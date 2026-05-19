@@ -33,21 +33,192 @@ restricted to the relevant risk-factor subset.
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 
 from frtb_ima.data_models import LiquidityHorizon
 from frtb_ima.expected_shortfall import expected_shortfall
+from frtb_ima.scenario import ScenarioVector
+from frtb_ima.scenario_validation import validate_nested_lh_vectors
 
-# (lh_cutoff, weight_numerator, weight_denominator)
+# (lh_cutoff, weight)
 # weight = (lh_upper - lh_lower) / base_horizon
 # base_horizon = 10 business days
 _LHA_STEPS: list[tuple[LiquidityHorizon, float]] = [
-    (LiquidityHorizon.LH10,  1.0),   # ES(P_all): weight = (10-10)/10 + 1 ... just the base term
-    (LiquidityHorizon.LH20,  (20 - 10) / 10),
-    (LiquidityHorizon.LH40,  (40 - 20) / 10),
-    (LiquidityHorizon.LH60,  (60 - 40) / 10),
+    (LiquidityHorizon.LH10, 1.0),
+    (LiquidityHorizon.LH20, (20 - 10) / 10),
+    (LiquidityHorizon.LH40, (40 - 20) / 10),
+    (LiquidityHorizon.LH60, (60 - 40) / 10),
     (LiquidityHorizon.LH120, (120 - 60) / 10),
 ]
+
+
+@dataclass(frozen=True)
+class LHAESComponent:
+    """One liquidity-horizon contribution to the LHA ES aggregation."""
+
+    liquidity_horizon: LiquidityHorizon
+    weight: float
+    expected_shortfall: float
+    weighted_square: float
+    present: bool
+
+
+@dataclass(frozen=True)
+class LHAESResult:
+    """Audit-friendly decomposition of a liquidity-horizon-adjusted ES result."""
+
+    alpha: float
+    components: tuple[LHAESComponent, ...]
+    sum_weighted_squares: float
+    lha_es: float
+    scenario_count: int | None = None
+    metadata_aligned: bool | None = None
+
+    def component_by_horizon(self, lh: LiquidityHorizon) -> LHAESComponent:
+        """Return the decomposition component for one liquidity horizon."""
+        for component in self.components:
+            if component.liquidity_horizon == lh:
+                return component
+        raise KeyError(f"No component for liquidity horizon {lh.name}")
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and notebooks."""
+        return {
+            "alpha": self.alpha,
+            "sum_weighted_squares": self.sum_weighted_squares,
+            "lha_es": self.lha_es,
+            "scenario_count": self.scenario_count,
+            "metadata_aligned": self.metadata_aligned,
+            "components": [
+                {
+                    "liquidity_horizon": component.liquidity_horizon.name,
+                    "weight": component.weight,
+                    "expected_shortfall": component.expected_shortfall,
+                    "weighted_square": component.weighted_square,
+                    "present": component.present,
+                }
+                for component in self.components
+            ],
+        }
+
+    def summary_lines(self) -> list[str]:
+        """Return a compact text summary suitable for logs or examples."""
+        lines = [
+            f"LHA ES alpha={self.alpha:.4f}",
+            f"sum_weighted_squares={self.sum_weighted_squares:.6f}",
+            f"lha_es={self.lha_es:.6f}",
+        ]
+        if self.scenario_count is not None:
+            lines.append(f"scenario_count={self.scenario_count}")
+        if self.metadata_aligned is not None:
+            lines.append(f"metadata_aligned={self.metadata_aligned}")
+        for component in self.components:
+            lines.append(
+                " ".join(
+                    [
+                        component.liquidity_horizon.name,
+                        f"present={component.present}",
+                        f"weight={component.weight:.6f}",
+                        f"es={component.expected_shortfall:.6f}",
+                        f"weighted_square={component.weighted_square:.6f}",
+                    ]
+                )
+            )
+        return lines
+
+
+def _values_as_list(vector: ScenarioVector | Sequence[float]) -> list[float]:
+    if isinstance(vector, ScenarioVector):
+        return vector.tolist()
+    return list(vector)
+
+
+def lha_es_breakdown_from_vectors(
+    lh_vectors: Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]],
+    alpha: float = 0.975,
+) -> LHAESResult:
+    """
+    Compute LHA ES and return an audit-friendly decomposition.
+
+    This is the canonical vector-based reporting path. It validates nested
+    liquidity-horizon vector structure before calculation.
+    """
+    validation = validate_nested_lh_vectors(lh_vectors)
+
+    sum_sq = 0.0
+    components: list[LHAESComponent] = []
+    for lh, weight in _LHA_STEPS:
+        if lh not in lh_vectors:
+            components.append(
+                LHAESComponent(
+                    liquidity_horizon=lh,
+                    weight=weight,
+                    expected_shortfall=0.0,
+                    weighted_square=0.0,
+                    present=False,
+                )
+            )
+            continue
+        es = expected_shortfall(_values_as_list(lh_vectors[lh]), alpha=alpha)
+        weighted_square = weight * es**2
+        sum_sq += weighted_square
+        components.append(
+            LHAESComponent(
+                liquidity_horizon=lh,
+                weight=weight,
+                expected_shortfall=es,
+                weighted_square=weighted_square,
+                present=True,
+            )
+        )
+
+    return LHAESResult(
+        alpha=alpha,
+        components=tuple(components),
+        sum_weighted_squares=sum_sq,
+        lha_es=math.sqrt(sum_sq),
+        scenario_count=validation.scenario_count,
+        metadata_aligned=validation.metadata_aligned,
+    )
+
+
+def lha_es_breakdown_from_scalars(
+    es_by_lh: Mapping[LiquidityHorizon, float],
+    alpha: float = 0.975,
+) -> LHAESResult:
+    """
+    Compute LHA ES from pre-computed ES scalars and return decomposition.
+
+    This path is useful when ES has already been calculated upstream, but it
+    does not validate scenario alignment because no vectors are supplied.
+    """
+    if LiquidityHorizon.LH10 not in es_by_lh:
+        raise KeyError("es_by_lh must contain LH10 (the full risk-factor ES)")
+
+    sum_sq = 0.0
+    components: list[LHAESComponent] = []
+    for lh, weight in _LHA_STEPS:
+        present = lh in es_by_lh
+        es = float(es_by_lh.get(lh, 0.0))
+        weighted_square = weight * es**2
+        sum_sq += weighted_square
+        components.append(
+            LHAESComponent(
+                liquidity_horizon=lh,
+                weight=weight,
+                expected_shortfall=es,
+                weighted_square=weighted_square,
+                present=present,
+            )
+        )
+
+    return LHAESResult(
+        alpha=alpha,
+        components=tuple(components),
+        sum_weighted_squares=sum_sq,
+        lha_es=math.sqrt(sum_sq),
+    )
 
 
 def lha_es_from_vectors(
@@ -68,21 +239,11 @@ def lha_es_from_vectors(
 
     Raises:
         KeyError:   if LH10 vector is missing.
-        ValueError: if any vector is empty.
+        ValueError: if any vector is empty or structurally invalid.
     """
     if LiquidityHorizon.LH10 not in lh_vectors:
         raise KeyError("lh_vectors must contain LH10 (the full risk-factor vector)")
-
-    sum_sq = 0.0
-    for lh, weight in _LHA_STEPS:
-        if lh not in lh_vectors:
-            # Missing sub-vector: no risk factors at this horizon or above.
-            # Contribution is zero — a valid outcome for a simple desk.
-            continue
-        es = expected_shortfall(list(lh_vectors[lh]), alpha=alpha)
-        sum_sq += weight * es ** 2
-
-    return math.sqrt(sum_sq)
+    return lha_es_breakdown_from_vectors(lh_vectors, alpha=alpha).lha_es
 
 
 def lha_es_from_scalars(
@@ -93,23 +254,8 @@ def lha_es_from_scalars(
 
     Convenience wrapper for callers that have already computed ES per subset.
     Same formula as lha_es_from_vectors.
-
-    Args:
-        es_by_lh: Mapping from LiquidityHorizon cutoff to pre-computed ES.
-                  Must contain at least LH10.
-
-    Returns:
-        LHA ES scalar.
     """
-    if LiquidityHorizon.LH10 not in es_by_lh:
-        raise KeyError("es_by_lh must contain LH10 (the full risk-factor ES)")
-
-    sum_sq = 0.0
-    for lh, weight in _LHA_STEPS:
-        es = es_by_lh.get(lh, 0.0)
-        sum_sq += weight * es ** 2
-
-    return math.sqrt(sum_sq)
+    return lha_es_breakdown_from_scalars(es_by_lh).lha_es
 
 
 # ---------------------------------------------------------------------------
