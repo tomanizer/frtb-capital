@@ -23,6 +23,11 @@ from frtb_ima.scenario import (
     validate_aligned_metadata,
     validate_unique_scenarios,
 )
+from frtb_ima.scenario_validation import (
+    NestedLHValidationError,
+    NestedLHValidationResult,
+    validate_nested_lh_vectors,
+)
 
 __all__ = [
     "DeskCapitalResult",
@@ -38,4 +43,7 @@ __all__ = [
     "make_scenario_metadata",
     "validate_aligned_metadata",
     "validate_unique_scenarios",
+    "NestedLHValidationError",
+    "NestedLHValidationResult",
+    "validate_nested_lh_vectors",
 ]
