@@ -15,6 +15,14 @@ from frtb_ima.data_models import (
     RiskFactor,
     ScenarioPnL,
 )
+from frtb_ima.scenario import (
+    ScenarioMetadata,
+    ScenarioSetType,
+    ScenarioVector,
+    make_scenario_metadata,
+    validate_aligned_metadata,
+    validate_unique_scenarios,
+)
 
 __all__ = [
     "DeskCapitalResult",
@@ -24,4 +32,10 @@ __all__ = [
     "RiskClass",
     "RiskFactor",
     "ScenarioPnL",
+    "ScenarioMetadata",
+    "ScenarioSetType",
+    "ScenarioVector",
+    "make_scenario_metadata",
+    "validate_aligned_metadata",
+    "validate_unique_scenarios",
 ]
