@@ -91,22 +91,25 @@ requirements:
     title: "RFET evidence lineage, source de-duplication, and representativeness"
     source: "RFET real-price evidence and data-quality standards"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: unsupported
+    status: partial
     modules:
       - src/frtb_ima/data_models.py
       - src/frtb_ima/rfet.py
+      - src/frtb_ima/rfet_evidence.py
     tests:
-    notes: "Next implementation target: evidence records, bucket representativeness, source lineage, vendor de-duplication."
+      - tests/test_rfet_evidence.py
+    notes: "Evidence packages, source presence, bucket representativeness, and one-count-per-date are implemented; vendor reliance and advanced representativeness remain open."
 
   - id: NPR-MR-RFET-003
     title: "New-issuance RFET prorating"
     source: "RFET treatment for new issuances"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: unsupported
+    status: partial
     modules:
-      - src/frtb_ima/rfet.py
+      - src/frtb_ima/rfet_evidence.py
     tests:
-    notes: "Not implemented; should be added with dated issue metadata and prorated observation thresholds."
+      - tests/test_rfet_evidence.py
+    notes: "Opt-in prorated threshold helper implemented as a documented working assumption; final supervisory interpretation still needs confirmation."
 
   - id: NPR-MR-IMCC-001
     title: "IMCC constrained and unconstrained aggregation"

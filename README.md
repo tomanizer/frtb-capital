@@ -70,6 +70,7 @@ src/frtb_ima/
     liquidity_horizon.py    LHA ES from nested vectors
     regimes.py              Regulatory policy profiles and run context
     rfet.py                 RFET modellability classification
+    rfet_evidence.py        RFET evidence assessment and audit trail
     nmrf.py                 NMRF SES aggregation
     imcc.py                 IMCC unconstrained / constrained
     pla.py                  PLA KS statistic

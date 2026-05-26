@@ -35,6 +35,12 @@ from frtb_ima.regimes import (
     UnsupportedRegulatoryFeature,
     get_policy,
 )
+from frtb_ima.rfet_evidence import (
+    RFETEvidenceAssessment,
+    RFETExclusionReason,
+    RFETObservationExclusion,
+    assess_rfet_evidence,
+)
 from frtb_ima.scenario import (
     ScenarioMetadata,
     ScenarioSetType,
@@ -62,6 +68,9 @@ __all__ = [
     "PLAMetricsRequired",
     "Position",
     "RFETEvidence",
+    "RFETEvidenceAssessment",
+    "RFETExclusionReason",
+    "RFETObservationExclusion",
     "RealPriceObservation",
     "RegulatoryPolicy",
     "RegulatoryRegime",
@@ -77,6 +86,7 @@ __all__ = [
     "TypeASESAggregationMode",
     "UnsupportedFeature",
     "UnsupportedRegulatoryFeature",
+    "assess_rfet_evidence",
     "get_policy",
     "make_scenario_metadata",
     "validate_aligned_metadata",
