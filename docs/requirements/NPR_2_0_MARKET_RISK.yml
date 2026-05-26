@@ -135,9 +135,11 @@ requirements:
     status: partial
     modules:
       - src/frtb_ima/imcc.py
+      - src/frtb_ima/reduced_set.py
     tests:
       - tests/test_imcc.py
-    notes: "Reduced/full set scaling helper now returns ratio/floor audit details; no stress-window selection, 75-factor reduced-set selection, or coverage governance yet."
+      - tests/test_reduced_set.py
+    notes: "Reduced/full set scaling helper and 60-day 75% variation-explained diagnostic implemented; no stress-window selection or reduced risk-factor set selection workflow yet."
 
   - id: NPR-MR-NMRF-001
     title: "Type A and Type B SES aggregation"

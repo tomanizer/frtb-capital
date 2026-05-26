@@ -93,8 +93,10 @@ new upstream data contracts:
 - RFET qualitative checks are external inputs. Vendor/source lineage,
   data-pooling eligibility, third-party reliance, and new-issuance treatment are
   not implemented.
-- Stress-period selection, reduced-set selection, 75-factor coverage
-  governance, and supervisory approval workflows are not implemented.
+- Stress-period selection, reduced risk-factor set selection, reduced-set data
+  quality evidence, and supervisory approval workflows are not implemented. The
+  60-day 75 percent variation-explained diagnostic is implemented as a
+  calculation helper only.
 - PLA and backtesting now expose optional dated diagnostics/traces, but they do
   not implement full business-calendar governance beyond an official-holiday
   mask supplied by the caller.

@@ -41,6 +41,11 @@ from frtb_ima.lha_builder import (
     per_risk_class_nested_lh_vectors_from_cube,
     risk_factor_names_for_lh_subset,
 )
+from frtb_ima.reduced_set import (
+    ReducedSetCoverageResult,
+    reduced_set_variation_explained,
+    reduced_set_variation_explained_for_policy,
+)
 from frtb_ima.regimes import (
     CalculationContext,
     NMRFTaxonomyMode,
@@ -92,6 +97,7 @@ __all__ = [
     "RFETExclusionReason",
     "RFETObservationExclusion",
     "RealPriceObservation",
+    "ReducedSetCoverageResult",
     "RegulatoryPolicy",
     "RegulatoryRegime",
     "RiskClass",
@@ -117,6 +123,8 @@ __all__ = [
     "make_scenario_metadata",
     "nested_lh_vectors_from_cube",
     "per_risk_class_nested_lh_vectors_from_cube",
+    "reduced_set_variation_explained",
+    "reduced_set_variation_explained_for_policy",
     "risk_factor_names_for_lh_subset",
     "scale_stress_es_breakdown",
     "validate_aligned_metadata",

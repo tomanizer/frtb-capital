@@ -69,6 +69,7 @@ src/frtb_ima/
     expected_shortfall.py   ES calculation
     lha_builder.py          Scenario cube to nested LH vector builder
     liquidity_horizon.py    LHA ES from nested vectors
+    reduced_set.py          Indirect-approach reduced-set diagnostics
     regimes.py              Regulatory policy profiles and run context
     rfet.py                 RFET modellability classification
     rfet_evidence.py        RFET evidence assessment and audit trail

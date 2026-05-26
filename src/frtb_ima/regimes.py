@@ -145,6 +145,8 @@ class RegulatoryPolicy:
     backtesting_exception_limits: tuple[
         tuple[float, int], ...
     ] = DEFAULT_BACKTESTING_EXCEPTION_LIMITS
+    reduced_set_coverage_window_days: int = 60
+    reduced_set_variation_explained_threshold: float = 0.75
     supervisory_multiplier_schedule: tuple[
         tuple[int, float], ...
     ] = DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE
