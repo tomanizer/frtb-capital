@@ -19,8 +19,17 @@ This ensures the stress ES is never deflated by the reduced set.
 
 from __future__ import annotations
 
+import math
+
 from frtb_ima.data_models import LiquidityHorizon, RiskClass
 from frtb_ima.liquidity_horizon import lha_es_from_vectors
+
+
+def _validate_non_negative_finite(value: float, name: str) -> None:
+    if not math.isfinite(value):
+        raise ValueError(f"{name} must be finite, got {value}")
+    if value < 0.0:
+        raise ValueError(f"{name} must be non-negative, got {value}")
 
 
 def imcc_unconstrained(
@@ -88,6 +97,9 @@ def imcc(
     Returns:
         IMCC scalar.
     """
+    if not math.isfinite(w) or not (0.0 <= w <= 1.0):
+        raise ValueError(f"w must be finite and in [0, 1], got {w}")
+
     u = imcc_unconstrained(all_risk_class_vectors, alpha=alpha)
     c = imcc_constrained(per_risk_class_vectors, alpha=alpha)
     return w * u + (1.0 - w) * c
@@ -119,9 +131,13 @@ def scale_stress_es(
     Raises:
         ValueError: if current_reduced_es is zero (division undefined).
     """
+    _validate_non_negative_finite(stress_reduced_es, "stress_reduced_es")
+    _validate_non_negative_finite(current_full_es, "current_full_es")
+    _validate_non_negative_finite(current_reduced_es, "current_reduced_es")
+
     if current_reduced_es == 0.0:
         raise ValueError(
-            "current_reduced_es is zero — cannot compute scaling ratio"
+            "current_reduced_es is zero; cannot compute scaling ratio"
         )
     ratio = max(current_full_es / current_reduced_es, 1.0)
     return stress_reduced_es * ratio

@@ -2,7 +2,7 @@
 
 import pytest
 
-from frtb_ima.pla import PlaResult, ks_statistic, pla_assessment
+from frtb_ima.pla import ks_statistic, pla_assessment
 
 
 def test_ks_identical_distributions() -> None:
@@ -36,6 +36,18 @@ def test_ks_empty_rtpl_raises() -> None:
         ks_statistic([1.0, 2.0], [])
 
 
+def test_ks_accepts_numpy_arrays() -> None:
+    import numpy as np
+
+    vec = np.array([1.0, 2.0, 3.0])
+    assert ks_statistic(vec, vec) == pytest.approx(0.0)
+
+
+def test_ks_rejects_non_finite_values() -> None:
+    with pytest.raises(ValueError, match="finite"):
+        ks_statistic([1.0, float("nan")], [1.0, 2.0])
+
+
 def test_pla_assessment_green_zone() -> None:
     vec = [float(i) for i in range(200)]
     result = pla_assessment(vec, vec)
@@ -57,3 +69,8 @@ def test_pla_result_lengths() -> None:
     result = pla_assessment(hpl, rtpl)
     assert result.n_hpl == 3
     assert result.n_rtpl == 4
+
+
+def test_pla_assessment_rejects_invalid_thresholds() -> None:
+    with pytest.raises(ValueError, match="thresholds"):
+        pla_assessment([1.0, 2.0], [1.0, 2.0], green_threshold=0.2, amber_threshold=0.1)

@@ -53,6 +53,13 @@ def test_imcc_final_is_50_50_blend() -> None:
     assert result == pytest.approx(200.0)
 
 
+def test_imcc_rejects_invalid_weight() -> None:
+    all_class = {LiquidityHorizon.LH10: _flat_vec(200.0)}
+    per_class = {RiskClass.GIRR: {LiquidityHorizon.LH10: _flat_vec(100.0)}}
+    with pytest.raises(ValueError, match="w"):
+        imcc(all_class, per_class, w=1.5)
+
+
 def test_imcc_constrained_missing_lh10_raises() -> None:
     per_class = {
         RiskClass.GIRR: {LiquidityHorizon.LH20: _flat_vec(100.0)}
@@ -84,3 +91,8 @@ def test_scale_stress_es_ratio_below_one_floors_at_one() -> None:
 def test_scale_stress_es_zero_reduced_raises() -> None:
     with pytest.raises(ValueError):
         scale_stress_es(100.0, current_full_es=100.0, current_reduced_es=0.0)
+
+
+def test_scale_stress_es_rejects_negative_inputs() -> None:
+    with pytest.raises(ValueError, match="stress_reduced_es"):
+        scale_stress_es(-1.0, current_full_es=100.0, current_reduced_es=100.0)

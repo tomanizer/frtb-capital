@@ -12,6 +12,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from itertools import pairwise
+
+import numpy as np
 
 from frtb_ima.data_models import LiquidityHorizon
 from frtb_ima.scenario import ScenarioVector, validate_aligned_metadata
@@ -35,7 +38,7 @@ class NestedLHValidationError(ValueError):
 def _coerce_vector(value: ScenarioVector | Sequence[float], lh: LiquidityHorizon) -> ScenarioVector:
     if isinstance(value, ScenarioVector):
         return value
-    return ScenarioVector(values=value, liquidity_horizon=lh)
+    return ScenarioVector(values=np.asarray(value, dtype=float), liquidity_horizon=lh)
 
 
 def _normalise_vectors(
@@ -103,7 +106,7 @@ def validate_nested_lh_vectors(
 
     nesting_evidence_checked = False
     if nesting_evidence is not None:
-        _validate_nesting_evidence(vectors.keys(), nesting_evidence)
+        _validate_nesting_evidence(tuple(vectors.keys()), nesting_evidence)
         nesting_evidence_checked = True
 
     horizons = tuple(sorted(vectors.keys(), key=lambda item: item.value))
@@ -125,7 +128,7 @@ def _validate_nesting_evidence(
         raise NestedLHValidationError(f"nesting evidence missing for: {missing}")
 
     ordered = sorted(supplied_horizons, key=lambda item: item.value)
-    for lower, higher in zip(ordered, ordered[1:]):
+    for lower, higher in pairwise(ordered):
         lower_set = nesting_evidence[lower]
         higher_set = nesting_evidence[higher]
         if not higher_set.issubset(lower_set):

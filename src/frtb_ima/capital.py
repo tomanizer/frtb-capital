@@ -15,6 +15,7 @@ and add fallback SA capital for non-approved desks — not implemented here.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 
@@ -28,6 +29,13 @@ class CapitalComponents:
     pla_addon: float
     models_based_capital: float
     binding_term: str   # "SPOT" or "AVERAGE"
+
+
+def _validate_non_negative_finite(value: float, name: str) -> None:
+    if not math.isfinite(value):
+        raise ValueError(f"{name} must be finite, got {value}")
+    if value < 0.0:
+        raise ValueError(f"{name} must be non-negative, got {value}")
 
 
 def models_based_capital(
@@ -59,10 +67,18 @@ def models_based_capital(
     Returns:
         CapitalComponents with breakdown and binding term.
     """
+    _validate_non_negative_finite(imcc_t_minus_1, "imcc_t_minus_1")
+    _validate_non_negative_finite(ses_t_minus_1, "ses_t_minus_1")
+    _validate_non_negative_finite(imcc_60d_avg, "imcc_60d_avg")
+    _validate_non_negative_finite(ses_60d_avg, "ses_60d_avg")
+    _validate_non_negative_finite(pla_addon, "pla_addon")
+
+    if not math.isfinite(multiplier):
+        raise ValueError(f"multiplier must be finite, got {multiplier}")
     if multiplier < 1.5:
         raise ValueError(f"multiplier must be >= 1.5 (floor), got {multiplier}")
 
-    spot_term    = imcc_t_minus_1 + ses_t_minus_1
+    spot_term = imcc_t_minus_1 + ses_t_minus_1
     average_term = multiplier * imcc_60d_avg + ses_60d_avg
 
     if spot_term >= average_term:
@@ -99,8 +115,13 @@ def supervisory_multiplier(exception_count: int) -> float:
 
     These are the Basel standard add-ons; NPR 2.0 may differ.
     """
-    MULTIPLIERS = {
+    if not isinstance(exception_count, int):
+        raise TypeError("exception_count must be an integer")
+    if exception_count < 0:
+        raise ValueError(f"exception_count must be non-negative, got {exception_count}")
+
+    multipliers = {
         0: 1.50, 1: 1.50, 2: 1.50, 3: 1.50, 4: 1.50,
         5: 1.70, 6: 1.76, 7: 1.83, 8: 1.88, 9: 1.92,
     }
-    return MULTIPLIERS.get(exception_count, 2.00)
+    return multipliers.get(exception_count, 2.00)

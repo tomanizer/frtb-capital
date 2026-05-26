@@ -14,8 +14,8 @@ Working assumption (NPR 2.0 / Basel FRTB IMA):
     The 250-day window is the Basel / NPR 2.0 standard backtesting window.
 
     Exception count thresholds (Basel traffic-light):
-        Green:  0 – 4  exceptions
-        Amber:  5 – 9  exceptions
+        Green:  0-4  exceptions
+        Amber:  5-9  exceptions
         Red:   10+     exceptions
 
     These thresholds are prototype working assumptions.
@@ -25,6 +25,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+
+import numpy as np
+import numpy.typing as npt
 
 # Basel backtesting traffic-light thresholds
 GREEN_MAX = 4
@@ -38,6 +41,17 @@ class BacktestResult:
     apl_zone: str   # "GREEN", "AMBER", "RED"
     hpl_zone: str
     window_size: int
+
+
+def _as_finite_1d_array(values: Sequence[float], name: str) -> npt.NDArray[np.float64]:
+    arr = np.asarray(values, dtype=float)
+    if arr.ndim != 1:
+        raise ValueError(f"{name} must be one-dimensional")
+    if arr.size == 0:
+        raise ValueError(f"{name} is empty")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values")
+    return arr.astype(np.float64, copy=False)
 
 
 def _zone(count: int) -> str:
@@ -72,17 +86,17 @@ def count_exceptions(
     Raises:
         ValueError: if lengths differ or inputs are empty.
     """
-    pnl_list = list(pnl)
-    var_list = list(var_estimates)
+    pnl_arr = _as_finite_1d_array(pnl, "pnl")
+    var_arr = _as_finite_1d_array(var_estimates, "var_estimates")
 
-    if not pnl_list:
-        raise ValueError("pnl is empty")
-    if len(pnl_list) != len(var_list):
+    if len(pnl_arr) != len(var_arr):
         raise ValueError(
-            f"pnl length ({len(pnl_list)}) != var_estimates length ({len(var_list)})"
+            f"pnl length ({len(pnl_arr)}) != var_estimates length ({len(var_arr)})"
         )
+    if np.any(var_arr <= 0.0):
+        raise ValueError("var_estimates must contain only positive values")
 
-    return sum(1 for p, v in zip(pnl_list, var_list) if -p > v)
+    return int(np.sum(-pnl_arr > var_arr))
 
 
 def backtest(
@@ -104,17 +118,22 @@ def backtest(
     Returns:
         BacktestResult with exception counts and zone classifications.
     """
-    apl_w = list(apl)[-window:]
-    hpl_w = list(hpl)[-window:]
-    var_w = list(var_estimates)[-window:]
+    if window <= 0:
+        raise ValueError(f"window must be positive, got {window}")
+
+    apl_w = _as_finite_1d_array(apl, "apl")[-window:]
+    hpl_w = _as_finite_1d_array(hpl, "hpl")[-window:]
+    var_w = _as_finite_1d_array(var_estimates, "var_estimates")[-window:]
 
     if len(apl_w) != len(var_w) or len(hpl_w) != len(var_w):
         raise ValueError(
             "After windowing, APL, HPL, and VaR series must have equal length"
         )
+    if np.any(var_w <= 0.0):
+        raise ValueError("var_estimates must contain only positive values")
 
-    n_apl = count_exceptions(apl_w, var_w)
-    n_hpl = count_exceptions(hpl_w, var_w)
+    n_apl = int(np.sum(-apl_w > var_w))
+    n_hpl = int(np.sum(-hpl_w > var_w))
 
     return BacktestResult(
         apl_exceptions=n_apl,

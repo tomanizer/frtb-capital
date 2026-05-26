@@ -33,6 +33,9 @@ def test_scenario_vector_requires_non_empty_1d_vector() -> None:
     with pytest.raises(ValueError, match="one-dimensional"):
         ScenarioVector(values=np.array([[1.0, 2.0]]))
 
+    with pytest.raises(ValueError, match="finite"):
+        ScenarioVector(values=np.array([1.0, np.inf]))
+
 
 def test_scenario_vector_metadata_alignment() -> None:
     metadata = make_scenario_metadata([date(2025, 1, 1), date(2025, 1, 2)])

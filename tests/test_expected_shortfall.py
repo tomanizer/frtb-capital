@@ -47,6 +47,25 @@ def test_empty_raises() -> None:
         expected_shortfall([], alpha=0.975)
 
 
+def test_numpy_array_input() -> None:
+    import numpy as np
+
+    es = expected_shortfall(np.array([1.0, 2.0, 3.0]), alpha=0.80)
+    assert es == pytest.approx(3.0)
+
+
+def test_non_finite_losses_raise() -> None:
+    with pytest.raises(ValueError, match="finite"):
+        expected_shortfall([1.0, float("nan")], alpha=0.975)
+
+
+def test_multidimensional_losses_raise() -> None:
+    import numpy as np
+
+    with pytest.raises(ValueError, match="one-dimensional"):
+        expected_shortfall(np.array([[1.0, 2.0]]), alpha=0.975)
+
+
 def test_invalid_alpha_zero() -> None:
     with pytest.raises(ValueError, match="alpha"):
         expected_shortfall([1.0, 2.0], alpha=0.0)

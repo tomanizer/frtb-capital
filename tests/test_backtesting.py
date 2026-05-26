@@ -2,7 +2,7 @@
 
 import pytest
 
-from frtb_ima.backtesting import BacktestResult, backtest, count_exceptions
+from frtb_ima.backtesting import backtest, count_exceptions
 
 
 def test_count_exceptions_none() -> None:
@@ -41,6 +41,16 @@ def test_count_exceptions_empty_raises() -> None:
         count_exceptions([], [])
 
 
+def test_count_exceptions_rejects_non_positive_var() -> None:
+    with pytest.raises(ValueError, match="positive"):
+        count_exceptions([-100.0], [0.0])
+
+
+def test_count_exceptions_rejects_non_finite_inputs() -> None:
+    with pytest.raises(ValueError, match="finite"):
+        count_exceptions([float("nan")], [100.0])
+
+
 def test_backtest_window_trims_to_250() -> None:
     n = 300
     pnl = [100.0] * n          # all gains — no exceptions
@@ -70,3 +80,8 @@ def test_backtest_red_zone() -> None:
     var = [100.0] * n
     result = backtest(apl, apl, var)
     assert result.apl_zone == "RED"
+
+
+def test_backtest_rejects_non_positive_window() -> None:
+    with pytest.raises(ValueError, match="window"):
+        backtest([1.0], [1.0], [100.0], window=0)

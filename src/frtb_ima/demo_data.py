@@ -18,7 +18,6 @@ from frtb_ima.data_models import (
     ScenarioPnL,
 )
 
-
 RNG = np.random.default_rng(seed=42)
 
 

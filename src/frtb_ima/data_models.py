@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from enum import Enum
+from enum import Enum, StrEnum
 
 
-class RiskClass(str, Enum):
+class RiskClass(StrEnum):
     GIRR = "GIRR"
     CSR = "CSR"
     EQUITY = "EQUITY"
@@ -29,10 +29,10 @@ class LiquidityHorizon(int, Enum):
     LH120 = 120
 
 
-class ModellabilityStatus(str, Enum):
+class ModellabilityStatus(StrEnum):
     MODELLABLE = "MODELLABLE"
-    TYPE_A_NMRF = "TYPE_A_NMRF"   # passes qualitative, fails quantitative
-    TYPE_B_NMRF = "TYPE_B_NMRF"   # fails qualitative (or not classified above)
+    TYPE_A_NMRF = "TYPE_A_NMRF"  # passes qualitative, fails quantitative
+    TYPE_B_NMRF = "TYPE_B_NMRF"  # fails qualitative (or not classified above)
 
 
 @dataclass(frozen=True)

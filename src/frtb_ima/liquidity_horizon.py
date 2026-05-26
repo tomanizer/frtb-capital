@@ -222,7 +222,7 @@ def lha_es_breakdown_from_scalars(
 
 
 def lha_es_from_vectors(
-    lh_vectors: dict[LiquidityHorizon, Sequence[float]],
+    lh_vectors: Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]],
     alpha: float = 0.975,
 ) -> float:
     """
@@ -247,7 +247,7 @@ def lha_es_from_vectors(
 
 
 def lha_es_from_scalars(
-    es_by_lh: dict[LiquidityHorizon, float],
+    es_by_lh: Mapping[LiquidityHorizon, float],
 ) -> float:
     """
     Compute LHA ES directly from pre-computed ES scalars per LH subset.

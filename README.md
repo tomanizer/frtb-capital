@@ -24,6 +24,18 @@ pip install -e ".[dev]"
 
 Requires Python 3.11+, numpy.
 
+## Local development
+
+The repository includes a small `Makefile` for a fresh-clone workflow:
+
+```bash
+make install
+make check
+make demo
+```
+
+Individual targets are available for `make test`, `make lint`, and `make typecheck`.
+
 ## Run tests
 
 ```bash

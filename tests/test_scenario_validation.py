@@ -12,7 +12,6 @@ from frtb_ima.scenario_validation import (
     validate_nested_lh_vectors,
 )
 
-
 METADATA = make_scenario_metadata(
     [date(2025, 1, 1), date(2025, 1, 2), date(2025, 1, 3)]
 )
@@ -46,8 +45,8 @@ def test_validate_nested_lh_vectors_detects_length_mismatch() -> None:
     with pytest.raises(NestedLHValidationError, match="mismatched lengths"):
         validate_nested_lh_vectors(
             {
-                LiquidityHorizon.LH10: _vector([1.0, 2.0, 3.0]),
-                LiquidityHorizon.LH20: _vector([1.0, 2.0]),
+                LiquidityHorizon.LH10: ScenarioVector(values=np.array([1.0, 2.0, 3.0])),
+                LiquidityHorizon.LH20: ScenarioVector(values=np.array([1.0, 2.0])),
             }
         )
 

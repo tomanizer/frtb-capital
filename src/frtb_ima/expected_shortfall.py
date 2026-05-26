@@ -29,12 +29,17 @@ def expected_shortfall(losses: Sequence[float], alpha: float = 0.975) -> float:
     Raises:
         ValueError: on empty input or invalid alpha.
     """
-    if not losses:
-        raise ValueError("losses must be a non-empty sequence")
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
 
     arr = np.asarray(losses, dtype=float)
+    if arr.ndim != 1:
+        raise ValueError("losses must be a one-dimensional sequence")
+    if arr.size == 0:
+        raise ValueError("losses must be a non-empty sequence")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError("losses must contain only finite values")
+
     arr_sorted = np.sort(arr)[::-1]  # descending: worst losses first
 
     n = len(arr_sorted)

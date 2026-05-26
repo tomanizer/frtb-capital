@@ -2,16 +2,18 @@
 
 from datetime import date, timedelta
 
-import pytest
-
-from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus, RiskClass, RiskFactor
+from frtb_ima.data_models import (
+    LiquidityHorizon,
+    ModellabilityStatus,
+    RealPriceObservation,
+    RiskClass,
+    RiskFactor,
+)
 from frtb_ima.rfet import (
     classify_risk_factor,
     count_eligible_observations,
     passes_quantitative_test,
 )
-from frtb_ima.data_models import RealPriceObservation
-
 
 AS_OF = date(2025, 6, 30)
 
@@ -24,9 +26,9 @@ def _make_obs(name: str, n: int, spacing_days: int = 10) -> list[RealPriceObserv
     ]
 
 
-RF_LH10  = RiskFactor("RF_A", RiskClass.GIRR,   LiquidityHorizon.LH10)
-RF_LH20  = RiskFactor("RF_B", RiskClass.FX,     LiquidityHorizon.LH20)
-RF_LH40  = RiskFactor("RF_C", RiskClass.CSR,    LiquidityHorizon.LH40)
+RF_LH10 = RiskFactor("RF_A", RiskClass.GIRR, LiquidityHorizon.LH10)
+RF_LH20 = RiskFactor("RF_B", RiskClass.FX, LiquidityHorizon.LH20)
+RF_LH40 = RiskFactor("RF_C", RiskClass.CSR, LiquidityHorizon.LH40)
 RF_LH120 = RiskFactor("RF_D", RiskClass.EQUITY, LiquidityHorizon.LH120)
 
 

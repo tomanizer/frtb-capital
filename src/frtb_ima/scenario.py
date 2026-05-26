@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date
-from enum import Enum
+from enum import StrEnum
 from types import MappingProxyType
 
 import numpy as np
@@ -26,7 +26,7 @@ import numpy.typing as npt
 from frtb_ima.data_models import LiquidityHorizon, RiskClass
 
 
-class ScenarioSetType(str, Enum):
+class ScenarioSetType(StrEnum):
     """Classification of the scenario set supplied by upstream systems."""
 
     CURRENT = "CURRENT"
@@ -81,6 +81,8 @@ class ScenarioVector:
             raise ValueError("ScenarioVector values must be one-dimensional")
         if arr.size == 0:
             raise ValueError("ScenarioVector values must be non-empty")
+        if not np.all(np.isfinite(arr)):
+            raise ValueError("ScenarioVector values must contain only finite values")
         if self.metadata and len(self.metadata) != arr.size:
             raise ValueError(
                 f"metadata length ({len(self.metadata)}) != values length ({arr.size})"
@@ -100,7 +102,7 @@ class ScenarioVector:
 
     def tolist(self) -> list[float]:
         """Return values as a plain list for compatibility with existing APIs."""
-        return self.values.tolist()
+        return [float(value) for value in self.values]
 
 
 def make_scenario_metadata(
