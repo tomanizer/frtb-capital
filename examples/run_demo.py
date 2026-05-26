@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from datetime import date
 
-from frtb_ima.backtesting import backtest
-from frtb_ima.capital import models_based_capital, supervisory_multiplier
+from frtb_ima.backtesting import trading_desk_backtest_for_policy
+from frtb_ima.capital import models_based_capital, supervisory_multiplier_for_policy
 from frtb_ima.data_models import ModellabilityStatus
 from frtb_ima.demo_data import (
     DEMO_RISK_FACTORS,
@@ -19,11 +19,12 @@ from frtb_ima.demo_data import (
     make_pnl_series,
     make_scenario_pnl,
 )
-from frtb_ima.imcc import imcc
+from frtb_ima.imcc import imcc_for_policy
 from frtb_ima.liquidity_horizon import lha_es_from_vectors
-from frtb_ima.nmrf import aggregate_ses, ses_for_nmrf_linear
-from frtb_ima.pla import pla_assessment
-from frtb_ima.rfet import classify_risk_factor
+from frtb_ima.nmrf import aggregate_ses_for_policy, ses_for_nmrf_linear
+from frtb_ima.pla import pla_assessment_for_policy
+from frtb_ima.regimes import CalculationContext, RegulatoryRegime, get_policy
+from frtb_ima.rfet import classify_risk_factor_for_policy
 
 AS_OF = date(2025, 6, 30)
 DESK = "Rates & Credit"
@@ -38,8 +39,16 @@ def section(title: str) -> None:
 
 
 def main() -> None:
+    context = CalculationContext(
+        policy=get_policy(RegulatoryRegime.FED_NPR_2_0),
+        as_of_date=AS_OF,
+        desk=DESK,
+        run_id="synthetic-demo",
+    )
+
     print("\nFRTB IMA Prototype — NPR 2.0-style capital demo")
     print("Prototype only. Not for regulatory reporting.\n")
+    print(f"Regulatory profile: {context.policy.regime.value}\n")
 
     # ------------------------------------------------------------------
     # 1. Risk factor classifications
@@ -49,18 +58,19 @@ def main() -> None:
     well_observed = [rf.name for rf in DEMO_RISK_FACTORS if rf.name != "EXOTIC_RF"]
     poorly_observed = ["EXOTIC_RF"]
 
-    observations = make_observations(AS_OF, well_observed, poorly_observed)
+    observations = make_observations(context.as_of_date, well_observed, poorly_observed)
 
     # Qualitative pass for all except the exotic factor
     qualitative_decisions = {rf.name: rf.name != "EXOTIC_RF" for rf in DEMO_RISK_FACTORS}
 
     classifications: dict[str, ModellabilityStatus] = {}
     for rf in DEMO_RISK_FACTORS:
-        status = classify_risk_factor(
+        status = classify_risk_factor_for_policy(
             rf,
             observations,
             qualitative_pass=qualitative_decisions[rf.name],
-            as_of_date=AS_OF,
+            as_of_date=context.as_of_date,
+            policy=context.policy,
         )
         classifications[rf.name] = status
         print(f"  {rf.name:<20} LH={rf.liquidity_horizon.value:>3}d  {status.value}")
@@ -69,7 +79,11 @@ def main() -> None:
     type_a_nmrfs  = [n for n, s in classifications.items() if s == ModellabilityStatus.TYPE_A_NMRF]
     type_b_nmrfs  = [n for n, s in classifications.items() if s == ModellabilityStatus.TYPE_B_NMRF]
 
-    print(f"\n  Modellable: {len(modellable)}  |  Type A NMRF: {len(type_a_nmrfs)}  |  Type B NMRF: {len(type_b_nmrfs)}")
+    print(
+        f"\n  Modellable: {len(modellable)}  |  "
+        f"Type A NMRF: {len(type_a_nmrfs)}  |  "
+        f"Type B NMRF: {len(type_b_nmrfs)}"
+    )
 
     # ------------------------------------------------------------------
     # 2. Scenario P&L + Liquidity horizon adjusted ES
@@ -79,12 +93,20 @@ def main() -> None:
     spnl = make_scenario_pnl(DESK)
     all_class_vectors, per_class_vectors = aggregate_lh_vectors(spnl)
 
-    lha_es = lha_es_from_vectors(all_class_vectors)
+    lha_es = lha_es_from_vectors(
+        all_class_vectors,
+        alpha=context.policy.es_confidence_level,
+        lha_weights=context.policy.lha_weights,
+    )
     print(f"  LHA ES (all classes):  {lha_es:>12,.2f}")
 
     print("\n  Per risk-class LHA ES:")
     for rc, lh_vecs in per_class_vectors.items():
-        rc_lha = lha_es_from_vectors(lh_vecs)
+        rc_lha = lha_es_from_vectors(
+            lh_vecs,
+            alpha=context.policy.es_confidence_level,
+            lha_weights=context.policy.lha_weights,
+        )
         print(f"    {rc.value:<12} {rc_lha:>12,.2f}")
 
     # ------------------------------------------------------------------
@@ -92,7 +114,7 @@ def main() -> None:
     # ------------------------------------------------------------------
     section("IMCC")
 
-    imcc_value = imcc(all_class_vectors, per_class_vectors)
+    imcc_value = imcc_for_policy(all_class_vectors, per_class_vectors, context.policy)
     print(f"  IMCC:  {imcc_value:>12,.2f}")
 
     # For the 60d average demo, just use today's value repeated (simplification)
@@ -127,7 +149,7 @@ def main() -> None:
             tag = "Type B"
         print(f"  {name:<20} SES_i = {ses_i:>10,.2f}  ({tag})")
 
-    ses_total = aggregate_ses(type_a_ses_values, type_b_ses_values)
+    ses_total = aggregate_ses_for_policy(type_a_ses_values, type_b_ses_values, context.policy)
     print(f"\n  Total SES:  {ses_total:>12,.2f}")
 
     ses_60d_avg = ses_total
@@ -160,7 +182,7 @@ def main() -> None:
     section("PLA KS statistic")
 
     apl, hpl, var_estimates = make_pnl_series(n=260)
-    pla = pla_assessment(hpl=hpl, rtpl=apl)  # using APL as RTPL proxy in demo
+    pla = pla_assessment_for_policy(hpl=hpl, rtpl=apl, policy=context.policy)
     print(f"  KS statistic:   {pla.ks_statistic:.4f}")
     print(f"  Zone:           {pla.zone}")
     print(f"  HPL length:     {pla.n_hpl}")
@@ -171,11 +193,37 @@ def main() -> None:
     # ------------------------------------------------------------------
     section("Backtesting exception counts")
 
-    bt = backtest(apl, hpl, var_estimates, window=250)
-    mult = supervisory_multiplier(bt.apl_exceptions)
+    var_by_confidence = {
+        0.975: [v * 0.85 for v in var_estimates],
+        0.99: var_estimates,
+    }
+    bt = trading_desk_backtest_for_policy(
+        apl,
+        hpl,
+        var_by_confidence,
+        policy=context.policy,
+    )
+    bt99 = bt.level(0.99)
+    bt975 = bt.level(0.975)
+    mult = supervisory_multiplier_for_policy(bt99.apl_exceptions, context.policy)
     print(f"  Window:             {bt.window_size} business days")
-    print(f"  APL exceptions:     {bt.apl_exceptions:>4}  (zone: {bt.apl_zone})")
-    print(f"  HPL exceptions:     {bt.hpl_exceptions:>4}  (zone: {bt.hpl_zone})")
+    print(
+        f"  APL exceptions 99%: {bt99.apl_exceptions:>4}  "
+        f"(limit: {bt99.exception_limit:.0f})"
+    )
+    print(
+        f"  HPL exceptions 99%: {bt99.hpl_exceptions:>4}  "
+        f"(limit: {bt99.exception_limit:.0f})"
+    )
+    print(
+        f"  APL exceptions 97.5%: {bt975.apl_exceptions:>2}  "
+        f"(limit: {bt975.exception_limit:.0f})"
+    )
+    print(
+        f"  HPL exceptions 97.5%: {bt975.hpl_exceptions:>2}  "
+        f"(limit: {bt975.exception_limit:.0f})"
+    )
+    print(f"  Backtesting pass:   {bt.model_eligible}")
     print(f"  Supervisory mult:   {mult:.2f}")
 
     print(f"\n{SEP}")

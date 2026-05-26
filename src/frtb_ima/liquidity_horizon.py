@@ -28,6 +28,11 @@ risk factors over a common 10-day scenario horizon.
 The nested structure means the sub-vectors are NOT independent draws —
 they are constructed from the same historical scenario windows but
 restricted to the relevant risk-factor subset.
+
+Regulatory traceability:
+    Basel MAR33 liquidity-horizon adjustment; U.S. NPR 2.0 proposed section
+    __.215 LHA ES mechanics; EU CRR Articles 325bc and 325bd. See
+    docs/REGULATORY_TRACEABILITY.md.
 """
 
 from __future__ import annotations
@@ -38,19 +43,14 @@ from dataclasses import dataclass
 
 from frtb_ima.data_models import LiquidityHorizon
 from frtb_ima.expected_shortfall import expected_shortfall
+from frtb_ima.regimes import DEFAULT_LHA_WEIGHTS
 from frtb_ima.scenario import ScenarioVector
 from frtb_ima.scenario_validation import validate_nested_lh_vectors
 
 # (lh_cutoff, weight)
 # weight = (lh_upper - lh_lower) / base_horizon
 # base_horizon = 10 business days
-_LHA_STEPS: list[tuple[LiquidityHorizon, float]] = [
-    (LiquidityHorizon.LH10, 1.0),
-    (LiquidityHorizon.LH20, (20 - 10) / 10),
-    (LiquidityHorizon.LH40, (40 - 20) / 10),
-    (LiquidityHorizon.LH60, (60 - 40) / 10),
-    (LiquidityHorizon.LH120, (120 - 60) / 10),
-]
+_LHA_STEPS: tuple[tuple[LiquidityHorizon, float], ...] = DEFAULT_LHA_WEIGHTS
 
 
 @dataclass(frozen=True)
@@ -137,6 +137,7 @@ def _values_as_list(vector: ScenarioVector | Sequence[float]) -> list[float]:
 def lha_es_breakdown_from_vectors(
     lh_vectors: Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]],
     alpha: float = 0.975,
+    lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> LHAESResult:
     """
     Compute LHA ES and return an audit-friendly decomposition.
@@ -148,7 +149,7 @@ def lha_es_breakdown_from_vectors(
 
     sum_sq = 0.0
     components: list[LHAESComponent] = []
-    for lh, weight in _LHA_STEPS:
+    for lh, weight in lha_weights:
         if lh not in lh_vectors:
             components.append(
                 LHAESComponent(
@@ -186,6 +187,7 @@ def lha_es_breakdown_from_vectors(
 def lha_es_breakdown_from_scalars(
     es_by_lh: Mapping[LiquidityHorizon, float],
     alpha: float = 0.975,
+    lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> LHAESResult:
     """
     Compute LHA ES from pre-computed ES scalars and return decomposition.
@@ -198,7 +200,7 @@ def lha_es_breakdown_from_scalars(
 
     sum_sq = 0.0
     components: list[LHAESComponent] = []
-    for lh, weight in _LHA_STEPS:
+    for lh, weight in lha_weights:
         present = lh in es_by_lh
         es = float(es_by_lh.get(lh, 0.0))
         weighted_square = weight * es**2
@@ -224,6 +226,7 @@ def lha_es_breakdown_from_scalars(
 def lha_es_from_vectors(
     lh_vectors: Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]],
     alpha: float = 0.975,
+    lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> float:
     """
     Compute liquidity-horizon-adjusted ES from nested scenario vectors.
@@ -243,11 +246,16 @@ def lha_es_from_vectors(
     """
     if LiquidityHorizon.LH10 not in lh_vectors:
         raise KeyError("lh_vectors must contain LH10 (the full risk-factor vector)")
-    return lha_es_breakdown_from_vectors(lh_vectors, alpha=alpha).lha_es
+    return lha_es_breakdown_from_vectors(
+        lh_vectors,
+        alpha=alpha,
+        lha_weights=lha_weights,
+    ).lha_es
 
 
 def lha_es_from_scalars(
     es_by_lh: Mapping[LiquidityHorizon, float],
+    lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> float:
     """
     Compute LHA ES directly from pre-computed ES scalars per LH subset.
@@ -255,7 +263,7 @@ def lha_es_from_scalars(
     Convenience wrapper for callers that have already computed ES per subset.
     Same formula as lha_es_from_vectors.
     """
-    return lha_es_breakdown_from_scalars(es_by_lh).lha_es
+    return lha_es_breakdown_from_scalars(es_by_lh, lha_weights=lha_weights).lha_es
 
 
 # ---------------------------------------------------------------------------

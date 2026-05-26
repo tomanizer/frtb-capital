@@ -2,6 +2,10 @@
 Data models for FRTB IMA prototype.
 
 Minimal dataclasses and enums. No business logic here.
+
+Regulatory traceability:
+    See docs/REGULATORY_TRACEABILITY.md rows for data_models.py, RFET,
+    liquidity horizons, scenario vectors, NMRFs, and desk capital.
 """
 
 from __future__ import annotations

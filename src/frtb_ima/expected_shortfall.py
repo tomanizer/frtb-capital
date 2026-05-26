@@ -6,6 +6,11 @@ so larger positive numbers are worse. ES is the average of the worst
 (1 - alpha) tail — i.e. the average loss beyond the alpha quantile.
 
 Working assumption: 97.5% one-tailed ES per NPR 2.0 / Basel FRTB IMA.
+
+Regulatory traceability:
+    Basel MAR33 expected shortfall; U.S. NPR 2.0 expected-shortfall-based
+    measures; EU CRR Article 325bc partial expected shortfall. See
+    docs/REGULATORY_TRACEABILITY.md.
 """
 
 from __future__ import annotations

@@ -14,7 +14,7 @@ A Python prototype demonstrating how an existing risk engine can generate 10-day
 - Stressed Expected Shortfall for NMRFs (SES)
 - Models-based capital assembly
 - PLA Kolmogorov-Smirnov statistic
-- Backtesting exception counts
+- Backtesting exception counts at 97.5% and 99.0% VaR levels
 
 ## Install
 
@@ -67,6 +67,7 @@ src/frtb_ima/
     data_models.py          Enums and dataclasses
     expected_shortfall.py   ES calculation
     liquidity_horizon.py    LHA ES from nested vectors
+    regimes.py              Regulatory policy profiles and run context
     rfet.py                 RFET modellability classification
     nmrf.py                 NMRF SES aggregation
     imcc.py                 IMCC unconstrained / constrained
@@ -89,6 +90,12 @@ src/frtb_ima/
 ## Regulatory assumptions
 
 See [docs/REGULATORY_ASSUMPTIONS.md](docs/REGULATORY_ASSUMPTIONS.md).
+
+For a bidirectional code-to-regulation and regulation-to-code index, see
+[docs/REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md).
+
+For the latest NPR 2.0 implementation audit and remaining gaps, see
+[docs/NPR_2_IMPLEMENTATION_AUDIT.md](docs/NPR_2_IMPLEMENTATION_AUDIT.md).
 
 ## Architecture notes
 

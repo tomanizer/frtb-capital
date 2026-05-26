@@ -14,6 +14,11 @@ Zone thresholds:
     Red (fail):    KS > AMBER_THRESHOLD
 
 Thresholds are placeholders — NPR 2.0 working assumption only.
+
+Regulatory traceability:
+    Basel MAR32 PLA; U.S. NPR 2.0 KS-based PLA proposal; EU CRR Article 325bg
+    and Delegated Regulation (EU) 2022/2059. See
+    docs/REGULATORY_TRACEABILITY.md.
 """
 
 from __future__ import annotations
@@ -24,9 +29,16 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima.regimes import (
+    PLAMetricsRequired,
+    RegulatoryPolicy,
+    UnsupportedRegulatoryFeature,
+)
+
 # Placeholder zone thresholds — replace with final NPR 2.0 values when published
 GREEN_THRESHOLD: float = 0.09
 AMBER_THRESHOLD: float = 0.12
+DEFAULT_ZONE_LABELS: tuple[str, str, str] = ("GREEN", "AMBER", "RED")
 
 
 @dataclass(frozen=True)
@@ -37,7 +49,10 @@ class PlaResult:
     n_rtpl: int
 
 
-def _as_finite_1d_array(values: Sequence[float], name: str) -> npt.NDArray[np.float64]:
+FloatVector = Sequence[float] | npt.NDArray[np.float64]
+
+
+def _as_finite_1d_array(values: FloatVector, name: str) -> npt.NDArray[np.float64]:
     arr = np.asarray(values, dtype=float)
     if arr.ndim != 1:
         raise ValueError(f"{name} vector must be one-dimensional")
@@ -48,7 +63,7 @@ def _as_finite_1d_array(values: Sequence[float], name: str) -> npt.NDArray[np.fl
     return arr.astype(np.float64, copy=False)
 
 
-def ks_statistic(hpl: Sequence[float], rtpl: Sequence[float]) -> float:
+def ks_statistic(hpl: FloatVector, rtpl: FloatVector) -> float:
     """
     Compute the two-sample Kolmogorov-Smirnov statistic between HPL and RTPL.
 
@@ -90,10 +105,11 @@ def _ks_statistic_arrays(
 
 
 def pla_assessment(
-    hpl: Sequence[float],
-    rtpl: Sequence[float],
+    hpl: FloatVector,
+    rtpl: FloatVector,
     green_threshold: float = GREEN_THRESHOLD,
     amber_threshold: float = AMBER_THRESHOLD,
+    zone_labels: tuple[str, str, str] = DEFAULT_ZONE_LABELS,
 ) -> PlaResult:
     """
     Run PLA assessment and return the KS statistic with zone classification.
@@ -103,6 +119,7 @@ def pla_assessment(
         rtpl:             Risk-Theoretical P&L vector.
         green_threshold:  KS <= this -> GREEN.
         amber_threshold:  green < KS <= this -> AMBER; above -> RED.
+        zone_labels:      Labels for green, amber, and red zones.
 
     Returns:
         PlaResult with ks_statistic, zone, and vector lengths.
@@ -112,20 +129,74 @@ def pla_assessment(
             "PLA thresholds must satisfy 0 <= green_threshold <= amber_threshold <= 1"
         )
 
+    green_label, amber_label, red_label = zone_labels
     hpl_arr = _as_finite_1d_array(hpl, "hpl")
     rtpl_arr = _as_finite_1d_array(rtpl, "rtpl")
     ks = _ks_statistic_arrays(np.sort(hpl_arr), np.sort(rtpl_arr))
 
     if ks <= green_threshold:
-        zone = "GREEN"
+        zone = green_label
     elif ks <= amber_threshold:
-        zone = "AMBER"
+        zone = amber_label
     else:
-        zone = "RED"
+        zone = red_label
 
     return PlaResult(
         ks_statistic=ks,
         zone=zone,
         n_hpl=len(hpl_arr),
         n_rtpl=len(rtpl_arr),
+    )
+
+
+def pla_assessment_for_policy(
+    hpl: FloatVector,
+    rtpl: FloatVector,
+    policy: RegulatoryPolicy,
+) -> PlaResult:
+    """
+    Run PLA using policy thresholds and required metrics.
+
+    The prototype currently implements KS only. Policies requiring Spearman
+    raise an explicit unsupported-feature error.
+    """
+    if policy.pla_metrics_required == PLAMetricsRequired.KS_AND_SPEARMAN:
+        feature = policy.unsupported_feature("spearman_pla")
+        if feature is not None:
+            raise UnsupportedRegulatoryFeature(
+                policy.regime,
+                feature.feature_name,
+                feature.source_topic,
+            )
+        raise UnsupportedRegulatoryFeature(
+            policy.regime,
+            "spearman_pla",
+            "PLA Spearman metric",
+        )
+
+    if policy.pla_window_days <= 0:
+        raise ValueError(f"pla_window_days must be positive, got {policy.pla_window_days}")
+    if policy.pla_minimum_history_days <= 0:
+        raise ValueError(
+            "pla_minimum_history_days must be positive, "
+            f"got {policy.pla_minimum_history_days}"
+        )
+
+    hpl_arr = _as_finite_1d_array(hpl, "hpl")
+    rtpl_arr = _as_finite_1d_array(rtpl, "rtpl")
+    min_length = min(len(hpl_arr), len(rtpl_arr))
+    if min_length < policy.pla_minimum_history_days:
+        raise ValueError(
+            "HPL and RTPL must contain at least "
+            f"{policy.pla_minimum_history_days} observations for policy PLA"
+        )
+    hpl_w = hpl_arr[-policy.pla_window_days :]
+    rtpl_w = rtpl_arr[-policy.pla_window_days :]
+
+    return pla_assessment(
+        hpl_w,
+        rtpl_w,
+        green_threshold=policy.pla_green_threshold,
+        amber_threshold=policy.pla_amber_threshold,
+        zone_labels=policy.pla_zone_labels,
     )

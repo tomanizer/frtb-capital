@@ -2,7 +2,7 @@
 
 import pytest
 
-from frtb_ima.capital import models_based_capital, supervisory_multiplier
+from frtb_ima.capital import models_based_capital, pla_addon, supervisory_multiplier
 
 
 def test_models_based_capital_rejects_negative_components() -> None:
@@ -45,3 +45,34 @@ def test_supervisory_multiplier_rejects_negative_exception_count() -> None:
 def test_supervisory_multiplier_rejects_non_integer_exception_count() -> None:
     with pytest.raises(TypeError, match="integer"):
         supervisory_multiplier(1.5)  # type: ignore[arg-type]
+
+
+def test_pla_addon_uses_half_amber_standardized_share() -> None:
+    result = pla_addon(
+        standardized_green_amber=1_000.0,
+        standardized_amber=200.0,
+        ima_green_amber=700.0,
+    )
+
+    assert result.k_factor == pytest.approx(0.1)
+    assert result.capital_benefit == pytest.approx(300.0)
+    assert result.pla_addon == pytest.approx(30.0)
+
+
+def test_pla_addon_floors_negative_capital_benefit_at_zero() -> None:
+    result = pla_addon(
+        standardized_green_amber=1_000.0,
+        standardized_amber=500.0,
+        ima_green_amber=1_200.0,
+    )
+
+    assert result.pla_addon == pytest.approx(0.0)
+
+
+def test_pla_addon_rejects_amber_exceeding_green_amber() -> None:
+    with pytest.raises(ValueError, match="standardized_amber"):
+        pla_addon(
+            standardized_green_amber=100.0,
+            standardized_amber=101.0,
+            ima_green_amber=50.0,
+        )

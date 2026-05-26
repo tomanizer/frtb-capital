@@ -17,6 +17,10 @@ The implementation intentionally exposes intermediate aggregation terms rather t
 
 Basel FRTB liquidity-horizon aggregation is structurally decomposable.
 
+See [REGULATORY_TRACEABILITY.md](REGULATORY_TRACEABILITY.md) for the cross-reference
+to Basel MAR33, proposed U.S. section `__.215`, and EU CRR Articles 325bc and
+325bd.
+
 The capital calculation is built from:
 
 - liquidity-horizon-specific expected shortfalls,

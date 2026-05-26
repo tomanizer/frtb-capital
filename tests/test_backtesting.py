@@ -1,8 +1,10 @@
 """Tests for backtesting module."""
 
+import math
+
 import pytest
 
-from frtb_ima.backtesting import backtest, count_exceptions
+from frtb_ima.backtesting import backtest, count_exceptions, trading_desk_backtest
 
 
 def test_count_exceptions_none() -> None:
@@ -85,3 +87,93 @@ def test_backtest_red_zone() -> None:
 def test_backtest_rejects_non_positive_window() -> None:
     with pytest.raises(ValueError, match="window"):
         backtest([1.0], [1.0], [100.0], window=0)
+
+
+def test_trading_desk_backtest_uses_975_and_99_percentile_limits() -> None:
+    n = 250
+    apl = [-200.0] * 12 + [-150.0] * 18 + [100.0] * (n - 30)
+    hpl = [-200.0] * 5 + [-150.0] * 10 + [100.0] * (n - 15)
+    var = {
+        0.975: [100.0] * n,
+        0.99: [175.0] * n,
+    }
+
+    result = trading_desk_backtest(apl, hpl, var)
+
+    assert result.model_eligible is True
+    assert result.level(0.99).apl_exceptions == 12
+    assert result.level(0.99).exception_limit == pytest.approx(12.0)
+    assert result.level(0.975).apl_exceptions == 30
+    assert result.level(0.975).exception_limit == pytest.approx(30.0)
+
+
+def test_trading_desk_backtest_fails_when_either_pnl_series_exceeds_limit() -> None:
+    n = 250
+    apl = [-200.0] * 13 + [100.0] * (n - 13)
+    hpl = [100.0] * n
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+
+    result = trading_desk_backtest(apl, hpl, var)
+
+    assert result.model_eligible is False
+    assert result.level(0.99).apl_passed is False
+    assert result.level(0.99).hpl_passed is True
+
+
+def test_trading_desk_backtest_counts_missing_values_as_exceptions() -> None:
+    n = 250
+    apl = [100.0] * n
+    hpl = [100.0] * n
+    apl[0] = math.nan
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+
+    result = trading_desk_backtest(apl, hpl, var)
+
+    assert result.level(0.99).apl_exceptions == 1
+    assert result.level(0.975).apl_exceptions == 1
+
+
+def test_trading_desk_backtest_excludes_official_holiday_missing_values() -> None:
+    n = 250
+    apl = [100.0] * n
+    hpl = [100.0] * n
+    apl[0] = math.nan
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+    holidays = [False] * n
+    holidays[0] = True
+
+    result = trading_desk_backtest(apl, hpl, var, official_holiday_mask=holidays)
+
+    assert result.level(0.99).apl_exceptions == 0
+    assert result.level(0.975).apl_exceptions == 0
+
+
+def test_trading_desk_backtest_prorates_exception_limits_for_short_history() -> None:
+    n = 125
+    apl = [-200.0] * 6 + [100.0] * (n - 6)
+    hpl = [100.0] * n
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+
+    result = trading_desk_backtest(
+        apl,
+        hpl,
+        var,
+        minimum_history=250,
+        allow_prorated_thresholds=True,
+    )
+
+    assert result.window_size == 125
+    assert result.level(0.99).exception_limit == pytest.approx(6.0)
+    assert result.model_eligible is True

@@ -6,6 +6,7 @@ import pytest
 
 from frtb_ima.nmrf import (
     aggregate_ses,
+    aggregate_ses_breakdown,
     aggregate_ses_type_a,
     aggregate_ses_type_b,
     ses_for_nmrf_linear,
@@ -29,9 +30,9 @@ def test_ses_linear_zero() -> None:
     assert ses_for_nmrf_linear(0.0, 0.10) == pytest.approx(0.0)
 
 
-def test_aggregate_ses_type_a_linear_sum() -> None:
+def test_aggregate_ses_type_a_zero_correlation_root_sum_squares() -> None:
     values = [10.0, 20.0, 30.0]
-    assert aggregate_ses_type_a(values) == pytest.approx(60.0)
+    assert aggregate_ses_type_a(values) == pytest.approx(math.sqrt(10**2 + 20**2 + 30**2))
 
 
 def test_aggregate_ses_type_a_empty() -> None:
@@ -70,8 +71,19 @@ def test_aggregate_ses_type_b_empty() -> None:
 
 
 def test_aggregate_ses_combines_a_and_b() -> None:
-    type_a = [10.0, 20.0]       # SES_A = 30
-    type_b = [5.0, 5.0]         # SES_B = aggregate_ses_type_b([5, 5])
-    expected = aggregate_ses_type_a(type_a) + aggregate_ses_type_b(type_b)
+    type_a = [10.0, 20.0]
+    type_b = [5.0, 5.0]
+    expected = math.sqrt(
+        sum(v**2 for v in type_a) + aggregate_ses_type_b(type_b) ** 2
+    )
     result = aggregate_ses(type_a, type_b)
     assert result == pytest.approx(expected, rel=1e-9)
+
+
+def test_aggregate_ses_breakdown_is_vectorized_and_auditable() -> None:
+    result = aggregate_ses_breakdown([3.0, 4.0], [10.0, 10.0])
+    assert result.type_a_count == 2
+    assert result.type_b_count == 2
+    assert result.type_a_sum_of_squares == pytest.approx(25.0)
+    assert result.type_b_linear_sum == pytest.approx(20.0)
+    assert result.total_ses == pytest.approx(aggregate_ses([3.0, 4.0], [10.0, 10.0]))

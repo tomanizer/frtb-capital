@@ -15,6 +15,10 @@ Basel FRTB liquidity-horizon aggregation assumes:
 - nested liquidity-horizon subsets,
 - common scenario windows.
 
+See [REGULATORY_TRACEABILITY.md](REGULATORY_TRACEABILITY.md) for the cross-reference
+to Basel MAR33, the U.S. NPR 2.0 LHA ES proposal, and EU CRR Articles 325bc and
+325bd.
+
 Implementation failures frequently occur when:
 
 - vectors are silently reordered,

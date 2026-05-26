@@ -10,6 +10,10 @@ Scenario values remain sign-convention-specific to the consuming calculation:
 
 The structures here intentionally do not generate scenarios. They only identify,
 order, and carry already prepared scenario vectors.
+
+Regulatory traceability:
+    See docs/REGULATORY_TRACEABILITY.md rows for scenario.py, scenario metadata,
+    PLA, backtesting, expected shortfall, and liquidity-horizon vectors.
 """
 
 from __future__ import annotations

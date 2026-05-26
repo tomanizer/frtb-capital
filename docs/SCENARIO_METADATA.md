@@ -15,6 +15,10 @@ The engine intentionally does not generate scenarios here. It only validates and
 
 Basel FRTB and NPR 2.0-style calculations rely heavily on aligned historical scenario vectors.
 
+See [REGULATORY_TRACEABILITY.md](REGULATORY_TRACEABILITY.md) for the code-to-regulation
+mapping across Basel MAR32/MAR33, the U.S. NPR 2.0 proposal, and EU CRR Articles
+325bc, 325bf, and 325bg.
+
 This matters because:
 
 - liquidity-horizon aggregation assumes aligned historical shocks,

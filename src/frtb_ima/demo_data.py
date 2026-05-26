@@ -2,6 +2,10 @@
 Synthetic demo data for FRTB IMA prototype.
 
 All data is fabricated. No real market data, no real positions.
+
+Regulatory traceability:
+    Demo data is not regulatory evidence. See docs/REGULATORY_TRACEABILITY.md
+    for the calculation modules that consume these synthetic inputs.
 """
 
 from __future__ import annotations

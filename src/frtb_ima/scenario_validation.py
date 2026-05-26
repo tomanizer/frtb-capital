@@ -6,6 +6,10 @@ calculations consume nested liquidity-horizon vectors.
 
 It validates shape, liquidity-horizon keys, equal scenario counts, optional
 scenario metadata alignment, and optional nested subset metadata.
+
+Regulatory traceability:
+    See docs/REGULATORY_TRACEABILITY.md rows for scenario_validation.py and
+    liquidity-horizon-adjusted expected shortfall.
 """
 
 from __future__ import annotations

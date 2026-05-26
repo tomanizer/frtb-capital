@@ -15,14 +15,21 @@ The stress period is applied via a scaling ratio on a reduced-scenario set:
     scaled_stress_ES = stress_reduced_ES * max(current_full_ES / current_reduced_ES, 1.0)
 
 This ensures the stress ES is never deflated by the reduced set.
+
+Regulatory traceability:
+    Basel MAR33 IMA capital calculation; U.S. NPR 2.0 models-based non-default
+    capital and reduced/full set stress scaling; EU CRR Articles 325ba, 325bb,
+    and 325bc. See docs/REGULATORY_TRACEABILITY.md.
 """
 
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 
 from frtb_ima.data_models import LiquidityHorizon, RiskClass
 from frtb_ima.liquidity_horizon import lha_es_from_vectors
+from frtb_ima.regimes import DEFAULT_LHA_WEIGHTS, RegulatoryPolicy
 
 
 def _validate_non_negative_finite(value: float, name: str) -> None:
@@ -35,6 +42,7 @@ def _validate_non_negative_finite(value: float, name: str) -> None:
 def imcc_unconstrained(
     all_risk_class_vectors: dict[LiquidityHorizon, list[float]],
     alpha: float = 0.975,
+    lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
     """
     Compute unconstrained IMCC as the LHA ES of all-risk-class aggregated vectors.
@@ -43,16 +51,22 @@ def imcc_unconstrained(
         all_risk_class_vectors: Nested LH vectors with all risk classes aggregated
                                 into each sub-vector.
         alpha: ES confidence level.
+        lha_weights: Liquidity-horizon weights by nested vector.
 
     Returns:
         Unconstrained IMCC scalar.
     """
-    return lha_es_from_vectors(all_risk_class_vectors, alpha=alpha)
+    return lha_es_from_vectors(
+        all_risk_class_vectors,
+        alpha=alpha,
+        lha_weights=lha_weights,
+    )
 
 
 def imcc_constrained(
     per_risk_class_vectors: dict[RiskClass, dict[LiquidityHorizon, list[float]]],
     alpha: float = 0.975,
+    lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
     """
     Compute constrained IMCC as the sum of per-risk-class LHA ES values.
@@ -63,6 +77,7 @@ def imcc_constrained(
         per_risk_class_vectors: Nested LH vectors keyed by RiskClass then
                                 LiquidityHorizon.
         alpha: ES confidence level.
+        lha_weights: Liquidity-horizon weights by nested vector.
 
     Returns:
         Constrained IMCC scalar.
@@ -73,7 +88,7 @@ def imcc_constrained(
             raise KeyError(
                 f"RiskClass {rc} is missing the LH10 vector required for LHA ES"
             )
-        total += lha_es_from_vectors(lh_vectors, alpha=alpha)
+        total += lha_es_from_vectors(lh_vectors, alpha=alpha, lha_weights=lha_weights)
     return total
 
 
@@ -82,6 +97,7 @@ def imcc(
     per_risk_class_vectors: dict[RiskClass, dict[LiquidityHorizon, list[float]]],
     alpha: float = 0.975,
     w: float = 0.5,
+    lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
     """
     Compute final IMCC = w * unconstrained + (1 - w) * constrained.
@@ -93,6 +109,7 @@ def imcc(
         per_risk_class_vectors: Per-class LH vectors for constrained.
         alpha: ES confidence level.
         w:     Weight on unconstrained component.
+        lha_weights: Liquidity-horizon weights by nested vector.
 
     Returns:
         IMCC scalar.
@@ -100,9 +117,32 @@ def imcc(
     if not math.isfinite(w) or not (0.0 <= w <= 1.0):
         raise ValueError(f"w must be finite and in [0, 1], got {w}")
 
-    u = imcc_unconstrained(all_risk_class_vectors, alpha=alpha)
-    c = imcc_constrained(per_risk_class_vectors, alpha=alpha)
+    u = imcc_unconstrained(
+        all_risk_class_vectors,
+        alpha=alpha,
+        lha_weights=lha_weights,
+    )
+    c = imcc_constrained(
+        per_risk_class_vectors,
+        alpha=alpha,
+        lha_weights=lha_weights,
+    )
     return w * u + (1.0 - w) * c
+
+
+def imcc_for_policy(
+    all_risk_class_vectors: dict[LiquidityHorizon, list[float]],
+    per_risk_class_vectors: dict[RiskClass, dict[LiquidityHorizon, list[float]]],
+    policy: RegulatoryPolicy,
+) -> float:
+    """Compute IMCC using ES confidence level, LHA weights, and blend from policy."""
+    return imcc(
+        all_risk_class_vectors,
+        per_risk_class_vectors,
+        alpha=policy.es_confidence_level,
+        w=policy.imcc_unconstrained_weight,
+        lha_weights=policy.lha_weights,
+    )
 
 
 def scale_stress_es(
