@@ -6,6 +6,15 @@ All regulatory statements are working assumptions based on the
 March 2026 U.S. NPR 2.0 proposal and Basel FRTB IMA concepts.
 """
 
+from frtb_ima.data_contracts import (
+    CapitalRunResult,
+    DeskRun,
+    Position,
+    RFETEvidence,
+    RiskFactorBucket,
+    RiskFactorDefinition,
+    ScenarioCube,
+)
 from frtb_ima.data_models import (
     DeskCapitalResult,
     LiquidityHorizon,
@@ -42,18 +51,25 @@ from frtb_ima.scenario_validation import (
 
 __all__ = [
     "CalculationContext",
+    "CapitalRunResult",
     "DeskCapitalResult",
+    "DeskRun",
     "LiquidityHorizon",
     "ModellabilityStatus",
     "NMRFTaxonomyMode",
     "NestedLHValidationError",
     "NestedLHValidationResult",
     "PLAMetricsRequired",
+    "Position",
+    "RFETEvidence",
     "RealPriceObservation",
     "RegulatoryPolicy",
     "RegulatoryRegime",
     "RiskClass",
     "RiskFactor",
+    "RiskFactorBucket",
+    "RiskFactorDefinition",
+    "ScenarioCube",
     "ScenarioMetadata",
     "ScenarioPnL",
     "ScenarioSetType",

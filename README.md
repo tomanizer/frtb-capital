@@ -65,6 +65,7 @@ Backtesting exception counts
 ```
 src/frtb_ima/
     data_models.py          Enums and dataclasses
+    data_contracts.py       Validated run inputs and scenario cubes
     expected_shortfall.py   ES calculation
     liquidity_horizon.py    LHA ES from nested vectors
     regimes.py              Regulatory policy profiles and run context

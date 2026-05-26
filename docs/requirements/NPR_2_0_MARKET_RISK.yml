@@ -1,0 +1,273 @@
+schema_version: 1
+name: NPR_2_0_MARKET_RISK
+status_values:
+  - implemented
+  - partial
+  - unsupported
+source_register:
+  - name: "U.S. NPR 2.0 / Federal Register 91 FR 14952"
+    url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+  - name: "Basel Framework MAR31"
+    url: "https://www.bis.org/basel_framework/chapter/MAR/31.htm"
+  - name: "Basel Framework MAR32"
+    url: "https://www.bis.org/basel_framework/chapter/MAR/32.htm"
+  - name: "Basel Framework MAR33"
+    url: "https://www.bis.org/basel_framework/chapter/MAR/33.htm"
+
+requirements:
+  - id: NPR-MR-DATA-001
+    title: "Validated vector-friendly market-risk data contracts"
+    source: "NPR market-risk workflow input and audit traceability"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/data_contracts.py
+      - src/frtb_ima/data_models.py
+      - src/frtb_ima/scenario.py
+    tests:
+      - tests/test_data_contracts.py
+      - tests/test_scenario.py
+    notes: "Defines positions, risk-factor definitions, RFET evidence packages, scenario cubes, desk runs, and capital run result containers."
+
+  - id: NPR-MR-POLICY-001
+    title: "Run-level immutable regulatory policy"
+    source: "NPR market-risk framework; cross-regime traceability model"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/regimes.py
+    tests:
+      - tests/test_regimes.py
+    notes: "Fed NPR 2.0 is default; ECB/PRA profiles are explicit partial profiles."
+
+  - id: NPR-MR-ES-001
+    title: "97.5 percent empirical expected shortfall"
+    source: "Expected-shortfall-based measure for model-eligible positions"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/expected_shortfall.py
+    tests:
+      - tests/test_expected_shortfall.py
+    notes: "Simple empirical tail mean; interpolation/weighting conventions remain policy-review items."
+
+  - id: NPR-MR-LHA-001
+    title: "Liquidity-horizon adjusted ES from nested scenario vectors"
+    source: "Proposed Sec. __.215 liquidity horizon adjusted expected shortfall"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/liquidity_horizon.py
+      - src/frtb_ima/scenario_validation.py
+    tests:
+      - tests/test_liquidity_horizon.py
+      - tests/test_scenario_validation.py
+    notes: "Calculation consumes nested vectors; scenario-cube construction is tracked separately."
+
+  - id: NPR-MR-LHA-002
+    title: "Risk-factor to liquidity-horizon mapping tables"
+    source: "Proposed Sec. __.215 liquidity horizon tables"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: unsupported
+    modules:
+      - src/frtb_ima/data_models.py
+    tests:
+    notes: "Current code stores assigned liquidity horizons but does not implement regulatory mapping tables."
+
+  - id: NPR-MR-RFET-001
+    title: "RFET quantitative observation thresholds"
+    source: "Risk factor eligibility test real-price observation thresholds"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/rfet.py
+      - src/frtb_ima/regimes.py
+    tests:
+      - tests/test_rfet.py
+      - tests/test_regimes.py
+    notes: "Implements 24 short-LH and 16 long-LH unique-date count thresholds."
+
+  - id: NPR-MR-RFET-002
+    title: "RFET evidence lineage, source de-duplication, and representativeness"
+    source: "RFET real-price evidence and data-quality standards"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: unsupported
+    modules:
+      - src/frtb_ima/data_models.py
+      - src/frtb_ima/rfet.py
+    tests:
+    notes: "Next implementation target: evidence records, bucket representativeness, source lineage, vendor de-duplication."
+
+  - id: NPR-MR-RFET-003
+    title: "New-issuance RFET prorating"
+    source: "RFET treatment for new issuances"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: unsupported
+    modules:
+      - src/frtb_ima/rfet.py
+    tests:
+    notes: "Not implemented; should be added with dated issue metadata and prorated observation thresholds."
+
+  - id: NPR-MR-IMCC-001
+    title: "IMCC constrained and unconstrained aggregation"
+    source: "Models-based non-default capital requirement"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/imcc.py
+      - src/frtb_ima/liquidity_horizon.py
+    tests:
+      - tests/test_imcc.py
+      - tests/test_regimes.py
+    notes: "Scalar result implemented; richer IMCC decomposition is tracked separately."
+
+  - id: NPR-MR-IMCC-002
+    title: "Current/stress period ES and reduced-set governance"
+    source: "Full/reduced risk-factor set stress scaling and coverage tests"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: partial
+    modules:
+      - src/frtb_ima/imcc.py
+    tests:
+      - tests/test_imcc.py
+    notes: "Scaling helper exists; no stress-window selection, 75-factor reduced-set selection, or coverage governance yet."
+
+  - id: NPR-MR-NMRF-001
+    title: "Type A and Type B SES aggregation"
+    source: "Proposed stressed expected shortfall SES formula"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/nmrf.py
+      - src/frtb_ima/regimes.py
+    tests:
+      - tests/test_nmrf.py
+      - tests/test_regimes.py
+    notes: "Type A zero-correlation and Type B rho=0.36 aggregation implemented."
+
+  - id: NPR-MR-NMRF-002
+    title: "NMRF direct, stepwise, and full-revaluation stress scenarios"
+    source: "Stress scenario capital measure for each non-modellable risk factor"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: unsupported
+    modules:
+      - src/frtb_ima/nmrf.py
+    tests:
+    notes: "Current SES inputs use linear sensitivity shocks only."
+
+  - id: NPR-MR-PLA-001
+    title: "NPR KS-based PLA assessment"
+    source: "Profit and loss attribution over HPL and RTPL vectors"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/pla.py
+      - src/frtb_ima/regimes.py
+    tests:
+      - tests/test_pla.py
+      - tests/test_regimes.py
+    notes: "KS metric and 250-day policy window implemented for Fed profile."
+
+  - id: NPR-MR-PLA-002
+    title: "EU/PRA Spearman PLA metric"
+    source: "EU RTS/PRA profile comparison gap"
+    source_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R2059"
+    status: unsupported
+    modules:
+      - src/frtb_ima/pla.py
+      - src/frtb_ima/regimes.py
+    tests:
+      - tests/test_regimes.py
+    notes: "Explicit unsupported-feature behavior exists; metric not implemented."
+
+  - id: NPR-MR-BT-001
+    title: "Trading-desk backtesting gates at 97.5 and 99 percent VaR"
+    source: "APL/HPL exception counts over 250 business days"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/backtesting.py
+      - src/frtb_ima/regimes.py
+    tests:
+      - tests/test_backtesting.py
+      - tests/test_regimes.py
+    notes: "Includes missing-data exception treatment and optional prorated short-history thresholds."
+
+  - id: NPR-MR-BT-002
+    title: "Dated backtesting exception trace and business calendar"
+    source: "Backtesting operational traceability"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: unsupported
+    modules:
+      - src/frtb_ima/backtesting.py
+      - src/frtb_ima/scenario.py
+    tests:
+    notes: "Current official-holiday mask is not a complete business-calendar trace object."
+
+  - id: NPR-MR-CAP-001
+    title: "Desk-level models-based capital formula"
+    source: "Models-based market risk measure"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/capital.py
+    tests:
+      - tests/test_capital.py
+    notes: "Desk-level IMCC/SES average-vs-spot formula implemented."
+
+  - id: NPR-MR-CAP-002
+    title: "PLA add-on helper"
+    source: "Proposed PLA add-on mechanics"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: implemented
+    modules:
+      - src/frtb_ima/capital.py
+    tests:
+      - tests/test_capital.py
+    notes: "Helper computes k factor and capital-benefit floor."
+
+  - id: NPR-MR-CAP-003
+    title: "Standardized non-default capital requirement"
+    source: "Standardized measure for market risk"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: unsupported
+    modules:
+    tests:
+    notes: "Needed for model-ineligible desks, PLA add-on inputs, and fallback comparisons."
+
+  - id: NPR-MR-CAP-004
+    title: "Default risk capital requirement"
+    source: "Default risk capital requirement for non-securitization, securitization non-CTP, and CTP"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: unsupported
+    modules:
+    tests:
+    notes: "No DRC implementation yet."
+
+  - id: NPR-MR-CAP-005
+    title: "Fallback capital requirement"
+    source: "Fallback capital for uncomputable market risk covered positions"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: unsupported
+    modules:
+    tests:
+    notes: "No affected-position fallback engine yet."
+
+  - id: NPR-MR-DESK-001
+    title: "Trading desk eligibility lifecycle"
+    source: "Model-eligible trading desk approval, loss of eligibility, and re-entry workflow"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: unsupported
+    modules:
+      - src/frtb_ima/data_models.py
+    tests:
+    notes: "PLA and backtesting metrics exist; no state machine for eligibility lifecycle yet."
+
+  - id: NPR-MR-REPORT-001
+    title: "Audit-grade run report"
+    source: "Market risk reporting and disclosure traceability"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: unsupported
+    modules:
+    tests:
+    notes: "No make audit target or complete run report artifact yet."
