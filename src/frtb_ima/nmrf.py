@@ -19,13 +19,10 @@ Aggregation formulas used here:
     Combined SES:
         SES = sqrt(SES_A_term + SES_B_term)
 
-This is a linear / sensitivity-based prototype.
-The direct method and stepwise method are not yet implemented.
-
-TODOs:
-    - Direct method: construct a stress scenario specific to each NMRF.
-    - Stepwise method: sequential sensitivity to each factor.
-    - Full portfolio revaluation path.
+The prototype can generate only a labelled linear / sensitivity-based SES
+approximation. Direct, stepwise, and full-revaluation SES values may be
+recorded if supplied by an upstream risk engine, but this package raises
+explicit unsupported-feature errors if asked to generate them.
 
 Regulatory traceability:
     Basel MAR33 NMRF stress-scenario capital; U.S. NPR 2.0 SES treatment for
@@ -38,11 +35,71 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
+from enum import StrEnum
 
 import numpy as np
 import numpy.typing as npt
 
-from frtb_ima.regimes import RegulatoryPolicy, TypeASESAggregationMode
+from frtb_ima.regimes import (
+    RegulatoryPolicy,
+    RegulatoryRegime,
+    TypeASESAggregationMode,
+    UnsupportedRegulatoryFeature,
+)
+
+
+class NMRFStressMethod(StrEnum):
+    """Method used to produce an individual NMRF stress scenario SES value."""
+
+    LINEAR_SENSITIVITY = "LINEAR_SENSITIVITY"
+    DIRECT = "DIRECT"
+    STEPWISE = "STEPWISE"
+    FULL_REVALUATION = "FULL_REVALUATION"
+
+
+_UNSUPPORTED_GENERATION_FEATURES: dict[NMRFStressMethod, str] = {
+    NMRFStressMethod.DIRECT: "nmrf_direct_stress_scenario_generation",
+    NMRFStressMethod.STEPWISE: "nmrf_stepwise_stress_scenario_generation",
+    NMRFStressMethod.FULL_REVALUATION: "nmrf_full_revaluation_stress_scenario_generation",
+}
+
+
+@dataclass(frozen=True)
+class NMRFStressScenarioResult:
+    """
+    Individual NMRF stress scenario result consumed by SES aggregation.
+
+    ``generated_by_prototype`` is intentionally explicit. The prototype can
+    produce linear-sensitivity toy SES values, but direct, stepwise, and
+    full-revaluation SES values must be supplied by an upstream risk engine or
+    remain unsupported for generation in this package.
+    """
+
+    risk_factor_name: str
+    method: NMRFStressMethod
+    ses: float
+    generated_by_prototype: bool
+    source: str = ""
+    notes: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.risk_factor_name:
+            raise ValueError("risk_factor_name must be non-empty")
+        if not isinstance(self.method, NMRFStressMethod):
+            raise TypeError("method must be an NMRFStressMethod")
+        if not math.isfinite(self.ses) or self.ses < 0.0:
+            raise ValueError(f"ses must be a non-negative finite value, got {self.ses}")
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "risk_factor_name": self.risk_factor_name,
+            "method": self.method.value,
+            "ses": self.ses,
+            "generated_by_prototype": self.generated_by_prototype,
+            "source": self.source,
+            "notes": self.notes,
+        }
 
 
 @dataclass(frozen=True)
@@ -85,6 +142,83 @@ def ses_for_nmrf_linear(sensitivity: float, shock: float) -> float:
         SES contribution as a positive scalar.
     """
     return abs(sensitivity) * abs(shock)
+
+
+def nmrf_stress_result_from_linear_sensitivity(
+    risk_factor_name: str,
+    sensitivity: float,
+    shock: float,
+    *,
+    source: str = "",
+    notes: str = "Prototype linear sensitivity approximation.",
+) -> NMRFStressScenarioResult:
+    """
+    Build an individual NMRF SES result from the prototype linear helper.
+
+    This is not a full regulatory direct/stepwise/full-revaluation stress
+    scenario. It is retained as a transparent prototype approximation.
+    """
+    return NMRFStressScenarioResult(
+        risk_factor_name=risk_factor_name,
+        method=NMRFStressMethod.LINEAR_SENSITIVITY,
+        ses=ses_for_nmrf_linear(sensitivity, shock),
+        generated_by_prototype=True,
+        source=source,
+        notes=notes,
+    )
+
+
+def nmrf_stress_result_from_external_ses(
+    risk_factor_name: str,
+    ses: float,
+    method: NMRFStressMethod,
+    *,
+    source: str,
+    notes: str = "",
+) -> NMRFStressScenarioResult:
+    """
+    Record an externally supplied NMRF SES value and its upstream method.
+
+    This lets the capital layer consume risk-engine direct, stepwise, or
+    full-revaluation outputs without pretending this package generated them.
+    """
+    return NMRFStressScenarioResult(
+        risk_factor_name=risk_factor_name,
+        method=method,
+        ses=float(ses),
+        generated_by_prototype=False,
+        source=source,
+        notes=notes,
+    )
+
+
+def require_nmrf_stress_generation_supported(
+    method: NMRFStressMethod,
+    policy: RegulatoryPolicy | None = None,
+) -> None:
+    """
+    Raise a named unsupported-feature error for unimplemented SES generation.
+
+    The prototype can generate only the linear-sensitivity approximation. Direct,
+    stepwise, and full-revaluation methods are valid upstream methods to record
+    via ``nmrf_stress_result_from_external_ses`` but are not generated here.
+    """
+    if method == NMRFStressMethod.LINEAR_SENSITIVITY:
+        return
+    feature_name = _UNSUPPORTED_GENERATION_FEATURES[method]
+    regime = policy.regime if policy is not None else RegulatoryRegime.FED_NPR_2_0
+    raise UnsupportedRegulatoryFeature(
+        regime,
+        feature_name,
+        "NMRF stress-scenario generation",
+    )
+
+
+def ses_values_from_stress_results(
+    results: Sequence[NMRFStressScenarioResult],
+) -> tuple[float, ...]:
+    """Extract SES values from individual NMRF stress scenario results."""
+    return tuple(result.ses for result in results)
 
 
 def aggregate_ses_type_a(values: Sequence[float] | npt.NDArray[np.float64]) -> float:

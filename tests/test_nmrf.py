@@ -5,12 +5,18 @@ import math
 import pytest
 
 from frtb_ima.nmrf import (
+    NMRFStressMethod,
     aggregate_ses,
     aggregate_ses_breakdown,
     aggregate_ses_type_a,
     aggregate_ses_type_b,
+    nmrf_stress_result_from_external_ses,
+    nmrf_stress_result_from_linear_sensitivity,
+    require_nmrf_stress_generation_supported,
     ses_for_nmrf_linear,
+    ses_values_from_stress_results,
 )
+from frtb_ima.regimes import UnsupportedRegulatoryFeature, get_policy
 
 
 def test_ses_linear_basic() -> None:
@@ -28,6 +34,80 @@ def test_ses_linear_negative_shock() -> None:
 
 def test_ses_linear_zero() -> None:
     assert ses_for_nmrf_linear(0.0, 0.10) == pytest.approx(0.0)
+
+
+def test_nmrf_stress_result_from_linear_sensitivity_is_labelled_prototype() -> None:
+    result = nmrf_stress_result_from_linear_sensitivity(
+        "EXOTIC_RF",
+        sensitivity=-200.0,
+        shock=0.03,
+        source="synthetic",
+    )
+
+    assert result.method == NMRFStressMethod.LINEAR_SENSITIVITY
+    assert result.ses == pytest.approx(6.0)
+    assert result.generated_by_prototype is True
+    assert result.as_dict()["method"] == "LINEAR_SENSITIVITY"
+
+
+def test_nmrf_stress_result_from_external_ses_records_upstream_method() -> None:
+    result = nmrf_stress_result_from_external_ses(
+        "EXOTIC_RF",
+        ses=125.0,
+        method=NMRFStressMethod.FULL_REVALUATION,
+        source="upstream risk engine",
+        notes="synthetic fixture",
+    )
+
+    assert result.method == NMRFStressMethod.FULL_REVALUATION
+    assert result.ses == pytest.approx(125.0)
+    assert result.generated_by_prototype is False
+    assert result.source == "upstream risk engine"
+
+
+def test_nmrf_stress_result_rejects_invalid_inputs() -> None:
+    with pytest.raises(ValueError, match="risk_factor_name"):
+        nmrf_stress_result_from_external_ses(
+            "",
+            ses=1.0,
+            method=NMRFStressMethod.DIRECT,
+            source="upstream",
+        )
+    with pytest.raises(ValueError, match="ses"):
+        nmrf_stress_result_from_external_ses(
+            "EXOTIC_RF",
+            ses=-1.0,
+            method=NMRFStressMethod.DIRECT,
+            source="upstream",
+        )
+
+
+def test_nmrf_stress_generation_gates_unsupported_methods() -> None:
+    policy = get_policy()
+
+    require_nmrf_stress_generation_supported(
+        NMRFStressMethod.LINEAR_SENSITIVITY,
+        policy,
+    )
+    with pytest.raises(UnsupportedRegulatoryFeature, match="full_revaluation"):
+        require_nmrf_stress_generation_supported(
+            NMRFStressMethod.FULL_REVALUATION,
+            policy,
+        )
+
+
+def test_ses_values_from_stress_results_extracts_vector_input() -> None:
+    results = (
+        nmrf_stress_result_from_linear_sensitivity("RF1", 100.0, 0.1),
+        nmrf_stress_result_from_external_ses(
+            "RF2",
+            20.0,
+            NMRFStressMethod.DIRECT,
+            source="upstream",
+        ),
+    )
+
+    assert ses_values_from_stress_results(results) == pytest.approx((10.0, 20.0))
 
 
 def test_aggregate_ses_type_a_zero_correlation_root_sum_squares() -> None:

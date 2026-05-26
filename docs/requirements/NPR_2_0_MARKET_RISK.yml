@@ -156,11 +156,12 @@ requirements:
     title: "NMRF direct, stepwise, and full-revaluation stress scenarios"
     source: "Stress scenario capital measure for each non-modellable risk factor"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: unsupported
+    status: partial
     modules:
       - src/frtb_ima/nmrf.py
     tests:
-    notes: "Current SES inputs use linear sensitivity shocks only."
+      - tests/test_nmrf.py
+    notes: "Method contracts and external SES result inputs implemented; prototype generation remains limited to a labelled linear-sensitivity approximation and raises explicit unsupported-feature errors for direct, stepwise, and full-revaluation generation."
 
   - id: NPR-MR-PLA-001
     title: "NPR KS-based PLA assessment"

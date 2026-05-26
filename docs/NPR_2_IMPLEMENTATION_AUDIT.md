@@ -86,8 +86,10 @@ Corrected behavior:
 These are not small code cleanups; they require explicit modeling choices or
 new upstream data contracts:
 
-- Stress scenario generation for each NMRF remains a synthetic sensitivity-shock
-  helper. Direct, stepwise, and full revaluation methods are not implemented.
+- Stress scenario generation for each NMRF remains limited to a labelled
+  synthetic sensitivity-shock helper. External direct, stepwise, and
+  full-revaluation SES values can be recorded, but those methods are not
+  generated inside this package.
 - RFET qualitative checks are external inputs. Vendor/source lineage,
   data-pooling eligibility, third-party reliance, and new-issuance treatment are
   not implemented.

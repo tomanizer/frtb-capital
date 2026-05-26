@@ -72,7 +72,7 @@ src/frtb_ima/
     regimes.py              Regulatory policy profiles and run context
     rfet.py                 RFET modellability classification
     rfet_evidence.py        RFET evidence assessment and audit trail
-    nmrf.py                 NMRF SES aggregation
+    nmrf.py                 NMRF SES aggregation and stress-method contracts
     imcc.py                 IMCC unconstrained / constrained with audit decomposition
     pla.py                  PLA KS statistic and policy-window diagnostics
     backtesting.py          Exception counting and optional dated traces
