@@ -126,7 +126,7 @@ requirements:
       - tests/test_imcc.py
       - tests/test_lha_builder.py
       - tests/test_regimes.py
-    notes: "Scalar result implemented; richer IMCC decomposition is tracked separately."
+    notes: "Scalar API and audit decomposition implemented for unconstrained, constrained, and blended IMCC."
 
   - id: NPR-MR-IMCC-002
     title: "Current/stress period ES and reduced-set governance"
@@ -137,7 +137,7 @@ requirements:
       - src/frtb_ima/imcc.py
     tests:
       - tests/test_imcc.py
-    notes: "Scaling helper exists; no stress-window selection, 75-factor reduced-set selection, or coverage governance yet."
+    notes: "Reduced/full set scaling helper now returns ratio/floor audit details; no stress-window selection, 75-factor reduced-set selection, or coverage governance yet."
 
   - id: NPR-MR-NMRF-001
     title: "Type A and Type B SES aggregation"
