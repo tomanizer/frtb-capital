@@ -24,6 +24,13 @@ from frtb_ima.data_models import (
     RiskFactor,
     ScenarioPnL,
 )
+from frtb_ima.lha_builder import (
+    NestedLHScenarioVectors,
+    imcc_nested_lh_vectors_from_cube,
+    nested_lh_vectors_from_cube,
+    per_risk_class_nested_lh_vectors_from_cube,
+    risk_factor_names_for_lh_subset,
+)
 from frtb_ima.regimes import (
     CalculationContext,
     NMRFTaxonomyMode,
@@ -63,6 +70,7 @@ __all__ = [
     "LiquidityHorizon",
     "ModellabilityStatus",
     "NMRFTaxonomyMode",
+    "NestedLHScenarioVectors",
     "NestedLHValidationError",
     "NestedLHValidationResult",
     "PLAMetricsRequired",
@@ -88,7 +96,11 @@ __all__ = [
     "UnsupportedRegulatoryFeature",
     "assess_rfet_evidence",
     "get_policy",
+    "imcc_nested_lh_vectors_from_cube",
     "make_scenario_metadata",
+    "nested_lh_vectors_from_cube",
+    "per_risk_class_nested_lh_vectors_from_cube",
+    "risk_factor_names_for_lh_subset",
     "validate_aligned_metadata",
     "validate_nested_lh_vectors",
     "validate_unique_scenarios",

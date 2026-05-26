@@ -67,6 +67,7 @@ src/frtb_ima/
     data_models.py          Enums and dataclasses
     data_contracts.py       Validated run inputs and scenario cubes
     expected_shortfall.py   ES calculation
+    lha_builder.py          Scenario cube to nested LH vector builder
     liquidity_horizon.py    LHA ES from nested vectors
     regimes.py              Regulatory policy profiles and run context
     rfet.py                 RFET modellability classification

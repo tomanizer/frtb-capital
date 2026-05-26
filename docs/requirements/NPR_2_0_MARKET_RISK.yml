@@ -57,12 +57,14 @@ requirements:
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: implemented
     modules:
+      - src/frtb_ima/lha_builder.py
       - src/frtb_ima/liquidity_horizon.py
       - src/frtb_ima/scenario_validation.py
     tests:
+      - tests/test_lha_builder.py
       - tests/test_liquidity_horizon.py
       - tests/test_scenario_validation.py
-    notes: "Calculation consumes nested vectors; scenario-cube construction is tracked separately."
+    notes: "Scenario cube to nested-vector construction and LHA calculation are implemented."
 
   - id: NPR-MR-LHA-002
     title: "Risk-factor to liquidity-horizon mapping tables"
@@ -118,9 +120,11 @@ requirements:
     status: implemented
     modules:
       - src/frtb_ima/imcc.py
+      - src/frtb_ima/lha_builder.py
       - src/frtb_ima/liquidity_horizon.py
     tests:
       - tests/test_imcc.py
+      - tests/test_lha_builder.py
       - tests/test_regimes.py
     notes: "Scalar result implemented; richer IMCC decomposition is tracked separately."
 
