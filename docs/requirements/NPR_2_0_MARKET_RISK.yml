@@ -173,7 +173,7 @@ requirements:
     tests:
       - tests/test_pla.py
       - tests/test_regimes.py
-    notes: "KS metric and 250-day policy window implemented for Fed profile."
+    notes: "KS metric, 250-day policy window, and optional window date diagnostics implemented for Fed profile."
 
   - id: NPR-MR-PLA-002
     title: "EU/PRA Spearman PLA metric"
@@ -204,12 +204,13 @@ requirements:
     title: "Dated backtesting exception trace and business calendar"
     source: "Backtesting operational traceability"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: unsupported
+    status: partial
     modules:
       - src/frtb_ima/backtesting.py
       - src/frtb_ima/scenario.py
     tests:
-    notes: "Current official-holiday mask is not a complete business-calendar trace object."
+      - tests/test_backtesting.py
+    notes: "Per-observation exception trace implemented with optional dates and official-holiday exclusions; full business-calendar semantics remain unsupported."
 
   - id: NPR-MR-CAP-001
     title: "Desk-level models-based capital formula"

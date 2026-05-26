@@ -1,10 +1,18 @@
 """Tests for backtesting module."""
 
 import math
+from datetime import date, timedelta
 
 import pytest
 
-from frtb_ima.backtesting import backtest, count_exceptions, trading_desk_backtest
+from frtb_ima.backtesting import (
+    backtest,
+    count_exceptions,
+    trading_desk_backtest,
+    trading_desk_backtest_trace,
+    trading_desk_backtest_trace_for_policy,
+)
+from frtb_ima.regimes import get_policy
 
 
 def test_count_exceptions_none() -> None:
@@ -139,6 +147,39 @@ def test_trading_desk_backtest_counts_missing_values_as_exceptions() -> None:
     assert result.level(0.975).apl_exceptions == 1
 
 
+def test_trading_desk_backtest_trace_reports_dated_exception_reasons() -> None:
+    n = 250
+    start = date(2025, 1, 1)
+    dates = tuple(start + timedelta(days=idx) for idx in range(n))
+    apl = [100.0] * n
+    hpl = [100.0] * n
+    apl[0] = math.nan
+    hpl[1] = -200.0
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+
+    result = trading_desk_backtest_trace(
+        apl,
+        hpl,
+        var,
+        observation_dates=dates,
+    )
+
+    level = result.level(0.99)
+    assert result.result == trading_desk_backtest(apl, hpl, var)
+    assert level.result.apl_exceptions == 1
+    assert level.result.hpl_exceptions == 1
+    assert len(level.observations) == n
+    assert len(level.exception_observations()) == 2
+    assert level.observations[0].observation_date == date(2025, 1, 1)
+    assert level.observations[0].apl is None
+    assert level.observations[0].apl_reason == "missing_pnl"
+    assert level.observations[1].hpl_reason == "loss_exceeds_var"
+    assert level.as_dict()["result"]["apl_exceptions"] == 1
+
+
 def test_trading_desk_backtest_excludes_official_holiday_missing_values() -> None:
     n = 250
     apl = [100.0] * n
@@ -155,6 +196,31 @@ def test_trading_desk_backtest_excludes_official_holiday_missing_values() -> Non
 
     assert result.level(0.99).apl_exceptions == 0
     assert result.level(0.975).apl_exceptions == 0
+
+
+def test_trading_desk_backtest_trace_marks_official_holiday_exclusions() -> None:
+    n = 250
+    apl = [100.0] * n
+    hpl = [100.0] * n
+    apl[0] = math.nan
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+    holidays = [False] * n
+    holidays[0] = True
+
+    result = trading_desk_backtest_trace(
+        apl,
+        hpl,
+        var,
+        official_holiday_mask=holidays,
+    )
+
+    observation = result.level(0.99).observations[0]
+    assert observation.official_holiday is True
+    assert observation.apl_exception is False
+    assert observation.apl_reason == "official_holiday"
 
 
 def test_trading_desk_backtest_prorates_exception_limits_for_short_history() -> None:
@@ -177,3 +243,34 @@ def test_trading_desk_backtest_prorates_exception_limits_for_short_history() -> 
     assert result.window_size == 125
     assert result.level(0.99).exception_limit == pytest.approx(6.0)
     assert result.model_eligible is True
+
+
+def test_trading_desk_backtest_trace_for_policy_uses_policy_window() -> None:
+    policy = get_policy()
+    n = policy.backtesting_window_days
+    apl = [100.0] * n
+    hpl = [100.0] * n
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+
+    result = trading_desk_backtest_trace_for_policy(apl, hpl, var, policy)
+
+    assert result.window_size == policy.backtesting_window_days
+    assert result.model_eligible is True
+
+
+def test_trading_desk_backtest_trace_rejects_misaligned_dates() -> None:
+    n = 250
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+    with pytest.raises(ValueError, match="observation_dates"):
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * n,
+            var,
+            observation_dates=[date(2025, 1, 1)],
+        )

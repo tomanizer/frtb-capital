@@ -93,8 +93,9 @@ new upstream data contracts:
   not implemented.
 - Stress-period selection, reduced-set selection, 75-factor coverage
   governance, and supervisory approval workflows are not implemented.
-- PLA and backtesting do not yet carry dated exception trace objects with
-  business-calendar semantics beyond the official-holiday mask.
+- PLA and backtesting now expose optional dated diagnostics/traces, but they do
+  not implement full business-calendar governance beyond an official-holiday
+  mask supplied by the caller.
 - Firm-level aggregation, standardized approach fallback, DRC, redesignation
   add-ons, and legal-entity consolidation are not implemented.
 - The U.S. NPR 2.0 source remains a proposed rule. Final-rule changes must be

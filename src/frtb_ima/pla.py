@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import date
 
 import numpy as np
 import numpy.typing as npt
@@ -49,6 +50,65 @@ class PlaResult:
     n_rtpl: int
 
 
+@dataclass(frozen=True)
+class PlaWindowDiagnostics:
+    """Policy-window diagnostics for a PLA assessment."""
+
+    available_observations: int
+    minimum_history: int
+    window_size: int
+    start_index: int
+    end_index_exclusive: int
+    start_date: date | None = None
+    end_date: date | None = None
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and notebooks."""
+        return {
+            "available_observations": self.available_observations,
+            "minimum_history": self.minimum_history,
+            "window_size": self.window_size,
+            "start_index": self.start_index,
+            "end_index_exclusive": self.end_index_exclusive,
+            "start_date": self.start_date.isoformat()
+            if self.start_date is not None
+            else None,
+            "end_date": self.end_date.isoformat()
+            if self.end_date is not None
+            else None,
+        }
+
+
+@dataclass(frozen=True)
+class PlaPolicyAssessmentResult:
+    """Policy PLA result with explicit window diagnostics."""
+
+    pla: PlaResult
+    diagnostics: PlaWindowDiagnostics
+
+    @property
+    def ks_statistic(self) -> float:
+        """PLA KS statistic."""
+        return self.pla.ks_statistic
+
+    @property
+    def zone(self) -> str:
+        """Policy PLA zone label."""
+        return self.pla.zone
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and notebooks."""
+        return {
+            "pla": {
+                "ks_statistic": self.pla.ks_statistic,
+                "zone": self.pla.zone,
+                "n_hpl": self.pla.n_hpl,
+                "n_rtpl": self.pla.n_rtpl,
+            },
+            "diagnostics": self.diagnostics.as_dict(),
+        }
+
+
 FloatVector = Sequence[float] | npt.NDArray[np.float64]
 
 
@@ -61,6 +121,36 @@ def _as_finite_1d_array(values: FloatVector, name: str) -> npt.NDArray[np.float6
     if not np.all(np.isfinite(arr)):
         raise ValueError(f"{name} vector must contain only finite values")
     return arr.astype(np.float64, copy=False)
+
+
+def _validate_observation_dates(
+    observation_dates: Sequence[date] | None,
+    expected_length: int,
+) -> tuple[date, ...] | None:
+    if observation_dates is None:
+        return None
+    dates = tuple(observation_dates)
+    if len(dates) != expected_length:
+        raise ValueError("observation_dates length must match HPL/RTPL")
+    if not all(isinstance(item, date) for item in dates):
+        raise TypeError("observation_dates must contain datetime.date values")
+    return dates
+
+
+def _require_supported_policy_metrics(policy: RegulatoryPolicy) -> None:
+    if policy.pla_metrics_required == PLAMetricsRequired.KS_AND_SPEARMAN:
+        feature = policy.unsupported_feature("spearman_pla")
+        if feature is not None:
+            raise UnsupportedRegulatoryFeature(
+                policy.regime,
+                feature.feature_name,
+                feature.source_topic,
+            )
+        raise UnsupportedRegulatoryFeature(
+            policy.regime,
+            "spearman_pla",
+            "PLA Spearman metric",
+        )
 
 
 def ks_statistic(hpl: FloatVector, rtpl: FloatVector) -> float:
@@ -160,19 +250,23 @@ def pla_assessment_for_policy(
     The prototype currently implements KS only. Policies requiring Spearman
     raise an explicit unsupported-feature error.
     """
-    if policy.pla_metrics_required == PLAMetricsRequired.KS_AND_SPEARMAN:
-        feature = policy.unsupported_feature("spearman_pla")
-        if feature is not None:
-            raise UnsupportedRegulatoryFeature(
-                policy.regime,
-                feature.feature_name,
-                feature.source_topic,
-            )
-        raise UnsupportedRegulatoryFeature(
-            policy.regime,
-            "spearman_pla",
-            "PLA Spearman metric",
-        )
+    return pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy).pla
+
+
+def pla_assessment_for_policy_with_diagnostics(
+    hpl: FloatVector,
+    rtpl: FloatVector,
+    policy: RegulatoryPolicy,
+    observation_dates: Sequence[date] | None = None,
+) -> PlaPolicyAssessmentResult:
+    """
+    Run policy PLA and return window diagnostics.
+
+    Policy PLA requires HPL and RTPL to be aligned one-to-one before the most
+    recent policy window is selected. Optional dates provide an auditable window
+    start/end without introducing a full business-calendar dependency.
+    """
+    _require_supported_policy_metrics(policy)
 
     if policy.pla_window_days <= 0:
         raise ValueError(f"pla_window_days must be positive, got {policy.pla_window_days}")
@@ -184,19 +278,39 @@ def pla_assessment_for_policy(
 
     hpl_arr = _as_finite_1d_array(hpl, "hpl")
     rtpl_arr = _as_finite_1d_array(rtpl, "rtpl")
-    min_length = min(len(hpl_arr), len(rtpl_arr))
-    if min_length < policy.pla_minimum_history_days:
+    if len(hpl_arr) != len(rtpl_arr):
+        raise ValueError("HPL and RTPL must have equal length for policy PLA")
+    dates = _validate_observation_dates(observation_dates, len(hpl_arr))
+
+    available_observations = len(hpl_arr)
+    if available_observations < policy.pla_minimum_history_days:
         raise ValueError(
             "HPL and RTPL must contain at least "
             f"{policy.pla_minimum_history_days} observations for policy PLA"
         )
-    hpl_w = hpl_arr[-policy.pla_window_days :]
-    rtpl_w = rtpl_arr[-policy.pla_window_days :]
+    window_size = min(policy.pla_window_days, available_observations)
+    start_index = available_observations - window_size
+    end_index_exclusive = available_observations
+    hpl_w = hpl_arr[start_index:end_index_exclusive]
+    rtpl_w = rtpl_arr[start_index:end_index_exclusive]
+    dates_w = dates[start_index:end_index_exclusive] if dates is not None else None
 
-    return pla_assessment(
+    pla = pla_assessment(
         hpl_w,
         rtpl_w,
         green_threshold=policy.pla_green_threshold,
         amber_threshold=policy.pla_amber_threshold,
         zone_labels=policy.pla_zone_labels,
+    )
+    return PlaPolicyAssessmentResult(
+        pla=pla,
+        diagnostics=PlaWindowDiagnostics(
+            available_observations=available_observations,
+            minimum_history=policy.pla_minimum_history_days,
+            window_size=window_size,
+            start_index=start_index,
+            end_index_exclusive=end_index_exclusive,
+            start_date=dates_w[0] if dates_w else None,
+            end_date=dates_w[-1] if dates_w else None,
+        ),
     )

@@ -74,8 +74,8 @@ src/frtb_ima/
     rfet_evidence.py        RFET evidence assessment and audit trail
     nmrf.py                 NMRF SES aggregation
     imcc.py                 IMCC unconstrained / constrained with audit decomposition
-    pla.py                  PLA KS statistic
-    backtesting.py          Exception counting
+    pla.py                  PLA KS statistic and policy-window diagnostics
+    backtesting.py          Exception counting and optional dated traces
     capital.py              Models-based capital assembly
     demo_data.py            Synthetic demo data
 ```
