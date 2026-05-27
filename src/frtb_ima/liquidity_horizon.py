@@ -63,6 +63,16 @@ class LHAESComponent:
     weighted_square: float
     present: bool
 
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "liquidity_horizon": self.liquidity_horizon.name,
+            "weight": self.weight,
+            "expected_shortfall": self.expected_shortfall,
+            "weighted_square": self.weighted_square,
+            "present": self.present,
+        }
+
 
 @dataclass(frozen=True)
 class LHAESResult:
@@ -90,16 +100,7 @@ class LHAESResult:
             "lha_es": self.lha_es,
             "scenario_count": self.scenario_count,
             "metadata_aligned": self.metadata_aligned,
-            "components": [
-                {
-                    "liquidity_horizon": component.liquidity_horizon.name,
-                    "weight": component.weight,
-                    "expected_shortfall": component.expected_shortfall,
-                    "weighted_square": component.weighted_square,
-                    "present": component.present,
-                }
-                for component in self.components
-            ],
+            "components": [component.as_dict() for component in self.components],
         }
 
     def summary_lines(self) -> list[str]:

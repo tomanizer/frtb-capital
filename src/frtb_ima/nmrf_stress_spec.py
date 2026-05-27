@@ -68,6 +68,20 @@ class NMRFStressPeriodSpec:
         ):
             raise ValueError("start_date cannot be after end_date")
 
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "stress_period_id": self.stress_period_id,
+            "calibration_source": self.calibration_source,
+            "start_date": self.start_date.isoformat()
+            if self.start_date is not None
+            else None,
+            "end_date": self.end_date.isoformat()
+            if self.end_date is not None
+            else None,
+            "notes": self.notes,
+        }
+
 
 @dataclass(frozen=True)
 class NMRFDirectShockSpec:
@@ -91,6 +105,17 @@ class NMRFDirectShockSpec:
             raise ValueError("calibration_source must be non-empty")
         if not (0.0 < self.confidence_level < 1.0):
             raise ValueError("confidence_level must be in (0, 1)")
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "shock_size": self.shock_size,
+            "shock_unit": self.shock_unit,
+            "direction": self.direction.value,
+            "calibration_source": self.calibration_source,
+            "confidence_level": self.confidence_level,
+            "notes": self.notes,
+        }
 
 
 @dataclass(frozen=True)
@@ -121,6 +146,18 @@ class NMRFStepwiseShockGrid:
         """Number of shock points in the valuation grid/path."""
         return len(self.shock_points)
 
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "shock_points": list(self.shock_points),
+            "shock_unit": self.shock_unit,
+            "calibration_source": self.calibration_source,
+            "path_dependent": self.path_dependent,
+            "require_monotonic_loss_check": self.require_monotonic_loss_check,
+            "shock_count": self.shock_count,
+            "notes": self.notes,
+        }
+
 
 @dataclass(frozen=True)
 class NMRFFullRevaluationSpec:
@@ -142,6 +179,16 @@ class NMRFFullRevaluationSpec:
         if not self.calibration_source:
             raise ValueError("calibration_source must be non-empty")
         object.__setattr__(self, "market_state_ids", market_state_ids)
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable audit summary without expanding large state lists."""
+        return {
+            "scenario_set_id": self.scenario_set_id,
+            "market_state_count": len(self.market_state_ids),
+            "calibration_source": self.calibration_source,
+            "require_full_trade_repricing": self.require_full_trade_repricing,
+            "notes": self.notes,
+        }
 
 
 @dataclass(frozen=True)
@@ -167,6 +214,16 @@ class NMRFMaxLossFallbackSpec:
         if not self.loss_source:
             raise ValueError("loss_source must be non-empty")
         object.__setattr__(self, "candidate_scenario_ids", candidate_scenario_ids)
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "candidate_scenario_ids": list(self.candidate_scenario_ids),
+            "candidate_scenario_count": len(self.candidate_scenario_ids),
+            "loss_source": self.loss_source,
+            "selection_rule": self.SELECTION_RULE,
+            "notes": self.notes,
+        }
 
 
 @dataclass(frozen=True)
@@ -231,6 +288,31 @@ class NMRFValuationSpec:
                 f"{self.method.value} valuation spec has unexpected payloads: "
                 f"{unexpected}"
             )
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "risk_factor_name": self.risk_factor_name,
+            "modellability_status": self.modellability_status.value,
+            "risk_class": self.risk_class.value,
+            "method": self.method.value,
+            "required_liquidity_horizon": self.required_liquidity_horizon.value,
+            "stress_period": self.stress_period.as_dict(),
+            "direct_shock": self.direct_shock.as_dict()
+            if self.direct_shock is not None
+            else None,
+            "stepwise_grid": self.stepwise_grid.as_dict()
+            if self.stepwise_grid is not None
+            else None,
+            "full_revaluation": self.full_revaluation.as_dict()
+            if self.full_revaluation is not None
+            else None,
+            "max_loss_fallback": self.max_loss_fallback.as_dict()
+            if self.max_loss_fallback is not None
+            else None,
+            "source": self.source,
+            "notes": self.notes,
+        }
 
 
 def _as_finite_tuple(

@@ -66,6 +66,17 @@ class NMRFMethodDiagnostic:
         """Return True when the diagnostic explicitly passed."""
         return self.outcome == NMRFDiagnosticOutcome.PASS
 
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "name": self.name,
+            "outcome": self.outcome.value,
+            "value": self.value,
+            "threshold": self.threshold,
+            "source": self.source,
+            "notes": self.notes,
+        }
+
 
 @dataclass(frozen=True)
 class NMRFMethodEvidence:
@@ -130,6 +141,28 @@ class NMRFMethodEvidence:
         if self.direct_robustness is None:
             return self.diagnostics
         return (self.direct_robustness, *self.diagnostics)
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "risk_factor_name": self.risk_factor_name,
+            "nonlinear": self.nonlinear,
+            "full_revaluation_available": self.full_revaluation_available,
+            "direct_method_available": self.direct_method_available,
+            "direct_shock_well_defined": self.direct_shock_well_defined,
+            "direct_robust": self.direct_robust,
+            "stepwise_available": self.stepwise_available,
+            "stepwise_required": self.stepwise_required,
+            "max_loss_fallback_allowed": self.max_loss_fallback_allowed,
+            "pricing_attempt_count": self.pricing_attempt_count,
+            "pricing_failure_count": self.pricing_failure_count,
+            "proxy_or_basis_risk": self.proxy_or_basis_risk,
+            "diagnostics": [
+                diagnostic.as_dict() for diagnostic in self.all_diagnostics
+            ],
+            "source": self.source,
+            "notes": self.notes,
+        }
 
 
 class NMRFMethodReason(StrEnum):
@@ -317,6 +350,21 @@ class NMRFValuationInstruction:
         if not isinstance(self.reason, NMRFMethodReason):
             raise TypeError("reason must be an NMRFMethodReason")
 
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "risk_factor_name": self.risk_factor_name,
+            "modellability_status": self.modellability_status.value,
+            "method": self.method.value,
+            "risk_factor_liquidity_horizon": (
+                self.risk_factor_liquidity_horizon.value
+            ),
+            "required_liquidity_horizon": self.required_liquidity_horizon.value,
+            "reason": self.reason.value,
+            "source": self.source,
+            "notes": self.notes,
+        }
+
 
 @dataclass(frozen=True)
 class NMRFMethodDecision:
@@ -347,6 +395,19 @@ class NMRFMethodDecision:
             source=self.source,
             notes=self.notes,
         )
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "risk_factor_name": self.risk_factor_name,
+            "modellability_status": self.modellability_status.value,
+            "liquidity_horizon": self.liquidity_horizon.value,
+            "required_liquidity_horizon": self.required_liquidity_horizon.value,
+            "method": self.method.value,
+            "reason": self.reason.value,
+            "source": self.source,
+            "notes": self.notes,
+        }
 
 
 def _fallback_or_error(

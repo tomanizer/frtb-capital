@@ -39,6 +39,17 @@ class RFETObservationExclusion:
     observation: RealPriceObservation
     reason: RFETExclusionReason
 
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "observation": {
+                "risk_factor_name": self.observation.risk_factor_name,
+                "observation_date": self.observation.observation_date.isoformat(),
+                "source": self.observation.source,
+            },
+            "reason": self.reason.value,
+        }
+
 
 @dataclass(frozen=True)
 class RFETEvidenceAssessment:
@@ -58,6 +69,28 @@ class RFETEvidenceAssessment:
     new_issuance_prorated: bool
     modellability_status: ModellabilityStatus
     exclusions: tuple[RFETObservationExclusion, ...] = ()
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "risk_factor_name": self.risk_factor_name,
+            "as_of_date": self.as_of_date.isoformat(),
+            "lookback_start": self.lookback_start.isoformat(),
+            "base_required_observations": self.base_required_observations,
+            "required_observations": self.required_observations,
+            "eligible_observation_count": self.eligible_observation_count,
+            "eligible_observation_dates": [
+                observation_date.isoformat()
+                for observation_date in self.eligible_observation_dates
+            ],
+            "source_count": self.source_count,
+            "qualitative_pass": self.qualitative_pass,
+            "quantitative_pass": self.quantitative_pass,
+            "bucket_representative": self.bucket_representative,
+            "new_issuance_prorated": self.new_issuance_prorated,
+            "modellability_status": self.modellability_status.value,
+            "exclusions": [exclusion.as_dict() for exclusion in self.exclusions],
+        }
 
 
 def base_required_observation_count(

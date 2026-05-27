@@ -57,6 +57,7 @@ def test_pla_addon_uses_half_amber_standardized_share() -> None:
     assert result.k_factor == pytest.approx(0.1)
     assert result.capital_benefit == pytest.approx(300.0)
     assert result.pla_addon == pytest.approx(30.0)
+    assert result.as_dict()["pla_addon"] == pytest.approx(30.0)
 
 
 def test_pla_addon_floors_negative_capital_benefit_at_zero() -> None:
@@ -76,3 +77,15 @@ def test_pla_addon_rejects_amber_exceeding_green_amber() -> None:
             standardized_amber=101.0,
             ima_green_amber=50.0,
         )
+
+
+def test_models_based_capital_serializes_audit_breakdown() -> None:
+    result = models_based_capital(
+        imcc_t_minus_1=100.0,
+        ses_t_minus_1=20.0,
+        imcc_60d_avg=90.0,
+        ses_60d_avg=10.0,
+    )
+
+    assert result.as_dict()["models_based_capital"] == pytest.approx(145.0)
+    assert result.as_dict()["binding_term"] == "AVERAGE"

@@ -28,6 +28,8 @@ from frtb_ima.regimes import DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE, Regulatory
 
 @dataclass(frozen=True)
 class CapitalComponents:
+    """Decomposition of desk-level models-based capital."""
+
     imcc_t_minus_1: float
     ses_t_minus_1: float
     imcc_60d_avg: float
@@ -36,6 +38,19 @@ class CapitalComponents:
     pla_addon: float
     models_based_capital: float
     binding_term: str   # "SPOT" or "AVERAGE"
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "imcc_t_minus_1": self.imcc_t_minus_1,
+            "ses_t_minus_1": self.ses_t_minus_1,
+            "imcc_60d_avg": self.imcc_60d_avg,
+            "ses_60d_avg": self.ses_60d_avg,
+            "multiplier": self.multiplier,
+            "pla_addon": self.pla_addon,
+            "models_based_capital": self.models_based_capital,
+            "binding_term": self.binding_term,
+        }
 
 
 @dataclass(frozen=True)
@@ -48,6 +63,17 @@ class PLAAddonResult:
     ima_green_amber: float
     capital_benefit: float
     pla_addon: float
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "k_factor": self.k_factor,
+            "standardized_green_amber": self.standardized_green_amber,
+            "standardized_amber": self.standardized_amber,
+            "ima_green_amber": self.ima_green_amber,
+            "capital_benefit": self.capital_benefit,
+            "pla_addon": self.pla_addon,
+        }
 
 
 def _validate_non_negative_finite(value: float, name: str) -> None:

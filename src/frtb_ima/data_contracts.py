@@ -293,3 +293,16 @@ class CapitalRunResult:
             raise ValueError("total_market_risk_capital must be finite when provided")
         object.__setattr__(self, "desk_results", MappingProxyType(dict(self.desk_results)))
         object.__setattr__(self, "notes", tuple(self.notes))
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "as_of_date": self.as_of_date.isoformat(),
+            "regime": self.regime.value,
+            "desk_results": {
+                desk: result.as_dict()
+                for desk, result in self.desk_results.items()
+            },
+            "total_market_risk_capital": self.total_market_risk_capital,
+            "notes": list(self.notes),
+        }

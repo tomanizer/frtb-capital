@@ -94,6 +94,9 @@ The May 2026 accuracy pass corrected four prior simplifications:
    evidence diagnostics, upstream valuation-run specs, vectorized
    stress-artifact SES extraction, and fail-hard validation for missing Type A/B
    NMRF artifacts.
+5. Policy-wrapper boundaries can emit structured JSON log records with run,
+   desk, regime, and scalar result fields. Decomposed result objects can be
+   collected into `DeskAuditRecord` / `CapitalRunAuditLog` NDJSON artifacts.
 
 Remaining deliberate boundaries:
 
@@ -107,3 +110,6 @@ Remaining deliberate boundaries:
 - Formal stress-period selection/calibration, reduced-set governance,
   risk-factor bucketing, and firm-level consolidation are not complete
   regulatory workflows.
+- External telemetry backends, OpenTelemetry, Prometheus/Datadog metrics,
+  Parquet/DuckDB audit analytics, and full regulatory report generation remain
+  orchestration-layer future scope.

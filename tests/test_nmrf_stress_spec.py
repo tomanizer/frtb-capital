@@ -71,6 +71,7 @@ def test_direct_valuation_spec_requires_calibrated_direct_shock() -> None:
     assert spec.direct_shock is not None
     assert spec.direct_shock.shock_size == pytest.approx(350.0)
     assert spec.stepwise_grid is None
+    assert spec.as_dict()["direct_shock"] == spec.direct_shock.as_dict()
 
 
 def test_direct_valuation_spec_fails_without_direct_payload() -> None:
@@ -141,6 +142,7 @@ def test_full_revaluation_spec_requires_unique_market_states() -> None:
     assert spec.full_revaluation is not None
     assert spec.full_revaluation.market_state_ids == ("ms-1", "ms-2")
     assert spec.full_revaluation.require_full_trade_repricing is True
+    assert spec.full_revaluation.as_dict()["market_state_count"] == 2
 
     with pytest.raises(ValueError, match="duplicates"):
         NMRFFullRevaluationSpec(

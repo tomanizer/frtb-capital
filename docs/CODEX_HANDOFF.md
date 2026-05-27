@@ -12,6 +12,7 @@ Existing risk engine
     -> NMRF method-selection evidence, instructions, and valuation specs
     -> 10-day scenario P&L vectors and NMRF stress artifacts
     -> ex-post capital aggregation layer
+    -> structured JSON runtime logs and NDJSON desk audit records
     -> desk-level dashboard
 ```
 
@@ -26,7 +27,8 @@ Deliver a working demo that computes:
 - SES,
 - models-based capital,
 - PLA KS statistic,
-- backtesting exception counts.
+- backtesting exception counts,
+- structured logging and desk-level audit records.
 
 ## Build sequence
 
@@ -41,6 +43,7 @@ Deliver a working demo that computes:
 9. Add PLA KS and backtesting.
 10. Add capital assembly.
 11. Add synthetic demo.
+12. Add structured logging and NDJSON audit records.
 
 ## Key warning
 

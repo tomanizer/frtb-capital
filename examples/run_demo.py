@@ -241,7 +241,13 @@ def main() -> None:
     # ------------------------------------------------------------------
     section("IMCC")
 
-    imcc_value = imcc_for_policy(all_class_vectors, per_class_vectors, context.policy)
+    imcc_value = imcc_for_policy(
+        all_class_vectors,
+        per_class_vectors,
+        context.policy,
+        run_id=context.run_id,
+        desk_id=context.desk,
+    )
     print(f"  IMCC:  {imcc_value:>12,.2f}")
 
     # For the 60d average demo, just use today's value repeated (simplification)
@@ -278,6 +284,8 @@ def main() -> None:
         required_liquidity_horizons=required_liquidity_horizons_from_valuation_specs(
             valuation_specs,
         ),
+        run_id=context.run_id,
+        desk_id=context.desk,
     )
     for result in [*nmrf_capital.type_a_results, *nmrf_capital.type_b_results]:
         status = classifications[result.risk_factor_name]
@@ -325,7 +333,13 @@ def main() -> None:
     section("PLA KS statistic")
 
     apl, hpl, var_estimates = make_pnl_series(n=260)
-    pla = pla_assessment_for_policy(hpl=hpl, rtpl=apl, policy=context.policy)
+    pla = pla_assessment_for_policy(
+        hpl=hpl,
+        rtpl=apl,
+        policy=context.policy,
+        run_id=context.run_id,
+        desk_id=context.desk,
+    )
     print(f"  KS statistic:   {pla.ks_statistic:.4f}")
     print(f"  Zone:           {pla.zone}")
     print(f"  HPL length:     {pla.n_hpl}")
@@ -345,6 +359,8 @@ def main() -> None:
         hpl,
         var_by_confidence,
         policy=context.policy,
+        run_id=context.run_id,
+        desk_id=context.desk,
     )
     bt99 = bt.level(0.99)
     bt975 = bt.level(0.975)

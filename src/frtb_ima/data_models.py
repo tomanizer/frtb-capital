@@ -105,3 +105,16 @@ class DeskCapitalResult:
     backtesting_apl_exceptions: int
     backtesting_hpl_exceptions: int
     notes: str = ""
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "desk": self.desk,
+            "imcc": self.imcc,
+            "ses": self.ses,
+            "models_based_capital": self.models_based_capital,
+            "pla_ks_statistic": self.pla_ks_statistic,
+            "backtesting_apl_exceptions": self.backtesting_apl_exceptions,
+            "backtesting_hpl_exceptions": self.backtesting_hpl_exceptions,
+            "notes": self.notes,
+        }

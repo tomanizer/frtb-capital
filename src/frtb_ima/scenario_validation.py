@@ -34,6 +34,16 @@ class NestedLHValidationResult:
     metadata_aligned: bool
     nesting_evidence_checked: bool
 
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "horizons": [horizon.name for horizon in self.horizons],
+            "scenario_count": self.scenario_count,
+            "has_metadata": self.has_metadata,
+            "metadata_aligned": self.metadata_aligned,
+            "nesting_evidence_checked": self.nesting_evidence_checked,
+        }
+
 
 class NestedLHValidationError(ValueError):
     """Raised when nested liquidity-horizon vectors fail structural validation."""

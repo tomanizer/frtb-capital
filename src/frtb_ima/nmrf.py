@@ -33,6 +33,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+import logging
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -43,6 +44,7 @@ import numpy.typing as npt
 
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus
 from frtb_ima.expected_shortfall import expected_shortfall
+from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import (
     RegulatoryPolicy,
     RegulatoryRegime,
@@ -69,6 +71,7 @@ _UNSUPPORTED_GENERATION_FEATURES: dict[NMRFStressMethod, str] = {
 }
 
 _NMRF_MINIMUM_LIQUIDITY_HORIZON = LiquidityHorizon.LH20
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -184,6 +187,19 @@ class SESAggregationResult:
     type_b_rho: float
     total_ses: float
 
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "type_a_count": self.type_a_count,
+            "type_b_count": self.type_b_count,
+            "type_a_sum_of_squares": self.type_a_sum_of_squares,
+            "type_b_correlated_term": self.type_b_correlated_term,
+            "type_b_sum_of_squares": self.type_b_sum_of_squares,
+            "type_b_linear_sum": self.type_b_linear_sum,
+            "type_b_rho": self.type_b_rho,
+            "total_ses": self.total_ses,
+        }
+
 
 @dataclass(frozen=True)
 class NMRFCapitalRouting:
@@ -194,6 +210,16 @@ class NMRFCapitalRouting:
     type_b_nmrf_risk_factors: tuple[str, ...]
     imcc_risk_factors: tuple[str, ...]
     ses_risk_factors: tuple[str, ...]
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "modellable_risk_factors": list(self.modellable_risk_factors),
+            "type_a_nmrf_risk_factors": list(self.type_a_nmrf_risk_factors),
+            "type_b_nmrf_risk_factors": list(self.type_b_nmrf_risk_factors),
+            "imcc_risk_factors": list(self.imcc_risk_factors),
+            "ses_risk_factors": list(self.ses_risk_factors),
+        }
 
 
 @dataclass(frozen=True)
@@ -209,6 +235,16 @@ class NMRFCapitalResult:
     def total_ses(self) -> float:
         """Total SES scalar used by the models-based capital formula."""
         return self.aggregation.total_ses
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "routing": self.routing.as_dict(),
+            "type_a_results": [result.as_dict() for result in self.type_a_results],
+            "type_b_results": [result.as_dict() for result in self.type_b_results],
+            "aggregation": self.aggregation.as_dict(),
+            "total_ses": self.total_ses,
+        }
 
 
 def _as_loss_array(
@@ -651,6 +687,8 @@ def calculate_nmrf_capital_for_policy(
     required_methods: Mapping[str, NMRFStressMethod] | None = None,
     required_liquidity_horizons: Mapping[str, LiquidityHorizon] | None = None,
     allow_linear_approximation: bool = False,
+    run_id: str | None = None,
+    desk_id: str | None = None,
 ) -> NMRFCapitalResult:
     """
     Validate NMRF stress artifacts, extract SES, and aggregate Type A / Type B.
@@ -689,9 +727,23 @@ def calculate_nmrf_capital_for_policy(
         ses_values_from_stress_results(type_b_results),
         policy,
     )
-    return NMRFCapitalResult(
+    result = NMRFCapitalResult(
         routing=routing,
         type_a_results=type_a_results,
         type_b_results=type_b_results,
         aggregation=aggregation,
     )
+    logger.info(
+        "nmrf_capital_complete",
+        extra=calculation_log_extra(
+            run_id=run_id,
+            desk_id=desk_id,
+            regime=policy.regime.value,
+            total_ses=result.total_ses,
+            type_a_count=aggregation.type_a_count,
+            type_b_count=aggregation.type_b_count,
+            ses_risk_factor_count=len(routing.ses_risk_factors),
+            imcc_risk_factor_count=len(routing.imcc_risk_factors),
+        ),
+    )
+    return result

@@ -24,6 +24,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+import logging
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -31,11 +32,13 @@ from typing import TypeAlias
 
 from frtb_ima.data_models import LiquidityHorizon, RiskClass
 from frtb_ima.liquidity_horizon import LHAESResult, lha_es_breakdown_from_vectors
+from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import DEFAULT_LHA_WEIGHTS, RegulatoryPolicy
 from frtb_ima.scenario import ScenarioVector
 
 LHVectorInput: TypeAlias = Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]]
 PerRiskClassLHVectorInput: TypeAlias = Mapping[RiskClass, LHVectorInput]
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -332,29 +335,60 @@ def imcc_for_policy(
     all_risk_class_vectors: LHVectorInput,
     per_risk_class_vectors: PerRiskClassLHVectorInput,
     policy: RegulatoryPolicy,
+    *,
+    run_id: str | None = None,
+    desk_id: str | None = None,
 ) -> float:
     """Compute IMCC using ES confidence level, LHA weights, and blend from policy."""
-    return imcc(
+    result = imcc_breakdown(
         all_risk_class_vectors,
         per_risk_class_vectors,
         alpha=policy.es_confidence_level,
         w=policy.imcc_unconstrained_weight,
         lha_weights=policy.lha_weights,
     )
+    _log_imcc_result(result, policy, run_id=run_id, desk_id=desk_id)
+    return result.imcc
 
 
 def imcc_breakdown_for_policy(
     all_risk_class_vectors: LHVectorInput,
     per_risk_class_vectors: PerRiskClassLHVectorInput,
     policy: RegulatoryPolicy,
+    *,
+    run_id: str | None = None,
+    desk_id: str | None = None,
 ) -> IMCCResult:
     """Compute decomposed IMCC using ES confidence, LHA weights, and blend policy."""
-    return imcc_breakdown(
+    result = imcc_breakdown(
         all_risk_class_vectors,
         per_risk_class_vectors,
         alpha=policy.es_confidence_level,
         w=policy.imcc_unconstrained_weight,
         lha_weights=policy.lha_weights,
+    )
+    _log_imcc_result(result, policy, run_id=run_id, desk_id=desk_id)
+    return result
+
+
+def _log_imcc_result(
+    result: IMCCResult,
+    policy: RegulatoryPolicy,
+    *,
+    run_id: str | None,
+    desk_id: str | None,
+) -> None:
+    logger.info(
+        "imcc_complete",
+        extra=calculation_log_extra(
+            run_id=run_id,
+            desk_id=desk_id,
+            regime=policy.regime.value,
+            imcc=result.imcc,
+            unconstrained_lha_es=result.unconstrained_lha_es,
+            constrained_lha_es=result.constrained_lha_es,
+            constrained_component_count=len(result.constrained_components),
+        ),
     )
 
 

@@ -29,6 +29,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -36,6 +37,7 @@ from datetime import date
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import DEFAULT_BACKTESTING_EXCEPTION_LIMITS, RegulatoryPolicy
 
 # Basel backtesting traffic-light thresholds
@@ -43,15 +45,28 @@ GREEN_MAX = 4
 AMBER_MAX = 9
 FloatVector = Sequence[float] | npt.NDArray[np.float64]
 BoolVector = Sequence[bool] | npt.NDArray[np.bool_]
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class BacktestResult:
+    """Basic APL/HPL backtesting result for one VaR vector."""
+
     apl_exceptions: int
     hpl_exceptions: int
     apl_zone: str   # "GREEN", "AMBER", "RED"
     hpl_zone: str
     window_size: int
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "apl_exceptions": self.apl_exceptions,
+            "hpl_exceptions": self.hpl_exceptions,
+            "apl_zone": self.apl_zone,
+            "hpl_zone": self.hpl_zone,
+            "window_size": self.window_size,
+        }
 
 
 @dataclass(frozen=True)
@@ -66,6 +81,19 @@ class BacktestLevelResult:
     hpl_passed: bool
     level_passed: bool
     window_size: int
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "confidence_level": self.confidence_level,
+            "apl_exceptions": self.apl_exceptions,
+            "hpl_exceptions": self.hpl_exceptions,
+            "exception_limit": self.exception_limit,
+            "apl_passed": self.apl_passed,
+            "hpl_passed": self.hpl_passed,
+            "level_passed": self.level_passed,
+            "window_size": self.window_size,
+        }
 
 
 @dataclass(frozen=True)
@@ -82,6 +110,14 @@ class TradingDeskBacktestResult:
             if result.confidence_level == confidence_level:
                 return result
         raise KeyError(f"No backtesting result for confidence level {confidence_level}")
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "window_size": self.window_size,
+            "model_eligible": self.model_eligible,
+            "levels": [level.as_dict() for level in self.levels],
+        }
 
 
 @dataclass(frozen=True)
@@ -140,16 +176,7 @@ class BacktestLevelTrace:
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and notebooks."""
         return {
-            "result": {
-                "confidence_level": self.result.confidence_level,
-                "apl_exceptions": self.result.apl_exceptions,
-                "hpl_exceptions": self.result.hpl_exceptions,
-                "exception_limit": self.result.exception_limit,
-                "apl_passed": self.result.apl_passed,
-                "hpl_passed": self.result.hpl_passed,
-                "level_passed": self.result.level_passed,
-                "window_size": self.result.window_size,
-            },
+            "result": self.result.as_dict(),
             "observations": [
                 observation.as_dict() for observation in self.observations
             ],
@@ -588,9 +615,12 @@ def trading_desk_backtest_for_policy(
     policy: RegulatoryPolicy,
     allow_prorated_thresholds: bool = False,
     official_holiday_mask: BoolVector | None = None,
+    *,
+    run_id: str | None = None,
+    desk_id: str | None = None,
 ) -> TradingDeskBacktestResult:
     """Run trading-desk backtesting using a policy's NPR 2.0 gate parameters."""
-    return trading_desk_backtest(
+    result = trading_desk_backtest(
         apl,
         hpl,
         var_estimates_by_confidence,
@@ -600,6 +630,8 @@ def trading_desk_backtest_for_policy(
         allow_prorated_thresholds=allow_prorated_thresholds,
         official_holiday_mask=official_holiday_mask,
     )
+    _log_backtesting_result(result, policy, run_id=run_id, desk_id=desk_id)
+    return result
 
 
 def trading_desk_backtest_trace_for_policy(
@@ -610,9 +642,12 @@ def trading_desk_backtest_trace_for_policy(
     allow_prorated_thresholds: bool = False,
     official_holiday_mask: BoolVector | None = None,
     observation_dates: Sequence[date] | None = None,
+    *,
+    run_id: str | None = None,
+    desk_id: str | None = None,
 ) -> TradingDeskBacktestTraceResult:
     """Run policy backtesting and include per-observation exception traces."""
-    return trading_desk_backtest_trace(
+    result = trading_desk_backtest_trace(
         apl,
         hpl,
         var_estimates_by_confidence,
@@ -623,6 +658,8 @@ def trading_desk_backtest_trace_for_policy(
         official_holiday_mask=official_holiday_mask,
         observation_dates=observation_dates,
     )
+    _log_backtesting_result(result.result, policy, run_id=run_id, desk_id=desk_id)
+    return result
 
 
 def backtest_for_policy(
@@ -630,12 +667,59 @@ def backtest_for_policy(
     hpl: FloatVector,
     var_estimates: FloatVector,
     policy: RegulatoryPolicy,
+    *,
+    run_id: str | None = None,
+    desk_id: str | None = None,
 ) -> BacktestResult:
     """Run backtesting using a policy's window and minimum-history assumptions."""
-    return backtest(
+    result = backtest(
         apl,
         hpl,
         var_estimates,
         window=policy.backtesting_window_days,
         minimum_history=policy.backtesting_minimum_history_days,
+    )
+    logger.info(
+        "backtest_complete",
+        extra=calculation_log_extra(
+            run_id=run_id,
+            desk_id=desk_id,
+            regime=policy.regime.value,
+            apl_exceptions=result.apl_exceptions,
+            hpl_exceptions=result.hpl_exceptions,
+            apl_zone=result.apl_zone,
+            hpl_zone=result.hpl_zone,
+            window_size=result.window_size,
+        ),
+    )
+    return result
+
+
+def _log_backtesting_result(
+    result: TradingDeskBacktestResult,
+    policy: RegulatoryPolicy,
+    *,
+    run_id: str | None,
+    desk_id: str | None,
+) -> None:
+    max_apl_exceptions = max(
+        (level.apl_exceptions for level in result.levels),
+        default=0,
+    )
+    max_hpl_exceptions = max(
+        (level.hpl_exceptions for level in result.levels),
+        default=0,
+    )
+    logger.info(
+        "trading_desk_backtest_complete",
+        extra=calculation_log_extra(
+            run_id=run_id,
+            desk_id=desk_id,
+            regime=policy.regime.value,
+            model_eligible=result.model_eligible,
+            window_size=result.window_size,
+            level_count=len(result.levels),
+            max_apl_exceptions=max_apl_exceptions,
+            max_hpl_exceptions=max_hpl_exceptions,
+        ),
     )

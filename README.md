@@ -16,6 +16,7 @@ A Python prototype demonstrating how an existing risk engine can generate 10-day
 - Models-based capital assembly
 - PLA Kolmogorov-Smirnov statistic
 - Backtesting exception counts at 97.5% and 99.0% VaR levels
+- Structured JSON logging and NDJSON audit records
 
 ## Install
 
@@ -82,6 +83,8 @@ src/frtb_ima/
     pla.py                  PLA KS statistic and policy-window diagnostics
     backtesting.py          Exception counting and optional dated traces
     capital.py              Models-based capital assembly
+    logging.py              JSON logging formatter and structured fields
+    audit.py                Desk/run audit records and NDJSON serialization
     demo_data.py            Synthetic demo data
 ```
 

@@ -17,15 +17,18 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import RegulatoryPolicy
 
 FloatVector = Sequence[float] | npt.NDArray[np.float64]
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -145,12 +148,28 @@ def reduced_set_variation_explained_for_policy(
     full_current_lha_es: FloatVector,
     reduced_current_lha_es: FloatVector,
     policy: RegulatoryPolicy,
+    *,
+    run_id: str | None = None,
+    desk_id: str | None = None,
 ) -> ReducedSetCoverageResult:
     """Assess reduced-set variation explained using policy defaults."""
-    return reduced_set_variation_explained(
+    result = reduced_set_variation_explained(
         full_current_lha_es,
         reduced_current_lha_es,
         window=policy.reduced_set_coverage_window_days,
         minimum_history=policy.reduced_set_coverage_window_days,
         threshold=policy.reduced_set_variation_explained_threshold,
     )
+    logger.info(
+        "reduced_set_variation_explained_complete",
+        extra=calculation_log_extra(
+            run_id=run_id,
+            desk_id=desk_id,
+            regime=policy.regime.value,
+            variation_explained=result.variation_explained,
+            threshold=result.threshold,
+            passed=result.passed,
+            window_size=result.window_size,
+        ),
+    )
+    return result

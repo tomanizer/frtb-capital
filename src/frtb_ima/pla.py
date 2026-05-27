@@ -23,6 +23,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -30,6 +31,7 @@ from datetime import date
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import (
     PLAMetricsRequired,
     RegulatoryPolicy,
@@ -40,6 +42,7 @@ from frtb_ima.regimes import (
 GREEN_THRESHOLD: float = 0.09
 AMBER_THRESHOLD: float = 0.12
 DEFAULT_ZONE_LABELS: tuple[str, str, str] = ("GREEN", "AMBER", "RED")
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -48,6 +51,15 @@ class PlaResult:
     zone: str        # "GREEN", "AMBER", or "RED"
     n_hpl: int
     n_rtpl: int
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable dictionary for reporting and audit trails."""
+        return {
+            "ks_statistic": self.ks_statistic,
+            "zone": self.zone,
+            "n_hpl": self.n_hpl,
+            "n_rtpl": self.n_rtpl,
+        }
 
 
 @dataclass(frozen=True)
@@ -99,12 +111,7 @@ class PlaPolicyAssessmentResult:
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and notebooks."""
         return {
-            "pla": {
-                "ks_statistic": self.pla.ks_statistic,
-                "zone": self.pla.zone,
-                "n_hpl": self.pla.n_hpl,
-                "n_rtpl": self.pla.n_rtpl,
-            },
+            "pla": self.pla.as_dict(),
             "diagnostics": self.diagnostics.as_dict(),
         }
 
@@ -243,6 +250,9 @@ def pla_assessment_for_policy(
     hpl: FloatVector,
     rtpl: FloatVector,
     policy: RegulatoryPolicy,
+    *,
+    run_id: str | None = None,
+    desk_id: str | None = None,
 ) -> PlaResult:
     """
     Run PLA using policy thresholds and required metrics.
@@ -250,7 +260,13 @@ def pla_assessment_for_policy(
     The prototype currently implements KS only. Policies requiring Spearman
     raise an explicit unsupported-feature error.
     """
-    return pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy).pla
+    return pla_assessment_for_policy_with_diagnostics(
+        hpl,
+        rtpl,
+        policy,
+        run_id=run_id,
+        desk_id=desk_id,
+    ).pla
 
 
 def pla_assessment_for_policy_with_diagnostics(
@@ -258,6 +274,9 @@ def pla_assessment_for_policy_with_diagnostics(
     rtpl: FloatVector,
     policy: RegulatoryPolicy,
     observation_dates: Sequence[date] | None = None,
+    *,
+    run_id: str | None = None,
+    desk_id: str | None = None,
 ) -> PlaPolicyAssessmentResult:
     """
     Run policy PLA and return window diagnostics.
@@ -302,7 +321,7 @@ def pla_assessment_for_policy_with_diagnostics(
         amber_threshold=policy.pla_amber_threshold,
         zone_labels=policy.pla_zone_labels,
     )
-    return PlaPolicyAssessmentResult(
+    result = PlaPolicyAssessmentResult(
         pla=pla,
         diagnostics=PlaWindowDiagnostics(
             available_observations=available_observations,
@@ -314,3 +333,16 @@ def pla_assessment_for_policy_with_diagnostics(
             end_date=dates_w[-1] if dates_w else None,
         ),
     )
+    logger.info(
+        "pla_complete",
+        extra=calculation_log_extra(
+            run_id=run_id,
+            desk_id=desk_id,
+            regime=policy.regime.value,
+            ks_statistic=result.ks_statistic,
+            zone=result.zone,
+            window_size=result.diagnostics.window_size,
+            available_observations=result.diagnostics.available_observations,
+        ),
+    )
+    return result

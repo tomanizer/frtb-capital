@@ -110,6 +110,26 @@ Corrected behavior:
 - Missing Type A/B artifacts fail hard; the linear sensitivity helper remains
   approximation-only and requires explicit opt-in when used as an artifact.
 
+### Structured logging and audit records
+
+Prior behavior:
+
+- Runtime observability and post-run audit records were ad hoc. Several result
+  objects had `as_dict()` methods, but coverage was inconsistent and there was
+  no single desk-level audit artifact.
+
+Corrected behavior:
+
+- `logging.py` adds a dependency-free `JSONFormatter` and structured field
+  helper for calculation-boundary log records.
+- Policy-wrapper boundaries can emit compact `INFO` records containing
+  `run_id`, `desk_id`, `regime`, and scalar result fields; core vector
+  calculators remain silent.
+- Missing `as_dict()` methods were added across capital, NMRF, PLA,
+  backtesting, RFET evidence, scenario validation, and run-result objects.
+- `audit.py` adds `DeskAuditRecord`, `CapitalRunAuditLog`, and NDJSON
+  serialization helpers for orchestration-layer post-run audit artifacts.
+
 ## Remaining implementation gaps
 
 These are not small code cleanups; they require explicit modeling choices or
@@ -132,5 +152,8 @@ new upstream data contracts:
   mask supplied by the caller.
 - Firm-level aggregation, standardized approach fallback, DRC, redesignation
   add-ons, and legal-entity consolidation are not implemented.
+- Full regulatory report generation, external telemetry, OpenTelemetry,
+  Prometheus/Datadog metrics, and Parquet/DuckDB audit analytics remain future
+  orchestration-layer integrations.
 - The U.S. NPR 2.0 source remains a proposed rule. Final-rule changes must be
   reviewed before treating any profile as final regulatory capital.

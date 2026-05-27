@@ -63,6 +63,8 @@ Adjacent audit paths now include:
 - `nmrf_method_selection.py` for post-RFET NMRF method evidence, direct robustness diagnostics, selector decisions, and valuation instructions.
 - `nmrf_stress_spec.py` for upstream direct, stepwise, full-revaluation, and max-loss valuation-run specifications.
 - `nmrf.py` for NMRF stress artifacts, Type A/B routing, vectorized SES extraction, and aggregation. Institutional direct, stepwise, and full-revaluation pricing remains upstream; missing Type A/B artifacts fail hard.
+- `logging.py` for dependency-free JSON log formatting and structured log field helpers.
+- `audit.py` for orchestration-layer desk/run audit records and NDJSON serialisation.
 
 Core scenario-level calculations must be numpy-native. Small loops over fixed regulatory axes (risk classes, LH buckets, policy levels) are acceptable. Per-observation Python loops are acceptable only in explicit audit-trace builders after vectorized exception masks or statistics have already been computed.
 
@@ -97,7 +99,7 @@ Business logic lives in pure functions. Classes are for data containers (frozen 
 All public functions must fail fast with `ValueError` or `KeyError` on: empty vectors, non-finite values, mismatched lengths, missing LH10, negative capital where disallowed. Never let invalid inputs propagate silently into a result.
 
 ### Decomposed results
-Canonical audit paths return frozen dataclasses with full breakdowns: `LHAESResult`, `IMCCResult`, `StressScalingResult`, `SESAggregationResult`, `NMRFMethodDiagnostic`, `NMRFMethodEvidence`, `NMRFMethodDecision`, `NMRFValuationInstruction`, `NMRFValuationSpec`, `NMRFStressArtifact`, `NMRFStressScenarioResult`, `NMRFCapitalResult`, `ReducedSetCoverageResult`, `CapitalComponents`, `PLAAddonResult`, `PlaPolicyAssessmentResult`, and `TradingDeskBacktestTraceResult`. Scalar wrappers remain intentionally supported for backward compatibility and simple scalar checks, but new material workflows should expose a decomposed result object.
+Canonical audit paths return frozen dataclasses with full breakdowns: `LHAESResult`, `IMCCResult`, `StressScalingResult`, `SESAggregationResult`, `NMRFMethodDiagnostic`, `NMRFMethodEvidence`, `NMRFMethodDecision`, `NMRFValuationInstruction`, `NMRFValuationSpec`, `NMRFStressArtifact`, `NMRFStressScenarioResult`, `NMRFCapitalResult`, `ReducedSetCoverageResult`, `CapitalComponents`, `PLAAddonResult`, `PlaPolicyAssessmentResult`, `TradingDeskBacktestTraceResult`, `DeskAuditRecord`, and `CapitalRunAuditLog`. Scalar wrappers remain intentionally supported for backward compatibility and simple scalar checks, but new material workflows should expose a decomposed result object.
 
 ### Regulatory traceability — mandatory
 Every calculation module must include a `Regulatory traceability` block in its docstring naming the Basel anchor, U.S. NPR 2.0 anchor, and EU anchor. Update `docs/REGULATORY_TRACEABILITY.md` (Code-to-regulation and Regulation-to-code tables) for any module addition or change. Update `docs/requirements/NPR_2_0_MARKET_RISK.yml` when a requirement status changes.
@@ -165,9 +167,10 @@ Pure functions operating on numpy arrays are the correct foundation for future p
 
 - `print()` is banned in `src/`. Use `logging.getLogger(__name__)`.
 - Calculators (anything in `liquidity_horizon.py`, `imcc.py`, `nmrf.py`, `capital.py`, etc.) are **pure functions** — they emit nothing. Zero logging inside them.
-- Logging belongs in policy wrappers, the capital assembly layer, and orchestration code. Log at `DEBUG` for per-desk intermediate values; `INFO` for run-level milestones; `WARNING` for fallbacks or missing optional inputs.
+- Logging belongs in policy wrappers, the capital assembly layer, and orchestration code. Low-level scalar/vector calculators must stay silent. Policy wrappers may emit compact `INFO` records with `run_id`, `desk_id`, `regime`, and result scalars; use `frtb_ima.logging.JSONFormatter` when machine-readable output is needed.
 - Never log arrays larger than a summary (shape + a few stats). Full scenario arrays must not appear in log output — they are not tractable and break distributed log aggregation.
 - A desk run must produce identical results regardless of log level. Log calls must have no side effects on numerical outputs.
+- Post-run audit belongs in `DeskAuditRecord` / `CapitalRunAuditLog` NDJSON artifacts. Do not use runtime logs as the source of record for regulatory audit detail.
 
 ---
 

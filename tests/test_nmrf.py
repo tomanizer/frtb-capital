@@ -444,6 +444,8 @@ def test_calculate_nmrf_capital_aggregates_type_a_and_type_b_artifacts() -> None
     assert result.type_a_results[0].ses == pytest.approx(20.0)
     assert result.type_b_results[0].ses == pytest.approx(15.0)
     assert result.total_ses == pytest.approx(expected.total_ses)
+    assert result.as_dict()["total_ses"] == pytest.approx(expected.total_ses)
+    assert result.aggregation.as_dict()["type_b_rho"] == pytest.approx(0.36)
 
 
 def test_calculate_nmrf_capital_rejects_modellable_artifacts() -> None:

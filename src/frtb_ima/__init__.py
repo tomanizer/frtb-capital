@@ -6,6 +6,18 @@ All regulatory statements are working assumptions based on the
 March 2026 U.S. NPR 2.0 proposal and Basel FRTB IMA concepts.
 """
 
+from frtb_ima.audit import (
+    CapitalRunAuditLog,
+    DeskAuditRecord,
+    audit_records_to_ndjson,
+    write_audit_records_ndjson,
+)
+from frtb_ima.capital import (
+    CapitalComponents,
+    PLAAddonResult,
+    models_based_capital,
+    pla_addon,
+)
 from frtb_ima.data_contracts import (
     CapitalRunResult,
     DeskRun,
@@ -40,6 +52,11 @@ from frtb_ima.lha_builder import (
     nested_lh_vectors_from_cube,
     per_risk_class_nested_lh_vectors_from_cube,
     risk_factor_names_for_lh_subset,
+)
+from frtb_ima.logging import (
+    JSONFormatter,
+    calculation_log_extra,
+    configure_json_logging,
 )
 from frtb_ima.nmrf import (
     NMRFCapitalResult,
@@ -121,11 +138,15 @@ from frtb_ima.scenario_validation import (
 
 __all__ = [
     "CalculationContext",
+    "CapitalComponents",
+    "CapitalRunAuditLog",
     "CapitalRunResult",
+    "DeskAuditRecord",
     "DeskCapitalResult",
     "DeskRun",
     "IMCCResult",
     "IMCCRiskClassComponent",
+    "JSONFormatter",
     "LiquidityHorizon",
     "ModellabilityStatus",
     "NMRFCapitalResult",
@@ -153,6 +174,7 @@ __all__ = [
     "NestedLHScenarioVectors",
     "NestedLHValidationError",
     "NestedLHValidationResult",
+    "PLAAddonResult",
     "PLAMetricsRequired",
     "Position",
     "RFETEvidence",
@@ -180,10 +202,13 @@ __all__ = [
     "aggregate_ses_breakdown_for_policy",
     "assess_direct_loss_robustness",
     "assess_rfet_evidence",
+    "audit_records_to_ndjson",
     "build_nmrf_valuation_spec",
     "build_nmrf_valuation_specs",
     "calculate_nmrf_capital_for_policy",
     "calculate_nmrf_ses_from_revaluation",
+    "calculation_log_extra",
+    "configure_json_logging",
     "get_policy",
     "imcc_breakdown",
     "imcc_breakdown_for_policy",
@@ -191,9 +216,11 @@ __all__ = [
     "imcc_nested_lh_vectors_from_cube",
     "imcc_unconstrained_breakdown",
     "make_scenario_metadata",
+    "models_based_capital",
     "nested_lh_vectors_from_cube",
     "nmrf_effective_liquidity_horizon",
     "per_risk_class_nested_lh_vectors_from_cube",
+    "pla_addon",
     "reduced_set_variation_explained",
     "reduced_set_variation_explained_for_policy",
     "required_liquidity_horizons_from_valuation_specs",
@@ -208,4 +235,5 @@ __all__ = [
     "validate_aligned_metadata",
     "validate_nested_lh_vectors",
     "validate_unique_scenarios",
+    "write_audit_records_ndjson",
 ]

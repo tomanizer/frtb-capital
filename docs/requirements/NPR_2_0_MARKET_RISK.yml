@@ -282,7 +282,11 @@ requirements:
     title: "Audit-grade run report"
     source: "Market risk reporting and disclosure traceability"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: unsupported
+    status: partial
     modules:
+      - src/frtb_ima/audit.py
+      - src/frtb_ima/logging.py
     tests:
-    notes: "No make audit target or complete run report artifact yet."
+      - tests/test_audit.py
+      - tests/test_logging.py
+    notes: "Dependency-free JSON runtime logging, result-object as_dict methods, DeskAuditRecord, CapitalRunAuditLog, and NDJSON serialization are implemented. Full report generation, make audit, Parquet/DuckDB analytics, and external telemetry are not implemented."

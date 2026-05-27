@@ -113,6 +113,8 @@ def test_trading_desk_backtest_uses_975_and_99_percentile_limits() -> None:
     assert result.level(0.99).exception_limit == pytest.approx(12.0)
     assert result.level(0.975).apl_exceptions == 30
     assert result.level(0.975).exception_limit == pytest.approx(30.0)
+    assert result.as_dict()["model_eligible"] is True
+    assert result.level(0.99).as_dict()["apl_exceptions"] == 12
 
 
 def test_trading_desk_backtest_fails_when_either_pnl_series_exceeds_limit() -> None:
