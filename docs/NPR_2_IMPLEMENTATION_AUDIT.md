@@ -95,6 +95,11 @@ Corrected behavior:
 - `nmrf_method_selection.py` runs after RFET and emits auditable valuation
   instructions for `DIRECT`, `STEPWISE`, `FULL_REVALUATION`, or explicitly
   allowed `MAX_LOSS_FALLBACK` treatment.
+- Method selection can now consume auditable evidence, including a vectorized
+  direct-loss robustness diagnostic against benchmark revaluation losses.
+- `nmrf_stress_spec.py` converts valuation instructions into upstream
+  valuation-run specifications for calibrated direct shocks, stepwise grids,
+  full-revaluation market states, or max-loss candidate scenarios.
 - `NMRFStressArtifact` records post-valuation loss vectors with method,
   liquidity horizon, stress period, source, and provenance.
 - `calculate_nmrf_ses_from_revaluation` extracts SES from vectorized upstream
@@ -111,16 +116,17 @@ These are not small code cleanups; they require explicit modeling choices or
 new upstream data contracts:
 
 - Institutional pricing/revaluation for direct, stepwise, and full-revaluation
-  NMRF stress artifacts remains upstream. This package now selects methods,
-  validates artifacts, extracts SES, and aggregates capital, but it is not a
-  pricing engine.
+  NMRF stress artifacts remains upstream. This package records method evidence,
+  specifies valuation-run requirements, validates artifacts, extracts SES, and
+  aggregates capital, but it is not a pricing engine.
 - RFET qualitative checks are external inputs. Vendor/source lineage,
   data-pooling eligibility, third-party reliance, and new-issuance treatment are
   not implemented.
-- Stress-period selection, reduced risk-factor set selection, reduced-set data
-  quality evidence, and supervisory approval workflows are not implemented. The
-  60-day 75 percent variation-explained diagnostic is implemented as a
-  calculation helper only.
+- Formal stress-period selection/calibration, reduced risk-factor set
+  selection, reduced-set data quality evidence, and supervisory approval
+  workflows are not implemented. NMRF valuation specs can carry supplied stress
+  period ids and market-state references; they do not approve or calibrate
+  those windows.
 - PLA and backtesting now expose optional dated diagnostics/traces, but they do
   not implement full business-calendar governance beyond an official-holiday
   mask supplied by the caller.

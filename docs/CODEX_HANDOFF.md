@@ -9,7 +9,7 @@ Build a first Python prototype of an NPR 2.0-style FRTB IMA capital calculator f
 ```text
 Existing risk engine
     -> RFET classifications known before valuation
-    -> NMRF method-selection instructions
+    -> NMRF method-selection evidence, instructions, and valuation specs
     -> 10-day scenario P&L vectors and NMRF stress artifacts
     -> ex-post capital aggregation layer
     -> desk-level dashboard
@@ -22,7 +22,7 @@ Deliver a working demo that computes:
 - risk-factor modellability classification,
 - liquidity horizon adjusted expected shortfall,
 - IMCC,
-- NMRF method selection and stress-artifact validation,
+- NMRF method evidence, valuation specs, and stress-artifact validation,
 - SES,
 - models-based capital,
 - PLA KS statistic,
@@ -36,7 +36,7 @@ Deliver a working demo that computes:
 4. Add liquidity horizon adjustment from nested vectors.
 5. Add RFET / modellability classifier.
 6. Add Type A / Type B NMRF SES prototype.
-7. Add NMRF method selection, valuation instructions, and stress artifacts.
+7. Add NMRF method selection, valuation instructions/specs, and stress artifacts.
 8. Add IMCC aggregation.
 9. Add PLA KS and backtesting.
 10. Add capital assembly.

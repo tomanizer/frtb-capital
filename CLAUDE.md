@@ -60,7 +60,8 @@ Adjacent audit paths now include:
 - `reduced_set.py` for the 60-business-day / 75% variation-explained diagnostic used by the indirect IMCC stress approach.
 - `pla.py` policy-window diagnostics for HPL/RTPL windows.
 - `backtesting.py` optional per-observation exception traces with official-holiday exclusions.
-- `nmrf_method_selection.py` for the post-RFET NMRF method selector and valuation instructions.
+- `nmrf_method_selection.py` for post-RFET NMRF method evidence, direct robustness diagnostics, selector decisions, and valuation instructions.
+- `nmrf_stress_spec.py` for upstream direct, stepwise, full-revaluation, and max-loss valuation-run specifications.
 - `nmrf.py` for NMRF stress artifacts, Type A/B routing, vectorized SES extraction, and aggregation. Institutional direct, stepwise, and full-revaluation pricing remains upstream; missing Type A/B artifacts fail hard.
 
 Core scenario-level calculations must be numpy-native. Small loops over fixed regulatory axes (risk classes, LH buckets, policy levels) are acceptable. Per-observation Python loops are acceptable only in explicit audit-trace builders after vectorized exception masks or statistics have already been computed.
@@ -96,7 +97,7 @@ Business logic lives in pure functions. Classes are for data containers (frozen 
 All public functions must fail fast with `ValueError` or `KeyError` on: empty vectors, non-finite values, mismatched lengths, missing LH10, negative capital where disallowed. Never let invalid inputs propagate silently into a result.
 
 ### Decomposed results
-Canonical audit paths return frozen dataclasses with full breakdowns: `LHAESResult`, `IMCCResult`, `StressScalingResult`, `SESAggregationResult`, `NMRFMethodDecision`, `NMRFValuationInstruction`, `NMRFStressArtifact`, `NMRFStressScenarioResult`, `NMRFCapitalResult`, `ReducedSetCoverageResult`, `CapitalComponents`, `PLAAddonResult`, `PlaPolicyAssessmentResult`, and `TradingDeskBacktestTraceResult`. Scalar wrappers remain intentionally supported for backward compatibility and simple scalar checks, but new material workflows should expose a decomposed result object.
+Canonical audit paths return frozen dataclasses with full breakdowns: `LHAESResult`, `IMCCResult`, `StressScalingResult`, `SESAggregationResult`, `NMRFMethodDiagnostic`, `NMRFMethodEvidence`, `NMRFMethodDecision`, `NMRFValuationInstruction`, `NMRFValuationSpec`, `NMRFStressArtifact`, `NMRFStressScenarioResult`, `NMRFCapitalResult`, `ReducedSetCoverageResult`, `CapitalComponents`, `PLAAddonResult`, `PlaPolicyAssessmentResult`, and `TradingDeskBacktestTraceResult`. Scalar wrappers remain intentionally supported for backward compatibility and simple scalar checks, but new material workflows should expose a decomposed result object.
 
 ### Regulatory traceability — mandatory
 Every calculation module must include a `Regulatory traceability` block in its docstring naming the Basel anchor, U.S. NPR 2.0 anchor, and EU anchor. Update `docs/REGULATORY_TRACEABILITY.md` (Code-to-regulation and Regulation-to-code tables) for any module addition or change. Update `docs/requirements/NPR_2_0_MARKET_RISK.yml` when a requirement status changes.
@@ -122,9 +123,9 @@ Consult `docs/requirements/NPR_2_0_MARKET_RISK.yml` for the machine-readable sta
 Key gaps as of May 2026:
 - DRC, standardized approach, fallback capital, and firm/legal-entity consolidation.
 - Trading-desk eligibility lifecycle and supervisory approval workflows.
-- Stress-period selection and reduced risk-factor set selection workflow.
+- Formal stress-period selection/calibration and reduced risk-factor set selection workflow. `nmrf_stress_spec.py` can carry supplied stress-period ids and valuation requirements, but it does not select or approve those windows.
 - Reduced-set data-quality evidence beyond the 60-day / 75% variation-explained diagnostic.
-- Institutional pricing/revaluation for NMRF direct, stepwise, and full-revaluation artifacts. The code selects methods, emits valuation instructions, validates returned artifacts, extracts SES, and aggregates capital, but does not embed pricing models.
+- Institutional pricing/revaluation for NMRF direct, stepwise, and full-revaluation artifacts. The code records method evidence, selects methods, emits valuation specs, validates returned artifacts, extracts SES, and aggregates capital, but does not embed pricing models.
 - EU/PRA Spearman PLA.
 - Full business-calendar governance beyond optional PLA/backtesting dates and official-holiday masks.
 - Complete audit report artifact / `make audit` target.

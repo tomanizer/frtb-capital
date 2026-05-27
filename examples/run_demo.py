@@ -28,8 +28,19 @@ from frtb_ima.nmrf import (
     calculate_nmrf_capital_for_policy,
 )
 from frtb_ima.nmrf_method_selection import (
-    NMRFMethodSelectionInput,
+    NMRFMethodEvidence,
+    assess_direct_loss_robustness,
     select_nmrf_methods,
+    selection_input_from_method_evidence,
+)
+from frtb_ima.nmrf_stress_spec import (
+    NMRFDirectShockSpec,
+    NMRFFullRevaluationSpec,
+    NMRFShockDirection,
+    NMRFStressPeriodSpec,
+    build_nmrf_valuation_specs,
+    required_liquidity_horizons_from_valuation_specs,
+    required_methods_from_valuation_specs,
 )
 from frtb_ima.pla import pla_assessment_for_policy
 from frtb_ima.regimes import CalculationContext, RegulatoryRegime, get_policy
@@ -106,44 +117,99 @@ def main() -> None:
     # ------------------------------------------------------------------
     section("NMRF method selection")
 
-    selection_inputs: list[NMRFMethodSelectionInput] = []
+    method_evidence: list[NMRFMethodEvidence] = []
     risk_factor_by_name = {rf.name: rf for rf in DEMO_RISK_FACTORS}
     for name in [*type_a_nmrfs, *type_b_nmrfs]:
-        rf = risk_factor_by_name[name]
         if name == "HY_CREDIT_SPD":
-            selection_inputs.append(
-                NMRFMethodSelectionInput(
+            robustness = assess_direct_loss_robustness(
+                direct_losses=[100.0, 205.0, 310.0],
+                benchmark_losses=[100.0, 200.0, 300.0],
+                max_relative_error_threshold=0.10,
+                source="synthetic checkpoint revaluation",
+            )
+            method_evidence.append(
+                NMRFMethodEvidence(
                     risk_factor_name=name,
-                    modellability_status=classifications[name],
-                    liquidity_horizon=rf.liquidity_horizon,
                     direct_method_available=True,
                     direct_shock_well_defined=True,
-                    direct_robust=True,
-                    source="synthetic governance rule",
+                    direct_robustness=robustness,
+                    source="synthetic governance evidence",
                 )
             )
         else:
-            selection_inputs.append(
-                NMRFMethodSelectionInput(
+            method_evidence.append(
+                NMRFMethodEvidence(
                     risk_factor_name=name,
-                    modellability_status=classifications[name],
-                    liquidity_horizon=rf.liquidity_horizon,
                     nonlinear=True,
                     full_revaluation_available=True,
-                    source="synthetic governance rule",
+                    source="synthetic governance evidence",
                 )
             )
 
+    selection_inputs = [
+        selection_input_from_method_evidence(
+            evidence,
+            classifications[evidence.risk_factor_name],
+            risk_factor_by_name[evidence.risk_factor_name].liquidity_horizon,
+        )
+        for evidence in method_evidence
+    ]
     method_decisions = select_nmrf_methods(selection_inputs, context.policy)
     valuation_instructions = tuple(
         decision.to_valuation_instruction() for decision in method_decisions
     )
+
+    stress_periods = {
+        rf.risk_class: NMRFStressPeriodSpec(
+            stress_period_id=f"{rf.risk_class.value.lower()}-synthetic-stress",
+            calibration_source="synthetic stress-window selector",
+            notes="Demo stress period; not a regulatory calibration.",
+        )
+        for rf in DEMO_RISK_FACTORS
+    }
+    valuation_specs = build_nmrf_valuation_specs(
+        valuation_instructions,
+        {rf.name: rf.risk_class for rf in DEMO_RISK_FACTORS},
+        stress_periods,
+        context.policy,
+        direct_shocks={
+            "HY_CREDIT_SPD": NMRFDirectShockSpec(
+                shock_size=350.0,
+                shock_unit="spread_bps",
+                direction=NMRFShockDirection.UP,
+                calibration_source="synthetic stress-window selector",
+            ),
+        },
+        full_revaluations={
+            "EXOTIC_RF": NMRFFullRevaluationSpec(
+                scenario_set_id="synthetic-full-revaluation",
+                market_state_ids=tuple(f"stress-ms-{i:03d}" for i in range(1, 501)),
+                calibration_source="synthetic market-state replay",
+            ),
+        },
+    )
+
     for instruction in valuation_instructions:
         print(
             f"  {instruction.risk_factor_name:<20} "
             f"{instruction.method.value:<18} "
             f"required LH={instruction.required_liquidity_horizon.value:>3}d  "
             f"{instruction.reason.value}"
+        )
+    print("\n  Valuation specs:")
+    for spec in valuation_specs:
+        payload = (
+            f"direct shock {spec.direct_shock.shock_size:g} {spec.direct_shock.shock_unit}"
+            if spec.direct_shock is not None
+            else f"market states {len(spec.full_revaluation.market_state_ids)}"
+            if spec.full_revaluation is not None
+            else spec.method.value
+        )
+        print(
+            f"    {spec.risk_factor_name:<18} "
+            f"{spec.risk_class.value:<8} "
+            f"{spec.stress_period.stress_period_id:<26} "
+            f"{payload}"
         )
 
     # ------------------------------------------------------------------
@@ -208,14 +274,10 @@ def main() -> None:
         classifications,
         artifacts,
         context.policy,
-        required_methods={
-            instruction.risk_factor_name: instruction.method
-            for instruction in valuation_instructions
-        },
-        required_liquidity_horizons={
-            instruction.risk_factor_name: instruction.required_liquidity_horizon
-            for instruction in valuation_instructions
-        },
+        required_methods=required_methods_from_valuation_specs(valuation_specs),
+        required_liquidity_horizons=required_liquidity_horizons_from_valuation_specs(
+            valuation_specs,
+        ),
     )
     for result in [*nmrf_capital.type_a_results, *nmrf_capital.type_b_results]:
         status = classifications[result.risk_factor_name]

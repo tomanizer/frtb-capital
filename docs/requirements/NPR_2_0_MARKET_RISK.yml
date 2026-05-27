@@ -162,10 +162,12 @@ requirements:
     modules:
       - src/frtb_ima/nmrf.py
       - src/frtb_ima/nmrf_method_selection.py
+      - src/frtb_ima/nmrf_stress_spec.py
     tests:
       - tests/test_nmrf.py
       - tests/test_nmrf_method_selection.py
-    notes: "NMRF method selection, valuation instructions, vectorized stress-artifact SES extraction, and Type A/B capital routing are implemented. The capital layer consumes upstream direct/stepwise/full-revaluation artifacts but cannot generate them; generation raises UnsupportedRegulatoryFeatureError. Prototype linear sensitivity helper remains approximation-only."
+      - tests/test_nmrf_stress_spec.py
+    notes: "NMRF method evidence, valuation instructions, upstream valuation-run specs, vectorized stress-artifact SES extraction, and Type A/B capital routing are implemented. The capital layer consumes upstream direct/stepwise/full-revaluation artifacts but cannot generate or price them; generation raises UnsupportedRegulatoryFeatureError. Prototype linear sensitivity helper remains approximation-only."
 
   - id: NPR-MR-PLA-001
     title: "NPR KS-based PLA assessment"

@@ -14,9 +14,13 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+
+import numpy as np
+import numpy.typing as npt
 
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus
 from frtb_ima.nmrf import NMRFStressMethod, nmrf_effective_liquidity_horizon
@@ -25,6 +29,107 @@ from frtb_ima.regimes import RegulatoryPolicy
 
 class NMRFMethodSelectionError(ValueError):
     """Raised when no acceptable NMRF stress method can be selected."""
+
+
+class NMRFDiagnosticOutcome(StrEnum):
+    """Outcome of an auditable NMRF method-selection diagnostic."""
+
+    PASS = "PASS"
+    FAIL = "FAIL"
+    NOT_RUN = "NOT_RUN"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
+
+
+@dataclass(frozen=True)
+class NMRFMethodDiagnostic:
+    """Single method-selection diagnostic used as evidence for governance."""
+
+    name: str
+    outcome: NMRFDiagnosticOutcome
+    value: float | None = None
+    threshold: float | None = None
+    source: str = ""
+    notes: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            raise ValueError("diagnostic name must be non-empty")
+        if not isinstance(self.outcome, NMRFDiagnosticOutcome):
+            raise TypeError("outcome must be an NMRFDiagnosticOutcome")
+        if self.value is not None and not math.isfinite(self.value):
+            raise ValueError("diagnostic value must be finite when provided")
+        if self.threshold is not None and not math.isfinite(self.threshold):
+            raise ValueError("diagnostic threshold must be finite when provided")
+
+    @property
+    def passed(self) -> bool:
+        """Return True when the diagnostic explicitly passed."""
+        return self.outcome == NMRFDiagnosticOutcome.PASS
+
+
+@dataclass(frozen=True)
+class NMRFMethodEvidence:
+    """
+    Auditable evidence used to derive NMRF method-selection booleans.
+
+    The selector remains deterministic and simple, while this evidence object
+    records why a direct, stepwise, or full-revaluation path is considered
+    available. Direct shocks are treated as robust only when the vectorized
+    robustness diagnostic passes and no pricing/proxy flags disqualify it.
+    """
+
+    risk_factor_name: str
+    nonlinear: bool = False
+    full_revaluation_available: bool = False
+    direct_method_available: bool = False
+    direct_shock_well_defined: bool = False
+    direct_robustness: NMRFMethodDiagnostic | None = None
+    stepwise_available: bool = False
+    stepwise_required: bool = False
+    max_loss_fallback_allowed: bool = False
+    pricing_attempt_count: int = 0
+    pricing_failure_count: int = 0
+    proxy_or_basis_risk: bool = False
+    diagnostics: tuple[NMRFMethodDiagnostic, ...] = ()
+    source: str = ""
+    notes: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.risk_factor_name:
+            raise ValueError("risk_factor_name must be non-empty")
+        if self.direct_robustness is not None and not isinstance(
+            self.direct_robustness,
+            NMRFMethodDiagnostic,
+        ):
+            raise TypeError("direct_robustness must be an NMRFMethodDiagnostic")
+        if self.pricing_attempt_count < 0 or self.pricing_failure_count < 0:
+            raise ValueError("pricing counts must be non-negative")
+        if self.pricing_failure_count > self.pricing_attempt_count:
+            raise ValueError("pricing_failure_count cannot exceed pricing_attempt_count")
+
+        diagnostics = tuple(self.diagnostics)
+        if any(not isinstance(diagnostic, NMRFMethodDiagnostic) for diagnostic in diagnostics):
+            raise TypeError("diagnostics must contain NMRFMethodDiagnostic values")
+        object.__setattr__(self, "diagnostics", diagnostics)
+
+    @property
+    def direct_robust(self) -> bool:
+        """Return True when direct valuation evidence supports using direct shocks."""
+        return (
+            self.direct_method_available
+            and self.direct_shock_well_defined
+            and self.direct_robustness is not None
+            and self.direct_robustness.passed
+            and self.pricing_failure_count == 0
+            and not self.proxy_or_basis_risk
+        )
+
+    @property
+    def all_diagnostics(self) -> tuple[NMRFMethodDiagnostic, ...]:
+        """Return direct robustness plus any supplemental diagnostics."""
+        if self.direct_robustness is None:
+            return self.diagnostics
+        return (self.direct_robustness, *self.diagnostics)
 
 
 class NMRFMethodReason(StrEnum):
@@ -81,6 +186,100 @@ class NMRFMethodSelectionInput:
             ModellabilityStatus.TYPE_A_NMRF,
             ModellabilityStatus.TYPE_B_NMRF,
         }
+
+
+def _as_finite_1d_array(
+    values: Sequence[float] | npt.NDArray[np.float64],
+    name: str,
+) -> npt.NDArray[np.float64]:
+    arr = np.asarray(values, dtype=float)
+    if arr.ndim != 1:
+        raise ValueError(f"{name} must be one-dimensional")
+    if arr.size == 0:
+        raise ValueError(f"{name} must be non-empty")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values")
+    return arr.astype(np.float64, copy=False)
+
+
+def assess_direct_loss_robustness(
+    direct_losses: Sequence[float] | npt.NDArray[np.float64],
+    benchmark_losses: Sequence[float] | npt.NDArray[np.float64],
+    *,
+    max_relative_error_threshold: float = 0.10,
+    absolute_tolerance: float = 1e-12,
+    source: str = "",
+    notes: str = "",
+) -> NMRFMethodDiagnostic:
+    """
+    Compare direct-shock losses with benchmark revaluation losses.
+
+    The calculation is vectorized across scenario/checkpoint losses. A direct
+    method passes only when the worst relative deviation from the benchmark is
+    within the supplied threshold. ``absolute_tolerance`` prevents zero-loss
+    checkpoints from creating unstable relative-error denominators.
+    """
+    if max_relative_error_threshold < 0.0 or not math.isfinite(
+        max_relative_error_threshold
+    ):
+        raise ValueError("max_relative_error_threshold must be finite and non-negative")
+    if absolute_tolerance <= 0.0 or not math.isfinite(absolute_tolerance):
+        raise ValueError("absolute_tolerance must be finite and positive")
+
+    direct = _as_finite_1d_array(direct_losses, "direct_losses")
+    benchmark = _as_finite_1d_array(benchmark_losses, "benchmark_losses")
+    if direct.shape != benchmark.shape:
+        raise ValueError("direct_losses and benchmark_losses must have the same shape")
+
+    abs_errors = np.abs(direct - benchmark)
+    denominators = np.maximum(np.abs(benchmark), absolute_tolerance)
+    relative_errors = abs_errors / denominators
+    max_relative_error = float(np.max(relative_errors))
+    max_abs_error = float(np.max(abs_errors))
+    outcome = (
+        NMRFDiagnosticOutcome.PASS
+        if max_relative_error <= max_relative_error_threshold
+        else NMRFDiagnosticOutcome.FAIL
+    )
+    audit_notes = (
+        f"max_abs_error={max_abs_error:.12g}; observations={int(direct.size)}"
+    )
+    if notes:
+        audit_notes = f"{notes}; {audit_notes}"
+
+    return NMRFMethodDiagnostic(
+        name="direct_loss_robustness",
+        outcome=outcome,
+        value=max_relative_error,
+        threshold=max_relative_error_threshold,
+        source=source,
+        notes=audit_notes,
+    )
+
+
+def selection_input_from_method_evidence(
+    evidence: NMRFMethodEvidence,
+    modellability_status: ModellabilityStatus,
+    liquidity_horizon: LiquidityHorizon,
+) -> NMRFMethodSelectionInput:
+    """Convert auditable method evidence into the selector's stable input API."""
+    if not isinstance(evidence, NMRFMethodEvidence):
+        raise TypeError("evidence must be an NMRFMethodEvidence")
+    return NMRFMethodSelectionInput(
+        risk_factor_name=evidence.risk_factor_name,
+        modellability_status=modellability_status,
+        liquidity_horizon=liquidity_horizon,
+        nonlinear=evidence.nonlinear,
+        full_revaluation_available=evidence.full_revaluation_available,
+        direct_method_available=evidence.direct_method_available,
+        direct_shock_well_defined=evidence.direct_shock_well_defined,
+        direct_robust=evidence.direct_robust,
+        stepwise_available=evidence.stepwise_available,
+        stepwise_required=evidence.stepwise_required,
+        max_loss_fallback_allowed=evidence.max_loss_fallback_allowed,
+        source=evidence.source,
+        notes=evidence.notes,
+    )
 
 
 @dataclass(frozen=True)
@@ -273,6 +472,23 @@ def select_nmrf_method(
     return _fallback_or_error(
         selection_input,
         NMRFMethodReason.NO_ACCEPTABLE_METHOD,
+    )
+
+
+def select_nmrf_method_from_evidence(
+    evidence: NMRFMethodEvidence,
+    modellability_status: ModellabilityStatus,
+    liquidity_horizon: LiquidityHorizon,
+    policy: RegulatoryPolicy,
+) -> NMRFMethodDecision:
+    """Select one NMRF stress method from auditable method evidence."""
+    return select_nmrf_method(
+        selection_input_from_method_evidence(
+            evidence,
+            modellability_status,
+            liquidity_horizon,
+        ),
+        policy,
     )
 
 

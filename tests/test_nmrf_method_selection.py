@@ -5,11 +5,17 @@ import pytest
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus
 from frtb_ima.nmrf import NMRFStressMethod
 from frtb_ima.nmrf_method_selection import (
+    NMRFDiagnosticOutcome,
+    NMRFMethodDiagnostic,
+    NMRFMethodEvidence,
     NMRFMethodReason,
     NMRFMethodSelectionError,
     NMRFMethodSelectionInput,
+    assess_direct_loss_robustness,
     select_nmrf_method,
+    select_nmrf_method_from_evidence,
     select_nmrf_methods,
+    selection_input_from_method_evidence,
 )
 from frtb_ima.regimes import RegulatoryRegime, UnsupportedRegulatoryFeature, get_policy
 
@@ -122,4 +128,110 @@ def test_selector_does_not_use_fed_type_a_type_b_taxonomy_for_ecb_profile() -> N
         select_nmrf_method(
             _base_input(direct_method_available=True, direct_shock_well_defined=True),
             get_policy(RegulatoryRegime.ECB_CRR3),
+        )
+
+
+def test_direct_robustness_assessment_passes_within_threshold() -> None:
+    diagnostic = assess_direct_loss_robustness(
+        direct_losses=[100.0, 210.0, -50.0],
+        benchmark_losses=[100.0, 200.0, -50.0],
+        max_relative_error_threshold=0.10,
+        source="synthetic checkpoint revaluation",
+    )
+
+    assert diagnostic.outcome == NMRFDiagnosticOutcome.PASS
+    assert diagnostic.value == pytest.approx(0.05)
+    assert diagnostic.threshold == pytest.approx(0.10)
+    assert "observations=3" in diagnostic.notes
+
+
+def test_direct_robustness_assessment_fails_large_deviation() -> None:
+    diagnostic = assess_direct_loss_robustness(
+        direct_losses=[100.0, 260.0],
+        benchmark_losses=[100.0, 200.0],
+        max_relative_error_threshold=0.10,
+    )
+
+    assert diagnostic.outcome == NMRFDiagnosticOutcome.FAIL
+    assert diagnostic.value == pytest.approx(0.30)
+
+
+def test_direct_robustness_assessment_validates_vector_shapes() -> None:
+    with pytest.raises(ValueError, match="same shape"):
+        assess_direct_loss_robustness([1.0, 2.0], [1.0])
+
+
+def test_method_evidence_selects_direct_when_diagnostic_passes() -> None:
+    evidence = NMRFMethodEvidence(
+        risk_factor_name="HY_CREDIT_SPD",
+        direct_method_available=True,
+        direct_shock_well_defined=True,
+        direct_robustness=NMRFMethodDiagnostic(
+            name="direct_loss_robustness",
+            outcome=NMRFDiagnosticOutcome.PASS,
+            value=0.03,
+            threshold=0.10,
+        ),
+        source="synthetic governance evidence",
+    )
+
+    decision = select_nmrf_method_from_evidence(
+        evidence,
+        ModellabilityStatus.TYPE_A_NMRF,
+        LiquidityHorizon.LH40,
+        get_policy(),
+    )
+
+    assert decision.method == NMRFStressMethod.DIRECT
+    assert decision.reason == NMRFMethodReason.DIRECT_STABLE_AND_WELL_DEFINED
+
+
+def test_method_evidence_routes_failed_direct_test_to_stepwise() -> None:
+    evidence = NMRFMethodEvidence(
+        risk_factor_name="HY_CREDIT_SPD",
+        direct_method_available=True,
+        direct_shock_well_defined=True,
+        direct_robustness=NMRFMethodDiagnostic(
+            name="direct_loss_robustness",
+            outcome=NMRFDiagnosticOutcome.FAIL,
+            value=0.30,
+            threshold=0.10,
+        ),
+        stepwise_available=True,
+    )
+
+    selection_input = selection_input_from_method_evidence(
+        evidence,
+        ModellabilityStatus.TYPE_A_NMRF,
+        LiquidityHorizon.LH20,
+    )
+    decision = select_nmrf_method(selection_input, get_policy())
+
+    assert selection_input.direct_robust is False
+    assert decision.method == NMRFStressMethod.STEPWISE
+    assert decision.reason == NMRFMethodReason.DIRECT_FAILED_NONLINEARITY_TEST
+
+
+def test_method_evidence_direct_is_not_robust_with_pricing_failures() -> None:
+    evidence = NMRFMethodEvidence(
+        risk_factor_name="HY_CREDIT_SPD",
+        direct_method_available=True,
+        direct_shock_well_defined=True,
+        direct_robustness=NMRFMethodDiagnostic(
+            name="direct_loss_robustness",
+            outcome=NMRFDiagnosticOutcome.PASS,
+        ),
+        pricing_attempt_count=5,
+        pricing_failure_count=1,
+    )
+
+    assert evidence.direct_robust is False
+
+
+def test_method_evidence_rejects_inconsistent_pricing_counts() -> None:
+    with pytest.raises(ValueError, match="cannot exceed"):
+        NMRFMethodEvidence(
+            risk_factor_name="HY_CREDIT_SPD",
+            pricing_attempt_count=1,
+            pricing_failure_count=2,
         )

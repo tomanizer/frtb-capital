@@ -33,7 +33,8 @@ All U.S. NPR 2.0 content is treated as proposed-rule working assumptions. The pr
 11. Type B NMRFs are included in SES only, with the proposed 0.36 correlation
     parameter in the Type B aggregation term.
 12. RFET classifications are available before valuation. NMRF method selection
-    emits valuation instructions for Type A and Type B NMRFs, and the capital
+    can consume auditable method evidence, emits valuation instructions and
+    upstream valuation-run specs for Type A and Type B NMRFs, and the capital
     layer consumes the resulting stress artifacts.
 13. Missing Type A or Type B NMRF stress artifacts are hard validation errors;
     the capital layer does not silently substitute linear approximations.
@@ -89,17 +90,20 @@ The May 2026 accuracy pass corrected four prior simplifications:
    histories.
 3. The PLA policy wrapper now enforces the 250-business-day policy window before
    applying the KS threshold classification.
-4. NMRF treatment now has an explicit post-RFET method-selection step, valuation
-   instructions, vectorized stress-artifact SES extraction, and fail-hard
-   validation for missing Type A/B NMRF artifacts.
+4. NMRF treatment now has an explicit post-RFET method-selection step, method
+   evidence diagnostics, upstream valuation-run specs, vectorized
+   stress-artifact SES extraction, and fail-hard validation for missing Type A/B
+   NMRF artifacts.
 
 Remaining deliberate boundaries:
 
 - Direct, stepwise, and full-revaluation NMRF pricing/revaluation remains an
-  upstream risk-engine responsibility. The prototype validates and consumes the
-  resulting artifacts but does not embed institutional pricing models.
+  upstream risk-engine responsibility. The prototype specifies required
+  valuation runs, validates and consumes the resulting artifacts, but does not
+  embed institutional pricing models.
 - RFET qualitative criteria remain external inputs. Vendor lineage, data-pooling
   eligibility, supervisory overrides, and new-issuance pro-rating remain out of
   scope.
-- Stress-period selection, reduced-set governance, risk-factor bucketing, and
-  firm-level consolidation are not complete regulatory workflows.
+- Formal stress-period selection/calibration, reduced-set governance,
+  risk-factor bucketing, and firm-level consolidation are not complete
+  regulatory workflows.
