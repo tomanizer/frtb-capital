@@ -18,9 +18,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import numpy as np
+import numpy.typing as npt
 
 
-def expected_shortfall(losses: Sequence[float], alpha: float = 0.975) -> float:
+def expected_shortfall(
+    losses: Sequence[float] | npt.NDArray[np.float64],
+    alpha: float = 0.975,
+) -> float:
     """
     Compute expected shortfall (average of tail losses beyond alpha quantile).
 
@@ -29,7 +33,8 @@ def expected_shortfall(losses: Sequence[float], alpha: float = 0.975) -> float:
         alpha:  Confidence level. Default 0.975 (97.5%) per NPR 2.0.
 
     Returns:
-        ES as a positive scalar. Zero if the tail is empty.
+        ES as the mean of the non-empty worst-loss tail. The result can be
+        negative when all selected tail scenarios are gains.
 
     Raises:
         ValueError: on empty input or invalid alpha.

@@ -19,10 +19,11 @@ Aggregation formulas used here:
     Combined SES:
         SES = sqrt(SES_A_term + SES_B_term)
 
-The prototype can generate only a labelled linear / sensitivity-based SES
-approximation. Direct, stepwise, and full-revaluation SES values may be
-recorded if supplied by an upstream risk engine, but this package raises
-explicit unsupported-feature errors if asked to generate them.
+The capital layer consumes direct, stepwise, full-revaluation, or max-loss
+fallback stress artifacts produced by an upstream valuation run. It validates
+those artifacts, extracts vectorized SES values, routes Type A / Type B NMRFs,
+and aggregates capital. The labelled linear / sensitivity-based helper remains
+an explicit approximation for tests and demos only.
 
 Regulatory traceability:
     Basel MAR33 NMRF stress-scenario capital; U.S. NPR 2.0 SES treatment for
@@ -33,13 +34,15 @@ Regulatory traceability:
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus
+from frtb_ima.expected_shortfall import expected_shortfall
 from frtb_ima.regimes import (
     RegulatoryPolicy,
     RegulatoryRegime,
@@ -55,13 +58,17 @@ class NMRFStressMethod(StrEnum):
     DIRECT = "DIRECT"
     STEPWISE = "STEPWISE"
     FULL_REVALUATION = "FULL_REVALUATION"
+    MAX_LOSS_FALLBACK = "MAX_LOSS_FALLBACK"
 
 
 _UNSUPPORTED_GENERATION_FEATURES: dict[NMRFStressMethod, str] = {
     NMRFStressMethod.DIRECT: "nmrf_direct_stress_scenario_generation",
     NMRFStressMethod.STEPWISE: "nmrf_stepwise_stress_scenario_generation",
     NMRFStressMethod.FULL_REVALUATION: "nmrf_full_revaluation_stress_scenario_generation",
+    NMRFStressMethod.MAX_LOSS_FALLBACK: "nmrf_max_loss_fallback_generation",
 }
+
+_NMRF_MINIMUM_LIQUIDITY_HORIZON = LiquidityHorizon.LH20
 
 
 @dataclass(frozen=True)
@@ -71,8 +78,8 @@ class NMRFStressScenarioResult:
 
     ``generated_by_prototype`` is intentionally explicit. The prototype can
     produce linear-sensitivity toy SES values, but direct, stepwise, and
-    full-revaluation SES values must be supplied by an upstream risk engine or
-    remain unsupported for generation in this package.
+    full-revaluation losses must come from upstream stress artifacts rather than
+    embedded pricing logic in this package.
     """
 
     risk_factor_name: str
@@ -103,6 +110,68 @@ class NMRFStressScenarioResult:
 
 
 @dataclass(frozen=True)
+class NMRFStressArtifact:
+    """
+    Post-valuation NMRF stress output consumed by the capital layer.
+
+    The capital layer does not price trades. It validates and consumes loss
+    vectors produced by an upstream valuation run under the selected NMRF stress
+    method. Values use the package loss convention: positive means loss,
+    negative means gain.
+    """
+
+    risk_factor_name: str
+    method: NMRFStressMethod
+    losses: npt.NDArray[np.float64] | Sequence[float]
+    liquidity_horizon: LiquidityHorizon
+    stress_period: str
+    source: str
+    scenario_ids: tuple[str, ...] = ()
+    generated_by_prototype: bool = False
+    notes: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.risk_factor_name:
+            raise ValueError("risk_factor_name must be non-empty")
+        if not isinstance(self.method, NMRFStressMethod):
+            raise TypeError("method must be an NMRFStressMethod")
+        if not isinstance(self.liquidity_horizon, LiquidityHorizon):
+            raise TypeError("liquidity_horizon must be a LiquidityHorizon")
+        if self.liquidity_horizon.value < _NMRF_MINIMUM_LIQUIDITY_HORIZON.value:
+            raise ValueError("NMRF liquidity_horizon must be at least 20 business days")
+        if not self.stress_period:
+            raise ValueError("stress_period must be non-empty")
+        if not self.source:
+            raise ValueError("source must be non-empty")
+
+        losses = _as_loss_array(self.losses, "losses")
+        scenario_ids = tuple(self.scenario_ids)
+        if scenario_ids:
+            if len(scenario_ids) != losses.size:
+                raise ValueError("scenario_ids length must match losses length")
+            if any(not scenario_id for scenario_id in scenario_ids):
+                raise ValueError("scenario_ids cannot contain empty values")
+            if len(scenario_ids) != len(set(scenario_ids)):
+                raise ValueError("scenario_ids contains duplicates")
+
+        object.__setattr__(self, "losses", losses)
+        object.__setattr__(self, "scenario_ids", scenario_ids)
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable audit summary without expanding the loss vector."""
+        return {
+            "risk_factor_name": self.risk_factor_name,
+            "method": self.method.value,
+            "loss_count": int(np.asarray(self.losses).size),
+            "liquidity_horizon": self.liquidity_horizon.value,
+            "stress_period": self.stress_period,
+            "source": self.source,
+            "generated_by_prototype": self.generated_by_prototype,
+            "notes": self.notes,
+        }
+
+
+@dataclass(frozen=True)
 class SESAggregationResult:
     """Audit-friendly decomposition of NMRF SES aggregation."""
 
@@ -116,6 +185,48 @@ class SESAggregationResult:
     total_ses: float
 
 
+@dataclass(frozen=True)
+class NMRFCapitalRouting:
+    """Risk-factor routing implied by Fed NPR 2.0 Type A / Type B treatment."""
+
+    modellable_risk_factors: tuple[str, ...]
+    type_a_nmrf_risk_factors: tuple[str, ...]
+    type_b_nmrf_risk_factors: tuple[str, ...]
+    imcc_risk_factors: tuple[str, ...]
+    ses_risk_factors: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class NMRFCapitalResult:
+    """NMRF SES result with routing and aggregation audit detail."""
+
+    routing: NMRFCapitalRouting
+    type_a_results: tuple[NMRFStressScenarioResult, ...]
+    type_b_results: tuple[NMRFStressScenarioResult, ...]
+    aggregation: SESAggregationResult
+
+    @property
+    def total_ses(self) -> float:
+        """Total SES scalar used by the models-based capital formula."""
+        return self.aggregation.total_ses
+
+
+def _as_loss_array(
+    values: Sequence[float] | npt.NDArray[np.float64],
+    name: str,
+) -> npt.NDArray[np.float64]:
+    arr = np.asarray(values, dtype=float)
+    if arr.ndim != 1:
+        raise ValueError(f"{name} must be one-dimensional")
+    if arr.size == 0:
+        raise ValueError(f"{name} must be non-empty")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values")
+    result = arr.astype(np.float64, copy=True)
+    result.flags.writeable = False
+    return result
+
+
 def _as_abs_ses_array(
     values: Sequence[float] | npt.NDArray[np.float64],
     name: str,
@@ -126,6 +237,17 @@ def _as_abs_ses_array(
     if not np.all(np.isfinite(arr)):
         raise ValueError(f"{name} must contain only finite values")
     return np.abs(arr.astype(np.float64, copy=False))
+
+
+def nmrf_effective_liquidity_horizon(
+    risk_factor_liquidity_horizon: LiquidityHorizon,
+) -> LiquidityHorizon:
+    """Return the NMRF stress horizon after applying the 20-day floor."""
+    if not isinstance(risk_factor_liquidity_horizon, LiquidityHorizon):
+        raise TypeError("risk_factor_liquidity_horizon must be a LiquidityHorizon")
+    if risk_factor_liquidity_horizon.value < _NMRF_MINIMUM_LIQUIDITY_HORIZON.value:
+        return _NMRF_MINIMUM_LIQUIDITY_HORIZON
+    return risk_factor_liquidity_horizon
 
 
 def ses_for_nmrf_linear(sensitivity: float, shock: float) -> float:
@@ -211,6 +333,50 @@ def require_nmrf_stress_generation_supported(
         regime,
         feature_name,
         "NMRF stress-scenario generation",
+    )
+
+
+def calculate_nmrf_ses_from_revaluation(
+    artifact: NMRFStressArtifact,
+    policy: RegulatoryPolicy,
+    *,
+    allow_linear_approximation: bool = False,
+) -> NMRFStressScenarioResult:
+    """
+    Extract one NMRF SES value from an upstream revaluation loss vector.
+
+    The vector is expected to be a post-valuation artifact, not a pricing model
+    embedded in the capital layer. ES can be negative if every scenario is a
+    gain, so SES is floored at zero. ``MAX_LOSS_FALLBACK`` artifacts use the
+    maximum supplied loss instead of a tail average.
+    """
+    policy.require_supported("type_a_type_b_nmrf_taxonomy")
+    if (
+        artifact.method == NMRFStressMethod.LINEAR_SENSITIVITY
+        and not allow_linear_approximation
+    ):
+        raise ValueError(
+            "LINEAR_SENSITIVITY artifacts are approximation-only and require "
+            "allow_linear_approximation=True"
+        )
+
+    if artifact.method == NMRFStressMethod.MAX_LOSS_FALLBACK:
+        ses = max(0.0, float(np.max(artifact.losses)))
+    else:
+        ses = max(
+            0.0,
+            expected_shortfall(
+                artifact.losses,
+                alpha=policy.es_confidence_level,
+            ),
+        )
+    return NMRFStressScenarioResult(
+        risk_factor_name=artifact.risk_factor_name,
+        method=artifact.method,
+        ses=ses,
+        generated_by_prototype=artifact.generated_by_prototype,
+        source=artifact.source,
+        notes=artifact.notes,
     )
 
 
@@ -303,6 +469,28 @@ def aggregate_ses_breakdown(
     )
 
 
+def aggregate_ses_breakdown_for_policy(
+    type_a_values: Sequence[float] | npt.NDArray[np.float64],
+    type_b_values: Sequence[float] | npt.NDArray[np.float64],
+    policy: RegulatoryPolicy,
+) -> SESAggregationResult:
+    """Compute decomposed SES using policy parameters and taxonomy support gates."""
+    policy.require_supported("type_a_type_b_nmrf_taxonomy")
+    if (
+        policy.type_a_ses_aggregation_mode
+        != TypeASESAggregationMode.ZERO_CORRELATION_ROOT_SUM_SQUARES
+    ):
+        raise ValueError(
+            "NPR 2.0 policy must use zero-correlation root-sum-square "
+            "aggregation for Type A SES"
+        )
+    return aggregate_ses_breakdown(
+        type_a_values,
+        type_b_values,
+        type_b_rho=policy.type_b_ses_rho,
+    )
+
+
 def aggregate_ses(
     type_a_values: Sequence[float] | npt.NDArray[np.float64],
     type_b_values: Sequence[float] | npt.NDArray[np.float64],
@@ -328,17 +516,182 @@ def aggregate_ses_for_policy(
     Type A / Type B split. EU and UK profiles currently use broader NMRF
     terminology, so this wrapper raises a named unsupported-feature error.
     """
-    policy.require_supported("type_a_type_b_nmrf_taxonomy")
-    if (
-        policy.type_a_ses_aggregation_mode
-        != TypeASESAggregationMode.ZERO_CORRELATION_ROOT_SUM_SQUARES
-    ):
-        raise ValueError(
-            "NPR 2.0 policy must use zero-correlation root-sum-square "
-            "aggregation for Type A SES"
-        )
-    return aggregate_ses(
+    return aggregate_ses_breakdown_for_policy(
         type_a_values,
         type_b_values,
-        type_b_rho=policy.type_b_ses_rho,
+        policy,
+    ).total_ses
+
+
+def _validate_classification_mapping(
+    classifications: Mapping[str, ModellabilityStatus],
+) -> None:
+    if not classifications:
+        raise ValueError("classifications must be non-empty")
+    for risk_factor_name, status in classifications.items():
+        if not risk_factor_name:
+            raise ValueError("classification risk-factor names must be non-empty")
+        if not isinstance(status, ModellabilityStatus):
+            raise TypeError("classification values must be ModellabilityStatus")
+
+
+def route_nmrf_classifications_for_capital(
+    classifications: Mapping[str, ModellabilityStatus],
+    policy: RegulatoryPolicy,
+) -> NMRFCapitalRouting:
+    """
+    Route RFET classifications into IMCC and SES populations.
+
+    Under the Fed NPR 2.0 working assumption, Type A NMRFs remain in IMCC and
+    also require SES. Type B NMRFs require SES only.
+    """
+    policy.require_supported("type_a_type_b_nmrf_taxonomy")
+    _validate_classification_mapping(classifications)
+
+    modellable: list[str] = []
+    type_a: list[str] = []
+    type_b: list[str] = []
+    for risk_factor_name, status in classifications.items():
+        if status == ModellabilityStatus.MODELLABLE:
+            modellable.append(risk_factor_name)
+        elif status == ModellabilityStatus.TYPE_A_NMRF:
+            type_a.append(risk_factor_name)
+        elif status == ModellabilityStatus.TYPE_B_NMRF:
+            type_b.append(risk_factor_name)
+
+    modellable = sorted(modellable)
+    type_a = sorted(type_a)
+    type_b = sorted(type_b)
+
+    return NMRFCapitalRouting(
+        modellable_risk_factors=tuple(modellable),
+        type_a_nmrf_risk_factors=tuple(type_a),
+        type_b_nmrf_risk_factors=tuple(type_b),
+        imcc_risk_factors=tuple(modellable + type_a),
+        ses_risk_factors=tuple(type_a + type_b),
+    )
+
+
+def _artifact_by_risk_factor(
+    artifacts: Sequence[NMRFStressArtifact],
+) -> dict[str, NMRFStressArtifact]:
+    result: dict[str, NMRFStressArtifact] = {}
+    for artifact in artifacts:
+        if artifact.risk_factor_name in result:
+            raise ValueError(
+                f"duplicate NMRF stress artifact for {artifact.risk_factor_name}"
+            )
+        result[artifact.risk_factor_name] = artifact
+    return result
+
+
+def _validate_required_artifacts(
+    routing: NMRFCapitalRouting,
+    classifications: Mapping[str, ModellabilityStatus],
+    artifacts_by_name: Mapping[str, NMRFStressArtifact],
+    required_methods: Mapping[str, NMRFStressMethod] | None,
+    required_liquidity_horizons: Mapping[str, LiquidityHorizon] | None,
+) -> None:
+    classification_names = set(classifications)
+    unknown = [
+        risk_factor_name
+        for risk_factor_name in artifacts_by_name
+        if risk_factor_name not in classification_names
+    ]
+    if unknown:
+        raise ValueError(f"NMRF stress artifacts reference unknown risk factors: {unknown}")
+
+    modellable_artifacts = [
+        risk_factor_name
+        for risk_factor_name in artifacts_by_name
+        if classifications[risk_factor_name] == ModellabilityStatus.MODELLABLE
+    ]
+    if modellable_artifacts:
+        raise ValueError(
+            "NMRF stress artifacts were supplied for modellable risk factors: "
+            f"{modellable_artifacts}"
+        )
+
+    missing = [
+        risk_factor_name
+        for risk_factor_name in routing.ses_risk_factors
+        if risk_factor_name not in artifacts_by_name
+    ]
+    if missing:
+        raise ValueError(f"Missing NMRF stress artifacts for: {missing}")
+
+    if required_methods is not None:
+        for risk_factor_name in routing.ses_risk_factors:
+            expected_method = required_methods.get(risk_factor_name)
+            if expected_method is not None:
+                actual_method = artifacts_by_name[risk_factor_name].method
+                if actual_method != expected_method:
+                    raise ValueError(
+                        f"NMRF artifact method mismatch for {risk_factor_name}: "
+                        f"expected {expected_method.value}, got {actual_method.value}"
+                    )
+
+    if required_liquidity_horizons is not None:
+        for risk_factor_name in routing.ses_risk_factors:
+            required_lh = required_liquidity_horizons.get(risk_factor_name)
+            if required_lh is not None:
+                actual_lh = artifacts_by_name[risk_factor_name].liquidity_horizon
+                if actual_lh.value < required_lh.value:
+                    raise ValueError(
+                        f"NMRF artifact liquidity horizon too short for {risk_factor_name}: "
+                        f"required at least {required_lh.value}, got {actual_lh.value}"
+                    )
+
+
+def calculate_nmrf_capital_for_policy(
+    classifications: Mapping[str, ModellabilityStatus],
+    artifacts: Sequence[NMRFStressArtifact],
+    policy: RegulatoryPolicy,
+    *,
+    required_methods: Mapping[str, NMRFStressMethod] | None = None,
+    required_liquidity_horizons: Mapping[str, LiquidityHorizon] | None = None,
+    allow_linear_approximation: bool = False,
+) -> NMRFCapitalResult:
+    """
+    Validate NMRF stress artifacts, extract SES, and aggregate Type A / Type B.
+
+    Missing Type A or Type B stress artifacts are hard errors. This prevents the
+    capital layer from silently falling back to the prototype linear helper.
+    """
+    routing = route_nmrf_classifications_for_capital(classifications, policy)
+    artifacts_by_name = _artifact_by_risk_factor(tuple(artifacts))
+    _validate_required_artifacts(
+        routing,
+        classifications,
+        artifacts_by_name,
+        required_methods,
+        required_liquidity_horizons,
+    )
+
+    type_a_results = tuple(
+        calculate_nmrf_ses_from_revaluation(
+            artifacts_by_name[risk_factor_name],
+            policy,
+            allow_linear_approximation=allow_linear_approximation,
+        )
+        for risk_factor_name in routing.type_a_nmrf_risk_factors
+    )
+    type_b_results = tuple(
+        calculate_nmrf_ses_from_revaluation(
+            artifacts_by_name[risk_factor_name],
+            policy,
+            allow_linear_approximation=allow_linear_approximation,
+        )
+        for risk_factor_name in routing.type_b_nmrf_risk_factors
+    )
+    aggregation = aggregate_ses_breakdown_for_policy(
+        ses_values_from_stress_results(type_a_results),
+        ses_values_from_stress_results(type_b_results),
+        policy,
+    )
+    return NMRFCapitalResult(
+        routing=routing,
+        type_a_results=type_a_results,
+        type_b_results=type_b_results,
+        aggregation=aggregation,
     )

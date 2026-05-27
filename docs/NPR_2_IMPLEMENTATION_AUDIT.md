@@ -81,15 +81,39 @@ Corrected behavior:
 - The add-on applies only to positive capital benefit:
   `k * max(standardized_green_amber - ima_green_amber, 0)`.
 
+### NMRF method selection and stress artifacts
+
+Prior behavior:
+
+- RFET classified risk factors, but there was no explicit step that told the
+  valuation layer how each Type A or Type B NMRF must be stressed.
+- The capital layer could consume externally supplied SES scalars, but it did
+  not validate required stress artifacts or route Type A/B NMRFs end to end.
+
+Corrected behavior:
+
+- `nmrf_method_selection.py` runs after RFET and emits auditable valuation
+  instructions for `DIRECT`, `STEPWISE`, `FULL_REVALUATION`, or explicitly
+  allowed `MAX_LOSS_FALLBACK` treatment.
+- `NMRFStressArtifact` records post-valuation loss vectors with method,
+  liquidity horizon, stress period, source, and provenance.
+- `calculate_nmrf_ses_from_revaluation` extracts SES from vectorized upstream
+  loss artifacts using the policy ES confidence level and a zero floor.
+- `calculate_nmrf_capital_for_policy` validates that every Type A and Type B
+  NMRF has the required artifact, applies method/LH checks when supplied, keeps
+  Type A factors in IMCC plus SES, and keeps Type B factors in SES only.
+- Missing Type A/B artifacts fail hard; the linear sensitivity helper remains
+  approximation-only and requires explicit opt-in when used as an artifact.
+
 ## Remaining implementation gaps
 
 These are not small code cleanups; they require explicit modeling choices or
 new upstream data contracts:
 
-- Stress scenario generation for each NMRF remains limited to a labelled
-  synthetic sensitivity-shock helper. External direct, stepwise, and
-  full-revaluation SES values can be recorded, but those methods are not
-  generated inside this package.
+- Institutional pricing/revaluation for direct, stepwise, and full-revaluation
+  NMRF stress artifacts remains upstream. This package now selects methods,
+  validates artifacts, extracts SES, and aggregates capital, but it is not a
+  pricing engine.
 - RFET qualitative checks are external inputs. Vendor/source lineage,
   data-pooling eligibility, third-party reliance, and new-issuance treatment are
   not implemented.

@@ -161,9 +161,11 @@ requirements:
     status: partial
     modules:
       - src/frtb_ima/nmrf.py
+      - src/frtb_ima/nmrf_method_selection.py
     tests:
       - tests/test_nmrf.py
-    notes: "Method contracts and external SES result inputs implemented; prototype generation remains limited to a labelled linear-sensitivity approximation and raises explicit unsupported-feature errors for direct, stepwise, and full-revaluation generation."
+      - tests/test_nmrf_method_selection.py
+    notes: "NMRF method selection, valuation instructions, vectorized stress-artifact SES extraction, and Type A/B capital routing are implemented. The capital layer consumes upstream direct/stepwise/full-revaluation artifacts but cannot generate them; generation raises UnsupportedRegulatoryFeatureError. Prototype linear sensitivity helper remains approximation-only."
 
   - id: NPR-MR-PLA-001
     title: "NPR KS-based PLA assessment"

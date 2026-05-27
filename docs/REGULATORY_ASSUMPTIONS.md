@@ -32,12 +32,17 @@ All U.S. NPR 2.0 content is treated as proposed-rule working assumptions. The pr
     treatment in the SES formula.
 11. Type B NMRFs are included in SES only, with the proposed 0.36 correlation
     parameter in the Type B aggregation term.
-12. PLA uses a Kolmogorov-Smirnov statistic comparing HPL and RTPL over a
+12. RFET classifications are available before valuation. NMRF method selection
+    emits valuation instructions for Type A and Type B NMRFs, and the capital
+    layer consumes the resulting stress artifacts.
+13. Missing Type A or Type B NMRF stress artifacts are hard validation errors;
+    the capital layer does not silently substitute linear approximations.
+14. PLA uses a Kolmogorov-Smirnov statistic comparing HPL and RTPL over a
     250-business-day policy window.
-13. Backtesting counts both APL and HPL exceptions at 97.5% and 99.0% VaR
+15. Backtesting counts both APL and HPL exceptions at 97.5% and 99.0% VaR
     confidence levels. The Fed profile applies exception limits of 30 at 97.5%
     and 12 at 99.0%.
-14. Missing APL, HPL, or VaR observations count as backtesting exceptions
+16. Missing APL, HPL, or VaR observations count as backtesting exceptions
     unless marked as official-holiday related.
 
 ## EU CRR / CRR3 comparison assumptions
@@ -73,7 +78,7 @@ The prototype intentionally excludes or simplifies:
 
 ## Recent accuracy audit
 
-The May 2026 accuracy pass corrected three prior simplifications:
+The May 2026 accuracy pass corrected four prior simplifications:
 
 1. Type A SES aggregation is no longer a conservative linear sum. It now follows
    the proposed zero-correlation root-sum-square term and combines with the
@@ -84,11 +89,15 @@ The May 2026 accuracy pass corrected three prior simplifications:
    histories.
 3. The PLA policy wrapper now enforces the 250-business-day policy window before
    applying the KS threshold classification.
+4. NMRF treatment now has an explicit post-RFET method-selection step, valuation
+   instructions, vectorized stress-artifact SES extraction, and fail-hard
+   validation for missing Type A/B NMRF artifacts.
 
 Remaining deliberate boundaries:
 
-- SES still uses synthetic sensitivity/shock inputs; direct, stepwise, and full
-  revaluation stress-scenario methods are not implemented.
+- Direct, stepwise, and full-revaluation NMRF pricing/revaluation remains an
+  upstream risk-engine responsibility. The prototype validates and consumes the
+  resulting artifacts but does not embed institutional pricing models.
 - RFET qualitative criteria remain external inputs. Vendor lineage, data-pooling
   eligibility, supervisory overrides, and new-issuance pro-rating remain out of
   scope.
