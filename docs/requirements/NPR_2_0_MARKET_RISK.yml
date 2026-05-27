@@ -289,4 +289,4 @@ requirements:
     tests:
       - tests/test_audit.py
       - tests/test_logging.py
-    notes: "Dependency-free JSON runtime logging, result-object as_dict methods, DeskAuditRecord, CapitalRunAuditLog, and NDJSON serialization are implemented. Full report generation, make audit, Parquet/DuckDB analytics, and external telemetry are not implemented."
+    notes: "Dependency-free JSON runtime logging, result-object as_dict methods, DeskAuditRecord, CapitalRunAuditLog, and simple NDJSON serialization are implemented. Full report generation, make audit, streaming large-run writers, Parquet/DuckDB analytics, and external telemetry are not implemented."

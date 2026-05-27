@@ -75,7 +75,7 @@ The prototype intentionally excludes or simplifies:
 - vendor real-price evidence workflows,
 - EU RTS-level PLA Spearman correlation,
 - EU RTS-level RFET data-pooling/vendor-reliance rules,
-- production data lineage and audit controls.
+- production-grade data lineage, storage, telemetry, and control framework.
 
 ## Recent accuracy audit
 
@@ -111,5 +111,6 @@ Remaining deliberate boundaries:
   risk-factor bucketing, and firm-level consolidation are not complete
   regulatory workflows.
 - External telemetry backends, OpenTelemetry, Prometheus/Datadog metrics,
-  Parquet/DuckDB audit analytics, and full regulatory report generation remain
-  orchestration-layer future scope.
+  streaming audit writers for very large desk batches, Parquet/DuckDB audit
+  analytics, and full regulatory report generation remain orchestration-layer
+  future scope.

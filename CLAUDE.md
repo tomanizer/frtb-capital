@@ -103,12 +103,13 @@ Canonical audit paths return frozen dataclasses with full breakdowns: `LHAESResu
 
 ### Regulatory traceability — mandatory
 Every calculation module must include a `Regulatory traceability` block in its docstring naming the Basel anchor, U.S. NPR 2.0 anchor, and EU anchor. Update `docs/REGULATORY_TRACEABILITY.md` (Code-to-regulation and Regulation-to-code tables) for any module addition or change. Update `docs/requirements/NPR_2_0_MARKET_RISK.yml` when a requirement status changes.
+Use `docs/regulatory_sources.yml` for official source URLs and section hints. Do not vendor full regulatory text into the core package unless licensing and source authority have been explicitly reviewed.
 
 ### No drift
 Do not add abstractions, base classes, helper layers, or "convenience" wrappers that are not demanded by a specific calculation requirement. Three similar lines is preferable to a premature abstraction. If you see drift toward deep nesting or unnecessary class hierarchies, reject it.
 
 ### Dependencies
-`numpy` is the only runtime dependency. Do not add `pandas`, `scipy`, `polars`, or any other runtime library without an explicit architectural decision. Optional dev integrations (DuckDB, Arrow) are future scope — document them as such, do not import them in the main path.
+`numpy` is the only runtime dependency. Do not add `pandas`, `scipy`, `polars`, or any other runtime library without an explicit architectural decision. Optional orchestration integrations (DuckDB, Arrow, object stores, telemetry clients) are future scope — document them as such, do not import them in the main calculation path.
 
 ---
 
@@ -130,7 +131,7 @@ Key gaps as of May 2026:
 - Institutional pricing/revaluation for NMRF direct, stepwise, and full-revaluation artifacts. The code records method evidence, selects methods, emits valuation specs, validates returned artifacts, extracts SES, and aggregates capital, but does not embed pricing models.
 - EU/PRA Spearman PLA.
 - Full business-calendar governance beyond optional PLA/backtesting dates and official-holiday masks.
-- Complete audit report artifact / `make audit` target.
+- Full audit report generator / `make audit` target.
 
 ---
 
@@ -166,11 +167,13 @@ Pure functions operating on numpy arrays are the correct foundation for future p
 ## Logging standard
 
 - `print()` is banned in `src/`. Use `logging.getLogger(__name__)`.
-- Calculators (anything in `liquidity_horizon.py`, `imcc.py`, `nmrf.py`, `capital.py`, etc.) are **pure functions** — they emit nothing. Zero logging inside them.
-- Logging belongs in policy wrappers, the capital assembly layer, and orchestration code. Low-level scalar/vector calculators must stay silent. Policy wrappers may emit compact `INFO` records with `run_id`, `desk_id`, `regime`, and result scalars; use `frtb_ima.logging.JSONFormatter` when machine-readable output is needed.
+- Core calculators are **pure functions** and emit nothing. Examples include `expected_shortfall`, `lha_es_from_vectors`, `imcc_breakdown`, `aggregate_ses_breakdown`, `models_based_capital`, and other scalar/vector functions that do not take a `RegulatoryPolicy`.
+- Policy-wrapper boundaries may log because they know run context and regime. Examples include `imcc_for_policy`, `imcc_breakdown_for_policy`, `pla_assessment_for_policy`, `trading_desk_backtest_for_policy`, `calculate_nmrf_capital_for_policy`, and `reduced_set_variation_explained_for_policy`.
+- Policy-wrapper log records must be compact `INFO` events with `run_id`, `desk_id`, `regime`, and result scalars only; use `frtb_ima.logging.JSONFormatter` when machine-readable output is needed.
 - Never log arrays larger than a summary (shape + a few stats). Full scenario arrays must not appear in log output — they are not tractable and break distributed log aggregation.
 - A desk run must produce identical results regardless of log level. Log calls must have no side effects on numerical outputs.
 - Post-run audit belongs in `DeskAuditRecord` / `CapitalRunAuditLog` NDJSON artifacts. Do not use runtime logs as the source of record for regulatory audit detail.
+- External sinks such as Splunk, databases, object stores, OpenTelemetry, Prometheus/Datadog, Parquet, or DuckDB belong in orchestration code, not in `src/frtb_ima`.
 
 ---
 

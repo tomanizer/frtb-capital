@@ -2,32 +2,45 @@
 
 ## Purpose
 
-This repository should first make the calculation engine credible, deterministic, testable, performant, and professionally reviewable.
+This roadmap tracks what remains after the May 2026 calculation-engine
+hardening pass. The repository is now a credible deterministic prototype for
+capital assembly from prepared upstream inputs, but it is still not a complete
+regulatory implementation.
 
-The strategic point is that a solid calculation engine makes the upstream gaps visible. Once the formulas, interfaces, test harnesses, and outputs are stable, the unresolved problems become clearly upstream:
+The strategic boundary remains unchanged:
 
-- market data sourcing,
-- risk-factor taxonomy,
-- scenario generation,
-- liquidity horizon mapping,
-- RFET evidence,
-- stress-period selection,
-- reduced-set construction,
-- desk governance,
-- lineage and auditability.
+1. `frtb_ima` validates and assembles capital from supplied risk-engine outputs.
+2. Upstream systems provide market data, scenario generation, RFET evidence,
+   stress-period choices, NMRF valuation artifacts, and desk governance inputs.
+3. Orchestration code owns storage, object-store uploads, database writes,
+   external telemetry, dashboards, and regulatory report packaging.
 
-This document therefore separates:
+## Current state
 
-1. Calculation-engine hardening work that belongs in this repository now.
-2. Upstream placeholder work that should be explicitly modelled as interfaces, assumptions, and future integration points.
+The calculation layer currently provides:
 
-## Target state for the calculation engine
+- validated dataclass contracts for positions, risk factors, RFET evidence,
+  scenario cubes, desk runs, and capital run results;
+- scenario metadata and nested liquidity-horizon vector validation;
+- scenario-cube builders for all-class and per-risk-class nested LH vectors;
+- empirical 97.5 percent ES and LHA ES decomposition;
+- constrained/unconstrained IMCC decomposition and reduced/full-set scaling
+  helpers;
+- reduced-set 60-business-day / 75 percent variation-explained diagnostic;
+- RFET scalar classification plus audit-grade RFET evidence assessment;
+- NMRF method evidence, direct robustness diagnostics, valuation instructions,
+  upstream valuation-run specs, stress-artifact validation, Type A/B routing,
+  and SES aggregation;
+- PLA KS assessment over the policy window with optional date diagnostics;
+- APL/HPL backtesting at 97.5 percent and 99.0 percent VaR with optional dated
+  traces and official-holiday exclusions;
+- desk-level models-based capital and PLA add-on helper;
+- dependency-free structured JSON logging at policy-wrapper boundaries;
+- `as_dict()` coverage and `DeskAuditRecord` / `CapitalRunAuditLog` NDJSON
+  artifacts for post-run audit trails.
 
-The engine should be good enough that a reviewer can say:
-
-> Given correctly prepared upstream inputs, the engine deterministically calculates the intended NPR 2.0-style FRTB IMA prototype outputs, with clear assumptions, validations, test coverage, and audit-friendly breakdowns.
-
-It should not claim to be a full regulatory implementation until upstream data, governance, and supervisory interpretation are implemented.
+The current code is covered by `make check` and GitHub CI across Python 3.11
+and 3.12.
 
 ## Design principles
 
@@ -37,7 +50,8 @@ No LLMs, no hidden state, no stochastic behaviour inside the calculation path.
 
 ### 2. Explicit sign conventions
 
-Every module must state whether input values are losses, profits, VaR magnitudes, or P&L vectors.
+Every module must state whether input values are losses, profits, VaR
+magnitudes, or P&L vectors.
 
 ### 3. Validated inputs
 
@@ -50,11 +64,12 @@ The engine should fail fast on invalid inputs:
 - invalid confidence levels,
 - invalid liquidity horizons,
 - negative capital inputs where not allowed,
-- malformed RFET evidence.
+- malformed RFET evidence,
+- missing NMRF stress artifacts for Type A/B NMRFs.
 
 ### 4. Explainable outputs
 
-Capital results should include enough decomposition to support review:
+Capital results should expose decomposition for review:
 
 - raw ES,
 - liquidity-horizon adjusted ES,
@@ -63,231 +78,124 @@ Capital results should include enough decomposition to support review:
 - multiplier inputs,
 - PLA statistics,
 - backtesting exception counts,
-- final binding term.
+- final binding capital term,
+- structured runtime events and post-run desk audit records.
 
 ### 5. Minimal dependency core
 
-The current low-dependency core is a strength. Keep NumPy as the only runtime dependency unless there is a clear reason to add more.
+NumPy is the only runtime dependency. Do not add pandas, scipy, Polars,
+Pydantic, DuckDB, Arrow, OpenTelemetry, or vendor SDKs to the calculation
+package without an explicit architectural decision. If needed, those belong in
+runner/orchestration packages that convert external data into the current
+dataclass and NumPy contracts.
 
-Use optional integrations later for DuckDB, Arrow, Polars, or pandas.
+## Remaining roadmap
 
-## Phase 1: calculation correctness and validation
+### 1. Regulatory mapping and source governance
 
-### 1.1 Scenario vector validation
+Current state:
 
-Add a module such as `scenario_validation.py` to validate nested liquidity-horizon vectors.
+- Risk factors carry an assigned `LiquidityHorizon`.
+- RFET evidence assessment captures eligible/excluded observations and a
+  partial audit trail.
 
-Required checks:
+Remaining work:
 
-- LH10 exists.
-- All vectors are non-empty.
-- All supplied LH vectors have equal scenario length.
-- Scenario IDs or dates are aligned where metadata is available.
-- LH subsets are valid members of `LiquidityHorizon`.
-- Optional monotonic inclusion metadata can prove that LH20/LH40/LH60/LH120 are true nested subsets.
+- rules-based risk-factor to liquidity-horizon mapping tables;
+- mapping evidence and override provenance;
+- final NPR 2.0 interpretation once the proposal is finalized;
+- fuller RFET qualitative criteria, vendor reliance, data-pooling eligibility,
+  committed-quote handling, and supervisory override tracking.
 
-### 1.2 Risk-factor to liquidity-horizon mapping
+### 2. Stress-period and reduced-set governance
 
-Add a rules-based mapping layer.
+Current state:
 
-The current `RiskFactor` model stores a liquidity horizon, but a professional engine should show where that assignment comes from.
+- IMCC reduced/full-set scaling and floor audit details exist.
+- The reduced-set variation-explained diagnostic exists.
+- NMRF valuation specs can carry supplied stress-period ids.
 
-Recommended design:
+Remaining work:
 
-- default regulatory mapping table,
-- override table,
-- mapping evidence field,
-- validation that every risk factor has exactly one assigned LH,
-- explicit placeholder for final NPR 2.0 interpretation.
+- formal stress-window selection/calibration workflow;
+- reduced risk-factor set selection and approval evidence;
+- data-quality evidence for reduced sets beyond the coverage diagnostic;
+- governance metadata for approval, versioning, and review.
 
-### 1.3 Better expected shortfall options
+### 3. NMRF valuation integration
 
-The current ES implementation is fine for prototype use. Add optional calculation conventions:
+Current state:
 
-- empirical top-tail mean,
-- quantile-interpolated ES convention,
-- scenario-weighted ES placeholder.
+- The package selects methods, emits valuation instructions/specs, validates
+  returned artifacts, extracts SES from loss vectors, and aggregates Type A/B
+  capital.
+- Direct, stepwise, full-revaluation, and max-loss generation functions remain
+  explicitly unsupported in the capital package.
 
-Default should remain simple and auditable.
+Remaining work:
 
-### 1.4 Capital result decomposition
+- institutional pricing-engine integration contract;
+- direct, stepwise, and full-revaluation artifact production outside
+  `frtb_ima`;
+- robustness tests comparing direct approximations to benchmark revaluations;
+- stress scenario calibration governance and approval metadata.
 
-Add richer result dataclasses for:
+### 4. PLA, backtesting, and desk eligibility lifecycle
 
-- LHA ES component breakdown,
-- constrained/unconstrained IMCC breakdown,
-- SES Type A/Type B breakdown,
-- final desk-level capital breakdown.
+Current state:
 
-Do not only return scalar values.
+- Fed NPR 2.0 KS-only PLA path is implemented.
+- Dual-level APL/HPL backtesting gates are implemented.
+- Optional dated traces and official-holiday masks exist.
 
-## Phase 2: regulatory completeness of the calculation layer
+Remaining work:
 
-### 2.1 IMCC stress scaling framework
+- EU/PRA Spearman PLA metric and joint-zone logic;
+- full business-calendar governance;
+- trading-desk eligibility state machine, breach handling, loss of eligibility,
+  and re-entry workflow;
+- standardized/fallback inputs required for model-ineligible desks and PLA
+  add-on workflows.
 
-Current `scale_stress_es()` is useful but isolated.
+### 5. Capital completeness
 
-Add an IMCC component model that captures:
+Current state:
 
-- current full ES,
-- current reduced ES,
-- stress reduced ES,
-- stress scaling ratio,
-- floor application,
-- final scaled stress ES.
+- Desk-level models-based capital and PLA add-on helper exist.
 
-The reduced-set construction itself is upstream, but the calculator should expose the interface clearly.
+Remaining work:
 
-### 2.2 SES method interfaces
+- standardized market-risk capital;
+- default risk charge;
+- fallback capital for uncomputable affected positions;
+- redesignation add-ons;
+- legal-entity and firm-level consolidation.
 
-Current SES is linear sensitivity × shock.
+### 6. Reporting, storage, and telemetry
 
-Keep this implementation, but add method abstractions:
+Current state:
 
-- linear method,
-- direct method placeholder,
-- stepwise method placeholder,
-- full-revaluation placeholder.
+- Policy wrappers can emit compact structured JSON log events.
+- Result objects can be serialized into desk/run audit records and NDJSON.
 
-The unimplemented methods should raise `NotImplementedError` with clear messages and documentation.
+Remaining work:
 
-### 2.3 PLA statistical completeness
+- full audit report generation and `make audit` target;
+- streaming NDJSON writer for very large multi-desk runs;
+- orchestration-layer object-store/database/Splunk/OpenTelemetry sinks;
+- optional Parquet/DuckDB analytics outside the calculation core;
+- benchmark suite for repeated large desk runs.
 
-Add:
+## Performance baseline to add
 
-- Spearman rank correlation,
-- joint PLA assessment using KS and Spearman,
-- rolling-window interface,
-- data sufficiency checks,
-- aligned HPL/RTPL date handling placeholder.
+Add a repeatable benchmark suite for:
 
-### 2.4 Backtesting completeness
-
-Add:
-
-- exception result with dates,
-- APL/HPL separate outputs,
-- multiplier derivation trace,
-- rolling 250-business-day validation,
-- placeholder for business calendars.
-
-## Phase 3: professional engineering hardening
-
-### 3.1 CI pipeline
-
-Add GitHub Actions for:
-
-- pytest,
-- ruff,
-- mypy,
-- coverage.
-
-### 3.2 Test depth
-
-Add tests for:
-
-- invalid inputs,
-- sign convention edge cases,
-- zero and negative values,
-- large vectors,
-- deterministic reproducibility,
-- regression fixtures with known outputs,
-- malformed upstream inputs.
-
-### 3.3 Documentation maturity
-
-Add:
-
-- calculation methodology document,
-- regulatory assumptions matrix,
-- architecture diagram,
-- model validation checklist,
-- example desk calculation report.
-
-### 3.4 Performance baseline
-
-Add a simple benchmark suite.
-
-Initial targets:
-
-- 10,000 scenarios × 5 liquidity horizons,
-- 100 desks,
+- 10,000 scenarios x 5 liquidity horizons,
 - 5 risk classes,
-- repeated daily capital assembly.
+- 100 desks,
+- repeated daily capital assembly,
+- audit-record serialization for large desk batches.
 
-The first target is not extreme speed; it is repeatable measurement.
-
-## Phase 4: upstream placeholders and integration seams
-
-The engine should explicitly expose but not solve the upstream problems.
-
-### 4.1 Market data interface
-
-Placeholder:
-
-- historical price series input,
-- shock generation input,
-- scenario ID/date metadata,
-- data-quality flags.
-
-### 4.2 RFET evidence interface
-
-Placeholder:
-
-- vendor/source evidence,
-- committed quote versus transaction flag,
-- observation eligibility decision,
-- deduplication policy,
-- audit trail.
-
-### 4.3 Stress period governance interface
-
-Placeholder:
-
-- selected stress window,
-- selection rationale,
-- approval metadata,
-- calibration version.
-
-### 4.4 Reduced-set construction interface
-
-Placeholder:
-
-- selected reduced risk-factor set,
-- coverage diagnostics,
-- current/stress scaling evidence,
-- governance approval.
-
-### 4.5 Desk approval workflow interface
-
-Placeholder:
-
-- desk scope,
-- modellability result,
-- PLA state,
-- backtesting state,
-- capital fallback state.
-
-## Recommended issue structure
-
-The repo should use issues grouped as follows:
-
-1. Calculation correctness
-2. Regulatory method completeness
-3. Validation and auditability
-4. Performance
-5. Documentation and professionalism
-6. Upstream placeholders
-
-## Definition of done for the hardened prototype
-
-The prototype is ready for serious internal demonstration when:
-
-- all public functions have clear sign conventions,
-- invalid input handling is systematic,
-- core formulas return decomposed result objects,
-- tests cover normal, edge, and failure cases,
-- CI runs automatically,
-- regulatory assumptions are traceable,
-- upstream gaps are visible as explicit interfaces rather than hidden assumptions,
-- demo output looks like a desk-level capital report, not just printed scalars.
+The goal is not extreme speed. The goal is repeatable measurement and assurance
+that scenario-level work remains NumPy-native while audit materialisation stays
+explicit and outside the numeric hot path.

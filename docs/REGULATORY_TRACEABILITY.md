@@ -9,6 +9,12 @@ It is intentionally a traceability map, not legal advice and not a statement of
 regulatory compliance. The project remains a transparent prototype for testing
 calculation mechanics from synthetic inputs.
 
+The companion machine-readable source manifest is
+[`docs/regulatory_sources.yml`](regulatory_sources.yml). It keeps official
+source URLs, section hints, linked modules, linked requirement IDs, source
+status, and reuse notes without vendoring the full regulatory texts into the
+package.
+
 Use it in two directions:
 
 - **Code to regulation:** start from a module and see which Basel, U.S. NPR, and
@@ -43,6 +49,8 @@ From regulation to code:
 | EU RTS / EBA | Commission Delegated Regulation (EU) 2022/2059 for backtesting and P&L attribution technical details; Commission Delegated Regulation (EU) 2022/2060 for risk-factor modellability; EBA final draft RTS updates under CRR3. | Used to identify documentation gaps and EU-specific refinements, not fully implemented. |
 | UK CRR / PRA | UK CRR and PRA rulebook market-risk implementation. | Separate profile placeholder. PRA-specific deltas are not source-mapped or formally calibrated yet. |
 
+Use `docs/regulatory_sources.yml` for topic-level links and section hints.
+
 ## Primary-source links
 
 - Basel Committee, *Minimum capital requirements for market risk*, January 2019:
@@ -65,7 +73,7 @@ From regulation to code:
   https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R2059
 - Delegated Regulation (EU) 2022/2060, risk-factor modellability RTS:
   https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R2060
-- EBA 2024 final draft RTS update under CRR3:
+- EBA final draft technical standards update under CRR3:
   https://www.eba.europa.eu/publications-and-media/press-releases/eba-publishes-final-draft-technical-standards-market-risk-part-its-roadmap-implementation-banking
 
 ## Regime switching model
@@ -109,7 +117,7 @@ working assumption, not final U.S. regulatory capital.
 | `backtesting.py` | APL/HPL VaR exception counting over a rolling window, including NPR 97.5% and 99.0% trading-desk gates and optional per-observation traces. | MAR32 backtesting requirements for IMA. | Proposed backtesting over the most recent 250 business days against 97.5% and 99.0% VaR-based measures, including missing-data exception treatment. | Article 325bf and Delegated Regulation (EU) 2022/2059. | Exception gates and dated trace output implemented; complete business-calendar governance remains open. |
 | `capital.py` | Desk-level models-based capital assembly and PLA add-on helper. | MAR33 capital calculation and multiplier concepts. | Proposed models-based measure / non-default capital framework and PLA add-on mechanics. | Article 325ba own-funds requirement under alternative internal models. | Desk-level formula and PLA add-on helper implemented; excludes DRC, standardized fallback, redesignation add-ons, and firm consolidation. |
 | `logging.py` | Dependency-free JSON log formatter and structured calculation-boundary log field helper. | MAR31-MAR33 model governance and traceability concepts. | Proposed market-risk governance and auditability working assumptions. | CRR internal-model governance comparison concepts. | Runtime observability only; no metrics backend, OpenTelemetry, or external log collector dependency. |
-| `audit.py` | Desk-level audit records, run audit collection, and NDJSON serialization. | MAR31-MAR33 input/output traceability concepts. | Proposed reporting, governance, and audit-trail working assumptions. | CRR internal-model governance comparison concepts. | Serialisable post-run artifact only; no full regulatory report, Parquet, DuckDB, or disclosure template. |
+| `audit.py` | Desk-level audit records, run audit collection, and simple NDJSON serialization. | MAR31-MAR33 input/output traceability concepts. | Proposed reporting, governance, and audit-trail working assumptions. | CRR internal-model governance comparison concepts. | Serialisable post-run artifact only; no full regulatory report, streaming large-run writer, Parquet, DuckDB, or disclosure template. |
 | `demo_data.py` | Synthetic risk factors, observations, scenario vectors, P&L, and VaR series for examples. | Not a regulatory method; supports demonstrations of MAR31-MAR33 concepts. | Not a regulatory method; supports NPR-style examples. | Not a regulatory method; supports CRR/FRTB examples. | Fabricated data only; not evidence, not market data, not calibration. |
 
 ## Regulation to code
@@ -130,7 +138,7 @@ working assumption, not final U.S. regulatory capital.
 | PLA | MAR32 PLA test. | Proposed KS comparison of RTPL and HPL over 250 business days. | Article 325bg and Delegated Regulation (EU) 2022/2059. | `pla.py`. | NPR KS implemented with policy window and optional date diagnostics; EU Spearman not implemented. |
 | Backtesting | MAR32 backtesting. | Proposed APL/HPL backtesting over 250 business days at 97.5% and 99.0% VaR levels. | Article 325bf and Delegated Regulation (EU) 2022/2059. | `backtesting.py`. | Dual-level exception gate and optional dated trace implemented; full business calendar not implemented. |
 | Models-based capital / own funds | MAR33 capital calculation. | Proposed models-based market-risk measure, NDCR components, and PLA add-on. | Article 325ba. | `capital.py`. | Desk-level capital and PLA add-on helper implemented; firm consolidation not implemented. |
-| Run observability and audit artifacts | MAR31-MAR33 governance and traceability concepts. | Proposed market-risk reporting and model governance working assumptions. | CRR internal-model governance comparison concepts. | `logging.py`, `audit.py`, result-object `as_dict()` methods. | JSON runtime logs and NDJSON desk audit records implemented; external telemetry, Parquet/DuckDB analytics, and full report generation remain orchestration-layer future scope. |
+| Run observability and audit artifacts | MAR31-MAR33 governance and traceability concepts. | Proposed market-risk reporting and model governance working assumptions. | CRR internal-model governance comparison concepts. | `logging.py`, `audit.py`, result-object `as_dict()` methods. | JSON runtime logs and simple NDJSON desk audit records implemented; streaming large-run writers, external telemetry, Parquet/DuckDB analytics, and full report generation remain orchestration-layer future scope. |
 
 ## Module docstring convention
 

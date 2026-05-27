@@ -98,11 +98,10 @@ The implementation intentionally avoids:
 
 ### Vectorised-first
 
-The validator is designed around NumPy-backed vectors and future compatibility with:
-
-- Polars,
-- DuckDB,
-- Arrow-style columnar processing.
+The validator is designed around NumPy-backed vectors. Any future Polars,
+DuckDB, Arrow, or object-store integration should sit in an orchestration layer
+that converts data into these validated NumPy-backed contracts before
+calculation; those tools are not runtime dependencies of `frtb_ima`.
 
 ## Current limitations
 
@@ -111,7 +110,7 @@ The validator intentionally does not yet implement:
 - business-calendar validation,
 - stress-window governance,
 - reduced/full set governance,
-- RFET evidence management,
+- linkage to RFET evidence decisions,
 - distributed execution semantics.
 
 These remain explicit upstream placeholders.

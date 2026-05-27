@@ -153,7 +153,8 @@ new upstream data contracts:
 - Firm-level aggregation, standardized approach fallback, DRC, redesignation
   add-ons, and legal-entity consolidation are not implemented.
 - Full regulatory report generation, external telemetry, OpenTelemetry,
-  Prometheus/Datadog metrics, and Parquet/DuckDB audit analytics remain future
-  orchestration-layer integrations.
+  Prometheus/Datadog metrics, streaming audit writers for very large desk
+  batches, and Parquet/DuckDB audit analytics remain future orchestration-layer
+  integrations.
 - The U.S. NPR 2.0 source remains a proposed rule. Final-rule changes must be
   reviewed before treating any profile as final regulatory capital.

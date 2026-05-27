@@ -66,7 +66,8 @@ The canonical vector-based reporting path is:
 from frtb_ima.liquidity_horizon import lha_es_breakdown_from_vectors
 ```
 
-This path validates nested vectors through the canonical validator introduced in Issue #13.
+This path validates nested vectors through `validate_nested_lh_vectors` before
+computing any ES terms.
 
 ## Example
 
@@ -137,7 +138,7 @@ The implementation intentionally does not yet include:
 - business-calendar semantics,
 - stress-window governance,
 - reduced/full set decomposition,
-- desk-level governance outputs,
+- full desk-level regulatory report templates,
 - regulator-specific reporting exports.
 
 These remain future workstreams.
