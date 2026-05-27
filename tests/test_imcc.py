@@ -24,6 +24,7 @@ def _flat_vec(value: float, n: int = 100) -> list[float]:
 # Flat vectors: ES = constant value, LHA_ES = sqrt(sum_w * val^2)
 # For LH10-only: LHA_ES = sqrt(1 * val^2) = val
 
+
 def test_imcc_unconstrained_lh10_only() -> None:
     vecs = {LiquidityHorizon.LH10: _flat_vec(100.0)}
     result = imcc_unconstrained(vecs)
@@ -39,15 +40,13 @@ def test_imcc_unconstrained_breakdown_exposes_lha_components() -> None:
     result = imcc_unconstrained_breakdown(vecs)
 
     assert result.lha_es == pytest.approx((100.0**2 + 50.0**2) ** 0.5)
-    assert result.component_by_horizon(
-        LiquidityHorizon.LH20
-    ).expected_shortfall == pytest.approx(50.0)
+    assert result.component_by_horizon(LiquidityHorizon.LH20).expected_shortfall == pytest.approx(
+        50.0
+    )
 
 
 def test_imcc_constrained_single_class() -> None:
-    per_class = {
-        RiskClass.GIRR: {LiquidityHorizon.LH10: _flat_vec(100.0)}
-    }
+    per_class = {RiskClass.GIRR: {LiquidityHorizon.LH10: _flat_vec(100.0)}}
     result = imcc_constrained(per_class)
     assert result == pytest.approx(100.0)
 
@@ -55,7 +54,7 @@ def test_imcc_constrained_single_class() -> None:
 def test_imcc_constrained_multiple_classes_no_diversification() -> None:
     # Two classes each contributing 100 -> constrained = 200 (no diversification)
     per_class = {
-        RiskClass.GIRR:   {LiquidityHorizon.LH10: _flat_vec(100.0)},
+        RiskClass.GIRR: {LiquidityHorizon.LH10: _flat_vec(100.0)},
         RiskClass.EQUITY: {LiquidityHorizon.LH10: _flat_vec(100.0)},
     }
     result = imcc_constrained(per_class)
@@ -80,7 +79,7 @@ def test_imcc_constrained_breakdown_is_deterministic_by_risk_class() -> None:
 def test_imcc_final_is_50_50_blend() -> None:
     all_class = {LiquidityHorizon.LH10: _flat_vec(200.0)}  # unconstrained = 200
     per_class = {
-        RiskClass.GIRR:   {LiquidityHorizon.LH10: _flat_vec(100.0)},  # constrained = 200
+        RiskClass.GIRR: {LiquidityHorizon.LH10: _flat_vec(100.0)},  # constrained = 200
         RiskClass.EQUITY: {LiquidityHorizon.LH10: _flat_vec(100.0)},
     }
     result = imcc(all_class, per_class, w=0.5)
@@ -137,9 +136,7 @@ def test_imcc_rejects_invalid_weight() -> None:
 
 
 def test_imcc_constrained_missing_lh10_raises() -> None:
-    per_class = {
-        RiskClass.GIRR: {LiquidityHorizon.LH20: _flat_vec(100.0)}
-    }
+    per_class = {RiskClass.GIRR: {LiquidityHorizon.LH20: _flat_vec(100.0)}}
     with pytest.raises(KeyError):
         imcc_constrained(per_class)
 

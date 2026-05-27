@@ -54,7 +54,7 @@ class BacktestResult:
 
     apl_exceptions: int
     hpl_exceptions: int
-    apl_zone: str   # "GREEN", "AMBER", "RED"
+    apl_zone: str  # "GREEN", "AMBER", "RED"
     hpl_zone: str
     window_size: int
 
@@ -177,9 +177,7 @@ class BacktestLevelTrace:
         """Return a serialisable dictionary for reporting and notebooks."""
         return {
             "result": self.result.as_dict(),
-            "observations": [
-                observation.as_dict() for observation in self.observations
-            ],
+            "observations": [observation.as_dict() for observation in self.observations],
         }
 
 
@@ -295,9 +293,7 @@ def count_exceptions(
     var_arr = _as_finite_1d_array(var_estimates, "var_estimates")
 
     if len(pnl_arr) != len(var_arr):
-        raise ValueError(
-            f"pnl length ({len(pnl_arr)}) != var_estimates length ({len(var_arr)})"
-        )
+        raise ValueError(f"pnl length ({len(pnl_arr)}) != var_estimates length ({len(var_arr)})")
     if np.any(var_arr <= 0.0):
         raise ValueError("var_estimates must contain only positive values")
 
@@ -316,9 +312,7 @@ def _count_exceptions_regulatory(
     related to an official holiday. This function assumes inputs have already
     been windowed and length-aligned.
     """
-    return int(
-        np.sum(_exception_flags_regulatory(pnl, var_estimates, official_holiday_mask))
-    )
+    return int(np.sum(_exception_flags_regulatory(pnl, var_estimates, official_holiday_mask)))
 
 
 def _exception_flags_regulatory(
@@ -383,9 +377,7 @@ def backtest(
     if window <= 0:
         raise ValueError(f"window must be positive, got {window}")
     if minimum_history is not None and minimum_history <= 0:
-        raise ValueError(
-            f"minimum_history must be positive when provided, got {minimum_history}"
-        )
+        raise ValueError(f"minimum_history must be positive when provided, got {minimum_history}")
 
     apl_arr = _as_finite_1d_array(apl, "apl")
     hpl_arr = _as_finite_1d_array(hpl, "hpl")
@@ -404,9 +396,7 @@ def backtest(
     var_w = var_arr[-window:]
 
     if len(apl_w) != len(var_w) or len(hpl_w) != len(var_w):
-        raise ValueError(
-            "After windowing, APL, HPL, and VaR series must have equal length"
-        )
+        raise ValueError("After windowing, APL, HPL, and VaR series must have equal length")
     if np.any(var_w <= 0.0):
         raise ValueError("var_estimates must contain only positive values")
 
@@ -427,9 +417,7 @@ def trading_desk_backtest(
     hpl: FloatVector,
     var_estimates_by_confidence: Mapping[float, FloatVector],
     window: int = 250,
-    exception_limits: Sequence[
-        tuple[float, int]
-    ] = DEFAULT_BACKTESTING_EXCEPTION_LIMITS,
+    exception_limits: Sequence[tuple[float, int]] = DEFAULT_BACKTESTING_EXCEPTION_LIMITS,
     minimum_history: int | None = None,
     allow_prorated_thresholds: bool = False,
     official_holiday_mask: BoolVector | None = None,
@@ -462,9 +450,7 @@ def trading_desk_backtest_trace(
     hpl: FloatVector,
     var_estimates_by_confidence: Mapping[float, FloatVector],
     window: int = 250,
-    exception_limits: Sequence[
-        tuple[float, int]
-    ] = DEFAULT_BACKTESTING_EXCEPTION_LIMITS,
+    exception_limits: Sequence[tuple[float, int]] = DEFAULT_BACKTESTING_EXCEPTION_LIMITS,
     minimum_history: int | None = None,
     allow_prorated_thresholds: bool = False,
     official_holiday_mask: BoolVector | None = None,
@@ -480,9 +466,7 @@ def trading_desk_backtest_trace(
     if window <= 0:
         raise ValueError(f"window must be positive, got {window}")
     if minimum_history is not None and minimum_history <= 0:
-        raise ValueError(
-            f"minimum_history must be positive when provided, got {minimum_history}"
-        )
+        raise ValueError(f"minimum_history must be positive when provided, got {minimum_history}")
 
     apl_arr = _as_1d_array_allowing_missing(apl, "apl")
     hpl_arr = _as_1d_array_allowing_missing(hpl, "hpl")
@@ -508,9 +492,7 @@ def trading_desk_backtest_trace(
             f"var_estimates[{confidence_level}]",
         )
         if len(var_arr) != len(apl_arr):
-            raise ValueError(
-                f"VaR series length for {confidence_level} must match APL/HPL"
-            )
+            raise ValueError(f"VaR series length for {confidence_level} must match APL/HPL")
         min_length = min(min_length, len(var_arr))
 
     if minimum_history is not None and min_length < minimum_history:
@@ -562,9 +544,7 @@ def trading_desk_backtest_trace(
 
         observations: list[BacktestObservationTrace] = []
         for offset in range(window_size):
-            official_holiday = (
-                bool(holiday_w[offset]) if holiday_w is not None else False
-            )
+            official_holiday = bool(holiday_w[offset]) if holiday_w is not None else False
             observation_date = dates_w[offset] if dates_w is not None else None
             observations.append(
                 BacktestObservationTrace(

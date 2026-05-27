@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "docs" / "regulatory_sources.yml"
 TRACEABILITY = ROOT / "docs" / "REGULATORY_TRACEABILITY.md"
+SRC = ROOT / "src" / "frtb_ima"
 
 ALLOWED_URL_PREFIXES = (
     "https://www.bis.org/",
@@ -102,3 +103,12 @@ def test_regulatory_sources_link_existing_modules_and_requirements() -> None:
 
 def test_traceability_document_points_to_source_manifest() -> None:
     assert "docs/regulatory_sources.yml" in TRACEABILITY.read_text()
+
+
+def test_source_modules_appear_in_traceability_table() -> None:
+    traceability = TRACEABILITY.read_text()
+
+    module_names = sorted(path.name for path in SRC.glob("*.py") if path.name != "__init__.py")
+    assert module_names
+    for module_name in module_names:
+        assert f"| `{module_name}` |" in traceability

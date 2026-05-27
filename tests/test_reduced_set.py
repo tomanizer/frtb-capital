@@ -60,9 +60,7 @@ def test_reduced_set_variation_explained_for_policy_uses_policy_defaults() -> No
     result = reduced_set_variation_explained_for_policy(full, full, policy)
 
     assert result.window_size == policy.reduced_set_coverage_window_days
-    assert result.threshold == pytest.approx(
-        policy.reduced_set_variation_explained_threshold
-    )
+    assert result.threshold == pytest.approx(policy.reduced_set_variation_explained_threshold)
 
 
 def test_reduced_set_variation_explained_rejects_invalid_inputs() -> None:

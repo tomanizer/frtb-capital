@@ -1,9 +1,9 @@
 PYTHON ?= python3
 VENV ?= .venv
-PYTHON_BIN := $(VENV)/bin/python
+PYTHON_BIN ?= $(VENV)/bin/python
 PIP := $(PYTHON_BIN) -m pip
 
-.PHONY: venv install test lint typecheck check demo clean
+.PHONY: venv install test lint format format-check typecheck check examples demo clean
 
 venv:
 	$(PYTHON) -m venv $(VENV)
@@ -16,15 +16,23 @@ test:
 	$(PYTHON_BIN) -m pytest
 
 lint:
-	$(PYTHON_BIN) -m ruff check src tests
+	$(PYTHON_BIN) -m ruff check src tests examples
+
+format:
+	$(PYTHON_BIN) -m ruff format src tests examples
+
+format-check:
+	$(PYTHON_BIN) -m ruff format --check src tests examples
 
 typecheck:
 	$(PYTHON_BIN) -m mypy src
 
-check: lint typecheck test
+check: lint format-check typecheck test
 
-demo:
+examples:
 	$(PYTHON_BIN) examples/run_demo.py
+
+demo: examples
 
 clean:
 	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage build dist *.egg-info

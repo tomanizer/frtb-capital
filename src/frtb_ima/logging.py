@@ -47,12 +47,7 @@ class JSONFormatter(py_logging.Formatter):
 
         legacy_extra = record.__dict__.get("extra")
         if isinstance(legacy_extra, Mapping):
-            payload.update(
-                {
-                    str(key): _jsonable(value)
-                    for key, value in legacy_extra.items()
-                }
-            )
+            payload.update({str(key): _jsonable(value) for key, value in legacy_extra.items()})
 
         for key, value in record.__dict__.items():
             if key not in _STANDARD_LOG_RECORD_ATTRIBUTES and key != "extra":

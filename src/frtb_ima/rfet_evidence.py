@@ -80,8 +80,7 @@ class RFETEvidenceAssessment:
             "required_observations": self.required_observations,
             "eligible_observation_count": self.eligible_observation_count,
             "eligible_observation_dates": [
-                observation_date.isoformat()
-                for observation_date in self.eligible_observation_dates
+                observation_date.isoformat() for observation_date in self.eligible_observation_dates
             ],
             "source_count": self.source_count,
             "qualitative_pass": self.qualitative_pass,

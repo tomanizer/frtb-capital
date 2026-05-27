@@ -102,9 +102,7 @@ class NMRFValuationRunRequest:
             "run_id": self.run_id,
             "desk_id": self.desk_id,
             "regime": self.regime,
-            "as_of_date": self.as_of_date.isoformat()
-            if self.as_of_date is not None
-            else None,
+            "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
             "spec_count": self.spec_count,
             "specs": [spec.as_dict() for spec in self.specs],
             "source": self.source,
@@ -206,10 +204,7 @@ class NMRFArtifactReconciliationResult:
             raise ValueError("items contain duplicate risk_factor_name values")
         if self.returned_artifact_count is not None and self.returned_artifact_count < 0:
             raise ValueError("returned_artifact_count must be non-negative")
-        if (
-            self.unexpected_artifact_count is not None
-            and self.unexpected_artifact_count < 0
-        ):
+        if self.unexpected_artifact_count is not None and self.unexpected_artifact_count < 0:
             raise ValueError("unexpected_artifact_count must be non-negative")
         object.__setattr__(self, "items", items)
         object.__setattr__(self, "unexpected_artifacts", tuple(self.unexpected_artifacts))
@@ -271,10 +266,7 @@ class NMRFArtifactReconciliationResult:
     @property
     def required_liquidity_horizons(self) -> dict[str, LiquidityHorizon]:
         """Return required liquidity horizons keyed by risk factor."""
-        return {
-            item.risk_factor_name: item.required_liquidity_horizon
-            for item in self.items
-        }
+        return {item.risk_factor_name: item.required_liquidity_horizon for item in self.items}
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails."""
@@ -312,9 +304,7 @@ class NMRFValuationRunResult:
         if not isinstance(self.reconciliation, NMRFArtifactReconciliationResult):
             raise TypeError("reconciliation must be an NMRFArtifactReconciliationResult")
         request_names = {spec.risk_factor_name for spec in self.request.specs}
-        reconciliation_names = {
-            item.risk_factor_name for item in self.reconciliation.items
-        }
+        reconciliation_names = {item.risk_factor_name for item in self.reconciliation.items}
         if request_names != reconciliation_names:
             raise ValueError("reconciliation items must match request specs")
         if self.reconciliation.artifact_count != len(artifacts):
@@ -554,9 +544,7 @@ def _reconcile_one_spec(
     if not liquidity_horizon_matched:
         errors.append("liquidity_horizon_too_short")
 
-    stress_period_matched = (
-        artifact.stress_period == spec.stress_period.stress_period_id
-    )
+    stress_period_matched = artifact.stress_period == spec.stress_period.stress_period_id
     if not stress_period_matched:
         errors.append("stress_period_mismatch")
 

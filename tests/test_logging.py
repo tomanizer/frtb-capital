@@ -98,10 +98,7 @@ def test_policy_wrapper_emits_correlatable_log_record(caplog: pytest.LogCaptureF
             desk_id="desk-3",
         )
 
-    record = next(
-        record for record in caplog.records
-        if record.getMessage() == "imcc_complete"
-    )
+    record = next(record for record in caplog.records if record.getMessage() == "imcc_complete")
     assert record.run_id == "run-3"
     assert record.desk_id == "desk-3"
     assert record.regime == policy.regime.value
@@ -118,10 +115,7 @@ def test_policy_wrapper_without_run_or_desk_logs_cleanly(
     with caplog.at_level(logging.INFO, logger="frtb_ima.imcc"):
         imcc_for_policy(vectors, per_class, policy)
 
-    record = next(
-        record for record in caplog.records
-        if record.getMessage() == "imcc_complete"
-    )
+    record = next(record for record in caplog.records if record.getMessage() == "imcc_complete")
     assert not hasattr(record, "run_id")
     assert not hasattr(record, "desk_id")
     assert record.regime == policy.regime.value

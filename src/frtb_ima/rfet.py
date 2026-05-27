@@ -41,11 +41,11 @@ from frtb_ima.data_models import (
 from frtb_ima.regimes import RegulatoryPolicy
 
 # Quantitative thresholds keyed on whether LH is short (<= 20) or long (> 20)
-_THRESHOLD_SHORT_LH = 24   # for LH 10 or 20
-_THRESHOLD_LONG_LH  = 16   # for LH 40, 60, or 120
+_THRESHOLD_SHORT_LH = 24  # for LH 10 or 20
+_THRESHOLD_LONG_LH = 16  # for LH 40, 60, or 120
 _SHORT_LH_MAX_DAYS = 20
 
-_LOOKBACK_DAYS = 365        # "prior 12 months" approximated as 365 calendar days
+_LOOKBACK_DAYS = 365  # "prior 12 months" approximated as 365 calendar days
 
 
 def _quantitative_threshold(

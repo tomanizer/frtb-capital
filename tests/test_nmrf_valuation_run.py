@@ -175,7 +175,8 @@ def test_reconciliation_passes_exact_direct_and_full_revaluation_artifacts(
     assert result.items[1].scenario_ids_matched is True
     assert result.as_dict()["items"][1]["artifact_loss_count"] == 3
     record = next(
-        record for record in caplog.records
+        record
+        for record in caplog.records
         if record.getMessage() == "nmrf_valuation_reconciliation_complete"
     )
     assert record.passed is True

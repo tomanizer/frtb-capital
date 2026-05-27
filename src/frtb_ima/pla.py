@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class PlaResult:
     ks_statistic: float
-    zone: str        # "GREEN", "AMBER", or "RED"
+    zone: str  # "GREEN", "AMBER", or "RED"
     n_hpl: int
     n_rtpl: int
 
@@ -82,12 +82,8 @@ class PlaWindowDiagnostics:
             "window_size": self.window_size,
             "start_index": self.start_index,
             "end_index_exclusive": self.end_index_exclusive,
-            "start_date": self.start_date.isoformat()
-            if self.start_date is not None
-            else None,
-            "end_date": self.end_date.isoformat()
-            if self.end_date is not None
-            else None,
+            "start_date": self.start_date.isoformat() if self.start_date is not None else None,
+            "end_date": self.end_date.isoformat() if self.end_date is not None else None,
         }
 
 
@@ -222,9 +218,7 @@ def pla_assessment(
         PlaResult with ks_statistic, zone, and vector lengths.
     """
     if not (0.0 <= green_threshold <= amber_threshold <= 1.0):
-        raise ValueError(
-            "PLA thresholds must satisfy 0 <= green_threshold <= amber_threshold <= 1"
-        )
+        raise ValueError("PLA thresholds must satisfy 0 <= green_threshold <= amber_threshold <= 1")
 
     green_label, amber_label, red_label = zone_labels
     hpl_arr = _as_finite_1d_array(hpl, "hpl")
@@ -291,8 +285,7 @@ def pla_assessment_for_policy_with_diagnostics(
         raise ValueError(f"pla_window_days must be positive, got {policy.pla_window_days}")
     if policy.pla_minimum_history_days <= 0:
         raise ValueError(
-            "pla_minimum_history_days must be positive, "
-            f"got {policy.pla_minimum_history_days}"
+            f"pla_minimum_history_days must be positive, got {policy.pla_minimum_history_days}"
         )
 
     hpl_arr = _as_finite_1d_array(hpl, "hpl")

@@ -73,9 +73,7 @@ class DeskAuditRecord:
             "run_id": self.run_id,
             "desk_id": self.desk_id,
             "regime": self.regime,
-            "as_of_date": self.as_of_date.isoformat()
-            if self.as_of_date is not None
-            else None,
+            "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
             "imcc": _jsonable(self.imcc),
             "ses": _jsonable(self.ses),
             "pla": _jsonable(self.pla),
@@ -129,9 +127,7 @@ class CapitalRunAuditLog:
         return {
             "run_id": self.run_id,
             "regime": self.regime,
-            "as_of_date": self.as_of_date.isoformat()
-            if self.as_of_date is not None
-            else None,
+            "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
             "desk_count": self.desk_count,
             "desk_records": [record.as_dict() for record in self.desk_records],
             "metadata": _jsonable(self.metadata),

@@ -387,10 +387,7 @@ def calculate_nmrf_ses_from_revaluation(
     maximum supplied loss instead of a tail average.
     """
     policy.require_supported("type_a_type_b_nmrf_taxonomy")
-    if (
-        artifact.method == NMRFStressMethod.LINEAR_SENSITIVITY
-        and not allow_linear_approximation
-    ):
+    if artifact.method == NMRFStressMethod.LINEAR_SENSITIVITY and not allow_linear_approximation:
         raise ValueError(
             "LINEAR_SENSITIVITY artifacts are approximation-only and require "
             "allow_linear_approximation=True"
@@ -488,8 +485,7 @@ def aggregate_ses_breakdown(
     type_b_sum_of_squares = float(np.dot(type_b, type_b))
     type_b_linear_sum = float(np.sum(type_b))
     type_b_correlated_term = (
-        type_b_rho * type_b_linear_sum**2
-        + (1.0 - type_b_rho) * type_b_sum_of_squares
+        type_b_rho * type_b_linear_sum**2 + (1.0 - type_b_rho) * type_b_sum_of_squares
     )
     total = math.sqrt(type_a_sum_of_squares + type_b_correlated_term)
 
@@ -517,8 +513,7 @@ def aggregate_ses_breakdown_for_policy(
         != TypeASESAggregationMode.ZERO_CORRELATION_ROOT_SUM_SQUARES
     ):
         raise ValueError(
-            "NPR 2.0 policy must use zero-correlation root-sum-square "
-            "aggregation for Type A SES"
+            "NPR 2.0 policy must use zero-correlation root-sum-square aggregation for Type A SES"
         )
     return aggregate_ses_breakdown(
         type_a_values,
@@ -614,9 +609,7 @@ def _artifact_by_risk_factor(
     result: dict[str, NMRFStressArtifact] = {}
     for artifact in artifacts:
         if artifact.risk_factor_name in result:
-            raise ValueError(
-                f"duplicate NMRF stress artifact for {artifact.risk_factor_name}"
-            )
+            raise ValueError(f"duplicate NMRF stress artifact for {artifact.risk_factor_name}")
         result[artifact.risk_factor_name] = artifact
     return result
 

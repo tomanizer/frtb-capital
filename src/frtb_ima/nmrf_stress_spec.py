@@ -73,12 +73,8 @@ class NMRFStressPeriodSpec:
         return {
             "stress_period_id": self.stress_period_id,
             "calibration_source": self.calibration_source,
-            "start_date": self.start_date.isoformat()
-            if self.start_date is not None
-            else None,
-            "end_date": self.end_date.isoformat()
-            if self.end_date is not None
-            else None,
+            "start_date": self.start_date.isoformat() if self.start_date is not None else None,
+            "end_date": self.end_date.isoformat() if self.end_date is not None else None,
             "notes": self.notes,
         }
 
@@ -280,13 +276,13 @@ class NMRFValuationSpec:
             raise ValueError(f"{self.method.value} requires its matching spec payload")
 
         unexpected = [
-            method.value for method, payload in payloads.items()
+            method.value
+            for method, payload in payloads.items()
             if method != self.method and payload is not None
         ]
         if unexpected:
             raise ValueError(
-                f"{self.method.value} valuation spec has unexpected payloads: "
-                f"{unexpected}"
+                f"{self.method.value} valuation spec has unexpected payloads: {unexpected}"
             )
 
     def as_dict(self) -> dict[str, object]:
@@ -298,9 +294,7 @@ class NMRFValuationSpec:
             "method": self.method.value,
             "required_liquidity_horizon": self.required_liquidity_horizon.value,
             "stress_period": self.stress_period.as_dict(),
-            "direct_shock": self.direct_shock.as_dict()
-            if self.direct_shock is not None
-            else None,
+            "direct_shock": self.direct_shock.as_dict() if self.direct_shock is not None else None,
             "stepwise_grid": self.stepwise_grid.as_dict()
             if self.stepwise_grid is not None
             else None,
@@ -398,9 +392,7 @@ def build_nmrf_valuation_specs(
     for instruction in instructions:
         risk_factor_name = instruction.risk_factor_name
         if risk_factor_name in seen_risk_factors:
-            raise NMRFStressSpecError(
-                f"duplicate instruction for risk factor {risk_factor_name}"
-            )
+            raise NMRFStressSpecError(f"duplicate instruction for risk factor {risk_factor_name}")
         seen_risk_factors.add(risk_factor_name)
 
         risk_class = risk_classes.get(risk_factor_name)
@@ -418,18 +410,12 @@ def build_nmrf_valuation_specs(
             )
 
         direct_shock = None if direct_shocks is None else direct_shocks.get(risk_factor_name)
-        stepwise_grid = (
-            None if stepwise_grids is None else stepwise_grids.get(risk_factor_name)
-        )
+        stepwise_grid = None if stepwise_grids is None else stepwise_grids.get(risk_factor_name)
         full_revaluation = (
-            None
-            if full_revaluations is None
-            else full_revaluations.get(risk_factor_name)
+            None if full_revaluations is None else full_revaluations.get(risk_factor_name)
         )
         max_loss_fallback = (
-            None
-            if max_loss_fallbacks is None
-            else max_loss_fallbacks.get(risk_factor_name)
+            None if max_loss_fallbacks is None else max_loss_fallbacks.get(risk_factor_name)
         )
 
         try:
@@ -469,7 +455,4 @@ def required_liquidity_horizons_from_valuation_specs(
     """Return the required LH mapping expected by NMRF capital validation."""
     if not specs:
         raise ValueError("specs must be non-empty")
-    return {
-        spec.risk_factor_name: spec.required_liquidity_horizon
-        for spec in specs
-    }
+    return {spec.risk_factor_name: spec.required_liquidity_horizon for spec in specs}

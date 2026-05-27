@@ -20,10 +20,7 @@ AS_OF = date(2025, 6, 30)
 
 def _make_obs(name: str, n: int, spacing_days: int = 10) -> list[RealPriceObservation]:
     """n observations spaced `spacing_days` apart, all within 12 months of AS_OF."""
-    return [
-        RealPriceObservation(name, AS_OF - timedelta(days=i * spacing_days))
-        for i in range(n)
-    ]
+    return [RealPriceObservation(name, AS_OF - timedelta(days=i * spacing_days)) for i in range(n)]
 
 
 RF_LH10 = RiskFactor("RF_A", RiskClass.GIRR, LiquidityHorizon.LH10)
@@ -41,10 +38,7 @@ def test_count_eligible_observations_within_window() -> None:
 def test_count_eligible_observations_excludes_old() -> None:
     # 5 recent + 5 outside 365-day window
     recent = _make_obs("RF_A", n=5, spacing_days=10)
-    old = [
-        RealPriceObservation("RF_A", AS_OF - timedelta(days=400 + i * 10))
-        for i in range(5)
-    ]
+    old = [RealPriceObservation("RF_A", AS_OF - timedelta(days=400 + i * 10)) for i in range(5)]
     count = count_eligible_observations(recent + old, "RF_A", AS_OF)
     assert count == 5
 

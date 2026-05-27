@@ -169,9 +169,7 @@ def test_aggregate_ses_type_b_empty() -> None:
 def test_aggregate_ses_combines_a_and_b() -> None:
     type_a = [10.0, 20.0]
     type_b = [5.0, 5.0]
-    expected = math.sqrt(
-        sum(v**2 for v in type_a) + aggregate_ses_type_b(type_b) ** 2
-    )
+    expected = math.sqrt(sum(v**2 for v in type_a) + aggregate_ses_type_b(type_b) ** 2)
     result = aggregate_ses(type_a, type_b)
     assert result == pytest.approx(expected, rel=1e-9)
 
@@ -186,12 +184,8 @@ def test_aggregate_ses_breakdown_is_vectorized_and_auditable() -> None:
 
 
 def test_nmrf_effective_liquidity_horizon_applies_20_day_floor() -> None:
-    assert nmrf_effective_liquidity_horizon(LiquidityHorizon.LH10) == (
-        LiquidityHorizon.LH20
-    )
-    assert nmrf_effective_liquidity_horizon(LiquidityHorizon.LH60) == (
-        LiquidityHorizon.LH60
-    )
+    assert nmrf_effective_liquidity_horizon(LiquidityHorizon.LH10) == (LiquidityHorizon.LH20)
+    assert nmrf_effective_liquidity_horizon(LiquidityHorizon.LH60) == (LiquidityHorizon.LH60)
 
 
 def test_stress_artifact_extracts_ses_from_vectorized_revaluation_losses() -> None:

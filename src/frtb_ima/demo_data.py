@@ -30,15 +30,15 @@ RNG = np.random.default_rng(seed=42)
 # ---------------------------------------------------------------------------
 
 DEMO_RISK_FACTORS: list[RiskFactor] = [
-    RiskFactor("USD_LIBOR_3M",   RiskClass.GIRR,      LiquidityHorizon.LH10),
-    RiskFactor("EUR_SWAP_10Y",   RiskClass.GIRR,      LiquidityHorizon.LH20),
-    RiskFactor("IG_CREDIT_SPD",  RiskClass.CSR,       LiquidityHorizon.LH40),
-    RiskFactor("HY_CREDIT_SPD",  RiskClass.CSR,       LiquidityHorizon.LH60),
-    RiskFactor("SPX_EQUITY",     RiskClass.EQUITY,    LiquidityHorizon.LH20),
-    RiskFactor("EM_EQUITY",      RiskClass.EQUITY,    LiquidityHorizon.LH60),
-    RiskFactor("EURUSD_FX",      RiskClass.FX,        LiquidityHorizon.LH10),
-    RiskFactor("WTI_CRUDE",      RiskClass.COMMODITY, LiquidityHorizon.LH20),
-    RiskFactor("EXOTIC_RF",      RiskClass.EQUITY,    LiquidityHorizon.LH120),  # NMRF
+    RiskFactor("USD_LIBOR_3M", RiskClass.GIRR, LiquidityHorizon.LH10),
+    RiskFactor("EUR_SWAP_10Y", RiskClass.GIRR, LiquidityHorizon.LH20),
+    RiskFactor("IG_CREDIT_SPD", RiskClass.CSR, LiquidityHorizon.LH40),
+    RiskFactor("HY_CREDIT_SPD", RiskClass.CSR, LiquidityHorizon.LH60),
+    RiskFactor("SPX_EQUITY", RiskClass.EQUITY, LiquidityHorizon.LH20),
+    RiskFactor("EM_EQUITY", RiskClass.EQUITY, LiquidityHorizon.LH60),
+    RiskFactor("EURUSD_FX", RiskClass.FX, LiquidityHorizon.LH10),
+    RiskFactor("WTI_CRUDE", RiskClass.COMMODITY, LiquidityHorizon.LH20),
+    RiskFactor("EXOTIC_RF", RiskClass.EQUITY, LiquidityHorizon.LH120),  # NMRF
 ]
 
 
@@ -100,23 +100,23 @@ def make_scenario_pnl(desk: str, n_scenarios: int = 500) -> ScenarioPnL:
     # Build per-risk-class vectors (simplified: pro-rata split across classes)
     # In practice these would come from the risk engine per risk class.
     for rc in [RiskClass.GIRR, RiskClass.FX]:
-        spnl.add_vector(rc, LiquidityHorizon.LH10,  (base  * 0.3).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH20,  (lh20  * 0.3).tolist())
+        spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.3).tolist())
+        spnl.add_vector(rc, LiquidityHorizon.LH20, (lh20 * 0.3).tolist())
 
     for rc in [RiskClass.CSR]:
-        spnl.add_vector(rc, LiquidityHorizon.LH10,  (base  * 0.2).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH40,  (lh40  * 0.2).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH60,  (lh60  * 0.2).tolist())
+        spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.2).tolist())
+        spnl.add_vector(rc, LiquidityHorizon.LH40, (lh40 * 0.2).tolist())
+        spnl.add_vector(rc, LiquidityHorizon.LH60, (lh60 * 0.2).tolist())
 
     for rc in [RiskClass.EQUITY]:
-        spnl.add_vector(rc, LiquidityHorizon.LH10,  (base  * 0.3).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH20,  (lh20  * 0.3).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH60,  (lh60  * 0.3).tolist())
+        spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.3).tolist())
+        spnl.add_vector(rc, LiquidityHorizon.LH20, (lh20 * 0.3).tolist())
+        spnl.add_vector(rc, LiquidityHorizon.LH60, (lh60 * 0.3).tolist())
         spnl.add_vector(rc, LiquidityHorizon.LH120, (lh120 * 0.3).tolist())
 
     for rc in [RiskClass.COMMODITY]:
-        spnl.add_vector(rc, LiquidityHorizon.LH10,  (base  * 0.2).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH20,  (lh20  * 0.2).tolist())
+        spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.2).tolist())
+        spnl.add_vector(rc, LiquidityHorizon.LH20, (lh20 * 0.2).tolist())
 
     return spnl
 
@@ -124,7 +124,7 @@ def make_scenario_pnl(desk: str, n_scenarios: int = 500) -> ScenarioPnL:
 def aggregate_lh_vectors(
     spnl: ScenarioPnL,
 ) -> tuple[
-    dict[LiquidityHorizon, list[float]],               # all-class aggregated
+    dict[LiquidityHorizon, list[float]],  # all-class aggregated
     dict[RiskClass, dict[LiquidityHorizon, list[float]]],  # per-class
 ]:
     """
@@ -180,9 +180,9 @@ def make_pnl_series(n: int = 260) -> tuple[list[float], list[float], list[float]
         VaR convention: positive magnitude.
     """
     # APL: actual — slightly fatter tails than HPL
-    apl  = RNG.normal(loc=50.0, scale=1_200.0, size=n).tolist()
+    apl = RNG.normal(loc=50.0, scale=1_200.0, size=n).tolist()
     # HPL: hypothetical — same centre, tighter
-    hpl  = RNG.normal(loc=50.0, scale=1_050.0, size=n).tolist()
+    hpl = RNG.normal(loc=50.0, scale=1_050.0, size=n).tolist()
     # VaR: constant approximation for demo
     var_estimates = [2_500.0] * n
     return apl, hpl, var_estimates

@@ -39,10 +39,7 @@ def _flat_vec(value: float, n: int = 100) -> list[float]:
 
 
 def _observations(name: str, n: int) -> list[RealPriceObservation]:
-    return [
-        RealPriceObservation(name, AS_OF - timedelta(days=i * 14))
-        for i in range(n)
-    ]
+    return [RealPriceObservation(name, AS_OF - timedelta(days=i * 14)) for i in range(n)]
 
 
 def test_get_policy_returns_deterministic_immutable_profiles() -> None:
@@ -103,9 +100,7 @@ def test_fed_policy_reproduces_current_default_calculation_outputs() -> None:
         [100.0] * 250,
         policy,
     )
-    assert supervisory_multiplier(6) == pytest.approx(
-        supervisory_multiplier_for_policy(6, policy)
-    )
+    assert supervisory_multiplier(6) == pytest.approx(supervisory_multiplier_for_policy(6, policy))
 
 
 def test_scalar_functions_remain_backward_compatible() -> None:
@@ -130,19 +125,25 @@ def test_type_a_type_b_taxonomy_is_fed_only_until_explicitly_supported() -> None
 
     assert fed.nmrf_taxonomy_mode == NMRFTaxonomyMode.TYPE_A_TYPE_B
     assert ecb.nmrf_taxonomy_mode == NMRFTaxonomyMode.BASEL_EU_NMRF
-    assert classify_risk_factor_for_policy(
-        rf,
-        obs,
-        qualitative_pass=True,
-        as_of_date=AS_OF,
-        policy=fed,
-    ) == ModellabilityStatus.TYPE_A_NMRF
-    assert classify_risk_factor(
-        rf,
-        obs,
-        qualitative_pass=True,
-        as_of_date=AS_OF,
-    ) == ModellabilityStatus.TYPE_A_NMRF
+    assert (
+        classify_risk_factor_for_policy(
+            rf,
+            obs,
+            qualitative_pass=True,
+            as_of_date=AS_OF,
+            policy=fed,
+        )
+        == ModellabilityStatus.TYPE_A_NMRF
+    )
+    assert (
+        classify_risk_factor(
+            rf,
+            obs,
+            qualitative_pass=True,
+            as_of_date=AS_OF,
+        )
+        == ModellabilityStatus.TYPE_A_NMRF
+    )
 
     with pytest.raises(UnsupportedRegulatoryFeature, match="type_a_type_b"):
         classify_risk_factor_for_policy(

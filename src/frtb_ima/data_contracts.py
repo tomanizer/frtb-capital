@@ -84,9 +84,7 @@ class RiskFactorDefinition:
             if self.bucket.risk_class != self.risk_class:
                 raise ValueError("risk factor bucket risk_class does not match definition")
             if self.bucket.liquidity_horizon != self.liquidity_horizon:
-                raise ValueError(
-                    "risk factor bucket liquidity_horizon does not match definition"
-                )
+                raise ValueError("risk factor bucket liquidity_horizon does not match definition")
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 
 
@@ -172,8 +170,7 @@ class ScenarioCube:
         arr = np.asarray(self.values, dtype=float)
         if arr.ndim != 3:
             raise ValueError(
-                "ScenarioCube values must have shape "
-                "(scenario, position, risk_factor)"
+                "ScenarioCube values must have shape (scenario, position, risk_factor)"
             )
         if arr.size == 0:
             raise ValueError("ScenarioCube values must be non-empty")
@@ -183,9 +180,7 @@ class ScenarioCube:
         scenario_count, position_count, risk_factor_count = arr.shape
         scenario_metadata = tuple(self.scenario_metadata)
         if len(scenario_metadata) != scenario_count:
-            raise ValueError(
-                "scenario_metadata length must match ScenarioCube scenario axis"
-            )
+            raise ValueError("scenario_metadata length must match ScenarioCube scenario axis")
 
         position_ids = _validate_non_empty_unique(self.position_ids, "position_ids")
         risk_factor_names = _validate_non_empty_unique(
@@ -195,9 +190,7 @@ class ScenarioCube:
         if len(position_ids) != position_count:
             raise ValueError("position_ids length must match ScenarioCube position axis")
         if len(risk_factor_names) != risk_factor_count:
-            raise ValueError(
-                "risk_factor_names length must match ScenarioCube risk-factor axis"
-            )
+            raise ValueError("risk_factor_names length must match ScenarioCube risk-factor axis")
 
         object.__setattr__(self, "values", arr.astype(np.float64, copy=False))
         object.__setattr__(self, "scenario_metadata", scenario_metadata)
@@ -223,8 +216,7 @@ class ScenarioCube:
     @property
     def risk_factor_index(self) -> dict[str, int]:
         return {
-            risk_factor_name: index
-            for index, risk_factor_name in enumerate(self.risk_factor_names)
+            risk_factor_name: index for index, risk_factor_name in enumerate(self.risk_factor_names)
         }
 
     def total_scenario_pnl(self) -> FloatArray:
@@ -299,10 +291,7 @@ class CapitalRunResult:
         return {
             "as_of_date": self.as_of_date.isoformat(),
             "regime": self.regime.value,
-            "desk_results": {
-                desk: result.as_dict()
-                for desk, result in self.desk_results.items()
-            },
+            "desk_results": {desk: result.as_dict() for desk, result in self.desk_results.items()},
             "total_market_risk_capital": self.total_market_risk_capital,
             "notes": list(self.notes),
         }

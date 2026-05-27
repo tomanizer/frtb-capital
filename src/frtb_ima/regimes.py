@@ -71,8 +71,7 @@ class UnsupportedRegulatoryFeatureError(NotImplementedError):
         self.feature_name = feature_name
         self.source_topic = source_topic
         super().__init__(
-            f"{regime.value} requires unsupported feature '{feature_name}' "
-            f"({source_topic})"
+            f"{regime.value} requires unsupported feature '{feature_name}' ({source_topic})"
         )
 
 
@@ -142,16 +141,16 @@ class RegulatoryPolicy:
     backtesting_window_days: int = 250
     backtesting_minimum_history_days: int = 250
     backtesting_var_confidence_levels: tuple[float, ...] = (0.975, 0.99)
-    backtesting_exception_limits: tuple[
-        tuple[float, int], ...
-    ] = DEFAULT_BACKTESTING_EXCEPTION_LIMITS
+    backtesting_exception_limits: tuple[tuple[float, int], ...] = (
+        DEFAULT_BACKTESTING_EXCEPTION_LIMITS
+    )
     reduced_set_coverage_window_days: int = 60
     reduced_set_variation_explained_threshold: float = 0.75
     stress_period_window_observations: int = 250
     stress_period_minimum_observations: int = 250
-    supervisory_multiplier_schedule: tuple[
-        tuple[int, float], ...
-    ] = DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE
+    supervisory_multiplier_schedule: tuple[tuple[int, float], ...] = (
+        DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE
+    )
     supervisory_multiplier_red_zone: float = 2.00
     unsupported_features: tuple[UnsupportedFeature, ...] = ()
 
@@ -222,8 +221,7 @@ def _ecb_crr3_policy() -> RegulatoryPolicy:
                 feature_name="type_a_type_b_nmrf_taxonomy",
                 source_topic="EU CRR Article 325bk NMRF terminology",
                 notes=(
-                    "Type A / Type B labels are U.S. NPR working assumptions, "
-                    "not native EU terms."
+                    "Type A / Type B labels are U.S. NPR working assumptions, not native EU terms."
                 ),
             ),
         ),
@@ -255,8 +253,7 @@ def _pra_uk_crr_policy() -> RegulatoryPolicy:
                 feature_name="type_a_type_b_nmrf_taxonomy",
                 source_topic="UK CRR / PRA NMRF terminology",
                 notes=(
-                    "Type A / Type B labels are U.S. NPR working assumptions, "
-                    "not native UK terms."
+                    "Type A / Type B labels are U.S. NPR working assumptions, not native UK terms."
                 ),
             ),
         ),

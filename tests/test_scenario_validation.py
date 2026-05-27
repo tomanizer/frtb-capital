@@ -12,9 +12,7 @@ from frtb_ima.scenario_validation import (
     validate_nested_lh_vectors,
 )
 
-METADATA = make_scenario_metadata(
-    [date(2025, 1, 1), date(2025, 1, 2), date(2025, 1, 3)]
-)
+METADATA = make_scenario_metadata([date(2025, 1, 1), date(2025, 1, 2), date(2025, 1, 3)])
 
 
 def _vector(values: list[float]) -> ScenarioVector:
@@ -68,12 +66,8 @@ def test_validate_nested_lh_vectors_detects_metadata_misalignment() -> None:
     with pytest.raises(NestedLHValidationError, match="not aligned"):
         validate_nested_lh_vectors(
             {
-                LiquidityHorizon.LH10: ScenarioVector(
-                    values=np.array([1.0, 2.0]), metadata=m1
-                ),
-                LiquidityHorizon.LH20: ScenarioVector(
-                    values=np.array([1.0, 2.0]), metadata=m2
-                ),
+                LiquidityHorizon.LH10: ScenarioVector(values=np.array([1.0, 2.0]), metadata=m1),
+                LiquidityHorizon.LH20: ScenarioVector(values=np.array([1.0, 2.0]), metadata=m2),
             }
         )
 

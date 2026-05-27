@@ -119,9 +119,7 @@ class IMCCResult:
             f"imcc={self.imcc:.6f}",
         ]
         for component in self.constrained_components:
-            lines.append(
-                f"{component.risk_class.value} constrained_lha_es={component.lha_es:.6f}"
-            )
+            lines.append(f"{component.risk_class.value} constrained_lha_es={component.lha_es:.6f}")
         return lines
 
 
@@ -245,9 +243,7 @@ def imcc_constrained_breakdown(
     for risk_class in sorted(per_risk_class_vectors, key=lambda item: item.value):
         lh_vectors = per_risk_class_vectors[risk_class]
         if LiquidityHorizon.LH10 not in lh_vectors:
-            raise KeyError(
-                f"RiskClass {risk_class} is missing the LH10 vector required for LHA ES"
-            )
+            raise KeyError(f"RiskClass {risk_class} is missing the LH10 vector required for LHA ES")
         components.append(
             IMCCRiskClassComponent(
                 risk_class=risk_class,

@@ -315,22 +315,15 @@ def rolling_window_severity_scores(
     )
     loss_arr = _as_finite_loss_array(losses, "losses")
     if loss_arr.size < minimum_observations:
-        raise ValueError(
-            "losses must contain at least "
-            f"{minimum_observations} observations"
-        )
+        raise ValueError(f"losses must contain at least {minimum_observations} observations")
     if loss_arr.size < window_observations:
-        raise ValueError(
-            "losses must contain at least window_observations observations"
-        )
+        raise ValueError("losses must contain at least window_observations observations")
 
     if severity_metric == StressSeverityMetric.CUMULATIVE_LOSS:
         cumulative = np.empty(loss_arr.size + 1, dtype=np.float64)
         cumulative[0] = 0.0
         np.cumsum(loss_arr, out=cumulative[1:])
-        return cumulative[window_observations:] - cumulative[
-            : -window_observations
-        ]
+        return cumulative[window_observations:] - cumulative[:-window_observations]
 
     windows = sliding_window_view(loss_arr, window_shape=window_observations)
 
@@ -455,9 +448,7 @@ def select_stress_periods_by_risk_class(
         if not isinstance(series, HistoricalStressSeries):
             raise TypeError("histories must contain HistoricalStressSeries values")
         if series.risk_class in selected:
-            raise ValueError(
-                f"duplicate history for risk class {series.risk_class.value}"
-            )
+            raise ValueError(f"duplicate history for risk class {series.risk_class.value}")
         selected[series.risk_class] = select_stress_period_from_history(
             series,
             window_observations=window_observations,
@@ -466,9 +457,7 @@ def select_stress_periods_by_risk_class(
             confidence_level=confidence_level,
             tie_break=tie_break,
         )
-        counts[series.risk_class] = (
-            series.observation_count - window_observations + 1
-        )
+        counts[series.risk_class] = series.observation_count - window_observations + 1
 
     regime_value = regime.value if isinstance(regime, RegulatoryRegime) else str(regime)
     return StressPeriodSelectionResult(
@@ -531,9 +520,7 @@ def stress_period_specs_for_nmrf(
     if not isinstance(selection_result, StressPeriodSelectionResult):
         raise TypeError("selection_result must be a StressPeriodSelectionResult")
     return {
-        risk_class: selection_result.selected_by_risk_class[
-            risk_class
-        ].to_nmrf_stress_period_spec()
+        risk_class: selection_result.selected_by_risk_class[risk_class].to_nmrf_stress_period_spec()
         for risk_class in sorted(
             selection_result.selected_by_risk_class,
             key=lambda item: item.value,
@@ -698,7 +685,4 @@ def _stress_period_id(
     metric: StressSeverityMetric,
 ) -> str:
     metric_label = metric.value.lower().replace("_", "-")
-    return (
-        f"{risk_class.value.lower()}-"
-        f"{start_date:%Y%m%d}-{end_date:%Y%m%d}-{metric_label}"
-    )
+    return f"{risk_class.value.lower()}-{start_date:%Y%m%d}-{end_date:%Y%m%d}-{metric_label}"

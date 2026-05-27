@@ -271,6 +271,7 @@ def lha_es_from_scalars(
 # Toy approximation — clearly labelled, never used in the main path
 # ---------------------------------------------------------------------------
 
+
 def lha_es_scalar_approximation(
     es_full: float,
     weighted_avg_lh_days: float,

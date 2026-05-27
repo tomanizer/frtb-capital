@@ -55,9 +55,7 @@ def test_selector_chooses_direct_when_stable_and_well_defined() -> None:
 
     assert decision.method == NMRFStressMethod.DIRECT
     assert decision.reason == NMRFMethodReason.DIRECT_STABLE_AND_WELL_DEFINED
-    assert decision.to_valuation_instruction().required_liquidity_horizon == (
-        LiquidityHorizon.LH40
-    )
+    assert decision.to_valuation_instruction().required_liquidity_horizon == (LiquidityHorizon.LH40)
 
 
 def test_selector_chooses_stepwise_when_direct_robustness_fails() -> None:

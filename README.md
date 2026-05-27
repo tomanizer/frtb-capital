@@ -39,10 +39,12 @@ The repository includes a small `Makefile` for a fresh-clone workflow:
 ```bash
 make install
 make check
-make demo
+make examples
 ```
 
-Individual targets are available for `make test`, `make lint`, and `make typecheck`.
+Individual targets are available for `make test`, `make lint`, `make format`,
+`make format-check`, `make typecheck`, and `make demo` (alias for
+`make examples`).
 
 ## Run tests
 

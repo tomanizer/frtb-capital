@@ -96,9 +96,7 @@ def reduced_set_variation_explained(
     if window <= 0:
         raise ValueError(f"window must be positive, got {window}")
     if minimum_history is not None and minimum_history <= 0:
-        raise ValueError(
-            f"minimum_history must be positive when provided, got {minimum_history}"
-        )
+        raise ValueError(f"minimum_history must be positive when provided, got {minimum_history}")
     if not (0.0 <= threshold <= 1.0):
         raise ValueError(f"threshold must be in [0, 1], got {threshold}")
 

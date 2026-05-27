@@ -78,9 +78,7 @@ class ScenarioPnL:
     desk: str
     # risk_class -> lh_subset -> 1-D array of scenario losses
     # lh_subset is a LiquidityHorizon value (the cutoff, not the label)
-    vectors: dict[RiskClass, dict[LiquidityHorizon, list[float]]] = field(
-        default_factory=dict
-    )
+    vectors: dict[RiskClass, dict[LiquidityHorizon, list[float]]] = field(default_factory=dict)
 
     def add_vector(
         self,

@@ -102,8 +102,7 @@ def nested_lh_vectors_from_cube(
             risk_class=risk_class,
             liquidity_horizon=liquidity_horizon,
             name=(
-                f"{risk_class.value if risk_class is not None else 'ALL'}_"
-                f"{liquidity_horizon.name}"
+                f"{risk_class.value if risk_class is not None else 'ALL'}_{liquidity_horizon.name}"
             ),
         )
 

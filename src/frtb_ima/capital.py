@@ -37,7 +37,7 @@ class CapitalComponents:
     multiplier: float
     pla_addon: float
     models_based_capital: float
-    binding_term: str   # "SPOT" or "AVERAGE"
+    binding_term: str  # "SPOT" or "AVERAGE"
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails."""
@@ -176,14 +176,11 @@ def pla_addon(
     if standardized_green_amber == 0.0:
         if standardized_amber != 0.0:
             raise ValueError(
-                "standardized_amber cannot be positive when "
-                "standardized_green_amber is zero"
+                "standardized_amber cannot be positive when standardized_green_amber is zero"
             )
         k_factor = 0.0
     elif standardized_amber > standardized_green_amber:
-        raise ValueError(
-            "standardized_amber cannot exceed standardized_green_amber"
-        )
+        raise ValueError("standardized_amber cannot exceed standardized_green_amber")
     else:
         k_factor = 0.5 * standardized_amber / standardized_green_amber
 
@@ -201,9 +198,7 @@ def pla_addon(
 
 def supervisory_multiplier(
     exception_count: int,
-    schedule: Sequence[
-        tuple[int, float]
-    ] = DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE,
+    schedule: Sequence[tuple[int, float]] = DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE,
     red_zone_multiplier: float = 2.00,
 ) -> float:
     """
@@ -236,8 +231,7 @@ def supervisory_multiplier(
             raise ValueError(f"schedule exception counts must be non-negative, got {count}")
         if not math.isfinite(multiplier) or multiplier < 1.5:
             raise ValueError(
-                "schedule multipliers must be finite and at least the 1.5 floor, "
-                f"got {multiplier}"
+                f"schedule multipliers must be finite and at least the 1.5 floor, got {multiplier}"
             )
     return multipliers.get(exception_count, red_zone_multiplier)
 

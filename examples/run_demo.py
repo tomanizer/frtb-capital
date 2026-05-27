@@ -104,8 +104,7 @@ def synthetic_stress_histories() -> tuple[HistoricalStressSeries, ...]:
     """Build deterministic risk-class histories for stress-period calibration."""
     observation_count = 520
     dates = tuple(
-        AS_OF - timedelta(days=observation_count - 1 - idx)
-        for idx in range(observation_count)
+        AS_OF - timedelta(days=observation_count - 1 - idx) for idx in range(observation_count)
     )
     grid = np.arange(observation_count, dtype=float)
     stress_start_by_risk_class: dict[RiskClass, int] = {
@@ -133,8 +132,7 @@ def synthetic_stress_histories() -> tuple[HistoricalStressSeries, ...]:
                 dates=dates,
                 source="synthetic historical risk-class loss calibration",
                 scenario_ids=tuple(
-                    f"{risk_class.value.lower()}-hist-{idx:03d}"
-                    for idx in range(observation_count)
+                    f"{risk_class.value.lower()}-hist-{idx:03d}" for idx in range(observation_count)
                 ),
             )
         )
@@ -186,9 +184,9 @@ def main() -> None:
         classifications[rf.name] = status
         print(f"  {rf.name:<20} LH={rf.liquidity_horizon.value:>3}d  {status.value}")
 
-    modellable    = [n for n, s in classifications.items() if s == ModellabilityStatus.MODELLABLE]
-    type_a_nmrfs  = [n for n, s in classifications.items() if s == ModellabilityStatus.TYPE_A_NMRF]
-    type_b_nmrfs  = [n for n, s in classifications.items() if s == ModellabilityStatus.TYPE_B_NMRF]
+    modellable = [n for n, s in classifications.items() if s == ModellabilityStatus.MODELLABLE]
+    type_a_nmrfs = [n for n, s in classifications.items() if s == ModellabilityStatus.TYPE_A_NMRF]
+    type_b_nmrfs = [n for n, s in classifications.items() if s == ModellabilityStatus.TYPE_B_NMRF]
 
     print(
         f"\n  Modellable: {len(modellable)}  |  "
@@ -455,21 +453,13 @@ def main() -> None:
     bt975 = bt.level(0.975)
     mult = supervisory_multiplier_for_policy(bt99.apl_exceptions, context.policy)
     print(f"  Window:             {bt.window_size} business days")
+    print(f"  APL exceptions 99%: {bt99.apl_exceptions:>4}  (limit: {bt99.exception_limit:.0f})")
+    print(f"  HPL exceptions 99%: {bt99.hpl_exceptions:>4}  (limit: {bt99.exception_limit:.0f})")
     print(
-        f"  APL exceptions 99%: {bt99.apl_exceptions:>4}  "
-        f"(limit: {bt99.exception_limit:.0f})"
+        f"  APL exceptions 97.5%: {bt975.apl_exceptions:>2}  (limit: {bt975.exception_limit:.0f})"
     )
     print(
-        f"  HPL exceptions 99%: {bt99.hpl_exceptions:>4}  "
-        f"(limit: {bt99.exception_limit:.0f})"
-    )
-    print(
-        f"  APL exceptions 97.5%: {bt975.apl_exceptions:>2}  "
-        f"(limit: {bt975.exception_limit:.0f})"
-    )
-    print(
-        f"  HPL exceptions 97.5%: {bt975.hpl_exceptions:>2}  "
-        f"(limit: {bt975.exception_limit:.0f})"
+        f"  HPL exceptions 97.5%: {bt975.hpl_exceptions:>2}  (limit: {bt975.exception_limit:.0f})"
     )
     print(f"  Backtesting pass:   {bt.model_eligible}")
     print(f"  Supervisory mult:   {mult:.2f}")

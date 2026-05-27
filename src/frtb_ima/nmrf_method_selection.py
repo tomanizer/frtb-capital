@@ -157,9 +157,7 @@ class NMRFMethodEvidence:
             "pricing_attempt_count": self.pricing_attempt_count,
             "pricing_failure_count": self.pricing_failure_count,
             "proxy_or_basis_risk": self.proxy_or_basis_risk,
-            "diagnostics": [
-                diagnostic.as_dict() for diagnostic in self.all_diagnostics
-            ],
+            "diagnostics": [diagnostic.as_dict() for diagnostic in self.all_diagnostics],
             "source": self.source,
             "notes": self.notes,
         }
@@ -174,9 +172,7 @@ class NMRFMethodReason(StrEnum):
     STEPWISE_REQUIRED_FOR_GRID_SEARCH = "STEPWISE_REQUIRED_FOR_GRID_SEARCH"
     STEPWISE_ONLY_AVAILABLE_METHOD = "STEPWISE_ONLY_AVAILABLE_METHOD"
     FULL_REVALUATION_AVAILABLE = "FULL_REVALUATION_AVAILABLE"
-    NO_ACCEPTABLE_SCENARIO_REQUIRES_MAX_LOSS = (
-        "NO_ACCEPTABLE_SCENARIO_REQUIRES_MAX_LOSS"
-    )
+    NO_ACCEPTABLE_SCENARIO_REQUIRES_MAX_LOSS = "NO_ACCEPTABLE_SCENARIO_REQUIRES_MAX_LOSS"
     NO_ACCEPTABLE_METHOD = "NO_ACCEPTABLE_METHOD"
 
 
@@ -252,9 +248,7 @@ def assess_direct_loss_robustness(
     within the supplied threshold. ``absolute_tolerance`` prevents zero-loss
     checkpoints from creating unstable relative-error denominators.
     """
-    if max_relative_error_threshold < 0.0 or not math.isfinite(
-        max_relative_error_threshold
-    ):
+    if max_relative_error_threshold < 0.0 or not math.isfinite(max_relative_error_threshold):
         raise ValueError("max_relative_error_threshold must be finite and non-negative")
     if absolute_tolerance <= 0.0 or not math.isfinite(absolute_tolerance):
         raise ValueError("absolute_tolerance must be finite and positive")
@@ -274,9 +268,7 @@ def assess_direct_loss_robustness(
         if max_relative_error <= max_relative_error_threshold
         else NMRFDiagnosticOutcome.FAIL
     )
-    audit_notes = (
-        f"max_abs_error={max_abs_error:.12g}; observations={int(direct.size)}"
-    )
+    audit_notes = f"max_abs_error={max_abs_error:.12g}; observations={int(direct.size)}"
     if notes:
         audit_notes = f"{notes}; {audit_notes}"
 
@@ -339,9 +331,7 @@ class NMRFValuationInstruction:
         if not isinstance(self.method, NMRFStressMethod):
             raise TypeError("method must be an NMRFStressMethod")
         if not isinstance(self.risk_factor_liquidity_horizon, LiquidityHorizon):
-            raise TypeError(
-                "risk_factor_liquidity_horizon must be a LiquidityHorizon"
-            )
+            raise TypeError("risk_factor_liquidity_horizon must be a LiquidityHorizon")
         if not isinstance(self.required_liquidity_horizon, LiquidityHorizon):
             raise TypeError("required_liquidity_horizon must be a LiquidityHorizon")
         minimum = nmrf_effective_liquidity_horizon(self.risk_factor_liquidity_horizon)
@@ -356,9 +346,7 @@ class NMRFValuationInstruction:
             "risk_factor_name": self.risk_factor_name,
             "modellability_status": self.modellability_status.value,
             "method": self.method.value,
-            "risk_factor_liquidity_horizon": (
-                self.risk_factor_liquidity_horizon.value
-            ),
+            "risk_factor_liquidity_horizon": (self.risk_factor_liquidity_horizon.value),
             "required_liquidity_horizon": self.required_liquidity_horizon.value,
             "reason": self.reason.value,
             "source": self.source,
@@ -425,8 +413,7 @@ def _fallback_or_error(
             notes=selection_input.notes,
         )
     raise NMRFMethodSelectionError(
-        f"No acceptable NMRF stress method for {selection_input.risk_factor_name}: "
-        f"{reason.value}"
+        f"No acceptable NMRF stress method for {selection_input.risk_factor_name}: {reason.value}"
     )
 
 
@@ -445,9 +432,7 @@ def select_nmrf_method(
     """
     policy.require_supported("type_a_type_b_nmrf_taxonomy")
     if not selection_input.is_nmrf:
-        raise NMRFMethodSelectionError(
-            "NMRF method selection requires TYPE_A_NMRF or TYPE_B_NMRF"
-        )
+        raise NMRFMethodSelectionError("NMRF method selection requires TYPE_A_NMRF or TYPE_B_NMRF")
 
     if selection_input.nonlinear and selection_input.full_revaluation_available:
         return NMRFMethodDecision(
@@ -561,6 +546,5 @@ def select_nmrf_methods(
     if not selection_inputs:
         raise ValueError("selection_inputs must be non-empty")
     return tuple(
-        select_nmrf_method(selection_input, policy)
-        for selection_input in selection_inputs
+        select_nmrf_method(selection_input, policy) for selection_input in selection_inputs
     )

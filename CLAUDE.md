@@ -24,20 +24,27 @@ git worktree list
 make install          # creates .venv and installs all deps
 
 # Full gate (run before every commit)
-make check            # lint + typecheck + test
+make check            # lint + format-check + typecheck + test
 
 # Individual targets
-make lint             # ruff check src tests
+make lint             # ruff check src tests examples
+make format           # ruff format src tests examples
+make format-check     # ruff format --check src tests examples
 make typecheck        # mypy src
 make test             # pytest -v --tb=short
-make demo             # python examples/run_demo.py
+make examples         # python examples/run_demo.py
+make demo             # alias for make examples
 
 # Single test
 .venv/bin/python -m pytest tests/test_expected_shortfall.py -v
 .venv/bin/python -m pytest tests/ -k "test_lha"
 ```
 
-CI runs `pytest --cov=frtb_ima --cov-report=term-missing` across Python 3.11 and 3.12.
+CI splits lint, typecheck, test, and examples. Lint enforces `ruff check` plus
+`ruff format --check` on `src`, `tests`, and `examples`; typecheck runs mypy on
+Python 3.11; tests run `pytest --cov=frtb_ima --cov-report=term-missing` across
+Python 3.11, 3.12, and 3.13 with the configured coverage floor; examples run
+the demo path as a separate integration gate.
 
 ---
 

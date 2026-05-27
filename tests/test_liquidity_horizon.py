@@ -35,13 +35,7 @@ def test_lha_es_from_scalars_all_horizons() -> None:
         LiquidityHorizon.LH60: 40.0,
         LiquidityHorizon.LH120: 20.0,
     }
-    expected = math.sqrt(
-        1 * 100**2
-        + 1 * 80**2
-        + 2 * 60**2
-        + 2 * 40**2
-        + 6 * 20**2
-    )
+    expected = math.sqrt(1 * 100**2 + 1 * 80**2 + 2 * 60**2 + 2 * 40**2 + 6 * 20**2)
     result = lha_es_from_scalars(es)
     assert result == pytest.approx(expected, rel=1e-9)
 
@@ -68,9 +62,7 @@ def test_lha_es_from_vectors_matches_scalars() -> None:
 
 
 def test_lha_breakdown_from_vectors() -> None:
-    metadata = make_scenario_metadata(
-        [date(2025, 1, 1), date(2025, 1, 2), date(2025, 1, 3)]
-    )
+    metadata = make_scenario_metadata([date(2025, 1, 1), date(2025, 1, 2), date(2025, 1, 3)])
 
     result = lha_es_breakdown_from_vectors(
         {

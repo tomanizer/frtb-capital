@@ -63,7 +63,7 @@ def test_count_exceptions_rejects_non_finite_inputs() -> None:
 
 def test_backtest_window_trims_to_250() -> None:
     n = 300
-    pnl = [100.0] * n          # all gains — no exceptions
+    pnl = [100.0] * n  # all gains — no exceptions
     var = [50.0] * n
     result = backtest(pnl, pnl, var, window=250)
     assert result.window_size == 250
