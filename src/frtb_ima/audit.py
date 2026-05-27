@@ -1,5 +1,5 @@
 """
-Post-run audit records and NDJSON serialisation.
+Post-run audit records, NDJSON serialisation, and Markdown report rendering.
 
 These dataclasses sit at the orchestration boundary. They collect decomposed
 calculation results into serialisable records without adding storage or
@@ -146,6 +146,127 @@ def audit_records_to_ndjson(records: Iterable[DeskAuditRecord]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_capital_run_audit_report(
+    log: CapitalRunAuditLog,
+    *,
+    title: str = "FRTB IMA Capital Run Audit Report",
+) -> str:
+    """
+    Render a deterministic Markdown audit report for a capital run.
+
+    This is an orchestration-layer report view over already-computed audit
+    records. It does not recalculate capital and does not attempt to be a final
+    regulatory disclosure template.
+    """
+    lines: list[str] = [
+        f"# {title}",
+        "",
+        "> Prototype report only. Not for regulatory reporting.",
+        "> NPR 2.0 values are proposed-rule working assumptions.",
+        "",
+        "## Run summary",
+        "",
+    ]
+    lines.extend(
+        _markdown_table(
+            ("Field", "Value"),
+            (
+                ("Run ID", log.run_id),
+                ("Regime", log.regime),
+                (
+                    "As of date",
+                    log.as_of_date.isoformat() if log.as_of_date is not None else "",
+                ),
+                ("Desk count", log.desk_count),
+            ),
+        )
+    )
+
+    if log.metadata:
+        lines.extend(_json_section("Run metadata", log.metadata, heading_level=3))
+
+    lines.extend(["", "## Desk summary", ""])
+    lines.extend(
+        _markdown_table(
+            (
+                "Desk",
+                "As of date",
+                "IMCC",
+                "Total SES",
+                "Models-based capital",
+                "PLA zone",
+                "Backtesting eligible",
+                "Elapsed seconds",
+            ),
+            (
+                (
+                    record.desk_id,
+                    record.as_of_date.isoformat() if record.as_of_date is not None else "",
+                    _format_report_value(_mapping_value(record.imcc, "imcc")),
+                    _format_report_value(_mapping_value(record.ses, "total_ses", "ses")),
+                    _format_report_value(_mapping_value(record.capital, "models_based_capital")),
+                    _format_report_value(_mapping_value(record.pla, "zone", "pla_zone")),
+                    _format_report_value(_mapping_value(record.backtesting, "model_eligible")),
+                    _format_report_value(record.elapsed_seconds),
+                )
+                for record in log.desk_records
+            ),
+        )
+    )
+
+    for record in log.desk_records:
+        lines.extend(["", f"## Desk: {record.desk_id}", ""])
+        lines.extend(
+            _markdown_table(
+                ("Field", "Value"),
+                (
+                    ("Run ID", record.run_id),
+                    ("Regime", record.regime),
+                    (
+                        "As of date",
+                        record.as_of_date.isoformat() if record.as_of_date is not None else "",
+                    ),
+                    ("Elapsed seconds", _format_report_value(record.elapsed_seconds)),
+                ),
+            )
+        )
+        if record.notes:
+            lines.extend(["", "### Notes", ""])
+            lines.extend(f"- {_escape_table_cell(note)}" for note in record.notes)
+        lines.extend(_json_section("IMCC", record.imcc, heading_level=3))
+        lines.extend(_json_section("SES", record.ses, heading_level=3))
+        lines.extend(_json_section("PLA", record.pla, heading_level=3))
+        lines.extend(_json_section("Backtesting", record.backtesting, heading_level=3))
+        lines.extend(_json_section("Capital", record.capital, heading_level=3))
+        if record.nmrf_valuation:
+            lines.extend(
+                _json_section(
+                    "NMRF valuation",
+                    record.nmrf_valuation,
+                    heading_level=3,
+                )
+            )
+        if record.metadata:
+            lines.extend(_json_section("Desk metadata", record.metadata, heading_level=3))
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def write_capital_run_audit_report(
+    log: CapitalRunAuditLog,
+    path: str | Path,
+    *,
+    title: str = "FRTB IMA Capital Run Audit Report",
+) -> None:
+    """Write a deterministic Markdown audit report for a capital run."""
+    report_path = Path(path)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(
+        render_capital_run_audit_report(log, title=title),
+        encoding="utf-8",
+    )
+
+
 def write_audit_records_ndjson(
     records: Iterable[DeskAuditRecord],
     path: str | Path,
@@ -160,6 +281,57 @@ def write_audit_records_ndjson(
 
 def _freeze_mapping(values: Mapping[str, object]) -> Mapping[str, object]:
     return MappingProxyType(dict(values))
+
+
+def _json_section(
+    title: str,
+    value: object,
+    *,
+    heading_level: int,
+) -> list[str]:
+    heading = "#" * heading_level
+    return [
+        "",
+        f"{heading} {title}",
+        "",
+        "```json",
+        json.dumps(_jsonable(value), indent=2, sort_keys=True),
+        "```",
+    ]
+
+
+def _markdown_table(
+    headers: tuple[str, ...],
+    rows: Iterable[tuple[object, ...]],
+) -> list[str]:
+    header = "| " + " | ".join(_escape_table_cell(item) for item in headers) + " |"
+    separator = "| " + " | ".join("---" for _ in headers) + " |"
+    body = ["| " + " | ".join(_escape_table_cell(item) for item in row) + " |" for row in rows]
+    return [header, separator, *body]
+
+
+def _mapping_value(mapping: Mapping[str, object], *keys: str) -> object:
+    for key in keys:
+        if key in mapping:
+            return mapping[key]
+    return ""
+
+
+def _format_report_value(value: object) -> str:
+    if isinstance(value, bool):
+        return str(value)
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return f"{value:.6g}"
+    if value is None:
+        return ""
+    return str(value)
+
+
+def _escape_table_cell(value: object) -> str:
+    text = _format_report_value(value)
+    return text.replace("|", "\\|").replace("\n", "<br>")
 
 
 def _jsonable(value: Any) -> object:

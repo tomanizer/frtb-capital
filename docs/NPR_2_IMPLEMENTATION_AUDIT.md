@@ -157,6 +157,25 @@ Corrected behavior:
   backtesting, RFET evidence, scenario validation, and run-result objects.
 - `audit.py` adds `DeskAuditRecord`, `CapitalRunAuditLog`, and NDJSON
   serialization helpers for orchestration-layer post-run audit artifacts.
+- `audit.py` also renders deterministic Markdown capital-run audit reports from
+  the same audit records, and `make audit` writes the committed fixture report
+  under `build/audit/`.
+
+### Liquidity-horizon mapping
+
+Prior behavior:
+
+- Risk factors could carry an assigned liquidity horizon, but the package had
+  no regulatory category-to-horizon table.
+
+Corrected behavior:
+
+- `liquidity_horizon_mapping.py` implements the Fed NPR 2.0 / Basel working
+  assumption table for caller-supplied regulatory categories.
+- Helpers cover the short-maturity rule and the weighted-average rule for
+  credit/equity indices and similar multi-underlying instruments.
+- The package still does not infer categories from proprietary trade, vendor,
+  CRIF, or instrument data; that evidence remains upstream.
 
 ## Remaining implementation gaps
 
@@ -176,12 +195,15 @@ new upstream data contracts:
   approval workflows are not implemented. Stress windows can be selected from
   supplied historical loss/severity vectors, but the package does not prove
   source completeness or supervisory acceptability of those inputs.
+- Liquidity-horizon category assignment evidence from proprietary
+  trade/vendor/instrument data is not implemented; callers must provide the
+  assigned regulatory category or final liquidity horizon.
 - PLA and backtesting now expose optional dated diagnostics/traces, but they do
   not implement full business-calendar governance beyond an official-holiday
   mask supplied by the caller.
 - Firm-level aggregation, standardized approach fallback, DRC, redesignation
   add-ons, and legal-entity consolidation are not implemented.
-- Full regulatory report generation, external telemetry, OpenTelemetry,
+- Final regulatory disclosure templates, external telemetry, OpenTelemetry,
   Prometheus/Datadog metrics, streaming audit writers for very large desk
   batches, and Parquet/DuckDB audit analytics remain future orchestration-layer
   integrations.

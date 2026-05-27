@@ -3,7 +3,7 @@ VENV ?= .venv
 PYTHON_BIN ?= $(VENV)/bin/python
 PIP := $(PYTHON_BIN) -m pip
 
-.PHONY: venv install test lint format format-check typecheck check examples demo fixtures clean
+.PHONY: venv install test lint format format-check typecheck check examples demo fixtures audit clean
 
 venv:
 	$(PYTHON) -m venv $(VENV)
@@ -36,6 +36,9 @@ demo: examples
 
 fixtures:
 	$(PYTHON_BIN) scripts/generate_fixture.py --seed 42 --output tests/fixtures/capital_run_v1
+
+audit:
+	$(PYTHON_BIN) scripts/render_audit_report.py --output build/audit/capital_run_v1_audit_report.md
 
 clean:
 	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage build dist *.egg-info

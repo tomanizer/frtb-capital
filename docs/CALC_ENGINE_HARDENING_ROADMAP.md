@@ -96,13 +96,15 @@ dataclass and NumPy contracts.
 Current state:
 
 - Risk factors carry an assigned `LiquidityHorizon`.
+- `liquidity_horizon_mapping.py` implements the Fed NPR 2.0 / Basel
+  category-to-horizon table plus short-maturity and weighted-average
+  multi-underlying helpers.
 - RFET evidence assessment captures eligible/excluded observations and a
   partial audit trail.
 
 Remaining work:
 
-- rules-based risk-factor to liquidity-horizon mapping tables;
-- mapping evidence and override provenance;
+- proprietary trade/vendor-to-LH-category evidence and override provenance;
 - final NPR 2.0 interpretation once the proposal is finalized;
 - fuller RFET qualitative criteria, vendor reliance, data-pooling eligibility,
   committed-quote handling, and supervisory override tracking.
@@ -176,11 +178,12 @@ Remaining work:
 Current state:
 
 - Policy wrappers can emit compact structured JSON log events.
-- Result objects can be serialized into desk/run audit records and NDJSON.
+- Result objects can be serialized into desk/run audit records, NDJSON, and
+  deterministic Markdown reports.
 
 Remaining work:
 
-- full audit report generation and `make audit` target;
+- final regulatory disclosure templates;
 - streaming NDJSON writer for very large multi-desk runs;
 - orchestration-layer object-store/database/Splunk/OpenTelemetry sinks;
 - optional Parquet/DuckDB analytics outside the calculation core;

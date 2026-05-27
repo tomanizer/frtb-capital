@@ -54,16 +54,18 @@ not stress-period objects.
 11. Add synthetic demo.
 12. Add structured logging and NDJSON audit records.
 13. Add vectorized stress-period selection from supplied historical loss series.
+14. Add deterministic Markdown audit report rendering and `make audit`.
+15. Add risk-factor category to liquidity-horizon mapping table helpers.
 
 ## Current next workstreams
 
-1. Risk-factor to liquidity-horizon mapping table and evidence.
+1. Liquidity-horizon category assignment evidence from proprietary instrument/vendor data.
 2. Reduced risk-factor set construction and governance evidence.
 3. Institutional NMRF pricing/revaluation adapter beyond the current handoff reconciliation.
 4. Raw market-data calibration adapters and formal stress-period governance evidence.
 5. EU/PRA Spearman PLA and jurisdiction-specific source mapping.
 6. DRC, standardized/fallback capital, and legal-entity consolidation.
-7. Full run report generation and orchestration-layer storage/telemetry sinks.
+7. Regulatory disclosure templates and orchestration-layer storage/telemetry sinks.
 
 ## Key warning
 

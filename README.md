@@ -17,7 +17,7 @@ A Python prototype demonstrating how an existing risk engine can generate 10-day
 - Models-based capital assembly
 - PLA Kolmogorov-Smirnov statistic
 - Backtesting exception counts at 97.5% and 99.0% VaR levels
-- Structured JSON logging and NDJSON audit records
+- Structured JSON logging, NDJSON audit records, and Markdown audit reports
 
 The current boundary is intentional: the package assembles and validates
 capital inputs, and can select stress windows from supplied historical loss
@@ -41,11 +41,13 @@ make install
 make check
 make examples
 make fixtures
+make audit
 ```
 
 Individual targets are available for `make test`, `make lint`, `make format`,
 `make format-check`, `make typecheck`, `make fixtures`, and `make demo` (alias
-for `make examples`).
+for `make examples`). `make audit` renders the committed fixture's audit report
+to `build/audit/capital_run_v1_audit_report.md`.
 
 ## Run tests
 
@@ -81,6 +83,7 @@ src/frtb_ima/
     expected_shortfall.py   ES calculation
     lha_builder.py          Scenario cube to nested LH vector builder
     liquidity_horizon.py    LHA ES from nested vectors
+    liquidity_horizon_mapping.py Regulatory risk-factor category to LH table
     reduced_set.py          Indirect-approach reduced-set diagnostics
     stress_periods.py       Vectorized stress-window selection by risk class
     regimes.py              Regulatory policy profiles and run context
@@ -103,6 +106,11 @@ src/frtb_ima/
 
 **Nested LH vectors, not scalar scaling.** The LHA ES uses nested P&L sub-vectors per liquidity horizon subset, per the NPR 2.0 formula. Scaling a single ES scalar by sqrt(weighted_avg_LH / 10) is explicitly labelled a toy approximation.
 
+**LH mapping is category-based.** The regulatory risk-factor category to
+liquidity-horizon table is available in `liquidity_horizon_mapping.py`, including
+short-maturity and weighted-average index helpers. The package does not infer
+those categories from vendor or instrument data.
+
 **Deterministic-first.** No LLM involvement in calculations. This layer computes capital from risk engine outputs.
 
 **Minimal dependencies.** numpy only. No pandas, no scipy — keeps it auditable.
@@ -117,9 +125,9 @@ upstream.
 
 **Audit trail without backend coupling.** Runtime observability uses stdlib
 logging and compact scalar JSON events at policy-wrapper boundaries. Durable
-desk/run audit records are serialisable NDJSON objects; object-store, database,
-Splunk, OpenTelemetry, Parquet, or DuckDB integration belongs in an external
-runner.
+desk/run audit records are serialisable NDJSON objects and can be rendered to a
+deterministic Markdown report. Object-store, database, Splunk, OpenTelemetry,
+Parquet, or DuckDB integration belongs in an external runner.
 
 ## Regulatory assumptions
 

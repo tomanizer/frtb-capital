@@ -14,6 +14,7 @@ sources:
     reuse_note: "Link-only reference. BIS text should not be vendored without permission review."
     modules:
       - src/frtb_ima/regimes.py
+      - src/frtb_ima/liquidity_horizon_mapping.py
       - src/frtb_ima/stress_periods.py
       - src/frtb_ima/imcc.py
       - src/frtb_ima/nmrf_method_selection.py
@@ -22,6 +23,7 @@ sources:
       - src/frtb_ima/nmrf.py
     requirements:
       - NPR-MR-POLICY-001
+      - NPR-MR-LHA-002
       - NPR-MR-STRESS-001
       - NPR-MR-IMCC-001
       - NPR-MR-NMRF-002
@@ -69,6 +71,7 @@ sources:
     reuse_note: "Link-only reference. BIS text should not be vendored without permission review."
     modules:
       - src/frtb_ima/expected_shortfall.py
+      - src/frtb_ima/liquidity_horizon_mapping.py
       - src/frtb_ima/liquidity_horizon.py
       - src/frtb_ima/stress_periods.py
       - src/frtb_ima/imcc.py
@@ -79,6 +82,7 @@ sources:
     requirements:
       - NPR-MR-ES-001
       - NPR-MR-LHA-001
+      - NPR-MR-LHA-002
       - NPR-MR-STRESS-001
       - NPR-MR-IMCC-001
       - NPR-MR-NMRF-001
@@ -94,6 +98,7 @@ sources:
     reuse_note: "GovInfo link. U.S. government works are generally not copyrightable, but third-party material can be included; link rather than vendor text by default."
     modules:
       - src/frtb_ima/regimes.py
+      - src/frtb_ima/liquidity_horizon_mapping.py
       - src/frtb_ima/liquidity_horizon.py
       - src/frtb_ima/stress_periods.py
       - src/frtb_ima/imcc.py
@@ -104,9 +109,12 @@ sources:
       - src/frtb_ima/pla.py
       - src/frtb_ima/backtesting.py
       - src/frtb_ima/capital.py
+      - src/frtb_ima/logging.py
+      - src/frtb_ima/audit.py
     requirements:
       - NPR-MR-POLICY-001
       - NPR-MR-LHA-001
+      - NPR-MR-LHA-002
       - NPR-MR-RFET-001
       - NPR-MR-STRESS-001
       - NPR-MR-IMCC-001
@@ -115,6 +123,7 @@ sources:
       - NPR-MR-PLA-001
       - NPR-MR-BT-001
       - NPR-MR-CAP-001
+      - NPR-MR-REPORT-001
 
   - id: us_npr_2_0_occ_pdf_copy
     family: US_NPR_2_0

@@ -35,6 +35,7 @@ make test             # pytest -v --tb=short
 make examples         # python examples/run_demo.py
 make demo             # alias for make examples
 make fixtures         # regenerate tests/fixtures/capital_run_v1 from seed 42
+make audit            # render build/audit/capital_run_v1_audit_report.md
 
 # Single test
 .venv/bin/python -m pytest tests/test_expected_shortfall.py -v
@@ -75,8 +76,12 @@ Adjacent audit paths now include:
 - `nmrf_stress_spec.py` for upstream direct, stepwise, full-revaluation, and max-loss valuation-run specifications.
 - `nmrf_valuation_run.py` for reconciling returned upstream artifacts to valuation-run specs before SES capital use.
 - `nmrf.py` for NMRF stress artifacts, Type A/B routing, vectorized SES extraction, and aggregation. Institutional direct, stepwise, and full-revaluation pricing remains upstream; missing Type A/B artifacts fail hard.
+- `liquidity_horizon_mapping.py` for caller-supplied regulatory LH category to
+  10/20/40/60/120-day horizon mapping, including short-maturity and
+  weighted-average index helpers.
 - `logging.py` for dependency-free JSON log formatting and structured log field helpers.
-- `audit.py` for orchestration-layer desk/run audit records and NDJSON serialisation.
+- `audit.py` for orchestration-layer desk/run audit records, NDJSON
+  serialisation, and deterministic Markdown report rendering.
 
 Committed integration fixtures live under `tests/fixtures/` and are generated
 by `scripts/generate_fixture.py`. The v1 fixture is intentionally IMA-native:
@@ -149,11 +154,17 @@ Key gaps as of May 2026:
 - Prototype stress-period selection from supplied historical risk-class
   loss/severity vectors. Raw market-data sourcing, formal calibration approval,
   and reduced risk-factor set selection workflow remain open.
+- Liquidity-horizon category assignment from proprietary instrument/vendor
+  attributes remains upstream. The package implements the regulatory category
+  table and adjustment helpers, but it does not classify trades into those
+  categories.
 - Reduced-set data-quality evidence beyond the 60-day / 75% variation-explained diagnostic.
 - Institutional pricing/revaluation for NMRF direct, stepwise, and full-revaluation artifacts. The code records method evidence, selects methods, emits valuation specs, reconciles/validates returned artifacts, extracts SES, and aggregates capital, but does not embed pricing models.
 - EU/PRA Spearman PLA.
 - Full business-calendar governance beyond optional PLA/backtesting dates and official-holiday masks.
-- Full audit report generator / `make audit` target.
+- Full regulatory disclosure templates, external telemetry, and large-run
+  storage/analytics backends beyond the dependency-free Markdown/NDJSON audit
+  artifacts.
 
 ---
 

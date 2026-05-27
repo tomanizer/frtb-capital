@@ -11,7 +11,9 @@ from frtb_ima.audit import (
     CapitalRunAuditLog,
     DeskAuditRecord,
     audit_records_to_ndjson,
+    render_capital_run_audit_report,
     write_audit_records_ndjson,
+    write_capital_run_audit_report,
 )
 
 
@@ -97,3 +99,39 @@ def test_write_audit_records_ndjson(tmp_path: Path) -> None:
     write_audit_records_ndjson([_desk_record()], path)
 
     assert audit_records_to_ndjson([_desk_record()]) == path.read_text()
+
+
+def test_render_capital_run_audit_report_contains_summary_and_details() -> None:
+    log = CapitalRunAuditLog(
+        run_id="run-1",
+        regime="FED_NPR_2_0",
+        as_of_date=date(2026, 5, 27),
+        desk_records=(_desk_record(),),
+        metadata={"fixture": "capital_run_v1"},
+    )
+
+    report = render_capital_run_audit_report(log)
+
+    assert "# FRTB IMA Capital Run Audit Report" in report
+    assert "| Run ID | run-1 |" in report
+    assert "| desk-1 | 2026-05-27 | 100 | 40 | 190 |" in report
+    assert "## Desk: desk-1" in report
+    assert "### NMRF valuation" in report
+    assert '"artifact_count": 2' in report
+    assert "Prototype report only. Not for regulatory reporting." in report
+    assert "> NPR 2.0 values are proposed-rule working assumptions." in report
+
+
+def test_write_capital_run_audit_report(tmp_path: Path) -> None:
+    log = CapitalRunAuditLog(
+        run_id="run-1",
+        regime="FED_NPR_2_0",
+        desk_records=(_desk_record(),),
+    )
+    path = tmp_path / "reports" / "audit.md"
+
+    write_capital_run_audit_report(log, path, title="Unit Test Audit")
+
+    report = path.read_text()
+    assert report.startswith("# Unit Test Audit")
+    assert "## Desk summary" in report

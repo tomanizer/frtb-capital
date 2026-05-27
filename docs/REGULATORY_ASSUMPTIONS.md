@@ -104,10 +104,14 @@ The May 2026 accuracy pass corrected four prior simplifications:
    validation for missing Type A/B NMRF artifacts.
 5. Policy-wrapper boundaries can emit structured JSON log records with run,
    desk, regime, and scalar result fields. Decomposed result objects can be
-   collected into `DeskAuditRecord` / `CapitalRunAuditLog` NDJSON artifacts.
+   collected into `DeskAuditRecord` / `CapitalRunAuditLog` NDJSON artifacts
+   and deterministic Markdown reports.
 6. Stress-period selection now has a first-class pre-run component that selects
    common risk-class stress windows from supplied historical loss/severity
    vectors with NumPy-native rolling-window severity scoring.
+7. Liquidity-horizon mapping is implemented for caller-supplied regulatory
+   categories, including short-maturity and weighted-average multi-underlying
+   helpers.
 
 Remaining deliberate boundaries:
 
@@ -119,9 +123,10 @@ Remaining deliberate boundaries:
   eligibility, supervisory overrides, and new-issuance pro-rating remain out of
   scope.
 - Raw market-data sourcing, formal stress-period approval governance,
-  reduced-set governance, risk-factor bucketing, and firm-level consolidation
-  are not complete regulatory workflows.
+  reduced-set governance, proprietary trade/vendor-to-LH-category evidence,
+  risk-factor bucketing, and firm-level consolidation are not complete
+  regulatory workflows.
 - External telemetry backends, OpenTelemetry, Prometheus/Datadog metrics,
   streaming audit writers for very large desk batches, Parquet/DuckDB audit
-  analytics, and full regulatory report generation remain orchestration-layer
-  future scope.
+  analytics, and final regulatory disclosure templates remain
+  orchestration-layer future scope.
