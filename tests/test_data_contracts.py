@@ -114,18 +114,21 @@ def test_rfet_evidence_requires_matching_observations() -> None:
 
 
 def test_scenario_cube_validates_shape_and_axis_labels() -> None:
+    values = np.array(
+        [
+            [[1.0, 10.0], [100.0, 1_000.0]],
+            [[2.0, 20.0], [200.0, 2_000.0]],
+        ]
+    )
     cube = ScenarioCube(
-        values=np.array(
-            [
-                [[1.0, 10.0], [100.0, 1_000.0]],
-                [[2.0, 20.0], [200.0, 2_000.0]],
-            ]
-        ),
+        values=values,
         scenario_metadata=_metadata(2),
         position_ids=("P1", "P2"),
         risk_factor_names=("RF1", "RF2"),
     )
 
+    values[0, 0, 0] = 999.0
+    assert not cube.values.flags.writeable
     assert cube.scenario_count == 2
     assert cube.position_count == 2
     assert cube.risk_factor_count == 2

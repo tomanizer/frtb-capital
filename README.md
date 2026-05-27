@@ -40,11 +40,12 @@ The repository includes a small `Makefile` for a fresh-clone workflow:
 make install
 make check
 make examples
+make fixtures
 ```
 
 Individual targets are available for `make test`, `make lint`, `make format`,
-`make format-check`, `make typecheck`, and `make demo` (alias for
-`make examples`).
+`make format-check`, `make typecheck`, `make fixtures`, and `make demo` (alias
+for `make examples`).
 
 ## Run tests
 
@@ -129,6 +130,9 @@ For a bidirectional code-to-regulation and regulation-to-code index, see
 
 For machine-readable source links and section hints without vendored regulatory
 text, see [docs/regulatory_sources.yml](docs/regulatory_sources.yml).
+
+For the committed synthetic capital-run fixture contract, see
+[docs/DATASET_CONTRACT.md](docs/DATASET_CONTRACT.md).
 
 For the latest NPR 2.0 implementation audit and remaining gaps, see
 [docs/NPR_2_IMPLEMENTATION_AUDIT.md](docs/NPR_2_IMPLEMENTATION_AUDIT.md).

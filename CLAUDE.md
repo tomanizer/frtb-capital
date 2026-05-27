@@ -34,6 +34,7 @@ make typecheck        # mypy src
 make test             # pytest -v --tb=short
 make examples         # python examples/run_demo.py
 make demo             # alias for make examples
+make fixtures         # regenerate tests/fixtures/capital_run_v1 from seed 42
 
 # Single test
 .venv/bin/python -m pytest tests/test_expected_shortfall.py -v
@@ -41,10 +42,11 @@ make demo             # alias for make examples
 ```
 
 CI splits lint, typecheck, test, and examples. Lint enforces `ruff check` plus
-`ruff format --check` on `src`, `tests`, and `examples`; typecheck runs mypy on
-Python 3.11; tests run `pytest --cov=frtb_ima --cov-report=term-missing` across
-Python 3.11, 3.12, and 3.13 with the configured coverage floor; examples run
-the demo path as a separate integration gate.
+`ruff format --check` on `src`, `tests`, `examples`, and `scripts`; typecheck
+runs mypy on Python 3.11; tests run
+`pytest --cov=frtb_ima --cov-report=term-missing` across Python 3.11, 3.12, and
+3.13 with the configured coverage floor; examples run the demo path as a
+separate integration gate.
 
 ---
 
@@ -75,6 +77,14 @@ Adjacent audit paths now include:
 - `nmrf.py` for NMRF stress artifacts, Type A/B routing, vectorized SES extraction, and aggregation. Institutional direct, stepwise, and full-revaluation pricing remains upstream; missing Type A/B artifacts fail hard.
 - `logging.py` for dependency-free JSON log formatting and structured log field helpers.
 - `audit.py` for orchestration-layer desk/run audit records and NDJSON serialisation.
+
+Committed integration fixtures live under `tests/fixtures/` and are generated
+by `scripts/generate_fixture.py`. The v1 fixture is intentionally IMA-native:
+CSV metadata mirrors the package dataclasses, dense scenario/P&L arrays are NPZ,
+`manifest.json` records SHA-256 checksums and sign conventions, and
+`expected_outputs.json` stores golden values with tolerances. Do not introduce
+CRIF/SIMM/vendor fields into this canonical fixture; vendor adapters belong in a
+future boundary layer.
 
 Core scenario-level calculations must be numpy-native. Small loops over fixed regulatory axes (risk classes, LH buckets, policy levels) are acceptable. Per-observation Python loops are acceptable only in explicit audit-trace builders after vectorized exception masks or statistics have already been computed.
 

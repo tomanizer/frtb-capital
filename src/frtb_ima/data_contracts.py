@@ -167,7 +167,8 @@ class ScenarioCube:
     name: str = ""
 
     def __post_init__(self) -> None:
-        arr = np.asarray(self.values, dtype=float)
+        source_values = self.values
+        arr = np.asarray(source_values, dtype=float)
         if arr.ndim != 3:
             raise ValueError(
                 "ScenarioCube values must have shape (scenario, position, risk_factor)"
@@ -192,7 +193,14 @@ class ScenarioCube:
         if len(risk_factor_names) != risk_factor_count:
             raise ValueError("risk_factor_names length must match ScenarioCube risk-factor axis")
 
-        object.__setattr__(self, "values", arr.astype(np.float64, copy=False))
+        shares_source = isinstance(source_values, np.ndarray) and np.shares_memory(
+            arr,
+            source_values,
+        )
+        if shares_source or not arr.flags.owndata:
+            arr = arr.copy()
+        arr.flags.writeable = False
+        object.__setattr__(self, "values", arr)
         object.__setattr__(self, "scenario_metadata", scenario_metadata)
         object.__setattr__(self, "position_ids", position_ids)
         object.__setattr__(self, "risk_factor_names", risk_factor_names)
