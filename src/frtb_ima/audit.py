@@ -40,6 +40,7 @@ class DeskAuditRecord:
     backtesting: Mapping[str, object]
     capital: Mapping[str, object]
     elapsed_seconds: float
+    nmrf_valuation: Mapping[str, object] = field(default_factory=_empty_mapping)
     as_of_date: date | None = None
     notes: tuple[str, ...] = ()
     metadata: Mapping[str, object] = field(default_factory=_empty_mapping)
@@ -58,6 +59,11 @@ class DeskAuditRecord:
         object.__setattr__(self, "pla", _freeze_mapping(self.pla))
         object.__setattr__(self, "backtesting", _freeze_mapping(self.backtesting))
         object.__setattr__(self, "capital", _freeze_mapping(self.capital))
+        object.__setattr__(
+            self,
+            "nmrf_valuation",
+            _freeze_mapping(self.nmrf_valuation),
+        )
         object.__setattr__(self, "notes", tuple(self.notes))
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 
@@ -75,6 +81,7 @@ class DeskAuditRecord:
             "pla": _jsonable(self.pla),
             "backtesting": _jsonable(self.backtesting),
             "capital": _jsonable(self.capital),
+            "nmrf_valuation": _jsonable(self.nmrf_valuation),
             "elapsed_seconds": self.elapsed_seconds,
             "notes": list(self.notes),
             "metadata": _jsonable(self.metadata),

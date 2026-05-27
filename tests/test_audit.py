@@ -26,6 +26,7 @@ def _desk_record(desk_id: str = "desk-1") -> DeskAuditRecord:
         pla={"pla": {"zone": "GREEN"}},
         backtesting={"model_eligible": True},
         capital={"models_based_capital": 190.0},
+        nmrf_valuation={"passed": True, "artifact_count": 2},
         elapsed_seconds=0.25,
         metadata={"source": "unit-test"},
     )
@@ -40,6 +41,7 @@ def test_desk_audit_record_serializes_to_json_line() -> None:
     assert payload["desk_id"] == "desk-1"
     assert payload["as_of_date"] == "2026-05-27"
     assert payload["imcc"]["imcc"] == pytest.approx(100.0)
+    assert payload["nmrf_valuation"]["passed"] is True
     assert payload["metadata"]["source"] == "unit-test"
 
 

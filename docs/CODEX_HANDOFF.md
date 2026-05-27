@@ -42,7 +42,7 @@ submission package.
 4. Add liquidity horizon adjustment from nested vectors.
 5. Add RFET / modellability classifier.
 6. Add Type A / Type B NMRF SES aggregation.
-7. Add NMRF method selection, valuation instructions/specs, and stress artifacts.
+7. Add NMRF method selection, valuation instructions/specs, valuation-run reconciliation, and stress artifacts.
 8. Add IMCC aggregation.
 9. Add PLA KS and backtesting.
 10. Add capital assembly.
@@ -54,7 +54,7 @@ submission package.
 1. Risk-factor to liquidity-horizon mapping table and evidence.
 2. Stress-period selection/calibration interface.
 3. Reduced risk-factor set construction and governance evidence.
-4. Institutional NMRF pricing/revaluation integration contract.
+4. Institutional NMRF pricing/revaluation adapter beyond the current handoff reconciliation.
 5. EU/PRA Spearman PLA and jurisdiction-specific source mapping.
 6. DRC, standardized/fallback capital, and legal-entity consolidation.
 7. Full run report generation and orchestration-layer storage/telemetry sinks.

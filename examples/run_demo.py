@@ -25,7 +25,6 @@ from frtb_ima.imcc import imcc_for_policy
 from frtb_ima.liquidity_horizon import lha_es_from_vectors
 from frtb_ima.nmrf import (
     NMRFStressArtifact,
-    calculate_nmrf_capital_for_policy,
 )
 from frtb_ima.nmrf_method_selection import (
     NMRFMethodEvidence,
@@ -38,9 +37,13 @@ from frtb_ima.nmrf_stress_spec import (
     NMRFFullRevaluationSpec,
     NMRFShockDirection,
     NMRFStressPeriodSpec,
+    NMRFValuationSpec,
     build_nmrf_valuation_specs,
-    required_liquidity_horizons_from_valuation_specs,
-    required_methods_from_valuation_specs,
+)
+from frtb_ima.nmrf_valuation_run import (
+    build_nmrf_valuation_run_request,
+    calculate_nmrf_capital_from_valuation_run,
+    complete_nmrf_valuation_run,
 )
 from frtb_ima.pla import pla_assessment_for_policy
 from frtb_ima.regimes import CalculationContext, RegulatoryRegime, get_policy
@@ -56,6 +59,41 @@ def section(title: str) -> None:
     print(f"\n{SEP}")
     print(f"  {title}")
     print(SEP)
+
+
+def synthetic_nmrf_artifact_for_spec(spec: NMRFValuationSpec) -> NMRFStressArtifact:
+    """Build a labelled synthetic artifact for the demo valuation handoff."""
+    if spec.risk_factor_name == "HY_CREDIT_SPD":
+        losses = np.linspace(-500.0, 2_500.0, 500)
+        scenario_ids: tuple[str, ...] = ()
+    elif spec.full_revaluation is not None:
+        losses = np.linspace(-1_000.0, 4_000.0, len(spec.full_revaluation.market_state_ids))
+        scenario_ids = spec.full_revaluation.market_state_ids
+    elif spec.stepwise_grid is not None:
+        losses = np.linspace(-250.0, 1_250.0, spec.stepwise_grid.shock_count)
+        scenario_ids = tuple(f"shock-{idx:03d}" for idx in range(spec.stepwise_grid.shock_count))
+    elif spec.max_loss_fallback is not None:
+        losses = np.linspace(
+            -100.0,
+            1_000.0,
+            len(spec.max_loss_fallback.candidate_scenario_ids),
+        )
+        scenario_ids = spec.max_loss_fallback.candidate_scenario_ids
+    else:
+        losses = np.linspace(-250.0, 1_250.0, 500)
+        scenario_ids = ()
+
+    return NMRFStressArtifact(
+        risk_factor_name=spec.risk_factor_name,
+        method=spec.method,
+        losses=losses,
+        liquidity_horizon=spec.required_liquidity_horizon,
+        stress_period=spec.stress_period.stress_period_id,
+        source="synthetic upstream valuation artifact",
+        scenario_ids=scenario_ids,
+        generated_by_prototype=True,
+        notes="Demo artifact; not a production pricing output.",
+    )
 
 
 def main() -> None:
@@ -258,34 +296,32 @@ def main() -> None:
     # ------------------------------------------------------------------
     section("SES")
 
-    artifact_losses = {
-        "HY_CREDIT_SPD": np.linspace(-500.0, 2_500.0, 500),
-        "EXOTIC_RF": np.linspace(-1_000.0, 4_000.0, 500),
-    }
-    artifacts = tuple(
-        NMRFStressArtifact(
-            risk_factor_name=instruction.risk_factor_name,
-            method=instruction.method,
-            losses=artifact_losses[instruction.risk_factor_name],
-            liquidity_horizon=instruction.required_liquidity_horizon,
-            stress_period="synthetic 12-month stress window",
-            source="synthetic valuation run artifact",
-            generated_by_prototype=True,
-            notes="Demo artifact; not a production pricing output.",
-        )
-        for instruction in valuation_instructions
+    artifacts = tuple(synthetic_nmrf_artifact_for_spec(spec) for spec in valuation_specs)
+    valuation_request = build_nmrf_valuation_run_request(
+        valuation_specs,
+        context.policy,
+        run_id=context.run_id or "synthetic-demo",
+        desk_id=context.desk or DESK,
+        as_of_date=context.as_of_date,
+        notes="Synthetic demo request; valuation remains upstream in real runs.",
+    )
+    valuation_run = complete_nmrf_valuation_run(
+        valuation_request,
+        artifacts,
+        allow_prototype_artifacts=True,
+        notes="Synthetic demo valuation result.",
+    )
+    print(
+        "  Valuation reconciliation: "
+        f"{'PASS' if valuation_run.passed else 'FAIL'}  "
+        f"specs={valuation_run.reconciliation.spec_count}  "
+        f"artifacts={valuation_run.reconciliation.artifact_count}"
     )
 
-    nmrf_capital = calculate_nmrf_capital_for_policy(
+    nmrf_capital = calculate_nmrf_capital_from_valuation_run(
         classifications,
-        artifacts,
+        valuation_run,
         context.policy,
-        required_methods=required_methods_from_valuation_specs(valuation_specs),
-        required_liquidity_horizons=required_liquidity_horizons_from_valuation_specs(
-            valuation_specs,
-        ),
-        run_id=context.run_id,
-        desk_id=context.desk,
     )
     for result in [*nmrf_capital.type_a_results, *nmrf_capital.type_b_results]:
         status = classifications[result.risk_factor_name]

@@ -34,10 +34,13 @@ All U.S. NPR 2.0 content is treated as proposed-rule working assumptions. The pr
     parameter in the Type B aggregation term.
 12. RFET classifications are available before valuation. NMRF method selection
     can consume auditable method evidence, emits valuation instructions and
-    upstream valuation-run specs for Type A and Type B NMRFs, and the capital
-    layer consumes the resulting stress artifacts.
-13. Missing Type A or Type B NMRF stress artifacts are hard validation errors;
-    the capital layer does not silently substitute linear approximations.
+    upstream valuation-run specs for Type A and Type B NMRFs. Returned stress
+    artifacts are reconciled to the specs before the capital layer consumes
+    them.
+13. Missing or mismatched Type A or Type B NMRF stress artifacts are hard
+    validation errors; the capital layer does not silently substitute linear
+    approximations. Prototype-labelled valuation artifacts fail reconciliation
+    unless a demo/test caller explicitly opts into synthetic artifacts.
 14. PLA uses a Kolmogorov-Smirnov statistic comparing HPL and RTPL over a
     250-business-day policy window.
 15. Backtesting counts both APL and HPL exceptions at 97.5% and 99.0% VaR
@@ -91,9 +94,9 @@ The May 2026 accuracy pass corrected four prior simplifications:
 3. The PLA policy wrapper now enforces the 250-business-day policy window before
    applying the KS threshold classification.
 4. NMRF treatment now has an explicit post-RFET method-selection step, method
-   evidence diagnostics, upstream valuation-run specs, vectorized
-   stress-artifact SES extraction, and fail-hard validation for missing Type A/B
-   NMRF artifacts.
+   evidence diagnostics, upstream valuation-run specs, valuation-run artifact
+   reconciliation, vectorized stress-artifact SES extraction, and fail-hard
+   validation for missing Type A/B NMRF artifacts.
 5. Policy-wrapper boundaries can emit structured JSON log records with run,
    desk, regime, and scalar result fields. Decomposed result objects can be
    collected into `DeskAuditRecord` / `CapitalRunAuditLog` NDJSON artifacts.
@@ -102,8 +105,8 @@ Remaining deliberate boundaries:
 
 - Direct, stepwise, and full-revaluation NMRF pricing/revaluation remains an
   upstream risk-engine responsibility. The prototype specifies required
-  valuation runs, validates and consumes the resulting artifacts, but does not
-  embed institutional pricing models.
+  valuation runs, reconciles, validates, and consumes the resulting artifacts,
+  but does not embed institutional pricing models.
 - RFET qualitative criteria remain external inputs. Vendor lineage, data-pooling
   eligibility, supervisory overrides, and new-issuance pro-rating remain out of
   scope.

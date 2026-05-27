@@ -62,6 +62,7 @@ Adjacent audit paths now include:
 - `backtesting.py` optional per-observation exception traces with official-holiday exclusions.
 - `nmrf_method_selection.py` for post-RFET NMRF method evidence, direct robustness diagnostics, selector decisions, and valuation instructions.
 - `nmrf_stress_spec.py` for upstream direct, stepwise, full-revaluation, and max-loss valuation-run specifications.
+- `nmrf_valuation_run.py` for reconciling returned upstream artifacts to valuation-run specs before SES capital use.
 - `nmrf.py` for NMRF stress artifacts, Type A/B routing, vectorized SES extraction, and aggregation. Institutional direct, stepwise, and full-revaluation pricing remains upstream; missing Type A/B artifacts fail hard.
 - `logging.py` for dependency-free JSON log formatting and structured log field helpers.
 - `audit.py` for orchestration-layer desk/run audit records and NDJSON serialisation.
@@ -99,7 +100,7 @@ Business logic lives in pure functions. Classes are for data containers (frozen 
 All public functions must fail fast with `ValueError` or `KeyError` on: empty vectors, non-finite values, mismatched lengths, missing LH10, negative capital where disallowed. Never let invalid inputs propagate silently into a result.
 
 ### Decomposed results
-Canonical audit paths return frozen dataclasses with full breakdowns: `LHAESResult`, `IMCCResult`, `StressScalingResult`, `SESAggregationResult`, `NMRFMethodDiagnostic`, `NMRFMethodEvidence`, `NMRFMethodDecision`, `NMRFValuationInstruction`, `NMRFValuationSpec`, `NMRFStressArtifact`, `NMRFStressScenarioResult`, `NMRFCapitalResult`, `ReducedSetCoverageResult`, `CapitalComponents`, `PLAAddonResult`, `PlaPolicyAssessmentResult`, `TradingDeskBacktestTraceResult`, `DeskAuditRecord`, and `CapitalRunAuditLog`. Scalar wrappers remain intentionally supported for backward compatibility and simple scalar checks, but new material workflows should expose a decomposed result object.
+Canonical audit paths return frozen dataclasses with full breakdowns: `LHAESResult`, `IMCCResult`, `StressScalingResult`, `SESAggregationResult`, `NMRFMethodDiagnostic`, `NMRFMethodEvidence`, `NMRFMethodDecision`, `NMRFValuationInstruction`, `NMRFValuationSpec`, `NMRFValuationRunRequest`, `NMRFArtifactReconciliationResult`, `NMRFValuationRunResult`, `NMRFStressArtifact`, `NMRFStressScenarioResult`, `NMRFCapitalResult`, `ReducedSetCoverageResult`, `CapitalComponents`, `PLAAddonResult`, `PlaPolicyAssessmentResult`, `TradingDeskBacktestTraceResult`, `DeskAuditRecord`, and `CapitalRunAuditLog`. Scalar wrappers remain intentionally supported for backward compatibility and simple scalar checks, but new material workflows should expose a decomposed result object.
 
 ### Regulatory traceability — mandatory
 Every calculation module must include a `Regulatory traceability` block in its docstring naming the Basel anchor, U.S. NPR 2.0 anchor, and EU anchor. Update `docs/REGULATORY_TRACEABILITY.md` (Code-to-regulation and Regulation-to-code tables) for any module addition or change. Update `docs/requirements/NPR_2_0_MARKET_RISK.yml` when a requirement status changes.
@@ -128,7 +129,7 @@ Key gaps as of May 2026:
 - Trading-desk eligibility lifecycle and supervisory approval workflows.
 - Formal stress-period selection/calibration and reduced risk-factor set selection workflow. `nmrf_stress_spec.py` can carry supplied stress-period ids and valuation requirements, but it does not select or approve those windows.
 - Reduced-set data-quality evidence beyond the 60-day / 75% variation-explained diagnostic.
-- Institutional pricing/revaluation for NMRF direct, stepwise, and full-revaluation artifacts. The code records method evidence, selects methods, emits valuation specs, validates returned artifacts, extracts SES, and aggregates capital, but does not embed pricing models.
+- Institutional pricing/revaluation for NMRF direct, stepwise, and full-revaluation artifacts. The code records method evidence, selects methods, emits valuation specs, reconciles/validates returned artifacts, extracts SES, and aggregates capital, but does not embed pricing models.
 - EU/PRA Spearman PLA.
 - Full business-calendar governance beyond optional PLA/backtesting dates and official-holiday masks.
 - Full audit report generator / `make audit` target.

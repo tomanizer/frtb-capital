@@ -11,7 +11,7 @@ A Python prototype demonstrating how an existing risk engine can generate 10-day
 - Risk factor modellability classification (RFET)
 - Liquidity horizon adjusted expected shortfall (LHA ES)
 - Internal Model Capital Charge (IMCC)
-- NMRF stress-method evidence, valuation specs, and artifact validation
+- NMRF stress-method evidence, valuation specs, artifact reconciliation, and SES
 - Stressed Expected Shortfall for NMRFs (SES)
 - Models-based capital assembly
 - PLA Kolmogorov-Smirnov statistic
@@ -83,6 +83,7 @@ src/frtb_ima/
     rfet_evidence.py        RFET evidence assessment and audit trail
     nmrf_method_selection.py NMRF stress-method evidence and selector
     nmrf_stress_spec.py     NMRF upstream valuation-run specifications
+    nmrf_valuation_run.py   NMRF valuation-run reconciliation
     nmrf.py                 NMRF stress artifacts, routing, and SES aggregation
     imcc.py                 IMCC unconstrained / constrained with audit decomposition
     pla.py                  PLA KS statistic and policy-window diagnostics

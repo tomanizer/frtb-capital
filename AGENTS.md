@@ -16,7 +16,7 @@ Key prototype assumptions:
 - Risk factors classify as `MODELLABLE`, `TYPE_A_NMRF`, or `TYPE_B_NMRF`.
 - Type A NMRFs go into both IMCC and SES.
 - Type B NMRFs go into SES only with conservative aggregation.
-- NMRF direct, stepwise, and full-revaluation pricing remains upstream; this package selects methods, emits valuation specs, validates returned artifacts, and aggregates SES.
+- NMRF direct, stepwise, and full-revaluation pricing remains upstream; this package selects methods, emits valuation specs, reconciles and validates returned artifacts, and aggregates SES.
 - PLA uses a Kolmogorov-Smirnov statistic over HPL and RTPL vectors.
 - Backtesting counts APL and HPL exceptions over 250 business days at both 97.5% and 99.0% VaR levels.
 - Runtime logging is structured and scalar-only at policy-wrapper boundaries; post-run audit records use serialisable dataclasses and NDJSON.
