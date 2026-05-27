@@ -115,6 +115,29 @@ Corrected behavior:
 - Missing Type A/B artifacts fail hard; the linear sensitivity helper remains
   approximation-only and requires explicit opt-in when used as an artifact.
 
+### Stress-period selection
+
+Prior behavior:
+
+- NMRF valuation specs could carry supplied stress-period identifiers, but the
+  repo had no first-class way to choose common stress windows by risk class.
+
+Corrected behavior:
+
+- `stress_periods.py` selects one stress window per risk class from supplied
+  historical loss/severity vectors before valuation specs are built.
+- Rolling-window severity scoring is NumPy-native: cumulative loss uses prefix
+  sums, max loss uses strided rolling views, and expected shortfall uses
+  strided rolling views plus `np.partition` instead of full sorting.
+- `StressPeriodSelectionResult` records selected windows, candidate counts,
+  selection parameters, dates, scenario-id endpoints, and serialisable audit
+  summaries without expanding historical loss vectors.
+- `stress_period_specs_for_nmrf` converts selected risk-class windows into the
+  `NMRFStressPeriodSpec` inputs consumed by the NMRF valuation-spec builder.
+  Separately, the same selected windows can inform upstream IMCC stressed-ES
+  scenario preparation; `imcc.py` itself consumes numeric ES inputs, not period
+  objects.
+
 ### Structured logging and audit records
 
 Prior behavior:
@@ -148,11 +171,11 @@ new upstream data contracts:
 - RFET qualitative checks are external inputs. Vendor/source lineage,
   data-pooling eligibility, third-party reliance, and new-issuance treatment are
   not implemented.
-- Formal stress-period selection/calibration, reduced risk-factor set
-  selection, reduced-set data quality evidence, and supervisory approval
-  workflows are not implemented. NMRF valuation specs can carry supplied stress
-  period ids and market-state references; they do not approve or calibrate
-  those windows.
+- Raw market-data sourcing, formal stress-period approval governance, reduced
+  risk-factor set selection, reduced-set data quality evidence, and supervisory
+  approval workflows are not implemented. Stress windows can be selected from
+  supplied historical loss/severity vectors, but the package does not prove
+  source completeness or supervisory acceptability of those inputs.
 - PLA and backtesting now expose optional dated diagnostics/traces, but they do
   not implement full business-calendar governance beyond an official-holiday
   mask supplied by the caller.

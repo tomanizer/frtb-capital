@@ -10,6 +10,8 @@ assembly layer for `tomanizer/FRTB-IMA`.
 ```text
 Existing risk engine
     -> RFET classifications known before valuation
+    -> supplied historical risk-class loss series for stress-period selection
+    -> upstream IMCC stressed-ES scenario preparation informed by selections
     -> NMRF method-selection evidence, instructions, and valuation specs
     -> 10-day scenario P&L vectors and NMRF stress artifacts
     -> ex-post capital aggregation layer
@@ -23,6 +25,7 @@ The current demo computes:
 - risk-factor modellability classification,
 - liquidity horizon adjusted expected shortfall,
 - IMCC,
+- stress-period selection from supplied historical risk-class loss vectors,
 - NMRF method evidence, valuation specs, and stress-artifact validation,
 - SES,
 - models-based capital,
@@ -30,9 +33,11 @@ The current demo computes:
 - backtesting exception counts,
 - structured logging and desk-level audit records.
 
-The package still does not generate market data, choose stress periods, price
-trades, implement DRC/standardized capital, or produce a final regulatory
-submission package.
+The package still does not source raw market data, price trades, implement
+DRC/standardized capital, or produce a final regulatory submission package.
+Stress-period selections directly feed NMRF valuation specs and separately
+inform upstream IMCC scenario preparation; `imcc.py` consumes numeric ES values,
+not stress-period objects.
 
 ## Build sequence completed
 
@@ -48,13 +53,14 @@ submission package.
 10. Add capital assembly.
 11. Add synthetic demo.
 12. Add structured logging and NDJSON audit records.
+13. Add vectorized stress-period selection from supplied historical loss series.
 
 ## Current next workstreams
 
 1. Risk-factor to liquidity-horizon mapping table and evidence.
-2. Stress-period selection/calibration interface.
-3. Reduced risk-factor set construction and governance evidence.
-4. Institutional NMRF pricing/revaluation adapter beyond the current handoff reconciliation.
+2. Reduced risk-factor set construction and governance evidence.
+3. Institutional NMRF pricing/revaluation adapter beyond the current handoff reconciliation.
+4. Raw market-data calibration adapters and formal stress-period governance evidence.
 5. EU/PRA Spearman PLA and jurisdiction-specific source mapping.
 6. DRC, standardized/fallback capital, and legal-entity consolidation.
 7. Full run report generation and orchestration-layer storage/telemetry sinks.

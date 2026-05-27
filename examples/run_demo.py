@@ -7,13 +7,13 @@ Not for regulatory use. All data is fabricated.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 import numpy as np
 
 from frtb_ima.backtesting import trading_desk_backtest_for_policy
 from frtb_ima.capital import models_based_capital, supervisory_multiplier_for_policy
-from frtb_ima.data_models import ModellabilityStatus
+from frtb_ima.data_models import ModellabilityStatus, RiskClass
 from frtb_ima.demo_data import (
     DEMO_RISK_FACTORS,
     aggregate_lh_vectors,
@@ -36,7 +36,6 @@ from frtb_ima.nmrf_stress_spec import (
     NMRFDirectShockSpec,
     NMRFFullRevaluationSpec,
     NMRFShockDirection,
-    NMRFStressPeriodSpec,
     NMRFValuationSpec,
     build_nmrf_valuation_specs,
 )
@@ -48,6 +47,11 @@ from frtb_ima.nmrf_valuation_run import (
 from frtb_ima.pla import pla_assessment_for_policy
 from frtb_ima.regimes import CalculationContext, RegulatoryRegime, get_policy
 from frtb_ima.rfet import classify_risk_factor_for_policy
+from frtb_ima.stress_periods import (
+    HistoricalStressSeries,
+    select_stress_periods_for_policy,
+    stress_period_specs_for_nmrf,
+)
 
 AS_OF = date(2025, 6, 30)
 DESK = "Rates & Credit"
@@ -94,6 +98,48 @@ def synthetic_nmrf_artifact_for_spec(spec: NMRFValuationSpec) -> NMRFStressArtif
         generated_by_prototype=True,
         notes="Demo artifact; not a production pricing output.",
     )
+
+
+def synthetic_stress_histories() -> tuple[HistoricalStressSeries, ...]:
+    """Build deterministic risk-class histories for stress-period calibration."""
+    observation_count = 520
+    dates = tuple(
+        AS_OF - timedelta(days=observation_count - 1 - idx)
+        for idx in range(observation_count)
+    )
+    grid = np.arange(observation_count, dtype=float)
+    stress_start_by_risk_class: dict[RiskClass, int] = {
+        RiskClass.CSR: 62,
+        RiskClass.EQUITY: 118,
+        RiskClass.GIRR: 151,
+        RiskClass.FX: 204,
+        RiskClass.COMMODITY: 86,
+    }
+    histories: list[HistoricalStressSeries] = []
+    risk_classes = sorted({rf.risk_class for rf in DEMO_RISK_FACTORS}, key=lambda item: item.value)
+
+    for ordinal, risk_class in enumerate(risk_classes):
+        losses = 80.0 + (ordinal * 12.0) + 8.0 * np.sin(grid / (13.0 + ordinal))
+        stress_start = stress_start_by_risk_class[risk_class]
+        losses[stress_start : stress_start + 18] += np.linspace(
+            600.0 + ordinal * 100.0,
+            1_200.0 + ordinal * 100.0,
+            18,
+        )
+        histories.append(
+            HistoricalStressSeries(
+                risk_class=risk_class,
+                losses=losses,
+                dates=dates,
+                source="synthetic historical risk-class loss calibration",
+                scenario_ids=tuple(
+                    f"{risk_class.value.lower()}-hist-{idx:03d}"
+                    for idx in range(observation_count)
+                ),
+            )
+        )
+
+    return tuple(histories)
 
 
 def main() -> None:
@@ -197,14 +243,14 @@ def main() -> None:
         decision.to_valuation_instruction() for decision in method_decisions
     )
 
-    stress_periods = {
-        rf.risk_class: NMRFStressPeriodSpec(
-            stress_period_id=f"{rf.risk_class.value.lower()}-synthetic-stress",
-            calibration_source="synthetic stress-window selector",
-            notes="Demo stress period; not a regulatory calibration.",
-        )
-        for rf in DEMO_RISK_FACTORS
-    }
+    stress_selection = select_stress_periods_for_policy(
+        synthetic_stress_histories(),
+        context.policy,
+        as_of_date=context.as_of_date,
+        run_id=context.run_id,
+        desk_id=context.desk,
+    )
+    stress_periods = stress_period_specs_for_nmrf(stress_selection)
     valuation_specs = build_nmrf_valuation_specs(
         valuation_instructions,
         {rf.name: rf.risk_class for rf in DEMO_RISK_FACTORS},
@@ -215,7 +261,7 @@ def main() -> None:
                 shock_size=350.0,
                 shock_unit="spread_bps",
                 direction=NMRFShockDirection.UP,
-                calibration_source="synthetic stress-window selector",
+                calibration_source="synthetic stress-period calibration",
             ),
         },
         full_revaluations={
@@ -233,6 +279,13 @@ def main() -> None:
             f"{instruction.method.value:<18} "
             f"required LH={instruction.required_liquidity_horizon.value:>3}d  "
             f"{instruction.reason.value}"
+        )
+    print("\n  Selected stress periods:")
+    for risk_class, candidate in stress_selection.selected_by_risk_class.items():
+        print(
+            f"    {risk_class.value:<12} "
+            f"{candidate.start_date.isoformat()} -> {candidate.end_date.isoformat()}  "
+            f"score={candidate.severity_score:>10,.2f}"
         )
     print("\n  Valuation specs:")
     for spec in valuation_specs:

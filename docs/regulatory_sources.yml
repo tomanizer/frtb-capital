@@ -14,6 +14,7 @@ sources:
     reuse_note: "Link-only reference. BIS text should not be vendored without permission review."
     modules:
       - src/frtb_ima/regimes.py
+      - src/frtb_ima/stress_periods.py
       - src/frtb_ima/imcc.py
       - src/frtb_ima/nmrf_method_selection.py
       - src/frtb_ima/nmrf_stress_spec.py
@@ -21,6 +22,7 @@ sources:
       - src/frtb_ima/nmrf.py
     requirements:
       - NPR-MR-POLICY-001
+      - NPR-MR-STRESS-001
       - NPR-MR-IMCC-001
       - NPR-MR-NMRF-002
 
@@ -68,6 +70,7 @@ sources:
     modules:
       - src/frtb_ima/expected_shortfall.py
       - src/frtb_ima/liquidity_horizon.py
+      - src/frtb_ima/stress_periods.py
       - src/frtb_ima/imcc.py
       - src/frtb_ima/nmrf_method_selection.py
       - src/frtb_ima/nmrf_stress_spec.py
@@ -76,6 +79,7 @@ sources:
     requirements:
       - NPR-MR-ES-001
       - NPR-MR-LHA-001
+      - NPR-MR-STRESS-001
       - NPR-MR-IMCC-001
       - NPR-MR-NMRF-001
       - NPR-MR-NMRF-002
@@ -91,6 +95,7 @@ sources:
     modules:
       - src/frtb_ima/regimes.py
       - src/frtb_ima/liquidity_horizon.py
+      - src/frtb_ima/stress_periods.py
       - src/frtb_ima/imcc.py
       - src/frtb_ima/nmrf_method_selection.py
       - src/frtb_ima/nmrf_stress_spec.py
@@ -103,6 +108,7 @@ sources:
       - NPR-MR-POLICY-001
       - NPR-MR-LHA-001
       - NPR-MR-RFET-001
+      - NPR-MR-STRESS-001
       - NPR-MR-IMCC-001
       - NPR-MR-NMRF-001
       - NPR-MR-NMRF-002
@@ -133,12 +139,14 @@ sources:
     reuse_note: "EUR-Lex legal document link. Reuse is generally allowed unless otherwise specified; link-only by default."
     modules:
       - src/frtb_ima/regimes.py
+      - src/frtb_ima/stress_periods.py
       - src/frtb_ima/pla.py
       - src/frtb_ima/backtesting.py
       - src/frtb_ima/nmrf.py
       - src/frtb_ima/nmrf_valuation_run.py
     requirements:
       - NPR-MR-POLICY-001
+      - NPR-MR-STRESS-001
       - NPR-MR-PLA-002
       - NPR-MR-NMRF-002
 

@@ -11,6 +11,7 @@ A Python prototype demonstrating how an existing risk engine can generate 10-day
 - Risk factor modellability classification (RFET)
 - Liquidity horizon adjusted expected shortfall (LHA ES)
 - Internal Model Capital Charge (IMCC)
+- Vectorized stress-period calibration from supplied historical risk-class losses
 - NMRF stress-method evidence, valuation specs, artifact reconciliation, and SES
 - Stressed Expected Shortfall for NMRFs (SES)
 - Models-based capital assembly
@@ -19,9 +20,9 @@ A Python prototype demonstrating how an existing risk engine can generate 10-day
 - Structured JSON logging and NDJSON audit records
 
 The current boundary is intentional: the package assembles and validates
-capital inputs, but it does not generate market data, select stress periods,
-price trades, run DRC/standardized capital, or produce final regulatory
-submissions.
+capital inputs, and can select stress windows from supplied historical loss
+series, but it does not source raw market data, price trades, run
+DRC/standardized capital, or produce final regulatory submissions.
 
 ## Install
 
@@ -78,6 +79,7 @@ src/frtb_ima/
     lha_builder.py          Scenario cube to nested LH vector builder
     liquidity_horizon.py    LHA ES from nested vectors
     reduced_set.py          Indirect-approach reduced-set diagnostics
+    stress_periods.py       Vectorized stress-window selection by risk class
     regimes.py              Regulatory policy profiles and run context
     rfet.py                 RFET modellability classification
     rfet_evidence.py        RFET evidence assessment and audit trail
@@ -103,6 +105,12 @@ src/frtb_ima/
 **Minimal dependencies.** numpy only. No pandas, no scipy — keeps it auditable.
 
 **Functional style.** Classes only where data structure demands it (dataclasses). Business logic is pure functions.
+
+**Stress-period calibration is pre-run.** Stress windows are selected by risk
+class from supplied historical loss/severity vectors before NMRF valuation
+specs are built. The selector is vectorized with NumPy and produces
+`NMRFStressPeriodSpec` inputs, but raw market-data sourcing and pricing remain
+upstream.
 
 **Audit trail without backend coupling.** Runtime observability uses stdlib
 logging and compact scalar JSON events at policy-wrapper boundaries. Durable

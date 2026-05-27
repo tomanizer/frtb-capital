@@ -139,7 +139,20 @@ requirements:
     tests:
       - tests/test_imcc.py
       - tests/test_reduced_set.py
-    notes: "Reduced/full set scaling helper and 60-day 75% variation-explained diagnostic implemented; no stress-window selection or reduced risk-factor set selection workflow yet."
+    notes: "Reduced/full set scaling helper and 60-day 75% variation-explained diagnostic implemented; stress-window selection is tracked separately in NPR-MR-STRESS-001; no reduced risk-factor set selection workflow yet."
+
+  - id: NPR-MR-STRESS-001
+    title: "Stress-period determination from supplied historical loss series"
+    source: "Stressed ES / SES calibration window selection by risk class"
+    source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
+    status: partial
+    modules:
+      - src/frtb_ima/stress_periods.py
+      - src/frtb_ima/nmrf_stress_spec.py
+    tests:
+      - tests/test_stress_periods.py
+      - tests/test_nmrf_stress_spec.py
+    notes: "Vectorized common stress-window selection by risk class is implemented from supplied historical loss/severity vectors, including NMRFStressPeriodSpec bridging. Raw market-data sourcing, exact business-calendar semantics, source-completeness proof, formal calibration approval, and trade pricing remain upstream."
 
   - id: NPR-MR-NMRF-001
     title: "Type A and Type B SES aggregation"

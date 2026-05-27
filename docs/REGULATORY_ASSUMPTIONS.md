@@ -41,12 +41,17 @@ All U.S. NPR 2.0 content is treated as proposed-rule working assumptions. The pr
     validation errors; the capital layer does not silently substitute linear
     approximations. Prototype-labelled valuation artifacts fail reconciliation
     unless a demo/test caller explicitly opts into synthetic artifacts.
-14. PLA uses a Kolmogorov-Smirnov statistic comparing HPL and RTPL over a
+14. Stress-period selection is a pre-run calibration step by risk class. The
+    prototype selects windows from supplied historical loss/severity vectors
+    using a fixed observation-count business-day proxy for a 12-month period.
+    It does not source raw market data, price trades, or approve a formal
+    regulatory stress-period methodology.
+15. PLA uses a Kolmogorov-Smirnov statistic comparing HPL and RTPL over a
     250-business-day policy window.
-15. Backtesting counts both APL and HPL exceptions at 97.5% and 99.0% VaR
+16. Backtesting counts both APL and HPL exceptions at 97.5% and 99.0% VaR
     confidence levels. The Fed profile applies exception limits of 30 at 97.5%
     and 12 at 99.0%.
-16. Missing APL, HPL, or VaR observations count as backtesting exceptions
+17. Missing APL, HPL, or VaR observations count as backtesting exceptions
     unless marked as official-holiday related.
 
 ## EU CRR / CRR3 comparison assumptions
@@ -74,7 +79,7 @@ The prototype intentionally excludes or simplifies:
 - redesignation add-ons,
 - legal-entity consolidation,
 - actual supervisory submission workflows,
-- full stress-period selection governance,
+- formal stress-period approval governance and raw market-data sourcing,
 - vendor real-price evidence workflows,
 - EU RTS-level PLA Spearman correlation,
 - EU RTS-level RFET data-pooling/vendor-reliance rules,
@@ -100,6 +105,9 @@ The May 2026 accuracy pass corrected four prior simplifications:
 5. Policy-wrapper boundaries can emit structured JSON log records with run,
    desk, regime, and scalar result fields. Decomposed result objects can be
    collected into `DeskAuditRecord` / `CapitalRunAuditLog` NDJSON artifacts.
+6. Stress-period selection now has a first-class pre-run component that selects
+   common risk-class stress windows from supplied historical loss/severity
+   vectors with NumPy-native rolling-window severity scoring.
 
 Remaining deliberate boundaries:
 
@@ -110,9 +118,9 @@ Remaining deliberate boundaries:
 - RFET qualitative criteria remain external inputs. Vendor lineage, data-pooling
   eligibility, supervisory overrides, and new-issuance pro-rating remain out of
   scope.
-- Formal stress-period selection/calibration, reduced-set governance,
-  risk-factor bucketing, and firm-level consolidation are not complete
-  regulatory workflows.
+- Raw market-data sourcing, formal stress-period approval governance,
+  reduced-set governance, risk-factor bucketing, and firm-level consolidation
+  are not complete regulatory workflows.
 - External telemetry backends, OpenTelemetry, Prometheus/Datadog metrics,
   streaming audit writers for very large desk batches, Parquet/DuckDB audit
   analytics, and full regulatory report generation remain orchestration-layer
