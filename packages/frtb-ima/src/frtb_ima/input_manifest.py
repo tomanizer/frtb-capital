@@ -56,6 +56,7 @@ class InputArtifactLineage:
         ):
             if not getattr(self, field_name):
                 raise ValueError(f"{field_name} must be non-empty")
+        _validate_sha256_hex(self.checksum, "checksum")
         if self.extraction_timestamp.tzinfo is None:
             raise ValueError("extraction_timestamp must be timezone-aware")
         if type(self.as_of_date) is not date:
@@ -129,7 +130,7 @@ class CapitalRunInputManifest:
     @property
     def manifest_hash(self) -> str:
         """Stable SHA-256 digest over the manifest payload."""
-        return compute_inputs_hash(input_manifest=self.as_dict())
+        return self.manifest_hash_without_self_reference()
 
     def artifact(self, artifact_name: str) -> InputArtifactLineage:
         """Return one artifact lineage record by name."""
@@ -230,7 +231,7 @@ def capital_run_input_manifest_from_fixture(
                 vector_count=vector_count,
                 checksum=str(file_info["sha256"]),
                 sign_convention=sign_convention,
-                metadata={"fixture_root": str(root)},
+                metadata={"fixture": root.name},
             )
         )
     return CapitalRunInputManifest(
@@ -276,3 +277,8 @@ def _fixture_sign_convention(
     if convention is None:
         return "not_applicable"
     return json.dumps(convention, sort_keys=True, separators=(",", ":"))
+
+
+def _validate_sha256_hex(value: str, field_name: str) -> None:
+    if len(value) != 64 or any(char not in "0123456789abcdef" for char in value):
+        raise ValueError(f"{field_name} must be a lowercase SHA-256 hex digest")

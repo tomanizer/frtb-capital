@@ -44,6 +44,10 @@ def test_input_artifact_lineage_validates_required_controls() -> None:
         replace(lineage, extraction_timestamp=datetime(2026, 5, 27))
     with pytest.raises(ValueError, match="record_count"):
         replace(lineage, record_count=-1)
+    with pytest.raises(ValueError, match="SHA-256"):
+        replace(lineage, checksum="not-a-sha")
+    with pytest.raises(ValueError, match="lowercase"):
+        replace(lineage, checksum="A" * 64)
     with pytest.raises(ValueError, match="validation_messages"):
         replace(lineage, validation_status=InputValidationStatus.FAILED)
 
@@ -56,6 +60,8 @@ def test_capital_run_input_manifest_validates_expectations() -> None:
     )
 
     assert manifest.require_artifact("scenario_cube.npz", checksum="a" * 64) == _lineage()
+    assert manifest.manifest_hash == manifest.manifest_hash_without_self_reference()
+    assert manifest.as_dict()["manifest_hash"] == manifest.manifest_hash
     assert manifest.compact_summary()["artifact_count"] == 1
     with pytest.raises(KeyError, match="missing input artifact"):
         manifest.artifact("missing.csv")
@@ -104,5 +110,7 @@ def test_fixture_manifest_maps_to_capital_run_input_manifest() -> None:
 
     assert manifest.artifact_count == len(fixture_manifest["files"])
     assert scenario_cube.sign_convention == '{"cube":"positive_loss"}'
+    assert scenario_cube.metadata["fixture"] == "capital_run_v1"
+    assert str(FIXTURE_ROOT) not in json.dumps(scenario_cube.as_dict())
     assert rfet_observations.record_count > 0
     assert manifest.as_dict()["run_id"] == "capital_run_v1"
