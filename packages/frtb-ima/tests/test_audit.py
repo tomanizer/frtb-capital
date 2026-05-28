@@ -1,7 +1,7 @@
 """Tests for post-run audit records."""
 
 import json
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 from types import MappingProxyType
 
@@ -16,10 +16,33 @@ from frtb_ima.audit import (
     write_audit_records_ndjson,
     write_capital_run_audit_report,
 )
+from frtb_ima.input_manifest import CapitalRunInputManifest, InputArtifactLineage
 from frtb_ima.regimes import DEFAULT_MODEL_VERSION, DeskEligibilityStatus, get_policy
 
 TEST_INPUTS_HASH = "1" * 64
 ALT_INPUTS_HASH = "2" * 64
+
+
+def _input_manifest() -> CapitalRunInputManifest:
+    return CapitalRunInputManifest(
+        run_id="run-1",
+        as_of_date=date(2026, 5, 27),
+        artifacts=(
+            InputArtifactLineage(
+                artifact_name="scenario_cube.npz",
+                artifact_type="npz",
+                schema_version="capital_run_fixture_v1",
+                source_system="synthetic_fixture",
+                source_version="1",
+                extraction_timestamp=datetime(2026, 5, 27, tzinfo=UTC),
+                as_of_date=date(2026, 5, 27),
+                record_count=10,
+                vector_count=1,
+                checksum="a" * 64,
+                sign_convention="positive_loss",
+            ),
+        ),
+    )
 
 
 def _desk_record(desk_id: str = "desk-1") -> DeskAuditRecord:
@@ -56,6 +79,41 @@ def test_desk_audit_record_serializes_to_json_line() -> None:
     assert payload["imcc"]["imcc"] == pytest.approx(100.0)
     assert payload["nmrf_valuation"]["passed"] is True
     assert payload["metadata"]["source"] == "unit-test"
+
+
+def test_desk_audit_record_serializes_input_lineage_summary() -> None:
+    record = DeskAuditRecord(
+        run_id="run-1",
+        desk_id="desk-1",
+        regime="FED_NPR_2_0",
+        inputs_hash=TEST_INPUTS_HASH,
+        as_of_date=date(2026, 5, 27),
+        imcc={"imcc": 100.0},
+        ses={"total_ses": 40.0},
+        pla={"pla": {"zone": "GREEN"}},
+        backtesting={"model_eligible": True},
+        capital={"models_based_capital": 190.0},
+        elapsed_seconds=0.25,
+        input_manifest=_input_manifest(),
+    )
+
+    payload = record.as_dict()
+
+    assert payload["input_manifest"]["artifact_count"] == 1  # type: ignore[index]
+    with pytest.raises(ValueError, match="input_manifest is required"):
+        DeskAuditRecord(
+            run_id="run-1",
+            desk_id="desk-1",
+            regime="FED_NPR_2_0",
+            imcc={},
+            ses={},
+            pla={},
+            backtesting={},
+            capital={},
+            inputs_hash=TEST_INPUTS_HASH,
+            elapsed_seconds=0.0,
+            require_input_manifest=True,
+        )
 
 
 def test_desk_audit_record_canonicalizes_desk_eligibility_enum() -> None:
@@ -112,6 +170,29 @@ def test_capital_run_audit_log_serializes_records_to_ndjson() -> None:
     assert len(lines) == 2
     assert json.loads(lines[1])["desk_id"] == "desk-2"
     assert json.loads(lines[1])["inputs_hash"] == TEST_INPUTS_HASH
+
+
+def test_capital_run_audit_log_reports_input_lineage() -> None:
+    log = CapitalRunAuditLog(
+        run_id="run-1",
+        regime="FED_NPR_2_0",
+        as_of_date=date(2026, 5, 27),
+        desk_records=(_desk_record("desk-1"),),
+        input_manifest=_input_manifest(),
+    )
+
+    payload = log.as_dict()
+    report = render_capital_run_audit_report(log)
+
+    assert payload["input_manifest"]["artifact_count"] == 1  # type: ignore[index]
+    assert "## Input lineage" in report
+    with pytest.raises(ValueError, match="input_manifest is required"):
+        CapitalRunAuditLog(
+            run_id="run-1",
+            regime="FED_NPR_2_0",
+            desk_records=(_desk_record("desk-1"),),
+            require_input_manifest=True,
+        )
 
 
 def test_capital_run_audit_log_rejects_duplicate_desks() -> None:

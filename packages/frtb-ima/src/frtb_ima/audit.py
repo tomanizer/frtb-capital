@@ -24,6 +24,7 @@ from typing import Any
 
 from frtb_ima._version import __version__
 from frtb_ima.audit_inputs import compute_inputs_hash
+from frtb_ima.input_manifest import CapitalRunInputManifest
 from frtb_ima.regimes import (
     DEFAULT_MODEL_VERSION,
     DeskEligibilityStatus,
@@ -56,6 +57,8 @@ class DeskAuditRecord:
     capital: Mapping[str, object]
     elapsed_seconds: float
     nmrf_valuation: Mapping[str, object] = field(default_factory=_empty_mapping)
+    input_manifest: CapitalRunInputManifest | None = field(default=None, kw_only=True)
+    require_input_manifest: bool = field(default=False, kw_only=True)
     as_of_date: date | None = None
     notes: tuple[str, ...] = ()
     metadata: Mapping[str, object] = field(default_factory=_empty_mapping)
@@ -82,6 +85,14 @@ class DeskAuditRecord:
             raise ValueError("desk_eligibility must be a DeskEligibilityStatus value") from exc
         if self.elapsed_seconds < 0.0:
             raise ValueError("elapsed_seconds must be non-negative")
+        if self.require_input_manifest and self.input_manifest is None:
+            raise ValueError("input_manifest is required for production-style audit records")
+        if (
+            self.input_manifest is not None
+            and self.as_of_date is not None
+            and self.input_manifest.as_of_date != self.as_of_date
+        ):
+            raise ValueError("input_manifest as_of_date must match audit record as_of_date")
         object.__setattr__(self, "desk_eligibility", desk_eligibility)
         object.__setattr__(self, "model_version", model_version)
         object.__setattr__(self, "code_version", code_version)
@@ -118,6 +129,9 @@ class DeskAuditRecord:
             "backtesting": _jsonable(self.backtesting),
             "capital": _jsonable(self.capital),
             "nmrf_valuation": _jsonable(self.nmrf_valuation),
+            "input_manifest": (
+                self.input_manifest.compact_summary() if self.input_manifest is not None else None
+            ),
             "elapsed_seconds": self.elapsed_seconds,
             "notes": list(self.notes),
             "metadata": _jsonable(self.metadata),
@@ -139,6 +153,8 @@ class CapitalRunAuditLog:
     code_version: str = field(default=__version__, kw_only=True)
     policy_hash: str = field(default="", kw_only=True)
     inputs_hash: str = field(default="", kw_only=True)
+    input_manifest: CapitalRunInputManifest | None = field(default=None, kw_only=True)
+    require_input_manifest: bool = field(default=False, kw_only=True)
     as_of_date: date | None = None
     metadata: Mapping[str, object] = field(default_factory=_empty_mapping)
 
@@ -160,6 +176,14 @@ class CapitalRunAuditLog:
             raise ValueError("code_version must be non-empty")
         _validate_sha256_hex(policy_hash, "policy_hash")
         _validate_sha256_hex(inputs_hash, "inputs_hash")
+        if self.require_input_manifest and self.input_manifest is None:
+            raise ValueError("input_manifest is required for production-style audit logs")
+        if (
+            self.input_manifest is not None
+            and self.as_of_date is not None
+            and self.input_manifest.as_of_date != self.as_of_date
+        ):
+            raise ValueError("input_manifest as_of_date must match audit log as_of_date")
         desk_ids = [record.desk_id for record in desk_records]
         if len(desk_ids) != len(set(desk_ids)):
             raise ValueError("desk_records contains duplicate desk_id values")
@@ -195,6 +219,9 @@ class CapitalRunAuditLog:
             "code_version": self.code_version,
             "policy_hash": self.policy_hash,
             "inputs_hash": self.inputs_hash,
+            "input_manifest": (
+                self.input_manifest.compact_summary() if self.input_manifest is not None else None
+            ),
             "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
             "desk_count": self.desk_count,
             "desk_records": [record.as_dict() for record in self.desk_records],
@@ -266,6 +293,10 @@ def render_capital_run_audit_report(
 
     if log.metadata:
         lines.extend(_json_section("Run metadata", log.metadata, heading_level=3))
+    if log.input_manifest is not None:
+        lines.extend(
+            _json_section("Input lineage", log.input_manifest.compact_summary(), heading_level=2)
+        )
 
     lines.extend(["", "## Desk summary", ""])
     lines.extend(
@@ -320,6 +351,14 @@ def render_capital_run_audit_report(
         if record.notes:
             lines.extend(["", "### Notes", ""])
             lines.extend(f"- {_escape_table_cell(note)}" for note in record.notes)
+        if record.input_manifest is not None:
+            lines.extend(
+                _json_section(
+                    "Input lineage",
+                    record.input_manifest.compact_summary(),
+                    heading_level=3,
+                )
+            )
         lines.extend(_json_section("IMCC", record.imcc, heading_level=3))
         lines.extend(_json_section("SES", record.ses, heading_level=3))
         lines.extend(_json_section("PLA", record.pla, heading_level=3))
