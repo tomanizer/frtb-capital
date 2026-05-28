@@ -1,0 +1,45 @@
+# FRTB Module Planning Documents
+
+This directory holds documentation-only module plans for capital components that
+are not yet implemented on `main`. The files are deliberately outside
+`packages/` so the `uv` workspace glob `packages/*` is not changed until a real
+package manifest is added.
+
+| Module | Regulatory requirements | PRD | Workable requirements |
+| --- | --- | --- | --- |
+| DRC | [frtb-drc/REGULATORY_REQUIREMENTS.md](frtb-drc/REGULATORY_REQUIREMENTS.md) | [frtb-drc/PRD.md](frtb-drc/PRD.md) | [frtb-drc/requirements/BASEL_FRTB_DRC.yml](frtb-drc/requirements/BASEL_FRTB_DRC.yml) |
+| RRAO | [frtb-rrao/REGULATORY_REQUIREMENTS.md](frtb-rrao/REGULATORY_REQUIREMENTS.md) | [frtb-rrao/PRD.md](frtb-rrao/PRD.md) | [frtb-rrao/requirements/BASEL_FRTB_RRAO.yml](frtb-rrao/requirements/BASEL_FRTB_RRAO.yml) |
+| CVA | [frtb-cva/REGULATORY_REQUIREMENTS.md](frtb-cva/REGULATORY_REQUIREMENTS.md) | [frtb-cva/PRD.md](frtb-cva/PRD.md) | [frtb-cva/requirements/BASEL_FRTB_CVA.yml](frtb-cva/requirements/BASEL_FRTB_CVA.yml) |
+| SA SBM | [frtb-sa-sbm/REGULATORY_REQUIREMENTS.md](frtb-sa-sbm/REGULATORY_REQUIREMENTS.md) | [frtb-sa-sbm/PRD.md](frtb-sa-sbm/PRD.md) | [frtb-sa-sbm/requirements/BASEL_FRTB_SA_SBM.yml](frtb-sa-sbm/requirements/BASEL_FRTB_SA_SBM.yml) |
+
+## Research Sources
+
+The documents use these primary references:
+
+- Basel MAR20, standardised approach structure:
+  https://www.bis.org/basel_framework/chapter/MAR/20.htm
+- Basel MAR21, sensitivities-based method:
+  https://www.bis.org/basel_framework/chapter/MAR/21.htm
+- Basel MAR22, default risk capital:
+  https://www.bis.org/basel_framework/chapter/MAR/22.htm
+- Basel MAR23, residual risk add-on:
+  https://www.bis.org/basel_framework/chapter/MAR/23.htm
+- Basel MAR50, CVA framework:
+  https://www.bis.org/basel_framework/chapter/MAR/50.htm
+- U.S. NPR 2.0 / Federal Register 91 FR 14952:
+  https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
+- CRR3 Regulation (EU) 2024/1623:
+  https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
+- EBA residual risk add-on RTS:
+  https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2?version=2021
+- Commission Delegated Regulation (EU) 2022/2328:
+  https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2328
+
+The local reference implementation used for design inspiration is:
+
+`/Users/thomas/Documents/Projects/extract_cva/risk/gra/mrcm/frtb/capital_navigator`
+
+That implementation is treated as an implementation reference only. Regulatory
+requirements in these documents are sourced from Basel, U.S. NPR, CRR3, and EBA
+references.
+

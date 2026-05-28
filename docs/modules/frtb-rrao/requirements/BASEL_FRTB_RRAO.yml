@@ -1,0 +1,57 @@
+schema_version: 1
+name: BASEL_FRTB_RRAO
+module: frtb-rrao
+status_values: [planned, implemented, partial, unsupported, out_of_scope]
+source_register:
+  - name: Basel MAR23
+    url: https://www.bis.org/basel_framework/chapter/MAR/23.htm
+  - name: U.S. NPR 2.0 91 FR 14952
+    url: https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
+  - name: EBA RTS on residual risk add-on
+    url: https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2?version=2021
+  - name: Commission Delegated Regulation (EU) 2022/2328
+    url: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2328
+requirements:
+  - id: RRAO-DATA-001
+    title: Frozen RRAO input and result models
+    source: Basel MAR23.1-MAR23.3; U.S. NPR 2.0 section V.A.7.b
+    status: planned
+    modules: [src/frtb_rrao/data_models.py]
+    tests: [tests/test_data_models.py]
+    notes: Position, classification, capital line, and aggregate result.
+  - id: RRAO-CLASS-001
+    title: Exotic and other residual risk classification
+    source: Basel MAR23.2-MAR23.3; 91 FR 15049
+    status: planned
+    modules: [src/frtb_rrao/classification.py]
+    tests: [tests/test_classification.py]
+    notes: Include explicit classification reason and evidence fields.
+  - id: RRAO-CAP-001
+    title: 1 percent exotic add-on
+    source: Basel MAR23.2; 91 FR 15049 footnote 385
+    status: planned
+    modules: [src/frtb_rrao/capital.py]
+    tests: [tests/test_capital.py]
+    notes: Capital equals 0.01 times gross effective notional.
+  - id: RRAO-CAP-002
+    title: 0.1 percent other residual risk add-on
+    source: Basel MAR23.3; 91 FR 15049 footnote 386
+    status: planned
+    modules: [src/frtb_rrao/capital.py]
+    tests: [tests/test_capital.py]
+    notes: Capital equals 0.001 times gross effective notional.
+  - id: RRAO-EXCL-001
+    title: Exclusion and back-to-back treatment
+    source: Basel MAR23.4-MAR23.7; 91 FR 15049-15050
+    status: planned
+    modules: [src/frtb_rrao/classification.py]
+    tests: [tests/test_exclusions.py]
+    notes: Exclusions must be explicit and auditable.
+  - id: RRAO-AUDIT-001
+    title: Additive audit contribution report
+    source: Basel MAR23 calculation structure
+    status: planned
+    modules: [src/frtb_rrao/audit.py]
+    tests: [tests/test_audit.py]
+    notes: Line-level weighted notional contributions sum to total RRAO.
+

@@ -1,0 +1,71 @@
+schema_version: 1
+name: BASEL_FRTB_DRC
+module: frtb-drc
+status_values: [planned, implemented, partial, unsupported, out_of_scope]
+source_register:
+  - name: Basel MAR22
+    url: https://www.bis.org/basel_framework/chapter/MAR/22.htm
+  - name: U.S. NPR 2.0 91 FR 14952
+    url: https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
+  - name: CRR3 Regulation (EU) 2024/1623
+    url: https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
+  - name: EBA RTS on gross jump-to-default amounts
+    url: https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-3
+requirements:
+  - id: DRC-DATA-001
+    title: Frozen DRC input and result models
+    source: Basel MAR22.1-MAR22.8; U.S. NPR 2.0 section V.A.9
+    status: planned
+    modules: [src/frtb_drc/data_models.py]
+    tests: [tests/test_data_models.py]
+    notes: Position, GrossJtd, NetJtd, BucketDrc, and DrcCapitalResult.
+  - id: DRC-REF-001
+    title: Regime-specific LGD and risk-weight reference data
+    source: Basel MAR22.12, MAR22.19-MAR22.26; 91 FR 15068
+    status: planned
+    modules: [src/frtb_drc/reference_data.py, src/frtb_drc/regimes.py]
+    tests: [tests/test_reference_data.py]
+    notes: Basel, U.S. NPR 2.0, CRR3, and PRA profiles must be explicit.
+  - id: DRC-JTD-001
+    title: Gross JTD and default long-short direction
+    source: Basel MAR22.9-MAR22.12; U.S. NPR 2.0 section V.A.9.a.i
+    status: planned
+    modules: [src/frtb_drc/gross_jtd.py]
+    tests: [tests/test_gross_jtd.py]
+    notes: Preserve source values and LGD source in audit output.
+  - id: DRC-NET-001
+    title: Net JTD by obligor, seniority, tranche, and maturity
+    source: Basel MAR22.13-MAR22.18; U.S. NPR 2.0 section V.A.9 steps two and three
+    status: planned
+    modules: [src/frtb_drc/netting.py]
+    tests: [tests/test_netting.py]
+    notes: No cross-seniority or cross-tranche offset unless cited by profile.
+  - id: DRC-CAP-001
+    title: Hedge benefit ratio and bucket capital
+    source: Basel MAR22.21-MAR22.26; U.S. NPR 2.0 section V.A.9 step four
+    status: planned
+    modules: [src/frtb_drc/capital.py]
+    tests: [tests/test_capital.py]
+    notes: Bucket floors and weighted long/short components must reconcile.
+  - id: DRC-SEC-001
+    title: Securitisation non-CTP DRC
+    source: Basel MAR22.27-MAR22.38; U.S. NPR 2.0 section V.A.9.b
+    status: planned
+    modules: [src/frtb_drc/securitisation.py]
+    tests: [tests/test_securitisation.py]
+    notes: Include attachment/detachment and non-CTP bucket references.
+  - id: DRC-CTP-001
+    title: Correlation trading portfolio DRC
+    source: Basel MAR22.39-MAR22.47; U.S. NPR 2.0 section V.A.9.c
+    status: planned
+    modules: [src/frtb_drc/ctp.py]
+    tests: [tests/test_ctp.py]
+    notes: Separate aggregation from non-CTP and non-sec paths.
+  - id: DRC-AUDIT-001
+    title: Audit and Euler-compatible decomposition
+    source: Basel MAR22 traceability requirement by calculation component
+    status: planned
+    modules: [src/frtb_drc/audit.py]
+    tests: [tests/test_audit.py]
+    notes: Provide issuer/tranche, bucket, seniority, RW, gross/net JTD, and capital contribution.
+
