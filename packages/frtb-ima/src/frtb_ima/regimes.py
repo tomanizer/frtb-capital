@@ -13,9 +13,13 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import hashlib
+import json
+import re
+from dataclasses import dataclass, fields, is_dataclass
 from datetime import date
 from enum import StrEnum
+from typing import Any
 
 from frtb_ima.data_models import LiquidityHorizon
 
@@ -130,6 +134,40 @@ DEFAULT_BACKTESTING_EXCEPTION_LIMITS: tuple[tuple[float, int], ...] = (
     (0.99, 12),
 )
 
+_SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
+
+
+@dataclass(frozen=True)
+class ModelVersion:
+    """Immutable model identity used in audit records."""
+
+    model_id: str
+    version: str
+    description: str
+
+    def __post_init__(self) -> None:
+        if not self.model_id:
+            raise ValueError("model_id must be non-empty")
+        if not _SEMVER_RE.fullmatch(self.version):
+            raise ValueError("version must be semver-like, for example 0.1.0")
+        if not self.description:
+            raise ValueError("description must be non-empty")
+
+    def as_dict(self) -> dict[str, str]:
+        """Return a JSON-serialisable model identity dictionary."""
+        return {
+            "model_id": self.model_id,
+            "version": self.version,
+            "description": self.description,
+        }
+
+
+DEFAULT_MODEL_VERSION = ModelVersion(
+    model_id="frtb-ima",
+    version="0.1.0",
+    description="FRTB IMA prototype capital model",
+)
+
 
 @dataclass(frozen=True)
 class RegulatoryPolicy:
@@ -175,6 +213,21 @@ class RegulatoryPolicy:
     )
     supervisory_multiplier_red_zone: float = 2.00
     unsupported_features: tuple[UnsupportedFeature, ...] = ()
+
+    @property
+    def policy_hash(self) -> str:
+        """Stable SHA-256 over this policy's canonical serialisation."""
+        payload = json.dumps(
+            self.as_dict(),
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        return hashlib.sha256(bytes(payload, "utf-8")).hexdigest()
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a deterministic JSON-serialisable policy dictionary."""
+        return {field.name: _policy_jsonable(getattr(self, field.name)) for field in fields(self)}
 
     def unsupported_feature(self, feature_name: str) -> UnsupportedFeature | None:
         """Return an unsupported-feature descriptor by name, if present."""
@@ -270,3 +323,15 @@ def _pra_uk_crr_policy() -> RegulatoryPolicy:
             ),
         ),
     )
+
+
+def _policy_jsonable(value: Any) -> object:
+    if isinstance(value, StrEnum):
+        return value.value
+    if is_dataclass(value) and not isinstance(value, type):
+        return {field.name: _policy_jsonable(getattr(value, field.name)) for field in fields(value)}
+    if isinstance(value, tuple | list):
+        return [_policy_jsonable(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _policy_jsonable(item) for key, item in value.items()}
+    return value
