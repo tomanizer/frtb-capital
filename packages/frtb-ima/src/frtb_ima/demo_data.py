@@ -100,23 +100,23 @@ def make_scenario_pnl(desk: str, n_scenarios: int = 500) -> ScenarioPnL:
     # Build per-risk-class vectors (simplified: pro-rata split across classes)
     # In practice these would come from the risk engine per risk class.
     for rc in [RiskClass.GIRR, RiskClass.FX]:
-        spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.3).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH20, (lh20 * 0.3).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.3).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH20, (lh20 * 0.3).tolist())
 
     for rc in [RiskClass.CSR]:
-        spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.2).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH40, (lh40 * 0.2).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH60, (lh60 * 0.2).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.2).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH40, (lh40 * 0.2).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH60, (lh60 * 0.2).tolist())
 
     for rc in [RiskClass.EQUITY]:
-        spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.3).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH20, (lh20 * 0.3).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH60, (lh60 * 0.3).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH120, (lh120 * 0.3).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.3).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH20, (lh20 * 0.3).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH60, (lh60 * 0.3).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH120, (lh120 * 0.3).tolist())
 
     for rc in [RiskClass.COMMODITY]:
-        spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.2).tolist())
-        spnl.add_vector(rc, LiquidityHorizon.LH20, (lh20 * 0.2).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH10, (base * 0.2).tolist())
+        spnl = spnl.add_vector(rc, LiquidityHorizon.LH20, (lh20 * 0.2).tolist())
 
     return spnl
 
@@ -138,10 +138,10 @@ def aggregate_lh_vectors(
 
     # Gather per-class LH -> vector
     per_class: dict[RiskClass, dict[LiquidityHorizon, list[float]]] = {}
-    for rc, lh_map in spnl.vectors.items():
+    for rc, frozen_lh_map in spnl.vectors.items():
         per_class[rc] = {}
-        for lh, vec in lh_map.items():
-            per_class[rc][lh] = vec
+        for lh, frozen_vector in frozen_lh_map.items():
+            per_class[rc][lh] = list(frozen_vector)
 
     # Per-class: fill missing LH10 from lowest available horizon
     # (LH10 must always exist for lha_es_from_vectors)
@@ -155,12 +155,12 @@ def aggregate_lh_vectors(
     all_lh: dict[LiquidityHorizon, list[float]] = collections.defaultdict(list)
     n_scenarios: dict[LiquidityHorizon, int] = {}
 
-    for rc, lh_map in per_class.items():
-        for lh, vec in lh_map.items():
+    for rc, per_class_lh_map in per_class.items():
+        for lh, mutable_vector in per_class_lh_map.items():
             if lh not in n_scenarios:
-                n_scenarios[lh] = len(vec)
-                all_lh[lh] = [0.0] * len(vec)
-            for i, v in enumerate(vec):
+                n_scenarios[lh] = len(mutable_vector)
+                all_lh[lh] = [0.0] * len(mutable_vector)
+            for i, v in enumerate(mutable_vector):
                 all_lh[lh][i] += v
 
     # Ensure LH10 exists in all_class
