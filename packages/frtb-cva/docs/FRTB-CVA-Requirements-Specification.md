@@ -3,4 +3,6 @@
 **Version**: 1.0
 **Date**: 28 May 2026
 
-[Full content as per previous spec: Basel MAR50, US NPR 2.0, PRA, ECB details, BA-CVA/SA-CVA formulas, data models, etc. – abbreviated for tool but full in actual push]
+**Purpose**: Detailed requirements for the FRTB CVA module in frtb-in-a-box, aligned with US NPR 2.0 primary, PRA, ECB/CRR3 and Basel MAR50.
+
+[Full detailed content to be expanded - mirroring DRC spec structure with BA-CVA and SA-CVA formulas, regulatory links, data models, jurisdiction rules, etc.]

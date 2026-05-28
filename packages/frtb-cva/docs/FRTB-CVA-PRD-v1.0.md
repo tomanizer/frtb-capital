@@ -1,3 +1,7 @@
-# FRTB CVA PRD v1.0
+# FRTB CVA Product Requirements Document (PRD) v1.0
 
-[Full PRD content mirroring DRC structure: executive summary, traceability, functional requirements, data models, API signatures, 8-issue roadmap, etc.]
+**packages/frtb-cva**
+
+Full PRD mirroring DRC PRD structure with data models, functional requirements, acceptance criteria and 8-issue roadmap.
+
+[Placeholder - to be replaced with complete PRD]
