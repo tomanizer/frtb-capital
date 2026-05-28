@@ -10,9 +10,11 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum, StrEnum
+from types import MappingProxyType
 
 
 class RiskClass(StrEnum):
@@ -85,7 +87,7 @@ class RealPriceObservation:
             raise TypeError("verifiable must be a bool")
 
 
-@dataclass
+@dataclass(frozen=True)
 class ScenarioPnL:
     """
     Scenario P&L vectors for one desk, keyed by (risk_class, lh_subset).
@@ -99,20 +101,34 @@ class ScenarioPnL:
     desk: str
     # risk_class -> lh_subset -> 1-D array of scenario losses
     # lh_subset is a LiquidityHorizon value (the cutoff, not the label)
-    vectors: dict[RiskClass, dict[LiquidityHorizon, list[float]]] = field(default_factory=dict)
+    vectors: Mapping[RiskClass, Mapping[LiquidityHorizon, tuple[float, ...]]] = field(
+        default_factory=dict
+    )
+
+    def __post_init__(self) -> None:
+        frozen_vectors: dict[RiskClass, Mapping[LiquidityHorizon, tuple[float, ...]]] = {}
+        for risk_class, horizon_vectors in self.vectors.items():
+            frozen_vectors[risk_class] = MappingProxyType(
+                {
+                    liquidity_horizon: tuple(losses)
+                    for liquidity_horizon, losses in horizon_vectors.items()
+                }
+            )
+        object.__setattr__(self, "vectors", MappingProxyType(frozen_vectors))
 
     def add_vector(
         self,
         risk_class: RiskClass,
         lh_subset: LiquidityHorizon,
         losses: list[float],
-    ) -> None:
-        if risk_class not in self.vectors:
-            self.vectors[risk_class] = {}
-        self.vectors[risk_class][lh_subset] = losses
+    ) -> ScenarioPnL:
+        """Return a new instance with the supplied vector added."""
+        vectors = {existing_class: dict(lh_map) for existing_class, lh_map in self.vectors.items()}
+        vectors.setdefault(risk_class, {})[lh_subset] = tuple(losses)
+        return ScenarioPnL(desk=self.desk, vectors=vectors)
 
 
-@dataclass
+@dataclass(frozen=True)
 class DeskCapitalResult:
     """Capital components for a single approved desk."""
 
