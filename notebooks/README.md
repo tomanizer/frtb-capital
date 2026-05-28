@@ -10,14 +10,14 @@ Run them with:
 make notebooks
 ```
 
-Current first slice:
+Current slices:
 
 - `02_stress_period_selection.ipynb`
+- `03_lha_es_imcc.ipynb`
 - `05_pla_backtesting.ipynb`
+- `06_capital_assembly.ipynb`
 
 Planned follow-up notebooks:
 
 - RFET evidence and classification
-- LHA ES and IMCC
 - NMRF method-selection to SES chain
-- Capital assembly and IMCC/SES binding-term logic
