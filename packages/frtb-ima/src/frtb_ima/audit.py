@@ -7,7 +7,7 @@ analytics dependencies to the calculation layer.
 
 Regulatory traceability:
     Supports auditability and run traceability for Basel MAR31-MAR33, U.S. NPR
-    2.0 model-risk governance working assumptions, and EU CRR internal-model
+    2.0 model-risk governance expectations, and EU CRR internal-model
     governance. See docs/REGULATORY_TRACEABILITY.md.
 """
 
@@ -171,7 +171,7 @@ def render_capital_run_audit_report(
         f"# {title}",
         "",
         "> Prototype report only. Not for regulatory reporting.",
-        "> NPR 2.0 values are proposed-rule working assumptions.",
+        "> NPR 2.0 values are proposed-rule parameters and are not final regulatory capital.",
         "",
         "## Run summary",
         "",

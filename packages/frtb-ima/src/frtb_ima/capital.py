@@ -6,7 +6,7 @@ capital assembly. Use DeskEligibilityStatus and the policy wrapper in this
 module to make that handoff explicit; SA fallback capital remains out of scope
 for this package.
 
-Working assumption (NPR 2.0 / Basel FRTB IMA):
+Desk-level formula implemented from the cited NPR 2.0 / Basel FRTB IMA model:
 
     MBC = max(IMCC_t-1 + SES_t-1,  multiplier * IMCC_60d_avg + SES_60d_avg)
           + PLA_addon
@@ -306,7 +306,8 @@ def supervisory_multiplier(
     """
     Map backtesting exception count to supervisory multiplier.
 
-    Basel traffic-light add-ons (working assumption):
+    Basel MAR99 Table 2 traffic-light multiplier schedule, used with the MAR32
+    backtesting context:
         0-4   exceptions: 1.50
         5     exceptions: 1.70
         6     exceptions: 1.76
@@ -315,7 +316,7 @@ def supervisory_multiplier(
         9     exceptions: 1.92
         10+   exceptions: 2.00
 
-    These are the Basel standard add-ons; NPR 2.0 may differ.
+    These are the Basel MAR99 Table 2 multipliers used by the policy schedule.
     """
     if not isinstance(exception_count, int):
         raise TypeError("exception_count must be an integer")

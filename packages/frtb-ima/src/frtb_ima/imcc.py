@@ -1,7 +1,7 @@
 """
-Internal Model Capital Charge (IMCC) prototype.
+Internal Model Capital Charge (IMCC).
 
-Working assumptions (NPR 2.0 / Basel FRTB IMA):
+Formula mechanics for the NPR 2.0 / Basel FRTB IMA policy profile:
 
     IMCC = 0.5 * IMCC_unconstrained + 0.5 * IMCC_constrained
 
@@ -267,7 +267,8 @@ def imcc(
     """
     Compute final IMCC = w * unconstrained + (1 - w) * constrained.
 
-    Default w = 0.5 per NPR 2.0 working assumption.
+    Default w = 0.5 per Basel MAR33.15 rho weighting and the NPR 2.0 profile
+    policy.
 
     Args:
         all_risk_class_vectors: All-class aggregated LH vectors for unconstrained.

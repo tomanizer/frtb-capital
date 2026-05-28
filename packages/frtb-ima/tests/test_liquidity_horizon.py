@@ -118,6 +118,6 @@ def test_lha_es_missing_intermediate_horizons() -> None:
     assert result == pytest.approx(expected, rel=1e-6)
 
 
-def test_scalar_approximation_is_labelled_toy() -> None:
+def test_scalar_approximation_matches_legacy_scaling_formula() -> None:
     result = lha_es_scalar_approximation(100.0, weighted_avg_lh_days=20.0)
     assert result == pytest.approx(100.0 * math.sqrt(2.0), rel=1e-9)

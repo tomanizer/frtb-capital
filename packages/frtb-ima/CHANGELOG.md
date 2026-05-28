@@ -9,6 +9,9 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 
 ### Documentation
 
+- Replaced misleading regulatory "working assumption" language in IMA
+  docstrings and traceability docs with cited threshold references for audit
+  issue #4.
 - Updated package documentation to reflect the migration into the
   `frtb-capital` monorepo under `packages/frtb-ima`.
 

@@ -6,8 +6,8 @@ boundary. Lower-level calculators should continue to accept explicit scalar
 parameters whenever possible so they remain easy to test.
 
 Regulatory traceability:
-    Basel MAR31-MAR33, U.S. NPR 2.0 proposed-rule working assumptions, EU CRR3
-    and RTS, and UK CRR / PRA-rulebook placeholders. See
+    Basel MAR31-MAR33, U.S. NPR 2.0 proposed-rule parameters, EU CRR3
+    and RTS, and UK CRR / PRA-rulebook comparison profiles. See
     docs/REGULATORY_TRACEABILITY.md.
 """
 
@@ -36,7 +36,7 @@ class NMRFTaxonomyMode(StrEnum):
 
 
 class TypeASESAggregationMode(StrEnum):
-    """Prototype Type A SES aggregation choices."""
+    """Type A SES aggregation policy choices."""
 
     ZERO_CORRELATION_ROOT_SUM_SQUARES = "ZERO_CORRELATION_ROOT_SUM_SQUARES"
     CONSERVATIVE_LINEAR_SUM = "CONSERVATIVE_LINEAR_SUM"
@@ -67,7 +67,7 @@ class DeskEligibilityStatus(StrEnum):
 
 @dataclass(frozen=True)
 class UnsupportedFeature:
-    """A policy feature intentionally not implemented in this prototype."""
+    """A policy feature intentionally not implemented in this package."""
 
     feature_name: str
     source_topic: str
@@ -112,6 +112,7 @@ DEFAULT_LHA_WEIGHTS: tuple[tuple[LiquidityHorizon, float], ...] = (
 )
 
 DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE: tuple[tuple[int, float], ...] = (
+    # Basel MAR99 Table 2 backtesting-dependent multipliers.
     (0, 1.50),
     (1, 1.50),
     (2, 1.50),
@@ -147,10 +148,13 @@ class RegulatoryPolicy:
     type_a_ses_aggregation_mode: TypeASESAggregationMode = (
         TypeASESAggregationMode.ZERO_CORRELATION_ROOT_SUM_SQUARES
     )
+    # Type B SES rho: U.S. NPR 2.0 proposed section `__.215`; Basel MAR33.16 anchor.
     type_b_ses_rho: float = 0.36
     pla_metrics_required: PLAMetricsRequired = PLAMetricsRequired.KS_ONLY
+    # KS PLA thresholds: Basel MAR32.42; U.S. NPR 2.0 proposed section `__.213`.
     pla_green_threshold: float = 0.09
     pla_amber_threshold: float = 0.12
+    # Spearman PLA thresholds: Basel MAR32.42; Delegated Regulation (EU) 2022/2059 Article 5(2).
     pla_spearman_green_threshold: float = 0.80
     pla_spearman_amber_threshold: float = 0.70
     pla_zone_labels: tuple[str, str, str] = ("GREEN", "AMBER", "RED")
@@ -234,7 +238,7 @@ def _ecb_crr3_policy() -> RegulatoryPolicy:
                 feature_name="type_a_type_b_nmrf_taxonomy",
                 source_topic="EU CRR Article 325bk NMRF terminology",
                 notes=(
-                    "Type A / Type B labels are U.S. NPR working assumptions, not native EU terms."
+                    "Type A / Type B labels are U.S. NPR proposed-rule terms, not native EU terms."
                 ),
             ),
         ),
@@ -261,7 +265,7 @@ def _pra_uk_crr_policy() -> RegulatoryPolicy:
                 feature_name="type_a_type_b_nmrf_taxonomy",
                 source_topic="UK CRR / PRA NMRF terminology",
                 notes=(
-                    "Type A / Type B labels are U.S. NPR working assumptions, not native UK terms."
+                    "Type A / Type B labels are U.S. NPR proposed-rule terms, not native UK terms."
                 ),
             ),
         ),

@@ -11,7 +11,7 @@ and negative values for gains, matching ``nmrf.py``.
 
 Regulatory traceability:
     Basel MAR33 NMRF stress-scenario capital; U.S. NPR 2.0 stressed expected
-    shortfall working assumptions for Type A / Type B NMRFs; EU CRR Article
+    shortfall treatment for Type A / Type B NMRFs; EU CRR Article
     325bk stress scenario risk measure. See docs/REGULATORY_TRACEABILITY.md.
 """
 

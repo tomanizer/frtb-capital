@@ -293,8 +293,8 @@ def liquidity_horizon_for_category(
     Return the minimum liquidity horizon for a regulatory category.
 
     If ``maturity_days`` is supplied and shorter than the category floor, the
-    U.S. NPR working assumption is applied: use the next longer standard
-    liquidity horizon from the position maturity.
+    U.S. NPR profile applies the short-maturity rule: use the next longer
+    standard liquidity horizon from the position maturity.
     """
     base_horizon = liquidity_horizon_mapping_entry(category).liquidity_horizon
     if maturity_days is None:
