@@ -1,6 +1,9 @@
 # Regulatory assumptions for prototype
 
-This repository implements a **prototype** FRTB IMA capital calculator inspired by Basel FRTB IMA, the March 2026 U.S. NPR 2.0 market-risk proposal, and the EU CRR/CRR3 FRTB internal-model framework.
+This package implements a **prototype** FRTB IMA capital calculator inside the
+`frtb-capital` monorepo. It is inspired by Basel FRTB IMA, the March 2026 U.S.
+NPR 2.0 market-risk proposal, and the EU CRR/CRR3 FRTB internal-model
+framework.
 
 It is not a production regulatory calculator and should not be used for regulatory reporting without legal, risk, model validation, and supervisory review.
 
@@ -12,9 +15,10 @@ Basel FRTB separates market risk capital into standardized and internal-model ap
 
 The Basel references used by the prototype are primarily MAR30, MAR31, MAR32, MAR33, and MAR99.
 
-## Prototype NPR 2.0 assumptions
+## Prototype NPR 2.0 basis
 
-All U.S. NPR 2.0 content is treated as proposed-rule working assumptions. The prototype uses these assumptions:
+All U.S. NPR 2.0 content is treated as proposed-rule material. The prototype
+uses the following documented modelling basis:
 
 1. Market risk IMA capital is based on expected shortfall-style calculations.
 2. Scenario generation uses 10-day overlapping historical shocks for IMCC-style ES.
@@ -75,7 +79,7 @@ claim to calculate final EU own-funds requirements.
 
 The prototype intentionally excludes or simplifies:
 - redesignation add-ons (within IMA desk lifecycle),
-- SA, DRC, and CVA capital (separate repositories),
+- SA, DRC, and CVA capital (planned sibling packages in the monorepo),
 - legal-entity and firm-level consolidation (orchestration layer),
 - actual supervisory submission workflows,
 - formal stress-period approval governance and raw market-data sourcing,

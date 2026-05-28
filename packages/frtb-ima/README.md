@@ -2,7 +2,9 @@
 
 **Prototype NPR 2.0-style FRTB IMA capital calculator.**
 
-> ⚠️ Prototype only. Not for regulatory reporting. All regulatory statements are working assumptions based on the March 2026 U.S. NPR 2.0 proposal and Basel FRTB IMA concepts.
+> ⚠️ Prototype only. Not for regulatory reporting. U.S. NPR 2.0 references are
+> proposed-rule material based on the March 2026 proposal and Basel FRTB IMA
+> concepts.
 
 ## What this is
 
@@ -26,15 +28,25 @@ SA/DRC/CVA capital, or produce final regulatory submissions.
 
 ## Install
 
+From the monorepo root:
+
 ```bash
-pip install -e ".[dev]"
+uv sync
 ```
 
-Requires Python 3.11+, numpy.
+For isolated package work from `packages/frtb-ima`:
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
+Requires Python 3.11+ and numpy.
 
 ## Local development
 
-The repository includes a small `Makefile` for a fresh-clone workflow:
+The monorepo root exposes workspace-level targets through `make check` and
+`make ima`. This package also includes a package-local `Makefile`; run these
+from `packages/frtb-ima`:
 
 ```bash
 make install
@@ -54,11 +66,27 @@ renders the committed fixture's audit report to
 
 ## Run tests
 
+From the monorepo root:
+
 ```bash
-pytest
+uv run pytest packages/frtb-ima/tests
+```
+
+From `packages/frtb-ima` after package-local installation:
+
+```bash
+python -m pytest
 ```
 
 ## Run demo
+
+From the monorepo root:
+
+```bash
+uv run python packages/frtb-ima/examples/run_demo.py
+```
+
+From `packages/frtb-ima`:
 
 ```bash
 python examples/run_demo.py
@@ -80,7 +108,7 @@ Backtesting exception counts
 ## Package layout
 
 ```
-src/frtb_ima/
+packages/frtb-ima/src/frtb_ima/
     data_models.py          Enums and dataclasses
     data_contracts.py       Validated run inputs and scenario cubes
     expected_shortfall.py   ES calculation

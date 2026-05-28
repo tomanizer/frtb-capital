@@ -6,11 +6,14 @@
 
 ## Components
 
-This repository is a `uv` workspace containing one Python package per capital component plus a shared common package.
+This repository is a `uv` workspace intended to contain one Python package per
+capital component plus a shared common package. The migrated IMA package is the
+only implemented capital package today; the other packages are planned sibling
+packages tracked by the audit backlog.
 
 | Package | Purpose | Status |
 |---|---|---|
-| `packages/frtb-common` | Shared primitives: sign conventions, scenario metadata, audit records, regulatory policy base, business calendar | Skeleton |
+| `packages/frtb-common` | Shared primitives: sign conventions, scenario metadata, audit records, regulatory policy base, business calendar | Planned |
 | `packages/frtb-ima` | Internal Models Approach capital for model-eligible trading desks | Migrated from `tomanizer/FRTB-IMA` |
 | `packages/frtb-sa` | Standardized Approach for market risk | Planned |
 | `packages/frtb-drc` | Default Risk Charge | Planned |
@@ -31,7 +34,8 @@ Requires Python 3.11+ and [`uv`](https://docs.astral.sh/uv/).
 uv sync
 ```
 
-This installs every workspace package in editable mode plus dev dependencies.
+This installs every implemented workspace package in editable mode plus dev
+dependencies.
 
 ## Local development
 
@@ -46,8 +50,8 @@ Per-package targets are available from each package's own `Makefile` or via `uv 
 ## Documentation
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — suite architecture and dependency graph
-- [`docs/REGULATORY_TRACEABILITY.md`](docs/REGULATORY_TRACEABILITY.md) — code ↔ regulation cross-reference across all components
-- [`docs/REGULATORY_ASSUMPTIONS.md`](docs/REGULATORY_ASSUMPTIONS.md) — deliberate modelling choices, suite-wide
+- [`packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md`](packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md) — IMA code ↔ regulation cross-reference
+- [`packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md`](packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md) — IMA modelling boundaries and proposed-rule basis
 - [`docs/decisions/`](docs/decisions/) — architectural decision records (ADRs)
 - [`docs/model_documentation/`](docs/model_documentation/) — per-model documentation packs
 

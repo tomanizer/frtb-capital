@@ -2,17 +2,23 @@
 
 ## Project identity
 
-This repository is for a prototype NPR 2.0-style FRTB IMA market-risk capital calculator.
+This package is the migrated IMA component inside the `frtb-capital` monorepo.
+It contains a prototype NPR 2.0-style FRTB IMA market-risk capital calculator.
 
 The goal is not production regulatory compliance. The goal is to create a transparent, testable prototype that demonstrates how an existing risk engine could generate scenario P&L vectors and NMRF stress artifacts while an ex-post capital layer assembles IMA-style capital.
 
 ## Scope boundary
 
-This repository covers the IMA model-eligible desk capital path only. **SA, DRC, and CVA are separate repositories**; do not add those calculations here. The handoff contract from this package is a desk-level capital result and eligibility signal; aggregation across desks is an orchestration-layer concern outside this repo.
+This package covers the IMA model-eligible desk capital path only. **SA, DRC,
+and CVA are planned sibling packages in this monorepo**; do not add those
+calculations here. The handoff contract from this package is a desk-level
+capital result and eligibility signal; aggregation across desks is an
+orchestration-layer concern outside `packages/frtb-ima`.
 
 ## Regulatory caution
 
-Treat all U.S. NPR 2.0 content as proposed-rule working assumptions. Do not present outputs as final regulatory capital.
+Treat all U.S. NPR 2.0 content as proposed-rule material. Do not present
+outputs as final regulatory capital.
 
 Key prototype assumptions:
 - Expected shortfall starts from 10-day scenario P&L vectors.
@@ -48,4 +54,4 @@ When reviewing or changing code, focus on:
 - Separation of risk engine outputs from capital aggregation.
 - Clear unsupported-feature behavior where ECB/PRA or full regulatory workflows are not implemented.
 - Good documentation of assumptions and limitations.
-- No SA, DRC, CVA, or firm-level consolidation calculations in this repo.
+- No SA, DRC, CVA, or firm-level consolidation calculations in this package.

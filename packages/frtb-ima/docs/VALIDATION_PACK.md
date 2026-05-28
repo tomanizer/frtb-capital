@@ -7,7 +7,7 @@ lineage through capital assembly.
 
 The pack is not a regulatory report, does not use live market data, and does
 not present final regulatory capital. NPR 2.0 references are proposed-rule
-working assumptions for this prototype.
+material for this prototype.
 
 ## Build
 

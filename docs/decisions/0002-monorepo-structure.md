@@ -65,5 +65,6 @@ Package boundaries will be enforced by `importlinter` (to be added).
 
 ## References
 
-- Path-to-production audit: `tomanizer/FRTB-IMA` issue #31.
+- Path-to-production audit: `tomanizer/frtb-capital` issue #1
+  (transferred from `tomanizer/FRTB-IMA` issue #31).
 - `docs/ARCHITECTURE.md`.
