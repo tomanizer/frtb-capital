@@ -21,7 +21,7 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
 - Suite-level governance files: `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`.
 - Suite-level architecture documentation under `docs/`.
 - Initial ADRs documenting the monorepo decision and the SA/DRC/CVA scope boundary.
-- Documentation alignment for the monorepo migration (PR #23), including root and
+- Documentation alignment for the monorepo migration, including root and
   package agent guidance, model-documentation index, documentation audit, and
   package changelog updates.
 - Supply-chain hygiene (PR #24) with minor-capped dev dependencies, weekly
