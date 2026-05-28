@@ -5,7 +5,7 @@ LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scr
 MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/frtb-ima.json
 
-.PHONY: check lint format format-check typecheck test mutation audit-deps sbom ima sa drc cva orchestration clean
+.PHONY: check lint format format-check typecheck test mutation benchmark audit-deps sbom ima sa drc cva orchestration clean
 
 check: lint format-check typecheck test
 
@@ -29,6 +29,9 @@ test:
 mutation:
 	FRTB_IMA_MUTATION_IMPORT=1 HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-ima python -c "import numpy; import sys; from mutmut.__main__ import cli; sys.argv = ['mutmut', 'run']; cli()"
 	uv run --directory packages/frtb-ima mutmut results
+
+benchmark:
+	uv run python scripts/benchmark_target_scale.py --output dist/benchmarks/frtb-ima-target-scale.json
 
 audit-deps:
 	uv run pip-audit

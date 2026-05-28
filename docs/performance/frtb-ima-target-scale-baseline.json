@@ -1,0 +1,87 @@
+{
+  "environment": {
+    "machine": "x86_64",
+    "numpy": "2.4.6",
+    "platform": "macOS-13.7.8-x86_64-i386-64bit",
+    "processor": "i386",
+    "python": "3.11.14"
+  },
+  "fixture_dimensions": {
+    "desks": 100,
+    "liquidity_horizon_subsets": 5,
+    "nmrf_type_a_values_per_desk": 25,
+    "nmrf_type_b_values_per_desk": 25,
+    "pla_backtesting_observations": 250,
+    "positions_per_desk": 1,
+    "risk_classes": 5,
+    "risk_factors_per_desk": 25,
+    "scenarios": 10000,
+    "seed": 20260528
+  },
+  "generated_at": "2026-05-28T19:37:00.656079+00:00",
+  "phase_timings": {
+    "audit_ndjson_serialization": {
+      "count": 1,
+      "mean_seconds": 0.5683619499905035,
+      "seconds": 0.5683619499905035
+    },
+    "audit_record_construction": {
+      "count": 100,
+      "mean_seconds": 0.0015987441659672185,
+      "seconds": 0.15987441659672186
+    },
+    "capital_assembly": {
+      "count": 100,
+      "mean_seconds": 0.00015961967932526022,
+      "seconds": 0.015961967932526022
+    },
+    "imcc_decomposition": {
+      "count": 100,
+      "mean_seconds": 0.4244275170279434,
+      "seconds": 42.44275170279434
+    },
+    "lha_es": {
+      "count": 100,
+      "mean_seconds": 0.06855544093821664,
+      "seconds": 6.855544093821663
+    },
+    "nested_lh_vector_construction": {
+      "count": 100,
+      "mean_seconds": 0.012915857731713913,
+      "seconds": 1.2915857731713913
+    },
+    "nmrf_ses_aggregation": {
+      "count": 100,
+      "mean_seconds": 0.00020555142138618975,
+      "seconds": 0.020555142138618976
+    },
+    "pla_backtesting_checks": {
+      "count": 100,
+      "mean_seconds": 0.05716874956327956,
+      "seconds": 5.716874956327956
+    },
+    "synthetic_input_generation": {
+      "count": 100,
+      "mean_seconds": 0.011469026876729913,
+      "seconds": 1.1469026876729913
+    }
+  },
+  "sample_results": {
+    "backtesting_model_eligible": true,
+    "desk_id": "desk-099",
+    "imcc": 84.99688841852905,
+    "lha_es": 68.59072678606783,
+    "models_based_capital": 1774.3264389548556,
+    "pla_zone": "GREEN",
+    "ses": 1613.2903460792
+  },
+  "schema_version": "frtb_ima_target_scale_benchmark_v1",
+  "totals": {
+    "desk_records": 100,
+    "ndjson_bytes": 739376,
+    "tracemalloc_current_bytes": 8463833,
+    "tracemalloc_peak_bytes": 11688352,
+    "tracemalloc_scope": "Python allocations; NumPy native buffers may not be fully counted",
+    "wall_clock_seconds": 58.24383210099768
+  }
+}

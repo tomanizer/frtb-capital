@@ -1,0 +1,37 @@
+name: Benchmark
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  frtb-ima-target-scale:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync workspace
+        run: uv sync --locked
+
+      - name: Run target-scale benchmark
+        run: make benchmark
+
+      - name: Upload benchmark report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frtb-ima-target-scale-benchmark
+          path: dist/benchmarks/frtb-ima-target-scale.json
