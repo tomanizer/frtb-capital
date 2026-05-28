@@ -80,7 +80,8 @@ as a separate supply-chain follow-up.
    make sbom
    ```
 
-5. Update affected package versions and changelogs in a release PR.
+5. Update affected package versions, refresh `uv.lock` with `uv lock`, and
+   update changelogs in a release PR.
 6. Confirm material changes have an ADR and model-validation approval.
 7. Merge the release PR through the protected-branch workflow.
 8. Create annotated tag(s) from the final `main` commit.
