@@ -12,6 +12,11 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 - Updated package documentation to reflect the migration into the
   `frtb-capital` monorepo under `packages/frtb-ima`.
 
+### Changed
+
+- Capped the runtime, development, and notebook dependency ranges to minor
+  versions for supply-chain control.
+
 ### Notes
 
 - The package was migrated from `tomanizer/FRTB-IMA` with full git history
