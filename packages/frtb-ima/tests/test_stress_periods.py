@@ -7,7 +7,6 @@ from datetime import date, timedelta
 import numpy as np
 import pytest
 
-import frtb_ima.stress_periods as stress_periods_module
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus, RiskClass
 from frtb_ima.expected_shortfall import ESEstimator
@@ -527,14 +526,26 @@ def test_stress_period_selection_parameter_validation() -> None:
             es_estimator=ES_ESTIMATOR,
         )
 
+    candidate = select_stress_period_from_history(
+        series,
+        window_observations=2,
+        minimum_observations=2,
+        severity_metric=StressSeverityMetric.MAX_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
+    )
     with pytest.raises(TypeError, match="tie_break"):
-        stress_periods_module._validate_selection_parameters(
+        StressPeriodSelectionResult(
+            as_of_date=date(2025, 6, 30),
+            regime="FED_NPR_2_0",
             window_observations=2,
             minimum_observations=2,
             severity_metric=StressSeverityMetric.MAX_LOSS,
             confidence_level=CONFIDENCE_LEVEL,
             es_estimator=ES_ESTIMATOR,
             tie_break=object(),  # type: ignore[arg-type]
+            selected_by_risk_class={RiskClass.CSR: candidate},
+            candidate_counts={RiskClass.CSR: 3},
         )
 
 
@@ -717,9 +728,16 @@ def test_public_input_guards_raise_for_wrong_types() -> None:
         validate_selected_stress_periods(object(), [RiskClass.CSR])  # type: ignore[arg-type]
 
 
-def test_rolling_window_internal_guards_raise_for_short_losses_and_bad_metric(
+def test_rolling_window_raises_on_insufficient_data_and_invalid_metric(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """
+    Exercise terminal rolling-window guards that are unreachable via public validation.
+
+    If selection-parameter validation semantics change, this test should be revisited.
+    """
+    import frtb_ima.stress_periods as stress_periods_module
+
     monkeypatch.setattr(stress_periods_module, "_validate_selection_parameters", lambda **_: None)
 
     with pytest.raises(ValueError, match="window_observations"):
