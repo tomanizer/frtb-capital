@@ -113,7 +113,7 @@ requirements:
       - src/frtb_ima/rfet_evidence.py
     tests:
       - tests/test_rfet_evidence.py
-    notes: "Opt-in prorated threshold helper implemented as a documented working assumption; final supervisory interpretation still needs confirmation."
+    notes: "Opt-in prorated threshold helper implemented as a documented proposed-rule modelling choice; final supervisory interpretation still needs confirmation."
 
   - id: NPR-MR-IMCC-001
     title: "IMCC constrained and unconstrained aggregation"
@@ -210,7 +210,7 @@ requirements:
     tests:
       - tests/test_pla.py
       - tests/test_regimes.py
-    notes: "Spearman rank-correlation PLA and worse-of-KS/Spearman joint-zone logic are implemented for ECB/PRA policy paths. Thresholds are prototype working assumptions."
+    notes: "Spearman rank-correlation PLA and worse-of-KS/Spearman joint-zone logic are implemented for ECB/PRA policy paths. Thresholds are documented proposed-rule comparison parameters."
 
   - id: NPR-MR-BT-001
     title: "Trading-desk backtesting gates at 97.5 and 99 percent VaR"
@@ -264,21 +264,21 @@ requirements:
     source: "Standardized measure for market risk"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: out_of_scope
-    notes: "Out of scope for this package. SA/DRC/CVA are separate repositories. This package covers the IMA model-eligible desk capital path only."
+    notes: "Out of scope for this package. SA/DRC/CVA are planned sibling packages in the monorepo. This package covers the IMA model-eligible desk capital path only."
 
   - id: NPR-MR-CAP-004
     title: "Default risk capital requirement"
     source: "Default risk capital requirement for non-securitization, securitization non-CTP, and CTP"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: out_of_scope
-    notes: "Out of scope for this package. SA/DRC/CVA are separate repositories. This package covers the IMA model-eligible desk capital path only."
+    notes: "Out of scope for this package. SA/DRC/CVA are planned sibling packages in the monorepo. This package covers the IMA model-eligible desk capital path only."
 
   - id: NPR-MR-CAP-005
     title: "Fallback capital requirement"
     source: "Fallback capital for uncomputable market risk covered positions"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: out_of_scope
-    notes: "Out of scope for this package. SA/DRC/CVA are separate repositories. This package covers the IMA model-eligible desk capital path only."
+    notes: "Out of scope for this package. SA/DRC/CVA are planned sibling packages in the monorepo. This package covers the IMA model-eligible desk capital path only."
 
   - id: NPR-MR-DESK-001
     title: "Trading desk eligibility lifecycle"

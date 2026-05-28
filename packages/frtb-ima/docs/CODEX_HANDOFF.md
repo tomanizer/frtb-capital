@@ -7,18 +7,18 @@
 ## One-line task
 
 Maintain a transparent Python prototype of an NPR 2.0-style FRTB IMA capital
-assembly layer for `tomanizer/FRTB-IMA`.
+assembly layer in `tomanizer/frtb-capital`, under `packages/frtb-ima`.
 
 ## Scope boundary
 
 This package is the IMA model-eligible desk capital path only.
 
-**SA, DRC, and CVA are separate repositories.** Do not add standardized
-approach, default risk charge, CVA capital, fallback capital, firm-level
-consolidation, or legal-entity aggregation to this package. The handoff
-contract from this repo is a desk-level `CapitalComponents` result and a
-`DeskEligibilityStatus` signal. Aggregation across desks and regimes is an
-orchestration-layer concern.
+**SA, DRC, and CVA are planned sibling packages in this monorepo.** Do not add
+standardized approach, default risk charge, CVA capital, fallback capital,
+firm-level consolidation, or legal-entity aggregation to this package. The
+handoff contract from `packages/frtb-ima` is a desk-level `CapitalComponents`
+result and a `DeskEligibilityStatus` signal. Aggregation across desks and
+regimes is an orchestration-layer concern.
 
 ## Architecture
 

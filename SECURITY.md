@@ -16,7 +16,9 @@ You will receive an acknowledgement within five business days.
 
 This suite is a calculation library with no network I/O, no authentication surface, and no secrets handling. The relevant security concerns are:
 
-- **Supply chain.** Dependencies are pinned and monitored via Dependabot. Vulnerability scans run on every PR.
+- **Supply chain.** Dependency locking and automated vulnerability monitoring
+  are tracked by audit-followup work. Until that lands, supply-chain reports
+  for unpinned dependencies or missing scan coverage are in scope.
 - **Input validation.** All public APIs validate inputs at the boundary. Reports of crashes, denial-of-service via malformed input, or numerical undefined behaviour are in scope.
 - **Determinism.** Reports of non-deterministic output for identical inputs are in scope as a model-risk issue.
 

@@ -2,7 +2,11 @@
 
 ## Suite overview
 
-`frtb-capital` is a workspace of FRTB market-risk capital calculation packages. It implements the four primary capital charges plus a suite-level aggregator, with a shared foundation package.
+`frtb-capital` is a workspace of FRTB market-risk capital calculation packages.
+The target structure covers the four primary capital charges plus a suite-level
+aggregator, with a shared foundation package. Today, only `packages/frtb-ima`
+contains a migrated implementation; `frtb-common`, SA, DRC, CVA, and
+orchestration remain planned packages.
 
 ## Dependency graph
 
@@ -41,13 +45,16 @@ Shared primitives used by every capital component:
 - `BusinessCalendar` (when implemented).
 - Logging configuration (`JSONFormatter`, `calculation_log_extra`).
 
-Status: skeleton planned. Currently each component holds its own copy of these abstractions inside `frtb-ima`. Extraction is a separate workstream.
+Status: planned. The directory is not created yet. Currently the migrated IMA
+package holds its own copy of these abstractions inside `packages/frtb-ima`.
+Extraction is a separate workstream.
 
 ### `frtb-ima` — Internal Models Approach
 
 Capital from model-eligible trading desks. Inputs: 10-day scenario P&L vectors, RFET evidence, NMRF stress artifacts, PLA/backtesting vectors. Outputs: `CapitalComponents` per desk plus a `DeskEligibilityStatus` signal.
 
-Migrated from `tomanizer/FRTB-IMA` with full history.
+Migrated from `tomanizer/FRTB-IMA` with full history into
+`packages/frtb-ima`.
 
 Status: substantial implementation. Audit-followup issues track the path to a B-grade production-ready engine.
 
@@ -85,7 +92,11 @@ See [`decisions/0003-sa-drc-cva-scope.md`](decisions/0003-sa-drc-cva-scope.md). 
 
 ## Per-model documentation
 
-Each capital component has its own model documentation pack under `docs/model_documentation/<component>/`. The pack covers:
+Each capital component should have its own model documentation pack under
+`docs/model_documentation/<component>/`. The suite-level directory is present;
+IMA-specific validation and traceability docs currently live under
+`packages/frtb-ima/docs/` until a formal model pack is scaffolded. The pack
+covers:
 
 - Intended use.
 - Conceptual soundness.

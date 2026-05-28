@@ -44,6 +44,7 @@ Firm-level aggregation and floors that compare across charges (e.g. IMA capital 
 
 ## References
 
-- `tomanizer/FRTB-IMA` audit issue #31.
+- `tomanizer/frtb-capital` audit issue #1 (transferred from
+  `tomanizer/FRTB-IMA` audit issue #31).
 - ADR 0002: monorepo structure.
 - `docs/ARCHITECTURE.md`.
