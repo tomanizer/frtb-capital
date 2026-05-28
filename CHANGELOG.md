@@ -8,14 +8,30 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
 
 ### Added
 
+- Governance completion for audit issue #3: documented release approvals,
+  versioning, tagging, and material-change handling in
+  `docs/RELEASE_PROCESS.md`.
+
+## [0.1.0] - 2026-05-28
+
+### Added
+
 - Initial `frtb-capital` monorepo skeleton with `uv` workspace.
 - `packages/frtb-ima/` migrated from `tomanizer/FRTB-IMA` with full git history preserved.
 - Suite-level governance files: `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`.
 - Suite-level architecture documentation under `docs/`.
 - Initial ADRs documenting the monorepo decision and the SA/DRC/CVA scope boundary.
-- Supply-chain hygiene with minor-capped dev dependencies, weekly Dependabot
-  monitoring, a `pip-audit` CI job, and CycloneDX SBOM generation under
-  `dist/sbom/`.
+- Documentation alignment for the monorepo migration, including root and
+  package agent guidance, model-documentation index, documentation audit, and
+  package changelog updates.
+- Supply-chain hygiene (PR #24) with minor-capped dev dependencies, weekly
+  Dependabot monitoring, a `pip-audit` CI job, and CycloneDX SBOM generation
+  under `dist/sbom/`.
+
+### Fixed
+
+- CI uses Makefile targets consistently for workspace-scoped lint, typecheck,
+  tests, examples, notebooks, dependency audit, and SBOM generation.
 
 ### Notes
 
