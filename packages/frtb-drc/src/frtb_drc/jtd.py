@@ -18,6 +18,7 @@ from frtb_drc.data_models import (
     CreditQuality,
     NettedIssuerSeniority,
     Position,
+    RulesVersion,
     Seniority,
 )
 from frtb_drc.reference_data import get_lgd, get_risk_weight
@@ -51,7 +52,7 @@ def compute_gross_jtd(
 
 def net_positions_by_issuer_seniority(
     positions: Iterable[Position],
-    rules_version: str = "CRR2",  # kept for future RW/LGD policy
+    rules_version: RulesVersion | str = RulesVersion.CRR2,
 ) -> list[NettedIssuerSeniority]:
     """
     Aggregate positions to (issuer, seniority) level and apply within-seniority
@@ -60,9 +61,19 @@ def net_positions_by_issuer_seniority(
     Per Basel MAR22.11: netting is performed separately for each combination of
     obligor and seniority. No netting across seniorities for the same issuer.
 
+    Risk weight lookup now respects the supplied rules_version (FRB uses the
+    2-tuple table keyed by (bucket, IG/SG/SSG); BCBS/CRR2/PRA use letter/CQS
+    tables). LGD is regime-independent today but the parameter is carried for
+    future policy overrides.
+
     Returns one NettedIssuerSeniority per (issuer, seniority) that has exposure.
     Risk weight and LGD are looked up at this stage for audit completeness.
     """
+    if isinstance(rules_version, str):
+        rv = RulesVersion(rules_version)
+    else:
+        rv = rules_version
+
     # Group gross long/short by (issuer, seniority, bucket, cq)
     buckets: dict[tuple[str, Seniority, str, str], dict[str, float]] = defaultdict(
         lambda: {"gross_long": 0.0, "gross_short": 0.0}
@@ -81,10 +92,8 @@ def net_positions_by_issuer_seniority(
         net_long = max(0.0, gl - gs)
         net_short = max(0.0, gs - gl)
 
-        # Lookup RW (FRB path uses bucket + cq; others use cq or bucket)
-        # We pass the credit_quality string; get_risk_weight handles regime internally
-        # For now default to CRR2-style; caller can re-apply with correct RulesVersion later.
-        rw = get_risk_weight(bucket, cq_str)  # safe default
+        # Pass the resolved regime so FRB gets tuple-keyed FRB_DRC_JS_RW etc.
+        rw = get_risk_weight(bucket, cq_str, rules_version=rv)
         lgd = get_lgd(SENIORITY_TO_STR[seniority])
 
         cq = CreditQuality(cq_str)
