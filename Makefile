@@ -2,8 +2,9 @@ PYTHON ?= python3
 VENV ?= .venv
 PYTHON_BIN ?= $(VENV)/bin/python
 PIP := $(PYTHON_BIN) -m pip
+VALIDATION_DIR ?= build/validation/capital_run_v1
 
-.PHONY: venv install test lint format format-check typecheck check examples demo notebooks fixtures audit clean
+.PHONY: venv install test lint format format-check typecheck check examples demo notebooks validation-pack fixtures audit clean
 
 venv:
 	$(PYTHON) -m venv $(VENV)
@@ -36,6 +37,10 @@ demo: examples
 
 notebooks:
 	MPLBACKEND=Agg IPYTHONDIR=$(CURDIR)/.pytest_cache/ipython $(PYTHON_BIN) -m pytest --nbmake notebooks
+
+validation-pack: notebooks
+	$(PYTHON_BIN) scripts/render_audit_report.py --output $(VALIDATION_DIR)/audit/capital_run_v1_audit_report.md --ndjson $(VALIDATION_DIR)/audit/capital_run_v1_desk_records.ndjson
+	$(PYTHON_BIN) scripts/build_validation_pack.py --output $(VALIDATION_DIR)
 
 fixtures:
 	$(PYTHON_BIN) scripts/generate_fixture.py --seed 42 --output tests/fixtures/capital_run_v1

@@ -119,5 +119,12 @@ jobs:
       - name: Install
         run: python -m pip install -e ".[dev,notebooks]"
 
-      - name: Execute notebooks
-        run: make notebooks PYTHON_BIN=python
+      - name: Build validation pack
+        run: make validation-pack PYTHON_BIN=python
+
+      - name: Upload validation pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: capital-run-v1-validation-pack
+          path: build/validation/capital_run_v1
+          if-no-files-found: error

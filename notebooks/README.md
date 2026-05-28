@@ -10,8 +10,15 @@ Run them with:
 make notebooks
 ```
 
+Build the notebook-backed validation bundle with:
+
+```bash
+make validation-pack
+```
+
 Current slices:
 
+- `00_validation_map.ipynb`
 - `01_rfet_evidence_classification.ipynb`
 - `02_stress_period_selection.ipynb`
 - `03_lha_es_imcc.ipynb`
