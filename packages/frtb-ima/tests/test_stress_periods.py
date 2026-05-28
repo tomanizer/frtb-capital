@@ -526,7 +526,7 @@ def test_stress_period_selection_parameter_validation() -> None:
             es_estimator=ES_ESTIMATOR,
         )
 
-    candidate = select_stress_period_from_history(
+    tie_break_test_candidate = select_stress_period_from_history(
         series,
         window_observations=2,
         minimum_observations=2,
@@ -534,7 +534,7 @@ def test_stress_period_selection_parameter_validation() -> None:
         confidence_level=CONFIDENCE_LEVEL,
         es_estimator=ES_ESTIMATOR,
     )
-    with pytest.raises(TypeError, match="tie_break"):
+    with pytest.raises(TypeError, match="tie_break must be a StressPeriodTieBreak"):
         StressPeriodSelectionResult(
             as_of_date=date(2025, 6, 30),
             regime="FED_NPR_2_0",
@@ -544,7 +544,7 @@ def test_stress_period_selection_parameter_validation() -> None:
             confidence_level=CONFIDENCE_LEVEL,
             es_estimator=ES_ESTIMATOR,
             tie_break=object(),  # type: ignore[arg-type]
-            selected_by_risk_class={RiskClass.CSR: candidate},
+            selected_by_risk_class={RiskClass.CSR: tie_break_test_candidate},
             candidate_counts={RiskClass.CSR: 3},
         )
 
@@ -738,6 +738,8 @@ def test_rolling_window_raises_on_insufficient_data_and_invalid_metric(
     """
     import frtb_ima.stress_periods as stress_periods_module
 
+    # Disabling parameter validation is intentional: otherwise minimum/window and
+    # metric-type checks fail earlier and these final guards cannot be executed.
     monkeypatch.setattr(stress_periods_module, "_validate_selection_parameters", lambda **_: None)
 
     with pytest.raises(ValueError, match="window_observations"):
@@ -754,7 +756,7 @@ def test_rolling_window_raises_on_insufficient_data_and_invalid_metric(
             [1.0, 2.0, 3.0],
             window_observations=2,
             minimum_observations=1,
-            severity_metric=object(),  # type: ignore[arg-type]
+            severity_metric="UNKNOWN_METRIC",  # type: ignore[arg-type]
             confidence_level=CONFIDENCE_LEVEL,
             es_estimator=ES_ESTIMATOR,
         )
