@@ -17,7 +17,7 @@ gross effective notional risk weights.
 | U.S. NPR 2.0, 91 FR 14952 | https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959 | Proposed residual risk capital requirement, section V.A.7.b, pages around 15049-15050. |
 | EBA RRAO RTS page | https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2?version=2021 | EU RTS scope clarification for instruments bearing residual risks. |
 | Commission Delegated Regulation (EU) 2022/2328 | https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2328 | Official Journal RTS on residual risk add-on. |
-| Local reference implementation | `[local_projects_path]/extract_cva/risk/gra/mrcm/frtb/capital_navigator/sa/rrao` | Implementation inspiration for risk-type mapping, 1 percent and 0.1 percent weights, and Euler breakdowns. |
+| Local reference implementation | External `extract_cva` capital navigator, RRAO component | Implementation inspiration for risk-type mapping, 1 percent and 0.1 percent weights, and Euler breakdowns; not included in this repository. |
 
 ## Regulatory Scope
 

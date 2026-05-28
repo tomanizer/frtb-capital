@@ -35,9 +35,9 @@ The documents use these primary references:
 - Commission Delegated Regulation (EU) 2022/2328:
   https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2328
 
-The local reference implementation used for design inspiration is:
-
-`[local_projects_path]/extract_cva/risk/gra/mrcm/frtb/capital_navigator`
+The local reference implementation used for design inspiration is the external
+`extract_cva` capital navigator implementation. It is not part of this
+repository.
 
 That implementation is treated as an implementation reference only. Regulatory
 requirements in these documents are sourced from Basel, U.S. NPR, CRR3, and EBA
