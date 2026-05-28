@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-from statistics import NormalDist
 
 import numpy as np
 import pytest
@@ -44,22 +43,15 @@ def test_es_truncated_normal_matches_analytic_tail_integral() -> None:
     alpha = 0.975
     lower = -1.0
     upper = 2.0
-    standard_normal = NormalDist()
-    lower_cdf = standard_normal.cdf(lower)
-    upper_cdf = standard_normal.cdf(upper)
-    quantile = standard_normal.inv_cdf(lower_cdf + alpha * (upper_cdf - lower_cdf))
-    reference = (_normal_pdf(quantile) - _normal_pdf(upper)) / (
-        upper_cdf - standard_normal.cdf(quantile)
+    lower_cdf = stats.norm.cdf(lower)
+    upper_cdf = stats.norm.cdf(upper)
+    quantile = stats.norm.ppf(lower_cdf + alpha * (upper_cdf - lower_cdf))
+    reference = (stats.norm.pdf(quantile) - stats.norm.pdf(upper)) / (
+        upper_cdf - stats.norm.cdf(quantile)
     )
 
     probabilities = (np.arange(20_000, dtype=float) + 0.5) / 20_000
-    losses = np.array(
-        [
-            standard_normal.inv_cdf(lower_cdf + probability * (upper_cdf - lower_cdf))
-            for probability in probabilities
-        ],
-        dtype=float,
-    )
+    losses = stats.norm.ppf(lower_cdf + probabilities * (upper_cdf - lower_cdf))
     actual = expected_shortfall(
         losses,
         alpha=alpha,
@@ -67,10 +59,6 @@ def test_es_truncated_normal_matches_analytic_tail_integral() -> None:
     )
 
     assert actual == pytest.approx(reference, abs=2e-5)
-
-
-def _normal_pdf(value: float) -> float:
-    return math.exp(-0.5 * value * value) / math.sqrt(2.0 * math.pi)
 
 
 # LHA ES
