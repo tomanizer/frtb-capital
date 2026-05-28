@@ -11,8 +11,8 @@ This audit checks whether repository documentation reflects the current
 ## Current Structure
 
 - Root repository: `tomanizer/frtb-capital`
-- Active package: `packages/frtb-ima`
-- Planned packages: `packages/frtb-common`, `packages/frtb-sbm`,
+- Implemented package: `packages/frtb-ima`
+- Scaffolded packages: `packages/frtb-common`, `packages/frtb-sbm`,
   `packages/frtb-drc`, `packages/frtb-rrao`, `packages/frtb-cva`, and
   `packages/frtb-orchestration`
 - Root CI: `.github/workflows/ci.yml`
@@ -26,11 +26,12 @@ This audit checks whether repository documentation reflects the current
 
 - Replaced standalone IMA repository language with package-in-monorepo language.
 - Updated SBM, DRC, RRAO, and CVA references from separate repositories to
-  planned sibling packages.
+  scaffolded sibling packages.
 - Pointed root documentation navigation at the current IMA regulatory docs
   instead of non-existent root regulatory docs.
 - Clarified that `frtb-common`, SBM, DRC, RRAO, CVA, and orchestration are
-  planned packages, not implemented directories.
+  scaffolded packages with unimplemented calculations rather than missing
+  directories.
 - Added the missing `packages/frtb-ima/CHANGELOG.md` placeholder required by
   package versioning guidance.
 - Added a suite-level `docs/modules/` home for module documentation and moved
@@ -41,8 +42,8 @@ This audit checks whether repository documentation reflects the current
 
 ## Residual Follow-Ups
 
-- Future package work: add matching module documentation front doors and model
-  packs as planned components become implemented packages.
+- Future package work: add formal model documentation packs as scaffolded
+  components become implemented calculation packages.
 - `tomanizer/frtb-capital#2`: dependency pinning and supply-chain hygiene.
 - `tomanizer/frtb-capital#3`: governance file completion, including PR
   templates if desired.

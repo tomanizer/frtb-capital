@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frtb-orchestration"
+version = "0.1.0"
+description = "Suite-level orchestration scaffold for frtb-capital"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+    "frtb-common",
+    "frtb-cva",
+    "frtb-drc",
+    "frtb-ima",
+    "frtb-rrao",
+    "frtb-sbm",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -11,7 +11,13 @@ resolution-markers = [
 [manifest]
 members = [
     "frtb-capital",
+    "frtb-common",
+    "frtb-cva",
+    "frtb-drc",
     "frtb-ima",
+    "frtb-orchestration",
+    "frtb-rrao",
+    "frtb-sbm",
 ]
 
 [[package]]
@@ -799,7 +805,13 @@ name = "frtb-capital"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "frtb-common" },
+    { name = "frtb-cva" },
+    { name = "frtb-drc" },
     { name = "frtb-ima" },
+    { name = "frtb-orchestration" },
+    { name = "frtb-rrao" },
+    { name = "frtb-sbm" },
 ]
 
 [package.dev-dependencies]
@@ -816,7 +828,15 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "frtb-ima", editable = "packages/frtb-ima" }]
+requires-dist = [
+    { name = "frtb-common", editable = "packages/frtb-common" },
+    { name = "frtb-cva", editable = "packages/frtb-cva" },
+    { name = "frtb-drc", editable = "packages/frtb-drc" },
+    { name = "frtb-ima", editable = "packages/frtb-ima" },
+    { name = "frtb-orchestration", editable = "packages/frtb-orchestration" },
+    { name = "frtb-rrao", editable = "packages/frtb-rrao" },
+    { name = "frtb-sbm", editable = "packages/frtb-sbm" },
+]
 
 [package.metadata.requires-dev]
 dev = [
@@ -830,6 +850,33 @@ dev = [
     { name = "ruff", specifier = ">=0.15,<0.16" },
     { name = "scipy", specifier = ">=1.16,<1.17" },
 ]
+
+[[package]]
+name = "frtb-common"
+version = "0.1.0"
+source = { editable = "packages/frtb-common" }
+
+[[package]]
+name = "frtb-cva"
+version = "0.1.0"
+source = { editable = "packages/frtb-cva" }
+dependencies = [
+    { name = "frtb-common" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "frtb-common", editable = "packages/frtb-common" }]
+
+[[package]]
+name = "frtb-drc"
+version = "0.1.0"
+source = { editable = "packages/frtb-drc" }
+dependencies = [
+    { name = "frtb-common" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "frtb-common", editable = "packages/frtb-common" }]
 
 [[package]]
 name = "frtb-ima"
@@ -870,6 +917,51 @@ requires-dist = [
     { name = "scipy", marker = "extra == 'dev'", specifier = ">=1.16,<1.17" },
 ]
 provides-extras = ["dev", "notebooks"]
+
+[[package]]
+name = "frtb-orchestration"
+version = "0.1.0"
+source = { editable = "packages/frtb-orchestration" }
+dependencies = [
+    { name = "frtb-common" },
+    { name = "frtb-cva" },
+    { name = "frtb-drc" },
+    { name = "frtb-ima" },
+    { name = "frtb-rrao" },
+    { name = "frtb-sbm" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "frtb-common", editable = "packages/frtb-common" },
+    { name = "frtb-cva", editable = "packages/frtb-cva" },
+    { name = "frtb-drc", editable = "packages/frtb-drc" },
+    { name = "frtb-ima", editable = "packages/frtb-ima" },
+    { name = "frtb-rrao", editable = "packages/frtb-rrao" },
+    { name = "frtb-sbm", editable = "packages/frtb-sbm" },
+]
+
+[[package]]
+name = "frtb-rrao"
+version = "0.1.0"
+source = { editable = "packages/frtb-rrao" }
+dependencies = [
+    { name = "frtb-common" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "frtb-common", editable = "packages/frtb-common" }]
+
+[[package]]
+name = "frtb-sbm"
+version = "0.1.0"
+source = { editable = "packages/frtb-sbm" }
+dependencies = [
+    { name = "frtb-common" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "frtb-common", editable = "packages/frtb-common" }]
 
 [[package]]
 name = "h11"

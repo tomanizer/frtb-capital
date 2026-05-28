@@ -56,7 +56,8 @@ covers:
 - IMA regulatory documentation and source manifests,
 - suite ADRs and model-documentation packs.
 
-Add package-specific owners when planned packages become active.
+Add package-specific owners when scaffolded packages move into active
+calculation implementation.
 
 ## Audit evidence capture
 
