@@ -3,14 +3,14 @@ VENV ?= .venv
 PYTHON_BIN ?= $(VENV)/bin/python
 PIP := $(PYTHON_BIN) -m pip
 
-.PHONY: venv install test lint format format-check typecheck check examples demo fixtures audit clean
+.PHONY: venv install test lint format format-check typecheck check examples demo notebooks fixtures audit clean
 
 venv:
 	$(PYTHON) -m venv $(VENV)
 	$(PIP) install --upgrade pip
 
 install: venv
-	$(PIP) install -e ".[dev]"
+	$(PIP) install -e ".[dev,notebooks]"
 
 test:
 	$(PYTHON_BIN) -m pytest
@@ -33,6 +33,9 @@ examples:
 	$(PYTHON_BIN) examples/run_demo.py
 
 demo: examples
+
+notebooks:
+	MPLBACKEND=Agg IPYTHONDIR=$(CURDIR)/.pytest_cache/ipython $(PYTHON_BIN) -m pytest --nbmake notebooks
 
 fixtures:
 	$(PYTHON_BIN) scripts/generate_fixture.py --seed 42 --output tests/fixtures/capital_run_v1

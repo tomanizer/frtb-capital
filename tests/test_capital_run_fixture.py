@@ -96,6 +96,13 @@ def test_fixture_manifest_checksum_mismatch_has_clear_message(tmp_path: Path) ->
         _verify_manifest_checksums(tmp_path, manifest)
 
 
+def test_fixture_manifest_rejects_paths_outside_fixture_root(tmp_path: Path) -> None:
+    manifest = {"files": {"../outside.txt": {"sha256": "0" * 64}}}
+
+    with pytest.raises(AssertionError, match="escapes fixture root"):
+        _verify_manifest_checksums(tmp_path, manifest)
+
+
 def _run_fixture_workflow(fixture: CapitalRunFixture) -> dict[str, object]:
     policy = get_policy(RegulatoryRegime(str(fixture.params["regime"])))
     as_of_date = date.fromisoformat(str(fixture.params["as_of_date"]))
