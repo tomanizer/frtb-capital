@@ -95,7 +95,7 @@ requirements:
     title: "RFET evidence lineage, source de-duplication, and representativeness"
     source: "RFET real-price evidence and data-quality standards"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: partial
+    status: implemented
     modules:
       - src/frtb_ima/data_models.py
       - src/frtb_ima/rfet.py
@@ -141,7 +141,7 @@ requirements:
     tests:
       - tests/test_imcc.py
       - tests/test_reduced_set.py
-    notes: "Reduced/full set scaling helper and 60-day 75% variation-explained diagnostic implemented; stress-window selection is tracked separately in NPR-MR-STRESS-001; no reduced risk-factor set selection workflow yet."
+    notes: "Reduced/full set scaling helper, deterministic reduced risk-factor set selector, and 60-day 75% variation-explained diagnostic implemented. Stress-window selection is tracked separately in NPR-MR-STRESS-001; caller remains responsible for supplying contribution series and governance evidence."
 
   - id: NPR-MR-STRESS-001
     title: "Stress-period determination from supplied historical loss series"
