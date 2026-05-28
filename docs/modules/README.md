@@ -66,7 +66,10 @@ they do not leak into the capital calculation runtime path; see
 Every calculation feature needs deterministic unit tests, invalid-input tests,
 cited golden fixtures, explicit unsupported-feature tests, audit-metadata
 tests, and benchmark coverage where realistic bucket or risk-factor counts
-matter.
+matter. When a determinism check or audit control is intended to detect
+bit-identical output drift, use raw numeric hashes rather than rounded
+floating-point outputs. Document the control intent and any platform or BLAS
+limits.
 
 ## Research Sources
 
