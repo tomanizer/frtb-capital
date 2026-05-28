@@ -21,7 +21,11 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
 
 - Python 3.11+ across all packages.
 - Prefer dataclasses, enums, pure functions.
-- `numpy` is the default runtime numerical dependency. Adding any other runtime dependency requires an ADR.
+- `numpy` is the default runtime numerical dependency for capital calculation
+  kernels. Adding any other runtime dependency requires an ADR. `pandas`,
+  `polars`, `scipy`, and `statsmodels` may be used in notebooks, validation,
+  tests, research, or optional adapters when they do not leak into the core
+  runtime path; see [`ADR 0011`](docs/decisions/0011-core-runtime-dependency-policy.md).
 - Add unit tests for every calculation.
 - Synthetic data only; no proprietary market data.
 - Favour clarity over cleverness.
