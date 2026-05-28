@@ -6,7 +6,7 @@ validators and quants who need to inspect the prototype workflow from fixture
 lineage through capital assembly.
 
 The formal model documentation pack for this package lives at
-[`docs/model_documentation/frtb-ima/`](../../../docs/model_documentation/frtb-ima/README.md).
+[`docs/model_documentation/frtb-ima/`](../../../docs/model_documentation/frtb-ima/).
 Use that pack for intended use, conceptual soundness, derivation, assumptions,
 sensitivity-analysis planning, monitoring, and change history.
 
