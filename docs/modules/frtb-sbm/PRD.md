@@ -46,6 +46,27 @@ prescribed risk classes, risk measures, buckets, and correlation scenarios.
 | `crif.py` | CRIF-to-canonical mapping. |
 | `audit.py` | Reconciliation, Euler, and report records. |
 
+## Implementation Standards
+
+`frtb-sbm` owns the canonical sensitivity contract for delta, vega, and
+curvature inputs. Connectors and CRIF mappers adapt into that contract before
+calculation starts. Required fields include stable sensitivity, desk, position,
+risk-class, risk-measure, bucket, risk-factor, amount, currency, tenor where
+applicable, source row id, and an explicit sign convention.
+
+Risk weights, buckets, correlations, thresholds, and scenario labels come from
+a versioned rule profile supplied through `frtb-common`. SBM kernels must not
+load regime constants from globals. Results include rule profile id, profile
+hash, input snapshot hash, selected correlation scenario, source citation ids,
+and reconciliation records.
+
+Shared aggregation primitives should cover bucket grouping, weighted
+sensitivity calculation, intra-bucket quadratic aggregation, inter-bucket
+correlation aggregation, scenario selection, curvature up/down selection, and
+Euler-compatible contribution allocation. Risk-class modules select profile
+tables and assemble inputs; they should not duplicate the aggregation
+algorithm.
+
 ## Delivery Slices
 
 1. **Skeleton and source register**.
@@ -65,5 +86,8 @@ prescribed risk classes, risk measures, buckets, and correlation scenarios.
 - Correlation scenarios reconcile and final selected scenario is auditable.
 - Risk-class totals sum to total SBM according to profile rules.
 - No sibling imports.
+- Unsupported risk classes, measures, buckets, or profile features fail
+  explicitly.
+- Public results carry rule-profile and input-snapshot hashes.
+- Hot-path aggregation uses `numpy` arrays and deterministic output ordering.
 - Synthetic fixtures cover each risk class and at least one curvature case.
-

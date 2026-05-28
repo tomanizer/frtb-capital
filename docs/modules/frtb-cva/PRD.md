@@ -44,6 +44,26 @@ inputs.
 | `hedges.py` | Eligible hedge checks and CVA/hedge netting. |
 | `audit.py` | Reportable audit records and reconciliation. |
 
+## Implementation Standards
+
+`frtb-cva` owns canonical counterparty, netting-set exposure, hedge, and
+SA-CVA sensitivity records. Exposure records keep counterparty identity,
+netting set, exposure-at-default input, maturity, currency, source row id, and
+sign convention explicit. Hedge records keep eligibility evidence separate
+from exposure records.
+
+BA-CVA and SA-CVA method policy, multipliers, hedge eligibility, risk weights,
+correlations, and profile-specific exclusions come from a versioned rule
+profile supplied through `frtb-common`. CVA kernels receive typed inputs and
+profile data; they do not simulate exposures, source market data, or read
+external hedge systems.
+
+Results must expose method selection, counterparty or risk-class contribution,
+hedge benefit applied or rejected, total CVA capital, rule profile id and hash,
+input snapshot hash, source citation ids, and unsupported-feature or fallback
+status where applicable. Hedge benefit is never applied unless eligibility is
+explicitly recorded.
+
 ## Delivery Slices
 
 1. **Skeleton and source map**.
@@ -63,6 +83,8 @@ inputs.
 - Exposure-at-default inputs are validated and traceable.
 - SA-CVA risk-class totals reconcile to overall total.
 - Unsupported profile features fail explicitly.
+- Public results carry rule-profile and input-snapshot hashes.
+- Calculation kernels remain independent of dataframe or proprietary system
+  dependencies.
 - Synthetic fixtures cover at least one counterparty, one hedge, and each
   SA-CVA risk class.
-
