@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
     "frtb-ima",
+    "frtb-drc",
 ]
 
 [tool.uv.workspace]
@@ -14,6 +15,7 @@ members = ["packages/*"]
 
 [tool.uv.sources]
 frtb-ima = { workspace = true }
+frtb-drc = { workspace = true }
 
 [dependency-groups]
 dev = [
