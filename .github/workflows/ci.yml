@@ -5,13 +5,53 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "47 4 * * 1"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      code: ${{ steps.classify.outputs.code }}
+      dependency: ${{ steps.classify.outputs.dependency }}
+      docs: ${{ steps.classify.outputs.docs }}
+      examples: ${{ steps.classify.outputs.examples }}
+      full: ${{ steps.classify.outputs.full }}
+      notebooks: ${{ steps.classify.outputs.notebooks }}
+      workflow: ${{ steps.classify.outputs.workflow }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed paths
+        id: classify
+        run: python3 scripts/ci/classify_changed_paths.py
+
+  docs:
+    needs: changes
+    if: ${{ github.event_name != 'schedule' && needs.changes.outputs.docs == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check documentation links and registries
+        run: make docs-check
+
   lint:
+    needs: changes
+    if: ${{ github.event_name != 'schedule' && needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,7 +66,7 @@ jobs:
         run: uv python install 3.11
 
       - name: Sync workspace
-        run: uv sync
+        run: uv sync --locked
 
       - name: Lint
         run: make lint
@@ -35,6 +75,8 @@ jobs:
         run: make format-check
 
   typecheck:
+    needs: changes
+    if: ${{ github.event_name != 'schedule' && needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -49,12 +91,14 @@ jobs:
         run: uv python install 3.11
 
       - name: Sync workspace
-        run: uv sync
+        run: uv sync --locked
 
       - name: Type check
         run: make typecheck
 
   test:
+    needs: changes
+    if: ${{ github.event_name != 'schedule' && needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -72,7 +116,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Sync workspace
-        run: uv sync --python ${{ matrix.python-version }}
+        run: uv sync --locked --python ${{ matrix.python-version }}
 
       - name: Test
         env:
@@ -80,6 +124,8 @@ jobs:
         run: make test
 
   build:
+    needs: changes
+    if: ${{ github.event_name != 'schedule' && needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -93,6 +139,9 @@ jobs:
       - name: Set up Python
         run: uv python install 3.11
 
+      - name: Sync workspace
+        run: uv sync --locked
+
       - name: Build package artifacts
         run: make build
 
@@ -103,6 +152,8 @@ jobs:
           path: dist/release/
 
   dependency-audit:
+    needs: changes
+    if: ${{ needs.changes.outputs.dependency == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -123,6 +174,8 @@ jobs:
         run: make audit-deps
 
   sbom:
+    needs: changes
+    if: ${{ needs.changes.outputs.dependency == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -149,6 +202,8 @@ jobs:
           path: dist/sbom/
 
   examples:
+    needs: changes
+    if: ${{ github.event_name != 'schedule' && needs.changes.outputs.examples == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -163,12 +218,14 @@ jobs:
         run: uv python install 3.11
 
       - name: Sync workspace
-        run: uv sync
+        run: uv sync --locked
 
       - name: Run IMA demo
         run: uv run python packages/frtb-ima/examples/run_demo.py
 
   notebooks:
+    needs: changes
+    if: ${{ github.event_name != 'schedule' && needs.changes.outputs.notebooks == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -183,7 +240,7 @@ jobs:
         run: uv python install 3.11
 
       - name: Sync workspace and IMA notebooks extra
-        run: uv sync --package frtb-ima --extra notebooks
+        run: uv sync --locked --package frtb-ima --extra notebooks
 
       - name: Build IMA validation pack
         working-directory: packages/frtb-ima

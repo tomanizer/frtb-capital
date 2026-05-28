@@ -7,7 +7,7 @@ LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scr
 MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/frtb-ima.json
 
-.PHONY: check lint format format-check typecheck test build release-artifacts mutation benchmark audit-deps sbom checksums repo-controls-snapshot replay-fixture validation-pack ima sa sbm drc rrao cva orchestration clean
+.PHONY: check lint format format-check typecheck test docs-check build release-artifacts mutation benchmark audit-deps sbom checksums repo-controls-snapshot replay-fixture validation-pack ima sa sbm drc rrao cva orchestration clean
 
 check: lint format-check typecheck test
 
@@ -28,8 +28,13 @@ test:
 	uv run pytest packages --cov=frtb_ima --cov-report=term-missing --cov-report=json:$(COVERAGE_JSON)
 	uv run python scripts/ci/check_module_coverage.py $(COVERAGE_JSON)
 
+docs-check:
+	python3 scripts/ci/check_markdown_links.py
+	python3 scripts/ci/check_requirement_yaml.py
+
 build:
-	uv build --all-packages --out-dir dist/release --clear
+	rm -rf dist/release
+	uv build --all-packages --out-dir dist/release
 
 mutation:
 	FRTB_IMA_MUTATION_IMPORT=1 HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-ima python -c "import numpy; import sys; from mutmut.__main__ import cli; sys.argv = ['mutmut', 'run']; cli()"
