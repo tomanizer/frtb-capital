@@ -19,6 +19,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   interpolation as the policy default.
 - Added deterministic reduced risk-factor set selection for the indirect IMCC
   reduced-set workflow.
+- Added Hypothesis property tests for ES, PLA statistics, LHA ES, IMCC, SES,
+  and desk-level capital assembly.
 
 ### Documentation
 
@@ -38,6 +40,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   interpolated estimators.
 - Added reduced-set selector coverage for hand-calculated, single-factor,
   deterministic tie-break, and threshold-unmet cases.
+- Added deterministic Hypothesis `dev` and `ci` profiles, with CI running the
+  thorough profile.
 - Added a Python-version-keyed SHA-256 determinism check for the full
   `capital_run_v1` fixture.
 - Updated package documentation to reflect the migration into the
