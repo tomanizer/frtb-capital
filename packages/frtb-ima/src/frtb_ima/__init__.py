@@ -59,6 +59,12 @@ from frtb_ima.imcc import (
     imcc_unconstrained_breakdown,
     scale_stress_es_breakdown,
 )
+from frtb_ima.input_manifest import (
+    CapitalRunInputManifest,
+    InputArtifactLineage,
+    InputValidationStatus,
+    capital_run_input_manifest_from_fixture,
+)
 from frtb_ima.lha_builder import (
     NestedLHScenarioVectors,
     imcc_nested_lh_vectors_from_cube,
@@ -204,6 +210,7 @@ __all__ = [
     "CalculationContext",
     "CapitalComponents",
     "CapitalRunAuditLog",
+    "CapitalRunInputManifest",
     "CapitalRunResult",
     "DeskAuditRecord",
     "DeskCapitalResult",
@@ -214,6 +221,8 @@ __all__ = [
     "IMAIneligibleError",
     "IMCCResult",
     "IMCCRiskClassComponent",
+    "InputArtifactLineage",
+    "InputValidationStatus",
     "JSONFormatter",
     "LiquidityHorizon",
     "LiquidityHorizonCategory",
@@ -300,6 +309,7 @@ __all__ = [
     "calculate_nmrf_capital_from_valuation_run",
     "calculate_nmrf_ses_from_revaluation",
     "calculation_log_extra",
+    "capital_run_input_manifest_from_fixture",
     "complete_nmrf_valuation_run",
     "compute_inputs_hash",
     "configure_json_logging",

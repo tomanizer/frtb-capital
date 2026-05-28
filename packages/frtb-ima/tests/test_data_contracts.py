@@ -1,6 +1,6 @@
 """Tests for vector-friendly market-risk data contracts."""
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from types import MappingProxyType
 
 import numpy as np
@@ -21,10 +21,33 @@ from frtb_ima.data_models import (
     RealPriceObservation,
     RiskClass,
 )
+from frtb_ima.input_manifest import CapitalRunInputManifest, InputArtifactLineage
 from frtb_ima.regimes import CalculationContext, RegulatoryRegime, get_policy
 from frtb_ima.scenario import ScenarioSetType, make_scenario_metadata
 
 AS_OF = date(2025, 6, 30)
+
+
+def _input_manifest(as_of_date: date = AS_OF) -> CapitalRunInputManifest:
+    return CapitalRunInputManifest(
+        run_id="run-1",
+        as_of_date=as_of_date,
+        artifacts=(
+            InputArtifactLineage(
+                artifact_name="scenario_cube.npz",
+                artifact_type="npz",
+                schema_version="capital_run_fixture_v1",
+                source_system="synthetic_fixture",
+                source_version="1",
+                extraction_timestamp=datetime(2025, 6, 30, tzinfo=UTC),
+                as_of_date=as_of_date,
+                record_count=10,
+                vector_count=1,
+                checksum="a" * 64,
+                sign_convention="positive_loss",
+            ),
+        ),
+    )
 
 
 def _metadata(n: int = 2) -> tuple:
@@ -315,6 +338,15 @@ def test_capital_run_result_freezes_desk_results() -> None:
     assert isinstance(result.desk_results, MappingProxyType)
     assert result.as_dict()["total_market_risk_capital"] == pytest.approx(3.0)
 
+    production_result = CapitalRunResult(
+        as_of_date=AS_OF,
+        regime=RegulatoryRegime.FED_NPR_2_0,
+        desk_results={"Rates": desk_result},
+        input_manifest=_input_manifest(),
+        require_input_manifest=True,
+    )
+    assert production_result.as_dict()["input_manifest"]["artifact_count"] == 1
+
     with pytest.raises(TypeError, match="as_of_date"):
         CapitalRunResult(
             as_of_date="2025-06-30",  # type: ignore[arg-type]
@@ -327,4 +359,18 @@ def test_capital_run_result_freezes_desk_results() -> None:
             regime=RegulatoryRegime.FED_NPR_2_0,
             desk_results={"Rates": desk_result},
             total_market_risk_capital=float("nan"),
+        )
+    with pytest.raises(ValueError, match="input_manifest is required"):
+        CapitalRunResult(
+            as_of_date=AS_OF,
+            regime=RegulatoryRegime.FED_NPR_2_0,
+            desk_results={"Rates": desk_result},
+            require_input_manifest=True,
+        )
+    with pytest.raises(ValueError, match="input_manifest as_of_date"):
+        CapitalRunResult(
+            as_of_date=AS_OF,
+            regime=RegulatoryRegime.FED_NPR_2_0,
+            desk_results={"Rates": desk_result},
+            input_manifest=_input_manifest(date(2025, 7, 1)),
         )

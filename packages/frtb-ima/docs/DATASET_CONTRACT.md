@@ -73,6 +73,29 @@ belong in future adapter documentation, not in the core regression fixture.
 - `expected_outputs.json`: golden scalar outputs and exact categorical outputs
   used by the integration test.
 
+## Production Input Lineage
+
+Production-style runs should attach a `CapitalRunInputManifest` to the
+`CapitalRunResult`, `DeskAuditRecord`, or `CapitalRunAuditLog`. The manifest
+contains one `InputArtifactLineage` record per consumed upstream artifact, with:
+
+- artifact name and type,
+- schema version,
+- source system and source version,
+- extraction timestamp,
+- as-of date,
+- record and vector counts,
+- SHA-256 checksum,
+- sign convention,
+- validation status and messages.
+
+The committed fixture manifest can be mapped into this structure with
+`capital_run_input_manifest_from_fixture(...)`. This preserves the existing
+fixture files and checksums while exposing the same lineage shape expected for
+production-style inputs. The manifest validates missing lineage, checksum
+mismatches, sign-convention mismatches, and count mismatches before audit output
+is produced.
+
 ## Sign Conventions
 
 The fixture manifest declares conventions per array group. The key conventions

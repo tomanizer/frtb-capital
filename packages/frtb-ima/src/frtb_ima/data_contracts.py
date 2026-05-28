@@ -29,6 +29,7 @@ from frtb_ima.data_models import (
     RealPriceObservation,
     RiskClass,
 )
+from frtb_ima.input_manifest import CapitalRunInputManifest
 from frtb_ima.regimes import CalculationContext, RegulatoryRegime
 from frtb_ima.scenario import ScenarioMetadata
 
@@ -356,14 +357,20 @@ class CapitalRunResult:
     desk_results: Mapping[str, DeskCapitalResult]
     total_market_risk_capital: float | None = None
     notes: tuple[str, ...] = ()
+    input_manifest: CapitalRunInputManifest | None = None
+    require_input_manifest: bool = field(default=False, kw_only=True)
 
     def __post_init__(self) -> None:
-        if not isinstance(self.as_of_date, date):
+        if type(self.as_of_date) is not date:
             raise TypeError("as_of_date must be a datetime.date")
         if self.total_market_risk_capital is not None and not np.isfinite(
             self.total_market_risk_capital
         ):
             raise ValueError("total_market_risk_capital must be finite when provided")
+        if self.require_input_manifest and self.input_manifest is None:
+            raise ValueError("input_manifest is required for production-style capital runs")
+        if self.input_manifest is not None and self.input_manifest.as_of_date != self.as_of_date:
+            raise ValueError("input_manifest as_of_date must match CapitalRunResult as_of_date")
         object.__setattr__(self, "desk_results", MappingProxyType(dict(self.desk_results)))
         object.__setattr__(self, "notes", tuple(self.notes))
 
@@ -375,4 +382,7 @@ class CapitalRunResult:
             "desk_results": {desk: result.as_dict() for desk, result in self.desk_results.items()},
             "total_market_risk_capital": self.total_market_risk_capital,
             "notes": list(self.notes),
+            "input_manifest": (
+                self.input_manifest.compact_summary() if self.input_manifest is not None else None
+            ),
         }

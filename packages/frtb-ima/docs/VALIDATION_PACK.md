@@ -37,6 +37,12 @@ The generated files are written under `build/validation/capital_run_v1/`:
   rendered from the fixture's golden outputs.
 - `audit/capital_run_v1_desk_records.ndjson`: serialised desk audit record.
 
+Audit records and reports can now include a compact `input_manifest` lineage
+summary built from `CapitalRunInputManifest`. The committed fixture manifest is
+mapped into that structure by package APIs, preserving fixture checksums while
+adding source-system, schema-version, sign-convention, count, and validation
+status controls for each artifact.
+
 CI uploads this directory as the `capital-run-v1-validation-pack` artifact from
 the notebooks job.
 
@@ -55,3 +61,5 @@ gaps. Then review the process notebooks in order:
 
 Use the generated manifest to confirm that reviewers are looking at the same
 fixture files, notebook sources, and audit artifacts that CI executed.
+Use any attached `input_manifest` summary in audit NDJSON or Markdown reports
+to confirm the upstream artifact lineage behind a replay or validation pack.
