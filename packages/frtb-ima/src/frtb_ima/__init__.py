@@ -137,8 +137,12 @@ from frtb_ima.nmrf_valuation_run import (
 from frtb_ima.pla import SpearmanPlaResult
 from frtb_ima.reduced_set import (
     ReducedSetCoverageResult,
+    ReducedSetSelectionResult,
+    ReducedSetSelectionStep,
     reduced_set_variation_explained,
     reduced_set_variation_explained_for_policy,
+    select_reduced_risk_factor_set,
+    select_reduced_risk_factor_set_for_policy,
 )
 from frtb_ima.regimes import (
     DEFAULT_MODEL_VERSION,
@@ -250,6 +254,8 @@ __all__ = [
     "RFETObservationExclusion",
     "RealPriceObservation",
     "ReducedSetCoverageResult",
+    "ReducedSetSelectionResult",
+    "ReducedSetSelectionStep",
     "RegulatoryPolicy",
     "RegulatoryRegime",
     "RiskClass",
@@ -323,6 +329,8 @@ __all__ = [
     "select_nmrf_method",
     "select_nmrf_method_from_evidence",
     "select_nmrf_methods",
+    "select_reduced_risk_factor_set",
+    "select_reduced_risk_factor_set_for_policy",
     "select_stress_period_from_history",
     "select_stress_periods_by_risk_class",
     "select_stress_periods_for_policy",

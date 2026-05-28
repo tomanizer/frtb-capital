@@ -17,6 +17,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   parameters.
 - Added explicit expected shortfall estimator selection with weighted
   interpolation as the policy default.
+- Added deterministic reduced risk-factor set selection for the indirect IMCC
+  reduced-set workflow.
 
 ### Documentation
 
@@ -34,6 +36,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   documented as a structural modelling choice.
 - Added closed-form expected shortfall tests for discrete-ceil and weighted
   interpolated estimators.
+- Added reduced-set selector coverage for hand-calculated, single-factor,
+  deterministic tie-break, and threshold-unmet cases.
 - Added a Python-version-keyed SHA-256 determinism check for the full
   `capital_run_v1` fixture.
 - Updated package documentation to reflect the migration into the

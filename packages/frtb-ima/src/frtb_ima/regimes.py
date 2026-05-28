@@ -169,6 +169,10 @@ REGULATORY_PARAMETER_CITATIONS: Mapping[str, str] = MappingProxyType(
         "reduced_set_variation_explained_threshold": (
             "Basel MAR33.16; U.S. NPR 2.0 proposed section __.214"
         ),
+        "reduced_set_minimum_factor_count": (
+            "Basel MAR33.16; U.S. NPR 2.0 proposed section __.214; "
+            "prototype selection sanity control"
+        ),
         "stress_period_window_observations": (
             "Basel MAR33.5; U.S. NPR 2.0 proposed section __.214"
         ),
@@ -262,6 +266,7 @@ class RegulatoryPolicy:
     )
     reduced_set_coverage_window_days: int = 60
     reduced_set_variation_explained_threshold: float = 0.75
+    reduced_set_minimum_factor_count: int = 1
     stress_period_window_observations: int = 250
     stress_period_minimum_observations: int = 250
     supervisory_multiplier_schedule: tuple[tuple[int, float], ...] = (
