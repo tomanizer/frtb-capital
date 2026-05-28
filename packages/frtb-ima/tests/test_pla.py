@@ -1,9 +1,11 @@
 """Tests for PLA KS statistic."""
 
+from dataclasses import replace
 from datetime import date, timedelta
 
 import pytest
 
+from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.pla import (
     PlaPolicyAssessmentResult,
     PlaResult,
@@ -20,6 +22,19 @@ from frtb_ima.regimes import PLAMetricsRequired, RegulatoryPolicy, RegulatoryReg
 
 PLA_GREEN_THRESHOLD = 0.09
 PLA_AMBER_THRESHOLD = 0.12
+
+
+def _business_dates(
+    count: int, *, start: date, holidays: set[date] | None = None
+) -> tuple[date, ...]:
+    holidays = set() if holidays is None else holidays
+    days: list[date] = []
+    current = start
+    while len(days) < count:
+        if current.weekday() < 5 and current not in holidays:
+            days.append(current)
+        current += timedelta(days=1)
+    return tuple(days)
 
 
 def _diagnostics() -> PlaWindowDiagnostics:
@@ -286,6 +301,56 @@ def test_pla_assessment_for_policy_with_diagnostics_reports_window() -> None:
     assert result.diagnostics.start_date == dates[n - policy.pla_window_days]
     assert result.diagnostics.end_date == dates[-1]
     assert result.as_dict()["diagnostics"]["window_size"] == policy.pla_window_days
+
+
+def test_pla_policy_calendar_validates_business_window_and_reports_holidays() -> None:
+    policy = get_policy()
+    holiday = date(2025, 12, 25)
+    dates = _business_dates(300, start=date(2025, 1, 1), holidays={holiday})
+    calendar = BusinessCalendar(
+        business_dates=dates,
+        official_holidays=(holiday,),
+        source="FED",
+        version="2026.1",
+    )
+    hpl = [float(idx) for idx in range(300)]
+    rtpl = [float(idx) for idx in range(300)]
+
+    result = pla_assessment_for_policy_with_diagnostics(
+        hpl,
+        rtpl,
+        policy,
+        observation_dates=dates,
+        calendar=calendar,
+    )
+
+    assert result.diagnostics.calendar_basis == ObservationWindowBasis.MOST_RECENT_BUSINESS_DAYS
+    assert result.diagnostics.calendar_source == "FED"
+    assert result.diagnostics.official_holiday_count == 1
+    assert result.as_dict()["diagnostics"]["official_holiday_count"] == 1
+
+
+def test_pla_policy_calendar_uses_actual_short_window_size() -> None:
+    policy = replace(get_policy(), pla_window_days=10, pla_minimum_history_days=5)
+    dates = _business_dates(6, start=date(2025, 1, 1))
+    calendar = BusinessCalendar(
+        business_dates=dates,
+        source="FED",
+        version="2026.1",
+    )
+    hpl = [float(idx) for idx in range(6)]
+    rtpl = [float(idx) for idx in range(6)]
+
+    result = pla_assessment_for_policy_with_diagnostics(
+        hpl,
+        rtpl,
+        policy,
+        observation_dates=dates,
+        calendar=calendar,
+    )
+
+    assert result.diagnostics.window_size == 6
+    assert result.diagnostics.calendar_basis == ObservationWindowBasis.MOST_RECENT_BUSINESS_DAYS
 
 
 def test_pla_ecb_policy_no_longer_raises_unsupported_feature() -> None:

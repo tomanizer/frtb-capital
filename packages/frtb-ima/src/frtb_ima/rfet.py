@@ -32,6 +32,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import date, timedelta
 
+from frtb_ima.calendar import BusinessCalendar
 from frtb_ima.data_models import (
     LiquidityHorizon,
     ModellabilityStatus,
@@ -45,7 +46,7 @@ _THRESHOLD_SHORT_LH = 24  # for LH 10 or 20
 _THRESHOLD_LONG_LH = 16  # for LH 40, 60, or 120
 _SHORT_LH_MAX_DAYS = 20
 
-_LOOKBACK_DAYS = 365  # "prior 12 months" approximated as 365 calendar days
+_LOOKBACK_DAYS = 365  # Legacy compatibility path; prefer BusinessCalendar for exact windows.
 
 
 def _quantitative_threshold(
@@ -62,6 +63,10 @@ def count_eligible_observations(
     risk_factor_name: str,
     as_of_date: date,
     lookback_days: int = _LOOKBACK_DAYS,
+    calendar: BusinessCalendar | None = None,
+    shifted_start_date: date | None = None,
+    shifted_end_date: date | None = None,
+    shift_reason: str = "",
 ) -> int:
     """
     Count unique-date real-price observations for a risk factor in prior 12 months.
@@ -69,17 +74,32 @@ def count_eligible_observations(
     One-count-per-date rule: at most one observation counts per calendar date,
     consistent with the Basel MAR31 RFET observation-counting concept.
     """
-    if lookback_days <= 0:
-        raise ValueError(f"lookback_days must be positive, got {lookback_days}")
-
-    window_start = as_of_date - timedelta(days=lookback_days)
+    if calendar is None:
+        if lookback_days <= 0:
+            raise ValueError(f"lookback_days must be positive, got {lookback_days}")
+        window_start = as_of_date - timedelta(days=lookback_days)
+        window_end = as_of_date
+        business_dates: set[date] | None = None
+    else:
+        window = calendar.exact_twelve_month_window(
+            as_of_date,
+            shifted_start_date=shifted_start_date,
+            shifted_end_date=shifted_end_date,
+            shift_reason=shift_reason,
+        )
+        window_start = window.start_date
+        window_end = window.end_date
+        business_dates = set(window.business_dates)
 
     eligible_dates: set[date] = set()
     for obs in observations:
         if obs.risk_factor_name != risk_factor_name:
             continue
-        if window_start <= obs.observation_date <= as_of_date:
-            eligible_dates.add(obs.observation_date)
+        if not (window_start <= obs.observation_date <= window_end):
+            continue
+        if business_dates is not None and obs.observation_date not in business_dates:
+            continue
+        eligible_dates.add(obs.observation_date)
 
     return len(eligible_dates)
 
@@ -92,6 +112,10 @@ def passes_quantitative_test(
     long_lh_threshold: int = _THRESHOLD_LONG_LH,
     short_lh_max_days: int = _SHORT_LH_MAX_DAYS,
     lookback_days: int = _LOOKBACK_DAYS,
+    calendar: BusinessCalendar | None = None,
+    shifted_start_date: date | None = None,
+    shifted_end_date: date | None = None,
+    shift_reason: str = "",
 ) -> bool:
     """Return True if the risk factor meets the quantitative real-price threshold."""
     count = count_eligible_observations(
@@ -99,6 +123,10 @@ def passes_quantitative_test(
         risk_factor.name,
         as_of_date,
         lookback_days=lookback_days,
+        calendar=calendar,
+        shifted_start_date=shifted_start_date,
+        shifted_end_date=shifted_end_date,
+        shift_reason=shift_reason,
     )
     threshold = _quantitative_threshold(
         risk_factor.liquidity_horizon,
@@ -118,6 +146,10 @@ def classify_risk_factor(
     long_lh_threshold: int = _THRESHOLD_LONG_LH,
     short_lh_max_days: int = _SHORT_LH_MAX_DAYS,
     lookback_days: int = _LOOKBACK_DAYS,
+    calendar: BusinessCalendar | None = None,
+    shifted_start_date: date | None = None,
+    shifted_end_date: date | None = None,
+    shift_reason: str = "",
 ) -> ModellabilityStatus:
     """
     Classify a risk factor as MODELLABLE, TYPE_A_NMRF, or TYPE_B_NMRF.
@@ -143,6 +175,10 @@ def classify_risk_factor(
         long_lh_threshold=long_lh_threshold,
         short_lh_max_days=short_lh_max_days,
         lookback_days=lookback_days,
+        calendar=calendar,
+        shifted_start_date=shifted_start_date,
+        shifted_end_date=shifted_end_date,
+        shift_reason=shift_reason,
     )
     if quant_pass:
         return ModellabilityStatus.MODELLABLE
@@ -156,6 +192,10 @@ def classify_risk_factor_for_policy(
     qualitative_pass: bool,
     as_of_date: date,
     policy: RegulatoryPolicy,
+    calendar: BusinessCalendar | None = None,
+    shifted_start_date: date | None = None,
+    shifted_end_date: date | None = None,
+    shift_reason: str = "",
 ) -> ModellabilityStatus:
     """
     Classify a risk factor using policy RFET parameters.
@@ -174,4 +214,8 @@ def classify_risk_factor_for_policy(
         long_lh_threshold=policy.rfet_long_lh_threshold,
         short_lh_max_days=policy.rfet_short_lh_max_days,
         lookback_days=policy.rfet_lookback_days,
+        calendar=calendar,
+        shifted_start_date=shifted_start_date,
+        shifted_end_date=shifted_end_date,
+        shift_reason=shift_reason,
     )

@@ -84,12 +84,14 @@ requirements:
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: implemented
     modules:
+      - src/frtb_ima/calendar.py
       - src/frtb_ima/rfet.py
       - src/frtb_ima/regimes.py
     tests:
+      - tests/test_calendar.py
       - tests/test_rfet.py
       - tests/test_regimes.py
-    notes: "Implements 24 short-LH and 16 long-LH unique-date count thresholds."
+    notes: "Implements 24 short-LH and 16 long-LH unique-date count thresholds. Supports caller-supplied exact 12-month business-calendar windows and policy-approved shifted windows; the legacy 365-day count path remains available for compatibility."
 
   - id: NPR-MR-RFET-002
     title: "RFET evidence lineage, source de-duplication, and representativeness"
@@ -97,12 +99,14 @@ requirements:
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: implemented
     modules:
+      - src/frtb_ima/calendar.py
       - src/frtb_ima/data_models.py
       - src/frtb_ima/rfet.py
       - src/frtb_ima/rfet_evidence.py
     tests:
+      - tests/test_calendar.py
       - tests/test_rfet_evidence.py
-    notes: "Evidence packages, source presence, bucket representativeness, and one-count-per-date are implemented; vendor reliance and advanced representativeness remain open."
+    notes: "Evidence packages, source presence, bucket representativeness, one-count-per-date, business-calendar basis, official-holiday exclusions, and non-business-date exclusions are implemented; vendor reliance and advanced representativeness remain open."
 
   - id: NPR-MR-RFET-003
     title: "New-issuance RFET prorating"
@@ -149,12 +153,14 @@ requirements:
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: partial
     modules:
+      - src/frtb_ima/calendar.py
       - src/frtb_ima/stress_periods.py
       - src/frtb_ima/nmrf_stress_spec.py
     tests:
+      - tests/test_calendar.py
       - tests/test_stress_periods.py
       - tests/test_nmrf_stress_spec.py
-    notes: "Vectorized common stress-window selection by risk class is implemented from supplied historical loss/severity vectors, including NMRFStressPeriodSpec bridging. Raw market-data sourcing, exact business-calendar semantics, source-completeness proof, formal calibration approval, and trade pricing remain upstream."
+    notes: "Vectorized common stress-window selection by risk class is implemented from supplied historical loss/severity vectors, including NMRFStressPeriodSpec bridging. Results distinguish observation-count proxy windows from caller-supplied exact 12-month business-calendar windows. Raw market-data sourcing, source-completeness proof, formal calibration approval, and trade pricing remain upstream."
 
   - id: NPR-MR-NMRF-001
     title: "Type A and Type B SES aggregation"
@@ -192,12 +198,14 @@ requirements:
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: implemented
     modules:
+      - src/frtb_ima/calendar.py
       - src/frtb_ima/pla.py
       - src/frtb_ima/regimes.py
     tests:
+      - tests/test_calendar.py
       - tests/test_pla.py
       - tests/test_regimes.py
-    notes: "KS metric, 250-day policy window, and optional window date diagnostics implemented for Fed profile."
+    notes: "KS metric, 250-day policy window, optional window date diagnostics, and caller-supplied business-calendar validation implemented for Fed profile."
 
   - id: NPR-MR-PLA-002
     title: "EU/PRA Spearman PLA metric"
@@ -218,24 +226,28 @@ requirements:
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: implemented
     modules:
+      - src/frtb_ima/calendar.py
       - src/frtb_ima/backtesting.py
       - src/frtb_ima/regimes.py
     tests:
+      - tests/test_calendar.py
       - tests/test_backtesting.py
       - tests/test_regimes.py
-    notes: "Includes missing-data exception treatment and optional prorated short-history thresholds."
+    notes: "Includes missing-data exception treatment, optional prorated short-history thresholds, and caller-supplied business-calendar validation of the 250-business-day policy window."
 
   - id: NPR-MR-BT-002
     title: "Dated backtesting exception trace and business calendar"
     source: "Backtesting operational traceability"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: partial
+    status: implemented
     modules:
+      - src/frtb_ima/calendar.py
       - src/frtb_ima/backtesting.py
       - src/frtb_ima/scenario.py
     tests:
+      - tests/test_calendar.py
       - tests/test_backtesting.py
-    notes: "Per-observation exception trace implemented with optional dates and official-holiday exclusions; full business-calendar semantics remain unsupported."
+    notes: "Per-observation exception trace implemented with optional dates, official-holiday exclusions, and caller-supplied business-calendar source/version metadata. The package validates supplied calendars but does not source holiday calendars."
 
   - id: NPR-MR-CAP-001
     title: "Desk-level models-based capital formula"

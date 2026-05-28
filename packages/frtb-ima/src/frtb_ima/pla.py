@@ -36,6 +36,7 @@ from datetime import date
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import (
     PLAMetricsRequired,
@@ -91,6 +92,11 @@ class PlaWindowDiagnostics:
     end_index_exclusive: int
     start_date: date | None = None
     end_date: date | None = None
+    calendar_source: str = ""
+    calendar_version: str = ""
+    calendar_basis: str = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
+    official_holiday_count: int = 0
+    missing_business_dates: tuple[date, ...] = ()
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and notebooks."""
@@ -102,6 +108,11 @@ class PlaWindowDiagnostics:
             "end_index_exclusive": self.end_index_exclusive,
             "start_date": self.start_date.isoformat() if self.start_date is not None else None,
             "end_date": self.end_date.isoformat() if self.end_date is not None else None,
+            "calendar_source": self.calendar_source,
+            "calendar_version": self.calendar_version,
+            "calendar_basis": self.calendar_basis,
+            "official_holiday_count": self.official_holiday_count,
+            "missing_business_dates": [item.isoformat() for item in self.missing_business_dates],
         }
 
 
@@ -378,6 +389,8 @@ def pla_assessment_for_policy(
     hpl: FloatVector,
     rtpl: FloatVector,
     policy: RegulatoryPolicy,
+    observation_dates: Sequence[date] | None = None,
+    calendar: BusinessCalendar | None = None,
     *,
     run_id: str | None = None,
     desk_id: str | None = None,
@@ -393,6 +406,8 @@ def pla_assessment_for_policy(
         hpl,
         rtpl,
         policy,
+        observation_dates=observation_dates,
+        calendar=calendar,
         run_id=run_id,
         desk_id=desk_id,
     )
@@ -411,6 +426,7 @@ def pla_assessment_for_policy_with_diagnostics(
     rtpl: FloatVector,
     policy: RegulatoryPolicy,
     observation_dates: Sequence[date] | None = None,
+    calendar: BusinessCalendar | None = None,
     *,
     run_id: str | None = None,
     desk_id: str | None = None,
@@ -447,6 +463,26 @@ def pla_assessment_for_policy_with_diagnostics(
     hpl_w = hpl_arr[start_index:end_index_exclusive]
     rtpl_w = rtpl_arr[start_index:end_index_exclusive]
     dates_w = dates[start_index:end_index_exclusive] if dates is not None else None
+    calendar_source = ""
+    calendar_version = ""
+    calendar_basis = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
+    official_holiday_count = 0
+    missing_business_dates: tuple[date, ...] = ()
+    if calendar is not None:
+        if dates is None:
+            raise ValueError("observation_dates are required when calendar is supplied")
+        calendar_window = calendar.most_recent_business_days(
+            window_size,
+            as_of_date=dates[-1],
+        )
+        assert dates_w is not None
+        if tuple(dates_w) != calendar_window.business_dates:
+            raise ValueError("PLA window dates must match the supplied business calendar")
+        calendar_source = calendar_window.calendar_source
+        calendar_version = calendar_window.calendar_version
+        calendar_basis = calendar_window.basis.value
+        official_holiday_count = calendar_window.official_holiday_count
+        missing_business_dates = calendar_window.missing_business_dates
 
     pla = pla_assessment(
         hpl_w,
@@ -474,6 +510,11 @@ def pla_assessment_for_policy_with_diagnostics(
             end_index_exclusive=end_index_exclusive,
             start_date=dates_w[0] if dates_w else None,
             end_date=dates_w[-1] if dates_w else None,
+            calendar_source=calendar_source,
+            calendar_version=calendar_version,
+            calendar_basis=calendar_basis,
+            official_holiday_count=official_holiday_count,
+            missing_business_dates=missing_business_dates,
         ),
         spearman=spearman_result,
         zone_labels=policy.pla_zone_labels,

@@ -47,17 +47,22 @@ uses the following documented modelling basis:
     unless a demo/test caller explicitly opts into synthetic artifacts.
 14. Stress-period selection is a pre-run calibration step by risk class. The
     prototype selects windows from supplied historical loss/severity vectors
-    using a fixed observation-count business-day proxy for a 12-month period.
-    It does not source raw market data, price trades, or approve a formal
-    regulatory stress-period methodology.
+    using either the configured observation-count proxy or a caller-supplied
+    exact 12-month business-calendar window. It does not source raw market
+    data, price trades, or approve a formal regulatory stress-period
+    methodology.
 15. Fed NPR PLA uses a Kolmogorov-Smirnov statistic comparing HPL and RTPL
-    over a 250-business-day policy window. ECB/PRA comparison profiles also
-    compute Spearman rank correlation and use the worse KS/Spearman joint zone.
+    over a 250-business-day policy window. Callers may supply authoritative
+    business-calendar metadata to validate the most recent 250 business dates.
+    ECB/PRA comparison profiles also compute Spearman rank correlation and use
+    the worse KS/Spearman joint zone.
 16. Backtesting counts both APL and HPL exceptions at 97.5% and 99.0% VaR
     confidence levels. The Fed profile applies exception limits of 30 at 97.5%
     and 12 at 99.0%.
 17. Missing APL, HPL, or VaR observations count as backtesting exceptions
-    unless marked as official-holiday related.
+    unless marked as official-holiday related. Supplied business calendars are
+    recorded with source/version metadata and official-holiday counts in
+    backtesting audit output.
 
 ### Expected shortfall estimator
 

@@ -26,6 +26,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 - Added a deterministic target-scale performance benchmark covering nested LH
   vectors, LHA ES, IMCC, SES, PLA/backtesting checks, capital assembly, and
   NDJSON audit serialisation.
+- Added dependency-free business-calendar contracts for RFET, PLA/backtesting,
+  and stress-period observation-window evidence.
 
 ### Documentation
 
@@ -64,6 +66,9 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   callers now pass explicit parameters or use policy-aware wrappers.
 - Regenerated the `capital_run_v1` fixture using the weighted interpolated
   expected shortfall estimator.
+- PLA, backtesting, RFET, and stress-period policy paths now record
+  supplied-calendar source/version metadata when a business calendar is
+  provided.
 
 ### Notes
 

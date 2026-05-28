@@ -2,6 +2,7 @@
 
 from datetime import date, timedelta
 
+from frtb_ima.calendar import BusinessCalendar
 from frtb_ima.data_models import (
     LiquidityHorizon,
     ModellabilityStatus,
@@ -21,6 +22,16 @@ AS_OF = date(2025, 6, 30)
 def _make_obs(name: str, n: int, spacing_days: int = 10) -> list[RealPriceObservation]:
     """n observations spaced `spacing_days` apart, all within 12 months of AS_OF."""
     return [RealPriceObservation(name, AS_OF - timedelta(days=i * spacing_days)) for i in range(n)]
+
+
+def _weekdays(start: date, end: date) -> tuple[date, ...]:
+    days: list[date] = []
+    current = start
+    while current <= end:
+        if current.weekday() < 5:
+            days.append(current)
+        current += timedelta(days=1)
+    return tuple(days)
 
 
 RF_LH10 = RiskFactor("RF_A", RiskClass.GIRR, LiquidityHorizon.LH10)
@@ -52,6 +63,55 @@ def test_count_eligible_observations_deduplicates_dates() -> None:
     ]
     count = count_eligible_observations(obs, "RF_A", AS_OF)
     assert count == 1
+
+
+def test_count_eligible_observations_uses_exact_calendar_window() -> None:
+    as_of = date(2025, 2, 28)
+    calendar = BusinessCalendar(
+        business_dates=_weekdays(date(2024, 2, 29), as_of),
+        source="FED",
+        version="2026.1",
+    )
+    observations = [
+        RealPriceObservation("RF_A", date(2024, 2, 29)),
+        RealPriceObservation("RF_A", date(2024, 2, 28)),
+    ]
+
+    assert (
+        count_eligible_observations(
+            observations,
+            "RF_A",
+            as_of,
+            calendar=calendar,
+        )
+        == 1
+    )
+
+
+def test_count_eligible_observations_supports_shifted_calendar_window() -> None:
+    as_of = date(2025, 1, 31)
+    calendar = BusinessCalendar(
+        business_dates=_weekdays(date(2024, 1, 1), as_of),
+        source="FED",
+        version="2026.1",
+    )
+    observations = [
+        RealPriceObservation("RF_A", date(2024, 1, 15)),
+        RealPriceObservation("RF_A", date(2024, 1, 12)),
+    ]
+
+    assert (
+        count_eligible_observations(
+            observations,
+            "RF_A",
+            as_of,
+            calendar=calendar,
+            shifted_start_date=date(2024, 1, 15),
+            shifted_end_date=date(2025, 1, 14),
+            shift_reason="Policy-approved shifted period",
+        )
+        == 1
+    )
 
 
 def test_passes_quantitative_lh10_exactly_24() -> None:
