@@ -19,6 +19,8 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
   analysis, monitoring, and change history.
 - Material-change policy and backfilled ADRs for major FRTB-IMA model-design
   decisions, with a PR template reminder for ADR review.
+- Scheduled/manual FRTB-IMA target-scale benchmark workflow with `make benchmark`
+  and a checked-in performance-baseline directory.
 - Governance completion for audit issue #3: documented release approvals,
   versioning, tagging, and material-change handling in
   `docs/RELEASE_PROCESS.md`.

@@ -23,6 +23,9 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   and desk-level capital assembly.
 - Added mutmut configuration and baseline documentation for mutation testing on
   core calculation modules.
+- Added a deterministic target-scale performance benchmark covering nested LH
+  vectors, LHA ES, IMCC, SES, PLA/backtesting checks, capital assembly, and
+  NDJSON audit serialisation.
 
 ### Documentation
 
