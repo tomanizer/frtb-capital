@@ -117,5 +117,5 @@ recorded as ADRs:
 
 - [CONTRIBUTING.md](../../CONTRIBUTING.md).
 - [docs/RELEASE_PROCESS.md](../RELEASE_PROCESS.md).
-- [docs/model_documentation/frtb-ima/06_change_history.md](../model_documentation/frtb-ima/06_change_history.md).
+- [docs/modules/frtb-ima/model_documentation/06_change_history.md](../modules/frtb-ima/model_documentation/06_change_history.md).
 - `tomanizer/frtb-capital` issue #16.

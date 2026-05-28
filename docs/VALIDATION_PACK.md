@@ -6,7 +6,7 @@ Package evidence remains close to the package that owns the calculation model.
 ## FRTB-IMA
 
 - Formal model documentation pack:
-  [`FRTB-IMA model documentation pack`](model_documentation/frtb-ima/README.md)
+  [`FRTB-IMA model documentation pack`](modules/frtb-ima/model_documentation/README.md)
 - Package validation-pack build instructions:
   [`packages/frtb-ima/docs/VALIDATION_PACK.md`](../packages/frtb-ima/docs/VALIDATION_PACK.md)
 - Deterministic validation notebooks:

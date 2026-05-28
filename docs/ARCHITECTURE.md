@@ -120,13 +120,16 @@ Each is a distinct model component under SR 11-7 with its own documentation
 pack, but they share enough plumbing that a monorepo with separate packages is
 the right factoring.
 
-## Per-model documentation
+## Module documentation
 
-Each capital component should have its own model documentation pack under
-`docs/model_documentation/<component>/`. The suite-level directory is present;
-IMA-specific supporting evidence lives under `packages/frtb-ima/docs/`; the
-formal IMA model documentation pack lives under
-`docs/model_documentation/frtb-ima/`. Each pack covers:
+Each capital component should have a suite-level documentation front door under
+`docs/modules/<component>/`. For IMA, the formal model documentation pack lives
+under [`docs/modules/frtb-ima/model_documentation/`](modules/frtb-ima/model_documentation/README.md)
+and package-specific supporting evidence remains under `packages/frtb-ima/docs/`.
+Future SBM, DRC, RRAO, and CVA packages should follow the same shape when they
+move from planning docs to implementation docs.
+
+Model documentation packs cover:
 
 - Intended use.
 - Conceptual soundness.

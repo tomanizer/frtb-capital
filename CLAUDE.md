@@ -27,7 +27,7 @@ frtb-capital/
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── decisions/           # suite-wide ADRs
-│   └── model_documentation/ # per-model SR 11-7 packs
+│   └── modules/             # component docs and model documentation packs
 ├── CLAUDE.md                # this file
 ├── AGENTS.md                # Codex brief
 └── pyproject.toml           # uv workspace root

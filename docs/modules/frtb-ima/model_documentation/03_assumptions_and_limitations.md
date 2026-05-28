@@ -2,9 +2,9 @@
 
 This file summarizes the assumptions that materially shape the `frtb-ima`
 prototype. The detailed source of record is
-[`REGULATORY_ASSUMPTIONS.md`](../../../packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md)
+[`REGULATORY_ASSUMPTIONS.md`](../../../../packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md)
 and the implementation-status inventory is
-[`NPR_2_0_MARKET_RISK.yml`](../../../packages/frtb-ima/docs/requirements/NPR_2_0_MARKET_RISK.yml).
+[`NPR_2_0_MARKET_RISK.yml`](../../../../packages/frtb-ima/docs/requirements/NPR_2_0_MARKET_RISK.yml).
 
 ## Modelling Basis
 

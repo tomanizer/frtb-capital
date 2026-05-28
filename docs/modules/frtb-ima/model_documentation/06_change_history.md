@@ -2,20 +2,20 @@
 
 This file records material `frtb-ima` model-documentation history and points to
 the authoritative change logs. Material-change control is defined in
-[`ADR 0005`](../../decisions/0005-material-change-policy.md).
+[`ADR 0005`](../../../decisions/0005-material-change-policy.md).
 
 ## Authoritative Logs
 
 - Suite release notes:
-  [`CHANGELOG.md`](../../../CHANGELOG.md)
+  [`CHANGELOG.md`](../../../../CHANGELOG.md)
 - Package release notes:
-  [`packages/frtb-ima/CHANGELOG.md`](../../../packages/frtb-ima/CHANGELOG.md)
+  [`packages/frtb-ima/CHANGELOG.md`](../../../../packages/frtb-ima/CHANGELOG.md)
 - ADRs:
-  [`docs/decisions/`](../../decisions/)
+  [`docs/decisions/`](../../../decisions/)
 - IMA regulatory traceability:
-  [`REGULATORY_TRACEABILITY.md`](../../../packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md)
+  [`REGULATORY_TRACEABILITY.md`](../../../../packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md)
 - IMA assumptions:
-  [`REGULATORY_ASSUMPTIONS.md`](../../../packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md)
+  [`REGULATORY_ASSUMPTIONS.md`](../../../../packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md)
 
 ## Material Model Changes
 
