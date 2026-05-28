@@ -12,12 +12,9 @@ make notebooks
 
 Current slices:
 
+- `01_rfet_evidence_classification.ipynb`
 - `02_stress_period_selection.ipynb`
 - `03_lha_es_imcc.ipynb`
+- `04_nmrf_chain.ipynb`
 - `05_pla_backtesting.ipynb`
 - `06_capital_assembly.ipynb`
-
-Planned follow-up notebooks:
-
-- RFET evidence and classification
-- NMRF method-selection to SES chain

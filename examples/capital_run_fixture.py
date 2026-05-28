@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -24,13 +25,31 @@ from frtb_ima.data_contracts import (
     RiskFactorDefinition,
     ScenarioCube,
 )
-from frtb_ima.data_models import LiquidityHorizon, RealPriceObservation, RiskClass
+from frtb_ima.data_models import (
+    LiquidityHorizon,
+    ModellabilityStatus,
+    RealPriceObservation,
+    RiskClass,
+)
+from frtb_ima.nmrf import NMRFStressArtifact
+from frtb_ima.nmrf_method_selection import (
+    NMRFMethodEvidence,
+    assess_direct_loss_robustness,
+)
+from frtb_ima.nmrf_stress_spec import (
+    NMRFDirectShockSpec,
+    NMRFFullRevaluationSpec,
+    NMRFShockDirection,
+    NMRFValuationSpec,
+)
 from frtb_ima.regimes import RegulatoryPolicy, RegulatoryRegime, get_policy
+from frtb_ima.rfet_evidence import RFETEvidenceAssessment, assess_rfet_evidence
 from frtb_ima.scenario import ScenarioMetadata, ScenarioSetType
 from frtb_ima.stress_periods import HistoricalStressSeries
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CAPITAL_RUN_V1_ROOT = ROOT / "tests" / "fixtures" / "capital_run_v1"
+NMRF_ARTIFACT_SOURCE = "fixture upstream valuation artifact"
 
 
 @dataclass(frozen=True)
@@ -104,6 +123,140 @@ def policy_from_fixture(fixture: CapitalRunFixture) -> RegulatoryPolicy:
 def as_of_date_from_fixture(fixture: CapitalRunFixture) -> date:
     """Return the fixture as-of date."""
     return date.fromisoformat(str(fixture.params["as_of_date"]))
+
+
+def rfet_assessments_from_fixture(
+    fixture: CapitalRunFixture,
+    policy: RegulatoryPolicy | None = None,
+) -> dict[str, RFETEvidenceAssessment]:
+    """Assess all RFET evidence packages in fixture order."""
+    active_policy = policy if policy is not None else policy_from_fixture(fixture)
+    return {
+        risk_factor.name: assess_rfet_evidence(
+            risk_factor,
+            fixture.rfet_evidence[risk_factor.name],
+            active_policy,
+        )
+        for risk_factor in fixture.risk_factors
+    }
+
+
+def classifications_from_fixture(
+    fixture: CapitalRunFixture,
+    policy: RegulatoryPolicy | None = None,
+) -> dict[str, ModellabilityStatus]:
+    """Return RFET classifications derived from the fixture evidence."""
+    assessments = rfet_assessments_from_fixture(fixture, policy)
+    return {
+        risk_factor_name: assessments[risk_factor_name].modellability_status
+        for risk_factor_name in sorted(assessments)
+    }
+
+
+def nmrf_method_evidence_from_fixture(
+    fixture: CapitalRunFixture,
+) -> dict[str, NMRFMethodEvidence]:
+    """Return auditable NMRF method evidence from the fixture JSON payload."""
+    evidence_by_name: dict[str, NMRFMethodEvidence] = {}
+    for risk_factor_name, raw in fixture.nmrf_evidence.items():
+        if not isinstance(raw, Mapping):
+            raise TypeError(f"NMRF evidence for {risk_factor_name} must be a mapping")
+        robustness = None
+        check = raw.get("direct_robustness_check")
+        if isinstance(check, Mapping):
+            robustness = assess_direct_loss_robustness(
+                check["direct_losses"],
+                check["benchmark_losses"],
+                max_relative_error_threshold=float(check["max_relative_error_threshold"]),
+                source=str(check["source"]),
+            )
+        evidence_by_name[risk_factor_name] = NMRFMethodEvidence(
+            risk_factor_name=risk_factor_name,
+            nonlinear=bool(raw.get("nonlinear", False)),
+            full_revaluation_available=bool(raw.get("full_revaluation_available", False)),
+            direct_method_available=bool(raw.get("direct_method_available", False)),
+            direct_shock_well_defined=bool(raw.get("direct_shock_well_defined", False)),
+            direct_robustness=robustness,
+            stepwise_available=bool(raw.get("stepwise_available", False)),
+            stepwise_required=bool(raw.get("stepwise_required", False)),
+            max_loss_fallback_allowed=bool(raw.get("max_loss_fallback_allowed", False)),
+            pricing_attempt_count=int(raw.get("pricing_attempt_count", 0)),
+            pricing_failure_count=int(raw.get("pricing_failure_count", 0)),
+            proxy_or_basis_risk=bool(raw.get("proxy_or_basis_risk", False)),
+            source=str(raw.get("source", "")),
+        )
+    return evidence_by_name
+
+
+def nmrf_direct_shocks_from_fixture(
+    fixture: CapitalRunFixture,
+) -> dict[str, NMRFDirectShockSpec]:
+    """Return direct shock specs declared by the fixture NMRF evidence."""
+    result: dict[str, NMRFDirectShockSpec] = {}
+    for risk_factor_name, raw in fixture.nmrf_evidence.items():
+        if not isinstance(raw, Mapping):
+            raise TypeError(f"NMRF evidence for {risk_factor_name} must be a mapping")
+        shock = raw.get("direct_shock")
+        if not isinstance(shock, Mapping):
+            continue
+        result[risk_factor_name] = NMRFDirectShockSpec(
+            shock_size=float(shock["shock_size"]),
+            shock_unit=str(shock["shock_unit"]),
+            direction=NMRFShockDirection(str(shock["direction"])),
+            calibration_source=str(shock["calibration_source"]),
+            confidence_level=float(shock.get("confidence_level", 0.975)),
+            notes=str(shock.get("notes", "")),
+        )
+    return result
+
+
+def nmrf_full_revaluations_from_fixture(
+    fixture: CapitalRunFixture,
+) -> dict[str, NMRFFullRevaluationSpec]:
+    """Return full-revaluation specs declared by the fixture NMRF evidence."""
+    result: dict[str, NMRFFullRevaluationSpec] = {}
+    for risk_factor_name, raw in fixture.nmrf_evidence.items():
+        if not isinstance(raw, Mapping):
+            raise TypeError(f"NMRF evidence for {risk_factor_name} must be a mapping")
+        revaluation = raw.get("full_revaluation")
+        if not isinstance(revaluation, Mapping):
+            continue
+        result[risk_factor_name] = NMRFFullRevaluationSpec(
+            scenario_set_id=str(revaluation["scenario_set_id"]),
+            market_state_ids=tuple(str(item) for item in revaluation["market_state_ids"]),
+            calibration_source=str(revaluation["calibration_source"]),
+            require_full_trade_repricing=bool(
+                revaluation.get("require_full_trade_repricing", True)
+            ),
+            notes=str(revaluation.get("notes", "")),
+        )
+    return result
+
+
+def nmrf_artifacts_from_fixture(
+    fixture: CapitalRunFixture,
+    specs: Sequence[NMRFValuationSpec],
+) -> tuple[NMRFStressArtifact, ...]:
+    """Return committed upstream NMRF artifacts matched to valuation specs."""
+    artifacts: list[NMRFStressArtifact] = []
+    for spec in specs:
+        risk_factor_name = spec.risk_factor_name
+        artifacts.append(
+            NMRFStressArtifact(
+                risk_factor_name=risk_factor_name,
+                method=spec.method,
+                losses=fixture.nmrf_artifacts[f"{risk_factor_name}_losses"],
+                liquidity_horizon=spec.required_liquidity_horizon,
+                stress_period=spec.stress_period.stress_period_id,
+                source=NMRF_ARTIFACT_SOURCE,
+                scenario_ids=tuple(
+                    _to_str(item)
+                    for item in fixture.nmrf_artifacts[f"{risk_factor_name}_scenario_ids"].tolist()
+                ),
+                generated_by_prototype=False,
+            )
+        )
+    return tuple(artifacts)
 
 
 def observation_dates_from_fixture(fixture: CapitalRunFixture) -> tuple[date, ...]:
