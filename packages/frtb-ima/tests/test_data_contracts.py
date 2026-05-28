@@ -380,11 +380,26 @@ def test_capital_run_result_freezes_desk_results() -> None:
 
 def test_scenario_pnl_and_desk_capital_result_are_immutable() -> None:
     scenario_pnl = ScenarioPnL(desk="Rates")
-    scenario_pnl.add_vector(RiskClass.GIRR, LiquidityHorizon.LH10, [1.0, 2.0, 3.0])
-    assert scenario_pnl.vectors[RiskClass.GIRR][LiquidityHorizon.LH10] == [1.0, 2.0, 3.0]
+    scenario_pnl_with_vector = scenario_pnl.add_vector(
+        RiskClass.GIRR,
+        LiquidityHorizon.LH10,
+        [1.0, 2.0, 3.0],
+    )
+    assert RiskClass.GIRR not in scenario_pnl.vectors
+    assert scenario_pnl_with_vector.vectors[RiskClass.GIRR][LiquidityHorizon.LH10] == (
+        1.0,
+        2.0,
+        3.0,
+    )
 
     with pytest.raises(FrozenInstanceError):
         scenario_pnl.desk = "Credit"  # type: ignore[misc]
+    horizon_vectors = scenario_pnl_with_vector.vectors[RiskClass.GIRR]
+    with pytest.raises(TypeError):
+        horizon_vectors[LiquidityHorizon.LH10] = (4.0,)  # type: ignore[index]
+    with pytest.raises(TypeError):
+        vector = horizon_vectors[LiquidityHorizon.LH10]
+        vector[0] = 4.0  # type: ignore[index]
 
     desk_result = DeskCapitalResult(
         desk="Rates",
