@@ -37,14 +37,15 @@ classification (the routing input for IMCC vs SES capital):
 | `TYPE_A_NMRF` | 1 |
 | `TYPE_B_NMRF` | 1 |
 
-The single Type B factor matters for interpreting Section 5.1: with N=1,
+The single Type B factor matters for interpreting §4.4: with N=1,
 the Type B correlation parameter ρ is structurally without effect on
-aggregated SES. Section 5.2 supplies a synthetic-vector demonstration that
+aggregated SES. §4.5 supplies a synthetic-vector demonstration that
 isolates the formula's actual ρ-sensitivity.
 
 ## 3. Baseline outputs
 
-Under the default Fed NPR 2.0 policy (`get_policy(FED_NPR_2_0)`) and the
+Under the default Fed NPR 2.0 policy loaded from the fixture
+(`policy_from_fixture(fixture)`) and the
 committed fixture:
 
 | Output | Value |

@@ -33,7 +33,7 @@ To define how the FRTB capital suite is independently validated under SR 11-7 / 
 | FRTB-IMA model documentation pack | `docs/modules/frtb-ima/model_documentation/` |
 | Architectural decisions | `docs/decisions/` (ADRs 0001 onward) |
 | Requirement registry | `docs/modules/frtb-ima/requirements/` and `packages/frtb-ima/docs/requirements/NPR_2_0_MARKET_RISK.yml` |
-| Audit records and replay CLI | `packages/frtb-ima/src/frtb_ima/audit.py`, `replay.py` |
+| Audit records and replay CLI | `packages/frtb-ima/src/frtb_ima/audit.py`, `packages/frtb-ima/src/frtb_ima/replay.py` |
 | Committed regression fixture | `packages/frtb-ima/tests/fixtures/capital_run_v1/` |
 | Independent numerical reference vectors | `packages/frtb-ima/tests/test_reference_vectors.py` |
 | Determinism guarantee | `packages/frtb-ima/tests/test_determinism.py` |
@@ -67,10 +67,10 @@ The development team commits to maintaining the following artifacts as the evide
 | Model documentation pack (`docs/modules/frtb-ima/model_documentation/`) | Conceptual soundness, intended use, derivation, assumptions and limitations, sensitivity analysis, monitoring, change history |
 | Architectural decision records (`docs/decisions/`) | Why specific methodology choices were made |
 | Requirement registry (`NPR_2_0_MARKET_RISK.yml`) | Boundary of claimed implementation — every requirement labelled `implemented`, `partial`, `out_of_scope`, or `unsupported` |
-| Regulatory traceability (`docs/REGULATORY_TRACEABILITY.md`) | Code-to-regulation and regulation-to-code mapping |
+| Regulatory traceability (`packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md`) | Code-to-regulation and regulation-to-code mapping |
 | Material change policy (ADR #5 `docs/decisions/0005-material-change-policy.md`) | Definition of material change and re-validation trigger |
 | Audit records (`DeskAuditRecord`, `CapitalRunAuditLog`) | Per-run identity: `model_version`, `code_version`, `policy_hash`, `inputs_hash`, full result breakdown |
-| Replay CLI (`replay.py`) | Independent reproduction of any committed audit record from inputs |
+| Replay CLI (`packages/frtb-ima/src/frtb_ima/replay.py`) | Independent reproduction of any committed audit record from inputs |
 | Committed fixture (`tests/fixtures/capital_run_v1/`) | Reference inputs and expected outputs for regression and replay |
 | Reference-vector tests (`test_reference_vectors.py`) | Closed-form analytic checks for ES, KS, Spearman, multiplier |
 | Determinism registry (`tests/fixtures/determinism/<py-minor>.sha256`) | Cross-Python-minor reproducibility guarantee |
@@ -203,7 +203,7 @@ This metadata is *not yet* on audit records — adding it is a tracked engineeri
 - U.S. NPR 2.0 (March 2026 proposed rule) — proposed §§ `__.212`–`__.215`
 - EU CRR Articles 325ba–325bk; Delegated Regulations (EU) 2022/2059 and 2022/2060
 - Internal: `docs/decisions/` (ADRs)
-- Internal: `docs/REGULATORY_TRACEABILITY.md`
+- Internal: `packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md`
 - Internal: `docs/RELEASE_PROCESS.md`
 - Internal: `packages/frtb-ima/docs/regulatory_sources.yml`
 

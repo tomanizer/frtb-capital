@@ -6,21 +6,27 @@ time, holding the fixture inputs fixed, and reports the resulting capital and
 intermediate metrics. Results are written as JSON for transcription.
 
 Run:
-    PYTHONPATH=packages/frtb-ima/src python packages/frtb-ima/scripts/sensitivity_sweep.py
+    PYTHONPATH=packages/frtb-ima/src python packages/frtb-ima/scripts/sensitivity_sweep.py \
+        --output sensitivity_sweep_results.json
 """
 
 from __future__ import annotations
 
+import argparse
 import dataclasses
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
+from frtb_ima._version import __version__
+from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.capital import (
     models_based_capital,
     supervisory_multiplier_for_policy,
 )
 from frtb_ima.capital_run_fixture import (
+    _filtered_cube,
     as_of_date_from_fixture,
     classifications_from_fixture,
     load_capital_run_v1_fixture,
@@ -50,21 +56,32 @@ from frtb_ima.stress_periods import (
     validate_selected_stress_periods,
 )
 
-OUTPUT_PATH = Path("/tmp/sensitivity_sweep_results.json")
+DEFAULT_OUTPUT_PATH = Path("sensitivity_sweep_results.json")
 
 
-def _filtered_cube(cube: Any, names: list[str]) -> Any:
-    allowed = set(names)
-    selected = tuple(n for n in cube.risk_factor_names if n in allowed)
-    indices = [cube.risk_factor_index[n] for n in selected]
-    from frtb_ima.data_contracts import ScenarioCube
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run deterministic sensitivity sweeps over capital_run_v1."
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT_PATH,
+        help="JSON output path. Defaults to ./sensitivity_sweep_results.json.",
+    )
+    return parser.parse_args()
 
-    return ScenarioCube(
-        values=cube.values[:, :, indices].copy(),
-        scenario_metadata=cube.scenario_metadata,
-        position_ids=cube.position_ids,
-        risk_factor_names=selected,
-        name=f"{cube.name}_filtered" if cube.name else "",
+
+def _fixture_inputs_hash(fixture: Any) -> str:
+    return compute_inputs_hash(
+        params=fixture.params,
+        risk_factors=fixture.risk_factors,
+        rfet_evidence=fixture.rfet_evidence,
+        scenario_cube=fixture.scenario_cube,
+        stress_histories=fixture.stress_histories,
+        nmrf_evidence=fixture.nmrf_evidence,
+        nmrf_artifacts=fixture.nmrf_artifacts,
+        pla_bt_vectors=fixture.pla_bt_vectors,
     )
 
 
@@ -275,11 +292,16 @@ def baseline_summary(fixture: Any, base_policy: Any) -> dict[str, Any]:
     }
 
 
-def main() -> None:
-    fixture = load_capital_run_v1_fixture()
-    base_policy = policy_from_fixture(fixture)
-
-    results: dict[str, Any] = {
+def build_results(fixture: Any, base_policy: Any) -> dict[str, Any]:
+    return {
+        "metadata": {
+            "fixture_root": str(fixture.root),
+            "inputs_hash": _fixture_inputs_hash(fixture),
+            "policy_profile": base_policy.regime.value,
+            "policy_hash": base_policy.policy_hash,
+            "code_version": __version__,
+            "python_minor": f"{sys.version_info.major}.{sys.version_info.minor}",
+        },
         "baseline": baseline_summary(fixture, base_policy),
         "es_alpha": sweep_es_alpha(fixture, base_policy),
         "es_estimator": sweep_es_estimator(fixture, base_policy),
@@ -290,7 +312,15 @@ def main() -> None:
         "capital_vs_multiplier": sweep_capital_with_multiplier(fixture, base_policy),
     }
 
-    OUTPUT_PATH.write_text(json.dumps(results, indent=2, sort_keys=True) + "\n")
+
+def main() -> None:
+    args = _parse_args()
+    fixture = load_capital_run_v1_fixture()
+    base_policy = policy_from_fixture(fixture)
+    results = build_results(fixture, base_policy)
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(results, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
