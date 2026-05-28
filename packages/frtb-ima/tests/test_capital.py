@@ -15,6 +15,8 @@ from frtb_ima.capital import (
 )
 from frtb_ima.regimes import DeskEligibilityStatus, get_policy
 
+POLICY = get_policy()
+
 
 def _trading_desk_backtest_result(*, model_eligible: bool) -> TradingDeskBacktestResult:
     return TradingDeskBacktestResult(
@@ -42,6 +44,7 @@ def test_models_based_capital_rejects_negative_components() -> None:
             ses_t_minus_1=0.0,
             imcc_60d_avg=0.0,
             ses_60d_avg=0.0,
+            multiplier=1.5,
         )
 
 
@@ -52,6 +55,7 @@ def test_models_based_capital_rejects_non_finite_components() -> None:
             ses_t_minus_1=1.0,
             imcc_60d_avg=1.0,
             ses_60d_avg=1.0,
+            multiplier=1.5,
             pla_addon=float("inf"),
         )
 
@@ -69,12 +73,20 @@ def test_models_based_capital_rejects_non_finite_multiplier() -> None:
 
 def test_supervisory_multiplier_rejects_negative_exception_count() -> None:
     with pytest.raises(ValueError, match="non-negative"):
-        supervisory_multiplier(-1)
+        supervisory_multiplier(
+            -1,
+            schedule=POLICY.supervisory_multiplier_schedule,
+            red_zone_multiplier=POLICY.supervisory_multiplier_red_zone,
+        )
 
 
 def test_supervisory_multiplier_rejects_non_integer_exception_count() -> None:
     with pytest.raises(TypeError, match="integer"):
-        supervisory_multiplier(1.5)  # type: ignore[arg-type]
+        supervisory_multiplier(  # type: ignore[arg-type]
+            1.5,
+            schedule=POLICY.supervisory_multiplier_schedule,
+            red_zone_multiplier=POLICY.supervisory_multiplier_red_zone,
+        )
 
 
 def test_pla_addon_uses_half_amber_standardized_share() -> None:
@@ -115,6 +127,7 @@ def test_models_based_capital_serializes_audit_breakdown() -> None:
         ses_t_minus_1=20.0,
         imcc_60d_avg=90.0,
         ses_60d_avg=10.0,
+        multiplier=1.5,
     )
 
     assert result.as_dict()["models_based_capital"] == pytest.approx(145.0)

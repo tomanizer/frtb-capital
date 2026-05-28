@@ -5,7 +5,8 @@ Convention throughout this package: scenario values represent losses,
 so larger positive numbers are worse. ES is the average of the worst
 (1 - alpha) tail — i.e. the average loss beyond the alpha quantile.
 
-Working assumption: 97.5% one-tailed ES per NPR 2.0 / Basel FRTB IMA.
+Callers must provide the ES confidence level explicitly. Policy-aware
+calculation wrappers source the level from ``RegulatoryPolicy``.
 
 Regulatory traceability:
     Basel MAR33 expected shortfall; U.S. NPR 2.0 expected-shortfall-based
@@ -23,14 +24,14 @@ import numpy.typing as npt
 
 def expected_shortfall(
     losses: Sequence[float] | npt.NDArray[np.float64],
-    alpha: float = 0.975,
+    alpha: float,
 ) -> float:
     """
     Compute expected shortfall (average of tail losses beyond alpha quantile).
 
     Args:
         losses: Scenario loss values. Positive = loss, negative = gain.
-        alpha:  Confidence level. Default 0.975 (97.5%) per NPR 2.0.
+        alpha:  Confidence level sourced from the applicable run policy.
 
     Returns:
         ES as the mean of the non-empty worst-loss tail. The result can be

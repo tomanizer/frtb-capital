@@ -4,7 +4,7 @@ Non-Modellable Risk Factor (NMRF) Stressed Expected Shortfall (SES).
 NPR 2.0 profile mechanics:
 
     - Type A NMRFs: included in both IMCC and SES.
-    - Type B NMRFs: included in SES only, with conservative aggregation rho = 0.36.
+    - Type B NMRFs: included in SES only, with a policy-supplied partial-correlation parameter.
 
 Aggregation formulas used here:
 
@@ -434,13 +434,12 @@ def aggregate_ses_type_a(values: Sequence[float] | npt.NDArray[np.float64]) -> f
 
 def aggregate_ses_type_b(
     values: Sequence[float] | npt.NDArray[np.float64],
-    rho: float = 0.36,
+    rho: float,
 ) -> float:
     """
     Aggregate SES contributions for Type B NMRFs.
 
-    Partial correlation via rho (default 0.36 per U.S. NPR 2.0 proposed
-    section `__.215`; Basel MAR33.16 is the NMRF stress-capital anchor):
+    Partial correlation via rho, supplied by the applicable policy:
 
         SES_B = sqrt(rho * (sum SES_i)^2 + (1 - rho) * sum(SES_i^2))
 
@@ -463,7 +462,7 @@ def aggregate_ses_type_b(
 def aggregate_ses_breakdown(
     type_a_values: Sequence[float] | npt.NDArray[np.float64],
     type_b_values: Sequence[float] | npt.NDArray[np.float64],
-    type_b_rho: float = 0.36,
+    type_b_rho: float,
 ) -> SESAggregationResult:
     """
     Compute total SES from Type A and Type B NMRF contributions with decomposition.
@@ -526,7 +525,7 @@ def aggregate_ses_breakdown_for_policy(
 def aggregate_ses(
     type_a_values: Sequence[float] | npt.NDArray[np.float64],
     type_b_values: Sequence[float] | npt.NDArray[np.float64],
-    type_b_rho: float = 0.36,
+    type_b_rho: float,
 ) -> float:
     """Return total SES from Type A and Type B NMRF contributions."""
     return aggregate_ses_breakdown(

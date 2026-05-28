@@ -26,6 +26,8 @@ from frtb_ima.nmrf import (
 )
 from frtb_ima.regimes import UnsupportedRegulatoryFeature, get_policy
 
+TYPE_B_RHO = 0.36
+
 
 def test_ses_linear_basic() -> None:
     assert ses_for_nmrf_linear(100.0, 0.05) == pytest.approx(5.0)
@@ -151,9 +153,8 @@ def test_aggregate_ses_type_b_rho_one() -> None:
 
 def test_aggregate_ses_type_b_default_rho() -> None:
     values = [10.0, 10.0]
-    rho = 0.36
-    expected = math.sqrt(rho * 20**2 + (1 - rho) * (10**2 + 10**2))
-    result = aggregate_ses_type_b(values)
+    expected = math.sqrt(TYPE_B_RHO * 20**2 + (1 - TYPE_B_RHO) * (10**2 + 10**2))
+    result = aggregate_ses_type_b(values, rho=TYPE_B_RHO)
     assert result == pytest.approx(expected, rel=1e-9)
 
 
@@ -163,24 +164,28 @@ def test_aggregate_ses_type_b_invalid_rho() -> None:
 
 
 def test_aggregate_ses_type_b_empty() -> None:
-    assert aggregate_ses_type_b([]) == pytest.approx(0.0)
+    assert aggregate_ses_type_b([], rho=TYPE_B_RHO) == pytest.approx(0.0)
 
 
 def test_aggregate_ses_combines_a_and_b() -> None:
     type_a = [10.0, 20.0]
     type_b = [5.0, 5.0]
-    expected = math.sqrt(sum(v**2 for v in type_a) + aggregate_ses_type_b(type_b) ** 2)
-    result = aggregate_ses(type_a, type_b)
+    expected = math.sqrt(
+        sum(v**2 for v in type_a) + aggregate_ses_type_b(type_b, rho=TYPE_B_RHO) ** 2
+    )
+    result = aggregate_ses(type_a, type_b, type_b_rho=TYPE_B_RHO)
     assert result == pytest.approx(expected, rel=1e-9)
 
 
 def test_aggregate_ses_breakdown_is_vectorized_and_auditable() -> None:
-    result = aggregate_ses_breakdown([3.0, 4.0], [10.0, 10.0])
+    result = aggregate_ses_breakdown([3.0, 4.0], [10.0, 10.0], type_b_rho=TYPE_B_RHO)
     assert result.type_a_count == 2
     assert result.type_b_count == 2
     assert result.type_a_sum_of_squares == pytest.approx(25.0)
     assert result.type_b_linear_sum == pytest.approx(20.0)
-    assert result.total_ses == pytest.approx(aggregate_ses([3.0, 4.0], [10.0, 10.0]))
+    assert result.total_ses == pytest.approx(
+        aggregate_ses([3.0, 4.0], [10.0, 10.0], type_b_rho=TYPE_B_RHO)
+    )
 
 
 def test_nmrf_effective_liquidity_horizon_applies_20_day_floor() -> None:

@@ -59,6 +59,23 @@ uses the following documented modelling basis:
 17. Missing APL, HPL, or VaR observations count as backtesting exceptions
     unless marked as official-holiday related.
 
+## Policy parameter citation allowlist
+
+`RegulatoryPolicy.cited_by` records the regulatory citation for each numeric
+threshold or parameter used by policy-aware calculations. Two numeric policy
+fields are deliberately treated as structural modelling choices rather than
+thresholds:
+
+- `liquidity_horizons`: the tuple of supported liquidity-horizon buckets used
+  to structure nested scenario vectors.
+- `lha_weights`: the deterministic weights derived from adjacent liquidity
+  horizons for liquidity-horizon-adjusted ES aggregation.
+
+Changes to either field are material model-design changes and require ADR-led
+review, but they are not threshold overrides in the same sense as PLA,
+backtesting, RFET, ES confidence, reduced-set, stress-period, NMRF rho, or
+supervisory multiplier parameters.
+
 ## EU CRR / CRR3 comparison assumptions
 
 The EU comparison layer is based on Regulation (EU) No 575/2013 as amended by CRR2 and CRR3, especially:
