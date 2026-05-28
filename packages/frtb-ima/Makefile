@@ -4,7 +4,7 @@ PYTHON_BIN ?= $(VENV)/bin/python
 PIP := $(PYTHON_BIN) -m pip
 VALIDATION_DIR ?= build/validation/capital_run_v1
 
-.PHONY: venv install test lint format format-check typecheck check examples demo notebooks validation-pack fixtures audit clean
+.PHONY: venv install test lint format format-check typecheck check examples demo notebooks validation-pack replay-fixture fixtures audit clean
 
 venv:
 	$(PYTHON) -m venv $(VENV)
@@ -41,6 +41,10 @@ notebooks:
 validation-pack: notebooks
 	$(PYTHON_BIN) scripts/render_audit_report.py --output $(VALIDATION_DIR)/audit/capital_run_v1_audit_report.md --ndjson $(VALIDATION_DIR)/audit/capital_run_v1_desk_records.ndjson
 	$(PYTHON_BIN) scripts/build_validation_pack.py --output $(VALIDATION_DIR)
+
+replay-fixture:
+	$(PYTHON_BIN) scripts/render_audit_report.py --output build/replay/capital_run_v1_audit_report.md --ndjson build/replay/capital_run_v1_desk_records.ndjson
+	$(PYTHON_BIN) -m frtb_ima.replay --audit build/replay/capital_run_v1_desk_records.ndjson --fixture tests/fixtures/capital_run_v1 --json-output build/replay/capital_run_v1_replay_report.json
 
 fixtures:
 	$(PYTHON_BIN) scripts/generate_fixture.py --seed 42 --output tests/fixtures/capital_run_v1

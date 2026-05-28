@@ -34,6 +34,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 - Added production-style `CapitalRunInputManifest` and `InputArtifactLineage`
   contracts for source-system lineage, checksums, sign conventions, counts, and
   validation status controls.
+- Added a dependency-free `python -m frtb_ima.replay` CLI for replaying fixture
+  audit NDJSON against the committed `capital_run_v1` input bundle.
 
 ### Documentation
 
