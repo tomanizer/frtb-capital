@@ -85,7 +85,7 @@ class RealPriceObservation:
             raise TypeError("verifiable must be a bool")
 
 
-@dataclass
+@dataclass(frozen=True)
 class ScenarioPnL:
     """
     Scenario P&L vectors for one desk, keyed by (risk_class, lh_subset).
@@ -112,7 +112,7 @@ class ScenarioPnL:
         self.vectors[risk_class][lh_subset] = losses
 
 
-@dataclass
+@dataclass(frozen=True)
 class DeskCapitalResult:
     """Capital components for a single approved desk."""
 

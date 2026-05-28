@@ -1,5 +1,6 @@
 """Tests for vector-friendly market-risk data contracts."""
 
+from dataclasses import FrozenInstanceError
 from datetime import UTC, date, datetime
 from types import MappingProxyType
 
@@ -20,6 +21,7 @@ from frtb_ima.data_models import (
     LiquidityHorizon,
     RealPriceObservation,
     RiskClass,
+    ScenarioPnL,
 )
 from frtb_ima.input_manifest import CapitalRunInputManifest, InputArtifactLineage
 from frtb_ima.regimes import CalculationContext, RegulatoryRegime, get_policy
@@ -374,3 +376,25 @@ def test_capital_run_result_freezes_desk_results() -> None:
             desk_results={"Rates": desk_result},
             input_manifest=_input_manifest(date(2025, 7, 1)),
         )
+
+
+def test_scenario_pnl_and_desk_capital_result_are_immutable() -> None:
+    scenario_pnl = ScenarioPnL(desk="Rates")
+    scenario_pnl.add_vector(RiskClass.GIRR, LiquidityHorizon.LH10, [1.0, 2.0, 3.0])
+    assert scenario_pnl.vectors[RiskClass.GIRR][LiquidityHorizon.LH10] == [1.0, 2.0, 3.0]
+
+    with pytest.raises(FrozenInstanceError):
+        scenario_pnl.desk = "Credit"  # type: ignore[misc]
+
+    desk_result = DeskCapitalResult(
+        desk="Rates",
+        imcc=1.0,
+        ses=2.0,
+        models_based_capital=3.0,
+        pla_ks_statistic=0.0,
+        backtesting_apl_exceptions=0,
+        backtesting_hpl_exceptions=0,
+    )
+
+    with pytest.raises(FrozenInstanceError):
+        desk_result.notes = "changed"  # type: ignore[misc]
