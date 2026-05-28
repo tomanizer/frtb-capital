@@ -131,6 +131,9 @@ class NMRFStepwiseShockGrid:
             raise ValueError("shock_points must contain at least two points")
         if len(points) != len(set(points)):
             raise ValueError("shock_points contains duplicates")
+        deltas = np.diff(np.asarray(points, dtype=float))
+        if not (np.all(deltas > 0.0) or np.all(deltas < 0.0)):
+            raise ValueError("shock_points must be strictly monotonic")
         if not self.shock_unit:
             raise ValueError("shock_unit must be non-empty")
         if not self.calibration_source:
