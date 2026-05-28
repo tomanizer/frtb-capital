@@ -56,3 +56,8 @@ For commits authored by Codex, prefix the subject with `[codex]`. For commits au
 ## Reviewing
 
 Reviews follow the checklist in `CLAUDE.md`. Material changes require an additional reviewer with model-validation responsibilities.
+
+## Releases
+
+Release approvals, version tags, SBOM generation, and material-change release
+rules are documented in [`docs/RELEASE_PROCESS.md`](docs/RELEASE_PROCESS.md).
