@@ -16,15 +16,25 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
+from enum import StrEnum
 
 import numpy as np
 import numpy.typing as npt
 
 
+class ESEstimator(StrEnum):
+    """Expected shortfall tail estimator."""
+
+    DISCRETE_CEIL = "DISCRETE_CEIL"
+    WEIGHTED_INTERPOLATED = "WEIGHTED_INTERPOLATED"
+
+
 def expected_shortfall(
     losses: Sequence[float] | npt.NDArray[np.float64],
     alpha: float,
+    estimator: ESEstimator,
 ) -> float:
     """
     Compute expected shortfall (average of tail losses beyond alpha quantile).
@@ -32,6 +42,7 @@ def expected_shortfall(
     Args:
         losses: Scenario loss values. Positive = loss, negative = gain.
         alpha:  Confidence level sourced from the applicable run policy.
+        estimator: Tail estimator used to average losses beyond alpha.
 
     Returns:
         ES as the mean of the non-empty worst-loss tail. The result can be
@@ -42,6 +53,7 @@ def expected_shortfall(
     """
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+    estimator = ESEstimator(estimator)
 
     arr = np.asarray(losses, dtype=float)
     if arr.ndim != 1:
@@ -51,11 +63,38 @@ def expected_shortfall(
     if not np.all(np.isfinite(arr)):
         raise ValueError("losses must contain only finite values")
 
-    arr_sorted = np.sort(arr)[::-1]  # descending: worst losses first
+    return expected_shortfall_from_sorted_losses_desc(
+        np.sort(arr)[::-1],
+        alpha=alpha,
+        estimator=estimator,
+    )
 
-    n = len(arr_sorted)
-    # Number of scenarios in the tail: at least 1
-    tail_count = max(1, int(np.ceil(n * (1.0 - alpha))))
-    tail = arr_sorted[:tail_count]
 
-    return float(np.mean(tail))
+def expected_shortfall_from_sorted_losses_desc(
+    sorted_losses_desc: Sequence[float] | npt.NDArray[np.float64],
+    alpha: float,
+    estimator: ESEstimator,
+) -> float:
+    """Compute ES from losses already sorted descending, worst losses first."""
+    if not (0.0 < alpha < 1.0):
+        raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+    estimator = ESEstimator(estimator)
+    arr = np.asarray(sorted_losses_desc, dtype=float)
+    if arr.ndim != 1:
+        raise ValueError("sorted_losses_desc must be a one-dimensional sequence")
+    if arr.size == 0:
+        raise ValueError("sorted_losses_desc must be a non-empty sequence")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError("sorted_losses_desc must contain only finite values")
+
+    if estimator == ESEstimator.DISCRETE_CEIL:
+        tail_count = max(1, math.ceil(arr.size * (1.0 - alpha)))
+        return float(np.mean(arr[:tail_count]))
+
+    tail_mass = arr.size * (1.0 - alpha)
+    full_count = math.floor(tail_mass)
+    fractional_weight = tail_mass - full_count
+    weighted_sum = float(np.sum(arr[:full_count])) if full_count else 0.0
+    if fractional_weight > 0.0:
+        weighted_sum += fractional_weight * float(arr[full_count])
+    return weighted_sum / tail_mass

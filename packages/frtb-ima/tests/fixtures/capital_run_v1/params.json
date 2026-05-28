@@ -3,6 +3,7 @@
   "backtesting_window_days": 250,
   "desk_id": "rates-credit-demo",
   "es_confidence_level": 0.975,
+  "es_estimator": "WEIGHTED_INTERPOLATED",
   "generator_version": "1",
   "imcc_unconstrained_weight": 0.5,
   "lha_weights": [

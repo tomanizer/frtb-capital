@@ -31,6 +31,7 @@ from dataclasses import dataclass
 from typing import TypeAlias
 
 from frtb_ima.data_models import LiquidityHorizon, RiskClass
+from frtb_ima.expected_shortfall import ESEstimator
 from frtb_ima.liquidity_horizon import LHAESResult, lha_es_breakdown_from_vectors
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import DEFAULT_LHA_WEIGHTS, RegulatoryPolicy
@@ -67,6 +68,7 @@ class IMCCResult:
     """Audit-friendly decomposition of the IMCC blend."""
 
     alpha: float
+    estimator: ESEstimator
     unconstrained_weight: float
     unconstrained: LHAESResult
     constrained_components: tuple[IMCCRiskClassComponent, ...]
@@ -97,6 +99,7 @@ class IMCCResult:
         """Return a serialisable dictionary for reporting and notebooks."""
         return {
             "alpha": self.alpha,
+            "estimator": self.estimator.value,
             "unconstrained_weight": self.unconstrained_weight,
             "constrained_weight": self.constrained_weight,
             "unconstrained_lha_es": self.unconstrained_lha_es,
@@ -111,7 +114,7 @@ class IMCCResult:
     def summary_lines(self) -> list[str]:
         """Return a compact text summary suitable for logs or examples."""
         lines = [
-            f"IMCC alpha={self.alpha:.4f}",
+            f"IMCC alpha={self.alpha:.4f} estimator={self.estimator.value}",
             f"unconstrained_weight={self.unconstrained_weight:.6f}",
             f"unconstrained_lha_es={self.unconstrained_lha_es:.6f}",
             f"constrained_weight={self.constrained_weight:.6f}",
@@ -170,6 +173,7 @@ def _validate_non_negative_finite(value: float, name: str) -> None:
 def imcc_unconstrained(
     all_risk_class_vectors: LHVectorInput,
     alpha: float,
+    estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
     """
@@ -187,6 +191,7 @@ def imcc_unconstrained(
     return imcc_unconstrained_breakdown(
         all_risk_class_vectors,
         alpha=alpha,
+        estimator=estimator,
         lha_weights=lha_weights,
     ).lha_es
 
@@ -194,12 +199,14 @@ def imcc_unconstrained(
 def imcc_unconstrained_breakdown(
     all_risk_class_vectors: LHVectorInput,
     alpha: float,
+    estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> LHAESResult:
     """Compute the unconstrained all-risk-class LHA ES decomposition."""
     return lha_es_breakdown_from_vectors(
         all_risk_class_vectors,
         alpha=alpha,
+        estimator=estimator,
         lha_weights=lha_weights,
     )
 
@@ -207,6 +214,7 @@ def imcc_unconstrained_breakdown(
 def imcc_constrained(
     per_risk_class_vectors: PerRiskClassLHVectorInput,
     alpha: float,
+    estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
     """
@@ -228,6 +236,7 @@ def imcc_constrained(
         for component in imcc_constrained_breakdown(
             per_risk_class_vectors,
             alpha=alpha,
+            estimator=estimator,
             lha_weights=lha_weights,
         )
     )
@@ -236,6 +245,7 @@ def imcc_constrained(
 def imcc_constrained_breakdown(
     per_risk_class_vectors: PerRiskClassLHVectorInput,
     alpha: float,
+    estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> tuple[IMCCRiskClassComponent, ...]:
     """Compute per-risk-class constrained LHA ES components."""
@@ -250,6 +260,7 @@ def imcc_constrained_breakdown(
                 lha_es_result=lha_es_breakdown_from_vectors(
                     lh_vectors,
                     alpha=alpha,
+                    estimator=estimator,
                     lha_weights=lha_weights,
                 ),
             )
@@ -261,6 +272,7 @@ def imcc(
     all_risk_class_vectors: LHVectorInput,
     per_risk_class_vectors: PerRiskClassLHVectorInput,
     alpha: float,
+    estimator: ESEstimator,
     w: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
@@ -283,6 +295,7 @@ def imcc(
         all_risk_class_vectors,
         per_risk_class_vectors,
         alpha=alpha,
+        estimator=estimator,
         w=w,
         lha_weights=lha_weights,
     ).imcc
@@ -292,6 +305,7 @@ def imcc_breakdown(
     all_risk_class_vectors: LHVectorInput,
     per_risk_class_vectors: PerRiskClassLHVectorInput,
     alpha: float,
+    estimator: ESEstimator,
     w: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> IMCCResult:
@@ -308,17 +322,20 @@ def imcc_breakdown(
     unconstrained = imcc_unconstrained_breakdown(
         all_risk_class_vectors,
         alpha=alpha,
+        estimator=estimator,
         lha_weights=lha_weights,
     )
     constrained_components = imcc_constrained_breakdown(
         per_risk_class_vectors,
         alpha=alpha,
+        estimator=estimator,
         lha_weights=lha_weights,
     )
     constrained_lha_es = sum(component.lha_es for component in constrained_components)
     imcc_value = w * unconstrained.lha_es + (1.0 - w) * constrained_lha_es
     return IMCCResult(
         alpha=alpha,
+        estimator=estimator,
         unconstrained_weight=w,
         unconstrained=unconstrained,
         constrained_components=constrained_components,
@@ -340,6 +357,7 @@ def imcc_for_policy(
         all_risk_class_vectors,
         per_risk_class_vectors,
         alpha=policy.es_confidence_level,
+        estimator=policy.es_estimator,
         w=policy.imcc_unconstrained_weight,
         lha_weights=policy.lha_weights,
     )
@@ -360,6 +378,7 @@ def imcc_breakdown_for_policy(
         all_risk_class_vectors,
         per_risk_class_vectors,
         alpha=policy.es_confidence_level,
+        estimator=policy.es_estimator,
         w=policy.imcc_unconstrained_weight,
         lha_weights=policy.lha_weights,
     )

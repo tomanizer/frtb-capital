@@ -44,6 +44,7 @@ from frtb_ima.data_models import (
     RiskFactor,
     ScenarioPnL,
 )
+from frtb_ima.expected_shortfall import ESEstimator
 from frtb_ima.imcc import (
     IMCCResult,
     IMCCRiskClassComponent,
@@ -199,6 +200,7 @@ __all__ = [
     "DeskCapitalResult",
     "DeskEligibilityStatus",
     "DeskRun",
+    "ESEstimator",
     "HistoricalStressSeries",
     "IMAIneligibleError",
     "IMCCResult",

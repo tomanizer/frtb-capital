@@ -42,7 +42,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from frtb_ima.data_models import LiquidityHorizon
-from frtb_ima.expected_shortfall import expected_shortfall
+from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall
 from frtb_ima.regimes import DEFAULT_LHA_WEIGHTS
 from frtb_ima.scenario import ScenarioVector
 from frtb_ima.scenario_validation import validate_nested_lh_vectors
@@ -79,6 +79,7 @@ class LHAESResult:
     """Audit-friendly decomposition of a liquidity-horizon-adjusted ES result."""
 
     alpha: float
+    estimator: ESEstimator
     components: tuple[LHAESComponent, ...]
     sum_weighted_squares: float
     lha_es: float
@@ -96,6 +97,7 @@ class LHAESResult:
         """Return a serialisable dictionary for reporting and notebooks."""
         return {
             "alpha": self.alpha,
+            "estimator": self.estimator.value,
             "sum_weighted_squares": self.sum_weighted_squares,
             "lha_es": self.lha_es,
             "scenario_count": self.scenario_count,
@@ -106,7 +108,7 @@ class LHAESResult:
     def summary_lines(self) -> list[str]:
         """Return a compact text summary suitable for logs or examples."""
         lines = [
-            f"LHA ES alpha={self.alpha:.4f}",
+            f"LHA ES alpha={self.alpha:.4f} estimator={self.estimator.value}",
             f"sum_weighted_squares={self.sum_weighted_squares:.6f}",
             f"lha_es={self.lha_es:.6f}",
         ]
@@ -138,6 +140,7 @@ def _values_as_list(vector: ScenarioVector | Sequence[float]) -> list[float]:
 def lha_es_breakdown_from_vectors(
     lh_vectors: Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]],
     alpha: float,
+    estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> LHAESResult:
     """
@@ -162,7 +165,11 @@ def lha_es_breakdown_from_vectors(
                 )
             )
             continue
-        es = expected_shortfall(_values_as_list(lh_vectors[lh]), alpha=alpha)
+        es = expected_shortfall(
+            _values_as_list(lh_vectors[lh]),
+            alpha=alpha,
+            estimator=estimator,
+        )
         weighted_square = weight * es**2
         sum_sq += weighted_square
         components.append(
@@ -177,6 +184,7 @@ def lha_es_breakdown_from_vectors(
 
     return LHAESResult(
         alpha=alpha,
+        estimator=estimator,
         components=tuple(components),
         sum_weighted_squares=sum_sq,
         lha_es=math.sqrt(sum_sq),
@@ -188,6 +196,7 @@ def lha_es_breakdown_from_vectors(
 def lha_es_breakdown_from_scalars(
     es_by_lh: Mapping[LiquidityHorizon, float],
     alpha: float,
+    estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> LHAESResult:
     """
@@ -218,6 +227,7 @@ def lha_es_breakdown_from_scalars(
 
     return LHAESResult(
         alpha=alpha,
+        estimator=estimator,
         components=tuple(components),
         sum_weighted_squares=sum_sq,
         lha_es=math.sqrt(sum_sq),
@@ -227,6 +237,7 @@ def lha_es_breakdown_from_scalars(
 def lha_es_from_vectors(
     lh_vectors: Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]],
     alpha: float,
+    estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> float:
     """
@@ -250,6 +261,7 @@ def lha_es_from_vectors(
     return lha_es_breakdown_from_vectors(
         lh_vectors,
         alpha=alpha,
+        estimator=estimator,
         lha_weights=lha_weights,
     ).lha_es
 
@@ -257,6 +269,7 @@ def lha_es_from_vectors(
 def lha_es_from_scalars(
     es_by_lh: Mapping[LiquidityHorizon, float],
     alpha: float,
+    estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> float:
     """
@@ -268,6 +281,7 @@ def lha_es_from_scalars(
     return lha_es_breakdown_from_scalars(
         es_by_lh,
         alpha=alpha,
+        estimator=estimator,
         lha_weights=lha_weights,
     ).lha_es
 

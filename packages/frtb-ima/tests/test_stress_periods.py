@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus, RiskClass
+from frtb_ima.expected_shortfall import ESEstimator
 from frtb_ima.nmrf import NMRFStressMethod
 from frtb_ima.nmrf_method_selection import NMRFMethodReason, NMRFValuationInstruction
 from frtb_ima.nmrf_stress_spec import (
@@ -32,6 +33,7 @@ from frtb_ima.stress_periods import (
 )
 
 CONFIDENCE_LEVEL = 0.975
+ES_ESTIMATOR = ESEstimator.DISCRETE_CEIL
 
 
 def _dates(count: int, *, start: date = date(2020, 1, 1)) -> tuple[date, ...]:
@@ -62,6 +64,7 @@ def test_expected_shortfall_scores_match_naive_tail_mean() -> None:
         minimum_observations=4,
         severity_metric=StressSeverityMetric.EXPECTED_SHORTFALL,
         confidence_level=0.50,
+        es_estimator=ES_ESTIMATOR,
     )
     naive = []
     for start in range(0, 3):
@@ -80,6 +83,7 @@ def test_cumulative_loss_uses_window_sum_and_selects_severe_cluster() -> None:
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
         confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
     )
     selected = select_stress_period_from_history(
         _series(losses),
@@ -87,6 +91,7 @@ def test_cumulative_loss_uses_window_sum_and_selects_severe_cluster() -> None:
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
         confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
     )
 
     assert scores[5] == pytest.approx(120.0)
@@ -103,6 +108,7 @@ def test_latest_start_date_tie_break_is_deterministic() -> None:
         minimum_observations=2,
         severity_metric=StressSeverityMetric.MAX_LOSS,
         confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
         tie_break=StressPeriodTieBreak.LATEST_START_DATE,
     )
 
@@ -118,6 +124,7 @@ def test_earliest_start_date_tie_break_is_deterministic() -> None:
         minimum_observations=2,
         severity_metric=StressSeverityMetric.MAX_LOSS,
         confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
         tie_break=StressPeriodTieBreak.EARLIEST_START_DATE,
     )
 
@@ -132,6 +139,7 @@ def test_candidates_from_history_materialises_audit_windows_without_losses() -> 
         minimum_observations=3,
         severity_metric=StressSeverityMetric.MAX_LOSS,
         confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
     )
 
     assert len(candidates) == 3
@@ -167,6 +175,7 @@ def test_select_stress_periods_by_risk_class_selects_independently() -> None:
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
         confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
     )
 
     assert isinstance(result, StressPeriodSelectionResult)
@@ -199,6 +208,7 @@ def test_stress_period_specs_for_nmrf_bridge_uses_selected_windows() -> None:
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
         confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
     )
 
     specs = stress_period_specs_for_nmrf(result)
@@ -259,6 +269,7 @@ def test_selection_rejects_short_histories_and_duplicate_risk_classes() -> None:
             minimum_observations=4,
             severity_metric=StressSeverityMetric.MAX_LOSS,
             confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
         )
 
     with pytest.raises(ValueError, match="duplicate history"):
@@ -269,6 +280,7 @@ def test_selection_rejects_short_histories_and_duplicate_risk_classes() -> None:
             minimum_observations=4,
             severity_metric=StressSeverityMetric.MAX_LOSS,
             confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
         )
 
 
@@ -280,6 +292,7 @@ def test_validate_selected_stress_periods_requires_all_risk_classes() -> None:
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
         confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
     )
 
     validate_selected_stress_periods(result, [RiskClass.CSR])
@@ -295,6 +308,7 @@ def test_same_risk_class_nmrfs_use_common_selected_stress_period() -> None:
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
         confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
     )
     stress_periods = stress_period_specs_for_nmrf(result)
     instructions = (

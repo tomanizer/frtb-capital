@@ -117,7 +117,14 @@ def load_capital_run_fixture(root: Path) -> CapitalRunFixture:
 
 def policy_from_fixture(fixture: CapitalRunFixture) -> RegulatoryPolicy:
     """Return the regulatory policy declared by a fixture's run parameters."""
-    return get_policy(RegulatoryRegime(str(fixture.params["regime"])))
+    policy = get_policy(RegulatoryRegime(str(fixture.params["regime"])))
+    fixture_estimator = fixture.params.get("es_estimator")
+    if fixture_estimator is not None and fixture_estimator != policy.es_estimator.value:
+        raise ValueError(
+            "fixture es_estimator does not match the active regulatory policy "
+            f"({fixture_estimator!r} != {policy.es_estimator.value!r})"
+        )
+    return policy
 
 
 def as_of_date_from_fixture(fixture: CapitalRunFixture) -> date:

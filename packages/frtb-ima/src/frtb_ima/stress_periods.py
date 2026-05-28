@@ -37,6 +37,7 @@ from numpy.lib.stride_tricks import sliding_window_view
 
 from frtb_ima.audit import _jsonable
 from frtb_ima.data_models import RiskClass
+from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall_from_sorted_losses_desc
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.nmrf_stress_spec import NMRFStressPeriodSpec
 from frtb_ima.regimes import RegulatoryPolicy, RegulatoryRegime
@@ -144,6 +145,7 @@ class StressPeriodCandidate:
     severity_score: float
     severity_metric: StressSeverityMetric
     confidence_level: float
+    es_estimator: ESEstimator
     source: str
     start_scenario_id: str
     end_scenario_id: str
@@ -170,10 +172,12 @@ class StressPeriodCandidate:
             raise TypeError("severity_metric must be a StressSeverityMetric")
         if not (0.0 < self.confidence_level < 1.0):
             raise ValueError("confidence_level must be in (0, 1)")
+        es_estimator = ESEstimator(self.es_estimator)
         if not self.source:
             raise ValueError("source must be non-empty")
         if not self.start_scenario_id or not self.end_scenario_id:
             raise ValueError("start_scenario_id and end_scenario_id must be non-empty")
+        object.__setattr__(self, "es_estimator", es_estimator)
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails."""
@@ -188,6 +192,7 @@ class StressPeriodCandidate:
             "severity_score": self.severity_score,
             "severity_metric": self.severity_metric.value,
             "confidence_level": self.confidence_level,
+            "es_estimator": self.es_estimator.value,
             "source": self.source,
             "start_scenario_id": self.start_scenario_id,
             "end_scenario_id": self.end_scenario_id,
@@ -219,6 +224,7 @@ class StressPeriodSelectionResult:
     minimum_observations: int
     severity_metric: StressSeverityMetric
     confidence_level: float
+    es_estimator: ESEstimator
     tie_break: StressPeriodTieBreak
     selected_by_risk_class: Mapping[RiskClass, StressPeriodCandidate]
     candidate_counts: Mapping[RiskClass, int]
@@ -234,8 +240,10 @@ class StressPeriodSelectionResult:
             minimum_observations=self.minimum_observations,
             severity_metric=self.severity_metric,
             confidence_level=self.confidence_level,
+            es_estimator=self.es_estimator,
             tie_break=self.tie_break,
         )
+        es_estimator = ESEstimator(self.es_estimator)
         selected = dict(self.selected_by_risk_class)
         counts = dict(self.candidate_counts)
         if not selected:
@@ -252,6 +260,7 @@ class StressPeriodSelectionResult:
                 raise ValueError("candidate_counts values must be positive")
         object.__setattr__(self, "selected_by_risk_class", MappingProxyType(selected))
         object.__setattr__(self, "candidate_counts", MappingProxyType(counts))
+        object.__setattr__(self, "es_estimator", es_estimator)
         object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
 
     @property
@@ -277,6 +286,7 @@ class StressPeriodSelectionResult:
                 "minimum_observations": self.minimum_observations,
                 "severity_metric": self.severity_metric.value,
                 "confidence_level": self.confidence_level,
+                "es_estimator": self.es_estimator.value,
                 "tie_break": self.tie_break.value,
             },
             "risk_class_count": self.risk_class_count,
@@ -293,6 +303,7 @@ def rolling_window_severity_scores(
     minimum_observations: int = 250,
     severity_metric: StressSeverityMetric = StressSeverityMetric.EXPECTED_SHORTFALL,
     confidence_level: float,
+    es_estimator: ESEstimator,
 ) -> npt.NDArray[np.float64]:
     """
     Return one severity score per rolling window.
@@ -312,6 +323,7 @@ def rolling_window_severity_scores(
         minimum_observations=minimum_observations,
         severity_metric=severity_metric,
         confidence_level=confidence_level,
+        es_estimator=es_estimator,
     )
     loss_arr = _as_finite_loss_array(losses, "losses")
     if loss_arr.size < minimum_observations:
@@ -335,14 +347,16 @@ def rolling_window_severity_scores(
         return max_scores
 
     if severity_metric == StressSeverityMetric.EXPECTED_SHORTFALL:
-        tail_count = max(
-            1,
-            math.ceil((1.0 - confidence_level) * window_observations),
-        )
-        tail_start = window_observations - tail_count
-        partitioned = np.partition(windows, tail_start, axis=1)
+        sorted_windows = np.sort(windows, axis=1)[:, ::-1]
         es_scores: npt.NDArray[np.float64] = np.asarray(
-            np.mean(partitioned[:, tail_start:], axis=1),
+            [
+                expected_shortfall_from_sorted_losses_desc(
+                    window,
+                    alpha=confidence_level,
+                    estimator=es_estimator,
+                )
+                for window in sorted_windows
+            ],
             dtype=np.float64,
         )
         return es_scores
@@ -357,6 +371,7 @@ def stress_period_candidates_from_history(
     minimum_observations: int = 250,
     severity_metric: StressSeverityMetric = StressSeverityMetric.EXPECTED_SHORTFALL,
     confidence_level: float,
+    es_estimator: ESEstimator,
 ) -> tuple[StressPeriodCandidate, ...]:
     """Build all candidate stress windows for audit or diagnostics."""
     if not isinstance(series, HistoricalStressSeries):
@@ -367,6 +382,7 @@ def stress_period_candidates_from_history(
         minimum_observations=minimum_observations,
         severity_metric=severity_metric,
         confidence_level=confidence_level,
+        es_estimator=es_estimator,
     )
     return tuple(
         _candidate_from_window_index(
@@ -376,6 +392,7 @@ def stress_period_candidates_from_history(
             window_observations=window_observations,
             severity_metric=severity_metric,
             confidence_level=confidence_level,
+            es_estimator=es_estimator,
         )
         for window_index in range(scores.size)
     )
@@ -388,6 +405,7 @@ def select_stress_period_from_history(
     minimum_observations: int = 250,
     severity_metric: StressSeverityMetric = StressSeverityMetric.EXPECTED_SHORTFALL,
     confidence_level: float,
+    es_estimator: ESEstimator,
     tie_break: StressPeriodTieBreak = StressPeriodTieBreak.LATEST_START_DATE,
 ) -> StressPeriodCandidate:
     """
@@ -405,6 +423,7 @@ def select_stress_period_from_history(
         minimum_observations=minimum_observations,
         severity_metric=severity_metric,
         confidence_level=confidence_level,
+        es_estimator=es_estimator,
     )
     window_index = _select_window_index(scores, tie_break)
     return _candidate_from_window_index(
@@ -414,6 +433,7 @@ def select_stress_period_from_history(
         window_observations=window_observations,
         severity_metric=severity_metric,
         confidence_level=confidence_level,
+        es_estimator=es_estimator,
     )
 
 
@@ -425,6 +445,7 @@ def select_stress_periods_by_risk_class(
     minimum_observations: int = 250,
     severity_metric: StressSeverityMetric = StressSeverityMetric.EXPECTED_SHORTFALL,
     confidence_level: float,
+    es_estimator: ESEstimator,
     tie_break: StressPeriodTieBreak = StressPeriodTieBreak.LATEST_START_DATE,
     regime: RegulatoryRegime | str = RegulatoryRegime.FED_NPR_2_0,
     metadata: Mapping[str, object] | None = None,
@@ -439,6 +460,7 @@ def select_stress_periods_by_risk_class(
         minimum_observations=minimum_observations,
         severity_metric=severity_metric,
         confidence_level=confidence_level,
+        es_estimator=es_estimator,
         tie_break=tie_break,
     )
 
@@ -455,6 +477,7 @@ def select_stress_periods_by_risk_class(
             minimum_observations=minimum_observations,
             severity_metric=severity_metric,
             confidence_level=confidence_level,
+            es_estimator=es_estimator,
             tie_break=tie_break,
         )
         counts[series.risk_class] = series.observation_count - window_observations + 1
@@ -467,6 +490,7 @@ def select_stress_periods_by_risk_class(
         minimum_observations=minimum_observations,
         severity_metric=severity_metric,
         confidence_level=confidence_level,
+        es_estimator=es_estimator,
         tie_break=tie_break,
         selected_by_risk_class=selected,
         candidate_counts=counts,
@@ -495,6 +519,7 @@ def select_stress_periods_for_policy(
         minimum_observations=policy.stress_period_minimum_observations,
         severity_metric=severity_metric,
         confidence_level=policy.es_confidence_level,
+        es_estimator=policy.es_estimator,
         tie_break=tie_break,
         regime=policy.regime,
         metadata=metadata,
@@ -557,6 +582,7 @@ def _validate_selection_parameters(
     minimum_observations: int,
     severity_metric: StressSeverityMetric,
     confidence_level: float,
+    es_estimator: ESEstimator,
     tie_break: StressPeriodTieBreak | None = None,
 ) -> None:
     if window_observations <= 0:
@@ -569,6 +595,7 @@ def _validate_selection_parameters(
         raise TypeError("severity_metric must be a StressSeverityMetric")
     if not (0.0 < confidence_level < 1.0):
         raise ValueError("confidence_level must be in (0, 1)")
+    ESEstimator(es_estimator)
     if tie_break is not None and not isinstance(tie_break, StressPeriodTieBreak):
         raise TypeError("tie_break must be a StressPeriodTieBreak")
 
@@ -645,6 +672,7 @@ def _candidate_from_window_index(
     window_observations: int,
     severity_metric: StressSeverityMetric,
     confidence_level: float,
+    es_estimator: ESEstimator,
 ) -> StressPeriodCandidate:
     start_index = window_index
     end_index_exclusive = window_index + window_observations
@@ -668,6 +696,7 @@ def _candidate_from_window_index(
         severity_score=float(scores[window_index]),
         severity_metric=severity_metric,
         confidence_level=confidence_level,
+        es_estimator=es_estimator,
         source=series.source,
         start_scenario_id=series.scenario_ids[start_index],
         end_scenario_id=series.scenario_ids[end_index],
