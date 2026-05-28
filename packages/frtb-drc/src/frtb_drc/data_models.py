@@ -157,8 +157,18 @@ class Position:
             raise ValueError("issuer_id must be non-empty string")
         if self.long_jtd < 0 or self.short_jtd < 0:
             raise ValueError("JTD amounts must be non-negative (use separate long/short fields)")
-        if self.long_jtd == 0 and self.short_jtd == 0:
-            raise ValueError("At least one of long_jtd or short_jtd must be > 0")
+        # Allow zero JTD when notional is supplied (for upstream feeds that have not pre-computed
+        # LGD*notional); compute_gross_jtd will fall back. Per review feedback on reachability.
+        if self.long_jtd == 0 and self.short_jtd == 0 and (self.notional is None or self.notional == 0):
+            raise ValueError("At least one of long_jtd, short_jtd, or notional must be non-zero")
+
+        # Coerce raw str/int from CRIF-like inputs to enums (prevents AttributeError on .value downstream)
+        if not isinstance(self.seniority, Seniority):
+            object.__setattr__(self, "seniority", Seniority(self.seniority))
+        if not isinstance(self.credit_quality, CreditQuality):
+            object.__setattr__(self, "credit_quality", CreditQuality(self.credit_quality))
+        if not isinstance(self.risk_class, RiskClassDRC):
+            object.__setattr__(self, "risk_class", RiskClassDRC(self.risk_class))
 
     def as_dict(self) -> dict[str, Any]:
         """Serialisable form for audit records and logging."""

@@ -49,7 +49,8 @@ class TestPosition:
             )
 
     def test_rejects_zero_exposure(self) -> None:
-        with pytest.raises(ValueError, match="At least one of long_jtd or short_jtd"):
+        # Zero JTD + no notional is invalid
+        with pytest.raises(ValueError, match="At least one of long_jtd, short_jtd, or notional"):
             Position(
                 issuer_id="ZERO",
                 bucket="CORPORATES",
@@ -58,6 +59,22 @@ class TestPosition:
                 long_jtd=0.0,
                 short_jtd=0.0,
             )
+
+    def test_allows_notional_only_for_gross_jtd_fallback(self) -> None:
+        # Notional-only valid for upstream w/o precomputed JTD; fallback in compute_gross_jtd
+        pos = Position(
+            issuer_id="NOTIONAL_ONLY",
+            bucket="CORPORATES",
+            seniority=Seniority.SENIOR,
+            credit_quality=CreditQuality.BBB,
+            long_jtd=0.0,
+            short_jtd=0.0,
+            notional=10_000_000.0,
+        )
+        # Uses LGD (0.75 for SENIOR per MAR22.12) * notional
+        from frtb_drc.jtd import compute_gross_jtd
+        gross = compute_gross_jtd(pos)
+        assert gross == 7_500_000.0  # 0.75 * 10M
 
 
 class TestGetRiskWeight:
