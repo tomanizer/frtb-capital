@@ -13,6 +13,9 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
 - Suite-level governance files: `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`.
 - Suite-level architecture documentation under `docs/`.
 - Initial ADRs documenting the monorepo decision and the SA/DRC/CVA scope boundary.
+- Supply-chain hygiene with minor-capped dev dependencies, weekly Dependabot
+  monitoring, a `pip-audit` CI job, and CycloneDX SBOM generation under
+  `dist/sbom/`.
 
 ### Notes
 

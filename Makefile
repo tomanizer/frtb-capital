@@ -4,7 +4,7 @@ PYTHON_BIN ?= uv run python
 LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts
 MYPY_PATHS := packages/*/src
 
-.PHONY: check lint format format-check typecheck test ima sa drc cva orchestration clean
+.PHONY: check lint format format-check typecheck test audit-deps sbom ima sa drc cva orchestration clean
 
 check: lint format-check typecheck test
 
@@ -22,6 +22,13 @@ typecheck:
 
 test:
 	uv run pytest packages
+
+audit-deps:
+	uv run pip-audit
+
+sbom:
+	mkdir -p dist/sbom
+	uv run cyclonedx-py environment .venv --pyproject pyproject.toml --output-reproducible --of JSON -o dist/sbom/frtb-capital.cdx.json
 
 # Per-package shortcuts
 ima:
