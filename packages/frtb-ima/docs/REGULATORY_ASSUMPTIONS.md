@@ -87,6 +87,35 @@ The prototype intentionally excludes or simplifies:
 - EU RTS-level RFET data-pooling/vendor-reliance rules,
 - production-grade data lineage, storage, telemetry, and control framework.
 
+## Determinism guarantee
+
+The committed `capital_run_v1` fixture is the package-level reproducibility
+sentinel. The CI test matrix runs the full fixture on Python 3.11, 3.12, and
+3.13, serialises the computed output with canonical JSON settings, and compares
+the SHA-256 digest with the committed expectation under
+`tests/fixtures/determinism/`.
+
+Within that boundary, the guarantee is:
+
+1. With the committed fixture inputs, committed code, and the dependency
+   versions resolved by `uv.lock`, the fixture output hash is expected to be
+   stable for each supported Python minor version.
+2. A change to calculation logic, fixture inputs, Python minor behaviour, or the
+   resolved NumPy minor version must either preserve the committed hash or
+   intentionally update the hash registry in the same change.
+3. The guarantee covers the canonical fixture output dictionary, not every
+   intermediate floating-point array or optional diagnostic rendering.
+
+Known limits:
+
+- The repository does not yet enforce bit-level equivalence across operating
+  systems, BLAS implementations, or CPU vector widths.
+- Extreme floating-point edge cases outside the committed synthetic fixture may
+  still show last-bit differences when NumPy dispatches to different platform
+  kernels.
+- Regulatory reproducibility for proprietary bank inputs will require future
+  input hashing, code-version, policy-version, and replay controls.
+
 ## Recent accuracy audit
 
 The May 2026 accuracy pass corrected four prior simplifications:
