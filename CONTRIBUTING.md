@@ -22,7 +22,8 @@ Requires Python 3.11+ and [`uv`](https://docs.astral.sh/uv/).
 4. Run `make check` until green.
 5. Open a PR. The PR template will prompt for:
    - Affected package(s).
-   - Whether the change is material under ADR 0005.
+   - Whether the change is material under
+     [ADR 0005](docs/decisions/0005-material-change-policy.md).
    - Link to ADR if material.
 
 ## Material change policy

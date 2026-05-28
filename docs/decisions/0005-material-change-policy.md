@@ -86,12 +86,18 @@ decision in the PR.
 The following prior decisions are material model-design evidence and are
 recorded as ADRs:
 
-- ADR 0003: SA, DRC, and CVA as separate packages within the suite.
-- ADR 0004: weighted interpolated expected shortfall estimator.
-- ADR 0006: Type A NMRF zero-correlation SES aggregation.
-- ADR 0007: Fed KS-only PLA versus EU/PRA KS + Spearman PLA.
-- ADR 0008: nested liquidity-horizon vectors rather than scalar scaling.
-- ADR 0009: desk eligibility as a two-state capital guard.
+- [ADR 0003](0003-sa-drc-cva-scope.md): SA, DRC, and CVA as separate packages
+  within the suite.
+- [ADR 0004](0004-weighted-interpolated-expected-shortfall.md): weighted
+  interpolated expected shortfall estimator.
+- [ADR 0006](0006-type-a-nmrf-zero-correlation-ses.md): Type A NMRF
+  zero-correlation SES aggregation.
+- [ADR 0007](0007-pla-metric-policy-by-regime.md): Fed KS-only PLA versus
+  EU/PRA KS + Spearman PLA.
+- [ADR 0008](0008-nested-liquidity-horizon-vectors.md): nested
+  liquidity-horizon vectors rather than scalar scaling.
+- [ADR 0009](0009-desk-eligibility-two-state-guard.md): desk eligibility as a
+  two-state capital guard.
 
 ## Consequences
 
@@ -109,7 +115,7 @@ recorded as ADRs:
 
 ## References
 
-- `CONTRIBUTING.md`.
-- `docs/RELEASE_PROCESS.md`.
-- `docs/model_documentation/frtb-ima/06_change_history.md`.
+- [CONTRIBUTING.md](../../CONTRIBUTING.md).
+- [docs/RELEASE_PROCESS.md](../RELEASE_PROCESS.md).
+- [docs/model_documentation/frtb-ima/06_change_history.md](../model_documentation/frtb-ima/06_change_history.md).
 - `tomanizer/frtb-capital` issue #16.

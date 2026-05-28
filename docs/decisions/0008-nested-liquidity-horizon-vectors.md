@@ -52,8 +52,8 @@ allowed use of scalar scaling is material under ADR 0005.
 
 ## References
 
-- `packages/frtb-ima/src/frtb_ima/lha_builder.py`.
-- `packages/frtb-ima/src/frtb_ima/liquidity_horizon.py`.
-- `packages/frtb-ima/src/frtb_ima/scenario_validation.py`.
-- `packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md`.
-- ADR 0005.
+- [packages/frtb-ima/src/frtb_ima/lha_builder.py](../../packages/frtb-ima/src/frtb_ima/lha_builder.py).
+- [packages/frtb-ima/src/frtb_ima/liquidity_horizon.py](../../packages/frtb-ima/src/frtb_ima/liquidity_horizon.py).
+- [packages/frtb-ima/src/frtb_ima/scenario_validation.py](../../packages/frtb-ima/src/frtb_ima/scenario_validation.py).
+- [packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md](../../packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md).
+- [ADR 0005](0005-material-change-policy.md).
