@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import urllib.parse
 from pathlib import Path
 
 LINK_RE = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
@@ -24,7 +25,7 @@ def _base_dir(root: Path, path: Path) -> Path:
 
 
 def _target_exists(root: Path, source: Path, target: str) -> bool:
-    target = target.strip()
+    target = urllib.parse.unquote(target.strip())
     if not target or target.startswith(SKIP_PREFIXES):
         return True
     target = target.split("#", 1)[0]
@@ -32,6 +33,8 @@ def _target_exists(root: Path, source: Path, target: str) -> bool:
         return True
     if target.startswith("<") and target.endswith(">"):
         target = target[1:-1]
+    if target.startswith("/"):
+        return (root / target.lstrip("/")).resolve().exists()
     return (_base_dir(root, source) / target).resolve().exists()
 
 

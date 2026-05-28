@@ -25,7 +25,7 @@ def _inline_list(value: str) -> list[str]:
     value = value.strip()
     if not (value.startswith("[") and value.endswith("]")):
         return []
-    return [item.strip().strip('"') for item in value[1:-1].split(",") if item.strip()]
+    return [item.strip().strip("'\"") for item in value[1:-1].split(",") if item.strip()]
 
 
 def _status_values(lines: list[str]) -> set[str]:
@@ -38,7 +38,7 @@ def _status_values(lines: list[str]) -> set[str]:
                 break
             for child in lines[index + 1 :]:
                 if child.startswith("  - "):
-                    values.append(child.strip()[2:].strip().strip('"'))
+                    values.append(child.strip()[2:].strip().strip("'\""))
                     continue
                 if child and not child.startswith(" "):
                     break
@@ -63,7 +63,7 @@ def _requirement_entries(lines: list[str]) -> list[dict[str, object]]:
         if raw_line.startswith("  - id: "):
             if current is not None:
                 entries.append(current)
-            current = {"id": raw_line.split(":", 1)[1].strip().strip('"')}
+            current = {"id": raw_line.split(":", 1)[1].strip().strip("'\"")}
             current_list = None
             continue
         if current is None:
@@ -75,7 +75,7 @@ def _requirement_entries(lines: list[str]) -> list[dict[str, object]]:
         if stripped.startswith("- "):
             if current_list is None:
                 raise AssertionError(f"list item without parent key: {raw_line}")
-            current.setdefault(current_list, []).append(stripped[2:].strip().strip('"'))  # type: ignore[union-attr]
+            current.setdefault(current_list, []).append(stripped[2:].strip().strip("'\""))  # type: ignore[union-attr]
             continue
         if ":" not in stripped:
             continue
@@ -85,7 +85,7 @@ def _requirement_entries(lines: list[str]) -> list[dict[str, object]]:
             current[key] = []
             current_list = key
         else:
-            current[key] = _inline_list(value) or value.strip('"')
+            current[key] = _inline_list(value) or value.strip("'\"")
             current_list = None
 
     if current is not None:

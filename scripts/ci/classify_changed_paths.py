@@ -33,9 +33,27 @@ def _changed_paths() -> tuple[str, set[str]]:
         payload = json.loads(Path(event_path).read_text())
         base_sha = payload.get("pull_request", {}).get("base", {}).get("sha", "")
 
+    diff_base = ""
     if base_sha:
-        diff_base = base_sha
-    else:
+        exists = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", f"{base_sha}^0"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if exists.returncode == 0:
+            diff_base = base_sha
+        else:
+            fetch = subprocess.run(
+                ["git", "fetch", "--depth=1", "origin", base_sha],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            if fetch.returncode == 0:
+                diff_base = base_sha
+
+    if not diff_base:
         diff_base = f"origin/{base_ref}"
         exists = subprocess.run(
             ["git", "rev-parse", "--verify", "--quiet", diff_base],
