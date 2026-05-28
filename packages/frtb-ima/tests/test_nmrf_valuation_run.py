@@ -21,6 +21,8 @@ from frtb_ima.nmrf_valuation_run import (
     NMRFArtifactReconciliationItem,
     NMRFArtifactReconciliationResult,
     NMRFValuationRunError,
+    NMRFValuationRunRequest,
+    NMRFValuationRunResult,
     build_nmrf_valuation_run_request,
     calculate_nmrf_capital_from_valuation_run,
     complete_nmrf_valuation_run,
@@ -149,6 +151,30 @@ def test_valuation_run_request_is_immutable_and_serialisable() -> None:
     assert request.as_dict()["as_of_date"] == "2026-05-27"
 
 
+def test_valuation_run_request_validates_identity_and_specs() -> None:
+    spec = _direct_spec()
+    invalid_cases = (
+        {"run_id": "", "match": "run_id"},
+        {"desk_id": "", "match": "desk_id"},
+        {"regime": "", "match": "regime"},
+        {"as_of_date": "2026-05-27", "match": "as_of_date"},
+        {"source": "", "match": "source"},
+        {"specs": (), "match": "specs"},
+        {"specs": (object(),), "match": "NMRFValuationSpec"},
+        {"specs": (spec, spec), "match": "duplicate"},
+    )
+    base = {
+        "run_id": "run-1",
+        "desk_id": "desk-1",
+        "regime": "FED_NPR_2_0",
+        "specs": (spec,),
+    }
+    for case in invalid_cases:
+        kwargs = {**base, **{key: value for key, value in case.items() if key != "match"}}
+        with pytest.raises((TypeError, ValueError), match=str(case["match"])):
+            NMRFValuationRunRequest(**kwargs)  # type: ignore[arg-type]
+
+
 def test_reconciliation_passes_exact_direct_and_full_revaluation_artifacts(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -230,6 +256,54 @@ def test_reconciliation_artifact_count_fallback_uses_unexpected_artifact_count()
     assert result.artifact_count == 3
 
 
+def test_reconciliation_result_and_items_validate_fields() -> None:
+    item = NMRFArtifactReconciliationItem(
+        risk_factor_name="RF_DIRECT",
+        required_method=NMRFStressMethod.DIRECT,
+        required_liquidity_horizon=LiquidityHorizon.LH20,
+        required_stress_period="csr-2008",
+        artifact_count=0,
+        errors=("missing_artifact",),
+    )
+    result = NMRFArtifactReconciliationResult(items=(item,))
+
+    assert item.passed is False
+    assert result.passed is False
+    assert result.failed_item_count == 1
+    assert result.required_methods == {"RF_DIRECT": NMRFStressMethod.DIRECT}
+    assert result.required_liquidity_horizons == {"RF_DIRECT": LiquidityHorizon.LH20}
+
+    invalid_item_cases = (
+        {"risk_factor_name": "", "match": "risk_factor_name"},
+        {"required_method": "DIRECT", "match": "NMRFStressMethod"},
+        {"required_liquidity_horizon": 20, "match": "LiquidityHorizon"},
+        {"required_stress_period": "", "match": "required_stress_period"},
+        {"artifact_count": -1, "match": "artifact_count"},
+    )
+    base_item = {
+        "risk_factor_name": "RF_DIRECT",
+        "required_method": NMRFStressMethod.DIRECT,
+        "required_liquidity_horizon": LiquidityHorizon.LH20,
+        "required_stress_period": "csr-2008",
+        "artifact_count": 0,
+    }
+    for case in invalid_item_cases:
+        kwargs = {**base_item, **{key: value for key, value in case.items() if key != "match"}}
+        with pytest.raises((TypeError, ValueError), match=str(case["match"])):
+            NMRFArtifactReconciliationItem(**kwargs)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="items"):
+        NMRFArtifactReconciliationResult(items=())
+    with pytest.raises(TypeError, match="NMRFArtifactReconciliationItem"):
+        NMRFArtifactReconciliationResult(items=(object(),))  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="duplicate"):
+        NMRFArtifactReconciliationResult(items=(item, item))
+    with pytest.raises(ValueError, match="returned_artifact_count"):
+        NMRFArtifactReconciliationResult(items=(item,), returned_artifact_count=-1)
+    with pytest.raises(ValueError, match="unexpected_artifact_count"):
+        NMRFArtifactReconciliationResult(items=(item,), unexpected_artifact_count=-1)
+
+
 def test_reconciliation_reports_method_lh_and_stress_period_mismatches() -> None:
     direct = _direct_spec()
     artifact = _artifact(
@@ -264,6 +338,33 @@ def test_reconciliation_reports_liquidity_horizon_too_short() -> None:
     assert result.passed is False
     assert result.items[0].liquidity_horizon_matched is False
     assert "liquidity_horizon_too_short" in result.items[0].errors
+
+
+def test_reconciliation_reports_missing_source_and_validates_input_types() -> None:
+    direct = _direct_spec()
+    artifact = NMRFStressArtifact(
+        risk_factor_name=direct.risk_factor_name,
+        method=direct.method,
+        losses=(1.0, 2.0, 3.0),
+        liquidity_horizon=direct.required_liquidity_horizon,
+        stress_period=direct.stress_period.stress_period_id,
+        source="synthetic upstream artifact",
+    )
+    object.__setattr__(artifact, "source", "")
+
+    result = reconcile_nmrf_valuation_artifacts((direct,), (artifact,))
+
+    assert result.passed is False
+    assert "missing_source" in result.items[0].errors
+
+    with pytest.raises(ValueError, match="specs"):
+        reconcile_nmrf_valuation_artifacts((), ())
+    with pytest.raises(TypeError, match="NMRFValuationSpec"):
+        reconcile_nmrf_valuation_artifacts((object(),), ())  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="duplicate"):
+        reconcile_nmrf_valuation_artifacts((direct, direct), ())
+    with pytest.raises(TypeError, match="NMRFStressArtifact"):
+        reconcile_nmrf_valuation_artifacts((direct,), (object(),))  # type: ignore[arg-type]
 
 
 def test_reconciliation_rejects_prototype_artifacts_by_default() -> None:
@@ -347,6 +448,67 @@ def test_failed_reconciliation_blocks_capital_consumption() -> None:
             {"RF_DIRECT": ModellabilityStatus.TYPE_A_NMRF},
             valuation_run,
             get_policy(),
+        )
+
+
+def test_valuation_run_result_validates_reconciliation_contract() -> None:
+    direct = _direct_spec()
+    artifact = _artifact(direct)
+    request = build_nmrf_valuation_run_request(
+        (direct,),
+        get_policy(),
+        run_id="run-1",
+        desk_id="desk-1",
+    )
+    reconciliation = reconcile_nmrf_valuation_artifacts((direct,), (artifact,))
+
+    with pytest.raises(TypeError, match="request"):
+        NMRFValuationRunResult(
+            request=object(),  # type: ignore[arg-type]
+            artifacts=(artifact,),
+            reconciliation=reconciliation,
+        )
+    with pytest.raises(TypeError, match="artifacts"):
+        NMRFValuationRunResult(
+            request=request,
+            artifacts=(object(),),  # type: ignore[arg-type]
+            reconciliation=reconciliation,
+        )
+    with pytest.raises(TypeError, match="reconciliation"):
+        NMRFValuationRunResult(
+            request=request,
+            artifacts=(artifact,),
+            reconciliation=object(),  # type: ignore[arg-type]
+        )
+    with pytest.raises(ValueError, match="match request specs"):
+        NMRFValuationRunResult(
+            request=request,
+            artifacts=(artifact,),
+            reconciliation=NMRFArtifactReconciliationResult(
+                items=(
+                    NMRFArtifactReconciliationItem(
+                        risk_factor_name="OTHER",
+                        required_method=NMRFStressMethod.DIRECT,
+                        required_liquidity_horizon=LiquidityHorizon.LH20,
+                        required_stress_period="csr-2008",
+                        artifact_count=1,
+                    ),
+                ),
+                returned_artifact_count=1,
+            ),
+        )
+    with pytest.raises(ValueError, match="artifact_count"):
+        NMRFValuationRunResult(
+            request=request,
+            artifacts=(),
+            reconciliation=reconciliation,
+        )
+    with pytest.raises(ValueError, match="elapsed_seconds"):
+        NMRFValuationRunResult(
+            request=request,
+            artifacts=(artifact,),
+            reconciliation=reconciliation,
+            elapsed_seconds=-0.1,
         )
 
 

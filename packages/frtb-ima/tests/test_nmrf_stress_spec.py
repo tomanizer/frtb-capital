@@ -16,6 +16,7 @@ from frtb_ima.nmrf_stress_spec import (
     NMRFStepwiseShockGrid,
     NMRFStressPeriodSpec,
     NMRFStressSpecError,
+    NMRFValuationSpec,
     build_nmrf_valuation_spec,
     build_nmrf_valuation_specs,
     required_liquidity_horizons_from_valuation_specs,
@@ -77,6 +78,72 @@ def test_direct_valuation_spec_requires_calibrated_direct_shock() -> None:
     assert spec.as_dict()["direct_shock"] == spec.direct_shock.as_dict()
 
 
+def test_stress_period_and_direct_shock_specs_validate_fields() -> None:
+    stress_period = NMRFStressPeriodSpec(
+        stress_period_id="csr-2008",
+        calibration_source="synthetic",
+        notes="unit test",
+    )
+    direct = NMRFDirectShockSpec(
+        shock_size=350.0,
+        shock_unit="spread_bps",
+        direction=NMRFShockDirection.TWO_SIDED,
+        calibration_source="synthetic",
+        confidence_level=CONFIDENCE_LEVEL,
+        notes="unit test",
+    )
+
+    assert stress_period.as_dict()["start_date"] is None
+    assert direct.as_dict()["direction"] == "TWO_SIDED"
+
+    invalid_stress_periods = (
+        {"stress_period_id": "", "calibration_source": "synthetic", "match": "stress_period_id"},
+        {"stress_period_id": "csr", "calibration_source": "", "match": "calibration_source"},
+        {
+            "stress_period_id": "csr",
+            "calibration_source": "synthetic",
+            "start_date": "2020-01-01",
+            "match": "start_date",
+        },
+        {
+            "stress_period_id": "csr",
+            "calibration_source": "synthetic",
+            "end_date": "2020-01-01",
+            "match": "end_date",
+        },
+        {
+            "stress_period_id": "csr",
+            "calibration_source": "synthetic",
+            "start_date": date(2020, 1, 2),
+            "end_date": date(2020, 1, 1),
+            "match": "start_date",
+        },
+    )
+    for case in invalid_stress_periods:
+        kwargs = {key: value for key, value in case.items() if key != "match"}
+        with pytest.raises((TypeError, ValueError), match=str(case["match"])):
+            NMRFStressPeriodSpec(**kwargs)  # type: ignore[arg-type]
+
+    invalid_direct_shocks = (
+        {"shock_size": 0.0, "match": "shock_size"},
+        {"shock_unit": "", "match": "shock_unit"},
+        {"direction": "UP", "match": "NMRFShockDirection"},
+        {"calibration_source": "", "match": "calibration_source"},
+        {"confidence_level": 1.0, "match": "confidence_level"},
+    )
+    base = {
+        "shock_size": 350.0,
+        "shock_unit": "spread_bps",
+        "direction": NMRFShockDirection.UP,
+        "calibration_source": "synthetic",
+        "confidence_level": CONFIDENCE_LEVEL,
+    }
+    for case in invalid_direct_shocks:
+        kwargs = {**base, **{key: value for key, value in case.items() if key != "match"}}
+        with pytest.raises((TypeError, ValueError), match=str(case["match"])):
+            NMRFDirectShockSpec(**kwargs)  # type: ignore[arg-type]
+
+
 def test_direct_valuation_spec_fails_without_direct_payload() -> None:
     with pytest.raises(ValueError, match="DIRECT requires"):
         build_nmrf_valuation_spec(
@@ -108,6 +175,30 @@ def test_stepwise_grid_is_vectorized_validated_and_order_preserving() -> None:
 
 
 def test_stepwise_grid_rejects_duplicate_or_short_grids() -> None:
+    grid = NMRFStepwiseShockGrid(
+        shock_points=[-1.0, 0.0, 1.0],
+        shock_unit="spread_bps",
+        calibration_source="synthetic",
+        path_dependent=True,
+        require_monotonic_loss_check=False,
+        notes="unit test",
+    )
+
+    assert grid.as_dict()["shock_count"] == 3
+    assert grid.as_dict()["path_dependent"] is True
+
+    with pytest.raises(ValueError, match="one-dimensional"):
+        NMRFStepwiseShockGrid(
+            shock_points=np.array([[0.0, 1.0]]),
+            shock_unit="spread_bps",
+            calibration_source="synthetic",
+        )
+    with pytest.raises(ValueError, match="finite"):
+        NMRFStepwiseShockGrid(
+            shock_points=[0.0, float("nan")],
+            shock_unit="spread_bps",
+            calibration_source="synthetic",
+        )
     with pytest.raises(ValueError, match="at least two"):
         NMRFStepwiseShockGrid(
             shock_points=[0.0],
@@ -120,6 +211,18 @@ def test_stepwise_grid_rejects_duplicate_or_short_grids() -> None:
             shock_points=[0.0, 100.0, 100.0],
             shock_unit="spread_bps",
             calibration_source="synthetic",
+        )
+    with pytest.raises(ValueError, match="shock_unit"):
+        NMRFStepwiseShockGrid(
+            shock_points=[0.0, 100.0],
+            shock_unit="",
+            calibration_source="synthetic",
+        )
+    with pytest.raises(ValueError, match="calibration_source"):
+        NMRFStepwiseShockGrid(
+            shock_points=[0.0, 100.0],
+            shock_unit="spread_bps",
+            calibration_source="",
         )
 
 
@@ -147,11 +250,35 @@ def test_full_revaluation_spec_requires_unique_market_states() -> None:
     assert spec.full_revaluation.require_full_trade_repricing is True
     assert spec.full_revaluation.as_dict()["market_state_count"] == 2
 
+    with pytest.raises(ValueError, match="scenario_set_id"):
+        NMRFFullRevaluationSpec(
+            scenario_set_id="",
+            market_state_ids=("ms-1",),
+            calibration_source="synthetic market-state replay",
+        )
+    with pytest.raises(ValueError, match="market_state_ids must be non-empty"):
+        NMRFFullRevaluationSpec(
+            scenario_set_id="synthetic-full-reval",
+            market_state_ids=(),
+            calibration_source="synthetic market-state replay",
+        )
+    with pytest.raises(ValueError, match="empty values"):
+        NMRFFullRevaluationSpec(
+            scenario_set_id="synthetic-full-reval",
+            market_state_ids=("ms-1", ""),
+            calibration_source="synthetic market-state replay",
+        )
     with pytest.raises(ValueError, match="duplicates"):
         NMRFFullRevaluationSpec(
             scenario_set_id="synthetic-full-reval",
             market_state_ids=("ms-1", "ms-1"),
             calibration_source="synthetic market-state replay",
+        )
+    with pytest.raises(ValueError, match="calibration_source"):
+        NMRFFullRevaluationSpec(
+            scenario_set_id="synthetic-full-reval",
+            market_state_ids=("ms-1",),
+            calibration_source="",
         )
 
     with pytest.raises(TypeError, match="only strings"):
@@ -176,6 +303,54 @@ def test_max_loss_fallback_spec_requires_candidate_scenarios() -> None:
 
     assert spec.max_loss_fallback is not None
     assert spec.max_loss_fallback.SELECTION_RULE == "MAXIMUM_LOSS"
+    assert spec.max_loss_fallback.as_dict()["candidate_scenario_count"] == 2
+
+    with pytest.raises(ValueError, match="candidate_scenario_ids"):
+        NMRFMaxLossFallbackSpec(candidate_scenario_ids=(), loss_source="synthetic")
+    with pytest.raises(ValueError, match="loss_source"):
+        NMRFMaxLossFallbackSpec(candidate_scenario_ids=("candidate-1",), loss_source="")
+
+
+def test_valuation_spec_validates_identity_and_payload_consistency() -> None:
+    direct = NMRFDirectShockSpec(
+        shock_size=350.0,
+        shock_unit="spread_bps",
+        direction=NMRFShockDirection.UP,
+        calibration_source="synthetic",
+        confidence_level=CONFIDENCE_LEVEL,
+    )
+    stepwise = NMRFStepwiseShockGrid(
+        shock_points=[0.0, 100.0],
+        shock_unit="spread_bps",
+        calibration_source="synthetic",
+    )
+
+    base = {
+        "risk_factor_name": "HY_CREDIT_SPD",
+        "modellability_status": ModellabilityStatus.TYPE_A_NMRF,
+        "risk_class": RiskClass.CSR,
+        "method": NMRFStressMethod.DIRECT,
+        "required_liquidity_horizon": LiquidityHorizon.LH20,
+        "stress_period": _stress_period(),
+        "direct_shock": direct,
+        "source": "synthetic",
+    }
+
+    invalid_cases = (
+        {"risk_factor_name": "", "match": "risk_factor_name"},
+        {"modellability_status": ModellabilityStatus.MODELLABLE, "match": "only valid for NMRFs"},
+        {"risk_class": "CSR", "match": "RiskClass"},
+        {"method": "DIRECT", "match": "NMRFStressMethod"},
+        {"required_liquidity_horizon": 20, "match": "LiquidityHorizon"},
+        {"required_liquidity_horizon": LiquidityHorizon.LH10, "match": "at least 20"},
+        {"stress_period": object(), "match": "stress_period"},
+        {"source": "", "match": "source"},
+        {"stepwise_grid": stepwise, "match": "unexpected payloads"},
+    )
+    for case in invalid_cases:
+        kwargs = {**base, **{key: value for key, value in case.items() if key != "match"}}
+        with pytest.raises((TypeError, ValueError), match=str(case["match"])):
+            NMRFValuationSpec(**kwargs)  # type: ignore[arg-type]
 
 
 def test_bulk_spec_builder_uses_risk_class_period_and_factor_override() -> None:
@@ -245,6 +420,24 @@ def test_bulk_spec_builder_reports_missing_risk_class() -> None:
         )
 
 
+def test_bulk_spec_builder_reports_missing_stress_period_and_wrapped_payload_errors() -> None:
+    with pytest.raises(NMRFStressSpecError, match="missing stress period"):
+        build_nmrf_valuation_specs(
+            (_instruction(),),
+            {"HY_CREDIT_SPD": RiskClass.CSR},
+            {},
+            get_policy(),
+        )
+
+    with pytest.raises(NMRFStressSpecError, match="invalid valuation spec"):
+        build_nmrf_valuation_specs(
+            (_instruction(),),
+            {"HY_CREDIT_SPD": RiskClass.CSR},
+            {RiskClass.CSR: _stress_period()},
+            get_policy(),
+        )
+
+
 def test_bulk_spec_builder_rejects_duplicate_instructions() -> None:
     direct_shock = NMRFDirectShockSpec(
         shock_size=350.0,
@@ -292,3 +485,10 @@ def test_linear_sensitivity_is_not_a_valuation_run_spec() -> None:
             _stress_period(),
             get_policy(),
         )
+
+
+def test_required_mapping_helpers_reject_empty_specs() -> None:
+    with pytest.raises(ValueError, match="specs"):
+        required_methods_from_valuation_specs(())
+    with pytest.raises(ValueError, match="specs"):
+        required_liquidity_horizons_from_valuation_specs(())

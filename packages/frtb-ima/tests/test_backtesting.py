@@ -95,6 +95,14 @@ def test_backtest_red_zone() -> None:
 def test_backtest_rejects_non_positive_window() -> None:
     with pytest.raises(ValueError, match="window"):
         backtest([1.0], [1.0], [100.0], window=0)
+    with pytest.raises(ValueError, match="minimum_history"):
+        backtest([1.0], [1.0], [100.0], minimum_history=0)
+    with pytest.raises(ValueError, match="at least 2 observations"):
+        backtest([1.0], [1.0], [100.0], minimum_history=2)
+    with pytest.raises(ValueError, match="equal length"):
+        backtest([1.0, 2.0], [1.0], [100.0], window=2)
+    with pytest.raises(ValueError, match="positive"):
+        backtest([1.0], [1.0], [0.0])
 
 
 def test_trading_desk_backtest_uses_975_and_99_percentile_limits() -> None:
@@ -115,6 +123,8 @@ def test_trading_desk_backtest_uses_975_and_99_percentile_limits() -> None:
     assert result.level(0.975).exception_limit == pytest.approx(30.0)
     assert result.as_dict()["model_eligible"] is True
     assert result.level(0.99).as_dict()["apl_exceptions"] == 12
+    with pytest.raises(KeyError, match="confidence level"):
+        result.level(0.95)
 
 
 def test_trading_desk_backtest_fails_when_either_pnl_series_exceeds_limit() -> None:
@@ -180,6 +190,28 @@ def test_trading_desk_backtest_trace_reports_dated_exception_reasons() -> None:
     assert level.observations[0].apl_reason == "missing_pnl"
     assert level.observations[1].hpl_reason == "loss_exceeds_var"
     assert level.as_dict()["result"]["apl_exceptions"] == 1
+    with pytest.raises(KeyError, match="confidence level"):
+        result.level(0.95)
+
+
+def test_trading_desk_backtest_trace_reports_missing_pnl_and_var_reason() -> None:
+    n = 250
+    apl = [100.0] * n
+    hpl = [100.0] * n
+    apl[0] = math.nan
+    hpl[0] = math.nan
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+    var[0.99][0] = math.nan
+
+    result = trading_desk_backtest_trace(apl, hpl, var)
+    observation = result.level(0.99).observations[0]
+
+    assert observation.apl_reason == "missing_pnl_and_var"
+    assert observation.hpl_reason == "missing_pnl_and_var"
+    assert result.as_dict()["levels"][0]["observations"][0]["apl"] is None
 
 
 def test_trading_desk_backtest_excludes_official_holiday_missing_values() -> None:
@@ -276,3 +308,60 @@ def test_trading_desk_backtest_trace_rejects_misaligned_dates() -> None:
             var,
             observation_dates=[date(2025, 1, 1)],
         )
+    with pytest.raises(TypeError, match=r"datetime\.date"):
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * n,
+            var,
+            observation_dates=["2025-01-01"] * n,  # type: ignore[list-item]
+        )
+
+
+def test_trading_desk_backtest_trace_validates_windowing_and_series_inputs() -> None:
+    n = 250
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+    with pytest.raises(ValueError, match="window"):
+        trading_desk_backtest_trace([100.0] * n, [100.0] * n, var, window=0)
+    with pytest.raises(ValueError, match="minimum_history"):
+        trading_desk_backtest_trace([100.0] * n, [100.0] * n, var, minimum_history=0)
+    with pytest.raises(ValueError, match="equal length"):
+        trading_desk_backtest_trace([100.0] * n, [100.0] * (n - 1), var)
+    with pytest.raises(ValueError, match="official_holiday_mask"):
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * n,
+            var,
+            official_holiday_mask=[[False] * n],  # type: ignore[list-item]
+        )
+    with pytest.raises(ValueError, match="official_holiday_mask length"):
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * n,
+            var,
+            official_holiday_mask=[False],
+        )
+    with pytest.raises(KeyError, match="Missing VaR"):
+        trading_desk_backtest_trace([100.0] * n, [100.0] * n, {0.99: [100.0] * n})
+    with pytest.raises(ValueError, match="must match APL"):
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * n,
+            {0.975: [100.0] * n, 0.99: [100.0]},
+        )
+    with pytest.raises(ValueError, match="at least 251 observations"):
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * n,
+            var,
+            minimum_history=251,
+        )
+    bad_var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+    bad_var[0.99][0] = 0.0
+    with pytest.raises(ValueError, match="finite VaR"):
+        trading_desk_backtest_trace([100.0] * n, [100.0] * n, bad_var)

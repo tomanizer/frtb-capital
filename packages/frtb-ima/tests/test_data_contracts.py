@@ -64,6 +64,25 @@ def test_risk_factor_definition_validates_bucket_alignment() -> None:
             liquidity_horizon=LiquidityHorizon.LH10,
             bucket=bad_bucket,
         )
+    with pytest.raises(ValueError, match="liquidity_horizon"):
+        RiskFactorDefinition(
+            name="USD_SWAP_5Y",
+            risk_class=RiskClass.GIRR,
+            liquidity_horizon=LiquidityHorizon.LH20,
+            bucket=bucket,
+        )
+    with pytest.raises(ValueError, match="bucket_id"):
+        RiskFactorBucket(
+            bucket_id="",
+            risk_class=RiskClass.GIRR,
+            liquidity_horizon=LiquidityHorizon.LH10,
+        )
+    with pytest.raises(ValueError, match="risk factor name"):
+        RiskFactorDefinition(
+            name="",
+            risk_class=RiskClass.GIRR,
+            liquidity_horizon=LiquidityHorizon.LH10,
+        )
 
 
 def test_position_freezes_metadata_and_requires_unique_risk_factors() -> None:
@@ -89,6 +108,34 @@ def test_position_freezes_metadata_and_requires_unique_risk_factors() -> None:
             currency="USD",
             risk_factor_names=("RF", "RF"),
         )
+    with pytest.raises(ValueError, match="desk"):
+        Position(
+            position_id="P2",
+            desk="",
+            instrument_id="Bond2",
+            fair_value=10.0,
+            currency="USD",
+            risk_factor_names=("RF",),
+        )
+    with pytest.raises(ValueError, match="fair_value"):
+        Position(
+            position_id="P2",
+            desk="Rates",
+            instrument_id="Bond2",
+            fair_value=float("nan"),
+            currency="USD",
+            risk_factor_names=("RF",),
+        )
+    with pytest.raises(ValueError, match="notional"):
+        Position(
+            position_id="P2",
+            desk="Rates",
+            instrument_id="Bond2",
+            fair_value=10.0,
+            currency="USD",
+            risk_factor_names=("RF",),
+            notional=float("inf"),
+        )
 
 
 def test_rfet_evidence_requires_matching_observations() -> None:
@@ -109,6 +156,20 @@ def test_rfet_evidence_requires_matching_observations() -> None:
             risk_factor_name="RF",
             as_of_date=AS_OF,
             observations=(RealPriceObservation("OTHER", AS_OF),),
+            qualitative_pass=True,
+        )
+    with pytest.raises(ValueError, match="risk_factor_name"):
+        RFETEvidence(
+            risk_factor_name="",
+            as_of_date=AS_OF,
+            observations=(),
+            qualitative_pass=True,
+        )
+    with pytest.raises(TypeError, match="as_of_date"):
+        RFETEvidence(
+            risk_factor_name="RF",
+            as_of_date="2025-06-30",  # type: ignore[arg-type]
+            observations=(),
             qualitative_pass=True,
         )
 
@@ -143,6 +204,29 @@ def test_scenario_cube_validates_shape_and_axis_labels() -> None:
             position_ids=("P1",),
             risk_factor_names=("RF1",),
         )
+    with pytest.raises(ValueError, match="shape"):
+        ScenarioCube(
+            values=np.ones((2, 1)),
+            scenario_metadata=_metadata(2),
+            position_ids=("P1",),
+            risk_factor_names=("RF1",),
+        )
+    with pytest.raises(ValueError, match="finite"):
+        ScenarioCube(
+            values=np.array([[[float("nan")]]]),
+            scenario_metadata=_metadata(1),
+            position_ids=("P1",),
+            risk_factor_names=("RF1",),
+        )
+    with pytest.raises(ValueError, match="position_ids"):
+        ScenarioCube(
+            values=np.ones((1, 1, 1)),
+            scenario_metadata=_metadata(1),
+            position_ids=("",),
+            risk_factor_names=("RF1",),
+        )
+    with pytest.raises(KeyError, match="Unknown position_ids"):
+        cube.pnl_for_positions(("MISSING",))
     with pytest.raises(KeyError, match="Unknown risk_factor_names"):
         cube.pnl_for_risk_factors(("MISSING",))
 
@@ -184,6 +268,10 @@ def test_desk_run_validates_position_desk_alignment() -> None:
             positions=(position, other_position),
             risk_factors=(risk_factor,),
         )
+    with pytest.raises(ValueError, match="positions"):
+        DeskRun(context=context, positions=(), risk_factors=(risk_factor,))
+    with pytest.raises(ValueError, match="risk_factors"):
+        DeskRun(context=context, positions=(position,), risk_factors=())
 
 
 def test_capital_run_result_freezes_desk_results() -> None:
@@ -205,3 +293,18 @@ def test_capital_run_result_freezes_desk_results() -> None:
 
     assert result.desk_results["Rates"] == desk_result
     assert isinstance(result.desk_results, MappingProxyType)
+    assert result.as_dict()["total_market_risk_capital"] == pytest.approx(3.0)
+
+    with pytest.raises(TypeError, match="as_of_date"):
+        CapitalRunResult(
+            as_of_date="2025-06-30",  # type: ignore[arg-type]
+            regime=RegulatoryRegime.FED_NPR_2_0,
+            desk_results={"Rates": desk_result},
+        )
+    with pytest.raises(ValueError, match="total_market_risk_capital"):
+        CapitalRunResult(
+            as_of_date=AS_OF,
+            regime=RegulatoryRegime.FED_NPR_2_0,
+            desk_results={"Rates": desk_result},
+            total_market_risk_capital=float("nan"),
+        )

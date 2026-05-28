@@ -1,8 +1,9 @@
 PYTHON_BIN ?= uv run python
 
 # Paths to lint and typecheck. Notebooks are excluded.
-LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts
+LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts scripts
 MYPY_PATHS := packages/*/src
+COVERAGE_JSON := dist/coverage/frtb-ima.json
 
 .PHONY: check lint format format-check typecheck test mutation audit-deps sbom ima sa drc cva orchestration clean
 
@@ -21,7 +22,9 @@ typecheck:
 	uv run mypy $(MYPY_PATHS)
 
 test:
-	uv run pytest packages
+	mkdir -p dist/coverage
+	uv run pytest packages --cov=frtb_ima --cov-report=term-missing --cov-report=json:$(COVERAGE_JSON)
+	uv run python scripts/ci/check_module_coverage.py $(COVERAGE_JSON)
 
 mutation:
 	FRTB_IMA_MUTATION_IMPORT=1 HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-ima python -c "import numpy; import sys; from mutmut.__main__ import cli; sys.argv = ['mutmut', 'run']; cli()"
