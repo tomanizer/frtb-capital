@@ -5,13 +5,14 @@ documentation packs.
 
 Current status:
 
-- `frtb-ima`: implemented package; detailed traceability, validation-pack, and
-  dataset-contract docs currently live under `packages/frtb-ima/docs/`. Issue
-  `tomanizer/frtb-capital#15` tracks the formal model documentation pack
-  scaffold.
+- [`frtb-ima`](frtb-ima/README.md): implemented package. The formal model
+  documentation pack lives here and links to supporting implementation
+  evidence under `packages/frtb-ima/docs/` and
+  `packages/frtb-ima/notebooks/`.
 - `frtb-sa`, `frtb-drc`, `frtb-cva`, `frtb-orchestration`: planned packages;
   model documentation packs should be added as each package is created.
 
-Each future pack should cover intended use, conceptual soundness, calculation
+Each pack should cover intended use, conceptual soundness, calculation
 derivation, assumptions and limitations, sensitivity analysis, monitoring, and
-change history.
+change history. Package evidence can remain inside the package directory when
+that keeps calculation documentation close to the code.

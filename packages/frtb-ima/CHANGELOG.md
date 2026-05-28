@@ -28,6 +28,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 
 - Added a determinism guarantee for the committed capital-run fixture and the
   boundaries of the current reproducibility claim.
+- Linked the validation-pack guide to the formal suite-level FRTB-IMA model
+  documentation pack.
 - Replaced misleading regulatory "working assumption" language in IMA
   docstrings and traceability docs with cited threshold references for audit
   issue #4.
