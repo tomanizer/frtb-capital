@@ -1,43 +1,62 @@
-# Codex handoff summary
+# Codex handoff - FRTB-IMA
+
+> **Agent document.** This brief is for Codex and other coding agents.
+> Human-facing documentation starts at `README.md`. The authoritative coding
+> standards and review checklist are in `CLAUDE.md`.
 
 ## One-line task
 
 Maintain a transparent Python prototype of an NPR 2.0-style FRTB IMA capital
 assembly layer for `tomanizer/FRTB-IMA`.
 
+## Scope boundary
+
+This package is the IMA model-eligible desk capital path only.
+
+**SA, DRC, and CVA are separate repositories.** Do not add standardized
+approach, default risk charge, CVA capital, fallback capital, firm-level
+consolidation, or legal-entity aggregation to this package. The handoff
+contract from this repo is a desk-level `CapitalComponents` result and a
+`DeskEligibilityStatus` signal. Aggregation across desks and regimes is an
+orchestration-layer concern.
+
 ## Architecture
 
 ```text
-Existing risk engine
+Upstream risk engine
     -> RFET classifications known before valuation
     -> supplied historical risk-class loss series for stress-period selection
     -> upstream IMCC stressed-ES scenario preparation informed by selections
     -> NMRF method-selection evidence, instructions, and valuation specs
     -> 10-day scenario P&L vectors and NMRF stress artifacts
-    -> ex-post capital aggregation layer
+    -> ex-post capital aggregation layer (this package)
+    -> DeskEligibilityStatus + CapitalComponents per desk
     -> structured JSON runtime logs and NDJSON desk audit records
 ```
 
 ## Current implemented milestone
 
-The current demo computes:
-
-- risk-factor modellability classification,
-- liquidity horizon adjusted expected shortfall,
-- IMCC,
-- stress-period selection from supplied historical risk-class loss vectors,
-- NMRF method evidence, valuation specs, and stress-artifact validation,
-- SES,
-- models-based capital,
-- PLA KS statistic,
-- backtesting exception counts,
-- structured logging and desk-level audit records.
-
-The package still does not source raw market data, price trades, implement
-DRC/standardized capital, or produce a final regulatory submission package.
-Stress-period selections directly feed NMRF valuation specs and separately
-inform upstream IMCC scenario preparation; `imcc.py` consumes numeric ES values,
-not stress-period objects.
+- Risk-factor modellability classification (RFET scalar and audit-grade evidence).
+- Liquidity-horizon-adjusted expected shortfall from nested scenario vectors.
+- Constrained/unconstrained IMCC decomposition.
+- Reduced-set 60-business-day / 75% variation-explained diagnostic.
+- Vectorized stress-period selection by risk class from supplied historical
+  loss/severity series.
+- NMRF method evidence, valuation instructions, upstream valuation-run specs,
+  artifact reconciliation, Type A/B routing, and SES aggregation.
+- Fed NPR KS PLA over the 250-business-day policy window with optional date
+  diagnostics.
+- EU/PRA Spearman PLA and worse-of-KS/Spearman joint-zone logic.
+- APL/HPL backtesting at 97.5% and 99.0% VaR with optional dated traces and
+  official-holiday exclusions.
+- Desk-level models-based capital and PLA add-on helper.
+- `DeskEligibilityStatus` enum and `desk_eligibility_from_results` handoff
+  guard in `capital.py`.
+- Dependency-free structured JSON logging at policy-wrapper boundaries.
+- `DeskAuditRecord` / `CapitalRunAuditLog` NDJSON artifacts and deterministic
+  Markdown report rendering.
+- Regulatory risk-factor category to liquidity-horizon mapping table,
+  short-maturity rule, and weighted-average multi-underlying helpers.
 
 ## Build sequence completed
 
@@ -47,7 +66,8 @@ not stress-period objects.
 4. Add liquidity horizon adjustment from nested vectors.
 5. Add RFET / modellability classifier.
 6. Add Type A / Type B NMRF SES aggregation.
-7. Add NMRF method selection, valuation instructions/specs, valuation-run reconciliation, and stress artifacts.
+7. Add NMRF method selection, valuation instructions/specs, valuation-run
+   reconciliation, and stress artifacts.
 8. Add IMCC aggregation.
 9. Add PLA KS and backtesting.
 10. Add capital assembly.
@@ -56,17 +76,21 @@ not stress-period objects.
 13. Add vectorized stress-period selection from supplied historical loss series.
 14. Add deterministic Markdown audit report rendering and `make audit`.
 15. Add risk-factor category to liquidity-horizon mapping table helpers.
+16. Add `DeskEligibilityStatus` and capital eligibility guard.
+17. Add EU/PRA Spearman PLA metric and joint-zone logic.
 
 ## Current next workstreams
 
-1. Liquidity-horizon category assignment evidence from proprietary instrument/vendor data.
-2. Reduced risk-factor set construction and governance evidence.
-3. Institutional NMRF pricing/revaluation adapter beyond the current handoff reconciliation.
-4. Raw market-data calibration adapters and formal stress-period governance evidence.
-5. Jurisdiction-specific source mapping and remaining EU/PRA RFET/PRA calibration gaps.
-6. DRC, standardized/fallback capital, and legal-entity consolidation.
-7. Regulatory disclosure templates and orchestration-layer storage/telemetry sinks.
+1. Coverage hardening - `stress_periods.py`, `nmrf_stress_spec.py`, and
+   `nmrf_method_selection.py` are partial in the requirements registry. Add
+   tests for stepwise/full-revaluation spec paths and direct robustness
+   diagnostic branches.
+2. Performance benchmark suite - 10,000 scenarios x 5 LH subsets x 5 risk
+   classes x 100 desks plus audit serialization. Validate the NumPy-native
+   design claim at target scale.
 
 ## Key warning
 
-Do not calculate liquidity horizon adjustment by taking one final ES number and multiplying by a square-root factor. The prototype should use scenario vectors by nested liquidity-horizon subsets.
+Do not calculate liquidity horizon adjustment by taking one final ES number and
+multiplying by a square-root factor. The prototype must use scenario vectors by
+nested liquidity-horizon subsets.

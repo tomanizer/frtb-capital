@@ -6,7 +6,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "docs" / "requirements" / "NPR_2_0_MARKET_RISK.yml"
-ALLOWED_STATUSES = {"implemented", "partial", "unsupported"}
+ALLOWED_STATUSES = {"implemented", "partial", "unsupported", "out_of_scope"}
 
 
 def _parse_registry_entries() -> list[dict[str, object]]:
@@ -98,12 +98,16 @@ def test_implemented_and_partial_requirements_have_existing_code_and_tests(
             assert (ROOT / test_path).exists(), entry
 
 
-def test_unsupported_requirements_are_explicitly_documented(
+def test_unsupported_and_out_of_scope_requirements_are_documented(
     registry_entries: list[dict[str, object]],
 ) -> None:
-    unsupported = [entry for entry in registry_entries if entry.get("status") == "unsupported"]
-    assert unsupported
-    for entry in unsupported:
+    documented_gaps = [
+        entry
+        for entry in registry_entries
+        if entry.get("status") in {"unsupported", "out_of_scope"}
+    ]
+    assert documented_gaps
+    for entry in documented_gaps:
         assert entry.get("notes"), entry
         assert entry.get("source_url"), entry
 

@@ -15,14 +15,14 @@ A Python prototype demonstrating how an existing risk engine can generate 10-day
 - NMRF stress-method evidence, valuation specs, artifact reconciliation, and SES
 - Stressed Expected Shortfall for NMRFs (SES)
 - Models-based capital assembly
-- PLA Kolmogorov-Smirnov statistic
+- Fed NPR PLA Kolmogorov-Smirnov statistic and EU/PRA Spearman comparison metric
 - Backtesting exception counts at 97.5% and 99.0% VaR levels
 - Structured JSON logging, NDJSON audit records, and Markdown audit reports
 
 The current boundary is intentional: the package assembles and validates
 capital inputs, and can select stress windows from supplied historical loss
 series, but it does not source raw market data, price trades, run
-DRC/standardized capital, or produce final regulatory submissions.
+SA/DRC/CVA capital, or produce final regulatory submissions.
 
 ## Install
 
@@ -42,12 +42,15 @@ make check
 make examples
 make fixtures
 make audit
+make notebooks
+make validation-pack
 ```
 
 Individual targets are available for `make test`, `make lint`, `make format`,
-`make format-check`, `make typecheck`, `make fixtures`, and `make demo` (alias
-for `make examples`). `make audit` renders the committed fixture's audit report
-to `build/audit/capital_run_v1_audit_report.md`.
+`make format-check`, `make typecheck`, `make fixtures`, `make notebooks`,
+`make validation-pack`, and `make demo` (alias for `make examples`). `make audit`
+renders the committed fixture's audit report to
+`build/audit/capital_run_v1_audit_report.md`.
 
 ## Run tests
 
@@ -94,7 +97,7 @@ src/frtb_ima/
     nmrf_valuation_run.py   NMRF valuation-run reconciliation
     nmrf.py                 NMRF stress artifacts, routing, and SES aggregation
     imcc.py                 IMCC unconstrained / constrained with audit decomposition
-    pla.py                  PLA KS statistic and policy-window diagnostics
+    pla.py                  PLA KS/Spearman metrics and policy-window diagnostics
     backtesting.py          Exception counting and optional dated traces
     capital.py              Models-based capital assembly
     logging.py              JSON logging formatter and structured fields
@@ -141,10 +144,3 @@ text, see [docs/regulatory_sources.yml](docs/regulatory_sources.yml).
 
 For the committed synthetic capital-run fixture contract, see
 [docs/DATASET_CONTRACT.md](docs/DATASET_CONTRACT.md).
-
-For the latest NPR 2.0 implementation audit and remaining gaps, see
-[docs/NPR_2_IMPLEMENTATION_AUDIT.md](docs/NPR_2_IMPLEMENTATION_AUDIT.md).
-
-## Architecture notes
-
-See [docs/CODEX_HANDOFF.md](docs/CODEX_HANDOFF.md).

@@ -46,8 +46,9 @@ All U.S. NPR 2.0 content is treated as proposed-rule working assumptions. The pr
     using a fixed observation-count business-day proxy for a 12-month period.
     It does not source raw market data, price trades, or approve a formal
     regulatory stress-period methodology.
-15. PLA uses a Kolmogorov-Smirnov statistic comparing HPL and RTPL over a
-    250-business-day policy window.
+15. Fed NPR PLA uses a Kolmogorov-Smirnov statistic comparing HPL and RTPL
+    over a 250-business-day policy window. ECB/PRA comparison profiles also
+    compute Spearman rank correlation and use the worse KS/Spearman joint zone.
 16. Backtesting counts both APL and HPL exceptions at 97.5% and 99.0% VaR
     confidence levels. The Fed profile applies exception limits of 30 at 97.5%
     and 12 at 99.0%.
@@ -73,15 +74,12 @@ claim to calculate final EU own-funds requirements.
 ## Important limitation
 
 The prototype intentionally excludes or simplifies:
-- default risk charge,
-- standardized approach implementation,
-- fallback capital requirements,
-- redesignation add-ons,
-- legal-entity consolidation,
+- redesignation add-ons (within IMA desk lifecycle),
+- SA, DRC, and CVA capital (separate repositories),
+- legal-entity and firm-level consolidation (orchestration layer),
 - actual supervisory submission workflows,
 - formal stress-period approval governance and raw market-data sourcing,
 - vendor real-price evidence workflows,
-- EU RTS-level PLA Spearman correlation,
 - EU RTS-level RFET data-pooling/vendor-reliance rules,
 - production-grade data lineage, storage, telemetry, and control framework.
 

@@ -4,6 +4,7 @@ status_values:
   - implemented
   - partial
   - unsupported
+  - out_of_scope
 source_register:
   - name: "U.S. NPR 2.0 / Federal Register 91 FR 14952"
     url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
@@ -262,28 +263,22 @@ requirements:
     title: "Standardized non-default capital requirement"
     source: "Standardized measure for market risk"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: unsupported
-    modules:
-    tests:
-    notes: "Needed for model-ineligible desks, PLA add-on inputs, and fallback comparisons."
+    status: out_of_scope
+    notes: "Out of scope for this package. SA/DRC/CVA are separate repositories. This package covers the IMA model-eligible desk capital path only."
 
   - id: NPR-MR-CAP-004
     title: "Default risk capital requirement"
     source: "Default risk capital requirement for non-securitization, securitization non-CTP, and CTP"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: unsupported
-    modules:
-    tests:
-    notes: "No DRC implementation yet."
+    status: out_of_scope
+    notes: "Out of scope for this package. SA/DRC/CVA are separate repositories. This package covers the IMA model-eligible desk capital path only."
 
   - id: NPR-MR-CAP-005
     title: "Fallback capital requirement"
     source: "Fallback capital for uncomputable market risk covered positions"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: unsupported
-    modules:
-    tests:
-    notes: "No affected-position fallback engine yet."
+    status: out_of_scope
+    notes: "Out of scope for this package. SA/DRC/CVA are separate repositories. This package covers the IMA model-eligible desk capital path only."
 
   - id: NPR-MR-DESK-001
     title: "Trading desk eligibility lifecycle"

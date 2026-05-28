@@ -6,6 +6,10 @@ This repository is for a prototype NPR 2.0-style FRTB IMA market-risk capital ca
 
 The goal is not production regulatory compliance. The goal is to create a transparent, testable prototype that demonstrates how an existing risk engine could generate scenario P&L vectors and NMRF stress artifacts while an ex-post capital layer assembles IMA-style capital.
 
+## Scope boundary
+
+This repository covers the IMA model-eligible desk capital path only. **SA, DRC, and CVA are separate repositories**; do not add those calculations here. The handoff contract from this package is a desk-level capital result and eligibility signal; aggregation across desks is an orchestration-layer concern outside this repo.
+
 ## Regulatory caution
 
 Treat all U.S. NPR 2.0 content as proposed-rule working assumptions. Do not present outputs as final regulatory capital.
@@ -17,7 +21,7 @@ Key prototype assumptions:
 - Type A NMRFs go into both IMCC and SES.
 - Type B NMRFs go into SES only with conservative aggregation.
 - NMRF direct, stepwise, and full-revaluation pricing remains upstream; this package selects methods, emits valuation specs, reconciles and validates returned artifacts, and aggregates SES.
-- PLA uses a Kolmogorov-Smirnov statistic over HPL and RTPL vectors.
+- Fed NPR PLA uses a Kolmogorov-Smirnov statistic over HPL and RTPL vectors; ECB/PRA comparison profiles also compute Spearman and use the worse joint zone.
 - Backtesting counts APL and HPL exceptions over 250 business days at both 97.5% and 99.0% VaR levels.
 - Runtime logging is structured and scalar-only at policy-wrapper boundaries; post-run audit records use serialisable dataclasses and NDJSON.
 
@@ -36,10 +40,12 @@ Key prototype assumptions:
 ## Review focus
 
 When reviewing or changing code, focus on:
-- Correct scenario-vector granularity.
+- Correct scenario-vector granularity (nested LH vectors, not scalar scaling).
 - No inappropriate final-scalar liquidity-horizon scaling.
 - Deterministic tests.
 - Clear risk-factor classification logic.
+- Explicit `DeskEligibilityStatus` handoff before capital assembly.
 - Separation of risk engine outputs from capital aggregation.
 - Clear unsupported-feature behavior where ECB/PRA or full regulatory workflows are not implemented.
 - Good documentation of assumptions and limitations.
+- No SA, DRC, CVA, or firm-level consolidation calculations in this repo.

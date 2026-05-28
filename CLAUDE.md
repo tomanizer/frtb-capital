@@ -146,10 +146,10 @@ The library targets **U.S. Fed NPR 2.0** (91 FR 14952, March 2026 proposed rule)
 All jurisdiction-specific parameters are isolated in `RegulatoryPolicy` (in `regimes.py`). Lower-level calculators accept explicit scalar parameters and remain testable in isolation. Policy-aware wrappers (e.g., `imcc_for_policy`, `pla_assessment_for_policy`, `trading_desk_backtest_trace_for_policy`, `reduced_set_variation_explained_for_policy`) extract parameters from the policy and call the underlying function. If a profile requires a feature not implemented, `policy.require_supported(feature_name)` raises `UnsupportedRegulatoryFeatureError` — never silently compute a wrong answer.
 
 ### What is implemented vs not
-Consult `docs/requirements/NPR_2_0_MARKET_RISK.yml` for the machine-readable status of every requirement (`implemented`, `partial`, `unsupported`). Before claiming something is done, check its requirement entry. Do not mark a requirement `implemented` if it has material gaps.
+Consult `docs/requirements/NPR_2_0_MARKET_RISK.yml` for the machine-readable status of every requirement (`implemented`, `partial`, `unsupported`, `out_of_scope`). Before claiming something is done, check its requirement entry. Do not mark a requirement `implemented` if it has material gaps.
 
 Key gaps as of May 2026:
-- DRC, standardized approach, fallback capital, and firm/legal-entity consolidation.
+- SA, DRC, CVA, fallback capital, and firm/legal-entity consolidation are outside this package boundary.
 - Trading-desk eligibility lifecycle and supervisory approval workflows.
 - Prototype stress-period selection from supplied historical risk-class
   loss/severity vectors. Raw market-data sourcing, formal calibration approval,
@@ -160,7 +160,6 @@ Key gaps as of May 2026:
   categories.
 - Reduced-set data-quality evidence beyond the 60-day / 75% variation-explained diagnostic.
 - Institutional pricing/revaluation for NMRF direct, stepwise, and full-revaluation artifacts. The code records method evidence, selects methods, emits valuation specs, reconciles/validates returned artifacts, extracts SES, and aggregates capital, but does not embed pricing models.
-- EU/PRA Spearman PLA.
 - Full business-calendar governance beyond optional PLA/backtesting dates and official-holiday masks.
 - Full regulatory disclosure templates, external telemetry, and large-run
   storage/analytics backends beyond the dependency-free Markdown/NDJSON audit
@@ -215,7 +214,6 @@ Pure functions operating on numpy arrays are the correct foundation for future p
 - Each calculation module docstring: one-paragraph purpose, sign convention where applicable, and a `Regulatory traceability` block.
 - Do not paste regulatory text into docstrings. Route reviewers to `docs/REGULATORY_TRACEABILITY.md`.
 - `docs/REGULATORY_ASSUMPTIONS.md` — record deliberate divergences from Basel/NPR/EU.
-- `docs/NPR_2_IMPLEMENTATION_AUDIT.md` — record accuracy pass findings and remaining gaps.
 
 ---
 
