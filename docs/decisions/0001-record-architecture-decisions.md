@@ -26,7 +26,9 @@ Every architectural or material modelling decision will be recorded as an ADR in
 
 ADRs are numbered sequentially in their filename. Numbers are not reused.
 
-Material changes (see [`CONTRIBUTING.md`](../../CONTRIBUTING.md)) require an ADR. Non-material changes do not.
+Material changes (see
+[`0005-material-change-policy.md`](0005-material-change-policy.md)) require an
+ADR. Non-material changes do not.
 
 ## Consequences
 

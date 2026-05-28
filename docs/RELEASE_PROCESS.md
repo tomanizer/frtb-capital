@@ -25,10 +25,10 @@ Every release needs approval from:
 - A model-validation reviewer for any material model change.
 - A security reviewer for vulnerability or supply-chain releases.
 
-The material-change policy is currently defined in
-[`CONTRIBUTING.md`](../CONTRIBUTING.md). Audit follow-up
-[`#16`](https://github.com/tomanizer/frtb-capital/issues/16) will move that
-policy into an ADR and expand the change-control workflow.
+The material-change policy is defined in
+[`docs/decisions/0005-material-change-policy.md`](decisions/0005-material-change-policy.md).
+Material releases require the ADR, package-owner approval, model-validation
+reviewer approval, changelog entry, and fixture review described there.
 
 ## Versioning
 
@@ -82,7 +82,8 @@ as a separate supply-chain follow-up.
 
 5. Update affected package versions, refresh `uv.lock` with `uv lock`, and
    update changelogs in a release PR.
-6. Confirm material changes have an ADR and model-validation approval.
+6. Confirm material changes have an ADR, package-owner approval,
+   model-validation approval, and fixture review where applicable.
 7. Merge the release PR through the protected-branch workflow.
 8. Create annotated tag(s) from the final `main` commit.
 9. Create a GitHub release that includes:
