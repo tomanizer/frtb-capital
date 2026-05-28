@@ -1,5 +1,5 @@
 """
-Synthetic demo data for FRTB IMA prototype.
+Synthetic demo data for FRTB IMA examples.
 
 All data is fabricated. No real market data, no real positions.
 

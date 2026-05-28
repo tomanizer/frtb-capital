@@ -1,7 +1,7 @@
 """
 Risk Factor Eligibility Test (RFET) and modellability classification.
 
-Working assumptions (NPR 2.0 / Basel FRTB IMA prototype):
+RFET mechanics for the NPR 2.0 / Basel FRTB IMA profile:
 
 Quantitative thresholds:
     - LH <= 20 days: >= 24 real-price observations in the prior 12 months.
@@ -16,13 +16,13 @@ Classification logic:
     - qualitative pass, quantitative fail -> TYPE_A_NMRF
     - qualitative fail                    -> TYPE_B_NMRF
 
-TODOs (not implemented in prototype):
+Known unsupported evidence controls:
     - Vendor/source deduplication across observation feeds.
     - Time-zone normalisation for cross-market risk factors.
     - New-issuance pro-rating stub.
 
 Regulatory traceability:
-    Basel MAR31 RFET; U.S. NPR 2.0 Type A / Type B NMRF working assumptions;
+    Basel MAR31 RFET; U.S. NPR 2.0 Type A / Type B NMRF proposed taxonomy;
     EU CRR Article 325be and Delegated Regulation (EU) 2022/2060. See
     docs/REGULATORY_TRACEABILITY.md.
 """
@@ -66,7 +66,8 @@ def count_eligible_observations(
     """
     Count unique-date real-price observations for a risk factor in prior 12 months.
 
-    Per prototype assumption: at most one observation counts per calendar date.
+    One-count-per-date rule: at most one observation counts per calendar date,
+    consistent with the Basel MAR31 RFET observation-counting concept.
     """
     if lookback_days <= 0:
         raise ValueError(f"lookback_days must be positive, got {lookback_days}")

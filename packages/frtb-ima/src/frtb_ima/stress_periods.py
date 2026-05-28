@@ -16,7 +16,7 @@ Sign convention: input historical values are positive = loss.
 
 Regulatory traceability:
     Basel MAR33 stress-period and NMRF stress-scenario concepts; U.S. NPR 2.0
-    proposed-rule working assumptions for stressed ES / SES calibration; EU CRR
+    proposed-rule stressed ES / SES calibration basis; EU CRR
     Article 325bc and 325bk comparison concepts. See
     docs/REGULATORY_TRACEABILITY.md.
 """
@@ -673,7 +673,8 @@ def _candidate_from_window_index(
         end_scenario_id=series.scenario_ids[end_index],
         notes=(
             "Selected from provided historical loss series; "
-            "business-day observation count is a prototype 12-month proxy."
+            "business-day observation count is a package-level 12-month proxy "
+            "because exact business-calendar governance remains upstream."
         ),
     )
 

@@ -8,7 +8,7 @@ for each Type A or Type B NMRF.
 Regulatory traceability:
     Basel MAR33 NMRF stress-scenario capital; U.S. NPR 2.0 SES methodology for
     Type A / Type B NMRFs; EU CRR Article 325bk stress scenario risk measure.
-    The method-selection rules here are prototype governance logic; they do not
+    The method-selection rules here are package governance logic; they do not
     replace model approval or pricing-model validation.
 """
 

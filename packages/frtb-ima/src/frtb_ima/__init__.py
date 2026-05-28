@@ -1,9 +1,10 @@
 """
-FRTB IMA prototype — NPR 2.0-style capital calculator.
+FRTB IMA calculation mechanics referenced to cited FRTB sources.
 
-Prototype only. Not for regulatory reporting.
-All regulatory statements are working assumptions based on the
-March 2026 U.S. NPR 2.0 proposal and Basel FRTB IMA concepts.
+This package is not independently model-validated and is not approved for
+regulatory reporting. Regulatory citations point to proposed U.S. NPR 2.0,
+Basel FRTB, and EU/PRA comparison material; supervisory approval, validation,
+and production governance remain outside this package.
 """
 
 from frtb_ima.audit import (

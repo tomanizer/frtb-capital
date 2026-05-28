@@ -5,7 +5,7 @@ Per NPR 2.0 / Basel FRTB IMA, the LHA ES is computed from nested
 P&L vectors — one per liquidity-horizon subset — NOT by scaling a
 single scalar ES by sqrt(weighted_avg_LH / 10).
 
-Formula (working assumption):
+Formula (Basel MAR33.4 and U.S. NPR 2.0 proposed section `__.215`):
 
     LHA_ES = sqrt(
         ES(P_all)^2
@@ -268,7 +268,7 @@ def lha_es_from_scalars(
 
 
 # ---------------------------------------------------------------------------
-# Toy approximation — clearly labelled, never used in the main path
+# Scalar approximation — clearly labelled, never used in the main path
 # ---------------------------------------------------------------------------
 
 
@@ -280,8 +280,9 @@ def lha_es_scalar_approximation(
     """
     Scalar approximation: ES_full * sqrt(weighted_avg_LH / base_horizon).
 
-    WARNING: This is a simplified toy approximation.
-    It is provided only for comparison / educational purposes.
+    WARNING: This is a simplified scalar approximation.
+    It is provided only for comparison / educational purposes because some
+    legacy model documentation describes LHA as scalar horizon scaling.
     Do NOT use this as the primary LHA calculation.
     The nested-vector method (lha_es_from_vectors) is the required approach.
     """

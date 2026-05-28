@@ -1,5 +1,5 @@
 """
-Canonical scenario metadata and vector containers for the FRTB IMA prototype.
+Canonical scenario metadata and vector containers for FRTB IMA.
 
 This module defines the lightweight scenario representation used at the boundary
 between upstream scenario generation and downstream capital calculations.

@@ -1,7 +1,7 @@
 """
-Backtesting prototype.
+Backtesting diagnostics.
 
-Working assumption (NPR 2.0 / Basel FRTB IMA):
+Backtesting logic for the NPR 2.0 / Basel FRTB IMA policy profile:
 
     Count VaR exceptions over the most recent 250 business days.
     An exception occurs when the actual loss exceeds the VaR estimate.
@@ -14,12 +14,10 @@ Working assumption (NPR 2.0 / Basel FRTB IMA):
     and 99.0% one-tailed confidence levels.
     The 250-day window is the Basel / NPR 2.0 standard backtesting window.
 
-    Exception count thresholds (Basel traffic-light):
+    Exception count thresholds (Basel MAR32/MAR99 traffic-light):
         Green:  0-4  exceptions
         Amber:  5-9  exceptions
         Red:   10+     exceptions
-
-    These thresholds are prototype working assumptions.
 
 Regulatory traceability:
     Basel MAR32 backtesting; U.S. NPR 2.0 APL/HPL VaR backtesting over 250
@@ -40,7 +38,7 @@ import numpy.typing as npt
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import DEFAULT_BACKTESTING_EXCEPTION_LIMITS, RegulatoryPolicy
 
-# Basel backtesting traffic-light thresholds
+# Basel MAR32/MAR99 backtesting traffic-light thresholds over 250 observations.
 GREEN_MAX = 4
 AMBER_MAX = 9
 FloatVector = Sequence[float] | npt.NDArray[np.float64]

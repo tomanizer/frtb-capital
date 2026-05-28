@@ -6,9 +6,9 @@ requirements for an upstream valuation or pricing engine. It does not generate
 stress losses, select market data, or price instruments.
 
 Regulatory traceability:
-    Basel MAR33 NMRF stress-scenario capital; U.S. NPR 2.0 SES working
-    assumptions for Type A / Type B NMRFs; EU CRR Article 325bk stress scenario
-    risk measure. Specifications here are prototype run contracts for upstream
+    Basel MAR33 NMRF stress-scenario capital; U.S. NPR 2.0 SES treatment for
+    Type A / Type B NMRFs; EU CRR Article 325bk stress scenario
+    risk measure. Specifications here are package run contracts for upstream
     valuation artifacts, not regulatory calibration approval.
 """
 

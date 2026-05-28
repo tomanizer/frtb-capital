@@ -7,7 +7,7 @@ change numerical results.
 
 Regulatory traceability:
     Supports auditability and run traceability for Basel MAR31-MAR33, U.S. NPR
-    2.0 model-risk governance working assumptions, and EU CRR internal-model
+    2.0 model-risk governance expectations, and EU CRR internal-model
     governance. See docs/REGULATORY_TRACEABILITY.md.
 """
 

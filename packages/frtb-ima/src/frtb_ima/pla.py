@@ -1,10 +1,11 @@
 """
-Profit and Loss Attribution (PLA) prototype.
+Profit and Loss Attribution (PLA) diagnostics.
 
-Working assumption: use Kolmogorov-Smirnov (KS) statistic to compare
+The Fed NPR profile uses a Kolmogorov-Smirnov (KS) statistic to compare
 Hypothetical P&L (HPL) and Risk-Theoretical P&L (RTPL) vectors. EU/PRA
-profiles also compute a Spearman rank-correlation metric over the same
-positive-profit HPL/RTPL sign convention; higher Spearman correlation is better.
+comparison profiles also compute a Spearman rank-correlation metric over the
+same positive-profit HPL/RTPL sign convention; higher Spearman correlation is
+better.
 
 A large KS statistic indicates the two distributions differ significantly,
 which under NPR 2.0 / Basel FRTB IMA would trigger a PLA add-on or
@@ -16,7 +17,10 @@ Zone thresholds:
     Amber:         GREEN_THRESHOLD < KS <= AMBER_THRESHOLD
     Red (fail):    KS > AMBER_THRESHOLD
 
-Thresholds are prototype working assumptions for the selected policy profile.
+The default KS thresholds are Basel MAR32.42 traffic-light thresholds and align
+to U.S. NPR 2.0 proposed section `__.213`. The default Spearman thresholds used
+by EU/PRA comparison profiles are Basel MAR32.42 and Delegated Regulation (EU)
+2022/2059 Article 5(2) thresholds.
 
 Regulatory traceability:
     Basel MAR32 PLA; U.S. NPR 2.0 KS-based PLA proposal; EU CRR Article 325bg
@@ -41,7 +45,7 @@ from frtb_ima.regimes import (
     RegulatoryPolicy,
 )
 
-# Placeholder zone thresholds — replace with final NPR 2.0 values when published
+# KS PLA zone thresholds: Basel MAR32.42; U.S. NPR 2.0 proposed section `__.213`.
 GREEN_THRESHOLD: float = 0.09
 AMBER_THRESHOLD: float = 0.12
 DEFAULT_ZONE_LABELS: tuple[str, str, str] = ("GREEN", "AMBER", "RED")

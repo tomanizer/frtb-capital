@@ -1,5 +1,5 @@
 """
-Data models for FRTB IMA prototype.
+Data models for FRTB IMA.
 
 Minimal dataclasses and enums. No business logic here.
 
@@ -54,7 +54,8 @@ class RealPriceObservation:
     A single real-price observation for a risk factor.
 
     'real price' means an executable price from a verifiable transaction
-    or committed quote — per NPR 2.0 / Basel RFET working assumptions.
+    or committed quote, following the RFET concepts in Basel MAR31 and the
+    U.S. NPR 2.0 proposed market-risk framework.
     """
 
     risk_factor_name: str
