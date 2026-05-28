@@ -51,8 +51,9 @@ python_version = "3.11"
 strict = true
 
 [tool.coverage.report]
-fail_under = 84
+fail_under = 90
 show_missing = true
+omit = ["*/demo_data.py"]
 
 [tool.mutmut]
 paths_to_mutate = [

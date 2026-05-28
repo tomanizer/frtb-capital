@@ -1,5 +1,6 @@
 """Tests for NMRF stress-method selection."""
 
+import numpy as np
 import pytest
 
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus
@@ -83,6 +84,19 @@ def test_selector_chooses_stepwise_when_grid_search_is_required() -> None:
     assert decision.reason == NMRFMethodReason.STEPWISE_REQUIRED_FOR_GRID_SEARCH
 
 
+def test_selector_uses_fallback_when_required_stepwise_is_unavailable() -> None:
+    decision = select_nmrf_method(
+        _base_input(
+            stepwise_required=True,
+            stepwise_available=False,
+            max_loss_fallback_allowed=True,
+        ),
+        get_policy(),
+    )
+
+    assert decision.method == NMRFStressMethod.MAX_LOSS_FALLBACK
+
+
 def test_selector_chooses_stepwise_as_only_available_method() -> None:
     decision = select_nmrf_method(
         _base_input(stepwise_available=True),
@@ -103,6 +117,17 @@ def test_selector_uses_max_loss_fallback_only_when_allowed() -> None:
     assert decision.reason == NMRFMethodReason.NO_ACCEPTABLE_SCENARIO_REQUIRES_MAX_LOSS
 
 
+def test_selector_uses_full_revaluation_when_direct_is_unavailable() -> None:
+    decision = select_nmrf_method(
+        _base_input(full_revaluation_available=True),
+        get_policy(),
+    )
+
+    assert decision.method == NMRFStressMethod.FULL_REVALUATION
+    assert decision.reason == NMRFMethodReason.FULL_REVALUATION_AVAILABLE
+    assert decision.as_dict()["required_liquidity_horizon"] == LiquidityHorizon.LH20.value
+
+
 def test_selector_fails_when_no_acceptable_method_exists() -> None:
     with pytest.raises(NMRFMethodSelectionError, match="No acceptable"):
         select_nmrf_method(_base_input(), get_policy())
@@ -119,6 +144,15 @@ def test_selector_rejects_modellable_inputs() -> None:
             _base_input(modellability_status=ModellabilityStatus.MODELLABLE),
             get_policy(),
         )
+
+
+def test_method_selection_input_validates_required_types() -> None:
+    with pytest.raises(ValueError, match="risk_factor_name"):
+        _base_input(risk_factor_name="")
+    with pytest.raises(TypeError, match="ModellabilityStatus"):
+        _base_input(modellability_status="TYPE_A_NMRF")
+    with pytest.raises(TypeError, match="LiquidityHorizon"):
+        _base_input(liquidity_horizon=20)
 
 
 def test_selector_does_not_use_fed_type_a_type_b_taxonomy_for_ecb_profile() -> None:
@@ -159,6 +193,50 @@ def test_direct_robustness_assessment_validates_vector_shapes() -> None:
         assess_direct_loss_robustness([1.0, 2.0], [1.0])
 
 
+def test_direct_robustness_assessment_validates_thresholds_and_vectors() -> None:
+    with pytest.raises(ValueError, match="max_relative_error_threshold"):
+        assess_direct_loss_robustness([1.0], [1.0], max_relative_error_threshold=float("nan"))
+    with pytest.raises(ValueError, match="absolute_tolerance"):
+        assess_direct_loss_robustness([1.0], [1.0], absolute_tolerance=0.0)
+    with pytest.raises(ValueError, match="one-dimensional"):
+        assess_direct_loss_robustness([[1.0]], [1.0])  # type: ignore[list-item]
+    with pytest.raises(ValueError, match="non-empty"):
+        assess_direct_loss_robustness([], [])
+    with pytest.raises(ValueError, match="finite"):
+        assess_direct_loss_robustness([np.inf], [1.0])
+
+
+def test_method_diagnostic_validates_fields_and_serializes() -> None:
+    diagnostic = NMRFMethodDiagnostic(
+        name="direct_loss_robustness",
+        outcome=NMRFDiagnosticOutcome.NOT_RUN,
+        value=None,
+        threshold=None,
+        source="synthetic",
+        notes="not enough observations",
+    )
+
+    assert diagnostic.passed is False
+    assert diagnostic.as_dict()["outcome"] == "NOT_RUN"
+
+    with pytest.raises(ValueError, match="diagnostic name"):
+        NMRFMethodDiagnostic(name="", outcome=NMRFDiagnosticOutcome.PASS)
+    with pytest.raises(TypeError, match="NMRFDiagnosticOutcome"):
+        NMRFMethodDiagnostic(name="direct", outcome="PASS")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="diagnostic value"):
+        NMRFMethodDiagnostic(
+            name="direct",
+            outcome=NMRFDiagnosticOutcome.PASS,
+            value=float("nan"),
+        )
+    with pytest.raises(ValueError, match="diagnostic threshold"):
+        NMRFMethodDiagnostic(
+            name="direct",
+            outcome=NMRFDiagnosticOutcome.PASS,
+            threshold=float("inf"),
+        )
+
+
 def test_method_evidence_selects_direct_when_diagnostic_passes() -> None:
     evidence = NMRFMethodEvidence(
         risk_factor_name="HY_CREDIT_SPD",
@@ -182,6 +260,22 @@ def test_method_evidence_selects_direct_when_diagnostic_passes() -> None:
 
     assert decision.method == NMRFStressMethod.DIRECT
     assert decision.reason == NMRFMethodReason.DIRECT_STABLE_AND_WELL_DEFINED
+
+
+def test_method_evidence_without_direct_diagnostic_preserves_supplemental_diagnostics() -> None:
+    supplemental = NMRFMethodDiagnostic(
+        name="pricing_engine_available",
+        outcome=NMRFDiagnosticOutcome.PASS,
+    )
+    evidence = NMRFMethodEvidence(
+        risk_factor_name="HY_CREDIT_SPD",
+        diagnostics=(supplemental,),
+        proxy_or_basis_risk=True,
+    )
+
+    assert evidence.direct_robust is False
+    assert evidence.all_diagnostics == (supplemental,)
+    assert evidence.as_dict()["diagnostics"][0]["name"] == "pricing_engine_available"
 
 
 def test_method_evidence_routes_failed_direct_test_to_stepwise() -> None:
@@ -224,6 +318,26 @@ def test_method_evidence_direct_is_not_robust_with_pricing_failures() -> None:
     )
 
     assert evidence.direct_robust is False
+
+
+def test_method_evidence_rejects_invalid_diagnostics() -> None:
+    with pytest.raises(ValueError, match="risk_factor_name"):
+        NMRFMethodEvidence(risk_factor_name="")
+    with pytest.raises(TypeError, match="direct_robustness"):
+        NMRFMethodEvidence(
+            risk_factor_name="HY_CREDIT_SPD",
+            direct_robustness=object(),  # type: ignore[arg-type]
+        )
+    with pytest.raises(ValueError, match="non-negative"):
+        NMRFMethodEvidence(
+            risk_factor_name="HY_CREDIT_SPD",
+            pricing_attempt_count=-1,
+        )
+    with pytest.raises(TypeError, match="diagnostics"):
+        NMRFMethodEvidence(
+            risk_factor_name="HY_CREDIT_SPD",
+            diagnostics=(object(),),  # type: ignore[arg-type]
+        )
 
 
 def test_method_evidence_rejects_inconsistent_pricing_counts() -> None:

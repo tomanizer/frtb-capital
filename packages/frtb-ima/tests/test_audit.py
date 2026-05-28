@@ -124,6 +124,21 @@ def test_capital_run_audit_log_rejects_duplicate_desks() -> None:
 
 
 def test_capital_run_audit_log_requires_consistent_identity_fields() -> None:
+    with pytest.raises(ValueError, match="same run_id"):
+        CapitalRunAuditLog(
+            run_id="run-2",
+            regime="FED_NPR_2_0",
+            desk_records=(_desk_record("desk-1"),),
+        )
+
+    with pytest.raises(ValueError, match="same regime"):
+        CapitalRunAuditLog(
+            run_id="run-1",
+            regime="ECB_CRR3",
+            policy_hash="0" * 64,
+            desk_records=(_desk_record("desk-1"),),
+        )
+
     with pytest.raises(ValueError, match="same policy_hash"):
         CapitalRunAuditLog(
             run_id="run-1",
@@ -178,6 +193,62 @@ def test_audit_record_rejects_invalid_inputs_hash() -> None:
             backtesting={},
             capital={},
             elapsed_seconds=0.0,
+        )
+
+
+def test_audit_records_validate_identity_and_version_fields() -> None:
+    with pytest.raises(ValueError, match="run_id"):
+        DeskAuditRecord(
+            run_id="",
+            desk_id="desk-1",
+            regime="FED_NPR_2_0",
+            imcc={},
+            ses={},
+            pla={},
+            backtesting={},
+            capital={},
+            inputs_hash=TEST_INPUTS_HASH,
+            elapsed_seconds=0.0,
+        )
+    with pytest.raises(ValueError, match="code_version"):
+        DeskAuditRecord(
+            run_id="run-1",
+            desk_id="desk-1",
+            regime="FED_NPR_2_0",
+            code_version="",
+            imcc={},
+            ses={},
+            pla={},
+            backtesting={},
+            capital={},
+            inputs_hash=TEST_INPUTS_HASH,
+            elapsed_seconds=0.0,
+        )
+    with pytest.raises(ValueError, match="policy_hash"):
+        DeskAuditRecord(
+            run_id="run-1",
+            desk_id="desk-1",
+            regime="UNKNOWN_REGIME",
+            imcc={},
+            ses={},
+            pla={},
+            backtesting={},
+            capital={},
+            inputs_hash=TEST_INPUTS_HASH,
+            elapsed_seconds=0.0,
+        )
+    with pytest.raises(ValueError, match="elapsed_seconds"):
+        DeskAuditRecord(
+            run_id="run-1",
+            desk_id="desk-1",
+            regime="FED_NPR_2_0",
+            imcc={},
+            ses={},
+            pla={},
+            backtesting={},
+            capital={},
+            inputs_hash=TEST_INPUTS_HASH,
+            elapsed_seconds=-0.1,
         )
 
 
@@ -242,6 +313,10 @@ def test_audit_metadata_defaults_are_immutable_mappings() -> None:
 
     assert isinstance(record.metadata, MappingProxyType)
     assert isinstance(log.metadata, MappingProxyType)
+
+
+def test_audit_records_to_ndjson_returns_empty_string_for_empty_input() -> None:
+    assert audit_records_to_ndjson(()) == ""
 
 
 def test_write_audit_records_ndjson(tmp_path: Path) -> None:

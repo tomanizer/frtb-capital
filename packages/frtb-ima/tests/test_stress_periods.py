@@ -20,6 +20,7 @@ from frtb_ima.regimes import get_policy
 from frtb_ima.stress_periods import (
     HistoricalStressSeries,
     StressPeriodCalibrationError,
+    StressPeriodCandidate,
     StressPeriodSelectionResult,
     StressPeriodTieBreak,
     StressSeverityMetric,
@@ -220,6 +221,14 @@ def test_stress_period_specs_for_nmrf_bridge_uses_selected_windows() -> None:
 
 
 def test_historical_stress_series_rejects_invalid_inputs() -> None:
+    with pytest.raises(TypeError, match="RiskClass"):
+        HistoricalStressSeries(
+            risk_class="CSR",  # type: ignore[arg-type]
+            losses=[1.0],
+            dates=_dates(1),
+            source="synthetic",
+        )
+
     with pytest.raises(ValueError, match="non-empty"):
         HistoricalStressSeries(
             risk_class=RiskClass.CSR,
@@ -260,6 +269,133 @@ def test_historical_stress_series_rejects_invalid_inputs() -> None:
             source="synthetic",
         )
 
+    with pytest.raises(ValueError, match="source"):
+        HistoricalStressSeries(
+            risk_class=RiskClass.CSR,
+            losses=[1.0],
+            dates=_dates(1),
+            source="",
+        )
+
+    with pytest.raises(TypeError, match=r"datetime\.date"):
+        HistoricalStressSeries(
+            risk_class=RiskClass.CSR,
+            losses=[1.0],
+            dates=("2020-01-01",),  # type: ignore[arg-type]
+            source="synthetic",
+        )
+
+    with pytest.raises(ValueError, match="one-dimensional"):
+        HistoricalStressSeries(
+            risk_class=RiskClass.CSR,
+            losses=[[1.0]],  # type: ignore[list-item]
+            dates=_dates(1),
+            source="synthetic",
+        )
+
+
+def test_historical_stress_series_defaults_and_validates_scenario_ids() -> None:
+    series = HistoricalStressSeries(
+        risk_class=RiskClass.CSR,
+        losses=[1.0, 2.0],
+        dates=_dates(2),
+        source="synthetic",
+    )
+
+    assert series.scenario_ids == ("csr-2020-01-01", "csr-2020-01-02")
+    assert series.as_dict()["start_date"] == "2020-01-01"
+
+    with pytest.raises(ValueError, match="scenario_ids length"):
+        HistoricalStressSeries(
+            risk_class=RiskClass.CSR,
+            losses=[1.0, 2.0],
+            dates=_dates(2),
+            source="synthetic",
+            scenario_ids=("one",),
+        )
+    with pytest.raises(TypeError, match="scenario_ids"):
+        HistoricalStressSeries(
+            risk_class=RiskClass.CSR,
+            losses=[1.0, 2.0],
+            dates=_dates(2),
+            source="synthetic",
+            scenario_ids=("one", 2),  # type: ignore[list-item]
+        )
+    with pytest.raises(ValueError, match="empty"):
+        HistoricalStressSeries(
+            risk_class=RiskClass.CSR,
+            losses=[1.0, 2.0],
+            dates=_dates(2),
+            source="synthetic",
+            scenario_ids=("one", ""),
+        )
+    with pytest.raises(ValueError, match="duplicates"):
+        HistoricalStressSeries(
+            risk_class=RiskClass.CSR,
+            losses=[1.0, 2.0],
+            dates=_dates(2),
+            source="synthetic",
+            scenario_ids=("one", "one"),
+        )
+
+
+def test_stress_period_candidate_validates_inputs_and_serializes_spec() -> None:
+    candidate = StressPeriodCandidate(
+        risk_class=RiskClass.CSR,
+        period_id="csr-20200101-20200102",
+        start_date=date(2020, 1, 1),
+        end_date=date(2020, 1, 2),
+        start_index=0,
+        end_index_exclusive=2,
+        observation_count=2,
+        severity_score=10.0,
+        severity_metric=StressSeverityMetric.MAX_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR.value,
+        source="synthetic",
+        start_scenario_id="s1",
+        end_scenario_id="s2",
+    )
+
+    assert candidate.es_estimator == ES_ESTIMATOR
+    assert candidate.to_nmrf_stress_period_spec().stress_period_id == candidate.period_id
+    assert candidate.as_dict()["severity_metric"] == "MAX_LOSS"
+
+    invalid_cases = (
+        {"risk_class": "CSR", "match": "RiskClass"},
+        {"period_id": "", "match": "period_id"},
+        {"start_date": date(2020, 1, 3), "match": "start_date"},
+        {"start_index": -1, "match": "start_index"},
+        {"end_index_exclusive": 0, "match": "end_index_exclusive"},
+        {"observation_count": 0, "match": "observation_count"},
+        {"observation_count": 3, "match": "index span"},
+        {"severity_score": float("nan"), "match": "severity_score"},
+        {"severity_metric": "MAX_LOSS", "match": "StressSeverityMetric"},
+        {"confidence_level": 1.0, "match": "confidence_level"},
+        {"source": "", "match": "source"},
+        {"start_scenario_id": "", "match": "scenario_id"},
+    )
+    base = {
+        "risk_class": RiskClass.CSR,
+        "period_id": "csr-20200101-20200102",
+        "start_date": date(2020, 1, 1),
+        "end_date": date(2020, 1, 2),
+        "start_index": 0,
+        "end_index_exclusive": 2,
+        "observation_count": 2,
+        "severity_score": 10.0,
+        "severity_metric": StressSeverityMetric.MAX_LOSS,
+        "confidence_level": CONFIDENCE_LEVEL,
+        "es_estimator": ES_ESTIMATOR,
+        "source": "synthetic",
+        "start_scenario_id": "s1",
+        "end_scenario_id": "s2",
+    }
+    for case in invalid_cases:
+        kwargs = {**base, **{key: value for key, value in case.items() if key != "match"}}
+        with pytest.raises((TypeError, ValueError), match=str(case["match"])):
+            StressPeriodCandidate(**kwargs)  # type: ignore[arg-type]
+
 
 def test_selection_rejects_short_histories_and_duplicate_risk_classes() -> None:
     with pytest.raises(ValueError, match="at least 4 observations"):
@@ -283,6 +419,67 @@ def test_selection_rejects_short_histories_and_duplicate_risk_classes() -> None:
             es_estimator=ES_ESTIMATOR,
         )
 
+    with pytest.raises(ValueError, match="histories"):
+        select_stress_periods_by_risk_class(
+            (),
+            as_of_date=date(2025, 6, 30),
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+        )
+
+    with pytest.raises(TypeError, match="as_of_date"):
+        select_stress_periods_by_risk_class(
+            [_series([1.0, 2.0, 3.0, 4.0])],
+            as_of_date="2025-06-30",  # type: ignore[arg-type]
+            window_observations=4,
+            minimum_observations=4,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+        )
+
+    with pytest.raises(TypeError, match="HistoricalStressSeries"):
+        select_stress_periods_by_risk_class(
+            [object()],  # type: ignore[list-item]
+            as_of_date=date(2025, 6, 30),
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+        )
+
+
+def test_stress_period_selection_parameter_validation() -> None:
+    series = _series([1.0, 2.0, 3.0, 4.0])
+
+    invalid_calls = (
+        {"window_observations": 0, "match": "window_observations"},
+        {"minimum_observations": 0, "match": "minimum_observations"},
+        {"minimum_observations": 2, "window_observations": 3, "match": "minimum_observations"},
+        {"severity_metric": "MAX_LOSS", "match": "StressSeverityMetric"},
+        {"confidence_level": 1.0, "match": "confidence_level"},
+        {"tie_break": object(), "match": "Unsupported tie-break"},
+    )
+    for case in invalid_calls:
+        kwargs = {
+            "window_observations": case.get("window_observations", 2),
+            "minimum_observations": case.get("minimum_observations", 2),
+            "severity_metric": case.get("severity_metric", StressSeverityMetric.MAX_LOSS),
+            "confidence_level": case.get("confidence_level", CONFIDENCE_LEVEL),
+            "es_estimator": ES_ESTIMATOR,
+            "tie_break": case.get("tie_break", StressPeriodTieBreak.LATEST_START_DATE),
+        }
+        with pytest.raises((TypeError, ValueError), match=str(case["match"])):
+            select_stress_period_from_history(series, **kwargs)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="window_observations"):
+        rolling_window_severity_scores(
+            [1.0],
+            window_observations=2,
+            minimum_observations=1,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+        )
+
 
 def test_validate_selected_stress_periods_requires_all_risk_classes() -> None:
     result = select_stress_periods_by_risk_class(
@@ -296,8 +493,76 @@ def test_validate_selected_stress_periods_requires_all_risk_classes() -> None:
     )
 
     validate_selected_stress_periods(result, [RiskClass.CSR])
+    with pytest.raises(ValueError, match="required_risk_classes"):
+        validate_selected_stress_periods(result, [])
+    with pytest.raises(TypeError, match="RiskClass"):
+        validate_selected_stress_periods(result, ["CSR"])  # type: ignore[list-item]
     with pytest.raises(StressPeriodCalibrationError, match="EQUITY"):
         validate_selected_stress_periods(result, [RiskClass.CSR, RiskClass.EQUITY])
+
+
+def test_selection_result_validates_candidate_mapping() -> None:
+    candidate = select_stress_period_from_history(
+        _series([1.0, 2.0, 3.0, 4.0]),
+        window_observations=2,
+        minimum_observations=2,
+        severity_metric=StressSeverityMetric.MAX_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
+    )
+
+    with pytest.raises(TypeError, match="as_of_date"):
+        StressPeriodSelectionResult(
+            as_of_date="2025-06-30",  # type: ignore[arg-type]
+            regime="FED_NPR_2_0",
+            window_observations=2,
+            minimum_observations=2,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+            tie_break=StressPeriodTieBreak.LATEST_START_DATE,
+            selected_by_risk_class={RiskClass.CSR: candidate},
+            candidate_counts={RiskClass.CSR: 3},
+        )
+    with pytest.raises(ValueError, match="regime"):
+        StressPeriodSelectionResult(
+            as_of_date=date(2025, 6, 30),
+            regime="",
+            window_observations=2,
+            minimum_observations=2,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+            tie_break=StressPeriodTieBreak.LATEST_START_DATE,
+            selected_by_risk_class={RiskClass.CSR: candidate},
+            candidate_counts={RiskClass.CSR: 3},
+        )
+    with pytest.raises(ValueError, match="non-empty"):
+        StressPeriodSelectionResult(
+            as_of_date=date(2025, 6, 30),
+            regime="FED_NPR_2_0",
+            window_observations=2,
+            minimum_observations=2,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+            tie_break=StressPeriodTieBreak.LATEST_START_DATE,
+            selected_by_risk_class={},
+            candidate_counts={},
+        )
+    with pytest.raises(ValueError, match="keys"):
+        StressPeriodSelectionResult(
+            as_of_date=date(2025, 6, 30),
+            regime="FED_NPR_2_0",
+            window_observations=2,
+            minimum_observations=2,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+            tie_break=StressPeriodTieBreak.LATEST_START_DATE,
+            selected_by_risk_class={RiskClass.CSR: candidate},
+            candidate_counts={RiskClass.EQUITY: 1},
+        )
 
 
 def test_same_risk_class_nmrfs_use_common_selected_stress_period() -> None:

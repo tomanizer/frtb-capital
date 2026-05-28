@@ -40,9 +40,9 @@ dependencies.
 ## Local development
 
 ```bash
-make check          # lint + typecheck + tests across the workspace
+make check          # lint + typecheck + coverage-gated tests across the workspace
 make ima            # work on the IMA package only
-make integration    # cross-package integration tests (when orchestration lands)
+make mutation       # run the focused IMA mutation-testing baseline
 ```
 
 Per-package targets are available from each package's own `Makefile` or via `uv run`.
@@ -54,6 +54,8 @@ Per-package targets are available from each package's own `Makefile` or via `uv 
 - [`packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md`](packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md) — IMA modelling boundaries and proposed-rule basis
 - [`docs/decisions/`](docs/decisions/) — architectural decision records (ADRs)
 - [`docs/model_documentation/`](docs/model_documentation/) — per-model documentation packs
+- [`docs/quality/coverage_policy.md`](docs/quality/coverage_policy.md) — IMA coverage floor and later production-quality target
+- [`docs/quality/mutation_baseline.md`](docs/quality/mutation_baseline.md) — mutation-testing baseline and survivor review policy
 
 ## Governance
 

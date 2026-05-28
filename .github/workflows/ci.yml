@@ -77,7 +77,7 @@ jobs:
       - name: Test
         env:
           HYPOTHESIS_PROFILE: ci
-        run: uv run pytest packages --cov --cov-report=term-missing
+        run: make test
 
   dependency-audit:
     runs-on: ubuntu-latest

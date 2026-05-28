@@ -134,6 +134,31 @@ def test_models_based_capital_serializes_audit_breakdown() -> None:
     assert result.as_dict()["binding_term"] == "AVERAGE"
 
 
+def test_models_based_capital_reports_spot_binding_term() -> None:
+    result = models_based_capital(
+        imcc_t_minus_1=200.0,
+        ses_t_minus_1=20.0,
+        imcc_60d_avg=90.0,
+        ses_60d_avg=10.0,
+        multiplier=1.5,
+        pla_addon=5.0,
+    )
+
+    assert result.binding_term == "SPOT"
+    assert result.models_based_capital == pytest.approx(225.0)
+
+
+def test_models_based_capital_rejects_multiplier_below_floor() -> None:
+    with pytest.raises(ValueError, match="supervisory floor"):
+        models_based_capital(
+            imcc_t_minus_1=1.0,
+            ses_t_minus_1=1.0,
+            imcc_60d_avg=1.0,
+            ses_60d_avg=1.0,
+            multiplier=1.49,
+        )
+
+
 def test_desk_eligibility_from_results_falls_back_when_backtesting_fails() -> None:
     result = desk_eligibility_from_results(
         _trading_desk_backtest_result(model_eligible=False),
@@ -188,6 +213,27 @@ def test_desk_eligibility_from_results_rejects_unknown_pla_zone() -> None:
 
 
 def test_desk_eligibility_from_results_rejects_invalid_pla_zone_labels() -> None:
+    with pytest.raises(ValueError, match="sequence"):
+        desk_eligibility_from_results(
+            _trading_desk_backtest_result(model_eligible=True),
+            "GREEN",
+            pla_zone_labels=object(),  # type: ignore[arg-type]
+        )
+
+    with pytest.raises(ValueError, match="exactly three"):
+        desk_eligibility_from_results(
+            _trading_desk_backtest_result(model_eligible=True),
+            "GREEN",
+            pla_zone_labels=("GREEN", "AMBER"),
+        )
+
+    with pytest.raises(ValueError, match="non-empty"):
+        desk_eligibility_from_results(
+            _trading_desk_backtest_result(model_eligible=True),
+            "GREEN",
+            pla_zone_labels=("GREEN", "", "RED"),
+        )
+
     with pytest.raises(ValueError, match="pla_zone_labels"):
         desk_eligibility_from_results(
             _trading_desk_backtest_result(model_eligible=True),
@@ -197,6 +243,29 @@ def test_desk_eligibility_from_results_rejects_invalid_pla_zone_labels() -> None
 
 
 def test_models_based_capital_for_policy_rejects_sa_fallback_desks() -> None:
+    with pytest.raises(ValueError, match="policy"):
+        models_based_capital_for_policy(
+            DeskEligibilityStatus.IMA_ELIGIBLE,
+            imcc_t_minus_1=100.0,
+            ses_t_minus_1=20.0,
+            imcc_60d_avg=90.0,
+            ses_60d_avg=10.0,
+            pla_addon=0.0,
+            policy=object(),  # type: ignore[arg-type]
+        )
+
+    with pytest.raises(ValueError, match="exception_count"):
+        models_based_capital_for_policy(
+            DeskEligibilityStatus.IMA_ELIGIBLE,
+            imcc_t_minus_1=100.0,
+            ses_t_minus_1=20.0,
+            imcc_60d_avg=90.0,
+            ses_60d_avg=10.0,
+            pla_addon=0.0,
+            policy=get_policy(),
+            exception_count=1.5,  # type: ignore[arg-type]
+        )
+
     with pytest.raises(IMAIneligibleError, match="SA_FALLBACK"):
         models_based_capital_for_policy(
             DeskEligibilityStatus.SA_FALLBACK,
@@ -244,3 +313,32 @@ def test_models_based_capital_for_policy_uses_policy_exception_count_multiplier(
 
     assert result.multiplier == pytest.approx(supervisory_multiplier_for_policy(6, policy))
     assert result.models_based_capital == pytest.approx(168.4)
+
+
+def test_pla_addon_zero_green_amber_requires_zero_amber() -> None:
+    result = pla_addon(
+        standardized_green_amber=0.0,
+        standardized_amber=0.0,
+        ima_green_amber=10.0,
+    )
+
+    assert result.k_factor == pytest.approx(0.0)
+    assert result.pla_addon == pytest.approx(0.0)
+
+    with pytest.raises(ValueError, match="standardized_amber"):
+        pla_addon(
+            standardized_green_amber=0.0,
+            standardized_amber=1.0,
+            ima_green_amber=0.0,
+        )
+
+
+def test_supervisory_multiplier_validates_schedule_and_red_zone_multiplier() -> None:
+    with pytest.raises(ValueError, match="red_zone_multiplier"):
+        supervisory_multiplier(10, schedule=(), red_zone_multiplier=1.0)
+
+    with pytest.raises(ValueError, match="exception counts"):
+        supervisory_multiplier(0, schedule=((-1, 1.5),), red_zone_multiplier=2.0)
+
+    with pytest.raises(ValueError, match="schedule multipliers"):
+        supervisory_multiplier(0, schedule=((0, 1.0),), red_zone_multiplier=2.0)
