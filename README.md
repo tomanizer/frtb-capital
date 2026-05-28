@@ -71,6 +71,7 @@ Per-package targets are available from each package's own `Makefile` or via `uv 
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute, material-change policy
 - [`SECURITY.md`](SECURITY.md) — vulnerability reporting
 - [`docs/RELEASE_PROCESS.md`](docs/RELEASE_PROCESS.md) — release approval, tagging, and versioning policy
+- [`docs/REPO_CONTROLS.md`](docs/REPO_CONTROLS.md) — branch protection, CODEOWNERS, and release-attestation controls
 - [`docs/decisions/`](docs/decisions/) — ADR log for architecture and material model decisions
 
 ## What this suite is not
