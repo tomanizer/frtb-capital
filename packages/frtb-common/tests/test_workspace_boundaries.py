@@ -19,7 +19,7 @@ CAPITAL_PACKAGE_BY_IMPORT = {
 
 
 def imported_top_level_modules(path: Path) -> set[str]:
-    tree = ast.parse(path.read_text(), filename=str(path))
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     modules: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -32,6 +32,7 @@ def imported_top_level_modules(path: Path) -> set[str]:
 def test_capital_packages_do_not_import_sibling_capital_packages() -> None:
     for import_name, package_name in CAPITAL_PACKAGE_BY_IMPORT.items():
         src_root = REPO_ROOT / "packages" / package_name / "src"
+        assert src_root.is_dir(), f"Source directory not found: {src_root}"
         imported_capital_modules: set[str] = set()
         for path in src_root.rglob("*.py"):
             imported_capital_modules.update(imported_top_level_modules(path) & CAPITAL_IMPORTS)
@@ -41,6 +42,7 @@ def test_capital_packages_do_not_import_sibling_capital_packages() -> None:
 
 def test_common_does_not_import_capital_packages() -> None:
     src_root = REPO_ROOT / "packages" / "frtb-common" / "src"
+    assert src_root.is_dir(), f"Source directory not found: {src_root}"
     imported_capital_modules: set[str] = set()
     for path in src_root.rglob("*.py"):
         imported_capital_modules.update(imported_top_level_modules(path) & CAPITAL_IMPORTS)
