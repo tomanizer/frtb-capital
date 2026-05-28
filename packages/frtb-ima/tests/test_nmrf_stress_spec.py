@@ -199,9 +199,21 @@ def test_stepwise_grid_rejects_duplicate_or_short_grids() -> None:
             shock_unit="spread_bps",
             calibration_source="synthetic",
         )
+    with pytest.raises(ValueError, match="non-empty"):
+        NMRFStepwiseShockGrid(
+            shock_points=[],
+            shock_unit="spread_bps",
+            calibration_source="synthetic",
+        )
     with pytest.raises(ValueError, match="at least two"):
         NMRFStepwiseShockGrid(
             shock_points=[0.0],
+            shock_unit="spread_bps",
+            calibration_source="synthetic",
+        )
+    with pytest.raises(ValueError, match="strictly monotonic"):
+        NMRFStepwiseShockGrid(
+            shock_points=[-100.0, 100.0, 0.0],
             shock_unit="spread_bps",
             calibration_source="synthetic",
         )
@@ -309,6 +321,24 @@ def test_max_loss_fallback_spec_requires_candidate_scenarios() -> None:
         NMRFMaxLossFallbackSpec(candidate_scenario_ids=(), loss_source="synthetic")
     with pytest.raises(ValueError, match="loss_source"):
         NMRFMaxLossFallbackSpec(candidate_scenario_ids=("candidate-1",), loss_source="")
+
+
+def test_bulk_builder_emits_fallback_spec_for_fallback_instruction() -> None:
+    fallback_spec = NMRFMaxLossFallbackSpec(
+        candidate_scenario_ids=("candidate-1", "candidate-2"),
+        loss_source="synthetic candidate-loss inventory",
+    )
+    specs = build_nmrf_valuation_specs(
+        (_instruction(method=NMRFStressMethod.MAX_LOSS_FALLBACK),),
+        {"HY_CREDIT_SPD": RiskClass.CSR},
+        {RiskClass.CSR: _stress_period()},
+        get_policy(),
+        max_loss_fallbacks={"HY_CREDIT_SPD": fallback_spec},
+    )
+
+    assert len(specs) == 1
+    assert specs[0].max_loss_fallback == fallback_spec
+    assert specs[0].direct_shock is None
 
 
 def test_valuation_spec_validates_identity_and_payload_consistency() -> None:
@@ -420,6 +450,16 @@ def test_bulk_spec_builder_reports_missing_risk_class() -> None:
         )
 
 
+def test_bulk_spec_builder_rejects_empty_instruction_sequence() -> None:
+    with pytest.raises(ValueError, match="non-empty"):
+        build_nmrf_valuation_specs(
+            (),
+            {"HY_CREDIT_SPD": RiskClass.CSR},
+            {RiskClass.CSR: _stress_period()},
+            get_policy(),
+        )
+
+
 def test_bulk_spec_builder_reports_missing_stress_period_and_wrapped_payload_errors() -> None:
     with pytest.raises(NMRFStressSpecError, match="missing stress period"):
         build_nmrf_valuation_specs(
@@ -487,8 +527,40 @@ def test_linear_sensitivity_is_not_a_valuation_run_spec() -> None:
         )
 
 
+def test_spec_builder_rejects_invalid_instruction_type() -> None:
+    with pytest.raises(TypeError, match="NMRFValuationInstruction"):
+        build_nmrf_valuation_spec(  # type: ignore[arg-type]
+            "invalid-instruction",
+            RiskClass.CSR,
+            _stress_period(),
+            get_policy(),
+        )
+
+
 def test_required_mapping_helpers_reject_empty_specs() -> None:
     with pytest.raises(ValueError, match="specs"):
         required_methods_from_valuation_specs(())
     with pytest.raises(ValueError, match="specs"):
         required_liquidity_horizons_from_valuation_specs(())
+
+
+def test_required_mapping_helpers_support_single_spec() -> None:
+    spec = build_nmrf_valuation_spec(
+        _instruction(),
+        RiskClass.CSR,
+        _stress_period(),
+        get_policy(),
+        direct_shock=NMRFDirectShockSpec(
+            shock_size=350.0,
+            shock_unit="spread_bps",
+            direction=NMRFShockDirection.UP,
+            calibration_source="synthetic",
+            confidence_level=CONFIDENCE_LEVEL,
+        ),
+    )
+    assert required_methods_from_valuation_specs((spec,)) == {
+        "HY_CREDIT_SPD": NMRFStressMethod.DIRECT
+    }
+    assert required_liquidity_horizons_from_valuation_specs((spec,)) == {
+        "HY_CREDIT_SPD": LiquidityHorizon.LH20
+    }
