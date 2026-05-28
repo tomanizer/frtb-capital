@@ -24,7 +24,8 @@ A Python prototype demonstrating how an existing risk engine can generate 10-day
 The current boundary is intentional: the package assembles and validates
 capital inputs, and can select stress windows from supplied historical loss
 series, but it does not source raw market data, price trades, run
-SA/DRC/CVA capital, or produce final regulatory submissions.
+SBM/DRC/RRAO/CVA capital, compose SA totals, or produce final regulatory
+submissions.
 
 ## Install
 

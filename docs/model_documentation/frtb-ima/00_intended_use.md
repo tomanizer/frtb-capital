@@ -58,8 +58,8 @@ or trading-book boundary decisions.
 The following are outside this package and belong to planned sibling packages or
 upstream systems:
 
-- Standardized Approach, Default Risk Charge, CVA, residual risk add-on, and
-  fallback capital;
+- SBM, Default Risk Charge, residual risk add-on, CVA, and fallback capital;
+  SA fallback is owned by orchestration as the composed SBM + DRC + RRAO stack;
 - legal-entity, firm-level, or top-of-house aggregation;
 - market-data sourcing, cleaning, and lineage attestation;
 - trade pricing, full revaluation, risk-engine scenario generation, and vendor

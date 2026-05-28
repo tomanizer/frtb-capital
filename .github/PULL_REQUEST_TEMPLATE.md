@@ -6,8 +6,9 @@
 
 - [ ] Suite-only documentation/governance
 - [ ] `packages/frtb-ima`
-- [ ] `packages/frtb-sa`
+- [ ] `packages/frtb-sbm`
 - [ ] `packages/frtb-drc`
+- [ ] `packages/frtb-rrao`
 - [ ] `packages/frtb-cva`
 - [ ] `packages/frtb-orchestration`
 - [ ] `packages/frtb-common`

@@ -13,12 +13,13 @@ assembly layer in `tomanizer/frtb-capital`, under `packages/frtb-ima`.
 
 This package is the IMA model-eligible desk capital path only.
 
-**SA, DRC, and CVA are planned sibling packages in this monorepo.** Do not add
-standardized approach, default risk charge, CVA capital, fallback capital,
-firm-level consolidation, or legal-entity aggregation to this package. The
-handoff contract from `packages/frtb-ima` is a desk-level `CapitalComponents`
-result and a `DeskEligibilityStatus` signal. Aggregation across desks and
-regimes is an orchestration-layer concern.
+**SBM, DRC, RRAO, and CVA are planned sibling packages in this monorepo.** Do
+not add sensitivities-based method, default risk charge, residual risk add-on,
+CVA capital, SA-composition, fallback capital, firm-level consolidation, or
+legal-entity aggregation to this package. The handoff contract from
+`packages/frtb-ima` is a desk-level `CapitalComponents` result and a
+`DeskEligibilityStatus` signal. Aggregation across desks and regimes is an
+orchestration-layer concern.
 
 ## Architecture
 

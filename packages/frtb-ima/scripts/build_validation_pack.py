@@ -77,7 +77,7 @@ NOTEBOOKS = (
 )
 
 OPEN_GAPS = (
-    "Default risk charge, standardized approach fallback, and firm/legal-entity consolidation.",
+    "SBM/DRC/RRAO fallback stack, CVA, and firm/legal-entity consolidation.",
     "Trading-desk approval lifecycle and supervisory workflow evidence.",
     "Real market-data sourcing, vendor adapters, and proprietary instrument classification.",
     "Production direct, stepwise, and full-revaluation NMRF pricing engines.",

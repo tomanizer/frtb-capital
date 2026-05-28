@@ -154,7 +154,7 @@ All jurisdiction-specific parameters are isolated in `RegulatoryPolicy` (in `reg
 Consult `docs/requirements/NPR_2_0_MARKET_RISK.yml` for the machine-readable status of every requirement (`implemented`, `partial`, `unsupported`, `out_of_scope`). Before claiming something is done, check its requirement entry. Do not mark a requirement `implemented` if it has material gaps.
 
 Key gaps as of May 2026:
-- SA, DRC, CVA, fallback capital, and firm/legal-entity consolidation are outside this package boundary.
+- SBM, DRC, RRAO, CVA, fallback capital, SA composition, and firm/legal-entity consolidation are outside this package boundary.
 - Trading-desk eligibility lifecycle and supervisory approval workflows.
 - Prototype stress-period selection from supplied historical risk-class
   loss/severity vectors. Raw market-data sourcing, formal calibration approval,

@@ -9,7 +9,7 @@ inputs.
 ## Users
 
 - CVA desk/risk developers validating capital mechanics.
-- Market risk teams comparing CVA capital with SA SBM and IMA outputs.
+- Market risk teams comparing CVA capital with SBM and IMA outputs.
 - Model risk reviewers tracing hedge eligibility and exposure inputs.
 - Suite orchestrators aggregating top-of-house capital.
 

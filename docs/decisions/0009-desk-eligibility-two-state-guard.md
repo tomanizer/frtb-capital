@@ -14,7 +14,7 @@ remediation, re-entry, supervisory overrides, and fallback capital. That
 lifecycle is broader than the current `frtb-ima` package boundary.
 
 The package still needs a hard guard so models-based capital is not assembled
-for a desk that the caller has classified as requiring standardized fallback.
+for a desk that the caller has classified as requiring the SA fallback stack.
 
 ## Decision
 
@@ -46,7 +46,8 @@ capital ownership is material under ADR 0005.
 
 - The two-state guard is not sufficient for production desk lifecycle
   governance.
-- Orchestration and SA packages must own fallback capital once implemented.
+- Orchestration and the SA component packages (`frtb-sbm`, `frtb-drc`, and
+  `frtb-rrao`) must own fallback capital once implemented.
 
 ## References
 

@@ -52,7 +52,7 @@ The following are not complete production workflows:
 - regulatory final-rule interpretation and legal sign-off;
 - trading-desk approval lifecycle, loss of eligibility, remediation, and
   re-entry;
-- standardized fallback capital, DRC, CVA, RRAO, and firm-level consolidation;
+- SBM, DRC, RRAO, CVA, SA fallback stack capital, and firm-level consolidation;
 - market-data sourcing, instrument classification, trade enrichment, vendor
   data lineage, and RFET data-pooling controls;
 - institutional pricing and revaluation engines for NMRF stress artifacts;

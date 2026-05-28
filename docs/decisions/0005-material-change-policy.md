@@ -86,7 +86,7 @@ decision in the PR.
 The following prior decisions are material model-design evidence and are
 recorded as ADRs:
 
-- [ADR 0003](0003-sa-drc-cva-scope.md): SA, DRC, and CVA as separate packages
+- [ADR 0003](0003-sa-drc-cva-scope.md): SA component stack and CVA as separate packages
   within the suite.
 - [ADR 0004](0004-weighted-interpolated-expected-shortfall.md): weighted
   interpolated expected shortfall estimator.

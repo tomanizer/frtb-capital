@@ -14,7 +14,7 @@ capital breakdowns.
 - Model risk reviewers checking traceability and reproducibility.
 - Risk managers comparing Basel, U.S. NPR 2.0, CRR3, and PRA-style policy
   profiles.
-- Suite orchestrators combining DRC with SA SBM, RRAO, CVA, and IMA outputs.
+- Suite orchestrators combining DRC with SBM, RRAO, CVA, and IMA outputs.
 
 ## Non-Goals
 

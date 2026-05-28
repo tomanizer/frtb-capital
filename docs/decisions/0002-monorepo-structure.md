@@ -8,7 +8,12 @@ Accepted
 
 ## Context
 
-The FRTB capital suite consists of four primary capital components — Internal Models Approach (IMA), Standardized Approach (SA), Default Risk Charge (DRC), Credit Valuation Adjustment (CVA) — plus a suite-level orchestration layer that aggregates them into firm-level capital.
+The FRTB capital suite consists of the Internal Models Approach (IMA), the
+Standardised Approach (SA) component stack, Credit Valuation Adjustment (CVA),
+and a suite-level orchestration layer that aggregates them into firm-level
+capital. SA is a regulatory composition label in this repository: it is produced
+by the planned `frtb-sbm`, `frtb-drc`, and `frtb-rrao` packages rather than by
+a single coarse SA package.
 
 Each component is, under SR 11-7 / PRA SS 1/23, a distinct model requiring its own documentation pack, validation evidence, and ongoing monitoring. But they share enough common plumbing (regulatory policy framework, audit records, scenario metadata, sign conventions, business calendar) that maintaining four separate repositories would cause:
 
@@ -29,14 +34,19 @@ frtb-capital/
 ├── packages/
 │   ├── frtb-common/         # shared primitives
 │   ├── frtb-ima/            # Internal Models Approach
-│   ├── frtb-sa/             # Standardized Approach
-│   ├── frtb-drc/            # Default Risk Charge
+│   ├── frtb-sbm/            # SA sensitivities-based method
+│   ├── frtb-drc/            # SA default risk charge
+│   ├── frtb-rrao/           # SA residual risk add-on
 │   ├── frtb-cva/            # Credit Valuation Adjustment
 │   └── frtb-orchestration/  # suite-level aggregation
 └── ...
 ```
 
-Each package has its own `pyproject.toml`, version, tests, and model documentation pack. Sibling capital packages must not import from each other. Shared types live in `frtb-common`. The orchestration package is the only one allowed to import from multiple capital components.
+Each package has its own `pyproject.toml`, version, tests, and model
+documentation pack. Sibling capital packages must not import from each other.
+Shared types live in `frtb-common`. The orchestration package is the only one
+allowed to import from multiple capital components and is responsible for
+composing SA from SBM, DRC, and RRAO.
 
 Package boundaries will be enforced by `importlinter` (to be added).
 
@@ -68,3 +78,4 @@ Package boundaries will be enforced by `importlinter` (to be added).
 - Path-to-production audit: `tomanizer/frtb-capital` issue #1
   (transferred from `tomanizer/FRTB-IMA` issue #31).
 - `docs/ARCHITECTURE.md`.
+- ADR 0010: standardised approach component taxonomy.

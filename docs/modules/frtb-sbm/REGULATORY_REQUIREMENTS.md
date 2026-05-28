@@ -1,8 +1,8 @@
-# FRTB SA SBM Regulatory Requirements
+# FRTB SBM Regulatory Requirements
 
 ## Purpose
 
-This document captures requirements for `frtb-sa-sbm`, the sensitivities-based
+This document captures requirements for `frtb-sbm`, the sensitivities-based
 method component of the FRTB standardised approach. The package should calculate
 delta, vega, and curvature capital for prescribed risk classes, apply bucket and
 inter-bucket aggregation, support correlation scenarios, and produce

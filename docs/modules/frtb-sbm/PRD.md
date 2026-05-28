@@ -1,8 +1,8 @@
-# FRTB SA SBM Product Requirements Document
+# FRTB SBM Product Requirements Document
 
 ## Objective
 
-Build `frtb-sa-sbm`, a package that calculates FRTB standardised approach
+Build `frtb-sbm`, a package that calculates FRTB standardised approach
 sensitivities-based capital from synthetic sensitivity inputs across all
 prescribed risk classes, risk measures, buckets, and correlation scenarios.
 

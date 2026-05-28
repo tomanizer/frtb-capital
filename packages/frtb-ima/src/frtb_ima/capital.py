@@ -3,8 +3,8 @@ Models-based capital assembly.
 
 Callers must determine desk IMA eligibility before invoking models-based
 capital assembly. Use DeskEligibilityStatus and the policy wrapper in this
-module to make that handoff explicit; SA fallback capital remains out of scope
-for this package.
+module to make that handoff explicit; SA fallback stack capital remains out of
+scope for this package and is owned by orchestration over SBM, DRC, and RRAO.
 
 Desk-level formula implemented from the cited NPR 2.0 / Basel FRTB IMA model:
 
@@ -15,7 +15,8 @@ Desk-level formula implemented from the cited NPR 2.0 / Basel FRTB IMA model:
     pla_addon:   additional capital charge from PLA amber/red zone.
 
 This is the desk-level aggregation. Firm-level capital would sum approved desks
-and add fallback SA capital for non-approved desks — not implemented here.
+and add the orchestrated SBM/DRC/RRAO fallback stack for non-approved desks —
+not implemented here.
 
 Regulatory traceability:
     Basel MAR33 capital calculation; U.S. NPR 2.0 models-based market-risk

@@ -60,8 +60,8 @@ class DeskEligibilityStatus(StrEnum):
     """Whether a desk is currently approved for IMA capital treatment.
 
     Determined from trailing backtesting and PLA results before the capital run.
-    SA_FALLBACK signals that SA capital is required; SA calculation is out of
-    scope for this package.
+    SA_FALLBACK signals that the orchestrated SBM/DRC/RRAO stack is required;
+    that calculation is out of scope for this package.
 
     Regulatory traceability:
         U.S. NPR 2.0 proposed section `__.213` backtesting eligibility gates;
