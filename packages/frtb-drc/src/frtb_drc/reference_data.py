@@ -19,12 +19,11 @@ from typing import Any
 
 from frtb_drc.data_models import (
     BCBS_BUCKETS,
-    BCBS_SEC_NCTP_SECTORS,
-    CreditQuality,
     DEFAULTED_BUCKET,
     FRB_BUCKETS,
     NON_US_SOVEREIGNS,
     PSE_GSE_DEBT,
+    CreditQuality,
     RulesVersion,
 )
 
@@ -222,12 +221,12 @@ def load_reference_data(
 __all__ = [
     "BCBS_DRC_JS_RW",
     "CRR2_DRC_JS_RW",
-    "FRB_DRC_JS_RW",
-    "RISK_WEIGHTS",
     "DRC_NS_BUCKETS",
+    "FRB_DRC_JS_RW",
     "LGD_BY_SENIORITY",
-    "get_risk_weight",
-    "get_lgd",
-    "load_reference_data",
+    "RISK_WEIGHTS",
     "ReferenceData",
+    "get_lgd",
+    "get_risk_weight",
+    "load_reference_data",
 ]

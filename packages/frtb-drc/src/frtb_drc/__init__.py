@@ -35,13 +35,13 @@ from frtb_drc.reference_data import (
 )
 
 __all__ = [
-    "__version__",
     "CreditQuality",
     "NettedIssuerSeniority",
     "Position",
     "RiskClassDRC",
     "RulesVersion",
     "Seniority",
+    "__version__",
     "apply_hedging_benefit",
     "compute_gross_jtd",
     "get_lgd",

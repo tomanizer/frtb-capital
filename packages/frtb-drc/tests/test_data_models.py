@@ -11,14 +11,12 @@ import pytest
 from frtb_drc.data_models import (
     CreditQuality,
     Position,
-    RiskClassDRC,
     RulesVersion,
     Seniority,
 )
 from frtb_drc.reference_data import (
-    FRB_DRC_JS_RW,
-    get_risk_weight,
     get_lgd,
+    get_risk_weight,
     load_reference_data,
 )
 

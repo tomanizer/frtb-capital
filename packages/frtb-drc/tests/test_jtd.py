@@ -48,8 +48,8 @@ def test_no_cross_seniority_netting() -> None:
     netted = net_positions_by_issuer_seniority(positions)
     # Two separate records
     assert len(netted) == 2
-    senior = [x for x in netted if x.seniority == Seniority.SENIOR][0]
-    non = [x for x in netted if x.seniority == Seniority.NON_SENIOR][0]
+    senior = next(x for x in netted if x.seniority == Seniority.SENIOR)
+    non = next(x for x in netted if x.seniority == Seniority.NON_SENIOR)
     assert senior.net_long == 5e6
     assert non.net_long == 1e6
     assert non.net_short == 0.0

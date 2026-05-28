@@ -11,13 +11,13 @@ Regulatory traceability:
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterable
+from collections.abc import Iterable
 
 from frtb_drc.data_models import (
+    SENIORITY_TO_STR,
     CreditQuality,
     NettedIssuerSeniority,
     Position,
-    SENIORITY_TO_STR,
     Seniority,
 )
 from frtb_drc.reference_data import get_lgd, get_risk_weight
