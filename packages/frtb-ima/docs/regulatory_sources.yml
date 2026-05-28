@@ -1,0 +1,244 @@
+schema_version: 1
+name: FRTB_IMA_REGULATORY_SOURCES
+purpose: "Link-only regulatory source manifest for traceability, review, and optional downstream RAG retrieval."
+text_policy: "Do not vendor full regulatory text in the core package. Keep official URLs, section hints, source status, and reuse notes here."
+
+sources:
+  - id: basel_bcbs_d457_minimum_capital_market_risk
+    family: BASEL_FRTB_IMA
+    jurisdiction: GLOBAL
+    title: "Basel Committee, Minimum capital requirements for market risk, January 2019"
+    url: "https://www.bis.org/bcbs/publ/d457.htm"
+    section_hint: "Parent publication for Basel FRTB market-risk standard"
+    status: baseline_reference
+    reuse_note: "Link-only reference. BIS text should not be vendored without permission review."
+    modules:
+      - src/frtb_ima/regimes.py
+      - src/frtb_ima/liquidity_horizon_mapping.py
+      - src/frtb_ima/stress_periods.py
+      - src/frtb_ima/imcc.py
+      - src/frtb_ima/nmrf_method_selection.py
+      - src/frtb_ima/nmrf_stress_spec.py
+      - src/frtb_ima/nmrf_valuation_run.py
+      - src/frtb_ima/nmrf.py
+    requirements:
+      - NPR-MR-POLICY-001
+      - NPR-MR-LHA-002
+      - NPR-MR-STRESS-001
+      - NPR-MR-IMCC-001
+      - NPR-MR-NMRF-002
+
+  - id: basel_mar31_model_requirements
+    family: BASEL_FRTB_IMA
+    jurisdiction: GLOBAL
+    title: "Basel Framework MAR31, Internal models approach model requirements"
+    url: "https://www.bis.org/basel_framework/chapter/MAR/31.htm"
+    section_hint: "MAR31 RFET and model requirements"
+    status: baseline_reference
+    reuse_note: "Link-only reference. BIS text should not be vendored without permission review."
+    modules:
+      - src/frtb_ima/rfet.py
+      - src/frtb_ima/rfet_evidence.py
+      - src/frtb_ima/data_contracts.py
+    requirements:
+      - NPR-MR-RFET-001
+      - NPR-MR-RFET-002
+      - NPR-MR-DATA-001
+
+  - id: basel_mar32_pla_backtesting
+    family: BASEL_FRTB_IMA
+    jurisdiction: GLOBAL
+    title: "Basel Framework MAR32, Backtesting and profit and loss attribution"
+    url: "https://www.bis.org/basel_framework/chapter/MAR/32.htm"
+    section_hint: "MAR32 PLA and backtesting"
+    status: baseline_reference
+    reuse_note: "Link-only reference. BIS text should not be vendored without permission review."
+    modules:
+      - src/frtb_ima/pla.py
+      - src/frtb_ima/backtesting.py
+    requirements:
+      - NPR-MR-PLA-001
+      - NPR-MR-BT-001
+      - NPR-MR-BT-002
+
+  - id: basel_mar33_capital_nmrf
+    family: BASEL_FRTB_IMA
+    jurisdiction: GLOBAL
+    title: "Basel Framework MAR33, Internal models approach capital requirements"
+    url: "https://www.bis.org/basel_framework/chapter/MAR/33.htm"
+    section_hint: "MAR33 ES, liquidity horizons, IMCC, and NMRF stress scenarios"
+    status: baseline_reference
+    reuse_note: "Link-only reference. BIS text should not be vendored without permission review."
+    modules:
+      - src/frtb_ima/expected_shortfall.py
+      - src/frtb_ima/liquidity_horizon_mapping.py
+      - src/frtb_ima/liquidity_horizon.py
+      - src/frtb_ima/stress_periods.py
+      - src/frtb_ima/imcc.py
+      - src/frtb_ima/nmrf_method_selection.py
+      - src/frtb_ima/nmrf_stress_spec.py
+      - src/frtb_ima/nmrf_valuation_run.py
+      - src/frtb_ima/nmrf.py
+    requirements:
+      - NPR-MR-ES-001
+      - NPR-MR-LHA-001
+      - NPR-MR-LHA-002
+      - NPR-MR-STRESS-001
+      - NPR-MR-IMCC-001
+      - NPR-MR-NMRF-001
+      - NPR-MR-NMRF-002
+
+  - id: us_npr_2_0_91_fr_14952
+    family: US_NPR_2_0
+    jurisdiction: US
+    title: "Federal Register 91 FR 14952, Regulatory Capital Rule market-risk proposal"
+    url: "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
+    section_hint: "Primary NPR 2.0 source; use proposed section hints in requirement notes."
+    status: proposed_rule_working_assumption
+    reuse_note: "GovInfo link. U.S. government works are generally not copyrightable, but third-party material can be included; link rather than vendor text by default."
+    modules:
+      - src/frtb_ima/regimes.py
+      - src/frtb_ima/liquidity_horizon_mapping.py
+      - src/frtb_ima/liquidity_horizon.py
+      - src/frtb_ima/stress_periods.py
+      - src/frtb_ima/imcc.py
+      - src/frtb_ima/nmrf_method_selection.py
+      - src/frtb_ima/nmrf_stress_spec.py
+      - src/frtb_ima/nmrf_valuation_run.py
+      - src/frtb_ima/nmrf.py
+      - src/frtb_ima/pla.py
+      - src/frtb_ima/backtesting.py
+      - src/frtb_ima/capital.py
+      - src/frtb_ima/logging.py
+      - src/frtb_ima/audit.py
+    requirements:
+      - NPR-MR-POLICY-001
+      - NPR-MR-LHA-001
+      - NPR-MR-LHA-002
+      - NPR-MR-RFET-001
+      - NPR-MR-STRESS-001
+      - NPR-MR-IMCC-001
+      - NPR-MR-NMRF-001
+      - NPR-MR-NMRF-002
+      - NPR-MR-PLA-001
+      - NPR-MR-BT-001
+      - NPR-MR-CAP-001
+      - NPR-MR-REPORT-001
+
+  - id: us_npr_2_0_occ_pdf_copy
+    family: US_NPR_2_0
+    jurisdiction: US
+    title: "OCC PDF copy of Federal Register 91 FR 14952"
+    url: "https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf"
+    section_hint: "Convenience PDF copy for reviewers; GovInfo remains the primary source."
+    status: proposed_rule_working_assumption
+    reuse_note: "Convenience link only; do not treat as an independent source."
+    modules:
+      - src/frtb_ima/regimes.py
+    requirements:
+      - NPR-MR-POLICY-001
+
+  - id: eu_crr3_2024_1623
+    family: EU_CRR3
+    jurisdiction: EU
+    title: "Regulation (EU) 2024/1623, CRR3 amendments"
+    url: "https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng"
+    section_hint: "Articles 325ba, 325bb, 325bc, 325bd, 325be, 325bf, 325bg, and 325bk"
+    status: comparison_reference
+    reuse_note: "EUR-Lex legal document link. Reuse is generally allowed unless otherwise specified; link-only by default."
+    modules:
+      - src/frtb_ima/regimes.py
+      - src/frtb_ima/stress_periods.py
+      - src/frtb_ima/pla.py
+      - src/frtb_ima/backtesting.py
+      - src/frtb_ima/nmrf.py
+      - src/frtb_ima/nmrf_valuation_run.py
+    requirements:
+      - NPR-MR-POLICY-001
+      - NPR-MR-STRESS-001
+      - NPR-MR-PLA-002
+      - NPR-MR-NMRF-002
+
+  - id: eu_crr2_2019_876
+    family: EU_CRR
+    jurisdiction: EU
+    title: "Regulation (EU) 2019/876, CRR2 amendments"
+    url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32019R0876"
+    section_hint: "CRR amendment baseline for market-risk comparison"
+    status: comparison_reference
+    reuse_note: "EUR-Lex legal document link. Reuse is generally allowed unless otherwise specified; link-only by default."
+    modules:
+      - src/frtb_ima/regimes.py
+    requirements:
+      - NPR-MR-POLICY-001
+
+  - id: eu_rts_2022_2059_pla_backtesting
+    family: EU_RTS
+    jurisdiction: EU
+    title: "Delegated Regulation (EU) 2022/2059, backtesting and P&L attribution RTS"
+    url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R2059"
+    section_hint: "EU RTS for backtesting and PLA, including Spearman/KS comparison concepts"
+    status: comparison_reference
+    reuse_note: "EUR-Lex legal document link. Reuse is generally allowed unless otherwise specified; link-only by default."
+    modules:
+      - src/frtb_ima/pla.py
+      - src/frtb_ima/backtesting.py
+      - src/frtb_ima/regimes.py
+    requirements:
+      - NPR-MR-PLA-002
+      - NPR-MR-BT-001
+      - NPR-MR-BT-002
+
+  - id: eu_rts_2022_2060_rfet
+    family: EU_RTS
+    jurisdiction: EU
+    title: "Delegated Regulation (EU) 2022/2060, risk-factor modellability RTS"
+    url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R2060"
+    section_hint: "EU RFET RTS for modellability, data-pooling, and vendor-evidence comparison gaps"
+    status: comparison_reference
+    reuse_note: "EUR-Lex legal document link. Reuse is generally allowed unless otherwise specified; link-only by default."
+    modules:
+      - src/frtb_ima/rfet.py
+      - src/frtb_ima/rfet_evidence.py
+      - src/frtb_ima/regimes.py
+    requirements:
+      - NPR-MR-RFET-002
+
+  - id: eba_crr3_market_risk_technical_standards
+    family: EU_RTS
+    jurisdiction: EU
+    title: "EBA final draft technical standards for market risk under CRR3"
+    url: "https://www.eba.europa.eu/publications-and-media/press-releases/eba-publishes-final-draft-technical-standards-market-risk-part-its-roadmap-implementation-banking"
+    section_hint: "CRR3 market-risk technical standards roadmap"
+    status: comparison_reference
+    reuse_note: "Link-only reference to EBA publication page."
+    modules:
+      - src/frtb_ima/regimes.py
+    requirements:
+      - NPR-MR-POLICY-001
+
+  - id: pra_market_risk_internal_models_index
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "Bank of England / PRA market risk internal models approach index"
+    url: "https://www.bankofengland.co.uk/prudential-regulation/prudential-and-resolution-policy-index/banking/market-risk-internal-models-approach"
+    section_hint: "PRA market risk internal models index and links to UK CRR/PRA materials"
+    status: placeholder_reference
+    reuse_note: "Link-only placeholder. PRA-specific source mapping remains incomplete."
+    modules:
+      - src/frtb_ima/regimes.py
+    requirements:
+      - NPR-MR-POLICY-001
+
+  - id: pra_basel_3_1_final_rules
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "PRA PS1/26, Implementation of Basel 3.1: Final rules"
+    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement."
+    section_hint: "PRA Basel 3.1 final-rule context for future UK profile mapping"
+    status: placeholder_reference
+    reuse_note: "Link-only placeholder. PRA-specific source mapping remains incomplete."
+    modules:
+      - src/frtb_ima/regimes.py
+    requirements:
+      - NPR-MR-POLICY-001
