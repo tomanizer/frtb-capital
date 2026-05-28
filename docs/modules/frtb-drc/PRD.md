@@ -51,6 +51,25 @@ capital breakdowns.
 | `audit.py` | Serialisable audit records and reconciliation helpers. |
 | `regimes.py` | Policy selection and unsupported-feature declarations. |
 
+## Implementation Standards
+
+`frtb-drc` owns canonical issuer, tranche, and default-exposure input records.
+The public boundary records long/short direction, issuer or tranche identity,
+seniority, rating or credit quality, maturity, LGD category, JTD amount,
+currency, source row id, and sign convention explicitly. CRIF or vendor-shaped
+records must be mapped before calculation starts.
+
+Risk weights, maturity-scaling rules, hedge-benefit rules, bucket definitions,
+and securitisation/CTP switches come from a versioned rule profile supplied
+through `frtb-common`. Calculation kernels receive typed inputs and profile
+data; they do not reach into external data sources or global regime constants.
+
+Results must expose gross JTD, net JTD, hedge-benefit ratio, bucket/category
+capital, total DRC, rule profile id and hash, input snapshot hash, source
+citation ids, and unsupported-feature or fallback status where applicable.
+Securitisation and CTP paths should fail closed until their source mapping and
+fixtures are complete.
+
 ## Delivery Slices
 
 1. **Package skeleton and source register**: package metadata, docs,
@@ -75,6 +94,9 @@ capital breakdowns.
 - No sibling package imports.
 - Unsupported regulatory features fail explicitly.
 - Results reconcile: sum of bucket/category components equals total DRC.
+- Public results carry rule-profile and input-snapshot hashes.
+- Calculation kernels are pure and `numpy`-friendly where aggregation size
+  matters.
 - Synthetic examples run from workspace root with `uv run`.
 
 ## Risks

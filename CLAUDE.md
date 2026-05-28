@@ -57,7 +57,12 @@ Enforced by `importlinter` (to be added per audit-followup work).
 ### Consistent style across packages
 
 - Python 3.11+ across all packages.
-- `numpy` is the default numerical runtime. Adding any other runtime dependency (pandas, scipy, polars, pydantic) requires an ADR.
+- `numpy` is the default numerical runtime for capital calculation kernels.
+  Adding any other runtime dependency (`pandas`, `scipy`, `polars`,
+  `statsmodels`, `pydantic`, etc.) requires an ADR. These libraries may be used
+  in notebooks, validation, tests, research, or optional adapters when they do
+  not leak into the core runtime path; see
+  [`ADR 0011`](docs/decisions/0011-core-runtime-dependency-policy.md).
 - Frozen dataclasses for data containers; pure functions for business logic.
 - No mutable global state, no implicit I/O in calculation paths.
 - Sign conventions documented per module (use `frtb_common.SignConvention` once available).
