@@ -58,7 +58,10 @@ Default numerical kernels should use `numpy` arrays and deterministic output
 ordering. Avoid row-wise dataframe execution, hidden table shims, mutable model
 classes that load/calculate/save/report in one object, and duplicated
 risk-class classes where profile data can drive shared aggregation logic. Any
-new runtime dependency requires an ADR.
+new runtime dependency requires an ADR. Dataframe and statistical libraries may
+be used in notebooks, validation, tests, research, and optional adapters when
+they do not leak into the capital calculation runtime path; see
+[`ADR 0011`](../decisions/0011-core-runtime-dependency-policy.md).
 
 Every calculation feature needs deterministic unit tests, invalid-input tests,
 cited golden fixtures, explicit unsupported-feature tests, audit-metadata
