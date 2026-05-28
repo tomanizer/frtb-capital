@@ -11,7 +11,7 @@ Regulatory traceability:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from enum import Enum, StrEnum
 
 
@@ -61,8 +61,28 @@ class RealPriceObservation:
     risk_factor_name: str
     observation_date: date
     source: str = ""
-    # TODO: vendor/source deduplication
-    # TODO: time-zone normalisation for cross-market factors
+    vendor_id: str = ""
+    venue: str = ""
+    feed: str = ""
+    observation_timestamp: datetime | None = None
+    date_normalization_evidence: str = ""
+    verifiable: bool = True
+    verifiability_reason: str = ""
+    data_pool_id: str = ""
+    vendor_audit_evidence_id: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.risk_factor_name:
+            raise ValueError("risk_factor_name must be non-empty")
+        if type(self.observation_date) is not date:
+            raise TypeError("observation_date must be a datetime.date")
+        if self.observation_timestamp is not None and not isinstance(
+            self.observation_timestamp,
+            datetime,
+        ):
+            raise TypeError("observation_timestamp must be a datetime.datetime when provided")
+        if not isinstance(self.verifiable, bool):
+            raise TypeError("verifiable must be a bool")
 
 
 @dataclass

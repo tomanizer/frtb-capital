@@ -1,11 +1,18 @@
 """Tests for RFET evidence assessment."""
 
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
-from frtb_ima.data_contracts import RFETEvidence, RiskFactorBucket, RiskFactorDefinition
+from frtb_ima.data_contracts import (
+    RFETDataPoolEvidence,
+    RFETEvidence,
+    RFETNewIssuanceEvidence,
+    RFETRepresentativenessEvidence,
+    RiskFactorBucket,
+    RiskFactorDefinition,
+)
 from frtb_ima.data_models import (
     LiquidityHorizon,
     ModellabilityStatus,
@@ -110,6 +117,49 @@ def test_assess_rfet_evidence_deduplicates_dates_and_records_exclusions() -> Non
     ]
 
 
+def test_assess_rfet_evidence_deduplicates_source_vendor_lineage() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    duplicate_date = AS_OF - timedelta(days=1)
+    observations = (
+        RealPriceObservation(
+            "USD_SWAP_5Y",
+            duplicate_date,
+            source="TRADE_STORE",
+            vendor_id="INTERNAL",
+            venue="SEF_A",
+            feed="EXECUTIONS",
+            vendor_audit_evidence_id="internal-lineage-control-2026",
+        ),
+        RealPriceObservation(
+            "USD_SWAP_5Y",
+            duplicate_date,
+            source="TRADE_STORE",
+            vendor_id="INTERNAL",
+            venue="SEF_A",
+            feed="EXECUTIONS",
+            vendor_audit_evidence_id="internal-lineage-control-2026",
+        ),
+        RealPriceObservation(
+            "USD_SWAP_5Y",
+            duplicate_date,
+            source="VENDOR_A",
+            vendor_id="VENDOR_A",
+            venue="SEF_A",
+            feed="COMPOSITE",
+            vendor_audit_evidence_id="audit-vendor-a-2026",
+        ),
+    )
+
+    result = assess_rfet_evidence(_risk_factor(), _evidence(observations), policy)
+
+    assert result.eligible_observation_count == 1
+    assert [exclusion.reason for exclusion in result.exclusions] == [
+        RFETExclusionReason.DUPLICATE_SOURCE_VENDOR,
+        RFETExclusionReason.DUPLICATE_DATE,
+    ]
+    assert result.as_dict()["source_counts"] == {"TRADE_STORE": 2, "VENDOR_A": 1}
+
+
 def test_assess_rfet_evidence_excludes_missing_source_and_old_observations() -> None:
     policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
     observations = (
@@ -175,6 +225,79 @@ def test_assess_rfet_evidence_requires_representative_bucket() -> None:
     }
 
 
+def test_assess_rfet_evidence_uses_explicit_representativeness_evidence() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    evidence = RFETEvidence(
+        risk_factor_name="USD_SWAP_5Y",
+        as_of_date=AS_OF,
+        observations=_observations(3),
+        qualitative_pass=True,
+        bucket_id="USD_RATES",
+        representativeness=(
+            RFETRepresentativenessEvidence(
+                bucket_id="USD_RATES",
+                methodology="curve-node-proximity",
+                passed=False,
+                rationale="Observed tenors do not represent the 5Y node.",
+            ),
+        ),
+    )
+
+    result = assess_rfet_evidence(_risk_factor(), evidence, policy)
+
+    assert result.bucket_representative is False
+    assert result.eligible_observation_count == 0
+    assert {exclusion.reason for exclusion in result.exclusions} == {
+        RFETExclusionReason.NON_REPRESENTATIVE_EVIDENCE
+    }
+    assert result.as_dict()["representative_methodology_counts"] == {"curve-node-proximity": 1}
+
+
+def test_assess_rfet_evidence_requires_vendor_audit_or_data_pool_evidence() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    observations = (
+        RealPriceObservation(
+            "USD_SWAP_5Y",
+            AS_OF - timedelta(days=1),
+            source="VENDOR_A",
+            vendor_id="VENDOR_A",
+            feed="COMPOSITE",
+        ),
+        RealPriceObservation(
+            "USD_SWAP_5Y",
+            AS_OF - timedelta(days=2),
+            source="VENDOR_B",
+            vendor_id="VENDOR_B",
+            feed="COMPOSITE",
+            data_pool_id="pool-b",
+        ),
+    )
+    evidence = RFETEvidence(
+        risk_factor_name="USD_SWAP_5Y",
+        as_of_date=AS_OF,
+        observations=observations,
+        qualitative_pass=True,
+        bucket_id="USD_RATES",
+        data_pools=(
+            RFETDataPoolEvidence(
+                pool_id="pool-b",
+                vendor_id="VENDOR_B",
+                independent_audit_evidence_id="vendor-b-audit-2026",
+            ),
+        ),
+    )
+
+    result = assess_rfet_evidence(_risk_factor(), evidence, policy)
+
+    assert result.eligible_observation_count == 1
+    assert {exclusion.reason for exclusion in result.exclusions} == {
+        RFETExclusionReason.MISSING_VENDOR_AUDIT_EVIDENCE
+    }
+    assert result.as_dict()["vendor_counts"] == {"VENDOR_B": 1}
+    assert result.as_dict()["data_pool_count"] == 1
+    assert result.as_dict()["vendor_audit_evidence_count"] == 1
+
+
 def test_assess_rfet_evidence_maps_qualitative_failure_to_type_b() -> None:
     policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
     result = assess_rfet_evidence(
@@ -212,6 +335,60 @@ def test_new_issuance_prorating_is_explicit_opt_in() -> None:
     assert with_prorating.required_observations < 24
     assert with_prorating.new_issuance_prorated is True
     assert with_prorating.modellability_status == ModellabilityStatus.MODELLABLE
+
+
+def test_new_issuance_prorating_uses_policy_governed_evidence() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    evidence = RFETEvidence(
+        risk_factor_name="USD_SWAP_5Y",
+        as_of_date=AS_OF,
+        observations=_observations(8),
+        qualitative_pass=True,
+        bucket_id="USD_RATES",
+        new_issuance=RFETNewIssuanceEvidence(
+            issue_date=AS_OF - timedelta(days=90),
+            prorating_approved=True,
+            policy_citation="U.S. NPR 2.0 proposed RFET new-issuance treatment",
+        ),
+    )
+
+    result = assess_rfet_evidence(_risk_factor(), evidence, policy)
+
+    assert result.required_observations < result.base_required_observations
+    assert result.new_issuance_prorated is True
+    assert result.as_dict()["new_issuance_policy_basis"] == (
+        "U.S. NPR 2.0 proposed RFET new-issuance treatment"
+    )
+
+
+def test_assess_rfet_evidence_requires_timestamp_normalization_evidence() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    observations = (
+        RealPriceObservation(
+            "USD_SWAP_5Y",
+            AS_OF,
+            source="VENDOR_A",
+            vendor_id="VENDOR_A",
+            observation_timestamp=datetime(2025, 7, 1, 0, 30, tzinfo=UTC),
+            vendor_audit_evidence_id="vendor-a-audit-2026",
+        ),
+        RealPriceObservation(
+            "USD_SWAP_5Y",
+            AS_OF - timedelta(days=1),
+            source="VENDOR_A",
+            vendor_id="VENDOR_A",
+            observation_timestamp=datetime(2025, 6, 30, 23, 30, tzinfo=UTC),
+            date_normalization_evidence="New York market close normalized to local date.",
+            vendor_audit_evidence_id="vendor-a-audit-2026",
+        ),
+    )
+
+    result = assess_rfet_evidence(_risk_factor(), _evidence(observations), policy)
+
+    assert result.eligible_observation_count == 1
+    assert {exclusion.reason for exclusion in result.exclusions} == {
+        RFETExclusionReason.MISSING_DATE_NORMALIZATION_EVIDENCE
+    }
 
 
 def test_prorated_required_observation_count_rejects_future_issue_date() -> None:

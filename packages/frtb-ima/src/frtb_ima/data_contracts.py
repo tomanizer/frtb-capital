@@ -89,6 +89,70 @@ class RiskFactorDefinition:
 
 
 @dataclass(frozen=True)
+class RFETRepresentativenessEvidence:
+    """Evidence that RFET observations are representative for a bucket/curve/surface."""
+
+    bucket_id: str
+    methodology: str
+    passed: bool
+    rationale: str = ""
+    curve_id: str = ""
+    surface_id: str = ""
+    metadata: Mapping[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.bucket_id:
+            raise ValueError("bucket_id must be non-empty")
+        if not self.methodology:
+            raise ValueError("methodology must be non-empty")
+        if not isinstance(self.passed, bool):
+            raise TypeError("passed must be a bool")
+        if not self.passed and not self.rationale:
+            raise ValueError("failed representativeness evidence requires a rationale")
+        object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
+
+
+@dataclass(frozen=True)
+class RFETDataPoolEvidence:
+    """Vendor/data-pooling evidence for third-party real-price observations."""
+
+    pool_id: str
+    vendor_id: str
+    independent_audit_evidence_id: str
+    description: str = ""
+    metadata: Mapping[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.pool_id:
+            raise ValueError("pool_id must be non-empty")
+        if not self.vendor_id:
+            raise ValueError("vendor_id must be non-empty")
+        if not self.independent_audit_evidence_id:
+            raise ValueError("independent_audit_evidence_id must be non-empty")
+        object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
+
+
+@dataclass(frozen=True)
+class RFETNewIssuanceEvidence:
+    """Policy-governed evidence for new-issuance RFET prorating."""
+
+    issue_date: date
+    prorating_approved: bool
+    policy_citation: str = ""
+    rationale: str = ""
+    metadata: Mapping[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if type(self.issue_date) is not date:
+            raise TypeError("issue_date must be a datetime.date")
+        if not isinstance(self.prorating_approved, bool):
+            raise TypeError("prorating_approved must be a bool")
+        if self.prorating_approved and not (self.policy_citation or self.rationale):
+            raise ValueError("approved prorating requires a policy_citation or rationale")
+        object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
+
+
+@dataclass(frozen=True)
 class Position:
     """A market-risk covered position as seen by the ex-post capital layer."""
 
@@ -129,16 +193,25 @@ class RFETEvidence:
     observations: tuple[RealPriceObservation, ...]
     qualitative_pass: bool
     bucket_id: str = ""
+    representativeness: tuple[RFETRepresentativenessEvidence, ...] = ()
+    data_pools: tuple[RFETDataPoolEvidence, ...] = ()
+    new_issuance: RFETNewIssuanceEvidence | None = None
     metadata: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.risk_factor_name:
             raise ValueError("risk_factor_name must be non-empty")
-        if not isinstance(self.as_of_date, date):
+        if type(self.as_of_date) is not date:
             raise TypeError("as_of_date must be a datetime.date")
         if any(obs.risk_factor_name != self.risk_factor_name for obs in self.observations):
             raise ValueError("all observations must match risk_factor_name")
+        data_pools = tuple(self.data_pools)
+        pool_ids = [item.pool_id for item in data_pools]
+        if len(pool_ids) != len(set(pool_ids)):
+            raise ValueError("data_pools contains duplicate pool_id values")
         object.__setattr__(self, "observations", tuple(self.observations))
+        object.__setattr__(self, "representativeness", tuple(self.representativeness))
+        object.__setattr__(self, "data_pools", data_pools)
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 
     @property

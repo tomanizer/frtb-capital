@@ -28,6 +28,9 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   NDJSON audit serialisation.
 - Added dependency-free business-calendar contracts for RFET, PLA/backtesting,
   and stress-period observation-window evidence.
+- Added RFET evidence contracts for source/vendor/feed/venue lineage,
+  data-pooling/vendor-audit evidence, timestamp normalisation,
+  representativeness methodologies, and policy-governed new-issuance prorating.
 
 ### Documentation
 
@@ -69,6 +72,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 - PLA, backtesting, RFET, and stress-period policy paths now record
   supplied-calendar source/version metadata when a business calendar is
   provided.
+- RFET evidence assessments now expose immutable source/vendor, exclusion,
+  bucket, and representativeness-methodology summary counts for audit output.
 
 ### Notes
 

@@ -117,8 +117,8 @@ The prototype intentionally excludes or simplifies:
 - legal-entity and firm-level consolidation (orchestration layer),
 - actual supervisory submission workflows,
 - formal stress-period approval governance and raw market-data sourcing,
-- vendor real-price evidence workflows,
-- EU RTS-level RFET data-pooling/vendor-reliance rules,
+- external vendor real-price evidence integrations and legal/vendor-contract review,
+- supervisor-specific EU RTS RFET data-pooling/vendor-reliance approvals,
 - production-grade data lineage, storage, telemetry, and control framework.
 
 ## Determinism guarantee
@@ -184,9 +184,11 @@ Remaining deliberate boundaries:
   upstream risk-engine responsibility. The prototype specifies required
   valuation runs, reconciles, validates, and consumes the resulting artifacts,
   but does not embed institutional pricing models.
-- RFET qualitative criteria remain external inputs. Vendor lineage, data-pooling
-  eligibility, supervisory overrides, and new-issuance pro-rating remain out of
-  scope.
+- RFET qualitative criteria remain external inputs. The package records and
+  validates source/vendor lineage, data-pooling evidence, representativeness
+  methodologies, date-normalisation evidence, and new-issuance policy evidence;
+  upstream systems still own raw market-data collection, vendor contracts, and
+  supervisory approvals.
 - Raw market-data sourcing, formal stress-period approval governance,
   reduced-set governance, proprietary trade/vendor-to-LH-category evidence,
   risk-factor bucketing, and firm-level consolidation are not complete
