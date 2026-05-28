@@ -100,6 +100,20 @@ def test_desk_audit_record_serializes_input_lineage_summary() -> None:
     payload = record.as_dict()
 
     assert payload["input_manifest"]["artifact_count"] == 1  # type: ignore[index]
+    defaulted_record = DeskAuditRecord(
+        run_id="run-1",
+        desk_id="desk-1",
+        regime="FED_NPR_2_0",
+        inputs_hash=TEST_INPUTS_HASH,
+        imcc={"imcc": 100.0},
+        ses={"total_ses": 40.0},
+        pla={"pla": {"zone": "GREEN"}},
+        backtesting={"model_eligible": True},
+        capital={"models_based_capital": 190.0},
+        elapsed_seconds=0.25,
+        input_manifest=_input_manifest(),
+    )
+    assert defaulted_record.as_of_date == date(2026, 5, 27)
     with pytest.raises(ValueError, match="input_manifest is required"):
         DeskAuditRecord(
             run_id="run-1",
@@ -186,6 +200,13 @@ def test_capital_run_audit_log_reports_input_lineage() -> None:
 
     assert payload["input_manifest"]["artifact_count"] == 1  # type: ignore[index]
     assert "## Input lineage" in report
+    defaulted_log = CapitalRunAuditLog(
+        run_id="run-1",
+        regime="FED_NPR_2_0",
+        desk_records=(_desk_record("desk-1"),),
+        input_manifest=_input_manifest(),
+    )
+    assert defaulted_log.as_of_date == date(2026, 5, 27)
     with pytest.raises(ValueError, match="input_manifest is required"):
         CapitalRunAuditLog(
             run_id="run-1",

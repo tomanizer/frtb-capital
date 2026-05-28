@@ -87,7 +87,9 @@ class DeskAuditRecord:
             raise ValueError("elapsed_seconds must be non-negative")
         if self.require_input_manifest and self.input_manifest is None:
             raise ValueError("input_manifest is required for production-style audit records")
-        if (
+        if self.as_of_date is None and self.input_manifest is not None:
+            object.__setattr__(self, "as_of_date", self.input_manifest.as_of_date)
+        elif (
             self.input_manifest is not None
             and self.as_of_date is not None
             and self.input_manifest.as_of_date != self.as_of_date
@@ -178,7 +180,9 @@ class CapitalRunAuditLog:
         _validate_sha256_hex(inputs_hash, "inputs_hash")
         if self.require_input_manifest and self.input_manifest is None:
             raise ValueError("input_manifest is required for production-style audit logs")
-        if (
+        if self.as_of_date is None and self.input_manifest is not None:
+            object.__setattr__(self, "as_of_date", self.input_manifest.as_of_date)
+        elif (
             self.input_manifest is not None
             and self.as_of_date is not None
             and self.input_manifest.as_of_date != self.as_of_date

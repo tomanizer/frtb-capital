@@ -247,12 +247,17 @@ def capital_run_input_manifest_from_fixture(
 def _artifact_counts(path: Path) -> tuple[int, int]:
     if path.suffix == ".csv":
         with path.open("r", newline="", encoding="utf-8") as handle:
-            return sum(1 for _row in csv.DictReader(handle)), 0
+            reader = csv.reader(handle)
+            next(reader, None)
+            return sum(1 for _row in reader), 0
     if path.suffix == ".npz":
-        with np.load(path, allow_pickle=False) as payload:
-            arrays = [payload[name] for name in payload.files]
-            record_count = max((int(array.shape[0]) for array in arrays if array.ndim), default=0)
-            return record_count, len(arrays)
+        with np.load(path, allow_pickle=False, mmap_mode="r") as payload:
+            record_count = 0
+            for name in payload.files:
+                array = payload[name]
+                if array.ndim:
+                    record_count = max(record_count, int(array.shape[0]))
+            return record_count, len(payload.files)
     if path.suffix == ".json":
         with path.open("r", encoding="utf-8") as handle:
             payload = json.load(handle)
