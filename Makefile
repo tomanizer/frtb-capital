@@ -44,10 +44,7 @@ sbom:
 ima:
 	uv run pytest packages/frtb-ima/tests
 
-sa:
-	$(MAKE) sbm
-	$(MAKE) drc
-	$(MAKE) rrao
+sa: sbm drc rrao
 
 sbm:
 	@test -d packages/frtb-sbm || (echo "frtb-sbm package not yet created"; exit 1)
