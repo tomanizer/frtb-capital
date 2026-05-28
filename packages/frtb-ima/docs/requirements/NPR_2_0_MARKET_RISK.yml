@@ -100,24 +100,26 @@ requirements:
     status: implemented
     modules:
       - src/frtb_ima/calendar.py
+      - src/frtb_ima/data_contracts.py
       - src/frtb_ima/data_models.py
       - src/frtb_ima/rfet.py
       - src/frtb_ima/rfet_evidence.py
     tests:
       - tests/test_calendar.py
       - tests/test_rfet_evidence.py
-    notes: "Evidence packages, source presence, bucket representativeness, one-count-per-date, business-calendar basis, official-holiday exclusions, and non-business-date exclusions are implemented; vendor reliance and advanced representativeness remain open."
+    notes: "Evidence packages now record source/vendor/feed/venue lineage, timestamp normalisation evidence, verifiability flags, vendor audit/data-pooling evidence, explicit representativeness methodologies, one-count-per-date and source/vendor de-duplication, business-calendar basis, official-holiday exclusions, and non-business-date exclusions. External vendor APIs and supervisory approval workflows remain out of scope."
 
   - id: NPR-MR-RFET-003
     title: "New-issuance RFET prorating"
     source: "RFET treatment for new issuances"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
-    status: partial
+    status: implemented
     modules:
+      - src/frtb_ima/data_contracts.py
       - src/frtb_ima/rfet_evidence.py
     tests:
       - tests/test_rfet_evidence.py
-    notes: "Opt-in prorated threshold helper implemented as a documented proposed-rule modelling choice; final supervisory interpretation still needs confirmation."
+    notes: "RFET evidence can now carry policy-governed new-issuance evidence with issue date, approval flag, and regulatory citation or modelling-choice rationale. The legacy explicit argument remains for compatibility; final supervisory approval remains outside the package."
 
   - id: NPR-MR-IMCC-001
     title: "IMCC constrained and unconstrained aggregation"

@@ -1,6 +1,6 @@
 """Tests for vector-friendly market-risk data contracts."""
 
-from datetime import date
+from datetime import date, datetime
 from types import MappingProxyType
 
 import numpy as np
@@ -172,6 +172,26 @@ def test_rfet_evidence_requires_matching_observations() -> None:
             observations=(),
             qualitative_pass=True,
         )
+
+
+def test_real_price_observation_validates_identity_dates_and_flags() -> None:
+    observation = RealPriceObservation(
+        "RF",
+        AS_OF,
+        source="VENDOR_A",
+        vendor_id="VENDOR_A",
+        vendor_audit_evidence_id="vendor-audit-2026",
+    )
+
+    assert observation.vendor_id == "VENDOR_A"
+    with pytest.raises(ValueError, match="risk_factor_name"):
+        RealPriceObservation("", AS_OF)
+    with pytest.raises(TypeError, match="observation_date"):
+        RealPriceObservation("RF", datetime(2025, 6, 30, 12, 0))  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="observation_timestamp"):
+        RealPriceObservation("RF", AS_OF, observation_timestamp=AS_OF)  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="verifiable"):
+        RealPriceObservation("RF", AS_OF, verifiable="yes")  # type: ignore[arg-type]
 
 
 def test_scenario_cube_validates_shape_and_axis_labels() -> None:

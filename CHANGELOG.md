@@ -23,6 +23,8 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
   and a checked-in performance-baseline directory.
 - FRTB-IMA dependency-free business-calendar window semantics for RFET,
   PLA/backtesting, and stress-period evidence.
+- FRTB-IMA RFET vendor/data-pooling, representativeness, timestamp
+  normalisation, and new-issuance evidence contracts.
 - Governance completion for audit issue #3: documented release approvals,
   versioning, tagging, and material-change handling in
   `docs/RELEASE_PROCESS.md`.
