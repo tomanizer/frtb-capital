@@ -111,7 +111,7 @@ Status: planned. Not started.
 
 See [`decisions/0002-monorepo-structure.md`](decisions/0002-monorepo-structure.md). In short: one team, one product line, atomic cross-cutting changes, shared abstractions, consistent style. Per-package versioning and ADR-driven change control preserve SR 11-7 / PRA SS 1/23 model boundaries.
 
-## Why SA Components And CVA Are Separate Packages
+## Why SA components and CVA are separate packages
 
 See [`decisions/0010-standardised-approach-component-taxonomy.md`](decisions/0010-standardised-approach-component-taxonomy.md).
 `SA` is the regulatory composition label. `frtb-sbm`, `frtb-drc`, and
