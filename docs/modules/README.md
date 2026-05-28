@@ -5,12 +5,16 @@ are not yet implemented on `main`. The files are deliberately outside
 `packages/` so the `uv` workspace glob `packages/*` is not changed until a real
 package manifest is added.
 
+For market risk Standardised Approach, SA is the composed total `SBM + DRC +
+RRAO` under Basel MAR20.4. The implementation taxonomy therefore uses three
+planned component packages: `frtb-sbm`, `frtb-drc`, and `frtb-rrao`.
+
 | Module | Regulatory requirements | PRD | Workable requirements |
 | --- | --- | --- | --- |
+| SBM | [frtb-sbm/REGULATORY_REQUIREMENTS.md](frtb-sbm/REGULATORY_REQUIREMENTS.md) | [frtb-sbm/PRD.md](frtb-sbm/PRD.md) | [frtb-sbm/requirements/BASEL_FRTB_SBM.yml](frtb-sbm/requirements/BASEL_FRTB_SBM.yml) |
 | DRC | [frtb-drc/REGULATORY_REQUIREMENTS.md](frtb-drc/REGULATORY_REQUIREMENTS.md) | [frtb-drc/PRD.md](frtb-drc/PRD.md) | [frtb-drc/requirements/BASEL_FRTB_DRC.yml](frtb-drc/requirements/BASEL_FRTB_DRC.yml) |
 | RRAO | [frtb-rrao/REGULATORY_REQUIREMENTS.md](frtb-rrao/REGULATORY_REQUIREMENTS.md) | [frtb-rrao/PRD.md](frtb-rrao/PRD.md) | [frtb-rrao/requirements/BASEL_FRTB_RRAO.yml](frtb-rrao/requirements/BASEL_FRTB_RRAO.yml) |
 | CVA | [frtb-cva/REGULATORY_REQUIREMENTS.md](frtb-cva/REGULATORY_REQUIREMENTS.md) | [frtb-cva/PRD.md](frtb-cva/PRD.md) | [frtb-cva/requirements/BASEL_FRTB_CVA.yml](frtb-cva/requirements/BASEL_FRTB_CVA.yml) |
-| SA SBM | [frtb-sa-sbm/REGULATORY_REQUIREMENTS.md](frtb-sa-sbm/REGULATORY_REQUIREMENTS.md) | [frtb-sa-sbm/PRD.md](frtb-sa-sbm/PRD.md) | [frtb-sa-sbm/requirements/BASEL_FRTB_SA_SBM.yml](frtb-sa-sbm/requirements/BASEL_FRTB_SA_SBM.yml) |
 
 ## Research Sources
 

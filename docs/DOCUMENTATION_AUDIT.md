@@ -12,8 +12,8 @@ This audit checks whether repository documentation reflects the current
 
 - Root repository: `tomanizer/frtb-capital`
 - Active package: `packages/frtb-ima`
-- Planned packages: `packages/frtb-common`, `packages/frtb-sa`,
-  `packages/frtb-drc`, `packages/frtb-cva`, and
+- Planned packages: `packages/frtb-common`, `packages/frtb-sbm`,
+  `packages/frtb-drc`, `packages/frtb-rrao`, `packages/frtb-cva`, and
   `packages/frtb-orchestration`
 - Root CI: `.github/workflows/ci.yml`
 - Package-local IMA docs: `packages/frtb-ima/docs/`
@@ -23,12 +23,12 @@ This audit checks whether repository documentation reflects the current
 ## Findings Addressed
 
 - Replaced standalone IMA repository language with package-in-monorepo language.
-- Updated SA, DRC, and CVA references from separate repositories to planned
-  sibling packages.
+- Updated SBM, DRC, RRAO, and CVA references from separate repositories to
+  planned sibling packages.
 - Pointed root documentation navigation at the current IMA regulatory docs
   instead of non-existent root regulatory docs.
-- Clarified that `frtb-common`, SA, DRC, CVA, and orchestration are planned
-  packages, not implemented directories.
+- Clarified that `frtb-common`, SBM, DRC, RRAO, CVA, and orchestration are
+  planned packages, not implemented directories.
 - Added the missing `packages/frtb-ima/CHANGELOG.md` placeholder required by
   package versioning guidance.
 - Added a suite-level `docs/model_documentation/README.md` placeholder for

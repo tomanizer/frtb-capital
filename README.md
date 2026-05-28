@@ -11,18 +11,24 @@ capital component plus a shared common package. The migrated IMA package is the
 only implemented capital package today; the other packages are planned sibling
 packages tracked by the audit backlog.
 
+The Standardised Approach is a composed calculation stack, not a standalone
+package. Planned SA capital is `frtb-sbm + frtb-drc + frtb-rrao`; suite
+orchestration will combine those components for SA totals and for IMA fallback
+capital when a desk is not IMA-eligible.
+
 | Package | Purpose | Status |
 |---|---|---|
 | `packages/frtb-common` | Shared primitives: sign conventions, scenario metadata, audit records, regulatory policy base, business calendar | Planned |
 | `packages/frtb-ima` | Internal Models Approach capital for model-eligible trading desks | Migrated from `tomanizer/FRTB-IMA` |
-| `packages/frtb-sa` | Standardized Approach for market risk | Planned |
-| `packages/frtb-drc` | Default Risk Charge | Planned |
+| `packages/frtb-sbm` | Standardised Approach sensitivities-based method component | Planned |
+| `packages/frtb-drc` | Standardised Approach default risk charge component | Planned |
+| `packages/frtb-rrao` | Standardised Approach residual risk add-on component | Planned |
 | `packages/frtb-cva` | Credit Valuation Adjustment capital | Planned |
 | `packages/frtb-orchestration` | Suite-level capital aggregation and firm-level consolidation | Planned |
 
 ## Why a monorepo
 
-One repository preserves consistent style, shared abstractions, and atomic cross-cutting regulatory changes across the four capital charges. Each package is independently versioned with its own model documentation pack, so SR 11-7 / PRA SS 1/23 model boundaries remain clean.
+One repository preserves consistent style, shared abstractions, and atomic cross-cutting regulatory changes across the capital components. Each package is independently versioned with its own model documentation pack, so SR 11-7 / PRA SS 1/23 model boundaries remain clean.
 
 For the architectural rationale, see [`docs/decisions/0002-monorepo-structure.md`](docs/decisions/0002-monorepo-structure.md).
 

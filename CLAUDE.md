@@ -19,8 +19,9 @@ frtb-capital/
 ├── packages/
 │   ├── frtb-common/         # shared primitives (planned)
 │   ├── frtb-ima/            # Internal Models Approach (migrated)
-│   ├── frtb-sa/             # Standardized Approach (planned)
-│   ├── frtb-drc/            # Default Risk Charge (planned)
+│   ├── frtb-sbm/            # Standardized Approach SBM component (planned)
+│   ├── frtb-drc/            # Standardized Approach DRC component (planned)
+│   ├── frtb-rrao/           # Standardized Approach RRAO component (planned)
 │   ├── frtb-cva/            # Credit Valuation Adjustment (planned)
 │   └── frtb-orchestration/  # suite-level aggregation (planned)
 ├── docs/
@@ -42,13 +43,14 @@ Sibling packages must NOT import from each other. Allowed dependency directions:
 
 ```
 frtb-common  ← frtb-ima
-frtb-common  ← frtb-sa
+frtb-common  ← frtb-sbm
 frtb-common  ← frtb-drc
+frtb-common  ← frtb-rrao
 frtb-common  ← frtb-cva
-frtb-{ima,sa,drc,cva}  ← frtb-orchestration
+frtb-{ima,sbm,drc,rrao,cva}  ← frtb-orchestration
 ```
 
-`frtb-ima` does not import from `frtb-sa`. `frtb-orchestration` is the only package allowed to import from multiple capital components. Shared abstractions belong in `frtb-common`.
+`frtb-ima` does not import from `frtb-sbm`, `frtb-drc`, `frtb-rrao`, or `frtb-cva`. `frtb-orchestration` is the only package allowed to import from multiple capital components. Shared abstractions belong in `frtb-common`. `SA` is a composition label for `frtb-sbm + frtb-drc + frtb-rrao`, not a standalone package.
 
 Enforced by `importlinter` (to be added per audit-followup work).
 
@@ -69,7 +71,7 @@ Enforced by `importlinter` (to be added per audit-followup work).
 
 ### Cross-package changes
 
-Cross-cutting regulatory changes (e.g. a new business-day definition affecting IMA, SA, DRC) should land in a single PR. The ADR log records the rationale.
+Cross-cutting regulatory changes (e.g. a new business-day definition affecting IMA, SBM, DRC, or RRAO) should land in a single PR. The ADR log records the rationale.
 
 ### Material changes require ADRs
 

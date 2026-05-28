@@ -6,15 +6,16 @@
 
 - [ ] Suite-only documentation/governance
 - [ ] `packages/frtb-ima`
-- [ ] `packages/frtb-sa`
+- [ ] `packages/frtb-sbm`
 - [ ] `packages/frtb-drc`
+- [ ] `packages/frtb-rrao`
 - [ ] `packages/frtb-cva`
 - [ ] `packages/frtb-orchestration`
 - [ ] `packages/frtb-common`
 
 ## Material Change Review
 
-- [ ] I checked [ADR 0005](docs/decisions/0005-material-change-policy.md) and this PR is not material.
+- [ ] I checked [ADR 0005](../docs/decisions/0005-material-change-policy.md) and this PR is not material.
 - [ ] This PR is material and links the required ADR below.
 
 ADR:

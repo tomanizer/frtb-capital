@@ -3,31 +3,38 @@
 ## Suite overview
 
 `frtb-capital` is a workspace of FRTB market-risk capital calculation packages.
-The target structure covers the four primary capital charges plus a suite-level
-aggregator, with a shared foundation package. Today, only `packages/frtb-ima`
-contains a migrated implementation; `frtb-common`, SA, DRC, CVA, and
-orchestration remain planned packages.
+The target structure covers IMA, the three Standardised Approach components,
+CVA, and a suite-level aggregator, with a shared foundation package. Today, only
+`packages/frtb-ima` contains a migrated implementation; `frtb-common`,
+`frtb-sbm`, `frtb-drc`, `frtb-rrao`, `frtb-cva`, and orchestration remain
+planned packages.
+
+The Standardised Approach is a composed regulatory approach, not a standalone
+package. In this suite, `frtb-sbm`, `frtb-drc`, and `frtb-rrao` together produce
+SA capital. `frtb-orchestration` owns SA aggregation and routes non-IMA-eligible
+desks to that SA component stack for fallback capital.
 
 ## Dependency graph
 
 ```
-                   ┌────────────────────────┐
-                   │   frtb-orchestration   │   top-of-the-house aggregation
-                   └─────────┬──────────────┘
-                             │
-       ┌────────┬────────────┼────────────┬─────────┐
-       ▼        ▼            ▼            ▼         ▼
-   ┌────────┐ ┌──────┐  ┌────────┐  ┌────────┐
-   │ frtb-  │ │frtb- │  │ frtb-  │  │ frtb-  │
-   │  ima   │ │  sa  │  │  drc   │  │  cva   │
-   └───┬────┘ └──┬───┘  └───┬────┘  └───┬────┘
-       │         │          │           │
-       └─────────┴────┬─────┴───────────┘
-                      ▼
-                ┌───────────┐
-                │ frtb-     │   shared primitives
-                │  common   │
-                └───────────┘
+                         ┌────────────────────────┐
+                         │   frtb-orchestration   │
+                         │ aggregation + fallback │
+                         └───────────┬────────────┘
+                                     │
+       ┌─────────────┬───────────────┼───────────────┬─────────────┐
+       ▼             ▼               ▼               ▼             ▼
+   ┌────────┐   ┌──────────┐    ┌──────────┐    ┌──────────┐  ┌────────┐
+   │ frtb-  │   │ frtb-    │    │ frtb-    │    │ frtb-    │  │ frtb-  │
+   │  ima   │   │  sbm     │    │  drc     │    │  rrao    │  │  cva   │
+   └───┬────┘   └────┬─────┘    └────┬─────┘    └────┬─────┘  └───┬────┘
+       │             │               │               │            │
+       └─────────────┴───────────────┼───────────────┴────────────┘
+                                     ▼
+                              ┌───────────┐
+                              │ frtb-     │
+                              │  common   │
+                              └───────────┘
 ```
 
 **Allowed imports:** `frtb-*` capital components may import from `frtb-common`. `frtb-orchestration` may import from any sibling. **No other cross-package imports are allowed.**
@@ -58,15 +65,30 @@ Migrated from `tomanizer/FRTB-IMA` with full history into
 
 Status: substantial implementation. Audit-followup issues track the path to a B-grade production-ready engine.
 
-### `frtb-sa` — Standardized Approach
+### `frtb-sbm` — Standardised Approach sensitivities-based method
 
-Sensitivity-based capital. Inputs: delta, vega, curvature sensitivities per risk class. Outputs: SA capital per desk.
+Non-default standardised capital from delta, vega, and curvature sensitivities.
+Inputs: canonical or CRIF-mapped sensitivities by risk class, bucket, tenor, and
+risk measure. Outputs: SBM capital, risk-class totals, correlation-scenario
+selection, and audit breakdowns.
 
 Status: planned. Not started.
 
 ### `frtb-drc` — Default Risk Charge
 
-Jump-to-default capital for non-securitization, securitization non-CTP, and CTP. Inputs: issuer exposures, ratings, JTD calculations. Outputs: DRC capital per desk.
+Standardised default risk charge component. Jump-to-default capital for
+non-securitisation, securitisation non-CTP, and correlation trading portfolio
+positions. Inputs: issuer/tranche exposures, credit quality, seniority,
+maturity, and JTD inputs. Outputs: DRC capital and issuer/tranche audit
+breakdowns.
+
+Status: planned. Not started.
+
+### `frtb-rrao` — Residual Risk Add-On
+
+Standardised residual risk add-on component. Inputs: positions with exotic or
+other residual risk classification evidence and gross effective notionals.
+Outputs: additive RRAO capital, exclusion records, and contribution breakdowns.
 
 Status: planned. Not started.
 
@@ -78,7 +100,10 @@ Status: planned. Not started.
 
 ### `frtb-orchestration` — Suite aggregation
 
-Combines the four capital outputs into a firm-level capital figure, applies floors and add-ons (e.g. IMA vs SA floor, PLA add-on), produces consolidated audit records.
+Combines IMA, SA component outputs, and CVA into firm-level capital figures.
+For SA, it owns the composed `SBM + DRC + RRAO` total. For IMA fallback, it
+routes non-IMA-eligible desks to the SA component stack. It also applies
+cross-component floors and add-ons and produces consolidated audit records.
 
 Status: planned. Not started.
 
@@ -86,17 +111,22 @@ Status: planned. Not started.
 
 See [`decisions/0002-monorepo-structure.md`](decisions/0002-monorepo-structure.md). In short: one team, one product line, atomic cross-cutting changes, shared abstractions, consistent style. Per-package versioning and ADR-driven change control preserve SR 11-7 / PRA SS 1/23 model boundaries.
 
-## Why SA, DRC, CVA are separate packages (not separate repos)
+## Why SA Components And CVA Are Separate Packages
 
-See [`decisions/0003-sa-drc-cva-scope.md`](decisions/0003-sa-drc-cva-scope.md). Each is a distinct model under SR 11-7 with its own documentation pack, but they share enough plumbing (audit records, business calendar, regulatory policy framework) that a monorepo with separate packages is the right factoring.
+See [`decisions/0010-standardised-approach-component-taxonomy.md`](decisions/0010-standardised-approach-component-taxonomy.md).
+`SA` is the regulatory composition label. `frtb-sbm`, `frtb-drc`, and
+`frtb-rrao` are the implementation packages that together produce SA capital.
+Each is a distinct model component under SR 11-7 with its own documentation
+pack, but they share enough plumbing that a monorepo with separate packages is
+the right factoring.
 
 ## Per-model documentation
 
 Each capital component should have its own model documentation pack under
 `docs/model_documentation/<component>/`. The suite-level directory is present;
-IMA-specific validation and traceability docs currently live under
-`packages/frtb-ima/docs/` until a formal model pack is scaffolded. The pack
-covers:
+IMA-specific supporting evidence lives under `packages/frtb-ima/docs/`; the
+formal IMA model documentation pack lives under
+`docs/model_documentation/frtb-ima/`. Each pack covers:
 
 - Intended use.
 - Conceptual soundness.

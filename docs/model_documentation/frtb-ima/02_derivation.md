@@ -130,8 +130,8 @@ Regulatory anchors:
 
 The package assembles a desk-level models-based capital measure from IMCC, SES,
 and PLA add-on components, subject to an explicit desk eligibility handoff. It
-does not calculate standardized fallback, DRC, CVA, residual risk add-on,
-redesignation add-ons, or firm-level consolidation.
+does not calculate SBM, DRC, RRAO, CVA, fallback stack capital, redesignation
+add-ons, or firm-level consolidation.
 
 Regulatory anchors:
 

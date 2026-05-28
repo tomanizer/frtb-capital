@@ -39,7 +39,7 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
 - `packages/frtb-ima/` migrated from `tomanizer/FRTB-IMA` with full git history preserved.
 - Suite-level governance files: `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`.
 - Suite-level architecture documentation under `docs/`.
-- Initial ADRs documenting the monorepo decision and the SA/DRC/CVA scope boundary.
+- Initial ADRs documenting the monorepo decision and the SA component/CVA scope boundary.
 - Documentation alignment for the monorepo migration, including root and
   package agent guidance, model-documentation index, documentation audit, and
   package changelog updates.

@@ -18,5 +18,7 @@ final regulatory capital.
 
 ## Planned Packages
 
-Validation-pack pages for `frtb-sa`, `frtb-drc`, `frtb-cva`, and
-`frtb-orchestration` should be added when those packages are implemented.
+Validation-pack pages for `frtb-sbm`, `frtb-drc`, `frtb-rrao`, `frtb-cva`, and
+`frtb-orchestration` should be added when those packages are implemented. The
+orchestration validation pack should reconcile the composed SA total from SBM,
+DRC, and RRAO.

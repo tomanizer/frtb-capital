@@ -49,7 +49,7 @@ release notes.
 
 ## Package discipline
 
-- Sibling capital packages (`frtb-ima`, `frtb-sa`, `frtb-drc`, `frtb-cva`) must not import from each other.
+- Sibling capital packages (`frtb-ima`, `frtb-sbm`, `frtb-drc`, `frtb-rrao`, `frtb-cva`) must not import from each other.
 - All shared types belong in `frtb-common`.
 - The suite-level `frtb-orchestration` package is the only one allowed to import from multiple capital components.
 

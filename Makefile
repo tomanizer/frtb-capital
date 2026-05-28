@@ -5,7 +5,7 @@ LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scr
 MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/frtb-ima.json
 
-.PHONY: check lint format format-check typecheck test mutation benchmark audit-deps sbom ima sa drc cva orchestration clean
+.PHONY: check lint format format-check typecheck test mutation benchmark audit-deps sbom ima sa sbm drc rrao cva orchestration clean
 
 check: lint format-check typecheck test
 
@@ -45,12 +45,21 @@ ima:
 	uv run pytest packages/frtb-ima/tests
 
 sa:
-	@test -d packages/frtb-sa || (echo "frtb-sa package not yet created"; exit 1)
-	uv run pytest packages/frtb-sa/tests
+	$(MAKE) sbm
+	$(MAKE) drc
+	$(MAKE) rrao
+
+sbm:
+	@test -d packages/frtb-sbm || (echo "frtb-sbm package not yet created"; exit 1)
+	uv run pytest packages/frtb-sbm/tests
 
 drc:
 	@test -d packages/frtb-drc || (echo "frtb-drc package not yet created"; exit 1)
 	uv run pytest packages/frtb-drc/tests
+
+rrao:
+	@test -d packages/frtb-rrao || (echo "frtb-rrao package not yet created"; exit 1)
+	uv run pytest packages/frtb-rrao/tests
 
 cva:
 	@test -d packages/frtb-cva || (echo "frtb-cva package not yet created"; exit 1)

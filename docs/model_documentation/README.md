@@ -9,8 +9,10 @@ Current status:
   documentation pack lives here and links to supporting implementation
   evidence under `packages/frtb-ima/docs/` and
   `packages/frtb-ima/notebooks/`.
-- `frtb-sa`, `frtb-drc`, `frtb-cva`, `frtb-orchestration`: planned packages;
-  model documentation packs should be added as each package is created.
+- `frtb-sbm`, `frtb-drc`, `frtb-rrao`, `frtb-cva`, `frtb-orchestration`:
+  planned packages; model documentation packs should be added as each package
+  is created. The composed SA model documentation should reconcile the SBM,
+  DRC, and RRAO packs once orchestration is implemented.
 
 Each pack should cover intended use, conceptual soundness, calculation
 derivation, assumptions and limitations, sensitivity analysis, monitoring, and
