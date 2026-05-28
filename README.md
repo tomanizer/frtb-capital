@@ -50,6 +50,8 @@ Per-package targets are available from each package's own `Makefile` or via `uv 
 ## Documentation
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — suite architecture and dependency graph
+- [`docs/model_documentation/frtb-ima/`](docs/model_documentation/frtb-ima/README.md) — FRTB-IMA model documentation pack
+- [`docs/VALIDATION_PACK.md`](docs/VALIDATION_PACK.md) — suite index for package validation bundles
 - [`packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md`](packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md) — IMA code ↔ regulation cross-reference
 - [`packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md`](packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md) — IMA modelling boundaries and proposed-rule basis
 - [`docs/decisions/`](docs/decisions/) — architectural decision records (ADRs)

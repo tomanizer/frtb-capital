@@ -5,6 +5,11 @@ committed `capital_run_v1` synthetic fixture. It is designed for model
 validators and quants who need to inspect the prototype workflow from fixture
 lineage through capital assembly.
 
+The formal model documentation pack for this package lives at
+[`docs/model_documentation/frtb-ima/`](../../../docs/model_documentation/frtb-ima/README.md).
+Use that pack for intended use, conceptual soundness, derivation, assumptions,
+sensitivity-analysis planning, monitoring, and change history.
+
 The pack is not a regulatory report, does not use live market data, and does
 not present final regulatory capital. NPR 2.0 references are proposed-rule
 material for this prototype.

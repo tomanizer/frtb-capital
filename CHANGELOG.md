@@ -14,6 +14,9 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
   enforcement through `make test`.
 - Independent IMA numerical reference-vector tests for ES, LHA ES, IMCC, SES,
   PLA, and supervisory multiplier mappings.
+- FRTB-IMA model documentation pack scaffold covering intended use,
+  conceptual soundness, derivation, assumptions and limitations, sensitivity
+  analysis, monitoring, and change history.
 - Governance completion for audit issue #3: documented release approvals,
   versioning, tagging, and material-change handling in
   `docs/RELEASE_PROCESS.md`.
