@@ -8,6 +8,8 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
 
 ### Added
 
+- Weekly/manual mutation-testing workflow and root `make mutation` target for
+  the FRTB-IMA calculation-module baseline.
 - Governance completion for audit issue #3: documented release approvals,
   versioning, tagging, and material-change handling in
   `docs/RELEASE_PROCESS.md`.

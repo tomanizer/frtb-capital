@@ -4,7 +4,7 @@ PYTHON_BIN ?= uv run python
 LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts
 MYPY_PATHS := packages/*/src
 
-.PHONY: check lint format format-check typecheck test audit-deps sbom ima sa drc cva orchestration clean
+.PHONY: check lint format format-check typecheck test mutation audit-deps sbom ima sa drc cva orchestration clean
 
 check: lint format-check typecheck test
 
@@ -22,6 +22,10 @@ typecheck:
 
 test:
 	uv run pytest packages
+
+mutation:
+	FRTB_IMA_MUTATION_IMPORT=1 HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-ima python -c "import numpy; import sys; from mutmut.__main__ import cli; sys.argv = ['mutmut', 'run']; cli()"
+	uv run --directory packages/frtb-ima mutmut results
 
 audit-deps:
 	uv run pip-audit

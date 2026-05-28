@@ -2,7 +2,11 @@
 
 import pytest
 
-from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall
+from frtb_ima.expected_shortfall import (
+    ESEstimator,
+    expected_shortfall,
+    expected_shortfall_from_sorted_losses_desc,
+)
 
 DISCRETE = ESEstimator.DISCRETE_CEIL
 WEIGHTED = ESEstimator.WEIGHTED_INTERPOLATED
@@ -27,6 +31,37 @@ def test_weighted_interpolated_known_vector_alpha_975() -> None:
     losses = [float(i) for i in range(1, 101)]
     es = expected_shortfall(losses, alpha=0.975, estimator=WEIGHTED)
     assert es == pytest.approx((100 + 99 + 0.5 * 98) / 2.5, rel=1e-6)
+
+
+def test_sorted_loss_helper_weighted_interpolated_known_vector() -> None:
+    sorted_losses_desc = [100.0, 99.0, 98.0, 97.0]
+    es = expected_shortfall_from_sorted_losses_desc(
+        sorted_losses_desc,
+        alpha=0.375,
+        estimator=WEIGHTED,
+    )
+    assert es == pytest.approx((100 + 99 + 0.5 * 98) / 2.5, rel=1e-6)
+
+
+def test_sorted_loss_helper_rejects_alpha_zero() -> None:
+    with pytest.raises(ValueError, match="alpha"):
+        expected_shortfall_from_sorted_losses_desc([2.0, 1.0], alpha=0.0, estimator=WEIGHTED)
+
+
+def test_sorted_loss_helper_rejects_alpha_one() -> None:
+    with pytest.raises(ValueError, match="alpha"):
+        expected_shortfall_from_sorted_losses_desc([2.0, 1.0], alpha=1.0, estimator=WEIGHTED)
+
+
+def test_sorted_loss_helper_rejects_unsorted_multidimensional_input() -> None:
+    import numpy as np
+
+    with pytest.raises(ValueError, match="one-dimensional"):
+        expected_shortfall_from_sorted_losses_desc(
+            np.array([[2.0, 1.0]]),
+            alpha=0.5,
+            estimator=WEIGHTED,
+        )
 
 
 def test_estimators_match_when_tail_mass_is_integer() -> None:

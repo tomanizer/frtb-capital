@@ -16,6 +16,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "hypothesis>=6.152,<6.153",
+    "mutmut>=3.5,<3.6",
     "mypy>=2.1,<2.2",
     "pytest>=9.0,<9.1",
     "pytest-cov>=7.1,<7.2",
@@ -33,6 +34,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
+norecursedirs = [".*", "build", "dist", "mutants"]
 
 [tool.ruff]
 line-length = 100
@@ -51,3 +53,43 @@ strict = true
 [tool.coverage.report]
 fail_under = 84
 show_missing = true
+
+[tool.mutmut]
+paths_to_mutate = [
+    "src/frtb_ima/expected_shortfall.py",
+    "src/frtb_ima/liquidity_horizon.py",
+    "src/frtb_ima/imcc.py",
+    "src/frtb_ima/nmrf.py",
+    "src/frtb_ima/pla.py",
+    "src/frtb_ima/capital.py",
+    "src/frtb_ima/reduced_set.py",
+]
+pytest_add_cli_args_test_selection = [
+    "tests/test_expected_shortfall.py",
+    "tests/test_liquidity_horizon.py",
+    "tests/test_imcc.py",
+    "tests/test_nmrf.py",
+    "tests/test_pla.py",
+    "tests/test_capital.py",
+    "tests/test_reduced_set.py",
+    "tests/test_properties_es.py",
+    "tests/test_properties_lha_imcc_nmrf.py",
+    "tests/test_properties_pla.py",
+    "tests/test_properties_capital.py",
+]
+pytest_add_cli_args = [
+    "-c",
+    "pyproject.toml",
+    "-p",
+    "no:cov",
+]
+do_not_mutate = [
+    "src/frtb_ima/demo_data.py",
+    "src/frtb_ima/audit.py",
+    "src/frtb_ima/logging.py",
+]
+also_copy = [
+    "src/frtb_ima",
+    "tests",
+]
+mutate_only_covered_lines = true
