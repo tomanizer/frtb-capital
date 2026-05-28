@@ -87,7 +87,7 @@ class NMRFDirectShockSpec:
     shock_unit: str
     direction: NMRFShockDirection
     calibration_source: str
-    confidence_level: float = 0.975
+    confidence_level: float
     notes: str = ""
 
     def __post_init__(self) -> None:

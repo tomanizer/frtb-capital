@@ -169,7 +169,7 @@ def _validate_non_negative_finite(value: float, name: str) -> None:
 
 def imcc_unconstrained(
     all_risk_class_vectors: LHVectorInput,
-    alpha: float = 0.975,
+    alpha: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
     """
@@ -193,7 +193,7 @@ def imcc_unconstrained(
 
 def imcc_unconstrained_breakdown(
     all_risk_class_vectors: LHVectorInput,
-    alpha: float = 0.975,
+    alpha: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> LHAESResult:
     """Compute the unconstrained all-risk-class LHA ES decomposition."""
@@ -206,7 +206,7 @@ def imcc_unconstrained_breakdown(
 
 def imcc_constrained(
     per_risk_class_vectors: PerRiskClassLHVectorInput,
-    alpha: float = 0.975,
+    alpha: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
     """
@@ -235,7 +235,7 @@ def imcc_constrained(
 
 def imcc_constrained_breakdown(
     per_risk_class_vectors: PerRiskClassLHVectorInput,
-    alpha: float = 0.975,
+    alpha: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> tuple[IMCCRiskClassComponent, ...]:
     """Compute per-risk-class constrained LHA ES components."""
@@ -260,15 +260,14 @@ def imcc_constrained_breakdown(
 def imcc(
     all_risk_class_vectors: LHVectorInput,
     per_risk_class_vectors: PerRiskClassLHVectorInput,
-    alpha: float = 0.975,
-    w: float = 0.5,
+    alpha: float,
+    w: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
     """
     Compute final IMCC = w * unconstrained + (1 - w) * constrained.
 
-    Default w = 0.5 per Basel MAR33.15 rho weighting and the NPR 2.0 profile
-    policy.
+    ``w`` must be supplied by the caller or sourced from ``RegulatoryPolicy``.
 
     Args:
         all_risk_class_vectors: All-class aggregated LH vectors for unconstrained.
@@ -292,8 +291,8 @@ def imcc(
 def imcc_breakdown(
     all_risk_class_vectors: LHVectorInput,
     per_risk_class_vectors: PerRiskClassLHVectorInput,
-    alpha: float = 0.975,
-    w: float = 0.5,
+    alpha: float,
+    w: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> IMCCResult:
     """

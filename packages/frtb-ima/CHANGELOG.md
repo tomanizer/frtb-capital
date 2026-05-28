@@ -13,6 +13,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   audit records, NDJSON serialisation, and Markdown audit reports.
 - Added deterministic inputs hash support for audit records and validation-pack
   audit reports.
+- Added `RegulatoryPolicy.cited_by` citations for numeric policy thresholds and
+  parameters.
 
 ### Documentation
 
@@ -26,6 +28,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 
 - Added policy-hash and audit-identity regression coverage.
 - Added capital-run fixture coverage for stable input hashing.
+- Added coverage that every numeric `RegulatoryPolicy` field is either cited or
+  documented as a structural modelling choice.
 - Added a Python-version-keyed SHA-256 determinism check for the full
   `capital_run_v1` fixture.
 - Updated package documentation to reflect the migration into the
@@ -35,6 +39,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 
 - Capped the runtime, development, and notebook dependency ranges to minor
   versions for supply-chain control.
+- Removed regulatory numeric defaults from lower-level IMA calculation helpers;
+  callers now pass explicit parameters or use policy-aware wrappers.
 
 ### Notes
 

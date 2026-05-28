@@ -137,7 +137,7 @@ def _values_as_list(vector: ScenarioVector | Sequence[float]) -> list[float]:
 
 def lha_es_breakdown_from_vectors(
     lh_vectors: Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]],
-    alpha: float = 0.975,
+    alpha: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> LHAESResult:
     """
@@ -187,7 +187,7 @@ def lha_es_breakdown_from_vectors(
 
 def lha_es_breakdown_from_scalars(
     es_by_lh: Mapping[LiquidityHorizon, float],
-    alpha: float = 0.975,
+    alpha: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> LHAESResult:
     """
@@ -226,7 +226,7 @@ def lha_es_breakdown_from_scalars(
 
 def lha_es_from_vectors(
     lh_vectors: Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]],
-    alpha: float = 0.975,
+    alpha: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> float:
     """
@@ -256,6 +256,7 @@ def lha_es_from_vectors(
 
 def lha_es_from_scalars(
     es_by_lh: Mapping[LiquidityHorizon, float],
+    alpha: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> float:
     """
@@ -264,7 +265,11 @@ def lha_es_from_scalars(
     Convenience wrapper for callers that have already computed ES per subset.
     Same formula as lha_es_from_vectors.
     """
-    return lha_es_breakdown_from_scalars(es_by_lh, lha_weights=lha_weights).lha_es
+    return lha_es_breakdown_from_scalars(
+        es_by_lh,
+        alpha=alpha,
+        lha_weights=lha_weights,
+    ).lha_es
 
 
 # ---------------------------------------------------------------------------

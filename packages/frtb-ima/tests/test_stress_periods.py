@@ -31,6 +31,8 @@ from frtb_ima.stress_periods import (
     validate_selected_stress_periods,
 )
 
+CONFIDENCE_LEVEL = 0.975
+
 
 def _dates(count: int, *, start: date = date(2020, 1, 1)) -> tuple[date, ...]:
     return tuple(start + timedelta(days=idx) for idx in range(count))
@@ -77,12 +79,14 @@ def test_cumulative_loss_uses_window_sum_and_selects_severe_cluster() -> None:
         window_observations=3,
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
     )
     selected = select_stress_period_from_history(
         _series(losses),
         window_observations=3,
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
     )
 
     assert scores[5] == pytest.approx(120.0)
@@ -98,6 +102,7 @@ def test_latest_start_date_tie_break_is_deterministic() -> None:
         window_observations=2,
         minimum_observations=2,
         severity_metric=StressSeverityMetric.MAX_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
         tie_break=StressPeriodTieBreak.LATEST_START_DATE,
     )
 
@@ -112,6 +117,7 @@ def test_earliest_start_date_tie_break_is_deterministic() -> None:
         window_observations=2,
         minimum_observations=2,
         severity_metric=StressSeverityMetric.MAX_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
         tie_break=StressPeriodTieBreak.EARLIEST_START_DATE,
     )
 
@@ -125,6 +131,7 @@ def test_candidates_from_history_materialises_audit_windows_without_losses() -> 
         window_observations=3,
         minimum_observations=3,
         severity_metric=StressSeverityMetric.MAX_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
     )
 
     assert len(candidates) == 3
@@ -159,6 +166,7 @@ def test_select_stress_periods_by_risk_class_selects_independently() -> None:
         window_observations=3,
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
     )
 
     assert isinstance(result, StressPeriodSelectionResult)
@@ -190,6 +198,7 @@ def test_stress_period_specs_for_nmrf_bridge_uses_selected_windows() -> None:
         window_observations=3,
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
     )
 
     specs = stress_period_specs_for_nmrf(result)
@@ -249,6 +258,7 @@ def test_selection_rejects_short_histories_and_duplicate_risk_classes() -> None:
             window_observations=4,
             minimum_observations=4,
             severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
         )
 
     with pytest.raises(ValueError, match="duplicate history"):
@@ -258,6 +268,7 @@ def test_selection_rejects_short_histories_and_duplicate_risk_classes() -> None:
             window_observations=4,
             minimum_observations=4,
             severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
         )
 
 
@@ -268,6 +279,7 @@ def test_validate_selected_stress_periods_requires_all_risk_classes() -> None:
         window_observations=3,
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
     )
 
     validate_selected_stress_periods(result, [RiskClass.CSR])
@@ -282,6 +294,7 @@ def test_same_risk_class_nmrfs_use_common_selected_stress_period() -> None:
         window_observations=3,
         minimum_observations=3,
         severity_metric=StressSeverityMetric.CUMULATIVE_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
     )
     stress_periods = stress_period_specs_for_nmrf(result)
     instructions = (
@@ -319,12 +332,14 @@ def test_same_risk_class_nmrfs_use_common_selected_stress_period() -> None:
                 shock_unit="spread_bps",
                 direction=NMRFShockDirection.UP,
                 calibration_source="synthetic stress calibration",
+                confidence_level=CONFIDENCE_LEVEL,
             ),
             "DISTRESSED_CREDIT_SPD": NMRFDirectShockSpec(
                 shock_size=500.0,
                 shock_unit="spread_bps",
                 direction=NMRFShockDirection.UP,
                 calibration_source="synthetic stress calibration",
+                confidence_level=CONFIDENCE_LEVEL,
             ),
         },
     )

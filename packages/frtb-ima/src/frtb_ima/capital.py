@@ -32,7 +32,6 @@ from dataclasses import dataclass
 from frtb_ima.backtesting import TradingDeskBacktestResult
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import (
-    DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE,
     DeskEligibilityStatus,
     RegulatoryPolicy,
 )
@@ -121,7 +120,7 @@ def models_based_capital(
     ses_t_minus_1: float,
     imcc_60d_avg: float,
     ses_60d_avg: float,
-    multiplier: float = 1.5,
+    multiplier: float,
     pla_addon: float = 0.0,
 ) -> CapitalComponents:
     """
@@ -154,7 +153,7 @@ def models_based_capital(
     if not math.isfinite(multiplier):
         raise ValueError(f"multiplier must be finite, got {multiplier}")
     if multiplier < 1.5:
-        raise ValueError(f"multiplier must be >= 1.5 (floor), got {multiplier}")
+        raise ValueError(f"multiplier must be at least the supervisory floor, got {multiplier}")
 
     spot_term = imcc_t_minus_1 + ses_t_minus_1
     average_term = multiplier * imcc_60d_avg + ses_60d_avg
@@ -300,8 +299,8 @@ def pla_addon(
 
 def supervisory_multiplier(
     exception_count: int,
-    schedule: Sequence[tuple[int, float]] = DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE,
-    red_zone_multiplier: float = 2.00,
+    schedule: Sequence[tuple[int, float]],
+    red_zone_multiplier: float,
 ) -> float:
     """
     Map backtesting exception count to supervisory multiplier.

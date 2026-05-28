@@ -16,9 +16,11 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass, fields, is_dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field, fields, is_dataclass
 from datetime import date
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Any
 
 from frtb_ima.data_models import LiquidityHorizon
@@ -134,6 +136,57 @@ DEFAULT_BACKTESTING_EXCEPTION_LIMITS: tuple[tuple[float, int], ...] = (
     (0.99, 12),
 )
 
+REGULATORY_PARAMETER_CITATIONS: Mapping[str, str] = MappingProxyType(
+    {
+        "es_confidence_level": "Basel MAR33.4; U.S. NPR 2.0 proposed section __.214",
+        "imcc_unconstrained_weight": "Basel MAR33.15; U.S. NPR 2.0 proposed section __.214",
+        "rfet_short_lh_threshold": "Basel MAR31.12; U.S. NPR 2.0 proposed section __.212",
+        "rfet_long_lh_threshold": "Basel MAR31.12; U.S. NPR 2.0 proposed section __.212",
+        "rfet_short_lh_max_days": "Basel MAR31.12; U.S. NPR 2.0 proposed section __.212",
+        "rfet_lookback_days": "Basel MAR31.12; U.S. NPR 2.0 proposed section __.212",
+        "type_b_ses_rho": "Basel MAR33.16; U.S. NPR 2.0 proposed section __.215",
+        "pla_green_threshold": "Basel MAR32.42; U.S. NPR 2.0 proposed section __.213",
+        "pla_amber_threshold": "Basel MAR32.42; U.S. NPR 2.0 proposed section __.213",
+        "pla_spearman_green_threshold": (
+            "Basel MAR32.42; Delegated Regulation (EU) 2022/2059 Article 5(2)"
+        ),
+        "pla_spearman_amber_threshold": (
+            "Basel MAR32.42; Delegated Regulation (EU) 2022/2059 Article 5(2)"
+        ),
+        "pla_window_days": "Basel MAR32.40; U.S. NPR 2.0 proposed section __.213",
+        "pla_minimum_history_days": "Basel MAR32.40; U.S. NPR 2.0 proposed section __.213",
+        "backtesting_window_days": "Basel MAR32.7; U.S. NPR 2.0 proposed section __.213",
+        "backtesting_minimum_history_days": ("Basel MAR32.7; U.S. NPR 2.0 proposed section __.213"),
+        "backtesting_var_confidence_levels": (
+            "Basel MAR32.6; U.S. NPR 2.0 proposed section __.213"
+        ),
+        "backtesting_exception_limits": "Basel MAR32.8; U.S. NPR 2.0 proposed section __.213",
+        "reduced_set_coverage_window_days": (
+            "Basel MAR33.16; U.S. NPR 2.0 proposed section __.214"
+        ),
+        "reduced_set_variation_explained_threshold": (
+            "Basel MAR33.16; U.S. NPR 2.0 proposed section __.214"
+        ),
+        "stress_period_window_observations": (
+            "Basel MAR33.5; U.S. NPR 2.0 proposed section __.214"
+        ),
+        "stress_period_minimum_observations": (
+            "Basel MAR33.5; U.S. NPR 2.0 proposed section __.214"
+        ),
+        "supervisory_multiplier_schedule": (
+            "Basel MAR99 Table 2; U.S. NPR 2.0 proposed section __.213"
+        ),
+        "supervisory_multiplier_red_zone": (
+            "Basel MAR99 Table 2; U.S. NPR 2.0 proposed section __.213"
+        ),
+    }
+)
+
+
+def _default_parameter_citations() -> Mapping[str, str]:
+    return REGULATORY_PARAMETER_CITATIONS
+
+
 _SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 
 
@@ -212,7 +265,18 @@ class RegulatoryPolicy:
         DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE
     )
     supervisory_multiplier_red_zone: float = 2.00
+    cited_by: Mapping[str, str] = field(default_factory=_default_parameter_citations)
     unsupported_features: tuple[UnsupportedFeature, ...] = ()
+
+    def __post_init__(self) -> None:
+        citations = {
+            str(parameter_name): str(citation) for parameter_name, citation in self.cited_by.items()
+        }
+        if any(
+            not parameter_name or not citation for parameter_name, citation in citations.items()
+        ):
+            raise ValueError("cited_by must map non-empty parameter names to non-empty citations")
+        object.__setattr__(self, "cited_by", MappingProxyType(citations))
 
     @property
     def policy_hash(self) -> str:
@@ -332,6 +396,6 @@ def _policy_jsonable(value: Any) -> object:
         return {field.name: _policy_jsonable(getattr(value, field.name)) for field in fields(value)}
     if isinstance(value, tuple | list):
         return [_policy_jsonable(item) for item in value]
-    if isinstance(value, dict):
+    if isinstance(value, Mapping):
         return {str(key): _policy_jsonable(item) for key, item in value.items()}
     return value

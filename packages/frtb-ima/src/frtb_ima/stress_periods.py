@@ -292,7 +292,7 @@ def rolling_window_severity_scores(
     window_observations: int = 250,
     minimum_observations: int = 250,
     severity_metric: StressSeverityMetric = StressSeverityMetric.EXPECTED_SHORTFALL,
-    confidence_level: float = 0.975,
+    confidence_level: float,
 ) -> npt.NDArray[np.float64]:
     """
     Return one severity score per rolling window.
@@ -356,7 +356,7 @@ def stress_period_candidates_from_history(
     window_observations: int = 250,
     minimum_observations: int = 250,
     severity_metric: StressSeverityMetric = StressSeverityMetric.EXPECTED_SHORTFALL,
-    confidence_level: float = 0.975,
+    confidence_level: float,
 ) -> tuple[StressPeriodCandidate, ...]:
     """Build all candidate stress windows for audit or diagnostics."""
     if not isinstance(series, HistoricalStressSeries):
@@ -387,7 +387,7 @@ def select_stress_period_from_history(
     window_observations: int = 250,
     minimum_observations: int = 250,
     severity_metric: StressSeverityMetric = StressSeverityMetric.EXPECTED_SHORTFALL,
-    confidence_level: float = 0.975,
+    confidence_level: float,
     tie_break: StressPeriodTieBreak = StressPeriodTieBreak.LATEST_START_DATE,
 ) -> StressPeriodCandidate:
     """
@@ -424,7 +424,7 @@ def select_stress_periods_by_risk_class(
     window_observations: int = 250,
     minimum_observations: int = 250,
     severity_metric: StressSeverityMetric = StressSeverityMetric.EXPECTED_SHORTFALL,
-    confidence_level: float = 0.975,
+    confidence_level: float,
     tie_break: StressPeriodTieBreak = StressPeriodTieBreak.LATEST_START_DATE,
     regime: RegulatoryRegime | str = RegulatoryRegime.FED_NPR_2_0,
     metadata: Mapping[str, object] | None = None,

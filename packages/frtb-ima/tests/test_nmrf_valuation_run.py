@@ -29,6 +29,8 @@ from frtb_ima.nmrf_valuation_run import (
 )
 from frtb_ima.regimes import RegulatoryRegime, get_policy
 
+CONFIDENCE_LEVEL = 0.975
+
 
 def _stress_period(period_id: str = "csr-2008") -> NMRFStressPeriodSpec:
     return NMRFStressPeriodSpec(
@@ -52,6 +54,7 @@ def _direct_spec(name: str = "RF_DIRECT") -> NMRFValuationSpec:
             shock_unit="spread_bps",
             direction=NMRFShockDirection.UP,
             calibration_source="synthetic",
+            confidence_level=CONFIDENCE_LEVEL,
         ),
         source="unit-test spec",
     )

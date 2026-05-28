@@ -204,7 +204,7 @@ def nmrf_direct_shocks_from_fixture(
             shock_unit=str(shock["shock_unit"]),
             direction=NMRFShockDirection(str(shock["direction"])),
             calibration_source=str(shock["calibration_source"]),
-            confidence_level=float(shock.get("confidence_level", 0.975)),
+            confidence_level=float(shock["confidence_level"]),
             notes=str(shock.get("notes", "")),
         )
     return result

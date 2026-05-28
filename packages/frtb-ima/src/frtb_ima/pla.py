@@ -13,14 +13,11 @@ model failure. For EU/PRA profiles, the authoritative PLA zone is the worse of
 the KS zone and Spearman zone.
 
 Zone thresholds:
-    Green (pass):  KS <= GREEN_THRESHOLD
-    Amber:         GREEN_THRESHOLD < KS <= AMBER_THRESHOLD
-    Red (fail):    KS > AMBER_THRESHOLD
+    Green (pass):  KS <= policy green threshold
+    Amber:         green threshold < KS <= policy amber threshold
+    Red (fail):    KS > policy amber threshold
 
-The default KS thresholds are Basel MAR32.42 traffic-light thresholds and align
-to U.S. NPR 2.0 proposed section `__.213`. The default Spearman thresholds used
-by EU/PRA comparison profiles are Basel MAR32.42 and Delegated Regulation (EU)
-2022/2059 Article 5(2) thresholds.
+Threshold values are sourced from ``RegulatoryPolicy`` by policy-aware wrappers.
 
 Regulatory traceability:
     Basel MAR32 PLA; U.S. NPR 2.0 KS-based PLA proposal; EU CRR Article 325bg
@@ -45,9 +42,6 @@ from frtb_ima.regimes import (
     RegulatoryPolicy,
 )
 
-# KS PLA zone thresholds: Basel MAR32.42; U.S. NPR 2.0 proposed section `__.213`.
-GREEN_THRESHOLD: float = 0.09
-AMBER_THRESHOLD: float = 0.12
 DEFAULT_ZONE_LABELS: tuple[str, str, str] = ("GREEN", "AMBER", "RED")
 logger = logging.getLogger(__name__)
 
@@ -286,8 +280,8 @@ def spearman_correlation(hpl: FloatVector, rtpl: FloatVector) -> float:
 def pla_assessment(
     hpl: FloatVector,
     rtpl: FloatVector,
-    green_threshold: float = GREEN_THRESHOLD,
-    amber_threshold: float = AMBER_THRESHOLD,
+    green_threshold: float,
+    amber_threshold: float,
     zone_labels: tuple[str, str, str] = DEFAULT_ZONE_LABELS,
 ) -> PlaResult:
     """

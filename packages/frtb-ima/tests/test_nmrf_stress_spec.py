@@ -23,6 +23,8 @@ from frtb_ima.nmrf_stress_spec import (
 )
 from frtb_ima.regimes import RegulatoryRegime, UnsupportedRegulatoryFeature, get_policy
 
+CONFIDENCE_LEVEL = 0.975
+
 
 def _instruction(
     *,
@@ -63,6 +65,7 @@ def test_direct_valuation_spec_requires_calibrated_direct_shock() -> None:
             shock_unit="spread_bps",
             direction=NMRFShockDirection.UP,
             calibration_source="synthetic 12-month stress window",
+            confidence_level=CONFIDENCE_LEVEL,
         ),
     )
 
@@ -207,6 +210,7 @@ def test_bulk_spec_builder_uses_risk_class_period_and_factor_override() -> None:
                 shock_unit="spread_bps",
                 direction=NMRFShockDirection.UP,
                 calibration_source="synthetic",
+                confidence_level=CONFIDENCE_LEVEL,
             ),
         },
         full_revaluations={
@@ -247,6 +251,7 @@ def test_bulk_spec_builder_rejects_duplicate_instructions() -> None:
         shock_unit="spread_bps",
         direction=NMRFShockDirection.UP,
         calibration_source="synthetic",
+        confidence_level=CONFIDENCE_LEVEL,
     )
 
     with pytest.raises(NMRFStressSpecError, match="duplicate instruction"):
@@ -274,6 +279,7 @@ def test_spec_builder_rejects_unsupported_ecb_type_a_type_b_policy() -> None:
                 shock_unit="spread_bps",
                 direction=NMRFShockDirection.UP,
                 calibration_source="synthetic",
+                confidence_level=CONFIDENCE_LEVEL,
             ),
         )
 

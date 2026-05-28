@@ -18,6 +18,9 @@ from frtb_ima.pla import (
 )
 from frtb_ima.regimes import PLAMetricsRequired, RegulatoryPolicy, RegulatoryRegime, get_policy
 
+PLA_GREEN_THRESHOLD = 0.09
+PLA_AMBER_THRESHOLD = 0.12
+
 
 def _diagnostics() -> PlaWindowDiagnostics:
     return PlaWindowDiagnostics(
@@ -123,7 +126,12 @@ def test_spearman_correlation_rejects_string_input() -> None:
 
 def test_pla_assessment_green_zone() -> None:
     vec = [float(i) for i in range(200)]
-    result = pla_assessment(vec, vec)
+    result = pla_assessment(
+        vec,
+        vec,
+        green_threshold=PLA_GREEN_THRESHOLD,
+        amber_threshold=PLA_AMBER_THRESHOLD,
+    )
     assert result.zone == "GREEN"
     assert result.ks_statistic == pytest.approx(0.0)
 
@@ -131,7 +139,12 @@ def test_pla_assessment_green_zone() -> None:
 def test_pla_assessment_red_zone() -> None:
     hpl = [float(i) for i in range(1, 101)]
     rtpl = [float(i + 200) for i in range(1, 101)]
-    result = pla_assessment(hpl, rtpl)
+    result = pla_assessment(
+        hpl,
+        rtpl,
+        green_threshold=PLA_GREEN_THRESHOLD,
+        amber_threshold=PLA_AMBER_THRESHOLD,
+    )
     assert result.zone == "RED"
     assert result.ks_statistic > 0.12
 
@@ -139,7 +152,12 @@ def test_pla_assessment_red_zone() -> None:
 def test_pla_result_lengths() -> None:
     hpl = [1.0, 2.0, 3.0]
     rtpl = [1.0, 2.0, 3.0, 4.0]
-    result = pla_assessment(hpl, rtpl)
+    result = pla_assessment(
+        hpl,
+        rtpl,
+        green_threshold=PLA_GREEN_THRESHOLD,
+        amber_threshold=PLA_AMBER_THRESHOLD,
+    )
     assert result.n_hpl == 3
     assert result.n_rtpl == 4
 

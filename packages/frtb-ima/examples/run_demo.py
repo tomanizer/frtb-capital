@@ -260,6 +260,7 @@ def main() -> None:
                 shock_unit="spread_bps",
                 direction=NMRFShockDirection.UP,
                 calibration_source="synthetic stress-period calibration",
+                confidence_level=context.policy.es_confidence_level,
             ),
         },
         full_revaluations={
