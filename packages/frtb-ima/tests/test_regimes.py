@@ -1,11 +1,13 @@
 """Tests for regulatory regime policy configuration."""
 
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 from datetime import date, timedelta
+from importlib.metadata import version
 from pathlib import Path
 
 import pytest
 
+import frtb_ima
 from frtb_ima.backtesting import backtest, backtest_for_policy
 from frtb_ima.capital import supervisory_multiplier, supervisory_multiplier_for_policy
 from frtb_ima.data_models import (
@@ -60,6 +62,21 @@ def test_get_policy_returns_deterministic_immutable_profiles() -> None:
 
     with pytest.raises(FrozenInstanceError):
         fed.es_confidence_level = 0.99  # type: ignore[misc]
+
+
+def test_package_version_matches_installed_metadata() -> None:
+    assert frtb_ima.__version__ == version("frtb-ima")
+
+
+def test_regulatory_policy_hash_is_stable_and_field_sensitive() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    identical = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    changed = replace(policy, pla_green_threshold=policy.pla_green_threshold + 0.01)
+
+    assert policy.as_dict()["regime"] == "FED_NPR_2_0"
+    assert policy.policy_hash == identical.policy_hash
+    assert len(policy.policy_hash) == 64
+    assert policy.policy_hash != changed.policy_hash
 
 
 def test_fed_policy_reproduces_current_default_calculation_outputs() -> None:

@@ -7,6 +7,11 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 
 ## [Unreleased]
 
+### Added
+
+- Added model version, package code version, and policy hash identity fields to
+  audit records, NDJSON serialisation, and Markdown audit reports.
+
 ### Documentation
 
 - Added a determinism guarantee for the committed capital-run fixture and the
@@ -17,6 +22,7 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 
 ### Tests
 
+- Added policy-hash and audit-identity regression coverage.
 - Added a Python-version-keyed SHA-256 determinism check for the full
   `capital_run_v1` fixture.
 - Updated package documentation to reflect the migration into the

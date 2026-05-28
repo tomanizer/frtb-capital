@@ -7,6 +7,7 @@ Basel FRTB, and EU/PRA comparison material; supervisory approval, validation,
 and production governance remain outside this package.
 """
 
+from frtb_ima._version import __version__
 from frtb_ima.audit import (
     CapitalRunAuditLog,
     DeskAuditRecord,
@@ -138,8 +139,10 @@ from frtb_ima.reduced_set import (
     reduced_set_variation_explained_for_policy,
 )
 from frtb_ima.regimes import (
+    DEFAULT_MODEL_VERSION,
     CalculationContext,
     DeskEligibilityStatus,
+    ModelVersion,
     NMRFTaxonomyMode,
     PLAMetricsRequired,
     RegulatoryPolicy,
@@ -185,6 +188,7 @@ from frtb_ima.stress_periods import (
 )
 
 __all__ = [
+    "DEFAULT_MODEL_VERSION",
     "FED_NPR_SPECIFIED_FX_CURRENCY_CODES",
     "CalculationContext",
     "CapitalComponents",
@@ -202,6 +206,7 @@ __all__ = [
     "LiquidityHorizon",
     "LiquidityHorizonCategory",
     "LiquidityHorizonMappingEntry",
+    "ModelVersion",
     "ModellabilityStatus",
     "NMRFArtifactReconciliationItem",
     "NMRFArtifactReconciliationResult",
@@ -264,6 +269,7 @@ __all__ = [
     "TypeASESAggregationMode",
     "UnsupportedFeature",
     "UnsupportedRegulatoryFeature",
+    "__version__",
     "aggregate_ses_breakdown_for_policy",
     "assess_direct_loss_robustness",
     "assess_rfet_evidence",

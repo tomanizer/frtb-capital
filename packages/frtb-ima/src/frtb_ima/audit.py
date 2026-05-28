@@ -22,7 +22,14 @@ from pathlib import Path
 from types import MappingProxyType, TracebackType
 from typing import Any
 
-from frtb_ima.regimes import DeskEligibilityStatus
+from frtb_ima._version import __version__
+from frtb_ima.regimes import (
+    DEFAULT_MODEL_VERSION,
+    DeskEligibilityStatus,
+    ModelVersion,
+    RegulatoryRegime,
+    get_policy,
+)
 
 
 def _empty_mapping() -> Mapping[str, object]:
@@ -37,6 +44,9 @@ class DeskAuditRecord:
     desk_id: str
     regime: str
     desk_eligibility: str = field(default="IMA_ELIGIBLE", kw_only=True)
+    model_version: ModelVersion = field(default=DEFAULT_MODEL_VERSION, kw_only=True)
+    code_version: str = field(default=__version__, kw_only=True)
+    policy_hash: str = field(default="", kw_only=True)
     imcc: Mapping[str, object]
     ses: Mapping[str, object]
     pla: Mapping[str, object]
@@ -55,6 +65,14 @@ class DeskAuditRecord:
             raise ValueError("desk_id must be non-empty")
         if not self.regime:
             raise ValueError("regime must be non-empty")
+        model_version = _coerce_model_version(self.model_version)
+        code_version = str(self.code_version)
+        policy_hash = (
+            str(self.policy_hash) if self.policy_hash else _default_policy_hash(self.regime)
+        )
+        if not code_version:
+            raise ValueError("code_version must be non-empty")
+        _validate_policy_hash(policy_hash)
         try:
             desk_eligibility = DeskEligibilityStatus(self.desk_eligibility).value
         except ValueError as exc:
@@ -62,6 +80,9 @@ class DeskAuditRecord:
         if self.elapsed_seconds < 0.0:
             raise ValueError("elapsed_seconds must be non-negative")
         object.__setattr__(self, "desk_eligibility", desk_eligibility)
+        object.__setattr__(self, "model_version", model_version)
+        object.__setattr__(self, "code_version", code_version)
+        object.__setattr__(self, "policy_hash", policy_hash)
         object.__setattr__(self, "imcc", _freeze_mapping(self.imcc))
         object.__setattr__(self, "ses", _freeze_mapping(self.ses))
         object.__setattr__(self, "pla", _freeze_mapping(self.pla))
@@ -82,6 +103,9 @@ class DeskAuditRecord:
             "desk_id": self.desk_id,
             "regime": self.regime,
             "desk_eligibility": self.desk_eligibility,
+            "model_version": self.model_version.as_dict(),
+            "code_version": self.code_version,
+            "policy_hash": self.policy_hash,
             "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
             "imcc": _jsonable(self.imcc),
             "ses": _jsonable(self.ses),
@@ -106,6 +130,9 @@ class CapitalRunAuditLog:
     run_id: str
     regime: str
     desk_records: tuple[DeskAuditRecord, ...]
+    model_version: ModelVersion = field(default=DEFAULT_MODEL_VERSION, kw_only=True)
+    code_version: str = field(default=__version__, kw_only=True)
+    policy_hash: str = field(default="", kw_only=True)
     as_of_date: date | None = None
     metadata: Mapping[str, object] = field(default_factory=_empty_mapping)
 
@@ -114,6 +141,14 @@ class CapitalRunAuditLog:
             raise ValueError("run_id must be non-empty")
         if not self.regime:
             raise ValueError("regime must be non-empty")
+        model_version = _coerce_model_version(self.model_version)
+        code_version = str(self.code_version)
+        policy_hash = (
+            str(self.policy_hash) if self.policy_hash else _default_policy_hash(self.regime)
+        )
+        if not code_version:
+            raise ValueError("code_version must be non-empty")
+        _validate_policy_hash(policy_hash)
         desk_records = tuple(self.desk_records)
         desk_ids = [record.desk_id for record in desk_records]
         if len(desk_ids) != len(set(desk_ids)):
@@ -123,6 +158,15 @@ class CapitalRunAuditLog:
                 raise ValueError("all desk_records must have the same run_id")
             if record.regime != self.regime:
                 raise ValueError("all desk_records must have the same regime")
+            if record.model_version != model_version:
+                raise ValueError("all desk_records must have the same model_version")
+            if record.code_version != code_version:
+                raise ValueError("all desk_records must have the same code_version")
+            if record.policy_hash != policy_hash:
+                raise ValueError("all desk_records must have the same policy_hash")
+        object.__setattr__(self, "model_version", model_version)
+        object.__setattr__(self, "code_version", code_version)
+        object.__setattr__(self, "policy_hash", policy_hash)
         object.__setattr__(self, "desk_records", desk_records)
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 
@@ -136,6 +180,9 @@ class CapitalRunAuditLog:
         return {
             "run_id": self.run_id,
             "regime": self.regime,
+            "model_version": self.model_version.as_dict(),
+            "code_version": self.code_version,
+            "policy_hash": self.policy_hash,
             "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
             "desk_count": self.desk_count,
             "desk_records": [record.as_dict() for record in self.desk_records],
@@ -173,9 +220,22 @@ def render_capital_run_audit_report(
         "> Prototype report only. Not for regulatory reporting.",
         "> NPR 2.0 values are proposed-rule parameters and are not final regulatory capital.",
         "",
-        "## Run summary",
+        "## Run identity",
         "",
     ]
+    lines.extend(
+        _markdown_table(
+            ("Field", "Value"),
+            (
+                ("Model ID", log.model_version.model_id),
+                ("Model version", log.model_version.version),
+                ("Model description", log.model_version.description),
+                ("Code version", log.code_version),
+                ("Policy hash", log.policy_hash),
+            ),
+        )
+    )
+    lines.extend(["", "## Run summary", ""])
     lines.extend(
         _markdown_table(
             ("Field", "Value"),
@@ -231,6 +291,10 @@ def render_capital_run_audit_report(
                 (
                     ("Run ID", record.run_id),
                     ("Regime", record.regime),
+                    ("Model ID", record.model_version.model_id),
+                    ("Model version", record.model_version.version),
+                    ("Code version", record.code_version),
+                    ("Policy hash", record.policy_hash),
                     (
                         "As of date",
                         record.as_of_date.isoformat() if record.as_of_date is not None else "",
@@ -290,6 +354,33 @@ def write_audit_records_ndjson(
 
 def _freeze_mapping(values: Mapping[str, object]) -> Mapping[str, object]:
     return MappingProxyType(dict(values))
+
+
+def _coerce_model_version(value: ModelVersion | Mapping[str, object]) -> ModelVersion:
+    if isinstance(value, ModelVersion):
+        return value
+    if isinstance(value, Mapping):
+        return ModelVersion(
+            model_id=str(value["model_id"]),
+            version=str(value["version"]),
+            description=str(value["description"]),
+        )
+    raise TypeError("model_version must be a ModelVersion")
+
+
+def _default_policy_hash(regime: str) -> str:
+    try:
+        policy = get_policy(RegulatoryRegime(regime))
+    except ValueError as exc:
+        raise ValueError(
+            "policy_hash must be provided when regime is not a known RegulatoryRegime"
+        ) from exc
+    return policy.policy_hash
+
+
+def _validate_policy_hash(value: str) -> None:
+    if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
+        raise ValueError("policy_hash must be a lowercase SHA-256 hex digest")
 
 
 def _json_section(

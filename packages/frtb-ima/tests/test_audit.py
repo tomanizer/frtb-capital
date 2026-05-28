@@ -7,6 +7,7 @@ from types import MappingProxyType
 
 import pytest
 
+from frtb_ima import __version__
 from frtb_ima.audit import (
     CapitalRunAuditLog,
     DeskAuditRecord,
@@ -15,7 +16,7 @@ from frtb_ima.audit import (
     write_audit_records_ndjson,
     write_capital_run_audit_report,
 )
-from frtb_ima.regimes import DeskEligibilityStatus
+from frtb_ima.regimes import DEFAULT_MODEL_VERSION, DeskEligibilityStatus, get_policy
 
 
 def _desk_record(desk_id: str = "desk-1") -> DeskAuditRecord:
@@ -43,6 +44,9 @@ def test_desk_audit_record_serializes_to_json_line() -> None:
     assert payload["run_id"] == "run-1"
     assert payload["desk_id"] == "desk-1"
     assert payload["desk_eligibility"] == "IMA_ELIGIBLE"
+    assert payload["model_version"] == DEFAULT_MODEL_VERSION.as_dict()
+    assert payload["code_version"] == __version__
+    assert payload["policy_hash"] == get_policy().policy_hash
     assert payload["as_of_date"] == "2026-05-27"
     assert payload["imcc"]["imcc"] == pytest.approx(100.0)
     assert payload["nmrf_valuation"]["passed"] is True
@@ -94,6 +98,9 @@ def test_capital_run_audit_log_serializes_records_to_ndjson() -> None:
     lines = log.to_ndjson().splitlines()
 
     assert log.desk_count == 2
+    assert log.as_dict()["model_version"] == DEFAULT_MODEL_VERSION.as_dict()
+    assert log.as_dict()["code_version"] == __version__
+    assert log.as_dict()["policy_hash"] == get_policy().policy_hash
     assert len(lines) == 2
     assert json.loads(lines[1])["desk_id"] == "desk-2"
 
@@ -104,6 +111,46 @@ def test_capital_run_audit_log_rejects_duplicate_desks() -> None:
             run_id="run-1",
             regime="FED_NPR_2_0",
             desk_records=(_desk_record("desk-1"), _desk_record("desk-1")),
+        )
+
+
+def test_capital_run_audit_log_requires_consistent_identity_fields() -> None:
+    with pytest.raises(ValueError, match="same policy_hash"):
+        CapitalRunAuditLog(
+            run_id="run-1",
+            regime="FED_NPR_2_0",
+            policy_hash=get_policy().policy_hash,
+            desk_records=(
+                _desk_record("desk-1"),
+                DeskAuditRecord(
+                    run_id="run-1",
+                    desk_id="desk-2",
+                    regime="FED_NPR_2_0",
+                    policy_hash="0" * 64,
+                    imcc={},
+                    ses={},
+                    pla={},
+                    backtesting={},
+                    capital={},
+                    elapsed_seconds=0.0,
+                ),
+            ),
+        )
+
+
+def test_audit_record_rejects_invalid_policy_hash() -> None:
+    with pytest.raises(ValueError, match="policy_hash"):
+        DeskAuditRecord(
+            run_id="run-1",
+            desk_id="desk-1",
+            regime="FED_NPR_2_0",
+            policy_hash="not-a-sha",
+            imcc={},
+            ses={},
+            pla={},
+            backtesting={},
+            capital={},
+            elapsed_seconds=0.0,
         )
 
 
@@ -149,6 +196,9 @@ def test_render_capital_run_audit_report_contains_summary_and_details() -> None:
     report = render_capital_run_audit_report(log)
 
     assert "# FRTB IMA Capital Run Audit Report" in report
+    assert "## Run identity" in report
+    assert f"| Code version | {__version__} |" in report
+    assert f"| Policy hash | {get_policy().policy_hash} |" in report
     assert "| Run ID | run-1 |" in report
     assert "| desk-1 | 2026-05-27 | 100 | 40 | 190 |" in report
     assert "## Desk: desk-1" in report
