@@ -15,7 +15,7 @@ interpolated estimator that applies full weight to the worst complete tail
 observations and fractional weight to the next observation when
 `n * (1 - alpha)` is not an integer. This is documented as the policy default
 in ADR 0004 and in
-[`REGULATORY_ASSUMPTIONS.md`](../../../packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md#expected-shortfall-estimator).
+[`REGULATORY_ASSUMPTIONS.md`](../../../../packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md#expected-shortfall-estimator).
 
 Regulatory anchors:
 

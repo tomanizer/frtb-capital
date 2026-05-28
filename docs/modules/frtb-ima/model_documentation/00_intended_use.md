@@ -77,4 +77,4 @@ proposed sections `__.213` for desk eligibility and PLA/backtesting gates and
 Articles 325ba-325bg and Article 325bk are used as comparison anchors.
 
 For the full code-to-regulation map, see
-[`REGULATORY_TRACEABILITY.md`](../../../packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md).
+[`REGULATORY_TRACEABILITY.md`](../../../../packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md).
