@@ -5,7 +5,7 @@ LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scr
 MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/frtb-ima.json
 
-.PHONY: check lint format format-check typecheck test mutation benchmark audit-deps sbom ima sa sbm drc rrao cva orchestration clean
+.PHONY: check lint format format-check typecheck test mutation benchmark audit-deps sbom replay-fixture validation-pack ima sa sbm drc rrao cva orchestration clean
 
 check: lint format-check typecheck test
 
@@ -39,6 +39,14 @@ audit-deps:
 sbom:
 	mkdir -p dist/sbom
 	uv run cyclonedx-py environment .venv --pyproject pyproject.toml --output-reproducible --of JSON -o dist/sbom/frtb-capital.cdx.json
+
+replay-fixture:
+	mkdir -p dist/replay
+	uv run python packages/frtb-ima/scripts/render_audit_report.py --output dist/replay/capital_run_v1_audit_report.md --ndjson dist/replay/capital_run_v1_desk_records.ndjson
+	uv run python -m frtb_ima.replay --audit dist/replay/capital_run_v1_desk_records.ndjson --fixture packages/frtb-ima/tests/fixtures/capital_run_v1 --json-output dist/replay/capital_run_v1_replay_report.json
+
+validation-pack:
+	$(MAKE) -C packages/frtb-ima PYTHON_BIN="uv run --extra notebooks python" validation-pack
 
 # Per-package shortcuts
 ima:

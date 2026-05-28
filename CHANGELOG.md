@@ -27,6 +27,8 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
   normalisation, and new-issuance evidence contracts.
 - FRTB-IMA production input-lineage manifest contracts for audit and validation
   pack evidence.
+- FRTB-IMA replay CLI and root `make replay-fixture` target for reproducing the
+  committed capital-run fixture from audit NDJSON.
 - Governance completion for audit issue #3: documented release approvals,
   versioning, tagging, and material-change handling in
   `docs/RELEASE_PROCESS.md`.

@@ -46,6 +46,26 @@ status controls for each artifact.
 CI uploads this directory as the `capital-run-v1-validation-pack` artifact from
 the notebooks job.
 
+## Replay
+
+After building the validation pack, validators can replay the desk audit record
+against the committed fixture input bundle:
+
+```bash
+python -m frtb_ima.replay \
+  --audit build/validation/capital_run_v1/audit/capital_run_v1_desk_records.ndjson \
+  --fixture tests/fixtures/capital_run_v1 \
+  --json-output build/validation/capital_run_v1/audit/capital_run_v1_replay_report.json
+```
+
+From the monorepo root, `make replay-fixture` renders the audit NDJSON and
+executes the same replay path under `dist/replay/`. The command emits a
+machine-readable JSON report and a compact terminal summary, and exits non-zero
+when code, policy, input hash, scalar, or categorical output checks do not
+match the audit record. Optional `--expected-code-version`,
+`--expected-policy-hash`, and `--expected-inputs-hash` arguments let a reviewer
+pin the replay to externally recorded run identity values.
+
 ## Review Order
 
 Start with `notebooks/00_validation_map.ipynb` for the fixture lineage,
