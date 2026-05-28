@@ -21,6 +21,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   reduced-set workflow.
 - Added Hypothesis property tests for ES, PLA statistics, LHA ES, IMCC, SES,
   and desk-level capital assembly.
+- Added mutmut configuration and baseline documentation for mutation testing on
+  core calculation modules.
 
 ### Documentation
 
@@ -42,6 +44,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   deterministic tie-break, and threshold-unmet cases.
 - Added deterministic Hypothesis `dev` and `ci` profiles, with CI running the
   thorough profile.
+- Added focused expected-shortfall helper coverage for direct sorted-loss input
+  validation.
 - Added a Python-version-keyed SHA-256 determinism check for the full
   `capital_run_v1` fixture.
 - Updated package documentation to reflect the migration into the
