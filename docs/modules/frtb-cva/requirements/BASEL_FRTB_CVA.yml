@@ -1,0 +1,62 @@
+schema_version: 1
+name: BASEL_FRTB_CVA
+module: frtb-cva
+status_values: [planned, implemented, partial, unsupported, out_of_scope]
+source_register:
+  - name: Basel MAR50
+    url: https://www.bis.org/basel_framework/chapter/MAR/50.htm
+  - name: U.S. NPR 2.0 91 FR 14952
+    url: https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
+  - name: CRR3 Regulation (EU) 2024/1623
+    url: https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
+requirements:
+  - id: CVA-DATA-001
+    title: Frozen CVA counterparty, netting-set, hedge, and sensitivity models
+    source: Basel MAR50.1-MAR50.9; U.S. NPR 2.0 section V.B
+    status: planned
+    modules: [src/frtb_cva/data_models.py]
+    tests: [tests/test_data_models.py]
+    notes: Include EAD/source lineage and CVA/hedge tags.
+  - id: CVA-SCOPE-001
+    title: CVA scope, exclusions, and method selection
+    source: Basel MAR50.1-MAR50.13; U.S. NPR 2.0 section V.B.2
+    status: planned
+    modules: [src/frtb_cva/regimes.py, src/frtb_cva/scope.py]
+    tests: [tests/test_scope.py]
+    notes: BA-CVA, SA-CVA, threshold, and unsupported cases must be explicit.
+  - id: CVA-HEDGE-001
+    title: Eligible CVA hedge and internal transfer treatment
+    source: Basel MAR50 hedge provisions; U.S. NPR 2.0 section V.A.6.c and V.B.3
+    status: planned
+    modules: [src/frtb_cva/hedges.py]
+    tests: [tests/test_hedges.py]
+    notes: Ineligible hedge benefit must be disallowed.
+  - id: CVA-BA-001
+    title: Basic approach CVA capital
+    source: Basel MAR50 BA-CVA provisions, including MAR50.14 and following
+    status: planned
+    modules: [src/frtb_cva/ba_cva.py]
+    tests: [tests/test_ba_cva.py]
+    notes: Counterparty/netting-set exposure and maturity inputs drive capital.
+  - id: CVA-SA-001
+    title: SA-CVA weighted sensitivity netting and risk-class capital
+    source: Basel MAR50.47-MAR50.53 and SA-CVA risk-class provisions
+    status: planned
+    modules: [src/frtb_cva/sa_cva.py, src/frtb_cva/risk_classes]
+    tests: [tests/test_sa_cva.py]
+    notes: Cover GIRR, FX, CCS, RCS, equity, and commodity risk classes.
+  - id: CVA-AGG-001
+    title: CVA aggregation and multiplier
+    source: Basel MAR50.1 and MAR50 aggregation provisions
+    status: planned
+    modules: [src/frtb_cva/capital.py]
+    tests: [tests/test_capital.py]
+    notes: Preserve pre- and post-multiplier amounts.
+  - id: CVA-AUDIT-001
+    title: CVA audit and benchmark output
+    source: Basel MAR50 traceability by component; U.S. NPR 2.0 section V.B.6
+    status: planned
+    modules: [src/frtb_cva/audit.py]
+    tests: [tests/test_audit.py]
+    notes: Include counterparty, netting set, risk class, bucket, CVA/hedge, and contribution.
+

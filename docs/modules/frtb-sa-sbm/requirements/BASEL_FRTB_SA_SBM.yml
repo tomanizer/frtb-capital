@@ -1,0 +1,78 @@
+schema_version: 1
+name: BASEL_FRTB_SA_SBM
+module: frtb-sa-sbm
+status_values: [planned, implemented, partial, unsupported, out_of_scope]
+source_register:
+  - name: Basel MAR20
+    url: https://www.bis.org/basel_framework/chapter/MAR/20.htm
+  - name: Basel MAR21
+    url: https://www.bis.org/basel_framework/chapter/MAR/21.htm
+  - name: U.S. NPR 2.0 91 FR 14952
+    url: https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
+  - name: CRR3 Regulation (EU) 2024/1623
+    url: https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
+requirements:
+  - id: SBM-DATA-001
+    title: Frozen SBM sensitivity and result models
+    source: Basel MAR21.1-MAR21.8; U.S. NPR 2.0 section V.A.7.a
+    status: planned
+    modules: [src/frtb_sa_sbm/data_models.py]
+    tests: [tests/test_data_models.py]
+    notes: Sensitivity, weighted sensitivity, bucket capital, risk-class capital, and total result.
+  - id: SBM-REF-001
+    title: Risk-class, bucket, risk-weight, tenor, and correlation reference data
+    source: Basel MAR21 risk-class tables; CRR3 Articles 325e-325az
+    status: planned
+    modules: [src/frtb_sa_sbm/reference_data.py]
+    tests: [tests/test_reference_data.py]
+    notes: Tables must be profile-keyed and cited.
+  - id: SBM-RISK-001
+    title: Seven-risk-class coverage
+    source: Basel MAR21; 91 FR 15037
+    status: planned
+    modules: [src/frtb_sa_sbm/risk_classes]
+    tests: [tests/test_risk_classes.py]
+    notes: GIRR, CSR non-sec, CSR sec CTP, CSR sec non-CTP, equity, commodity, FX.
+  - id: SBM-WS-001
+    title: Weighted sensitivity calculation
+    source: Basel MAR21 risk-weight provisions; U.S. NPR 2.0 section V.A.7.a step three
+    status: planned
+    modules: [src/frtb_sa_sbm/weighted_sensitivity.py]
+    tests: [tests/test_weighted_sensitivity.py]
+    notes: Include vega liquidity-horizon scaling.
+  - id: SBM-AGG-001
+    title: Intra-bucket aggregation
+    source: Basel MAR21 aggregation formulas; U.S. NPR 2.0 section V.A.7.a step four
+    status: planned
+    modules: [src/frtb_sa_sbm/aggregation.py]
+    tests: [tests/test_aggregation.py]
+    notes: Preserve pairwise correlation details for audit.
+  - id: SBM-AGG-002
+    title: Inter-bucket and correlation-scenario aggregation
+    source: Basel MAR21 aggregation formulas; U.S. NPR 2.0 section V.A.7.a steps five and six
+    status: planned
+    modules: [src/frtb_sa_sbm/aggregation.py]
+    tests: [tests/test_correlation_scenarios.py]
+    notes: Low, medium, and high scenario support.
+  - id: SBM-CURV-001
+    title: Curvature capital
+    source: Basel MAR21 curvature provisions; 91 FR 15037 footnote 328
+    status: planned
+    modules: [src/frtb_sa_sbm/curvature.py]
+    tests: [tests/test_curvature.py]
+    notes: Up/down scenario inputs and delta-exclusion treatment must be explicit.
+  - id: SBM-CRIF-001
+    title: CRIF-to-canonical mapping
+    source: ISDA CRIF field convention; implementation support requirement
+    status: planned
+    modules: [src/frtb_sa_sbm/crif.py]
+    tests: [tests/test_crif.py]
+    notes: Calculation kernel must not depend on CSV or pandas.
+  - id: SBM-AUDIT-001
+    title: Audit and Euler-compatible reports
+    source: Basel MAR21 component traceability by formula
+    status: planned
+    modules: [src/frtb_sa_sbm/audit.py]
+    tests: [tests/test_audit.py]
+    notes: Weighted sensitivities, buckets, scenarios, and capital contributions reconcile.
+
