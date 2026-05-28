@@ -63,7 +63,7 @@ not stress-period objects.
 2. Reduced risk-factor set construction and governance evidence.
 3. Institutional NMRF pricing/revaluation adapter beyond the current handoff reconciliation.
 4. Raw market-data calibration adapters and formal stress-period governance evidence.
-5. EU/PRA Spearman PLA and jurisdiction-specific source mapping.
+5. Jurisdiction-specific source mapping and remaining EU/PRA RFET/PRA calibration gaps.
 6. DRC, standardized/fallback capital, and legal-entity consolidation.
 7. Regulatory disclosure templates and orchestration-layer storage/telemetry sinks.
 

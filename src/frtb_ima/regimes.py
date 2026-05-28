@@ -151,6 +151,8 @@ class RegulatoryPolicy:
     pla_metrics_required: PLAMetricsRequired = PLAMetricsRequired.KS_ONLY
     pla_green_threshold: float = 0.09
     pla_amber_threshold: float = 0.12
+    pla_spearman_green_threshold: float = 0.80
+    pla_spearman_amber_threshold: float = 0.70
     pla_zone_labels: tuple[str, str, str] = ("GREEN", "AMBER", "RED")
     pla_window_days: int = 250
     pla_minimum_history_days: int = 250
@@ -221,11 +223,6 @@ def _ecb_crr3_policy() -> RegulatoryPolicy:
         pla_metrics_required=PLAMetricsRequired.KS_AND_SPEARMAN,
         unsupported_features=(
             UnsupportedFeature(
-                feature_name="spearman_pla",
-                source_topic="EU PLA RTS / Delegated Regulation (EU) 2022/2059",
-                notes="Prototype implements KS only; EU RTS Spearman metric is not implemented.",
-            ),
-            UnsupportedFeature(
                 feature_name="eu_rfet_rts_detail",
                 source_topic="EU RFET RTS / Delegated Regulation (EU) 2022/2060",
                 notes=(
@@ -250,11 +247,6 @@ def _pra_uk_crr_policy() -> RegulatoryPolicy:
         nmrf_taxonomy_mode=NMRFTaxonomyMode.BASEL_EU_NMRF,
         pla_metrics_required=PLAMetricsRequired.KS_AND_SPEARMAN,
         unsupported_features=(
-            UnsupportedFeature(
-                feature_name="spearman_pla",
-                source_topic="UK CRR / PRA PLA calibration",
-                notes="Prototype implements KS only; PRA-specific PLA calibration is not mapped.",
-            ),
             UnsupportedFeature(
                 feature_name="eu_rfet_rts_detail",
                 source_topic="UK CRR / PRA RFET source mapping",

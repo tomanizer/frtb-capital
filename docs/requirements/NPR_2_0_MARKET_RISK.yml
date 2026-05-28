@@ -202,13 +202,14 @@ requirements:
     title: "EU/PRA Spearman PLA metric"
     source: "EU RTS/PRA profile comparison gap"
     source_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R2059"
-    status: unsupported
+    status: implemented
     modules:
       - src/frtb_ima/pla.py
       - src/frtb_ima/regimes.py
     tests:
+      - tests/test_pla.py
       - tests/test_regimes.py
-    notes: "Explicit unsupported-feature behavior exists; metric not implemented."
+    notes: "Spearman rank-correlation PLA and worse-of-KS/Spearman joint-zone logic are implemented for ECB/PRA policy paths. Thresholds are prototype working assumptions."
 
   - id: NPR-MR-BT-001
     title: "Trading-desk backtesting gates at 97.5 and 99 percent VaR"

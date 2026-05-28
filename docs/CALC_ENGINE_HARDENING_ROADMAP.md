@@ -147,12 +147,13 @@ Remaining work:
 Current state:
 
 - Fed NPR 2.0 KS-only PLA path is implemented.
+- EU/PRA Spearman PLA metric and worse-of-KS/Spearman joint-zone logic are
+  implemented with prototype working-assumption thresholds.
 - Dual-level APL/HPL backtesting gates are implemented.
 - Optional dated traces and official-holiday masks exist.
 
 Remaining work:
 
-- EU/PRA Spearman PLA metric and joint-zone logic;
 - full business-calendar governance;
 - trading-desk eligibility state machine, breach handling, loss of eligibility,
   and re-entry workflow;

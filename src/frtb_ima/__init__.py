@@ -130,6 +130,7 @@ from frtb_ima.nmrf_valuation_run import (
     reconcile_nmrf_valuation_artifacts,
     require_nmrf_valuation_reconciliation_passed,
 )
+from frtb_ima.pla import SpearmanPlaResult
 from frtb_ima.reduced_set import (
     ReducedSetCoverageResult,
     reduced_set_variation_explained,
@@ -252,6 +253,7 @@ __all__ = [
     "ScenarioPnL",
     "ScenarioSetType",
     "ScenarioVector",
+    "SpearmanPlaResult",
     "StressPeriodCalibrationError",
     "StressPeriodCandidate",
     "StressPeriodSelectionResult",

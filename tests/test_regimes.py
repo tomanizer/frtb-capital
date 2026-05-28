@@ -109,12 +109,13 @@ def test_scalar_functions_remain_backward_compatible() -> None:
     assert supervisory_multiplier(10) == pytest.approx(2.0)
 
 
-def test_ecb_profile_requires_unsupported_spearman_pla() -> None:
+def test_ecb_profile_requires_ks_and_spearman_pla() -> None:
     policy = get_policy(RegulatoryRegime.ECB_CRR3)
-    assert policy.pla_metrics_required == PLAMetricsRequired.KS_AND_SPEARMAN
 
-    with pytest.raises(UnsupportedRegulatoryFeature, match="spearman_pla"):
-        pla_assessment_for_policy([1.0, 2.0], [1.0, 2.0], policy)
+    assert policy.pla_metrics_required == PLAMetricsRequired.KS_AND_SPEARMAN
+    assert policy.pla_spearman_green_threshold == pytest.approx(0.80)
+    assert policy.pla_spearman_amber_threshold == pytest.approx(0.70)
+    assert "spearman_pla" not in {feature.feature_name for feature in policy.unsupported_features}
 
 
 def test_type_a_type_b_taxonomy_is_fed_only_until_explicitly_supported() -> None:
