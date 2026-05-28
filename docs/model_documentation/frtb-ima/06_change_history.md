@@ -1,8 +1,8 @@
 # Change History
 
 This file records material `frtb-ima` model-documentation history and points to
-the authoritative change logs. It is maintained manually until audit issue #16
-defines the full material-change control workflow.
+the authoritative change logs. Material-change control is defined in
+[`ADR 0005`](../../decisions/0005-material-change-policy.md).
 
 ## Authoritative Logs
 
@@ -27,6 +27,7 @@ defines the full material-change control workflow.
 | 2026-05-28 | Added deterministic input hashing and version identity to audit records and validation-pack reports. | Package changelog; audit tests; validation-pack docs. | Improves reproducibility evidence and run identity controls. |
 | 2026-05-28 | Added reduced risk-factor set selection, Hypothesis properties, mutation baseline, coverage floor, and independent reference vectors. | Root and package changelogs; quality docs; PR history. | Expands numerical assurance; does not by itself complete independent validation. |
 | 2026-05-28 | Added this formal model documentation pack scaffold. | Issue #15; root changelog. | Establishes SR 11-7 / PRA SS 1/23 documentation structure for future validation evidence. |
+| 2026-05-28 | Added the material-change policy and backfilled major design ADRs. | ADRs 0005-0009; issue #16; root changelog. | Establishes the governance trigger for future material model changes. |
 
 ## Maintenance Rules
 

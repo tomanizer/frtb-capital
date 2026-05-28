@@ -1,6 +1,8 @@
 # Contributing to frtb-capital
 
-This is a regulated-bank-software prototype suite. Contributions are reviewed against the standards in [`CLAUDE.md`](CLAUDE.md) and the audit checklist in [`docs/decisions/`](docs/decisions/).
+This is a regulated-bank-software prototype suite. Contributions are reviewed
+against the standards in [`CLAUDE.md`](CLAUDE.md), the package-specific agent
+guidance, and the ADR log in [`docs/decisions/`](docs/decisions/).
 
 ## Setup
 
@@ -15,31 +17,35 @@ Requires Python 3.11+ and [`uv`](https://docs.astral.sh/uv/).
 
 1. Open an issue or pick one labelled `audit-followup`, `enhancement`, or `bug`.
 2. Branch from `main`.
-3. Make the change in a single package where possible. Cross-package changes require an ADR.
+3. Make the change in a single package where possible. Cross-package model
+   changes require an ADR.
 4. Run `make check` until green.
 5. Open a PR. The PR template will prompt for:
    - Affected package(s).
-   - Whether the change is "material" under the policy below.
+   - Whether the change is material under
+     [ADR 0005](docs/decisions/0005-material-change-policy.md).
    - Link to ADR if material.
 
 ## Material change policy
 
-A **material change** is one that:
+The canonical material-change policy is
+[`docs/decisions/0005-material-change-policy.md`](docs/decisions/0005-material-change-policy.md).
 
-- Alters a regulatory threshold value.
-- Changes a calculation formula.
-- Modifies the signature of any public API in a `frtb-*` package.
-- Affects the numerical output of any committed golden fixture.
-- Changes the `RegulatoryPolicy` schema.
+In short, material changes include regulatory threshold changes, calculation
+formula or input-routing changes, `RegulatoryPolicy` or public API semantic
+changes, fixture numerical output changes, requirement-status changes, package
+boundary changes, audit-record semantic changes, and model-version or release
+semantics changes.
 
-Material changes **require**:
+Material changes require an ADR, package-owner approval, model-validation
+reviewer approval, affected package version bump, changelog entry, and fixture
+review when fixture outputs or hashes change.
 
-- An ADR in `docs/decisions/`.
-- A version bump on the affected package.
-- A `CHANGELOG.md` entry on that package.
-- A regenerated fixture (if a fixture is affected) with a clean diff review.
-
-Non-material changes (refactors with identical outputs, documentation, tests, performance optimisations) do not require an ADR but should still update CHANGELOG.
+Non-material changes include refactors with identical outputs, documentation
+changes that do not reinterpret regulatory treatment, test additions,
+performance optimisations with identical outputs, and CI/formatting changes.
+They do not require an ADR but should still update changelogs when useful for
+release notes.
 
 ## Package discipline
 
@@ -55,7 +61,8 @@ For commits authored by Codex, prefix the subject with `[codex]`. For commits au
 
 ## Reviewing
 
-Reviews follow the checklist in `CLAUDE.md`. Material changes require an additional reviewer with model-validation responsibilities.
+Reviews follow the checklist in `CLAUDE.md`. Material changes require an
+additional reviewer with model-validation responsibilities before merge.
 
 ## Releases
 

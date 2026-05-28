@@ -17,6 +17,8 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
 - FRTB-IMA model documentation pack scaffold covering intended use,
   conceptual soundness, derivation, assumptions and limitations, sensitivity
   analysis, monitoring, and change history.
+- Material-change policy and backfilled ADRs for major FRTB-IMA model-design
+  decisions, with a PR template reminder for ADR review.
 - Governance completion for audit issue #3: documented release approvals,
   versioning, tagging, and material-change handling in
   `docs/RELEASE_PROCESS.md`.
