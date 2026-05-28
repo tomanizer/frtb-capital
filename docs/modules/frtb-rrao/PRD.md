@@ -43,6 +43,25 @@ and calculates the residual risk add-on for the FRTB standardised approach.
 | `crif.py` | CRIF/Axiom-style mapping into canonical fields. |
 | `audit.py` | Contribution and exclusion explain output. |
 
+## Implementation Standards
+
+`frtb-rrao` owns canonical residual-risk position records. The public boundary
+records position identity, desk, residual-risk type, classification evidence,
+gross effective notional, currency, source row id, supervisor-directed
+inclusion flag where applicable, and explicit sign convention.
+
+Risk-type weights, exclusion criteria, classification labels, and
+supervisor-directed inclusion rules come from a versioned rule profile supplied
+through `frtb-common`. The package does not infer exotic classification from
+free-form trade text; classification evidence is an input and must be
+auditable.
+
+Results must expose line contribution, classification reason, exclusion reason
+where applicable, additive RRAO total, rule profile id and hash, input snapshot
+hash, source citation ids, and unsupported-feature status. Exclusions and zero
+capital outcomes are successful only when they are explicitly cited and
+recorded.
+
 ## Delivery Slices
 
 1. **Skeleton and source register**.
@@ -60,4 +79,4 @@ and calculates the residual risk add-on for the FRTB standardised approach.
 - Synthetic tests cover exotic, other residual risk, excluded, and forced
   inclusion cases.
 - Unsupported classification inputs raise explicit errors.
-
+- Public results carry rule-profile and input-snapshot hashes.
