@@ -36,8 +36,12 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "N", "RUF", "T20"]
 
 [tool.ruff.lint.per-file-ignores]
-"examples/*.py" = ["T201"]
+"examples/*.py" = ["T201", "E501", "RUF002"]
 "scripts/*.py" = ["T201"]
+# Tolerate RUF002 (en-dashes in regulatory citations e.g. MAR22.8–22.14, × symbols) and E501 (long synthetic Position / test data lines) in library + test code.
+# Mirrors root pyproject.toml drc exceptions; package-local config is authoritative for `make lint` / CI on this package.
+"tests/*.py" = ["E501", "RUF002"]
+"src/frtb_drc/*.py" = ["RUF002"]
 
 [tool.mypy]
 python_version = "3.11"

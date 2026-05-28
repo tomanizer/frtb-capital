@@ -78,10 +78,12 @@ FRB_DRC_JS_RW: dict[tuple[str, str], float] = {
 }
 
 # Regime -> table
+# FRB uses (bucket, credit_quality) tuple keys; others use str (rating/CQS/bucket).
+# dict[Any, float] value allows mixed keys under the annotation (ignore was unused).
 RISK_WEIGHTS: dict[RulesVersion, dict[Any, float]] = {
     RulesVersion.CRR2: CRR2_DRC_JS_RW,
     RulesVersion.BCBS: BCBS_DRC_JS_RW,
-    RulesVersion.FRB: FRB_DRC_JS_RW,  # type: ignore[dict-item]  # tuple keys
+    RulesVersion.FRB: FRB_DRC_JS_RW,
     RulesVersion.PRA: BCBS_DRC_JS_RW,
 }
 
@@ -148,14 +150,16 @@ def get_risk_weight(
     rw_mapping = RISK_WEIGHTS[rules_version]
 
     if rules_version == RulesVersion.FRB:
-        key = (bucket, credit_quality or CreditQuality.SG.value)
-        rw = rw_mapping.get(key)
+        # Tuple key for FRB (bucket, IG/SG/SSG)
+        frb_key: tuple[str, str] = (bucket, credit_quality or CreditQuality.SG.value)
+        rw = rw_mapping.get(frb_key)
         if rw is None:
             # Fallback for unknown bucket under FRB (conservative SSG per reference)
             rw = 0.50
     else:
-        key = str(credit_quality or bucket)
-        rw = rw_mapping.get(key, 0.15)  # UNRATED default per tables
+        # str key for BCBS/CRR2/PRA (rating letter, CQS, or bucket fallback)
+        other_key: str = str(credit_quality or bucket)
+        rw = rw_mapping.get(other_key, 0.15)  # UNRATED default per tables
 
     if rw is None:
         raise ValueError(
