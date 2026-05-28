@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync workspace
+        run: uv sync
+
+      - name: Lint
+        run: uv run ruff check packages
+
+      - name: Format check
+        run: uv run ruff format --check packages
+
+  typecheck:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync workspace
+        run: uv sync
+
+      - name: Type check
+        run: uv run mypy packages
+
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Sync workspace
+        run: uv sync --python ${{ matrix.python-version }}
+
+      - name: Test
+        run: uv run pytest packages --cov --cov-report=term-missing
+
+  examples:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync workspace
+        run: uv sync
+
+      - name: Run IMA demo
+        run: uv run python packages/frtb-ima/examples/run_demo.py
+
+  notebooks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync workspace with notebooks extra
+        run: uv sync --extra notebooks
+
+      - name: Build IMA validation pack
+        working-directory: packages/frtb-ima
+        run: MPLBACKEND=Agg uv run pytest --nbmake notebooks
+
+      - name: Upload validation pack
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ima-validation-pack
+          path: packages/frtb-ima/build/validation/
+          if-no-files-found: warn
