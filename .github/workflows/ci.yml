@@ -75,6 +75,8 @@ jobs:
         run: uv sync --python ${{ matrix.python-version }}
 
       - name: Test
+        env:
+          HYPOTHESIS_PROFILE: ci
         run: uv run pytest packages --cov --cov-report=term-missing
 
   dependency-audit:
