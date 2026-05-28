@@ -59,6 +59,18 @@ uses the following documented modelling basis:
 17. Missing APL, HPL, or VaR observations count as backtesting exceptions
     unless marked as official-holiday related.
 
+### Expected shortfall estimator
+
+The regulation defines expected shortfall as a tail risk measure but does not
+prescribe the finite-sample interpolation method for this prototype. The Fed
+NPR 2.0, ECB CRR3, and PRA UK CRR policy profiles therefore use
+`ESEstimator.WEIGHTED_INTERPOLATED` by default. This estimator includes the
+worst `floor(n * (1 - alpha))` scenarios fully and applies the remaining
+fractional tail mass to the next scenario. `ESEstimator.DISCRETE_CEIL` remains
+available as an explicit compatibility estimator for closed-form tests and
+comparisons with the original prototype behaviour. See ADR 0004 for the model
+decision record.
+
 ## Policy parameter citation allowlist
 
 `RegulatoryPolicy.cited_by` records the regulatory citation for each numeric

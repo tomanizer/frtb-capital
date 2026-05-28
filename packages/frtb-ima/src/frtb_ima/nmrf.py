@@ -401,6 +401,7 @@ def calculate_nmrf_ses_from_revaluation(
             expected_shortfall(
                 artifact.losses,
                 alpha=policy.es_confidence_level,
+                estimator=policy.es_estimator,
             ),
         )
     return NMRFStressScenarioResult(

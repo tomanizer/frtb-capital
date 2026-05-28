@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from frtb_ima.data_models import LiquidityHorizon
+from frtb_ima.expected_shortfall import ESEstimator
 from frtb_ima.liquidity_horizon import (
     lha_es_breakdown_from_scalars,
     lha_es_breakdown_from_vectors,
@@ -17,6 +18,7 @@ from frtb_ima.liquidity_horizon import (
 from frtb_ima.scenario import ScenarioVector, make_scenario_metadata
 
 ALPHA = 0.975
+ESTIMATOR = ESEstimator.DISCRETE_CEIL
 
 
 def _uniform_losses(n: int, value: float) -> list[float]:
@@ -25,7 +27,7 @@ def _uniform_losses(n: int, value: float) -> list[float]:
 
 def test_lha_es_from_scalars_lh10_only() -> None:
     es_by_lh = {LiquidityHorizon.LH10: 100.0}
-    result = lha_es_from_scalars(es_by_lh, alpha=ALPHA)
+    result = lha_es_from_scalars(es_by_lh, alpha=ALPHA, estimator=ESTIMATOR)
     assert result == pytest.approx(100.0)
 
 
@@ -38,7 +40,7 @@ def test_lha_es_from_scalars_all_horizons() -> None:
         LiquidityHorizon.LH120: 20.0,
     }
     expected = math.sqrt(1 * 100**2 + 1 * 80**2 + 2 * 60**2 + 2 * 40**2 + 6 * 20**2)
-    result = lha_es_from_scalars(es, alpha=ALPHA)
+    result = lha_es_from_scalars(es, alpha=ALPHA, estimator=ESTIMATOR)
     assert result == pytest.approx(expected, rel=1e-9)
 
 
@@ -59,8 +61,9 @@ def test_lha_es_from_vectors_matches_scalars() -> None:
             LiquidityHorizon.LH120: 20.0,
         },
         alpha=ALPHA,
+        estimator=ESTIMATOR,
     )
-    vector_result = lha_es_from_vectors(lh_vectors, alpha=ALPHA)
+    vector_result = lha_es_from_vectors(lh_vectors, alpha=ALPHA, estimator=ESTIMATOR)
     assert vector_result == pytest.approx(scalar_result, rel=1e-6)
 
 
@@ -79,6 +82,7 @@ def test_lha_breakdown_from_vectors() -> None:
             ),
         },
         alpha=ALPHA,
+        estimator=ESTIMATOR,
     )
 
     lh10 = result.component_by_horizon(LiquidityHorizon.LH10)
@@ -97,6 +101,7 @@ def test_lha_breakdown_summary_lines() -> None:
             LiquidityHorizon.LH20: 50.0,
         },
         alpha=ALPHA,
+        estimator=ESTIMATOR,
     )
     summary = result.summary_lines()
     assert any("lha_es=" in line for line in summary)
@@ -105,12 +110,20 @@ def test_lha_breakdown_summary_lines() -> None:
 
 def test_lha_es_missing_lh10_raises() -> None:
     with pytest.raises(KeyError):
-        lha_es_from_vectors({LiquidityHorizon.LH20: [1.0, 2.0]}, alpha=ALPHA)
+        lha_es_from_vectors(
+            {LiquidityHorizon.LH20: [1.0, 2.0]},
+            alpha=ALPHA,
+            estimator=ESTIMATOR,
+        )
 
 
 def test_lha_es_from_scalars_missing_lh10_raises() -> None:
     with pytest.raises(KeyError):
-        lha_es_from_scalars({LiquidityHorizon.LH20: 50.0}, alpha=ALPHA)
+        lha_es_from_scalars(
+            {LiquidityHorizon.LH20: 50.0},
+            alpha=ALPHA,
+            estimator=ESTIMATOR,
+        )
 
 
 def test_lha_es_missing_intermediate_horizons() -> None:
@@ -119,7 +132,7 @@ def test_lha_es_missing_intermediate_horizons() -> None:
         LiquidityHorizon.LH120: _uniform_losses(100, 20.0),
     }
     expected = math.sqrt(1 * 100**2 + 6 * 20**2)
-    result = lha_es_from_vectors(lh_vectors, alpha=ALPHA)
+    result = lha_es_from_vectors(lh_vectors, alpha=ALPHA, estimator=ESTIMATOR)
     assert result == pytest.approx(expected, rel=1e-6)
 
 

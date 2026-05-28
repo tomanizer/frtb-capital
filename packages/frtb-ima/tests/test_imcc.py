@@ -3,6 +3,7 @@
 import pytest
 
 from frtb_ima.data_models import LiquidityHorizon, RiskClass
+from frtb_ima.expected_shortfall import ESEstimator
 from frtb_ima.imcc import (
     imcc,
     imcc_breakdown,
@@ -17,6 +18,7 @@ from frtb_ima.imcc import (
 from frtb_ima.regimes import get_policy
 
 ALPHA = 0.975
+ESTIMATOR = ESEstimator.DISCRETE_CEIL
 UNCONSTRAINED_WEIGHT = 0.5
 
 
@@ -30,7 +32,7 @@ def _flat_vec(value: float, n: int = 100) -> list[float]:
 
 def test_imcc_unconstrained_lh10_only() -> None:
     vecs = {LiquidityHorizon.LH10: _flat_vec(100.0)}
-    result = imcc_unconstrained(vecs, alpha=ALPHA)
+    result = imcc_unconstrained(vecs, alpha=ALPHA, estimator=ESTIMATOR)
     assert result == pytest.approx(100.0)
 
 
@@ -40,7 +42,7 @@ def test_imcc_unconstrained_breakdown_exposes_lha_components() -> None:
         LiquidityHorizon.LH20: _flat_vec(50.0),
     }
 
-    result = imcc_unconstrained_breakdown(vecs, alpha=ALPHA)
+    result = imcc_unconstrained_breakdown(vecs, alpha=ALPHA, estimator=ESTIMATOR)
 
     assert result.lha_es == pytest.approx((100.0**2 + 50.0**2) ** 0.5)
     assert result.component_by_horizon(LiquidityHorizon.LH20).expected_shortfall == pytest.approx(
@@ -50,7 +52,7 @@ def test_imcc_unconstrained_breakdown_exposes_lha_components() -> None:
 
 def test_imcc_constrained_single_class() -> None:
     per_class = {RiskClass.GIRR: {LiquidityHorizon.LH10: _flat_vec(100.0)}}
-    result = imcc_constrained(per_class, alpha=ALPHA)
+    result = imcc_constrained(per_class, alpha=ALPHA, estimator=ESTIMATOR)
     assert result == pytest.approx(100.0)
 
 
@@ -60,7 +62,7 @@ def test_imcc_constrained_multiple_classes_no_diversification() -> None:
         RiskClass.GIRR: {LiquidityHorizon.LH10: _flat_vec(100.0)},
         RiskClass.EQUITY: {LiquidityHorizon.LH10: _flat_vec(100.0)},
     }
-    result = imcc_constrained(per_class, alpha=ALPHA)
+    result = imcc_constrained(per_class, alpha=ALPHA, estimator=ESTIMATOR)
     assert result == pytest.approx(200.0)
 
 
@@ -70,7 +72,7 @@ def test_imcc_constrained_breakdown_is_deterministic_by_risk_class() -> None:
         RiskClass.GIRR: {LiquidityHorizon.LH10: _flat_vec(50.0)},
     }
 
-    result = imcc_constrained_breakdown(per_class, alpha=ALPHA)
+    result = imcc_constrained_breakdown(per_class, alpha=ALPHA, estimator=ESTIMATOR)
 
     assert [component.risk_class for component in result] == [
         RiskClass.EQUITY,
@@ -85,7 +87,13 @@ def test_imcc_final_is_50_50_blend() -> None:
         RiskClass.GIRR: {LiquidityHorizon.LH10: _flat_vec(100.0)},  # constrained = 200
         RiskClass.EQUITY: {LiquidityHorizon.LH10: _flat_vec(100.0)},
     }
-    result = imcc(all_class, per_class, alpha=ALPHA, w=UNCONSTRAINED_WEIGHT)
+    result = imcc(
+        all_class,
+        per_class,
+        alpha=ALPHA,
+        estimator=ESTIMATOR,
+        w=UNCONSTRAINED_WEIGHT,
+    )
     # 0.5 * 200 + 0.5 * 200 = 200
     assert result == pytest.approx(200.0)
 
@@ -100,7 +108,13 @@ def test_imcc_breakdown_reproduces_scalar_and_reports_components() -> None:
         RiskClass.EQUITY: {LiquidityHorizon.LH10: _flat_vec(50.0)},
     }
 
-    result = imcc_breakdown(all_class, per_class, alpha=ALPHA, w=UNCONSTRAINED_WEIGHT)
+    result = imcc_breakdown(
+        all_class,
+        per_class,
+        alpha=ALPHA,
+        estimator=ESTIMATOR,
+        w=UNCONSTRAINED_WEIGHT,
+    )
 
     unconstrained = (200.0**2 + 100.0**2) ** 0.5
     constrained = 150.0
@@ -108,7 +122,13 @@ def test_imcc_breakdown_reproduces_scalar_and_reports_components() -> None:
     assert result.constrained_lha_es == pytest.approx(constrained)
     assert result.imcc == pytest.approx((unconstrained + constrained) * 0.5)
     assert result.imcc == pytest.approx(
-        imcc(all_class, per_class, alpha=ALPHA, w=UNCONSTRAINED_WEIGHT)
+        imcc(
+            all_class,
+            per_class,
+            alpha=ALPHA,
+            estimator=ESTIMATOR,
+            w=UNCONSTRAINED_WEIGHT,
+        )
     )
     assert result.component_by_risk_class(RiskClass.GIRR).lha_es == pytest.approx(100.0)
 
@@ -135,6 +155,7 @@ def test_imcc_breakdown_for_policy_reproduces_policy_scalar() -> None:
             all_class,
             per_class,
             alpha=policy.es_confidence_level,
+            estimator=policy.es_estimator,
             w=policy.imcc_unconstrained_weight,
         )
     )
@@ -144,20 +165,26 @@ def test_imcc_rejects_invalid_weight() -> None:
     all_class = {LiquidityHorizon.LH10: _flat_vec(200.0)}
     per_class = {RiskClass.GIRR: {LiquidityHorizon.LH10: _flat_vec(100.0)}}
     with pytest.raises(ValueError, match="w"):
-        imcc(all_class, per_class, alpha=ALPHA, w=1.5)
+        imcc(all_class, per_class, alpha=ALPHA, estimator=ESTIMATOR, w=1.5)
 
 
 def test_imcc_constrained_missing_lh10_raises() -> None:
     per_class = {RiskClass.GIRR: {LiquidityHorizon.LH20: _flat_vec(100.0)}}
     with pytest.raises(KeyError):
-        imcc_constrained(per_class, alpha=ALPHA)
+        imcc_constrained(per_class, alpha=ALPHA, estimator=ESTIMATOR)
 
 
 def test_imcc_breakdown_missing_constrained_lh10_raises() -> None:
     all_class = {LiquidityHorizon.LH10: _flat_vec(100.0)}
     per_class = {RiskClass.GIRR: {LiquidityHorizon.LH20: _flat_vec(100.0)}}
     with pytest.raises(KeyError, match="LH10"):
-        imcc_breakdown(all_class, per_class, alpha=ALPHA, w=UNCONSTRAINED_WEIGHT)
+        imcc_breakdown(
+            all_class,
+            per_class,
+            alpha=ALPHA,
+            estimator=ESTIMATOR,
+            w=UNCONSTRAINED_WEIGHT,
+        )
 
 
 def test_scale_stress_es_ratio_above_one() -> None:

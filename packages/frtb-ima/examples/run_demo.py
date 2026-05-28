@@ -313,6 +313,7 @@ def main() -> None:
     lha_es = lha_es_from_vectors(
         all_class_vectors,
         alpha=context.policy.es_confidence_level,
+        estimator=context.policy.es_estimator,
         lha_weights=context.policy.lha_weights,
     )
     print(f"  LHA ES (all classes):  {lha_es:>12,.2f}")
@@ -322,6 +323,7 @@ def main() -> None:
         rc_lha = lha_es_from_vectors(
             lh_vecs,
             alpha=context.policy.es_confidence_level,
+            estimator=context.policy.es_estimator,
             lha_weights=context.policy.lha_weights,
         )
         print(f"    {rc.value:<12} {rc_lha:>12,.2f}")

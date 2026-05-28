@@ -17,7 +17,7 @@ from frtb_ima.data_models import (
     RiskClass,
     RiskFactor,
 )
-from frtb_ima.expected_shortfall import expected_shortfall
+from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall
 from frtb_ima.imcc import imcc, imcc_for_policy
 from frtb_ima.liquidity_horizon import lha_es_from_vectors
 from frtb_ima.nmrf import aggregate_ses, aggregate_ses_for_policy
@@ -84,7 +84,12 @@ def test_fed_policy_reproduces_current_default_calculation_outputs() -> None:
     policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
 
     losses = [float(i) for i in range(1, 101)]
-    assert expected_shortfall(losses, alpha=policy.es_confidence_level) == pytest.approx(99.0)
+    assert policy.es_estimator == ESEstimator.WEIGHTED_INTERPOLATED
+    assert expected_shortfall(
+        losses,
+        alpha=policy.es_confidence_level,
+        estimator=policy.es_estimator,
+    ) == pytest.approx(99.2)
 
     all_class = {LiquidityHorizon.LH10: _flat_vec(200.0)}
     per_class = {
@@ -94,11 +99,13 @@ def test_fed_policy_reproduces_current_default_calculation_outputs() -> None:
     assert lha_es_from_vectors(
         all_class,
         alpha=policy.es_confidence_level,
+        estimator=policy.es_estimator,
         lha_weights=policy.lha_weights,
     ) == pytest.approx(
         lha_es_from_vectors(
             all_class,
             alpha=policy.es_confidence_level,
+            estimator=policy.es_estimator,
             lha_weights=policy.lha_weights,
         )
     )
@@ -106,6 +113,7 @@ def test_fed_policy_reproduces_current_default_calculation_outputs() -> None:
         all_class,
         per_class,
         alpha=policy.es_confidence_level,
+        estimator=policy.es_estimator,
         w=policy.imcc_unconstrained_weight,
         lha_weights=policy.lha_weights,
     ) == pytest.approx(imcc_for_policy(all_class, per_class, policy))
@@ -138,7 +146,11 @@ def test_fed_policy_reproduces_current_default_calculation_outputs() -> None:
 
 
 def test_scalar_functions_accept_explicit_regulatory_parameters() -> None:
-    assert expected_shortfall([1.0, 2.0, 3.0], alpha=0.80) == pytest.approx(3.0)
+    assert expected_shortfall(
+        [1.0, 2.0, 3.0],
+        alpha=0.80,
+        estimator=ESEstimator.DISCRETE_CEIL,
+    ) == pytest.approx(3.0)
     assert aggregate_ses([1.0], [2.0], type_b_rho=1.0) == pytest.approx(5.0**0.5)
     policy = get_policy()
     assert supervisory_multiplier(
@@ -227,8 +239,16 @@ def test_calculation_context_selects_policy_without_changing_low_level_semantics
 
     assert context.policy.regime == RegulatoryRegime.FED_NPR_2_0
     assert isinstance(context.policy, RegulatoryPolicy)
-    assert expected_shortfall([10.0], alpha=context.policy.es_confidence_level) == (
-        expected_shortfall([10.0], alpha=context.policy.es_confidence_level)
+    assert expected_shortfall(
+        [10.0],
+        alpha=context.policy.es_confidence_level,
+        estimator=context.policy.es_estimator,
+    ) == (
+        expected_shortfall(
+            [10.0],
+            alpha=context.policy.es_confidence_level,
+            estimator=context.policy.es_estimator,
+        )
     )
 
 

@@ -47,17 +47,17 @@
     "constrained_lha_es": {
       "atol": 1e-09,
       "rtol": 1e-09,
-      "value": 77079.9968447628
+      "value": 78168.63193398895
     },
     "imcc": {
       "atol": 1e-09,
       "rtol": 1e-09,
-      "value": 63378.845003131544
+      "value": 64370.82565859761
     },
     "models_based_capital": {
       "atol": 1e-09,
       "rtol": 1e-09,
-      "value": 103642.91922221948
+      "value": 105196.6194304928
     },
     "pla_ks_statistic": {
       "atol": 1e-09,
@@ -72,12 +72,12 @@
     "total_ses": {
       "atol": 1e-09,
       "rtol": 1e-09,
-      "value": 5610.395776844361
+      "value": 5631.0723411367535
     },
     "unconstrained_lha_es": {
       "atol": 1e-09,
       "rtol": 1e-09,
-      "value": 49677.69316150028
+      "value": 50573.01938320628
     }
   },
   "selected_stress_periods": {

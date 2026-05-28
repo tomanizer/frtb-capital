@@ -421,6 +421,7 @@ def _params(policy: RegulatoryPolicy, seed: int) -> dict[str, object]:
         "as_of_date": AS_OF_DATE.isoformat(),
         "regime": policy.regime.value,
         "es_confidence_level": policy.es_confidence_level,
+        "es_estimator": policy.es_estimator.value,
         "lha_weights": [
             {"liquidity_horizon": liquidity_horizon.value, "weight": weight}
             for liquidity_horizon, weight in policy.lha_weights

@@ -1,7 +1,7 @@
 {
   "files": {
     "expected_outputs.json": {
-      "sha256": "8a4a427036a04ecdf868fc5f6f784d956f1ee7fac8a9175818c0c9c6bf82092b"
+      "sha256": "32aac2954d0e709c144f070a5a53e3c91e2adc273183a64255a281491019b2d1"
     },
     "nmrf_artifacts.npz": {
       "sha256": "ceda8d8cc9a62c45fff500c54e686e73ded9d135c2785f4aed7f74431e11f31b"
@@ -10,7 +10,7 @@
       "sha256": "329d7b77757bacef6fef860481b3455536bc7c43519ffe7c425ca60fe1fbd4fb"
     },
     "params.json": {
-      "sha256": "4f1d1c61dfa34d1ce1566a26972df40692aeda7bbc3db034da6bfaa87d85eb46"
+      "sha256": "329ca11caa38081c4c4bf697374776992a4533af8d75de5315bfdfe2ac7185d4"
     },
     "pla_bt_vectors.npz": {
       "sha256": "1f321c70d16bcc9978b3d4025520bfbdbafe4d0774022fe4d3b24b76c49cfcbd"

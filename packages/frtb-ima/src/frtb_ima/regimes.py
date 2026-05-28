@@ -24,6 +24,7 @@ from types import MappingProxyType
 from typing import Any
 
 from frtb_ima.data_models import LiquidityHorizon
+from frtb_ima.expected_shortfall import ESEstimator
 
 
 class RegulatoryRegime(StrEnum):
@@ -139,6 +140,7 @@ DEFAULT_BACKTESTING_EXCEPTION_LIMITS: tuple[tuple[float, int], ...] = (
 REGULATORY_PARAMETER_CITATIONS: Mapping[str, str] = MappingProxyType(
     {
         "es_confidence_level": "Basel MAR33.4; U.S. NPR 2.0 proposed section __.214",
+        "es_estimator": "Basel MAR33 expected shortfall; documented model choice",
         "imcc_unconstrained_weight": "Basel MAR33.15; U.S. NPR 2.0 proposed section __.214",
         "rfet_short_lh_threshold": "Basel MAR31.12; U.S. NPR 2.0 proposed section __.212",
         "rfet_long_lh_threshold": "Basel MAR31.12; U.S. NPR 2.0 proposed section __.212",
@@ -228,6 +230,7 @@ class RegulatoryPolicy:
 
     regime: RegulatoryRegime
     es_confidence_level: float = 0.975
+    es_estimator: ESEstimator = ESEstimator.WEIGHTED_INTERPOLATED
     liquidity_horizons: tuple[LiquidityHorizon, ...] = DEFAULT_LIQUIDITY_HORIZONS
     lha_weights: tuple[tuple[LiquidityHorizon, float], ...] = DEFAULT_LHA_WEIGHTS
     imcc_unconstrained_weight: float = 0.5
