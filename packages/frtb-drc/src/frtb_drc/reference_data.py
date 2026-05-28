@@ -97,17 +97,22 @@ DRC_NS_BUCKETS: dict[RulesVersion, tuple[str, ...]] = {
 }
 
 # =============================================================================
-# LGD defaults (Basel MAR22.18, NPR cross-reference)
+# LGD defaults per Basel MAR22.12 (JTD LGD for non-securitisation)
 # =============================================================================
+# Per MAR22.12: LGD is 25% for covered bonds only; 75% for senior debt;
+# 100% for non-senior (subordinated) debt and equity.
+# See https://www.bis.org/basel_framework/chapter/MAR/22.htm paragraph 12.
 
-DEFAULT_LGD_NON_SENIOR: float = 0.75  # subordinated / equity / non-senior
-DEFAULT_LGD_SENIOR: float = 0.25  # senior unsecured / covered (conservative; cite exact reg)
+DEFAULT_LGD_COVERED: float = 0.25
+DEFAULT_LGD_SENIOR: float = 0.75
+DEFAULT_LGD_NON_SENIOR: float = 1.0
+DEFAULT_LGD_EQUITY: float = 1.0
 
 LGD_BY_SENIORITY: dict[str, float] = {
-    "COVERED": DEFAULT_LGD_SENIOR,
+    "COVERED": DEFAULT_LGD_COVERED,
     "SENIOR": DEFAULT_LGD_SENIOR,
     "NON-SENIOR": DEFAULT_LGD_NON_SENIOR,
-    "EQUITY": DEFAULT_LGD_NON_SENIOR,
+    "EQUITY": DEFAULT_LGD_EQUITY,
 }
 
 

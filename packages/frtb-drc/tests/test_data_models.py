@@ -117,9 +117,11 @@ class TestReferenceDataLoader:
         assert ref.risk_weights[("CORPORATES", "IG")] == 0.025
 
     def test_lgd_senior_vs_non_senior(self) -> None:
-        assert get_lgd("SENIOR") == 0.25
-        assert get_lgd("NON-SENIOR") == 0.75
-        assert get_lgd("EQUITY") == 0.75
+        # Exact per Basel MAR22.12: covered=0.25, senior=0.75, non-senior/equity=1.0
+        assert get_lgd("COVERED") == 0.25
+        assert get_lgd("SENIOR") == 0.75
+        assert get_lgd("NON-SENIOR") == 1.0
+        assert get_lgd("EQUITY") == 1.0
 
     def test_lgd_override_validation(self) -> None:
         with pytest.raises(ValueError):

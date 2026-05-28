@@ -17,6 +17,7 @@ and validators, not a compliance claim.
 | `data_models.Position`           | JTD exposure definition (long/short)      | Basel MAR22.8–22.10                     | Implemented | Frozen, validated, audit `.as_dict()` |
 | `reference_data.get_risk_weight` (FRB path) | NON_US_SOVEREIGNS / PSE_GSE_DEBT RW | NPR 2.0 FRB table + MAR22.16         | Implemented | Exact match to drc_common tables |
 | `reference_data.get_risk_weight` (BCBS/CRR) | CQS / rating RW table                | Basel MAR22.15–22.17, CRR3 Annex        | Implemented | UNRATED=15%, DEFAULTED=100% |
+| `reference_data.LGD_BY_SENIORITY` + `get_lgd` | JTD LGD by seniority (covered/senior/non-senior/equity) | Basel MAR22.12 | Implemented (corrected) | 0.25/0.75/1.0/1.0 per MAR22.12; see reference_data.py header |
 | `reference_data.load_reference_data` + overrides | Jurisdiction-specific parameters | MAR22.3, NPR policy layer            | Implemented | Supports future YAML seeds |
 
 ## Regulation-to-Code

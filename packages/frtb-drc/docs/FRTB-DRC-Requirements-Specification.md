@@ -55,7 +55,7 @@ Format borrows from frtb-ima `docs/requirements/NPR_2_0_MARKET_RISK.yml` style (
   - Tables:
     - BCBS_DRC_JS_RW / CRR2_DRC_JS_RW (rating -> RW)
     - FRB_DRC_JS_RW with (bucket, IG/SG/SSG) tuples for NON_US_SOVEREIGNS (0.005/0.20/0.50), PSE_GSE_DEBT (0.02/0.12/0.50), CORPORATES same, DEFAULTED 1.00.
-  - LGD defaults: 0.75 non-senior / equity, 0.25 senior/covered? (confirm vs reg; document citation).
+  - LGD defaults per Basel MAR22.12: 0.25 for covered bonds only; 0.75 for senior debt; 1.0 for non-senior (subordinated) debt and equity. (See REGULATORY_TRACEABILITY.md and reference_data.py for exact mapping and citation link.)
   - `DRC_NS_BUCKETS` and `SEC_*_BUCKETS` per RulesVersion (CRR2/BCBS/FRB/PRA).
   - Loader: `load_reference_data(jurisdiction: str | None = None, overrides: dict | None = None)` returning immutable mapping or frozen dataclass. Supports YAML/JSON seed files (minimal, one example override file committed).
   - RulesVersion enum (reuse or copy from frtb-ima/sbm style; define locally until frtb-common).

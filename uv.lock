@@ -10,6 +10,7 @@ resolution-markers = [
 [manifest]
 members = [
     "frtb-capital",
+    "frtb-drc",
     "frtb-ima",
 ]
 
@@ -786,6 +787,7 @@ name = "frtb-capital"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "frtb-drc" },
     { name = "frtb-ima" },
 ]
 
@@ -800,7 +802,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "frtb-ima", editable = "packages/frtb-ima" }]
+requires-dist = [
+    { name = "frtb-drc", editable = "packages/frtb-drc" },
+    { name = "frtb-ima", editable = "packages/frtb-ima" },
+]
 
 [package.metadata.requires-dev]
 dev = [
@@ -811,6 +816,32 @@ dev = [
     { name = "pytest-cov", specifier = ">=7.1,<7.2" },
     { name = "ruff", specifier = ">=0.15,<0.16" },
 ]
+
+[[package]]
+name = "frtb-drc"
+version = "0.1.0"
+source = { editable = "packages/frtb-drc" }
+dependencies = [
+    { name = "numpy" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=2.1,<2.2" },
+    { name = "numpy", specifier = ">=1.26,<2.5" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0,<9.1" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.1,<7.2" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15,<0.16" },
+]
+provides-extras = ["dev"]
 
 [[package]]
 name = "frtb-ima"
