@@ -49,6 +49,22 @@ class PLAMetricsRequired(StrEnum):
     KS_AND_SPEARMAN = "KS_AND_SPEARMAN"
 
 
+class DeskEligibilityStatus(StrEnum):
+    """Whether a desk is currently approved for IMA capital treatment.
+
+    Determined from trailing backtesting and PLA results before the capital run.
+    SA_FALLBACK signals that SA capital is required; SA calculation is out of
+    scope for this package.
+
+    Regulatory traceability:
+        U.S. NPR 2.0 proposed section `__.213` backtesting eligibility gates;
+        Basel MAR32 traffic-light zones. See docs/REGULATORY_TRACEABILITY.md.
+    """
+
+    IMA_ELIGIBLE = "IMA_ELIGIBLE"
+    SA_FALLBACK = "SA_FALLBACK"
+
+
 @dataclass(frozen=True)
 class UnsupportedFeature:
     """A policy feature intentionally not implemented in this prototype."""

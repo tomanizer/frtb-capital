@@ -22,6 +22,8 @@ from pathlib import Path
 from types import MappingProxyType, TracebackType
 from typing import Any
 
+from frtb_ima.regimes import DeskEligibilityStatus
+
 
 def _empty_mapping() -> Mapping[str, object]:
     return MappingProxyType({})
@@ -34,6 +36,7 @@ class DeskAuditRecord:
     run_id: str
     desk_id: str
     regime: str
+    desk_eligibility: str = field(default="IMA_ELIGIBLE", kw_only=True)
     imcc: Mapping[str, object]
     ses: Mapping[str, object]
     pla: Mapping[str, object]
@@ -52,8 +55,13 @@ class DeskAuditRecord:
             raise ValueError("desk_id must be non-empty")
         if not self.regime:
             raise ValueError("regime must be non-empty")
+        try:
+            desk_eligibility = DeskEligibilityStatus(self.desk_eligibility).value
+        except ValueError as exc:
+            raise ValueError("desk_eligibility must be a DeskEligibilityStatus value") from exc
         if self.elapsed_seconds < 0.0:
             raise ValueError("elapsed_seconds must be non-negative")
+        object.__setattr__(self, "desk_eligibility", desk_eligibility)
         object.__setattr__(self, "imcc", _freeze_mapping(self.imcc))
         object.__setattr__(self, "ses", _freeze_mapping(self.ses))
         object.__setattr__(self, "pla", _freeze_mapping(self.pla))
@@ -73,6 +81,7 @@ class DeskAuditRecord:
             "run_id": self.run_id,
             "desk_id": self.desk_id,
             "regime": self.regime,
+            "desk_eligibility": self.desk_eligibility,
             "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
             "imcc": _jsonable(self.imcc),
             "ses": _jsonable(self.ses),

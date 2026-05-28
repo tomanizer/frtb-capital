@@ -15,6 +15,7 @@ from frtb_ima.audit import (
     write_audit_records_ndjson,
     write_capital_run_audit_report,
 )
+from frtb_ima.regimes import DeskEligibilityStatus
 
 
 def _desk_record(desk_id: str = "desk-1") -> DeskAuditRecord:
@@ -41,10 +42,45 @@ def test_desk_audit_record_serializes_to_json_line() -> None:
 
     assert payload["run_id"] == "run-1"
     assert payload["desk_id"] == "desk-1"
+    assert payload["desk_eligibility"] == "IMA_ELIGIBLE"
     assert payload["as_of_date"] == "2026-05-27"
     assert payload["imcc"]["imcc"] == pytest.approx(100.0)
     assert payload["nmrf_valuation"]["passed"] is True
     assert payload["metadata"]["source"] == "unit-test"
+
+
+def test_desk_audit_record_canonicalizes_desk_eligibility_enum() -> None:
+    record = DeskAuditRecord(
+        run_id="run-1",
+        desk_id="desk-1",
+        regime="FED_NPR_2_0",
+        desk_eligibility=DeskEligibilityStatus.SA_FALLBACK,
+        imcc={},
+        ses={},
+        pla={},
+        backtesting={},
+        capital={},
+        elapsed_seconds=0.0,
+    )
+
+    assert record.desk_eligibility == "SA_FALLBACK"
+    assert record.as_dict()["desk_eligibility"] == "SA_FALLBACK"
+
+
+def test_desk_audit_record_rejects_invalid_desk_eligibility() -> None:
+    with pytest.raises(ValueError, match="DeskEligibilityStatus"):
+        DeskAuditRecord(
+            run_id="run-1",
+            desk_id="desk-1",
+            regime="FED_NPR_2_0",
+            desk_eligibility="BREACH",
+            imcc={},
+            ses={},
+            pla={},
+            backtesting={},
+            capital={},
+            elapsed_seconds=0.0,
+        )
 
 
 def test_capital_run_audit_log_serializes_records_to_ndjson() -> None:

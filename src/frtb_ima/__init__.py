@@ -16,8 +16,11 @@ from frtb_ima.audit import (
 )
 from frtb_ima.capital import (
     CapitalComponents,
+    IMAIneligibleError,
     PLAAddonResult,
+    desk_eligibility_from_results,
     models_based_capital,
+    models_based_capital_for_policy,
     pla_addon,
 )
 from frtb_ima.data_contracts import (
@@ -134,6 +137,7 @@ from frtb_ima.reduced_set import (
 )
 from frtb_ima.regimes import (
     CalculationContext,
+    DeskEligibilityStatus,
     NMRFTaxonomyMode,
     PLAMetricsRequired,
     RegulatoryPolicy,
@@ -186,8 +190,10 @@ __all__ = [
     "CapitalRunResult",
     "DeskAuditRecord",
     "DeskCapitalResult",
+    "DeskEligibilityStatus",
     "DeskRun",
     "HistoricalStressSeries",
+    "IMAIneligibleError",
     "IMCCResult",
     "IMCCRiskClassComponent",
     "JSONFormatter",
@@ -268,6 +274,7 @@ __all__ = [
     "calculation_log_extra",
     "complete_nmrf_valuation_run",
     "configure_json_logging",
+    "desk_eligibility_from_results",
     "get_policy",
     "imcc_breakdown",
     "imcc_breakdown_for_policy",
@@ -283,6 +290,7 @@ __all__ = [
     "liquidity_horizon_mapping_table",
     "make_scenario_metadata",
     "models_based_capital",
+    "models_based_capital_for_policy",
     "nested_lh_vectors_from_cube",
     "nmrf_effective_liquidity_horizon",
     "per_risk_class_nested_lh_vectors_from_cube",
