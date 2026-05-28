@@ -188,6 +188,13 @@ def build_nmrf_values(count: int, desk_index: int) -> tuple[np.ndarray, np.ndarr
 
 
 def cube_digest(cube: ScenarioCube) -> str:
+    """
+    Return a raw numeric hash of scenario-cube values for drift detection.
+
+    This intentionally hashes the float64 bytes rather than rounded values.
+    Reproducibility remains bounded by NumPy, platform, architecture, and BLAS
+    behavior documented in the determinism and performance notes.
+    """
     return hashlib.sha256(np.ascontiguousarray(cube.values).tobytes()).hexdigest()
 
 
@@ -217,7 +224,10 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, object]:
                 seed=args.seed,
             )
             inputs_hash = hashlib.sha256(
-                f"{desk_id}:{cube_digest(cube)}:{policy.policy_hash}:{args.seed}".encode()
+                bytes(
+                    f"{desk_id}:{cube_digest(cube)}:{policy.policy_hash}:{args.seed}",
+                    "utf-8",
+                )
             ).hexdigest()
 
         with timer.phase("nested_lh_vector_construction"):
@@ -277,7 +287,11 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, object]:
                 pla_zone_labels=policy.pla_zone_labels,
             )
             max_exceptions = max(
-                max(level.apl_exceptions, level.hpl_exceptions) for level in backtest_result.levels
+                (
+                    max(level.apl_exceptions, level.hpl_exceptions)
+                    for level in backtest_result.levels
+                ),
+                default=0,
             )
             addon = pla_addon(
                 standardized_green_amber=imcc_result.imcc * 1.25 + ses_result.total_ses,
@@ -365,7 +379,7 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, object]:
                 "Python allocations; NumPy native buffers may not be fully counted"
             ),
             "desk_records": len(records),
-            "ndjson_bytes": len(ndjson.encode("utf-8")),
+            "ndjson_bytes": len(bytes(ndjson, "utf-8")),
         },
         "phase_timings": timer.as_dict(),
         "sample_results": sample_results,
