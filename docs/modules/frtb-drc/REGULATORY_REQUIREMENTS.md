@@ -16,7 +16,7 @@ advice and not a final regulatory capital interpretation.
 | U.S. NPR 2.0, 91 FR 14952 | https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959 | Proposed market risk framework, section V.A.9 Default Risk Capital Requirement, pages around 15067-15072. |
 | CRR3 | https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng | EU comparison for alternative standardised approach default risk charge, CRR market-risk provisions including Article 325w and related articles. |
 | EBA RTS on gross jump-to-default amounts | https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-3 | EU technical reference for gross JTD amount methodology. |
-| Local reference implementation | `/Users/thomas/Documents/Projects/extract_cva/risk/gra/mrcm/frtb/capital_navigator/sa/drc` | Implementation inspiration for CRIF mappings, risk-weight tables, DRC risk-class split, and Euler/audit breakdowns. |
+| Local reference implementation | `[local_projects_path]/extract_cva/risk/gra/mrcm/frtb/capital_navigator/sa/drc` | Implementation inspiration for CRIF mappings, risk-weight tables, DRC risk-class split, and Euler/audit breakdowns. |
 
 ## Regulatory Scope
 
@@ -194,4 +194,3 @@ source. It suggests:
 The new implementation should keep the same concepts but use dataclasses,
 enums, pure functions, and NumPy-first calculations rather than pandas-centric
 stateful components.
-

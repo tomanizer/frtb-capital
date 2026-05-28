@@ -15,7 +15,7 @@ SBM even when SA-CVA reuses SBM-style delta and vega aggregation mechanics.
 | U.S. NPR 2.0, 91 FR 14952 | https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959 | Proposed CVA risk scope, CVA hedges, internal CVA risk transfers, and measure for CVA risk, section V.B. |
 | CRR3 | https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng | EU CVA framework amendments, CRR Articles 382-386 and related CVA provisions. |
 | EBA RTS on CVA risk of SFTs | https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/market-counterparty-and-cva-risk/regulatory-technical-standards-cva-risk-securities-financing-transactions | EU technical context for SFT CVA scope. |
-| Local reference implementation | `/Users/thomas/Documents/Projects/extract_cva/risk/gra/mrcm/frtb/capital_navigator/sa/cva` | Implementation inspiration for BA-CVA, SA-CVA risk-class modules, hedge/CVA netting, and capital reports. |
+| Local reference implementation | `[local_projects_path]/extract_cva/risk/gra/mrcm/frtb/capital_navigator/sa/cva` | Implementation inspiration for BA-CVA, SA-CVA risk-class modules, hedge/CVA netting, and capital reports. |
 
 ## Regulatory Scope
 

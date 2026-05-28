@@ -18,7 +18,7 @@ audit-grade risk-class and bucket breakdowns.
 | Basel Framework MAR23 | https://www.bis.org/basel_framework/chapter/MAR/23.htm | Boundary with RRAO. |
 | U.S. NPR 2.0, 91 FR 14952 | https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959 | Proposed standardized non-default capital requirement, section V.A.7.a, pages around 15037 onward. |
 | CRR3 | https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng | EU alternative standardised approach, CRR market-risk Articles 325e-325az and related provisions. |
-| Local reference implementation | `/Users/thomas/Documents/Projects/extract_cva/risk/gra/mrcm/frtb/capital_navigator/sa/sbm` | Implementation inspiration for component graph, CRIF mappings, risk-class modules, correlation scenarios, and outputs. |
+| Local reference implementation | `[local_projects_path]/extract_cva/risk/gra/mrcm/frtb/capital_navigator/sa/sbm` | Implementation inspiration for component graph, CRIF mappings, risk-class modules, correlation scenarios, and outputs. |
 
 ## Regulatory Scope
 
@@ -150,4 +150,3 @@ The local extraction suggests:
 - helper functions for vega risk weights and exponential tenor correlations;
 - post-processing and persistence layers that should become audit/report
   outputs in this suite rather than runtime database dependencies.
-

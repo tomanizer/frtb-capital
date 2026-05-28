@@ -37,9 +37,8 @@ The documents use these primary references:
 
 The local reference implementation used for design inspiration is:
 
-`/Users/thomas/Documents/Projects/extract_cva/risk/gra/mrcm/frtb/capital_navigator`
+`[local_projects_path]/extract_cva/risk/gra/mrcm/frtb/capital_navigator`
 
 That implementation is treated as an implementation reference only. Regulatory
 requirements in these documents are sourced from Basel, U.S. NPR, CRR3, and EBA
 references.
-
