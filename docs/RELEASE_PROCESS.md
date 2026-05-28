@@ -63,8 +63,10 @@ that changed. Each tag message should include:
 - Changed package versions.
 - Link to the GitHub release notes or PR.
 
-Release signing is intentionally not defined here. Signed releases are tracked
-as a separate supply-chain follow-up.
+Release integrity is tracked through signed annotated tags where available,
+GitHub artifact attestations, and checksum manifests. See
+[`docs/REPO_CONTROLS.md`](REPO_CONTROLS.md) for the repository-control and
+release-integrity policy.
 
 ## Release checklist
 
@@ -76,6 +78,7 @@ as a separate supply-chain follow-up.
    ```bash
    uv sync --locked
    make check
+   make build
    make audit-deps
    make sbom
    ```
@@ -85,13 +88,30 @@ as a separate supply-chain follow-up.
 6. Confirm material changes have an ADR, package-owner approval,
    model-validation approval, and fixture review where applicable.
 7. Merge the release PR through the protected-branch workflow.
-8. Create annotated tag(s) from the final `main` commit.
-9. Create a GitHub release that includes:
+8. Create annotated tag(s) from the final `main` commit. Sign tags with the
+   maintainer's configured GPG or SSH signing key where available.
+9. Confirm `.github/workflows/release.yml` completed for the tag, or run it
+   manually as a dry run before publishing release notes.
+10. Confirm the release workflow uploaded:
+   - source distributions and wheels under `dist/release/`,
+   - `dist/sbom/frtb-capital.cdx.json`,
+   - `dist/release/SHA256SUMS`,
+   - `dist/release/release-checksums.json`,
+   - GitHub artifact attestations for the release artifacts.
+11. Capture repository-control evidence:
+
+   ```bash
+   make repo-controls-snapshot
+   ```
+
+12. Create a GitHub release that includes:
    - changelog excerpt,
    - affected packages and versions,
    - validation commands,
-   - SBOM artifact from `dist/sbom/`.
-10. Keep release notes factual. Do not describe outputs as final regulatory
+   - SBOM artifact from `dist/sbom/`,
+   - release checksum manifest,
+   - link to the GitHub artifact attestation.
+13. Keep release notes factual. Do not describe outputs as final regulatory
     capital or production-approved unless independent validation has approved
     that status.
 
@@ -105,3 +125,20 @@ dist/sbom/frtb-capital.cdx.json
 
 Attach this file to each suite release. For package-only releases, the suite
 SBOM is still acceptable until package-specific SBOM generation is introduced.
+
+## Release artifacts and attestations
+
+`make release-artifacts` builds all workspace packages, generates the suite
+SBOM, and writes SHA-256 checksum manifests:
+
+```text
+dist/release/
+dist/release/SHA256SUMS
+dist/release/release-checksums.json
+dist/sbom/frtb-capital.cdx.json
+```
+
+The release workflow uses GitHub artifact attestations as the documented
+attestation mechanism. It is intentionally dependency-free inside the Python
+packages; provenance is an operational control owned by GitHub Actions, not by
+the runtime calculators.

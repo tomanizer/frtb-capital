@@ -1,0 +1,14 @@
+# Default owner for suite-level governance, CI, and workspace metadata.
+* @tomanizer
+
+# IMA package implementation and test paths.
+/packages/frtb-ima/src/ @tomanizer
+/packages/frtb-ima/tests/ @tomanizer
+
+# Regulatory requirements, traceability, and model-documentation evidence.
+/packages/frtb-ima/docs/requirements/ @tomanizer
+/packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md @tomanizer
+/packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md @tomanizer
+/packages/frtb-ima/docs/regulatory_sources.yml @tomanizer
+/docs/model_documentation/ @tomanizer
+/docs/decisions/ @tomanizer

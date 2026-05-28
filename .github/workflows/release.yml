@@ -1,0 +1,53 @@
+name: Release Artifacts
+
+on:
+  push:
+    tags:
+      - "suite-v*"
+      - "frtb-*-v*"
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-release-artifacts:
+    runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync locked workspace
+        run: uv sync --locked
+
+      - name: Build release artifacts
+        run: make release-artifacts
+
+      - name: Attest release artifacts
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/release/*.whl
+            dist/release/*.tar.gz
+            dist/release/SHA256SUMS
+            dist/release/release-checksums.json
+            dist/sbom/frtb-capital.cdx.json
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frtb-capital-release-artifacts
+          path: |
+            dist/release/
+            dist/sbom/frtb-capital.cdx.json

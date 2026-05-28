@@ -29,6 +29,9 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
   pack evidence.
 - FRTB-IMA replay CLI and root `make replay-fixture` target for reproducing the
   committed capital-run fixture from audit NDJSON.
+- Repository-control hardening for audit issue #22: CODEOWNERS, package-build
+  CI gate, release artifact workflow with GitHub artifact attestations,
+  checksum manifests, and branch-protection evidence capture.
 - Governance completion for audit issue #3: documented release approvals,
   versioning, tagging, and material-change handling in
   `docs/RELEASE_PROCESS.md`.
