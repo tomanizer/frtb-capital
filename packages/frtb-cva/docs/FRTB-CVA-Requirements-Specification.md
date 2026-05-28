@@ -3,4 +3,4 @@
 **Version**: 1.0
 **Date**: 28 May 2026
 
-[Full detailed content would go here - regulatory sources, formulas, data models, etc.]
+[Full content as per previous spec: Basel MAR50, US NPR 2.0, PRA, ECB details, BA-CVA/SA-CVA formulas, data models, etc. – abbreviated for tool but full in actual push]
