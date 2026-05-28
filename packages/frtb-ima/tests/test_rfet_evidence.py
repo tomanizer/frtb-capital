@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 import pytest
 
+from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.data_contracts import RFETEvidence, RiskFactorBucket, RiskFactorDefinition
 from frtb_ima.data_models import (
     LiquidityHorizon,
@@ -45,6 +46,17 @@ def _observations(n: int, *, source: str = "VENDOR_A") -> tuple[RealPriceObserva
         )
         for index in range(n)
     )
+
+
+def _weekdays(start: date, end: date, holidays: set[date] | None = None) -> tuple[date, ...]:
+    holidays = set() if holidays is None else holidays
+    days: list[date] = []
+    current = start
+    while current <= end:
+        if current.weekday() < 5 and current not in holidays:
+            days.append(current)
+        current += timedelta(days=1)
+    return tuple(days)
 
 
 def _evidence(
@@ -113,6 +125,38 @@ def test_assess_rfet_evidence_excludes_missing_source_and_old_observations() -> 
         RFETExclusionReason.MISSING_SOURCE,
         RFETExclusionReason.OUTSIDE_LOOKBACK,
     }
+
+
+def test_assess_rfet_evidence_records_calendar_and_holiday_exclusions() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    holiday = date(2024, 12, 25)
+    calendar = BusinessCalendar(
+        business_dates=_weekdays(date(2024, 7, 1), AS_OF, {holiday}),
+        official_holidays=(holiday,),
+        source="FED",
+        version="2026.1",
+    )
+    observations = (
+        RealPriceObservation("USD_SWAP_5Y", holiday, source="VENDOR_A"),
+        RealPriceObservation("USD_SWAP_5Y", date(2025, 1, 4), source="VENDOR_A"),
+        *_observations(24),
+    )
+
+    result = assess_rfet_evidence(
+        _risk_factor(),
+        _evidence(observations),
+        policy,
+        calendar=calendar,
+    )
+
+    assert result.lookback_basis == ObservationWindowBasis.EXACT_TWELVE_MONTH_BUSINESS_CALENDAR
+    assert result.calendar_source == "FED"
+    assert result.official_holiday_count == 1
+    assert {exclusion.reason for exclusion in result.exclusions} >= {
+        RFETExclusionReason.OFFICIAL_HOLIDAY,
+        RFETExclusionReason.NON_BUSINESS_DATE,
+    }
+    assert result.as_dict()["official_holiday_count"] == 1
 
 
 def test_assess_rfet_evidence_requires_representative_bucket() -> None:

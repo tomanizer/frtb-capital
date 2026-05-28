@@ -8,9 +8,9 @@ shocks, price trades, or approve regulatory calibration.
 The selection result is a cross-cutting governance input: it directly supplies
 NMRF valuation stress-period specs and can inform upstream IMCC stressed-ES
 scenario preparation, while ``imcc.py`` itself still consumes numeric ES inputs.
-Window length is observation-count based. The Fed default is a 250-observation
-business-day proxy; callers are responsible for supplying business-day-aligned
-histories if they need a 12-month business-calendar interpretation.
+Window length is observation-count based by default. Callers may also supply a
+BusinessCalendar so the selection result records an exact 12-month
+business-calendar interpretation.
 
 Sign convention: input historical values are positive = loss.
 
@@ -36,6 +36,7 @@ import numpy.typing as npt
 from numpy.lib.stride_tricks import sliding_window_view
 
 from frtb_ima.audit import _jsonable
+from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.data_models import RiskClass
 from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall_from_sorted_losses_desc
 from frtb_ima.logging import calculation_log_extra
@@ -228,6 +229,11 @@ class StressPeriodSelectionResult:
     tie_break: StressPeriodTieBreak
     selected_by_risk_class: Mapping[RiskClass, StressPeriodCandidate]
     candidate_counts: Mapping[RiskClass, int]
+    window_basis: str = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
+    calendar_source: str = ""
+    calendar_version: str = ""
+    official_holiday_count: int = 0
+    missing_business_dates: tuple[date, ...] = ()
     metadata: Mapping[str, object] = field(default_factory=_empty_mapping)
 
     def __post_init__(self) -> None:
@@ -261,6 +267,8 @@ class StressPeriodSelectionResult:
         object.__setattr__(self, "selected_by_risk_class", MappingProxyType(selected))
         object.__setattr__(self, "candidate_counts", MappingProxyType(counts))
         object.__setattr__(self, "es_estimator", es_estimator)
+        object.__setattr__(self, "window_basis", str(self.window_basis))
+        object.__setattr__(self, "missing_business_dates", tuple(self.missing_business_dates))
         object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
 
     @property
@@ -288,6 +296,13 @@ class StressPeriodSelectionResult:
                 "confidence_level": self.confidence_level,
                 "es_estimator": self.es_estimator.value,
                 "tie_break": self.tie_break.value,
+                "window_basis": self.window_basis,
+                "calendar_source": self.calendar_source,
+                "calendar_version": self.calendar_version,
+                "official_holiday_count": self.official_holiday_count,
+                "missing_business_dates": [
+                    item.isoformat() for item in self.missing_business_dates
+                ],
             },
             "risk_class_count": self.risk_class_count,
             "selected_by_risk_class": selected,
@@ -448,6 +463,8 @@ def select_stress_periods_by_risk_class(
     es_estimator: ESEstimator,
     tie_break: StressPeriodTieBreak = StressPeriodTieBreak.LATEST_START_DATE,
     regime: RegulatoryRegime | str = RegulatoryRegime.FED_NPR_2_0,
+    calendar: BusinessCalendar | None = None,
+    use_exact_twelve_month_window: bool = False,
     metadata: Mapping[str, object] | None = None,
 ) -> StressPeriodSelectionResult:
     """Select one common stress period per risk class from supplied histories."""
@@ -463,6 +480,23 @@ def select_stress_periods_by_risk_class(
         es_estimator=es_estimator,
         tie_break=tie_break,
     )
+
+    window_basis = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
+    calendar_source = ""
+    calendar_version = ""
+    official_holiday_count = 0
+    missing_business_dates: tuple[date, ...] = ()
+    if use_exact_twelve_month_window:
+        if calendar is None:
+            raise ValueError("calendar is required for exact 12-month stress-period windows")
+        calendar_window = calendar.exact_twelve_month_window(as_of_date)
+        window_observations = calendar_window.business_day_count
+        minimum_observations = calendar_window.business_day_count
+        window_basis = calendar_window.basis.value
+        calendar_source = calendar_window.calendar_source
+        calendar_version = calendar_window.calendar_version
+        official_holiday_count = calendar_window.official_holiday_count
+        missing_business_dates = calendar_window.missing_business_dates
 
     selected: dict[RiskClass, StressPeriodCandidate] = {}
     counts: dict[RiskClass, int] = {}
@@ -494,6 +528,11 @@ def select_stress_periods_by_risk_class(
         tie_break=tie_break,
         selected_by_risk_class=selected,
         candidate_counts=counts,
+        window_basis=window_basis,
+        calendar_source=calendar_source,
+        calendar_version=calendar_version,
+        official_holiday_count=official_holiday_count,
+        missing_business_dates=missing_business_dates,
         metadata={} if metadata is None else metadata,
     )
 
@@ -505,6 +544,8 @@ def select_stress_periods_for_policy(
     as_of_date: date,
     severity_metric: StressSeverityMetric = StressSeverityMetric.EXPECTED_SHORTFALL,
     tie_break: StressPeriodTieBreak = StressPeriodTieBreak.LATEST_START_DATE,
+    calendar: BusinessCalendar | None = None,
+    use_exact_twelve_month_window: bool = False,
     run_id: str | None = None,
     desk_id: str | None = None,
     metadata: Mapping[str, object] | None = None,
@@ -522,6 +563,8 @@ def select_stress_periods_for_policy(
         es_estimator=policy.es_estimator,
         tie_break=tie_break,
         regime=policy.regime,
+        calendar=calendar,
+        use_exact_twelve_month_window=use_exact_twelve_month_window,
         metadata=metadata,
     )
     logger.info(
@@ -702,8 +745,7 @@ def _candidate_from_window_index(
         end_scenario_id=series.scenario_ids[end_index],
         notes=(
             "Selected from provided historical loss series; "
-            "business-day observation count is a package-level 12-month proxy "
-            "because exact business-calendar governance remains upstream."
+            "window basis is recorded on the StressPeriodSelectionResult."
         ),
     )
 

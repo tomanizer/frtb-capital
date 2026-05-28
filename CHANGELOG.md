@@ -21,6 +21,8 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
   decisions, with a PR template reminder for ADR review.
 - Scheduled/manual FRTB-IMA target-scale benchmark workflow with `make benchmark`
   and a checked-in performance-baseline directory.
+- FRTB-IMA dependency-free business-calendar window semantics for RFET,
+  PLA/backtesting, and stress-period evidence.
 - Governance completion for audit issue #3: documented release approvals,
   versioning, tagging, and material-change handling in
   `docs/RELEASE_PROCESS.md`.

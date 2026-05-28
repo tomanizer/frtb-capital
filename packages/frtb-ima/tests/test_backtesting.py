@@ -12,7 +12,21 @@ from frtb_ima.backtesting import (
     trading_desk_backtest_trace,
     trading_desk_backtest_trace_for_policy,
 )
+from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.regimes import get_policy
+
+
+def _business_dates(
+    count: int, *, start: date, holidays: set[date] | None = None
+) -> tuple[date, ...]:
+    holidays = set() if holidays is None else holidays
+    days: list[date] = []
+    current = start
+    while len(days) < count:
+        if current.weekday() < 5 and current not in holidays:
+            days.append(current)
+        current += timedelta(days=1)
+    return tuple(days)
 
 
 def test_count_exceptions_none() -> None:
@@ -279,6 +293,35 @@ def test_trading_desk_backtest_prorates_exception_limits_for_short_history() -> 
     assert result.model_eligible is True
 
 
+def test_trading_desk_backtest_prorated_calendar_uses_actual_window_size() -> None:
+    n = 125
+    dates = _business_dates(n, start=date(2025, 1, 1))
+    calendar = BusinessCalendar(
+        business_dates=dates,
+        source="FED",
+        version="2026.1",
+    )
+    apl = [100.0] * n
+    hpl = [100.0] * n
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+
+    result = trading_desk_backtest_trace(
+        apl,
+        hpl,
+        var,
+        minimum_history=250,
+        allow_prorated_thresholds=True,
+        observation_dates=dates,
+        calendar=calendar,
+    )
+
+    assert result.window_size == n
+    assert result.result.calendar_basis == ObservationWindowBasis.MOST_RECENT_BUSINESS_DAYS
+
+
 def test_trading_desk_backtest_trace_for_policy_uses_policy_window() -> None:
     policy = get_policy()
     n = policy.backtesting_window_days
@@ -293,6 +336,39 @@ def test_trading_desk_backtest_trace_for_policy_uses_policy_window() -> None:
 
     assert result.window_size == policy.backtesting_window_days
     assert result.model_eligible is True
+
+
+def test_trading_desk_backtest_policy_calendar_validates_business_window() -> None:
+    policy = get_policy()
+    holiday = date(2025, 1, 20)
+    dates = _business_dates(
+        policy.backtesting_window_days, start=date(2025, 1, 1), holidays={holiday}
+    )
+    calendar = BusinessCalendar(
+        business_dates=dates,
+        official_holidays=(holiday,),
+        source="FED",
+        version="2026.1",
+    )
+    apl = [100.0] * policy.backtesting_window_days
+    hpl = [100.0] * policy.backtesting_window_days
+    var = {
+        0.975: [100.0] * policy.backtesting_window_days,
+        0.99: [100.0] * policy.backtesting_window_days,
+    }
+
+    result = trading_desk_backtest_trace_for_policy(
+        apl,
+        hpl,
+        var,
+        policy,
+        observation_dates=dates,
+        calendar=calendar,
+    )
+
+    assert result.result.calendar_basis == ObservationWindowBasis.MOST_RECENT_BUSINESS_DAYS
+    assert result.result.official_holiday_count == 1
+    assert result.as_dict()["official_holiday_count"] == 1
 
 
 def test_trading_desk_backtest_trace_rejects_misaligned_dates() -> None:

@@ -35,6 +35,7 @@ from datetime import date
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import DEFAULT_BACKTESTING_EXCEPTION_LIMITS, RegulatoryPolicy
 
@@ -101,6 +102,11 @@ class TradingDeskBacktestResult:
     levels: tuple[BacktestLevelResult, ...]
     window_size: int
     model_eligible: bool
+    calendar_source: str = ""
+    calendar_version: str = ""
+    calendar_basis: str = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
+    official_holiday_count: int = 0
+    missing_business_dates: tuple[date, ...] = ()
 
     def level(self, confidence_level: float) -> BacktestLevelResult:
         """Return the result for one configured VaR confidence level."""
@@ -114,6 +120,11 @@ class TradingDeskBacktestResult:
         return {
             "window_size": self.window_size,
             "model_eligible": self.model_eligible,
+            "calendar_source": self.calendar_source,
+            "calendar_version": self.calendar_version,
+            "calendar_basis": self.calendar_basis,
+            "official_holiday_count": self.official_holiday_count,
+            "missing_business_dates": [item.isoformat() for item in self.missing_business_dates],
             "levels": [level.as_dict() for level in self.levels],
         }
 
@@ -208,6 +219,13 @@ class TradingDeskBacktestTraceResult:
         return {
             "window_size": self.window_size,
             "model_eligible": self.model_eligible,
+            "calendar_source": self.result.calendar_source,
+            "calendar_version": self.result.calendar_version,
+            "calendar_basis": self.result.calendar_basis,
+            "official_holiday_count": self.result.official_holiday_count,
+            "missing_business_dates": [
+                item.isoformat() for item in self.result.missing_business_dates
+            ],
             "levels": [level.as_dict() for level in self.levels],
         }
 
@@ -419,6 +437,8 @@ def trading_desk_backtest(
     minimum_history: int | None = None,
     allow_prorated_thresholds: bool = False,
     official_holiday_mask: BoolVector | None = None,
+    observation_dates: Sequence[date] | None = None,
+    calendar: BusinessCalendar | None = None,
 ) -> TradingDeskBacktestResult:
     """
     Run NPR 2.0 trading-desk backtesting across VaR confidence levels.
@@ -440,6 +460,8 @@ def trading_desk_backtest(
         minimum_history=minimum_history,
         allow_prorated_thresholds=allow_prorated_thresholds,
         official_holiday_mask=official_holiday_mask,
+        observation_dates=observation_dates,
+        calendar=calendar,
     ).result
 
 
@@ -453,6 +475,7 @@ def trading_desk_backtest_trace(
     allow_prorated_thresholds: bool = False,
     official_holiday_mask: BoolVector | None = None,
     observation_dates: Sequence[date] | None = None,
+    calendar: BusinessCalendar | None = None,
 ) -> TradingDeskBacktestTraceResult:
     """
     Run NPR 2.0 trading-desk backtesting with per-observation audit traces.
@@ -506,6 +529,26 @@ def trading_desk_backtest_trace(
     hpl_w = hpl_arr[-window_size:]
     holiday_w = holiday_arr[-window_size:] if holiday_arr is not None else None
     dates_w = dates[-window_size:] if dates is not None else None
+    calendar_source = ""
+    calendar_version = ""
+    calendar_basis = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
+    official_holiday_count = 0
+    missing_business_dates: tuple[date, ...] = ()
+    if calendar is not None:
+        if dates is None:
+            raise ValueError("observation_dates are required when calendar is supplied")
+        calendar_window = calendar.most_recent_business_days(
+            window_size,
+            as_of_date=dates[-1],
+        )
+        assert dates_w is not None
+        if tuple(dates_w) != calendar_window.business_dates:
+            raise ValueError("backtesting window dates must match the supplied business calendar")
+        calendar_source = calendar_window.calendar_source
+        calendar_version = calendar_window.calendar_version
+        calendar_basis = calendar_window.basis.value
+        official_holiday_count = calendar_window.official_holiday_count
+        missing_business_dates = calendar_window.missing_business_dates
 
     level_results: list[BacktestLevelResult] = []
     level_traces: list[BacktestLevelTrace] = []
@@ -579,6 +622,11 @@ def trading_desk_backtest_trace(
         levels=tuple(level_results),
         window_size=window_size,
         model_eligible=all(result.level_passed for result in level_results),
+        calendar_source=calendar_source,
+        calendar_version=calendar_version,
+        calendar_basis=calendar_basis,
+        official_holiday_count=official_holiday_count,
+        missing_business_dates=missing_business_dates,
     )
     return TradingDeskBacktestTraceResult(
         result=result,
@@ -593,6 +641,8 @@ def trading_desk_backtest_for_policy(
     policy: RegulatoryPolicy,
     allow_prorated_thresholds: bool = False,
     official_holiday_mask: BoolVector | None = None,
+    observation_dates: Sequence[date] | None = None,
+    calendar: BusinessCalendar | None = None,
     *,
     run_id: str | None = None,
     desk_id: str | None = None,
@@ -607,6 +657,8 @@ def trading_desk_backtest_for_policy(
         minimum_history=policy.backtesting_minimum_history_days,
         allow_prorated_thresholds=allow_prorated_thresholds,
         official_holiday_mask=official_holiday_mask,
+        observation_dates=observation_dates,
+        calendar=calendar,
     )
     _log_backtesting_result(result, policy, run_id=run_id, desk_id=desk_id)
     return result
@@ -620,6 +672,7 @@ def trading_desk_backtest_trace_for_policy(
     allow_prorated_thresholds: bool = False,
     official_holiday_mask: BoolVector | None = None,
     observation_dates: Sequence[date] | None = None,
+    calendar: BusinessCalendar | None = None,
     *,
     run_id: str | None = None,
     desk_id: str | None = None,
@@ -635,6 +688,7 @@ def trading_desk_backtest_trace_for_policy(
         allow_prorated_thresholds=allow_prorated_thresholds,
         official_holiday_mask=official_holiday_mask,
         observation_dates=observation_dates,
+        calendar=calendar,
     )
     _log_backtesting_result(result.result, policy, run_id=run_id, desk_id=desk_id)
     return result

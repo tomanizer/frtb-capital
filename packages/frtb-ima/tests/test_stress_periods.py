@@ -7,6 +7,7 @@ from datetime import date, timedelta
 import numpy as np
 import pytest
 
+from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus, RiskClass
 from frtb_ima.expected_shortfall import ESEstimator
 from frtb_ima.nmrf import NMRFStressMethod
@@ -41,17 +42,32 @@ def _dates(count: int, *, start: date = date(2020, 1, 1)) -> tuple[date, ...]:
     return tuple(start + timedelta(days=idx) for idx in range(count))
 
 
+def _business_dates(
+    count: int, *, start: date, holidays: set[date] | None = None
+) -> tuple[date, ...]:
+    holidays = set() if holidays is None else holidays
+    days: list[date] = []
+    current = start
+    while len(days) < count:
+        if current.weekday() < 5 and current not in holidays:
+            days.append(current)
+        current += timedelta(days=1)
+    return tuple(days)
+
+
 def _series(
     losses: list[float] | np.ndarray,
     *,
     risk_class: RiskClass = RiskClass.CSR,
     source: str = "synthetic historical scenario loss series",
+    dates: tuple[date, ...] | None = None,
 ) -> HistoricalStressSeries:
     loss_arr = np.asarray(losses, dtype=float)
+    series_dates = _dates(int(loss_arr.size)) if dates is None else dates
     return HistoricalStressSeries(
         risk_class=risk_class,
         losses=loss_arr,
-        dates=_dates(int(loss_arr.size)),
+        dates=series_dates,
         source=source,
         scenario_ids=tuple(f"{risk_class.value.lower()}-{idx:03d}" for idx in range(loss_arr.size)),
     )
@@ -199,6 +215,36 @@ def test_policy_wrapper_uses_policy_regime_and_confidence_level() -> None:
     assert defaulted.confidence_level == pytest.approx(policy.es_confidence_level)
     assert defaulted.window_observations == policy.stress_period_window_observations
     assert defaulted.minimum_observations == policy.stress_period_minimum_observations
+
+
+def test_stress_period_selection_records_exact_calendar_window_basis() -> None:
+    policy = get_policy()
+    as_of_date = date(2025, 2, 28)
+    holiday = date(2024, 12, 25)
+    calendar_dates = _business_dates(270, start=date(2024, 2, 29), holidays={holiday})
+    calendar = BusinessCalendar(
+        business_dates=calendar_dates,
+        official_holidays=(holiday,),
+        source="FED",
+        version="2026.1",
+    )
+    losses = np.linspace(1.0, float(len(calendar_dates)), len(calendar_dates))
+
+    result = select_stress_periods_for_policy(
+        [_series(losses, dates=calendar_dates)],
+        policy,
+        as_of_date=as_of_date,
+        calendar=calendar,
+        use_exact_twelve_month_window=True,
+    )
+
+    assert result.window_basis == ObservationWindowBasis.EXACT_TWELVE_MONTH_BUSINESS_CALENDAR
+    assert (
+        result.window_observations
+        == calendar.exact_twelve_month_window(as_of_date).business_day_count
+    )
+    assert result.official_holiday_count == 1
+    assert result.as_dict()["selection_parameters"]["calendar_source"] == "FED"
 
 
 def test_stress_period_specs_for_nmrf_bridge_uses_selected_windows() -> None:

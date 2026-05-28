@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from enum import StrEnum
 
+from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.data_contracts import RFETEvidence, RiskFactorDefinition
 from frtb_ima.data_models import ModellabilityStatus, RealPriceObservation
 from frtb_ima.regimes import RegulatoryPolicy
@@ -28,7 +29,9 @@ class RFETExclusionReason(StrEnum):
     DUPLICATE_DATE = "DUPLICATE_DATE"
     FUTURE_OBSERVATION = "FUTURE_OBSERVATION"
     MISSING_SOURCE = "MISSING_SOURCE"
+    NON_BUSINESS_DATE = "NON_BUSINESS_DATE"
     NON_REPRESENTATIVE_BUCKET = "NON_REPRESENTATIVE_BUCKET"
+    OFFICIAL_HOLIDAY = "OFFICIAL_HOLIDAY"
     OUTSIDE_LOOKBACK = "OUTSIDE_LOOKBACK"
 
 
@@ -68,6 +71,12 @@ class RFETEvidenceAssessment:
     bucket_representative: bool
     new_issuance_prorated: bool
     modellability_status: ModellabilityStatus
+    lookback_basis: str = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
+    calendar_source: str = ""
+    calendar_version: str = ""
+    official_holiday_count: int = 0
+    missing_business_dates: tuple[date, ...] = ()
+    shift_reason: str = ""
     exclusions: tuple[RFETObservationExclusion, ...] = ()
 
     def as_dict(self) -> dict[str, object]:
@@ -88,6 +97,12 @@ class RFETEvidenceAssessment:
             "bucket_representative": self.bucket_representative,
             "new_issuance_prorated": self.new_issuance_prorated,
             "modellability_status": self.modellability_status.value,
+            "lookback_basis": self.lookback_basis,
+            "calendar_source": self.calendar_source,
+            "calendar_version": self.calendar_version,
+            "official_holiday_count": self.official_holiday_count,
+            "missing_business_dates": [item.isoformat() for item in self.missing_business_dates],
+            "shift_reason": self.shift_reason,
             "exclusions": [exclusion.as_dict() for exclusion in self.exclusions],
         }
 
@@ -156,6 +171,10 @@ def assess_rfet_evidence(
     issue_date: date | None = None,
     allow_new_issuance_prorating: bool = False,
     require_source: bool = True,
+    calendar: BusinessCalendar | None = None,
+    shifted_start_date: date | None = None,
+    shifted_end_date: date | None = None,
+    shift_reason: str = "",
 ) -> RFETEvidenceAssessment:
     """
     Assess real-price evidence for one risk factor under a policy.
@@ -171,7 +190,32 @@ def assess_rfet_evidence(
     if risk_factor.name != evidence.risk_factor_name:
         raise ValueError("risk_factor and evidence names must match")
 
-    lookback_start = evidence.as_of_date - timedelta(days=policy.rfet_lookback_days)
+    if calendar is None:
+        lookback_start = evidence.as_of_date - timedelta(days=policy.rfet_lookback_days)
+        lookback_end = evidence.as_of_date
+        lookback_basis = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
+        calendar_source = ""
+        calendar_version = ""
+        official_holiday_count = 0
+        missing_business_dates: tuple[date, ...] = ()
+        business_dates: set[date] | None = None
+        official_holidays: set[date] = set()
+    else:
+        window = calendar.exact_twelve_month_window(
+            evidence.as_of_date,
+            shifted_start_date=shifted_start_date,
+            shifted_end_date=shifted_end_date,
+            shift_reason=shift_reason,
+        )
+        lookback_start = window.start_date
+        lookback_end = window.end_date
+        lookback_basis = window.basis.value
+        calendar_source = window.calendar_source
+        calendar_version = window.calendar_version
+        official_holiday_count = window.official_holiday_count
+        missing_business_dates = window.missing_business_dates
+        business_dates = set(window.business_dates)
+        official_holidays = set(window.official_holidays)
     base_required = base_required_observation_count(risk_factor, policy)
     new_issuance_prorated = False
     required = base_required
@@ -194,8 +238,15 @@ def assess_rfet_evidence(
         reason: RFETExclusionReason | None = None
         if observation.observation_date > evidence.as_of_date:
             reason = RFETExclusionReason.FUTURE_OBSERVATION
-        elif observation.observation_date < lookback_start:
+        elif (
+            observation.observation_date < lookback_start
+            or observation.observation_date > lookback_end
+        ):
             reason = RFETExclusionReason.OUTSIDE_LOOKBACK
+        elif observation.observation_date in official_holidays:
+            reason = RFETExclusionReason.OFFICIAL_HOLIDAY
+        elif business_dates is not None and observation.observation_date not in business_dates:
+            reason = RFETExclusionReason.NON_BUSINESS_DATE
         elif require_source and not observation.source:
             reason = RFETExclusionReason.MISSING_SOURCE
         elif not bucket_representative:
@@ -230,5 +281,13 @@ def assess_rfet_evidence(
         bucket_representative=bucket_representative,
         new_issuance_prorated=new_issuance_prorated,
         modellability_status=status,
+        lookback_basis=lookback_basis,
+        calendar_source=calendar_source,
+        calendar_version=calendar_version,
+        official_holiday_count=official_holiday_count,
+        missing_business_dates=missing_business_dates,
+        shift_reason=shift_reason
+        if lookback_basis == ObservationWindowBasis.SHIFTED_TWELVE_MONTH_BUSINESS_CALENDAR.value
+        else "",
         exclusions=tuple(exclusions),
     )
