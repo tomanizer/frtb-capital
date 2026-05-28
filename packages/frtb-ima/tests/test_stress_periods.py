@@ -526,6 +526,28 @@ def test_stress_period_selection_parameter_validation() -> None:
             es_estimator=ES_ESTIMATOR,
         )
 
+    tie_break_test_candidate = select_stress_period_from_history(
+        series,
+        window_observations=2,
+        minimum_observations=2,
+        severity_metric=StressSeverityMetric.MAX_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
+    )
+    with pytest.raises(TypeError, match="tie_break must be a StressPeriodTieBreak"):
+        StressPeriodSelectionResult(
+            as_of_date=date(2025, 6, 30),
+            regime="FED_NPR_2_0",
+            window_observations=2,
+            minimum_observations=2,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+            tie_break=object(),  # type: ignore[arg-type]
+            selected_by_risk_class={RiskClass.CSR: tie_break_test_candidate},
+            candidate_counts={RiskClass.CSR: 3},
+        )
+
 
 def test_validate_selected_stress_periods_requires_all_risk_classes() -> None:
     result = select_stress_periods_by_risk_class(
@@ -608,6 +630,135 @@ def test_selection_result_validates_candidate_mapping() -> None:
             tie_break=StressPeriodTieBreak.LATEST_START_DATE,
             selected_by_risk_class={RiskClass.CSR: candidate},
             candidate_counts={RiskClass.EQUITY: 1},
+        )
+    with pytest.raises(TypeError, match="RiskClass"):
+        StressPeriodSelectionResult(
+            as_of_date=date(2025, 6, 30),
+            regime="FED_NPR_2_0",
+            window_observations=2,
+            minimum_observations=2,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+            tie_break=StressPeriodTieBreak.LATEST_START_DATE,
+            selected_by_risk_class={"CSR": candidate},  # type: ignore[dict-item]
+            candidate_counts={"CSR": 1},  # type: ignore[dict-item]
+        )
+    with pytest.raises(ValueError, match="risk_class"):
+        StressPeriodSelectionResult(
+            as_of_date=date(2025, 6, 30),
+            regime="FED_NPR_2_0",
+            window_observations=2,
+            minimum_observations=2,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+            tie_break=StressPeriodTieBreak.LATEST_START_DATE,
+            selected_by_risk_class={
+                RiskClass.CSR: StressPeriodCandidate(
+                    risk_class=RiskClass.EQUITY,
+                    period_id="equity-20200101-20200102",
+                    start_date=date(2020, 1, 1),
+                    end_date=date(2020, 1, 2),
+                    start_index=0,
+                    end_index_exclusive=2,
+                    observation_count=2,
+                    severity_score=10.0,
+                    severity_metric=StressSeverityMetric.MAX_LOSS,
+                    confidence_level=CONFIDENCE_LEVEL,
+                    es_estimator=ES_ESTIMATOR,
+                    source="synthetic",
+                    start_scenario_id="s1",
+                    end_scenario_id="s2",
+                )
+            },
+            candidate_counts={RiskClass.CSR: 1},
+        )
+    with pytest.raises(ValueError, match="positive"):
+        StressPeriodSelectionResult(
+            as_of_date=date(2025, 6, 30),
+            regime="FED_NPR_2_0",
+            window_observations=2,
+            minimum_observations=2,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+            tie_break=StressPeriodTieBreak.LATEST_START_DATE,
+            selected_by_risk_class={RiskClass.CSR: candidate},
+            candidate_counts={RiskClass.CSR: 0},
+        )
+
+
+def test_public_input_guards_raise_for_wrong_types() -> None:
+    with pytest.raises(TypeError, match="HistoricalStressSeries"):
+        stress_period_candidates_from_history(  # type: ignore[arg-type]
+            object(),
+            window_observations=2,
+            minimum_observations=2,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+        )
+    with pytest.raises(TypeError, match="HistoricalStressSeries"):
+        select_stress_period_from_history(  # type: ignore[arg-type]
+            object(),
+            window_observations=2,
+            minimum_observations=2,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+        )
+    with pytest.raises(ValueError, match="calendar is required"):
+        select_stress_periods_by_risk_class(
+            [_series([1.0, 2.0, 3.0, 4.0])],
+            as_of_date=date(2025, 6, 30),
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+            use_exact_twelve_month_window=True,
+        )
+    with pytest.raises(TypeError, match="RegulatoryPolicy"):
+        select_stress_periods_for_policy(  # type: ignore[arg-type]
+            [_series([1.0, 2.0, 3.0, 4.0])],
+            object(),
+            as_of_date=date(2025, 6, 30),
+        )
+    with pytest.raises(TypeError, match="StressPeriodSelectionResult"):
+        stress_period_specs_for_nmrf(object())  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="StressPeriodSelectionResult"):
+        validate_selected_stress_periods(object(), [RiskClass.CSR])  # type: ignore[arg-type]
+
+
+def test_rolling_window_raises_on_insufficient_data_and_invalid_metric(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Exercise terminal rolling-window guards that are unreachable via public validation.
+
+    If selection-parameter validation semantics change, this test should be revisited.
+    """
+    import frtb_ima.stress_periods as stress_periods_module
+
+    # Disabling parameter validation is intentional: otherwise minimum/window and
+    # metric-type checks fail earlier and these final guards cannot be executed.
+    monkeypatch.setattr(stress_periods_module, "_validate_selection_parameters", lambda **_: None)
+
+    with pytest.raises(ValueError, match="window_observations"):
+        rolling_window_severity_scores(
+            [1.0, 2.0],
+            window_observations=3,
+            minimum_observations=1,
+            severity_metric=StressSeverityMetric.MAX_LOSS,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
+        )
+    with pytest.raises(ValueError, match="Unsupported severity metric"):
+        rolling_window_severity_scores(
+            [1.0, 2.0, 3.0],
+            window_observations=2,
+            minimum_observations=1,
+            severity_metric="UNKNOWN_METRIC",  # type: ignore[arg-type]
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ES_ESTIMATOR,
         )
 
 
