@@ -35,6 +35,9 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
 - Governance completion for audit issue #3: documented release approvals,
   versioning, tagging, and material-change handling in
   `docs/RELEASE_PROCESS.md`.
+- ADR 0011 documenting the core runtime dependency policy: `numpy` for capital
+  kernels, with dataframe and statistical libraries allowed in notebooks,
+  validation, tests, research, and optional adapters.
 
 ## [0.1.0] - 2026-05-28
 

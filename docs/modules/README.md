@@ -21,6 +21,56 @@ planned component packages: `frtb-sbm`, `frtb-drc`, and `frtb-rrao`. See the
 | RRAO | [frtb-rrao](frtb-rrao/) | [frtb-rrao/REGULATORY_REQUIREMENTS.md](frtb-rrao/REGULATORY_REQUIREMENTS.md) | [frtb-rrao/PRD.md](frtb-rrao/PRD.md) | [frtb-rrao/requirements/BASEL_FRTB_RRAO.yml](frtb-rrao/requirements/BASEL_FRTB_RRAO.yml) |
 | CVA | [frtb-cva](frtb-cva/) | [frtb-cva/REGULATORY_REQUIREMENTS.md](frtb-cva/REGULATORY_REQUIREMENTS.md) | [frtb-cva/PRD.md](frtb-cva/PRD.md) | [frtb-cva/requirements/BASEL_FRTB_CVA.yml](frtb-cva/requirements/BASEL_FRTB_CVA.yml) |
 
+## Implementation Pattern
+
+The planned `frtb-sbm`, `frtb-drc`, `frtb-rrao`, and `frtb-cva` packages
+should follow one implementation pattern. `frtb-common` owns shared primitives:
+rule-profile loading, citation identifiers, sign conventions, calculation
+context, validation errors, audit-record base types, and generic numerical
+aggregation helpers. Capital packages may import from `frtb-common`; they must
+not import from each other.
+
+Regulatory parameters belong in versioned rule profiles, not scattered through
+calculation modules. A profile records its id, status, effective date, source
+publication date, parameter groups, source citations, and a hash of normalized
+profile content. Calculation code receives a profile or `CalculationContext`;
+it must not look up global constants by regime name inside kernels.
+
+Each package owns a canonical input model at its public boundary. Importers,
+CRIF mappers, examples, and future vendor adapters must translate into that
+model before calculation starts. Public validation rejects missing identities,
+duplicate keys unless aggregation is explicit, unknown enum values, non-finite
+numbers, implicit sign conventions, and unsupported regulatory features.
+
+Calculation modules are pure kernels: typed inputs in, frozen result objects
+out. Database reads, Excel output, dashboard writes, and persisted manifests
+belong in adapters or `frtb-orchestration`, not in capital package kernels.
+`frtb-orchestration` owns composed SA capital, IMA fallback routing,
+top-of-house aggregation, cross-component reconciliation, reporting adapters,
+and run manifests.
+
+Every capital-producing result must carry enough metadata to reproduce and
+explain the number: run id, package id, model version, code version, rule
+profile id and hash, input snapshot hash, calculation node, source citation
+ids, validation status, and fallback status with reason code where applicable.
+
+Default numerical kernels should use `numpy` arrays and deterministic output
+ordering. Avoid row-wise dataframe execution, hidden table shims, mutable model
+classes that load/calculate/save/report in one object, and duplicated
+risk-class classes where profile data can drive shared aggregation logic. Any
+new runtime dependency requires an ADR. Dataframe and statistical libraries may
+be used in notebooks, validation, tests, research, and optional adapters when
+they do not leak into the capital calculation runtime path; see
+[`ADR 0011`](../decisions/0011-core-runtime-dependency-policy.md).
+
+Every calculation feature needs deterministic unit tests, invalid-input tests,
+cited golden fixtures, explicit unsupported-feature tests, audit-metadata
+tests, and benchmark coverage where realistic bucket or risk-factor counts
+matter. When a determinism check or audit control is intended to detect
+bit-identical output drift, use raw numeric hashes rather than rounded
+floating-point outputs. Document the control intent and any platform or BLAS
+limits.
+
 ## Research Sources
 
 The documents use these primary references:
