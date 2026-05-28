@@ -145,7 +145,10 @@ those categories from vendor or instrument data.
 
 **Deterministic-first.** No LLM involvement in calculations. This layer computes capital from risk engine outputs.
 
-**Minimal dependencies.** numpy only. No pandas, no scipy — keeps it auditable.
+**Minimal runtime dependencies.** Core capital kernels use numpy only. Dataframe
+and statistical libraries may be used outside the runtime kernel path for tests,
+notebooks, validation, research, or optional adapters under the suite dependency
+policy in [`ADR 0011`](../../docs/decisions/0011-core-runtime-dependency-policy.md).
 
 **Functional style.** Classes only where data structure demands it (dataclasses). Business logic is pure functions.
 
