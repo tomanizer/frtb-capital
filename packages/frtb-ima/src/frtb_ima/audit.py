@@ -23,6 +23,7 @@ from types import MappingProxyType, TracebackType
 from typing import Any
 
 from frtb_ima._version import __version__
+from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.regimes import (
     DEFAULT_MODEL_VERSION,
     DeskEligibilityStatus,
@@ -47,6 +48,7 @@ class DeskAuditRecord:
     model_version: ModelVersion = field(default=DEFAULT_MODEL_VERSION, kw_only=True)
     code_version: str = field(default=__version__, kw_only=True)
     policy_hash: str = field(default="", kw_only=True)
+    inputs_hash: str = field(kw_only=True)
     imcc: Mapping[str, object]
     ses: Mapping[str, object]
     pla: Mapping[str, object]
@@ -72,7 +74,8 @@ class DeskAuditRecord:
         )
         if not code_version:
             raise ValueError("code_version must be non-empty")
-        _validate_policy_hash(policy_hash)
+        _validate_sha256_hex(policy_hash, "policy_hash")
+        _validate_sha256_hex(self.inputs_hash, "inputs_hash")
         try:
             desk_eligibility = DeskEligibilityStatus(self.desk_eligibility).value
         except ValueError as exc:
@@ -83,6 +86,7 @@ class DeskAuditRecord:
         object.__setattr__(self, "model_version", model_version)
         object.__setattr__(self, "code_version", code_version)
         object.__setattr__(self, "policy_hash", policy_hash)
+        object.__setattr__(self, "inputs_hash", str(self.inputs_hash))
         object.__setattr__(self, "imcc", _freeze_mapping(self.imcc))
         object.__setattr__(self, "ses", _freeze_mapping(self.ses))
         object.__setattr__(self, "pla", _freeze_mapping(self.pla))
@@ -106,6 +110,7 @@ class DeskAuditRecord:
             "model_version": self.model_version.as_dict(),
             "code_version": self.code_version,
             "policy_hash": self.policy_hash,
+            "inputs_hash": self.inputs_hash,
             "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
             "imcc": _jsonable(self.imcc),
             "ses": _jsonable(self.ses),
@@ -133,6 +138,7 @@ class CapitalRunAuditLog:
     model_version: ModelVersion = field(default=DEFAULT_MODEL_VERSION, kw_only=True)
     code_version: str = field(default=__version__, kw_only=True)
     policy_hash: str = field(default="", kw_only=True)
+    inputs_hash: str = field(default="", kw_only=True)
     as_of_date: date | None = None
     metadata: Mapping[str, object] = field(default_factory=_empty_mapping)
 
@@ -146,10 +152,14 @@ class CapitalRunAuditLog:
         policy_hash = (
             str(self.policy_hash) if self.policy_hash else _default_policy_hash(self.regime)
         )
+        desk_records = tuple(self.desk_records)
+        inputs_hash = (
+            str(self.inputs_hash) if self.inputs_hash else _default_inputs_hash(desk_records)
+        )
         if not code_version:
             raise ValueError("code_version must be non-empty")
-        _validate_policy_hash(policy_hash)
-        desk_records = tuple(self.desk_records)
+        _validate_sha256_hex(policy_hash, "policy_hash")
+        _validate_sha256_hex(inputs_hash, "inputs_hash")
         desk_ids = [record.desk_id for record in desk_records]
         if len(desk_ids) != len(set(desk_ids)):
             raise ValueError("desk_records contains duplicate desk_id values")
@@ -167,6 +177,7 @@ class CapitalRunAuditLog:
         object.__setattr__(self, "model_version", model_version)
         object.__setattr__(self, "code_version", code_version)
         object.__setattr__(self, "policy_hash", policy_hash)
+        object.__setattr__(self, "inputs_hash", inputs_hash)
         object.__setattr__(self, "desk_records", desk_records)
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 
@@ -183,6 +194,7 @@ class CapitalRunAuditLog:
             "model_version": self.model_version.as_dict(),
             "code_version": self.code_version,
             "policy_hash": self.policy_hash,
+            "inputs_hash": self.inputs_hash,
             "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
             "desk_count": self.desk_count,
             "desk_records": [record.as_dict() for record in self.desk_records],
@@ -232,6 +244,7 @@ def render_capital_run_audit_report(
                 ("Model description", log.model_version.description),
                 ("Code version", log.code_version),
                 ("Policy hash", log.policy_hash),
+                ("Inputs hash", log.inputs_hash),
             ),
         )
     )
@@ -295,6 +308,7 @@ def render_capital_run_audit_report(
                     ("Model version", record.model_version.version),
                     ("Code version", record.code_version),
                     ("Policy hash", record.policy_hash),
+                    ("Inputs hash", record.inputs_hash),
                     (
                         "As of date",
                         record.as_of_date.isoformat() if record.as_of_date is not None else "",
@@ -378,9 +392,20 @@ def _default_policy_hash(regime: str) -> str:
     return policy.policy_hash
 
 
-def _validate_policy_hash(value: str) -> None:
+def _default_inputs_hash(desk_records: tuple[DeskAuditRecord, ...]) -> str:
+    if len(desk_records) == 1:
+        return desk_records[0].inputs_hash
+    return compute_inputs_hash(
+        desk_inputs={
+            record.desk_id: record.inputs_hash
+            for record in sorted(desk_records, key=lambda item: item.desk_id)
+        }
+    )
+
+
+def _validate_sha256_hex(value: str, field_name: str) -> None:
     if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
-        raise ValueError("policy_hash must be a lowercase SHA-256 hex digest")
+        raise ValueError(f"{field_name} must be a lowercase SHA-256 hex digest")
 
 
 def _json_section(

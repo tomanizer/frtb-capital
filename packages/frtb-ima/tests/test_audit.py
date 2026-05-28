@@ -18,12 +18,16 @@ from frtb_ima.audit import (
 )
 from frtb_ima.regimes import DEFAULT_MODEL_VERSION, DeskEligibilityStatus, get_policy
 
+TEST_INPUTS_HASH = "1" * 64
+ALT_INPUTS_HASH = "2" * 64
+
 
 def _desk_record(desk_id: str = "desk-1") -> DeskAuditRecord:
     return DeskAuditRecord(
         run_id="run-1",
         desk_id=desk_id,
         regime="FED_NPR_2_0",
+        inputs_hash=TEST_INPUTS_HASH,
         as_of_date=date(2026, 5, 27),
         imcc={"imcc": 100.0},
         ses={"total_ses": 40.0},
@@ -47,6 +51,7 @@ def test_desk_audit_record_serializes_to_json_line() -> None:
     assert payload["model_version"] == DEFAULT_MODEL_VERSION.as_dict()
     assert payload["code_version"] == __version__
     assert payload["policy_hash"] == get_policy().policy_hash
+    assert payload["inputs_hash"] == TEST_INPUTS_HASH
     assert payload["as_of_date"] == "2026-05-27"
     assert payload["imcc"]["imcc"] == pytest.approx(100.0)
     assert payload["nmrf_valuation"]["passed"] is True
@@ -64,6 +69,7 @@ def test_desk_audit_record_canonicalizes_desk_eligibility_enum() -> None:
         pla={},
         backtesting={},
         capital={},
+        inputs_hash=TEST_INPUTS_HASH,
         elapsed_seconds=0.0,
     )
 
@@ -83,6 +89,7 @@ def test_desk_audit_record_rejects_invalid_desk_eligibility() -> None:
             pla={},
             backtesting={},
             capital={},
+            inputs_hash=TEST_INPUTS_HASH,
             elapsed_seconds=0.0,
         )
 
@@ -101,8 +108,10 @@ def test_capital_run_audit_log_serializes_records_to_ndjson() -> None:
     assert log.as_dict()["model_version"] == DEFAULT_MODEL_VERSION.as_dict()
     assert log.as_dict()["code_version"] == __version__
     assert log.as_dict()["policy_hash"] == get_policy().policy_hash
+    assert log.as_dict()["inputs_hash"] != TEST_INPUTS_HASH
     assert len(lines) == 2
     assert json.loads(lines[1])["desk_id"] == "desk-2"
+    assert json.loads(lines[1])["inputs_hash"] == TEST_INPUTS_HASH
 
 
 def test_capital_run_audit_log_rejects_duplicate_desks() -> None:
@@ -132,6 +141,7 @@ def test_capital_run_audit_log_requires_consistent_identity_fields() -> None:
                     pla={},
                     backtesting={},
                     capital={},
+                    inputs_hash=TEST_INPUTS_HASH,
                     elapsed_seconds=0.0,
                 ),
             ),
@@ -150,8 +160,65 @@ def test_audit_record_rejects_invalid_policy_hash() -> None:
             pla={},
             backtesting={},
             capital={},
+            inputs_hash=TEST_INPUTS_HASH,
             elapsed_seconds=0.0,
         )
+
+
+def test_audit_record_rejects_invalid_inputs_hash() -> None:
+    with pytest.raises(ValueError, match="inputs_hash"):
+        DeskAuditRecord(
+            run_id="run-1",
+            desk_id="desk-1",
+            regime="FED_NPR_2_0",
+            inputs_hash="not-a-sha",
+            imcc={},
+            ses={},
+            pla={},
+            backtesting={},
+            capital={},
+            elapsed_seconds=0.0,
+        )
+
+
+def test_single_desk_audit_log_defaults_to_desk_inputs_hash() -> None:
+    log = CapitalRunAuditLog(
+        run_id="run-1",
+        regime="FED_NPR_2_0",
+        desk_records=(_desk_record(),),
+    )
+
+    assert log.inputs_hash == TEST_INPUTS_HASH
+
+
+def test_multi_desk_audit_log_inputs_hash_is_deterministic_by_desk_id() -> None:
+    first = _desk_record("desk-1")
+    second = DeskAuditRecord(
+        run_id="run-1",
+        desk_id="desk-2",
+        regime="FED_NPR_2_0",
+        inputs_hash=ALT_INPUTS_HASH,
+        imcc={},
+        ses={},
+        pla={},
+        backtesting={},
+        capital={},
+        elapsed_seconds=0.0,
+    )
+
+    forward = CapitalRunAuditLog(
+        run_id="run-1",
+        regime="FED_NPR_2_0",
+        desk_records=(first, second),
+    )
+    reverse = CapitalRunAuditLog(
+        run_id="run-1",
+        regime="FED_NPR_2_0",
+        desk_records=(second, first),
+    )
+
+    assert forward.inputs_hash == reverse.inputs_hash
+    assert forward.inputs_hash not in {TEST_INPUTS_HASH, ALT_INPUTS_HASH}
 
 
 def test_audit_metadata_defaults_are_immutable_mappings() -> None:
@@ -164,6 +231,7 @@ def test_audit_metadata_defaults_are_immutable_mappings() -> None:
         pla={},
         backtesting={},
         capital={},
+        inputs_hash=TEST_INPUTS_HASH,
         elapsed_seconds=0.0,
     )
     log = CapitalRunAuditLog(
@@ -199,6 +267,7 @@ def test_render_capital_run_audit_report_contains_summary_and_details() -> None:
     assert "## Run identity" in report
     assert f"| Code version | {__version__} |" in report
     assert f"| Policy hash | {get_policy().policy_hash} |" in report
+    assert f"| Inputs hash | {TEST_INPUTS_HASH} |" in report
     assert "| Run ID | run-1 |" in report
     assert "| desk-1 | 2026-05-27 | 100 | 40 | 190 |" in report
     assert "## Desk: desk-1" in report

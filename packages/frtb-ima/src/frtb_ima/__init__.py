@@ -16,6 +16,7 @@ from frtb_ima.audit import (
     write_audit_records_ndjson,
     write_capital_run_audit_report,
 )
+from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.capital import (
     CapitalComponents,
     IMAIneligibleError,
@@ -282,6 +283,7 @@ __all__ = [
     "calculate_nmrf_ses_from_revaluation",
     "calculation_log_extra",
     "complete_nmrf_valuation_run",
+    "compute_inputs_hash",
     "configure_json_logging",
     "desk_eligibility_from_results",
     "get_policy",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -14,8 +15,10 @@ from frtb_ima.audit import (
     write_audit_records_ndjson,
     write_capital_run_audit_report,
 )
+from frtb_ima.audit_inputs import compute_inputs_hash
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 DEFAULT_FIXTURE_ROOT = ROOT / "tests" / "fixtures" / "capital_run_v1"
 DEFAULT_OUTPUT = ROOT / "build" / "audit" / "capital_run_v1_audit_report.md"
 
@@ -57,17 +60,22 @@ def main() -> None:
 
 
 def _audit_log_from_fixture(fixture_root: Path) -> CapitalRunAuditLog:
+    from examples.capital_run_fixture import load_capital_run_fixture
+
+    fixture = load_capital_run_fixture(fixture_root)
     params = _read_json(fixture_root / "params.json")
     expected = _read_json(fixture_root / "expected_outputs.json")
     fixture_display = _display_path(fixture_root)
     as_of_date = date.fromisoformat(str(params["as_of_date"]))
     run_id = str(params["run_id"])
     regime = str(params["regime"])
+    inputs_hash = _fixture_inputs_hash(fixture)
 
     desk_record = DeskAuditRecord(
         run_id=run_id,
         desk_id=str(params["desk_id"]),
         regime=regime,
+        inputs_hash=inputs_hash,
         as_of_date=as_of_date,
         imcc={
             "imcc": _golden_scalar(expected, "imcc"),
@@ -106,12 +114,26 @@ def _audit_log_from_fixture(fixture_root: Path) -> CapitalRunAuditLog:
     return CapitalRunAuditLog(
         run_id=run_id,
         regime=regime,
+        inputs_hash=inputs_hash,
         as_of_date=as_of_date,
         desk_records=(desk_record,),
         metadata={
             "fixture_root": fixture_display,
             "source": "tests/fixtures/capital_run_v1 expected_outputs.json",
         },
+    )
+
+
+def _fixture_inputs_hash(fixture: Any) -> str:
+    return compute_inputs_hash(
+        params=fixture.params,
+        risk_factors=fixture.risk_factors,
+        rfet_evidence=fixture.rfet_evidence,
+        scenario_cube=fixture.scenario_cube,
+        stress_histories=fixture.stress_histories,
+        nmrf_evidence=fixture.nmrf_evidence,
+        nmrf_artifacts=fixture.nmrf_artifacts,
+        pla_bt_vectors=fixture.pla_bt_vectors,
     )
 
 
