@@ -1,0 +1,55 @@
+{
+  "context": {
+    "run_id": "rrao-eu-fixture",
+    "calculation_date": "2026-03-31",
+    "base_currency": "EUR",
+    "profile": "EU_CRR3"
+  },
+  "positions": [
+    {
+      "position_id": "eu-exotic-future-realised-volatility",
+      "source_row_id": "eu-row-001",
+      "desk_id": "eu-trading",
+      "legal_entity": "EU-LE-001",
+      "gross_effective_notional": 1000000.0,
+      "currency": "EUR",
+      "evidence_type": "EXOTIC_UNDERLYING",
+      "evidence_label": "future realised volatility underlying",
+      "classification_hint": "EXOTIC"
+    },
+    {
+      "position_id": "eu-path-dependent-option",
+      "source_row_id": "eu-row-002",
+      "desk_id": "eu-trading",
+      "legal_entity": "EU-LE-001",
+      "gross_effective_notional": 2000000.0,
+      "currency": "EUR",
+      "evidence_type": "PATH_DEPENDENT_OPTION",
+      "evidence_label": "path-dependent option from RTS Annex",
+      "classification_hint": "OTHER_RESIDUAL_RISK"
+    },
+    {
+      "position_id": "eu-index-option-correlation",
+      "source_row_id": "eu-row-003",
+      "desk_id": "eu-trading",
+      "legal_entity": "EU-LE-001",
+      "gross_effective_notional": 3000000.0,
+      "currency": "EUR",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "evidence_label": "Article 3 index option correlation risk only",
+      "classification_hint": "EXCLUDED",
+      "exclusion_reason": "EU_ARTICLE_3_INDEX_OPTION_CORRELATION",
+      "exclusion_evidence_id": "article-3-index-option-correlation-001"
+    }
+  ],
+  "expected": {
+    "total_rrao": 12000.0,
+    "included_position_ids": [
+      "eu-exotic-future-realised-volatility",
+      "eu-path-dependent-option"
+    ],
+    "excluded_position_ids": [
+      "eu-index-option-correlation"
+    ]
+  }
+}

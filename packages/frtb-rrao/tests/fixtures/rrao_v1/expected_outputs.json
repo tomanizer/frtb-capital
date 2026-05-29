@@ -1,0 +1,232 @@
+{
+  "profile_id": "US_NPR_2_0",
+  "profile_hash": "bfb2763c438d3cfd36b906c5ab3ebeae0ff92cf1160349369f1e417bf2157e15",
+  "input_hash": "051007628a602a187b1d01ce96a32d36d76107a513ca3734de85ec46a60612ab",
+  "total_rrao": 53000.0,
+  "warnings": [
+    "US_NPR_2_0 is proposed-rule material; do not present outputs as final regulatory capital."
+  ],
+  "citations": [
+    "us_npr_211_a_1",
+    "us_npr_211_c_1_i",
+    "us_npr_211_a_2",
+    "us_npr_211_c_1_ii",
+    "us_npr_211_a_4",
+    "us_npr_211_b_1",
+    "us_npr_211_b_2_i",
+    "us_npr_211_b_2_iii",
+    "us_npr_211_b_2_iv"
+  ],
+  "included_lines": [
+    {
+      "position_id": "exotic-longevity-001",
+      "classification": "EXOTIC",
+      "risk_weight": 0.01,
+      "add_on": 10000.0,
+      "reason_code": "US_NPR_EXOTIC_EXPOSURE",
+      "citations": ["us_npr_211_a_1", "us_npr_211_c_1_i"]
+    },
+    {
+      "position_id": "exotic-weather-001",
+      "classification": "EXOTIC",
+      "risk_weight": 0.01,
+      "add_on": 25000.0,
+      "reason_code": "US_NPR_EXOTIC_EXPOSURE",
+      "citations": ["us_npr_211_a_1", "us_npr_211_c_1_i"]
+    },
+    {
+      "position_id": "exotic-natural-disaster-001",
+      "classification": "EXOTIC",
+      "risk_weight": 0.01,
+      "add_on": 7500.0,
+      "reason_code": "US_NPR_EXOTIC_EXPOSURE",
+      "citations": ["us_npr_211_a_1", "us_npr_211_c_1_i"]
+    },
+    {
+      "position_id": "other-gap-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "risk_weight": 0.001,
+      "add_on": 4000.0,
+      "reason_code": "US_NPR_GAP_RISK",
+      "citations": ["us_npr_211_a_2", "us_npr_211_c_1_ii"]
+    },
+    {
+      "position_id": "other-correlation-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "risk_weight": 0.001,
+      "add_on": 1500.0,
+      "reason_code": "US_NPR_CORRELATION_RISK",
+      "citations": ["us_npr_211_a_2", "us_npr_211_c_1_ii"]
+    },
+    {
+      "position_id": "other-behavioural-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "risk_weight": 0.001,
+      "add_on": 2000.0,
+      "reason_code": "US_NPR_BEHAVIOURAL_RISK",
+      "citations": ["us_npr_211_a_2", "us_npr_211_c_1_ii"]
+    },
+    {
+      "position_id": "supervisor-directed-001",
+      "classification": "SUPERVISOR_DIRECTED",
+      "risk_weight": 0.001,
+      "add_on": 3000.0,
+      "reason_code": "US_NPR_SUPERVISOR_DIRECTIVE",
+      "citations": ["us_npr_211_a_4", "us_npr_211_c_1_ii"]
+    }
+  ],
+  "excluded_lines": [
+    {
+      "position_id": "excluded-listed-001",
+      "exclusion_reason": "LISTED",
+      "add_on": 0.0,
+      "reason_code": "US_NPR_EXCLUSION_LISTED",
+      "citations": ["us_npr_211_b_1"]
+    },
+    {
+      "position_id": "excluded-clearable-001",
+      "exclusion_reason": "CCP_OR_QCCP_CLEARABLE",
+      "add_on": 0.0,
+      "reason_code": "US_NPR_EXCLUSION_CLEARABLE",
+      "citations": ["us_npr_211_b_1"]
+    },
+    {
+      "position_id": "excluded-plain-option-001",
+      "exclusion_reason": "TWO_OR_FEWER_UNDERLYINGS_NON_PATH_DEPENDENT_OPTION",
+      "add_on": 0.0,
+      "reason_code": "US_NPR_EXCLUSION_SIMPLE_OPTION",
+      "citations": ["us_npr_211_b_1"]
+    },
+    {
+      "position_id": "excluded-back-to-back-001",
+      "exclusion_reason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+      "add_on": 0.0,
+      "reason_code": "US_NPR_EXCLUSION_EXACT_BACK_TO_BACK",
+      "citations": ["us_npr_211_b_2_i", "us_npr_211_b_1"]
+    },
+    {
+      "position_id": "excluded-gov-gse-001",
+      "exclusion_reason": "GOVERNMENT_OR_GSE_DEBT",
+      "add_on": 0.0,
+      "reason_code": "US_NPR_EXCLUSION_GOVERNMENT_OR_GSE_DEBT",
+      "citations": ["us_npr_211_b_2_iii", "us_npr_211_b_1"]
+    },
+    {
+      "position_id": "excluded-fallback-001",
+      "exclusion_reason": "FALLBACK_CAPITAL_REQUIREMENT",
+      "add_on": 0.0,
+      "reason_code": "US_NPR_EXCLUSION_FALLBACK_CAPITAL",
+      "citations": ["us_npr_211_b_2_iv", "us_npr_211_b_1"]
+    }
+  ],
+  "subtotals": [
+    {
+      "subtotal_type": "classification",
+      "subtotal_key": "EXCLUDED",
+      "gross_effective_notional": 45000000.0,
+      "add_on": 0.0
+    },
+    {
+      "subtotal_type": "classification",
+      "subtotal_key": "EXOTIC",
+      "gross_effective_notional": 4250000.0,
+      "add_on": 42500.0
+    },
+    {
+      "subtotal_type": "classification",
+      "subtotal_key": "OTHER_RESIDUAL_RISK",
+      "gross_effective_notional": 7500000.0,
+      "add_on": 7500.0
+    },
+    {
+      "subtotal_type": "classification",
+      "subtotal_key": "SUPERVISOR_DIRECTED",
+      "gross_effective_notional": 3000000.0,
+      "add_on": 3000.0
+    },
+    {
+      "subtotal_type": "evidence_type",
+      "subtotal_key": "BEHAVIOURAL_RISK",
+      "gross_effective_notional": 2000000.0,
+      "add_on": 2000.0
+    },
+    {
+      "subtotal_type": "evidence_type",
+      "subtotal_key": "CORRELATION_RISK",
+      "gross_effective_notional": 1500000.0,
+      "add_on": 1500.0
+    },
+    {
+      "subtotal_type": "evidence_type",
+      "subtotal_key": "EXOTIC_UNDERLYING",
+      "gross_effective_notional": 4250000.0,
+      "add_on": 42500.0
+    },
+    {
+      "subtotal_type": "evidence_type",
+      "subtotal_key": "EXPLICIT_EXCLUSION",
+      "gross_effective_notional": 45000000.0,
+      "add_on": 0.0
+    },
+    {
+      "subtotal_type": "evidence_type",
+      "subtotal_key": "GAP_RISK",
+      "gross_effective_notional": 4000000.0,
+      "add_on": 4000.0
+    },
+    {
+      "subtotal_type": "evidence_type",
+      "subtotal_key": "SUPERVISOR_DIRECTIVE",
+      "gross_effective_notional": 3000000.0,
+      "add_on": 3000.0
+    },
+    {
+      "subtotal_type": "desk_id",
+      "subtotal_key": "desk-exclusions",
+      "gross_effective_notional": 45000000.0,
+      "add_on": 0.0
+    },
+    {
+      "subtotal_type": "desk_id",
+      "subtotal_key": "desk-exotics",
+      "gross_effective_notional": 4250000.0,
+      "add_on": 42500.0
+    },
+    {
+      "subtotal_type": "desk_id",
+      "subtotal_key": "desk-structured",
+      "gross_effective_notional": 7500000.0,
+      "add_on": 7500.0
+    },
+    {
+      "subtotal_type": "desk_id",
+      "subtotal_key": "desk-supervisory",
+      "gross_effective_notional": 3000000.0,
+      "add_on": 3000.0
+    },
+    {
+      "subtotal_type": "legal_entity",
+      "subtotal_key": "LE-001",
+      "gross_effective_notional": 4250000.0,
+      "add_on": 42500.0
+    },
+    {
+      "subtotal_type": "legal_entity",
+      "subtotal_key": "LE-002",
+      "gross_effective_notional": 7500000.0,
+      "add_on": 7500.0
+    },
+    {
+      "subtotal_type": "legal_entity",
+      "subtotal_key": "LE-003",
+      "gross_effective_notional": 3000000.0,
+      "add_on": 3000.0
+    },
+    {
+      "subtotal_type": "legal_entity",
+      "subtotal_key": "LE-004",
+      "gross_effective_notional": 45000000.0,
+      "add_on": 0.0
+    }
+  ]
+}
