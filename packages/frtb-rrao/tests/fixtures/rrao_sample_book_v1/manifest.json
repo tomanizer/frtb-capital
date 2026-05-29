@@ -9,10 +9,10 @@
   "total_rrao_usd": 3000000.0,
   "files": {
     "positions.json": {
-      "sha256": "5c4c2b70892320ff3522d969f28e7580108c6814f582795ab94c1ba08a8eb2af"
+      "sha256": "1975f57798923f548c02c852a8679f3eceaef9ae4a696748f1d9b68d6b61b85c"
     },
     "expected_outputs.json": {
-      "sha256": "eb0417bf62038f63a62fe65b940e725afb8cb46e4d37cedc829954d39ac5211d"
+      "sha256": "765dfd888f1121caaeffd440a758311ea26a1f164b3fcf8bbb6ac9f637554411"
     }
   }
 }

@@ -130,7 +130,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
         gross_effective_notional=200_000_000.0,
         currency=_BASE_CURRENCY,
         evidence_type=RraoEvidenceType.GAP_RISK,
-        evidence_label="single-stock auto-callable note with soft barrier knock-in — gap at barrier",
+        evidence_label="single-stock auto-callable — soft barrier knock-in, gap at barrier",
         lineage=_lineage("sb-005"),
         classification_hint=RraoClassification.OTHER_RESIDUAL_RISK,
     ),
@@ -142,7 +142,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
         gross_effective_notional=150_000_000.0,
         currency=_BASE_CURRENCY,
         evidence_type=RraoEvidenceType.GAP_RISK,
-        evidence_label="equity-linked structured note — down-and-in put with large barrier discontinuity",
+        evidence_label="equity-linked structured note — down-and-in put, large barrier gap",
         lineage=_lineage("sb-006"),
         classification_hint=RraoClassification.OTHER_RESIDUAL_RISK,
     ),
@@ -171,7 +171,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
         gross_effective_notional=20_000_000.0,
         currency=_BASE_CURRENCY,
         evidence_type=RraoEvidenceType.CORRELATION_RISK,
-        evidence_label="equity dispersion trade via variance swaps — long index / short single-stocks",
+        evidence_label="equity dispersion via variance swaps — long index / short single-stocks",
         lineage=_lineage("sb-008"),
         classification_hint=RraoClassification.OTHER_RESIDUAL_RISK,
     ),
@@ -188,7 +188,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
         gross_effective_notional=120_000_000.0,
         currency=_BASE_CURRENCY,
         evidence_type=RraoEvidenceType.MULTIPLE_STRIKE_OR_BARRIER_OPTIONALITY,
-        evidence_label="step-down auto-callable with multiple annual barrier schedule — 5 barrier dates",
+        evidence_label="step-down auto-callable — multiple annual barrier schedule, 5 dates",
         lineage=_lineage("sb-009"),
         classification_hint=RraoClassification.OTHER_RESIDUAL_RISK,
     ),
@@ -238,7 +238,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
         gross_effective_notional=45_000_000.0,
         currency=_BASE_CURRENCY,
         evidence_type=RraoEvidenceType.NON_REPLICABLE_OPTIONALITY,
-        evidence_label="option on private equity fund NAV — non-replicable via listed or OTC vol surface",
+        evidence_label="option on private equity fund NAV — non-replicable via listed or OTC vol",
         lineage=_lineage("sb-012"),
         classification_hint=RraoClassification.OTHER_RESIDUAL_RISK,
     ),
@@ -284,7 +284,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
         gross_effective_notional=75_000_000.0,
         currency=_BASE_CURRENCY,
         evidence_type=RraoEvidenceType.SUPERVISOR_DIRECTIVE,
-        evidence_label="complex hybrid derivative — included under supervisory direction ref SUPDIR-2026-001",
+        evidence_label="complex hybrid derivative — supervisory direction ref SUPDIR-2026-001",
         lineage=_lineage("sb-015"),
         classification_hint=RraoClassification.SUPERVISOR_DIRECTED,
         supervisor_directive_id="SUPDIR-2026-001",
@@ -292,7 +292,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
     # -----------------------------------------------------------------------
     # Group I: Investment-Fund Exposures (desk-funds, LE-IB-NY)
     # US NPR __.211(a)(3) / __.205(e)(3)(iii) only
-    # Gross effective notional = fund_gross × included_exposure_ratio (validated)
+    # Gross effective notional = fund_gross x included_exposure_ratio (validated)
     # Risk weight: 1.0% for EXOTIC portion, 0.1% for OTHER_RESIDUAL_RISK portion
     # -----------------------------------------------------------------------
     RraoPosition(
@@ -300,7 +300,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
         source_row_id="sb-016",
         desk_id="desk-funds",
         legal_entity="LE-IB-NY",
-        gross_effective_notional=30_000_000.0,  # $200M × 0.15
+        gross_effective_notional=30_000_000.0,  # $200M x 0.15
         currency=_BASE_CURRENCY,
         evidence_type=RraoEvidenceType.INVESTMENT_FUND_EXPOSURE,
         evidence_label="Fund Alpha — backstop-method included exotic exposure portion",
@@ -335,7 +335,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
         source_row_id="sb-017",
         desk_id="desk-funds",
         legal_entity="LE-IB-NY",
-        gross_effective_notional=80_000_000.0,  # $320M × 0.25
+        gross_effective_notional=80_000_000.0,  # $320M x 0.25
         currency=_BASE_CURRENCY,
         evidence_type=RraoEvidenceType.INVESTMENT_FUND_EXPOSURE,
         evidence_label="Fund Beta — backstop-method included other-residual-risk exposure portion",
@@ -423,7 +423,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
         gross_effective_notional=25_000_000.0,
         currency=_BASE_CURRENCY,
         evidence_type=RraoEvidenceType.EXPLICIT_EXCLUSION,
-        evidence_label="temperature degree-day option — original client trade, exact third-party back-to-back",
+        evidence_label="temperature degree-day option — original client trade, btb excluded",
         lineage=_lineage("sb-021"),
         classification_hint=RraoClassification.EXCLUDED,
         exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
@@ -441,7 +441,7 @@ POSITIONS: tuple[RraoPosition, ...] = (
         gross_effective_notional=25_000_000.0,
         currency=_BASE_CURRENCY,
         evidence_type=RraoEvidenceType.EXPLICIT_EXCLUSION,
-        evidence_label="temperature degree-day option — third-party hedge leg, exact third-party back-to-back",
+        evidence_label="temperature degree-day option — third-party hedge leg, btb excluded",
         lineage=_lineage("sb-022"),
         classification_hint=RraoClassification.EXCLUDED,
         exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
