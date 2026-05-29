@@ -74,6 +74,20 @@ class DrcRuleProfile:
 
 
 US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
+    "BASEL_MAR22_11": DrcCitation(
+        citation_id="BASEL_MAR22_11",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.11",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="Gross JTD formula inputs: LGD, notional, and cumulative P&L.",
+    ),
+    "BASEL_MAR22_13": DrcCitation(
+        citation_id="BASEL_MAR22_13",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.13",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="Notional and P&L signs for long and short JTD.",
+    ),
     "US_NPR_210_SCOPE": DrcCitation(
         citation_id="US_NPR_210_SCOPE",
         source_id="US_NPR_2_0_91_FR_14952",
