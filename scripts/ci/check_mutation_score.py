@@ -4,18 +4,30 @@ from __future__ import annotations
 
 import argparse
 import json
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+REGISTRY_PATH = Path("docs/quality/package_maturity.toml")
 
 DEFAULT_STATS_PATHS = {
     "frtb-ima": Path("dist/mutation/frtb-ima/mutmut-cicd-stats.json"),
     "frtb-rrao": Path("dist/mutation/frtb-rrao/mutmut-cicd-stats.json"),
 }
-DEFAULT_FLOORS = {
-    "frtb-ima": 75.12,
-    "frtb-rrao": 85.47,
-}
+
+
+def _floors_from_registry(registry_path: Path = REGISTRY_PATH) -> dict[str, float]:
+    """Read mutation_floor values from package_maturity.toml."""
+    try:
+        data = tomllib.loads(registry_path.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return {}
+    return {
+        pkg["package"]: float(pkg["mutation_floor"])
+        for pkg in data.get("packages", [])
+        if "mutation_floor" in pkg
+    }
 
 
 @dataclass(frozen=True)
@@ -145,7 +157,7 @@ def main(argv: list[str] | None = None) -> int:
             package: Path(path)
             for package, path in _parse_package_mapping(args.stats, option="--stats").items()
         } or DEFAULT_STATS_PATHS
-        floors = {
+        cli_floors = {
             package: float(value)
             for package, value in _parse_package_mapping(args.floor, option="--floor").items()
         }
@@ -153,11 +165,15 @@ def main(argv: list[str] | None = None) -> int:
         print(exc)
         return 2
 
+    registry_floors = _floors_from_registry()
+    # CLI --floor overrides registry, registry overrides 0.0 sentinel.
+    resolved_floors = {**registry_floors, **cli_floors}
+
     results = tuple(
         check_stats_file(
             package,
             stats_path,
-            floor=floors.get(package, DEFAULT_FLOORS.get(package, 0.0)),
+            floor=resolved_floors.get(package, 0.0),
         )
         for package, stats_path in sorted(stats_paths.items())
     )
