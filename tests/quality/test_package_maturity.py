@@ -141,6 +141,29 @@ def test_unknown_maturity_profile_fails(tmp_path: Path, monkeypatch) -> None:
     assert "known-maturity-profile" in result.failed_requirement_ids
 
 
+def test_empty_optional_string_reports_registry_entry_and_field(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    entry = _make_package(
+        tmp_path,
+        package="qc-empty-optional",
+        import_name="qc_empty_optional",
+        profile="shared",
+        implementation=None,
+        validation=None,
+        required_tests=("regulatory-helpers",),
+        component_type="shared",
+    ).replace('component_type = "shared"', 'component_type = "shared"\nnotes = ""')
+    _write_registry(tmp_path, [entry])
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    with pytest.raises(ValueError) as exc_info:
+        maturity.load_registry(root=tmp_path)
+
+    assert "package entry 1 optional field notes" in str(exc_info.value)
+
+
 def test_missing_package_path_fails(tmp_path: Path, monkeypatch) -> None:
     entry = _make_package(
         tmp_path,

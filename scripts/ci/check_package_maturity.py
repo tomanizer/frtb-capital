@@ -225,19 +225,42 @@ def _package_entry_from_raw(
         module_docs=Path(str(raw_package["module_docs"])),
         maturity=str(raw_package["maturity"]),
         component_type=str(raw_package["component_type"]),
-        metadata_object=_optional_string(raw_package.get("metadata_object")),
-        calculation_entrypoint=_optional_string(raw_package.get("calculation_entrypoint")),
+        metadata_object=_optional_string(
+            raw_package.get("metadata_object"),
+            registry_path=registry_path,
+            index=index,
+            field="metadata_object",
+        ),
+        calculation_entrypoint=_optional_string(
+            raw_package.get("calculation_entrypoint"),
+            registry_path=registry_path,
+            index=index,
+            field="calculation_entrypoint",
+        ),
         required_tests=tuple(tests),
-        notes=_optional_string(raw_package.get("notes")),
+        notes=_optional_string(
+            raw_package.get("notes"),
+            registry_path=registry_path,
+            index=index,
+            field="notes",
+        ),
     )
 
 
-def _optional_string(value: object) -> str | None:
+def _optional_string(
+    value: object,
+    *,
+    registry_path: Path,
+    index: int,
+    field: str,
+) -> str | None:
     if value is None:
         return None
     if isinstance(value, str) and value:
         return value
-    raise ValueError("optional string fields must be non-empty strings")
+    raise ValueError(
+        f"{registry_path}: package entry {index} optional field {field} must be a non-empty string"
+    )
 
 
 def _select_entries(registry: Registry, package: str | None) -> tuple[PackageEntry, ...]:
