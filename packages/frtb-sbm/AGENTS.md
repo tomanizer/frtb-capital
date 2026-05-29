@@ -4,9 +4,13 @@
 
 ## Current status
 
-The package is scaffolded only. It must fail explicitly for calculation entry
-points until canonical sensitivity contracts and cited vertical slices are
-implemented.
+The package is scaffolded. Phase 1 (#151) adds a cited GIRR delta vertical
+slice in dependency order (#152–#159). Until the public API wiring issue lands,
+calculation entry points must fail explicitly.
+
+Package-local traceability lives under `packages/frtb-sbm/docs/`. See
+`REGULATORY_TRACEABILITY.md` for scaffold/planned/partial/implemented/unsupported
+status by area.
 
 ## Rules
 
