@@ -446,12 +446,24 @@ class DrcCapitalResult:
     citations: tuple[str, ...]
     warnings: tuple[str, ...] = ()
     branch_metadata: tuple[BranchMetadata, ...] = ()
+    package_name: str = "frtb-drc"
+    package_version: str = ""
+    input_count: int = 0
+    rejected_input_count: int = 0
+    input_positions: tuple[DrcPosition, ...] = ()
+    gross_jtds: tuple[GrossJtd, ...] = ()
+    maturity_scaled_jtds: tuple[MaturityScaledJtd, ...] = ()
+    net_jtds: tuple[NetJtd, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "categories", tuple(self.categories))
         object.__setattr__(self, "citations", tuple(self.citations))
         object.__setattr__(self, "warnings", tuple(self.warnings))
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
+        object.__setattr__(self, "input_positions", tuple(self.input_positions))
+        object.__setattr__(self, "gross_jtds", tuple(self.gross_jtds))
+        object.__setattr__(self, "maturity_scaled_jtds", tuple(self.maturity_scaled_jtds))
+        object.__setattr__(self, "net_jtds", tuple(self.net_jtds))
 
     def as_dict(self) -> dict[str, object]:
         return _as_dict(self)
