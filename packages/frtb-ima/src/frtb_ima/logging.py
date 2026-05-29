@@ -19,7 +19,7 @@ import sys
 from collections.abc import Mapping
 from typing import TextIO
 
-from frtb_ima.audit import _jsonable
+from frtb_common.serialization import jsonable
 
 _STANDARD_LOG_RECORD_ATTRIBUTES = frozenset(
     py_logging.LogRecord(
@@ -47,11 +47,11 @@ class JSONFormatter(py_logging.Formatter):
 
         legacy_extra = record.__dict__.get("extra")
         if isinstance(legacy_extra, Mapping):
-            payload.update({str(key): _jsonable(value) for key, value in legacy_extra.items()})
+            payload.update({str(key): jsonable(value) for key, value in legacy_extra.items()})
 
         for key, value in record.__dict__.items():
             if key not in _STANDARD_LOG_RECORD_ATTRIBUTES and key != "extra":
-                payload[key] = _jsonable(value)
+                payload[key] = jsonable(value)
 
         if record.exc_info:
             payload["exc_info"] = self.formatException(record.exc_info)

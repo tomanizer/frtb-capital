@@ -1,6 +1,7 @@
 """Shared primitives for the frtb-capital suite."""
 
 from frtb_common._version import __version__
+from frtb_common.serialization import jsonable
 from frtb_common.status import (
     CapitalComponentMetadata,
     ImplementationStatus,
@@ -16,4 +17,5 @@ __all__ = [
     "UnsupportedRegulatoryFeatureError",
     "ValidationStatus",
     "__version__",
+    "jsonable",
 ]
