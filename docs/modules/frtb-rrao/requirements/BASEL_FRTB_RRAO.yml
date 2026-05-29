@@ -87,7 +87,14 @@ requirements:
   - id: RRAO-AUDIT-001
     title: Additive audit contribution report
     source: Basel MAR23 calculation structure
-    status: planned
-    modules: [src/frtb_rrao/audit.py]
-    tests: [tests/test_audit.py]
-    notes: Line-level weighted notional contributions sum to total RRAO.
+    status: partial
+    modules: [src/frtb_rrao/audit.py, src/frtb_rrao/scaffold.py]
+    tests: [tests/test_audit.py, tests/test_public_api.py, tests/test_replay.py]
+    notes: Public result hashing, serialization, and reconciliation are implemented; optional contribution report helpers remain planned.
+  - id: RRAO-API-001
+    title: Public canonical-input RRAO run API
+    source: Basel MAR23.8; proposed U.S. section __.211(c)
+    status: implemented
+    modules: [src/frtb_rrao/scaffold.py, src/frtb_rrao/audit.py]
+    tests: [tests/test_public_api.py, tests/test_replay.py]
+    notes: Calculates supported Basel/U.S. canonical inputs, splits included and excluded lines, and fails closed for unsupported profiles.

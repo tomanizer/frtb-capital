@@ -1,15 +1,15 @@
 # frtb-rrao
 
-Scaffold package for the Standardised Approach residual risk add-on component.
+Standardised Approach residual risk add-on component.
 
-The package is importable and exposes its planned public boundary, but it does
-not calculate RRAO capital yet. Public calculation entry points raise
-`NotImplementedCapitalComponentError` from `frtb-common`; they must not emit
-zero or placeholder capital.
+The package is importable and exposes a public canonical-input calculation
+boundary for supported Basel MAR23 and U.S. NPR 2.0 profile slices. Unsupported
+profiles and unsupported evidence paths fail explicitly; the package must not
+emit zero or placeholder capital for unsupported scope.
 
-The planned v1 implementation is a canonical-input RRAO slice covering U.S. NPR
-2.0 proposed section `__.211` and Basel MAR23 additive line-capital mechanics,
-with classification evidence and exclusions recorded in audit output.
+The v1 implementation path covers U.S. NPR 2.0 proposed section `__.211` and
+Basel MAR23 additive line-capital mechanics, with classification evidence and
+exclusions recorded in audit output.
 
 Planning documents:
 

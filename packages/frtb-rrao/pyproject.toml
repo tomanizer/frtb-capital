@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frtb-rrao"
-version = "0.5.0"
-description = "FRTB Standardised Approach residual risk add-on scaffold"
+version = "0.6.0"
+description = "FRTB Standardised Approach residual risk add-on"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

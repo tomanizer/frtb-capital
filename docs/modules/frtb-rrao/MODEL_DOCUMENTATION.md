@@ -7,8 +7,10 @@ regulatory source mapping, product requirements, architecture, issue sequencing,
 and package-local traceability so future implementation PRs have one place to
 update reviewer-facing status.
 
-`frtb-rrao` is still scaffolded. The package import and explicit failure path
-are implemented, but no RRAO capital result is produced yet.
+`frtb-rrao` now has a partial implementation. The package import boundary,
+canonical validation, classification, line add-ons, public calculation API, and
+deterministic audit result serialization are implemented for supported Basel
+MAR23 and U.S. NPR 2.0 canonical inputs.
 
 ## Documentation map
 
@@ -29,13 +31,13 @@ are implemented, but no RRAO capital result is produced yet.
 
 | Area | Status | Next issue |
 | --- | --- | --- |
-| Public package boundary | Scaffold | Already present in `scaffold.py`; remains explicit-failure until issue #87. |
+| Public package boundary | Partial | Issue #87 added `calculate_rrao_capital` for supported canonical inputs; unsupported profiles and evidence paths still fail closed. |
 | Regulatory source pack | Partial | Issue #81 creates the package-local traceability skeleton. |
-| Canonical data models and validation | Implemented | Issue #82 added frozen public models and deterministic input validation; calculation remains scaffolded. |
+| Canonical data models and validation | Implemented | Issue #82 added frozen public models and deterministic input validation. |
 | Rule profiles and reference data | Implemented | Issue #83 added cited Basel MAR23 and U.S. NPR 2.0 lookup tables and unsupported EU/PRA guards. |
 | Classification and exclusions | Partial | Issue #85 added cited classification decisions and exclusion decisions; exact match-group validation remains future work. |
-| Line add-ons and subtotals | Implemented | Issue #86 added additive line add-ons and deterministic explain subtotals; public audit result remains planned. |
-| Public API and audit records | Planned | Issue #87. |
+| Line add-ons and subtotals | Implemented | Issue #86 added additive line add-ons and deterministic explain subtotals. |
+| Public API and audit records | Implemented | Issue #87 added public result assembly, input/profile hashes, deterministic serialization, and reconciliation checks. |
 | Synthetic validation fixture | Planned | Issue #88. |
 | Optional adapters | Planned | Issue #89. |
 | EU comparison profile | Unsupported | Issue #91 before any EU capital path may return a result. |
