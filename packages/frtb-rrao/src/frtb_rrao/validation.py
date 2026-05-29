@@ -22,6 +22,7 @@ from frtb_rrao.data_models import (
     RraoPosition,
     RraoSourceLineage,
 )
+from frtb_rrao.numeric import is_reconciled
 
 NotionalSignConvention = Literal["gross", "signed_absolute"]
 
@@ -264,35 +265,37 @@ def _validate_evidence_requirements(position: RraoPosition) -> None:
 
 def _validate_back_to_back_match_groups(positions: tuple[RraoPosition, ...]) -> None:
     positions_by_id = {position.position_id: position for position in positions}
-    match_groups: dict[str, list[RraoPosition]] = {}
+    match_groups: dict[str, list[tuple[RraoPosition, RraoBackToBackMatch]]] = {}
 
     for position in positions:
         match_fields = _validate_back_to_back_match_fields(position)
         if match_fields is None:
             continue
-        match_group_id, matched_position_id = match_fields
+        match_group_id, matched_position_id, match = match_fields
         if matched_position_id not in positions_by_id:
             raise RraoInputError(
                 "back-to-back matched position is missing from input",
                 field="back_to_back_match.matched_position_id",
                 position_id=position.position_id,
             )
-        match_groups.setdefault(match_group_id, []).append(position)
+        match_groups.setdefault(match_group_id, []).append((position, match))
 
     for match_group_id in sorted(match_groups):
-        group_positions = match_groups[match_group_id]
-        if len(group_positions) != 2:
-            joined = ", ".join(position.position_id for position in group_positions)
+        group_entries = match_groups[match_group_id]
+        if len(group_entries) != 2:
+            joined = ", ".join(position.position_id for position, _ in group_entries)
             raise RraoInputError(
                 (f"exact back-to-back match group must contain exactly two transactions: {joined}"),
                 field="back_to_back_match.match_group_id",
-                position_id=group_positions[0].position_id,
+                position_id=group_entries[0][0].position_id,
             )
-        left, right = group_positions
-        _validate_exact_back_to_back_pair(left, right, match_group_id)
+        (left, left_match), (right, right_match) = group_entries
+        _validate_exact_back_to_back_pair(left, left_match, right, right_match)
 
 
-def _validate_back_to_back_match_fields(position: RraoPosition) -> tuple[str, str] | None:
+def _validate_back_to_back_match_fields(
+    position: RraoPosition,
+) -> tuple[str, str, RraoBackToBackMatch] | None:
     match = position.back_to_back_match
     if match is None:
         return None
@@ -318,21 +321,15 @@ def _validate_back_to_back_match_fields(position: RraoPosition) -> tuple[str, st
             field="back_to_back_match.matched_position_id",
             position_id=position.position_id,
         )
-    return match_group_id, matched_position_id
+    return match_group_id, matched_position_id, match
 
 
 def _validate_exact_back_to_back_pair(
     left: RraoPosition,
+    left_match: RraoBackToBackMatch,
     right: RraoPosition,
-    match_group_id: str,
+    right_match: RraoBackToBackMatch,
 ) -> None:
-    left_match = left.back_to_back_match
-    right_match = right.back_to_back_match
-    if left_match is None or right_match is None:
-        raise RraoInputError(
-            "exact back-to-back pair requires match evidence on both transactions",
-            field="back_to_back_match",
-        )
     if left_match.matched_position_id != right.position_id:
         raise RraoInputError(
             "back-to-back match group does not cross-reference the paired transaction",
@@ -357,21 +354,13 @@ def _validate_exact_back_to_back_pair(
             field="currency",
             position_id=right.position_id,
         )
-    if not math.isclose(
+    if not is_reconciled(
         left.gross_effective_notional,
         right.gross_effective_notional,
-        rel_tol=1e-12,
-        abs_tol=1e-9,
     ):
         raise RraoInputError(
             "exact back-to-back pair must have matching gross effective notional",
             field="gross_effective_notional",
-            position_id=right.position_id,
-        )
-    if left_match.match_group_id != right_match.match_group_id:
-        raise RraoInputError(
-            f"back-to-back match group {match_group_id} is not deterministic",
-            field="back_to_back_match.match_group_id",
             position_id=right.position_id,
         )
 
