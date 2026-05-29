@@ -11,3 +11,5 @@ All notable changes to `frtb-drc` will be documented here.
 - Added versioned DRC rule-profile/reference-data APIs, including profile
   hashing that incorporates citation-backed LGD, maturity, bucket, and
   risk-weight tables.
+- Added cited non-securitisation gross JTD calculation APIs with fail-closed
+  unsupported risk-class gates.

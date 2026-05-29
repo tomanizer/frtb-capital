@@ -23,6 +23,7 @@ from frtb_drc.data_models import (
     NetJtd,
     RejectedOffset,
 )
+from frtb_drc.gross_jtd import calculate_gross_jtd, calculate_gross_jtds
 from frtb_drc.reference_data import (
     BucketDefinition,
     LgdRule,
@@ -77,6 +78,8 @@ __all__ = [
     "RiskWeightRule",
     "__version__",
     "calculate_drc_capital",
+    "calculate_gross_jtd",
+    "calculate_gross_jtds",
     "ensure_risk_class_supported",
     "get_bucket_definition",
     "get_lgd_rule",
