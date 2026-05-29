@@ -35,3 +35,4 @@ Package-local regulatory documentation:
 - [Regulatory traceability](docs/REGULATORY_TRACEABILITY.md)
 - [Regulatory assumptions](docs/REGULATORY_ASSUMPTIONS.md)
 - [Regulatory sources](docs/regulatory_sources.yml)
+- [Performance and replay controls](docs/PERFORMANCE.md)
