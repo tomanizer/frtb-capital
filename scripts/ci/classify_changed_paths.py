@@ -70,6 +70,15 @@ def _matches(path: str, prefixes: tuple[str, ...], suffixes: tuple[str, ...] = (
     return path.startswith(prefixes) or path.endswith(suffixes)
 
 
+def _is_agent_instruction_path(path: str) -> bool:
+    return (
+        path == ".github/copilot-instructions.md"
+        or path.startswith(".github/instructions/")
+        or path.startswith(".cursor/")
+        or path.startswith(".grok/")
+    )
+
+
 def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
     if event_name == "schedule":
         return {
@@ -89,6 +98,7 @@ def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
         or path.endswith("/pyproject.toml")
         for path in paths
     )
+    agent_instructions = any(_is_agent_instruction_path(path) for path in paths)
     code = any(
         _matches(
             path,
@@ -103,6 +113,7 @@ def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
     docs = any(
         path.endswith((".md", ".yml", ".yaml"))
         or path.startswith(("docs/", ".github/PULL_REQUEST_TEMPLATE.md"))
+        or _is_agent_instruction_path(path)
         for path in paths
     )
     notebooks = any(
@@ -135,7 +146,7 @@ def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
     return {
         "full": False,
         "docs": docs,
-        "code": code or dependency,
+        "code": code or dependency or agent_instructions,
         "dependency": dependency,
         "notebooks": notebooks,
         "examples": examples,
