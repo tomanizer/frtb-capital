@@ -84,6 +84,16 @@ def validate_rrao_positions(positions: object) -> tuple[RraoPosition, ...]:
     return validated_positions
 
 
+def _validate_position_without_back_to_back_groups(
+    position: RraoPosition,
+    seen_position_ids: set[str],
+) -> None:
+    """Validate one row before batch-level back-to-back matching is available."""
+
+    _validate_position(position, seen_position_ids)
+    _validate_back_to_back_match_fields(position)
+
+
 def _validate_position(position: RraoPosition, seen_position_ids: set[str]) -> None:
     position_id = _require_text(position.position_id, "position_id")
     if position_id in seen_position_ids:
@@ -257,31 +267,10 @@ def _validate_back_to_back_match_groups(positions: tuple[RraoPosition, ...]) -> 
     match_groups: dict[str, list[RraoPosition]] = {}
 
     for position in positions:
-        match = position.back_to_back_match
-        if match is None:
+        match_fields = _validate_back_to_back_match_fields(position)
+        if match_fields is None:
             continue
-        if not isinstance(match, RraoBackToBackMatch):
-            raise RraoInputError(
-                "invalid back-to-back match evidence",
-                field="back_to_back_match",
-                position_id=position.position_id,
-            )
-        match_group_id = _require_text(
-            match.match_group_id,
-            "back_to_back_match.match_group_id",
-            position.position_id,
-        )
-        matched_position_id = _require_text(
-            match.matched_position_id,
-            "back_to_back_match.matched_position_id",
-            position.position_id,
-        )
-        if matched_position_id == position.position_id:
-            raise RraoInputError(
-                "back-to-back match must reference the opposite transaction",
-                field="back_to_back_match.matched_position_id",
-                position_id=position.position_id,
-            )
+        match_group_id, matched_position_id = match_fields
         if matched_position_id not in positions_by_id:
             raise RraoInputError(
                 "back-to-back matched position is missing from input",
@@ -297,9 +286,39 @@ def _validate_back_to_back_match_groups(positions: tuple[RraoPosition, ...]) -> 
             raise RraoInputError(
                 (f"exact back-to-back match group must contain exactly two transactions: {joined}"),
                 field="back_to_back_match.match_group_id",
+                position_id=group_positions[0].position_id,
             )
         left, right = group_positions
         _validate_exact_back_to_back_pair(left, right, match_group_id)
+
+
+def _validate_back_to_back_match_fields(position: RraoPosition) -> tuple[str, str] | None:
+    match = position.back_to_back_match
+    if match is None:
+        return None
+    if not isinstance(match, RraoBackToBackMatch):
+        raise RraoInputError(
+            "invalid back-to-back match evidence",
+            field="back_to_back_match",
+            position_id=position.position_id,
+        )
+    match_group_id = _require_text(
+        match.match_group_id,
+        "back_to_back_match.match_group_id",
+        position.position_id,
+    )
+    matched_position_id = _require_text(
+        match.matched_position_id,
+        "back_to_back_match.matched_position_id",
+        position.position_id,
+    )
+    if matched_position_id == position.position_id:
+        raise RraoInputError(
+            "back-to-back match must reference the opposite transaction",
+            field="back_to_back_match.matched_position_id",
+            position_id=position.position_id,
+        )
+    return match_group_id, matched_position_id
 
 
 def _validate_exact_back_to_back_pair(

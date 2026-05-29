@@ -81,11 +81,7 @@ def validate_rrao_result_reconciliation(result: RraoCapitalResult) -> None:
         )
 
     expected_subtotals = build_rrao_subtotals(all_lines)
-    if tuple(result.subtotals) != expected_subtotals:
-        raise RraoInputError(
-            "subtotals do not reconcile to line records",
-            field="subtotals",
-        )
+    _validate_subtotals_reconcile(tuple(result.subtotals), expected_subtotals)
 
 
 def _validate_hash(field: str, value: str) -> None:
@@ -135,6 +131,33 @@ def _add_result_position_id(seen_position_ids: set[str], position_id: str, *, fi
             position_id=position_id,
         )
     seen_position_ids.add(position_id)
+
+
+def _validate_subtotals_reconcile(
+    actual_subtotals: tuple[RraoSubtotal, ...],
+    expected_subtotals: tuple[RraoSubtotal, ...],
+) -> None:
+    if len(actual_subtotals) != len(expected_subtotals):
+        _raise_subtotal_reconciliation_error()
+    for actual, expected in zip(actual_subtotals, expected_subtotals, strict=True):
+        if (
+            actual.subtotal_key != expected.subtotal_key
+            or actual.subtotal_type != expected.subtotal_type
+            or actual.position_ids != expected.position_ids
+        ):
+            _raise_subtotal_reconciliation_error()
+        if not is_reconciled(
+            actual.gross_effective_notional,
+            expected.gross_effective_notional,
+        ) or not is_reconciled(actual.add_on, expected.add_on):
+            _raise_subtotal_reconciliation_error()
+
+
+def _raise_subtotal_reconciliation_error() -> None:
+    raise RraoInputError(
+        "subtotals do not reconcile to line records",
+        field="subtotals",
+    )
 
 
 def _line_payload(line: RraoCapitalLine) -> dict[str, object]:

@@ -23,6 +23,7 @@ from frtb_rrao.data_models import (
 from frtb_rrao.validation import (
     NotionalSignConvention,
     RraoInputError,
+    _validate_position_without_back_to_back_groups,
     normalise_gross_effective_notional,
     validate_rrao_positions,
 )
@@ -138,6 +139,8 @@ def adapt_rrao_records(
     warnings: list[RraoAdapterWarning] = []
     rejected_rows: list[RraoRejectedRow] = []
     seen_position_ids: set[str] = set()
+    source_records_by_position_id: dict[str, Mapping[str, tuple[str, object]]] = {}
+    source_row_ids_by_position_id: dict[str, str] = {}
 
     for row_number, raw_record in enumerate(materialised_records, start=1):
         if not isinstance(raw_record, Mapping):
@@ -162,13 +165,7 @@ def adapt_rrao_records(
                 source_sign_convention=source_sign_convention,
                 warnings=warnings,
             )
-            if position.position_id in seen_position_ids:
-                raise RraoInputError(
-                    "duplicate position id in adapter records",
-                    field="position_id",
-                    position_id=position.position_id,
-                )
-            validate_rrao_positions((position,))
+            _validate_position_without_back_to_back_groups(position, seen_position_ids)
         except RraoInputError as exc:
             rejected_rows.append(
                 RraoRejectedRow(
@@ -181,10 +178,19 @@ def adapt_rrao_records(
             continue
 
         seen_position_ids.add(position.position_id)
+        source_records_by_position_id[position.position_id] = record
+        source_row_ids_by_position_id[position.position_id] = source_row_id
         positions.append(position)
 
+    validated_positions, group_rejections = _validate_adapted_position_batch(
+        tuple(positions),
+        source_records_by_position_id,
+        source_row_ids_by_position_id,
+    )
+    rejected_rows.extend(group_rejections)
+
     return RraoAdapterResult(
-        positions=tuple(positions),
+        positions=validated_positions,
         warnings=tuple(warnings),
         rejected_rows=tuple(rejected_rows),
     )
@@ -219,6 +225,68 @@ def adapt_fnet_records(
         source_system="fnet",
         source_file=source_file,
         source_sign_convention=source_sign_convention,
+    )
+
+
+def _validate_adapted_position_batch(
+    positions: tuple[RraoPosition, ...],
+    source_records_by_position_id: Mapping[str, Mapping[str, tuple[str, object]]],
+    source_row_ids_by_position_id: Mapping[str, str],
+) -> tuple[tuple[RraoPosition, ...], tuple[RraoRejectedRow, ...]]:
+    remaining = list(positions)
+    rejected_rows: list[RraoRejectedRow] = []
+
+    while remaining:
+        try:
+            return validate_rrao_positions(tuple(remaining)), tuple(rejected_rows)
+        except RraoInputError as exc:
+            rejected_position = _position_for_batch_error(remaining, exc)
+            if rejected_position is None:
+                rejected_rows.extend(
+                    _batch_rejection(
+                        position, exc, source_records_by_position_id, source_row_ids_by_position_id
+                    )
+                    for position in remaining
+                )
+                return (), tuple(rejected_rows)
+            rejected_rows.append(
+                _batch_rejection(
+                    rejected_position,
+                    exc,
+                    source_records_by_position_id,
+                    source_row_ids_by_position_id,
+                )
+            )
+            remaining = [position for position in remaining if position is not rejected_position]
+
+    return (), tuple(rejected_rows)
+
+
+def _position_for_batch_error(
+    positions: list[RraoPosition],
+    exc: RraoInputError,
+) -> RraoPosition | None:
+    if not exc.position_id:
+        return None
+    for position in positions:
+        if position.position_id == exc.position_id:
+            return position
+    return None
+
+
+def _batch_rejection(
+    position: RraoPosition,
+    exc: RraoInputError,
+    source_records_by_position_id: Mapping[str, Mapping[str, tuple[str, object]]],
+    source_row_ids_by_position_id: Mapping[str, str],
+) -> RraoRejectedRow:
+    source_record = source_records_by_position_id[position.position_id]
+    source_row_id = source_row_ids_by_position_id[position.position_id]
+    return RraoRejectedRow(
+        source_row_id=source_row_id,
+        reason=str(exc),
+        field=exc.field,
+        source_row=_source_row_snapshot(source_record),
     )
 
 

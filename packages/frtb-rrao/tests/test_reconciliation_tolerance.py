@@ -114,6 +114,22 @@ def test_excluded_line_zero_invariant_uses_documented_tolerance() -> None:
         )
 
 
+def test_subtotal_reconciliation_uses_shared_tolerance_budget() -> None:
+    lines = (included_line(1, 1.0 / 3.0),)
+    result = result_for_lines(lines, total_rrao=1.0 / 3.0)
+    tolerated_delta = RRAO_RECONCILIATION_ABS_TOLERANCE / 2
+    perturbed_subtotals = tuple(
+        replace(
+            subtotal,
+            gross_effective_notional=subtotal.gross_effective_notional + tolerated_delta,
+            add_on=subtotal.add_on + tolerated_delta,
+        )
+        for subtotal in result.subtotals
+    )
+
+    validate_rrao_result_reconciliation(replace(result, subtotals=perturbed_subtotals))
+
+
 def test_allocation_reconciliation_uses_shared_tolerance_budget() -> None:
     add_ons = [1.0 / 3.0] * 20_000
     lines = tuple(included_line(index, add_on) for index, add_on in enumerate(add_ons))
