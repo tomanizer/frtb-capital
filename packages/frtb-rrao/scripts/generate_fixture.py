@@ -601,10 +601,7 @@ def main() -> None:
     manifest = {
         "schema_version": "rrao_sample_book_fixture_v1",
         "generator": "scripts/generate_fixture.py",
-        "generator_command": (
-            "python scripts/generate_fixture.py "
-            f"--output {args.output}"
-        ),
+        "generator_command": (f"python scripts/generate_fixture.py --output {args.output}"),
         "generator_version": _FIXTURE_VERSION,
         "profile": CONTEXT.profile.value,
         "calculation_date": CONTEXT.calculation_date.isoformat(),

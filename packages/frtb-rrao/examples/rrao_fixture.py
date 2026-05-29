@@ -45,37 +45,41 @@ PROFILE_BASEL = RraoRegulatoryProfile.BASEL_MAR23
 # Position IDs that are valid under BOTH Basel MAR23 and US NPR 2.0.
 # Excludes: supervisor-directed (sb-015), investment funds (sb-016/017),
 # and US NPR-only exclusion positions (sb-023/024/025).
-COMMON_POSITION_IDS: frozenset[str] = frozenset({
-    "exotic-longevity-001",
-    "exotic-temperature-001",
-    "exotic-nat-cat-001",
-    "exotic-carbon-001",
-    "gap-autocall-001",
-    "gap-barrier-note-001",
-    "corr-swap-equity-001",
-    "corr-dispersion-001",
-    "structured-multi-barrier-001",
-    "ctp-basket-4under-001",
-    "ctp-rainbow-3eq-001",
-    "nro-illiquid-vol-001",
-    "behav-agency-mbs-001",
-    "behav-callable-deposit-001",
-    "excl-listed-spx-opt-001",
-    "excl-lch-irs-001",
-    "excl-vanilla-call-001",
-    "excl-btb-weather-A",
-    "excl-btb-weather-B",
-})
+COMMON_POSITION_IDS: frozenset[str] = frozenset(
+    {
+        "exotic-longevity-001",
+        "exotic-temperature-001",
+        "exotic-nat-cat-001",
+        "exotic-carbon-001",
+        "gap-autocall-001",
+        "gap-barrier-note-001",
+        "corr-swap-equity-001",
+        "corr-dispersion-001",
+        "structured-multi-barrier-001",
+        "ctp-basket-4under-001",
+        "ctp-rainbow-3eq-001",
+        "nro-illiquid-vol-001",
+        "behav-agency-mbs-001",
+        "behav-callable-deposit-001",
+        "excl-listed-spx-opt-001",
+        "excl-lch-irs-001",
+        "excl-vanilla-call-001",
+        "excl-btb-weather-A",
+        "excl-btb-weather-B",
+    }
+)
 
 # Position IDs that are US NPR 2.0-specific (fail under Basel MAR23).
-US_NPR_ONLY_POSITION_IDS: frozenset[str] = frozenset({
-    "supdir-complex-deriv-001",
-    "fund-alpha-exotic-001",
-    "fund-beta-residual-001",
-    "excl-deliverable-fx-001",
-    "excl-us-tsy-option-001",
-    "excl-fallback-capital-001",
-})
+US_NPR_ONLY_POSITION_IDS: frozenset[str] = frozenset(
+    {
+        "supdir-complex-deriv-001",
+        "fund-alpha-exotic-001",
+        "fund-beta-residual-001",
+        "excl-deliverable-fx-001",
+        "excl-us-tsy-option-001",
+        "excl-fallback-capital-001",
+    }
+)
 
 
 def load_context(
@@ -177,9 +181,7 @@ def _optional_fund_descriptor(value: object) -> RraoInvestmentFundDescriptor | N
     return RraoInvestmentFundDescriptor(
         fund_id=str(value["fund_id"]),
         section_205_method=RraoInvestmentFundMethod(str(value["section_205_method"])),
-        included_exposure_type=RraoInvestmentFundExposureType(
-            str(value["included_exposure_type"])
-        ),
+        included_exposure_type=RraoInvestmentFundExposureType(str(value["included_exposure_type"])),
         mandate_evidence_id=str(value["mandate_evidence_id"]),
         section_205_evidence_id=str(value["section_205_evidence_id"]),
         fund_gross_effective_notional=float(value["fund_gross_effective_notional"]),
