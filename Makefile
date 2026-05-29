@@ -82,24 +82,24 @@ AGENT ?= codex
 TASK ?=
 
 agent-setup:
-	python3 scripts/agent_worktree.py install-hooks
+	$(PYTHON_BIN) scripts/agent_worktree.py install-hooks
 
 agent-sync-main:
-	python3 scripts/agent_worktree.py sync-main
+	$(PYTHON_BIN) scripts/agent_worktree.py sync-main
 
 agent-new:
 	@test -n "$(TASK)" || \
 		(echo "TASK is required, for example: make agent-new AGENT=codex TASK=drc-scenarios"; exit 1)
-	python3 scripts/agent_worktree.py new --agent "$(AGENT)" "$(TASK)"
+	$(PYTHON_BIN) scripts/agent_worktree.py new --agent "$(AGENT)" "$(TASK)"
 
 agent-guard:
-	python3 scripts/agent_worktree.py guard
+	$(PYTHON_BIN) scripts/agent_worktree.py guard
 
 agent-worktrees:
-	python3 scripts/agent_worktree.py list
+	$(PYTHON_BIN) scripts/agent_worktree.py list
 
 agent-doctor:
-	python3 scripts/agent_worktree.py doctor
+	$(PYTHON_BIN) scripts/agent_worktree.py doctor
 
 # Per-package shortcuts
 ima:

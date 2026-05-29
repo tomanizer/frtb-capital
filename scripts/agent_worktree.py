@@ -100,6 +100,15 @@ def local_branch_exists(main_clone: Path, branch: str) -> bool:
     return result.returncode == 0
 
 
+def remote_branch_exists(main_clone: Path, branch: str) -> bool:
+    result = git(
+        ["ls-remote", "--exit-code", "--heads", REMOTE, branch],
+        main_clone,
+        check=False,
+    )
+    return result.returncode == 0
+
+
 def parse_worktrees(main_clone: Path) -> list[Worktree]:
     output = git_output(["worktree", "list", "--porcelain"], main_clone)
     records = [record for record in output.split("\n\n") if record.strip()]
@@ -199,9 +208,11 @@ def create_worktree(args: argparse.Namespace) -> int:
         raise AgentWorktreeError(
             "agent worktrees must not be created inside the protected main clone"
         )
-    expected_parent = worktree_root / agent
-    if not is_relative_to(worktree_path, expected_parent):
-        raise AgentWorktreeError(f"worktree path must be under {expected_parent}")
+    if not is_relative_to(worktree_path, worktree_root):
+        raise AgentWorktreeError(f"worktree path must be under {worktree_root}")
+    relative_worktree = worktree_path.relative_to(worktree_root)
+    if len(relative_worktree.parts) != 2 or relative_worktree.parts[0] != agent:
+        raise AgentWorktreeError(f"worktree path must be exactly {worktree_root}/<agent>/<task>")
     if worktree_path.exists():
         raise AgentWorktreeError(f"worktree path already exists: {worktree_path}")
 
@@ -211,6 +222,11 @@ def create_worktree(args: argparse.Namespace) -> int:
     worktree_path.parent.mkdir(parents=True, exist_ok=True)
     if local_branch_exists(main_clone, branch):
         git(["worktree", "add", str(worktree_path), branch], main_clone)
+    elif remote_branch_exists(main_clone, branch):
+        git(
+            ["worktree", "add", "--track", "-b", branch, str(worktree_path), f"{REMOTE}/{branch}"],
+            main_clone,
+        )
     else:
         git(
             ["worktree", "add", "-b", branch, str(worktree_path), f"{REMOTE}/{MAIN_BRANCH}"],
@@ -242,15 +258,19 @@ def guard(args: argparse.Namespace) -> int:
         failures.append(f"current worktree is outside the standard root: {worktree_root}")
     else:
         relative = current.relative_to(worktree_root)
-        if len(relative.parts) < 2:
+        if len(relative.parts) != 2:
             failures.append("worktree path must be <worktree-root>/<agent>/<task>")
-        elif branch and "/" in branch:
-            path_agent = relative.parts[0]
-            branch_agent = branch.split("/", 1)[0]
-            if path_agent != branch_agent:
-                failures.append(
-                    f"worktree agent {path_agent!r} does not match branch prefix {branch_agent!r}"
-                )
+        elif branch:
+            if "/" not in branch:
+                failures.append(f"branch {branch!r} must be named <agent>/<task>")
+            else:
+                path_agent = relative.parts[0]
+                branch_agent = branch.split("/", 1)[0]
+                if path_agent != branch_agent:
+                    failures.append(
+                        "worktree agent "
+                        f"{path_agent!r} does not match branch prefix {branch_agent!r}"
+                    )
 
     if failures:
         if args.quiet:
@@ -261,12 +281,19 @@ def guard(args: argparse.Namespace) -> int:
                 print(f"- {failure}")
             print()
             print("Create a compliant worktree with:")
-            print("  make agent-new AGENT=codex TASK=<task-name>")
+            print("  make agent-new AGENT=<agent> TASK=<task-name>")
         return 1
 
     if not args.quiet:
         print(f"agent worktree guard passed: {current} on {branch}")
     return 0
+
+
+def hooks_path_is_installed(main_clone: Path, hooks_path_raw: str) -> bool:
+    hooks_path = Path(hooks_path_raw)
+    if not hooks_path.is_absolute():
+        hooks_path = main_clone / hooks_path
+    return hooks_path.resolve() == (main_clone / ".githooks").resolve()
 
 
 def list_worktrees(args: argparse.Namespace) -> int:
@@ -301,8 +328,11 @@ def doctor(args: argparse.Namespace) -> int:
     if dirty:
         issues.append("protected main clone has local changes or untracked files")
 
-    hooks_path = git_optional_output(["config", "--get", "core.hooksPath"], main_clone)
-    if hooks_path != ".githooks":
+    hooks_path_raw = git_optional_output(["config", "--get", "core.hooksPath"], main_clone)
+    if hooks_path_raw:
+        if not hooks_path_is_installed(main_clone, hooks_path_raw):
+            issues.append(f"repo hooks path is configured to {hooks_path_raw}, expected .githooks")
+    else:
         issues.append("repo hooks are not installed; run `make agent-setup`")
 
     for worktree in parse_worktrees(main_clone):

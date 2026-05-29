@@ -1,10 +1,10 @@
 #!/bin/sh
 set -eu
 
-python_bin="${PYTHON_BIN:-python3}"
-if ! command -v "$python_bin" >/dev/null 2>&1; then
-  echo "error: python3 is required for the frtb-capital agent worktree guard" >&2
+set -- ${PYTHON_BIN:-python3}
+if ! command -v "$1" >/dev/null 2>&1; then
+  echo "error: PYTHON_BIN command is required for the frtb-capital agent worktree guard" >&2
   exit 1
 fi
 
-"$python_bin" scripts/agent_worktree.py guard --quiet
+"$@" scripts/agent_worktree.py guard --quiet
