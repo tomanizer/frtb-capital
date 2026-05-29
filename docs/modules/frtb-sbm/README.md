@@ -18,4 +18,8 @@ canonical sensitivity contracts and cited calculation slices are implemented.
 
 - [Product requirements](PRD.md)
 - [Regulatory requirements](REGULATORY_REQUIREMENTS.md)
+- [Detailed requirements](DETAILED_REQUIREMENTS.md)
+- [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
+- [Decisions and plan](DECISIONS_AND_PLAN.md)
+- [Issue breakdown](ISSUE_BREAKDOWN.md)
 - [Workable requirements](requirements/BASEL_FRTB_SBM.yml)
