@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from datetime import date
 
+from hypothesis import given
+from hypothesis import strategies as st
+
 from frtb_rrao import (
     RraoCalculationContext,
     RraoCapitalResult,
@@ -15,8 +18,6 @@ from frtb_rrao import (
     input_hash_for_positions,
 )
 from frtb_rrao.numeric import is_reconciled
-from hypothesis import given
-from hypothesis import strategies as st
 
 NOTIONALS = st.floats(
     min_value=0.0,

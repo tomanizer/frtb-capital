@@ -968,18 +968,26 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
 ]
+notebooks = [
+    { name = "jupyter" },
+    { name = "matplotlib" },
+    { name = "nbmake" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "frtb-common", editable = "packages/frtb-common" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.152,<6.153" },
+    { name = "jupyter", marker = "extra == 'notebooks'", specifier = ">=1.1,<1.2" },
+    { name = "matplotlib", marker = "extra == 'notebooks'", specifier = ">=3.10,<3.11" },
     { name = "mutmut", marker = "extra == 'dev'", specifier = ">=3.5,<3.6" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=2.1,<2.2" },
+    { name = "nbmake", marker = "extra == 'notebooks'", specifier = ">=1.5,<1.6" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0,<9.1" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.1,<7.2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15,<0.16" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["dev", "notebooks"]
 
 [[package]]
 name = "frtb-sbm"

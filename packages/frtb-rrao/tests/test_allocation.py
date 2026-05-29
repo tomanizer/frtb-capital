@@ -8,6 +8,7 @@ from pathlib import Path
 from types import ModuleType
 
 import pytest
+
 from frtb_rrao import (
     RraoAllocationBucket,
     RraoAllocationDimension,

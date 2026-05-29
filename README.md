@@ -7,9 +7,10 @@
 ## Components
 
 This repository is a `uv` workspace with one Python package per capital
-component plus a shared common package. The migrated IMA package is the only
-implemented capital package today; the other packages exist as importable
-scaffolds that fail explicitly until their calculations are implemented.
+component plus a shared common package. IMA and RRAO have implemented public
+calculation paths, DRC has a partial non-securitisation runtime path, and SBM
+and CVA remain importable scaffolds that fail explicitly until their
+calculations are implemented.
 
 The Standardised Approach is a composed calculation stack, not a standalone
 package. Planned SA capital is `frtb-sbm + frtb-drc + frtb-rrao`; suite
@@ -18,13 +19,13 @@ capital when a desk is not IMA-eligible.
 
 | Package | Purpose | Status |
 |---|---|---|
-| `packages/frtb-common` | Shared primitives: status metadata and unsupported-feature errors now; sign conventions, scenario metadata, audit records, regulatory policy base, and business calendar later | Scaffolded |
+| `packages/frtb-common` | Shared primitives: status metadata, unsupported-feature errors, serialization, and regulatory citation helpers | Shared |
 | `packages/frtb-ima` | Internal Models Approach capital for model-eligible trading desks | Implemented; migrated from `tomanizer/FRTB-IMA` |
 | `packages/frtb-sbm` | Standardised Approach sensitivities-based method component | Scaffolded; calculation not implemented |
-| `packages/frtb-drc` | Standardised Approach default risk charge component | Scaffolded; calculation not implemented |
-| `packages/frtb-rrao` | Standardised Approach residual risk add-on component | Scaffolded; calculation not implemented |
+| `packages/frtb-drc` | Standardised Approach default risk charge component | Partial runtime; supported non-securitisation path only |
+| `packages/frtb-rrao` | Standardised Approach residual risk add-on component | Implemented for supported canonical-input profiles |
 | `packages/frtb-cva` | Credit Valuation Adjustment capital | Scaffolded; calculation not implemented |
-| `packages/frtb-orchestration` | Suite-level capital aggregation and firm-level consolidation | Scaffolded; aggregation not implemented |
+| `packages/frtb-orchestration` | Suite-level capital aggregation and firm-level consolidation | Partial; component handoff contracts exist, aggregation not implemented |
 
 ## Why a monorepo
 

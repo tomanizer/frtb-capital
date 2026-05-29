@@ -59,18 +59,84 @@ def recognise_rrao_result(result: object) -> ComponentResultHandoff:
     return ComponentResultHandoff(
         component=StandardisedComponent.RRAO,
         package_name="frtb-rrao",
-        run_id=_required_text_attr(result, "run_id"),
-        calculation_date=_required_date_attr(result, "calculation_date"),
-        base_currency=_required_text_attr(result, "base_currency"),
-        profile_id=_required_text_attr(result, "profile_id"),
-        total_capital=_required_finite_number_attr(result, "total_rrao"),
-        profile_hash=_required_text_attr(result, "profile_hash"),
-        input_hash=_required_text_attr(result, "input_hash"),
-        line_count=_sequence_length_attr(result, "lines"),
-        excluded_line_count=_sequence_length_attr(result, "excluded_lines"),
-        subtotal_count=_sequence_length_attr(result, "subtotals"),
-        citations=_text_tuple_attr(result, "citations"),
-        warnings=_text_tuple_attr(result, "warnings"),
+        run_id=_required_text_attr(result, "run_id", component="RRAO"),
+        calculation_date=_required_date_attr(result, "calculation_date", component="RRAO"),
+        base_currency=_required_text_attr(result, "base_currency", component="RRAO"),
+        profile_id=_required_text_attr(result, "profile_id", component="RRAO"),
+        total_capital=_required_finite_number_attr(result, "total_rrao", component="RRAO"),
+        profile_hash=_required_text_attr(result, "profile_hash", component="RRAO"),
+        input_hash=_required_text_attr(result, "input_hash", component="RRAO"),
+        line_count=_sequence_length_attr(result, "lines", component="RRAO"),
+        excluded_line_count=_sequence_length_attr(result, "excluded_lines", component="RRAO"),
+        subtotal_count=_sequence_length_attr(result, "subtotals", component="RRAO"),
+        citations=_text_tuple_attr(result, "citations", component="RRAO"),
+        warnings=_text_tuple_attr(result, "warnings", component="RRAO"),
+    )
+
+
+def recognise_drc_result(result: object) -> ComponentResultHandoff:
+    """Return the orchestration handoff view for a public DRC result shape."""
+
+    return ComponentResultHandoff(
+        component=StandardisedComponent.DRC,
+        package_name=_optional_text_attr(
+            result, "package_name", component="DRC", default="frtb-drc"
+        ),
+        run_id=_required_text_attr(result, "run_id", component="DRC"),
+        calculation_date=_required_date_attr(result, "calculation_date", component="DRC"),
+        base_currency=_required_text_attr(result, "base_currency", component="DRC"),
+        profile_id=_required_text_attr(result, "profile_id", component="DRC"),
+        total_capital=_required_finite_number_attr(result, "total_drc", component="DRC"),
+        profile_hash=_required_text_attr(result, "profile_hash", component="DRC"),
+        input_hash=_required_text_attr(result, "input_hash", component="DRC"),
+        line_count=_optional_count_or_sequence_attr(
+            result,
+            count_field="input_count",
+            sequence_field="input_positions",
+            component="DRC",
+        ),
+        excluded_line_count=_optional_count_or_sequence_attr(
+            result,
+            count_field="rejected_input_count",
+            sequence_field="rejected_inputs",
+            component="DRC",
+        ),
+        subtotal_count=_sequence_length_attr(result, "categories", component="DRC"),
+        citations=_text_tuple_attr(result, "citations", component="DRC"),
+        warnings=_text_tuple_attr(result, "warnings", component="DRC"),
+    )
+
+
+def recognise_sbm_result(result: object) -> ComponentResultHandoff:
+    """Return the orchestration handoff view for the planned public SBM result shape."""
+
+    return ComponentResultHandoff(
+        component=StandardisedComponent.SBM,
+        package_name=_optional_text_attr(
+            result, "package_name", component="SBM", default="frtb-sbm"
+        ),
+        run_id=_required_text_attr(result, "run_id", component="SBM"),
+        calculation_date=_required_date_attr(result, "calculation_date", component="SBM"),
+        base_currency=_required_text_attr(result, "base_currency", component="SBM"),
+        profile_id=_required_text_attr(result, "profile_id", component="SBM"),
+        total_capital=_required_finite_number_attr(result, "total_sbm", component="SBM"),
+        profile_hash=_required_text_attr(result, "profile_hash", component="SBM"),
+        input_hash=_required_text_attr(result, "input_hash", component="SBM"),
+        line_count=_optional_count_or_sequence_attr(
+            result,
+            count_field="sensitivity_count",
+            sequence_field="sensitivities",
+            component="SBM",
+        ),
+        excluded_line_count=_optional_count_or_sequence_attr(
+            result,
+            count_field="unsupported_count",
+            sequence_field="unsupported_features",
+            component="SBM",
+        ),
+        subtotal_count=_sequence_length_attr(result, "risk_class_results", component="SBM"),
+        citations=_text_tuple_attr(result, "citations", component="SBM"),
+        warnings=_text_tuple_attr(result, "warnings", component="SBM"),
     )
 
 
@@ -84,6 +150,10 @@ def compose_standardised_approach_capital(
 
     if rrao_result is not None:
         recognise_rrao_result(rrao_result)
+    if drc_result is not None:
+        recognise_drc_result(drc_result)
+    if sbm_result is not None:
+        recognise_sbm_result(sbm_result)
 
     missing = _missing_standardised_components(
         sbm_result=sbm_result,
@@ -101,9 +171,7 @@ def compose_standardised_approach_capital(
 
     raise NotImplementedCapitalComponentError(
         component="frtb-orchestration",
-        feature=(
-            "standardised approach aggregation until SBM and DRC result contracts are compatible"
-        ),
+        feature="standardised approach aggregation arithmetic",
     )
 
 
@@ -123,66 +191,96 @@ def _missing_standardised_components(
     return tuple(missing)
 
 
-def _required_text_attr(result: object, field: str) -> str:
-    value = _required_attr(result, field)
+def _required_text_attr(result: object, field: str, *, component: str) -> str:
+    value = _required_attr(result, field, component=component)
     if not isinstance(value, str) or not value:
         raise OrchestrationInputError(
-            f"RRAO result field {field} must be non-empty text",
+            f"{component} result field {field} must be non-empty text",
             field=field,
         )
     return value
 
 
-def _required_date_attr(result: object, field: str) -> date:
-    value = _required_attr(result, field)
+def _optional_text_attr(result: object, field: str, *, component: str, default: str) -> str:
+    value = getattr(result, field, None)
+    if value is None:
+        return default
+    if not isinstance(value, str) or not value:
+        raise OrchestrationInputError(
+            f"{component} result field {field} must be non-empty text",
+            field=field,
+        )
+    return value
+
+
+def _required_date_attr(result: object, field: str, *, component: str) -> date:
+    value = _required_attr(result, field, component=component)
     if not isinstance(value, date):
         raise OrchestrationInputError(
-            f"RRAO result field {field} must be a date",
+            f"{component} result field {field} must be a date",
             field=field,
         )
     return value
 
 
-def _required_finite_number_attr(result: object, field: str) -> float:
-    value = _required_attr(result, field)
+def _required_finite_number_attr(result: object, field: str, *, component: str) -> float:
+    value = _required_attr(result, field, component=component)
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise OrchestrationInputError(
-            f"RRAO result field {field} must be numeric",
+            f"{component} result field {field} must be numeric",
             field=field,
         )
     number = float(value)
     if not math.isfinite(number):
         raise OrchestrationInputError(
-            f"RRAO result field {field} must be finite",
+            f"{component} result field {field} must be finite",
             field=field,
         )
     return number
 
 
-def _sequence_length_attr(result: object, field: str) -> int:
-    value = _required_attr(result, field)
+def _sequence_length_attr(result: object, field: str, *, component: str) -> int:
+    value = _required_attr(result, field, component=component)
     if isinstance(value, str | bytes) or not isinstance(value, Sequence):
         raise OrchestrationInputError(
-            f"RRAO result field {field} must be a sequence",
+            f"{component} result field {field} must be a sequence",
             field=field,
         )
     return len(value)
 
 
-def _text_tuple_attr(result: object, field: str) -> tuple[str, ...]:
-    value = _required_attr(result, field)
+def _optional_count_or_sequence_attr(
+    result: object,
+    *,
+    count_field: str,
+    sequence_field: str,
+    component: str,
+) -> int:
+    value = getattr(result, count_field, None)
+    if value is not None:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise OrchestrationInputError(
+                f"{component} result field {count_field} must be a non-negative integer",
+                field=count_field,
+            )
+        return value
+    return _sequence_length_attr(result, sequence_field, component=component)
+
+
+def _text_tuple_attr(result: object, field: str, *, component: str) -> tuple[str, ...]:
+    value = _required_attr(result, field, component=component)
     if not isinstance(value, tuple) or not all(isinstance(item, str) for item in value):
         raise OrchestrationInputError(
-            f"RRAO result field {field} must be a tuple of text values",
+            f"{component} result field {field} must be a tuple of text values",
             field=field,
         )
     return value
 
 
-def _required_attr(result: object, field: str) -> object:
+def _required_attr(result: object, field: str, *, component: str) -> object:
     if not hasattr(result, field):
         raise OrchestrationInputError(
-            f"RRAO result is missing required field {field}",
+            f"{component} result is missing required field {field}",
             field=field,
         )
     return getattr(result, field)
@@ -193,5 +291,7 @@ __all__ = [
     "OrchestrationInputError",
     "StandardisedComponent",
     "compose_standardised_approach_capital",
+    "recognise_drc_result",
     "recognise_rrao_result",
+    "recognise_sbm_result",
 ]
