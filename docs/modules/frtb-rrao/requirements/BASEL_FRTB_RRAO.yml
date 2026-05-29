@@ -6,7 +6,7 @@ source_register:
   - name: Basel MAR23
     url: https://www.bis.org/basel_framework/chapter/MAR/23.htm
   - name: U.S. NPR 2.0 91 FR 14952
-    url: https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
+    url: https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf
   - name: EBA RTS on residual risk add-on
     url: https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2?version=2021
   - name: Commission Delegated Regulation (EU) 2022/2328
@@ -19,6 +19,13 @@ requirements:
     modules: [src/frtb_rrao/data_models.py]
     tests: [tests/test_data_models.py]
     notes: Position, classification, capital line, and aggregate result.
+  - id: RRAO-DATA-002
+    title: Gross effective notional validation
+    source: Basel MAR23.8; proposed U.S. section __.211(c)(2)
+    status: planned
+    modules: [src/frtb_rrao/validation.py]
+    tests: [tests/test_validation.py]
+    notes: Non-negative finite gross effective notional after adapter normalisation.
   - id: RRAO-CLASS-001
     title: Exotic and other residual risk classification
     source: Basel MAR23.2-MAR23.3; 91 FR 15049
@@ -26,6 +33,13 @@ requirements:
     modules: [src/frtb_rrao/classification.py]
     tests: [tests/test_classification.py]
     notes: Include explicit classification reason and evidence fields.
+  - id: RRAO-CLASS-002
+    title: Supervisor-directed inclusion
+    source: proposed U.S. section __.211(a)(4)
+    status: planned
+    modules: [src/frtb_rrao/classification.py]
+    tests: [tests/test_classification.py]
+    notes: Requires supervisor directive evidence id; no implicit inclusion.
   - id: RRAO-CAP-001
     title: 1 percent exotic add-on
     source: Basel MAR23.2; 91 FR 15049 footnote 385
@@ -47,6 +61,13 @@ requirements:
     modules: [src/frtb_rrao/classification.py]
     tests: [tests/test_exclusions.py]
     notes: Exclusions must be explicit and auditable.
+  - id: RRAO-EU-001
+    title: EU Article 325u residual-risk classification profile
+    source: Regulation (EU) No 575/2013 Article 325u; Delegated Regulation (EU) 2022/2328 Articles 1-3 and Annex
+    status: planned
+    modules: [src/frtb_rrao/regimes.py, src/frtb_rrao/reference_data.py]
+    tests: [tests/test_eu_profile.py]
+    notes: Comparison profile may fail closed until deterministic fixtures are complete.
   - id: RRAO-AUDIT-001
     title: Additive audit contribution report
     source: Basel MAR23 calculation structure
@@ -54,4 +75,3 @@ requirements:
     modules: [src/frtb_rrao/audit.py]
     tests: [tests/test_audit.py]
     notes: Line-level weighted notional contributions sum to total RRAO.
-
