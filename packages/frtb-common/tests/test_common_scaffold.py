@@ -26,13 +26,14 @@ def test_common_exports_version_and_status_metadata() -> None:
         metadata.package_name = "mutated"  # type: ignore[misc]
 
 
-def test_not_implemented_component_error_is_explicit_unsupported_error() -> None:
+def test_not_implemented_component_error_is_not_regulatory_unsupported() -> None:
     error = NotImplementedCapitalComponentError(
         component="frtb-sbm",
         feature="SBM capital calculation",
     )
 
-    assert isinstance(error, UnsupportedRegulatoryFeatureError)
+    assert isinstance(error, NotImplementedError)
+    assert not isinstance(error, UnsupportedRegulatoryFeatureError)
     assert error.component == "frtb-sbm"
     assert error.feature == "SBM capital calculation"
     assert "does not implement" in str(error)

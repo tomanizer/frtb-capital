@@ -33,11 +33,11 @@ class CapitalComponentMetadata:
     validation_status: ValidationStatus
 
 
-class UnsupportedRegulatoryFeatureError(NotImplementedError):
+class UnsupportedRegulatoryFeatureError(Exception):
     """Raised when a requested regulatory feature is explicitly unsupported."""
 
 
-class NotImplementedCapitalComponentError(UnsupportedRegulatoryFeatureError):
+class NotImplementedCapitalComponentError(NotImplementedError):
     """Raised by scaffold packages instead of emitting placeholder capital."""
 
     def __init__(self, *, component: str, feature: str) -> None:

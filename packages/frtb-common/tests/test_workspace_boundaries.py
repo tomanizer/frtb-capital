@@ -3,6 +3,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CAPITAL_IMPORTS = {
+    "frtb_orchestration",
     "frtb_cva",
     "frtb_drc",
     "frtb_ima",
@@ -30,6 +31,11 @@ def imported_top_level_modules(path: Path) -> set[str]:
 
 
 def test_capital_packages_do_not_import_sibling_capital_packages() -> None:
+    # Orchestration is included in CAPITAL_IMPORTS to prevent component packages
+    # importing upward into the aggregator, but it is intentionally omitted from
+    # CAPITAL_PACKAGE_BY_IMPORT because orchestration may compose components.
+    # This AST guard catches source imports. Declared dependency drift in
+    # pyproject.toml should be closed by the planned import-linter control.
     for import_name, package_name in CAPITAL_PACKAGE_BY_IMPORT.items():
         src_root = REPO_ROOT / "packages" / package_name / "src"
         assert src_root.is_dir(), f"Source directory not found: {src_root}"
