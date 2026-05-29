@@ -18,6 +18,10 @@ from frtb_rrao import (
     validate_rrao_result_reconciliation,
 )
 from frtb_rrao.capital import build_rrao_subtotals
+from frtb_rrao.numeric import (
+    RRAO_RECONCILIATION_ABS_TOLERANCE,
+    RRAO_RECONCILIATION_REL_TOLERANCE,
+)
 
 VALID_HASH = "0" * 64
 
@@ -83,12 +87,14 @@ def result_for_lines(
 def test_reconciliation_uses_relative_tolerance_for_accumulated_float_error() -> None:
     add_ons = [1.0 / 3.0] * 20_000
     lines = tuple(included_line(index, add_on) for index, add_on in enumerate(add_ons))
-    total_from_independent_summation = math.fsum(add_ons)
+    base_total = sum(add_ons)
+    relative_only_delta = RRAO_RECONCILIATION_ABS_TOLERANCE * 5
 
-    assert abs(total_from_independent_summation - sum(add_ons)) > 1e-9
+    assert relative_only_delta > RRAO_RECONCILIATION_ABS_TOLERANCE
+    assert relative_only_delta < RRAO_RECONCILIATION_REL_TOLERANCE * base_total
 
     validate_rrao_result_reconciliation(
-        result_for_lines(lines, total_rrao=total_from_independent_summation)
+        result_for_lines(lines, total_rrao=base_total + relative_only_delta)
     )
 
 
