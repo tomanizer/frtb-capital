@@ -114,6 +114,43 @@ jobs:
       - name: Type check
         run: make typecheck
 
+  quality-control:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+            packages/*/pyproject.toml
+          cache-suffix: py3.11-quality-control
+
+      - name: Sync workspace
+        run: uv sync --locked --python 3.11
+
+      - name: Run quality-control gates
+        run: make quality-control
+
+      - name: Upload package maturity report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: package-maturity
+          path: dist/quality/package-maturity.json
+          if-no-files-found: ignore
+
   test:
     name: test (3.11)
     needs: changes
@@ -367,6 +404,7 @@ jobs:
       - docs
       - lint
       - typecheck
+      - quality-control
       - test
       - test-compat
       - build
@@ -386,6 +424,7 @@ jobs:
           DOCS_RESULT: ${{ needs.docs.result }}
           LINT_RESULT: ${{ needs.lint.result }}
           TYPECHECK_RESULT: ${{ needs.typecheck.result }}
+          QUALITY_CONTROL_RESULT: ${{ needs['quality-control'].result }}
           TEST_RESULT: ${{ needs.test.result }}
           TEST_COMPAT_RESULT: ${{ needs['test-compat'].result }}
           BUILD_RESULT: ${{ needs.build.result }}
@@ -400,6 +439,7 @@ jobs:
             "$DOCS_RESULT" \
             "$LINT_RESULT" \
             "$TYPECHECK_RESULT" \
+            "$QUALITY_CONTROL_RESULT" \
             "$TEST_RESULT" \
             "$TEST_COMPAT_RESULT" \
             "$BUILD_RESULT" \

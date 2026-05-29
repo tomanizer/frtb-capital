@@ -57,8 +57,9 @@ python_version = "3.11"
 strict = true
 
 [tool.pytest.ini_options]
-testpaths = ["packages"]
+testpaths = ["packages", "tests"]
 addopts = "-v --tb=short"
+pythonpath = ["."]
 norecursedirs = [".*", "build", "dist", "mutants"]
 
 [tool.coverage.report]
