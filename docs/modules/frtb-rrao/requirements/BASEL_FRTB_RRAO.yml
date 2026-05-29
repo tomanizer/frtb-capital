@@ -11,47 +11,118 @@ source_register:
     url: https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2?version=2021
   - name: Commission Delegated Regulation (EU) 2022/2328
     url: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2328
+  - name: OCC PDF copy of U.S. NPR 2.0 91 FR 14952
+    url: https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf
 requirements:
+  - id: RRAO-DOC-001
+    title: Package-local regulatory traceability pack
+    source: Basel MAR20.4; Basel MAR23.1-MAR23.8; proposed U.S. section __.211; Regulation (EU) No 575/2013 Article 325u
+    status: partial
+    modules: [docs/REGULATORY_TRACEABILITY.md, docs/REGULATORY_ASSUMPTIONS.md, docs/regulatory_sources.yml]
+    tests: [tests/test_regulatory_sources.py]
+    notes: Scaffold and implemented modules are source-mapped, with PRA capital paths still unsupported until fixture-tested.
   - id: RRAO-DATA-001
     title: Frozen RRAO input and result models
     source: Basel MAR23.1-MAR23.3; U.S. NPR 2.0 section V.A.7.b
-    status: planned
+    status: implemented
     modules: [src/frtb_rrao/data_models.py]
     tests: [tests/test_data_models.py]
     notes: Position, classification, capital line, and aggregate result.
+  - id: RRAO-DATA-002
+    title: Gross effective notional validation
+    source: Basel MAR23.8; proposed U.S. section __.211(c)(2)
+    status: implemented
+    modules: [src/frtb_rrao/validation.py]
+    tests: [tests/test_validation.py]
+    notes: Non-negative finite gross effective notional after adapter normalisation.
+  - id: RRAO-REF-001
+    title: Cited RRAO rule profiles and reference data
+    source: Basel MAR23.2-MAR23.8; proposed U.S. section __.211; Regulation (EU) No 575/2013 Article 325u; Delegated Regulation (EU) 2022/2328
+    status: implemented
+    modules: [src/frtb_rrao/regimes.py, src/frtb_rrao/reference_data.py]
+    tests: [tests/test_regimes.py, tests/test_reference_data.py]
+    notes: Supported Basel MAR23, U.S. NPR 2.0, and EU CRR3 comparison-profile metadata, evidence rules, exclusions, risk weights, and deterministic profile hashes.
   - id: RRAO-CLASS-001
     title: Exotic and other residual risk classification
     source: Basel MAR23.2-MAR23.3; 91 FR 15049
-    status: planned
+    status: implemented
     modules: [src/frtb_rrao/classification.py]
     tests: [tests/test_classification.py]
     notes: Include explicit classification reason and evidence fields.
+  - id: RRAO-CLASS-002
+    title: Supervisor-directed inclusion
+    source: proposed U.S. section __.211(a)(4)
+    status: implemented
+    modules: [src/frtb_rrao/classification.py]
+    tests: [tests/test_classification.py]
+    notes: Requires supervisor directive evidence id; no implicit inclusion.
+  - id: RRAO-CLASS-003
+    title: Investment-fund inclusion
+    source: proposed U.S. section __.205(e)(3)(iii); proposed U.S. section __.211(a)(3)
+    status: implemented
+    modules: [src/frtb_rrao/data_models.py, src/frtb_rrao/validation.py, src/frtb_rrao/reference_data.py, src/frtb_rrao/classification.py, src/frtb_rrao/capital.py]
+    tests: [tests/test_investment_fund.py, tests/test_unsupported_features.py]
+    notes: Requires an explicit backstop fund descriptor, mandate evidence, section 205 evidence, and included portion before applying cited 1.0% or 0.1% treatment.
   - id: RRAO-CAP-001
     title: 1 percent exotic add-on
     source: Basel MAR23.2; 91 FR 15049 footnote 385
-    status: planned
+    status: implemented
     modules: [src/frtb_rrao/capital.py]
     tests: [tests/test_capital.py]
     notes: Capital equals 0.01 times gross effective notional.
   - id: RRAO-CAP-002
     title: 0.1 percent other residual risk add-on
     source: Basel MAR23.3; 91 FR 15049 footnote 386
-    status: planned
+    status: implemented
     modules: [src/frtb_rrao/capital.py]
     tests: [tests/test_capital.py]
     notes: Capital equals 0.001 times gross effective notional.
   - id: RRAO-EXCL-001
     title: Exclusion and back-to-back treatment
     source: Basel MAR23.4-MAR23.7; 91 FR 15049-15050
-    status: planned
+    status: partial
     modules: [src/frtb_rrao/classification.py]
     tests: [tests/test_exclusions.py]
-    notes: Exclusions must be explicit and auditable.
+    notes: Cited exclusion decisions are implemented; exact match-group validation remains future work.
+  - id: RRAO-EU-001
+    title: EU Article 325u residual-risk classification profile
+    source: Regulation (EU) No 575/2013 Article 325u; Delegated Regulation (EU) 2022/2328 Articles 1-3 and Annex
+    status: implemented
+    modules: [src/frtb_rrao/data_models.py, src/frtb_rrao/regimes.py, src/frtb_rrao/reference_data.py, src/frtb_rrao/classification.py, src/frtb_rrao/capital.py]
+    tests: [tests/test_eu_profile.py, tests/test_reference_data.py, tests/test_regimes.py]
+    notes: Maps Article 1 exotic underlyings, Article 2 Annex instruments, Article 3 non-presumptive zero-capital records, Article 325u(3) risk weights, and Article 325u(4) exemptions for canonical comparison inputs.
   - id: RRAO-AUDIT-001
     title: Additive audit contribution report
     source: Basel MAR23 calculation structure
-    status: planned
-    modules: [src/frtb_rrao/audit.py]
-    tests: [tests/test_audit.py]
-    notes: Line-level weighted notional contributions sum to total RRAO.
-
+    status: implemented
+    modules: [src/frtb_rrao/audit.py, src/frtb_rrao/allocation.py, src/frtb_rrao/scaffold.py]
+    tests: [tests/test_audit.py, tests/test_allocation.py, tests/test_public_api.py, tests/test_replay.py]
+    notes: Public result hashing, serialization, reconciliation, and additive line/desk/legal-entity/evidence-type allocation helpers are implemented.
+  - id: RRAO-API-001
+    title: Public canonical-input RRAO run API
+    source: Basel MAR23.8; proposed U.S. section __.211(c)
+    status: implemented
+    modules: [src/frtb_rrao/scaffold.py, src/frtb_rrao/audit.py]
+    tests: [tests/test_public_api.py, tests/test_replay.py]
+    notes: Calculates supported Basel/U.S./EU canonical inputs, splits included and excluded lines, and fails closed for unsupported profiles; orchestration can recognise the public result shape without composing SA total yet.
+  - id: RRAO-FIXTURE-001
+    title: Synthetic v1 validation fixture
+    source: Basel MAR23.2-MAR23.8; proposed U.S. section __.211
+    status: implemented
+    modules: [tests/fixtures/rrao_v1]
+    tests: [tests/test_fixture_workflow.py]
+    notes: Covers exotic examples, other residual-risk examples, supervisor-directed inclusion, cited exclusions, invalid evidence, pinned hashes, and deterministic replay.
+  - id: RRAO-ADAPTER-001
+    title: Optional CRIF/FNet adapter boundary
+    source: Public implementation references for adapter shape; Basel MAR23 and proposed U.S. section __.211 for canonical output evidence
+    status: implemented
+    modules: [src/frtb_rrao/crif.py]
+    tests: [tests/test_crif.py]
+    notes: Converts supported mapping rows into canonical positions, records lineage and warnings, rejects ambiguous non-exotic and notional conventions, and adds no dataframe runtime dependency.
+  - id: RRAO-PERF-001
+    title: Performance and replay controls
+    source: Engineering control for deterministic target-scale replay; not a regulatory source
+    status: implemented
+    modules: [scripts/benchmark_rrao_target_scale.py, docs/PERFORMANCE.md]
+    tests: [tests/test_performance_controls.py, tests/test_replay.py]
+    notes: Adds a 100,000-position target-scale benchmark, replay payload hashes, ordering hashes, and tests that detect numeric or ordering drift.

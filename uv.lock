@@ -922,7 +922,7 @@ provides-extras = ["dev", "notebooks"]
 
 [[package]]
 name = "frtb-orchestration"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/frtb-orchestration" }
 dependencies = [
     { name = "frtb-common" },
@@ -945,7 +945,7 @@ requires-dist = [
 
 [[package]]
 name = "frtb-rrao"
-version = "0.1.0"
+version = "0.11.0"
 source = { editable = "packages/frtb-rrao" }
 dependencies = [
     { name = "frtb-common" },

@@ -1,0 +1,168 @@
+schema_version: 1
+name: FRTB_RRAO_REGULATORY_SOURCES
+purpose: "Link-only source manifest for RRAO traceability, review, and optional downstream retrieval."
+text_policy: "Do not vendor full regulatory text in the core package. Keep official URLs, section hints, source status, and reuse notes here."
+
+sources:
+  - id: basel_mar20_standardised_approach
+    family: BASEL_FRTB_SA
+    jurisdiction: GLOBAL
+    title: "Basel Framework MAR20, Standardised approach"
+    url: "https://www.bis.org/basel_framework/chapter/MAR/20.htm"
+    section_hint: "MAR20.4 places RRAO in the Standardised Approach stack."
+    status: baseline_reference
+    reuse_note: "Link-only BIS reference; do not vendor text without permission review."
+    module_paths:
+      - src/frtb_rrao/scaffold.py
+      - src/frtb_rrao/capital.py
+    requirement_ids:
+      - RRAO-BOUNDARY-001
+      - RRAO-FUNC-011
+
+  - id: basel_mar23_residual_risk_addon
+    family: BASEL_FRTB_RRAO
+    jurisdiction: GLOBAL
+    title: "Basel Framework MAR23, Residual risk add-on"
+    url: "https://www.bis.org/basel_framework/chapter/MAR/23.htm"
+    section_hint: "MAR23.1-MAR23.8 cover RRAO scope, classifications, exclusions, back-to-back treatment, and add-on formula."
+    status: baseline_reference
+    reuse_note: "Link-only BIS reference; do not vendor text without permission review."
+    module_paths:
+      - src/frtb_rrao/data_models.py
+      - src/frtb_rrao/validation.py
+      - src/frtb_rrao/regimes.py
+      - src/frtb_rrao/reference_data.py
+      - src/frtb_rrao/classification.py
+      - src/frtb_rrao/capital.py
+      - src/frtb_rrao/audit.py
+    requirement_ids:
+      - RRAO-FUNC-002
+      - RRAO-FUNC-003
+      - RRAO-FUNC-004
+      - RRAO-FUNC-005
+      - RRAO-FUNC-008
+      - RRAO-FUNC-010
+      - RRAO-FUNC-011
+
+  - id: us_npr_2_0_91_fr_14952
+    family: US_NPR_2_0
+    jurisdiction: US
+    title: "Federal Register 91 FR 14952, Regulatory Capital Rule market-risk proposal"
+    url: "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
+    section_hint: "Section V.A.7.b, proposed section __.205(e)(3)(iii), and proposed section __.211 cover U.S. residual risk capital requirement and fund-portion linkage."
+    status: proposed_rule_reference
+    reuse_note: "GovInfo is the primary U.S. NPR source link for this package."
+    module_paths:
+      - src/frtb_rrao/data_models.py
+      - src/frtb_rrao/validation.py
+      - src/frtb_rrao/regimes.py
+      - src/frtb_rrao/reference_data.py
+      - src/frtb_rrao/classification.py
+      - src/frtb_rrao/capital.py
+      - src/frtb_rrao/audit.py
+    requirement_ids:
+      - RRAO-FUNC-002
+      - RRAO-FUNC-003
+      - RRAO-FUNC-004
+      - RRAO-FUNC-005
+      - RRAO-FUNC-006
+      - RRAO-FUNC-007
+      - RRAO-FUNC-008
+      - RRAO-FUNC-010
+      - RRAO-FUNC-011
+      - RRAO-FUNC-014
+
+  - id: us_npr_2_0_occ_pdf_copy
+    family: US_NPR_2_0
+    jurisdiction: US
+    title: "OCC PDF copy of Federal Register 91 FR 14952"
+    url: "https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf"
+    section_hint: "Convenience PDF copy for page-specific review; GovInfo remains the primary source."
+    status: convenience_copy
+    reuse_note: "Convenience link only; do not treat as an independent source."
+    module_paths:
+      - src/frtb_rrao/regimes.py
+    requirement_ids:
+      - RRAO-FUNC-010
+
+  - id: eu_crr_article_325u
+    family: EU_CRR
+    jurisdiction: EU
+    title: "Regulation (EU) No 575/2013, Article 325u"
+    url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02013R0575-20240709"
+    section_hint: "Article 325u residual risk add-on under the alternative standardised approach."
+    status: comparison_reference
+    reuse_note: "EUR-Lex link-only reference for implemented EU comparison-profile mapping."
+    module_paths:
+      - src/frtb_rrao/data_models.py
+      - src/frtb_rrao/validation.py
+      - src/frtb_rrao/regimes.py
+      - src/frtb_rrao/reference_data.py
+      - src/frtb_rrao/classification.py
+      - src/frtb_rrao/capital.py
+      - tests/test_eu_profile.py
+    requirement_ids:
+      - RRAO-FUNC-004
+      - RRAO-FUNC-009
+
+  - id: eu_delegated_reg_2022_2328_rrao
+    family: EU_RTS
+    jurisdiction: EU
+    title: "Commission Delegated Regulation (EU) 2022/2328 on residual risk add-on"
+    url: "https://eur-lex.europa.eu/eli/reg_del/2022/2328/oj/eng"
+    section_hint: "Articles 1-3 and Annex specify exotic underlyings, residual-risk instruments, and risks that do not by themselves presume residual-risk treatment."
+    status: comparison_reference
+    reuse_note: "EUR-Lex link-only reference for implemented EU comparison-profile mapping."
+    module_paths:
+      - src/frtb_rrao/data_models.py
+      - src/frtb_rrao/validation.py
+      - src/frtb_rrao/regimes.py
+      - src/frtb_rrao/reference_data.py
+      - src/frtb_rrao/classification.py
+      - src/frtb_rrao/capital.py
+      - tests/test_eu_profile.py
+      - tests/fixtures/rrao_eu/positions.json
+    requirement_ids:
+      - RRAO-FUNC-004
+      - RRAO-FUNC-005
+      - RRAO-FUNC-009
+
+  - id: eba_rrao_rts_page
+    family: EU_RTS
+    jurisdiction: EU
+    title: "EBA residual risk add-on RTS page"
+    url: "https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2?version=2021"
+    section_hint: "Background page for the EU RTS on instruments bearing residual risks."
+    status: background_reference
+    reuse_note: "Use as background only; cite EUR-Lex legal text for implementation behavior."
+    module_paths:
+      - src/frtb_rrao/regimes.py
+    requirement_ids:
+      - RRAO-FUNC-009
+
+  - id: github_frtb_net_rrao_reference
+    family: IMPLEMENTATION_REFERENCE
+    jurisdiction: NON_REGULATORY
+    title: "frtb-net/FRTB SA_RRAO_Calc.py"
+    url: "https://github.com/frtb-net/FRTB/blob/bdce773dc01868f61d8fdd65476c52193a2321e1/SA_RRAO_Calc.py"
+    section_hint: "Public implementation reference for two-bucket adapter and explain-output shape."
+    status: implementation_reference
+    reuse_note: "Not a regulatory source. Do not copy code or use it to justify classification behavior."
+    module_paths:
+      - src/frtb_rrao/crif.py
+      - src/frtb_rrao/audit.py
+    requirement_ids:
+      - RRAO-FUNC-013
+
+  - id: github_fnet_format_documentation
+    family: IMPLEMENTATION_REFERENCE
+    jurisdiction: NON_REGULATORY
+    title: "frtb-net/FRTB FNet format documentation"
+    url: "https://github.com/frtb-net/FRTB/blob/bdce773dc01868f61d8fdd65476c52193a2321e1/FNet_Format_Documentation.md"
+    section_hint: "Public input-format reference for adapter field naming."
+    status: implementation_reference
+    reuse_note: "Not a regulatory source. Use only for optional adapter shape."
+    module_paths:
+      - src/frtb_rrao/crif.py
+    requirement_ids:
+      - RRAO-FUNC-013
