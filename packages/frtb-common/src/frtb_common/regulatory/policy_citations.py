@@ -65,8 +65,15 @@ def assert_policy_has_regulatory_citations(
     allowed_without_citation
         Field names that are intentionally modelling choices and do not require
         a regulatory citation (e.g. "es_estimator", "nmrf_taxonomy_mode").
+        Bare field names apply only to the root object. For nested policies,
+        use the full path shown in an error message, such as
+        ``ParentPolicy.child.modelling_choice``.
     recurse
-        Whether to descend into nested policy-like objects.
+        Whether to descend into nested policy-like objects. Recursion follows
+        dataclass fields, sequence items, and mapping values only when the child
+        is a dataclass carrying the selected citation attribute or another known
+        citation attribute (``cited_by``, ``citations``,
+        ``regulatory_citations``).
     max_depth
         Safety limit to prevent runaway recursion on circular structures.
     """
@@ -87,7 +94,13 @@ def assert_policy_has_regulatory_citations(
     # Discover fields that contain numeric values
     numeric_fields = _discover_numeric_fields(obj)
 
-    missing = numeric_fields - citation_keys - allowed
+    allowed_fields = _allowed_fields_for_path(
+        numeric_fields,
+        allowed_without_citation=allowed,
+        current_path=current_path,
+        is_root=_depth == 0,
+    )
+    missing = numeric_fields - citation_keys - allowed_fields
 
     if missing:
         missing_list = "\n    - ".join(sorted(missing))
@@ -111,7 +124,7 @@ def assert_policy_has_regulatory_citations(
 
         child_path = f"{current_path}.{field_info.name}"
 
-        for item_path, item in _iter_policy_like_children(value, child_path):
+        for item_path, item in _iter_policy_like_children(value, child_path, citation_attr):
             assert_policy_has_regulatory_citations(
                 item,
                 citation_attr=citation_attr,
@@ -162,16 +175,36 @@ def _is_directly_numeric(value: Any) -> bool:
     return False
 
 
-def _iter_policy_like_children(value: Any, path: str) -> Iterable[tuple[str, Any]]:
-    if _is_policy_like(value):
+def _allowed_fields_for_path(
+    numeric_fields: set[str],
+    *,
+    allowed_without_citation: set[str],
+    current_path: str,
+    is_root: bool,
+) -> set[str]:
+    allowed: set[str] = set()
+    for field_name in numeric_fields:
+        if is_root and field_name in allowed_without_citation:
+            allowed.add(field_name)
+        elif f"{current_path}.{field_name}" in allowed_without_citation:
+            allowed.add(field_name)
+    return allowed
+
+
+def _iter_policy_like_children(
+    value: Any,
+    path: str,
+    citation_attr: str,
+) -> Iterable[tuple[str, Any]]:
+    if _is_policy_like(value, citation_attr):
         yield path, value
     elif isinstance(value, Mapping):
         for key, item in value.items():
-            if _is_policy_like(item):
+            if _is_policy_like(item, citation_attr):
                 yield f"{path}[{key!r}]", item
     elif isinstance(value, (list, tuple, set)):
         for idx, item in enumerate(value):
-            if _is_policy_like(item):
+            if _is_policy_like(item, citation_attr):
                 yield f"{path}[{idx}]", item
 
 
@@ -193,18 +226,14 @@ def _has_citation_value(value: Any) -> bool:
     return str(value).strip() != ""
 
 
-def _is_policy_like(obj: Any) -> bool:
-    """Heuristic to detect objects that should be recursed into for citation checks."""
+def _is_policy_like(obj: Any, citation_attr: str = "cited_by") -> bool:
+    """Return true for dataclass objects carrying citation metadata."""
     if obj is None or isinstance(obj, (str, bytes, int, float, bool)):
         return False
     if not is_dataclass(obj) or isinstance(obj, type):
         return False
 
-    # Strong signals
-    if any(hasattr(obj, attr) for attr in ("cited_by", "citations", "regulatory_citations")):
-        return True
-
-    try:
-        return len(fields(obj)) >= 3
-    except Exception:
-        return False
+    return any(
+        hasattr(obj, attr)
+        for attr in (citation_attr, "cited_by", "citations", "regulatory_citations")
+    )

@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
 
+import frtb_common
 import pytest
 from frtb_common import assert_policy_has_regulatory_citations
 from frtb_common.regulatory.policy_citations import MissingRegulatoryCitationsError
@@ -35,6 +36,32 @@ class NestedPolicy:
 class MappedPolicy:
     children: Mapping[str, SimplePolicy]
     cited_by: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class NumericModellingChoicePolicy:
+    modelling_choice: float = 0.5
+    cited_by: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ParentWithChoice:
+    child: NumericModellingChoicePolicy
+    cited_by: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ValueObject:
+    amount: float = 1.0
+    weight: float = 2.0
+    label: str = "not-a-policy"
+
+
+@dataclass(frozen=True)
+class PolicyWithValueObject:
+    value: ValueObject
+    risk_weight: float = 0.06
+    cited_by: dict[str, str] = field(default_factory=lambda: {"risk_weight": "MAR22.15"})
 
 
 def test_simple_policy_passes_when_fully_cited() -> None:
@@ -91,6 +118,32 @@ def test_recurses_into_mapping_held_nested_policies() -> None:
     assert "confidence_level" in message
 
 
+def test_bare_allowlist_only_applies_to_root_policy() -> None:
+    policy = ParentWithChoice(child=NumericModellingChoicePolicy())
+
+    with pytest.raises(MissingRegulatoryCitationsError) as exc:
+        assert_policy_has_regulatory_citations(
+            policy, allowed_without_citation=["modelling_choice"]
+        )
+
+    assert "ParentWithChoice.child" in str(exc.value)
+
+
+def test_path_allowlist_can_exempt_nested_policy_field() -> None:
+    policy = ParentWithChoice(child=NumericModellingChoicePolicy())
+
+    assert_policy_has_regulatory_citations(
+        policy,
+        allowed_without_citation=["ParentWithChoice.child.modelling_choice"],
+    )
+
+
+def test_recursion_ignores_unmarked_value_objects() -> None:
+    policy = PolicyWithValueObject(value=ValueObject())
+
+    assert_policy_has_regulatory_citations(policy)
+
+
 def test_supports_custom_citation_attribute_name() -> None:
     @dataclass(frozen=True)
     class CustomPolicy:
@@ -101,3 +154,10 @@ def test_supports_custom_citation_attribute_name() -> None:
 
     policy = CustomPolicy()
     assert_policy_has_regulatory_citations(policy, citation_attr="regulatory_citations")
+
+
+def test_top_level_exports_match_regulatory_module() -> None:
+    assert (
+        frtb_common.assert_policy_has_regulatory_citations is assert_policy_has_regulatory_citations
+    )
+    assert frtb_common.MissingRegulatoryCitationsError is MissingRegulatoryCitationsError
