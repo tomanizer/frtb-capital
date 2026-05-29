@@ -18,14 +18,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-
       - name: Set up Python
-        run: uv python install 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+            packages/*/pyproject.toml
+          cache-suffix: py3.11
 
       - name: Sync workspace
-        run: uv sync --locked
+        run: uv sync --locked --python 3.11
 
       - name: Run target-scale benchmark
         run: make benchmark

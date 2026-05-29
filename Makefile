@@ -7,13 +7,21 @@ LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scr
 MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/frtb-ima.json
 
-.PHONY: check lint format format-check typecheck test docs-check regulatory-corpus import-smoke maturity-check quality-control build
+.PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
+.PHONY: test test-no-cov docs-check regulatory-corpus import-smoke maturity-check quality-control build
+.PHONY: examples-check notebooks-check
 .PHONY: release-artifacts mutation mutation-rrao benchmark rrao-benchmark
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
 .PHONY: validation-pack agent-setup agent-sync-main agent-new agent-guard
 .PHONY: agent-worktrees agent-doctor ima sa sbm drc rrao cva orchestration clean
 
 check: lint format-check typecheck test
+
+ci-local: docs-check lint format-check typecheck test build
+
+ci-local-fast: docs-check lint format-check typecheck test-no-cov
+
+ci-local-full: ci-local audit-deps sbom examples-check notebooks-check
 
 lint:
 	uv run ruff check $(LINT_PATHS)
@@ -31,6 +39,9 @@ test:
 	mkdir -p dist/coverage
 	uv run pytest packages tests --cov=frtb_ima --cov-report=term-missing --cov-report=json:$(COVERAGE_JSON)
 	uv run python scripts/ci/check_module_coverage.py $(COVERAGE_JSON)
+
+test-no-cov:
+	uv run pytest packages
 
 docs-check: regulatory-corpus
 	python3 scripts/ci/check_markdown_links.py
@@ -51,6 +62,12 @@ regulatory-corpus:
 build:
 	rm -rf dist/release
 	uv build --all-packages --out-dir dist/release
+
+examples-check:
+	uv run python packages/frtb-ima/examples/run_demo.py
+
+notebooks-check:
+	MPLBACKEND=Agg uv run --extra notebooks --directory packages/frtb-ima pytest --nbmake notebooks
 
 mutation:
 	FRTB_IMA_MUTATION_IMPORT=1 HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-ima python -c "import numpy; import sys; from mutmut.__main__ import cli; sys.argv = ['mutmut', 'run']; cli()"

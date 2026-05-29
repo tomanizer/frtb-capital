@@ -132,15 +132,6 @@ def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
         for path in paths
     )
 
-    if docs:
-        # Branch protection requires these check contexts. A pull_request job
-        # skipped at the job level leaves the required context expected rather
-        # than satisfied, so documentation PRs must emit pass/fail statuses too.
-        code = True
-        dependency = True
-        notebooks = True
-        examples = True
-
     if full or workflow:
         return {
             "full": full,
