@@ -33,7 +33,7 @@ def main() -> None:
     parser.add_argument(
         "--out",
         type=Path,
-        default=Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "drc_nonsec_v2",
+        default=(Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "drc_nonsec_v2"),
         help="output directory (default: tests/fixtures/drc_nonsec_v2)",
     )
     args = parser.parse_args()

@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Generate DRC demo notebooks.
 
 Run from the frtb-drc package root:

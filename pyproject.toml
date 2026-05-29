@@ -49,7 +49,7 @@ select = ["E", "F", "I", "UP", "N", "RUF", "T20"]
 
 [tool.ruff.lint.per-file-ignores]
 "packages/*/examples/*.py" = ["T201"]
-"packages/*/scripts/*.py" = ["T201", "E501"]
+"packages/*/scripts/*.py" = ["T201"]
 "scripts/**/*.py" = ["T201"]
 "tools/**/*.py" = ["T201"]
 
