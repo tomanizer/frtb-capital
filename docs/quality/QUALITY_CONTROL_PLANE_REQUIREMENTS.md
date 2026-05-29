@@ -450,7 +450,10 @@ runs but branch protection does not enforce it.
 ## Tests
 
 Quality-control script tests must live under `tests/quality/`. The first PR must
-update root `pyproject.toml` so pytest discovery includes both package tests and
+update both pytest discovery and the root `Makefile` test invocation so
+`make check` actually runs root quality-control tests.
+
+In root `pyproject.toml`, pytest discovery must include both package tests and
 root quality-control tests:
 
 ```toml
@@ -458,9 +461,8 @@ root quality-control tests:
 testpaths = ["packages", "tests"]
 ```
 
-The first PR must also update the root `Makefile` `test` target so it does not
-override pytest discovery with only the `packages` positional argument. Use one
-of these equivalent forms:
+In the root `Makefile`, the `test` target must not override pytest discovery
+with only the `packages` positional argument. Use one of these equivalent forms:
 
 ```make
 uv run pytest --cov=frtb_ima ...
