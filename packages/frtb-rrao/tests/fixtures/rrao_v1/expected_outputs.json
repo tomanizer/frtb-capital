@@ -1,7 +1,7 @@
 {
   "profile_id": "US_NPR_2_0",
-  "profile_hash": "e645d1c3a6302ac7274d54460d7e2232462168c26388e79af4f9bd6e1a7fe561",
-  "input_hash": "c1760c2caa2263cc286cbce88a298804b22057e9eea005675eb3451837d3f533",
+  "profile_hash": "bfb2763c438d3cfd36b906c5ab3ebeae0ff92cf1160349369f1e417bf2157e15",
+  "input_hash": "051007628a602a187b1d01ce96a32d36d76107a513ca3734de85ec46a60612ab",
   "total_rrao": 53000.0,
   "warnings": [
     "US_NPR_2_0 is proposed-rule material; do not present outputs as final regulatory capital."

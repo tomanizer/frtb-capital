@@ -17,6 +17,7 @@ from frtb_rrao.data_models import (
     RraoClassification,
     RraoEvidenceType,
     RraoExclusionReason,
+    RraoInvestmentFundExposureType,
     RraoRegulatoryProfile,
 )
 from frtb_rrao.validation import RraoInputError
@@ -51,6 +52,17 @@ class RraoRiskWeightRule:
     classification: RraoClassification
     risk_weight: float
     citation_id: str
+
+
+@dataclass(frozen=True)
+class RraoInvestmentFundRule:
+    """Profile-specific investment-fund inclusion mapping."""
+
+    included_exposure_type: RraoInvestmentFundExposureType
+    classification: RraoClassification
+    risk_weight_key: str
+    reason_code: str
+    citation_ids: tuple[str, ...]
 
 
 BASEL_CITATIONS: dict[str, RraoCitation] = {
@@ -110,6 +122,12 @@ US_NPR_CITATIONS: dict[str, RraoCitation] = {
         paragraph="Proposed section __.211(a)(2)",
         url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
         note="Other residual-risk inclusion.",
+    ),
+    "us_npr_211_a_3": RraoCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        paragraph="Proposed section __.211(a)(3)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note="Investment-fund portion included in RRAO.",
     ),
     "us_npr_211_a_4": RraoCitation(
         source_id="us_npr_2_0_91_fr_14952",
@@ -176,6 +194,12 @@ US_NPR_CITATIONS: dict[str, RraoCitation] = {
         paragraph="Proposed section __.211(c)(2)",
         url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
         note="Gross effective notional source.",
+    ),
+    "us_npr_205_e_3_iii": RraoCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        paragraph="Proposed section __.205(e)(3)(iii)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note="Backstop fund method and mandate-based RRAO exposure portion.",
     ),
 }
 
@@ -246,6 +270,37 @@ PROFILE_EVIDENCE_RULES: dict[RraoRegulatoryProfile, tuple[RraoEvidenceRule, ...]
             risk_weight_key="SUPERVISOR_DIRECTED_0_1_PERCENT",
             reason_code="US_NPR_SUPERVISOR_DIRECTIVE",
             citation_id="us_npr_211_a_4",
+        ),
+    ),
+}
+
+PROFILE_INVESTMENT_FUND_RULES: dict[
+    RraoRegulatoryProfile,
+    tuple[RraoInvestmentFundRule, ...],
+] = {
+    RraoRegulatoryProfile.BASEL_MAR23: (),
+    RraoRegulatoryProfile.US_NPR_2_0: (
+        RraoInvestmentFundRule(
+            included_exposure_type=RraoInvestmentFundExposureType.EXOTIC_EXPOSURE,
+            classification=RraoClassification.EXOTIC,
+            risk_weight_key="EXOTIC_1_PERCENT",
+            reason_code="US_NPR_INVESTMENT_FUND_EXOTIC_PORTION",
+            citation_ids=(
+                "us_npr_211_a_3",
+                "us_npr_205_e_3_iii",
+                "us_npr_211_c_1_i",
+            ),
+        ),
+        RraoInvestmentFundRule(
+            included_exposure_type=RraoInvestmentFundExposureType.OTHER_RESIDUAL_RISK,
+            classification=RraoClassification.OTHER_RESIDUAL_RISK,
+            risk_weight_key="OTHER_0_1_PERCENT",
+            reason_code="US_NPR_INVESTMENT_FUND_OTHER_RESIDUAL_PORTION",
+            citation_ids=(
+                "us_npr_211_a_3",
+                "us_npr_205_e_3_iii",
+                "us_npr_211_c_1_ii",
+            ),
         ),
     ),
 }
@@ -400,6 +455,15 @@ def exclusion_rules_for_profile(
     return PROFILE_EXCLUSION_RULES[resolved]
 
 
+def investment_fund_rules_for_profile(
+    profile: RraoRegulatoryProfile | str,
+) -> tuple[RraoInvestmentFundRule, ...]:
+    """Return supported investment-fund inclusion rules for a profile."""
+
+    resolved = _resolve_supported_profile(profile)
+    return PROFILE_INVESTMENT_FUND_RULES[resolved]
+
+
 def risk_weight_rules_for_profile(
     profile: RraoRegulatoryProfile | str,
 ) -> tuple[RraoRiskWeightRule, ...]:
@@ -436,6 +500,21 @@ def exclusion_rule_for(
     raise RraoInputError(
         f"no RRAO exclusion rule for {exclusion_reason.value}",
         field="exclusion_reason",
+    )
+
+
+def investment_fund_rule_for(
+    profile: RraoRegulatoryProfile | str,
+    included_exposure_type: RraoInvestmentFundExposureType,
+) -> RraoInvestmentFundRule:
+    """Return the profile rule for an investment-fund included exposure type."""
+
+    for rule in investment_fund_rules_for_profile(profile):
+        if rule.included_exposure_type is included_exposure_type:
+            return rule
+    raise RraoInputError(
+        f"no RRAO investment-fund rule for {included_exposure_type.value}",
+        field="investment_fund_descriptor.included_exposure_type",
     )
 
 
@@ -490,6 +569,19 @@ def profile_reference_payload(profile: RraoRegulatoryProfile | str) -> dict[str,
                 exclusion_rules_for_profile(resolved), key=lambda item: item.reason_code
             )
         ],
+        "investment_fund_rules": [
+            {
+                "included_exposure_type": rule.included_exposure_type.value,
+                "classification": rule.classification.value,
+                "risk_weight_key": rule.risk_weight_key,
+                "reason_code": rule.reason_code,
+                "citation_ids": list(rule.citation_ids),
+            }
+            for rule in sorted(
+                investment_fund_rules_for_profile(resolved),
+                key=lambda item: item.reason_code,
+            )
+        ],
         "risk_weight_rules": [
             {
                 "key": rule.key,
@@ -520,12 +612,15 @@ def _resolve_supported_profile(profile: RraoRegulatoryProfile | str) -> RraoRegu
 __all__ = [
     "RraoEvidenceRule",
     "RraoExclusionRule",
+    "RraoInvestmentFundRule",
     "RraoRiskWeightRule",
     "citations_for_profile",
     "evidence_rule_for",
     "evidence_rules_for_profile",
     "exclusion_rule_for",
     "exclusion_rules_for_profile",
+    "investment_fund_rule_for",
+    "investment_fund_rules_for_profile",
     "profile_reference_payload",
     "risk_weight_rule_for",
     "risk_weight_rules_for_profile",

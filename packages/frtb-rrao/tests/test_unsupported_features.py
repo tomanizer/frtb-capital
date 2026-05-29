@@ -38,13 +38,14 @@ def sample_position(**overrides: object) -> RraoPosition:
     return RraoPosition(**fields)  # type: ignore[arg-type]
 
 
-def test_investment_fund_path_fails_until_dedicated_issue() -> None:
-    with pytest.raises(RraoInputError, match="unsupported classification evidence"):
+def test_partial_investment_fund_path_fails_without_descriptor() -> None:
+    with pytest.raises(RraoInputError, match="investment fund descriptor"):
         classify_rrao_position(
             sample_position(
                 evidence_type=RraoEvidenceType.INVESTMENT_FUND_EXPOSURE,
                 evidence_label="investment fund exposure",
                 classification_hint=RraoClassification.OTHER_RESIDUAL_RISK,
+                is_investment_fund_exposure=True,
             )
         )
 

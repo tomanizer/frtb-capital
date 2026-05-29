@@ -193,13 +193,17 @@ class RraoPosition:
     has_multiple_strikes_or_barriers: bool | None = None
     is_ctp_hedge: bool = False
     is_investment_fund_exposure: bool = False
+    investment_fund_descriptor: RraoInvestmentFundDescriptor | None = None
     notional_source: str = "reported"
     lineage: RraoSourceLineage | None = None
 ```
 
 Required fields depend on evidence and exclusion paths. For example, exact
 back-to-back exclusion requires `exclusion_evidence_id`; supervisor-directed
-inclusion requires `supervisor_directive_id`.
+inclusion requires `supervisor_directive_id`; U.S. NPR 2.0 investment-fund
+inclusion requires a `RraoInvestmentFundDescriptor` proving the proposed
+section `__.205(e)(3)(iii)` backstop-method linkage and the included exposure
+portion used for proposed section `__.211(a)(3)`.
 
 ### Classification decision
 

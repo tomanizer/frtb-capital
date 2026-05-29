@@ -11,6 +11,10 @@ The v1 implementation path covers U.S. NPR 2.0 proposed section `__.211` and
 Basel MAR23 additive line-capital mechanics, with classification evidence and
 exclusions recorded in audit output.
 
+The U.S. NPR 2.0 profile also supports proposed section `__.211(a)(3)`
+investment-fund inclusion when the input supplies an explicit
+`__.205(e)(3)(iii)` backstop-method descriptor and cited mandate evidence.
+
 Planning documents:
 
 - [Model documentation](../../docs/modules/frtb-rrao/MODEL_DOCUMENTATION.md)

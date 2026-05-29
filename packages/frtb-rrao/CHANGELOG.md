@@ -26,3 +26,6 @@ All notable changes to `frtb-rrao` will be documented here.
 - Added the optional standard-library CRIF/FNet adapter with source lineage,
   mapping warnings, rejected-row audit records, and no dataframe runtime
   dependency.
+- Added the U.S. NPR 2.0 investment-fund inclusion path for cited
+  `__.205(e)(3)(iii)` backstop-method portions under proposed section
+  `__.211(a)(3)`.

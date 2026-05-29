@@ -153,8 +153,9 @@ The U.S. NPR 2.0 profile must represent proposed section `__.211(a)(3)`, which
 includes the portion of the exposure amount from an equity position in an
 investment fund required under proposed section `__.205(e)(3)(iii)`.
 
-This path may fail closed until the package has an explicit investment-fund
-input contract and fixture. It must not be silently treated as generic other
+This path requires an explicit investment-fund descriptor carrying the
+proposed section `__.205(e)(3)(iii)` backstop-method linkage, mandate evidence,
+and included exposure portion. It must not be silently treated as generic other
 residual risk.
 
 ### RRAO-FUNC-007: Supervisor-directed inclusion

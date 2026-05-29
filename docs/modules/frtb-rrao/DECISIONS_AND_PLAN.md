@@ -154,9 +154,9 @@ core RRAO mechanics.
    `frtb-common` after DRC and RRAO both have stable profile contracts?
 2. Should gross effective notional remain `float` throughout kernels or should
    adapters preserve `Decimal` amounts for audit while kernels receive floats?
-3. Should the first U.S. NPR slice implement proposed section `__.211(a)(3)`
-   investment-fund inclusion or keep it fail-closed until investment-fund
-   exposure contracts are stable?
+3. Resolved in issue #90: the first U.S. NPR slice implements proposed section
+   `__.211(a)(3)` only when an explicit `__.205(e)(3)(iii)` investment-fund
+   descriptor and cited mandate evidence are supplied.
 4. Should CRIF/FNet mapping ship before or after the first canonical-input
    capital slice?
 5. What benchmark size is useful enough for RRAO without overfitting to

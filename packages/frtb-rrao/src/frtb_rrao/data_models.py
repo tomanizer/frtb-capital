@@ -69,6 +69,22 @@ class RraoRegulatoryProfile(StrEnum):
     PRA_UK_CRR = "PRA_UK_CRR"
 
 
+class RraoInvestmentFundMethod(StrEnum):
+    """Supported investment-fund treatment methods for RRAO inclusion."""
+
+    BACKSTOP_FUND_METHOD = "BACKSTOP_FUND_METHOD"
+    HYPOTHETICAL_PORTFOLIO = "HYPOTHETICAL_PORTFOLIO"
+    TRACKED_INDEX = "TRACKED_INDEX"
+    LOOK_THROUGH = "LOOK_THROUGH"
+
+
+class RraoInvestmentFundExposureType(StrEnum):
+    """RRAO treatment for the included investment-fund exposure portion."""
+
+    EXOTIC_EXPOSURE = "EXOTIC_EXPOSURE"
+    OTHER_RESIDUAL_RISK = "OTHER_RESIDUAL_RISK"
+
+
 @dataclass(frozen=True)
 class RraoCitation:
     """A linkable citation identifier and paragraph hint."""
@@ -87,6 +103,21 @@ class RraoSourceLineage:
     source_file: str
     source_row_id: str
     source_column_map: tuple[tuple[str, str], ...] = ()
+
+
+@dataclass(frozen=True)
+class RraoInvestmentFundDescriptor:
+    """Evidence for U.S. NPR investment-fund RRAO inclusion."""
+
+    fund_id: str
+    section_205_method: RraoInvestmentFundMethod
+    included_exposure_type: RraoInvestmentFundExposureType
+    mandate_evidence_id: str
+    section_205_evidence_id: str
+    fund_gross_effective_notional: float
+    included_exposure_ratio: float
+    look_through_available: bool = False
+    mandate_allows_rrao_exposures: bool = True
 
 
 @dataclass(frozen=True)
@@ -113,6 +144,7 @@ class RraoPosition:
     has_multiple_strikes_or_barriers: bool | None = None
     is_ctp_hedge: bool = False
     is_investment_fund_exposure: bool = False
+    investment_fund_descriptor: RraoInvestmentFundDescriptor | None = None
     notional_source: str = "reported"
     citations: tuple[str, ...] = ()
 
@@ -211,6 +243,9 @@ __all__ = [
     "RraoClassificationDecision",
     "RraoEvidenceType",
     "RraoExclusionReason",
+    "RraoInvestmentFundDescriptor",
+    "RraoInvestmentFundExposureType",
+    "RraoInvestmentFundMethod",
     "RraoPosition",
     "RraoRegulatoryProfile",
     "RraoSourceLineage",
