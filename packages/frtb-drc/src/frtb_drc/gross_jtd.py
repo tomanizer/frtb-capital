@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from frtb_drc.data_models import DefaultDirection, DrcPosition, DrcRiskClass, GrossJtd
+from frtb_drc.data_models import (
+    DefaultDirection,
+    DrcPosition,
+    DrcRiskClass,
+    DrcSeniority,
+    GrossJtd,
+)
 from frtb_drc.reference_data import get_lgd_rule
 from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported, get_rule_profile
 from frtb_drc.validation import DrcInputError, validate_position, validate_positions
@@ -21,23 +27,26 @@ def calculate_gross_jtd(
 
     validate_position(position)
     profile = get_rule_profile(profile_id)
-    ensure_risk_class_supported(profile, position.risk_class)
-    if position.risk_class != DrcRiskClass.NON_SECURITISATION:
-        raise DrcInputError(f"gross JTD is not implemented for {position.risk_class.value}")
+    risk_class = DrcRiskClass(position.risk_class)
+    ensure_risk_class_supported(profile, risk_class)
+    if risk_class != DrcRiskClass.NON_SECURITISATION:
+        raise DrcInputError(f"gross JTD is not implemented for {risk_class.value}")
     if position.seniority is None:
         raise DrcInputError("seniority is required for gross JTD")
+    seniority = DrcSeniority(position.seniority)
+    default_direction = DefaultDirection(position.default_direction)
     if position.lgd_override is not None:
         raise DrcInputError("explicit LGD overrides are not supported by the selected profile")
 
     lgd_rule = get_lgd_rule(
-        position.seniority,
+        seniority,
         profile_id=profile.profile_id,
         is_defaulted=position.is_defaulted,
     )
     pnl_component = _resolve_pnl_component(position)
     signed_notional = _signed_notional(position)
     raw_jtd = lgd_rule.lgd_rate * signed_notional + pnl_component
-    if position.default_direction == DefaultDirection.LONG:
+    if default_direction == DefaultDirection.LONG:
         gross_jtd = max(raw_jtd, 0.0)
     else:
         gross_jtd = abs(min(raw_jtd, 0.0))
@@ -45,10 +54,10 @@ def calculate_gross_jtd(
     return GrossJtd(
         gross_jtd_id=f"gross-{position.position_id}",
         position_id=position.position_id,
-        risk_class=position.risk_class,
+        risk_class=risk_class,
         issuer_or_tranche_key=_issuer_or_tranche_key(position),
         bucket_key=position.bucket_key or "",
-        default_direction=position.default_direction,
+        default_direction=default_direction,
         lgd_rate=lgd_rule.lgd_rate,
         lgd_source=lgd_rule.description,
         notional=abs(position.notional),
@@ -73,7 +82,7 @@ def calculate_gross_jtds(
 
 def _signed_notional(position: DrcPosition) -> float:
     notional_magnitude = abs(position.notional)
-    if position.default_direction == DefaultDirection.LONG:
+    if DefaultDirection(position.default_direction) == DefaultDirection.LONG:
         return notional_magnitude
     return -notional_magnitude
 
@@ -83,7 +92,7 @@ def _resolve_pnl_component(position: DrcPosition) -> float:
         return position.cumulative_pnl
     if position.market_value is None:
         raise DrcInputError("cumulative_pnl or market_value is required for gross JTD")
-    if position.default_direction == DefaultDirection.LONG:
+    if DefaultDirection(position.default_direction) == DefaultDirection.LONG:
         return position.market_value - abs(position.notional)
     return abs(position.notional) - position.market_value
 
