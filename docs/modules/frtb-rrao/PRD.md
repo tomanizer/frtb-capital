@@ -67,11 +67,13 @@ recorded.
 1. **Skeleton and source register**.
 2. **Detailed requirements and issue plan**: DRC-style architecture, data
    design, decisions, and implementation-ready issues.
-3. **Data model and risk weights**: 1 percent, 0.1 percent, zero/excluded.
-4. **Classification and exclusion engine**.
-5. **Capital calculation and audit result**.
-6. **Input mapping and examples**.
-7. **Suite integration and report output**.
+3. **Model documentation and traceability**: package-local source manifest,
+   regulatory assumptions, and code-to-regulation map.
+4. **Data model and risk weights**: 1 percent, 0.1 percent, zero/excluded.
+5. **Classification and exclusion engine**.
+6. **Capital calculation and audit result**.
+7. **Input mapping and examples**.
+8. **Suite integration and report output**.
 
 ## Acceptance Criteria
 
