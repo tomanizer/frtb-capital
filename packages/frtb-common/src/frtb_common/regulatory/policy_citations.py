@@ -24,8 +24,9 @@ Example usage::
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import fields, is_dataclass
-from typing import Any, Iterable
+from typing import Any
 
 __all__ = [
     "MissingRegulatoryCitationsError",
