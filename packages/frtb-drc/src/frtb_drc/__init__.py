@@ -1,6 +1,12 @@
 """Standardised Approach default risk charge scaffold."""
 
 from frtb_drc._version import __version__
+from frtb_drc.capital import (
+    CapitalInput,
+    calculate_bucket_drc,
+    calculate_category_drc,
+    calculate_hedge_benefit_ratio,
+)
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -56,6 +62,7 @@ __all__ = [
     "BranchType",
     "BucketDefinition",
     "BucketDrc",
+    "CapitalInput",
     "CategoryDrc",
     "CreditQuality",
     "DefaultDirection",
@@ -80,9 +87,12 @@ __all__ = [
     "RejectedOffset",
     "RiskWeightRule",
     "__version__",
+    "calculate_bucket_drc",
+    "calculate_category_drc",
     "calculate_drc_capital",
     "calculate_gross_jtd",
     "calculate_gross_jtds",
+    "calculate_hedge_benefit_ratio",
     "calculate_maturity_weight",
     "calculate_net_jtds",
     "ensure_risk_class_supported",
