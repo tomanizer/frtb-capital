@@ -51,6 +51,7 @@ def calculate_rrao_capital(
     validated_positions = validate_rrao_positions(positions)
     all_lines = build_rrao_capital_lines(validated_positions, profile=rule_profile.profile)
     included_lines, excluded_lines = _partition_lines(all_lines)
+    result_lines = included_lines + excluded_lines
     result = RraoCapitalResult(
         run_id=context.run_id,
         calculation_date=context.calculation_date,
@@ -60,9 +61,9 @@ def calculate_rrao_capital(
         input_hash=input_hash_for_positions(validated_positions),
         lines=included_lines,
         excluded_lines=excluded_lines,
-        subtotals=build_rrao_subtotals(all_lines),
-        total_rrao=included_rrao_total(all_lines),
-        citations=_collect_line_citations(all_lines),
+        subtotals=build_rrao_subtotals(result_lines),
+        total_rrao=included_rrao_total(result_lines),
+        citations=_collect_line_citations(result_lines),
         warnings=_profile_warnings(rule_profile.profile),
     )
     validate_rrao_result_reconciliation(result)

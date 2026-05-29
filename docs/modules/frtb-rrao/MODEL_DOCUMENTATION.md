@@ -43,6 +43,7 @@ MAR23, U.S. NPR 2.0, and EU CRR3 comparison-profile canonical inputs.
 | Investment fund inclusion | Implemented | Issue #90 added a U.S. NPR 2.0 `__.205(e)(3)(iii)` backstop-method descriptor and cited `__.211(a)(3)` classification path. |
 | EU comparison profile | Implemented | Issue #91 added Article 325u and Delegated Regulation (EU) 2022/2328 mappings with EU fixture coverage. |
 | Orchestration SA composition | Partial outside package | Issue #92 added an orchestration-side RRAO result handoff while SA aggregation still fails until SBM and DRC outputs are compatible. |
+| Performance and replay controls | Implemented | Issue #93 added the `make rrao-benchmark` target, deterministic replay hashes, and target-scale runtime documentation. |
 
 ## Review checklist
 

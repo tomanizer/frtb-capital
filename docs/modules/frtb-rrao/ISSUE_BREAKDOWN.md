@@ -273,6 +273,9 @@ scale.
 
 **Tests/checks:** targeted benchmark command, replay tests.
 
+**Status:** Implemented with `make rrao-benchmark`, deterministic audit payload
+hashes, ordering-drift checks, and performance documentation.
+
 ## Issue 13: Add additive allocation/report helpers
 
 **Goal:** Add optional explain helpers after core RRAO is stable.

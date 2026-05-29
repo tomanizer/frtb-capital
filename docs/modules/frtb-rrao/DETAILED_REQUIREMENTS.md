@@ -338,6 +338,11 @@ The first implemented path should include a benchmark target for at least
 entities, classifications, and exclusion reasons. The target is an engineering
 control for suite usability, not a regulatory requirement.
 
+Issue #93 implements this with `make rrao-benchmark`, which writes a
+deterministic 100,000-position report to
+`dist/benchmarks/frtb-rrao-target-scale.json` and records observed local timing
+in `packages/frtb-rrao/docs/PERFORMANCE.md`.
+
 ## Initial implementation acceptance criteria
 
 The first capital-producing vertical slice is complete only when:

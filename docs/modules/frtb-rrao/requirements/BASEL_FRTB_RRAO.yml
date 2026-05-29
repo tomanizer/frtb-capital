@@ -119,3 +119,10 @@ requirements:
     modules: [src/frtb_rrao/crif.py]
     tests: [tests/test_crif.py]
     notes: Converts supported mapping rows into canonical positions, records lineage and warnings, rejects ambiguous non-exotic and notional conventions, and adds no dataframe runtime dependency.
+  - id: RRAO-PERF-001
+    title: Performance and replay controls
+    source: Engineering control for deterministic target-scale replay; not a regulatory source
+    status: implemented
+    modules: [scripts/benchmark_rrao_target_scale.py, docs/PERFORMANCE.md]
+    tests: [tests/test_performance_controls.py, tests/test_replay.py]
+    notes: Adds a 100,000-position target-scale benchmark, replay payload hashes, ordering hashes, and tests that detect numeric or ordering drift.
