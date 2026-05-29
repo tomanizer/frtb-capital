@@ -262,6 +262,8 @@ def test_validate_rrao_positions_requires_exclusion_evidence() -> None:
     )
     assert_rejects(
         sample_position(
+            evidence_type=RraoEvidenceType.EXPLICIT_EXCLUSION,
+            classification_hint=RraoClassification.EXCLUDED,
             exclusion_reason=RraoExclusionReason.LISTED,
             exclusion_evidence_id="",
         ),
@@ -278,6 +280,19 @@ def test_validate_rrao_positions_requires_exclusion_evidence() -> None:
                 exclusion_evidence_id="exchange-listing-001",
             ),
         )
+    )
+
+
+def test_validate_rrao_positions_rejects_exclusion_reason_without_exclusion_evidence_type() -> None:
+    assert_rejects(
+        sample_position(
+            evidence_type=RraoEvidenceType.GAP_RISK,
+            classification_hint=RraoClassification.OTHER_RESIDUAL_RISK,
+            exclusion_reason=RraoExclusionReason.LISTED,
+            exclusion_evidence_id="exchange-listing-001",
+        ),
+        "explicit exclusion evidence type",
+        expected_field="evidence_type",
     )
 
 

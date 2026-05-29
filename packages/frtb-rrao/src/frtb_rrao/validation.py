@@ -234,6 +234,12 @@ def _validate_evidence_requirements(position: RraoPosition) -> None:
             position_id=position.position_id,
         )
     if position.exclusion_reason is not None:
+        if position.evidence_type is not RraoEvidenceType.EXPLICIT_EXCLUSION:
+            raise RraoInputError(
+                "exclusion reason requires explicit exclusion evidence type",
+                field="evidence_type",
+                position_id=position.position_id,
+            )
         _require_text(position.exclusion_evidence_id, "exclusion_evidence_id", position.position_id)
     if (
         position.exclusion_reason is RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK
