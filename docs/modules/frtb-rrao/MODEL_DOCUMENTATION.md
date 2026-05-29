@@ -39,7 +39,7 @@ MAR23 and U.S. NPR 2.0 canonical inputs.
 | Line add-ons and subtotals | Implemented | Issue #86 added additive line add-ons and deterministic explain subtotals. |
 | Public API and audit records | Implemented | Issue #87 added public result assembly, input/profile hashes, deterministic serialization, and reconciliation checks. |
 | Synthetic validation fixture | Implemented | Issue #88 added the `tests/fixtures/rrao_v1/` pack, expected outputs, invalid cases, loader, and replay tests. |
-| Optional adapters | Planned | Issue #89. |
+| Optional adapters | Implemented | Issue #89 added the standard-library CRIF/FNet adapter with lineage, warnings, and rejected-row audit records. |
 | EU comparison profile | Unsupported | Issue #91 before any EU capital path may return a result. |
 | Orchestration SA composition | Excluded from package | Issue #92 defines handoff after RRAO result shape is stable. |
 

@@ -73,7 +73,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `classification.py` | Cited classification and exclusion decisions for canonical positions. | MAR23.2-MAR23.7. | Proposed section `__.211(a)`-`__.211(b)`. | Delegated Regulation 2022/2328 Articles 1-3 and Annex. | Implemented for Basel MAR23 and U.S. NPR 2.0 canonical evidence; exact match-group validation remains future work. |
 | `capital.py` | Additive line add-ons, zero-capital excluded lines, deterministic subtotals, and included-line total helper. | MAR23.8. | Proposed section `__.211(c)`. | Article 325u comparison mechanics once mapped. | Implemented for supported canonical inputs and used by the public API. |
 | `audit.py` | Result serialization, input/profile hashes, and line/subtotal reconciliation. | MAR23 calculation auditability context. | Proposed section `__.211(c)` line add-ons and reporting notional source. | Article 325u comparison context. | Implemented deterministic result serialization, input hashing, and reconciliation checks; optional contribution report helpers remain issue #94. |
-| `crif.py` | Optional CRIF/FNet-shaped adapter into canonical `RraoPosition` records. | MAR23 risk-type mapping context only. | Proposed section `__.211` canonical field mapping context. | Article 325u comparison mapping context. | Planned in issue #89; adapter only, not a calculation kernel. |
+| `crif.py` | Optional CRIF/FNet-shaped adapter into canonical `RraoPosition` records with lineage, warnings, and rejected rows. | MAR23 risk-type mapping context only. | Proposed section `__.211` canonical field mapping context. | Article 325u comparison mapping context. | Implemented as a standard-library adapter only; not imported by calculation kernels. |
 | `tests/fixtures/rrao_v1/` | Synthetic examples for source-cited classification, exclusions, invalid evidence, and deterministic replay. | MAR23.2-MAR23.8. | Proposed section `__.211(a)`-`__.211(c)`. | Delegated Regulation 2022/2328 Articles 1-3 and Annex for future EU fixtures. | Implemented for supported U.S. NPR 2.0 fixture coverage; EU fixture pack remains issue #91. |
 
 ## Regulation to code
@@ -87,7 +87,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | Supervisor-directed inclusion | MAR23 residual-risk scope context. | Proposed section `__.211(a)(4)`. | No v1 EU mapping. | `classification.py`, `capital.py`, `scaffold.py`. | Implemented for U.S. profile; requires directive evidence id. |
 | Exclusions | MAR23.4-MAR23.7. | Proposed section `__.211(b)`. | Delegated Regulation 2022/2328 Article 3 comparison context. | `classification.py`, `capital.py`, `scaffold.py`. | Partial: cited exclusion decisions and zero-capital result lines are implemented; exact match-group validation remains future work. |
 | Gross effective notional and risk weights | MAR23.8. | Proposed section `__.211(c)(1)`-`__.211(c)(2)`. | Article 325u comparison context. | `validation.py`, `reference_data.py`, `capital.py`, `audit.py`, `scaffold.py`. | Implemented for supported U.S./Basel canonical inputs. |
-| Public GitHub adapter shapes | Not a regulatory source. | Not a regulatory source. | Not a regulatory source. | Planned `crif.py`. | Optional adapter inspiration only; never overrides cited classification evidence. |
+| Public GitHub adapter shapes | Not a regulatory source. | Not a regulatory source. | Not a regulatory source. | `crif.py`. | Implemented as adapter inspiration only; never overrides cited classification evidence. |
 
 ## Module docstring convention
 

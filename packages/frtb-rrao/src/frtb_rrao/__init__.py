@@ -8,6 +8,14 @@ from frtb_rrao.audit import (
 )
 from frtb_rrao.capital import build_rrao_capital_lines, build_rrao_subtotals, included_rrao_total
 from frtb_rrao.classification import classify_rrao_position, classify_rrao_positions
+from frtb_rrao.crif import (
+    RraoAdapterResult,
+    RraoAdapterWarning,
+    RraoRejectedRow,
+    adapt_crif_records,
+    adapt_fnet_records,
+    adapt_rrao_records,
+)
 from frtb_rrao.data_models import (
     RraoCalculationContext,
     RraoCapitalLine,
@@ -49,6 +57,8 @@ from frtb_rrao.validation import (
 
 __all__ = [
     "PACKAGE_METADATA",
+    "RraoAdapterResult",
+    "RraoAdapterWarning",
     "RraoCalculationContext",
     "RraoCapitalLine",
     "RraoCapitalResult",
@@ -62,11 +72,15 @@ __all__ = [
     "RraoInputError",
     "RraoPosition",
     "RraoRegulatoryProfile",
+    "RraoRejectedRow",
     "RraoRiskWeightRule",
     "RraoRuleProfile",
     "RraoSourceLineage",
     "RraoSubtotal",
     "__version__",
+    "adapt_crif_records",
+    "adapt_fnet_records",
+    "adapt_rrao_records",
     "build_rrao_capital_lines",
     "build_rrao_subtotals",
     "calculate_rrao_capital",
