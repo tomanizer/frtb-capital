@@ -8,7 +8,6 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-import math
 from collections.abc import Iterable
 from datetime import date
 
@@ -20,6 +19,7 @@ from frtb_rrao.data_models import (
     RraoCapitalLine,
     RraoCapitalResult,
 )
+from frtb_rrao.numeric import is_reconciled
 from frtb_rrao.validation import RraoInputError
 
 SUPPORTED_RRAO_ALLOCATION_DIMENSIONS = (
@@ -30,7 +30,6 @@ SUPPORTED_RRAO_ALLOCATION_DIMENSIONS = (
 )
 
 _ALLOCATION_METHOD = "additive_line_add_on"
-_RECONCILIATION_TOLERANCE = 1e-9
 _DIMENSION_ALIASES = {
     "line": RraoAllocationDimension.LINE,
     "desk": RraoAllocationDimension.DESK,
@@ -120,19 +119,9 @@ def validate_rrao_allocation_report(report: RraoAllocationReport) -> None:
         raise RraoInputError("unsupported RRAO allocation method", field="allocation_method")
 
     bucket_total = sum(bucket.add_on for bucket in report.buckets)
-    if not math.isclose(
-        report.allocated_rrao,
-        bucket_total,
-        rel_tol=0.0,
-        abs_tol=_RECONCILIATION_TOLERANCE,
-    ):
+    if not is_reconciled(report.allocated_rrao, bucket_total):
         raise RraoInputError("allocated RRAO does not reconcile to buckets", field="buckets")
-    if not math.isclose(
-        report.total_rrao,
-        report.allocated_rrao,
-        rel_tol=0.0,
-        abs_tol=_RECONCILIATION_TOLERANCE,
-    ):
+    if not is_reconciled(report.total_rrao, report.allocated_rrao):
         raise RraoInputError("allocation does not reconcile to total RRAO", field="total_rrao")
 
     seen_bucket_keys: set[str] = set()

@@ -1,7 +1,7 @@
 {
   "profile_id": "US_NPR_2_0",
   "profile_hash": "bfb2763c438d3cfd36b906c5ab3ebeae0ff92cf1160349369f1e417bf2157e15",
-  "input_hash": "051007628a602a187b1d01ce96a32d36d76107a513ca3734de85ec46a60612ab",
+  "input_hash": "800c3b5af2992d8d1a539d8dea1c262123ae060344531e0b1370d4436d0e278f",
   "total_rrao": 53000.0,
   "warnings": [
     "US_NPR_2_0 is proposed-rule material; do not present outputs as final regulatory capital."
@@ -105,6 +105,13 @@
       "citations": ["us_npr_211_b_2_i", "us_npr_211_b_1"]
     },
     {
+      "position_id": "excluded-back-to-back-002",
+      "exclusion_reason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+      "add_on": 0.0,
+      "reason_code": "US_NPR_EXCLUSION_EXACT_BACK_TO_BACK",
+      "citations": ["us_npr_211_b_2_i", "us_npr_211_b_1"]
+    },
+    {
       "position_id": "excluded-gov-gse-001",
       "exclusion_reason": "GOVERNMENT_OR_GSE_DEBT",
       "add_on": 0.0,
@@ -123,7 +130,7 @@
     {
       "subtotal_type": "classification",
       "subtotal_key": "EXCLUDED",
-      "gross_effective_notional": 45000000.0,
+      "gross_effective_notional": 53000000.0,
       "add_on": 0.0
     },
     {
@@ -165,7 +172,7 @@
     {
       "subtotal_type": "evidence_type",
       "subtotal_key": "EXPLICIT_EXCLUSION",
-      "gross_effective_notional": 45000000.0,
+      "gross_effective_notional": 53000000.0,
       "add_on": 0.0
     },
     {
@@ -183,7 +190,7 @@
     {
       "subtotal_type": "desk_id",
       "subtotal_key": "desk-exclusions",
-      "gross_effective_notional": 45000000.0,
+      "gross_effective_notional": 53000000.0,
       "add_on": 0.0
     },
     {
@@ -225,7 +232,7 @@
     {
       "subtotal_type": "legal_entity",
       "subtotal_key": "LE-004",
-      "gross_effective_notional": 45000000.0,
+      "gross_effective_notional": 53000000.0,
       "add_on": 0.0
     }
   ]

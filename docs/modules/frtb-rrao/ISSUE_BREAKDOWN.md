@@ -1,8 +1,11 @@
 # frtb-rrao workable issue breakdown
 
-These are implementation-ready issue drafts. They are scoped so each can be a
-reviewable PR. Cross-cutting changes to `frtb-common` or orchestration should
-reference an ADR when they change shared contracts.
+These were the implementation-ready issue drafts for the v1 delivery sequence.
+They are retained as historical planning evidence; the active implementation
+status is now tracked in [`MODEL_DOCUMENTATION.md`](MODEL_DOCUMENTATION.md) and
+[`requirements/BASEL_FRTB_RRAO.yml`](requirements/BASEL_FRTB_RRAO.yml).
+Cross-cutting changes to `frtb-common` or orchestration should still reference
+an ADR when they change shared contracts.
 
 ## Issue 1: Add RRAO model documentation and traceability skeleton
 

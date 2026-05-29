@@ -13,6 +13,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from frtb_rrao.data_models import (
+    RraoBackToBackMatch,
     RraoClassification,
     RraoEvidenceType,
     RraoExclusionReason,
@@ -55,6 +56,16 @@ _EVIDENCE_TYPE_FIELDS = ("EvidenceType", "Evidence", "ResidualRiskEvidence")
 _EVIDENCE_LABEL_FIELDS = ("EvidenceLabel", "Description", "ProductType")
 _EXCLUSION_REASON_FIELDS = ("ExclusionReason", "exclusion_reason")
 _EXCLUSION_EVIDENCE_FIELDS = ("ExclusionEvidenceID", "ExclusionEvidenceId")
+_BACK_TO_BACK_MATCH_GROUP_FIELDS = (
+    "BackToBackMatchGroupID",
+    "BackToBackMatchGroupId",
+    "back_to_back_match_group_id",
+)
+_BACK_TO_BACK_MATCHED_POSITION_FIELDS = (
+    "BackToBackMatchedPositionID",
+    "BackToBackMatchedPositionId",
+    "back_to_back_matched_position_id",
+)
 _NOTIONAL_CONVENTION_FIELDS = ("NotionalConvention", "notional_convention")
 
 _EVIDENCE_ALIASES = {
@@ -244,6 +255,7 @@ def _position_from_record(
         "exclusion_evidence_id",
         column_map,
     )
+    back_to_back_match = _back_to_back_match_from_record(record, column_map)
 
     return RraoPosition(
         position_id=position_id,
@@ -263,7 +275,37 @@ def _position_from_record(
         classification_hint=classification,
         exclusion_reason=exclusion_reason,
         exclusion_evidence_id=exclusion_evidence_id,
+        back_to_back_match=back_to_back_match,
         notional_source="adapter",
+    )
+
+
+def _back_to_back_match_from_record(
+    record: Mapping[str, tuple[str, object]],
+    column_map: list[tuple[str, str]],
+) -> RraoBackToBackMatch | None:
+    match_group_id = _optional_text(
+        record,
+        _BACK_TO_BACK_MATCH_GROUP_FIELDS,
+        "back_to_back_match.match_group_id",
+        column_map,
+    )
+    matched_position_id = _optional_text(
+        record,
+        _BACK_TO_BACK_MATCHED_POSITION_FIELDS,
+        "back_to_back_match.matched_position_id",
+        column_map,
+    )
+    if match_group_id is None and matched_position_id is None:
+        return None
+    if match_group_id is None or matched_position_id is None:
+        raise RraoInputError(
+            "back-to-back adapter rows require both match group and matched position id",
+            field="back_to_back_match",
+        )
+    return RraoBackToBackMatch(
+        match_group_id=match_group_id,
+        matched_position_id=matched_position_id,
     )
 
 

@@ -12,6 +12,8 @@ from frtb_rrao import (
     RraoInputError,
     RraoRegulatoryProfile,
     get_rrao_rule_profile,
+)
+from frtb_rrao.regimes import (
     profile_content_hash,
     resolve_rrao_profile,
 )

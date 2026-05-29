@@ -12,6 +12,7 @@ import math
 from typing import Literal
 
 from frtb_rrao.data_models import (
+    RraoBackToBackMatch,
     RraoClassification,
     RraoEvidenceType,
     RraoExclusionReason,
@@ -78,7 +79,9 @@ def validate_rrao_positions(positions: object) -> tuple[RraoPosition, ...]:
         _validate_position(position, seen_position_ids)
         seen_position_ids.add(position.position_id)
         validated.append(position)
-    return tuple(validated)
+    validated_positions = tuple(validated)
+    _validate_back_to_back_match_groups(validated_positions)
+    return validated_positions
 
 
 def _validate_position(position: RraoPosition, seen_position_ids: set[str]) -> None:
@@ -221,6 +224,24 @@ def _validate_evidence_requirements(position: RraoPosition) -> None:
         )
     if position.exclusion_reason is not None:
         _require_text(position.exclusion_evidence_id, "exclusion_evidence_id", position.position_id)
+    if (
+        position.exclusion_reason is RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK
+        and position.back_to_back_match is None
+    ):
+        raise RraoInputError(
+            "exact back-to-back exclusion requires match evidence",
+            field="back_to_back_match",
+            position_id=position.position_id,
+        )
+    if (
+        position.back_to_back_match is not None
+        and position.exclusion_reason is not RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK
+    ):
+        raise RraoInputError(
+            "back-to-back match evidence is only valid for exact back-to-back exclusions",
+            field="back_to_back_match",
+            position_id=position.position_id,
+        )
     if position.evidence_type is RraoEvidenceType.EXPLICIT_EXCLUSION:
         if position.exclusion_reason is None:
             raise RraoInputError(
@@ -229,6 +250,111 @@ def _validate_evidence_requirements(position: RraoPosition) -> None:
                 position_id=position.position_id,
             )
         _require_text(position.exclusion_evidence_id, "exclusion_evidence_id", position.position_id)
+
+
+def _validate_back_to_back_match_groups(positions: tuple[RraoPosition, ...]) -> None:
+    positions_by_id = {position.position_id: position for position in positions}
+    match_groups: dict[str, list[RraoPosition]] = {}
+
+    for position in positions:
+        match = position.back_to_back_match
+        if match is None:
+            continue
+        if not isinstance(match, RraoBackToBackMatch):
+            raise RraoInputError(
+                "invalid back-to-back match evidence",
+                field="back_to_back_match",
+                position_id=position.position_id,
+            )
+        match_group_id = _require_text(
+            match.match_group_id,
+            "back_to_back_match.match_group_id",
+            position.position_id,
+        )
+        matched_position_id = _require_text(
+            match.matched_position_id,
+            "back_to_back_match.matched_position_id",
+            position.position_id,
+        )
+        if matched_position_id == position.position_id:
+            raise RraoInputError(
+                "back-to-back match must reference the opposite transaction",
+                field="back_to_back_match.matched_position_id",
+                position_id=position.position_id,
+            )
+        if matched_position_id not in positions_by_id:
+            raise RraoInputError(
+                "back-to-back matched position is missing from input",
+                field="back_to_back_match.matched_position_id",
+                position_id=position.position_id,
+            )
+        match_groups.setdefault(match_group_id, []).append(position)
+
+    for match_group_id in sorted(match_groups):
+        group_positions = match_groups[match_group_id]
+        if len(group_positions) != 2:
+            joined = ", ".join(position.position_id for position in group_positions)
+            raise RraoInputError(
+                (f"exact back-to-back match group must contain exactly two transactions: {joined}"),
+                field="back_to_back_match.match_group_id",
+            )
+        left, right = group_positions
+        _validate_exact_back_to_back_pair(left, right, match_group_id)
+
+
+def _validate_exact_back_to_back_pair(
+    left: RraoPosition,
+    right: RraoPosition,
+    match_group_id: str,
+) -> None:
+    left_match = left.back_to_back_match
+    right_match = right.back_to_back_match
+    if left_match is None or right_match is None:
+        raise RraoInputError(
+            "exact back-to-back pair requires match evidence on both transactions",
+            field="back_to_back_match",
+        )
+    if left_match.matched_position_id != right.position_id:
+        raise RraoInputError(
+            "back-to-back match group does not cross-reference the paired transaction",
+            field="back_to_back_match.matched_position_id",
+            position_id=left.position_id,
+        )
+    if right_match.matched_position_id != left.position_id:
+        raise RraoInputError(
+            "back-to-back match group does not cross-reference the paired transaction",
+            field="back_to_back_match.matched_position_id",
+            position_id=right.position_id,
+        )
+    if left.exclusion_evidence_id != right.exclusion_evidence_id:
+        raise RraoInputError(
+            "exact back-to-back pair must share the same exclusion evidence id",
+            field="exclusion_evidence_id",
+            position_id=right.position_id,
+        )
+    if left.currency != right.currency:
+        raise RraoInputError(
+            "exact back-to-back pair must have matching currency",
+            field="currency",
+            position_id=right.position_id,
+        )
+    if not math.isclose(
+        left.gross_effective_notional,
+        right.gross_effective_notional,
+        rel_tol=1e-12,
+        abs_tol=1e-9,
+    ):
+        raise RraoInputError(
+            "exact back-to-back pair must have matching gross effective notional",
+            field="gross_effective_notional",
+            position_id=right.position_id,
+        )
+    if left_match.match_group_id != right_match.match_group_id:
+        raise RraoInputError(
+            f"back-to-back match group {match_group_id} is not deterministic",
+            field="back_to_back_match.match_group_id",
+            position_id=right.position_id,
+        )
 
 
 def _validate_investment_fund_fields(position: RraoPosition) -> None:

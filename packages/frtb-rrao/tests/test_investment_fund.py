@@ -121,15 +121,17 @@ def test_investment_fund_exotic_portion_uses_one_percent() -> None:
 
 
 @pytest.mark.parametrize(
-    ("position", "match"),
+    ("position", "match", "expected_field"),
     [
         (
             sample_position(investment_fund_descriptor=None),
             "investment fund descriptor",
+            "investment_fund_descriptor",
         ),
         (
             sample_position(is_investment_fund_exposure=False),
             "investment fund exposure flag",
+            "is_investment_fund_exposure",
         ),
         (
             sample_position(
@@ -139,6 +141,17 @@ def test_investment_fund_exotic_portion_uses_one_percent() -> None:
                 )
             ),
             "mandate_evidence_id",
+            "investment_fund_descriptor.mandate_evidence_id",
+        ),
+        (
+            sample_position(
+                investment_fund_descriptor=sample_descriptor(
+                    RraoInvestmentFundExposureType.OTHER_RESIDUAL_RISK,
+                    section_205_evidence_id="",
+                )
+            ),
+            "section_205_evidence_id",
+            "investment_fund_descriptor.section_205_evidence_id",
         ),
         (
             sample_position(
@@ -148,6 +161,17 @@ def test_investment_fund_exotic_portion_uses_one_percent() -> None:
                 )
             ),
             "__.205\\(e\\)\\(3\\)\\(iii\\)",
+            "investment_fund_descriptor.section_205_method",
+        ),
+        (
+            sample_position(
+                investment_fund_descriptor=sample_descriptor(
+                    RraoInvestmentFundExposureType.OTHER_RESIDUAL_RISK,
+                    included_exposure_type="OTHER_RESIDUAL_RISK",
+                )
+            ),
+            "invalid investment fund exposure type",
+            "investment_fund_descriptor.included_exposure_type",
         ),
         (
             sample_position(
@@ -157,6 +181,17 @@ def test_investment_fund_exotic_portion_uses_one_percent() -> None:
                 )
             ),
             "non-look-through",
+            "investment_fund_descriptor.look_through_available",
+        ),
+        (
+            sample_position(
+                investment_fund_descriptor=sample_descriptor(
+                    RraoInvestmentFundExposureType.OTHER_RESIDUAL_RISK,
+                    look_through_available="no",
+                )
+            ),
+            "look-through availability",
+            "investment_fund_descriptor.look_through_available",
         ),
         (
             sample_position(
@@ -166,19 +201,54 @@ def test_investment_fund_exotic_portion_uses_one_percent() -> None:
                 )
             ),
             "mandate evidence",
+            "investment_fund_descriptor.mandate_allows_rrao_exposures",
+        ),
+        (
+            sample_position(
+                investment_fund_descriptor=sample_descriptor(
+                    RraoInvestmentFundExposureType.OTHER_RESIDUAL_RISK,
+                    mandate_allows_rrao_exposures="yes",
+                )
+            ),
+            "mandate RRAO exposure flag",
+            "investment_fund_descriptor.mandate_allows_rrao_exposures",
+        ),
+        (
+            sample_position(
+                investment_fund_descriptor=sample_descriptor(
+                    RraoInvestmentFundExposureType.OTHER_RESIDUAL_RISK,
+                    fund_gross_effective_notional=0.0,
+                )
+            ),
+            "fund gross effective notional",
+            "investment_fund_descriptor.fund_gross_effective_notional",
+        ),
+        (
+            sample_position(
+                investment_fund_descriptor=sample_descriptor(
+                    RraoInvestmentFundExposureType.OTHER_RESIDUAL_RISK,
+                    included_exposure_ratio=0.0,
+                )
+            ),
+            "included exposure ratio",
+            "investment_fund_descriptor.included_exposure_ratio",
         ),
         (
             sample_position(gross_effective_notional=1_000_000.0),
             "investment-fund included portion",
+            "gross_effective_notional",
         ),
     ],
 )
 def test_investment_fund_inputs_fail_closed_when_linkage_is_partial(
     position: RraoPosition,
     match: str,
+    expected_field: str,
 ) -> None:
-    with pytest.raises(RraoInputError, match=match):
+    with pytest.raises(RraoInputError, match=match) as exc_info:
         calculate_rrao_capital((position,), context=sample_context())
+    assert exc_info.value.field == expected_field
+    assert exc_info.value.position_id == "fund-pos-001"
 
 
 def test_investment_fund_classification_hint_must_match_cited_portion() -> None:

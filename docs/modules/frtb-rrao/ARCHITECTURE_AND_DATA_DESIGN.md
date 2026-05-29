@@ -191,6 +191,7 @@ tables keyed by `profile_id`.
 @dataclass(frozen=True)
 class RraoPosition:
     position_id: str
+    source_row_id: str
     desk_id: str
     legal_entity: str
     gross_effective_notional: float
@@ -200,6 +201,7 @@ class RraoPosition:
     classification_hint: RraoClassification | None = None
     exclusion_reason: RraoExclusionReason | None = None
     exclusion_evidence_id: str | None = None
+    back_to_back_match: RraoBackToBackMatch | None = None
     supervisor_directive_id: str | None = None
     underlying_count: int | None = None
     is_path_dependent: bool | None = None
@@ -214,11 +216,12 @@ class RraoPosition:
 ```
 
 Required fields depend on evidence and exclusion paths. For example, exact
-back-to-back exclusion requires `exclusion_evidence_id`; supervisor-directed
-inclusion requires `supervisor_directive_id`; U.S. NPR 2.0 investment-fund
-inclusion requires a `RraoInvestmentFundDescriptor` proving the proposed
-section `__.205(e)(3)(iii)` backstop-method linkage and the included exposure
-portion used for proposed section `__.211(a)(3)`.
+back-to-back exclusion requires both `exclusion_evidence_id` and a deterministic
+`RraoBackToBackMatch` pair; supervisor-directed inclusion requires
+`supervisor_directive_id`; U.S. NPR 2.0 investment-fund inclusion requires a
+`RraoInvestmentFundDescriptor` proving the proposed section
+`__.205(e)(3)(iii)` backstop-method linkage and the included exposure portion
+used for proposed section `__.211(a)(3)`.
 
 ### Classification decision
 
@@ -232,6 +235,8 @@ class RraoClassificationDecision:
     risk_weight_key: str
     citations: tuple[str, ...]
     exclusion_reason: RraoExclusionReason | None = None
+    exclusion_evidence_id: str | None = None
+    supervisor_directive_id: str | None = None
 ```
 
 ### Line contribution
@@ -249,6 +254,11 @@ class RraoCapitalLine:
     is_excluded: bool
     reason_code: str
     citations: tuple[str, ...]
+    desk_id: str = ""
+    legal_entity: str = ""
+    source_row_id: str = ""
+    exclusion_reason: RraoExclusionReason | None = None
+    exclusion_evidence_id: str | None = None
 ```
 
 ### Subtotal and result
@@ -278,8 +288,8 @@ class RraoCapitalResult:
     warnings: tuple[str, ...] = ()
 ```
 
-The public result should expose `as_dict()` for audit/reporting, following the
-IMA and DRC package style.
+The public audit serializer should produce deterministic JSON-compatible
+payloads for hashing, replay, and downstream reporting.
 
 ## Data invariants
 
@@ -308,7 +318,7 @@ calculation. Examples:
 - PRA profile not yet mapped;
 - uncited supervisory inclusion;
 - unrecognised residual-risk evidence type;
-- exact back-to-back exclusion requested without match evidence.
+- exact back-to-back exclusion requested without deterministic pair evidence.
 
 The package should raise an error for unsupported requested calculation paths.
 It may return rejected-input audit records only when no capital result is being
@@ -320,7 +330,7 @@ The test suite should mirror calculation layers:
 
 - `test_data_models.py`: frozen behavior, enum normalisation, serialization.
 - `test_validation.py`: missing fields, duplicate ids, notional finiteness,
-  negative notional, evidence requirements.
+  negative notional, evidence requirements, and structured error metadata.
 - `test_reference_data.py`: cited classification labels, exclusions, risk
   weights, and profile support switches.
 - `test_classification.py`: exotic, other residual risk, supervisor-directed,
@@ -333,15 +343,19 @@ The test suite should mirror calculation layers:
 - `test_public_api.py`: end-to-end calculation and explicit unsupported
   profile behavior.
 - `test_audit.py`: profile hash, input hash, deterministic ordering,
-  serialization.
+  serialization, and reconciliation tolerance.
 - `test_crif.py`: optional adapter mapping without dataframe runtime
   dependency.
 - `test_eu_profile.py`: EU Article 325u and Delegated Regulation (EU)
   2022/2328 comparison-profile fixtures.
+- `test_external_comparator.py`: independent U.S. NPR and EU hand-calculation
+  fixtures.
+- `test_properties.py`: Hypothesis invariants for additivity, excluded-line
+  idempotency, ordering, hashing, and partition disjointness.
 
 ## Example and validation artifacts
 
-The first vertical slice should include a synthetic fixture pack:
+The implemented vertical slice includes a synthetic fixture pack:
 
 ```text
 tests/fixtures/rrao_v1/

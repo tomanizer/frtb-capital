@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 from frtb_rrao import (
+    RraoBackToBackMatch,
+    RraoCalculationContext,
     RraoClassification,
     RraoEvidenceType,
     RraoExclusionReason,
@@ -9,6 +13,7 @@ from frtb_rrao import (
     RraoPosition,
     RraoRegulatoryProfile,
     RraoSourceLineage,
+    calculate_rrao_capital,
     classify_rrao_position,
 )
 
@@ -41,6 +46,17 @@ def sample_excluded_position(**overrides: object) -> RraoPosition:
     return RraoPosition(**fields)  # type: ignore[arg-type]
 
 
+def sample_context(
+    profile: RraoRegulatoryProfile = RraoRegulatoryProfile.US_NPR_2_0,
+) -> RraoCalculationContext:
+    return RraoCalculationContext(
+        run_id="rrao-exclusion-test",
+        calculation_date=date(2026, 3, 31),
+        base_currency="USD" if profile is not RraoRegulatoryProfile.EU_CRR3 else "EUR",
+        profile=profile,
+    )
+
+
 def test_us_exclusion_produces_zero_capital_decision_with_evidence_id() -> None:
     decision = classify_rrao_position(
         sample_excluded_position(),
@@ -55,20 +71,252 @@ def test_us_exclusion_produces_zero_capital_decision_with_evidence_id() -> None:
     assert decision.citations == ("us_npr_211_b_1",)
 
 
-def test_exact_back_to_back_exclusion_preserves_cited_reason() -> None:
-    decision = classify_rrao_position(
+@pytest.mark.parametrize(
+    ("profile", "expected_reason_code", "expected_citation"),
+    [
+        (
+            RraoRegulatoryProfile.BASEL_MAR23,
+            "BASEL_EXCLUSION_EXACT_THIRD_PARTY_BACK_TO_BACK",
+            "basel_mar23_4_7",
+        ),
+        (
+            RraoRegulatoryProfile.US_NPR_2_0,
+            "US_NPR_EXCLUSION_EXACT_BACK_TO_BACK",
+            "us_npr_211_b_2_i",
+        ),
+    ],
+)
+def test_valid_exact_back_to_back_pair_excludes_both_transactions(
+    profile: RraoRegulatoryProfile,
+    expected_reason_code: str,
+    expected_citation: str,
+) -> None:
+    positions = (
         sample_excluded_position(
-            evidence_label="exact third-party back-to-back",
+            position_id="b2b-left",
+            source_row_id="row-left",
+            gross_effective_notional=2_500_000.0,
+            evidence_label="exact third-party back-to-back left",
             exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
             exclusion_evidence_id="match-group-001",
+            back_to_back_match=RraoBackToBackMatch(
+                match_group_id="match-group-001",
+                matched_position_id="b2b-right",
+            ),
         ),
-        profile=RraoRegulatoryProfile.US_NPR_2_0,
+        sample_excluded_position(
+            position_id="b2b-right",
+            source_row_id="row-right",
+            gross_effective_notional=2_500_000.0,
+            evidence_label="exact third-party back-to-back right",
+            exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+            exclusion_evidence_id="match-group-001",
+            back_to_back_match=RraoBackToBackMatch(
+                match_group_id="match-group-001",
+                matched_position_id="b2b-left",
+            ),
+        ),
     )
 
-    assert decision.classification is RraoClassification.EXCLUDED
-    assert decision.reason_code == "US_NPR_EXCLUSION_EXACT_BACK_TO_BACK"
-    assert decision.exclusion_evidence_id == "match-group-001"
-    assert decision.citations == ("us_npr_211_b_2_i",)
+    result = calculate_rrao_capital(positions, context=sample_context(profile))
+
+    assert result.lines == ()
+    assert [line.position_id for line in result.excluded_lines] == ["b2b-left", "b2b-right"]
+    assert {line.reason_code for line in result.excluded_lines} == {expected_reason_code}
+    assert all(line.exclusion_evidence_id == "match-group-001" for line in result.excluded_lines)
+    assert all(expected_citation in line.citations for line in result.excluded_lines)
+    assert result.total_rrao == 0.0
+
+
+def test_exact_back_to_back_pair_rejects_missing_partner() -> None:
+    with pytest.raises(RraoInputError, match="matched position is missing") as exc_info:
+        calculate_rrao_capital(
+            (
+                sample_excluded_position(
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                    back_to_back_match=RraoBackToBackMatch(
+                        match_group_id="match-group-001",
+                        matched_position_id="missing-position",
+                    ),
+                ),
+            ),
+            context=sample_context(),
+        )
+    assert exc_info.value.field == "back_to_back_match.matched_position_id"
+    assert exc_info.value.position_id == "pos-excluded-001"
+
+
+def test_exact_back_to_back_validation_checks_later_match_groups() -> None:
+    with pytest.raises(RraoInputError, match="matched position is missing") as exc_info:
+        calculate_rrao_capital(
+            (
+                sample_excluded_position(
+                    position_id="ordinary-listed",
+                    source_row_id="row-listed",
+                ),
+                sample_excluded_position(
+                    position_id="b2b-left",
+                    source_row_id="row-left",
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                    back_to_back_match=RraoBackToBackMatch(
+                        match_group_id="match-group-001",
+                        matched_position_id="missing-position",
+                    ),
+                ),
+            ),
+            context=sample_context(),
+        )
+    assert exc_info.value.field == "back_to_back_match.matched_position_id"
+    assert exc_info.value.position_id == "b2b-left"
+
+
+def test_exact_back_to_back_pair_rejects_missing_match_evidence() -> None:
+    with pytest.raises(RraoInputError, match="match evidence") as exc_info:
+        calculate_rrao_capital(
+            (
+                sample_excluded_position(
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                ),
+            ),
+            context=sample_context(),
+        )
+    assert exc_info.value.field == "back_to_back_match"
+    assert exc_info.value.position_id == "pos-excluded-001"
+
+
+def test_exact_back_to_back_pair_rejects_mismatched_notional() -> None:
+    with pytest.raises(RraoInputError, match="matching gross effective notional") as exc_info:
+        calculate_rrao_capital(
+            (
+                sample_excluded_position(
+                    position_id="b2b-left",
+                    source_row_id="row-left",
+                    gross_effective_notional=2_500_000.0,
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                    back_to_back_match=RraoBackToBackMatch(
+                        match_group_id="match-group-001",
+                        matched_position_id="b2b-right",
+                    ),
+                ),
+                sample_excluded_position(
+                    position_id="b2b-right",
+                    source_row_id="row-right",
+                    gross_effective_notional=2_400_000.0,
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                    back_to_back_match=RraoBackToBackMatch(
+                        match_group_id="match-group-001",
+                        matched_position_id="b2b-left",
+                    ),
+                ),
+            ),
+            context=sample_context(),
+        )
+    assert exc_info.value.field == "gross_effective_notional"
+    assert exc_info.value.position_id == "b2b-right"
+
+
+def test_exact_back_to_back_pair_rejects_mismatched_currency() -> None:
+    with pytest.raises(RraoInputError, match="matching currency") as exc_info:
+        calculate_rrao_capital(
+            (
+                sample_excluded_position(
+                    position_id="b2b-left",
+                    source_row_id="row-left",
+                    currency="USD",
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                    back_to_back_match=RraoBackToBackMatch(
+                        match_group_id="match-group-001",
+                        matched_position_id="b2b-right",
+                    ),
+                ),
+                sample_excluded_position(
+                    position_id="b2b-right",
+                    source_row_id="row-right",
+                    currency="EUR",
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                    back_to_back_match=RraoBackToBackMatch(
+                        match_group_id="match-group-001",
+                        matched_position_id="b2b-left",
+                    ),
+                ),
+            ),
+            context=sample_context(),
+        )
+    assert exc_info.value.field == "currency"
+    assert exc_info.value.position_id == "b2b-right"
+
+
+def test_exact_back_to_back_pair_rejects_one_sided_exclusion() -> None:
+    with pytest.raises(RraoInputError, match="must contain exactly two") as exc_info:
+        calculate_rrao_capital(
+            (
+                sample_excluded_position(
+                    position_id="b2b-left",
+                    source_row_id="row-left",
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                    back_to_back_match=RraoBackToBackMatch(
+                        match_group_id="match-group-001",
+                        matched_position_id="b2b-right",
+                    ),
+                ),
+                sample_excluded_position(
+                    position_id="b2b-right",
+                    source_row_id="row-right",
+                    exclusion_reason=RraoExclusionReason.LISTED,
+                    exclusion_evidence_id="exchange-listing-001",
+                ),
+            ),
+            context=sample_context(),
+        )
+    assert exc_info.value.field == "back_to_back_match.match_group_id"
+
+
+def test_exact_back_to_back_pair_rejects_duplicate_reused_match_group() -> None:
+    with pytest.raises(RraoInputError, match="exactly two") as exc_info:
+        calculate_rrao_capital(
+            (
+                sample_excluded_position(
+                    position_id="b2b-left",
+                    source_row_id="row-left",
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                    back_to_back_match=RraoBackToBackMatch(
+                        match_group_id="match-group-001",
+                        matched_position_id="b2b-right",
+                    ),
+                ),
+                sample_excluded_position(
+                    position_id="b2b-right",
+                    source_row_id="row-right",
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                    back_to_back_match=RraoBackToBackMatch(
+                        match_group_id="match-group-001",
+                        matched_position_id="b2b-left",
+                    ),
+                ),
+                sample_excluded_position(
+                    position_id="b2b-extra",
+                    source_row_id="row-extra",
+                    exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                    exclusion_evidence_id="match-group-001",
+                    back_to_back_match=RraoBackToBackMatch(
+                        match_group_id="match-group-001",
+                        matched_position_id="b2b-left",
+                    ),
+                ),
+            ),
+            context=sample_context(),
+        )
+    assert exc_info.value.field == "back_to_back_match.match_group_id"
 
 
 def test_basel_exclusion_subset_is_supported() -> None:

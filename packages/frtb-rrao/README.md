@@ -16,6 +16,8 @@ exclusions recorded in audit output.
 The U.S. NPR 2.0 profile also supports proposed section `__.211(a)(3)`
 investment-fund inclusion when the input supplies an explicit
 `__.205(e)(3)(iii)` backstop-method descriptor and cited mandate evidence.
+Exact third-party back-to-back exclusions require deterministic two-transaction
+match evidence and remain visible as zero-capital audit lines.
 
 The EU CRR3 comparison profile maps Delegated Regulation (EU) 2022/2328
 Article 1 exotic underlyings, Article 2 Annex instruments, and Article 3
@@ -25,6 +27,8 @@ until package-local source mapping and fixtures are added.
 Planning documents:
 
 - [Model documentation](../../docs/modules/frtb-rrao/MODEL_DOCUMENTATION.md)
+- [IMA-style evidence pack](../../docs/modules/frtb-rrao/model_documentation/README.md)
+- [Stable public API](../../docs/modules/frtb-rrao/PUBLIC_API.md)
 - [Detailed requirements](../../docs/modules/frtb-rrao/DETAILED_REQUIREMENTS.md)
 - [Architecture and data design](../../docs/modules/frtb-rrao/ARCHITECTURE_AND_DATA_DESIGN.md)
 - [Decisions and implementation plan](../../docs/modules/frtb-rrao/DECISIONS_AND_PLAN.md)
@@ -37,3 +41,4 @@ Package-local regulatory documentation:
 - [Regulatory sources](docs/regulatory_sources.yml)
 - [Performance and replay controls](docs/PERFORMANCE.md)
 - [Allocation reports](docs/ALLOCATION.md)
+- [Mutation evidence](../../docs/quality/frtb-rrao/mutation_baseline.md)

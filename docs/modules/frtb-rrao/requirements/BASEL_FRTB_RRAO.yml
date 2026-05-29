@@ -17,10 +17,10 @@ requirements:
   - id: RRAO-DOC-001
     title: Package-local regulatory traceability pack
     source: Basel MAR20.4; Basel MAR23.1-MAR23.8; proposed U.S. section __.211; Regulation (EU) No 575/2013 Article 325u
-    status: partial
-    modules: [docs/REGULATORY_TRACEABILITY.md, docs/REGULATORY_ASSUMPTIONS.md, docs/regulatory_sources.yml]
+    status: implemented
+    modules: [docs/REGULATORY_TRACEABILITY.md, docs/REGULATORY_ASSUMPTIONS.md, docs/regulatory_sources.yml, ../../docs/modules/frtb-rrao/model_documentation]
     tests: [tests/test_regulatory_sources.py]
-    notes: Scaffold and implemented modules are source-mapped, with PRA capital paths still unsupported until fixture-tested.
+    notes: Implemented modules are source-mapped, the model-documentation evidence pack is present, and PRA capital paths remain explicitly unsupported until fixture-tested.
   - id: RRAO-DATA-001
     title: Frozen RRAO input and result models
     source: Basel MAR23.1-MAR23.3; U.S. NPR 2.0 section V.A.7.b
@@ -80,10 +80,10 @@ requirements:
   - id: RRAO-EXCL-001
     title: Exclusion and back-to-back treatment
     source: Basel MAR23.4-MAR23.7; 91 FR 15049-15050
-    status: partial
-    modules: [src/frtb_rrao/classification.py]
+    status: implemented
+    modules: [src/frtb_rrao/data_models.py, src/frtb_rrao/validation.py, src/frtb_rrao/classification.py, src/frtb_rrao/capital.py]
     tests: [tests/test_exclusions.py]
-    notes: Cited exclusion decisions are implemented; exact match-group validation remains future work.
+    notes: Cited exclusion decisions are implemented as zero-capital lines; exact third-party back-to-back exclusions require deterministic two-transaction match-group evidence.
   - id: RRAO-EU-001
     title: EU Article 325u residual-risk classification profile
     source: Regulation (EU) No 575/2013 Article 325u; Delegated Regulation (EU) 2022/2328 Articles 1-3 and Annex
@@ -95,9 +95,9 @@ requirements:
     title: Additive audit contribution report
     source: Basel MAR23 calculation structure
     status: implemented
-    modules: [src/frtb_rrao/audit.py, src/frtb_rrao/allocation.py, src/frtb_rrao/scaffold.py]
-    tests: [tests/test_audit.py, tests/test_allocation.py, tests/test_public_api.py, tests/test_replay.py]
-    notes: Public result hashing, serialization, reconciliation, and additive line/desk/legal-entity/evidence-type allocation helpers are implemented.
+    modules: [src/frtb_rrao/audit.py, src/frtb_rrao/allocation.py, src/frtb_rrao/numeric.py, src/frtb_rrao/scaffold.py]
+    tests: [tests/test_audit.py, tests/test_allocation.py, tests/test_public_api.py, tests/test_reconciliation_tolerance.py, tests/test_replay.py]
+    notes: Public result hashing, serialization, shared-tolerance reconciliation, and additive line/desk/legal-entity/evidence-type allocation helpers are implemented.
   - id: RRAO-API-001
     title: Public canonical-input RRAO run API
     source: Basel MAR23.8; proposed U.S. section __.211(c)
@@ -110,8 +110,8 @@ requirements:
     source: Basel MAR23.2-MAR23.8; proposed U.S. section __.211
     status: implemented
     modules: [tests/fixtures/rrao_v1]
-    tests: [tests/test_fixture_workflow.py]
-    notes: Covers exotic examples, other residual-risk examples, supervisor-directed inclusion, cited exclusions, invalid evidence, pinned hashes, and deterministic replay.
+    tests: [tests/test_fixture_workflow.py, tests/test_external_comparator.py]
+    notes: Covers exotic examples, other residual-risk examples, supervisor-directed inclusion, cited exclusions, exact back-to-back exclusion pairs, invalid evidence, independent comparator totals, pinned hashes, and deterministic replay.
   - id: RRAO-ADAPTER-001
     title: Optional CRIF/FNet adapter boundary
     source: Public implementation references for adapter shape; Basel MAR23 and proposed U.S. section __.211 for canonical output evidence
@@ -125,4 +125,18 @@ requirements:
     status: implemented
     modules: [scripts/benchmark_rrao_target_scale.py, docs/PERFORMANCE.md]
     tests: [tests/test_performance_controls.py, tests/test_replay.py]
-    notes: Adds a 100,000-position target-scale benchmark, replay payload hashes, ordering hashes, and tests that detect numeric or ordering drift.
+    notes: Adds a 100,000-position target-scale benchmark, replay payload hashes, ordering hashes, optimized validation/hash/serialization paths, and tests that detect numeric or ordering drift.
+  - id: RRAO-QUALITY-001
+    title: Property and mutation quality evidence
+    source: Engineering control for test-suite robustness; not a regulatory source
+    status: implemented
+    modules: [../../docs/quality/frtb-rrao, tests/test_properties.py]
+    tests: [tests/test_properties.py]
+    notes: Adds Hypothesis invariants and mutmut evidence comparable to the IMA package quality pattern.
+  - id: RRAO-API-002
+    title: Stable top-level public API surface
+    source: Engineering compatibility control; not a regulatory source
+    status: implemented
+    modules: [src/frtb_rrao/__init__.py, ../../docs/modules/frtb-rrao/PUBLIC_API.md]
+    tests: [tests/test_public_api_surface.py]
+    notes: Keeps low-level reference-data and implementation helpers importable from their submodules but outside the v1 top-level compatibility contract.

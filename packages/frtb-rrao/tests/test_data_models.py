@@ -5,6 +5,7 @@ from datetime import date
 
 import pytest
 from frtb_rrao import (
+    RraoBackToBackMatch,
     RraoCalculationContext,
     RraoCapitalLine,
     RraoCapitalResult,
@@ -91,6 +92,18 @@ def test_investment_fund_descriptor_is_frozen_and_carries_linkage() -> None:
     assert descriptor.section_205_method is RraoInvestmentFundMethod.BACKSTOP_FUND_METHOD
     with pytest.raises(FrozenInstanceError):
         descriptor.fund_id = "fund-002"  # type: ignore[misc]
+
+
+def test_back_to_back_match_is_frozen_and_explicit() -> None:
+    match = RraoBackToBackMatch(
+        match_group_id="match-group-001",
+        matched_position_id="position-b",
+    )
+
+    assert match.match_group_id == "match-group-001"
+    assert match.matched_position_id == "position-b"
+    with pytest.raises(FrozenInstanceError):
+        match.matched_position_id = "position-c"  # type: ignore[misc]
 
 
 def test_public_result_model_covers_decisions_lines_subtotals_and_context() -> None:

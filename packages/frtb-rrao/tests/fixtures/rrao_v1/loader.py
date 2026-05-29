@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from frtb_rrao import (
+    RraoBackToBackMatch,
     RraoCalculationContext,
     RraoClassification,
     RraoEvidenceType,
@@ -73,6 +74,7 @@ def _position_from_payload(payload: dict[str, Any]) -> RraoPosition:
         classification_hint=_optional_classification(payload.get("classification_hint")),
         exclusion_reason=_optional_exclusion_reason(payload.get("exclusion_reason")),
         exclusion_evidence_id=_optional_text(payload.get("exclusion_evidence_id")),
+        back_to_back_match=_optional_back_to_back_match(payload.get("back_to_back_match")),
         supervisor_directive_id=_optional_text(payload.get("supervisor_directive_id")),
         underlying_count=_optional_int(payload.get("underlying_count")),
         is_path_dependent=_optional_bool(payload.get("is_path_dependent")),
@@ -89,6 +91,17 @@ def _optional_exclusion_reason(value: object) -> RraoExclusionReason | None:
     if value is None:
         return None
     return RraoExclusionReason(str(value))
+
+
+def _optional_back_to_back_match(value: object) -> RraoBackToBackMatch | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise TypeError(f"expected back-to-back match object, got {value!r}")
+    return RraoBackToBackMatch(
+        match_group_id=str(value["match_group_id"]),
+        matched_position_id=str(value["matched_position_id"]),
+    )
 
 
 def _optional_text(value: object) -> str | None:
