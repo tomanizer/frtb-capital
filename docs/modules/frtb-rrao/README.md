@@ -1,18 +1,18 @@
 # frtb-rrao
 
-`frtb-rrao` is the scaffolded Standardised Approach residual risk add-on
-package.
+`frtb-rrao` is the Standardised Approach residual risk add-on package.
 
 ## Package Status
 
 - Package directory: `packages/frtb-rrao`
 - Import name: `frtb_rrao`
-- Implementation status: scaffolded; calculation not implemented
-- Validation status: not started
+- Implementation status: partial; supported canonical-input calculation path
+  implemented
+- Validation status: pending
 
-The package is importable and exposes a public calculation boundary, but
-`calculate_rrao_capital` raises an explicit unimplemented-component error until
-residual-risk classification and additive capital mechanics are implemented.
+The package is importable and exposes `calculate_rrao_capital` for supported
+Basel MAR23 and U.S. NPR 2.0 canonical inputs. Unsupported profiles and
+unsupported evidence paths fail closed.
 
 ## Planning Documents
 
@@ -33,8 +33,8 @@ Package-local traceability documents live under `packages/frtb-rrao/docs`:
 
 ## v1 Target
 
-The planned v1 target is a U.S. NPR 2.0 proposed section `__.211` plus Basel
-MAR23 canonical-input RRAO slice. It will calculate cited 1.0% exotic and 0.1%
-other residual-risk line add-ons, preserve explicit exclusions as zero-capital
-audit lines, and fail closed for EU/PRA profile gaps until separately mapped and
-tested.
+The v1 target is a U.S. NPR 2.0 proposed section `__.211` plus Basel MAR23
+canonical-input RRAO slice. The package now calculates cited 1.0% exotic and
+0.1% other residual-risk line add-ons, preserves explicit exclusions as
+zero-capital audit lines, and fails closed for EU/PRA profile gaps until
+separately mapped and tested.

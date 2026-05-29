@@ -18,3 +18,6 @@ All notable changes to `frtb-rrao` will be documented here.
   Basel MAR23 and U.S. NPR 2.0 canonical inputs.
 - Added additive RRAO line add-ons, excluded zero-capital lines, and
   deterministic explain subtotals.
+- Added the public canonical-input RRAO calculation API, deterministic input
+  and result audit serialization, profile/input hashes, and reconciliation
+  checks.

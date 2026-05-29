@@ -1,6 +1,11 @@
-"""Standardised Approach residual risk add-on scaffold."""
+"""Standardised Approach residual risk add-on package."""
 
 from frtb_rrao._version import __version__
+from frtb_rrao.audit import (
+    input_hash_for_positions,
+    serialize_rrao_result,
+    validate_rrao_result_reconciliation,
+)
 from frtb_rrao.capital import build_rrao_capital_lines, build_rrao_subtotals, included_rrao_total
 from frtb_rrao.classification import classify_rrao_position, classify_rrao_positions
 from frtb_rrao.data_models import (
@@ -74,10 +79,13 @@ __all__ = [
     "exclusion_rules_for_profile",
     "get_rrao_rule_profile",
     "included_rrao_total",
+    "input_hash_for_positions",
     "normalise_gross_effective_notional",
     "profile_content_hash",
     "resolve_rrao_profile",
     "risk_weight_rule_for",
     "risk_weight_rules_for_profile",
+    "serialize_rrao_result",
     "validate_rrao_positions",
+    "validate_rrao_result_reconciliation",
 ]

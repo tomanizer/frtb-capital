@@ -179,7 +179,7 @@ class RraoSubtotal:
 
 @dataclass(frozen=True)
 class RraoCapitalResult:
-    """Future public RRAO capital result shape."""
+    """Public RRAO capital result shape."""
 
     run_id: str
     calculation_date: date
@@ -193,6 +193,13 @@ class RraoCapitalResult:
     total_rrao: float
     citations: tuple[str, ...]
     warnings: tuple[str, ...] = ()
+
+    def as_dict(self) -> dict[str, object]:
+        """Return the deterministic audit payload for this result."""
+
+        from frtb_rrao.audit import serialize_rrao_result
+
+        return serialize_rrao_result(self)
 
 
 __all__ = [
