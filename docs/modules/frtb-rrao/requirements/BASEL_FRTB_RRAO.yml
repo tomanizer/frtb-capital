@@ -59,14 +59,14 @@ requirements:
   - id: RRAO-CAP-001
     title: 1 percent exotic add-on
     source: Basel MAR23.2; 91 FR 15049 footnote 385
-    status: planned
+    status: implemented
     modules: [src/frtb_rrao/capital.py]
     tests: [tests/test_capital.py]
     notes: Capital equals 0.01 times gross effective notional.
   - id: RRAO-CAP-002
     title: 0.1 percent other residual risk add-on
     source: Basel MAR23.3; 91 FR 15049 footnote 386
-    status: planned
+    status: implemented
     modules: [src/frtb_rrao/capital.py]
     tests: [tests/test_capital.py]
     notes: Capital equals 0.001 times gross effective notional.

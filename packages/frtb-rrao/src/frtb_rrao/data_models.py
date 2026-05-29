@@ -159,6 +159,11 @@ class RraoCapitalLine:
     is_excluded: bool
     reason_code: str
     citations: tuple[str, ...]
+    desk_id: str = ""
+    legal_entity: str = ""
+    source_row_id: str = ""
+    exclusion_reason: RraoExclusionReason | None = None
+    exclusion_evidence_id: str | None = None
 
 
 @dataclass(frozen=True)
