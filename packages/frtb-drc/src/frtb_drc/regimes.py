@@ -109,6 +109,20 @@ US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
         note="Maturity weighting and floor.",
     ),
+    "US_NPR_210_A_2_IV_A": DrcCitation(
+        citation_id="US_NPR_210_A_2_IV_A",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(a)(2)(iv)(A)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note="Hedge benefit ratio for long and short net default exposures within a bucket.",
+    ),
+    "US_NPR_210_A_2_IV_C": DrcCitation(
+        citation_id="US_NPR_210_A_2_IV_C",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(a)(2)(iv)(C)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note="Bucket-level default-risk capital aggregation.",
+    ),
     "US_NPR_210_B_2": DrcCitation(
         citation_id="US_NPR_210_B_2",
         source_id="US_NPR_2_0_91_FR_14952",
@@ -129,6 +143,13 @@ US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
         paragraph="proposed section __.210(b)(3)(ii)",
         url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
         note="Non-securitisation risk weights by bucket and credit quality.",
+    ),
+    "US_NPR_210_B_3_III": DrcCitation(
+        citation_id="US_NPR_210_B_3_III",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(b)(3)(iii)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note="Non-securitisation default-risk capital equals the sum of bucket-level requirements.",
     ),
 }
 
