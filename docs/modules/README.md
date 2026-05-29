@@ -1,9 +1,9 @@
 # FRTB Module Documents
 
 This directory is the suite-level home for capital component documentation. It
-contains the implemented IMA model documentation front door, scaffold front
-doors for the other workspace packages, and planning documents for calculations
-that are not yet implemented.
+contains implemented IMA and RRAO module documentation, DRC partial-runtime
+planning and requirements, scaffold front doors for SBM and CVA, and suite
+support documentation for common and orchestration.
 
 For market risk Standardised Approach, SA is the composed total `SBM + DRC +
 RRAO` under Basel MAR20.4. The implementation taxonomy therefore uses three
@@ -12,13 +12,13 @@ component packages: `frtb-sbm`, `frtb-drc`, and `frtb-rrao`. See the
 
 | Module | Package status | Module docs | Regulatory requirements | PRD | Workable requirements |
 | --- | --- | --- | --- | --- | --- |
-| Common | Scaffolded shared primitives | [frtb-common/README.md](frtb-common/README.md) | N/A | N/A | N/A |
+| Common | Shared primitives | [frtb-common/README.md](frtb-common/README.md) | N/A | N/A | N/A |
 | IMA | Implemented | [frtb-ima/README.md](frtb-ima/README.md) | [frtb-ima/REGULATORY_REQUIREMENTS.md](frtb-ima/REGULATORY_REQUIREMENTS.md) | [frtb-ima/PRD.md](frtb-ima/PRD.md) | [frtb-ima/requirements/README.md](frtb-ima/requirements/README.md) |
 | SBM | Scaffolded; calculation not implemented | [frtb-sbm/README.md](frtb-sbm/README.md) | [frtb-sbm/REGULATORY_REQUIREMENTS.md](frtb-sbm/REGULATORY_REQUIREMENTS.md) | [frtb-sbm/PRD.md](frtb-sbm/PRD.md) | [frtb-sbm/requirements/BASEL_FRTB_SBM.yml](frtb-sbm/requirements/BASEL_FRTB_SBM.yml) |
-| DRC | Scaffolded; calculation not implemented | [frtb-drc/README.md](frtb-drc/README.md) | [frtb-drc/REGULATORY_REQUIREMENTS.md](frtb-drc/REGULATORY_REQUIREMENTS.md) | [frtb-drc/PRD.md](frtb-drc/PRD.md) | [frtb-drc/requirements/BASEL_FRTB_DRC.yml](frtb-drc/requirements/BASEL_FRTB_DRC.yml) |
-| RRAO | Scaffolded; calculation not implemented | [frtb-rrao/README.md](frtb-rrao/README.md) | [frtb-rrao/REGULATORY_REQUIREMENTS.md](frtb-rrao/REGULATORY_REQUIREMENTS.md) | [frtb-rrao/PRD.md](frtb-rrao/PRD.md) | [frtb-rrao/requirements/BASEL_FRTB_RRAO.yml](frtb-rrao/requirements/BASEL_FRTB_RRAO.yml) |
+| DRC | Partial runtime; non-securitisation path implemented | [frtb-drc/README.md](frtb-drc/README.md) | [frtb-drc/REGULATORY_REQUIREMENTS.md](frtb-drc/REGULATORY_REQUIREMENTS.md) | [frtb-drc/PRD.md](frtb-drc/PRD.md) | [frtb-drc/requirements/BASEL_FRTB_DRC.yml](frtb-drc/requirements/BASEL_FRTB_DRC.yml) |
+| RRAO | Implemented for supported canonical inputs | [frtb-rrao/README.md](frtb-rrao/README.md) | [frtb-rrao/REGULATORY_REQUIREMENTS.md](frtb-rrao/REGULATORY_REQUIREMENTS.md) | [frtb-rrao/PRD.md](frtb-rrao/PRD.md) | [frtb-rrao/requirements/BASEL_FRTB_RRAO.yml](frtb-rrao/requirements/BASEL_FRTB_RRAO.yml) |
 | CVA | Scaffolded; calculation not implemented | [frtb-cva/README.md](frtb-cva/README.md) | [frtb-cva/REGULATORY_REQUIREMENTS.md](frtb-cva/REGULATORY_REQUIREMENTS.md) | [frtb-cva/PRD.md](frtb-cva/PRD.md) | [frtb-cva/requirements/BASEL_FRTB_CVA.yml](frtb-cva/requirements/BASEL_FRTB_CVA.yml) |
-| Orchestration | Scaffolded; aggregation not implemented | [frtb-orchestration/README.md](frtb-orchestration/README.md) | N/A | N/A | N/A |
+| Orchestration | Partial; handoff contracts, aggregation not implemented | [frtb-orchestration/README.md](frtb-orchestration/README.md) | N/A | N/A | N/A |
 
 ## Implementation Pattern
 
