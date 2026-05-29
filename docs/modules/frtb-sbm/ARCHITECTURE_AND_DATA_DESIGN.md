@@ -185,7 +185,7 @@ class SbmSourceLineage:
     source_system: str
     source_file: str
     source_row_id: str
-    source_column_map: Mapping[str, str] = field(default_factory=dict)
+    source_column_map: tuple[tuple[str, str], ...] = ()
 ```
 
 ### Rule profile
