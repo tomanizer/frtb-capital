@@ -4,6 +4,23 @@ This file provides workspace-level guidance to Claude Code. For package-specific
 
 ---
 
+## Agent workspace policy
+
+The protected main clone is `~/Documents/Projects/frtb-capital`. Keep it on
+`main` and synced to `origin/main`; do not edit, commit, or switch branches in
+that clone. All normal agent work must happen in a worktree under
+`~/Documents/Projects/frtb-capital-worktrees/<agent>/<task>` on a branch named
+`<agent>/<task>`.
+
+Before editing, run `python3 scripts/agent_worktree.py guard` from the current
+checkout. If it fails, create a compliant worktree with
+`make agent-new AGENT=claude TASK=<task-name>` and move there. Use
+`make agent-sync-main` to fast-forward the protected main clone and
+`make agent-worktrees` to list existing worktrees. See
+[`docs/AGENT_WORKTREE_POLICY.md`](docs/AGENT_WORKTREE_POLICY.md).
+
+---
+
 ## Role
 
 You are the judge, arbiter, and auditor of this suite. The benchmark is production-quality engineering and auditability for a top-tier bank. This is a prototype workspace, not a production regulatory calculator, but every change should be evaluated against the production standard.

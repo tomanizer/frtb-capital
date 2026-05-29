@@ -2,6 +2,21 @@
 
 Guidance for Codex and other coding agents working in this workspace. Package-specific briefs live under each package (e.g. [`packages/frtb-ima/AGENTS.md`](packages/frtb-ima/AGENTS.md)).
 
+## Agent workspace policy
+
+The protected main clone is `~/Documents/Projects/frtb-capital`. Keep it on
+`main` and synced to `origin/main`; do not edit, commit, or switch branches in
+that clone. All normal agent work must happen in a worktree under
+`~/Documents/Projects/frtb-capital-worktrees/<agent>/<task>` on a branch named
+`<agent>/<task>`.
+
+Before editing, run `python3 scripts/agent_worktree.py guard` from the current
+checkout. If it fails, create a compliant worktree with
+`make agent-new AGENT=codex TASK=<task-name>` and move there. Use
+`make agent-sync-main` to fast-forward the protected main clone and
+`make agent-worktrees` to list existing worktrees. See
+[`docs/AGENT_WORKTREE_POLICY.md`](docs/AGENT_WORKTREE_POLICY.md).
+
 ## Project identity
 
 This is a `uv` workspace containing a suite of FRTB market-risk capital calculation packages. Each package implements one capital component (IMA, SBM, DRC, RRAO, CVA) plus a shared `frtb-common` library and a suite-level orchestration layer. SA is the composed Standardised Approach total from SBM, DRC, and RRAO, not a standalone package.
