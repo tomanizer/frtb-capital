@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from frtb_drc.data_models import DefaultDirection, DrcPosition, DrcRiskClass, GrossJtd
 from frtb_drc.reference_data import get_lgd_rule
 from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported, get_rule_profile
-from frtb_drc.validation import DrcInputError, validate_position
+from frtb_drc.validation import DrcInputError, validate_position, validate_positions
 
 _FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
 
@@ -65,7 +65,10 @@ def calculate_gross_jtds(
 ) -> tuple[GrossJtd, ...]:
     """Calculate gross JTD records in input order."""
 
-    return tuple(calculate_gross_jtd(position, profile_id=profile_id) for position in positions)
+    validated_positions = validate_positions(positions)
+    return tuple(
+        calculate_gross_jtd(position, profile_id=profile_id) for position in validated_positions
+    )
 
 
 def _signed_notional(position: DrcPosition) -> float:

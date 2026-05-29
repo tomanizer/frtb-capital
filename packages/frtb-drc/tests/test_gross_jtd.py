@@ -116,6 +116,16 @@ def test_calculate_gross_jtds_preserves_input_order() -> None:
     assert [record.position_id for record in records] == ["pos-1", "pos-2"]
 
 
+def test_calculate_gross_jtds_rejects_duplicate_position_ids() -> None:
+    positions = (
+        _position(position_id="pos-1", source_row_id="row-1"),
+        _position(position_id="pos-1", source_row_id="row-2"),
+    )
+
+    with pytest.raises(DrcInputError, match="duplicate position_id"):
+        calculate_gross_jtds(positions)
+
+
 def _position(**overrides: object) -> DrcPosition:
     values: dict[str, object] = {
         "position_id": "pos-1",
