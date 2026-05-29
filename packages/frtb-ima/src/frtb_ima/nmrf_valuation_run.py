@@ -23,7 +23,8 @@ from dataclasses import dataclass, field
 from datetime import date
 from types import MappingProxyType
 
-from frtb_ima.audit import _jsonable
+from frtb_common.serialization import jsonable
+
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.nmrf import (
@@ -107,7 +108,7 @@ class NMRFValuationRunRequest:
             "specs": [spec.as_dict() for spec in self.specs],
             "source": self.source,
             "notes": self.notes,
-            "metadata": _jsonable(self.metadata),
+            "metadata": jsonable(self.metadata),
         }
 
 

@@ -33,9 +33,9 @@ from types import MappingProxyType
 
 import numpy as np
 import numpy.typing as npt
+from frtb_common.serialization import jsonable
 from numpy.lib.stride_tricks import sliding_window_view
 
-from frtb_ima.audit import _jsonable
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.data_models import RiskClass
 from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall_from_sorted_losses_desc
@@ -307,7 +307,7 @@ class StressPeriodSelectionResult:
             "risk_class_count": self.risk_class_count,
             "selected_by_risk_class": selected,
             "candidate_counts": counts,
-            "metadata": _jsonable(self.metadata),
+            "metadata": jsonable(self.metadata),
         }
 
 
