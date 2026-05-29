@@ -1,5 +1,6 @@
 import pytest
 from frtb_common import ImplementationStatus, ValidationStatus
+
 from frtb_rrao import PACKAGE_METADATA, RraoInputError, __version__, calculate_rrao_capital
 
 

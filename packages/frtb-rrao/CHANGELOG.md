@@ -42,6 +42,11 @@ All notable changes to `frtb-rrao` will be documented here.
   API contract.
 - Added the IMA-style RRAO model-documentation evidence pack and refreshed
   post-v1 status language across the RRAO docs.
+- Added `rrao_sample_book_v1` deterministic integration fixture (25 positions,
+  7 desks, 3 legal entities, all evidence types), `examples/rrao_fixture.py`
+  loader module, and four walkthrough notebooks covering classification,
+  capital explain, additive allocation, and Basel MAR23 vs US NPR 2.0
+  multi-profile comparison.
 
 ### Changed
 

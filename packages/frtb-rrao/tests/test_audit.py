@@ -6,6 +6,7 @@ from dataclasses import replace
 from datetime import date
 
 import pytest
+
 from frtb_rrao import (
     RraoBackToBackMatch,
     RraoCalculationContext,
