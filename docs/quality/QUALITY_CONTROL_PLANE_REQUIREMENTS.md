@@ -98,7 +98,7 @@ path = "packages/frtb-rrao"
 module_docs = "docs/modules/frtb-rrao"
 maturity = "implemented"
 component_type = "capital"
-metadata_object = "frtb_rrao.scaffold:PACKAGE_METADATA"
+metadata_object = "frtb_rrao:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_rrao:calculate_rrao_capital"
 
 [[packages.required_tests]]
@@ -145,6 +145,13 @@ Registry validation requirements:
 - `calculation_entrypoint`, when provided, must import successfully;
 - every `required_tests` path must exist and every `required_tests.id` must be
   unique within its package.
+
+All packages that expose `PACKAGE_METADATA` or calculation entry points must
+export those names from their top-level package namespace. Registry import paths
+must therefore use `frtb_rrao:PACKAGE_METADATA`,
+`frtb_drc:PACKAGE_METADATA`, and equivalent root-package paths rather than
+reaching into implementation submodules. This keeps the loader simple and makes
+the registry validate public package contracts.
 
 The initial registry must include this IMA entry so IMA participates in the same
 metadata and entry-point contract as RRAO:
@@ -217,6 +224,13 @@ or invalid import is reported clearly.
 ## Package maturity check
 
 Add `scripts/ci/check_package_maturity.py` and `make maturity-check`.
+
+The maturity checker is a static evidence gate. It must import package roots,
+metadata objects, and named entry points, and it must check file/registry
+evidence. It must not execute public calculation entry points to prove runtime
+behavior. Runtime behavior such as scaffolded packages raising
+`NotImplementedCapitalComponentError` or unsupported paths failing closed belongs
+in package unit tests referenced by `required_tests`.
 
 The checker must support:
 
@@ -318,10 +332,8 @@ Required for `frtb-sbm` and `frtb-cva`:
 - requirement registry exists under `docs/modules/<module>/requirements/`;
 - package metadata reports scaffolded status;
 - public calculation entry point imports successfully;
-- public calculation entry point raises
-  `NotImplementedCapitalComponentError`;
 - registry declares `scaffold-boundary` `required_tests` entry whose path
-  exists.
+  exists and covers `NotImplementedCapitalComponentError` behavior.
 
 ### `orchestration_partial`
 
@@ -336,9 +348,8 @@ Required for `frtb-orchestration`:
 - module documentation root exists;
 - package metadata reports partial status;
 - public suite calculation entry point imports successfully;
-- unsupported suite aggregation path fails explicitly until implemented;
 - registry declares `orchestration-boundary` `required_tests` entry whose path
-  exists.
+  exists and covers the explicit unavailable aggregation path until implemented.
 
 No full model documentation pack is required for orchestration in the first PR.
 
@@ -353,8 +364,9 @@ Required for `frtb-common`:
 - package tests directory exists;
 - module documentation root exists;
 - `py.typed` exists if the package declares typed distribution support;
-- if shared regulatory helpers are present, registry declares
-  `regulatory-helpers` `required_tests` entry whose path exists.
+- because `packages/frtb-common/src/frtb_common/regulatory/policy_citations.py`
+  is present, registry declares a `regulatory-helpers` `required_tests` entry
+  pointing to `packages/frtb-common/tests/test_regulatory_policy_citations.py`.
 
 ---
 
@@ -446,6 +458,20 @@ root quality-control tests:
 testpaths = ["packages", "tests"]
 ```
 
+The first PR must also update the root `Makefile` `test` target so it does not
+override pytest discovery with only the `packages` positional argument. Use one
+of these equivalent forms:
+
+```make
+uv run pytest --cov=frtb_ima ...
+```
+
+or:
+
+```make
+uv run pytest packages tests --cov=frtb_ima ...
+```
+
 Add unit tests for:
 
 - valid registry loading;
@@ -482,6 +508,8 @@ The first PR is complete when:
 - `make check` passes;
 - root `pyproject.toml` pytest discovery includes `tests` so
   `tests/quality/` runs under `make check`;
+- root `Makefile` `test` target either relies on pytest `testpaths` or passes
+  both `packages` and `tests` explicitly;
 - CI exposes a passing `quality-control` check for docs-only, code, dependency,
   and workflow PRs — confirm this by inspecting the PR check list before merge;
 - `docs/REPO_CONTROLS.md` required-checks table includes `quality-control`;
@@ -501,7 +529,8 @@ The first PR is complete when:
 3. Add the registry loader and validation primitives.
 4. Add the import smoke script and tests.
 5. Add maturity profile checks and tests.
-6. Update root pytest discovery so `tests/quality/` is included in `make check`.
+6. Update root pytest discovery and the root `Makefile` `test` target so
+   `tests/quality/` is included in `make check`.
 7. Add Make targets.
 8. Run `make maturity-check` against the current state and add only the minimum
    DRC evidence files reported missing; refer to the
