@@ -848,7 +848,7 @@ from frtb_drc import result_json
 import hashlib
 
 rj = result_json(result)
-sha = hashlib.sha256(rj.encode()).hexdigest()
+sha = hashlib.sha256(bytes(rj, "utf-8")).hexdigest()
 print(f"result_json SHA-256: {sha}")
 print(f"Golden SHA-256:      {expected['result_json_sha256']}")
 print(f"Match: {sha == expected['result_json_sha256']}")

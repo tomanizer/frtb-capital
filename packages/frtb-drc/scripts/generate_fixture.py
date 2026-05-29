@@ -145,7 +145,7 @@ def _sha256(path: Path) -> str:
 
 
 def _sha256_str(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return hashlib.sha256(bytes(text, "utf-8")).hexdigest()
 
 
 if __name__ == "__main__":

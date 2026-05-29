@@ -102,5 +102,5 @@ def _selected_outputs(result: object) -> dict[str, object]:
         },
         "category_capital": result.categories[0].capital,
         "total_drc": result.total_drc,
-        "result_json_sha256": hashlib.sha256(result_json(result).encode()).hexdigest(),
+        "result_json_sha256": hashlib.sha256(bytes(result_json(result), "utf-8")).hexdigest(),
     }
