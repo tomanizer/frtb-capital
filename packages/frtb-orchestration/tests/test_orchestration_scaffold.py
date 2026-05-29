@@ -103,7 +103,7 @@ def test_orchestration_can_recognise_public_drc_result_shape() -> None:
 
 def test_orchestration_can_recognise_planned_sbm_result_shape() -> None:
     result = MinimalResult(
-        package_name="frtb-sbm",
+        package_name=None,
         run_id="orchestration-sbm-run",
         calculation_date=date(2026, 3, 31),
         base_currency="USD",
@@ -111,8 +111,10 @@ def test_orchestration_can_recognise_planned_sbm_result_shape() -> None:
         total_sbm=42.0,
         profile_hash="profile-hash",
         input_hash="input-hash",
-        sensitivity_count=3,
-        unsupported_count=1,
+        sensitivity_count=None,
+        unsupported_count=None,
+        sensitivities=(object(), object(), object()),
+        unsupported_features=(object(),),
         risk_class_results=(object(), object()),
         citations=("MAR21.4",),
         warnings=("unsupported curvature path excluded from this synthetic shape",),
@@ -222,7 +224,7 @@ def test_sbm_handoff_rejects_invalid_result_shape() -> None:
         )
 
 
-def test_orchestration_runtime_does_not_import_rrao_package() -> None:
+def test_orchestration_runtime_does_not_import_sibling_packages() -> None:
     for source_file in SOURCE_ROOT.rglob("*.py"):
         tree = ast.parse(source_file.read_text(encoding="utf-8"))
         for node in ast.walk(tree):

@@ -198,9 +198,9 @@ def _required_text_attr(result: object, field: str, *, component: str) -> str:
 
 
 def _optional_text_attr(result: object, field: str, *, default: str) -> str:
-    if not hasattr(result, field):
+    value = getattr(result, field, None)
+    if value is None:
         return default
-    value = getattr(result, field)
     if not isinstance(value, str) or not value:
         raise OrchestrationInputError(
             f"result field {field} must be non-empty text",
@@ -252,8 +252,8 @@ def _optional_count_or_sequence_attr(
     sequence_field: str,
     component: str,
 ) -> int:
-    if hasattr(result, count_field):
-        value = getattr(result, count_field)
+    value = getattr(result, count_field, None)
+    if value is not None:
         if isinstance(value, bool) or not isinstance(value, int) or value < 0:
             raise OrchestrationInputError(
                 f"{component} result field {count_field} must be a non-negative integer",
