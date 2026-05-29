@@ -14,7 +14,7 @@ approved for regulatory reporting.
 | Required reviews | Require at least one approving review. |
 | Code owners | Require review from `.github/CODEOWNERS` for owned paths. |
 | Conversations | Require all conversations to be resolved before merge. |
-| Required checks | Require `lint`, `typecheck`, `build`, `test (3.11)`, `test (3.12)`, `test (3.13)`, `dependency-audit`, `sbom`, `examples`, and `notebooks`. |
+| Required checks | Require `lint`, `typecheck`, `quality-control`, `build`, `test (3.11)`, `test (3.12)`, `test (3.13)`, `dependency-audit`, `sbom`, `examples`, and `notebooks`. |
 | Force pushes | Disabled for `main`. |
 | Deletions | Disabled for `main`. Branch deletion after merge is handled by repository auto-delete for merged PR head branches, not by allowing deletion of `main`. |
 | Admin bypass | Disabled for normal work. Emergency bypass must be documented in an issue or incident record and followed by a corrective PR. |

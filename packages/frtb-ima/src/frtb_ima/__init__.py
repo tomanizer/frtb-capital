@@ -7,6 +7,8 @@ Basel FRTB, and EU/PRA comparison material; supervisory approval, validation,
 and production governance remain outside this package.
 """
 
+from frtb_common import CapitalComponentMetadata, ImplementationStatus, ValidationStatus
+
 from frtb_ima._version import __version__
 from frtb_ima.audit import (
     CapitalRunAuditLog,
@@ -203,9 +205,18 @@ from frtb_ima.stress_periods import (
     validate_selected_stress_periods,
 )
 
+PACKAGE_METADATA = CapitalComponentMetadata(
+    package_name="frtb-ima",
+    import_name="frtb_ima",
+    component_name="Internal models approach",
+    implementation_status=ImplementationStatus.IMPLEMENTED,
+    validation_status=ValidationStatus.AVAILABLE,
+)
+
 __all__ = [
     "DEFAULT_MODEL_VERSION",
     "FED_NPR_SPECIFIED_FX_CURRENCY_CODES",
+    "PACKAGE_METADATA",
     "BusinessCalendar",
     "CalculationContext",
     "CapitalComponents",

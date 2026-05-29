@@ -1,0 +1,102 @@
+schema_version = 1
+
+[[packages]]
+package = "frtb-common"
+import_name = "frtb_common"
+path = "packages/frtb-common"
+module_docs = "docs/modules/frtb-common"
+maturity = "shared"
+component_type = "shared"
+notes = "Shared library, not a capital component."
+
+[[packages.required_tests]]
+id = "regulatory-helpers"
+path = "packages/frtb-common/tests/test_regulatory_policy_citations.py"
+
+[[packages]]
+package = "frtb-cva"
+import_name = "frtb_cva"
+path = "packages/frtb-cva"
+module_docs = "docs/modules/frtb-cva"
+maturity = "scaffolded"
+component_type = "capital"
+metadata_object = "frtb_cva:PACKAGE_METADATA"
+calculation_entrypoint = "frtb_cva:calculate_cva_capital"
+
+[[packages.required_tests]]
+id = "scaffold-boundary"
+path = "packages/frtb-cva/tests/test_cva_scaffold.py"
+
+[[packages]]
+package = "frtb-drc"
+import_name = "frtb_drc"
+path = "packages/frtb-drc"
+module_docs = "docs/modules/frtb-drc"
+maturity = "partial_runtime"
+component_type = "capital"
+metadata_object = "frtb_drc:PACKAGE_METADATA"
+calculation_entrypoint = "frtb_drc:calculate_drc_capital"
+
+[[packages.required_tests]]
+id = "public-api"
+path = "packages/frtb-drc/tests/test_drc_public_api.py"
+
+[[packages.required_tests]]
+id = "unsupported-runtime-paths"
+path = "packages/frtb-drc/tests/test_drc_public_api.py"
+
+[[packages]]
+package = "frtb-ima"
+import_name = "frtb_ima"
+path = "packages/frtb-ima"
+module_docs = "docs/modules/frtb-ima"
+maturity = "implemented"
+component_type = "capital"
+metadata_object = "frtb_ima:PACKAGE_METADATA"
+calculation_entrypoint = "frtb_ima:models_based_capital_for_policy"
+
+[[packages.required_tests]]
+id = "public-api"
+path = "packages/frtb-ima/tests/test_public_api.py"
+
+[[packages]]
+package = "frtb-orchestration"
+import_name = "frtb_orchestration"
+path = "packages/frtb-orchestration"
+module_docs = "docs/modules/frtb-orchestration"
+maturity = "orchestration_partial"
+component_type = "orchestration"
+metadata_object = "frtb_orchestration:PACKAGE_METADATA"
+calculation_entrypoint = "frtb_orchestration:calculate_suite_capital"
+
+[[packages.required_tests]]
+id = "orchestration-boundary"
+path = "packages/frtb-orchestration/tests/test_orchestration_scaffold.py"
+
+[[packages]]
+package = "frtb-rrao"
+import_name = "frtb_rrao"
+path = "packages/frtb-rrao"
+module_docs = "docs/modules/frtb-rrao"
+maturity = "implemented"
+component_type = "capital"
+metadata_object = "frtb_rrao:PACKAGE_METADATA"
+calculation_entrypoint = "frtb_rrao:calculate_rrao_capital"
+
+[[packages.required_tests]]
+id = "public-api"
+path = "packages/frtb-rrao/tests/test_public_api.py"
+
+[[packages]]
+package = "frtb-sbm"
+import_name = "frtb_sbm"
+path = "packages/frtb-sbm"
+module_docs = "docs/modules/frtb-sbm"
+maturity = "scaffolded"
+component_type = "capital"
+metadata_object = "frtb_sbm:PACKAGE_METADATA"
+calculation_entrypoint = "frtb_sbm:calculate_sbm_capital"
+
+[[packages.required_tests]]
+id = "scaffold-boundary"
+path = "packages/frtb-sbm/tests/test_sbm_scaffold.py"
