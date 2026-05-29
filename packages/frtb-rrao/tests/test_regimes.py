@@ -42,18 +42,35 @@ def test_get_rrao_rule_profile_returns_supported_basel_profile() -> None:
     assert RraoExclusionReason.GOVERNMENT_OR_GSE_DEBT not in profile.supported_exclusions
 
 
+def test_get_rrao_rule_profile_returns_supported_eu_profile() -> None:
+    profile = get_rrao_rule_profile(RraoRegulatoryProfile.EU_CRR3)
+
+    assert profile.profile is RraoRegulatoryProfile.EU_CRR3
+    assert profile.regulator == "European Union"
+    assert profile.publication_date == date(2022, 11, 29)
+    assert profile.effective_date == date(2022, 12, 19)
+    assert RraoEvidenceType.PATH_DEPENDENT_OPTION in profile.supported_evidence_types
+    assert RraoEvidenceType.GAP_RISK not in profile.supported_evidence_types
+    assert RraoExclusionReason.EU_ARTICLE_3_INDEX_OPTION_CORRELATION in (
+        profile.supported_exclusions
+    )
+    assert "eu_rts_2022_2328_article_2_annex" in profile.citation_ids
+
+
 def test_profile_content_hash_is_deterministic_and_profile_specific() -> None:
     us_profile = get_rrao_rule_profile(RraoRegulatoryProfile.US_NPR_2_0)
     basel_profile = get_rrao_rule_profile(RraoRegulatoryProfile.BASEL_MAR23)
+    eu_profile = get_rrao_rule_profile(RraoRegulatoryProfile.EU_CRR3)
 
     assert re.fullmatch(r"[0-9a-f]{64}", us_profile.content_hash)
     assert us_profile.content_hash == profile_content_hash(RraoRegulatoryProfile.US_NPR_2_0)
     assert us_profile.content_hash != basel_profile.content_hash
+    assert eu_profile.content_hash != us_profile.content_hash
 
 
 @pytest.mark.parametrize(
     "profile",
-    [RraoRegulatoryProfile.EU_CRR3, RraoRegulatoryProfile.PRA_UK_CRR],
+    [RraoRegulatoryProfile.PRA_UK_CRR],
 )
 def test_unsupported_profiles_fail_before_calculation(profile: RraoRegulatoryProfile) -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):

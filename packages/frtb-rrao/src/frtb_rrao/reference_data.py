@@ -3,7 +3,8 @@ Reference data for RRAO rule profiles.
 
 Regulatory traceability:
     See docs/REGULATORY_TRACEABILITY.md rows for reference_data.py, Basel
-    MAR23.2-MAR23.8, and U.S. NPR 2.0 proposed section __.211.
+    MAR23.2-MAR23.8, U.S. NPR 2.0 proposed section __.211, EU Article
+    325u, and Delegated Regulation (EU) 2022/2328 Articles 1-3.
 """
 
 from __future__ import annotations
@@ -203,10 +204,88 @@ US_NPR_CITATIONS: dict[str, RraoCitation] = {
     ),
 }
 
+EU_CRR3_URL = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02013R0575-20240709"
+EU_RTS_RRAO_URL = "https://eur-lex.europa.eu/eli/reg_del/2022/2328/oj/eng"
+
+EU_CRR3_CITATIONS: dict[str, RraoCitation] = {
+    "eu_crr_325u_2_a": RraoCitation(
+        source_id="eu_crr_article_325u",
+        paragraph="Article 325u(2)(a)",
+        url=EU_CRR3_URL,
+        note="Exotic underlying residual-risk condition.",
+    ),
+    "eu_crr_325u_2_b": RraoCitation(
+        source_id="eu_crr_article_325u",
+        paragraph="Article 325u(2)(b)",
+        url=EU_CRR3_URL,
+        note="Other residual-risk instrument condition.",
+    ),
+    "eu_crr_325u_3_a": RraoCitation(
+        source_id="eu_crr_article_325u",
+        paragraph="Article 325u(3)(a)",
+        url=EU_CRR3_URL,
+        note="1.0% gross notional add-on for Article 325u(2)(a) instruments.",
+    ),
+    "eu_crr_325u_3_b": RraoCitation(
+        source_id="eu_crr_article_325u",
+        paragraph="Article 325u(3)(b)",
+        url=EU_CRR3_URL,
+        note="0.1% gross notional add-on for Article 325u(2)(b) instruments.",
+    ),
+    "eu_crr_325u_4": RraoCitation(
+        source_id="eu_crr_article_325u",
+        paragraph="Article 325u(4)",
+        url=EU_CRR3_URL,
+        note="Listed, centrally clearable, and perfectly offsetting exemptions.",
+    ),
+    "eu_rts_2022_2328_article_1": RraoCitation(
+        source_id="eu_delegated_reg_2022_2328_rrao",
+        paragraph="Article 1",
+        url=EU_RTS_RRAO_URL,
+        note=(
+            "Longevity, weather, natural disaster, and future realised "
+            "volatility exotic underlyings."
+        ),
+    ),
+    "eu_rts_2022_2328_article_2_annex": RraoCitation(
+        source_id="eu_delegated_reg_2022_2328_rrao",
+        paragraph="Article 2 and Annex",
+        url=EU_RTS_RRAO_URL,
+        note="Specified instruments bearing residual risks.",
+    ),
+    "eu_rts_2022_2328_article_3": RraoCitation(
+        source_id="eu_delegated_reg_2022_2328_rrao",
+        paragraph="Article 3",
+        url=EU_RTS_RRAO_URL,
+        note="Risks that do not by themselves presume Article 325u(2)(b) residual-risk treatment.",
+    ),
+}
+
 PROFILE_CITATIONS: dict[RraoRegulatoryProfile, dict[str, RraoCitation]] = {
     RraoRegulatoryProfile.BASEL_MAR23: BASEL_CITATIONS,
     RraoRegulatoryProfile.US_NPR_2_0: US_NPR_CITATIONS,
+    RraoRegulatoryProfile.EU_CRR3: EU_CRR3_CITATIONS,
 }
+
+_EU_ARTICLE_2_EVIDENCE_TYPES = (
+    RraoEvidenceType.PATH_DEPENDENT_OPTION,
+    RraoEvidenceType.FORWARD_START_UNDETERMINED_STRIKE_OPTION,
+    RraoEvidenceType.OPTION_ON_OPTION,
+    RraoEvidenceType.DISCONTINUOUS_PAYOFF_OPTION,
+    RraoEvidenceType.HOLDER_MODIFIABLE_OPTION,
+    RraoEvidenceType.FINITE_EXERCISE_DATES_OPTION,
+    RraoEvidenceType.CROSS_CURRENCY_SETTLED_OPTION,
+    RraoEvidenceType.MULTI_UNDERLYING_OPTION,
+    RraoEvidenceType.BEHAVIOURAL_OPTION,
+)
+
+_EU_ARTICLE_3_EXCLUSION_REASONS = (
+    RraoExclusionReason.EU_ARTICLE_3_DELIVERABLE_RANGE,
+    RraoExclusionReason.EU_ARTICLE_3_RELATIVE_IMPLIED_VOLATILITY,
+    RraoExclusionReason.EU_ARTICLE_3_INDEX_OPTION_CORRELATION,
+    RraoExclusionReason.EU_ARTICLE_3_CIU_INDEX_OPTION_CORRELATION,
+    RraoExclusionReason.EU_ARTICLE_3_DIVIDEND_RISK,
+)
 
 PROFILE_EVIDENCE_RULES: dict[RraoRegulatoryProfile, tuple[RraoEvidenceRule, ...]] = {
     RraoRegulatoryProfile.BASEL_MAR23: (
@@ -272,6 +351,25 @@ PROFILE_EVIDENCE_RULES: dict[RraoRegulatoryProfile, tuple[RraoEvidenceRule, ...]
             citation_id="us_npr_211_a_4",
         ),
     ),
+    RraoRegulatoryProfile.EU_CRR3: (
+        RraoEvidenceRule(
+            evidence_type=RraoEvidenceType.EXOTIC_UNDERLYING,
+            classification=RraoClassification.EXOTIC,
+            risk_weight_key="EXOTIC_1_PERCENT",
+            reason_code="EU_CRR3_EXOTIC_UNDERLYING",
+            citation_id="eu_rts_2022_2328_article_1",
+        ),
+        *(
+            RraoEvidenceRule(
+                evidence_type=evidence_type,
+                classification=RraoClassification.OTHER_RESIDUAL_RISK,
+                risk_weight_key="OTHER_0_1_PERCENT",
+                reason_code=f"EU_CRR3_{evidence_type.value}",
+                citation_id="eu_rts_2022_2328_article_2_annex",
+            )
+            for evidence_type in _EU_ARTICLE_2_EVIDENCE_TYPES
+        ),
+    ),
 }
 
 PROFILE_INVESTMENT_FUND_RULES: dict[
@@ -303,6 +401,7 @@ PROFILE_INVESTMENT_FUND_RULES: dict[
             ),
         ),
     ),
+    RraoRegulatoryProfile.EU_CRR3: (),
 }
 
 PROFILE_EXCLUSION_RULES: dict[RraoRegulatoryProfile, tuple[RraoExclusionRule, ...]] = {
@@ -376,6 +475,35 @@ PROFILE_EXCLUSION_RULES: dict[RraoRegulatoryProfile, tuple[RraoExclusionRule, ..
             citation_id="us_npr_211_b_2_vi",
         ),
     ),
+    RraoRegulatoryProfile.EU_CRR3: (
+        RraoExclusionRule(
+            exclusion_reason=RraoExclusionReason.LISTED,
+            risk_weight_key="EXCLUDED_0_PERCENT",
+            reason_code="EU_CRR3_EXCLUSION_LISTED",
+            citation_id="eu_crr_325u_4",
+        ),
+        RraoExclusionRule(
+            exclusion_reason=RraoExclusionReason.CCP_OR_QCCP_CLEARABLE,
+            risk_weight_key="EXCLUDED_0_PERCENT",
+            reason_code="EU_CRR3_EXCLUSION_CLEARABLE",
+            citation_id="eu_crr_325u_4",
+        ),
+        RraoExclusionRule(
+            exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+            risk_weight_key="EXCLUDED_0_PERCENT",
+            reason_code="EU_CRR3_EXCLUSION_PERFECTLY_OFFSETTING",
+            citation_id="eu_crr_325u_4",
+        ),
+        *(
+            RraoExclusionRule(
+                exclusion_reason=reason,
+                risk_weight_key="NON_PRESUMPTIVE_0_PERCENT",
+                reason_code=f"EU_CRR3_NON_PRESUMPTIVE_{reason.value}",
+                citation_id="eu_rts_2022_2328_article_3",
+            )
+            for reason in _EU_ARTICLE_3_EXCLUSION_REASONS
+        ),
+    ),
 }
 
 PROFILE_RISK_WEIGHT_RULES: dict[RraoRegulatoryProfile, tuple[RraoRiskWeightRule, ...]] = {
@@ -423,6 +551,32 @@ PROFILE_RISK_WEIGHT_RULES: dict[RraoRegulatoryProfile, tuple[RraoRiskWeightRule,
             classification=RraoClassification.EXCLUDED,
             risk_weight=0.0,
             citation_id="us_npr_211_b_1",
+        ),
+    ),
+    RraoRegulatoryProfile.EU_CRR3: (
+        RraoRiskWeightRule(
+            key="EXOTIC_1_PERCENT",
+            classification=RraoClassification.EXOTIC,
+            risk_weight=0.01,
+            citation_id="eu_crr_325u_3_a",
+        ),
+        RraoRiskWeightRule(
+            key="OTHER_0_1_PERCENT",
+            classification=RraoClassification.OTHER_RESIDUAL_RISK,
+            risk_weight=0.001,
+            citation_id="eu_crr_325u_3_b",
+        ),
+        RraoRiskWeightRule(
+            key="EXCLUDED_0_PERCENT",
+            classification=RraoClassification.EXCLUDED,
+            risk_weight=0.0,
+            citation_id="eu_crr_325u_4",
+        ),
+        RraoRiskWeightRule(
+            key="NON_PRESUMPTIVE_0_PERCENT",
+            classification=RraoClassification.EXCLUDED,
+            risk_weight=0.0,
+            citation_id="eu_rts_2022_2328_article_3",
         ),
     ),
 }

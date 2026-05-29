@@ -141,4 +141,4 @@ def test_classification_hint_conflict_fails() -> None:
 
 def test_unsupported_profiles_fail_before_classification() -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        classify_rrao_position(sample_position(), profile=RraoRegulatoryProfile.EU_CRR3)
+        classify_rrao_position(sample_position(), profile=RraoRegulatoryProfile.PRA_UK_CRR)

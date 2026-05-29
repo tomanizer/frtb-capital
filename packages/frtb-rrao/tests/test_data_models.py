@@ -55,7 +55,12 @@ def test_rrao_enums_have_stable_wire_values() -> None:
     assert RraoClassification.EXOTIC == "EXOTIC"
     assert RraoClassification.OTHER_RESIDUAL_RISK == "OTHER_RESIDUAL_RISK"
     assert RraoEvidenceType.NO_MATURITY_OPTIONALITY == "NO_MATURITY_OPTIONALITY"
+    assert RraoEvidenceType.PATH_DEPENDENT_OPTION == "PATH_DEPENDENT_OPTION"
     assert RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK == "EXACT_THIRD_PARTY_BACK_TO_BACK"
+    assert (
+        RraoExclusionReason.EU_ARTICLE_3_INDEX_OPTION_CORRELATION
+        == "EU_ARTICLE_3_INDEX_OPTION_CORRELATION"
+    )
     assert RraoRegulatoryProfile.US_NPR_2_0 == "US_NPR_2_0"
     assert RraoInvestmentFundMethod.BACKSTOP_FUND_METHOD == "BACKSTOP_FUND_METHOD"
     assert RraoInvestmentFundExposureType.EXOTIC_EXPOSURE == "EXOTIC_EXPOSURE"

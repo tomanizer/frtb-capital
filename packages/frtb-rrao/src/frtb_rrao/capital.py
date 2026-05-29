@@ -3,7 +3,7 @@ RRAO line add-ons and deterministic explain subtotals.
 
 Regulatory traceability:
     See docs/REGULATORY_TRACEABILITY.md rows for capital.py, Basel MAR23.8,
-    and U.S. NPR 2.0 proposed section __.211(c).
+    U.S. NPR 2.0 proposed section __.211(c), and EU Article 325u(3).
 """
 
 from __future__ import annotations

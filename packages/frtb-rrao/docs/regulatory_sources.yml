@@ -92,11 +92,15 @@ sources:
     url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02013R0575-20240709"
     section_hint: "Article 325u residual risk add-on under the alternative standardised approach."
     status: comparison_reference
-    reuse_note: "EUR-Lex link-only reference for future EU profile mapping."
+    reuse_note: "EUR-Lex link-only reference for implemented EU comparison-profile mapping."
     module_paths:
+      - src/frtb_rrao/data_models.py
+      - src/frtb_rrao/validation.py
       - src/frtb_rrao/regimes.py
       - src/frtb_rrao/reference_data.py
       - src/frtb_rrao/classification.py
+      - src/frtb_rrao/capital.py
+      - tests/test_eu_profile.py
     requirement_ids:
       - RRAO-FUNC-004
       - RRAO-FUNC-009
@@ -108,11 +112,16 @@ sources:
     url: "https://eur-lex.europa.eu/eli/reg_del/2022/2328/oj/eng"
     section_hint: "Articles 1-3 and Annex specify exotic underlyings, residual-risk instruments, and risks that do not by themselves presume residual-risk treatment."
     status: comparison_reference
-    reuse_note: "EUR-Lex link-only reference for future EU profile mapping."
+    reuse_note: "EUR-Lex link-only reference for implemented EU comparison-profile mapping."
     module_paths:
+      - src/frtb_rrao/data_models.py
+      - src/frtb_rrao/validation.py
       - src/frtb_rrao/regimes.py
       - src/frtb_rrao/reference_data.py
       - src/frtb_rrao/classification.py
+      - src/frtb_rrao/capital.py
+      - tests/test_eu_profile.py
+      - tests/fixtures/rrao_eu/positions.json
     requirement_ids:
       - RRAO-FUNC-004
       - RRAO-FUNC-005

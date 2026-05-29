@@ -192,11 +192,9 @@ def test_investment_fund_classification_hint_must_match_cited_portion() -> None:
 
 
 def test_basel_profile_rejects_us_investment_fund_inclusion_path() -> None:
-    with pytest.raises(RraoInputError, match="no RRAO investment-fund rule"):
-        classify_rrao_position(
-            sample_position(),
-            profile=RraoRegulatoryProfile.BASEL_MAR23,
-        )
+    for profile in (RraoRegulatoryProfile.BASEL_MAR23, RraoRegulatoryProfile.EU_CRR3):
+        with pytest.raises(RraoInputError, match="no RRAO investment-fund rule"):
+            classify_rrao_position(sample_position(), profile=profile)
 
 
 def test_descriptor_is_frozen() -> None:

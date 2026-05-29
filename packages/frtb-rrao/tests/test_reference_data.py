@@ -23,7 +23,11 @@ from frtb_rrao import (
 
 @pytest.mark.parametrize(
     "profile",
-    [RraoRegulatoryProfile.BASEL_MAR23, RraoRegulatoryProfile.US_NPR_2_0],
+    [
+        RraoRegulatoryProfile.BASEL_MAR23,
+        RraoRegulatoryProfile.US_NPR_2_0,
+        RraoRegulatoryProfile.EU_CRR3,
+    ],
 )
 def test_reference_data_entries_have_citations(profile: RraoRegulatoryProfile) -> None:
     citations = citations_for_profile(profile)
@@ -91,6 +95,23 @@ def test_basel_reference_data_keeps_us_specific_paths_unsupported() -> None:
         )
 
 
+def test_eu_reference_data_contains_rts_annex_and_article_3_mappings() -> None:
+    annex_rule = evidence_rule_for(
+        RraoRegulatoryProfile.EU_CRR3,
+        RraoEvidenceType.PATH_DEPENDENT_OPTION,
+    )
+    article_3_rule = exclusion_rule_for(
+        RraoRegulatoryProfile.EU_CRR3,
+        RraoExclusionReason.EU_ARTICLE_3_INDEX_OPTION_CORRELATION,
+    )
+
+    assert annex_rule.classification is RraoClassification.OTHER_RESIDUAL_RISK
+    assert annex_rule.risk_weight_key == "OTHER_0_1_PERCENT"
+    assert annex_rule.citation_id == "eu_rts_2022_2328_article_2_annex"
+    assert article_3_rule.risk_weight_key == "NON_PRESUMPTIVE_0_PERCENT"
+    assert article_3_rule.citation_id == "eu_rts_2022_2328_article_3"
+
+
 @pytest.mark.parametrize(
     ("profile", "key", "weight", "classification"),
     [
@@ -118,6 +139,24 @@ def test_basel_reference_data_keeps_us_specific_paths_unsupported() -> None:
             0.001,
             RraoClassification.OTHER_RESIDUAL_RISK,
         ),
+        (
+            RraoRegulatoryProfile.EU_CRR3,
+            "EXOTIC_1_PERCENT",
+            0.01,
+            RraoClassification.EXOTIC,
+        ),
+        (
+            RraoRegulatoryProfile.EU_CRR3,
+            "OTHER_0_1_PERCENT",
+            0.001,
+            RraoClassification.OTHER_RESIDUAL_RISK,
+        ),
+        (
+            RraoRegulatoryProfile.EU_CRR3,
+            "NON_PRESUMPTIVE_0_PERCENT",
+            0.0,
+            RraoClassification.EXCLUDED,
+        ),
     ],
 )
 def test_risk_weight_lookup(
@@ -140,4 +179,4 @@ def test_missing_risk_weight_lookup_fails_deterministically() -> None:
 
 def test_unsupported_profile_reference_data_fails_closed() -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        citations_for_profile(RraoRegulatoryProfile.EU_CRR3)
+        citations_for_profile(RraoRegulatoryProfile.PRA_UK_CRR)

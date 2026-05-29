@@ -63,7 +63,8 @@ MAR23 canonical-input slice.
 - Add Basel MAR23 profile id, publication metadata, supported classification
   evidence, exclusions, and risk weights.
 - Add profile hash generation.
-- Explicitly mark EU CRR3 and PRA paths unsupported until mapped.
+- Explicitly mark EU CRR3 and PRA paths unsupported until mapped; EU CRR3 is
+  mapped by Issue 10.
 
 **Acceptance criteria:**
 
@@ -84,8 +85,8 @@ MAR23 canonical-input slice.
 - Support exotic, other residual risk, supervisor-directed inclusion, and cited
   exclusions for the first U.S. NPR/Basel slice.
 - Preserve reason codes, exclusion evidence ids, and citation ids.
-- Reject investment-fund inclusion and EU/PRA-specific paths until explicitly
-  implemented.
+- Reject investment-fund inclusion and unmapped jurisdiction-specific paths
+  until explicitly implemented.
 
 **Acceptance criteria:**
 

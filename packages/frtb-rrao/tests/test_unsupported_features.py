@@ -52,7 +52,7 @@ def test_partial_investment_fund_path_fails_without_descriptor() -> None:
 
 @pytest.mark.parametrize(
     "profile",
-    [RraoRegulatoryProfile.EU_CRR3, RraoRegulatoryProfile.PRA_UK_CRR],
+    [RraoRegulatoryProfile.PRA_UK_CRR],
 )
 def test_unsupported_profiles_fail_closed(profile: RraoRegulatoryProfile) -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):

@@ -3,7 +3,8 @@ RRAO classification and exclusion decisions.
 
 Regulatory traceability:
     See docs/REGULATORY_TRACEABILITY.md rows for classification.py, Basel
-    MAR23.2-MAR23.7, and U.S. NPR 2.0 proposed section __.211(a)-__.211(b).
+    MAR23.2-MAR23.7, U.S. NPR 2.0 proposed section __.211(a)-__.211(b),
+    and Delegated Regulation (EU) 2022/2328 Articles 1-3.
 """
 
 from __future__ import annotations
