@@ -8,6 +8,18 @@ from frtb_common import (
     NotImplementedCapitalComponentError,
     ValidationStatus,
 )
+from frtb_drc import (
+    US_NPR_2_0_PROFILE_ID,
+    CreditQuality,
+    DefaultDirection,
+    DrcCalculationContext,
+    DrcInstrumentType,
+    DrcPosition,
+    DrcRiskClass,
+    DrcSeniority,
+    DrcSourceLineage,
+    calculate_drc_capital,
+)
 from frtb_orchestration import (
     PACKAGE_METADATA,
     OrchestrationInputError,
@@ -15,7 +27,9 @@ from frtb_orchestration import (
     __version__,
     calculate_suite_capital,
     compose_standardised_approach_capital,
+    recognise_drc_result,
     recognise_rrao_result,
+    recognise_sbm_result,
 )
 from frtb_rrao import (
     RraoCalculationContext,
@@ -66,6 +80,56 @@ def test_orchestration_can_recognise_public_rrao_result_shape() -> None:
     assert handoff.warnings == result.warnings
 
 
+def test_orchestration_can_recognise_public_drc_result_shape() -> None:
+    result = sample_drc_result()
+
+    handoff = recognise_drc_result(result)
+
+    assert handoff.component is StandardisedComponent.DRC
+    assert handoff.package_name == "frtb-drc"
+    assert handoff.run_id == "orchestration-drc-run"
+    assert handoff.calculation_date == date(2026, 3, 31)
+    assert handoff.base_currency == "USD"
+    assert handoff.profile_id == US_NPR_2_0_PROFILE_ID
+    assert handoff.total_capital == result.total_drc
+    assert handoff.profile_hash == result.profile_hash
+    assert handoff.input_hash == result.input_hash
+    assert handoff.line_count == result.input_count
+    assert handoff.excluded_line_count == result.rejected_input_count
+    assert handoff.subtotal_count == len(result.categories)
+    assert "US_NPR_210_SCOPE" in handoff.citations
+    assert handoff.warnings == result.warnings
+
+
+def test_orchestration_can_recognise_planned_sbm_result_shape() -> None:
+    result = MinimalResult(
+        package_name="frtb-sbm",
+        run_id="orchestration-sbm-run",
+        calculation_date=date(2026, 3, 31),
+        base_currency="USD",
+        profile_id="BASEL_MAR21",
+        total_sbm=42.0,
+        profile_hash="profile-hash",
+        input_hash="input-hash",
+        sensitivity_count=3,
+        unsupported_count=1,
+        risk_class_results=(object(), object()),
+        citations=("MAR21.4",),
+        warnings=("unsupported curvature path excluded from this synthetic shape",),
+    )
+
+    handoff = recognise_sbm_result(result)
+
+    assert handoff.component is StandardisedComponent.SBM
+    assert handoff.package_name == "frtb-sbm"
+    assert handoff.run_id == "orchestration-sbm-run"
+    assert handoff.total_capital == 42.0
+    assert handoff.line_count == 3
+    assert handoff.excluded_line_count == 1
+    assert handoff.subtotal_count == 2
+    assert handoff.citations == ("MAR21.4",)
+
+
 def test_standardised_approach_aggregation_requires_missing_component_outputs() -> None:
     result = sample_rrao_result()
 
@@ -75,11 +139,26 @@ def test_standardised_approach_aggregation_requires_missing_component_outputs() 
 
 def test_sa_aggregation_remains_unimplemented_with_placeholder_components() -> None:
     result = sample_rrao_result()
+    drc_result = sample_drc_result()
+    sbm_result = MinimalResult(
+        run_id="orchestration-sbm-run",
+        calculation_date=date(2026, 3, 31),
+        base_currency="USD",
+        profile_id="BASEL_MAR21",
+        total_sbm=42.0,
+        profile_hash="profile-hash",
+        input_hash="input-hash",
+        sensitivities=(object(),),
+        unsupported_features=(),
+        risk_class_results=(object(),),
+        citations=("MAR21.4",),
+        warnings=(),
+    )
 
-    with pytest.raises(NotImplementedCapitalComponentError, match="SBM and DRC result contracts"):
+    with pytest.raises(NotImplementedCapitalComponentError, match="aggregation arithmetic"):
         compose_standardised_approach_capital(
-            sbm_result=object(),
-            drc_result=object(),
+            sbm_result=sbm_result,
+            drc_result=drc_result,
             rrao_result=result,
         )
 
@@ -103,6 +182,46 @@ def test_rrao_handoff_rejects_invalid_result_shape() -> None:
         )
 
 
+def test_drc_handoff_rejects_invalid_result_shape() -> None:
+    with pytest.raises(OrchestrationInputError, match="missing required field total_drc"):
+        recognise_drc_result(
+            MinimalResult(
+                run_id="bad-drc",
+                calculation_date=date(2026, 3, 31),
+                base_currency="USD",
+                profile_id=US_NPR_2_0_PROFILE_ID,
+                profile_hash="profile",
+                input_hash="input",
+                input_count=0,
+                rejected_input_count=0,
+                categories=(),
+                citations=(),
+                warnings=(),
+            )
+        )
+
+
+def test_sbm_handoff_rejects_invalid_result_shape() -> None:
+    with pytest.raises(
+        OrchestrationInputError, match="SBM result is missing required field total_sbm"
+    ):
+        recognise_sbm_result(
+            MinimalResult(
+                run_id="bad-sbm",
+                calculation_date=date(2026, 3, 31),
+                base_currency="USD",
+                profile_id="BASEL_MAR21",
+                profile_hash="profile",
+                input_hash="input",
+                sensitivities=(),
+                unsupported_features=(),
+                risk_class_results=(),
+                citations=(),
+                warnings=(),
+            )
+        )
+
+
 def test_orchestration_runtime_does_not_import_rrao_package() -> None:
     for source_file in SOURCE_ROOT.rglob("*.py"):
         tree = ast.parse(source_file.read_text(encoding="utf-8"))
@@ -111,8 +230,16 @@ def test_orchestration_runtime_does_not_import_rrao_package() -> None:
                 assert not any(alias.name.startswith("frtb_rrao") for alias in node.names), (
                     source_file
                 )
+                assert not any(alias.name.startswith("frtb_drc") for alias in node.names), (
+                    source_file
+                )
+                assert not any(alias.name.startswith("frtb_sbm") for alias in node.names), (
+                    source_file
+                )
             if isinstance(node, ast.ImportFrom):
                 assert node.module is None or not node.module.startswith("frtb_rrao"), source_file
+                assert node.module is None or not node.module.startswith("frtb_drc"), source_file
+                assert node.module is None or not node.module.startswith("frtb_sbm"), source_file
 
 
 def sample_rrao_result() -> RraoCapitalResult:
@@ -141,6 +268,46 @@ def sample_rrao_result() -> RraoCapitalResult:
             calculation_date=date(2026, 3, 31),
             base_currency="USD",
             profile=RraoRegulatoryProfile.US_NPR_2_0,
+        ),
+    )
+
+
+def sample_drc_result() -> object:
+    return calculate_drc_capital(
+        (
+            DrcPosition(
+                position_id="drc-handoff-001",
+                source_row_id="row-001",
+                desk_id="desk-drc",
+                legal_entity="LE-001",
+                risk_class=DrcRiskClass.NON_SECURITISATION,
+                instrument_type=DrcInstrumentType.BOND,
+                default_direction=DefaultDirection.LONG,
+                issuer_id="issuer-001",
+                tranche_id=None,
+                index_series_id=None,
+                bucket_key="CORPORATE",
+                seniority=DrcSeniority.SENIOR_DEBT,
+                credit_quality=CreditQuality.INVESTMENT_GRADE,
+                notional=100.0,
+                market_value=100.0,
+                cumulative_pnl=0.0,
+                maturity_years=1.0,
+                currency="USD",
+                lineage=DrcSourceLineage(
+                    source_system="orchestration-test",
+                    source_file="drc.csv",
+                    source_row_id="row-001",
+                    source_column_map={"notional": "notional"},
+                ),
+                citation_ids=("US_NPR_210_SCOPE",),
+            ),
+        ),
+        context=DrcCalculationContext(
+            run_id="orchestration-drc-run",
+            calculation_date=date(2026, 3, 31),
+            base_currency="USD",
+            profile_id=US_NPR_2_0_PROFILE_ID,
         ),
     )
 
