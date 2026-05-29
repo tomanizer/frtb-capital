@@ -13,6 +13,7 @@ Upstream risk / trade systems
     -> canonical DrcPosition records
     -> frtb-drc validation, rule-profile lookup, and capital kernels
     -> DrcCapitalResult + DrcAuditRecord
+    -> optional attribution and impact records
     -> frtb-orchestration SA composition and suite aggregation
 ```
 
@@ -31,6 +32,8 @@ SA composition, or top-of-house aggregation.
 | `maturity.py` | Maturity weighting, floors, and hedge maturity alignment helpers. |
 | `netting.py` | Same-obligor, seniority-aware, maturity-weighted net JTD aggregation. |
 | `capital.py` | HBR, bucket capital, category totals, and public calculation entry point. |
+| `attribution.py` | Future analytical Euler and fallback attribution over the audited capital graph. Not part of the first capital slice. |
+| `impact.py` | Future baseline-vs-candidate capital deltas for change assessment. Not part of the first capital slice. |
 | `securitisation.py` | Securitisation non-CTP tranche data, bucket assignment, and capital path. Initially fail closed. |
 | `ctp.py` | CTP membership, tranche/index decomposition, HBR, and capital path. Initially fail closed. |
 | `crif.py` | Optional CRIF-to-canonical mapping. Not imported by kernels. |
@@ -88,8 +91,27 @@ and tranche mechanics package-local.
 1. Compute profile and input hashes.
 2. Verify bucket totals sum to category totals and category totals sum to DRC
    total.
-3. Serialize deterministic audit records.
-4. Return a frozen result.
+3. Preserve lineage from position id through gross JTD, scaled JTD, netting
+   group, bucket, category, and total result.
+4. Record branch metadata for floors, zero denominators, rejected offsets, and
+   unsupported features.
+5. Serialize deterministic audit records.
+6. Return a frozen result.
+
+### Stage 7: Future attribution and impact
+
+This stage is reserved by [ADR 0012](../../decisions/0012-capital-impact-attribution.md)
+and is not required in the first capital-producing slice.
+
+1. Consume the capital result and audit graph.
+2. Calculate analytical Euler contributions where the DRC formula is
+   differentiable on the active branch.
+3. Label branch-specific fallbacks, such as finite-difference impact or
+   unsupported attribution.
+4. Reconcile contribution totals to bucket, category, and total DRC where the
+   selected method permits exact reconciliation.
+5. Report residuals explicitly when floors, caps, branch changes, or bucket
+   moves prevent exact Euler reconciliation.
 
 ## Proposed enums
 
@@ -343,12 +365,66 @@ class DrcCapitalResult:
 The public result should expose `as_dict()` for audit/reporting, following the
 IMA package style.
 
+### Future attribution and impact records
+
+The first DRC implementation does not need to emit these records, but the
+result graph must make them addable without changing the capital calculation
+API.
+
+```python
+class AttributionMethod(StrEnum):
+    ANALYTICAL_EULER = "analytical_euler"
+    FINITE_DIFFERENCE = "finite_difference"
+    UNSUPPORTED = "unsupported"
+
+@dataclass(frozen=True)
+class DrcCapitalContribution:
+    contribution_id: str
+    source_id: str
+    source_level: str
+    bucket_key: str | None
+    category: DrcRiskClass
+    base_amount: float
+    marginal_multiplier: float | None
+    contribution: float | None
+    method: AttributionMethod
+    residual: float = 0.0
+    reason: str = ""
+
+@dataclass(frozen=True)
+class DrcBucketImpactDelta:
+    bucket_key: str
+    baseline_capital: float
+    candidate_capital: float
+    delta: float
+
+@dataclass(frozen=True)
+class DrcImpactResult:
+    baseline_run_id: str
+    candidate_run_id: str
+    total_delta: float
+    bucket_deltas: tuple[DrcBucketImpactDelta, ...]
+    contribution_records: tuple[DrcCapitalContribution, ...] = ()
+```
+
+For non-securitisation DRC, analytical Euler is expected to be tractable for
+bucket capital after netting because bucket DRC is a function of net long, net
+short, risk-weighted net long, risk-weighted net short, and HBR. The
+implementation must still handle branch cases explicitly: zero denominators,
+bucket-level floors, offset rejection, maturity-scaling floors, and any change
+that moves an exposure to a different bucket or category.
+
 ## Data invariants
 
 - All result dataclasses are frozen.
 - Public result records are JSON serialisable without custom object state.
 - Inputs and outputs use stable ids, not object identities.
 - All grouping keys are explicit strings or enums.
+- Intermediate records preserve enough lineage for later impact and
+  attribution through stable joins: position id and source row lineage on
+  inputs, gross/scaled/net JTD ids on intermediates, netting group id and bucket
+  key on aggregation records, risk class on category records, and run id on the
+  public capital result.
 - A position has exactly one DRC risk class.
 - A supported position has exactly one bucket under the selected profile.
 - Direction is never inferred from notional sign alone.
@@ -356,6 +432,8 @@ IMA package style.
 - HBR uses netted exposures, not raw position-level gross JTD.
 - Category totals reconcile exactly to bucket totals within numeric tolerance.
 - Total DRC reconciles exactly to category totals within numeric tolerance.
+- Any future attribution record must state its method and reconciliation
+  residual.
 
 ## Unsupported feature strategy
 
@@ -388,6 +466,10 @@ The test suite should mirror calculation layers:
   weighted long/short maturity cases.
 - `test_capital.py`: HBR, risk weighting, bucket floor, category total, total
   reconciliation.
+- `test_attribution.py`: future analytical Euler and fallback attribution,
+  including branch residuals and unsupported-method reporting.
+- `test_impact.py`: future baseline-vs-candidate deltas using stable ids and
+  explicit method labels.
 - `test_audit.py`: profile hash, input hash, deterministic ordering,
   serialization.
 - `test_unsupported.py`: securitisation and CTP fail closed until implemented.

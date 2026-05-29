@@ -77,16 +77,22 @@ sub-frameworks.
 **Implication:** Any future profile with a different aggregation treatment must
 cite the rule and add tests before changing this behavior.
 
-### DRC-DEC-007: Audit before Euler allocation
+### DRC-DEC-007: Audit graph before attribution
 
 **Decision:** The first implementation will provide deterministic bucket and
-netting-group explain records. Euler-style allocation is a later enhancement.
+netting-group explain records with attribution-ready lineage. Analytical Euler
+allocation and baseline-vs-candidate impact are later enhancements implemented
+outside the capital kernel.
 
 **Reason:** The package first needs a stable capital chain. Euler allocation is
-useful for explainability but should not delay the cited calculation path.
+useful for explainability and change control but should not delay the cited
+calculation path. It is also branch-sensitive: floors, zero denominators,
+bucket moves, and unsupported paths must be labelled before a contribution
+method can be trusted.
 
-**Implication:** The issue breakdown includes an optional Euler allocation issue
-after bucket capital and audit reconciliation are stable.
+**Implication:** The first slice must retain stable ids and branch metadata from
+position through total result. A later issue can add `attribution.py` and
+`impact.py` in line with [ADR 0012](../../decisions/0012-capital-impact-attribution.md).
 
 ### DRC-DEC-008: Securitisation and CTP fail closed
 
@@ -113,12 +119,14 @@ during the non-securitisation phase.
 6. Implement maturity scaling and netting.
 7. Implement HBR, bucket capital, category total, and run result.
 8. Add audit/replay artifacts and synthetic validation pack.
-9. Integrate DRC package output contract into orchestration, without composing
+9. Add explicit attribution and impact placeholders to the public docs and
+   result graph, without calculating contributions yet.
+10. Integrate DRC package output contract into orchestration, without composing
    SA until SBM and RRAO outputs exist.
-10. Implement securitisation non-CTP.
-11. Implement CTP.
-12. Add optional CRIF adapter, validation notebooks, performance checks, and
-   Euler allocation.
+11. Implement securitisation non-CTP.
+12. Implement CTP.
+13. Add optional CRIF adapter, validation notebooks, performance checks,
+    analytical Euler attribution, and finite-difference impact assessment.
 
 ## Documentation deliverables
 

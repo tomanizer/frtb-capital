@@ -165,12 +165,15 @@ result should identify positions that must be routed to fallback.
 
 U.S. source: section V.A.3.d fallback capital requirement and section V.A.9.
 
-### DRC-REQ-010: Audit and Euler Decomposition
+### DRC-REQ-010: Audit and Attribution-Ready Decomposition
 
 Expose bucket, issuer/tranche, seniority, risk weight, gross JTD, net JTD,
-hedge benefit, capital contribution, and source row ids. Euler allocation is a
-useful explain feature but must reconcile to total capital for every supported
-scenario.
+hedge benefit, capital contribution, source row ids, stable intermediate ids,
+and branch metadata. Analytical Euler allocation is a useful future explain
+feature, but it is not part of the regulatory capital formula and must remain
+outside the capital kernel. Where future attribution is implemented, it must
+reconcile to total capital for every supported stable branch or report an
+explicit residual/unsupported method.
 
 Reference implementation inspiration: `drc.py` defines `bucket_net_long`,
 `bucket_net_short`, `rw_net_long`, `rw_net_short`, `capital_contrib`, marginal
