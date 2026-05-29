@@ -12,11 +12,11 @@ workflow has four sequential phases. Complete each phase before advancing.
 
 ## 0. Start state
 
-Determine the PR and export the number for use in all subsequent commands:
+Determine the PR and capture the number for use in all subsequent commands:
 
 ```bash
 gh pr view --json number,title,headRefName,baseRefName,isDraft,mergeable,state
-export PR=<number>
+export PR=$(gh pr view --json number --jq .number)
 ```
 
 If no PR exists for the current branch, stop and ask the user. Set `$PR`
@@ -40,14 +40,16 @@ unresolved thread count. This is the baseline for the run.
 
 - `quality-control` — always runs, never skipped. If this job is absent from
   the check list something is wrong with the workflow wiring.
-- `lint`, `format-check`, `typecheck`, `build`, `test (3.11)` — required for
-  code and dependency changes.
+- `lint`, `typecheck`, `build`, `test (3.11)`, `test (3.12)`, `test (3.13)`
+  — required for code and dependency changes. All three Python versions run on
+  every PR; `3.12` and `3.13` are only skipped on the scheduled weekly run,
+  not on pull requests. Treat a missing or failed `test (3.12)` or
+  `test (3.13)` check on a PR as a real failure.
+  Note: `format-check` is a step inside the `lint` job, not a separate CI
+  job. It has no independent check context.
 - `dependency-audit`, `sbom` — required when `pyproject.toml` or `uv.lock`
   changed.
 - `examples`, `notebooks` — required when IMA examples or notebooks changed.
-- Python `3.12` and `3.13` test matrix jobs — may be legitimately skipped on
-  normal PRs (they are scheduled/manual compatibility checks). Do not treat a
-  skip as a failure.
 
 ```bash
 gh pr checks --watch
@@ -151,7 +153,8 @@ gh pr view $PR --json reviews --jq '
 Also check inline review comments:
 
 ```bash
-gh api repos/:owner/:repo/pulls/$PR/comments \
+REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
+gh api "repos/$REPO/pulls/$PR/comments" \
   --jq '[.[] | select(.user.login | ascii_downcase | test("copilot"))]'
 ```
 
@@ -232,16 +235,15 @@ subagent audit PASS, and mergeability not `CONFLICTING`.
 
 ## CI expectations reference
 
-| Job | When required | Skippable |
+| Job | When required | Skippable on PRs |
 |---|---|---|
 | `quality-control` | Always | Never |
-| `lint` | Code changes | No |
-| `format-check` | Code changes | No |
+| `lint` (includes `format-check` step) | Code changes | No |
 | `typecheck` | Code changes | No |
 | `build` | Code changes | No |
 | `test (3.11)` | Code changes | No |
-| `test (3.12)` | Code changes | Yes — scheduled compat check |
-| `test (3.13)` | Code changes | Yes — scheduled compat check |
+| `test (3.12)` | Code changes | No — skipped on scheduled run only |
+| `test (3.13)` | Code changes | No — skipped on scheduled run only |
 | `dependency-audit` | `pyproject.toml` / `uv.lock` | No |
 | `sbom` | `pyproject.toml` / `uv.lock` | No |
 | `examples` | IMA examples/src changes | No |
