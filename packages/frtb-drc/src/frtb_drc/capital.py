@@ -53,10 +53,14 @@ def calculate_hedge_benefit_ratio(
     for record in records:
         _validate_net_jtd(record, bucket_key=bucket_key)
     aggregate_long = sum(
-        record.net_amount for record in records if record.net_direction is DefaultDirection.LONG
+        record.net_amount
+        for record in records
+        if DefaultDirection(record.net_direction) == DefaultDirection.LONG
     )
     aggregate_short = sum(
-        record.net_amount for record in records if record.net_direction is DefaultDirection.SHORT
+        record.net_amount
+        for record in records
+        if DefaultDirection(record.net_direction) == DefaultDirection.SHORT
     )
     denominator = aggregate_long + aggregate_short
     branch_metadata: tuple[BranchMetadata, ...] = ()
@@ -101,9 +105,11 @@ def calculate_bucket_drc(
     if not records:
         raise DrcInputError("bucket DRC requires at least one net JTD input")
 
-    resolved_bucket = bucket_key or records[0].net_jtd.bucket_key
+    resolved_bucket = records[0].net_jtd.bucket_key if bucket_key is None else bucket_key
+    if not resolved_bucket.strip():
+        raise DrcInputError("bucket_key must be non-empty")
     bucket_definition = get_bucket_definition(resolved_bucket, profile_id=profile_id)
-    if bucket_definition.risk_class is not DrcRiskClass.NON_SECURITISATION:
+    if DrcRiskClass(bucket_definition.risk_class) != DrcRiskClass.NON_SECURITISATION:
         raise DrcInputError(f"bucket is not non-securitisation: {resolved_bucket}")
 
     weighted_long = 0.0
@@ -113,14 +119,15 @@ def calculate_bucket_drc(
     for capital_input in records:
         net_jtd = capital_input.net_jtd
         _validate_net_jtd(net_jtd, bucket_key=resolved_bucket)
+        credit_quality = CreditQuality(capital_input.credit_quality)
         risk_weight = get_risk_weight_rule(
             resolved_bucket,
-            capital_input.credit_quality,
+            credit_quality,
             profile_id=profile_id,
         )
         citation_ids.add(risk_weight.citation_id)
         weighted_amount = net_jtd.net_amount * risk_weight.risk_weight
-        if net_jtd.net_direction is DefaultDirection.LONG:
+        if DefaultDirection(net_jtd.net_direction) == DefaultDirection.LONG:
             weighted_long += weighted_amount
         else:
             weighted_short += weighted_amount
@@ -197,7 +204,7 @@ def calculate_category_drc(
 
 
 def _validate_net_jtd(net_jtd: NetJtd, *, bucket_key: str) -> None:
-    if net_jtd.risk_class is not DrcRiskClass.NON_SECURITISATION:
+    if DrcRiskClass(net_jtd.risk_class) != DrcRiskClass.NON_SECURITISATION:
         raise DrcInputError("bucket DRC requires non-securitisation net JTD")
     if net_jtd.bucket_key != bucket_key:
         raise DrcInputError(

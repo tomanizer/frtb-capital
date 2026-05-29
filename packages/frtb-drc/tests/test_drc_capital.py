@@ -67,6 +67,16 @@ def test_bucket_capital_applies_risk_weights_and_hbr() -> None:
     assert "US_NPR_210_B_3_II" in bucket.citations
 
 
+def test_bucket_capital_accepts_string_credit_quality() -> None:
+    bucket = calculate_bucket_drc(
+        (CapitalInput(_net("long", DefaultDirection.LONG, 100.0), "INVESTMENT_GRADE"),),
+        bucket_key="CORPORATE",
+    )
+
+    assert bucket.weighted_long == pytest.approx(2.1)
+    assert bucket.capital == pytest.approx(2.1)
+
+
 def test_bucket_capital_floors_negative_bucket_at_zero() -> None:
     bucket = calculate_bucket_drc(
         (
@@ -127,6 +137,18 @@ def test_bucket_capital_rejects_bucket_mismatch() -> None:
                 ),
             ),
             bucket_key="CORPORATE",
+        )
+
+
+def test_bucket_capital_rejects_explicit_empty_bucket_key() -> None:
+    with pytest.raises(DrcInputError, match="bucket_key must be non-empty"):
+        calculate_bucket_drc(
+            (
+                CapitalInput(
+                    _net("bad", DefaultDirection.LONG, 10.0), CreditQuality.INVESTMENT_GRADE
+                ),
+            ),
+            bucket_key="",
         )
 
 
