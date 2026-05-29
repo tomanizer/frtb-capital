@@ -1,6 +1,14 @@
 """Standardised Approach residual risk add-on package."""
 
 from frtb_rrao._version import __version__
+from frtb_rrao.allocation import (
+    SUPPORTED_RRAO_ALLOCATION_DIMENSIONS,
+    build_rrao_allocation_report,
+    build_rrao_allocation_reports,
+    resolve_rrao_allocation_dimension,
+    serialize_rrao_allocation_report,
+    validate_rrao_allocation_report,
+)
 from frtb_rrao.audit import (
     input_hash_for_positions,
     serialize_rrao_result,
@@ -17,6 +25,9 @@ from frtb_rrao.crif import (
     adapt_rrao_records,
 )
 from frtb_rrao.data_models import (
+    RraoAllocationBucket,
+    RraoAllocationDimension,
+    RraoAllocationReport,
     RraoCalculationContext,
     RraoCapitalLine,
     RraoCapitalResult,
@@ -63,8 +74,12 @@ from frtb_rrao.validation import (
 
 __all__ = [
     "PACKAGE_METADATA",
+    "SUPPORTED_RRAO_ALLOCATION_DIMENSIONS",
     "RraoAdapterResult",
     "RraoAdapterWarning",
+    "RraoAllocationBucket",
+    "RraoAllocationDimension",
+    "RraoAllocationReport",
     "RraoCalculationContext",
     "RraoCapitalLine",
     "RraoCapitalResult",
@@ -91,6 +106,8 @@ __all__ = [
     "adapt_crif_records",
     "adapt_fnet_records",
     "adapt_rrao_records",
+    "build_rrao_allocation_report",
+    "build_rrao_allocation_reports",
     "build_rrao_capital_lines",
     "build_rrao_subtotals",
     "calculate_rrao_capital",
@@ -108,10 +125,13 @@ __all__ = [
     "investment_fund_rules_for_profile",
     "normalise_gross_effective_notional",
     "profile_content_hash",
+    "resolve_rrao_allocation_dimension",
     "resolve_rrao_profile",
     "risk_weight_rule_for",
     "risk_weight_rules_for_profile",
+    "serialize_rrao_allocation_report",
     "serialize_rrao_result",
+    "validate_rrao_allocation_report",
     "validate_rrao_positions",
     "validate_rrao_result_reconciliation",
 ]
