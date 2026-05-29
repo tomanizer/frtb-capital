@@ -12,13 +12,16 @@ workflow has four sequential phases. Complete each phase before advancing.
 
 ## 0. Start state
 
-Determine the PR:
+Determine the PR and export the number for use in all subsequent commands:
 
 ```bash
 gh pr view --json number,title,headRefName,baseRefName,isDraft,mergeable,state
+export PR=<number>
 ```
 
-If no PR exists for the current branch, stop and ask the user.
+If no PR exists for the current branch, stop and ask the user. Set `$PR`
+once here and use it consistently in every `gh` command below — do not
+re-derive the PR number in later phases.
 
 Confirm worktree compliance before editing anything:
 
@@ -148,7 +151,7 @@ gh pr view $PR --json reviews --jq '
 Also check inline review comments:
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/$PR/comments \
+gh api repos/:owner/:repo/pulls/$PR/comments \
   --jq '[.[] | select(.user.login | ascii_downcase | test("copilot"))]'
 ```
 
