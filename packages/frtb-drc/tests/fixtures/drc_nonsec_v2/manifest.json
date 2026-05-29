@@ -1,0 +1,12 @@
+{
+  "files": {
+    "expected_outputs.json": {
+      "sha256": "ebfeadca79fb7e1c425295fb05133d87425aff03b29137f82a6aaeea218174ad"
+    },
+    "positions.json": {
+      "sha256": "60b8287c559c438735fcd261efb737ed5d86c1491e9c98105edc574f429889db"
+    }
+  },
+  "fixture_id": "drc_nonsec_v2",
+  "schema_version": "drc_nonsec_fixture_v2"
+}

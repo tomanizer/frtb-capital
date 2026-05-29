@@ -875,8 +875,16 @@ dependencies = [
     { name = "frtb-common" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "matplotlib" },
+]
+
 [package.metadata]
 requires-dist = [{ name = "frtb-common", editable = "packages/frtb-common" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "matplotlib", specifier = ">=3.10.9" }]
 
 [[package]]
 name = "frtb-ima"

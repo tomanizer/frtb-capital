@@ -1,0 +1,375 @@
+{
+  "buckets": {
+    "CORPORATE": {
+      "capital": 566429.8980806948,
+      "floor_applied": false,
+      "hbr": 0.9327542729055758,
+      "weighted_long": 572306.25,
+      "weighted_short": 6300.0
+    },
+    "DEFAULTED": {
+      "capital": 1970000.0,
+      "floor_applied": false,
+      "hbr": 1.0,
+      "weighted_long": 1970000.0,
+      "weighted_short": 0.0
+    },
+    "NON_US_SOVEREIGN": {
+      "capital": 916050.0,
+      "floor_applied": false,
+      "hbr": 1.0,
+      "weighted_long": 916050.0,
+      "weighted_short": 0.0
+    },
+    "PSE_GSE": {
+      "capital": 35239.72602739726,
+      "floor_applied": false,
+      "hbr": 0.958904109589041,
+      "weighted_long": 36750.0,
+      "weighted_short": 1575.0
+    }
+  },
+  "category_capital": 3487719.6241080924,
+  "fixture_id": "drc_nonsec_v2",
+  "gross": {
+    "corp-acme-nsr-s-001": 300000.0,
+    "corp-acme-sr-l-001": 750000.0,
+    "corp-beta-sr-l-0y1": 375000.0,
+    "corp-beta-sr-l-0y5": 375000.0,
+    "corp-beta-sr-l-1y0": 375000.0,
+    "corp-beta-sr-l-5y0": 375000.0,
+    "corp-delta-nsr-l-001": 680000.0,
+    "corp-eta-nsr-l-001": 700000.0,
+    "corp-eta-sr-s-001": 150000.0,
+    "corp-gamma-nsr-l-001": 800000.0,
+    "corp-gamma-nsr-s-001": 400000.0,
+    "corp-lambda-eq-l-001": 400000.0,
+    "corp-mu-sr-l-001": 0.0,
+    "corp-theta-nrl-l-001": 0.0,
+    "corp-zeta-nsr-l-001": 500000.0,
+    "corp-zeta-sr-s-001": 150000.0,
+    "def-epsilon-sr-l-001": 500000.0,
+    "def-epsilon-sr-l-0y3": 300000.0,
+    "def-omega-nsr-l-001": 400000.0,
+    "def-pi-eq-l-001": 300000.0,
+    "def-rho-sr-l-001": 250000.0,
+    "def-sigma-sr-l-001": 480000.0,
+    "pse-covered-cb-l-001": 150000.0,
+    "pse-fannie-gg-l-001": 375000.0,
+    "pse-fannie-gg-s-001": 125000.0,
+    "pse-freddie-gg-s-001": 75000.0,
+    "pse-freddie-ging-l-001": 750000.0,
+    "pse-ipsa-pse-l-001": 400000.0,
+    "pse-tricity-pse-l-001": 200000.0,
+    "sov-argentina-sr-l-001": 750000.0,
+    "sov-brazil-sr-l-001": 1125000.0,
+    "sov-brazil-sr-s-001": 375000.0,
+    "sov-france-sr-l-001": 1200000.0,
+    "sov-germany-sr-l-001": 2075000.0,
+    "sov-italy-sr-l-001": 900000.0,
+    "sov-japan-sr-l-001": 1350000.0,
+    "sov-japan-sr-s-001": 450000.0,
+    "sov-mexico-sr-l-001": 675000.0,
+    "sov-uk-sr-l-001": 1500000.0,
+    "sov-uk-sr-s-001": 750000.0
+  },
+  "input_count": 40,
+  "input_hash": "7b3c4dbf2140a93d04c6830a366bb30ac7f90d932dddf45ad75702a4b8680763",
+  "maturity_weights": {
+    "corp-acme-nsr-s-001": 1.0,
+    "corp-acme-sr-l-001": 1.0,
+    "corp-beta-sr-l-0y1": 0.25,
+    "corp-beta-sr-l-0y5": 0.5,
+    "corp-beta-sr-l-1y0": 1.0,
+    "corp-beta-sr-l-5y0": 1.0,
+    "corp-delta-nsr-l-001": 1.0,
+    "corp-eta-nsr-l-001": 1.0,
+    "corp-eta-sr-s-001": 1.0,
+    "corp-gamma-nsr-l-001": 1.0,
+    "corp-gamma-nsr-s-001": 1.0,
+    "corp-lambda-eq-l-001": 1.0,
+    "corp-mu-sr-l-001": 1.0,
+    "corp-theta-nrl-l-001": 1.0,
+    "corp-zeta-nsr-l-001": 1.0,
+    "corp-zeta-sr-s-001": 1.0,
+    "def-epsilon-sr-l-001": 1.0,
+    "def-epsilon-sr-l-0y3": 0.3,
+    "def-omega-nsr-l-001": 1.0,
+    "def-pi-eq-l-001": 1.0,
+    "def-rho-sr-l-001": 0.8,
+    "def-sigma-sr-l-001": 1.0,
+    "pse-covered-cb-l-001": 1.0,
+    "pse-fannie-gg-l-001": 1.0,
+    "pse-fannie-gg-s-001": 1.0,
+    "pse-freddie-gg-s-001": 1.0,
+    "pse-freddie-ging-l-001": 1.0,
+    "pse-ipsa-pse-l-001": 1.0,
+    "pse-tricity-pse-l-001": 1.0,
+    "sov-argentina-sr-l-001": 1.0,
+    "sov-brazil-sr-l-001": 1.0,
+    "sov-brazil-sr-s-001": 1.0,
+    "sov-france-sr-l-001": 1.0,
+    "sov-germany-sr-l-001": 1.0,
+    "sov-italy-sr-l-001": 1.0,
+    "sov-japan-sr-l-001": 1.0,
+    "sov-japan-sr-s-001": 1.0,
+    "sov-mexico-sr-l-001": 1.0,
+    "sov-uk-sr-l-001": 1.0,
+    "sov-uk-sr-s-001": 1.0
+  },
+  "net": {
+    "net-corporate-acme-corp-senior_debt-long": {
+      "amount": 450000.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "acme-corp",
+      "rejected_offsets": []
+    },
+    "net-corporate-beta-tech-senior_debt-long": {
+      "amount": 1031250.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "beta-tech",
+      "rejected_offsets": []
+    },
+    "net-corporate-delta-retail-non_senior_debt-long": {
+      "amount": 680000.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "delta-retail",
+      "rejected_offsets": []
+    },
+    "net-corporate-eta-finance-non_senior_debt-long": {
+      "amount": 700000.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "eta-finance",
+      "rejected_offsets": [
+        "SHORT_HIGHER_SENIORITY_THAN_LONG"
+      ]
+    },
+    "net-corporate-eta-finance-senior_debt-short": {
+      "amount": 150000.0,
+      "bucket": "CORPORATE",
+      "direction": "SHORT",
+      "issuer": "eta-finance",
+      "rejected_offsets": [
+        "SHORT_HIGHER_SENIORITY_THAN_LONG"
+      ]
+    },
+    "net-corporate-gamma-energy-non_senior_debt-long": {
+      "amount": 400000.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "gamma-energy",
+      "rejected_offsets": []
+    },
+    "net-corporate-lambda-holdings-equity-long": {
+      "amount": 400000.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "lambda-holdings",
+      "rejected_offsets": []
+    },
+    "net-corporate-zeta-metals-non_senior_debt-long": {
+      "amount": 500000.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "zeta-metals",
+      "rejected_offsets": [
+        "SHORT_HIGHER_SENIORITY_THAN_LONG"
+      ]
+    },
+    "net-corporate-zeta-metals-senior_debt-short": {
+      "amount": 150000.0,
+      "bucket": "CORPORATE",
+      "direction": "SHORT",
+      "issuer": "zeta-metals",
+      "rejected_offsets": [
+        "SHORT_HIGHER_SENIORITY_THAN_LONG"
+      ]
+    },
+    "net-defaulted-epsilon-holdings-senior_debt-long": {
+      "amount": 590000.0,
+      "bucket": "DEFAULTED",
+      "direction": "LONG",
+      "issuer": "epsilon-holdings",
+      "rejected_offsets": []
+    },
+    "net-defaulted-omega-corp-non_senior_debt-long": {
+      "amount": 400000.0,
+      "bucket": "DEFAULTED",
+      "direction": "LONG",
+      "issuer": "omega-corp",
+      "rejected_offsets": []
+    },
+    "net-defaulted-pi-industrial-equity-long": {
+      "amount": 300000.0,
+      "bucket": "DEFAULTED",
+      "direction": "LONG",
+      "issuer": "pi-industrial",
+      "rejected_offsets": []
+    },
+    "net-defaulted-rho-financial-senior_debt-long": {
+      "amount": 200000.0,
+      "bucket": "DEFAULTED",
+      "direction": "LONG",
+      "issuer": "rho-financial",
+      "rejected_offsets": []
+    },
+    "net-defaulted-sigma-holdings-senior_debt-long": {
+      "amount": 480000.0,
+      "bucket": "DEFAULTED",
+      "direction": "LONG",
+      "issuer": "sigma-holdings",
+      "rejected_offsets": []
+    },
+    "net-non-us-sovereign-argentina-sovereign-senior_debt-long": {
+      "amount": 750000.0,
+      "bucket": "NON_US_SOVEREIGN",
+      "direction": "LONG",
+      "issuer": "argentina-sovereign",
+      "rejected_offsets": []
+    },
+    "net-non-us-sovereign-brazil-sovereign-senior_debt-long": {
+      "amount": 750000.0,
+      "bucket": "NON_US_SOVEREIGN",
+      "direction": "LONG",
+      "issuer": "brazil-sovereign",
+      "rejected_offsets": []
+    },
+    "net-non-us-sovereign-france-sovereign-senior_debt-long": {
+      "amount": 1200000.0,
+      "bucket": "NON_US_SOVEREIGN",
+      "direction": "LONG",
+      "issuer": "france-sovereign",
+      "rejected_offsets": []
+    },
+    "net-non-us-sovereign-germany-sovereign-senior_debt-long": {
+      "amount": 2075000.0,
+      "bucket": "NON_US_SOVEREIGN",
+      "direction": "LONG",
+      "issuer": "germany-sovereign",
+      "rejected_offsets": []
+    },
+    "net-non-us-sovereign-italy-sovereign-senior_debt-long": {
+      "amount": 900000.0,
+      "bucket": "NON_US_SOVEREIGN",
+      "direction": "LONG",
+      "issuer": "italy-sovereign",
+      "rejected_offsets": []
+    },
+    "net-non-us-sovereign-japan-sovereign-senior_debt-long": {
+      "amount": 900000.0,
+      "bucket": "NON_US_SOVEREIGN",
+      "direction": "LONG",
+      "issuer": "japan-sovereign",
+      "rejected_offsets": []
+    },
+    "net-non-us-sovereign-mexico-sovereign-senior_debt-long": {
+      "amount": 675000.0,
+      "bucket": "NON_US_SOVEREIGN",
+      "direction": "LONG",
+      "issuer": "mexico-sovereign",
+      "rejected_offsets": []
+    },
+    "net-non-us-sovereign-uk-sovereign-senior_debt-long": {
+      "amount": 750000.0,
+      "bucket": "NON_US_SOVEREIGN",
+      "direction": "LONG",
+      "issuer": "uk-sovereign",
+      "rejected_offsets": []
+    },
+    "net-pse-gse-fannie-mae-gse_guaranteed-long": {
+      "amount": 250000.0,
+      "bucket": "PSE_GSE",
+      "direction": "LONG",
+      "issuer": "fannie-mae",
+      "rejected_offsets": []
+    },
+    "net-pse-gse-freddie-mac-gse_guaranteed-short": {
+      "amount": 75000.0,
+      "bucket": "PSE_GSE",
+      "direction": "SHORT",
+      "issuer": "freddie-mac",
+      "rejected_offsets": [
+        "SHORT_HIGHER_SENIORITY_THAN_LONG"
+      ]
+    },
+    "net-pse-gse-freddie-mac-gse_issued_not_guaranteed-long": {
+      "amount": 750000.0,
+      "bucket": "PSE_GSE",
+      "direction": "LONG",
+      "issuer": "freddie-mac",
+      "rejected_offsets": [
+        "SHORT_HIGHER_SENIORITY_THAN_LONG"
+      ]
+    },
+    "net-pse-gse-ipsa-muni-pse-long": {
+      "amount": 400000.0,
+      "bucket": "PSE_GSE",
+      "direction": "LONG",
+      "issuer": "ipsa-muni",
+      "rejected_offsets": []
+    },
+    "net-pse-gse-northern-covered-bank-covered_bond-long": {
+      "amount": 150000.0,
+      "bucket": "PSE_GSE",
+      "direction": "LONG",
+      "issuer": "northern-covered-bank",
+      "rejected_offsets": []
+    },
+    "net-pse-gse-tri-county-authority-pse-long": {
+      "amount": 200000.0,
+      "bucket": "PSE_GSE",
+      "direction": "LONG",
+      "issuer": "tri-county-authority",
+      "rejected_offsets": []
+    }
+  },
+  "profile_hash": "7275a6648f42e386e78f3193c12fe05a228aa1a9e4d2fd5d71cb27a13a87b239",
+  "result_json_sha256": "cd23169282aedcb3e5776d6727cee2c716efc69267003bb7c81028f25de211dc",
+  "scaled": {
+    "corp-acme-nsr-s-001": 300000.0,
+    "corp-acme-sr-l-001": 750000.0,
+    "corp-beta-sr-l-0y1": 93750.0,
+    "corp-beta-sr-l-0y5": 187500.0,
+    "corp-beta-sr-l-1y0": 375000.0,
+    "corp-beta-sr-l-5y0": 375000.0,
+    "corp-delta-nsr-l-001": 680000.0,
+    "corp-eta-nsr-l-001": 700000.0,
+    "corp-eta-sr-s-001": 150000.0,
+    "corp-gamma-nsr-l-001": 800000.0,
+    "corp-gamma-nsr-s-001": 400000.0,
+    "corp-lambda-eq-l-001": 400000.0,
+    "corp-mu-sr-l-001": 0.0,
+    "corp-theta-nrl-l-001": 0.0,
+    "corp-zeta-nsr-l-001": 500000.0,
+    "corp-zeta-sr-s-001": 150000.0,
+    "def-epsilon-sr-l-001": 500000.0,
+    "def-epsilon-sr-l-0y3": 90000.0,
+    "def-omega-nsr-l-001": 400000.0,
+    "def-pi-eq-l-001": 300000.0,
+    "def-rho-sr-l-001": 200000.0,
+    "def-sigma-sr-l-001": 480000.0,
+    "pse-covered-cb-l-001": 150000.0,
+    "pse-fannie-gg-l-001": 375000.0,
+    "pse-fannie-gg-s-001": 125000.0,
+    "pse-freddie-gg-s-001": 75000.0,
+    "pse-freddie-ging-l-001": 750000.0,
+    "pse-ipsa-pse-l-001": 400000.0,
+    "pse-tricity-pse-l-001": 200000.0,
+    "sov-argentina-sr-l-001": 750000.0,
+    "sov-brazil-sr-l-001": 1125000.0,
+    "sov-brazil-sr-s-001": 375000.0,
+    "sov-france-sr-l-001": 1200000.0,
+    "sov-germany-sr-l-001": 2075000.0,
+    "sov-italy-sr-l-001": 900000.0,
+    "sov-japan-sr-l-001": 1350000.0,
+    "sov-japan-sr-s-001": 450000.0,
+    "sov-mexico-sr-l-001": 675000.0,
+    "sov-uk-sr-l-001": 1500000.0,
+    "sov-uk-sr-s-001": 750000.0
+  },
+  "total_drc": 3487719.6241080924
+}
