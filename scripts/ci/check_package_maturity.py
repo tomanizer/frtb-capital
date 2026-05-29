@@ -257,7 +257,12 @@ def _global_registry_errors(registry: Registry, *, root: Path) -> list[tuple[str
     errors.extend(_duplicate_errors(package_names, "unique-package-names"))
     errors.extend(_duplicate_errors(import_names, "unique-import-names"))
 
-    package_dirs = sorted(path.name for path in (root / "packages").iterdir() if path.is_dir())
+    packages_dir = root / "packages"
+    package_dirs = (
+        sorted(path.name for path in packages_dir.iterdir() if path.is_dir())
+        if packages_dir.is_dir()
+        else []
+    )
     registry_packages = sorted(package_names)
     if registry_packages != package_dirs:
         missing = sorted(set(package_dirs).difference(registry_packages))
@@ -489,7 +494,8 @@ def _requirement_registry_failures(entry: PackageEntry, *, root: Path) -> list[s
     module_requirement_dir = root / entry.module_docs / "requirements"
     package_requirement_dir = root / entry.path / "docs" / "requirements"
     has_registry = any(
-        requirement_dir.is_dir() and list(requirement_dir.glob("*.yml"))
+        requirement_dir.is_dir()
+        and (list(requirement_dir.glob("*.yml")) or list(requirement_dir.glob("*.yaml")))
         for requirement_dir in (module_requirement_dir, package_requirement_dir)
     )
     if not has_registry:
@@ -539,7 +545,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         registry = load_registry(args.registry)
         results = check_registry(registry, package=args.package)
-    except ValueError as exc:
+    except (ValueError, OSError) as exc:
         print(exc)
         return 1
 

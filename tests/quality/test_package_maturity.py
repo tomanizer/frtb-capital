@@ -181,6 +181,33 @@ def test_package_directory_omitted_from_registry_fails(tmp_path: Path, monkeypat
     assert "package-directory-omitted:qc-omitted" in result.failed_requirement_ids
 
 
+def test_missing_packages_directory_reports_registry_mismatch(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _write_import_module(
+        tmp_path,
+        package="qc-no-packages",
+        import_name="qc_no_packages",
+        implementation=None,
+        validation=None,
+        with_metadata=False,
+    )
+    entry = _registry_entry(
+        package="qc-no-packages",
+        import_name="qc_no_packages",
+        profile="shared",
+        component_type="shared",
+        required_tests=(),
+    )
+    _write_registry(tmp_path, [entry])
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = _single_result(tmp_path)
+
+    assert "package-directory-extra" in result.failed_requirement_ids
+
+
 def test_metadata_mismatch_fails(tmp_path: Path, monkeypatch) -> None:
     entry = _make_package(
         tmp_path,
@@ -235,6 +262,25 @@ def test_missing_required_test_path_fails(tmp_path: Path, monkeypatch) -> None:
     result = _single_result(tmp_path)
 
     assert "required-test-path:public-api" in result.failed_requirement_ids
+
+
+def test_requirement_registry_accepts_yaml_extension(tmp_path: Path, monkeypatch) -> None:
+    entry = _make_package(
+        tmp_path,
+        package="qc-yaml",
+        import_name="qc_yaml",
+        profile="implemented",
+        implementation="IMPLEMENTED",
+        validation="AVAILABLE",
+        required_tests=("public-api",),
+        requirement_extension=".yaml",
+    )
+    _write_registry(tmp_path, [entry])
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = _single_result(tmp_path)
+
+    assert result.passed
 
 
 def test_unknown_package_selection_fails(tmp_path: Path, monkeypatch) -> None:
@@ -310,6 +356,7 @@ def _make_package(
     component_type: str = "capital",
     metadata_package_name: str | None = None,
     write_required_tests: bool = True,
+    requirement_extension: str = ".yml",
 ) -> str:
     package_dir = root / "packages" / package
     source_dir = package_dir / "src" / import_name
@@ -341,7 +388,10 @@ def _make_package(
         (module_docs / "model_documentation").mkdir()
         (module_docs / "model_documentation/README.md").write_text("model\n", encoding="utf-8")
         (module_docs / "requirements").mkdir()
-        (module_docs / "requirements/BASEL_FRTB_TEST.yml").write_text("x\n", encoding="utf-8")
+        (module_docs / f"requirements/BASEL_FRTB_TEST{requirement_extension}").write_text(
+            "x\n",
+            encoding="utf-8",
+        )
     elif profile == "partial_runtime":
         for filename in (
             "ARCHITECTURE_AND_DATA_DESIGN.md",
@@ -450,12 +500,18 @@ def _registry_entry(
             ]
         )
     for test_id in required_tests:
+        required_test_path = _test_path(
+            Path("packages") / package,
+            import_name,
+            profile,
+            test_id,
+        ).as_posix()
         lines.extend(
             [
                 "",
                 "[[packages.required_tests]]",
                 f'id = "{test_id}"',
-                f'path = "{_test_path(Path("packages") / package, import_name, profile, test_id)}"',
+                f'path = "{required_test_path}"',
             ]
         )
     return "\n".join(lines) + "\n"
