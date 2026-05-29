@@ -16,11 +16,11 @@ from __future__ import annotations
 import json
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from datetime import date, datetime
-from enum import Enum
+from datetime import date
 from pathlib import Path
-from types import MappingProxyType, TracebackType
-from typing import Any
+from types import MappingProxyType
+
+from frtb_common.serialization import jsonable
 
 from frtb_ima._version import __version__
 from frtb_ima.audit_inputs import compute_inputs_hash
@@ -125,18 +125,18 @@ class DeskAuditRecord:
             "policy_hash": self.policy_hash,
             "inputs_hash": self.inputs_hash,
             "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
-            "imcc": _jsonable(self.imcc),
-            "ses": _jsonable(self.ses),
-            "pla": _jsonable(self.pla),
-            "backtesting": _jsonable(self.backtesting),
-            "capital": _jsonable(self.capital),
-            "nmrf_valuation": _jsonable(self.nmrf_valuation),
+            "imcc": jsonable(self.imcc),
+            "ses": jsonable(self.ses),
+            "pla": jsonable(self.pla),
+            "backtesting": jsonable(self.backtesting),
+            "capital": jsonable(self.capital),
+            "nmrf_valuation": jsonable(self.nmrf_valuation),
             "input_manifest": (
                 self.input_manifest.compact_summary() if self.input_manifest is not None else None
             ),
             "elapsed_seconds": self.elapsed_seconds,
             "notes": list(self.notes),
-            "metadata": _jsonable(self.metadata),
+            "metadata": jsonable(self.metadata),
         }
 
     def to_json_line(self) -> str:
@@ -229,7 +229,7 @@ class CapitalRunAuditLog:
             "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
             "desk_count": self.desk_count,
             "desk_records": [record.as_dict() for record in self.desk_records],
-            "metadata": _jsonable(self.metadata),
+            "metadata": jsonable(self.metadata),
         }
 
     def to_ndjson(self) -> str:
@@ -463,7 +463,7 @@ def _json_section(
         f"{heading} {title}",
         "",
         "```json",
-        json.dumps(_jsonable(value), indent=2, sort_keys=True),
+        json.dumps(jsonable(value), indent=2, sort_keys=True),
         "```",
     ]
 
@@ -500,25 +500,3 @@ def _format_report_value(value: object) -> str:
 def _escape_table_cell(value: object) -> str:
     text = _format_report_value(value)
     return text.replace("|", "\\|").replace("\n", "<br>")
-
-
-def _jsonable(value: Any) -> object:
-    if hasattr(value, "as_dict") and callable(value.as_dict):
-        return _jsonable(value.as_dict())
-    if isinstance(value, Enum):
-        return value.value
-    if isinstance(value, datetime | date):
-        return value.isoformat()
-    if isinstance(value, Mapping):
-        return {str(key): _jsonable(item) for key, item in value.items()}
-    if isinstance(value, tuple | list):
-        return [_jsonable(item) for item in value]
-    if isinstance(value, BaseException):
-        return repr(value)
-    if isinstance(value, TracebackType):
-        return repr(value)
-    try:
-        json.dumps(value)
-    except TypeError:
-        return str(value)
-    return value
