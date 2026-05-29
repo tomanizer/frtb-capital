@@ -23,12 +23,16 @@ ALLOWED_SOURCE_STATUS = {
 }
 
 
+def clean_scalar(value: str) -> str:
+    return value.split(" #", 1)[0].strip().strip("'\"")
+
+
 def scalar_field(block: list[str], field: str) -> str | None:
     prefix = f"    {field}:"
     for line in block:
         if line.startswith(prefix):
             value = line.split(":", 1)[1].strip()
-            return value.strip('"') or None
+            return clean_scalar(value) or None
     return None
 
 
@@ -42,7 +46,7 @@ def source_blocks() -> dict[str, list[str]]:
         if line.startswith("  - id: "):
             if current_id is not None:
                 blocks[current_id] = current
-            current_id = line.split(":", 1)[1].strip()
+            current_id = clean_scalar(line.split(":", 1)[1])
             current = [line]
         elif current_id is not None:
             current.append(line)
@@ -53,14 +57,16 @@ def source_blocks() -> dict[str, list[str]]:
 
 
 def collect_source_ids(errors: list[str]) -> set[str]:
-    blocks = source_blocks()
     seen: set[str] = set()
+    for line in SOURCES.read_text(encoding="utf-8").splitlines():
+        if line.startswith("  - id: "):
+            source_id = clean_scalar(line.split(":", 1)[1])
+            if source_id in seen:
+                errors.append(f"duplicate source id: {source_id}")
+            seen.add(source_id)
 
+    blocks = source_blocks()
     for source_id, block in blocks.items():
-        if source_id in seen:
-            errors.append(f"duplicate source id: {source_id}")
-        seen.add(source_id)
-
         status = scalar_field(block, "status")
         if status not in ALLOWED_SOURCE_STATUS:
             errors.append(f"{source_id}: invalid status {status!r}")
@@ -78,32 +84,27 @@ def list_values_after_key(path: Path, key: str) -> list[str]:
     lines = path.read_text(encoding="utf-8").splitlines()
     values: list[str] = []
     collecting = False
-    list_indent: int | None = None
+    key_indent = 0
 
     for line in lines:
         stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
         if stripped == f"{key}:":
             collecting = True
-            list_indent = None
+            key_indent = len(line) - len(line.lstrip())
             continue
 
         if not collecting:
             continue
 
-        if not stripped:
-            continue
-
         indent = len(line) - len(line.lstrip())
         if stripped.startswith("- "):
-            if list_indent is None:
-                list_indent = indent
-            if indent >= list_indent:
-                values.append(stripped[2:].strip())
-                continue
+            values.append(clean_scalar(stripped[2:]))
+            continue
 
-        if list_indent is not None and indent <= max(list_indent - 2, 0):
-            collecting = False
-        elif list_indent is None and not stripped.startswith("- "):
+        if indent <= key_indent:
             collecting = False
 
     return values

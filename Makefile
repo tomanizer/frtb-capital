@@ -46,7 +46,7 @@ maturity-check:
 quality-control: import-smoke maturity-check
 
 regulatory-corpus:
-	uv run python tools/regulatory/lint_regulatory_corpus.py
+	python3 tools/regulatory/lint_regulatory_corpus.py
 
 build:
 	rm -rf dist/release

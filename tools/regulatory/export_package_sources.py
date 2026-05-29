@@ -8,6 +8,10 @@ SOURCES = ROOT / "docs" / "regulatory" / "sources.yml"
 CROSSWALK_DIR = ROOT / "docs" / "regulatory" / "crosswalk"
 
 
+def clean_scalar(value: str) -> str:
+    return value.split(" #", 1)[0].strip().strip("'\"")
+
+
 def source_blocks() -> dict[str, list[str]]:
     lines = SOURCES.read_text(encoding="utf-8").splitlines()
     blocks: dict[str, list[str]] = {}
@@ -18,7 +22,7 @@ def source_blocks() -> dict[str, list[str]]:
         if line.startswith("  - id: "):
             if current_id is not None:
                 blocks[current_id] = current
-            current_id = line.split(":", 1)[1].strip()
+            current_id = clean_scalar(line.split(":", 1)[1])
             current = [line]
         elif current_id is not None:
             current.append(line)
@@ -33,28 +37,29 @@ def source_refs(component: str) -> list[str]:
     lines = crosswalk.read_text(encoding="utf-8").splitlines()
     refs: list[str] = []
     collecting = False
-    list_indent: int | None = None
+    key_indent = 0
 
     for line in lines:
         stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
         if stripped == "source_refs:":
             collecting = True
-            list_indent = None
+            key_indent = len(line) - len(line.lstrip())
             continue
-        if not collecting or not stripped:
+
+        if not collecting:
             continue
 
         indent = len(line) - len(line.lstrip())
         if stripped.startswith("- "):
-            if list_indent is None:
-                list_indent = indent
-            ref = stripped[2:].strip()
+            ref = clean_scalar(stripped[2:])
             if ref not in refs:
                 refs.append(ref)
             continue
-        if list_indent is not None and indent <= max(list_indent - 2, 0):
-            collecting = False
-        elif list_indent is None:
+
+        if indent <= key_indent:
             collecting = False
 
     return refs
