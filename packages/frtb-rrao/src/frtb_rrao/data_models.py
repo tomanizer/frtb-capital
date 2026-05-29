@@ -141,6 +141,8 @@ class RraoClassificationDecision:
     risk_weight_key: str
     citations: tuple[str, ...]
     exclusion_reason: RraoExclusionReason | None = None
+    exclusion_evidence_id: str | None = None
+    supervisor_directive_id: str | None = None
 
 
 @dataclass(frozen=True)

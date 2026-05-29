@@ -1,6 +1,7 @@
 """Standardised Approach residual risk add-on scaffold."""
 
 from frtb_rrao._version import __version__
+from frtb_rrao.classification import classify_rrao_position, classify_rrao_positions
 from frtb_rrao.data_models import (
     RraoCalculationContext,
     RraoCapitalLine,
@@ -62,6 +63,8 @@ __all__ = [
     "__version__",
     "calculate_rrao_capital",
     "citations_for_profile",
+    "classify_rrao_position",
+    "classify_rrao_positions",
     "evidence_rule_for",
     "evidence_rules_for_profile",
     "exclusion_rule_for",

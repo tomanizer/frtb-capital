@@ -33,7 +33,7 @@ are implemented, but no RRAO capital result is produced yet.
 | Regulatory source pack | Partial | Issue #81 creates the package-local traceability skeleton. |
 | Canonical data models and validation | Implemented | Issue #82 added frozen public models and deterministic input validation; calculation remains scaffolded. |
 | Rule profiles and reference data | Implemented | Issue #83 added cited Basel MAR23 and U.S. NPR 2.0 lookup tables and unsupported EU/PRA guards. |
-| Classification and exclusions | Planned | Issue #85. |
+| Classification and exclusions | Partial | Issue #85 added cited classification decisions and exclusion decisions; exact match-group validation remains future work. |
 | Line add-ons and subtotals | Planned | Issue #86. |
 | Public API and audit records | Planned | Issue #87. |
 | Synthetic validation fixture | Planned | Issue #88. |
