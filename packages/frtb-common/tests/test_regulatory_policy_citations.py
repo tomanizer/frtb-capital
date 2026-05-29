@@ -7,7 +7,6 @@ import pytest
 
 from frtb_common import assert_policy_has_regulatory_citations
 from frtb_common.regulatory.policy_citations import MissingRegulatoryCitationsError
-from frtb_common.status import UnsupportedRegulatoryFeatureError
 
 
 @dataclass(frozen=True)
