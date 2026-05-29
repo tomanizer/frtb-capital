@@ -6,9 +6,9 @@
 
 - Package directory: `packages/frtb-rrao`
 - Import name: `frtb_rrao`
-- Implementation status: partial; supported canonical-input calculation path
-  implemented
-- Validation status: pending
+- Implementation status: implemented for scoped v1 canonical-input mechanics
+- Validation status: available for deterministic fixture, comparator,
+  property, mutation, reconciliation, and performance evidence
 
 The package is importable and exposes `calculate_rrao_capital` for supported
 Basel MAR23, U.S. NPR 2.0, and EU CRR3 comparison-profile canonical inputs.
@@ -24,12 +24,16 @@ Unsupported profiles and unsupported evidence paths fail closed.
 - [Decisions and implementation plan](DECISIONS_AND_PLAN.md)
 - [Workable issue breakdown](ISSUE_BREAKDOWN.md)
 - [Workable requirements](requirements/BASEL_FRTB_RRAO.yml)
+- [Stable public API](PUBLIC_API.md)
+- [IMA-style model documentation pack](model_documentation/README.md)
 
 Package-local traceability documents live under `packages/frtb-rrao/docs`:
 
 - [Regulatory traceability](../../../packages/frtb-rrao/docs/REGULATORY_TRACEABILITY.md)
 - [Regulatory assumptions](../../../packages/frtb-rrao/docs/REGULATORY_ASSUMPTIONS.md)
 - [Regulatory sources](../../../packages/frtb-rrao/docs/regulatory_sources.yml)
+- [Performance benchmark](../../../packages/frtb-rrao/docs/PERFORMANCE.md)
+- [Allocation explain views](../../../packages/frtb-rrao/docs/ALLOCATION.md)
 
 ## v1 Target
 

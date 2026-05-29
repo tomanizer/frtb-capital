@@ -144,6 +144,14 @@ class RraoInvestmentFundDescriptor:
 
 
 @dataclass(frozen=True)
+class RraoBackToBackMatch:
+    """Deterministic evidence for an exact third-party back-to-back exclusion."""
+
+    match_group_id: str
+    matched_position_id: str
+
+
+@dataclass(frozen=True)
 class RraoPosition:
     """Canonical residual-risk position before classification and capital."""
 
@@ -159,6 +167,7 @@ class RraoPosition:
     classification_hint: RraoClassification | None = None
     exclusion_reason: RraoExclusionReason | None = None
     exclusion_evidence_id: str | None = None
+    back_to_back_match: RraoBackToBackMatch | None = None
     supervisor_directive_id: str | None = None
     underlying_count: int | None = None
     is_path_dependent: bool | None = None
@@ -292,6 +301,7 @@ __all__ = [
     "RraoAllocationBucket",
     "RraoAllocationDimension",
     "RraoAllocationReport",
+    "RraoBackToBackMatch",
     "RraoCalculationContext",
     "RraoCapitalLine",
     "RraoCapitalResult",

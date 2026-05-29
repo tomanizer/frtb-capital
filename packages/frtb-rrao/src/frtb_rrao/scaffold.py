@@ -10,9 +10,9 @@ from frtb_common import (
     ValidationStatus,
 )
 
-from frtb_rrao.audit import input_hash_for_positions, validate_rrao_result_reconciliation
+from frtb_rrao.audit import _input_hash_for_validated_positions, validate_rrao_result_reconciliation
 from frtb_rrao.capital import (
-    build_rrao_capital_lines,
+    _build_rrao_capital_lines_from_validated,
     build_rrao_subtotals,
     included_rrao_total,
 )
@@ -29,8 +29,8 @@ PACKAGE_METADATA = CapitalComponentMetadata(
     package_name="frtb-rrao",
     import_name="frtb_rrao",
     component_name="Standardised Approach residual risk add-on",
-    implementation_status=ImplementationStatus.PARTIAL,
-    validation_status=ValidationStatus.PENDING,
+    implementation_status=ImplementationStatus.IMPLEMENTED,
+    validation_status=ValidationStatus.AVAILABLE,
 )
 
 
@@ -49,7 +49,10 @@ def calculate_rrao_capital(
     _validate_context(context)
     rule_profile = get_rrao_rule_profile(context.profile)
     validated_positions = validate_rrao_positions(positions)
-    all_lines = build_rrao_capital_lines(validated_positions, profile=rule_profile.profile)
+    all_lines = _build_rrao_capital_lines_from_validated(
+        validated_positions,
+        profile=rule_profile.profile,
+    )
     included_lines, excluded_lines = _partition_lines(all_lines)
     result_lines = included_lines + excluded_lines
     result = RraoCapitalResult(
@@ -58,7 +61,7 @@ def calculate_rrao_capital(
         base_currency=context.base_currency,
         profile_id=rule_profile.profile.value,
         profile_hash=rule_profile.content_hash,
-        input_hash=input_hash_for_positions(validated_positions),
+        input_hash=_input_hash_for_validated_positions(validated_positions),
         lines=included_lines,
         excluded_lines=excluded_lines,
         subtotals=build_rrao_subtotals(result_lines),

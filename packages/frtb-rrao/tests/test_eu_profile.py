@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 from frtb_rrao import (
+    RraoBackToBackMatch,
     RraoCalculationContext,
     RraoClassification,
     RraoEvidenceType,
@@ -43,7 +44,6 @@ EU_ARTICLE_3_EXCLUSION_REASONS = (
 EU_ARTICLE_325U_4_EXCLUSION_REASONS = (
     RraoExclusionReason.LISTED,
     RraoExclusionReason.CCP_OR_QCCP_CLEARABLE,
-    RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
 )
 
 
@@ -69,6 +69,7 @@ def eu_position(
     source_row_id: str = "row-001",
     exclusion_reason: RraoExclusionReason | None = None,
     exclusion_evidence_id: str | None = None,
+    back_to_back_match: RraoBackToBackMatch | None = None,
 ) -> RraoPosition:
     return RraoPosition(
         position_id=position_id,
@@ -82,6 +83,7 @@ def eu_position(
         classification_hint=classification_hint,
         exclusion_reason=exclusion_reason,
         exclusion_evidence_id=exclusion_evidence_id,
+        back_to_back_match=back_to_back_match,
         lineage=sample_lineage(source_row_id),
     )
 
@@ -141,7 +143,18 @@ def _position_from_payload(payload: object) -> RraoPosition:
             RraoExclusionReason(str(exclusion_reason)) if exclusion_reason is not None else None
         ),
         exclusion_evidence_id=_optional_str(payload.get("exclusion_evidence_id")),
+        back_to_back_match=_optional_back_to_back_match(payload.get("back_to_back_match")),
         lineage=sample_lineage(str(payload["source_row_id"])),
+    )
+
+
+def _optional_back_to_back_match(value: object) -> RraoBackToBackMatch | None:
+    if value is None:
+        return None
+    assert isinstance(value, dict)
+    return RraoBackToBackMatch(
+        match_group_id=str(value["match_group_id"]),
+        matched_position_id=str(value["matched_position_id"]),
     )
 
 
@@ -244,6 +257,51 @@ def test_eu_article_325u_4_exemptions_are_cited_zero_capital_records(
     assert result.lines == ()
     assert result.excluded_lines[0].exclusion_reason is exclusion_reason
     assert result.excluded_lines[0].risk_weight == 0.0
+    assert result.excluded_lines[0].citations == ("eu_crr_325u_4",)
+
+
+def test_eu_article_325u_4_exact_back_to_back_requires_valid_pair() -> None:
+    result = calculate_rrao_capital(
+        (
+            eu_position(
+                position_id="eu-b2b-left",
+                source_row_id="eu-b2b-left-row",
+                evidence_type=RraoEvidenceType.EXPLICIT_EXCLUSION,
+                evidence_label="exact third-party back-to-back left",
+                classification_hint=RraoClassification.EXCLUDED,
+                exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                exclusion_evidence_id="eu-b2b-match-001",
+                back_to_back_match=RraoBackToBackMatch(
+                    match_group_id="eu-b2b-match-001",
+                    matched_position_id="eu-b2b-right",
+                ),
+            ),
+            eu_position(
+                position_id="eu-b2b-right",
+                source_row_id="eu-b2b-right-row",
+                evidence_type=RraoEvidenceType.EXPLICIT_EXCLUSION,
+                evidence_label="exact third-party back-to-back right",
+                classification_hint=RraoClassification.EXCLUDED,
+                exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+                exclusion_evidence_id="eu-b2b-match-001",
+                back_to_back_match=RraoBackToBackMatch(
+                    match_group_id="eu-b2b-match-001",
+                    matched_position_id="eu-b2b-left",
+                ),
+            ),
+        ),
+        context=eu_context(),
+    )
+
+    assert result.total_rrao == 0.0
+    assert result.lines == ()
+    assert [line.position_id for line in result.excluded_lines] == [
+        "eu-b2b-left",
+        "eu-b2b-right",
+    ]
+    assert result.excluded_lines[0].exclusion_reason is (
+        RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK
+    )
     assert result.excluded_lines[0].citations == ("eu_crr_325u_4",)
 
 

@@ -9,6 +9,8 @@ from frtb_rrao import (
     RraoInputError,
     RraoInvestmentFundExposureType,
     RraoRegulatoryProfile,
+)
+from frtb_rrao.reference_data import (
     citations_for_profile,
     evidence_rule_for,
     evidence_rules_for_profile,

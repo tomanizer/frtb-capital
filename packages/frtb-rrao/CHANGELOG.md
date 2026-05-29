@@ -35,3 +35,15 @@ All notable changes to `frtb-rrao` will be documented here.
   command for 100,000 synthetic residual-risk positions.
 - Added deterministic additive RRAO allocation report helpers for line, desk,
   legal-entity, and evidence-type contribution views.
+- Added exact third-party back-to-back match-group validation, including
+  deterministic two-transaction evidence and zero-capital excluded lines.
+- Added external comparator tests, Hypothesis property tests, mutmut quality
+  evidence, shared reconciliation tolerance helpers, and a narrowed v1 public
+  API contract.
+- Added the IMA-style RRAO model-documentation evidence pack and refreshed
+  post-v1 status language across the RRAO docs.
+
+### Changed
+
+- Improved target-scale RRAO performance by avoiding repeated validation and
+  replacing generic audit dataclass normalization with explicit serializers.

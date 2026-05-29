@@ -5,10 +5,10 @@ For a bidirectional code/regulation map, see
 [`REGULATORY_TRACEABILITY.md`](REGULATORY_TRACEABILITY.md). For link-only source
 metadata, see [`regulatory_sources.yml`](regulatory_sources.yml).
 
-`frtb-rrao` is currently partial. The package calculates supported canonical
-Basel MAR23, U.S. NPR 2.0, and EU CRR3 comparison-profile residual-risk inputs,
-and no document or test in this package should describe outputs as final
-regulatory capital.
+`frtb-rrao` has an implemented v1 canonical-input calculation path for
+supported Basel MAR23, U.S. NPR 2.0, and EU CRR3 comparison-profile
+residual-risk inputs. No document or test in this package should describe
+outputs as final regulatory capital.
 
 ## v1 basis
 
@@ -98,9 +98,24 @@ perfectly offsetting exemptions. It also records Delegated Regulation (EU)
 asserts that the listed risk is the only residual-risk evidence. Article 3
 records are not treated as Article 325u(4) exemptions.
 
+Exact third-party back-to-back exclusions require deterministic
+`RraoBackToBackMatch` evidence. A match group must contain exactly two
+transactions, each transaction must cross-reference the other, both records must
+share the same exclusion evidence id and currency, and gross effective notionals
+must match within the package reconciliation tolerance.
+
 If exclusion evidence is missing, the position must remain subject to normal
 classification or fail validation. The package must not silently convert missing
 evidence into zero capital.
+
+## Reconciliation tolerance boundary
+
+RRAO v1 uses exact additive arithmetic for published 1.0% and 0.1% risk
+weights, but result reconciliation allows a documented floating-point budget for
+future profile weights and for accumulated serialized totals. The shared
+tolerance is `rel_tol=1e-12` and `abs_tol=1e-9` for included-line and subtotal
+reconciliation, with a stricter `abs_tol=1e-12` zero-add-on check for excluded
+lines. Differences outside those budgets fail reconciliation.
 
 ## Jurisdiction support
 

@@ -34,10 +34,17 @@ def classify_rrao_positions(
 
     rule_profile = get_rrao_rule_profile(profile)
     validated = validate_rrao_positions(positions)
-    return tuple(
-        _classify_validated_position(position, profile=rule_profile.profile)
-        for position in validated
-    )
+    return _classify_validated_rrao_positions(validated, profile=rule_profile.profile)
+
+
+def _classify_validated_rrao_positions(
+    positions: tuple[RraoPosition, ...],
+    *,
+    profile: RraoRegulatoryProfile,
+) -> tuple[RraoClassificationDecision, ...]:
+    """Classify an already validated tuple of RRAO positions."""
+
+    return tuple(_classify_validated_position(position, profile=profile) for position in positions)
 
 
 def classify_rrao_position(

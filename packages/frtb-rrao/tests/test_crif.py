@@ -7,6 +7,7 @@ from frtb_rrao import (
     RraoCalculationContext,
     RraoClassification,
     RraoEvidenceType,
+    RraoExclusionReason,
     RraoRegulatoryProfile,
     adapt_crif_records,
     adapt_fnet_records,
@@ -97,6 +98,111 @@ def test_fnet_adapter_maps_bucket_rows_when_evidence_is_sufficient() -> None:
     assert [position.evidence_type for position in result.positions] == [
         RraoEvidenceType.EXOTIC_UNDERLYING,
         RraoEvidenceType.BEHAVIOURAL_RISK,
+    ]
+
+
+def test_crif_adapter_accepts_valid_exact_back_to_back_pair() -> None:
+    result = adapt_crif_records(
+        (
+            {
+                "TradeId": "crif-b2b-left",
+                "RowID": "row-b2b-left",
+                "Desk": "desk-a",
+                "LegalEntity": "LE-001",
+                "AmountUSD": "2500000",
+                "Currency": "USD",
+                "RiskType": "RRAO_0_PERCENT",
+                "ProductType": "exact back-to-back left",
+                "ExclusionReason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+                "ExclusionEvidenceID": "external-match-001",
+                "BackToBackMatchGroupID": "external-match-001",
+                "BackToBackMatchedPositionID": "crif-b2b-right",
+            },
+            {
+                "TradeId": "crif-b2b-right",
+                "RowID": "row-b2b-right",
+                "Desk": "desk-a",
+                "LegalEntity": "LE-001",
+                "AmountUSD": "2500000",
+                "Currency": "USD",
+                "RiskType": "RRAO_0_PERCENT",
+                "ProductType": "exact back-to-back right",
+                "ExclusionReason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+                "ExclusionEvidenceID": "external-match-001",
+                "BackToBackMatchGroupID": "external-match-001",
+                "BackToBackMatchedPositionID": "crif-b2b-left",
+            },
+        ),
+        source_file="crif.csv",
+    )
+
+    assert result.rejected_rows == ()
+    assert [position.position_id for position in result.positions] == [
+        "crif-b2b-left",
+        "crif-b2b-right",
+    ]
+    assert all(
+        position.exclusion_reason is RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK
+        for position in result.positions
+    )
+
+    capital = calculate_rrao_capital(
+        result.positions,
+        context=RraoCalculationContext(
+            run_id="adapter-b2b-run",
+            calculation_date=date(2026, 3, 31),
+            base_currency="USD",
+            profile=RraoRegulatoryProfile.US_NPR_2_0,
+        ),
+    )
+
+    assert capital.lines == ()
+    assert [line.position_id for line in capital.excluded_lines] == [
+        "crif-b2b-left",
+        "crif-b2b-right",
+    ]
+    assert capital.total_rrao == 0.0
+
+
+def test_fnet_adapter_accepts_valid_exact_back_to_back_pair() -> None:
+    result = adapt_fnet_records(
+        (
+            {
+                "PositionID": "fnet-b2b-left",
+                "RowID": "row-b2b-left",
+                "DeskID": "desk-b",
+                "LegalEntityID": "LE-002",
+                "GrossEffectiveNotional": 1250000.0,
+                "Currency": "USD",
+                "Bucket": "Excluded",
+                "Description": "exact back-to-back left",
+                "ExclusionReason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+                "ExclusionEvidenceID": "fnet-match-001",
+                "BackToBackMatchGroupID": "fnet-match-001",
+                "BackToBackMatchedPositionID": "fnet-b2b-right",
+            },
+            {
+                "PositionID": "fnet-b2b-right",
+                "RowID": "row-b2b-right",
+                "DeskID": "desk-b",
+                "LegalEntityID": "LE-002",
+                "GrossEffectiveNotional": 1250000.0,
+                "Currency": "USD",
+                "Bucket": "Excluded",
+                "Description": "exact back-to-back right",
+                "ExclusionReason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+                "ExclusionEvidenceID": "fnet-match-001",
+                "BackToBackMatchGroupID": "fnet-match-001",
+                "BackToBackMatchedPositionID": "fnet-b2b-left",
+            },
+        ),
+        source_file="fnet.csv",
+    )
+
+    assert result.rejected_rows == ()
+    assert [position.position_id for position in result.positions] == [
+        "fnet-b2b-left",
+        "fnet-b2b-right",
     ]
 
 

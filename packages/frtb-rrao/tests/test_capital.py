@@ -7,6 +7,8 @@ from frtb_rrao import (
     RraoPosition,
     RraoRegulatoryProfile,
     RraoSourceLineage,
+)
+from frtb_rrao.capital import (
     build_rrao_capital_lines,
     build_rrao_subtotals,
     included_rrao_total,

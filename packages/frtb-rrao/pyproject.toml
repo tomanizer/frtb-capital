@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frtb-rrao"
-version = "0.11.0"
+version = "0.12.0"
 description = "FRTB Standardised Approach residual risk add-on"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,5 +13,56 @@ dependencies = [
     "frtb-common",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "hypothesis>=6.152,<6.153",
+    "mutmut>=3.5,<3.6",
+    "mypy>=2.1,<2.2",
+    "pytest>=9.0,<9.1",
+    "pytest-cov>=7.1,<7.2",
+    "ruff>=0.15,<0.16",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+norecursedirs = [".*", "build", "dist", "mutants"]
+
+[tool.mutmut]
+paths_to_mutate = [
+    "src/frtb_rrao/audit.py",
+    "src/frtb_rrao/capital.py",
+    "src/frtb_rrao/classification.py",
+    "src/frtb_rrao/validation.py",
+]
+pytest_add_cli_args_test_selection = [
+    "tests/test_audit.py",
+    "tests/test_capital.py",
+    "tests/test_classification.py",
+    "tests/test_exclusions.py",
+    "tests/test_external_comparator.py",
+    "tests/test_fixture_workflow.py",
+    "tests/test_investment_fund.py",
+    "tests/test_properties.py",
+    "tests/test_reconciliation_tolerance.py",
+    "tests/test_validation.py",
+]
+pytest_add_cli_args = [
+    "-c",
+    "pyproject.toml",
+    "-p",
+    "no:cov",
+]
+do_not_mutate = [
+    "src/frtb_rrao/crif.py",
+    "src/frtb_rrao/reference_data.py",
+    "src/frtb_rrao/regimes.py",
+]
+also_copy = [
+    "src/frtb_rrao",
+    "tests",
+]
+mutate_only_covered_lines = true

@@ -1,5 +1,10 @@
 # frtb-rrao decisions and implementation plan
 
+This document is the historical v1 implementation plan. The scoped
+canonical-input calculation path is now implemented; remaining questions below
+describe future cross-package design choices, not blockers for current RRAO v1
+mechanics.
+
 ## Decision log
 
 ### RRAO-DEC-001: Implement U.S. NPR and Basel canonical-input slice first
@@ -80,13 +85,13 @@ cite the rule and add tests before changing this behavior.
 ### RRAO-DEC-007: Additive explain before advanced allocation
 
 **Decision:** The first implementation will provide line and subtotal explain
-records. Advanced allocation views are later enhancements.
+records. Advanced allocation views may be added after the public API is stable.
 
 **Reason:** RRAO is additive, so line contribution is already exact. The package
 first needs stable capital and audit chains.
 
-**Implication:** Optional allocation issue comes after public API, audit, and
-fixtures.
+**Implication:** Issue #94 added additive allocation helpers after the public
+API, audit, and fixtures were in place.
 
 ### RRAO-DEC-008: External GitHub implementations inform adapters, not rules
 
@@ -101,24 +106,27 @@ the suite's clarity and dependency rules.
 **Implication:** The implementation should keep standard-library adapters and
 pure calculation kernels.
 
-## Implementation sequence
+## Implemented sequence
 
-1. Complete scaffold and keep RRAO calculation entry points failing explicitly.
-2. Add RRAO architecture, detailed requirements, and actionable issue plan.
-3. Add RRAO package model documentation and traceability skeleton.
-4. Implement data models and validation.
-5. Implement rule profiles and reference data for U.S. NPR 2.0 and Basel MAR23
+1. Completed scaffold and explicit failure paths.
+2. Added RRAO architecture, detailed requirements, and actionable issue plan.
+3. Added RRAO package model documentation and traceability skeleton.
+4. Implemented data models and validation.
+5. Implemented rule profiles and reference data for U.S. NPR 2.0 and Basel MAR23
    canonical-input slice.
-6. Implement classification and exclusion decisions.
-7. Implement line add-ons, subtotals, and total capital.
-8. Add public run API and audit/replay artifacts.
-9. Add synthetic validation fixture pack.
-10. Add optional CRIF/FNet adapter.
-11. Add EU CRR3 profile mapping and fixtures.
-12. Integrate RRAO package output contract into orchestration, without changing
+6. Implemented classification and exclusion decisions.
+7. Implemented line add-ons, subtotals, and total capital.
+8. Added public run API and audit/replay artifacts.
+9. Added synthetic validation fixture pack.
+10. Added optional CRIF/FNet adapter.
+11. Added EU CRR3 profile mapping and fixtures.
+12. Integrated RRAO package output contract into orchestration, without changing
     SA composition until SBM and DRC outputs are compatible.
-13. Add performance and replay controls.
-14. Add optional allocation/reporting helpers.
+13. Added performance and replay controls.
+14. Added additive allocation/reporting helpers.
+15. Added exact back-to-back match-group validation, external comparator tests,
+    property tests, mutation evidence, a narrow public API contract, and shared
+    reconciliation tolerance helpers.
 
 ## Documentation deliverables
 
@@ -149,7 +157,7 @@ canonical-input slice:
 This is narrow enough to implement and review, but broad enough to exercise the
 core RRAO mechanics.
 
-## Open design questions
+## Remaining design questions
 
 1. Should `RraoRuleProfile` remain package-local for RRAO v1 or move to
    `frtb-common` after DRC and RRAO both have stable profile contracts?
@@ -158,10 +166,10 @@ core RRAO mechanics.
 3. Resolved in issue #90: the first U.S. NPR slice implements proposed section
    `__.211(a)(3)` only when an explicit `__.205(e)(3)(iii)` investment-fund
    descriptor and cited mandate evidence are supplied.
-4. Should CRIF/FNet mapping ship before or after the first canonical-input
-   capital slice?
-5. What benchmark size is useful enough for RRAO without overfitting to
-   synthetic data shape?
+4. Resolved in issue #89: CRIF/FNet mapping shipped after the first
+   canonical-input capital slice as an optional adapter.
+5. Resolved in issue #93: the benchmark fixture uses 100,000 deterministic
+   synthetic positions and records replay hashes.
 
-These are design questions, not blockers for the first data-model and
-validation issues.
+The unresolved items are cross-package contract choices and do not block scoped
+v1 RRAO calculation for supported canonical inputs.

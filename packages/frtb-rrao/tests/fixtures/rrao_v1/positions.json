@@ -136,7 +136,28 @@
       "evidence_label": "exact third-party back-to-back transaction",
       "classification_hint": "EXCLUDED",
       "exclusion_reason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
-      "exclusion_evidence_id": "back-to-back-match-001"
+      "exclusion_evidence_id": "back-to-back-match-001",
+      "back_to_back_match": {
+        "match_group_id": "back-to-back-match-001",
+        "matched_position_id": "excluded-back-to-back-002"
+      }
+    },
+    {
+      "position_id": "excluded-back-to-back-002",
+      "source_row_id": "row-011b",
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-004",
+      "gross_effective_notional": 8000000.0,
+      "currency": "USD",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "evidence_label": "exact third-party back-to-back matching transaction",
+      "classification_hint": "EXCLUDED",
+      "exclusion_reason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+      "exclusion_evidence_id": "back-to-back-match-001",
+      "back_to_back_match": {
+        "match_group_id": "back-to-back-match-001",
+        "matched_position_id": "excluded-back-to-back-001"
+      }
     },
     {
       "position_id": "excluded-gov-gse-001",
