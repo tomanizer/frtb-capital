@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+set -- ${PYTHON_BIN:-python3}
+if ! command -v "$1" >/dev/null 2>&1; then
+  echo "error: PYTHON_BIN command is required for the frtb-capital agent worktree guard" >&2
+  exit 1
+fi
+
+"$@" scripts/agent_worktree.py guard --quiet
+
+while read local_ref _local_sha remote_ref _remote_sha
+do
+  if [ "$remote_ref" = "refs/heads/main" ] || [ "$local_ref" = "refs/heads/main" ]; then
+    echo "error: pushing main is blocked by frtb-capital agent worktree policy" >&2
+    exit 1
+  fi
+done

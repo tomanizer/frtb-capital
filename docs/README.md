@@ -15,6 +15,7 @@ model.
 | [Quality](quality/) | Coverage, mutation-testing, and engineering-quality evidence. |
 | [Performance](performance/) | Benchmark baselines and target-scale evidence. |
 | [Release process](RELEASE_PROCESS.md) | Versioning, approval, tagging, and release-note policy. |
+| [Agent worktrees](AGENT_WORKTREE_POLICY.md) | Protected-main and per-agent worktree workflow. |
 
 ## Documentation Boundaries
 

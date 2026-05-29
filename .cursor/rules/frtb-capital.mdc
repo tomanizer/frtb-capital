@@ -7,9 +7,18 @@ Before changing code, read the repository guidance:
 
 - `AGENTS.md`
 - `CLAUDE.md`
+- `docs/AGENT_WORKTREE_POLICY.md`
 - The relevant package-level `AGENTS.md` and `CLAUDE.md`
 
 Treat those files as the source of truth.
+
+Agent worktree rules:
+
+- Do not edit the protected main clone at `~/Documents/Projects/frtb-capital`.
+- Work under `~/Documents/Projects/frtb-capital-worktrees/cursor/<task>` on a
+  `cursor/<task>` branch.
+- Run `python3 scripts/agent_worktree.py guard` before editing. If it fails,
+  create a worktree with `make agent-new AGENT=cursor TASK=<task-name>`.
 
 Workspace rules:
 

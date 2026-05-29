@@ -7,7 +7,11 @@ LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scr
 MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/frtb-ima.json
 
-.PHONY: check lint format format-check typecheck test docs-check build release-artifacts mutation mutation-rrao benchmark rrao-benchmark audit-deps sbom checksums repo-controls-snapshot replay-fixture validation-pack ima sa sbm drc rrao cva orchestration clean
+.PHONY: check lint format format-check typecheck test docs-check build
+.PHONY: release-artifacts mutation mutation-rrao benchmark rrao-benchmark
+.PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
+.PHONY: validation-pack agent-setup agent-sync-main agent-new agent-guard
+.PHONY: agent-worktrees agent-doctor ima sa sbm drc rrao cva orchestration clean
 
 check: lint format-check typecheck test
 
@@ -72,6 +76,30 @@ replay-fixture:
 
 validation-pack:
 	$(MAKE) -C packages/frtb-ima PYTHON_BIN="uv run --extra notebooks python" validation-pack
+
+# Agent workspace helpers
+AGENT ?= codex
+TASK ?=
+
+agent-setup:
+	$(PYTHON_BIN) scripts/agent_worktree.py install-hooks
+
+agent-sync-main:
+	$(PYTHON_BIN) scripts/agent_worktree.py sync-main
+
+agent-new:
+	@test -n "$(TASK)" || \
+		(echo "TASK is required, for example: make agent-new AGENT=codex TASK=drc-scenarios"; exit 1)
+	$(PYTHON_BIN) scripts/agent_worktree.py new --agent "$(AGENT)" "$(TASK)"
+
+agent-guard:
+	$(PYTHON_BIN) scripts/agent_worktree.py guard
+
+agent-worktrees:
+	$(PYTHON_BIN) scripts/agent_worktree.py list
+
+agent-doctor:
+	$(PYTHON_BIN) scripts/agent_worktree.py doctor
 
 # Per-package shortcuts
 ima:
