@@ -4,6 +4,7 @@ from dataclasses import FrozenInstanceError
 from datetime import date
 
 import pytest
+
 from frtb_rrao import (
     RraoBackToBackMatch,
     RraoCalculationContext,

@@ -1,0 +1,18 @@
+{
+  "schema_version": "rrao_sample_book_fixture_v1",
+  "generator": "scripts/generate_fixture.py",
+  "generator_command": "python scripts/generate_fixture.py --output tests/fixtures/rrao_sample_book_v1",
+  "generator_version": "1",
+  "profile": "US_NPR_2_0",
+  "calculation_date": "2026-03-31",
+  "position_count": 25,
+  "total_rrao_usd": 3000000.0,
+  "files": {
+    "positions.json": {
+      "sha256": "1975f57798923f548c02c852a8679f3eceaef9ae4a696748f1d9b68d6b61b85c"
+    },
+    "expected_outputs.json": {
+      "sha256": "765dfd888f1121caaeffd440a758311ea26a1f164b3fcf8bbb6ac9f637554411"
+    }
+  }
+}
