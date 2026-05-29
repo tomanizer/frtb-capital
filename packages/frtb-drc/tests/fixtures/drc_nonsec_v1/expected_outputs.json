@@ -1,0 +1,146 @@
+{
+  "fixture_id": "drc_nonsec_v1",
+  "input_count": 12,
+  "input_hash": "38d53f06127b1505540d5b1f53bd52f8c7ce805671849f4c8504436b9aab902b",
+  "profile_hash": "e9cb980692760a4008c3894847ce97a6a5e7e8a5e88824493f8a0aaa84d9f36e",
+  "result_json_sha256": "b3610a6127c2e0b393d18a8b3e6d83c96f85af6e718ff552b975641a3185d00a",
+  "gross": {
+    "pos-001-long-corp": 75.0,
+    "pos-002-short-corp": 37.5,
+    "pos-003-offset-long": 90.0,
+    "pos-004-offset-short": 30.0,
+    "pos-005-ineligible-long": 100.0,
+    "pos-006-ineligible-short": 37.5,
+    "pos-007-floor-maturity": 75.0,
+    "pos-008-linear-maturity": 75.0,
+    "pos-009-defaulted": 100.0,
+    "pos-010-covered-bond": 25.0,
+    "pos-011-pse": 50.0,
+    "pos-012-zero-lgd": 0.0
+  },
+  "maturity_weights": {
+    "pos-001-long-corp": 1.0,
+    "pos-002-short-corp": 1.0,
+    "pos-003-offset-long": 1.0,
+    "pos-004-offset-short": 1.0,
+    "pos-005-ineligible-long": 1.0,
+    "pos-006-ineligible-short": 1.0,
+    "pos-007-floor-maturity": 0.25,
+    "pos-008-linear-maturity": 0.5,
+    "pos-009-defaulted": 1.0,
+    "pos-010-covered-bond": 1.0,
+    "pos-011-pse": 1.0,
+    "pos-012-zero-lgd": 1.0
+  },
+  "scaled": {
+    "pos-001-long-corp": 75.0,
+    "pos-002-short-corp": 37.5,
+    "pos-003-offset-long": 90.0,
+    "pos-004-offset-short": 30.0,
+    "pos-005-ineligible-long": 100.0,
+    "pos-006-ineligible-short": 37.5,
+    "pos-007-floor-maturity": 18.75,
+    "pos-008-linear-maturity": 37.5,
+    "pos-009-defaulted": 100.0,
+    "pos-010-covered-bond": 25.0,
+    "pos-011-pse": 50.0,
+    "pos-012-zero-lgd": 0.0
+  },
+  "net": {
+    "net-corporate-issuer-eligible-offset-senior_debt-long": {
+      "amount": 60.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "issuer-eligible-offset",
+      "rejected_offsets": []
+    },
+    "net-corporate-issuer-ineligible-offset-non_senior_debt-long": {
+      "amount": 100.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "issuer-ineligible-offset",
+      "rejected_offsets": ["SHORT_HIGHER_SENIORITY_THAN_LONG"]
+    },
+    "net-corporate-issuer-ineligible-offset-senior_debt-short": {
+      "amount": 37.5,
+      "bucket": "CORPORATE",
+      "direction": "SHORT",
+      "issuer": "issuer-ineligible-offset",
+      "rejected_offsets": ["SHORT_HIGHER_SENIORITY_THAN_LONG"]
+    },
+    "net-corporate-issuer-long-only-senior_debt-long": {
+      "amount": 75.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "issuer-long-only",
+      "rejected_offsets": []
+    },
+    "net-corporate-issuer-maturity-floor-senior_debt-long": {
+      "amount": 18.75,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "issuer-maturity-floor",
+      "rejected_offsets": []
+    },
+    "net-corporate-issuer-maturity-linear-senior_debt-long": {
+      "amount": 37.5,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "issuer-maturity-linear",
+      "rejected_offsets": []
+    },
+    "net-corporate-issuer-short-only-senior_debt-short": {
+      "amount": 37.5,
+      "bucket": "CORPORATE",
+      "direction": "SHORT",
+      "issuer": "issuer-short-only",
+      "rejected_offsets": []
+    },
+    "net-defaulted-issuer-defaulted-senior_debt-long": {
+      "amount": 100.0,
+      "bucket": "DEFAULTED",
+      "direction": "LONG",
+      "issuer": "issuer-defaulted",
+      "rejected_offsets": []
+    },
+    "net-pse-gse-issuer-covered-covered_bond-long": {
+      "amount": 25.0,
+      "bucket": "PSE_GSE",
+      "direction": "LONG",
+      "issuer": "issuer-covered",
+      "rejected_offsets": []
+    },
+    "net-pse-gse-issuer-pse-pse-long": {
+      "amount": 50.0,
+      "bucket": "PSE_GSE",
+      "direction": "LONG",
+      "issuer": "issuer-pse",
+      "rejected_offsets": []
+    }
+  },
+  "buckets": {
+    "CORPORATE": {
+      "capital": 4.863775597269625,
+      "floor_applied": false,
+      "hbr": 0.7952218430034129,
+      "weighted_long": 6.116250000000001,
+      "weighted_short": 1.5750000000000002
+    },
+    "DEFAULTED": {
+      "capital": 100.0,
+      "floor_applied": false,
+      "hbr": 1.0,
+      "weighted_long": 100.0,
+      "weighted_short": 0.0
+    },
+    "PSE_GSE": {
+      "capital": 1.5750000000000002,
+      "floor_applied": false,
+      "hbr": 1.0,
+      "weighted_long": 1.5750000000000002,
+      "weighted_short": 0.0
+    }
+  },
+  "category_capital": 106.43877559726963,
+  "total_drc": 106.43877559726963
+}
