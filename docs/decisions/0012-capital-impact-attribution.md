@@ -115,5 +115,5 @@ citations on the underlying capital formula.
   decisions.
 - [ADR 0011](0011-core-runtime-dependency-policy.md): runtime dependency
   policy for capital kernels and optional analysis layers.
-- `docs/modules/frtb-drc/ARCHITECTURE_AND_DATA_DESIGN.md`: DRC lineage,
+- [DRC Architecture and Data Design](../modules/frtb-drc/ARCHITECTURE_AND_DATA_DESIGN.md): DRC lineage,
   impact, and attribution hooks.
