@@ -14,3 +14,5 @@ All notable changes to `frtb-rrao` will be documented here.
   source-manifest tests.
 - Added cited Basel MAR23 and U.S. NPR 2.0 rule-profile reference data,
   deterministic profile hashes, and fail-closed unsupported EU/PRA profiles.
+- Added RRAO classification and exclusion decision helpers for supported
+  Basel MAR23 and U.S. NPR 2.0 canonical inputs.

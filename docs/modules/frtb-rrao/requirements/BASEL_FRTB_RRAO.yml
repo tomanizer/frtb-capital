@@ -45,14 +45,14 @@ requirements:
   - id: RRAO-CLASS-001
     title: Exotic and other residual risk classification
     source: Basel MAR23.2-MAR23.3; 91 FR 15049
-    status: planned
+    status: implemented
     modules: [src/frtb_rrao/classification.py]
     tests: [tests/test_classification.py]
     notes: Include explicit classification reason and evidence fields.
   - id: RRAO-CLASS-002
     title: Supervisor-directed inclusion
     source: proposed U.S. section __.211(a)(4)
-    status: planned
+    status: implemented
     modules: [src/frtb_rrao/classification.py]
     tests: [tests/test_classification.py]
     notes: Requires supervisor directive evidence id; no implicit inclusion.
@@ -73,10 +73,10 @@ requirements:
   - id: RRAO-EXCL-001
     title: Exclusion and back-to-back treatment
     source: Basel MAR23.4-MAR23.7; 91 FR 15049-15050
-    status: planned
+    status: partial
     modules: [src/frtb_rrao/classification.py]
     tests: [tests/test_exclusions.py]
-    notes: Exclusions must be explicit and auditable.
+    notes: Cited exclusion decisions are implemented; exact match-group validation remains future work.
   - id: RRAO-EU-001
     title: EU Article 325u residual-risk classification profile
     source: Regulation (EU) No 575/2013 Article 325u; Delegated Regulation (EU) 2022/2328 Articles 1-3 and Annex
