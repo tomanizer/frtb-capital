@@ -38,7 +38,7 @@ MAR23 and U.S. NPR 2.0 canonical inputs.
 | Classification and exclusions | Partial | Issue #85 added cited classification decisions and exclusion decisions; exact match-group validation remains future work. |
 | Line add-ons and subtotals | Implemented | Issue #86 added additive line add-ons and deterministic explain subtotals. |
 | Public API and audit records | Implemented | Issue #87 added public result assembly, input/profile hashes, deterministic serialization, and reconciliation checks. |
-| Synthetic validation fixture | Planned | Issue #88. |
+| Synthetic validation fixture | Implemented | Issue #88 added the `tests/fixtures/rrao_v1/` pack, expected outputs, invalid cases, loader, and replay tests. |
 | Optional adapters | Planned | Issue #89. |
 | EU comparison profile | Unsupported | Issue #91 before any EU capital path may return a result. |
 | Orchestration SA composition | Excluded from package | Issue #92 defines handoff after RRAO result shape is stable. |
