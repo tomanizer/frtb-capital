@@ -20,6 +20,7 @@ def validate_position(position: DrcPosition) -> DrcPosition:
     _require_non_empty(position.desk_id, "desk_id")
     _require_non_empty(position.legal_entity, "legal_entity")
     _require_non_empty(position.currency, "currency")
+    _require_non_empty(position.bucket_key, "bucket_key")
     if position.lineage is None:
         raise DrcInputError("lineage is required")
     _require_non_empty(position.lineage.source_system, "lineage.source_system")

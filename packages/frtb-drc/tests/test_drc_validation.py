@@ -46,6 +46,7 @@ def test_validate_positions_rejects_duplicate_position_ids() -> None:
         ("desk_id", {"desk_id": ""}, "desk_id must be non-empty"),
         ("legal_entity", {"legal_entity": ""}, "legal_entity must be non-empty"),
         ("currency", {"currency": ""}, "currency must be non-empty"),
+        ("bucket_key", {"bucket_key": None}, "bucket_key must be non-empty"),
     ],
 )
 def test_validate_position_rejects_missing_identity_fields(
