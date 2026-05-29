@@ -29,6 +29,47 @@ def test_same_obligor_same_seniority_offsets_net_correctly() -> None:
     assert records[0].rejected_offsets == ()
 
 
+def test_netting_reports_unscaled_short_totals_when_maturity_weighted() -> None:
+    records = calculate_net_jtds(
+        (
+            _input("long-1", DefaultDirection.LONG, 100.0, seniority=DrcSeniority.SENIOR_DEBT),
+            _input(
+                "short-1",
+                DefaultDirection.SHORT,
+                80.0,
+                scaled_amount=40.0,
+                seniority=DrcSeniority.SENIOR_DEBT,
+            ),
+        )
+    )
+
+    assert len(records) == 1
+    assert records[0].gross_short == 80.0
+    assert records[0].scaled_short == 40.0
+    assert records[0].net_amount == 60.0
+
+
+def test_residual_short_record_reports_only_unconsumed_unscaled_short() -> None:
+    records = calculate_net_jtds(
+        (
+            _input("long-1", DefaultDirection.LONG, 20.0, seniority=DrcSeniority.SENIOR_DEBT),
+            _input(
+                "short-1",
+                DefaultDirection.SHORT,
+                100.0,
+                scaled_amount=50.0,
+                seniority=DrcSeniority.NON_SENIOR_DEBT,
+            ),
+        )
+    )
+
+    assert len(records) == 1
+    assert records[0].net_direction is DefaultDirection.SHORT
+    assert records[0].gross_short == 60.0
+    assert records[0].scaled_short == 30.0
+    assert records[0].net_amount == 30.0
+
+
 def test_cross_obligor_exposures_do_not_offset() -> None:
     records = calculate_net_jtds(
         (
@@ -114,11 +155,23 @@ def test_netting_rejects_mismatched_gross_and_scaled_ids() -> None:
     bad = _input("long-1", DefaultDirection.LONG, 100.0)
     bad = NettingInput(
         gross_jtd=bad.gross_jtd,
-        scaled_jtd=_scaled("other", DefaultDirection.LONG, 100.0),
+        scaled_jtd=_scaled("other", 100.0, 100.0),
         seniority=bad.seniority,
     )
 
     with pytest.raises(DrcInputError, match="gross_jtd_id mismatch"):
+        calculate_net_jtds((bad,))
+
+
+def test_netting_rejects_mismatched_gross_and_scaled_amounts() -> None:
+    bad = _input("long-1", DefaultDirection.LONG, 100.0)
+    bad = NettingInput(
+        gross_jtd=bad.gross_jtd,
+        scaled_jtd=_scaled("long-1", 99.0, 100.0),
+        seniority=bad.seniority,
+    )
+
+    with pytest.raises(DrcInputError, match="gross_jtd amount mismatch"):
         calculate_net_jtds((bad,))
 
 
@@ -127,13 +180,18 @@ def _input(
     direction: DefaultDirection,
     amount: float,
     *,
+    scaled_amount: float | None = None,
     seniority: DrcSeniority = DrcSeniority.SENIOR_DEBT,
     issuer: str = "issuer-a",
     bucket: str = "CORPORATE",
 ) -> NettingInput:
     return NettingInput(
         gross_jtd=_gross(position_id, direction, amount, issuer=issuer, bucket=bucket),
-        scaled_jtd=_scaled(position_id, direction, amount),
+        scaled_jtd=_scaled(
+            position_id,
+            amount,
+            amount if scaled_amount is None else scaled_amount,
+        ),
         seniority=seniority,
     )
 
@@ -162,15 +220,15 @@ def _gross(
     )
 
 
-def _scaled(position_id: str, _direction: DefaultDirection, amount: float) -> MaturityScaledJtd:
+def _scaled(position_id: str, gross_amount: float, scaled_amount: float) -> MaturityScaledJtd:
     return MaturityScaledJtd(
         scaled_jtd_id=f"scaled-{position_id}",
         gross_jtd_id=f"gross-{position_id}",
         position_id=position_id,
-        gross_jtd=amount,
+        gross_jtd=gross_amount,
         maturity_years=1.0,
         maturity_weight=1.0,
-        scaled_jtd=amount,
+        scaled_jtd=scaled_amount,
         floor_applied=False,
         citations=("US_NPR_210_A_2_III",),
     )

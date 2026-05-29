@@ -41,6 +41,13 @@ class NettingInput:
     seniority: DrcSeniority
 
 
+@dataclass
+class _ShortState:
+    item: NettingInput
+    remaining_gross: float
+    remaining_scaled: float
+
+
 def calculate_net_jtds(
     exposures: Iterable[NettingInput],
     *,
@@ -65,20 +72,29 @@ def calculate_net_jtds(
 def _validate_netting_input(exposure: NettingInput) -> None:
     gross = exposure.gross_jtd
     scaled = exposure.scaled_jtd
-    if gross.risk_class is not DrcRiskClass.NON_SECURITISATION:
+    if DrcRiskClass(gross.risk_class) != DrcRiskClass.NON_SECURITISATION:
         raise DrcInputError("non-securitisation netting requires non-securitisation gross JTD")
     if gross.gross_jtd_id != scaled.gross_jtd_id:
         raise DrcInputError("gross_jtd_id mismatch between gross and scaled JTD")
     if gross.position_id != scaled.position_id:
         raise DrcInputError("position_id mismatch between gross and scaled JTD")
+    if gross.gross_jtd != scaled.gross_jtd:
+        raise DrcInputError("gross_jtd amount mismatch between gross and scaled JTD")
 
 
 def _net_group(key: tuple[str, str], exposures: list[NettingInput]) -> list[NetJtd]:
     bucket_key, issuer_key = key
     longs = _by_seniority(exposures, DefaultDirection.LONG)
     shorts = _by_seniority(exposures, DefaultDirection.SHORT)
-    available_shorts = {
-        seniority: sum(item.scaled_jtd.scaled_jtd for item in items)
+    short_states = {
+        seniority: [
+            _ShortState(
+                item=item,
+                remaining_gross=item.gross_jtd.gross_jtd,
+                remaining_scaled=item.scaled_jtd.scaled_jtd,
+            )
+            for item in items
+        ]
         for seniority, items in shorts.items()
     }
     rejected = _rejected_seniority_offsets(bucket_key, issuer_key, longs, shorts)
@@ -88,23 +104,30 @@ def _net_group(key: tuple[str, str], exposures: list[NettingInput]) -> list[NetJ
         long_items = longs[seniority]
         scaled_long = sum(item.scaled_jtd.scaled_jtd for item in long_items)
         gross_long = sum(item.gross_jtd.gross_jtd for item in long_items)
-        used_short = 0.0
+        used_short_scaled = 0.0
+        used_short_gross = 0.0
         used_short_items: list[NettingInput] = []
         for short_seniority in sorted(shorts, key=_seniority_rank):
             if not _short_can_offset(long_seniority=seniority, short_seniority=short_seniority):
                 continue
-            remaining_long = scaled_long - used_short
+            remaining_long = scaled_long - used_short_scaled
             if remaining_long <= 0:
                 break
-            available = available_shorts.get(short_seniority, 0.0)
-            if available <= 0:
-                continue
-            consumed = min(remaining_long, available)
-            used_short += consumed
-            available_shorts[short_seniority] = available - consumed
-            used_short_items.extend(shorts[short_seniority])
+            for short_state in short_states.get(short_seniority, ()):
+                if remaining_long <= 0:
+                    break
+                consumed_scaled, consumed_gross = _consume_short_state(
+                    short_state,
+                    remaining_long,
+                )
+                if consumed_scaled <= 0:
+                    continue
+                used_short_scaled += consumed_scaled
+                used_short_gross += consumed_gross
+                remaining_long -= consumed_scaled
+                used_short_items.append(short_state.item)
 
-        net_amount = scaled_long - used_short
+        net_amount = scaled_long - used_short_scaled
         if net_amount > 0:
             records.append(
                 _net_record(
@@ -113,9 +136,9 @@ def _net_group(key: tuple[str, str], exposures: list[NettingInput]) -> list[NetJ
                     seniority=seniority,
                     direction=DefaultDirection.LONG,
                     gross_long=gross_long,
-                    gross_short=used_short,
+                    gross_short=used_short_gross,
                     scaled_long=scaled_long,
-                    scaled_short=used_short,
+                    scaled_short=used_short_scaled,
                     net_amount=net_amount,
                     source_items=(*long_items, *used_short_items),
                     rejected_offsets=tuple(rejected),
@@ -123,10 +146,13 @@ def _net_group(key: tuple[str, str], exposures: list[NettingInput]) -> list[NetJ
             )
 
     for seniority in sorted(shorts, key=_seniority_rank):
-        remaining_short = available_shorts.get(seniority, 0.0)
-        if remaining_short <= 0:
+        remaining_states = [
+            short_state
+            for short_state in short_states.get(seniority, ())
+            if short_state.remaining_scaled > 0
+        ]
+        if not remaining_states:
             continue
-        short_items = shorts[seniority]
         records.append(
             _net_record(
                 bucket_key=bucket_key,
@@ -134,11 +160,11 @@ def _net_group(key: tuple[str, str], exposures: list[NettingInput]) -> list[NetJ
                 seniority=seniority,
                 direction=DefaultDirection.SHORT,
                 gross_long=0.0,
-                gross_short=sum(item.gross_jtd.gross_jtd for item in short_items),
+                gross_short=sum(short_state.remaining_gross for short_state in remaining_states),
                 scaled_long=0.0,
-                scaled_short=remaining_short,
-                net_amount=remaining_short,
-                source_items=tuple(short_items),
+                scaled_short=sum(short_state.remaining_scaled for short_state in remaining_states),
+                net_amount=sum(short_state.remaining_scaled for short_state in remaining_states),
+                source_items=tuple(short_state.item for short_state in remaining_states),
                 rejected_offsets=tuple(rejected),
             )
         )
@@ -152,9 +178,24 @@ def _by_seniority(
 ) -> dict[DrcSeniority, list[NettingInput]]:
     grouped: dict[DrcSeniority, list[NettingInput]] = {}
     for exposure in exposures:
-        if exposure.gross_jtd.default_direction is direction:
+        if DefaultDirection(exposure.gross_jtd.default_direction) == direction:
             grouped.setdefault(exposure.seniority, []).append(exposure)
     return grouped
+
+
+def _consume_short_state(short_state: _ShortState, requested_scaled: float) -> tuple[float, float]:
+    if short_state.remaining_scaled <= 0:
+        return 0.0, 0.0
+
+    consumed_scaled = min(requested_scaled, short_state.remaining_scaled)
+    if consumed_scaled <= 0:
+        return 0.0, 0.0
+
+    consumed_ratio = consumed_scaled / short_state.remaining_scaled
+    consumed_gross = short_state.remaining_gross * consumed_ratio
+    short_state.remaining_scaled -= consumed_scaled
+    short_state.remaining_gross -= consumed_gross
+    return consumed_scaled, consumed_gross
 
 
 def _net_record(
