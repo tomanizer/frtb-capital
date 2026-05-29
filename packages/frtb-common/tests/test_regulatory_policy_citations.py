@@ -1,10 +1,10 @@
 """Tests for the regulatory citation enforcement helper in frtb-common."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
 
 import pytest
-
 from frtb_common import assert_policy_has_regulatory_citations
 from frtb_common.regulatory.policy_citations import MissingRegulatoryCitationsError
 
@@ -26,19 +26,23 @@ class SimplePolicy:
 class NestedPolicy:
     simple: SimplePolicy
     another_value: float = 0.12
-    cited_by: MappingProxyType = field(
+    cited_by: Mapping[str, str] = field(
         default_factory=lambda: MappingProxyType({"another_value": "MAR50.3"})
     )
 
 
-def test_simple_policy_passes_when_fully_cited():
+@dataclass(frozen=True)
+class MappedPolicy:
+    children: Mapping[str, SimplePolicy]
+    cited_by: dict[str, str] = field(default_factory=dict)
+
+
+def test_simple_policy_passes_when_fully_cited() -> None:
     policy = SimplePolicy()
-    assert_policy_has_regulatory_citations(
-        policy, allowed_without_citation=["modelling_choice"]
-    )
+    assert_policy_has_regulatory_citations(policy, allowed_without_citation=["modelling_choice"])
 
 
-def test_raises_clear_error_on_missing_citation():
+def test_raises_clear_error_on_missing_citation() -> None:
     policy = SimplePolicy(cited_by={"risk_weight": "Basel MAR22.15"})
     with pytest.raises(MissingRegulatoryCitationsError) as exc:
         assert_policy_has_regulatory_citations(
@@ -47,23 +51,53 @@ def test_raises_clear_error_on_missing_citation():
     assert "confidence_level" in str(exc.value)
 
 
-def test_recurses_into_nested_policies():
-    inner = SimplePolicy()
-    nested = NestedPolicy(simple=inner)
-    assert_policy_has_regulatory_citations(
-        nested, allowed_without_citation=["modelling_choice"]
+@pytest.mark.parametrize("citation_value", ["", "   ", None])
+def test_raises_on_blank_or_missing_citation_values(citation_value: object) -> None:
+    policy = SimplePolicy(
+        cited_by={
+            "risk_weight": "Basel MAR22.15",
+            "confidence_level": citation_value,
+        }
     )
 
+    with pytest.raises(MissingRegulatoryCitationsError) as exc:
+        assert_policy_has_regulatory_citations(
+            policy, allowed_without_citation=["modelling_choice"]
+        )
 
-def test_supports_custom_citation_attribute_name():
+    assert "confidence_level" in str(exc.value)
+
+
+def test_recurses_into_nested_policies() -> None:
+    inner = SimplePolicy()
+    nested = NestedPolicy(simple=inner)
+    assert_policy_has_regulatory_citations(nested, allowed_without_citation=["modelling_choice"])
+
+
+def test_recurses_into_mapping_held_nested_policies() -> None:
+    mapped = MappedPolicy(
+        children={
+            "uncited": SimplePolicy(cited_by={"risk_weight": "Basel MAR22.15"}),
+        }
+    )
+
+    with pytest.raises(MissingRegulatoryCitationsError) as exc:
+        assert_policy_has_regulatory_citations(
+            mapped, allowed_without_citation=["modelling_choice"]
+        )
+
+    message = str(exc.value)
+    assert "MappedPolicy.children['uncited']" in message
+    assert "confidence_level" in message
+
+
+def test_supports_custom_citation_attribute_name() -> None:
     @dataclass(frozen=True)
     class CustomPolicy:
         foo: float = 0.5
-        regulatory_citations: dict = field(
+        regulatory_citations: dict[str, str] = field(
             default_factory=lambda: {"foo": "NPR 2.0 §__.220"}
         )
 
     policy = CustomPolicy()
-    assert_policy_has_regulatory_citations(
-        policy, citation_attr="regulatory_citations"
-    )
+    assert_policy_has_regulatory_citations(policy, citation_attr="regulatory_citations")

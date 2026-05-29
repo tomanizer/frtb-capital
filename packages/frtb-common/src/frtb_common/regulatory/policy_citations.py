@@ -24,7 +24,7 @@ Example usage::
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import fields, is_dataclass
 from typing import Any
 
@@ -79,14 +79,10 @@ def assert_policy_has_regulatory_citations(
     allowed = set(allowed_without_citation or ())
     current_path = _current_path or type(obj).__name__
 
-    # Retrieve the citation mapping (supports dict and MappingProxyType)
-    citations: dict[str, str] = {}
+    # Retrieve the citation mapping (supports dict and MappingProxyType).
+    citation_keys: set[str] = set()
     if hasattr(obj, citation_attr):
-        raw = getattr(obj, citation_attr)
-        if hasattr(raw, "items"):
-            citations = {str(k): str(v) for k, v in raw.items()}
-
-    citation_keys = set(citations.keys())
+        citation_keys = _valid_citation_keys(getattr(obj, citation_attr))
 
     # Discover fields that contain numeric values
     numeric_fields = _discover_numeric_fields(obj)
@@ -115,29 +111,16 @@ def assert_policy_has_regulatory_citations(
 
         child_path = f"{current_path}.{field_info.name}"
 
-        if _is_policy_like(value):
+        for item_path, item in _iter_policy_like_children(value, child_path):
             assert_policy_has_regulatory_citations(
-                value,
+                item,
                 citation_attr=citation_attr,
                 allowed_without_citation=allowed,
                 recurse=True,
                 max_depth=max_depth,
-                _current_path=child_path,
+                _current_path=item_path,
                 _depth=_depth + 1,
             )
-        elif isinstance(value, (list, tuple, set)):
-            for idx, item in enumerate(value):
-                if _is_policy_like(item):
-                    item_path = f"{child_path}[{idx}]"
-                    assert_policy_has_regulatory_citations(
-                        item,
-                        citation_attr=citation_attr,
-                        allowed_without_citation=allowed,
-                        recurse=True,
-                        max_depth=max_depth,
-                        _current_path=item_path,
-                        _depth=_depth + 1,
-                    )
 
 
 def _discover_numeric_fields(obj: Any) -> set[str]:
@@ -172,11 +155,42 @@ def _is_directly_numeric(value: Any) -> bool:
         if any(_is_policy_like(v) for v in value):
             return False
         return any(isinstance(v, (int, float)) and not isinstance(v, bool) for v in value)
-    if isinstance(value, dict):
+    if isinstance(value, Mapping):
         if any(_is_policy_like(v) for v in value.values()):
             return False
         return any(isinstance(v, (int, float)) and not isinstance(v, bool) for v in value.values())
     return False
+
+
+def _iter_policy_like_children(value: Any, path: str) -> Iterable[tuple[str, Any]]:
+    if _is_policy_like(value):
+        yield path, value
+    elif isinstance(value, Mapping):
+        for key, item in value.items():
+            if _is_policy_like(item):
+                yield f"{path}[{key!r}]", item
+    elif isinstance(value, (list, tuple, set)):
+        for idx, item in enumerate(value):
+            if _is_policy_like(item):
+                yield f"{path}[{idx}]", item
+
+
+def _valid_citation_keys(raw: Any) -> set[str]:
+    if not isinstance(raw, Mapping):
+        return set()
+    return {str(key) for key, value in raw.items() if _has_citation_value(value)}
+
+
+def _has_citation_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip() != ""
+    if isinstance(value, bytes):
+        return value.strip() != b""
+    if isinstance(value, Iterable) and not isinstance(value, Mapping):
+        return any(_has_citation_value(item) for item in value)
+    return str(value).strip() != ""
 
 
 def _is_policy_like(obj: Any) -> bool:
