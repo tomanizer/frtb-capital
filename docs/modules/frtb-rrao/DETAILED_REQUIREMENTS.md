@@ -22,10 +22,11 @@ external implementations as design inspiration only.
 | --- | --- | --- |
 | 1 | [Basel MAR23](https://www.bis.org/basel_framework/chapter/MAR/23.htm) | RRAO scope, exotic and other residual-risk split, exclusions, back-to-back treatment, and 1.0% / 0.1% formula. |
 | 1 | [Basel MAR20](https://www.bis.org/basel_framework/chapter/MAR/20.htm) | Standardised Approach composition: SA = SBM + DRC + RRAO. |
-| 1 | [U.S. NPR 2.0, 91 FR 14952](https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf) | Proposed U.S. residual risk add-on, including proposed section `__.211` and narrative section V.A.7.b. |
+| 1 | [U.S. NPR 2.0, 91 FR 14952](https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959) | Proposed U.S. residual risk add-on, including proposed section `__.211` and narrative section V.A.7.b. |
 | 2 | [Regulation (EU) No 575/2013 Article 325u](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02013R0575-20240709) and [Commission Delegated Regulation (EU) 2022/2328](https://eur-lex.europa.eu/eli/reg_del/2022/2328/oj/eng) | EU comparison profile for exotic underlyings, residual-risk instrument lists, and non-presumptive risks. |
 | 2 | [EBA RTS on residual risk add-on](https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2?version=2021) | Background for EU RTS scope and classification rationale. |
 | 3 | Public GitHub reference implementations such as [`frtb-net/FRTB` `SA_RRAO_Calc.py`](https://github.com/frtb-net/FRTB/blob/bdce773dc01868f61d8fdd65476c52193a2321e1/SA_RRAO_Calc.py) and [`FNet_Format_Documentation.md`](https://github.com/frtb-net/FRTB/blob/bdce773dc01868f61d8fdd65476c52193a2321e1/FNet_Format_Documentation.md) | Input naming and explain-output inspiration only. Do not copy code or treat implementation choices as regulatory requirements. |
+| 3 | [OCC PDF copy of 91 FR 14952](https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf) | Convenience copy for page-specific review. GovInfo remains the primary source. |
 
 Every risk weight, classification reason, exclusion reason, and profile support
 switch must have a paragraph, proposed-section, article, or table citation. Do

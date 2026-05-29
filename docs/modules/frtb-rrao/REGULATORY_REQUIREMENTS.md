@@ -14,10 +14,11 @@ gross effective notional risk weights.
 | --- | --- | --- |
 | Basel Framework MAR20 | https://www.bis.org/basel_framework/chapter/MAR/20.htm | Standardised approach structure, MAR20.4. |
 | Basel Framework MAR23 | https://www.bis.org/basel_framework/chapter/MAR/23.htm | Residual risk add-on scope, formula, exclusions, and back-to-back treatment, MAR23.1-MAR23.7. |
-| U.S. NPR 2.0, 91 FR 14952 | https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf | Proposed residual risk capital requirement, section V.A.7.b and proposed section `__.211`, pages 15049-15050 and 15239-15240. |
+| U.S. NPR 2.0, 91 FR 14952 | https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959 | Proposed residual risk capital requirement, section V.A.7.b and proposed section `__.211`, pages 15049-15050 and 15239-15240. |
 | EBA RRAO RTS page | https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2?version=2021 | EU RTS scope clarification for instruments bearing residual risks. |
 | Commission Delegated Regulation (EU) 2022/2328 | https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2328 | Official Journal RTS on residual risk add-on. |
 | Public GitHub implementation reference | https://github.com/frtb-net/FRTB/blob/bdce773dc01868f61d8fdd65476c52193a2321e1/SA_RRAO_Calc.py | Implementation inspiration for risk-type mapping and explain grouping only; not a regulatory source. |
+| OCC PDF copy of 91 FR 14952 | https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf | Convenience copy for page-specific review. GovInfo remains the primary source. |
 
 ## Regulatory Scope
 
@@ -102,6 +103,17 @@ recognised unless a future profile cites it explicitly.
 
 Basel source: MAR23.8. U.S. source: proposed section `__.211(c)`.
 
+### RRAO-REQ-007: Audit and Euler Explain
+
+Expose risk type, classification reason, gross effective notional, risk weight,
+weighted notional, exclusion reason, and source row id. Euler allocation is
+trivial because capital is additive, but the result should still provide line
+contributions for suite-level explain.
+
+Reference implementation inspiration: `rrao.py` uses `RRAO_1_PERCENT`,
+`RRAO_01_PERCENT`, `RRAO_0_PERCENT`, `WeightedNotional`, and grouped Euler
+breakdowns.
+
 ### RRAO-REQ-008: Gross Effective Notional Source
 
 The U.S. NPR 2.0 profile uses gross effective notional as the notional amount
@@ -121,17 +133,6 @@ the mapping has deterministic fixture coverage.
 
 EU source: Regulation (EU) No 575/2013 Article 325u and Delegated Regulation
 (EU) 2022/2328 Articles 1-3 and Annex.
-
-### RRAO-REQ-007: Audit and Euler Explain
-
-Expose risk type, classification reason, gross effective notional, risk weight,
-weighted notional, exclusion reason, and source row id. Euler allocation is
-trivial because capital is additive, but the result should still provide line
-contributions for suite-level explain.
-
-Reference implementation inspiration: `rrao.py` uses `RRAO_1_PERCENT`,
-`RRAO_01_PERCENT`, `RRAO_0_PERCENT`, `WeightedNotional`, and grouped Euler
-breakdowns.
 
 ## Reference Implementation Notes
 

@@ -6,11 +6,13 @@ source_register:
   - name: Basel MAR23
     url: https://www.bis.org/basel_framework/chapter/MAR/23.htm
   - name: U.S. NPR 2.0 91 FR 14952
-    url: https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf
+    url: https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
   - name: EBA RTS on residual risk add-on
     url: https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2?version=2021
   - name: Commission Delegated Regulation (EU) 2022/2328
     url: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2328
+  - name: OCC PDF copy of U.S. NPR 2.0 91 FR 14952
+    url: https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf
 requirements:
   - id: RRAO-DATA-001
     title: Frozen RRAO input and result models
