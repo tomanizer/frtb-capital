@@ -330,7 +330,10 @@ Unsupported paths must identify the failing dimension explicitly, for example:
 
 Outputs must be deterministic for the same ordered canonical inputs, rule
 profile, and code version. Grouping and serialization must use stable keys, not
-incidental dictionary ordering.
+incidental dictionary ordering. Determinism checks or audit controls designed to
+detect bit-identical output drift must use raw numeric hashes rather than
+rounding floating-point outputs, and must document the intent and any platform or
+BLAS limits.
 
 ### SBM-NFR-002: Runtime dependency policy
 
