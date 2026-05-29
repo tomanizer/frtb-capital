@@ -16,3 +16,5 @@ All notable changes to `frtb-rrao` will be documented here.
   deterministic profile hashes, and fail-closed unsupported EU/PRA profiles.
 - Added RRAO classification and exclusion decision helpers for supported
   Basel MAR23 and U.S. NPR 2.0 canonical inputs.
+- Added additive RRAO line add-ons, excluded zero-capital lines, and
+  deterministic explain subtotals.
