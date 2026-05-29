@@ -3,11 +3,13 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+import pytest
 from frtb_rrao import (
     RraoCalculationContext,
     RraoClassification,
     RraoEvidenceType,
     RraoExclusionReason,
+    RraoInputError,
     RraoRegulatoryProfile,
     adapt_crif_records,
     adapt_fnet_records,
@@ -242,6 +244,114 @@ def test_adapter_rejects_ambiguous_classification_and_notional_conventions() -> 
     )
 
 
+def test_adapter_rejects_non_iterable_or_mapping_record_batches() -> None:
+    with pytest.raises(RraoInputError, match="records must be an iterable of mapping rows"):
+        adapt_rrao_records({"PositionID": "not-a-batch"})
+    with pytest.raises(RraoInputError, match="records must be an iterable of mapping rows"):
+        adapt_rrao_records(object())
+
+
+def test_adapter_rejects_non_mapping_rows_without_stopping_batch() -> None:
+    result = adapt_rrao_records(
+        (
+            "not-a-row",
+            {
+                "PositionID": "valid-exotic",
+                "RowID": "row-002",
+                "Desk": "desk-a",
+                "LegalEntity": "LE-001",
+                "Amount": 1000000.0,
+                "Currency": "USD",
+                "Bucket": "Exotic",
+            },
+        )
+    )
+
+    assert [position.position_id for position in result.positions] == ["valid-exotic"]
+    assert result.rejected_rows[0].source_row_id == "row-000001"
+    assert result.rejected_rows[0].field == "record"
+
+
+@pytest.mark.parametrize(
+    ("row_updates", "expected_field", "expected_reason"),
+    (
+        ({"Desk": ""}, "desk_id", "desk_id field is required"),
+        ({"Bucket": ""}, "RiskType/Bucket", "row must include CRIF RiskType or FNet Bucket"),
+        (
+            {"Bucket": "Unsupported"},
+            "RiskType/Bucket",
+            "unsupported RRAO adapter classification label",
+        ),
+        (
+            {"Bucket": "Non-Exotic", "EvidenceType": "UNKNOWN"},
+            "EvidenceType",
+            "unsupported adapter evidence type",
+        ),
+        ({"Amount": None}, "Amount", "gross effective notional must be numeric"),
+        ({"Amount": True}, "Amount", "gross effective notional must be numeric"),
+        ({"Amount": "not-numeric"}, "Amount", "gross effective notional must be numeric"),
+        (
+            {
+                "Bucket": "Excluded",
+                "ExclusionReason": "UNKNOWN",
+                "ExclusionEvidenceID": "evidence-001",
+            },
+            "ExclusionReason",
+            "unsupported adapter exclusion reason",
+        ),
+        (
+            {"BackToBackMatchGroupID": "match-001"},
+            "back_to_back_match",
+            "require both match group and matched position id",
+        ),
+    ),
+)
+def test_adapter_reports_row_level_rejections(
+    row_updates: dict[str, object],
+    expected_field: str,
+    expected_reason: str,
+) -> None:
+    row = _base_adapter_row()
+    row.update(row_updates)
+
+    result = adapt_rrao_records((row,))
+
+    assert result.positions == ()
+    assert result.rejected_rows[0].field == expected_field
+    assert expected_reason in result.rejected_rows[0].reason
+    assert ("PositionID", "'invalid-row'") in result.rejected_rows[0].source_row
+
+
+def test_adapter_reports_missing_notional_as_row_rejection() -> None:
+    row = _base_adapter_row()
+    del row["Amount"]
+
+    result = adapt_rrao_records((row,))
+
+    assert result.positions == ()
+    assert result.rejected_rows[0].field == "gross_effective_notional"
+    assert "gross effective notional field is required" in result.rejected_rows[0].reason
+
+
+def test_adapter_reports_batch_validation_rejections() -> None:
+    row = _base_adapter_row()
+    row.update(
+        {
+            "Bucket": "Excluded",
+            "ExclusionReason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+            "ExclusionEvidenceID": "external-match-001",
+            "BackToBackMatchGroupID": "external-match-001",
+            "BackToBackMatchedPositionID": "missing-partner",
+        }
+    )
+
+    result = adapt_rrao_records((row,))
+
+    assert result.positions == ()
+    assert result.rejected_rows[0].source_row_id == "row-invalid"
+    assert result.rejected_rows[0].field is not None
+
+
 def test_adapter_records_warnings_and_can_feed_public_calculation() -> None:
     adapter_result = adapt_rrao_records(
         (
@@ -281,3 +391,15 @@ def test_adapter_records_warnings_and_can_feed_public_calculation() -> None:
 
 def test_adapter_does_not_import_pandas() -> None:
     assert "pandas" not in Path(crif.__file__).read_text(encoding="utf-8")
+
+
+def _base_adapter_row() -> dict[str, object]:
+    return {
+        "PositionID": "invalid-row",
+        "RowID": "row-invalid",
+        "Desk": "desk-a",
+        "LegalEntity": "LE-001",
+        "Amount": 1000000.0,
+        "Currency": "USD",
+        "Bucket": "Exotic",
+    }

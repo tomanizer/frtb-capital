@@ -42,9 +42,10 @@ Baseline command completed successfully on 2026-05-29.
 
 Killed-only mutation score: `85.47%`.
 
-The IMA precedent recorded in `docs/quality/mutation_baseline.md` is `75.12%`.
-RRAO therefore exceeds the suite precedent across the configured v1 boundary
-without excluding any survivor from the denominator.
+The IMA precedent recorded in
+`docs/quality/frtb-ima/mutation_baseline.md` is `75.12%`. RRAO therefore
+exceeds the suite precedent across the configured v1 boundary without excluding
+any survivor from the denominator.
 
 ## Module Breakdown
 
@@ -69,6 +70,9 @@ The same quality slice added Hypothesis tests under
 ## Schedule
 
 Mutation testing is not part of the normal push gate because it is slower than
-the deterministic package suite. It should be rerun for material changes to
-`audit.py`, `capital.py`, `classification.py`, or `validation.py`, and at least
-before a release candidate that changes RRAO capital behavior.
+the deterministic package suite. `.github/workflows/mutation.yml` runs it
+weekly, exports `mutmut-cicd-stats.json`, and enforces this killed-only
+baseline with `scripts/ci/check_mutation_score.py`. It should also be rerun for
+material changes to `audit.py`, `capital.py`, `classification.py`, or
+`validation.py`, and at least before a release candidate that changes RRAO
+capital behavior.

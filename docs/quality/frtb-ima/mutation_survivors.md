@@ -5,7 +5,7 @@ or intentionally deferred for the current prototype.
 
 The 2026-05-28 mutation baseline has **no allowlisted survivors**. All 467
 surviving mutants are counted in the denominator for the `75.12%` killed-only
-score documented in `docs/quality/mutation_baseline.md`.
+score documented in `docs/quality/frtb-ima/mutation_baseline.md`.
 
 ## Current Survivor Categories
 

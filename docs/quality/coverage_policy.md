@@ -1,14 +1,18 @@
-# IMA coverage policy
+# Implemented-package coverage policy
 
-The interim IMA calculation-quality gate is a 90% line-coverage floor for every
-module under `packages/frtb-ima/src/frtb_ima`, excluding `demo_data.py`.
-`demo_data.py` is demonstration plumbing and is not part of the calculation
-coverage gate.
+The implemented-package calculation-quality gate is a 90% line-coverage floor
+for every top-level module under each package marked `implemented` in
+`docs/quality/package_maturity.toml`. The current implemented packages are
+`frtb-ima` and `frtb-rrao`.
 
-The root `make test` target writes `dist/coverage/frtb-ima.json` and runs
-`scripts/ci/check_module_coverage.py` to enforce the per-module floor. The CI
-test matrix uses the same target, so a pull request fails if any measured IMA
-module drops below 90%.
+`demo_data.py` is excluded where present because it is demonstration plumbing
+and is not part of the calculation coverage gate.
+
+The root `make test` target writes
+`dist/coverage/implemented-packages.json` with coverage for all implemented
+packages and runs `scripts/ci/check_module_coverage.py` to enforce the
+per-module floor. The CI test matrix uses the same target, so a pull request
+fails if any measured implemented-package module drops below 90%.
 
 The later production-quality target is stricter: after the reference-vector,
 validation-pack, and independent benchmark follow-ups land, calculation-core

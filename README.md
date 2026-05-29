@@ -48,6 +48,7 @@ This installs the full workspace in editable mode plus dev dependencies.
 make check          # lint + typecheck + coverage-gated tests across the workspace
 make ima            # work on the IMA package only
 make mutation       # run the focused IMA mutation-testing baseline
+make mutation-rrao  # run the focused RRAO mutation-testing baseline
 ```
 
 Per-package targets are available from each package's own `Makefile` or via `uv run`.
@@ -66,8 +67,9 @@ Per-package targets are available from each package's own `Makefile` or via `uv 
 - [`packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md`](packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md) — IMA code ↔ regulation cross-reference
 - [`packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md`](packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md) — IMA modelling boundaries and proposed-rule basis
 - [`docs/decisions/`](docs/decisions/) — architectural decision records (ADRs)
-- [`docs/quality/coverage_policy.md`](docs/quality/coverage_policy.md) — IMA coverage floor and later production-quality target
-- [`docs/quality/mutation_baseline.md`](docs/quality/mutation_baseline.md) — mutation-testing baseline and survivor review policy
+- [`docs/quality/coverage_policy.md`](docs/quality/coverage_policy.md) — implemented-package coverage floor and later production-quality target
+- [`docs/quality/frtb-ima/mutation_baseline.md`](docs/quality/frtb-ima/mutation_baseline.md) — IMA mutation-testing baseline and survivor review policy
+- [`docs/quality/frtb-rrao/mutation_baseline.md`](docs/quality/frtb-rrao/mutation_baseline.md) — RRAO mutation-testing baseline and survivor review policy
 
 ## Governance
 
