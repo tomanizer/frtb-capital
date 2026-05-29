@@ -70,4 +70,5 @@ def _position(
             source_row_id=f"row-{position_id}",
             source_column_map={"position_id": "position_id"},
         ),
+        citation_ids=("US_NPR_210_SCOPE",),
     )

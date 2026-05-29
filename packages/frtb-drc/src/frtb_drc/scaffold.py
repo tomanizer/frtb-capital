@@ -49,7 +49,9 @@ def calculate_drc_capital(
 
     _validate_context(context)
     profile = get_rule_profile(context.profile_id)
-    validated = _sorted_positions(validate_positions(positions))
+    validated = _sorted_positions(
+        validate_positions(positions, citation_policy=context.citation_policy)
+    )
     if not validated:
         raise DrcInputError("DRC capital requires at least one position")
     _validate_supported_run(validated, context=context, profile=profile)
@@ -126,6 +128,8 @@ def _validate_context(context: DrcCalculationContext) -> None:
         raise DrcInputError("base_currency must be non-empty")
     if context.profile_id.strip() == "":
         raise DrcInputError("profile_id must be non-empty")
+    if context.citation_policy.strip() == "":
+        raise DrcInputError("citation_policy must be non-empty")
 
 
 def _validate_supported_run(
@@ -134,6 +138,8 @@ def _validate_supported_run(
     context: DrcCalculationContext,
     profile: DrcRuleProfile,
 ) -> None:
+    scoped_desk_id = context.desk_id.strip()
+    scoped_legal_entity = context.legal_entity.strip()
     for position in positions:
         risk_class = DrcRiskClass(position.risk_class)
         ensure_risk_class_supported(profile, risk_class)
@@ -143,6 +149,17 @@ def _validate_supported_run(
             raise DrcInputError(
                 f"position currency {position.currency} does not match base currency "
                 f"{context.base_currency}"
+            )
+        if scoped_desk_id and position.desk_id != scoped_desk_id:
+            raise DrcInputError(
+                f"position {position.position_id} desk_id {position.desk_id} does not match "
+                f"context desk_id {scoped_desk_id}"
+            )
+        if scoped_legal_entity and position.legal_entity != scoped_legal_entity:
+            raise DrcInputError(
+                f"position {position.position_id} legal_entity "
+                f"{position.legal_entity} does not match "
+                f"context legal_entity {scoped_legal_entity}"
             )
 
 
