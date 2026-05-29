@@ -109,6 +109,13 @@ US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
         note="Maturity weighting and floor.",
     ),
+    "US_NPR_210_B_2": DrcCitation(
+        citation_id="US_NPR_210_B_2",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(b)(2)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note="Same-obligor non-securitisation offsetting and seniority rule.",
+    ),
     "US_NPR_210_B_3_I": DrcCitation(
         citation_id="US_NPR_210_B_3_I",
         source_id="US_NPR_2_0_91_FR_14952",
