@@ -1,7 +1,7 @@
 # frtb-capital
 
-Use this skill when working in the `frtb-capital` repository with Grok or Grok
-Build.
+Use this skill when working in the `frtb-capital` repository with Grok or
+Grok Build.
 
 ## Required Reading
 
