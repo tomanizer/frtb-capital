@@ -36,3 +36,4 @@ Package-local regulatory documentation:
 - [Regulatory assumptions](docs/REGULATORY_ASSUMPTIONS.md)
 - [Regulatory sources](docs/regulatory_sources.yml)
 - [Performance and replay controls](docs/PERFORMANCE.md)
+- [Allocation reports](docs/ALLOCATION.md)

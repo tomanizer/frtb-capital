@@ -44,6 +44,7 @@ MAR23, U.S. NPR 2.0, and EU CRR3 comparison-profile canonical inputs.
 | EU comparison profile | Implemented | Issue #91 added Article 325u and Delegated Regulation (EU) 2022/2328 mappings with EU fixture coverage. |
 | Orchestration SA composition | Partial outside package | Issue #92 added an orchestration-side RRAO result handoff while SA aggregation still fails until SBM and DRC outputs are compatible. |
 | Performance and replay controls | Implemented | Issue #93 added the `make rrao-benchmark` target, deterministic replay hashes, and target-scale runtime documentation. |
+| Allocation reports | Implemented | Issue #94 added additive line, desk, legal-entity, and evidence-type allocation helpers with explicit unsupported-dimension errors. |
 
 ## Review checklist
 

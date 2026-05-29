@@ -278,8 +278,10 @@ Audit serialization must be JSON/Markdown ready and deterministic.
 
 Because RRAO is additive, line contribution equals the weighted notional add-on.
 The package must expose line-level contribution records in the first
-capital-producing slice. Any later allocation view must reconcile exactly to
-total RRAO and must not change capital.
+capital-producing slice. Additive allocation reports for line, desk, legal
+entity, and evidence type must reconcile to total RRAO and must not change
+capital. Unsupported allocation dimensions or non-additive allocation paths must
+fail explicitly.
 
 ## Non-functional requirements
 

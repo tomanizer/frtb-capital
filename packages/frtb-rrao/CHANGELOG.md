@@ -33,3 +33,5 @@ All notable changes to `frtb-rrao` will be documented here.
   (EU) 2022/2328 Article 1, Article 2 Annex, and Article 3 mappings.
 - Added deterministic RRAO replay-hash controls and a target-scale benchmark
   command for 100,000 synthetic residual-risk positions.
+- Added deterministic additive RRAO allocation report helpers for line, desk,
+  legal-entity, and evidence-type contribution views.

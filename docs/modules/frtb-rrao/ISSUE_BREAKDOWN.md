@@ -293,3 +293,7 @@ hashes, ordering-drift checks, and performance documentation.
 - Capital totals do not change when allocation is requested.
 
 **Tests/checks:** `tests/test_allocation.py`.
+
+**Status:** Implemented with additive line, desk, legal-entity, and
+evidence-type allocation reports, reconciliation checks, and fail-closed
+unsupported-dimension handling.

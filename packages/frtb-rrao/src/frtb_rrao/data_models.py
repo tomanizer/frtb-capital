@@ -99,6 +99,15 @@ class RraoInvestmentFundExposureType(StrEnum):
     OTHER_RESIDUAL_RISK = "OTHER_RESIDUAL_RISK"
 
 
+class RraoAllocationDimension(StrEnum):
+    """Supported additive RRAO allocation report dimensions."""
+
+    LINE = "line"
+    DESK = "desk_id"
+    LEGAL_ENTITY = "legal_entity"
+    EVIDENCE_TYPE = "evidence_type"
+
+
 @dataclass(frozen=True)
 class RraoCitation:
     """A linkable citation identifier and paragraph hint."""
@@ -224,6 +233,37 @@ class RraoSubtotal:
 
 
 @dataclass(frozen=True)
+class RraoAllocationBucket:
+    """One deterministic additive allocation bucket."""
+
+    dimension: RraoAllocationDimension
+    bucket_key: str
+    gross_effective_notional: float
+    add_on: float
+    position_ids: tuple[str, ...]
+    included_position_ids: tuple[str, ...]
+    excluded_position_ids: tuple[str, ...]
+    line_count: int
+    excluded_line_count: int
+
+
+@dataclass(frozen=True)
+class RraoAllocationReport:
+    """Deterministic additive allocation report for one supported dimension."""
+
+    run_id: str
+    calculation_date: date
+    base_currency: str
+    profile_id: str
+    input_hash: str
+    dimension: RraoAllocationDimension
+    allocation_method: str
+    total_rrao: float
+    allocated_rrao: float
+    buckets: tuple[RraoAllocationBucket, ...]
+
+
+@dataclass(frozen=True)
 class RraoCapitalResult:
     """Public RRAO capital result shape."""
 
@@ -249,6 +289,9 @@ class RraoCapitalResult:
 
 
 __all__ = [
+    "RraoAllocationBucket",
+    "RraoAllocationDimension",
+    "RraoAllocationReport",
     "RraoCalculationContext",
     "RraoCapitalLine",
     "RraoCapitalResult",
