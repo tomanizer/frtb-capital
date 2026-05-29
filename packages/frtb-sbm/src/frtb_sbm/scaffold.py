@@ -1,29 +1,21 @@
-"""Scaffold boundary for the future SBM calculation package."""
+"""Public boundary for the SBM calculation package."""
 
 from __future__ import annotations
-
-from typing import NoReturn
 
 from frtb_common import (
     CapitalComponentMetadata,
     ImplementationStatus,
-    NotImplementedCapitalComponentError,
     ValidationStatus,
 )
+
+from frtb_sbm.capital import calculate_sbm_capital
 
 PACKAGE_METADATA = CapitalComponentMetadata(
     package_name="frtb-sbm",
     import_name="frtb_sbm",
     component_name="Standardised Approach sensitivities-based method",
-    implementation_status=ImplementationStatus.SCAFFOLDED,
-    validation_status=ValidationStatus.NOT_STARTED,
+    implementation_status=ImplementationStatus.PARTIAL,
+    validation_status=ValidationStatus.PENDING,
 )
 
-
-def calculate_sbm_capital(*_args: object, **_kwargs: object) -> NoReturn:
-    """Fail explicitly until the SBM calculation is implemented."""
-
-    raise NotImplementedCapitalComponentError(
-        component="frtb-sbm",
-        feature="SBM capital calculation",
-    )
+__all__ = ["PACKAGE_METADATA", "calculate_sbm_capital"]

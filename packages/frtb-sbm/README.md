@@ -5,15 +5,13 @@ Standardised Approach sensitivities-based method component for the
 
 ## Status
 
-The package is importable and exposes its planned public boundary. Phase 1
-implements a cited GIRR delta vertical slice (parent issue #151). Until that
-slice lands, `calculate_sbm_capital` raises `NotImplementedCapitalComponentError`
-from `frtb-common`; it must not emit zero or placeholder capital.
+The package exposes `calculate_sbm_capital` for the phase-1 cited GIRR delta
+vertical slice under the Basel MAR21 profile. Vega, curvature, and non-GIRR
+risk classes fail closed with explicit errors.
 
 | Area | Status |
 | --- | --- |
-| Public calculation boundary | Scaffold |
-| GIRR delta capital path | Planned (phase 1) |
+| GIRR delta capital path | Implemented (phase 1) |
 | Vega, curvature, non-GIRR risk classes | Unsupported (fail-closed) |
 | CRIF/CSV adapters | Out of scope (phase 1) |
 

@@ -991,14 +991,18 @@ provides-extras = ["dev", "notebooks"]
 
 [[package]]
 name = "frtb-sbm"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/frtb-sbm" }
 dependencies = [
     { name = "frtb-common" },
+    { name = "numpy" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "frtb-common", editable = "packages/frtb-common" }]
+requires-dist = [
+    { name = "frtb-common", editable = "packages/frtb-common" },
+    { name = "numpy", specifier = ">=1.26,<2.5" },
+]
 
 [[package]]
 name = "h11"

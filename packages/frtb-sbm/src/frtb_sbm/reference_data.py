@@ -1,0 +1,627 @@
+"""
+Reference data for SBM rule profiles.
+
+Regulatory traceability:
+    See docs/REGULATORY_TRACEABILITY.md rows for reference_data.py, Basel
+    MAR21.38-MAR21.43, and SBM-REF-001.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+
+from frtb_common import UnsupportedRegulatoryFeatureError
+
+from frtb_sbm.data_models import (
+    SbmCitation,
+    SbmRegulatoryProfile,
+    SbmScenarioLabel,
+)
+from frtb_sbm.validation import SbmInputError
+
+BASEL_MAR21_URL = "https://www.bis.org/basel_framework/chapter/MAR/21.htm"
+
+GIRR_DELTA_INTRA_BUCKET_CONSTANT = 0.03
+GIRR_INTRA_BUCKET_CORRELATION_FLOOR = 0.40
+GIRR_INTER_BUCKET_CORRELATION = 0.50
+GIRR_SAME_CURVE_CORRELATION = 1.0
+GIRR_DIFFERENT_CURVE_CORRELATION = 0.999
+GIRR_INFLATION_SAME_TENOR_CORRELATION = 1.0
+GIRR_INFLATION_DIFFERENT_TENOR_CORRELATION = 0.40
+
+LIQUID_GIRR_CURRENCIES = frozenset({"EUR", "USD", "GBP", "JPY", "AUD", "CAD", "SEK"})
+SQRT2 = math.sqrt(2.0)
+
+
+@dataclass(frozen=True)
+class SbmGirrBucketDefinition:
+    """Profile-specific GIRR currency bucket definition."""
+
+    bucket_id: str
+    currency: str
+    citation_id: str
+
+
+@dataclass(frozen=True)
+class SbmGirrTenorDefinition:
+    """Profile-specific GIRR tenor label and maturity in years."""
+
+    tenor: str
+    maturity_years: float
+    citation_id: str
+
+
+@dataclass(frozen=True)
+class SbmGirrRiskWeightRule:
+    """Profile-specific GIRR delta risk-weight lookup entry."""
+
+    tenor: str
+    risk_weight: float
+    citation_id: str
+
+
+@dataclass(frozen=True)
+class SbmGirrSpecialRiskFactorRule:
+    """Profile-specific inflation or cross-currency basis risk factor."""
+
+    risk_factor: str
+    risk_weight: float
+    citation_id: str
+
+
+@dataclass(frozen=True)
+class SbmCorrelationScenarioDefinition:
+    """Profile-specific low, medium, or high correlation scenario rule."""
+
+    scenario: SbmScenarioLabel
+    multiplier: float
+    floor_factor: float | None
+    cap: float | None
+    citation_id: str
+
+
+BASEL_CITATIONS: dict[str, SbmCitation] = {
+    "basel_mar21_1": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.1",
+        url=BASEL_MAR21_URL,
+        note="Sensitivities-based method scope and risk-class stack.",
+    ),
+    "basel_mar21_8": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.8",
+        url=BASEL_MAR21_URL,
+        note="Risk-factor and bucket assignment boundary.",
+    ),
+    "basel_mar21_38": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.38",
+        url=BASEL_MAR21_URL,
+        note="GIRR bucket definitions by currency.",
+    ),
+    "basel_mar21_39": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.39",
+        url=BASEL_MAR21_URL,
+        note="GIRR delta risk weights by prescribed tenor.",
+    ),
+    "basel_mar21_40": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.40",
+        url=BASEL_MAR21_URL,
+        note="Liquid-currency and reporting-currency sqrt(2) risk-weight adjustment.",
+    ),
+    "basel_mar21_41": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.41",
+        url=BASEL_MAR21_URL,
+        note="GIRR delta intra-bucket correlation structure.",
+    ),
+    "basel_mar21_42": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.42",
+        url=BASEL_MAR21_URL,
+        note="GIRR inter-bucket correlation parameter.",
+    ),
+    "basel_mar21_43": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.43",
+        url=BASEL_MAR21_URL,
+        note="Low, medium, and high correlation scenario adjustments.",
+    ),
+}
+
+PROFILE_CITATIONS: dict[SbmRegulatoryProfile, dict[str, SbmCitation]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_CITATIONS,
+}
+
+BASEL_GIRR_BUCKETS: tuple[SbmGirrBucketDefinition, ...] = (
+    SbmGirrBucketDefinition("1", "EUR", "basel_mar21_38"),
+    SbmGirrBucketDefinition("2", "USD", "basel_mar21_38"),
+    SbmGirrBucketDefinition("3", "GBP", "basel_mar21_38"),
+    SbmGirrBucketDefinition("4", "JPY", "basel_mar21_38"),
+    SbmGirrBucketDefinition("5", "AUD", "basel_mar21_38"),
+    SbmGirrBucketDefinition("6", "CAD", "basel_mar21_38"),
+    SbmGirrBucketDefinition("7", "CHF", "basel_mar21_38"),
+    SbmGirrBucketDefinition("8", "CNH", "basel_mar21_38"),
+    SbmGirrBucketDefinition("9", "HKD", "basel_mar21_38"),
+    SbmGirrBucketDefinition("10", "KRW", "basel_mar21_38"),
+    SbmGirrBucketDefinition("11", "MXN", "basel_mar21_38"),
+    SbmGirrBucketDefinition("12", "NOK", "basel_mar21_38"),
+    SbmGirrBucketDefinition("13", "NZD", "basel_mar21_38"),
+    SbmGirrBucketDefinition("14", "SEK", "basel_mar21_38"),
+    SbmGirrBucketDefinition("15", "SGD", "basel_mar21_38"),
+    SbmGirrBucketDefinition("16", "TRY", "basel_mar21_38"),
+)
+
+BASEL_GIRR_TENORS: tuple[SbmGirrTenorDefinition, ...] = (
+    SbmGirrTenorDefinition("3m", 0.25, "basel_mar21_39"),
+    SbmGirrTenorDefinition("6m", 0.5, "basel_mar21_39"),
+    SbmGirrTenorDefinition("1y", 1.0, "basel_mar21_39"),
+    SbmGirrTenorDefinition("2y", 2.0, "basel_mar21_39"),
+    SbmGirrTenorDefinition("3y", 3.0, "basel_mar21_39"),
+    SbmGirrTenorDefinition("5y", 5.0, "basel_mar21_39"),
+    SbmGirrTenorDefinition("10y", 10.0, "basel_mar21_39"),
+    SbmGirrTenorDefinition("15y", 15.0, "basel_mar21_39"),
+    SbmGirrTenorDefinition("20y", 20.0, "basel_mar21_39"),
+    SbmGirrTenorDefinition("30y", 30.0, "basel_mar21_39"),
+)
+
+BASEL_GIRR_DELTA_RISK_WEIGHTS: tuple[SbmGirrRiskWeightRule, ...] = (
+    SbmGirrRiskWeightRule("3m", 0.017, "basel_mar21_39"),
+    SbmGirrRiskWeightRule("6m", 0.017, "basel_mar21_39"),
+    SbmGirrRiskWeightRule("1y", 0.016, "basel_mar21_39"),
+    SbmGirrRiskWeightRule("2y", 0.013, "basel_mar21_39"),
+    SbmGirrRiskWeightRule("3y", 0.012, "basel_mar21_39"),
+    SbmGirrRiskWeightRule("5y", 0.011, "basel_mar21_39"),
+    SbmGirrRiskWeightRule("10y", 0.011, "basel_mar21_39"),
+    SbmGirrRiskWeightRule("15y", 0.011, "basel_mar21_39"),
+    SbmGirrRiskWeightRule("20y", 0.011, "basel_mar21_39"),
+    SbmGirrRiskWeightRule("30y", 0.011, "basel_mar21_39"),
+)
+
+BASEL_GIRR_SPECIAL_RISK_FACTORS: tuple[SbmGirrSpecialRiskFactorRule, ...] = (
+    SbmGirrSpecialRiskFactorRule("INFL", 0.016, "basel_mar21_39"),
+    SbmGirrSpecialRiskFactorRule("XCCY", 0.016, "basel_mar21_39"),
+)
+
+BASEL_CORRELATION_SCENARIOS: tuple[SbmCorrelationScenarioDefinition, ...] = (
+    SbmCorrelationScenarioDefinition(
+        SbmScenarioLabel.LOW,
+        multiplier=0.75,
+        floor_factor=0.75,
+        cap=None,
+        citation_id="basel_mar21_43",
+    ),
+    SbmCorrelationScenarioDefinition(
+        SbmScenarioLabel.MEDIUM,
+        multiplier=1.0,
+        floor_factor=None,
+        cap=None,
+        citation_id="basel_mar21_43",
+    ),
+    SbmCorrelationScenarioDefinition(
+        SbmScenarioLabel.HIGH,
+        multiplier=1.25,
+        floor_factor=None,
+        cap=1.0,
+        citation_id="basel_mar21_43",
+    ),
+)
+
+PROFILE_GIRR_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmGirrBucketDefinition, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_BUCKETS,
+}
+
+PROFILE_GIRR_TENORS: dict[SbmRegulatoryProfile, tuple[SbmGirrTenorDefinition, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_TENORS,
+}
+
+PROFILE_GIRR_DELTA_RISK_WEIGHTS: dict[
+    SbmRegulatoryProfile,
+    tuple[SbmGirrRiskWeightRule, ...],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_DELTA_RISK_WEIGHTS,
+}
+
+PROFILE_GIRR_SPECIAL_RISK_FACTORS: dict[
+    SbmRegulatoryProfile,
+    tuple[SbmGirrSpecialRiskFactorRule, ...],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_SPECIAL_RISK_FACTORS,
+}
+
+PROFILE_CORRELATION_SCENARIOS: dict[
+    SbmRegulatoryProfile,
+    tuple[SbmCorrelationScenarioDefinition, ...],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_CORRELATION_SCENARIOS,
+}
+
+
+def citations_for_profile(
+    profile: SbmRegulatoryProfile | str,
+) -> dict[str, SbmCitation]:
+    """Return citations for a supported SBM profile."""
+
+    resolved = _resolve_supported_profile(profile)
+    return dict(PROFILE_CITATIONS[resolved])
+
+
+def girr_buckets_for_profile(
+    profile: SbmRegulatoryProfile | str,
+) -> tuple[SbmGirrBucketDefinition, ...]:
+    """Return GIRR bucket definitions for a supported profile."""
+
+    resolved = _resolve_supported_profile(profile)
+    return PROFILE_GIRR_BUCKETS[resolved]
+
+
+def girr_tenors_for_profile(
+    profile: SbmRegulatoryProfile | str,
+) -> tuple[SbmGirrTenorDefinition, ...]:
+    """Return the prescribed GIRR tenor set for a supported profile."""
+
+    resolved = _resolve_supported_profile(profile)
+    return PROFILE_GIRR_TENORS[resolved]
+
+
+def girr_bucket_for_currency(
+    profile: SbmRegulatoryProfile | str,
+    currency: str,
+) -> SbmGirrBucketDefinition:
+    """Return the GIRR bucket definition for a currency code."""
+
+    normalised = _require_currency(currency)
+    for bucket in girr_buckets_for_profile(profile):
+        if bucket.currency == normalised:
+            return bucket
+    raise SbmInputError(
+        f"no GIRR bucket for currency {normalised}",
+        field="currency",
+    )
+
+
+def girr_bucket_definition(
+    profile: SbmRegulatoryProfile | str,
+    bucket_id: str,
+) -> SbmGirrBucketDefinition:
+    """Return the GIRR bucket definition for a bucket id."""
+
+    normalised = _require_text(bucket_id, "bucket_id")
+    for bucket in girr_buckets_for_profile(profile):
+        if bucket.bucket_id == normalised:
+            return bucket
+    raise SbmInputError(
+        f"no GIRR bucket definition for bucket_id {normalised}",
+        field="bucket_id",
+    )
+
+
+def girr_tenor_definition(
+    profile: SbmRegulatoryProfile | str,
+    tenor: str,
+) -> SbmGirrTenorDefinition:
+    """Return the GIRR tenor definition for a canonical tenor label."""
+
+    normalised = _require_text(tenor, "tenor")
+    for tenor_definition in girr_tenors_for_profile(profile):
+        if tenor_definition.tenor == normalised:
+            return tenor_definition
+    raise SbmInputError(
+        f"no GIRR tenor definition for tenor {normalised}",
+        field="tenor",
+    )
+
+
+def girr_delta_risk_weight_rule(
+    profile: SbmRegulatoryProfile | str,
+    tenor: str,
+) -> SbmGirrRiskWeightRule:
+    """Return the cited base GIRR delta risk-weight rule for a tenor."""
+
+    normalised = _require_text(tenor, "tenor")
+    for rule in PROFILE_GIRR_DELTA_RISK_WEIGHTS[_resolve_supported_profile(profile)]:
+        if rule.tenor == normalised:
+            return rule
+    for special_rule in PROFILE_GIRR_SPECIAL_RISK_FACTORS[_resolve_supported_profile(profile)]:
+        if special_rule.risk_factor == normalised:
+            return SbmGirrRiskWeightRule(
+                tenor=special_rule.risk_factor,
+                risk_weight=special_rule.risk_weight,
+                citation_id=special_rule.citation_id,
+            )
+    raise SbmInputError(
+        f"no GIRR delta risk weight for tenor {normalised}",
+        field="tenor",
+    )
+
+
+def girr_delta_risk_weight(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    tenor: str,
+    currency: str,
+    reporting_currency: str,
+) -> tuple[float, tuple[str, ...]]:
+    """Return the cited GIRR delta risk weight and citation ids."""
+
+    _ensure_girr_delta_supported(profile)
+    rule = girr_delta_risk_weight_rule(profile, tenor)
+    normalised_currency = _require_currency(currency)
+    normalised_reporting = _require_currency(reporting_currency)
+    citation_ids: list[str] = [rule.citation_id]
+    risk_weight = rule.risk_weight
+    if _apply_sqrt2_adjustment(
+        tenor=rule.tenor,
+        currency=normalised_currency,
+        reporting_currency=normalised_reporting,
+    ):
+        risk_weight /= SQRT2
+        citation_ids.append("basel_mar21_40")
+    return risk_weight, tuple(citation_ids)
+
+
+def girr_delta_intra_bucket_correlation(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    tenor1: str,
+    tenor2: str,
+    same_curve: bool,
+) -> tuple[float, tuple[str, ...]]:
+    """Return the cited GIRR delta intra-bucket correlation and citation ids."""
+
+    _ensure_girr_delta_supported(profile)
+    normalised_tenor1 = _require_text(tenor1, "tenor1")
+    normalised_tenor2 = _require_text(tenor2, "tenor2")
+    citation_ids = ("basel_mar21_41",)
+
+    if normalised_tenor1 == "XCCY" or normalised_tenor2 == "XCCY":
+        if normalised_tenor1 == normalised_tenor2:
+            return GIRR_SAME_CURVE_CORRELATION, citation_ids
+        return 0.0, citation_ids
+
+    if normalised_tenor1 == "INFL" or normalised_tenor2 == "INFL":
+        if normalised_tenor1 == normalised_tenor2:
+            return GIRR_INFLATION_SAME_TENOR_CORRELATION, citation_ids
+        return GIRR_INFLATION_DIFFERENT_TENOR_CORRELATION, citation_ids
+
+    maturity1 = girr_tenor_definition(profile, normalised_tenor1).maturity_years
+    maturity2 = girr_tenor_definition(profile, normalised_tenor2).maturity_years
+    tenor_correlation = _exponential_tenor_correlation(maturity1, maturity2)
+    curve_correlation = (
+        GIRR_SAME_CURVE_CORRELATION if same_curve else GIRR_DIFFERENT_CURVE_CORRELATION
+    )
+    return curve_correlation * tenor_correlation, citation_ids
+
+
+def girr_inter_bucket_correlation(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    bucket1: str,
+    bucket2: str,
+) -> tuple[float, tuple[str, ...]]:
+    """Return the cited GIRR inter-bucket correlation and citation ids."""
+
+    _ensure_girr_delta_supported(profile)
+    normalised_bucket1 = _require_text(bucket1, "bucket1")
+    normalised_bucket2 = _require_text(bucket2, "bucket2")
+    girr_bucket_definition(profile, normalised_bucket1)
+    girr_bucket_definition(profile, normalised_bucket2)
+    if normalised_bucket1 == normalised_bucket2:
+        return GIRR_SAME_CURVE_CORRELATION, ("basel_mar21_42",)
+    return GIRR_INTER_BUCKET_CORRELATION, ("basel_mar21_42",)
+
+
+def correlation_scenarios_for_profile(
+    profile: SbmRegulatoryProfile | str,
+) -> tuple[SbmCorrelationScenarioDefinition, ...]:
+    """Return low, medium, and high correlation scenario definitions."""
+
+    resolved = _resolve_supported_profile(profile)
+    return PROFILE_CORRELATION_SCENARIOS[resolved]
+
+
+def correlation_scenario_definition(
+    profile: SbmRegulatoryProfile | str,
+    scenario: SbmScenarioLabel | str,
+) -> SbmCorrelationScenarioDefinition:
+    """Return one correlation scenario definition."""
+
+    resolved_scenario = _coerce_scenario(scenario)
+    for definition in correlation_scenarios_for_profile(profile):
+        if definition.scenario is resolved_scenario:
+            return definition
+    raise SbmInputError(
+        f"no correlation scenario definition for {resolved_scenario.value}",
+        field="scenario",
+    )
+
+
+def apply_correlation_scenario(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    base_correlation: float,
+    scenario: SbmScenarioLabel | str,
+) -> tuple[float, tuple[str, ...]]:
+    """Apply a profile correlation scenario to a base correlation parameter."""
+
+    definition = correlation_scenario_definition(profile, scenario)
+    adjusted = base_correlation
+    if definition.scenario is SbmScenarioLabel.LOW:
+        adjusted = max(2.0 * base_correlation - 1.0, definition.multiplier * base_correlation)
+    elif definition.scenario is SbmScenarioLabel.HIGH:
+        adjusted = min(definition.cap or 1.0, definition.multiplier * base_correlation)
+    else:
+        adjusted = definition.multiplier * base_correlation
+    return adjusted, (definition.citation_id,)
+
+
+def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:
+    """Return a deterministic, JSON-serialisable payload for profile hashing."""
+
+    resolved = _resolve_supported_profile(profile)
+    citations = citations_for_profile(resolved)
+    return {
+        "profile": resolved.value,
+        "citations": {
+            citation_id: {
+                "source_id": citation.source_id,
+                "location": citation.location,
+                "url": citation.url,
+                "note": citation.note,
+            }
+            for citation_id, citation in sorted(citations.items())
+        },
+        "girr_buckets": [
+            {
+                "bucket_id": bucket.bucket_id,
+                "currency": bucket.currency,
+                "citation_id": bucket.citation_id,
+            }
+            for bucket in girr_buckets_for_profile(resolved)
+        ],
+        "girr_tenors": [
+            {
+                "tenor": tenor.tenor,
+                "maturity_years": tenor.maturity_years,
+                "citation_id": tenor.citation_id,
+            }
+            for tenor in girr_tenors_for_profile(resolved)
+        ],
+        "girr_delta_risk_weights": [
+            {
+                "tenor": rule.tenor,
+                "risk_weight": rule.risk_weight,
+                "citation_id": rule.citation_id,
+            }
+            for rule in sorted(
+                PROFILE_GIRR_DELTA_RISK_WEIGHTS[resolved],
+                key=lambda item: item.tenor,
+            )
+        ],
+        "girr_special_risk_factors": [
+            {
+                "risk_factor": rule.risk_factor,
+                "risk_weight": rule.risk_weight,
+                "citation_id": rule.citation_id,
+            }
+            for rule in PROFILE_GIRR_SPECIAL_RISK_FACTORS[resolved]
+        ],
+        "correlation_scenarios": [
+            {
+                "scenario": definition.scenario.value,
+                "multiplier": definition.multiplier,
+                "floor_factor": definition.floor_factor,
+                "cap": definition.cap,
+                "citation_id": definition.citation_id,
+            }
+            for definition in correlation_scenarios_for_profile(resolved)
+        ],
+        "girr_delta_parameters": {
+            "intra_bucket_constant": GIRR_DELTA_INTRA_BUCKET_CONSTANT,
+            "intra_bucket_floor": GIRR_INTRA_BUCKET_CORRELATION_FLOOR,
+            "inter_bucket_correlation": GIRR_INTER_BUCKET_CORRELATION,
+            "intra_bucket_citation_id": "basel_mar21_41",
+            "inter_bucket_citation_id": "basel_mar21_42",
+        },
+    }
+
+
+def _ensure_girr_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
+    resolved = _resolve_supported_profile(profile)
+    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR delta reference data is unsupported for profile {resolved.value}"
+        )
+
+
+def _resolve_supported_profile(profile: SbmRegulatoryProfile | str) -> SbmRegulatoryProfile:
+    try:
+        resolved = SbmRegulatoryProfile(profile)
+    except ValueError as exc:
+        raise SbmInputError(
+            f"unknown SBM regulatory profile: {profile!r}",
+            field="profile_id",
+        ) from exc
+
+    if resolved not in PROFILE_CITATIONS:
+        raise UnsupportedRegulatoryFeatureError(
+            f"SBM profile {resolved.value} is unsupported until mapped and fixture-tested."
+        )
+    return resolved
+
+
+def _apply_sqrt2_adjustment(*, tenor: str, currency: str, reporting_currency: str) -> bool:
+    if tenor in {"INFL", "XCCY"}:
+        return False
+    return currency == reporting_currency or currency in LIQUID_GIRR_CURRENCIES
+
+
+def _exponential_tenor_correlation(tenor1_years: float, tenor2_years: float) -> float:
+    if tenor1_years <= 0.0 or tenor2_years <= 0.0:
+        return GIRR_SAME_CURVE_CORRELATION
+    minimum_tenor = min(tenor1_years, tenor2_years)
+    exponent = -GIRR_DELTA_INTRA_BUCKET_CONSTANT * abs(tenor1_years - tenor2_years) / minimum_tenor
+    return max(math.exp(exponent), GIRR_INTRA_BUCKET_CORRELATION_FLOOR)
+
+
+def _coerce_scenario(value: SbmScenarioLabel | str) -> SbmScenarioLabel:
+    if isinstance(value, SbmScenarioLabel):
+        return value
+    try:
+        return SbmScenarioLabel(value)
+    except ValueError as exc:
+        allowed = ", ".join(item.value for item in SbmScenarioLabel)
+        raise SbmInputError(
+            f"scenario must be one of: {allowed}",
+            field="scenario",
+        ) from exc
+
+
+def _require_text(value: object, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise SbmInputError("non-empty text is required", field=field)
+    return value.strip()
+
+
+def _require_currency(value: str) -> str:
+    normalised = _require_text(value, "currency")
+    if len(normalised) != 3 or not normalised.isalpha():
+        raise SbmInputError(
+            "currency must be a three-letter alphabetic code",
+            field="currency",
+        )
+    return normalised.upper()
+
+
+__all__ = [
+    "BASEL_CORRELATION_SCENARIOS",
+    "BASEL_GIRR_BUCKETS",
+    "BASEL_GIRR_DELTA_RISK_WEIGHTS",
+    "BASEL_GIRR_SPECIAL_RISK_FACTORS",
+    "BASEL_GIRR_TENORS",
+    "GIRR_DELTA_INTRA_BUCKET_CONSTANT",
+    "GIRR_INTER_BUCKET_CORRELATION",
+    "LIQUID_GIRR_CURRENCIES",
+    "SbmCorrelationScenarioDefinition",
+    "SbmGirrBucketDefinition",
+    "SbmGirrRiskWeightRule",
+    "SbmGirrSpecialRiskFactorRule",
+    "SbmGirrTenorDefinition",
+    "apply_correlation_scenario",
+    "citations_for_profile",
+    "correlation_scenario_definition",
+    "correlation_scenarios_for_profile",
+    "girr_bucket_definition",
+    "girr_bucket_for_currency",
+    "girr_buckets_for_profile",
+    "girr_delta_intra_bucket_correlation",
+    "girr_delta_risk_weight",
+    "girr_delta_risk_weight_rule",
+    "girr_inter_bucket_correlation",
+    "girr_tenor_definition",
+    "girr_tenors_for_profile",
+    "profile_reference_payload",
+]

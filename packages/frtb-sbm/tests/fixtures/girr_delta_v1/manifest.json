@@ -1,0 +1,18 @@
+{
+  "calculation_date": "2026-05-30",
+  "files": {
+    "expected_outputs.json": {
+      "sha256": "f39621907f3cfa82a0cd7dc8f86e248c22c7e3d15aa54b7d29a242dfc0cf0c2a"
+    },
+    "invalid_cases.json": {
+      "sha256": "4f22b8c3a4f60a9f1fda3f929639a02febddfc88aa5c56e390c935321851d7d0"
+    },
+    "sensitivities.json": {
+      "sha256": "cab64ff443060f217c01e601b8cb2323f71e3d96cc51597a5215157bf44377a4"
+    }
+  },
+  "profile": "BASEL_MAR21",
+  "schema_version": "girr_delta_fixture_v1",
+  "sensitivity_count": 3,
+  "total_capital": 19445.924982656645
+}

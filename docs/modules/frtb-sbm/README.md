@@ -6,15 +6,12 @@
 
 - Package directory: `packages/frtb-sbm`
 - Import name: `frtb_sbm`
-- Implementation status: scaffolded; phase-1 GIRR delta slice in progress (#151)
-- Validation status: not started
+- Implementation status: partial runtime — GIRR delta capital path implemented (#151 phase 1)
+- Validation status: deterministic fixture, audit, replay, and public API tests available
 
-The package is importable and exposes a public calculation boundary, but
-`calculate_sbm_capital` raises an explicit unimplemented-component error until
-the cited GIRR delta vertical slice is wired through the public API.
-
-Phase 1 explicitly leaves vega, curvature, CSR, equity, commodity, FX, and
-securitisation paths as fail-closed unsupported features.
+The package is importable and exposes `calculate_sbm_capital` for supported
+Basel MAR21 GIRR delta canonical inputs. Unsupported profiles, risk classes,
+and risk measures fail closed.
 
 ## Package-Local Documentation
 

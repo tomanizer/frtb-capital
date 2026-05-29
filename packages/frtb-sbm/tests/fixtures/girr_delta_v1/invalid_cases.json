@@ -1,0 +1,106 @@
+[
+  {
+    "case_id": "duplicate_sensitivity_id",
+    "expected_error_match": "duplicate sensitivity id",
+    "sensitivity": {
+      "sensitivity_id": "dup-001",
+      "source_row_id": "row-dup",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "DELTA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "tenor": "1y",
+      "sign_convention": "RECEIVE"
+    },
+    "duplicate_of": {
+      "sensitivity_id": "dup-001",
+      "source_row_id": "row-dup-2",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "DELTA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 2000000.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "sign_convention": "RECEIVE"
+    }
+  },
+  {
+    "case_id": "missing_tenor_lookup",
+    "expected_error_match": "no GIRR delta risk weight",
+    "sensitivity": {
+      "sensitivity_id": "bad-tenor",
+      "source_row_id": "row-bad-tenor",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "DELTA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "tenor": "99y",
+      "sign_convention": "RECEIVE"
+    }
+  },
+  {
+    "case_id": "unsupported_measure",
+    "expected_error_match": "frtb-sbm does not support",
+    "sensitivity": {
+      "sensitivity_id": "vega-001",
+      "source_row_id": "row-vega",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "tenor": "1y",
+      "sign_convention": "RECEIVE"
+    }
+  },
+  {
+    "case_id": "unsupported_risk_class",
+    "expected_error_match": "frtb-sbm does not support",
+    "sensitivity": {
+      "sensitivity_id": "fx-001",
+      "source_row_id": "row-fx",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "bucket": "1",
+      "risk_factor": "EURUSD",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "tenor": "1y",
+      "sign_convention": "RECEIVE"
+    }
+  },
+  {
+    "case_id": "missing_bucket_definition",
+    "expected_error_match": "no GIRR bucket definition",
+    "sensitivity": {
+      "sensitivity_id": "bad-bucket",
+      "source_row_id": "row-bad-bucket",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "DELTA",
+      "bucket": "999",
+      "risk_factor": "EUR",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "tenor": "1y",
+      "sign_convention": "RECEIVE"
+    }
+  }
+]

@@ -94,11 +94,15 @@ package = "frtb-sbm"
 import_name = "frtb_sbm"
 path = "packages/frtb-sbm"
 module_docs = "docs/modules/frtb-sbm"
-maturity = "scaffolded"
+maturity = "partial_runtime"
 component_type = "capital"
 metadata_object = "frtb_sbm:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_sbm:calculate_sbm_capital"
 
 [[packages.required_tests]]
-id = "scaffold-boundary"
-path = "packages/frtb-sbm/tests/test_sbm_scaffold.py"
+id = "public-api"
+path = "packages/frtb-sbm/tests/test_sbm_public_api.py"
+
+[[packages.required_tests]]
+id = "unsupported-runtime-paths"
+path = "packages/frtb-sbm/tests/test_sbm_unsupported_features.py"
