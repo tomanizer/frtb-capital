@@ -79,7 +79,9 @@ def recognise_drc_result(result: object) -> ComponentResultHandoff:
 
     return ComponentResultHandoff(
         component=StandardisedComponent.DRC,
-        package_name=_optional_text_attr(result, "package_name", default="frtb-drc"),
+        package_name=_optional_text_attr(
+            result, "package_name", component="DRC", default="frtb-drc"
+        ),
         run_id=_required_text_attr(result, "run_id", component="DRC"),
         calculation_date=_required_date_attr(result, "calculation_date", component="DRC"),
         base_currency=_required_text_attr(result, "base_currency", component="DRC"),
@@ -110,7 +112,9 @@ def recognise_sbm_result(result: object) -> ComponentResultHandoff:
 
     return ComponentResultHandoff(
         component=StandardisedComponent.SBM,
-        package_name=_optional_text_attr(result, "package_name", default="frtb-sbm"),
+        package_name=_optional_text_attr(
+            result, "package_name", component="SBM", default="frtb-sbm"
+        ),
         run_id=_required_text_attr(result, "run_id", component="SBM"),
         calculation_date=_required_date_attr(result, "calculation_date", component="SBM"),
         base_currency=_required_text_attr(result, "base_currency", component="SBM"),
@@ -197,13 +201,13 @@ def _required_text_attr(result: object, field: str, *, component: str) -> str:
     return value
 
 
-def _optional_text_attr(result: object, field: str, *, default: str) -> str:
+def _optional_text_attr(result: object, field: str, *, component: str, default: str) -> str:
     value = getattr(result, field, None)
     if value is None:
         return default
     if not isinstance(value, str) or not value:
         raise OrchestrationInputError(
-            f"result field {field} must be non-empty text",
+            f"{component} result field {field} must be non-empty text",
             field=field,
         )
     return value

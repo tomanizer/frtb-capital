@@ -224,6 +224,30 @@ def test_sbm_handoff_rejects_invalid_result_shape() -> None:
         )
 
 
+def test_sbm_handoff_rejects_invalid_optional_package_name_with_component_context() -> None:
+    with pytest.raises(
+        OrchestrationInputError,
+        match="SBM result field package_name must be non-empty text",
+    ):
+        recognise_sbm_result(
+            MinimalResult(
+                package_name="",
+                run_id="bad-sbm",
+                calculation_date=date(2026, 3, 31),
+                base_currency="USD",
+                profile_id="BASEL_MAR21",
+                total_sbm=42.0,
+                profile_hash="profile",
+                input_hash="input",
+                sensitivities=(),
+                unsupported_features=(),
+                risk_class_results=(),
+                citations=(),
+                warnings=(),
+            )
+        )
+
+
 def test_orchestration_runtime_does_not_import_sibling_packages() -> None:
     for source_file in SOURCE_ROOT.rglob("*.py"):
         tree = ast.parse(source_file.read_text(encoding="utf-8"))
