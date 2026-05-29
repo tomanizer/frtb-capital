@@ -150,7 +150,7 @@ def _position_from_payload(payload: dict[str, Any]) -> RraoPosition:
         investment_fund_descriptor=_optional_fund_descriptor(
             payload.get("investment_fund_descriptor")
         ),
-        citations=tuple(str(c) for c in payload.get("citations", [])),
+        citations=tuple(str(c) for c in (payload.get("citations") or [])),
     )
 
 

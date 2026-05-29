@@ -571,9 +571,10 @@ def _sha256(path: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    _default_output = Path(__file__).parent.parent / "tests" / "fixtures" / "rrao_sample_book_v1"
     parser.add_argument(
         "--output",
-        default="tests/fixtures/rrao_sample_book_v1",
+        default=str(_default_output),
         help="Output directory for fixture files",
     )
     args = parser.parse_args()
