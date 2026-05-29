@@ -1,0 +1,48 @@
+[
+  {
+    "case_id": "unsupported-investment-fund-evidence",
+    "expected_error_match": "unsupported classification evidence",
+    "position": {
+      "position_id": "invalid-investment-fund-001",
+      "source_row_id": "bad-row-001",
+      "desk_id": "desk-structured",
+      "legal_entity": "LE-002",
+      "gross_effective_notional": 1000000.0,
+      "currency": "USD",
+      "evidence_type": "INVESTMENT_FUND_EXPOSURE",
+      "evidence_label": "investment fund exposure",
+      "classification_hint": "OTHER_RESIDUAL_RISK"
+    }
+  },
+  {
+    "case_id": "missing-exclusion-evidence",
+    "expected_error_match": "exclusion_evidence_id",
+    "position": {
+      "position_id": "invalid-exclusion-evidence-001",
+      "source_row_id": "bad-row-002",
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-004",
+      "gross_effective_notional": 1000000.0,
+      "currency": "USD",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "evidence_label": "listed option without evidence id",
+      "classification_hint": "EXCLUDED",
+      "exclusion_reason": "LISTED"
+    }
+  },
+  {
+    "case_id": "conflicting-classification-hint",
+    "expected_error_match": "classification hint conflicts",
+    "position": {
+      "position_id": "invalid-hint-conflict-001",
+      "source_row_id": "bad-row-003",
+      "desk_id": "desk-structured",
+      "legal_entity": "LE-002",
+      "gross_effective_notional": 1000000.0,
+      "currency": "USD",
+      "evidence_type": "GAP_RISK",
+      "evidence_label": "gap risk labelled exotic",
+      "classification_hint": "EXOTIC"
+    }
+  }
+]

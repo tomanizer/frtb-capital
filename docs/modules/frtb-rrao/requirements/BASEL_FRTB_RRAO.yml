@@ -98,3 +98,10 @@ requirements:
     modules: [src/frtb_rrao/scaffold.py, src/frtb_rrao/audit.py]
     tests: [tests/test_public_api.py, tests/test_replay.py]
     notes: Calculates supported Basel/U.S. canonical inputs, splits included and excluded lines, and fails closed for unsupported profiles.
+  - id: RRAO-FIXTURE-001
+    title: Synthetic v1 validation fixture
+    source: Basel MAR23.2-MAR23.8; proposed U.S. section __.211
+    status: implemented
+    modules: [tests/fixtures/rrao_v1]
+    tests: [tests/test_fixture_workflow.py]
+    notes: Covers exotic examples, other residual-risk examples, supervisor-directed inclusion, cited exclusions, invalid evidence, pinned hashes, and deterministic replay.

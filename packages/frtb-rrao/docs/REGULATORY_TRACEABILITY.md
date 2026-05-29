@@ -74,7 +74,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `capital.py` | Additive line add-ons, zero-capital excluded lines, deterministic subtotals, and included-line total helper. | MAR23.8. | Proposed section `__.211(c)`. | Article 325u comparison mechanics once mapped. | Implemented for supported canonical inputs and used by the public API. |
 | `audit.py` | Result serialization, input/profile hashes, and line/subtotal reconciliation. | MAR23 calculation auditability context. | Proposed section `__.211(c)` line add-ons and reporting notional source. | Article 325u comparison context. | Implemented deterministic result serialization, input hashing, and reconciliation checks; optional contribution report helpers remain issue #94. |
 | `crif.py` | Optional CRIF/FNet-shaped adapter into canonical `RraoPosition` records. | MAR23 risk-type mapping context only. | Proposed section `__.211` canonical field mapping context. | Article 325u comparison mapping context. | Planned in issue #89; adapter only, not a calculation kernel. |
-| `fixtures.py` | Synthetic examples for source-cited classification, exclusions, and deterministic replay. | MAR23.2-MAR23.8. | Proposed section `__.211(a)`-`__.211(c)`. | Delegated Regulation 2022/2328 Articles 1-3 and Annex for EU fixtures. | Planned in issue #88. |
+| `tests/fixtures/rrao_v1/` | Synthetic examples for source-cited classification, exclusions, invalid evidence, and deterministic replay. | MAR23.2-MAR23.8. | Proposed section `__.211(a)`-`__.211(c)`. | Delegated Regulation 2022/2328 Articles 1-3 and Annex for future EU fixtures. | Implemented for supported U.S. NPR 2.0 fixture coverage; EU fixture pack remains issue #91. |
 
 ## Regulation to code
 

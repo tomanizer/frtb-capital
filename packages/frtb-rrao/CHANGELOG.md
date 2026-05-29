@@ -21,3 +21,5 @@ All notable changes to `frtb-rrao` will be documented here.
 - Added the public canonical-input RRAO calculation API, deterministic input
   and result audit serialization, profile/input hashes, and reconciliation
   checks.
+- Added the synthetic RRAO v1 validation fixture pack with expected outputs,
+  invalid cases, pinned hashes, and replay tests.

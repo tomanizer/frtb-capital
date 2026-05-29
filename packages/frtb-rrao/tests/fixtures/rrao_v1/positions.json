@@ -1,0 +1,168 @@
+{
+  "context": {
+    "run_id": "rrao-v1-fixture",
+    "calculation_date": "2026-03-31",
+    "base_currency": "USD",
+    "profile": "US_NPR_2_0"
+  },
+  "positions": [
+    {
+      "position_id": "exotic-longevity-001",
+      "source_row_id": "row-001",
+      "desk_id": "desk-exotics",
+      "legal_entity": "LE-001",
+      "gross_effective_notional": 1000000.0,
+      "currency": "USD",
+      "evidence_type": "EXOTIC_UNDERLYING",
+      "evidence_label": "longevity derivative",
+      "classification_hint": "EXOTIC"
+    },
+    {
+      "position_id": "exotic-weather-001",
+      "source_row_id": "row-002",
+      "desk_id": "desk-exotics",
+      "legal_entity": "LE-001",
+      "gross_effective_notional": 2500000.0,
+      "currency": "USD",
+      "evidence_type": "EXOTIC_UNDERLYING",
+      "evidence_label": "weather derivative",
+      "classification_hint": "EXOTIC"
+    },
+    {
+      "position_id": "exotic-natural-disaster-001",
+      "source_row_id": "row-003",
+      "desk_id": "desk-exotics",
+      "legal_entity": "LE-001",
+      "gross_effective_notional": 750000.0,
+      "currency": "USD",
+      "evidence_type": "EXOTIC_UNDERLYING",
+      "evidence_label": "natural disaster derivative",
+      "classification_hint": "EXOTIC"
+    },
+    {
+      "position_id": "other-gap-001",
+      "source_row_id": "row-004",
+      "desk_id": "desk-structured",
+      "legal_entity": "LE-002",
+      "gross_effective_notional": 4000000.0,
+      "currency": "USD",
+      "evidence_type": "GAP_RISK",
+      "evidence_label": "jump-to-gap payoff",
+      "classification_hint": "OTHER_RESIDUAL_RISK"
+    },
+    {
+      "position_id": "other-correlation-001",
+      "source_row_id": "row-005",
+      "desk_id": "desk-structured",
+      "legal_entity": "LE-002",
+      "gross_effective_notional": 1500000.0,
+      "currency": "USD",
+      "evidence_type": "CORRELATION_RISK",
+      "evidence_label": "correlation-sensitive payoff",
+      "classification_hint": "OTHER_RESIDUAL_RISK"
+    },
+    {
+      "position_id": "other-behavioural-001",
+      "source_row_id": "row-006",
+      "desk_id": "desk-structured",
+      "legal_entity": "LE-002",
+      "gross_effective_notional": 2000000.0,
+      "currency": "USD",
+      "evidence_type": "BEHAVIOURAL_RISK",
+      "evidence_label": "behavioural prepayment risk",
+      "classification_hint": "OTHER_RESIDUAL_RISK"
+    },
+    {
+      "position_id": "supervisor-directed-001",
+      "source_row_id": "row-007",
+      "desk_id": "desk-supervisory",
+      "legal_entity": "LE-003",
+      "gross_effective_notional": 3000000.0,
+      "currency": "USD",
+      "evidence_type": "SUPERVISOR_DIRECTIVE",
+      "evidence_label": "agency-directed inclusion",
+      "classification_hint": "SUPERVISOR_DIRECTED",
+      "supervisor_directive_id": "agency-letter-2026-001"
+    },
+    {
+      "position_id": "excluded-listed-001",
+      "source_row_id": "row-008",
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-004",
+      "gross_effective_notional": 5000000.0,
+      "currency": "USD",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "evidence_label": "listed option",
+      "classification_hint": "EXCLUDED",
+      "exclusion_reason": "LISTED",
+      "exclusion_evidence_id": "exchange-listing-001"
+    },
+    {
+      "position_id": "excluded-clearable-001",
+      "source_row_id": "row-009",
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-004",
+      "gross_effective_notional": 6000000.0,
+      "currency": "USD",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "evidence_label": "QCCP clearable transaction",
+      "classification_hint": "EXCLUDED",
+      "exclusion_reason": "CCP_OR_QCCP_CLEARABLE",
+      "exclusion_evidence_id": "qccp-clearable-001"
+    },
+    {
+      "position_id": "excluded-plain-option-001",
+      "source_row_id": "row-010",
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-004",
+      "gross_effective_notional": 7000000.0,
+      "currency": "USD",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "evidence_label": "two-underlying non-path-dependent option",
+      "classification_hint": "EXCLUDED",
+      "exclusion_reason": "TWO_OR_FEWER_UNDERLYINGS_NON_PATH_DEPENDENT_OPTION",
+      "exclusion_evidence_id": "plain-option-001",
+      "underlying_count": 2,
+      "is_path_dependent": false
+    },
+    {
+      "position_id": "excluded-back-to-back-001",
+      "source_row_id": "row-011",
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-004",
+      "gross_effective_notional": 8000000.0,
+      "currency": "USD",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "evidence_label": "exact third-party back-to-back transaction",
+      "classification_hint": "EXCLUDED",
+      "exclusion_reason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+      "exclusion_evidence_id": "back-to-back-match-001"
+    },
+    {
+      "position_id": "excluded-gov-gse-001",
+      "source_row_id": "row-012",
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-004",
+      "gross_effective_notional": 9000000.0,
+      "currency": "USD",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "evidence_label": "U.S. government or GSE debt",
+      "classification_hint": "EXCLUDED",
+      "exclusion_reason": "GOVERNMENT_OR_GSE_DEBT",
+      "exclusion_evidence_id": "gov-gse-security-001"
+    },
+    {
+      "position_id": "excluded-fallback-001",
+      "source_row_id": "row-013",
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-004",
+      "gross_effective_notional": 10000000.0,
+      "currency": "USD",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "evidence_label": "fallback capital requirement",
+      "classification_hint": "EXCLUDED",
+      "exclusion_reason": "FALLBACK_CAPITAL_REQUIREMENT",
+      "exclusion_evidence_id": "fallback-capital-001"
+    }
+  ]
+}
