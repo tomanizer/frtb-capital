@@ -434,12 +434,25 @@ jobs:
           NOTEBOOKS_RESULT: ${{ needs.notebooks.result }}
         run: |
           failed=0
+
+          # quality-control must always succeed — it runs unconditionally and
+          # skipped means the job was somehow bypassed, which is a failure.
+          case "$QUALITY_CONTROL_RESULT" in
+            success)
+              ;;
+            *)
+              echo "quality-control must succeed (got $QUALITY_CONTROL_RESULT)" >&2
+              failed=1
+              ;;
+          esac
+
+          # Conditional jobs are skipped when their changed-path filter did not
+          # match; skipped is acceptable for these.
           for result in \
             "$CHANGES_RESULT" \
             "$DOCS_RESULT" \
             "$LINT_RESULT" \
             "$TYPECHECK_RESULT" \
-            "$QUALITY_CONTROL_RESULT" \
             "$TEST_RESULT" \
             "$TEST_COMPAT_RESULT" \
             "$BUILD_RESULT" \

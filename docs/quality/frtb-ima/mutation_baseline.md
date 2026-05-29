@@ -58,8 +58,8 @@ Detected mutation score, counting the timeout as detected but not killed:
 `75.17%`.
 
 The project quality target for this slice is a killed-only score of at least
-`75%` across the configured calculation modules. The 2026-05-28 baseline meets
-that target without excluding any survivor from the denominator.
+`75.12%` across the configured calculation modules. The 2026-05-28 baseline
+meets that target without excluding any survivor from the denominator.
 
 ## Module Breakdown
 
@@ -79,5 +79,6 @@ the main hardening targets for future mutation-score increases.
 ## Schedule
 
 Mutation testing is not part of the PR push gate because it is slower than the
-normal suite. `.github/workflows/mutation.yml` runs it weekly and also supports
-manual dispatch.
+normal suite. `.github/workflows/mutation.yml` runs it weekly, exports
+`mutmut-cicd-stats.json`, and enforces this killed-only baseline with
+`scripts/ci/check_mutation_score.py`.

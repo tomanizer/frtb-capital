@@ -74,8 +74,8 @@ The development team commits to maintaining the following artifacts as the evide
 | Committed fixture (`tests/fixtures/capital_run_v1/`) | Reference inputs and expected outputs for regression and replay |
 | Reference-vector tests (`test_reference_vectors.py`) | Closed-form analytic checks for ES, KS, Spearman, multiplier |
 | Determinism registry (`tests/fixtures/determinism/<py-minor>.sha256`) | Cross-Python-minor reproducibility guarantee |
-| Mutation testing baseline (`docs/quality/mutation_baseline.md`) | Test-suite robustness evidence |
-| Coverage policy (`docs/quality/coverage_policy.md`) | 90% interim, 95% production-quality target per module |
+| Mutation testing baselines (`docs/quality/<package>/mutation_baseline.md`) | Test-suite robustness evidence |
+| Coverage policy (`docs/quality/coverage_policy.md`) | 90% interim, 95% production-quality target per implemented-package module |
 
 ## 5. Validation deliverables
 

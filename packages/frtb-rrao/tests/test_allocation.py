@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import importlib.util
 import json
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from types import ModuleType
 
 import pytest
 from frtb_rrao import (
+    RraoAllocationBucket,
     RraoAllocationDimension,
+    RraoAllocationReport,
     RraoCalculationContext,
     RraoCapitalResult,
     RraoClassification,
@@ -179,8 +182,100 @@ def test_unsupported_allocation_dimension_fails_explicitly() -> None:
     result = us_fixture_result()
 
     assert resolve_rrao_allocation_dimension("legal-entity") is RraoAllocationDimension.LEGAL_ENTITY
+    with pytest.raises(RraoInputError, match="allocation dimension must be non-empty text"):
+        resolve_rrao_allocation_dimension(" ")
+    with pytest.raises(RraoInputError, match="result must be RraoCapitalResult"):
+        build_rrao_allocation_report(object(), "desk")
     with pytest.raises(RraoInputError, match="unsupported RRAO allocation dimension"):
         build_rrao_allocation_report(result, "classification")
+
+
+def test_allocation_report_validation_rejects_invalid_report_shape() -> None:
+    report = build_rrao_allocation_report(us_fixture_result(), "desk")
+
+    with pytest.raises(RraoInputError, match="report must be RraoAllocationReport"):
+        validate_rrao_allocation_report(object())
+    with pytest.raises(RraoInputError, match="unsupported RRAO allocation dimension"):
+        validate_rrao_allocation_report(replace(report, dimension="unsupported"))
+    with pytest.raises(RraoInputError, match="calculation date must be a date"):
+        validate_rrao_allocation_report(replace(report, calculation_date="2026-03-31"))
+    with pytest.raises(RraoInputError, match="unsupported RRAO allocation method"):
+        validate_rrao_allocation_report(replace(report, allocation_method="pro_rata"))
+    with pytest.raises(RraoInputError, match="allocated RRAO does not reconcile"):
+        validate_rrao_allocation_report(replace(report, allocated_rrao=report.allocated_rrao + 1.0))
+    with pytest.raises(RraoInputError, match="allocation does not reconcile"):
+        validate_rrao_allocation_report(replace(report, total_rrao=report.total_rrao + 1.0))
+
+
+def test_allocation_bucket_validation_rejects_incoherent_buckets() -> None:
+    report = build_rrao_allocation_report(us_fixture_result(), "desk")
+    bucket = replace(report.buckets[0], add_on=report.total_rrao)
+
+    invalid_cases = (
+        (
+            replace(bucket, dimension=RraoAllocationDimension.LINE),
+            "allocation bucket dimension mismatch",
+        ),
+        (replace(bucket, bucket_key=" "), "allocation bucket key is required"),
+        (
+            replace(bucket, line_count=bucket.line_count + 1),
+            "allocation bucket line count mismatch",
+        ),
+        (
+            replace(bucket, excluded_line_count=bucket.excluded_line_count + 1),
+            "allocation bucket excluded count mismatch",
+        ),
+    )
+    for invalid_bucket, message in invalid_cases:
+        with pytest.raises(RraoInputError, match=message):
+            validate_rrao_allocation_report(
+                replace(
+                    report,
+                    total_rrao=invalid_bucket.add_on,
+                    allocated_rrao=invalid_bucket.add_on,
+                    buckets=(invalid_bucket,),
+                )
+            )
+
+    duplicate_bucket = replace(report.buckets[1], bucket_key=bucket.bucket_key, add_on=0.0)
+    with pytest.raises(RraoInputError, match="duplicate allocation bucket key"):
+        validate_rrao_allocation_report(
+            replace(
+                report,
+                total_rrao=bucket.add_on,
+                allocated_rrao=bucket.add_on,
+                buckets=(bucket, duplicate_bucket),
+            )
+        )
+
+
+def test_allocation_report_rejects_inconsistent_manual_bucket_totals() -> None:
+    report = build_rrao_allocation_report(us_fixture_result(), "desk")
+    bucket = RraoAllocationBucket(
+        dimension=RraoAllocationDimension.DESK,
+        bucket_key="manual",
+        gross_effective_notional=1.0,
+        add_on=report.total_rrao,
+        position_ids=("manual",),
+        included_position_ids=("manual",),
+        excluded_position_ids=(),
+        line_count=1,
+        excluded_line_count=0,
+    )
+    manual_report = RraoAllocationReport(
+        run_id=report.run_id,
+        calculation_date=report.calculation_date,
+        base_currency=report.base_currency,
+        profile_id=report.profile_id,
+        input_hash=report.input_hash,
+        dimension=RraoAllocationDimension.DESK,
+        allocation_method=report.allocation_method,
+        total_rrao=report.total_rrao,
+        allocated_rrao=report.total_rrao,
+        buckets=(bucket,),
+    )
+
+    assert serialize_rrao_allocation_report(manual_report)["buckets"][0]["bucket_key"] == "manual"
 
 
 def _eu_position_from_payload(payload: object) -> RraoPosition:

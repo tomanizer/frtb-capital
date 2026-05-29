@@ -54,6 +54,7 @@ maturity = "implemented"
 component_type = "capital"
 metadata_object = "frtb_ima:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_ima:models_based_capital_for_policy"
+mutation_floor = 75.12
 
 [[packages.required_tests]]
 id = "public-api"
@@ -82,6 +83,7 @@ maturity = "implemented"
 component_type = "capital"
 metadata_object = "frtb_rrao:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_rrao:calculate_rrao_capital"
+mutation_floor = 85.47
 
 [[packages.required_tests]]
 id = "public-api"

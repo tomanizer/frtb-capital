@@ -131,6 +131,90 @@ def test_calculate_rrao_capital_requires_context() -> None:
         calculate_rrao_capital(())
 
 
+def test_calculate_rrao_capital_validates_context_shape() -> None:
+    position = sample_position(
+        position_id="exotic-001",
+        source_row_id="row-001",
+        gross_effective_notional=1_000_000.0,
+        evidence_type=RraoEvidenceType.EXOTIC_UNDERLYING,
+        evidence_label="weather derivative",
+        classification_hint=RraoClassification.EXOTIC,
+    )
+
+    invalid_contexts = (
+        (object(), "calculation context must be RraoCalculationContext"),
+        (
+            RraoCalculationContext(
+                run_id="run",
+                calculation_date="2026-03-31",
+                base_currency="USD",
+                profile=RraoRegulatoryProfile.US_NPR_2_0,
+            ),
+            "calculation date must be a date",
+        ),
+        (
+            RraoCalculationContext(
+                run_id="run",
+                calculation_date=date(2026, 3, 31),
+                base_currency="USD",
+                profile="UNKNOWN",
+            ),
+            "invalid regulatory profile",
+        ),
+        (
+            RraoCalculationContext(
+                run_id=" ",
+                calculation_date=date(2026, 3, 31),
+                base_currency="USD",
+                profile=RraoRegulatoryProfile.US_NPR_2_0,
+            ),
+            "non-empty text is required",
+        ),
+        (
+            RraoCalculationContext(
+                run_id="run",
+                calculation_date=date(2026, 3, 31),
+                base_currency=" ",
+                profile=RraoRegulatoryProfile.US_NPR_2_0,
+            ),
+            "non-empty text is required",
+        ),
+        (
+            RraoCalculationContext(
+                run_id="run",
+                calculation_date=date(2026, 3, 31),
+                base_currency="USD",
+                profile=RraoRegulatoryProfile.US_NPR_2_0,
+                desk_id=" ",
+            ),
+            "non-empty text is required",
+        ),
+        (
+            RraoCalculationContext(
+                run_id="run",
+                calculation_date=date(2026, 3, 31),
+                base_currency="USD",
+                profile=RraoRegulatoryProfile.US_NPR_2_0,
+                legal_entity=" ",
+            ),
+            "non-empty text is required",
+        ),
+        (
+            RraoCalculationContext(
+                run_id="run",
+                calculation_date=date(2026, 3, 31),
+                base_currency="USD",
+                profile=RraoRegulatoryProfile.US_NPR_2_0,
+                citation_policy=" ",
+            ),
+            "non-empty text is required",
+        ),
+    )
+    for context, message in invalid_contexts:
+        with pytest.raises(RraoInputError, match=message):
+            calculate_rrao_capital((position,), context=context)
+
+
 def test_calculate_rrao_capital_fails_closed_for_unsupported_profiles() -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
         calculate_rrao_capital(
