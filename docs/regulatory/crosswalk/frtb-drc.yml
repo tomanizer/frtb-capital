@@ -15,8 +15,8 @@ requirements:
       - packages/frtb-drc/tests/
     coverage_status: not_implemented
     challenger_refs:
-      - frtb-net/FRTB
-      - ankitjha67/baselkit
+      - frtb_net_frtb
+      - ankitjha67_baselkit
     notes: "Separate non-securitisation, securitisation non-CTP, and CTP cases."
 
   - id: DRC-HBR-001
@@ -30,5 +30,5 @@ requirements:
       - packages/frtb-drc/tests/
     coverage_status: not_implemented
     challenger_refs:
-      - frtb-net/FRTB
+      - frtb_net_frtb
     notes: "Keep issuer, seniority, maturity, and tranche grouping auditable."

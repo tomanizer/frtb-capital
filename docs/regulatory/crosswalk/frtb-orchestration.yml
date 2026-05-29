@@ -16,8 +16,8 @@ requirements:
       - packages/frtb-orchestration/tests/
     coverage_status: not_implemented
     challenger_refs:
-      - frtb-net/FRTB
-      - ultima-ib/ultima
+      - frtb_net_frtb
+      - ultima_ib_ultima
     notes: "Orchestration owns SA composition and IMA fallback routing."
 
   - id: ORCH-REGIME-001

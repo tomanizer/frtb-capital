@@ -16,8 +16,8 @@ requirements:
       - packages/frtb-rrao/tests/
     coverage_status: not_implemented
     challenger_refs:
-      - frtb-net/FRTB
-      - ankitjha67/baselkit
+      - frtb_net_frtb
+      - ankitjha67_baselkit
     notes: "UK RRAO permissions regime is not generic Basel behaviour."
 
   - id: RRAO-HEDGE-EXEMPTION-001

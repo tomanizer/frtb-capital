@@ -17,8 +17,8 @@ requirements:
       - packages/frtb-sbm/tests/
     coverage_status: not_implemented
     challenger_refs:
-      - frtb-net/FRTB
-      - hemanthreddyaeddulla/FRTB-SA-Capital-Engine
+      - frtb_net_frtb
+      - hemanth_frtb_sa_capital_engine
     notes: "Implement before vega/curvature to exercise bucket/rho/gamma scaffolding."
 
   - id: SBM-FX-DELTA-001
@@ -33,8 +33,8 @@ requirements:
       - packages/frtb-sbm/tests/
     coverage_status: not_implemented
     challenger_refs:
-      - frtb-net/FRTB
-      - hemanthreddyaeddulla/FRTB-SA-Capital-Engine
+      - frtb_net_frtb
+      - hemanth_frtb_sa_capital_engine
     notes: "Keep PRA historical-FX treatment separate from generic Basel profile."
 
   - id: SBM-EQUITY-DELTA-001
@@ -48,9 +48,9 @@ requirements:
       - packages/frtb-sbm/tests/
     coverage_status: not_implemented
     challenger_refs:
-      - frtb-net/FRTB
-      - hemanthreddyaeddulla/FRTB-SA-Capital-Engine
-      - subhamsharma7/FRTB-Market-Risk
+      - frtb_net_frtb
+      - hemanth_frtb_sa_capital_engine
+      - subhamsharma7_frtb_market_risk
     notes: "Use small deterministic bucket-assignment portfolios first."
 
   - id: SBM-VEGA-001
@@ -64,9 +64,9 @@ requirements:
       - packages/frtb-sbm/tests/
     coverage_status: not_implemented
     challenger_refs:
-      - frtb-net/FRTB
-      - Levan-Danelia/FRTB
-      - ivanshuer/FRTB
+      - frtb_net_frtb
+      - levan_danelia_frtb
+      - ivanshuer_frtb
     notes: "Record option-maturity and underlying-maturity conventions explicitly."
 
   - id: SBM-CURVATURE-001
@@ -80,7 +80,7 @@ requirements:
       - packages/frtb-sbm/tests/
     coverage_status: not_implemented
     challenger_refs:
-      - frtb-net/FRTB
-      - Levan-Danelia/FRTB
-      - ivanshuer/FRTB
+      - frtb_net_frtb
+      - levan_danelia_frtb
+      - ivanshuer_frtb
     notes: "Explicitly record sign convention and correlation-squaring convention."

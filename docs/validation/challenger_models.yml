@@ -43,6 +43,14 @@ challengers:
     components:
       - frtb-sbm
 
+  - id: subhamsharma7_frtb_market_risk
+    repo: subhamsharma7/FRTB-Market-Risk
+    role: equity_delta_challenger
+    license: unknown
+    use_policy: "Use for targeted SBM equity delta sanity checks; inspect license before reuse."
+    components:
+      - frtb-sbm
+
   - id: levan_danelia_frtb
     repo: Levan-Danelia/FRTB
     role: formula_triangulation_notebooks
