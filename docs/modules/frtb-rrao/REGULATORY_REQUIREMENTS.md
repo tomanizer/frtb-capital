@@ -14,10 +14,11 @@ gross effective notional risk weights.
 | --- | --- | --- |
 | Basel Framework MAR20 | https://www.bis.org/basel_framework/chapter/MAR/20.htm | Standardised approach structure, MAR20.4. |
 | Basel Framework MAR23 | https://www.bis.org/basel_framework/chapter/MAR/23.htm | Residual risk add-on scope, formula, exclusions, and back-to-back treatment, MAR23.1-MAR23.7. |
-| U.S. NPR 2.0, 91 FR 14952 | https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959 | Proposed residual risk capital requirement, section V.A.7.b, pages around 15049-15050. |
+| U.S. NPR 2.0, 91 FR 14952 | https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959 | Proposed residual risk capital requirement, section V.A.7.b and proposed section `__.211`, pages 15049-15050 and 15239-15240. |
 | EBA RRAO RTS page | https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2?version=2021 | EU RTS scope clarification for instruments bearing residual risks. |
 | Commission Delegated Regulation (EU) 2022/2328 | https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2328 | Official Journal RTS on residual risk add-on. |
-| Local reference implementation | External `extract_cva` capital navigator, RRAO component | Implementation inspiration for risk-type mapping, 1 percent and 0.1 percent weights, and Euler breakdowns; not included in this repository. |
+| Public GitHub implementation reference | https://github.com/frtb-net/FRTB/blob/bdce773dc01868f61d8fdd65476c52193a2321e1/SA_RRAO_Calc.py | Implementation inspiration for risk-type mapping and explain grouping only; not a regulatory source. |
+| OCC PDF copy of 91 FR 14952 | https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf | Convenience copy for page-specific review. GovInfo remains the primary source. |
 
 ## Regulatory Scope
 
@@ -84,7 +85,7 @@ Support explicit exclusion logic for positions that meet regulatory criteria:
 - profile-specific government, GSE, hedge, or fallback exclusions.
 
 Basel source: MAR23.4-MAR23.7. U.S. source: 91 FR 15049-15050, section
-V.A.7.b.ii.
+V.A.7.b.ii and proposed section `__.211(b)`.
 
 ### RRAO-REQ-005: Supervisor-Directed Inclusion
 
@@ -100,7 +101,7 @@ Total RRAO equals the simple sum of weighted gross effective notionals across
 subject positions. No diversification, correlation scenario, or offsetting is
 recognised unless a future profile cites it explicitly.
 
-Basel source: MAR23.2-MAR23.3. U.S. source: section V.A.7.b.
+Basel source: MAR23.8. U.S. source: proposed section `__.211(c)`.
 
 ### RRAO-REQ-007: Audit and Euler Explain
 
@@ -113,9 +114,29 @@ Reference implementation inspiration: `rrao.py` uses `RRAO_1_PERCENT`,
 `RRAO_01_PERCENT`, `RRAO_0_PERCENT`, `WeightedNotional`, and grouped Euler
 breakdowns.
 
+### RRAO-REQ-008: Gross Effective Notional Source
+
+The U.S. NPR 2.0 profile uses gross effective notional as the notional amount
+reported in the most recent Call Report or FR Y-9C. Adapter boundaries must
+record the source field used for this amount and calculation kernels must reject
+negative or non-finite notionals after normalisation.
+
+U.S. source: proposed section `__.211(c)(2)`.
+
+### RRAO-REQ-009: EU Classification Profile
+
+The EU comparison profile must represent Delegated Regulation (EU) 2022/2328
+Article 1 exotic underlyings, Article 2 Annex instruments bearing residual
+risks, and Article 3 risks that do not by themselves create a presumption of
+residual-risk treatment. The profile may remain unsupported for capital until
+the mapping has deterministic fixture coverage.
+
+EU source: Regulation (EU) No 575/2013 Article 325u and Delegated Regulation
+(EU) 2022/2328 Articles 1-3 and Annex.
+
 ## Reference Implementation Notes
 
-The local extraction suggests:
+The public GitHub and local extraction references suggest:
 
 - a small rule table mapping risk type to risk weight;
 - an input loader that maps Axiom risk classes such as `Other` and `Exotic`

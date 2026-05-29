@@ -65,11 +65,13 @@ recorded.
 ## Delivery Slices
 
 1. **Skeleton and source register**.
-2. **Data model and risk weights**: 1 percent, 0.1 percent, zero/excluded.
-3. **Classification and exclusion engine**.
-4. **Capital calculation and audit result**.
-5. **Input mapping and examples**.
-6. **Suite integration and report output**.
+2. **Detailed requirements and issue plan**: DRC-style architecture, data
+   design, decisions, and implementation-ready issues.
+3. **Data model and risk weights**: 1 percent, 0.1 percent, zero/excluded.
+4. **Classification and exclusion engine**.
+5. **Capital calculation and audit result**.
+6. **Input mapping and examples**.
+7. **Suite integration and report output**.
 
 ## Acceptance Criteria
 
