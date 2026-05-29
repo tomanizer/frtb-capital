@@ -18,6 +18,7 @@ from frtb_drc.data_models import (
     DrcCapitalResult,
     DrcPosition,
     DrcRiskClass,
+    DrcSeniority,
     GrossJtd,
     MaturityScaledJtd,
     NetJtd,
@@ -25,7 +26,7 @@ from frtb_drc.data_models import (
 from frtb_drc.gross_jtd import calculate_gross_jtds
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
-from frtb_drc.regimes import ensure_risk_class_supported, get_rule_profile
+from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
 from frtb_drc.validation import DrcInputError, validate_positions
 
 PACKAGE_METADATA = CapitalComponentMetadata(
@@ -51,7 +52,7 @@ def calculate_drc_capital(
     validated = _sorted_positions(validate_positions(positions))
     if not validated:
         raise DrcInputError("DRC capital requires at least one position")
-    _validate_supported_run(validated, context=context)
+    _validate_supported_run(validated, context=context, profile=profile)
 
     gross_jtds = calculate_gross_jtds(validated, profile_id=profile.profile_id)
     scaled_jtds = scale_gross_jtds(
@@ -131,12 +132,13 @@ def _validate_supported_run(
     positions: tuple[DrcPosition, ...],
     *,
     context: DrcCalculationContext,
+    profile: DrcRuleProfile,
 ) -> None:
-    profile = get_rule_profile(context.profile_id)
     for position in positions:
-        ensure_risk_class_supported(profile, position.risk_class)
-        if position.risk_class is not DrcRiskClass.NON_SECURITISATION:
-            raise DrcInputError(f"DRC risk class is not implemented: {position.risk_class.value}")
+        risk_class = DrcRiskClass(position.risk_class)
+        ensure_risk_class_supported(profile, risk_class)
+        if risk_class != DrcRiskClass.NON_SECURITISATION:
+            raise DrcInputError(f"DRC risk class is not implemented: {risk_class.value}")
         if position.currency != context.base_currency:
             raise DrcInputError(
                 f"position currency {position.currency} does not match base currency "
@@ -157,7 +159,7 @@ def _netting_inputs(
             NettingInput(
                 gross_jtd=gross_by_position[position.position_id],
                 scaled_jtd=scaled_by_position[position.position_id],
-                seniority=position.seniority,
+                seniority=DrcSeniority(position.seniority),
             )
         )
     return tuple(inputs)
@@ -181,15 +183,13 @@ def _credit_quality_for_net_jtd(
     net_jtd: NetJtd,
     positions_by_id: dict[str, DrcPosition],
 ) -> CreditQuality:
-    credit_qualities = {
-        positions_by_id[position_id].credit_quality
-        for position_id in net_jtd.position_ids
-        if positions_by_id[position_id].credit_quality is not None
-    }
+    credit_qualities: set[CreditQuality] = set()
+    for position_id in net_jtd.position_ids:
+        credit_quality = positions_by_id[position_id].credit_quality
+        if credit_quality is not None:
+            credit_qualities.add(CreditQuality(credit_quality))
     if len(credit_qualities) != 1:
-        raise DrcInputError(
-            f"net JTD must map to exactly one credit quality: {net_jtd.net_jtd_id}"
-        )
+        raise DrcInputError(f"net JTD must map to exactly one credit quality: {net_jtd.net_jtd_id}")
     return next(iter(credit_qualities))
 
 

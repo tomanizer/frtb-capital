@@ -38,18 +38,17 @@ def test_rule_profile_hash_returns_profile_content_hash() -> None:
 
 
 def test_result_serialization_is_json_ready_and_deterministic() -> None:
-    result = calculate_drc_capital(
-        (
-            _position("long", DefaultDirection.LONG, 100.0),
-            _position("short", DefaultDirection.SHORT, 40.0, issuer="issuer-b"),
-        ),
-        context=_context(),
+    positions = (
+        _position("long", DefaultDirection.LONG, 100.0),
+        _position("short", DefaultDirection.SHORT, 40.0, issuer="issuer-b"),
     )
+    result = calculate_drc_capital(positions, context=_context())
+    repeat = calculate_drc_capital(positions, context=_context())
 
     snapshot = serialize_result(result)
     assert snapshot["run_id"] == "run-audit"
     assert snapshot["package_name"] == "frtb-drc"
-    assert result_json(result) == result_json(result)
+    assert result_json(result) == result_json(repeat)
 
 
 def test_validate_reconciliation_rejects_broken_total() -> None:

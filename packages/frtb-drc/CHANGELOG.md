@@ -19,3 +19,5 @@ All notable changes to `frtb-drc` will be documented here.
   rejection records.
 - Added bucket-level and category-level non-securitisation DRC capital APIs with
   HBR and bucket-floor audit metadata.
+- Added public non-securitisation DRC API results with deterministic audit and
+  replay snapshots.

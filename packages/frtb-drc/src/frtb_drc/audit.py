@@ -52,9 +52,7 @@ def validate_reconciliation(result: DrcCapitalResult, *, tolerance: float = 1e-1
     for category in result.categories:
         bucket_total = sum(bucket.capital for bucket in category.bucket_results)
         if abs(bucket_total - category.capital) > tolerance:
-            raise DrcInputError(
-                f"category capital does not reconcile: {category.category_id}"
-            )
+            raise DrcInputError(f"category capital does not reconcile: {category.category_id}")
         category_total += category.capital
         for bucket in category.bucket_results:
             expected_denominator = bucket.hbr.aggregate_net_long + bucket.hbr.aggregate_net_short
@@ -76,7 +74,7 @@ def validate_reconciliation(result: DrcCapitalResult, *, tolerance: float = 1e-1
 
 def _validate_net_records(result: DrcCapitalResult) -> None:
     for record in result.net_jtds:
-        if record.net_direction is DefaultDirection.LONG:
+        if DefaultDirection(record.net_direction) == DefaultDirection.LONG:
             signed_amount = record.net_amount
         else:
             signed_amount = -record.net_amount
