@@ -43,9 +43,10 @@ def scale_gross_jtd(
         maturity_years,
         profile_id=profile_id,
     )
-    branch_metadata = ()
+    branch_metadata = gross_jtd.branch_metadata
     if floor_applied:
         branch_metadata = (
+            *gross_jtd.branch_metadata,
             BranchMetadata(
                 branch_id=f"branch-maturity-floor-{gross_jtd.gross_jtd_id}",
                 branch_type=BranchType.FLOOR,
@@ -65,7 +66,7 @@ def scale_gross_jtd(
         maturity_weight=weight,
         scaled_jtd=gross_jtd.gross_jtd * weight,
         floor_applied=floor_applied,
-        citations=(citation_id,),
+        citations=_append_citation(gross_jtd.citations, citation_id),
         branch_metadata=branch_metadata,
     )
 
@@ -81,3 +82,9 @@ def scale_gross_jtds(
         scale_gross_jtd(gross_jtd, maturity_years, profile_id=profile_id)
         for gross_jtd, maturity_years in gross_jtds_with_maturity
     )
+
+
+def _append_citation(citations: tuple[str, ...], citation_id: str) -> tuple[str, ...]:
+    if citation_id in citations:
+        return citations
+    return (*citations, citation_id)

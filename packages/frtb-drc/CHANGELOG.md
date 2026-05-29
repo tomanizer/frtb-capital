@@ -13,3 +13,5 @@ All notable changes to `frtb-drc` will be documented here.
   risk-weight tables.
 - Added cited non-securitisation gross JTD calculation APIs with fail-closed
   unsupported risk-class gates.
+- Added cited maturity-scaling APIs with audit branch metadata for maturity
+  floors.

@@ -4,6 +4,8 @@ import math
 
 import pytest
 from frtb_drc import (
+    BranchMetadata,
+    BranchType,
     DefaultDirection,
     DrcInputError,
     DrcRiskClass,
@@ -57,7 +59,31 @@ def test_scale_gross_jtd_preserves_lineage_and_citation() -> None:
     assert scaled.scaled_jtd_id == "scaled-pos-2"
     assert scaled.gross_jtd_id == "gross-pos-2"
     assert scaled.position_id == "pos-2"
-    assert scaled.citations == ("US_NPR_210_A_2_III",)
+    assert scaled.citations == ("BASEL_MAR22_11", "US_NPR_210_B_1_IV", "US_NPR_210_A_2_III")
+
+
+def test_scale_gross_jtd_carries_branch_metadata_and_appends_floor_branch() -> None:
+    gross_branch = BranchMetadata(
+        branch_id="branch-gross-pos-3",
+        branch_type=BranchType.NORMAL,
+        source_id="gross-pos-3",
+        selected=True,
+        reason="gross JTD source branch",
+        citations=("BASEL_MAR22_11",),
+    )
+    scaled = scale_gross_jtd(
+        _gross(
+            position_id="pos-3",
+            gross_jtd_id="gross-pos-3",
+            branch_metadata=(gross_branch,),
+        ),
+        0.10,
+    )
+
+    assert scaled.branch_metadata[0] == gross_branch
+    assert scaled.branch_metadata[1].branch_type == BranchType.FLOOR
+    assert scaled.branch_metadata[1].citations == ("US_NPR_210_A_2_III",)
+    assert scaled.citations == ("BASEL_MAR22_11", "US_NPR_210_B_1_IV", "US_NPR_210_A_2_III")
 
 
 def test_scale_gross_jtds_preserves_input_order() -> None:
