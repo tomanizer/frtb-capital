@@ -45,6 +45,8 @@ def check_stats_file(package: str, stats_path: Path, *, floor: float) -> Mutatio
 
     try:
         stats = json.loads(stats_path.read_text(encoding="utf-8"))
+        if not isinstance(stats, dict):
+            raise ValueError("stats must be a dictionary")
         killed = _required_int(stats, "killed")
         total = _required_int(stats, "total")
         if total <= 0:
@@ -113,6 +115,8 @@ def _parse_package_mapping(raw_values: list[str], *, option: str) -> dict[str, s
     parsed: dict[str, str] = {}
     for raw_value in raw_values:
         package, separator, value = raw_value.partition("=")
+        package = package.strip()
+        value = value.strip()
         if not separator or not package or not value:
             raise ValueError(f"{option} must use PACKAGE=VALUE form: {raw_value}")
         parsed[package] = value

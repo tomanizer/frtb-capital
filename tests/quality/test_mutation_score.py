@@ -46,6 +46,33 @@ def test_mutation_score_reports_missing_stats(tmp_path: Path) -> None:
     assert result.error is not None
 
 
+def test_mutation_score_reports_non_mapping_stats(tmp_path: Path) -> None:
+    stats_path = tmp_path / "mutmut-cicd-stats.json"
+    stats_path.write_text("[]", encoding="utf-8")
+
+    result = mutation_score.check_stats_file("frtb-example", stats_path, floor=85.0)
+
+    assert not result.passed
+    assert result.failed_requirement_ids == ("mutation-stats-readable",)
+    assert result.error == "stats must be a dictionary"
+
+
+def test_mutation_score_main_strips_package_mappings(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    stats_path = _write_stats(tmp_path, killed=9, total=10)
+
+    exit_code = mutation_score.main(
+        [
+            "--stats",
+            f" frtb-example = {stats_path} ",
+            "--floor",
+            " frtb-example = 90.0 ",
+        ]
+    )
+
+    assert exit_code == 0
+
+
 def test_mutation_score_main_writes_json_report(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     stats_path = _write_stats(tmp_path, killed=9, total=10)
