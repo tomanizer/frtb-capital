@@ -13,6 +13,9 @@ from frtb_rrao import (
     RraoClassificationDecision,
     RraoEvidenceType,
     RraoExclusionReason,
+    RraoInvestmentFundDescriptor,
+    RraoInvestmentFundExposureType,
+    RraoInvestmentFundMethod,
     RraoPosition,
     RraoRegulatoryProfile,
     RraoSourceLineage,
@@ -54,6 +57,8 @@ def test_rrao_enums_have_stable_wire_values() -> None:
     assert RraoEvidenceType.NO_MATURITY_OPTIONALITY == "NO_MATURITY_OPTIONALITY"
     assert RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK == "EXACT_THIRD_PARTY_BACK_TO_BACK"
     assert RraoRegulatoryProfile.US_NPR_2_0 == "US_NPR_2_0"
+    assert RraoInvestmentFundMethod.BACKSTOP_FUND_METHOD == "BACKSTOP_FUND_METHOD"
+    assert RraoInvestmentFundExposureType.EXOTIC_EXPOSURE == "EXOTIC_EXPOSURE"
 
 
 def test_rrao_position_is_frozen_and_carries_lineage() -> None:
@@ -64,6 +69,23 @@ def test_rrao_position_is_frozen_and_carries_lineage() -> None:
     assert position.citations == ("basel_mar23_2",)
     with pytest.raises(FrozenInstanceError):
         position.currency = "EUR"  # type: ignore[misc]
+
+
+def test_investment_fund_descriptor_is_frozen_and_carries_linkage() -> None:
+    descriptor = RraoInvestmentFundDescriptor(
+        fund_id="fund-001",
+        section_205_method=RraoInvestmentFundMethod.BACKSTOP_FUND_METHOD,
+        included_exposure_type=RraoInvestmentFundExposureType.OTHER_RESIDUAL_RISK,
+        mandate_evidence_id="mandate-001",
+        section_205_evidence_id="section-205-001",
+        fund_gross_effective_notional=10_000_000.0,
+        included_exposure_ratio=0.25,
+    )
+
+    assert descriptor.fund_id == "fund-001"
+    assert descriptor.section_205_method is RraoInvestmentFundMethod.BACKSTOP_FUND_METHOD
+    with pytest.raises(FrozenInstanceError):
+        descriptor.fund_id = "fund-002"  # type: ignore[misc]
 
 
 def test_public_result_model_covers_decisions_lines_subtotals_and_context() -> None:

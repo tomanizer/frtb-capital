@@ -339,12 +339,6 @@ def _specific_other_residual_evidence(
             field="EvidenceType",
             position_id=source_row_id,
         ) from exc
-    if evidence_type is RraoEvidenceType.INVESTMENT_FUND_EXPOSURE:
-        raise RraoInputError(
-            "investment fund adapter mapping is unsupported until issue #90",
-            field="EvidenceType",
-            position_id=source_row_id,
-        )
     return evidence_type
 
 

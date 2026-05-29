@@ -15,7 +15,11 @@ from frtb_rrao.data_models import (
     RraoPosition,
     RraoRegulatoryProfile,
 )
-from frtb_rrao.reference_data import evidence_rule_for, exclusion_rule_for
+from frtb_rrao.reference_data import (
+    evidence_rule_for,
+    exclusion_rule_for,
+    investment_fund_rule_for,
+)
 from frtb_rrao.regimes import get_rrao_rule_profile
 from frtb_rrao.validation import RraoInputError, validate_rrao_positions
 
@@ -53,6 +57,8 @@ def _classify_validated_position(
 ) -> RraoClassificationDecision:
     if _is_exclusion_path(position):
         return _excluded_decision(position, profile)
+    if position.evidence_type is RraoEvidenceType.INVESTMENT_FUND_EXPOSURE:
+        return _investment_fund_decision(position, profile)
 
     rule = evidence_rule_for(profile, position.evidence_type)
     _check_hint_compatibility(position, rule.classification)
@@ -87,6 +93,31 @@ def _excluded_decision(
         citations=_merged_citation_ids((rule.citation_id,), position.citations),
         exclusion_reason=position.exclusion_reason,
         exclusion_evidence_id=position.exclusion_evidence_id,
+    )
+
+
+def _investment_fund_decision(
+    position: RraoPosition,
+    profile: RraoRegulatoryProfile,
+) -> RraoClassificationDecision:
+    if position.investment_fund_descriptor is None:
+        raise RraoInputError(
+            "investment fund descriptor is required",
+            field="investment_fund_descriptor",
+            position_id=position.position_id,
+        )
+    rule = investment_fund_rule_for(
+        profile,
+        position.investment_fund_descriptor.included_exposure_type,
+    )
+    _check_hint_compatibility(position, rule.classification)
+    return RraoClassificationDecision(
+        position_id=position.position_id,
+        classification=rule.classification,
+        evidence_type=position.evidence_type,
+        reason_code=rule.reason_code,
+        risk_weight_key=rule.risk_weight_key,
+        citations=_merged_citation_ids(rule.citation_ids, position.citations),
     )
 
 

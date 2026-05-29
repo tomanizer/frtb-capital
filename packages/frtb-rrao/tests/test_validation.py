@@ -122,12 +122,15 @@ def test_validate_rrao_positions_rejects_unsupported_classification_paths() -> N
         "unsupported classification path",
     )
     assert_rejects(
-        sample_position(evidence_type=RraoEvidenceType.INVESTMENT_FUND_EXPOSURE),
-        "unsupported classification evidence",
+        sample_position(
+            evidence_type=RraoEvidenceType.INVESTMENT_FUND_EXPOSURE,
+            is_investment_fund_exposure=True,
+        ),
+        "investment fund descriptor",
     )
     assert_rejects(
         sample_position(is_investment_fund_exposure=True),
-        "investment fund exposure path is unsupported",
+        "investment-fund evidence type",
     )
 
 

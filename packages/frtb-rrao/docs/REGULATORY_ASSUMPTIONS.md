@@ -60,6 +60,22 @@ No diversification, offsetting, hedge benefit, correlation aggregation,
 maturity scaling, or scenario aggregation applies in v1 unless a future
 regulatory profile cites and tests a different treatment.
 
+## Investment fund inclusion boundary
+
+For the U.S. NPR 2.0 profile, proposed section `__.211(a)(3)` is implemented
+only through an explicit `RraoInvestmentFundDescriptor`. The descriptor must
+show that the position uses the proposed section `__.205(e)(3)(iii)` backstop
+fund method, that look-through is not available for the included portion, that
+the fund mandate permits residual-risk exposure types, and that the reported
+gross effective notional equals the cited included portion.
+
+The package does not infer investment-fund treatment from fund name, strategy,
+or free-form description. The descriptor must choose whether the included
+portion maps to the exotic 1.0% treatment or the other-residual-risk 0.1%
+treatment, and classification validates that choice against the selected U.S.
+profile rule. Basel, EU, and PRA investment-fund capital paths remain
+unsupported until they have separate cited mappings and fixtures.
+
 ## Exclusion boundary
 
 Exclusions are successful zero-capital outcomes only when the selected profile

@@ -56,6 +56,13 @@ requirements:
     modules: [src/frtb_rrao/classification.py]
     tests: [tests/test_classification.py]
     notes: Requires supervisor directive evidence id; no implicit inclusion.
+  - id: RRAO-CLASS-003
+    title: Investment-fund inclusion
+    source: proposed U.S. section __.205(e)(3)(iii); proposed U.S. section __.211(a)(3)
+    status: implemented
+    modules: [src/frtb_rrao/data_models.py, src/frtb_rrao/validation.py, src/frtb_rrao/reference_data.py, src/frtb_rrao/classification.py, src/frtb_rrao/capital.py]
+    tests: [tests/test_investment_fund.py, tests/test_unsupported_features.py]
+    notes: Requires an explicit backstop fund descriptor, mandate evidence, section 205 evidence, and included portion before applying cited 1.0% or 0.1% treatment.
   - id: RRAO-CAP-001
     title: 1 percent exotic add-on
     source: Basel MAR23.2; 91 FR 15049 footnote 385

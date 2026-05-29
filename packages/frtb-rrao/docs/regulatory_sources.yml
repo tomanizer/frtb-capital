@@ -49,7 +49,7 @@ sources:
     jurisdiction: US
     title: "Federal Register 91 FR 14952, Regulatory Capital Rule market-risk proposal"
     url: "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
-    section_hint: "Section V.A.7.b and proposed section __.211 cover U.S. residual risk capital requirement."
+    section_hint: "Section V.A.7.b, proposed section __.205(e)(3)(iii), and proposed section __.211 cover U.S. residual risk capital requirement and fund-portion linkage."
     status: proposed_rule_reference
     reuse_note: "GovInfo is the primary U.S. NPR source link for this package."
     module_paths:
@@ -157,4 +157,3 @@ sources:
       - src/frtb_rrao/crif.py
     requirement_ids:
       - RRAO-FUNC-013
-
