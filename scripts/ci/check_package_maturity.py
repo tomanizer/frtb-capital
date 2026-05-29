@@ -433,11 +433,7 @@ def _partial_runtime_failures(entry: PackageEntry, *, root: Path) -> list[str]:
     failures = _common_package_file_failures(entry, root=root)
     if not (root / entry.path / "tests").is_dir():
         failures.append("tests-directory")
-    if not _any_exists(
-        root,
-        entry.path / "tests/test_drc_public_api.py",
-        entry.path / "tests/test_drc_scaffold.py",
-    ):
+    if not list((root / entry.path / "tests").glob("test_*public_api*.py")):
         failures.append("public-api-tests")
     if not (root / entry.module_docs / "ARCHITECTURE_AND_DATA_DESIGN.md").exists():
         failures.append("architecture-data-design")

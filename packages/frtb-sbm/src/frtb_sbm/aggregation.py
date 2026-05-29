@@ -1,0 +1,539 @@
+"""
+Shared intra-bucket and inter-bucket SBM aggregation primitives.
+
+Regulatory traceability:
+    Basel MAR21.4(4)-(5) — within-bucket and across-bucket delta/vega aggregation.
+    Basel MAR21.6 — low, medium, and high correlation scenarios.
+    Basel MAR21.7(2) — select the largest risk-class capital across scenarios.
+    U.S. NPR 2.0 section V.A.7.a steps four through six.
+    SBM-REQ-005, SBM-REQ-006.
+"""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+
+import numpy as np
+import numpy.typing as npt
+
+from frtb_sbm.data_models import (
+    BucketCapital,
+    RiskClassCapital,
+    SbmBranchMetadata,
+    SbmBranchType,
+    SbmRiskClass,
+    SbmRiskMeasure,
+    SbmScenarioLabel,
+    WeightedSensitivity,
+)
+from frtb_sbm.validation import SbmInputError
+
+_MAR21_INTRA_BUCKET_CITATION = ("basel_mar21_4_intra_bucket",)
+_MAR21_INTER_BUCKET_CITATION = ("basel_mar21_4_inter_bucket",)
+_MAR21_SCENARIO_CITATION = ("basel_mar21_6_correlation_scenarios",)
+_MAR21_SCENARIO_SELECTION_CITATION = ("basel_mar21_7_scenario_selection",)
+
+_DEFAULT_SCENARIOS: tuple[SbmScenarioLabel, ...] = (
+    SbmScenarioLabel.LOW,
+    SbmScenarioLabel.MEDIUM,
+    SbmScenarioLabel.HIGH,
+)
+
+
+@dataclass(frozen=True)
+class PairwiseCorrelationEvidence:
+    """Audit record for one pairwise intra-bucket correlation."""
+
+    sensitivity_id_a: str
+    sensitivity_id_b: str
+    correlation: float
+    citation_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class IntraBucketAggregationResult:
+    """Intra-bucket capital with full audit evidence."""
+
+    bucket_capital: BucketCapital
+    pairwise_correlations: tuple[PairwiseCorrelationEvidence, ...]
+    variance_before_floor: float
+    zero_variance_floor_applied: bool
+    sb_correlation_floor_applied: bool
+
+
+@dataclass(frozen=True)
+class InterBucketScenarioResult:
+    """Risk-class capital for one correlation scenario."""
+
+    scenario: SbmScenarioLabel
+    capital: float
+    capital_variance_sum: float
+    alternative_sb_used: bool
+    bucket_ids: tuple[str, ...]
+    bucket_kb_values: tuple[float, ...]
+    bucket_sb_values: tuple[float, ...]
+    inter_bucket_correlations: tuple[tuple[str, str, float], ...]
+    citation_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class ScenarioSelectionResult:
+    """Selected scenario outcome for a risk class."""
+
+    scenario_totals: Mapping[SbmScenarioLabel, float]
+    selected_scenario: SbmScenarioLabel
+    selected_capital: float
+    branch_metadata: SbmBranchMetadata
+    citation_ids: tuple[str, ...]
+
+
+def adjust_correlation_for_scenario(
+    base_correlation: float,
+    scenario: SbmScenarioLabel,
+) -> float:
+    """
+    Apply MAR21.6 correlation-scenario adjustments to one parameter.
+
+    Medium scenario uses the base value unchanged. High scenario multiplies by
+    1.25 and caps at 100%. Low scenario uses max(2 * rho - 100%, 75% * rho).
+    """
+    _validate_finite_correlation(base_correlation, field="base_correlation")
+    if scenario is SbmScenarioLabel.MEDIUM:
+        return base_correlation
+    if scenario is SbmScenarioLabel.HIGH:
+        return min(base_correlation * 1.25, 1.0)
+    if scenario is SbmScenarioLabel.LOW:
+        return max(2.0 * base_correlation - 1.0, 0.75 * base_correlation)
+    raise SbmInputError(
+        f"unsupported correlation scenario: {scenario!r}",
+        field="scenario",
+    )
+
+
+def aggregate_intra_bucket(
+    bucket_id: str,
+    weighted_sensitivities: Sequence[WeightedSensitivity],
+    correlation_matrix: npt.NDArray[np.float64],
+    *,
+    risk_class: SbmRiskClass,
+    risk_measure: SbmRiskMeasure,
+    sb_correlation_floor: float | None = None,
+    citation_ids: tuple[str, ...] = _MAR21_INTRA_BUCKET_CITATION,
+) -> IntraBucketAggregationResult:
+    """
+    Aggregate weighted sensitivities within one bucket (MAR21.4 step 4).
+
+    Computes the signed bucket aggregate ``Sb = sum_k WS_k`` and bucket capital
+    ``Kb = sqrt(max(0, sum_k sum_l rho_kl WS_k WS_l))``. When ``sb_correlation_floor``
+    is supplied, ``Kb`` is additionally floored at ``abs(sb_correlation_floor * Sb)``.
+    """
+    ordered = _sort_weighted_sensitivities(weighted_sensitivities)
+    _validate_bucket_scope(bucket_id, ordered, risk_class, risk_measure)
+    matrix = _validate_correlation_matrix(correlation_matrix, n_factors=len(ordered))
+
+    ws = np.array([item.scaled_amount for item in ordered], dtype=np.float64)
+    sb = float(np.sum(ws))
+    variance = float(ws @ matrix @ ws)
+
+    zero_floor_applied = variance < 0.0
+    variance_floored = max(0.0, variance)
+
+    kb_squared = variance_floored
+    sb_floor_applied = False
+    if sb_correlation_floor is not None:
+        if not math.isfinite(sb_correlation_floor) or sb_correlation_floor < 0.0:
+            raise SbmInputError(
+                "sb_correlation_floor must be a finite non-negative number",
+                field="sb_correlation_floor",
+            )
+        sb_floor_value = (sb_correlation_floor * sb) ** 2
+        if sb_floor_value > kb_squared:
+            kb_squared = sb_floor_value
+            sb_floor_applied = True
+
+    kb = math.sqrt(kb_squared)
+    pairwise = _pairwise_correlation_evidence(ordered, matrix, citation_ids)
+
+    bucket_capital = BucketCapital(
+        bucket_id=bucket_id,
+        risk_class=risk_class,
+        risk_measure=risk_measure,
+        kb=kb,
+        weighted_sensitivities=tuple(ordered),
+        citation_ids=citation_ids,
+        sb=sb,
+        floor_applied=zero_floor_applied or sb_floor_applied,
+    )
+    return IntraBucketAggregationResult(
+        bucket_capital=bucket_capital,
+        pairwise_correlations=pairwise,
+        variance_before_floor=variance,
+        zero_variance_floor_applied=zero_floor_applied,
+        sb_correlation_floor_applied=sb_floor_applied,
+    )
+
+
+def aggregate_inter_bucket(
+    bucket_results: Sequence[IntraBucketAggregationResult | BucketCapital],
+    inter_bucket_correlations: Mapping[tuple[str, str], float],
+    *,
+    scenario: SbmScenarioLabel = SbmScenarioLabel.MEDIUM,
+    apply_scenario_adjustment: bool = True,
+    citation_ids: tuple[str, ...] = _MAR21_INTER_BUCKET_CITATION,
+) -> InterBucketScenarioResult:
+    """
+    Aggregate bucket-level positions across buckets for one scenario (MAR21.4 step 5).
+
+    Uses ``K^2 = sum_b Kb^2 + sum_b sum_c gamma_bc Sb Sc`` with ``gamma_bb = 0``.
+    When the summed variance is negative, applies the alternative ``Sb`` specification
+    from MAR21.4(5)(b).
+    """
+    buckets = [_as_bucket_capital(item) for item in bucket_results]
+    if not buckets:
+        raise SbmInputError("bucket_results must not be empty", field="bucket_results")
+
+    bucket_ids = tuple(sorted({bucket.bucket_id for bucket in buckets}, key=str))
+    if len(bucket_ids) != len(buckets):
+        raise SbmInputError(
+            "duplicate bucket_id values are not permitted in inter-bucket aggregation",
+            field="bucket_results",
+        )
+
+    kb_values = np.array([bucket.kb for bucket in buckets], dtype=np.float64)
+    sb_values = np.array([_bucket_sb(bucket) for bucket in buckets], dtype=np.float64)
+    gamma = _build_inter_bucket_gamma_matrix(
+        bucket_ids=bucket_ids,
+        inter_bucket_correlations=inter_bucket_correlations,
+        scenario=scenario,
+        apply_scenario_adjustment=apply_scenario_adjustment,
+    )
+
+    capital_variance, alternative_sb_used = _inter_bucket_variance(
+        kb_values=kb_values,
+        sb_values=sb_values,
+        gamma=gamma,
+    )
+    capital = math.sqrt(max(0.0, capital_variance))
+    adjusted_correlations = _inter_bucket_correlation_audit(
+        bucket_ids=bucket_ids,
+        inter_bucket_correlations=inter_bucket_correlations,
+        scenario=scenario,
+        apply_scenario_adjustment=apply_scenario_adjustment,
+    )
+
+    return InterBucketScenarioResult(
+        scenario=scenario,
+        capital=capital,
+        capital_variance_sum=capital_variance,
+        alternative_sb_used=alternative_sb_used,
+        bucket_ids=bucket_ids,
+        bucket_kb_values=tuple(float(value) for value in kb_values),
+        bucket_sb_values=tuple(float(value) for value in sb_values),
+        inter_bucket_correlations=adjusted_correlations,
+        citation_ids=citation_ids,
+    )
+
+
+def select_max_correlation_scenario(
+    scenario_totals: Mapping[SbmScenarioLabel, float],
+    *,
+    risk_class: SbmRiskClass,
+    citation_ids: tuple[str, ...] = _MAR21_SCENARIO_SELECTION_CITATION,
+) -> ScenarioSelectionResult:
+    """
+    Select the maximum risk-class capital across correlation scenarios.
+
+    GIRR delta capital uses the largest scenario total per MAR21.7(2).
+    """
+    if not scenario_totals:
+        raise SbmInputError("scenario_totals must not be empty", field="scenario_totals")
+
+    selected_scenario = max(
+        scenario_totals,
+        key=lambda label: (scenario_totals[label], _scenario_rank(label)),
+    )
+    selected_capital = float(scenario_totals[selected_scenario])
+    branch = SbmBranchMetadata(
+        branch_id=f"{risk_class.value.lower()}_scenario_selection",
+        branch_type=SbmBranchType.SCENARIO_SELECTION,
+        source_id="mar21_7_2",
+        selected=True,
+        reason=(
+            f"selected {selected_scenario.value} scenario with capital "
+            f"{selected_capital} as the maximum across correlation scenarios"
+        ),
+        citation_ids=citation_ids,
+    )
+    return ScenarioSelectionResult(
+        scenario_totals=dict(scenario_totals),
+        selected_scenario=selected_scenario,
+        selected_capital=selected_capital,
+        branch_metadata=branch,
+        citation_ids=citation_ids,
+    )
+
+
+def aggregate_risk_class_with_scenarios(
+    bucket_results: Sequence[IntraBucketAggregationResult | BucketCapital],
+    inter_bucket_correlations: Mapping[tuple[str, str], float],
+    *,
+    risk_class: SbmRiskClass,
+    risk_measure: SbmRiskMeasure,
+    scenarios: Sequence[SbmScenarioLabel] = _DEFAULT_SCENARIOS,
+    apply_scenario_adjustment: bool = True,
+    citation_ids: tuple[str, ...] = _MAR21_SCENARIO_CITATION,
+) -> RiskClassCapital:
+    """
+    Evaluate inter-bucket capital across scenarios and select the maximum for GIRR.
+
+    Returns a ``RiskClassCapital`` with per-scenario totals, selected scenario,
+    and the intra-bucket ``BucketCapital`` records used in aggregation.
+    """
+    if not scenarios:
+        raise SbmInputError("scenarios must not be empty", field="scenarios")
+
+    scenario_results: dict[SbmScenarioLabel, InterBucketScenarioResult] = {}
+    for scenario in scenarios:
+        scenario_results[scenario] = aggregate_inter_bucket(
+            bucket_results,
+            inter_bucket_correlations,
+            scenario=scenario,
+            apply_scenario_adjustment=apply_scenario_adjustment,
+            citation_ids=citation_ids,
+        )
+
+    scenario_totals = {label: result.capital for label, result in sorted(scenario_results.items())}
+    selection = select_max_correlation_scenario(
+        scenario_totals,
+        risk_class=risk_class,
+        citation_ids=_MAR21_SCENARIO_SELECTION_CITATION,
+    )
+    buckets = tuple(_as_bucket_capital(item) for item in bucket_results)
+    return RiskClassCapital(
+        risk_class=risk_class,
+        risk_measure=risk_measure,
+        selected_capital=selection.selected_capital,
+        buckets=buckets,
+        citation_ids=citation_ids,
+        scenario_totals=selection.scenario_totals,
+        selected_scenario=selection.selected_scenario,
+    )
+
+
+def group_weighted_sensitivities_by_bucket(
+    weighted_sensitivities: Sequence[WeightedSensitivity],
+) -> dict[tuple[SbmRiskClass, SbmRiskMeasure, str], tuple[WeightedSensitivity, ...]]:
+    """Group weighted sensitivities by risk class, measure, and bucket id."""
+    grouped: dict[tuple[SbmRiskClass, SbmRiskMeasure, str], list[WeightedSensitivity]] = {}
+    for item in weighted_sensitivities:
+        key = (item.risk_class, item.risk_measure, item.bucket)
+        grouped.setdefault(key, []).append(item)
+    return {
+        key: tuple(_sort_weighted_sensitivities(values)) for key, values in sorted(grouped.items())
+    }
+
+
+def _inter_bucket_variance(
+    *,
+    kb_values: npt.NDArray[np.float64],
+    sb_values: npt.NDArray[np.float64],
+    gamma: npt.NDArray[np.float64],
+) -> tuple[float, bool]:
+    variance = float(np.dot(kb_values, kb_values) + sb_values @ gamma @ sb_values)
+    if variance >= 0.0:
+        return variance, False
+
+    adjusted_sb = np.array(
+        [max(min(sb, kb), -kb) for sb, kb in zip(sb_values, kb_values, strict=True)],
+        dtype=np.float64,
+    )
+    adjusted_variance = float(np.dot(kb_values, kb_values) + adjusted_sb @ gamma @ adjusted_sb)
+    return adjusted_variance, True
+
+
+def _build_inter_bucket_gamma_matrix(
+    *,
+    bucket_ids: Sequence[str],
+    inter_bucket_correlations: Mapping[tuple[str, str], float],
+    scenario: SbmScenarioLabel,
+    apply_scenario_adjustment: bool,
+) -> npt.NDArray[np.float64]:
+    size = len(bucket_ids)
+    gamma = np.zeros((size, size), dtype=np.float64)
+    index = {bucket_id: position for position, bucket_id in enumerate(bucket_ids)}
+
+    for (bucket_a, bucket_b), base_gamma in sorted(inter_bucket_correlations.items()):
+        if bucket_a not in index or bucket_b not in index:
+            raise SbmInputError(
+                "inter_bucket_correlations references unknown bucket ids",
+                field="inter_bucket_correlations",
+            )
+        applied = (
+            adjust_correlation_for_scenario(base_gamma, scenario)
+            if apply_scenario_adjustment
+            else base_gamma
+        )
+        row = index[bucket_a]
+        col = index[bucket_b]
+        gamma[row, col] = applied
+        if row != col:
+            gamma[col, row] = applied
+    return gamma
+
+
+def _inter_bucket_correlation_audit(
+    *,
+    bucket_ids: Sequence[str],
+    inter_bucket_correlations: Mapping[tuple[str, str], float],
+    scenario: SbmScenarioLabel,
+    apply_scenario_adjustment: bool,
+) -> tuple[tuple[str, str, float], ...]:
+    audit: list[tuple[str, str, float]] = []
+    for (bucket_a, bucket_b), base_gamma in sorted(inter_bucket_correlations.items()):
+        if bucket_a not in bucket_ids or bucket_b not in bucket_ids:
+            continue
+        applied = (
+            adjust_correlation_for_scenario(base_gamma, scenario)
+            if apply_scenario_adjustment
+            else base_gamma
+        )
+        audit.append((bucket_a, bucket_b, applied))
+    return tuple(audit)
+
+
+def _pairwise_correlation_evidence(
+    ordered: Sequence[WeightedSensitivity],
+    matrix: npt.NDArray[np.float64],
+    citation_ids: tuple[str, ...],
+) -> tuple[PairwiseCorrelationEvidence, ...]:
+    records: list[PairwiseCorrelationEvidence] = []
+    for row_index, sensitivity_a in enumerate(ordered):
+        for col_index in range(row_index, len(ordered)):
+            sensitivity_b = ordered[col_index]
+            records.append(
+                PairwiseCorrelationEvidence(
+                    sensitivity_id_a=sensitivity_a.sensitivity_id,
+                    sensitivity_id_b=sensitivity_b.sensitivity_id,
+                    correlation=float(matrix[row_index, col_index]),
+                    citation_ids=citation_ids,
+                )
+            )
+    return tuple(records)
+
+
+def _sort_weighted_sensitivities(
+    weighted_sensitivities: Sequence[WeightedSensitivity],
+) -> tuple[WeightedSensitivity, ...]:
+    return tuple(
+        sorted(
+            weighted_sensitivities,
+            key=lambda item: (item.sensitivity_id, item.bucket, item.qualifier or ""),
+        )
+    )
+
+
+def _validate_bucket_scope(
+    bucket_id: str,
+    weighted_sensitivities: Sequence[WeightedSensitivity],
+    risk_class: SbmRiskClass,
+    risk_measure: SbmRiskMeasure,
+) -> None:
+    if not bucket_id.strip():
+        raise SbmInputError("bucket_id must be non-empty", field="bucket_id")
+    if not weighted_sensitivities:
+        raise SbmInputError(
+            "weighted_sensitivities must not be empty",
+            field="weighted_sensitivities",
+        )
+    for item in weighted_sensitivities:
+        if item.bucket != bucket_id:
+            raise SbmInputError(
+                "weighted sensitivity bucket does not match bucket_id",
+                field="bucket",
+                sensitivity_id=item.sensitivity_id,
+            )
+        if item.risk_class is not risk_class:
+            raise SbmInputError(
+                "weighted sensitivity risk_class does not match aggregation scope",
+                field="risk_class",
+                sensitivity_id=item.sensitivity_id,
+            )
+        if item.risk_measure is not risk_measure:
+            raise SbmInputError(
+                "weighted sensitivity risk_measure does not match aggregation scope",
+                field="risk_measure",
+                sensitivity_id=item.sensitivity_id,
+            )
+        if not math.isfinite(item.scaled_amount):
+            raise SbmInputError(
+                "scaled_amount must be finite",
+                field="scaled_amount",
+                sensitivity_id=item.sensitivity_id,
+            )
+
+
+def _validate_correlation_matrix(
+    correlation_matrix: npt.NDArray[np.float64],
+    *,
+    n_factors: int,
+) -> npt.NDArray[np.float64]:
+    matrix = np.asarray(correlation_matrix, dtype=np.float64)
+    if matrix.ndim != 2 or matrix.shape != (n_factors, n_factors):
+        raise SbmInputError(
+            "correlation_matrix shape must match weighted_sensitivities count",
+            field="correlation_matrix",
+        )
+    if not np.all(np.isfinite(matrix)):
+        raise SbmInputError(
+            "correlation_matrix must contain finite values",
+            field="correlation_matrix",
+        )
+    if not np.allclose(matrix, matrix.T):
+        raise SbmInputError("correlation_matrix must be symmetric", field="correlation_matrix")
+    if not np.allclose(np.diag(matrix), 1.0):
+        raise SbmInputError("correlation_matrix diagonal must be 1.0", field="correlation_matrix")
+    return matrix
+
+
+def _validate_finite_correlation(value: float, *, field: str) -> None:
+    if not math.isfinite(value):
+        raise SbmInputError(f"{field} must be finite", field=field)
+
+
+def _as_bucket_capital(
+    item: IntraBucketAggregationResult | BucketCapital,
+) -> BucketCapital:
+    if isinstance(item, IntraBucketAggregationResult):
+        return item.bucket_capital
+    return item
+
+
+def _bucket_sb(bucket: BucketCapital) -> float:
+    if bucket.sb is not None:
+        return bucket.sb
+    return float(sum(item.scaled_amount for item in bucket.weighted_sensitivities))
+
+
+def _scenario_rank(label: SbmScenarioLabel) -> int:
+    order = {
+        SbmScenarioLabel.LOW: 0,
+        SbmScenarioLabel.MEDIUM: 1,
+        SbmScenarioLabel.HIGH: 2,
+    }
+    return order[label]
+
+
+__all__ = [
+    "InterBucketScenarioResult",
+    "IntraBucketAggregationResult",
+    "PairwiseCorrelationEvidence",
+    "ScenarioSelectionResult",
+    "adjust_correlation_for_scenario",
+    "aggregate_inter_bucket",
+    "aggregate_intra_bucket",
+    "aggregate_risk_class_with_scenarios",
+    "group_weighted_sensitivities_by_bucket",
+    "select_max_correlation_scenario",
+]

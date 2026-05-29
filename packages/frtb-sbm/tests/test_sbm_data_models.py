@@ -1,0 +1,190 @@
+from __future__ import annotations
+
+from dataclasses import FrozenInstanceError
+from datetime import date
+
+import pytest
+from frtb_sbm import (
+    BucketCapital,
+    CurvatureInput,
+    CurvatureResult,
+    RiskClassCapital,
+    SbmCalculationContext,
+    SbmCapitalResult,
+    SbmCitation,
+    SbmReconciliationMetadata,
+    SbmRegulatoryProfile,
+    SbmRiskClass,
+    SbmRiskMeasure,
+    SbmRunControls,
+    SbmScenarioLabel,
+    SbmSensitivity,
+    SbmSignConvention,
+    SbmSourceLineage,
+    SbmUnsupportedFeature,
+    SbmWarning,
+    WeightedSensitivity,
+)
+
+
+def sample_lineage() -> SbmSourceLineage:
+    return SbmSourceLineage(
+        source_system="synthetic-risk",
+        source_file="sbm.csv",
+        source_row_id="row-001",
+        source_column_map=(
+            ("RiskType", "risk_class"),
+            ("AmountUSD", "amount"),
+        ),
+    )
+
+
+def sample_sensitivity() -> SbmSensitivity:
+    return SbmSensitivity(
+        sensitivity_id="sens-001",
+        source_row_id="row-001",
+        desk_id="rates-desk",
+        legal_entity="LE-001",
+        risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.DELTA,
+        bucket="1",
+        risk_factor="USD",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        tenor="5y",
+        sign_convention=SbmSignConvention.RECEIVE,
+        lineage=sample_lineage(),
+        mapping_citation_ids=("basel_mar21_girr",),
+    )
+
+
+def test_sbm_enums_cover_seven_risk_classes_and_three_measures() -> None:
+    assert len(SbmRiskClass) == 7
+    assert SbmRiskClass.GIRR == "GIRR"
+    assert SbmRiskClass.CSR_NONSEC == "CSR_NONSEC"
+    assert SbmRiskClass.CSR_SEC_CTP == "CSR_SEC_CTP"
+    assert SbmRiskClass.CSR_SEC_NONCTP == "CSR_SEC_NONCTP"
+    assert SbmRiskClass.EQUITY == "EQUITY"
+    assert SbmRiskClass.COMMODITY == "COMMODITY"
+    assert SbmRiskClass.FX == "FX"
+    assert SbmRiskMeasure.DELTA == "DELTA"
+    assert SbmRiskMeasure.VEGA == "VEGA"
+    assert SbmRiskMeasure.CURVATURE == "CURVATURE"
+    assert SbmScenarioLabel.MEDIUM == "MEDIUM"
+    assert SbmRegulatoryProfile.US_NPR_2_0 == "US_NPR_2_0"
+
+
+def test_sbm_sensitivity_is_frozen_and_carries_lineage() -> None:
+    sensitivity = sample_sensitivity()
+
+    assert sensitivity.sensitivity_id == "sens-001"
+    assert sensitivity.lineage == sample_lineage()
+    assert sensitivity.mapping_citation_ids == ("basel_mar21_girr",)
+    with pytest.raises(FrozenInstanceError):
+        sensitivity.amount = 0.0  # type: ignore[misc]
+
+
+def test_public_result_model_covers_weighted_bucket_risk_class_and_total() -> None:
+    citation = SbmCitation(
+        source_id="basel_mar21",
+        location="MAR21.38",
+        url="https://www.bis.org/basel_framework/chapter/MAR/21.htm",
+    )
+    weighted = WeightedSensitivity(
+        sensitivity_id="sens-001",
+        risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.DELTA,
+        bucket="1",
+        raw_amount=1_000_000.0,
+        risk_weight=0.016,
+        scaled_amount=16_000.0,
+        citation_ids=(citation.source_id,),
+    )
+    bucket = BucketCapital(
+        bucket_id="1",
+        risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.DELTA,
+        kb=16_000.0,
+        weighted_sensitivities=(weighted,),
+        citation_ids=(citation.source_id,),
+        sb=16_000.0,
+    )
+    risk_class = RiskClassCapital(
+        risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.DELTA,
+        scenario_totals={SbmScenarioLabel.MEDIUM: 16_000.0},
+        selected_scenario=SbmScenarioLabel.MEDIUM,
+        selected_capital=16_000.0,
+        buckets=(bucket,),
+        citation_ids=(citation.source_id,),
+    )
+    result = SbmCapitalResult(
+        total_capital=16_000.0,
+        risk_classes=(risk_class,),
+        profile_id=SbmRegulatoryProfile.US_NPR_2_0.value,
+        profile_hash="profile-hash",
+        input_hash="input-hash",
+        warnings=("synthetic-fixture",),
+        unsupported_flags=(),
+        structured_warnings=(SbmWarning(code="SYNTHETIC", message="synthetic fixture only"),),
+        unsupported_features=(),
+        reconciliation=SbmReconciliationMetadata(
+            input_count=1,
+            rejected_input_count=0,
+            requirement_ids=("SBM-DATA-001",),
+            citation_ids=(citation.source_id,),
+        ),
+    )
+
+    assert result.risk_classes == (risk_class,)
+    assert result.total_capital == 16_000.0
+    assert result.reconciliation is not None
+    assert result.reconciliation.input_count == 1
+
+
+def test_curvature_records_are_frozen() -> None:
+    curvature_input = CurvatureInput(
+        sensitivity_id="sens-curv-001",
+        bucket="1",
+        up_shock_amount=10_000.0,
+        down_shock_amount=-8_000.0,
+        citation_ids=("basel_mar21_curvature",),
+    )
+    curvature_result = CurvatureResult(
+        bucket_id="1",
+        selected_branch="down",
+        bucket_capital=8_000.0,
+        citation_ids=("basel_mar21_curvature",),
+        floor_applied=False,
+    )
+
+    assert curvature_input.up_shock_amount == 10_000.0
+    assert curvature_result.selected_branch == "down"
+    with pytest.raises(FrozenInstanceError):
+        curvature_result.bucket_capital = 0.0  # type: ignore[misc]
+
+
+def test_calculation_context_carries_run_controls() -> None:
+    context = SbmCalculationContext(
+        run_id="run-001",
+        calculation_date=date(2026, 5, 30),
+        base_currency="USD",
+        reporting_currency="USD",
+        profile_id=SbmRegulatoryProfile.US_NPR_2_0.value,
+        run_controls=SbmRunControls(retain_scenario_detail=True),
+    )
+
+    assert context.run_controls is not None
+    assert context.run_controls.retain_scenario_detail is True
+
+
+def test_unsupported_feature_metadata_is_structured() -> None:
+    unsupported = SbmUnsupportedFeature(
+        feature_key="CSR_SEC_NONCTP_DELTA",
+        dimension="risk_class",
+        reason="CSR securitisation non-CTP delta is not implemented",
+        requirement_id="SBM-FUNC-015",
+    )
+
+    assert unsupported.dimension == "risk_class"
+    assert unsupported.requirement_id == "SBM-FUNC-015"

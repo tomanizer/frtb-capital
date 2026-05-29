@@ -1,0 +1,56 @@
+{
+  "buckets": [
+    [
+      {
+        "bucket_id": "1",
+        "kb": 14871.91979641868,
+        "sb": 15202.795795510772
+      },
+      {
+        "bucket_id": "2",
+        "kb": 6222.5396744416175,
+        "sb": 6222.5396744416175
+      }
+    ]
+  ],
+  "input_hash": "4b1cb2d56dc63d5317e740fb1abaafa7c30d3222e8f85077d99b0014b1cb5928",
+  "profile_hash": "7c99e66dc6cd585914ad19ee2c9936c3ae94ac7f27a6d878288432f03244d3b8",
+  "profile_id": "BASEL_MAR21",
+  "risk_classes": [
+    {
+      "risk_class": "GIRR",
+      "selected_capital": 19445.924982656645,
+      "selected_scenario": "HIGH"
+    }
+  ],
+  "scenario_totals": {
+    "HIGH": 19445.924982656645,
+    "LOW": 18189.117582530216,
+    "MEDIUM": 18828.011005709282
+  },
+  "total_capital": 19445.924982656645,
+  "warnings": [],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "risk_weight": 0.01131370849898476,
+          "scaled_amount": 11313.70849898476,
+          "sensitivity_id": "eur-1y"
+        },
+        {
+          "risk_weight": 0.007778174593052022,
+          "scaled_amount": 3889.087296526011,
+          "sensitivity_id": "eur-5y"
+        }
+      ],
+      [
+        {
+          "risk_weight": 0.007778174593052022,
+          "scaled_amount": 6222.5396744416175,
+          "sensitivity_id": "usd-5y"
+        }
+      ]
+    ]
+  ]
+}

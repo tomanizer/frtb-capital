@@ -4,13 +4,12 @@
 
 ## Current status
 
-The package is scaffolded. Phase 1 (#151) adds a cited GIRR delta vertical
-slice in dependency order (#152–#159). Until the public API wiring issue lands,
-calculation entry points must fail explicitly.
+Phase 1 (#151) delivers a cited GIRR delta vertical slice. `calculate_sbm_capital`
+returns `SbmCapitalResult` for supported BASEL_MAR21 GIRR delta inputs and fails
+explicitly for vega, curvature, and non-GIRR paths.
 
 Package-local traceability lives under `packages/frtb-sbm/docs/`. See
-`REGULATORY_TRACEABILITY.md` for scaffold/planned/partial/implemented/unsupported
-status by area.
+`REGULATORY_TRACEABILITY.md` for implemented/unsupported status by area.
 
 ## Rules
 

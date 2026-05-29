@@ -1,0 +1,99 @@
+from __future__ import annotations
+
+import importlib.util
+import json
+from pathlib import Path
+from types import ModuleType
+
+import pytest
+from frtb_common import UnsupportedRegulatoryFeatureError
+from frtb_sbm import (
+    SbmInputError,
+    calculate_sbm_capital,
+    serialize_sbm_result,
+    validate_sbm_result_reconciliation,
+)
+
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "girr_delta_v1"
+_RISK_CLASS_KEYS = ("risk_class", "selected_capital", "selected_scenario")
+_BUCKET_KEYS = ("bucket_id", "kb", "sb")
+_WEIGHTED_KEYS = ("sensitivity_id", "risk_weight", "scaled_amount")
+
+
+def load_fixture_module() -> ModuleType:
+    spec = importlib.util.spec_from_file_location("girr_delta_v1_loader", FIXTURE_DIR / "loader.py")
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_girr_delta_v1_fixture_matches_expected_outputs() -> None:
+    loader = load_fixture_module()
+    context = loader.load_fixture_context()
+    sensitivities = loader.load_fixture_sensitivities()
+    expected = loader.load_expected_outputs()
+
+    result = calculate_sbm_capital(sensitivities, context=context)
+    validate_sbm_result_reconciliation(result)
+    payload = serialize_sbm_result(result)
+
+    assert payload["profile_id"] == expected["profile_id"]
+    assert payload["profile_hash"] == expected["profile_hash"]
+    assert payload["input_hash"] == expected["input_hash"]
+    assert payload["total_capital"] == expected["total_capital"]
+    assert payload["warnings"] == expected["warnings"]
+    risk_class_payload = [
+        _select(risk_class, _RISK_CLASS_KEYS) for risk_class in payload["risk_classes"]
+    ]
+    assert risk_class_payload == expected["risk_classes"]
+    assert [
+        [_select(bucket, _BUCKET_KEYS) for bucket in risk_class["buckets"]]
+        for risk_class in payload["risk_classes"]
+    ] == expected["buckets"]
+    assert [
+        [
+            [_select(item, _WEIGHTED_KEYS) for item in bucket["weighted_sensitivities"]]
+            for bucket in risk_class["buckets"]
+        ]
+        for risk_class in payload["risk_classes"]
+    ] == expected["weighted_sensitivities"]
+
+
+def test_girr_delta_v1_fixture_result_is_replay_stable() -> None:
+    loader = load_fixture_module()
+    context = loader.load_fixture_context()
+    sensitivities = loader.load_fixture_sensitivities()
+
+    first = serialize_sbm_result(calculate_sbm_capital(sensitivities, context=context))
+    second = serialize_sbm_result(calculate_sbm_capital(sensitivities, context=context))
+
+    assert first == second
+    assert json.dumps(first, sort_keys=True) == json.dumps(second, sort_keys=True)
+
+
+@pytest.mark.parametrize(
+    ("case_id", "expected_error_match", "sensitivities"),
+    load_fixture_module().load_invalid_cases(),
+    ids=lambda item: item if isinstance(item, str) else None,
+)
+def test_girr_delta_v1_invalid_fixture_cases_fail(
+    case_id: str,
+    expected_error_match: str,
+    sensitivities: tuple[object, ...],
+) -> None:
+    loader = load_fixture_module()
+    context = loader.load_fixture_context()
+
+    with pytest.raises(
+        (SbmInputError, UnsupportedRegulatoryFeatureError),
+        match=expected_error_match,
+    ):
+        calculate_sbm_capital(sensitivities, context=context)
+    assert case_id
+
+
+def _select(payload: object, keys: tuple[str, ...]) -> dict[str, object]:
+    assert isinstance(payload, dict)
+    return {key: payload[key] for key in keys}

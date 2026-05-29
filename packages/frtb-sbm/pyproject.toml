@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frtb-sbm"
-version = "0.1.0"
-description = "FRTB Standardised Approach sensitivities-based method scaffold"
+version = "0.2.0"
+description = "FRTB Standardised Approach sensitivities-based method (GIRR delta slice)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 dependencies = [
     "frtb-common",
+    "numpy>=1.26,<2.5",
 ]
 
 [tool.setuptools.packages.find]
