@@ -7,7 +7,7 @@ from dataclasses import dataclass, field, fields
 from datetime import date
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar
 
 from frtb_common import jsonable
 
@@ -454,4 +454,4 @@ class DrcCapitalResult:
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
     def as_dict(self) -> dict[str, object]:
-        return cast(dict[str, object], jsonable(_as_dict(self)))
+        return _as_dict(self)

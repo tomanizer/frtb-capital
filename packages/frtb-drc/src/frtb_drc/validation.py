@@ -23,7 +23,10 @@ def validate_position(position: DrcPosition) -> DrcPosition:
     if position.lineage is None:
         raise DrcInputError("lineage is required")
     _require_non_empty(position.lineage.source_system, "lineage.source_system")
+    _require_non_empty(position.lineage.source_file, "lineage.source_file")
     _require_non_empty(position.lineage.source_row_id, "lineage.source_row_id")
+    if position.source_row_id != position.lineage.source_row_id:
+        raise DrcInputError("source_row_id must match lineage.source_row_id")
 
     _require_finite(position.notional, "notional")
     _require_finite(position.maturity_years, "maturity_years")
@@ -38,11 +41,11 @@ def validate_position(position: DrcPosition) -> DrcPosition:
         if not 0 <= position.lgd_override <= 1:
             raise DrcInputError("lgd_override must be between 0 and 1")
 
-    if position.risk_class is DrcRiskClass.NON_SECURITISATION:
+    if position.risk_class == DrcRiskClass.NON_SECURITISATION:
         _validate_non_securitisation_identity(position)
-    elif position.risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
+    elif position.risk_class == DrcRiskClass.SECURITISATION_NON_CTP:
         _validate_securitisation_identity(position)
-    elif position.risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
+    elif position.risk_class == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
         _validate_ctp_identity(position)
     else:  # pragma: no cover - DrcPosition normalises the enum before validation.
         raise DrcInputError(f"unsupported risk_class: {position.risk_class}")

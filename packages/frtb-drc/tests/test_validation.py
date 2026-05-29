@@ -24,7 +24,15 @@ def test_validate_position_accepts_valid_non_securitisation_position() -> None:
 
 def test_validate_positions_rejects_duplicate_position_ids() -> None:
     first = _position(position_id="pos-1")
-    second = _position(position_id="pos-1", source_row_id="row-2")
+    second = _position(
+        position_id="pos-1",
+        source_row_id="row-2",
+        lineage=DrcSourceLineage(
+            source_system="test",
+            source_file="positions.csv",
+            source_row_id="row-2",
+        ),
+    )
 
     with pytest.raises(DrcInputError, match="duplicate position_id"):
         validate_positions((first, second))
@@ -54,6 +62,31 @@ def test_validate_position_rejects_missing_identity_fields(
 def test_validate_position_rejects_missing_lineage() -> None:
     with pytest.raises(DrcInputError, match="lineage is required"):
         validate_position(_position(lineage=None))
+
+
+def test_validate_position_rejects_incomplete_lineage() -> None:
+    lineage = DrcSourceLineage(
+        source_system="test",
+        source_file="",
+        source_row_id="row-1",
+    )
+
+    with pytest.raises(DrcInputError, match=r"lineage\.source_file must be non-empty"):
+        validate_position(_position(lineage=lineage))
+
+
+def test_validate_position_rejects_conflicting_source_row_lineage() -> None:
+    lineage = DrcSourceLineage(
+        source_system="test",
+        source_file="positions.csv",
+        source_row_id="row-2",
+    )
+
+    with pytest.raises(
+        DrcInputError,
+        match=r"source_row_id must match lineage\.source_row_id",
+    ):
+        validate_position(_position(source_row_id="row-1", lineage=lineage))
 
 
 def test_validate_position_rejects_non_finite_amounts() -> None:
