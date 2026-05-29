@@ -9,7 +9,7 @@ model.
 | Area | Purpose |
 | --- | --- |
 | [Architecture](ARCHITECTURE.md) | Workspace structure, package boundaries, dependency rules, and orchestration ownership. |
-| [Modules](modules/README.md) | Component documentation for implemented and planned capital modules. |
+| [Modules](modules/README.md) | Component documentation for implemented and scaffolded capital modules. |
 | [ADRs](decisions/) | Architecture and material model decisions. |
 | [Validation packs](VALIDATION_PACK.md) | Suite index for validation evidence and package review bundles. |
 | [Quality](quality/) | Coverage, mutation-testing, and engineering-quality evidence. |

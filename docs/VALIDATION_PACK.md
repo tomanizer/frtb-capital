@@ -16,9 +16,19 @@ The `frtb-ima` validation pack is built from the committed synthetic
 `capital_run_v1` fixture. It is not a regulatory report and does not present
 final regulatory capital.
 
-## Planned Packages
+## Scaffolded Packages
 
-Validation-pack pages for `frtb-sbm`, `frtb-drc`, `frtb-rrao`, `frtb-cva`, and
-`frtb-orchestration` should be added when those packages are implemented. The
-orchestration validation pack should reconcile the composed SA total from SBM,
-DRC, and RRAO.
+The following packages are importable scaffolds. They have no model validation
+pack yet because they do not calculate capital:
+
+- `frtb-common`
+- `frtb-sbm`
+- `frtb-drc`
+- `frtb-rrao`
+- `frtb-cva`
+- `frtb-orchestration`
+
+Validation-pack pages should be added when these packages move from scaffold to
+implemented calculation. The orchestration validation pack should reconcile the
+composed SA total from SBM, DRC, and RRAO once those components produce typed,
+audited outputs.

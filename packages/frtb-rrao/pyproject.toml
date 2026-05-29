@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frtb-rrao"
+version = "0.1.0"
+description = "FRTB Standardised Approach residual risk add-on scaffold"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+    "frtb-common",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

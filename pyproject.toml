@@ -6,14 +6,26 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
+    "frtb-common",
+    "frtb-cva",
+    "frtb-drc",
     "frtb-ima",
+    "frtb-orchestration",
+    "frtb-rrao",
+    "frtb-sbm",
 ]
 
 [tool.uv.workspace]
 members = ["packages/*"]
 
 [tool.uv.sources]
+frtb-common = { workspace = true }
+frtb-cva = { workspace = true }
+frtb-drc = { workspace = true }
 frtb-ima = { workspace = true }
+frtb-orchestration = { workspace = true }
+frtb-rrao = { workspace = true }
+frtb-sbm = { workspace = true }
 
 [dependency-groups]
 dev = [

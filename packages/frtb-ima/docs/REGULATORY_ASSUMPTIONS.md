@@ -113,7 +113,7 @@ claim to calculate final EU own-funds requirements.
 
 The prototype intentionally excludes or simplifies:
 - redesignation add-ons (within IMA desk lifecycle),
-- SBM, DRC, RRAO, and CVA capital (planned sibling packages in the monorepo);
+- SBM, DRC, RRAO, and CVA capital (scaffolded sibling packages in the monorepo);
   SA is the composed SBM + DRC + RRAO total owned by orchestration,
 - legal-entity and firm-level consolidation (orchestration layer),
 - actual supervisory submission workflows,

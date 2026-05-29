@@ -9,7 +9,9 @@ Basel MAR20.4 defines market-risk Standardised Approach capital as the sum of:
 - default risk capital; and
 - residual risk add-on.
 
-The suite therefore represents SA through three planned component packages:
+The suite therefore represents SA through three component packages. They exist
+as importable scaffolds today and fail explicitly until their calculations are
+implemented:
 
 | SA component | Package | Documentation |
 | --- | --- | --- |
@@ -49,7 +51,7 @@ capital or an empty successful result silently.
 
 The build order should keep the component boundaries visible:
 
-1. Create `frtb-common` primitives for rule profiles, citations, calculation
+1. Expand `frtb-common` primitives for rule profiles, citations, calculation
    context, audit metadata, validation errors, and shared numerical helpers.
 2. Add `frtb-sbm` with canonical sensitivity inputs and one cited end-to-end
    vertical slice for a risk class and risk measure.

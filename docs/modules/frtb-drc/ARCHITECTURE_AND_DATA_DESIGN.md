@@ -1,0 +1,411 @@
+# frtb-drc architecture and data design
+
+## Design stance
+
+`frtb-drc` should follow the same broad pattern as `frtb-ima`: upstream systems
+generate risk inputs, the package applies deterministic capital mechanics, and
+the suite orchestration layer consumes package-level results.
+
+```text
+Upstream risk / trade systems
+    -> issuer, tranche, notional, P&L, maturity, seniority, credit-quality data
+    -> optional CRIF or vendor adapter
+    -> canonical DrcPosition records
+    -> frtb-drc validation, rule-profile lookup, and capital kernels
+    -> DrcCapitalResult + DrcAuditRecord
+    -> frtb-orchestration SA composition and suite aggregation
+```
+
+The package must not contain pricing, issuer mastering, market-data retrieval,
+SA composition, or top-of-house aggregation.
+
+## Proposed module layout
+
+| Module | Responsibility |
+| --- | --- |
+| `data_models.py` | Frozen dataclasses and enums only. No business logic. |
+| `validation.py` | Input and result invariant checks, error types, and normalisation guards. |
+| `regimes.py` | Rule-profile identity, supported-feature declarations, profile selection, and profile hashes. |
+| `reference_data.py` | LGD, bucket, seniority, credit-quality, maturity, risk-weight, and citation tables. |
+| `gross_jtd.py` | Position-level gross JTD and default direction handling. |
+| `maturity.py` | Maturity weighting, floors, and hedge maturity alignment helpers. |
+| `netting.py` | Same-obligor, seniority-aware, maturity-weighted net JTD aggregation. |
+| `capital.py` | HBR, bucket capital, category totals, and public calculation entry point. |
+| `securitisation.py` | Securitisation non-CTP tranche data, bucket assignment, and capital path. Initially fail closed. |
+| `ctp.py` | CTP membership, tranche/index decomposition, HBR, and capital path. Initially fail closed. |
+| `crif.py` | Optional CRIF-to-canonical mapping. Not imported by kernels. |
+| `audit.py` | Serialisable audit records, profile/input hashes, result reconciliation, Markdown/JSON helpers. |
+| `fixtures.py` | Synthetic fixture builders used by tests and examples. |
+
+This mirrors IMA's separation between `data_models.py`, calculation kernels,
+policy/regime choices, audit records, and examples while keeping DRC's issuer
+and tranche mechanics package-local.
+
+## Calculation flow
+
+### Stage 1: Normalize and validate
+
+1. Convert adapter output or user records into `DrcPosition` objects.
+2. Validate identity, category, sign convention, maturity, seniority, credit
+   quality, bucket inputs, numeric finiteness, and source lineage.
+3. Resolve the selected `DrcRuleProfile`.
+4. Reject unsupported category/profile combinations before any numeric capital
+   is computed.
+
+### Stage 2: Enrich with profile data
+
+1. Assign LGD using profile rules or validate cited explicit LGD overrides.
+2. Assign bucket and credit-quality keys.
+3. Assign risk weights.
+4. Attach source citation ids to each rule-derived value.
+
+### Stage 3: Gross JTD
+
+1. Calculate position-level gross JTD.
+2. Preserve default direction, unscaled amount, LGD source, P&L/market-value
+   component, and source row lineage.
+3. Emit `GrossJtd` records in stable order.
+
+### Stage 4: Maturity scaling and netting
+
+1. Apply maturity weights and floors.
+2. Build netting groups by category, bucket, obligor/tranche/index key, and
+   eligible seniority layer.
+3. Offset only where the profile permits it.
+4. Emit `NetJtd` records and rejected-offset audit notes.
+
+### Stage 5: Bucket and category capital
+
+1. Compute HBR for each bucket.
+2. Risk-weight net JTD records.
+3. Apply bucket capital formula and floors.
+4. Aggregate to category totals.
+5. Sum category totals into `DrcCapitalResult` without cross-category
+   diversification unless a profile explicitly cites another rule.
+
+### Stage 6: Audit and reconciliation
+
+1. Compute profile and input hashes.
+2. Verify bucket totals sum to category totals and category totals sum to DRC
+   total.
+3. Serialize deterministic audit records.
+4. Return a frozen result.
+
+## Proposed enums
+
+```python
+class DrcRiskClass(StrEnum):
+    NON_SECURITISATION = "NON_SECURITISATION"
+    SECURITISATION_NON_CTP = "SECURITISATION_NON_CTP"
+    CORRELATION_TRADING_PORTFOLIO = "CORRELATION_TRADING_PORTFOLIO"
+
+class DefaultDirection(StrEnum):
+    LONG = "LONG"    # issuer default creates a loss
+    SHORT = "SHORT"  # issuer default creates a gain
+
+class DrcInstrumentType(StrEnum):
+    BOND = "BOND"
+    EQUITY = "EQUITY"
+    LOAN = "LOAN"
+    CREDIT_DERIVATIVE = "CREDIT_DERIVATIVE"
+    SECURITISATION_TRANCHE = "SECURITISATION_TRANCHE"
+    INDEX_TRANCHE = "INDEX_TRANCHE"
+    OTHER = "OTHER"
+
+class DrcSeniority(StrEnum):
+    EQUITY = "EQUITY"
+    NON_SENIOR_DEBT = "NON_SENIOR_DEBT"
+    SENIOR_DEBT = "SENIOR_DEBT"
+    COVERED_BOND = "COVERED_BOND"
+    GSE_GUARANTEED = "GSE_GUARANTEED"
+    GSE_ISSUED_NOT_GUARANTEED = "GSE_ISSUED_NOT_GUARANTEED"
+    PSE = "PSE"
+    NOT_RECOVERY_LINKED = "NOT_RECOVERY_LINKED"
+
+class CreditQuality(StrEnum):
+    INVESTMENT_GRADE = "INVESTMENT_GRADE"
+    SPECULATIVE_GRADE = "SPECULATIVE_GRADE"
+    SUB_SPECULATIVE_GRADE = "SUB_SPECULATIVE_GRADE"
+    DEFAULTED = "DEFAULTED"
+    UNRATED = "UNRATED"
+
+class DrcBucketType(StrEnum):
+    NON_US_SOVEREIGN = "NON_US_SOVEREIGN"
+    PSE_GSE = "PSE_GSE"
+    CORPORATE = "CORPORATE"
+    DEFAULTED = "DEFAULTED"
+    SECURITISATION_ASSET_REGION = "SECURITISATION_ASSET_REGION"
+    CTP = "CTP"
+```
+
+The exact enum set can expand as Basel, U.S., CRR3, and PRA profiles are mapped.
+Enums should be stable public API once capital calculation is released.
+
+## Proposed dataclasses
+
+### Citation and lineage
+
+```python
+@dataclass(frozen=True)
+class DrcCitation:
+    source_id: str
+    paragraph: str
+    url: str
+    note: str = ""
+
+@dataclass(frozen=True)
+class DrcSourceLineage:
+    source_system: str
+    source_file: str
+    source_row_id: str
+    source_column_map: Mapping[str, str] = field(default_factory=dict)
+```
+
+`DrcCitation` may later move to `frtb-common` if other packages need the same
+shape. Until then, keeping it package-local avoids a premature cross-cutting
+change during DRC implementation.
+
+### Rule profile
+
+```python
+@dataclass(frozen=True)
+class DrcRuleProfile:
+    profile_id: str
+    regulator: str
+    version: str
+    publication_date: date
+    effective_date: date | None
+    status: str
+    supported_risk_classes: frozenset[DrcRiskClass]
+    citations: Mapping[str, DrcCitation]
+    content_hash: str
+```
+
+The profile owns identifiers and hashes. `reference_data.py` owns the actual
+lookup tables keyed by `profile_id`.
+
+### Canonical position
+
+```python
+@dataclass(frozen=True)
+class DrcPosition:
+    position_id: str
+    desk_id: str
+    legal_entity: str
+    risk_class: DrcRiskClass
+    instrument_type: DrcInstrumentType
+    default_direction: DefaultDirection
+    issuer_id: str | None
+    tranche_id: str | None
+    index_series_id: str | None
+    bucket_key: str | None
+    seniority: DrcSeniority | None
+    credit_quality: CreditQuality | None
+    notional: float
+    market_value: float | None
+    cumulative_pnl: float | None
+    maturity_years: float
+    currency: str
+    lgd_override: float | None = None
+    is_defaulted: bool = False
+    is_gse: bool = False
+    is_pse: bool = False
+    is_covered_bond: bool = False
+    lineage: DrcSourceLineage | None = None
+```
+
+Required fields depend on risk class. For example, non-securitisation requires
+`issuer_id`; securitisation requires `tranche_id`; CTP requires enough
+`index_series_id` and tranche metadata for decomposition.
+
+### Securitisation tranche metadata
+
+```python
+@dataclass(frozen=True)
+class SecuritisationTranche:
+    tranche_id: str
+    attachment_point: float
+    detachment_point: float
+    asset_class: str
+    region: str
+    is_cash_position: bool
+    fair_value_cap: float | None = None
+```
+
+This can be embedded in `DrcPosition` later or held in a separate keyed mapping.
+The first implementation should keep non-securitisation independent and require
+explicit tranche metadata only when securitisation paths are enabled.
+
+### Gross JTD
+
+```python
+@dataclass(frozen=True)
+class GrossJtd:
+    position_id: str
+    risk_class: DrcRiskClass
+    issuer_or_tranche_key: str
+    bucket_key: str
+    default_direction: DefaultDirection
+    lgd_rate: float
+    lgd_source: str
+    notional: float
+    pnl_component: float
+    gross_jtd: float
+    citations: tuple[str, ...]
+```
+
+### Maturity-scaled JTD
+
+```python
+@dataclass(frozen=True)
+class MaturityScaledJtd:
+    position_id: str
+    gross_jtd: float
+    maturity_years: float
+    maturity_weight: float
+    scaled_jtd: float
+    floor_applied: bool
+    citations: tuple[str, ...]
+```
+
+### Net JTD
+
+```python
+@dataclass(frozen=True)
+class NetJtd:
+    netting_group_id: str
+    risk_class: DrcRiskClass
+    bucket_key: str
+    obligor_or_tranche_key: str
+    seniority_layer: str
+    gross_long: float
+    gross_short: float
+    scaled_long: float
+    scaled_short: float
+    net_amount: float
+    net_direction: DefaultDirection
+    position_ids: tuple[str, ...]
+    rejected_offset_ids: tuple[str, ...] = ()
+```
+
+`gross_short` and `scaled_short` should be stored as positive magnitudes for
+readability, while `net_direction` carries direction. Internal numeric kernels
+may use signed arrays after validation.
+
+### Hedge benefit and bucket capital
+
+```python
+@dataclass(frozen=True)
+class HedgeBenefitRatio:
+    bucket_key: str
+    aggregate_net_long: float
+    aggregate_net_short: float
+    ratio: float
+    citations: tuple[str, ...]
+
+@dataclass(frozen=True)
+class BucketDrc:
+    bucket_key: str
+    risk_class: DrcRiskClass
+    hbr: HedgeBenefitRatio
+    weighted_long: float
+    weighted_short: float
+    capital: float
+    floor_applied: bool
+    net_jtd_ids: tuple[str, ...]
+    citations: tuple[str, ...]
+```
+
+### Category and run result
+
+```python
+@dataclass(frozen=True)
+class CategoryDrc:
+    risk_class: DrcRiskClass
+    bucket_results: tuple[BucketDrc, ...]
+    capital: float
+    unsupported_features: tuple[str, ...] = ()
+
+@dataclass(frozen=True)
+class DrcCapitalResult:
+    run_id: str
+    calculation_date: date
+    base_currency: str
+    profile_id: str
+    profile_hash: str
+    input_hash: str
+    categories: tuple[CategoryDrc, ...]
+    total_drc: float
+    citations: tuple[str, ...]
+    warnings: tuple[str, ...] = ()
+```
+
+The public result should expose `as_dict()` for audit/reporting, following the
+IMA package style.
+
+## Data invariants
+
+- All result dataclasses are frozen.
+- Public result records are JSON serialisable without custom object state.
+- Inputs and outputs use stable ids, not object identities.
+- All grouping keys are explicit strings or enums.
+- A position has exactly one DRC risk class.
+- A supported position has exactly one bucket under the selected profile.
+- Direction is never inferred from notional sign alone.
+- Maturity scaling is applied before netting where the profile requires it.
+- HBR uses netted exposures, not raw position-level gross JTD.
+- Category totals reconcile exactly to bucket totals within numeric tolerance.
+- Total DRC reconciles exactly to category totals within numeric tolerance.
+
+## Unsupported feature strategy
+
+Unsupported features should be declared at profile level and checked before
+calculation. Examples:
+
+- Basel securitisation non-CTP risk weights not mapped;
+- U.S. CTP decomposition not implemented;
+- CRR3 Article 325w inputs missing;
+- explicit LGD override not allowed by selected profile;
+- unsupported product type or bucket assignment.
+
+The package should raise an error for unsupported requested calculation paths.
+It may return rejected-input audit records only when no capital result is being
+presented as successful.
+
+## Testing architecture
+
+The test suite should mirror calculation layers:
+
+- `test_data_models.py`: frozen behavior, enum normalisation, serialization.
+- `test_validation.py`: missing fields, duplicate ids, sign convention, numeric
+  finiteness.
+- `test_reference_data.py`: cited LGD, maturity, bucket, and risk-weight tables.
+- `test_gross_jtd.py`: long, short, defaulted, zero-LGD, credit derivative, call
+  option, and invalid LGD paths.
+- `test_maturity.py`: below three months, below one year, one year or greater,
+  derivative hedge maturity alignment.
+- `test_netting.py`: same obligor, rejected seniority, rejected cross-obligor,
+  weighted long/short maturity cases.
+- `test_capital.py`: HBR, risk weighting, bucket floor, category total, total
+  reconciliation.
+- `test_audit.py`: profile hash, input hash, deterministic ordering,
+  serialization.
+- `test_unsupported.py`: securitisation and CTP fail closed until implemented.
+
+## Example and validation artifacts
+
+The first vertical slice should include a synthetic fixture pack:
+
+```text
+tests/fixtures/drc_nonsec_v1/
+    positions.json
+    profile.json
+    expected_gross_jtd.json
+    expected_net_jtd.json
+    expected_bucket_capital.json
+    expected_result.json
+```
+
+Future validation notebooks can inspect this fixture with `pandas`, but the
+runtime package must load fixture JSON into canonical dataclasses before
+calculation.

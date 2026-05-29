@@ -3,11 +3,12 @@
 ## Suite overview
 
 `frtb-capital` is a workspace of FRTB market-risk capital calculation packages.
-The target structure covers IMA, the three Standardised Approach components,
-CVA, and a suite-level aggregator, with a shared foundation package. Today, only
-`packages/frtb-ima` contains a migrated implementation; `frtb-common`,
-`frtb-sbm`, `frtb-drc`, `frtb-rrao`, `frtb-cva`, and orchestration remain
-planned packages.
+The structure covers IMA, the three Standardised Approach components, CVA, and
+a suite-level aggregator, with a shared foundation package. Today,
+`packages/frtb-ima` contains the migrated implementation. `frtb-common`,
+`frtb-sbm`, `frtb-drc`, `frtb-rrao`, `frtb-cva`, and `frtb-orchestration` are
+importable scaffolds: their package boundaries exist, but non-IMA calculations
+and suite aggregation fail explicitly until implemented.
 
 The Standardised Approach is a composed regulatory approach, not a standalone
 package. In this suite, `frtb-sbm`, `frtb-drc`, and `frtb-rrao` together produce
@@ -52,9 +53,10 @@ Shared primitives used by every capital component:
 - `BusinessCalendar` (when implemented).
 - Logging configuration (`JSONFormatter`, `calculation_log_extra`).
 
-Status: planned. The directory is not created yet. Currently the migrated IMA
-package holds its own copy of these abstractions inside `packages/frtb-ima`.
-Extraction is a separate workstream.
+Status: scaffolded. It currently provides shared status metadata and explicit
+unsupported/unimplemented exception types. The migrated IMA package still holds
+its own calculation-specific abstractions inside `packages/frtb-ima`. Broader
+extraction is a separate workstream.
 
 ### `frtb-ima` — Internal Models Approach
 
@@ -72,7 +74,8 @@ Inputs: canonical or CRIF-mapped sensitivities by risk class, bucket, tenor, and
 risk measure. Outputs: SBM capital, risk-class totals, correlation-scenario
 selection, and audit breakdowns.
 
-Status: planned. Not started.
+Status: scaffolded. Calculation not implemented; public calculation entry
+points raise explicit unimplemented-component errors.
 
 ### `frtb-drc` — Default Risk Charge
 
@@ -82,7 +85,8 @@ positions. Inputs: issuer/tranche exposures, credit quality, seniority,
 maturity, and JTD inputs. Outputs: DRC capital and issuer/tranche audit
 breakdowns.
 
-Status: planned. Not started.
+Status: scaffolded. Calculation not implemented; public calculation entry
+points raise explicit unimplemented-component errors.
 
 ### `frtb-rrao` — Residual Risk Add-On
 
@@ -90,13 +94,15 @@ Standardised residual risk add-on component. Inputs: positions with exotic or
 other residual risk classification evidence and gross effective notionals.
 Outputs: additive RRAO capital, exclusion records, and contribution breakdowns.
 
-Status: planned. Not started.
+Status: scaffolded. Calculation not implemented; public calculation entry
+points raise explicit unimplemented-component errors.
 
 ### `frtb-cva` — Credit Valuation Adjustment
 
 CVA capital under the Basic Approach or Standardized Approach. Inputs: counterparty exposures, credit spreads, hedge positions.
 
-Status: planned. Not started.
+Status: scaffolded. Calculation not implemented; public calculation entry
+points raise explicit unimplemented-component errors.
 
 ### `frtb-orchestration` — Suite aggregation
 
@@ -105,7 +111,8 @@ For SA, it owns the composed `SBM + DRC + RRAO` total. For IMA fallback, it
 routes non-IMA-eligible desks to the SA component stack. It also applies
 cross-component floors and add-ons and produces consolidated audit records.
 
-Status: planned. Not started.
+Status: scaffolded. Suite aggregation not implemented; public aggregation entry
+points raise explicit unimplemented-component errors.
 
 ## Why a monorepo
 
@@ -126,8 +133,9 @@ Each capital component should have a suite-level documentation front door under
 `docs/modules/<component>/`. For IMA, the formal model documentation pack lives
 under [`docs/modules/frtb-ima/model_documentation/`](modules/frtb-ima/model_documentation/README.md)
 and package-specific supporting evidence remains under `packages/frtb-ima/docs/`.
-Future SBM, DRC, RRAO, and CVA packages should follow the same shape when they
-move from planning docs to implementation docs.
+Scaffolded SBM, DRC, RRAO, CVA, common, and orchestration packages have module
+front doors. Formal model documentation packs should be added when each package
+moves from scaffold to implemented calculation.
 
 Model documentation packs cover:
 

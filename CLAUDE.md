@@ -17,13 +17,13 @@ Be honest and critical when reviewing code produced by Codex or other automated 
 ```
 frtb-capital/
 ├── packages/
-│   ├── frtb-common/         # shared primitives (planned)
+│   ├── frtb-common/         # shared primitives (scaffolded)
 │   ├── frtb-ima/            # Internal Models Approach (migrated)
-│   ├── frtb-sbm/            # Standardized Approach SBM component (planned)
-│   ├── frtb-drc/            # Standardized Approach DRC component (planned)
-│   ├── frtb-rrao/           # Standardized Approach RRAO component (planned)
-│   ├── frtb-cva/            # Credit Valuation Adjustment (planned)
-│   └── frtb-orchestration/  # suite-level aggregation (planned)
+│   ├── frtb-sbm/            # Standardized Approach SBM component (scaffolded)
+│   ├── frtb-drc/            # Standardized Approach DRC component (scaffolded)
+│   ├── frtb-rrao/           # Standardized Approach RRAO component (scaffolded)
+│   ├── frtb-cva/            # Credit Valuation Adjustment (scaffolded)
+│   └── frtb-orchestration/  # suite-level aggregation (scaffolded)
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── decisions/           # suite-wide ADRs

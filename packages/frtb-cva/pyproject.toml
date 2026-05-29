@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frtb-cva"
+version = "0.1.0"
+description = "FRTB Credit Valuation Adjustment capital scaffold"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+    "frtb-common",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

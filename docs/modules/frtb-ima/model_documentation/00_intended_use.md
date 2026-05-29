@@ -55,7 +55,7 @@ or trading-book boundary decisions.
 
 ## Out Of Scope
 
-The following are outside this package and belong to planned sibling packages or
+The following are outside this package and belong to scaffolded sibling packages or
 upstream systems:
 
 - SBM, Default Risk Charge, residual risk add-on, CVA, and fallback capital;
