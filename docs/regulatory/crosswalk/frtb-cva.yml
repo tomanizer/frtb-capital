@@ -1,0 +1,20 @@
+schema_version: 1
+component: frtb-cva
+status: scaffolded
+source_register: ../sources.yml
+
+requirements:
+  - id: CVA-POLICY-001
+    topic: CVA capital approach selection and local implementation profile
+    source_refs:
+      - uk_pra_ps1_26_basel_3_1_final_rules
+      - uk_pra_cp16_22_basel_3_1_consultation
+    code_refs:
+      - packages/frtb-cva/src/frtb_cva/
+    test_refs:
+      - packages/frtb-cva/tests/
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb-net/FRTB
+      - ankitjha67/baselkit
+    notes: "Add separate Basel CVA and EU CVA sources before implementation starts."

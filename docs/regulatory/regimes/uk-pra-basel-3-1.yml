@@ -1,0 +1,30 @@
+schema_version: 1
+regime_id: PRA_BASEL_3_1_2027_2028
+jurisdiction: UK
+status: final_rule
+primary_sources:
+  - uk_pra_ps1_26_basel_3_1_final_rules
+  - uk_pra_cp17_25_market_risk_adjustments
+
+effective_dates:
+  basel_3_1_policy_rules_supervisory_statements: "2027-01-01"
+  frtb_ima: "2028-01-01"
+
+components:
+  frtb-sbm:
+    implementation_date: "2027-01-01"
+    notes:
+      - "Advanced Standardised Approach applies from the PRA implementation date."
+      - "Keep UK ASA treatment separate from the Basel generic profile."
+  frtb-ima:
+    implementation_date: "2028-01-01"
+    notes:
+      - "Existing IMA permissions may continue in the interim, subject to PRA conditions."
+  frtb-rrao:
+    implementation_date: "2027-01-01"
+    notes:
+      - "RRAO permissions regime must be modelled as UK-specific policy."
+  frtb-cva:
+    implementation_date: "2027-01-01"
+    notes:
+      - "Add BA-CVA/SA-CVA source mapping before implementation."

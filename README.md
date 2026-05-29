@@ -61,6 +61,8 @@ Per-package targets are available from each package's own `Makefile` or via `uv 
 - [`docs/modules/standardised-approach.md`](docs/modules/standardised-approach.md) — SA composition from SBM, DRC, and RRAO
 - [`docs/modules/frtb-ima/model_documentation/`](docs/modules/frtb-ima/model_documentation/README.md) — FRTB-IMA model documentation pack
 - [`docs/VALIDATION_PACK.md`](docs/VALIDATION_PACK.md) — suite index for package validation bundles
+- [`docs/regulatory/`](docs/regulatory/README.md) — suite-level regulatory corpus, source register, jurisdiction profiles, and component crosswalks
+- [`docs/validation/challenger_models.yml`](docs/validation/challenger_models.yml) — external challenger model register for validation and reconciliation
 - [`packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md`](packages/frtb-ima/docs/REGULATORY_TRACEABILITY.md) — IMA code ↔ regulation cross-reference
 - [`packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md`](packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md) — IMA modelling boundaries and proposed-rule basis
 - [`docs/decisions/`](docs/decisions/) — architectural decision records (ADRs)

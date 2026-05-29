@@ -1,0 +1,30 @@
+schema_version: 1
+regime_id: BASEL_D457_2019
+jurisdiction: GLOBAL
+status: baseline_standard
+primary_sources:
+  - basel_bcbs_d457_2019_market_risk
+  - basel_bcbs_d457_2019_explanatory_note
+
+components:
+  frtb-ima:
+    status: baseline_reference
+    notes:
+      - "Expected shortfall"
+      - "Liquidity horizons"
+      - "PLA/backtesting"
+      - "NMRF"
+  frtb-sbm:
+    status: baseline_reference
+    notes:
+      - "Delta"
+      - "Vega"
+      - "Curvature"
+  frtb-drc:
+    status: baseline_reference
+  frtb-rrao:
+    status: baseline_reference
+  frtb-cva:
+    status: separate_basel_source_required
+    notes:
+      - "CVA requires its own Basel/EU/PRA source mapping before implementation."

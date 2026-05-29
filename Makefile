@@ -3,11 +3,11 @@ REPO ?= tomanizer/frtb-capital
 BRANCH ?= main
 
 # Paths to lint and typecheck. Notebooks are excluded.
-LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts scripts tests
+LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts scripts tests tools
 MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/frtb-ima.json
 
-.PHONY: check lint format format-check typecheck test docs-check import-smoke maturity-check quality-control build
+.PHONY: check lint format format-check typecheck test docs-check regulatory-corpus import-smoke maturity-check quality-control build
 .PHONY: release-artifacts mutation mutation-rrao benchmark rrao-benchmark
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
 .PHONY: validation-pack agent-setup agent-sync-main agent-new agent-guard
@@ -32,7 +32,7 @@ test:
 	uv run pytest packages tests --cov=frtb_ima --cov-report=term-missing --cov-report=json:$(COVERAGE_JSON)
 	uv run python scripts/ci/check_module_coverage.py $(COVERAGE_JSON)
 
-docs-check:
+docs-check: regulatory-corpus
 	python3 scripts/ci/check_markdown_links.py
 	python3 scripts/ci/check_requirement_yaml.py
 
@@ -44,6 +44,9 @@ maturity-check:
 	uv run python scripts/ci/check_package_maturity.py --json-output dist/quality/package-maturity.json
 
 quality-control: import-smoke maturity-check
+
+regulatory-corpus:
+	uv run python tools/regulatory/lint_regulatory_corpus.py
 
 build:
 	rm -rf dist/release

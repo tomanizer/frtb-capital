@@ -16,6 +16,15 @@ The `frtb-ima` validation pack is built from the committed synthetic
 `capital_run_v1` fixture. It is not a regulatory report and does not present
 final regulatory capital.
 
+## Challenger Models
+
+- Suite challenger register:
+  [`docs/validation/challenger_models.yml`](validation/challenger_models.yml)
+
+Challenger implementations are used as independent reconciliation references.
+They are not regulatory sources, and their licenses determine whether they may be
+run as black-box benchmarks, inspected, copied, or linked.
+
 ## Scaffolded Packages
 
 The following packages are importable scaffolds. They have no model validation

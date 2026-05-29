@@ -51,6 +51,7 @@ select = ["E", "F", "I", "UP", "N", "RUF", "T20"]
 "packages/*/examples/*.py" = ["T201"]
 "packages/*/scripts/*.py" = ["T201"]
 "scripts/**/*.py" = ["T201"]
+"tools/**/*.py" = ["T201"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -61,6 +62,10 @@ testpaths = ["packages", "tests"]
 addopts = "-v --tb=short"
 pythonpath = ["."]
 norecursedirs = [".*", "build", "dist", "mutants"]
+markers = [
+    "regulatory_ref(id): links a test to a regulatory requirement or source-crosswalk id",
+    "challenger_ref(id): links a test to an external challenger implementation",
+]
 
 [tool.coverage.report]
 fail_under = 90

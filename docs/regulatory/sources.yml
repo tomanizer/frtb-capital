@@ -1,0 +1,306 @@
+schema_version: 1
+name: FRTB_CAPITAL_REGULATORY_CORPUS
+purpose: >
+  Suite-level link-only regulatory source register for FRTB market-risk capital
+  implementation, challenger reconciliation, validation evidence, and audit traceability.
+text_policy: >
+  Do not vendor full regulatory text in the core repo by default. Store official
+  URLs, source status, section hints, effective dates, and implementation notes.
+
+sources:
+  - id: basel_bcbs_d457_2019_market_risk
+    issuer: BCBS
+    jurisdiction: GLOBAL
+    family: BASEL_FRTB
+    title: "Minimum capital requirements for market risk"
+    publication_date: "2019-01-14"
+    effective_date: "2022-01-01"
+    status: baseline_standard
+    source_type: standard
+    url: "https://www.bis.org/bcbs/publ/d457.htm"
+    section_hints:
+      - "Trading book / banking book boundary"
+      - "Standardised Approach"
+      - "Internal Models Approach"
+      - "Default Risk Charge"
+      - "Residual Risk Add-On"
+      - "NMRF"
+      - "PLA and backtesting"
+    components:
+      - frtb-ima
+      - frtb-sbm
+      - frtb-drc
+      - frtb-rrao
+      - frtb-orchestration
+    reuse_note: "Link-only. Do not vendor BIS text without permission review."
+
+  - id: basel_bcbs_d457_2019_explanatory_note
+    issuer: BCBS
+    jurisdiction: GLOBAL
+    family: BASEL_FRTB
+    title: "Explanatory note on the minimum capital requirements for market risk"
+    publication_date: "2019-01-14"
+    status: baseline_standard
+    source_type: explanatory_note
+    url: "https://www.bis.org/bcbs/publ/d457_note.pdf"
+    section_hints:
+      - "Worked examples"
+      - "SA delta"
+      - "SA vega"
+      - "SA curvature"
+      - "DRC examples"
+      - "Base-currency treatment"
+    components:
+      - frtb-sbm
+      - frtb-drc
+      - frtb-rrao
+    reuse_note: "Use for worked-example construction; do not vendor full text by default."
+
+  - id: uk_pra_ps1_26_basel_3_1_final_rules
+    issuer: PRA
+    jurisdiction: UK
+    family: PRA_BASEL_3_1
+    title: "PS1/26 - Implementation of Basel 3.1: Final rules"
+    publication_date: "2026-01-20"
+    effective_date: "2027-01-01"
+    status: final_rule
+    source_type: policy_statement
+    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement"
+    section_hints:
+      - "Chapter 3: Market risk"
+      - "Chapter 4: Capitalisation of foreign exchange positions for market risk"
+      - "Appendix 1: Final PRA Rulebook"
+      - "Appendix 11/12: SS13/13 Market risk"
+    components:
+      - frtb-ima
+      - frtb-sbm
+      - frtb-drc
+      - frtb-rrao
+      - frtb-cva
+      - frtb-orchestration
+    reuse_note: "Link-only. Use as UK final-rule profile anchor."
+
+  - id: uk_pra_cp16_22_basel_3_1_consultation
+    issuer: PRA
+    jurisdiction: UK
+    family: PRA_BASEL_3_1
+    title: "CP16/22 - Implementation of the Basel 3.1 standards"
+    publication_date: "2022-11-30"
+    status: historical
+    source_type: consultation_paper
+    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2022/november/implementation-of-the-basel-3-1-standards"
+    section_hints:
+      - "Chapter 6: Market risk"
+      - "Chapter 7: Credit valuation adjustment and counterparty credit risk"
+    components:
+      - frtb-sbm
+      - frtb-drc
+      - frtb-rrao
+      - frtb-cva
+      - frtb-orchestration
+    reuse_note: "Historical design-intent source; final rules take precedence."
+
+  - id: uk_pra_cp17_25_market_risk_adjustments
+    issuer: PRA
+    jurisdiction: UK
+    family: PRA_BASEL_3_1
+    title: "CP17/25 - Basel 3.1: Adjustments to the market risk framework"
+    publication_date: "2025-07-15"
+    status: consultation
+    source_type: consultation_paper
+    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2025/july/basel-3-1-adjustments-to-the-market-risk-framework-consultation-paper"
+    section_hints:
+      - "FRTB-IMA delay"
+      - "CIU simplifications"
+      - "RRAO permissions regime"
+      - "Reporting/disclosure updates"
+    components:
+      - frtb-ima
+      - frtb-sbm
+      - frtb-rrao
+      - frtb-orchestration
+    reuse_note: "Historical consultation feeding PS1/26; do not treat as final where superseded."
+
+  - id: eu_crr3_2024_1623
+    issuer: EU
+    jurisdiction: EU
+    family: EU_CRR3_FRTB
+    title: "Regulation (EU) 2024/1623, CRR3 amendments"
+    publication_date: "2024-05-31"
+    status: final_rule
+    source_type: regulation
+    url: "https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng"
+    section_hints:
+      - "Articles 325ba-325bg"
+      - "Article 325bk"
+      - "FRTB IMA and market-risk own funds requirements"
+    components:
+      - frtb-ima
+      - frtb-sbm
+      - frtb-drc
+      - frtb-rrao
+      - frtb-orchestration
+    reuse_note: "Use as EU Level 1 anchor; RTS/ITS provide technical detail."
+
+  - id: eu_eba_ima_under_frtb_technical_standards
+    issuer: EBA
+    jurisdiction: EU
+    family: EU_CRR3_FRTB
+    title: "Technical Standards on the IMA under the FRTB"
+    status: in_force
+    source_type: technical_standard
+    url: "https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/market-counterparty-and-cva-risk/technical-standards-ima-under-frtb"
+    section_hints:
+      - "Liquidity horizons for IMA"
+      - "Backtesting"
+      - "P&L attribution"
+      - "Risk-factor modellability"
+      - "NMRF data collection"
+    components:
+      - frtb-ima
+    reuse_note: "Use for EU IMA technical detail; package page links to adopted EU RTS."
+
+  - id: eu_eba_rts_nmrf_capitalisation
+    issuer: EBA
+    jurisdiction: EU
+    family: EU_CRR3_FRTB
+    title: "RTS on the capitalisation of non-modellable risk factors under the FRTB"
+    status: technical_standard
+    source_type: rts
+    url: "https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/market-counterparty-and-cva-risk/regulatory-technical-standards-capitalisation-non-modellable-risk-factors-under-frtb"
+    section_hints:
+      - "NMRF stress scenario risk measure"
+      - "Own funds requirement for non-modellable risk factors"
+    components:
+      - frtb-ima
+    reuse_note: "Use for EU NMRF stress-scenario cross-checking."
+
+  - id: eu_eba_rts_gross_jtd_default_risk
+    issuer: EBA
+    jurisdiction: EU
+    family: EU_CRR3_FRTB
+    title: "RTS on gross jump-to-default amounts"
+    status: technical_standard
+    source_type: rts
+    url: "https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-3"
+    section_hints:
+      - "Gross JTD"
+      - "Default risk charge"
+      - "FRTB-SA DRC inputs"
+    components:
+      - frtb-drc
+    reuse_note: "Use for EU DRC / JTD cross-checking."
+
+  - id: eu_eba_rts_residual_risk_add_on
+    issuer: EBA
+    jurisdiction: EU
+    family: EU_CRR3_FRTB
+    title: "RTS on residual risk add-on"
+    status: technical_standard
+    source_type: rts
+    url: "https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-2"
+    section_hints:
+      - "Residual risk scope"
+      - "Exotic underlyings"
+      - "Instruments subject to RRAO"
+    components:
+      - frtb-rrao
+    reuse_note: "Use for RRAO scope and residual-risk classification checks."
+
+  - id: eu_eba_rts_rrao_hedge_exemption
+    issuer: EBA
+    jurisdiction: EU
+    family: EU_CRR3_FRTB
+    title: "RTS on exemption from RRAO own funds requirements for certain hedges"
+    status: technical_standard
+    source_type: rts
+    url: "https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/market-counterparty-and-cva-risk/regulatory-technical-standards-exemption-residual-risk-add-own-funds-requirements-certain-type"
+    section_hints:
+      - "RRAO hedge exemption"
+      - "Residual-risk hedge treatment"
+    components:
+      - frtb-rrao
+    reuse_note: "Use for EU hedge-exemption treatment; not generic Basel behaviour."
+
+  - id: eu_eba_non_trading_book_fx_commodity_rts
+    issuer: EBA
+    jurisdiction: EU
+    family: EU_CRR3_FRTB
+    title: "RTS on non-trading book positions subject to FX or commodity risk"
+    status: technical_standard
+    source_type: rts
+    url: "https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/market-counterparty-and-cva-risk/regulatory-technical-standards-treatment-non-trading-book-positions-subject-foreign-exchange-risk-or"
+    section_hints:
+      - "Non-trading book FX risk"
+      - "Non-trading book commodity risk"
+      - "Backtesting and P&L attribution inputs"
+    components:
+      - frtb-ima
+      - frtb-sbm
+      - frtb-orchestration
+    reuse_note: "Use for banking-book FX/commodity treatment under EU FRTB."
+
+  - id: ecb_guide_to_internal_models_2024
+    issuer: ECB
+    jurisdiction: EU
+    family: EU_SUPERVISORY_EXPECTATIONS
+    title: "ECB Guide to internal models"
+    publication_date: "2024-02-01"
+    status: supervisory_expectation
+    source_type: supervisory_guide
+    url: "https://www.bankingsupervision.europa.eu/ecb/pub/pdf/ssm.supervisory_guides202402_internalmodels.en.pdf"
+    section_hints:
+      - "Market risk chapter"
+      - "Internal validation"
+      - "Model governance"
+      - "Backtesting"
+      - "Risks not in the model engines"
+    components:
+      - frtb-ima
+      - frtb-orchestration
+    reuse_note: "Use for governance and validation expectations, not formula precedence."
+
+  - id: us_fed_occ_fdic_2026_capital_framework_proposal
+    issuer: FED_OCC_FDIC
+    jurisdiction: US
+    family: US_MARKET_RISK_2026_PROPOSED
+    title: "Regulatory Capital Rule proposal for Category I and II organizations"
+    publication_date: "2026-03-19"
+    comment_due_date: "2026-06-18"
+    status: proposed_rule
+    source_type: npr
+    url: "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260319a.htm"
+    section_hints:
+      - "Market risk applies only to banks with significant trading activity"
+      - "Final components of Basel III"
+      - "Credit, market, and operational risk calibration"
+    components:
+      - frtb-ima
+      - frtb-sbm
+      - frtb-drc
+      - frtb-rrao
+      - frtb-orchestration
+    reuse_note: "Proposed U.S. source only. Do not treat as final U.S. regulatory capital."
+
+  - id: us_fed_occ_fdic_2023_basel_endgame_npr
+    issuer: FED_OCC_FDIC
+    jurisdiction: US
+    family: US_MARKET_RISK_2023_PROPOSED
+    title: "Regulatory Capital Rule: Large Banking Organizations and Trading Activity"
+    publication_date: "2023-09-18"
+    status: historical
+    source_type: npr
+    url: "https://www.federalregister.gov/documents/2023/09/18/2023-19200/regulatory-capital-rule-large-banking-organizations-and-banking-organizations-with-significant"
+    section_hints:
+      - "Standardized market risk"
+      - "IMA"
+      - "Expected shortfall"
+      - "NMRF"
+      - "PLA and backtesting"
+    components:
+      - frtb-ima
+      - frtb-sbm
+      - frtb-drc
+      - frtb-rrao
+      - frtb-orchestration
+    reuse_note: "Historical U.S. proposal; current proposal takes precedence."
