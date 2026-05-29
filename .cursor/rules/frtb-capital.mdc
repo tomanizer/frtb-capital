@@ -1,0 +1,41 @@
+---
+description: FRTB capital workspace rules
+alwaysApply: true
+---
+
+Before changing code, read the repository guidance:
+
+- `AGENTS.md`
+- `CLAUDE.md`
+- The relevant package-level `AGENTS.md` and `CLAUDE.md`
+
+Treat those files as the source of truth.
+
+Workspace rules:
+
+- Capital packages must not import sibling capital packages.
+- Shared abstractions belong in `frtb-common`.
+- Suite aggregation belongs in `frtb-orchestration`.
+- SA is a composition of `frtb-sbm`, `frtb-drc`, and `frtb-rrao`; it is not a
+  standalone package.
+- One package per PR unless the change is genuinely cross-cutting and backed by
+  an ADR.
+
+Runtime dependency policy:
+
+- `numpy` is the default runtime numerical dependency for calculation kernels.
+- Any other runtime dependency requires an ADR.
+- `pandas`, `polars`, `scipy`, and `statsmodels` may be used in notebooks,
+  validation, tests, research, or optional adapters when they do not leak into
+  the core runtime path.
+
+Regulatory and audit rules:
+
+- Do not present prototype outputs as final regulatory capital.
+- Cite specific regulatory paragraphs for regulatory behavior.
+- Use explicit unsupported-feature errors rather than silent fallback
+  calculations.
+- Add deterministic tests for calculation changes.
+
+For IMA work, read `packages/frtb-ima/AGENTS.md` and
+`packages/frtb-ima/CLAUDE.md` before editing IMA code.
