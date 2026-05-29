@@ -264,16 +264,45 @@ Every capital-producing result must carry:
 - requirement ids and citation ids;
 - gross JTD, scaled JTD, net JTD, HBR, risk-weight, bucket, category, and total
   records sufficient to reproduce the capital number.
+- lineage and branch metadata sufficient to add analytical Euler or
+  finite-difference impact in a later slice without changing the capital
+  calculation API.
 
 Audit serialization must be JSON/Markdown ready and deterministic.
 
 ### DRC-FUNC-017: Explain and contribution output
 
 The package must expose explain records at bucket and netting-group level in
-the first non-securitisation slice. Euler-style allocation is optional until a
-dedicated issue implements and tests reconciled marginal contribution. If Euler
-allocation is implemented, it must reconcile to total category capital for every
-supported deterministic fixture.
+the first non-securitisation slice. The first capital-producing slice does not
+need to calculate analytical Euler contribution, but it must preserve the audit
+lineage and branch metadata required by
+[ADR 0012](../../decisions/0012-capital-impact-attribution.md).
+
+Future attribution output must:
+
+- distinguish analytical Euler contribution from baseline-vs-candidate impact;
+- identify source level, source id, bucket, category, method, contribution,
+  marginal multiplier, and residual;
+- reconcile to bucket, category, and total capital where the active branch
+  permits exact reconciliation;
+- report explicit residuals or unsupported attribution where floors, zero
+  denominators, bucket moves, category moves, or unsupported features prevent
+  exact Euler decomposition.
+
+For non-securitisation DRC, analytical Euler is the preferred method for stable
+bucket-capital branches after netting. Finite-difference impact is acceptable
+only when labelled as an impact method rather than a marginal contribution.
+
+### DRC-FUNC-018: Change impact assessment
+
+The package must be structured so a later `impact.py` module can compare a
+baseline `DrcCapitalResult` with a candidate `DrcCapitalResult` and explain
+capital deltas by stable ids. The first implementation must therefore retain
+stable ids and deterministic ordering across position, gross JTD, scaled JTD,
+netting group, bucket, category, and total records.
+
+Impact records are not regulatory capital outputs. They are explainability and
+change-control artifacts, and must not change the capital number.
 
 ## Non-functional requirements
 

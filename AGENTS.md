@@ -30,6 +30,10 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
 - Synthetic data only; no proprietary market data.
 - Favour clarity over cleverness.
 - Cite regulatory paragraphs explicitly; do NOT use phrases like "working assumption" or "prototype" as a substitute for citation.
+- Preserve attribution readiness for every capital component: stable ids,
+  deterministic grouping, intermediate audit records, and branch metadata must
+  make later analytical Euler or impact analysis possible without changing the
+  capital number. See [`ADR 0012`](docs/decisions/0012-capital-impact-attribution.md).
 
 ## Workspace discipline
 
@@ -50,3 +54,6 @@ When reviewing or changing code, focus on:
 - Frozen dataclasses for audit-grade results.
 - Explicit `UnsupportedRegulatoryFeatureError` where a regime is not implemented; never silent computation.
 - Audit-record compatibility for any new result that contributes to capital.
+- Attribution/impact compatibility for any new capital aggregation branch,
+  including explicit residual or unsupported-method behavior where exact Euler
+  decomposition is not valid.

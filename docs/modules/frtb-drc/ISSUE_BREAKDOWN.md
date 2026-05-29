@@ -337,20 +337,28 @@ scale.
 
 **Tests/checks:** targeted benchmark command, replay tests.
 
-## Issue 17: Add Euler-style allocation
+## Issue 17: Add attribution and impact assessment
 
-**Goal:** Add optional explain allocation after core DRC is stable.
+**Goal:** Add optional analytical attribution and change-impact outputs after
+core DRC is stable.
 
 **Scope:**
 
-- Implement marginal/Euler contribution for supported category formulas.
-- Reconcile allocation to category and total DRC.
-- Document unsupported allocation paths.
+- Implement `attribution.py` for analytical Euler contribution on supported
+  stable DRC branches.
+- Implement `impact.py` for baseline-vs-candidate capital deltas.
+- Reconcile contribution records to bucket, category, and total DRC where the
+  active branch permits exact reconciliation.
+- Label finite-difference impact separately from analytical marginal
+  contribution.
+- Document unsupported attribution paths and residual reasons.
 
 **Acceptance criteria:**
 
-- Allocation sums to total within tolerance for all supported fixtures.
-- Unsupported formulas fail explicitly.
-- Capital totals do not change when allocation is requested.
+- Analytical contributions sum to total within tolerance for all supported
+  fixtures.
+- Unsupported formulas, branch changes, floors, and zero denominators report
+  explicit method/residual metadata.
+- Capital totals do not change when attribution or impact is requested.
 
-**Tests/checks:** `tests/test_allocation.py`.
+**Tests/checks:** `tests/test_attribution.py`, `tests/test_impact.py`.

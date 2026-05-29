@@ -62,10 +62,9 @@ requirements:
     tests: [tests/test_ctp.py]
     notes: Separate aggregation from non-CTP and non-sec paths.
   - id: DRC-AUDIT-001
-    title: Audit and Euler-compatible decomposition
+    title: Audit and attribution-compatible decomposition
     source: Basel MAR22 traceability requirement by calculation component
     status: planned
     modules: [src/frtb_drc/audit.py]
     tests: [tests/test_audit.py]
-    notes: Provide issuer/tranche, bucket, seniority, RW, gross/net JTD, and capital contribution.
-
+    notes: Provide issuer/tranche, bucket, seniority, RW, gross/net JTD, capital contribution, stable ids, and branch metadata for later analytical Euler or impact methods.

@@ -37,6 +37,8 @@ capital breakdowns.
 7. Deterministic audit records and Markdown/JSON-ready outputs.
 8. Synthetic fixtures covering long/short offsetting, LGD categories, defaulted
    positions, securitisation tranche cases, and CTP aggregation.
+9. Attribution-ready audit graph for future analytical Euler contribution and
+   baseline-vs-candidate impact assessment.
 
 ## Architecture
 
@@ -47,6 +49,8 @@ capital breakdowns.
 | `gross_jtd.py` | Gross default exposure and long/short direction. |
 | `netting.py` | Issuer/tranche netting and maturity scaling. |
 | `capital.py` | Hedge benefit ratio, bucket capital, category aggregation. |
+| `attribution.py` | Future analytical Euler and fallback attribution over capital audit records. |
+| `impact.py` | Future baseline-vs-candidate capital delta analysis. |
 | `crif.py` | CRIF-to-canonical mapping. |
 | `audit.py` | Serialisable audit records and reconciliation helpers. |
 | `regimes.py` | Policy selection and unsupported-feature declarations. |
@@ -66,7 +70,8 @@ data; they do not reach into external data sources or global regime constants.
 
 Results must expose gross JTD, net JTD, hedge-benefit ratio, bucket/category
 capital, total DRC, rule profile id and hash, input snapshot hash, source
-citation ids, and unsupported-feature or fallback status where applicable.
+citation ids, attribution-ready lineage, branch metadata, and
+unsupported-feature or fallback status where applicable.
 Securitisation and CTP paths should fail closed until their source mapping and
 fixtures are complete.
 
@@ -85,6 +90,9 @@ fixtures are complete.
 6. **CTP DRC**: CTP-specific aggregation and hedge recognition, tests.
 7. **Run-level result and suite integration**: public API, examples, audit
    report, orchestration contract.
+8. **Attribution and impact**: analytical Euler contribution where supported,
+   explicit fallback or unsupported states, baseline-vs-candidate capital
+   deltas, and reconciliation tests.
 
 ## Acceptance Criteria
 
