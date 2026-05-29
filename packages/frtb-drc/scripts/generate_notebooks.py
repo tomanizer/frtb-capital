@@ -17,6 +17,7 @@ OUT = Path(__file__).resolve().parents[1] / "notebooks"
 # Notebook helpers
 # ---------------------------------------------------------------------------
 
+
 def nb(cells: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "cells": cells,
@@ -98,8 +99,9 @@ display(
 # 00 — Validation map and regulatory framework
 # ---------------------------------------------------------------------------
 
-NB00 = nb([
-    md("""\
+NB00 = nb(
+    [
+        md("""\
 # 00 — Validation Map
 
 Entry point for the `drc_nonsec_v2` demo notebook pack.  Maps each notebook to
@@ -108,9 +110,9 @@ the committed fixture artifacts and regulatory anchors.
 **Prototype caution**: the fixture is deterministic synthetic development data.
 These notebooks are model-validation evidence for this prototype only and do
 not represent final regulatory capital figures."""),
-    code(_SETUP),
-    md("## Notebook map"),
-    code("""\
+        code(_SETUP),
+        md("## Notebook map"),
+        code("""\
 rows = [
     ["00_validation_map.ipynb", "Pack index and regulatory framework", "positions.json, expected_outputs.json"],
     ["01_gross_jtd.ipynb", "LGD rules and gross JTD calculation", "positions.json, expected_outputs.json"],
@@ -121,7 +123,7 @@ rows = [
 ]
 display(markdown_table(["Notebook", "Purpose", "Fixture inputs"], rows))\
 """),
-    md("""\
+        md("""\
 ## Regulatory anchors
 
 US NPR 2.0 (91 FR 14952) is the primary profile.  Basel FRTB (MAR22) is the
@@ -136,8 +138,8 @@ conceptual baseline.
 | Bucket capital | § 210(a)(2)(iv)(C) / MAR22.19 | Σ(RW * long) - HBR * Σ(RW * short), ≥ 0 |
 | Category total | § 210(b)(3)(iii) / MAR22.20 | Sum of bucket capitals |\
 """),
-    md("## LGD rules (US NPR 2.0)"),
-    code("""\
+        md("## LGD rules (US NPR 2.0)"),
+        code("""\
 from frtb_drc.reference_data import iter_lgd_rules, US_NPR_2_0_PROFILE_ID
 
 rows = [
@@ -146,8 +148,8 @@ rows = [
 ]
 display(markdown_table(["Seniority", "LGD", "Citation", "Description"], rows))\
 """),
-    md("## Risk weights by bucket and credit quality (US NPR 2.0)"),
-    code("""\
+        md("## Risk weights by bucket and credit quality (US NPR 2.0)"),
+        code("""\
 from frtb_drc.reference_data import iter_risk_weight_rules
 
 rows = [
@@ -156,8 +158,8 @@ rows = [
 ]
 display(markdown_table(["Bucket", "Credit quality", "Risk weight", "Citation"], rows))\
 """),
-    md("## Portfolio summary"),
-    code("""\
+        md("## Portfolio summary"),
+        code("""\
 from collections import Counter
 
 by_bucket = Counter(p.bucket_key for p in positions)
@@ -172,14 +174,16 @@ print(f"By credit qual  : {dict(sorted(by_cq.items()))}")
 print(f"By direction    : {dict(sorted(by_dir.items()))}")
 print(f"Total DRC (USD) : {expected['total_drc']:,.2f}")\
 """),
-])
+    ]
+)
 
 # ---------------------------------------------------------------------------
 # 01 — Gross JTD
 # ---------------------------------------------------------------------------
 
-NB01 = nb([
-    md("""\
+NB01 = nb(
+    [
+        md("""\
 # 01 — Gross Jump-to-Default
 
 The gross JTD is the estimated loss if the issuer defaults today.
@@ -202,9 +206,9 @@ The P&L component is `cumulative_pnl` if supplied; otherwise `market_value - not
 
 *Regulatory refs*: Basel MAR22.11-13; US NPR § 210(b)(1)(iv)\
 """),
-    code(_SETUP),
-    md("## Gross JTD across all seniority tiers"),
-    code("""\
+        code(_SETUP),
+        md("## Gross JTD across all seniority tiers"),
+        code("""\
 from frtb_drc.gross_jtd import calculate_gross_jtd
 from frtb_drc.reference_data import US_NPR_2_0_PROFILE_ID
 
@@ -229,7 +233,7 @@ display(markdown_table(
     rows,
 ))\
 """),
-    md("""\
+        md("""\
 ## Special cases
 
 ### 1. NOT\_RECOVERY\_LINKED (LGD = 0)
@@ -237,11 +241,11 @@ display(markdown_table(
 `theta-pharma` holds a NOT\_RECOVERY\_LINKED instrument.  LGD = 0 → gross JTD = 0
 regardless of notional.  The position contributes nothing to capital.\
 """),
-    code("""\
+        code("""\
 theta = next(g for g in results if "theta" in g.position_id)
 print(f"theta-pharma: notional={theta.notional:,.0f}  lgd={theta.lgd_rate:.0%}  gross_jtd={theta.gross_jtd:.2f}")\
 """),
-    md("""\
+        md("""\
 ### 2. Large negative P&L floors gross JTD to zero
 
 `mu-industries` holds LONG SENIOR\_DEBT with a large unrealised loss
@@ -252,7 +256,7 @@ raw_jtd = 0.75 * 500 000 + (-400 000) = 375 000 - 400 000 = -25 000
 gross_jtd = max(-25 000, 0) = 0
 ```\
 """),
-    code("""\
+        code("""\
 mu_pos = next(p for p in positions if "mu" in p.position_id)
 mu_g = next(g for g in results if "mu" in g.position_id)
 print(
@@ -260,7 +264,7 @@ print(
     f"  pnl={mu_pos.cumulative_pnl:,.0f}  gross_jtd={mu_g.gross_jtd:.2f}"
 )\
 """),
-    md("""\
+        md("""\
 ### 3. Positive P&L on a LONG position increases gross JTD
 
 `delta-retail` has `cumulative_pnl = +80 000` (unrealised gain).
@@ -270,7 +274,7 @@ The bond is trading above par; the additional mark-to-market exposure is at risk
 raw_jtd = 1.0 * 600 000 + 80 000 = 680 000
 ```\
 """),
-    code("""\
+        code("""\
 delta_pos = next(p for p in positions if "delta" in p.position_id)
 delta_g = next(g for g in results if "delta" in g.position_id)
 print(
@@ -278,8 +282,8 @@ print(
     f"  pnl={delta_pos.cumulative_pnl:,.0f}  gross_jtd={delta_g.gross_jtd:.2f}"
 )\
 """),
-    md("## Gross JTD chart — long positions by bucket"),
-    code("""\
+        md("## Gross JTD chart — long positions by bucket"),
+        code("""\
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -308,14 +312,16 @@ fig.suptitle("Gross JTD — long positions by bucket", fontsize=11)
 fig.tight_layout()
 plt.show()\
 """),
-])
+    ]
+)
 
 # ---------------------------------------------------------------------------
 # 02 — Maturity scaling
 # ---------------------------------------------------------------------------
 
-NB02 = nb([
-    md("""\
+NB02 = nb(
+    [
+        md("""\
 # 02 — Maturity Scaling
 
 Non-securitisation gross JTDs are scaled by a maturity weight before netting:
@@ -330,9 +336,9 @@ scaled_jtd = gross_jtd * weight
 
 *Regulatory refs*: Basel MAR22.12; US NPR § 210(a)(2)(iii)\
 """),
-    code(_SETUP),
-    md("## Maturity weight function"),
-    code("""\
+        code(_SETUP),
+        md("## Maturity weight function"),
+        code("""\
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -360,7 +366,7 @@ ax.legend(fontsize=8)
 fig.tight_layout()
 plt.show()\
 """),
-    md("""\
+        md("""\
 ## beta-tech maturity ladder
 
 The four `beta-tech` LONG SENIOR\_DEBT positions span 0.1 Y through 5.0 Y, demonstrating:
@@ -372,7 +378,7 @@ The four `beta-tech` LONG SENIOR\_DEBT positions span 0.1 Y through 5.0 Y, demon
 | 1.0 Y | Full weight | 1.00 |
 | 5.0 Y | Full weight | 1.00 |\
 """),
-    code("""\
+        code("""\
 from frtb_drc.gross_jtd import calculate_gross_jtd
 from frtb_drc.maturity import scale_gross_jtd
 from frtb_drc.reference_data import US_NPR_2_0_PROFILE_ID
@@ -394,8 +400,8 @@ display(markdown_table(
     ["Maturity", "Regime", "Weight", "Gross JTD", "Scaled JTD"], rows
 ))\
 """),
-    md("## All scaled JTDs"),
-    code("""\
+        md("## All scaled JTDs"),
+        code("""\
 from frtb_drc.gross_jtd import calculate_gross_jtd
 from frtb_drc.maturity import scale_gross_jtd
 
@@ -421,8 +427,8 @@ display(markdown_table(
     ["Position", "Bucket", "Maturity (Y)", "Weight", "Floor?", "Scaled JTD"], rows
 ))\
 """),
-    md("## Scaled JTD vs maturity scatter"),
-    code("""\
+        md("## Scaled JTD vs maturity scatter"),
+        code("""\
 import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots(figsize=(7, 4))
@@ -445,14 +451,16 @@ ax.legend(fontsize=8)
 fig.tight_layout()
 plt.show()\
 """),
-])
+    ]
+)
 
 # ---------------------------------------------------------------------------
 # 03 — Netting
 # ---------------------------------------------------------------------------
 
-NB03 = nb([
-    md("""\
+NB03 = nb(
+    [
+        md("""\
 # 03 — Netting
 
 Net JTD is computed per `(bucket_key, obligor)` group.  A SHORT position offsets
@@ -473,9 +481,9 @@ Seniority ranks (lower = higher seniority / lower LGD):
 
 *Regulatory refs*: Basel MAR22.14; US NPR § 210(b)(2)\
 """),
-    code(_SETUP),
-    md("## Net JTD records"),
-    code("""\
+        code(_SETUP),
+        md("## Net JTD records"),
+        code("""\
 from frtb_drc.gross_jtd import calculate_gross_jtds
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
@@ -512,8 +520,8 @@ rows = [
 ]
 display(markdown_table(["Net JTD ID", "Bucket", "Direction", "Net amount", "Rejected offsets"], rows))\
 """),
-    md("## Accepted offsets — acme-corp"),
-    code("""\
+        md("## Accepted offsets — acme-corp"),
+        code("""\
 # acme-corp: LONG SENIOR_DEBT (rank 1), SHORT NON_SENIOR_DEBT (rank 2)
 # short_rank(2) >= long_rank(1) → ACCEPTED
 acme_net = next(n for n in net_jtds if "acme" in n.net_jtd_id and n.net_direction.value == "LONG")
@@ -528,14 +536,14 @@ print(f"Scaled SHORT = {scaled_by_id['corp-acme-nsr-s-001'].scaled_jtd:,.2f}")
 print(f"Net amount   = {acme_net.net_amount:,.2f}  direction={acme_net.net_direction.value}")
 print(f"Rejected offsets: {acme_net.rejected_offsets}")\
 """),
-    md("""\
+        md("""\
 ## Rejected offsets — eta-finance
 
 `eta-finance` has LONG NON\_SENIOR\_DEBT (rank 2) and SHORT SENIOR\_DEBT (rank 1).
 `short_rank(1) < long_rank(2)` → the short is **too senior** to offset the long.
 Both survive as separate net positions.\
 """),
-    code("""\
+        code("""\
 eta_nets = [n for n in net_jtds if "eta-finance" in n.net_jtd_id]
 for net in eta_nets:
     print(f"  {net.net_jtd_id}: direction={net.net_direction.value}  amount={net.net_amount:,.2f}")
@@ -546,21 +554,21 @@ print("Interpretation:")
 print("  eta-finance LONG NSR (rank 2) cannot be hedged by SENIOR_DEBT short (rank 1)")
 print("  → both positions carry through to bucket capital step")\
 """),
-    md("""\
+        md("""\
 ## Rejected offsets — freddie-mac (PSE\_GSE bucket)
 
 `freddie-mac` has LONG GSE\_ISSUED\_NOT\_GUARANTEED (rank 1) and SHORT GSE\_GUARANTEED (rank 0).
 `short_rank(0) < long_rank(1)` → the short is **more senior** than the long → **rejected**.\
 """),
-    code("""\
+        code("""\
 freddie_nets = [n for n in net_jtds if "freddie" in n.net_jtd_id]
 for net in freddie_nets:
     print(f"  {net.net_jtd_id}: direction={net.net_direction.value}  amount={net.net_amount:,.2f}")
     for ro in net.rejected_offsets:
         print(f"    rejected: {ro.reason_code}")\
 """),
-    md("## Netting: long vs short survivors by bucket"),
-    code("""\
+        md("## Netting: long vs short survivors by bucket"),
+        code("""\
 import matplotlib.pyplot as plt
 
 buckets = ["CORPORATE", "NON_US_SOVEREIGN", "PSE_GSE", "DEFAULTED"]
@@ -578,14 +586,16 @@ fig.suptitle("Net JTD totals by bucket and direction", fontsize=11)
 fig.tight_layout()
 plt.show()\
 """),
-])
+    ]
+)
 
 # ---------------------------------------------------------------------------
 # 04 — HBR and bucket capital
 # ---------------------------------------------------------------------------
 
-NB04 = nb([
-    md("""\
+NB04 = nb(
+    [
+        md("""\
 # 04 — Hedge Benefit Ratio and Bucket Capital
 
 **Hedge benefit ratio** (HBR) for a bucket:
@@ -608,9 +618,9 @@ CORPORATE/PSE\_GSE IG=2.1 %, SG=22 %, sub-SG=50 %; DEFAULTED=100 %.
 
 *Regulatory refs*: Basel MAR22.17-19; US NPR § 210(a)(2)(iv)\
 """),
-    code(_SETUP),
-    md("## Full pipeline to bucket capital"),
-    code("""\
+        code(_SETUP),
+        md("## Full pipeline to bucket capital"),
+        code("""\
 from frtb_drc.scaffold import calculate_drc_capital
 
 result = calculate_drc_capital(positions, context=context)
@@ -634,7 +644,7 @@ display(markdown_table(
     rows,
 ))\
 """),
-    md("""\
+        md("""\
 ## HBR mechanics
 
 ### CORPORATE — partial hedge
@@ -647,7 +657,7 @@ positions.  After risk-weighting:
 
 The HBR ensures the hedge benefit is shared proportionally across longs and shorts.\
 """),
-    code("""\
+        code("""\
 corp = next(b for b in cat.bucket_results if b.bucket_key == "CORPORATE")
 print(f"CORPORATE")
 print(f"  aggregate_net_long  = {corp.hbr.aggregate_net_long:,.2f}")
@@ -658,14 +668,14 @@ print(f"  weighted_short      = {corp.weighted_short:,.2f}")
 print(f"  capital (unfloored) = {corp.weighted_long - corp.hbr.ratio * corp.weighted_short:,.2f}")
 print(f"  capital (final)     = {corp.capital:,.2f}")\
 """),
-    md("""\
+        md("""\
 ### NON\_US\_SOVEREIGN — no net shorts after netting
 
 UK, Japan, and Brazil shorts were fully consumed by their respective longs during netting.
 No net short positions remain.  HBR = 1.0, but `weighted_short = 0` — so HBR has
 no practical effect.\
 """),
-    code("""\
+        code("""\
 sov = next(b for b in cat.bucket_results if b.bucket_key == "NON_US_SOVEREIGN")
 print(f"NON_US_SOVEREIGN")
 print(f"  aggregate_net_long  = {sov.hbr.aggregate_net_long:,.2f}")
@@ -673,8 +683,8 @@ print(f"  aggregate_net_short = {sov.hbr.aggregate_net_short:,.2f}")
 print(f"  HBR                 = {sov.hbr.ratio:.6f}")
 print(f"  capital             = {sov.capital:,.2f}")\
 """),
-    md("## Bucket capital waterfall"),
-    code("""\
+        md("## Bucket capital waterfall"),
+        code("""\
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -699,14 +709,16 @@ ax.legend(fontsize=8)
 fig.tight_layout()
 plt.show()\
 """),
-])
+    ]
+)
 
 # ---------------------------------------------------------------------------
 # 05 — Category capital
 # ---------------------------------------------------------------------------
 
-NB05 = nb([
-    md("""\
+NB05 = nb(
+    [
+        md("""\
 # 05 — Category Capital and Multi-Desk Analysis
 
 The non-securitisation category DRC is the **sum of all bucket capitals**.
@@ -717,9 +729,9 @@ This notebook:
 
 *Regulatory refs*: Basel MAR22.20; US NPR § 210(b)(3)(iii)\
 """),
-    code(_SETUP),
-    md("## Full capital assembly"),
-    code("""\
+        code(_SETUP),
+        md("## Full capital assembly"),
+        code("""\
 from frtb_drc.scaffold import calculate_drc_capital
 
 result = calculate_drc_capital(positions, context=context)
@@ -734,8 +746,8 @@ for b in cat.bucket_results:
 print(f"  {'Category total':<22}  capital = {cat.capital:>14,.2f}")
 print(f"  {'Total DRC':<22}  capital = {result.total_drc:>14,.2f}")\
 """),
-    md("## Golden reconciliation"),
-    code("""\
+        md("## Golden reconciliation"),
+        code("""\
 tolerance = 1e-9
 checks = {
     "input_count"     : (result.input_count, expected["input_count"]),
@@ -755,7 +767,7 @@ for name, (actual, golden) in checks.items():
 
 display(markdown_table(["Check", "Actual", "Golden", "Status"], rows))\
 """),
-    md("""\
+        md("""\
 ## Multi-desk breakdown
 
 The portfolio spans three desks:
@@ -765,7 +777,7 @@ The portfolio spans three desks:
 
 Each desk can be run independently using a scoped context (`desk_id` filter).\
 """),
-    code("""\
+        code("""\
 from frtb_drc.data_models import DrcCalculationContext
 import matplotlib.pyplot as plt
 
@@ -798,8 +810,8 @@ print(f"\\nSum of desk capitals : {desk_total:,.2f}")
 print(f"Portfolio total      : {portfolio_total:,.2f}")
 print(f"Additive             : {abs(desk_total - portfolio_total) < 1e-9}")\
 """),
-    md("## Capital by desk and bucket"),
-    code("""\
+        md("## Capital by desk and bucket"),
+        code("""\
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -830,8 +842,8 @@ ax.legend(fontsize=8, loc="upper right")
 fig.tight_layout()
 plt.show()\
 """),
-    md("## Audit trail"),
-    code("""\
+        md("## Audit trail"),
+        code("""\
 from frtb_drc import result_json
 import hashlib
 
@@ -845,12 +857,14 @@ print(f"Citations used ({len(result.citations)}):")
 for cit in result.citations:
     print(f"  {cit}")\
 """),
-])
+    ]
+)
 
 
 # ---------------------------------------------------------------------------
 # Write notebooks
 # ---------------------------------------------------------------------------
+
 
 def write_nb(name: str, notebook: dict[str, Any]) -> None:
     path = OUT / name

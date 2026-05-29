@@ -33,9 +33,7 @@ def test_nonsec_v2_fixture_replays_deterministically() -> None:
     fixture = load_drc_nonsec_v2_fixture()
 
     first = calculate_drc_capital(fixture.positions, context=fixture.context)
-    second = calculate_drc_capital(
-        tuple(reversed(fixture.positions)), context=fixture.context
-    )
+    second = calculate_drc_capital(tuple(reversed(fixture.positions)), context=fixture.context)
 
     assert result_json(first) == result_json(second)
     assert _selected_outputs(first) == _selected_outputs(second)
@@ -79,13 +77,9 @@ def _selected_outputs(result: object) -> dict[str, object]:
         "profile_hash": result.profile_hash,
         "gross": {record.position_id: record.gross_jtd for record in result.gross_jtds},
         "maturity_weights": {
-            record.position_id: record.maturity_weight
-            for record in result.maturity_scaled_jtds
+            record.position_id: record.maturity_weight for record in result.maturity_scaled_jtds
         },
-        "scaled": {
-            record.position_id: record.scaled_jtd
-            for record in result.maturity_scaled_jtds
-        },
+        "scaled": {record.position_id: record.scaled_jtd for record in result.maturity_scaled_jtds},
         "net": {
             record.net_jtd_id: {
                 "amount": record.net_amount,

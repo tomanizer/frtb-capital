@@ -54,6 +54,7 @@ def load_drc_nonsec_fixture(root: Path) -> DrcNonSecFixture:
     positions = tuple(_position_from_dict(item) for item in raw["positions"])
     context_raw = raw["context"]
     from datetime import date
+
     context = DrcCalculationContext(
         run_id=str(context_raw["run_id"]),
         calculation_date=date.fromisoformat(str(context_raw["calculation_date"])),
@@ -159,8 +160,7 @@ def _verify_checksums(root: Path, manifest: dict[str, Any]) -> None:
         actual = _sha256(target)
         if actual != expected:
             raise AssertionError(
-                f"manifest checksum mismatch for {filename}: "
-                f"expected {expected}, actual {actual}"
+                f"manifest checksum mismatch for {filename}: expected {expected}, actual {actual}"
             )
 
 

@@ -108,58 +108,112 @@ def _pos(
 # short seniority rank (2) >= long seniority rank (1) → offset is ACCEPTED.
 
 _CORP_ACME_SR_L_001 = _pos(
-    "corp-acme-sr-l-001", "credit-desk", "CORPORATE", "acme-corp",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 1_000_000, 2.0,
+    "corp-acme-sr-l-001",
+    "credit-desk",
+    "CORPORATE",
+    "acme-corp",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    1_000_000,
+    2.0,
 )
 _CORP_ACME_NSR_S_001 = _pos(
-    "corp-acme-nsr-s-001", "credit-desk", "CORPORATE", "acme-corp",
-    DrcSeniority.NON_SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.SHORT, 300_000, 1.5,
+    "corp-acme-nsr-s-001",
+    "credit-desk",
+    "CORPORATE",
+    "acme-corp",
+    DrcSeniority.NON_SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.SHORT,
+    300_000,
+    1.5,
 )
 
 # beta-tech: IG obligor, maturity ladder — exercises the 0.25 Y floor,
 # the linear ramp, and full-weight at 1 Y and 5 Y.
 _CORP_BETA_SR_L_0Y1 = _pos(
-    "corp-beta-sr-l-0y1", "credit-desk", "CORPORATE", "beta-tech",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 500_000, 0.1,
+    "corp-beta-sr-l-0y1",
+    "credit-desk",
+    "CORPORATE",
+    "beta-tech",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    500_000,
+    0.1,
 )
 _CORP_BETA_SR_L_0Y5 = _pos(
-    "corp-beta-sr-l-0y5", "credit-desk", "CORPORATE", "beta-tech",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 500_000, 0.5,
+    "corp-beta-sr-l-0y5",
+    "credit-desk",
+    "CORPORATE",
+    "beta-tech",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    500_000,
+    0.5,
 )
 _CORP_BETA_SR_L_1Y0 = _pos(
-    "corp-beta-sr-l-1y0", "credit-desk", "CORPORATE", "beta-tech",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 500_000, 1.0,
+    "corp-beta-sr-l-1y0",
+    "credit-desk",
+    "CORPORATE",
+    "beta-tech",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    500_000,
+    1.0,
 )
 _CORP_BETA_SR_L_5Y0 = _pos(
-    "corp-beta-sr-l-5y0", "credit-desk", "CORPORATE", "beta-tech",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 500_000, 5.0,
+    "corp-beta-sr-l-5y0",
+    "credit-desk",
+    "CORPORATE",
+    "beta-tech",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    500_000,
+    5.0,
 )
 
 # gamma-energy: SG obligor, partial hedge.
 # Same seniority rank on both legs → offset is ACCEPTED.
 _CORP_GAMMA_NSR_L_001 = _pos(
-    "corp-gamma-nsr-l-001", "credit-desk", "CORPORATE", "gamma-energy",
-    DrcSeniority.NON_SENIOR_DEBT, CreditQuality.SPECULATIVE_GRADE,
-    DefaultDirection.LONG, 800_000, 3.0,
+    "corp-gamma-nsr-l-001",
+    "credit-desk",
+    "CORPORATE",
+    "gamma-energy",
+    DrcSeniority.NON_SENIOR_DEBT,
+    CreditQuality.SPECULATIVE_GRADE,
+    DefaultDirection.LONG,
+    800_000,
+    3.0,
 )
 _CORP_GAMMA_NSR_S_001 = _pos(
-    "corp-gamma-nsr-s-001", "credit-desk", "CORPORATE", "gamma-energy",
-    DrcSeniority.NON_SENIOR_DEBT, CreditQuality.SPECULATIVE_GRADE,
-    DefaultDirection.SHORT, 400_000, 2.0,
+    "corp-gamma-nsr-s-001",
+    "credit-desk",
+    "CORPORATE",
+    "gamma-energy",
+    DrcSeniority.NON_SENIOR_DEBT,
+    CreditQuality.SPECULATIVE_GRADE,
+    DefaultDirection.SHORT,
+    400_000,
+    2.0,
 )
 
 # delta-retail: sub-SG, single long with positive cumulative P&L.
 # Unrealised gain increases gross JTD (bond trading above par).
 _CORP_DELTA_NSR_L_001 = _pos(
-    "corp-delta-nsr-l-001", "credit-desk", "CORPORATE", "delta-retail",
-    DrcSeniority.NON_SENIOR_DEBT, CreditQuality.SUB_SPECULATIVE_GRADE,
-    DefaultDirection.LONG, 600_000, 1.5,
+    "corp-delta-nsr-l-001",
+    "credit-desk",
+    "CORPORATE",
+    "delta-retail",
+    DrcSeniority.NON_SENIOR_DEBT,
+    CreditQuality.SUB_SPECULATIVE_GRADE,
+    DefaultDirection.LONG,
+    600_000,
+    1.5,
     cumulative_pnl=80_000,
 )
 
@@ -167,49 +221,91 @@ _CORP_DELTA_NSR_L_001 = _pos(
 # SHORT SENIOR_DEBT (rank 1) CANNOT offset LONG NON_SENIOR_DEBT (rank 2):
 # short_rank (1) < long_rank (2) → offset REJECTED.
 _CORP_ETA_NSR_L_001 = _pos(
-    "corp-eta-nsr-l-001", "credit-desk", "CORPORATE", "eta-finance",
-    DrcSeniority.NON_SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 700_000, 2.0,
+    "corp-eta-nsr-l-001",
+    "credit-desk",
+    "CORPORATE",
+    "eta-finance",
+    DrcSeniority.NON_SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    700_000,
+    2.0,
 )
 _CORP_ETA_SR_S_001 = _pos(
-    "corp-eta-sr-s-001", "credit-desk", "CORPORATE", "eta-finance",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.SHORT, 200_000, 1.5,
+    "corp-eta-sr-s-001",
+    "credit-desk",
+    "CORPORATE",
+    "eta-finance",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.SHORT,
+    200_000,
+    1.5,
 )
 
 # zeta-metals: IG, second seniority-rejection demo.
 _CORP_ZETA_NSR_L_001 = _pos(
-    "corp-zeta-nsr-l-001", "credit-desk", "CORPORATE", "zeta-metals",
-    DrcSeniority.NON_SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 500_000, 3.0,
+    "corp-zeta-nsr-l-001",
+    "credit-desk",
+    "CORPORATE",
+    "zeta-metals",
+    DrcSeniority.NON_SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    500_000,
+    3.0,
 )
 _CORP_ZETA_SR_S_001 = _pos(
-    "corp-zeta-sr-s-001", "credit-desk", "CORPORATE", "zeta-metals",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.SHORT, 200_000, 2.0,
+    "corp-zeta-sr-s-001",
+    "credit-desk",
+    "CORPORATE",
+    "zeta-metals",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.SHORT,
+    200_000,
+    2.0,
 )
 
 # theta-pharma: IG, NOT_RECOVERY_LINKED → LGD = 0, gross JTD = 0.
 _CORP_THETA_NRL_L_001 = _pos(
-    "corp-theta-nrl-l-001", "credit-desk", "CORPORATE", "theta-pharma",
-    DrcSeniority.NOT_RECOVERY_LINKED, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 1_000_000, 1.0,
+    "corp-theta-nrl-l-001",
+    "credit-desk",
+    "CORPORATE",
+    "theta-pharma",
+    DrcSeniority.NOT_RECOVERY_LINKED,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    1_000_000,
+    1.0,
 )
 
 # mu-industries: IG, large negative P&L floors gross JTD to zero.
 # raw_jtd = 0.75 * 500 000 + (-400 000) = 375 000 - 400 000 = -25 000 → 0.
 _CORP_MU_SR_L_001 = _pos(
-    "corp-mu-sr-l-001", "credit-desk", "CORPORATE", "mu-industries",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 500_000, 2.0,
+    "corp-mu-sr-l-001",
+    "credit-desk",
+    "CORPORATE",
+    "mu-industries",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    500_000,
+    2.0,
     cumulative_pnl=-400_000,
 )
 
 # lambda-holdings: SG corporate equity — LGD = 100 %.
 _CORP_LAMBDA_EQ_L_001 = _pos(
-    "corp-lambda-eq-l-001", "credit-desk", "CORPORATE", "lambda-holdings",
-    DrcSeniority.EQUITY, CreditQuality.SPECULATIVE_GRADE,
-    DefaultDirection.LONG, 400_000, 1.0,
+    "corp-lambda-eq-l-001",
+    "credit-desk",
+    "CORPORATE",
+    "lambda-holdings",
+    DrcSeniority.EQUITY,
+    CreditQuality.SPECULATIVE_GRADE,
+    DefaultDirection.LONG,
+    400_000,
+    1.0,
     instrument_type=DrcInstrumentType.EQUITY,
 )
 
@@ -237,75 +333,141 @@ CORPORATE_POSITIONS: tuple[DrcPosition, ...] = (
 # ---------------------------------------------------------------------------
 # uk-sovereign: IG, long hedged by same-seniority short (offset ACCEPTED).
 _SOV_UK_SR_L_001 = _pos(
-    "sov-uk-sr-l-001", "rates-desk", "NON_US_SOVEREIGN", "uk-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 2_000_000, 5.0,
+    "sov-uk-sr-l-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "uk-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    2_000_000,
+    5.0,
 )
 _SOV_UK_SR_S_001 = _pos(
-    "sov-uk-sr-s-001", "rates-desk", "NON_US_SOVEREIGN", "uk-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.SHORT, 1_000_000, 3.0,
+    "sov-uk-sr-s-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "uk-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.SHORT,
+    1_000_000,
+    3.0,
 )
 
 # germany-sovereign: IG, long with positive P&L (premium bond).
 # cumulative_pnl = +200 000 → gross_jtd = 0.75 * 2 500 000 + 200 000 = 2 075 000.
 _SOV_GERMANY_SR_L_001 = _pos(
-    "sov-germany-sr-l-001", "rates-desk", "NON_US_SOVEREIGN", "germany-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 2_500_000, 10.0,
+    "sov-germany-sr-l-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "germany-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    2_500_000,
+    10.0,
     cumulative_pnl=200_000,
 )
 
 # japan-sovereign: IG, partial hedge.
 _SOV_JAPAN_SR_L_001 = _pos(
-    "sov-japan-sr-l-001", "rates-desk", "NON_US_SOVEREIGN", "japan-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 1_800_000, 7.0,
+    "sov-japan-sr-l-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "japan-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    1_800_000,
+    7.0,
 )
 _SOV_JAPAN_SR_S_001 = _pos(
-    "sov-japan-sr-s-001", "rates-desk", "NON_US_SOVEREIGN", "japan-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.SHORT, 600_000, 5.0,
+    "sov-japan-sr-s-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "japan-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.SHORT,
+    600_000,
+    5.0,
 )
 
 # brazil-sovereign: SG, partial hedge — higher risk weight (22 %).
 _SOV_BRAZIL_SR_L_001 = _pos(
-    "sov-brazil-sr-l-001", "rates-desk", "NON_US_SOVEREIGN", "brazil-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.SPECULATIVE_GRADE,
-    DefaultDirection.LONG, 1_500_000, 3.0,
+    "sov-brazil-sr-l-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "brazil-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.SPECULATIVE_GRADE,
+    DefaultDirection.LONG,
+    1_500_000,
+    3.0,
 )
 _SOV_BRAZIL_SR_S_001 = _pos(
-    "sov-brazil-sr-s-001", "rates-desk", "NON_US_SOVEREIGN", "brazil-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.SPECULATIVE_GRADE,
-    DefaultDirection.SHORT, 500_000, 1.5,
+    "sov-brazil-sr-s-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "brazil-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.SPECULATIVE_GRADE,
+    DefaultDirection.SHORT,
+    500_000,
+    1.5,
 )
 
 # italy-sovereign: SG, unhedged long.
 _SOV_ITALY_SR_L_001 = _pos(
-    "sov-italy-sr-l-001", "rates-desk", "NON_US_SOVEREIGN", "italy-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.SPECULATIVE_GRADE,
-    DefaultDirection.LONG, 1_200_000, 5.0,
+    "sov-italy-sr-l-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "italy-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.SPECULATIVE_GRADE,
+    DefaultDirection.LONG,
+    1_200_000,
+    5.0,
 )
 
 # mexico-sovereign: SG, single long.
 _SOV_MEXICO_SR_L_001 = _pos(
-    "sov-mexico-sr-l-001", "rates-desk", "NON_US_SOVEREIGN", "mexico-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.SPECULATIVE_GRADE,
-    DefaultDirection.LONG, 900_000, 3.0,
+    "sov-mexico-sr-l-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "mexico-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.SPECULATIVE_GRADE,
+    DefaultDirection.LONG,
+    900_000,
+    3.0,
 )
 
 # argentina-sovereign: sub-SG — highest sovereign risk weight (50 %).
 _SOV_ARGENTINA_SR_L_001 = _pos(
-    "sov-argentina-sr-l-001", "rates-desk", "NON_US_SOVEREIGN", "argentina-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.SUB_SPECULATIVE_GRADE,
-    DefaultDirection.LONG, 1_000_000, 2.0,
+    "sov-argentina-sr-l-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "argentina-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.SUB_SPECULATIVE_GRADE,
+    DefaultDirection.LONG,
+    1_000_000,
+    2.0,
 )
 
 # france-sovereign: IG, unhedged — rounds the G7 sovereign exposure to 40 positions.
 _SOV_FRANCE_SR_L_001 = _pos(
-    "sov-france-sr-l-001", "rates-desk", "NON_US_SOVEREIGN", "france-sovereign",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 1_600_000, 5.0,
+    "sov-france-sr-l-001",
+    "rates-desk",
+    "NON_US_SOVEREIGN",
+    "france-sovereign",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    1_600_000,
+    5.0,
 )
 
 NON_US_SOVEREIGN_POSITIONS: tuple[DrcPosition, ...] = (
@@ -327,15 +489,27 @@ NON_US_SOVEREIGN_POSITIONS: tuple[DrcPosition, ...] = (
 # ---------------------------------------------------------------------------
 # fannie-mae: GSE-guaranteed debt (LGD = 25 %), same-seniority short ACCEPTED.
 _PSE_FANNIE_GG_L_001 = _pos(
-    "pse-fannie-gg-l-001", "structured-desk", "PSE_GSE", "fannie-mae",
-    DrcSeniority.GSE_GUARANTEED, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 1_500_000, 5.0,
+    "pse-fannie-gg-l-001",
+    "structured-desk",
+    "PSE_GSE",
+    "fannie-mae",
+    DrcSeniority.GSE_GUARANTEED,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    1_500_000,
+    5.0,
     is_gse=True,
 )
 _PSE_FANNIE_GG_S_001 = _pos(
-    "pse-fannie-gg-s-001", "structured-desk", "PSE_GSE", "fannie-mae",
-    DrcSeniority.GSE_GUARANTEED, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.SHORT, 500_000, 3.0,
+    "pse-fannie-gg-s-001",
+    "structured-desk",
+    "PSE_GSE",
+    "fannie-mae",
+    DrcSeniority.GSE_GUARANTEED,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.SHORT,
+    500_000,
+    3.0,
     is_gse=True,
 )
 
@@ -343,39 +517,69 @@ _PSE_FANNIE_GG_S_001 = _pos(
 # SHORT GSE_GUARANTEED (rank 0) CANNOT offset LONG GING (rank 1):
 # short_rank (0) < long_rank (1) → offset REJECTED.
 _PSE_FREDDIE_GING_L_001 = _pos(
-    "pse-freddie-ging-l-001", "structured-desk", "PSE_GSE", "freddie-mac",
-    DrcSeniority.GSE_ISSUED_NOT_GUARANTEED, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 1_000_000, 5.0,
+    "pse-freddie-ging-l-001",
+    "structured-desk",
+    "PSE_GSE",
+    "freddie-mac",
+    DrcSeniority.GSE_ISSUED_NOT_GUARANTEED,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    1_000_000,
+    5.0,
     is_gse=True,
 )
 _PSE_FREDDIE_GG_S_001 = _pos(
-    "pse-freddie-gg-s-001", "structured-desk", "PSE_GSE", "freddie-mac",
-    DrcSeniority.GSE_GUARANTEED, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.SHORT, 300_000, 3.0,
+    "pse-freddie-gg-s-001",
+    "structured-desk",
+    "PSE_GSE",
+    "freddie-mac",
+    DrcSeniority.GSE_GUARANTEED,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.SHORT,
+    300_000,
+    3.0,
     is_gse=True,
 )
 
 # ipsa-muni: U.S. PSE (LGD = 50 %).
 _PSE_IPSA_PSE_L_001 = _pos(
-    "pse-ipsa-pse-l-001", "structured-desk", "PSE_GSE", "ipsa-muni",
-    DrcSeniority.PSE, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 800_000, 3.0,
+    "pse-ipsa-pse-l-001",
+    "structured-desk",
+    "PSE_GSE",
+    "ipsa-muni",
+    DrcSeniority.PSE,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    800_000,
+    3.0,
     is_pse=True,
 )
 
 # tri-county-authority: second PSE obligor.
 _PSE_TRICITY_PSE_L_001 = _pos(
-    "pse-tricity-pse-l-001", "structured-desk", "PSE_GSE", "tri-county-authority",
-    DrcSeniority.PSE, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 400_000, 1.5,
+    "pse-tricity-pse-l-001",
+    "structured-desk",
+    "PSE_GSE",
+    "tri-county-authority",
+    DrcSeniority.PSE,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    400_000,
+    1.5,
     is_pse=True,
 )
 
 # northern-covered-bank: covered bond (LGD = 25 %).
 _PSE_COVERED_CB_L_001 = _pos(
-    "pse-covered-cb-l-001", "structured-desk", "PSE_GSE", "northern-covered-bank",
-    DrcSeniority.COVERED_BOND, CreditQuality.INVESTMENT_GRADE,
-    DefaultDirection.LONG, 600_000, 2.0,
+    "pse-covered-cb-l-001",
+    "structured-desk",
+    "PSE_GSE",
+    "northern-covered-bank",
+    DrcSeniority.COVERED_BOND,
+    CreditQuality.INVESTMENT_GRADE,
+    DefaultDirection.LONG,
+    600_000,
+    2.0,
     is_covered_bond=True,
 )
 
@@ -397,31 +601,55 @@ PSE_GSE_POSITIONS: tuple[DrcPosition, ...] = (
 
 # epsilon-holdings: two positions, one with maturity floor.
 _DEF_EPSILON_SR_L_001 = _pos(
-    "def-epsilon-sr-l-001", "structured-desk", "DEFAULTED", "epsilon-holdings",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.DEFAULTED,
-    DefaultDirection.LONG, 500_000, 2.0,
+    "def-epsilon-sr-l-001",
+    "structured-desk",
+    "DEFAULTED",
+    "epsilon-holdings",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.DEFAULTED,
+    DefaultDirection.LONG,
+    500_000,
+    2.0,
     is_defaulted=True,
 )
 _DEF_EPSILON_SR_L_0Y3 = _pos(
-    "def-epsilon-sr-l-0y3", "structured-desk", "DEFAULTED", "epsilon-holdings",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.DEFAULTED,
-    DefaultDirection.LONG, 300_000, 0.3,
+    "def-epsilon-sr-l-0y3",
+    "structured-desk",
+    "DEFAULTED",
+    "epsilon-holdings",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.DEFAULTED,
+    DefaultDirection.LONG,
+    300_000,
+    0.3,
     is_defaulted=True,
 )
 
 # omega-corp: non-senior debt defaulted.
 _DEF_OMEGA_NSR_L_001 = _pos(
-    "def-omega-nsr-l-001", "structured-desk", "DEFAULTED", "omega-corp",
-    DrcSeniority.NON_SENIOR_DEBT, CreditQuality.DEFAULTED,
-    DefaultDirection.LONG, 400_000, 1.5,
+    "def-omega-nsr-l-001",
+    "structured-desk",
+    "DEFAULTED",
+    "omega-corp",
+    DrcSeniority.NON_SENIOR_DEBT,
+    CreditQuality.DEFAULTED,
+    DefaultDirection.LONG,
+    400_000,
+    1.5,
     is_defaulted=True,
 )
 
 # pi-industrial: equity defaulted.
 _DEF_PI_EQ_L_001 = _pos(
-    "def-pi-eq-l-001", "structured-desk", "DEFAULTED", "pi-industrial",
-    DrcSeniority.EQUITY, CreditQuality.DEFAULTED,
-    DefaultDirection.LONG, 300_000, 3.0,
+    "def-pi-eq-l-001",
+    "structured-desk",
+    "DEFAULTED",
+    "pi-industrial",
+    DrcSeniority.EQUITY,
+    CreditQuality.DEFAULTED,
+    DefaultDirection.LONG,
+    300_000,
+    3.0,
     instrument_type=DrcInstrumentType.EQUITY,
     is_defaulted=True,
 )
@@ -429,9 +657,15 @@ _DEF_PI_EQ_L_001 = _pos(
 # sigma-holdings: already impaired — negative P&L reduces gross JTD.
 # gross_jtd = max(1.0 * 600 000 + (-120 000), 0) = 480 000.
 _DEF_SIGMA_SR_L_001 = _pos(
-    "def-sigma-sr-l-001", "structured-desk", "DEFAULTED", "sigma-holdings",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.DEFAULTED,
-    DefaultDirection.LONG, 600_000, 1.0,
+    "def-sigma-sr-l-001",
+    "structured-desk",
+    "DEFAULTED",
+    "sigma-holdings",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.DEFAULTED,
+    DefaultDirection.LONG,
+    600_000,
+    1.0,
     cumulative_pnl=-120_000,
     is_defaulted=True,
 )
@@ -439,9 +673,15 @@ _DEF_SIGMA_SR_L_001 = _pos(
 # rho-financial: short residual maturity, exercises the linear weight ramp.
 # maturity = 0.8 Y → weight = (0.8 - 0.25) / (1.0 - 0.25) ≈ 0.733.
 _DEF_RHO_SR_L_001 = _pos(
-    "def-rho-sr-l-001", "structured-desk", "DEFAULTED", "rho-financial",
-    DrcSeniority.SENIOR_DEBT, CreditQuality.DEFAULTED,
-    DefaultDirection.LONG, 250_000, 0.8,
+    "def-rho-sr-l-001",
+    "structured-desk",
+    "DEFAULTED",
+    "rho-financial",
+    DrcSeniority.SENIOR_DEBT,
+    CreditQuality.DEFAULTED,
+    DefaultDirection.LONG,
+    250_000,
+    0.8,
     is_defaulted=True,
 )
 
