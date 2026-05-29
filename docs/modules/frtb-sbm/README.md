@@ -18,10 +18,10 @@ securitisation paths as fail-closed unsupported features.
 
 ## Package-Local Documentation
 
-- [Regulatory traceability](../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md)
-- [Regulatory assumptions](../../packages/frtb-sbm/docs/REGULATORY_ASSUMPTIONS.md)
-- [Regulatory sources manifest](../../packages/frtb-sbm/docs/regulatory_sources.yml)
-- [Package README](../../packages/frtb-sbm/README.md)
+- [Regulatory traceability](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md)
+- [Regulatory assumptions](../../../packages/frtb-sbm/docs/REGULATORY_ASSUMPTIONS.md)
+- [Regulatory sources manifest](../../../packages/frtb-sbm/docs/regulatory_sources.yml)
+- [Package README](../../../packages/frtb-sbm/README.md)
 
 ## Planning Documents
 
