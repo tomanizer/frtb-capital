@@ -1,4 +1,4 @@
-"""Scaffold boundary for future suite-level aggregation."""
+"""Explicitly unavailable suite-level aggregation entry point."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ PACKAGE_METADATA = CapitalComponentMetadata(
     package_name="frtb-orchestration",
     import_name="frtb_orchestration",
     component_name="Suite-level capital aggregation",
-    implementation_status=ImplementationStatus.SCAFFOLDED,
-    validation_status=ValidationStatus.NOT_STARTED,
+    implementation_status=ImplementationStatus.PARTIAL,
+    validation_status=ValidationStatus.PENDING,
 )
 
 
