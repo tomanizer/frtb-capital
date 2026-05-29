@@ -14,6 +14,13 @@ source_register:
   - name: OCC PDF copy of U.S. NPR 2.0 91 FR 14952
     url: https://www.occ.gov/news-issuances/federal-register/2026/91fr14952.pdf
 requirements:
+  - id: RRAO-DOC-001
+    title: Package-local regulatory traceability pack
+    source: Basel MAR20.4; Basel MAR23.1-MAR23.8; proposed U.S. section __.211; Regulation (EU) No 575/2013 Article 325u
+    status: partial
+    modules: [docs/REGULATORY_TRACEABILITY.md, docs/REGULATORY_ASSUMPTIONS.md, docs/regulatory_sources.yml]
+    tests: [tests/test_regulatory_sources.py]
+    notes: Scaffold and planned modules are source-mapped, with EU/PRA capital paths still unsupported until fixture-tested.
   - id: RRAO-DATA-001
     title: Frozen RRAO input and result models
     source: Basel MAR23.1-MAR23.3; U.S. NPR 2.0 section V.A.7.b

@@ -17,12 +17,19 @@ residual-risk classification and additive capital mechanics are implemented.
 ## Planning Documents
 
 - [Product requirements](PRD.md)
+- [Model documentation](MODEL_DOCUMENTATION.md)
 - [Regulatory requirements](REGULATORY_REQUIREMENTS.md)
 - [Detailed requirements](DETAILED_REQUIREMENTS.md)
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
 - [Decisions and implementation plan](DECISIONS_AND_PLAN.md)
 - [Workable issue breakdown](ISSUE_BREAKDOWN.md)
 - [Workable requirements](requirements/BASEL_FRTB_RRAO.yml)
+
+Package-local traceability documents live under `packages/frtb-rrao/docs`:
+
+- [Regulatory traceability](../../../packages/frtb-rrao/docs/REGULATORY_TRACEABILITY.md)
+- [Regulatory assumptions](../../../packages/frtb-rrao/docs/REGULATORY_ASSUMPTIONS.md)
+- [Regulatory sources](../../../packages/frtb-rrao/docs/regulatory_sources.yml)
 
 ## v1 Target
 

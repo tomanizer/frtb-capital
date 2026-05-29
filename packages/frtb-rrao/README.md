@@ -13,7 +13,14 @@ with classification evidence and exclusions recorded in audit output.
 
 Planning documents:
 
-- `docs/modules/frtb-rrao/DETAILED_REQUIREMENTS.md`
-- `docs/modules/frtb-rrao/ARCHITECTURE_AND_DATA_DESIGN.md`
-- `docs/modules/frtb-rrao/DECISIONS_AND_PLAN.md`
-- `docs/modules/frtb-rrao/ISSUE_BREAKDOWN.md`
+- [Model documentation](../../docs/modules/frtb-rrao/MODEL_DOCUMENTATION.md)
+- [Detailed requirements](../../docs/modules/frtb-rrao/DETAILED_REQUIREMENTS.md)
+- [Architecture and data design](../../docs/modules/frtb-rrao/ARCHITECTURE_AND_DATA_DESIGN.md)
+- [Decisions and implementation plan](../../docs/modules/frtb-rrao/DECISIONS_AND_PLAN.md)
+- [Workable issue breakdown](../../docs/modules/frtb-rrao/ISSUE_BREAKDOWN.md)
+
+Package-local regulatory documentation:
+
+- [Regulatory traceability](docs/REGULATORY_TRACEABILITY.md)
+- [Regulatory assumptions](docs/REGULATORY_ASSUMPTIONS.md)
+- [Regulatory sources](docs/regulatory_sources.yml)
