@@ -238,7 +238,12 @@ def _position_from_record(
         column_map=column_map,
     )
     exclusion_reason = _optional_exclusion_reason(record, column_map)
-    exclusion_evidence_id = _optional_text(record, _EXCLUSION_EVIDENCE_FIELDS, column_map)
+    exclusion_evidence_id = _optional_text(
+        record,
+        _EXCLUSION_EVIDENCE_FIELDS,
+        "exclusion_evidence_id",
+        column_map,
+    )
 
     return RraoPosition(
         position_id=position_id,
@@ -268,8 +273,18 @@ def _classification_from_record(
     source_row_id: str,
     column_map: list[tuple[str, str]],
 ) -> tuple[RraoClassification, RraoEvidenceType, str]:
-    risk_type = _optional_upper_text(record, _RISK_TYPE_FIELDS, column_map)
-    bucket = _optional_upper_text(record, _BUCKET_FIELDS, column_map)
+    risk_type = _optional_upper_text(
+        record,
+        _RISK_TYPE_FIELDS,
+        "classification_hint",
+        column_map,
+    )
+    bucket = _optional_upper_text(
+        record,
+        _BUCKET_FIELDS,
+        "classification_hint",
+        column_map,
+    )
     source_label = risk_type or bucket
     if source_label is None:
         raise RraoInputError(
@@ -302,7 +317,12 @@ def _specific_other_residual_evidence(
     source_row_id: str,
     column_map: list[tuple[str, str]],
 ) -> RraoEvidenceType:
-    evidence_value = _optional_upper_text(record, _EVIDENCE_TYPE_FIELDS, column_map)
+    evidence_value = _optional_upper_text(
+        record,
+        _EVIDENCE_TYPE_FIELDS,
+        "evidence_type",
+        column_map,
+    )
     if evidence_value is None:
         raise RraoInputError(
             "generic non-exotic RRAO rows require specific evidence type",
@@ -357,7 +377,12 @@ def _gross_effective_notional(
         )
     column_map.append((field_name, "gross_effective_notional"))
     if field_name.lower() == "weightednotional":
-        convention = _optional_upper_text(record, _NOTIONAL_CONVENTION_FIELDS, column_map)
+        convention = _optional_upper_text(
+            record,
+            _NOTIONAL_CONVENTION_FIELDS,
+            "gross_effective_notional",
+            column_map,
+        )
         if convention not in _GROSS_NOTIONAL_CONVENTIONS:
             raise RraoInputError(
                 "WeightedNotional requires explicit gross notional convention",
@@ -410,7 +435,7 @@ def _evidence_label(
     fallback: str,
     column_map: list[tuple[str, str]],
 ) -> str:
-    label = _optional_text(record, _EVIDENCE_LABEL_FIELDS, column_map)
+    label = _optional_text(record, _EVIDENCE_LABEL_FIELDS, "evidence_label", column_map)
     if label is None:
         return fallback
     return label
@@ -420,7 +445,12 @@ def _optional_exclusion_reason(
     record: Mapping[str, tuple[str, object]],
     column_map: list[tuple[str, str]],
 ) -> RraoExclusionReason | None:
-    reason = _optional_upper_text(record, _EXCLUSION_REASON_FIELDS, column_map)
+    reason = _optional_upper_text(
+        record,
+        _EXCLUSION_REASON_FIELDS,
+        "exclusion_reason",
+        column_map,
+    )
     if reason is None:
         return None
     try:
@@ -438,7 +468,7 @@ def _required_text(
     canonical_field: str,
     column_map: list[tuple[str, str]],
 ) -> str:
-    value = _optional_text(record, candidates, column_map)
+    value = _optional_text(record, candidates, canonical_field, column_map)
     if value is None:
         raise RraoInputError(
             f"{canonical_field} field is required",
@@ -450,12 +480,13 @@ def _required_text(
 def _optional_text(
     record: Mapping[str, tuple[str, object]],
     candidates: tuple[str, ...],
+    canonical_field: str,
     column_map: list[tuple[str, str]],
 ) -> str | None:
     field_name, raw_value = _field(record, candidates)
     if field_name is None:
         return None
-    column_map.append((field_name, candidates[0]))
+    column_map.append((field_name, canonical_field))
     value = str(raw_value).strip()
     if not value:
         return None
@@ -465,9 +496,10 @@ def _optional_text(
 def _optional_upper_text(
     record: Mapping[str, tuple[str, object]],
     candidates: tuple[str, ...],
+    canonical_field: str,
     column_map: list[tuple[str, str]],
 ) -> str | None:
-    value = _optional_text(record, candidates, column_map)
+    value = _optional_text(record, candidates, canonical_field, column_map)
     if value is None:
         return None
     return value.upper()

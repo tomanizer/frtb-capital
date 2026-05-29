@@ -56,9 +56,13 @@ def test_crif_adapter_maps_supported_risk_types_to_canonical_positions() -> None
     assert result.positions[1].evidence_type is RraoEvidenceType.GAP_RISK
     assert result.positions[0].lineage is not None
     assert result.positions[0].lineage.source_system == "crif"
-    assert ("AmountUSD", "gross_effective_notional") in result.positions[
-        0
-    ].lineage.source_column_map
+    source_column_map = result.positions[0].lineage.source_column_map
+    assert ("AmountUSD", "gross_effective_notional") in source_column_map
+    assert ("TradeId", "position_id") in source_column_map
+    assert ("Desk", "desk_id") in source_column_map
+    assert ("LegalEntity", "legal_entity") in source_column_map
+    assert ("RiskType", "classification_hint") in source_column_map
+    assert ("ProductType", "evidence_label") in source_column_map
 
 
 def test_fnet_adapter_maps_bucket_rows_when_evidence_is_sufficient() -> None:
