@@ -1,0 +1,823 @@
+{
+  "run_id": "rrao-sample-book-v1",
+  "calculation_date": "2026-03-31",
+  "base_currency": "USD",
+  "profile_id": "US_NPR_2_0",
+  "profile_hash": "bfb2763c438d3cfd36b906c5ab3ebeae0ff92cf1160349369f1e417bf2157e15",
+  "input_hash": "377ce1ae7ded3b512d919fd9837c6b639f20e16e4d9f5b75752251377c678386",
+  "total_rrao": 3000000.0,
+  "citations": [
+    "us_npr_211_a_1",
+    "us_npr_211_c_1_i",
+    "us_npr_211_a_2",
+    "us_npr_211_c_1_ii",
+    "us_npr_211_a_4",
+    "us_npr_211_a_3",
+    "us_npr_205_e_3_iii",
+    "us_npr_211_b_1",
+    "us_npr_211_b_2_i",
+    "us_npr_211_b_2_ii",
+    "us_npr_211_b_2_iii",
+    "us_npr_211_b_2_iv"
+  ],
+  "warnings": [
+    "US_NPR_2_0 is proposed-rule material; do not present outputs as final regulatory capital."
+  ],
+  "lines": [
+    {
+      "position_id": "exotic-longevity-001",
+      "classification": "EXOTIC",
+      "evidence_type": "EXOTIC_UNDERLYING",
+      "gross_effective_notional": 50000000.0,
+      "risk_weight": 0.01,
+      "add_on": 500000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_EXOTIC_EXPOSURE",
+      "citations": [
+        "us_npr_211_a_1",
+        "us_npr_211_c_1_i"
+      ],
+      "desk_id": "desk-exotics",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-001",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "exotic-temperature-001",
+      "classification": "EXOTIC",
+      "evidence_type": "EXOTIC_UNDERLYING",
+      "gross_effective_notional": 25000000.0,
+      "risk_weight": 0.01,
+      "add_on": 250000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_EXOTIC_EXPOSURE",
+      "citations": [
+        "us_npr_211_a_1",
+        "us_npr_211_c_1_i"
+      ],
+      "desk_id": "desk-exotics",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-002",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "exotic-nat-cat-001",
+      "classification": "EXOTIC",
+      "evidence_type": "EXOTIC_UNDERLYING",
+      "gross_effective_notional": 10000000.0,
+      "risk_weight": 0.01,
+      "add_on": 100000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_EXOTIC_EXPOSURE",
+      "citations": [
+        "us_npr_211_a_1",
+        "us_npr_211_c_1_i"
+      ],
+      "desk_id": "desk-exotics",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-003",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "exotic-carbon-001",
+      "classification": "EXOTIC",
+      "evidence_type": "EXOTIC_UNDERLYING",
+      "gross_effective_notional": 15000000.0,
+      "risk_weight": 0.01,
+      "add_on": 150000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_EXOTIC_EXPOSURE",
+      "citations": [
+        "us_npr_211_a_1",
+        "us_npr_211_c_1_i"
+      ],
+      "desk_id": "desk-exotics",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-004",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "gap-autocall-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "GAP_RISK",
+      "gross_effective_notional": 200000000.0,
+      "risk_weight": 0.001,
+      "add_on": 200000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_GAP_RISK",
+      "citations": [
+        "us_npr_211_a_2",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-structured",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-005",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "gap-barrier-note-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "GAP_RISK",
+      "gross_effective_notional": 150000000.0,
+      "risk_weight": 0.001,
+      "add_on": 150000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_GAP_RISK",
+      "citations": [
+        "us_npr_211_a_2",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-structured",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-006",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "corr-swap-equity-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "CORRELATION_RISK",
+      "gross_effective_notional": 35000000.0,
+      "risk_weight": 0.001,
+      "add_on": 35000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_CORRELATION_RISK",
+      "citations": [
+        "us_npr_211_a_2",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-structured",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-007",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "corr-dispersion-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "CORRELATION_RISK",
+      "gross_effective_notional": 20000000.0,
+      "risk_weight": 0.001,
+      "add_on": 20000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_CORRELATION_RISK",
+      "citations": [
+        "us_npr_211_a_2",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-structured",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-008",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "structured-multi-barrier-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "MULTIPLE_STRIKE_OR_BARRIER_OPTIONALITY",
+      "gross_effective_notional": 120000000.0,
+      "risk_weight": 0.001,
+      "add_on": 120000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_MULTIPLE_STRIKE_OR_BARRIER_OPTIONALITY",
+      "citations": [
+        "us_npr_211_a_2",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-structured",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-009",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "ctp-basket-4under-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "CTP_THREE_OR_MORE_UNDERLYINGS",
+      "gross_effective_notional": 100000000.0,
+      "risk_weight": 0.001,
+      "add_on": 100000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_CTP_THREE_OR_MORE_UNDERLYINGS",
+      "citations": [
+        "us_npr_211_a_2",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-ctp",
+      "legal_entity": "LE-IB-LDN",
+      "source_row_id": "sb-010",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "ctp-rainbow-3eq-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "CTP_THREE_OR_MORE_UNDERLYINGS",
+      "gross_effective_notional": 75000000.0,
+      "risk_weight": 0.001,
+      "add_on": 75000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_CTP_THREE_OR_MORE_UNDERLYINGS",
+      "citations": [
+        "us_npr_211_a_2",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-ctp",
+      "legal_entity": "LE-IB-LDN",
+      "source_row_id": "sb-011",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "nro-illiquid-vol-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "NON_REPLICABLE_OPTIONALITY",
+      "gross_effective_notional": 45000000.0,
+      "risk_weight": 0.001,
+      "add_on": 45000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_NON_REPLICABLE_OPTIONALITY",
+      "citations": [
+        "us_npr_211_a_2",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-ctp",
+      "legal_entity": "LE-IB-LDN",
+      "source_row_id": "sb-012",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "behav-agency-mbs-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "BEHAVIOURAL_RISK",
+      "gross_effective_notional": 500000000.0,
+      "risk_weight": 0.001,
+      "add_on": 500000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_BEHAVIOURAL_RISK",
+      "citations": [
+        "us_npr_211_a_2",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-mortgages",
+      "legal_entity": "LE-RTL-NY",
+      "source_row_id": "sb-013",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "behav-callable-deposit-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "BEHAVIOURAL_RISK",
+      "gross_effective_notional": 300000000.0,
+      "risk_weight": 0.001,
+      "add_on": 300000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_BEHAVIOURAL_RISK",
+      "citations": [
+        "us_npr_211_a_2",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-mortgages",
+      "legal_entity": "LE-RTL-NY",
+      "source_row_id": "sb-014",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "supdir-complex-deriv-001",
+      "classification": "SUPERVISOR_DIRECTED",
+      "evidence_type": "SUPERVISOR_DIRECTIVE",
+      "gross_effective_notional": 75000000.0,
+      "risk_weight": 0.001,
+      "add_on": 75000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_SUPERVISOR_DIRECTIVE",
+      "citations": [
+        "us_npr_211_a_4",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-supervisory",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-015",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "fund-alpha-exotic-001",
+      "classification": "EXOTIC",
+      "evidence_type": "INVESTMENT_FUND_EXPOSURE",
+      "gross_effective_notional": 30000000.0,
+      "risk_weight": 0.01,
+      "add_on": 300000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_INVESTMENT_FUND_EXOTIC_PORTION",
+      "citations": [
+        "us_npr_211_a_3",
+        "us_npr_205_e_3_iii",
+        "us_npr_211_c_1_i"
+      ],
+      "desk_id": "desk-funds",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-016",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    },
+    {
+      "position_id": "fund-beta-residual-001",
+      "classification": "OTHER_RESIDUAL_RISK",
+      "evidence_type": "INVESTMENT_FUND_EXPOSURE",
+      "gross_effective_notional": 80000000.0,
+      "risk_weight": 0.001,
+      "add_on": 80000.0,
+      "currency": "USD",
+      "is_excluded": false,
+      "reason_code": "US_NPR_INVESTMENT_FUND_OTHER_RESIDUAL_PORTION",
+      "citations": [
+        "us_npr_211_a_3",
+        "us_npr_205_e_3_iii",
+        "us_npr_211_c_1_ii"
+      ],
+      "desk_id": "desk-funds",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-017",
+      "exclusion_reason": null,
+      "exclusion_evidence_id": null
+    }
+  ],
+  "excluded_lines": [
+    {
+      "position_id": "excl-listed-spx-opt-001",
+      "classification": "EXCLUDED",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "gross_effective_notional": 200000000.0,
+      "risk_weight": 0.0,
+      "add_on": 0.0,
+      "currency": "USD",
+      "is_excluded": true,
+      "reason_code": "US_NPR_EXCLUSION_LISTED",
+      "citations": [
+        "us_npr_211_b_1"
+      ],
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-018",
+      "exclusion_reason": "LISTED",
+      "exclusion_evidence_id": "EXCL-LISTED-CME-SPX-2026"
+    },
+    {
+      "position_id": "excl-lch-irs-001",
+      "classification": "EXCLUDED",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "gross_effective_notional": 1000000000.0,
+      "risk_weight": 0.0,
+      "add_on": 0.0,
+      "currency": "USD",
+      "is_excluded": true,
+      "reason_code": "US_NPR_EXCLUSION_CLEARABLE",
+      "citations": [
+        "us_npr_211_b_1"
+      ],
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-019",
+      "exclusion_reason": "CCP_OR_QCCP_CLEARABLE",
+      "exclusion_evidence_id": "EXCL-LCH-IRS-USD-2026"
+    },
+    {
+      "position_id": "excl-vanilla-call-001",
+      "classification": "EXCLUDED",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "gross_effective_notional": 50000000.0,
+      "risk_weight": 0.0,
+      "add_on": 0.0,
+      "currency": "USD",
+      "is_excluded": true,
+      "reason_code": "US_NPR_EXCLUSION_SIMPLE_OPTION",
+      "citations": [
+        "us_npr_211_b_1"
+      ],
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-020",
+      "exclusion_reason": "TWO_OR_FEWER_UNDERLYINGS_NON_PATH_DEPENDENT_OPTION",
+      "exclusion_evidence_id": "EXCL-VANILLA-CALL-AAPL-2026"
+    },
+    {
+      "position_id": "excl-btb-weather-A",
+      "classification": "EXCLUDED",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "gross_effective_notional": 25000000.0,
+      "risk_weight": 0.0,
+      "add_on": 0.0,
+      "currency": "USD",
+      "is_excluded": true,
+      "reason_code": "US_NPR_EXCLUSION_EXACT_BACK_TO_BACK",
+      "citations": [
+        "us_npr_211_b_2_i",
+        "us_npr_211_b_1"
+      ],
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-021",
+      "exclusion_reason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+      "exclusion_evidence_id": "BTB-WEATHER-2026"
+    },
+    {
+      "position_id": "excl-btb-weather-B",
+      "classification": "EXCLUDED",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "gross_effective_notional": 25000000.0,
+      "risk_weight": 0.0,
+      "add_on": 0.0,
+      "currency": "USD",
+      "is_excluded": true,
+      "reason_code": "US_NPR_EXCLUSION_EXACT_BACK_TO_BACK",
+      "citations": [
+        "us_npr_211_b_2_i",
+        "us_npr_211_b_1"
+      ],
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-022",
+      "exclusion_reason": "EXACT_THIRD_PARTY_BACK_TO_BACK",
+      "exclusion_evidence_id": "BTB-WEATHER-2026"
+    },
+    {
+      "position_id": "excl-deliverable-fx-001",
+      "classification": "EXCLUDED",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "gross_effective_notional": 100000000.0,
+      "risk_weight": 0.0,
+      "add_on": 0.0,
+      "currency": "USD",
+      "is_excluded": true,
+      "reason_code": "US_NPR_EXCLUSION_DELIVERABLE_HEDGE_PAIR",
+      "citations": [
+        "us_npr_211_b_2_ii",
+        "us_npr_211_b_1"
+      ],
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-023",
+      "exclusion_reason": "DELIVERABLE_HEDGE_PAIR",
+      "exclusion_evidence_id": "EXCL-DLV-EURUSD-FWD-2026"
+    },
+    {
+      "position_id": "excl-us-tsy-option-001",
+      "classification": "EXCLUDED",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "gross_effective_notional": 250000000.0,
+      "risk_weight": 0.0,
+      "add_on": 0.0,
+      "currency": "USD",
+      "is_excluded": true,
+      "reason_code": "US_NPR_EXCLUSION_GOVERNMENT_OR_GSE_DEBT",
+      "citations": [
+        "us_npr_211_b_2_iii",
+        "us_npr_211_b_1"
+      ],
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-024",
+      "exclusion_reason": "GOVERNMENT_OR_GSE_DEBT",
+      "exclusion_evidence_id": "EXCL-UST-SWAPTION-2026"
+    },
+    {
+      "position_id": "excl-fallback-capital-001",
+      "classification": "EXCLUDED",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "gross_effective_notional": 45000000.0,
+      "risk_weight": 0.0,
+      "add_on": 0.0,
+      "currency": "USD",
+      "is_excluded": true,
+      "reason_code": "US_NPR_EXCLUSION_FALLBACK_CAPITAL",
+      "citations": [
+        "us_npr_211_b_2_iv",
+        "us_npr_211_b_1"
+      ],
+      "desk_id": "desk-exclusions",
+      "legal_entity": "LE-IB-NY",
+      "source_row_id": "sb-025",
+      "exclusion_reason": "FALLBACK_CAPITAL_REQUIREMENT",
+      "exclusion_evidence_id": "EXCL-FALLBACK-NOTE-2026"
+    }
+  ],
+  "subtotals": [
+    {
+      "subtotal_key": "EXCLUDED",
+      "subtotal_type": "classification",
+      "gross_effective_notional": 1695000000.0,
+      "add_on": 0.0,
+      "position_ids": [
+        "excl-listed-spx-opt-001",
+        "excl-lch-irs-001",
+        "excl-vanilla-call-001",
+        "excl-btb-weather-A",
+        "excl-btb-weather-B",
+        "excl-deliverable-fx-001",
+        "excl-us-tsy-option-001",
+        "excl-fallback-capital-001"
+      ]
+    },
+    {
+      "subtotal_key": "EXOTIC",
+      "subtotal_type": "classification",
+      "gross_effective_notional": 130000000.0,
+      "add_on": 1300000.0,
+      "position_ids": [
+        "exotic-longevity-001",
+        "exotic-temperature-001",
+        "exotic-nat-cat-001",
+        "exotic-carbon-001",
+        "fund-alpha-exotic-001"
+      ]
+    },
+    {
+      "subtotal_key": "OTHER_RESIDUAL_RISK",
+      "subtotal_type": "classification",
+      "gross_effective_notional": 1625000000.0,
+      "add_on": 1625000.0,
+      "position_ids": [
+        "gap-autocall-001",
+        "gap-barrier-note-001",
+        "corr-swap-equity-001",
+        "corr-dispersion-001",
+        "structured-multi-barrier-001",
+        "ctp-basket-4under-001",
+        "ctp-rainbow-3eq-001",
+        "nro-illiquid-vol-001",
+        "behav-agency-mbs-001",
+        "behav-callable-deposit-001",
+        "fund-beta-residual-001"
+      ]
+    },
+    {
+      "subtotal_key": "SUPERVISOR_DIRECTED",
+      "subtotal_type": "classification",
+      "gross_effective_notional": 75000000.0,
+      "add_on": 75000.0,
+      "position_ids": [
+        "supdir-complex-deriv-001"
+      ]
+    },
+    {
+      "subtotal_key": "BEHAVIOURAL_RISK",
+      "subtotal_type": "evidence_type",
+      "gross_effective_notional": 800000000.0,
+      "add_on": 800000.0,
+      "position_ids": [
+        "behav-agency-mbs-001",
+        "behav-callable-deposit-001"
+      ]
+    },
+    {
+      "subtotal_key": "CORRELATION_RISK",
+      "subtotal_type": "evidence_type",
+      "gross_effective_notional": 55000000.0,
+      "add_on": 55000.0,
+      "position_ids": [
+        "corr-swap-equity-001",
+        "corr-dispersion-001"
+      ]
+    },
+    {
+      "subtotal_key": "CTP_THREE_OR_MORE_UNDERLYINGS",
+      "subtotal_type": "evidence_type",
+      "gross_effective_notional": 175000000.0,
+      "add_on": 175000.0,
+      "position_ids": [
+        "ctp-basket-4under-001",
+        "ctp-rainbow-3eq-001"
+      ]
+    },
+    {
+      "subtotal_key": "EXOTIC_UNDERLYING",
+      "subtotal_type": "evidence_type",
+      "gross_effective_notional": 100000000.0,
+      "add_on": 1000000.0,
+      "position_ids": [
+        "exotic-longevity-001",
+        "exotic-temperature-001",
+        "exotic-nat-cat-001",
+        "exotic-carbon-001"
+      ]
+    },
+    {
+      "subtotal_key": "EXPLICIT_EXCLUSION",
+      "subtotal_type": "evidence_type",
+      "gross_effective_notional": 1695000000.0,
+      "add_on": 0.0,
+      "position_ids": [
+        "excl-listed-spx-opt-001",
+        "excl-lch-irs-001",
+        "excl-vanilla-call-001",
+        "excl-btb-weather-A",
+        "excl-btb-weather-B",
+        "excl-deliverable-fx-001",
+        "excl-us-tsy-option-001",
+        "excl-fallback-capital-001"
+      ]
+    },
+    {
+      "subtotal_key": "GAP_RISK",
+      "subtotal_type": "evidence_type",
+      "gross_effective_notional": 350000000.0,
+      "add_on": 350000.0,
+      "position_ids": [
+        "gap-autocall-001",
+        "gap-barrier-note-001"
+      ]
+    },
+    {
+      "subtotal_key": "INVESTMENT_FUND_EXPOSURE",
+      "subtotal_type": "evidence_type",
+      "gross_effective_notional": 110000000.0,
+      "add_on": 380000.0,
+      "position_ids": [
+        "fund-alpha-exotic-001",
+        "fund-beta-residual-001"
+      ]
+    },
+    {
+      "subtotal_key": "MULTIPLE_STRIKE_OR_BARRIER_OPTIONALITY",
+      "subtotal_type": "evidence_type",
+      "gross_effective_notional": 120000000.0,
+      "add_on": 120000.0,
+      "position_ids": [
+        "structured-multi-barrier-001"
+      ]
+    },
+    {
+      "subtotal_key": "NON_REPLICABLE_OPTIONALITY",
+      "subtotal_type": "evidence_type",
+      "gross_effective_notional": 45000000.0,
+      "add_on": 45000.0,
+      "position_ids": [
+        "nro-illiquid-vol-001"
+      ]
+    },
+    {
+      "subtotal_key": "SUPERVISOR_DIRECTIVE",
+      "subtotal_type": "evidence_type",
+      "gross_effective_notional": 75000000.0,
+      "add_on": 75000.0,
+      "position_ids": [
+        "supdir-complex-deriv-001"
+      ]
+    },
+    {
+      "subtotal_key": "desk-ctp",
+      "subtotal_type": "desk_id",
+      "gross_effective_notional": 220000000.0,
+      "add_on": 220000.0,
+      "position_ids": [
+        "ctp-basket-4under-001",
+        "ctp-rainbow-3eq-001",
+        "nro-illiquid-vol-001"
+      ]
+    },
+    {
+      "subtotal_key": "desk-exclusions",
+      "subtotal_type": "desk_id",
+      "gross_effective_notional": 1695000000.0,
+      "add_on": 0.0,
+      "position_ids": [
+        "excl-listed-spx-opt-001",
+        "excl-lch-irs-001",
+        "excl-vanilla-call-001",
+        "excl-btb-weather-A",
+        "excl-btb-weather-B",
+        "excl-deliverable-fx-001",
+        "excl-us-tsy-option-001",
+        "excl-fallback-capital-001"
+      ]
+    },
+    {
+      "subtotal_key": "desk-exotics",
+      "subtotal_type": "desk_id",
+      "gross_effective_notional": 100000000.0,
+      "add_on": 1000000.0,
+      "position_ids": [
+        "exotic-longevity-001",
+        "exotic-temperature-001",
+        "exotic-nat-cat-001",
+        "exotic-carbon-001"
+      ]
+    },
+    {
+      "subtotal_key": "desk-funds",
+      "subtotal_type": "desk_id",
+      "gross_effective_notional": 110000000.0,
+      "add_on": 380000.0,
+      "position_ids": [
+        "fund-alpha-exotic-001",
+        "fund-beta-residual-001"
+      ]
+    },
+    {
+      "subtotal_key": "desk-mortgages",
+      "subtotal_type": "desk_id",
+      "gross_effective_notional": 800000000.0,
+      "add_on": 800000.0,
+      "position_ids": [
+        "behav-agency-mbs-001",
+        "behav-callable-deposit-001"
+      ]
+    },
+    {
+      "subtotal_key": "desk-structured",
+      "subtotal_type": "desk_id",
+      "gross_effective_notional": 525000000.0,
+      "add_on": 525000.0,
+      "position_ids": [
+        "gap-autocall-001",
+        "gap-barrier-note-001",
+        "corr-swap-equity-001",
+        "corr-dispersion-001",
+        "structured-multi-barrier-001"
+      ]
+    },
+    {
+      "subtotal_key": "desk-supervisory",
+      "subtotal_type": "desk_id",
+      "gross_effective_notional": 75000000.0,
+      "add_on": 75000.0,
+      "position_ids": [
+        "supdir-complex-deriv-001"
+      ]
+    },
+    {
+      "subtotal_key": "LE-IB-LDN",
+      "subtotal_type": "legal_entity",
+      "gross_effective_notional": 220000000.0,
+      "add_on": 220000.0,
+      "position_ids": [
+        "ctp-basket-4under-001",
+        "ctp-rainbow-3eq-001",
+        "nro-illiquid-vol-001"
+      ]
+    },
+    {
+      "subtotal_key": "LE-IB-NY",
+      "subtotal_type": "legal_entity",
+      "gross_effective_notional": 2505000000.0,
+      "add_on": 1980000.0,
+      "position_ids": [
+        "exotic-longevity-001",
+        "exotic-temperature-001",
+        "exotic-nat-cat-001",
+        "exotic-carbon-001",
+        "gap-autocall-001",
+        "gap-barrier-note-001",
+        "corr-swap-equity-001",
+        "corr-dispersion-001",
+        "structured-multi-barrier-001",
+        "supdir-complex-deriv-001",
+        "fund-alpha-exotic-001",
+        "fund-beta-residual-001",
+        "excl-listed-spx-opt-001",
+        "excl-lch-irs-001",
+        "excl-vanilla-call-001",
+        "excl-btb-weather-A",
+        "excl-btb-weather-B",
+        "excl-deliverable-fx-001",
+        "excl-us-tsy-option-001",
+        "excl-fallback-capital-001"
+      ]
+    },
+    {
+      "subtotal_key": "LE-RTL-NY",
+      "subtotal_type": "legal_entity",
+      "gross_effective_notional": 800000000.0,
+      "add_on": 800000.0,
+      "position_ids": [
+        "behav-agency-mbs-001",
+        "behav-callable-deposit-001"
+      ]
+    }
+  ]
+}
