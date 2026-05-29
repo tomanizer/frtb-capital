@@ -27,8 +27,6 @@ from __future__ import annotations
 from dataclasses import fields, is_dataclass
 from typing import Any, Iterable
 
-from frtb_common.status import UnsupportedRegulatoryFeatureError
-
 __all__ = [
     "MissingRegulatoryCitationsError",
     "assert_policy_has_regulatory_citations",
