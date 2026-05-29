@@ -94,6 +94,34 @@ def test_coverage_check_reports_missing_entries(tmp_path: Path, monkeypatch, cap
     assert "Missing coverage entries:" in capsys.readouterr().out
 
 
+def test_coverage_check_reports_missing_source_roots(tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.chdir(tmp_path)
+    _write_registry(tmp_path, [("frtb-alpha", "frtb_alpha", "implemented")])
+    coverage_json = tmp_path / "coverage.json"
+    coverage_json.write_text(json.dumps({"files": {}}), encoding="utf-8")
+
+    exit_code = coverage.main([str(coverage_json)])
+
+    assert exit_code == 1
+    assert (
+        "Missing or empty source roots:\n  packages/frtb-alpha/src/frtb_alpha"
+        in capsys.readouterr().out
+    )
+
+
+def test_coverage_check_reports_empty_source_roots(tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.chdir(tmp_path)
+    _write_source(tmp_path, "frtb-alpha", "frtb_alpha", ["demo_data.py"])
+    _write_registry(tmp_path, [("frtb-alpha", "frtb_alpha", "implemented")])
+    coverage_json = tmp_path / "coverage.json"
+    coverage_json.write_text(json.dumps({"files": {}}), encoding="utf-8")
+
+    exit_code = coverage.main([str(coverage_json)])
+
+    assert exit_code == 1
+    assert "Missing or empty source roots:" in capsys.readouterr().out
+
+
 def _write_source(root: Path, package: str, import_name: str, files: list[str]) -> None:
     source_root = root / "packages" / package / "src" / import_name
     source_root.mkdir(parents=True)

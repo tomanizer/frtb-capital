@@ -60,11 +60,16 @@ def main(argv: list[str] | None = None) -> int:
 
     measured: list[tuple[Path, float]] = []
     missing_report_entries: list[Path] = []
+    missing_or_empty_source_roots: list[Path] = []
     for target in targets:
         source_root = target.source_root.resolve()
-        for source_file in sorted(source_root.glob("*.py")):
-            if source_file.name in excluded_names:
-                continue
+        source_files = [
+            path for path in sorted(source_root.glob("*.py")) if path.name not in excluded_names
+        ]
+        if not source_files:
+            missing_or_empty_source_roots.append(source_root)
+            continue
+        for source_file in source_files:
             report_key = _coverage_key_for(source_file, files)
             if report_key is None:
                 missing_report_entries.append(source_file)
@@ -76,6 +81,10 @@ def main(argv: list[str] | None = None) -> int:
     for path, percent in measured:
         print(f"{path.relative_to(Path.cwd())}: {percent:.2f}%")
 
+    if missing_or_empty_source_roots:
+        print("Missing or empty source roots:")
+        for path in missing_or_empty_source_roots:
+            print(f"  {path.relative_to(Path.cwd())}")
     if missing_report_entries:
         print("Missing coverage entries:")
         for path in missing_report_entries:
@@ -84,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Modules below {args.floor:.2f}% coverage:")
         for path, percent in failures:
             print(f"  {path.relative_to(Path.cwd())}: {percent:.2f}%")
-    if missing_report_entries or failures:
+    if missing_or_empty_source_roots or missing_report_entries or failures:
         return 1
 
     print(f"All measured modules meet the {args.floor:.2f}% coverage floor.")
