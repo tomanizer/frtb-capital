@@ -1,0 +1,70 @@
+schema_version: 1
+name: FRTB_CHALLENGER_MODELS
+purpose: >
+  External implementation register for independent calculation reconciliation.
+  Challenger models are not regulatory sources and are governed by their licenses.
+
+challengers:
+  - id: frtb_net_frtb
+    repo: frtb-net/FRTB
+    role: primary_sa_cva_challenger
+    license: AGPL-3.0
+    use_policy: "Black-box benchmark only unless legal review approves deeper reuse."
+    components:
+      - frtb-sbm
+      - frtb-drc
+      - frtb-rrao
+      - frtb-cva
+
+  - id: ankitjha67_baselkit
+    repo: ankitjha67/baselkit
+    role: ima_and_partial_sa_challenger
+    license: Apache-2.0
+    use_policy: >
+      Useful for IMA ES/PLAT/NMRF and simplified credit-spread SBM checks.
+    components:
+      - frtb-ima
+      - frtb-drc
+      - frtb-rrao
+
+  - id: ultima_ib_ultima
+    repo: ultima-ib/ultima
+    role: aggregation_and_what_if_challenger
+    license: GPL-3.0_or_proprietary
+    use_policy: "Use for aggregation/performance/analytics behaviour, not formula oracle."
+    components:
+      - frtb-orchestration
+
+  - id: hemanth_frtb_sa_capital_engine
+    repo: hemanthreddyaeddulla/FRTB-SA-Capital-Engine
+    role: girr_fx_equity_delta_challenger
+    license: unknown
+    use_policy: "Use as a targeted SA delta challenger; inspect license before reuse."
+    components:
+      - frtb-sbm
+
+  - id: subhamsharma7_frtb_market_risk
+    repo: subhamsharma7/FRTB-Market-Risk
+    role: equity_delta_challenger
+    license: unknown
+    use_policy: "Use for targeted SBM equity delta sanity checks; inspect license before reuse."
+    components:
+      - frtb-sbm
+
+  - id: levan_danelia_frtb
+    repo: Levan-Danelia/FRTB
+    role: formula_triangulation_notebooks
+    license: unknown
+    use_policy: "Use for manual formula triangulation; not a formal oracle."
+    components:
+      - frtb-sbm
+      - frtb-drc
+      - frtb-rrao
+
+  - id: ivanshuer_frtb
+    repo: ivanshuer/FRTB
+    role: transparent_sbm_sanity_checker
+    license: unknown
+    use_policy: "Use for basic delta/vega/curvature sanity checks only."
+    components:
+      - frtb-sbm

@@ -1,0 +1,86 @@
+schema_version: 1
+component: frtb-sbm
+status: scaffolded
+source_register: ../sources.yml
+
+requirements:
+  - id: SBM-GIRR-DELTA-001
+    topic: GIRR delta bucket-level and cross-bucket aggregation
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - basel_bcbs_d457_2019_explanatory_note
+      - uk_pra_ps1_26_basel_3_1_final_rules
+      - us_fed_occ_fdic_2026_capital_framework_proposal
+    code_refs:
+      - packages/frtb-sbm/src/frtb_sbm/
+    test_refs:
+      - packages/frtb-sbm/tests/
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb_net_frtb
+      - hemanth_frtb_sa_capital_engine
+    notes: "Implement before vega/curvature to exercise bucket/rho/gamma scaffolding."
+
+  - id: SBM-FX-DELTA-001
+    topic: FX delta, reporting currency, major pairs, and historical FX-rate treatment
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - uk_pra_ps1_26_basel_3_1_final_rules
+      - eu_eba_non_trading_book_fx_commodity_rts
+    code_refs:
+      - packages/frtb-sbm/src/frtb_sbm/
+    test_refs:
+      - packages/frtb-sbm/tests/
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb_net_frtb
+      - hemanth_frtb_sa_capital_engine
+    notes: "Keep PRA historical-FX treatment separate from generic Basel profile."
+
+  - id: SBM-EQUITY-DELTA-001
+    topic: Equity delta bucket assignment and correlation scenarios
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - basel_bcbs_d457_2019_explanatory_note
+    code_refs:
+      - packages/frtb-sbm/src/frtb_sbm/
+    test_refs:
+      - packages/frtb-sbm/tests/
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb_net_frtb
+      - hemanth_frtb_sa_capital_engine
+      - subhamsharma7_frtb_market_risk
+    notes: "Use small deterministic bucket-assignment portfolios first."
+
+  - id: SBM-VEGA-001
+    topic: Vega sensitivities and risk-class aggregation
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - basel_bcbs_d457_2019_explanatory_note
+    code_refs:
+      - packages/frtb-sbm/src/frtb_sbm/
+    test_refs:
+      - packages/frtb-sbm/tests/
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb_net_frtb
+      - levan_danelia_frtb
+      - ivanshuer_frtb
+    notes: "Record option-maturity and underlying-maturity conventions explicitly."
+
+  - id: SBM-CURVATURE-001
+    topic: Curvature scenario selection and correlation treatment
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - basel_bcbs_d457_2019_explanatory_note
+    code_refs:
+      - packages/frtb-sbm/src/frtb_sbm/
+    test_refs:
+      - packages/frtb-sbm/tests/
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb_net_frtb
+      - levan_danelia_frtb
+      - ivanshuer_frtb
+    notes: "Explicitly record sign convention and correlation-squaring convention."

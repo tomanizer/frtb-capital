@@ -1,0 +1,33 @@
+schema_version: 1
+component: frtb-rrao
+status: scaffolded
+source_register: ../sources.yml
+
+requirements:
+  - id: RRAO-SCOPE-001
+    topic: Instruments subject to residual risk add-on
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - eu_eba_rts_residual_risk_add_on
+      - uk_pra_ps1_26_basel_3_1_final_rules
+    code_refs:
+      - packages/frtb-rrao/src/frtb_rrao/
+    test_refs:
+      - packages/frtb-rrao/tests/
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb_net_frtb
+      - ankitjha67_baselkit
+    notes: "UK RRAO permissions regime is not generic Basel behaviour."
+
+  - id: RRAO-HEDGE-EXEMPTION-001
+    topic: Hedge exemption treatment for residual-risk instruments
+    source_refs:
+      - eu_eba_rts_rrao_hedge_exemption
+      - uk_pra_ps1_26_basel_3_1_final_rules
+    code_refs:
+      - packages/frtb-rrao/src/frtb_rrao/
+    test_refs:
+      - packages/frtb-rrao/tests/
+    coverage_status: not_implemented
+    notes: "Model as explicit jurisdictional policy; do not silently net."

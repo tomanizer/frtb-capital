@@ -1,0 +1,24 @@
+schema_version: 1
+regime_id: US_MARKET_RISK_2026_PROPOSED
+jurisdiction: US
+status: proposed_rule
+primary_sources:
+  - us_fed_occ_fdic_2026_capital_framework_proposal
+  - us_fed_occ_fdic_2023_basel_endgame_npr
+
+components:
+  frtb-ima:
+    status: proposed_rule_only
+    notes:
+      - "Do not treat as final U.S. regulatory capital."
+      - "Use 2023 NPR only as a historical interpretive aid."
+  frtb-sbm:
+    status: proposed_rule_only
+  frtb-drc:
+    status: proposed_rule_only
+  frtb-rrao:
+    status: proposed_rule_only
+  frtb-orchestration:
+    status: proposed_rule_only
+    notes:
+      - "Market-risk scope applies only when the bank is in scope for trading activity."

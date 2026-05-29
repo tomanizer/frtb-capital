@@ -1,0 +1,35 @@
+schema_version: 1
+component: frtb-orchestration
+status: scaffolded
+source_register: ../sources.yml
+
+requirements:
+  - id: ORCH-SA-TOTAL-001
+    topic: Standardised Approach total capital assembly from SBM, DRC, and RRAO
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - uk_pra_ps1_26_basel_3_1_final_rules
+      - us_fed_occ_fdic_2026_capital_framework_proposal
+    code_refs:
+      - packages/frtb-orchestration/src/frtb_orchestration/
+    test_refs:
+      - packages/frtb-orchestration/tests/
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb_net_frtb
+      - ultima_ib_ultima
+    notes: "Orchestration owns SA composition and IMA fallback routing."
+
+  - id: ORCH-REGIME-001
+    topic: Jurisdictional profile selection and effective-date control
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - uk_pra_ps1_26_basel_3_1_final_rules
+      - eu_crr3_2024_1623
+      - us_fed_occ_fdic_2026_capital_framework_proposal
+    code_refs:
+      - packages/frtb-orchestration/src/frtb_orchestration/
+    test_refs:
+      - packages/frtb-orchestration/tests/
+    coverage_status: not_implemented
+    notes: "Run-level policy selection should be immutable and auditable."

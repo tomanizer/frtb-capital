@@ -12,6 +12,7 @@ model.
 | [Modules](modules/README.md) | Component documentation for implemented and scaffolded capital modules. |
 | [ADRs](decisions/) | Architecture and material model decisions. |
 | [Validation packs](VALIDATION_PACK.md) | Suite index for validation evidence and package review bundles. |
+| [Regulatory corpus](regulatory/README.md) | Source register, jurisdictional profiles, and component regulatory crosswalks. |
 | [Quality](quality/) | Coverage, mutation-testing, and engineering-quality evidence. |
 | [Performance](performance/) | Benchmark baselines and target-scale evidence. |
 | [Release process](RELEASE_PROCESS.md) | Versioning, approval, tagging, and release-note policy. |

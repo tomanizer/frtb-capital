@@ -1,0 +1,27 @@
+schema_version: 1
+regime_id: EU_CRR3_FRTB
+jurisdiction: EU
+status: final_rule_and_technical_standards
+primary_sources:
+  - eu_crr3_2024_1623
+  - eu_eba_ima_under_frtb_technical_standards
+  - eu_eba_rts_nmrf_capitalisation
+  - eu_eba_rts_gross_jtd_default_risk
+  - eu_eba_rts_residual_risk_add_on
+  - ecb_guide_to_internal_models_2024
+
+components:
+  frtb-ima:
+    notes:
+      - "Use EBA RTS for IMA liquidity horizons, PLA/backtesting, and RFET."
+      - "Use EBA NMRF RTS for EU-specific NMRF capitalisation details."
+      - "Use ECB guide for governance expectations, not formula precedence."
+  frtb-drc:
+    notes:
+      - "Use gross JTD RTS for EU DRC input mechanics."
+  frtb-rrao:
+    notes:
+      - "Use RRAO RTS and hedge-exemption RTS for scope and classification."
+  frtb-sbm:
+    notes:
+      - "Keep banking-book FX/commodity treatment profile-specific."

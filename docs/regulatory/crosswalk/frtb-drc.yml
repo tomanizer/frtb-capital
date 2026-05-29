@@ -1,0 +1,34 @@
+schema_version: 1
+component: frtb-drc
+status: scaffolded
+source_register: ../sources.yml
+
+requirements:
+  - id: DRC-JTD-001
+    topic: Gross and net jump-to-default calculation
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - eu_eba_rts_gross_jtd_default_risk
+    code_refs:
+      - packages/frtb-drc/src/frtb_drc/
+    test_refs:
+      - packages/frtb-drc/tests/
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb_net_frtb
+      - ankitjha67_baselkit
+    notes: "Separate non-securitisation, securitisation non-CTP, and CTP cases."
+
+  - id: DRC-HBR-001
+    topic: Hedge benefit ratio and netting constraints
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - eu_eba_rts_gross_jtd_default_risk
+    code_refs:
+      - packages/frtb-drc/src/frtb_drc/
+    test_refs:
+      - packages/frtb-drc/tests/
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb_net_frtb
+    notes: "Keep issuer, seniority, maturity, and tranche grouping auditable."

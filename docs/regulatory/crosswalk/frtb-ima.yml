@@ -1,0 +1,73 @@
+schema_version: 1
+component: frtb-ima
+status: implemented_prototype
+source_register: ../sources.yml
+
+requirements:
+  - id: IMA-ES-001
+    topic: Expected shortfall confidence level and empirical tail convention
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - eu_eba_ima_under_frtb_technical_standards
+      - us_fed_occ_fdic_2026_capital_framework_proposal
+    code_refs:
+      - packages/frtb-ima/src/frtb_ima/expected_shortfall.py
+    test_refs:
+      - packages/frtb-ima/tests/
+    coverage_status: implemented_with_model_assumptions
+    notes: "Confirm tail interpolation convention by regime."
+
+  - id: IMA-LH-001
+    topic: Liquidity horizon mapping and nested ES construction
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - eu_eba_ima_under_frtb_technical_standards
+    code_refs:
+      - packages/frtb-ima/src/frtb_ima/liquidity_horizon_mapping.py
+      - packages/frtb-ima/src/frtb_ima/liquidity_horizon.py
+    test_refs:
+      - packages/frtb-ima/tests/
+    coverage_status: implemented_with_policy_profile_deltas
+    notes: "Keep separate regime parameters for Basel, EU, PRA, and US profiles."
+
+  - id: IMA-PLA-001
+    topic: P&L attribution test
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - eu_eba_ima_under_frtb_technical_standards
+      - us_fed_occ_fdic_2026_capital_framework_proposal
+    code_refs:
+      - packages/frtb-ima/src/frtb_ima/pla.py
+    test_refs:
+      - packages/frtb-ima/tests/
+    coverage_status: implemented_with_jurisdictional_variants
+    notes: "Keep EU/PRA KS/Spearman treatment separate from U.S. assumptions."
+
+  - id: IMA-NMRF-001
+    topic: NMRF stress scenario and SES aggregation
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - eu_eba_rts_nmrf_capitalisation
+      - us_fed_occ_fdic_2026_capital_framework_proposal
+    code_refs:
+      - packages/frtb-ima/src/frtb_ima/nmrf.py
+      - packages/frtb-ima/src/frtb_ima/nmrf_stress_spec.py
+      - packages/frtb-ima/src/frtb_ima/nmrf_valuation_run.py
+    test_refs:
+      - packages/frtb-ima/tests/
+    coverage_status: implemented_prototype
+    notes: "Keep upstream valuation/pricing outside package boundary."
+
+  - id: IMA-RFET-001
+    topic: Risk factor eligibility test and real-price evidence
+    source_refs:
+      - basel_bcbs_d457_2019_market_risk
+      - eu_eba_ima_under_frtb_technical_standards
+      - us_fed_occ_fdic_2026_capital_framework_proposal
+    code_refs:
+      - packages/frtb-ima/src/frtb_ima/rfet.py
+      - packages/frtb-ima/src/frtb_ima/rfet_evidence.py
+    test_refs:
+      - packages/frtb-ima/tests/
+    coverage_status: implemented_prototype
+    notes: "Vendor/data-pooling rules remain profile-specific."

@@ -3,12 +3,12 @@ REPO ?= tomanizer/frtb-capital
 BRANCH ?= main
 
 # Paths to lint and typecheck. Notebooks are excluded.
-LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts scripts tests
+LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts scripts tests tools
 MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/frtb-ima.json
 
 .PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
-.PHONY: test test-no-cov docs-check import-smoke maturity-check quality-control build
+.PHONY: test test-no-cov docs-check regulatory-corpus import-smoke maturity-check quality-control build
 .PHONY: examples-check notebooks-check
 .PHONY: release-artifacts mutation mutation-rrao benchmark rrao-benchmark
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
@@ -43,7 +43,7 @@ test:
 test-no-cov:
 	uv run pytest packages
 
-docs-check:
+docs-check: regulatory-corpus
 	python3 scripts/ci/check_markdown_links.py
 	python3 scripts/ci/check_requirement_yaml.py
 
@@ -55,6 +55,9 @@ maturity-check:
 	uv run python scripts/ci/check_package_maturity.py --json-output dist/quality/package-maturity.json
 
 quality-control: import-smoke maturity-check
+
+regulatory-corpus:
+	python3 tools/regulatory/lint_regulatory_corpus.py
 
 build:
 	rm -rf dist/release
