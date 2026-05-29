@@ -31,7 +31,7 @@ are implemented, but no RRAO capital result is produced yet.
 | --- | --- | --- |
 | Public package boundary | Scaffold | Already present in `scaffold.py`; remains explicit-failure until issue #87. |
 | Regulatory source pack | Partial | Issue #81 creates the package-local traceability skeleton. |
-| Canonical data models | Planned | Issue #82. |
+| Canonical data models and validation | Implemented | Issue #82 added frozen public models and deterministic input validation; calculation remains scaffolded. |
 | Rule profiles and reference data | Planned | Issue #83. |
 | Classification and exclusions | Planned | Issue #85. |
 | Line add-ons and subtotals | Planned | Issue #86. |
@@ -54,4 +54,3 @@ Before treating any RRAO change as implementation-ready, verify:
    inspiration.
 5. New runtime code stays within package boundaries and does not import sibling
    capital packages.
-
