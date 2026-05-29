@@ -452,3 +452,63 @@ _RISK_WEIGHT_RULES: Mapping[tuple[str, str, CreditQuality], RiskWeightRule] = Ma
         ),
     }
 )
+
+
+def profile_reference_data_payload(profile_id: str) -> dict[str, object]:
+    """Return deterministic reference-data payload for profile hashing."""
+
+    lgd_rules = [
+        {
+            "seniority": seniority.value,
+            "defaulted": defaulted,
+            "lgd_rate": rule.lgd_rate,
+            "citation_id": rule.citation_id,
+            "description": rule.description,
+        }
+        for (rule_profile_id, seniority, defaulted), rule in sorted(
+            _LGD_RULES.items(),
+            key=lambda item: (item[0][0], item[0][1].value, item[0][2]),
+        )
+        if rule_profile_id == profile_id
+    ]
+    maturity_policy = _MATURITY_POLICIES.get(profile_id)
+    maturity_payload = (
+        {
+            "profile_id": maturity_policy.profile_id,
+            "floor_years": maturity_policy.floor_years,
+            "full_weight_years": maturity_policy.full_weight_years,
+            "citation_id": maturity_policy.citation_id,
+        }
+        if maturity_policy is not None
+        else None
+    )
+    bucket_definitions = [
+        {
+            "bucket_key": bucket_key,
+            "bucket_type": bucket.bucket_type.value,
+            "risk_class": bucket.risk_class.value,
+            "citation_id": bucket.citation_id,
+            "description": bucket.description,
+        }
+        for (rule_profile_id, bucket_key), bucket in sorted(_BUCKET_DEFINITIONS.items())
+        if rule_profile_id == profile_id
+    ]
+    risk_weight_rules = [
+        {
+            "bucket_key": bucket_key,
+            "credit_quality": credit_quality.value,
+            "risk_weight": rule.risk_weight,
+            "citation_id": rule.citation_id,
+        }
+        for (rule_profile_id, bucket_key, credit_quality), rule in sorted(
+            _RISK_WEIGHT_RULES.items(),
+            key=lambda item: (item[0][0], item[0][1], item[0][2].value),
+        )
+        if rule_profile_id == profile_id
+    ]
+    return {
+        "lgd_rules": lgd_rules,
+        "maturity_policy": maturity_payload,
+        "bucket_definitions": bucket_definitions,
+        "risk_weight_rules": risk_weight_rules,
+    }
