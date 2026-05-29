@@ -251,6 +251,9 @@ Regulation (EU) 2022/2328.
 
 **Tests/checks:** orchestration package tests.
 
+**Status:** Implemented by the orchestration-side RRAO result handoff. SA
+aggregation still fails explicitly until SBM and DRC outputs are compatible.
+
 ## Issue 12: Add performance and replay controls
 
 **Goal:** Verify deterministic behavior and practical runtime at synthetic
