@@ -21,3 +21,12 @@ All notable changes to `frtb-drc` will be documented here.
   HBR and bucket-floor audit metadata.
 - Added public non-securitisation DRC API results with deterministic audit and
   replay snapshots.
+
+### Fixed
+
+- Reject positions that fall outside a scoped DRC desk or legal-entity run
+  before aggregation.
+- Reject uncited DRC positions under the strict citation policy before capital
+  is produced.
+- Bumped `frtb-drc` package metadata for the capital-producing non-securitisation
+  implementation.

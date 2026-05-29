@@ -12,9 +12,17 @@ class DrcInputError(ValueError):
     """Raised when canonical DRC inputs fail deterministic validation."""
 
 
-def validate_position(position: DrcPosition) -> DrcPosition:
+_STRICT_CITATION_POLICY = "strict"
+
+
+def validate_position(
+    position: DrcPosition,
+    *,
+    citation_policy: str = _STRICT_CITATION_POLICY,
+) -> DrcPosition:
     """Validate one canonical DRC position and return it unchanged."""
 
+    _validate_citation_policy(citation_policy)
     _require_non_empty(position.position_id, "position_id")
     _require_non_empty(position.source_row_id, "source_row_id")
     _require_non_empty(position.desk_id, "desk_id")
@@ -28,6 +36,7 @@ def validate_position(position: DrcPosition) -> DrcPosition:
     _require_non_empty(position.lineage.source_row_id, "lineage.source_row_id")
     if position.source_row_id != position.lineage.source_row_id:
         raise DrcInputError("source_row_id must match lineage.source_row_id")
+    _require_citation_ids(position)
 
     _require_finite(position.notional, "notional")
     _require_finite(position.maturity_years, "maturity_years")
@@ -54,13 +63,18 @@ def validate_position(position: DrcPosition) -> DrcPosition:
     return position
 
 
-def validate_positions(positions: Iterable[DrcPosition]) -> tuple[DrcPosition, ...]:
+def validate_positions(
+    positions: Iterable[DrcPosition],
+    *,
+    citation_policy: str = _STRICT_CITATION_POLICY,
+) -> tuple[DrcPosition, ...]:
     """Validate a deterministic collection of canonical DRC positions."""
 
+    _validate_citation_policy(citation_policy)
     validated: list[DrcPosition] = []
     seen: set[str] = set()
     for position in positions:
-        validate_position(position)
+        validate_position(position, citation_policy=citation_policy)
         if position.position_id in seen:
             raise DrcInputError(f"duplicate position_id: {position.position_id}")
         seen.add(position.position_id)
@@ -84,6 +98,19 @@ def _validate_securitisation_identity(position: DrcPosition) -> None:
 def _validate_ctp_identity(position: DrcPosition) -> None:
     if _is_blank(position.tranche_id) and _is_blank(position.index_series_id):
         raise DrcInputError("CTP positions require tranche_id or index_series_id")
+
+
+def _validate_citation_policy(citation_policy: str) -> None:
+    if citation_policy.strip().lower() != _STRICT_CITATION_POLICY:
+        raise DrcInputError(f"unsupported citation_policy: {citation_policy}")
+
+
+def _require_citation_ids(position: DrcPosition) -> None:
+    if not position.citation_ids:
+        raise DrcInputError("citation_ids must contain at least one citation")
+    for citation_id in position.citation_ids:
+        if not isinstance(citation_id, str) or _is_blank(citation_id):
+            raise DrcInputError("citation_ids must contain non-empty citations")
 
 
 def _require_non_empty(value: str | None, field_name: str) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from importlib.metadata import version as package_version
 
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
@@ -31,6 +32,8 @@ def test_calculate_drc_capital_wires_nonsec_chain_and_audit_lineage() -> None:
 
     assert result.package_name == "frtb-drc"
     assert result.package_version
+    assert result.package_version == package_version("frtb-drc")
+    assert result.package_version not in {"0.0.0+unknown", "0.1.0"}
     assert result.input_count == 2
     assert result.rejected_input_count == 0
     assert len(result.input_hash) == 64
@@ -93,6 +96,47 @@ def test_public_api_rejects_ambiguous_net_credit_quality() -> None:
         )
 
 
+def test_public_api_rejects_position_outside_context_desk_scope() -> None:
+    with pytest.raises(DrcInputError, match="desk_id"):
+        calculate_drc_capital(
+            (_position("desk-b", DefaultDirection.LONG, 100.0, desk_id="desk-b"),),
+            context=_context(desk_id="desk-a"),
+        )
+
+
+def test_public_api_rejects_position_outside_context_legal_entity_scope() -> None:
+    with pytest.raises(DrcInputError, match="legal_entity"):
+        calculate_drc_capital(
+            (_position("le-b", DefaultDirection.LONG, 100.0, legal_entity="bank-eu"),),
+            context=_context(legal_entity="bank-na"),
+        )
+
+
+def test_public_api_accepts_populated_position_scope_when_context_is_unscoped() -> None:
+    result = calculate_drc_capital(
+        (
+            _position(
+                "desk-b",
+                DefaultDirection.LONG,
+                100.0,
+                desk_id="desk-b",
+                legal_entity="bank-eu",
+            ),
+        ),
+        context=_context(),
+    )
+
+    assert result.input_count == 1
+
+
+def test_public_api_rejects_uncited_position_under_strict_policy() -> None:
+    with pytest.raises(DrcInputError, match="citation_ids"):
+        calculate_drc_capital(
+            (_position("uncited", DefaultDirection.LONG, 100.0, citation_ids=()),),
+            context=_context(),
+        )
+
+
 def test_public_api_preserves_zero_lgd_audit_records_with_zero_capital() -> None:
     result = calculate_drc_capital(
         (
@@ -113,12 +157,24 @@ def test_public_api_preserves_zero_lgd_audit_records_with_zero_capital() -> None
     assert result.categories[0].bucket_results == ()
 
 
-def _context() -> DrcCalculationContext:
+def _context(
+    *,
+    run_id: str = "run-public-api",
+    calculation_date: date = date(2026, 5, 29),
+    base_currency: str = "USD",
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
+    desk_id: str = "",
+    legal_entity: str = "",
+    citation_policy: str = "strict",
+) -> DrcCalculationContext:
     return DrcCalculationContext(
-        run_id="run-public-api",
-        calculation_date=date(2026, 5, 29),
-        base_currency="USD",
-        profile_id=US_NPR_2_0_PROFILE_ID,
+        run_id=run_id,
+        calculation_date=calculation_date,
+        base_currency=base_currency,
+        profile_id=profile_id,
+        desk_id=desk_id,
+        legal_entity=legal_entity,
+        citation_policy=citation_policy,
     )
 
 
@@ -133,12 +189,15 @@ def _position(
     instrument_type: DrcInstrumentType = DrcInstrumentType.BOND,
     seniority: DrcSeniority = DrcSeniority.SENIOR_DEBT,
     credit_quality: CreditQuality = CreditQuality.INVESTMENT_GRADE,
+    desk_id: str = "desk-a",
+    legal_entity: str = "bank-na",
+    citation_ids: tuple[str, ...] = ("US_NPR_210_SCOPE",),
 ) -> DrcPosition:
     return DrcPosition(
         position_id=position_id,
         source_row_id=f"row-{position_id}",
-        desk_id="desk-a",
-        legal_entity="bank-na",
+        desk_id=desk_id,
+        legal_entity=legal_entity,
         risk_class=risk_class,
         instrument_type=instrument_type,
         default_direction=direction,
@@ -159,5 +218,5 @@ def _position(
             source_row_id=f"row-{position_id}",
             source_column_map={"position_id": "position_id", "issuer_id": "issuer_id"},
         ),
-        citation_ids=("US_NPR_210_SCOPE",),
+        citation_ids=citation_ids,
     )

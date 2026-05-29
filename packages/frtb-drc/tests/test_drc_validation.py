@@ -65,6 +65,22 @@ def test_validate_position_rejects_missing_lineage() -> None:
         validate_position(_position(lineage=None))
 
 
+def test_validate_position_rejects_missing_citation_ids() -> None:
+    with pytest.raises(DrcInputError, match="citation_ids must contain at least one citation"):
+        validate_position(_position(citation_ids=()))
+
+
+@pytest.mark.parametrize("citation_ids", [("",), ("  ",)])
+def test_validate_position_rejects_blank_citation_ids(citation_ids: tuple[str, ...]) -> None:
+    with pytest.raises(DrcInputError, match="citation_ids must contain non-empty citations"):
+        validate_position(_position(citation_ids=citation_ids))
+
+
+def test_validate_position_rejects_unsupported_citation_policy() -> None:
+    with pytest.raises(DrcInputError, match="unsupported citation_policy"):
+        validate_position(_position(), citation_policy="permissive")
+
+
 def test_validate_position_rejects_incomplete_lineage() -> None:
     lineage = DrcSourceLineage(
         source_system="test",
@@ -175,6 +191,7 @@ def _position(**overrides: object) -> DrcPosition:
             source_file="positions.csv",
             source_row_id="row-1",
         ),
+        "citation_ids": ("US_NPR_210_SCOPE",),
     }
     values.update(overrides)
     return DrcPosition(**values)  # type: ignore[arg-type]

@@ -151,6 +151,7 @@ def _position(**overrides: object) -> DrcPosition:
             source_file="positions.csv",
             source_row_id=str(overrides.get("source_row_id", "row-1")),
         ),
+        "citation_ids": ("US_NPR_210_SCOPE",),
     }
     values.update(overrides)
     return DrcPosition(**values)  # type: ignore[arg-type]
