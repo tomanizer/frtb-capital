@@ -392,11 +392,18 @@ class DrcCapitalContribution:
     reason: str = ""
 
 @dataclass(frozen=True)
+class DrcBucketImpactDelta:
+    bucket_key: str
+    baseline_capital: float
+    candidate_capital: float
+    delta: float
+
+@dataclass(frozen=True)
 class DrcImpactResult:
     baseline_run_id: str
     candidate_run_id: str
     total_delta: float
-    bucket_deltas: Mapping[str, float]
+    bucket_deltas: tuple[DrcBucketImpactDelta, ...]
     contribution_records: tuple[DrcCapitalContribution, ...] = ()
 ```
 
@@ -414,7 +421,10 @@ that moves an exposure to a different bucket or category.
 - Inputs and outputs use stable ids, not object identities.
 - All grouping keys are explicit strings or enums.
 - Intermediate records preserve enough lineage for later impact and
-  attribution: position id, source row id, netting group id, bucket key, risk class, and run id.
+  attribution through stable joins: position id and source row lineage on
+  inputs, gross/scaled/net JTD ids on intermediates, netting group id and bucket
+  key on aggregation records, risk class on category records, and run id on the
+  public capital result.
 - A position has exactly one DRC risk class.
 - A supported position has exactly one bucket under the selected profile.
 - Direction is never inferred from notional sign alone.
