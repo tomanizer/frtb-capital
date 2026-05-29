@@ -25,6 +25,7 @@ from frtb_drc.data_models import (
 )
 from frtb_drc.gross_jtd import calculate_gross_jtd, calculate_gross_jtds
 from frtb_drc.maturity import calculate_maturity_weight, scale_gross_jtd, scale_gross_jtds
+from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.reference_data import (
     BucketDefinition,
     LgdRule,
@@ -75,6 +76,7 @@ __all__ = [
     "MaturityPolicy",
     "MaturityScaledJtd",
     "NetJtd",
+    "NettingInput",
     "RejectedOffset",
     "RiskWeightRule",
     "__version__",
@@ -82,6 +84,7 @@ __all__ = [
     "calculate_gross_jtd",
     "calculate_gross_jtds",
     "calculate_maturity_weight",
+    "calculate_net_jtds",
     "ensure_risk_class_supported",
     "get_bucket_definition",
     "get_lgd_rule",

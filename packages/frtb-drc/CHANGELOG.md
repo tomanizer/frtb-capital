@@ -15,3 +15,5 @@ All notable changes to `frtb-drc` will be documented here.
   unsupported risk-class gates.
 - Added cited maturity-scaling APIs with audit branch metadata for maturity
   floors.
+- Added same-obligor non-securitisation netting with seniority-aware offset
+  rejection records.
