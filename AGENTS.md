@@ -57,6 +57,30 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
 - **Per-package versioning.** Bump only the affected package's version.
 - **Material changes need ADRs.** See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
+## Quality control plane
+
+- Run `make agent-guard` and `make quality-control` before pushing any branch
+  that changes package code, package metadata, model documentation, regulatory
+  traceability, CI controls, or repository governance files.
+- For substantive package changes, also run `make check` before review. If the
+  full suite is impractical, run the affected package tests plus
+  `make quality-control`, and state the narrower validation in the PR.
+- Keep [`docs/quality/package_maturity.toml`](docs/quality/package_maturity.toml)
+  in sync with package additions, removals, renames, or implementation-status
+  changes. Every package under `packages/` must be represented exactly once in
+  the registry.
+- Do not satisfy maturity gates with placeholder evidence. If documentation,
+  tests, citations, or public entrypoints are not ready, keep the package at the
+  lower maturity profile until real evidence exists.
+- Public package contracts referenced by the maturity registry must be top-level
+  imports, such as `frtb_<x>:PACKAGE_METADATA` and public calculation entrypoints.
+  Avoid relying on private modules to satisfy registry gates.
+- Add package-local tests for new runtime behavior and reference the relevant
+  tests in the package maturity registry when the maturity gate depends on them.
+- Treat the remote `quality-control` CI job as mandatory. Fix failures before
+  review or merge, and do not bypass the check without a documented governance
+  reason.
+
 ## Review focus
 
 When reviewing or changing code, focus on:
