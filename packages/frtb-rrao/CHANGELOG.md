@@ -23,3 +23,6 @@ All notable changes to `frtb-rrao` will be documented here.
   checks.
 - Added the synthetic RRAO v1 validation fixture pack with expected outputs,
   invalid cases, pinned hashes, and replay tests.
+- Added the optional standard-library CRIF/FNet adapter with source lineage,
+  mapping warnings, rejected-row audit records, and no dataframe runtime
+  dependency.

@@ -105,3 +105,10 @@ requirements:
     modules: [tests/fixtures/rrao_v1]
     tests: [tests/test_fixture_workflow.py]
     notes: Covers exotic examples, other residual-risk examples, supervisor-directed inclusion, cited exclusions, invalid evidence, pinned hashes, and deterministic replay.
+  - id: RRAO-ADAPTER-001
+    title: Optional CRIF/FNet adapter boundary
+    source: Public implementation references for adapter shape; Basel MAR23 and proposed U.S. section __.211 for canonical output evidence
+    status: implemented
+    modules: [src/frtb_rrao/crif.py]
+    tests: [tests/test_crif.py]
+    notes: Converts supported mapping rows into canonical positions, records lineage and warnings, rejects ambiguous non-exotic and notional conventions, and adds no dataframe runtime dependency.
