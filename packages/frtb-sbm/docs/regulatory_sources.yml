@@ -1,0 +1,89 @@
+schema_version: 1
+name: FRTB_SBM_REGULATORY_SOURCES
+purpose: "Link-only source manifest for SBM traceability, review, and optional downstream retrieval."
+text_policy: "Do not vendor full regulatory text in the core package. Keep official URLs, section hints, source status, and reuse notes here."
+
+sources:
+  - id: basel_mar20_standardised_approach
+    family: BASEL_FRTB_SA
+    jurisdiction: GLOBAL
+    title: "Basel Framework MAR20, Standardised approach"
+    url: "https://www.bis.org/basel_framework/chapter/MAR/20.htm"
+    section_hint: "MAR20.1-MAR20.4 define SA composition and monthly calculation boundary."
+    status: baseline_reference
+    reuse_note: "Link-only BIS reference; do not vendor text without permission review."
+    module_paths:
+      - src/frtb_sbm/scaffold.py
+      - src/frtb_sbm/capital.py
+    requirement_ids:
+      - SBM-BOUNDARY-001
+
+  - id: basel_mar21_sensitivities_based_method
+    family: BASEL_FRTB_SBM
+    jurisdiction: GLOBAL
+    title: "Basel Framework MAR21, Sensitivities-based method"
+    url: "https://www.bis.org/basel_framework/chapter/MAR/21.htm"
+    section_hint: "MAR21.1-MAR21.101 cover risk classes, delta/vega/curvature, buckets, risk weights, intra-bucket and inter-bucket aggregation, and correlation scenarios."
+    status: baseline_reference
+    reuse_note: "Link-only BIS reference; do not vendor text without permission review."
+    module_paths:
+      - src/frtb_sbm/data_models.py
+      - src/frtb_sbm/validation.py
+      - src/frtb_sbm/regimes.py
+      - src/frtb_sbm/reference_data.py
+      - src/frtb_sbm/weighted_sensitivity.py
+      - src/frtb_sbm/aggregation.py
+      - src/frtb_sbm/capital.py
+      - src/frtb_sbm/audit.py
+    requirement_ids:
+      - SBM-DATA-001
+      - SBM-REF-001
+      - SBM-WS-001
+      - SBM-AGG-001
+      - SBM-AGG-002
+      - SBM-AUDIT-001
+
+  - id: us_npr_2_0_91_fr_14952
+    family: US_NPR_2_0
+    jurisdiction: US
+    title: "Federal Register 91 FR 14952, Regulatory Capital Rule market-risk proposal"
+    url: "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
+    section_hint: "Section V.A.7.a and pages around 91 FR 15037 describe the six-step standardized non-default capital requirement."
+    status: proposed_rule_reference
+    reuse_note: "GovInfo is the primary U.S. NPR source link for this package."
+    module_paths:
+      - src/frtb_sbm/regimes.py
+      - src/frtb_sbm/reference_data.py
+      - src/frtb_sbm/weighted_sensitivity.py
+      - src/frtb_sbm/aggregation.py
+      - src/frtb_sbm/capital.py
+    requirement_ids:
+      - SBM-REF-001
+      - SBM-WS-001
+      - SBM-AGG-001
+      - SBM-AGG-002
+
+  - id: eu_crr3_2024_1623
+    family: EU_CRR3
+    jurisdiction: EU
+    title: "Regulation (EU) 2024/1623 (CRR3) consolidated text"
+    url: "https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng"
+    section_hint: "Articles 325e-325az and related market-risk provisions for EU comparison profile work."
+    status: comparison_reference
+    reuse_note: "EU profile support is planned after the Basel MAR21 phase-1 GIRR delta slice."
+    module_paths: []
+    requirement_ids:
+      - SBM-REF-001
+
+  - id: isda_crif_convention
+    family: IMPLEMENTATION_SUPPORT
+    jurisdiction: GLOBAL
+    title: "ISDA CRIF field convention"
+    url: "https://www.isda.org/a/oNTE6/Tech-ISDA-Standard-Initial-Margin-Model.pdf"
+    section_hint: "Adapter mapping inspiration only; not a regulatory source."
+    status: adapter_reference
+    reuse_note: "Future CRIF adapter work only; calculation kernels must not depend on CRIF."
+    module_paths:
+      - src/frtb_sbm/crif.py
+    requirement_ids:
+      - SBM-CRIF-001
