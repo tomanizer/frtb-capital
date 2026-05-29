@@ -98,4 +98,3 @@ def test_regulatory_docs_cross_link_manifest_and_model_front_door() -> None:
     assert "regulatory_sources.yml" in assumptions
     assert "docs/REGULATORY_TRACEABILITY.md" in readme
     assert "Package regulatory traceability" in model_docs
-
