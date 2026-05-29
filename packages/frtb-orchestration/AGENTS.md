@@ -4,8 +4,9 @@
 
 ## Current status
 
-The package is scaffolded only. It must fail explicitly for aggregation entry
-points until component packages produce typed, audited outputs.
+The package has a partial handoff contract for recognising RRAO outputs. It
+must still fail explicitly for aggregation entry points until component
+packages produce compatible typed, audited outputs.
 
 ## Rules
 
