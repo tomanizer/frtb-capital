@@ -24,6 +24,7 @@ from frtb_drc.data_models import (
     RejectedOffset,
 )
 from frtb_drc.gross_jtd import calculate_gross_jtd, calculate_gross_jtds
+from frtb_drc.maturity import calculate_maturity_weight, scale_gross_jtd, scale_gross_jtds
 from frtb_drc.reference_data import (
     BucketDefinition,
     LgdRule,
@@ -80,6 +81,7 @@ __all__ = [
     "calculate_drc_capital",
     "calculate_gross_jtd",
     "calculate_gross_jtds",
+    "calculate_maturity_weight",
     "ensure_risk_class_supported",
     "get_bucket_definition",
     "get_lgd_rule",
@@ -90,6 +92,8 @@ __all__ = [
     "iter_lgd_rules",
     "iter_risk_weight_rules",
     "profile_content_hash",
+    "scale_gross_jtd",
+    "scale_gross_jtds",
     "validate_position",
     "validate_positions",
 ]
