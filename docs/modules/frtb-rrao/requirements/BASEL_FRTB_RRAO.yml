@@ -24,14 +24,14 @@ requirements:
   - id: RRAO-DATA-001
     title: Frozen RRAO input and result models
     source: Basel MAR23.1-MAR23.3; U.S. NPR 2.0 section V.A.7.b
-    status: planned
+    status: implemented
     modules: [src/frtb_rrao/data_models.py]
     tests: [tests/test_data_models.py]
     notes: Position, classification, capital line, and aggregate result.
   - id: RRAO-DATA-002
     title: Gross effective notional validation
     source: Basel MAR23.8; proposed U.S. section __.211(c)(2)
-    status: planned
+    status: implemented
     modules: [src/frtb_rrao/validation.py]
     tests: [tests/test_validation.py]
     notes: Non-negative finite gross effective notional after adapter normalisation.
