@@ -414,8 +414,7 @@ that moves an exposure to a different bucket or category.
 - Inputs and outputs use stable ids, not object identities.
 - All grouping keys are explicit strings or enums.
 - Intermediate records preserve enough lineage for later impact and
-  attribution: position id, source row id, gross JTD id, scaled JTD id, netting
-  group id, bucket id, category id, and result id.
+  attribution: position id, source row id, netting group id, bucket key, risk class, and run id.
 - A position has exactly one DRC risk class.
 - A supported position has exactly one bucket under the selected profile.
 - Direction is never inferred from notional sign alone.
