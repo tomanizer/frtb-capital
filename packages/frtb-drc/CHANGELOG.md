@@ -17,3 +17,7 @@ All notable changes to `frtb-drc` will be documented here.
   floors.
 - Added same-obligor non-securitisation netting with seniority-aware offset
   rejection records.
+- Added bucket-level and category-level non-securitisation DRC capital APIs with
+  HBR and bucket-floor audit metadata.
+- Added public non-securitisation DRC API results with deterministic audit and
+  replay snapshots.

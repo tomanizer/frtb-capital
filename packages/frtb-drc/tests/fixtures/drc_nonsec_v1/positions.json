@@ -1,0 +1,386 @@
+{
+  "fixture_id": "drc_nonsec_v1",
+  "context": {
+    "run_id": "drc-nonsec-v1",
+    "calculation_date": "2026-05-29",
+    "base_currency": "USD",
+    "profile_id": "US_NPR_2_0"
+  },
+  "positions": [
+    {
+      "position_id": "pos-001-long-corp",
+      "source_row_id": "row-001",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "BOND",
+      "default_direction": "LONG",
+      "issuer_id": "issuer-long-only",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "CORPORATE",
+      "seniority": "SENIOR_DEBT",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 100.0,
+      "market_value": 100.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 1.0,
+      "currency": "USD",
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-001",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "seniority": "seniority"
+        }
+      },
+      "citation_ids": ["US_NPR_210_SCOPE"]
+    },
+    {
+      "position_id": "pos-002-short-corp",
+      "source_row_id": "row-002",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "BOND",
+      "default_direction": "SHORT",
+      "issuer_id": "issuer-short-only",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "CORPORATE",
+      "seniority": "SENIOR_DEBT",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 50.0,
+      "market_value": 50.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 1.0,
+      "currency": "USD",
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-002",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "seniority": "seniority"
+        }
+      },
+      "citation_ids": ["US_NPR_210_SCOPE"]
+    },
+    {
+      "position_id": "pos-003-offset-long",
+      "source_row_id": "row-003",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "BOND",
+      "default_direction": "LONG",
+      "issuer_id": "issuer-eligible-offset",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "CORPORATE",
+      "seniority": "SENIOR_DEBT",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 120.0,
+      "market_value": 120.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 1.0,
+      "currency": "USD",
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-003",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "seniority": "seniority"
+        }
+      },
+      "citation_ids": ["US_NPR_210_B_2"]
+    },
+    {
+      "position_id": "pos-004-offset-short",
+      "source_row_id": "row-004",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "BOND",
+      "default_direction": "SHORT",
+      "issuer_id": "issuer-eligible-offset",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "CORPORATE",
+      "seniority": "SENIOR_DEBT",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 40.0,
+      "market_value": 40.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 1.0,
+      "currency": "USD",
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-004",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "seniority": "seniority"
+        }
+      },
+      "citation_ids": ["US_NPR_210_B_2"]
+    },
+    {
+      "position_id": "pos-005-ineligible-long",
+      "source_row_id": "row-005",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "BOND",
+      "default_direction": "LONG",
+      "issuer_id": "issuer-ineligible-offset",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "CORPORATE",
+      "seniority": "NON_SENIOR_DEBT",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 100.0,
+      "market_value": 100.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 1.0,
+      "currency": "USD",
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-005",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "seniority": "seniority"
+        }
+      },
+      "citation_ids": ["US_NPR_210_B_2"]
+    },
+    {
+      "position_id": "pos-006-ineligible-short",
+      "source_row_id": "row-006",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "BOND",
+      "default_direction": "SHORT",
+      "issuer_id": "issuer-ineligible-offset",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "CORPORATE",
+      "seniority": "SENIOR_DEBT",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 50.0,
+      "market_value": 50.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 1.0,
+      "currency": "USD",
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-006",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "seniority": "seniority"
+        }
+      },
+      "citation_ids": ["US_NPR_210_B_2"]
+    },
+    {
+      "position_id": "pos-007-floor-maturity",
+      "source_row_id": "row-007",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "BOND",
+      "default_direction": "LONG",
+      "issuer_id": "issuer-maturity-floor",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "CORPORATE",
+      "seniority": "SENIOR_DEBT",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 100.0,
+      "market_value": 100.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 0.1,
+      "currency": "USD",
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-007",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "maturity_years": "maturity_years"
+        }
+      },
+      "citation_ids": ["US_NPR_210_A_2_III"]
+    },
+    {
+      "position_id": "pos-008-linear-maturity",
+      "source_row_id": "row-008",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "BOND",
+      "default_direction": "LONG",
+      "issuer_id": "issuer-maturity-linear",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "CORPORATE",
+      "seniority": "SENIOR_DEBT",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 100.0,
+      "market_value": 100.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 0.5,
+      "currency": "USD",
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-008",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "maturity_years": "maturity_years"
+        }
+      },
+      "citation_ids": ["US_NPR_210_A_2_III"]
+    },
+    {
+      "position_id": "pos-009-defaulted",
+      "source_row_id": "row-009",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "BOND",
+      "default_direction": "LONG",
+      "issuer_id": "issuer-defaulted",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "DEFAULTED",
+      "seniority": "SENIOR_DEBT",
+      "credit_quality": "DEFAULTED",
+      "notional": 100.0,
+      "market_value": 100.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 1.0,
+      "currency": "USD",
+      "is_defaulted": true,
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-009",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "is_defaulted": "is_defaulted"
+        }
+      },
+      "citation_ids": ["US_NPR_210_B_3_II"]
+    },
+    {
+      "position_id": "pos-010-covered-bond",
+      "source_row_id": "row-010",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "BOND",
+      "default_direction": "LONG",
+      "issuer_id": "issuer-covered",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "PSE_GSE",
+      "seniority": "COVERED_BOND",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 100.0,
+      "market_value": 100.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 1.0,
+      "currency": "USD",
+      "is_covered_bond": true,
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-010",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "seniority": "seniority"
+        }
+      },
+      "citation_ids": ["US_NPR_210_B_1_IV"]
+    },
+    {
+      "position_id": "pos-011-pse",
+      "source_row_id": "row-011",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "LOAN",
+      "default_direction": "LONG",
+      "issuer_id": "issuer-pse",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "PSE_GSE",
+      "seniority": "PSE",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 100.0,
+      "market_value": 100.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 1.0,
+      "currency": "USD",
+      "is_pse": true,
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-011",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "seniority": "seniority"
+        }
+      },
+      "citation_ids": ["US_NPR_210_B_1_IV"]
+    },
+    {
+      "position_id": "pos-012-zero-lgd",
+      "source_row_id": "row-012",
+      "desk_id": "desk-a",
+      "legal_entity": "bank-na",
+      "risk_class": "NON_SECURITISATION",
+      "instrument_type": "CREDIT_DERIVATIVE",
+      "default_direction": "LONG",
+      "issuer_id": "issuer-zero-lgd",
+      "tranche_id": null,
+      "index_series_id": null,
+      "bucket_key": "CORPORATE",
+      "seniority": "NOT_RECOVERY_LINKED",
+      "credit_quality": "INVESTMENT_GRADE",
+      "notional": 100.0,
+      "market_value": 100.0,
+      "cumulative_pnl": 0.0,
+      "maturity_years": 1.0,
+      "currency": "USD",
+      "lineage": {
+        "source_system": "synthetic",
+        "source_file": "drc_nonsec_v1.csv",
+        "source_row_id": "row-012",
+        "source_column_map": {
+          "issuer_id": "issuer_id",
+          "notional": "notional",
+          "seniority": "seniority"
+        }
+      },
+      "citation_ids": ["US_NPR_210_B_1_IV"]
+    }
+  ]
+}

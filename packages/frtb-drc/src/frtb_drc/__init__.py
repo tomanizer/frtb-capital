@@ -1,6 +1,19 @@
 """Standardised Approach default risk charge scaffold."""
 
 from frtb_drc._version import __version__
+from frtb_drc.audit import (
+    input_snapshot_hash,
+    result_json,
+    rule_profile_hash,
+    serialize_result,
+    validate_reconciliation,
+)
+from frtb_drc.capital import (
+    CapitalInput,
+    calculate_bucket_drc,
+    calculate_category_drc,
+    calculate_hedge_benefit_ratio,
+)
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -56,6 +69,7 @@ __all__ = [
     "BranchType",
     "BucketDefinition",
     "BucketDrc",
+    "CapitalInput",
     "CategoryDrc",
     "CreditQuality",
     "DefaultDirection",
@@ -80,9 +94,12 @@ __all__ = [
     "RejectedOffset",
     "RiskWeightRule",
     "__version__",
+    "calculate_bucket_drc",
+    "calculate_category_drc",
     "calculate_drc_capital",
     "calculate_gross_jtd",
     "calculate_gross_jtds",
+    "calculate_hedge_benefit_ratio",
     "calculate_maturity_weight",
     "calculate_net_jtds",
     "ensure_risk_class_supported",
@@ -91,12 +108,17 @@ __all__ = [
     "get_maturity_policy",
     "get_risk_weight_rule",
     "get_rule_profile",
+    "input_snapshot_hash",
     "iter_bucket_definitions",
     "iter_lgd_rules",
     "iter_risk_weight_rules",
     "profile_content_hash",
+    "result_json",
+    "rule_profile_hash",
     "scale_gross_jtd",
     "scale_gross_jtds",
+    "serialize_result",
     "validate_position",
     "validate_positions",
+    "validate_reconciliation",
 ]
