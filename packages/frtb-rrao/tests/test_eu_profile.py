@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+
 from frtb_rrao import (
     RraoBackToBackMatch,
     RraoCalculationContext,

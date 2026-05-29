@@ -4,6 +4,7 @@ import math
 from dataclasses import replace
 
 import pytest
+
 from frtb_rrao import (
     RraoClassification,
     RraoEvidenceType,

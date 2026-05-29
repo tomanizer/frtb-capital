@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
+
 from frtb_rrao import (
     RraoClassification,
     RraoEvidenceType,
