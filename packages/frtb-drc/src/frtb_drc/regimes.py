@@ -12,6 +12,7 @@ from types import MappingProxyType
 from frtb_common import UnsupportedRegulatoryFeatureError, jsonable
 
 from frtb_drc.data_models import DrcCitation, DrcRiskClass
+from frtb_drc.reference_data import profile_reference_data_payload
 from frtb_drc.validation import DrcInputError
 
 US_NPR_2_0_PROFILE_ID = "US_NPR_2_0"
@@ -132,8 +133,7 @@ def ensure_risk_class_supported(profile: DrcRuleProfile, risk_class: DrcRiskClas
 def profile_content_hash(profile: DrcRuleProfile) -> str:
     """Compute a deterministic hash from profile content, excluding the hash itself."""
 
-    payload = dict(profile.as_dict()) if profile.content_hash else _profile_hash_payload(profile)
-    payload["content_hash"] = ""
+    payload = _profile_hash_payload(profile)
     encoded = json.dumps(jsonable(payload), sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
@@ -162,6 +162,7 @@ def _profile_hash_payload(profile: DrcRuleProfile) -> dict[str, object]:
                 key=lambda item: item[0].value,
             )
         },
+        "reference_data": profile_reference_data_payload(profile.profile_id),
         "content_hash": "",
     }
 
@@ -179,9 +180,7 @@ _US_NPR_2_0_PROFILE = DrcRuleProfile(
         DrcRiskClass.SECURITISATION_NON_CTP: (
             "U.S. NPR 2.0 securitisation non-CTP DRC is not implemented"
         ),
-        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
-            "U.S. NPR 2.0 CTP DRC is not implemented"
-        ),
+        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: ("U.S. NPR 2.0 CTP DRC is not implemented"),
     },
 )
 

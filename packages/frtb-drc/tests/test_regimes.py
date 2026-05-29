@@ -13,6 +13,7 @@ from frtb_drc import (
     ensure_risk_class_supported,
     get_rule_profile,
     profile_content_hash,
+    regimes,
 )
 
 
@@ -50,6 +51,31 @@ def test_profile_hash_is_deterministic_sha256() -> None:
 
     assert profile.content_hash == profile_content_hash(profile)
     assert re.fullmatch(r"[0-9a-f]{64}", profile.content_hash)
+
+
+def test_profile_hash_changes_when_reference_data_payload_changes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = get_rule_profile(US_NPR_2_0_PROFILE_ID)
+    baseline_hash = profile_content_hash(profile)
+    original_payload = regimes.profile_reference_data_payload
+
+    monkeypatch.setattr(
+        regimes,
+        "profile_reference_data_payload",
+        lambda profile_id: {
+            **original_payload(profile_id),
+            "risk_weight_rules": [
+                {
+                    "bucket_key": "CORPORATE",
+                    "credit_quality": "INVESTMENT_GRADE",
+                    "risk_weight": 0.5,
+                }
+            ],
+        },
+    )
+
+    assert profile_content_hash(profile) != baseline_hash
 
 
 def test_profile_as_dict_is_json_serialisable() -> None:
