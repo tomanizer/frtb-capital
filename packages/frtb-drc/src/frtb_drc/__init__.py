@@ -1,6 +1,13 @@
 """Standardised Approach default risk charge scaffold."""
 
 from frtb_drc._version import __version__
+from frtb_drc.audit import (
+    input_snapshot_hash,
+    result_json,
+    rule_profile_hash,
+    serialize_result,
+    validate_reconciliation,
+)
 from frtb_drc.capital import (
     CapitalInput,
     calculate_bucket_drc,
@@ -101,12 +108,17 @@ __all__ = [
     "get_maturity_policy",
     "get_risk_weight_rule",
     "get_rule_profile",
+    "input_snapshot_hash",
     "iter_bucket_definitions",
     "iter_lgd_rules",
     "iter_risk_weight_rules",
     "profile_content_hash",
+    "result_json",
+    "rule_profile_hash",
     "scale_gross_jtd",
     "scale_gross_jtds",
+    "serialize_result",
     "validate_position",
     "validate_positions",
+    "validate_reconciliation",
 ]

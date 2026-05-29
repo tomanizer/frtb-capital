@@ -70,6 +70,7 @@ def validate_positions(positions: Iterable[DrcPosition]) -> tuple[DrcPosition, .
 
 def _validate_non_securitisation_identity(position: DrcPosition) -> None:
     _require_non_empty(position.issuer_id, "issuer_id")
+    _require_non_empty(position.bucket_key, "bucket_key")
     if position.seniority is None:
         raise DrcInputError("seniority is required for non-securitisation positions")
     if position.credit_quality is None:
