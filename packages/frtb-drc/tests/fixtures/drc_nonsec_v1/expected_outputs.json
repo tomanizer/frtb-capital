@@ -2,8 +2,8 @@
   "fixture_id": "drc_nonsec_v1",
   "input_count": 12,
   "input_hash": "38d53f06127b1505540d5b1f53bd52f8c7ce805671849f4c8504436b9aab902b",
-  "profile_hash": "e9cb980692760a4008c3894847ce97a6a5e7e8a5e88824493f8a0aaa84d9f36e",
-  "result_json_sha256": "b3610a6127c2e0b393d18a8b3e6d83c96f85af6e718ff552b975641a3185d00a",
+  "profile_hash": "7275a6648f42e386e78f3193c12fe05a228aa1a9e4d2fd5d71cb27a13a87b239",
+  "result_json_sha256": "9a618f8f83a4b89f79c8beeb4684f1d60727e8454ca62351606f99bf02c73223",
   "gross": {
     "pos-001-long-corp": 75.0,
     "pos-002-short-corp": 37.5,

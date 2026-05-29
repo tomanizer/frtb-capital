@@ -97,18 +97,14 @@ def _selected_outputs(result: Any) -> dict[str, object]:
         "maturity_weights": {
             record.position_id: record.maturity_weight for record in result.maturity_scaled_jtds
         },
-        "scaled": {
-            record.position_id: record.scaled_jtd for record in result.maturity_scaled_jtds
-        },
+        "scaled": {record.position_id: record.scaled_jtd for record in result.maturity_scaled_jtds},
         "net": {
             record.net_jtd_id: {
                 "amount": record.net_amount,
                 "bucket": record.bucket_key,
                 "direction": record.net_direction.value,
                 "issuer": record.obligor_or_tranche_key,
-                "rejected_offsets": [
-                    offset.reason_code for offset in record.rejected_offsets
-                ],
+                "rejected_offsets": [offset.reason_code for offset in record.rejected_offsets],
             }
             for record in result.net_jtds
         },
