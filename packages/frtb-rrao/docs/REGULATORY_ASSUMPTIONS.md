@@ -6,8 +6,9 @@ For a bidirectional code/regulation map, see
 metadata, see [`regulatory_sources.yml`](regulatory_sources.yml).
 
 `frtb-rrao` is currently partial. The package calculates supported canonical
-Basel MAR23 and U.S. NPR 2.0 residual-risk inputs, and no document or test in
-this package should describe outputs as final regulatory capital.
+Basel MAR23, U.S. NPR 2.0, and EU CRR3 comparison-profile residual-risk inputs,
+and no document or test in this package should describe outputs as final
+regulatory capital.
 
 ## v1 basis
 
@@ -16,8 +17,11 @@ The first capital-producing slice targets canonical inputs for:
 1. Basel MAR23 residual-risk add-on mechanics, including MAR23.2-MAR23.8.
 2. U.S. NPR 2.0 proposed residual risk capital requirement, section V.A.7.b
    and proposed section `__.211`.
-3. Explicit zero-capital lines only where Basel MAR23.4-MAR23.7 or proposed
-   section `__.211(b)` support an exclusion.
+3. EU CRR3 comparison inputs for Article 325u and Delegated Regulation (EU)
+   2022/2328 Articles 1-3 and Annex.
+4. Explicit zero-capital lines only where Basel MAR23.4-MAR23.7, proposed
+   section `__.211(b)`, Article 325u(4), or Delegated Regulation (EU) 2022/2328
+   Article 3 support an exclusion or non-presumptive record.
 
 The package treats the U.S. NPR 2.0 profile as proposed-rule material. Any
 future final-rule change must update citations, profiles, fixtures, and
@@ -81,12 +85,18 @@ unsupported until they have separate cited mappings and fixtures.
 Exclusions are successful zero-capital outcomes only when the selected profile
 contains a cited exclusion rule and the input supplies the required evidence.
 
-The planned U.S. profile covers proposed section `__.211(b)` exclusions,
-including listed positions, CCP or QCCP clearable positions, non-path-dependent
-options with two or fewer underlyings, exact third-party back-to-back
-transactions, deliverable hedge pairs, U.S. government or GSE debt,
-fallback-capital positions, qualifying internal desk transactions, and
-agency-determined exclusions.
+The U.S. profile covers proposed section `__.211(b)` exclusions, including
+listed positions, CCP or QCCP clearable positions, non-path-dependent options
+with two or fewer underlyings, exact third-party back-to-back transactions,
+deliverable hedge pairs, U.S. government or GSE debt, fallback-capital
+positions, qualifying internal desk transactions, and agency-determined
+exclusions.
+
+The EU CRR3 comparison profile covers Article 325u(4) listed, clearable, and
+perfectly offsetting exemptions. It also records Delegated Regulation (EU)
+2022/2328 Article 3 risks as zero-capital audit lines when the input explicitly
+asserts that the listed risk is the only residual-risk evidence. Article 3
+records are not treated as Article 325u(4) exemptions.
 
 If exclusion evidence is missing, the position must remain subject to normal
 classification or fail validation. The package must not silently convert missing
@@ -98,7 +108,7 @@ evidence into zero capital.
 | --- | --- | --- |
 | Basel MAR23 | Supported for v1 canonical-input mechanics. | Profile covers MAR23.2-MAR23.8 mechanics and exclusions. |
 | U.S. NPR 2.0 | Supported for v1 canonical-input mechanics. | Proposed-rule material from section V.A.7.b and proposed section `__.211`; not final U.S. regulatory capital. |
-| EU Article 325u / Delegated Regulation 2022/2328 | Unsupported for capital until issue #91. | The package can document Article 1 exotic underlyings, Article 2 Annex instruments, and Article 3 non-presumptive risks, but must fail closed until deterministic fixtures exist. |
+| EU Article 325u / Delegated Regulation 2022/2328 | Supported comparison profile for canonical-input mechanics. | The package maps Article 1 exotic underlyings, Article 2 Annex instruments, Article 3 non-presumptive risks, Article 325u(3) weights, and Article 325u(4) listed/clearable/perfectly offsetting exemptions. |
 | PRA UK CRR | Unsupported. | No package-local PRA RRAO source mapping exists yet. |
 
 ## Public implementation references

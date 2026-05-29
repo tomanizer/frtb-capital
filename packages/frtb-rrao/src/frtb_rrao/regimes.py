@@ -3,7 +3,8 @@ RRAO regulatory profile selection and hashing.
 
 Regulatory traceability:
     See docs/REGULATORY_TRACEABILITY.md rows for regimes.py, Basel MAR23, U.S.
-    NPR 2.0 proposed section __.211, and unsupported EU/PRA profile handling.
+    NPR 2.0 proposed section __.211, EU Article 325u, and unsupported PRA
+    profile handling.
 """
 
 from __future__ import annotations
@@ -63,13 +64,16 @@ SUPPORTED_PROFILE_METADATA: dict[RraoRegulatoryProfile, dict[str, object]] = {
         "status": "supported_proposed_rule_canonical_input_slice",
         "effective_date": None,
     },
+    RraoRegulatoryProfile.EU_CRR3: {
+        "regulator": "European Union",
+        "version": "Article 325u and Delegated Regulation (EU) 2022/2328",
+        "publication_date": date(2022, 11, 29),
+        "status": "supported_comparison_canonical_input_slice",
+        "effective_date": date(2022, 12, 19),
+    },
 }
 
 UNSUPPORTED_PROFILE_REASONS: dict[RraoRegulatoryProfile, str] = {
-    RraoRegulatoryProfile.EU_CRR3: (
-        "EU Article 325u and Delegated Regulation 2022/2328 profile is "
-        "documented but unsupported until issue #91 adds deterministic fixtures."
-    ),
     RraoRegulatoryProfile.PRA_UK_CRR: (
         "PRA UK CRR RRAO profile is unsupported until UK-specific source mapping "
         "and fixtures are added."

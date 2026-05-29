@@ -10,7 +10,7 @@ update reviewer-facing status.
 `frtb-rrao` now has a partial implementation. The package import boundary,
 canonical validation, classification, line add-ons, public calculation API, and
 deterministic audit result serialization are implemented for supported Basel
-MAR23 and U.S. NPR 2.0 canonical inputs.
+MAR23, U.S. NPR 2.0, and EU CRR3 comparison-profile canonical inputs.
 
 ## Documentation map
 
@@ -34,14 +34,14 @@ MAR23 and U.S. NPR 2.0 canonical inputs.
 | Public package boundary | Partial | Issue #87 added `calculate_rrao_capital` for supported canonical inputs; unsupported profiles and evidence paths still fail closed. |
 | Regulatory source pack | Partial | Issue #81 creates the package-local traceability skeleton. |
 | Canonical data models and validation | Implemented | Issue #82 added frozen public models and deterministic input validation. |
-| Rule profiles and reference data | Implemented | Issue #83 added cited Basel MAR23 and U.S. NPR 2.0 lookup tables and unsupported EU/PRA guards. |
+| Rule profiles and reference data | Implemented | Issue #83 added cited Basel MAR23 and U.S. NPR 2.0 lookup tables; issue #91 added the EU CRR3 comparison profile. |
 | Classification and exclusions | Partial | Issue #85 added cited classification decisions and exclusion decisions; exact match-group validation remains future work. |
 | Line add-ons and subtotals | Implemented | Issue #86 added additive line add-ons and deterministic explain subtotals. |
 | Public API and audit records | Implemented | Issue #87 added public result assembly, input/profile hashes, deterministic serialization, and reconciliation checks. |
 | Synthetic validation fixture | Implemented | Issue #88 added the `tests/fixtures/rrao_v1/` pack, expected outputs, invalid cases, loader, and replay tests. |
 | Optional adapters | Implemented | Issue #89 added the standard-library CRIF/FNet adapter with lineage, warnings, and rejected-row audit records. |
 | Investment fund inclusion | Implemented | Issue #90 added a U.S. NPR 2.0 `__.205(e)(3)(iii)` backstop-method descriptor and cited `__.211(a)(3)` classification path. |
-| EU comparison profile | Unsupported | Issue #91 before any EU capital path may return a result. |
+| EU comparison profile | Implemented | Issue #91 added Article 325u and Delegated Regulation (EU) 2022/2328 mappings with EU fixture coverage. |
 | Orchestration SA composition | Excluded from package | Issue #92 defines handoff after RRAO result shape is stable. |
 
 ## Review checklist

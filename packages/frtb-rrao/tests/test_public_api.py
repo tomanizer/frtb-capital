@@ -144,5 +144,5 @@ def test_calculate_rrao_capital_fails_closed_for_unsupported_profiles() -> None:
                     classification_hint=RraoClassification.EXOTIC,
                 ),
             ),
-            context=sample_context(RraoRegulatoryProfile.EU_CRR3),
+            context=sample_context(RraoRegulatoryProfile.PRA_UK_CRR),
         )

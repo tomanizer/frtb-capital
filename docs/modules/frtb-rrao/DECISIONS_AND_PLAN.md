@@ -14,8 +14,9 @@ Starting with canonical, evidence-backed inputs provides a useful capital chain
 without prematurely implementing trade-text parsing or all jurisdictional
 classification variants.
 
-**Implication:** EU CRR3 and PRA paths must raise explicit unsupported-feature
-errors until their profile mappings and fixture packs are complete.
+**Implication:** PRA paths and unmapped EU-specific features must raise explicit
+unsupported-feature errors until their source mappings and fixture packs are
+complete.
 
 ### RRAO-DEC-002: Keep data contracts package-local initially
 
@@ -113,9 +114,9 @@ pure calculation kernels.
 8. Add public run API and audit/replay artifacts.
 9. Add synthetic validation fixture pack.
 10. Add optional CRIF/FNet adapter.
-11. Integrate RRAO package output contract into orchestration, without changing
+11. Add EU CRR3 profile mapping and fixtures.
+12. Integrate RRAO package output contract into orchestration, without changing
     SA composition until SBM and DRC outputs are compatible.
-12. Add EU CRR3 profile mapping and fixtures.
 13. Add performance and replay controls.
 14. Add optional allocation/reporting helpers.
 

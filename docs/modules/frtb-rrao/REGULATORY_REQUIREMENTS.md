@@ -138,8 +138,10 @@ U.S. source: proposed section `__.211(c)(2)`.
 The EU comparison profile must represent Delegated Regulation (EU) 2022/2328
 Article 1 exotic underlyings, Article 2 Annex instruments bearing residual
 risks, and Article 3 risks that do not by themselves create a presumption of
-residual-risk treatment. The profile may remain unsupported for capital until
-the mapping has deterministic fixture coverage.
+residual-risk treatment. Supported canonical EU comparison inputs must cite
+Article 325u for scope and add-on mechanics, and Article 3 records must remain
+zero-capital audit lines unless another cited residual-risk evidence item is
+present.
 
 EU source: Regulation (EU) No 575/2013 Article 325u and Delegated Regulation
 (EU) 2022/2328 Articles 1-3 and Annex.

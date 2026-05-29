@@ -125,8 +125,9 @@ from narrative section V.A.7.b.i and Basel MAR23.3 examples.
 
 The EU comparison profile must be able to represent Article 1 of Delegated
 Regulation (EU) 2022/2328, which specifies longevity risk, weather, natural
-disasters, and future realised volatility as exotic underlyings, but may remain
-unsupported for capital until the EU profile has full fixture coverage.
+disasters, and future realised volatility as exotic underlyings. For supported
+canonical EU comparison inputs, these Article 1 underlyings map to the Article
+325u(3)(a) 1.0% treatment.
 
 ### RRAO-FUNC-005: Other residual-risk classification
 
@@ -146,6 +147,11 @@ The narrative section V.A.7.b.i identifies gap risk, correlation risk, and
 behavioural risk such as prepayments as other residual-risk examples. These
 examples must be represented as evidence categories, not as uncited formula
 changes.
+
+The EU comparison profile must represent Delegated Regulation (EU) 2022/2328
+Article 2 Annex instruments as Article 325u(2)(b) other residual-risk inputs
+and Article 3 listed risks as zero-capital non-presumptive records when the
+input explicitly asserts that no other residual-risk evidence is present.
 
 ### RRAO-FUNC-006: Investment fund inclusion
 
@@ -341,7 +347,8 @@ The first capital-producing vertical slice is complete only when:
   and gross effective notional mappings needed by fixtures;
 - Basel profile contains cited MAR23 risk weights and can calculate the same
   canonical included/excluded fixture where classification evidence is supplied;
-- EU/PRA profile gaps raise explicit unsupported-feature errors;
+- PRA profile gaps raise explicit unsupported-feature errors, and EU-specific
+  gaps such as investment-fund treatment still fail closed unless mapped;
 - line add-ons, subtotals, and total RRAO run through one public API;
 - results are frozen, serialisable, and carry rule-profile/input hashes;
 - tests cover exotic, other residual risk, supervisor-directed inclusion,

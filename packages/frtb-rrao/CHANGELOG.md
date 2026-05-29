@@ -13,7 +13,7 @@ All notable changes to `frtb-rrao` will be documented here.
 - Added frozen public RRAO data models, canonical input validation helpers, and
   source-manifest tests.
 - Added cited Basel MAR23 and U.S. NPR 2.0 rule-profile reference data,
-  deterministic profile hashes, and fail-closed unsupported EU/PRA profiles.
+  deterministic profile hashes, and fail-closed unsupported profile handling.
 - Added RRAO classification and exclusion decision helpers for supported
   Basel MAR23 and U.S. NPR 2.0 canonical inputs.
 - Added additive RRAO line add-ons, excluded zero-capital lines, and
@@ -29,3 +29,5 @@ All notable changes to `frtb-rrao` will be documented here.
 - Added the U.S. NPR 2.0 investment-fund inclusion path for cited
   `__.205(e)(3)(iii)` backstop-method portions under proposed section
   `__.211(a)(3)`.
+- Added the EU CRR3 Article 325u comparison profile with Delegated Regulation
+  (EU) 2022/2328 Article 1, Article 2 Annex, and Article 3 mappings.
