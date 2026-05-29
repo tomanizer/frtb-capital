@@ -22,3 +22,7 @@ issuer, tranche, maturity, seniority, and JTD mechanics are implemented.
 - [Decisions and implementation plan](DECISIONS_AND_PLAN.md)
 - [Workable issue breakdown](ISSUE_BREAKDOWN.md)
 - [Workable requirements](requirements/BASEL_FRTB_DRC.yml)
+
+## Related ADRs
+
+- [ADR 0012: Capital impact and attribution readiness](../../decisions/0012-capital-impact-attribution.md)
