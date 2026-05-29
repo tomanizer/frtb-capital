@@ -366,10 +366,7 @@ def _build_inter_bucket_gamma_matrix(
 
     for (bucket_a, bucket_b), base_gamma in sorted(inter_bucket_correlations.items()):
         if bucket_a not in index or bucket_b not in index:
-            raise SbmInputError(
-                "inter_bucket_correlations references unknown bucket ids",
-                field="inter_bucket_correlations",
-            )
+            continue
         applied = (
             adjust_correlation_for_scenario(base_gamma, scenario)
             if apply_scenario_adjustment

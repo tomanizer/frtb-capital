@@ -311,7 +311,7 @@ def _validate_lineage(lineage: SbmSourceLineage, sensitivity_id: str) -> None:
     _require_text(lineage.source_file, "lineage.source_file", sensitivity_id)
     _require_text(lineage.source_row_id, "lineage.source_row_id", sensitivity_id)
     for mapping in lineage.source_column_map:
-        if not isinstance(mapping, tuple) or len(mapping) != 2:
+        if not isinstance(mapping, tuple | list) or len(mapping) != 2:
             raise SbmInputError(
                 "source column map entries must be field pairs",
                 field="lineage.source_column_map",

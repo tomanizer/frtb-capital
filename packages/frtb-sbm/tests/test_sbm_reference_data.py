@@ -134,16 +134,23 @@ def test_girr_delta_intra_bucket_correlation_handles_inflation_and_xccy() -> Non
         tenor2="1y",
         same_curve=False,
     )
-    xccy, _ = girr_delta_intra_bucket_correlation(
+    xccy_ir, _ = girr_delta_intra_bucket_correlation(
         SbmRegulatoryProfile.BASEL_MAR21,
         tenor1="XCCY",
         tenor2="1y",
         same_curve=False,
     )
+    xccy_xccy, _ = girr_delta_intra_bucket_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        tenor1="XCCY",
+        tenor2="XCCY",
+        same_curve=False,
+    )
 
     assert inflation_same == 1.0
     assert inflation_diff == 0.40
-    assert xccy == 0.999
+    assert xccy_ir == 0.0
+    assert xccy_xccy == 1.0
 
 
 def test_girr_inter_bucket_correlation() -> None:

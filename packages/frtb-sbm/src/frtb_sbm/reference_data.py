@@ -29,7 +29,6 @@ GIRR_SAME_CURVE_CORRELATION = 1.0
 GIRR_DIFFERENT_CURVE_CORRELATION = 0.999
 GIRR_INFLATION_SAME_TENOR_CORRELATION = 1.0
 GIRR_INFLATION_DIFFERENT_TENOR_CORRELATION = 0.40
-GIRR_XCCY_CORRELATION = 0.999
 
 LIQUID_GIRR_CURRENCIES = frozenset({"EUR", "USD", "GBP", "JPY", "AUD", "CAD", "SEK"})
 SQRT2 = math.sqrt(2.0)
@@ -379,7 +378,9 @@ def girr_delta_intra_bucket_correlation(
     citation_ids = ("basel_mar21_41",)
 
     if normalised_tenor1 == "XCCY" or normalised_tenor2 == "XCCY":
-        return GIRR_XCCY_CORRELATION, citation_ids
+        if normalised_tenor1 == normalised_tenor2:
+            return GIRR_SAME_CURVE_CORRELATION, citation_ids
+        return 0.0, citation_ids
 
     if normalised_tenor1 == "INFL" or normalised_tenor2 == "INFL":
         if normalised_tenor1 == normalised_tenor2:
