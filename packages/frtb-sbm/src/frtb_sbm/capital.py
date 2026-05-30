@@ -428,7 +428,9 @@ def _ordered_supported_paths(
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
     )
-    return tuple(path for path in ordering if path in present)
+    ordered = tuple(path for path in ordering if path in present)
+    remaining = tuple(sorted(present - set(ordering), key=lambda p: (p[0].value, p[1].value)))
+    return ordered + remaining
 
 
 def _coerce_sensitivities(sensitivities: object) -> tuple[SbmSensitivity, ...]:
