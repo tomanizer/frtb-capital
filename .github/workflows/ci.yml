@@ -398,6 +398,32 @@ jobs:
           path: packages/frtb-ima/build/validation/
           if-no-files-found: warn
 
+  version-bump-guard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check no version bumps in non-release PRs
+        run: python3 scripts/ci/check_version_bump.py
+
+  uv-lock-guard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check uv.lock only changed with dependency-spec changes
+        run: python3 scripts/ci/check_uv_lock_drift.py
+
   ci-required:
     needs:
       - changes
@@ -412,6 +438,8 @@ jobs:
       - sbom
       - examples
       - notebooks
+      - version-bump-guard
+      - uv-lock-guard
     if: ${{ always() }}
     runs-on: ubuntu-latest
     permissions:
@@ -432,6 +460,8 @@ jobs:
           SBOM_RESULT: ${{ needs.sbom.result }}
           EXAMPLES_RESULT: ${{ needs.examples.result }}
           NOTEBOOKS_RESULT: ${{ needs.notebooks.result }}
+          VERSION_BUMP_GUARD_RESULT: ${{ needs['version-bump-guard'].result }}
+          UV_LOCK_GUARD_RESULT: ${{ needs['uv-lock-guard'].result }}
         run: |
           failed=0
 
@@ -445,6 +475,18 @@ jobs:
               failed=1
               ;;
           esac
+
+          # Guard jobs must always succeed (they self-skip on non-PR events).
+          for guard_result in "$VERSION_BUMP_GUARD_RESULT" "$UV_LOCK_GUARD_RESULT"; do
+            case "$guard_result" in
+              success)
+                ;;
+              *)
+                echo "a guard job failed or was cancelled (got $guard_result)" >&2
+                failed=1
+                ;;
+            esac
+          done
 
           # Conditional jobs are skipped when their changed-path filter did not
           # match; skipped is acceptable for these.

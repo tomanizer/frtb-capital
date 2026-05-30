@@ -90,6 +90,13 @@ Enforced by `importlinter` (to be added per audit-followup work).
 - Each package has its own `version` in its `pyproject.toml`.
 - Each package has its own `CHANGELOG.md` under `packages/<name>/`.
 - The workspace root `CHANGELOG.md` records suite-level releases that coordinate across packages.
+- **Feature and fix PRs must not bump `version =` or add release sections to CHANGELOG.md.**
+  Instead, add a changelog fragment to `packages/<pkg>/changelog.d/<pr-number>.<type>.md`.
+  Version bumps and changelog assembly happen in a `release/*` PR. See
+  [ADR 0015](docs/decisions/0015-deferred-versioning-and-changelog-fragments.md) and
+  [CONTRIBUTING.md](CONTRIBUTING.md#changelog-fragments).
+- CI will reject any non-`release/*` PR that bumps a package version or regenerates
+  `uv.lock` without a corresponding dependency-spec change.
 
 ### Cross-package changes
 
