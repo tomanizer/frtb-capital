@@ -21,6 +21,10 @@ from frtb_sbm.data_models import (
     WeightedSensitivity,
 )
 from frtb_sbm.reference_data import (
+    commodity_bucket_definition,
+    commodity_delta_risk_weight,
+    equity_bucket_definition,
+    equity_delta_risk_weight,
     fx_bucket_definition,
     fx_delta_risk_weight,
     girr_bucket_definition,
@@ -85,6 +89,16 @@ def compute_weighted_sensitivities(
             sensitivities,
             profile_id=profile_id,
             reporting_currency=reporting_currency,
+        )
+    if risk_class is SbmRiskClass.EQUITY and risk_measure is SbmRiskMeasure.DELTA:
+        return weight_equity_delta_sensitivities(
+            sensitivities,
+            profile_id=profile_id,
+        )
+    if risk_class is SbmRiskClass.COMMODITY and risk_measure is SbmRiskMeasure.DELTA:
+        return weight_commodity_delta_sensitivities(
+            sensitivities,
+            profile_id=profile_id,
         )
     raise UnsupportedRegulatoryFeatureError(
         "frtb-sbm weighted sensitivity lookup does not support "
@@ -248,9 +262,104 @@ def weight_fx_delta_sensitivities(
     return tuple(weighted)
 
 
+def weight_equity_delta_sensitivities(
+    sensitivities: Sequence[SbmSensitivity],
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted equity delta sensitivities for a supported profile."""
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.EQUITY,
+        SbmRiskMeasure.DELTA,
+    )
+    weighted: list[WeightedSensitivity] = []
+    for sensitivity in sort_sensitivities_deterministic(sensitivities):
+        if sensitivity.risk_class is not SbmRiskClass.EQUITY:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm equity delta weighting does not support "
+                f"risk_class={sensitivity.risk_class.value}"
+            )
+        if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm equity delta weighting does not support "
+                f"risk_measure={sensitivity.risk_measure.value}"
+            )
+        equity_bucket_definition(profile_id, sensitivity.bucket)
+        risk_weight, citation_ids = equity_delta_risk_weight(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+            risk_factor=sensitivity.risk_factor,
+        )
+        scaled_amount = sensitivity.amount * risk_weight
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=sensitivity.sensitivity_id,
+                risk_class=SbmRiskClass.EQUITY,
+                risk_measure=SbmRiskMeasure.DELTA,
+                bucket=sensitivity.bucket,
+                raw_amount=sensitivity.amount,
+                risk_weight=risk_weight,
+                scaled_amount=scaled_amount,
+                citation_ids=citation_ids,
+                qualifier=sensitivity.qualifier,
+            )
+        )
+    return tuple(weighted)
+
+
+def weight_commodity_delta_sensitivities(
+    sensitivities: Sequence[SbmSensitivity],
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted commodity delta sensitivities for a supported profile."""
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.COMMODITY,
+        SbmRiskMeasure.DELTA,
+    )
+    weighted: list[WeightedSensitivity] = []
+    for sensitivity in sort_sensitivities_deterministic(sensitivities):
+        if sensitivity.risk_class is not SbmRiskClass.COMMODITY:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm commodity delta weighting does not support "
+                f"risk_class={sensitivity.risk_class.value}"
+            )
+        if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm commodity delta weighting does not support "
+                f"risk_measure={sensitivity.risk_measure.value}"
+            )
+        commodity_bucket_definition(profile_id, sensitivity.bucket)
+        risk_weight, citation_ids = commodity_delta_risk_weight(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+        )
+        scaled_amount = sensitivity.amount * risk_weight
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=sensitivity.sensitivity_id,
+                risk_class=SbmRiskClass.COMMODITY,
+                risk_measure=SbmRiskMeasure.DELTA,
+                bucket=sensitivity.bucket,
+                raw_amount=sensitivity.amount,
+                risk_weight=risk_weight,
+                scaled_amount=scaled_amount,
+                citation_ids=citation_ids,
+                qualifier=sensitivity.qualifier,
+            )
+        )
+    return tuple(weighted)
+
+
 __all__ = [
     "compute_weighted_sensitivities",
     "sort_weighted_sensitivities_deterministic",
+    "weight_commodity_delta_sensitivities",
+    "weight_equity_delta_sensitivities",
     "weight_fx_delta_sensitivities",
     "weight_girr_delta_sensitivities",
     "weight_girr_vega_sensitivities",

@@ -1,0 +1,62 @@
+{
+  "profile_id": "BASEL_MAR21",
+  "profile_hash": "eb6003d93d44d3a0751f60df0d6d7a1be4f6acaad1965e199372d902cf23972d",
+  "input_hash": "ecca3b9a1bb7a83cabda8f30fb9ec56796f5396ed2c6d0390ce35e682f6315db",
+  "total_capital": 1081815.4602333987,
+  "warnings": [],
+  "risk_classes": [
+    {
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "selected_capital": 1081815.4602333987,
+      "selected_scenario": "LOW"
+    }
+  ],
+  "scenario_totals": {
+    "HIGH": 1029563.0140987,
+    "LOW": 1081815.4602333987,
+    "MEDIUM": 1056012.47388466
+  },
+  "buckets": [
+    [
+      {
+        "bucket_id": "2",
+        "kb": 827239.1975722621,
+        "sb": 700000.0
+      },
+      {
+        "bucket_id": "5",
+        "kb": 600000.0,
+        "sb": 600000.0
+      }
+    ]
+  ],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "sensitivity_id": "com2-brent-3m",
+          "risk_weight": 0.35,
+          "scaled_amount": -700000.0
+        },
+        {
+          "sensitivity_id": "com2-wti-3m",
+          "risk_weight": 0.35,
+          "scaled_amount": 1050000.0
+        },
+        {
+          "sensitivity_id": "com2-wti-6m",
+          "risk_weight": 0.35,
+          "scaled_amount": 350000.0
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "com5-alu-1y",
+          "risk_weight": 0.4,
+          "scaled_amount": 600000.0
+        }
+      ]
+    ]
+  ]
+}

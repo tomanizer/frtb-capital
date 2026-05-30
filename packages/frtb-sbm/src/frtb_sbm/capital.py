@@ -6,7 +6,7 @@ Regulatory traceability:
     Basel MAR21.14, MAR21.86-MAR21.89 — FX delta buckets, weights, correlations.
     Basel MAR21.90-MAR21.95 — GIRR vega buckets and inter-bucket gamma.
     U.S. NPR 2.0 section V.A.7.a steps three through six.
-    SBM-WS-001, SBM-AGG-001, SBM-AGG-002.
+    SBM-WS-001, SBM-AGG-001, SBM-AGG-002, SBM-FUNC-017, SBM-FUNC-018.
 """
 
 from __future__ import annotations
@@ -44,6 +44,8 @@ from frtb_sbm.reference_data import (
     girr_vega_intra_bucket_correlation,
 )
 from frtb_sbm.regimes import get_sbm_rule_profile
+from frtb_sbm.risk_classes.commodity import calculate_commodity_delta_risk_class_capital
+from frtb_sbm.risk_classes.equity import calculate_equity_delta_risk_class_capital
 from frtb_sbm.risk_classes.fx import calculate_fx_delta_risk_class_capital
 from frtb_sbm.validation import SbmInputError, ensure_sbm_run_supported
 from frtb_sbm.weighted_sensitivity import (
@@ -56,6 +58,8 @@ _SBM_REQUIREMENT_IDS = (
     "SBM-AGG-001",
     "SBM-AGG-002",
     "SBM-AUDIT-001",
+    "SBM-FUNC-017",
+    "SBM-FUNC-018",
     "SBM-FUNC-019",
 )
 
@@ -64,6 +68,8 @@ _PHASE1_SUPPORTED_PATHS: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozen
         (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
     }
 )
 
@@ -73,7 +79,7 @@ def calculate_sbm_capital(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate supported canonical-input SBM capital for GIRR and FX delta/vega slices."""
+    """Calculate supported SBM capital for GIRR, FX, equity, and commodity delta slices."""
 
     if sensitivities is None:
         raise SbmInputError("sensitivities are required", field="sensitivities")
@@ -118,6 +124,20 @@ def calculate_sbm_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
                     reporting_currency=context.reporting_currency,
+                )
+            )
+        elif risk_class is SbmRiskClass.EQUITY and risk_measure is SbmRiskMeasure.DELTA:
+            risk_class_results.append(
+                calculate_equity_delta_risk_class_capital(
+                    measure_sensitivities,
+                    profile_id=rule_profile.profile_id,
+                )
+            )
+        elif risk_class is SbmRiskClass.COMMODITY and risk_measure is SbmRiskMeasure.DELTA:
+            risk_class_results.append(
+                calculate_commodity_delta_risk_class_capital(
+                    measure_sensitivities,
+                    profile_id=rule_profile.profile_id,
                 )
             )
         else:
@@ -353,7 +373,8 @@ def _ensure_phase1_supported(sensitivities: Sequence[SbmSensitivity]) -> None:
         path = (sensitivity.risk_class, sensitivity.risk_measure)
         if path not in _PHASE1_SUPPORTED_PATHS:
             raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm phase-1 capital supports only GIRR delta/vega and FX delta inputs; "
+                "frtb-sbm phase-1 capital supports GIRR delta/vega, FX delta, "
+                "equity delta, and commodity delta inputs; "
                 f"received risk_class={sensitivity.risk_class.value}, "
                 f"risk_measure={sensitivity.risk_measure.value}"
             )
@@ -371,6 +392,8 @@ def _ordered_supported_paths(
         (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
     )
     return tuple(path for path in ordering if path in present)
 

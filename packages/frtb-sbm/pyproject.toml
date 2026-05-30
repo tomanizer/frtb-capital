@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frtb-sbm"
-version = "0.5.0"
-description = "FRTB Standardised Approach sensitivities-based method (GIRR and FX delta, GIRR vega slice)"
+version = "0.6.0"
+description = "FRTB Standardised Approach sensitivities-based method (GIRR, FX, equity, and commodity delta slice)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

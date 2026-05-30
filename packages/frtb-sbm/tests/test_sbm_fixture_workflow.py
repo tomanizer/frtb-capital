@@ -121,6 +121,50 @@ def test_fx_delta_v1_fixture_matches_expected_outputs() -> None:
     assert payload["total_capital"] == expected["total_capital"]
 
 
+def test_equity_delta_v1_fixture_matches_expected_outputs() -> None:
+    equity_fixture_dir = Path(__file__).parent / "fixtures" / "equity_delta_v1"
+    spec = importlib.util.spec_from_file_location(
+        "equity_delta_v1_loader",
+        equity_fixture_dir / "loader.py",
+    )
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    context = module.load_fixture_context()
+    sensitivities = module.load_fixture_sensitivities()
+    expected = module.load_expected_outputs()
+
+    result = calculate_sbm_capital(sensitivities, context=context)
+    validate_sbm_result_reconciliation(result)
+    payload = serialize_sbm_result(result)
+
+    assert payload["profile_hash"] == expected["profile_hash"]
+    assert payload["total_capital"] == expected["total_capital"]
+
+
+def test_commodity_delta_v1_fixture_matches_expected_outputs() -> None:
+    commodity_fixture_dir = Path(__file__).parent / "fixtures" / "commodity_delta_v1"
+    spec = importlib.util.spec_from_file_location(
+        "commodity_delta_v1_loader",
+        commodity_fixture_dir / "loader.py",
+    )
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    context = module.load_fixture_context()
+    sensitivities = module.load_fixture_sensitivities()
+    expected = module.load_expected_outputs()
+
+    result = calculate_sbm_capital(sensitivities, context=context)
+    validate_sbm_result_reconciliation(result)
+    payload = serialize_sbm_result(result)
+
+    assert payload["profile_hash"] == expected["profile_hash"]
+    assert payload["total_capital"] == expected["total_capital"]
+
+
 @pytest.mark.parametrize(
     ("case_id", "expected_error_match", "sensitivities"),
     load_fixture_module().load_invalid_cases(),

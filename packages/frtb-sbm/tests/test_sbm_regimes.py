@@ -27,7 +27,14 @@ def test_get_sbm_rule_profile_returns_supported_basel_profile() -> None:
     assert profile.profile_id == SbmRegulatoryProfile.BASEL_MAR21.value
     assert profile.regulator == "Basel Committee on Banking Supervision"
     assert profile.publication_date == date(2019, 1, 14)
-    assert profile.supported_risk_classes == frozenset({SbmRiskClass.GIRR, SbmRiskClass.FX})
+    assert profile.supported_risk_classes == frozenset(
+        {
+            SbmRiskClass.GIRR,
+            SbmRiskClass.FX,
+            SbmRiskClass.EQUITY,
+            SbmRiskClass.COMMODITY,
+        }
+    )
     assert profile.supported_measures[SbmRiskClass.GIRR] == frozenset(
         {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA}
     )
@@ -73,8 +80,9 @@ def test_unknown_profile_fails_as_input_error() -> None:
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, True),
         (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, False),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA, False),
-        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, False),
     ],
 )
 def test_basel_profile_support_map(
@@ -105,7 +113,7 @@ def test_basel_profile_support_map(
             )
 
 
-def test_supported_risk_class_measures_lists_girr_and_fx_delta() -> None:
+def test_supported_risk_class_measures_lists_girr_fx_equity_and_commodity_delta() -> None:
     supported = supported_risk_class_measures(SbmRegulatoryProfile.BASEL_MAR21)
 
     assert supported == frozenset(
@@ -113,5 +121,7 @@ def test_supported_risk_class_measures_lists_girr_and_fx_delta() -> None:
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
         }
     )

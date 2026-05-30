@@ -991,7 +991,7 @@ provides-extras = ["dev", "notebooks"]
 
 [[package]]
 name = "frtb-sbm"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "packages/frtb-sbm" }
 dependencies = [
     { name = "frtb-common" },

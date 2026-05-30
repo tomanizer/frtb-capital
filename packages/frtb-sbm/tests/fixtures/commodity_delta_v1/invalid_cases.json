@@ -1,0 +1,111 @@
+[
+  {
+    "case_id": "duplicate_sensitivity_id",
+    "expected_error_match": "duplicate sensitivity id",
+    "sensitivity": {
+      "sensitivity_id": "dup-com-001",
+      "source_row_id": "row-dup",
+      "desk_id": "com-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "2",
+      "risk_factor": "WTI",
+      "qualifier": "NYMEX",
+      "tenor": "3m",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    "duplicate_of": {
+      "sensitivity_id": "dup-com-001",
+      "source_row_id": "row-dup-2",
+      "desk_id": "com-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "5",
+      "risk_factor": "ALU",
+      "qualifier": "LME",
+      "tenor": "1y",
+      "amount": 2000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "SHORT"
+    }
+  },
+  {
+    "case_id": "unsupported_measure",
+    "expected_error_match": "frtb-sbm does not support",
+    "sensitivity": {
+      "sensitivity_id": "com-vega-001",
+      "source_row_id": "row-com-vega",
+      "desk_id": "com-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "VEGA",
+      "bucket": "2",
+      "risk_factor": "WTI",
+      "qualifier": "NYMEX",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "option_tenor": "1y",
+      "tenor": "1y",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "missing_tenor",
+    "expected_error_match": "non-empty text is required",
+    "sensitivity": {
+      "sensitivity_id": "missing-tenor",
+      "source_row_id": "row-missing-tenor",
+      "desk_id": "com-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "2",
+      "risk_factor": "WTI",
+      "qualifier": "NYMEX",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "missing_qualifier",
+    "expected_error_match": "qualifier is required",
+    "sensitivity": {
+      "sensitivity_id": "missing-qualifier",
+      "source_row_id": "row-missing-qualifier",
+      "desk_id": "com-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "2",
+      "risk_factor": "WTI",
+      "tenor": "3m",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "invalid_bucket",
+    "expected_error_match": "no commodity bucket definition",
+    "sensitivity": {
+      "sensitivity_id": "bad-bucket",
+      "source_row_id": "row-bad-bucket",
+      "desk_id": "com-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "99",
+      "risk_factor": "WTI",
+      "qualifier": "NYMEX",
+      "tenor": "3m",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  }
+]

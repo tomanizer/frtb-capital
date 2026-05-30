@@ -50,6 +50,8 @@ class IntraBucketScenarioSpec:
     weighted_sensitivities: tuple[WeightedSensitivity, ...]
     base_correlation_matrix: npt.NDArray[np.float64]
     sb_correlation_floor: float | None = None
+    absolute_weight_intra: bool = False
+    absolute_weight_citation_ids: tuple[str, ...] = ()
 
 
 _MAR21_SCENARIO_SELECTION_CITATION = ("basel_mar21_7_scenario_selection",)
@@ -340,6 +342,9 @@ def _aggregate_intra_buckets_for_scenario(
 ) -> tuple[IntraBucketAggregationResult, ...]:
     results: list[IntraBucketAggregationResult] = []
     for spec in specs:
+        if spec.absolute_weight_intra:
+            results.append(_aggregate_absolute_weight_intra_bucket(spec, risk_class, risk_measure))
+            continue
         adjusted_matrix = adjust_correlation_matrix_for_scenario(
             spec.base_correlation_matrix,
             scenario,
@@ -355,6 +360,43 @@ def _aggregate_intra_buckets_for_scenario(
             )
         )
     return tuple(results)
+
+
+def _aggregate_absolute_weight_intra_bucket(
+    spec: IntraBucketScenarioSpec,
+    risk_class: SbmRiskClass,
+    risk_measure: SbmRiskMeasure,
+) -> IntraBucketAggregationResult:
+    """MAR21.79: other-sector equity bucket capital equals sum of absolute weighted WS."""
+
+    ordered = _sort_weighted_sensitivities(spec.weighted_sensitivities)
+    _validate_bucket_scope(
+        spec.bucket_id,
+        ordered,
+        risk_class,
+        risk_measure,
+    )
+    ws = np.array([item.scaled_amount for item in ordered], dtype=np.float64)
+    sb = float(np.sum(ws))
+    kb = float(np.sum(np.abs(ws)))
+    citation_ids = spec.absolute_weight_citation_ids or _MAR21_INTRA_BUCKET_CITATION
+    bucket_capital = BucketCapital(
+        bucket_id=spec.bucket_id,
+        risk_class=risk_class,
+        risk_measure=risk_measure,
+        kb=kb,
+        weighted_sensitivities=tuple(ordered),
+        citation_ids=citation_ids,
+        sb=sb,
+        floor_applied=False,
+    )
+    return IntraBucketAggregationResult(
+        bucket_capital=bucket_capital,
+        pairwise_correlations=(),
+        variance_before_floor=float(np.dot(ws, ws)),
+        zero_variance_floor_applied=False,
+        sb_correlation_floor_applied=False,
+    )
 
 
 def aggregate_risk_class_with_scenarios(

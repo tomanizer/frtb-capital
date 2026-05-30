@@ -1,0 +1,127 @@
+[
+  {
+    "case_id": "duplicate_sensitivity_id",
+    "expected_error_match": "duplicate sensitivity id",
+    "sensitivity": {
+      "sensitivity_id": "dup-eq-001",
+      "source_row_id": "row-dup",
+      "desk_id": "eq-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "5",
+      "risk_factor": "SPOT",
+      "qualifier": "ISS-A",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    "duplicate_of": {
+      "sensitivity_id": "dup-eq-001",
+      "source_row_id": "row-dup-2",
+      "desk_id": "eq-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "6",
+      "risk_factor": "SPOT",
+      "qualifier": "ISS-B",
+      "amount": 2000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "SHORT"
+    }
+  },
+  {
+    "case_id": "unsupported_measure",
+    "expected_error_match": "frtb-sbm does not support",
+    "sensitivity": {
+      "sensitivity_id": "eq-vega-001",
+      "source_row_id": "row-eq-vega",
+      "desk_id": "eq-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "VEGA",
+      "bucket": "5",
+      "risk_factor": "SPOT",
+      "qualifier": "ISS-A",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "option_tenor": "1y",
+      "tenor": "1y",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "unsupported_curvature",
+    "expected_error_match": "frtb-sbm does not support",
+    "sensitivity": {
+      "sensitivity_id": "eq-curvature-001",
+      "source_row_id": "row-eq-curvature",
+      "desk_id": "eq-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "CURVATURE",
+      "bucket": "5",
+      "risk_factor": "SPOT",
+      "qualifier": "ISS-A",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG",
+      "up_shock_amount": 100.0,
+      "down_shock_amount": -100.0
+    }
+  },
+  {
+    "case_id": "invalid_bucket",
+    "expected_error_match": "no equity bucket definition",
+    "sensitivity": {
+      "sensitivity_id": "bad-bucket",
+      "source_row_id": "row-bad-bucket",
+      "desk_id": "eq-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "99",
+      "risk_factor": "SPOT",
+      "qualifier": "ISS-A",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "invalid_risk_factor",
+    "expected_error_match": "equity delta risk_factor must be SPOT or REPO",
+    "sensitivity": {
+      "sensitivity_id": "bad-factor",
+      "source_row_id": "row-bad-factor",
+      "desk_id": "eq-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "5",
+      "risk_factor": "DIVIDEND",
+      "qualifier": "ISS-A",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "missing_qualifier",
+    "expected_error_match": "qualifier is required",
+    "sensitivity": {
+      "sensitivity_id": "missing-qualifier",
+      "source_row_id": "row-missing-qualifier",
+      "desk_id": "eq-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "5",
+      "risk_factor": "SPOT",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  }
+]
