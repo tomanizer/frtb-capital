@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
 
@@ -18,6 +19,7 @@ from frtb_sbm import (
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"
 
 
+@lru_cache(maxsize=None)
 def _load_fixture_module(relative_path: Path) -> ModuleType:
     spec = importlib.util.spec_from_file_location(
         f"{relative_path.parent.name}_loader",
