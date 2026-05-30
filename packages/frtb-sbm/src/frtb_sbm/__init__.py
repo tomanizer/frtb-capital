@@ -129,11 +129,11 @@ from frtb_sbm.weighted_sensitivity import (
 )
 
 __all__ = [
+    "CURVATURE_CAPITAL_REQUIREMENT_ID",
     "FX_DELTA_RISK_WEIGHT",
     "FX_INTER_BUCKET_CORRELATION",
     "PACKAGE_METADATA",
     "BucketCapital",
-    "CURVATURE_CAPITAL_REQUIREMENT_ID",
     "CurvatureInput",
     "CurvatureResult",
     "InterBucketScenarioResult",
@@ -219,8 +219,8 @@ __all__ = [
     "input_hash_for_sensitivities",
     "normalise_currency_code",
     "normalise_sensitivity_amount",
-    "phase1_capital_supported_paths",
     "parse_curvature_input",
+    "phase1_capital_supported_paths",
     "profile_content_hash",
     "profile_reference_payload",
     "profile_supports_risk_class_measure",
@@ -231,8 +231,8 @@ __all__ = [
     "sort_sensitivities_deterministic",
     "sort_weighted_sensitivities_deterministic",
     "supported_risk_class_measures",
-    "validate_sbm_calculation_context",
     "validate_curvature_sensitivities",
+    "validate_sbm_calculation_context",
     "validate_sbm_result_reconciliation",
     "validate_sbm_sensitivities",
     "vega_risk_weight",

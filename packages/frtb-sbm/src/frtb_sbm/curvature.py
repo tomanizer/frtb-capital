@@ -89,7 +89,9 @@ def validate_curvature_sensitivities(
             )
     validated = validate_sbm_sensitivities(sensitivities)
     ordered = sorted(validated, key=sensitivity_sort_key)
-    return tuple(parse_curvature_input(sensitivity, profile_id=profile_id) for sensitivity in ordered)
+    return tuple(
+        parse_curvature_input(sensitivity, profile_id=profile_id) for sensitivity in ordered
+    )
 
 
 def curvature_worst_branch(up_shock_amount: float, down_shock_amount: float) -> str:
