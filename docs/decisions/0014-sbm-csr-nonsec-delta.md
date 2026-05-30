@@ -33,8 +33,8 @@ Implement CSR non-securitisation delta as a profile-owned reference-data module 
 - `frtb-sbm` 0.7.0 expands the BASEL_MAR21 profile hash; existing fixture packs
   update expected `profile_hash` only.
 - `calculate_sbm_capital` routes homogeneous CSR_NONSEC/DELTA inputs.
-- Synthetic `csr_nonsec_delta_v1` fixture reconciles total capital 223,710.13 under
-  the HIGH correlation scenario.
+- Synthetic `csr_nonsec_delta_v1` fixture reconciles total capital 212,390.50 under
+  the HIGH correlation scenario (0.7.1 fixes MAR21.57 Table 5 lookup indexing).
 - No sibling capital-package imports; numpy-only kernels.
 
 ## References

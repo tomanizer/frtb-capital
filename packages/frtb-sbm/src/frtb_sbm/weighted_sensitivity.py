@@ -386,6 +386,7 @@ def weight_csr_nonsec_delta_sensitivities(
             bucket_id=sensitivity.bucket,
             risk_factor=sensitivity.risk_factor,
             tenor=sensitivity.tenor or "",
+            qualifier=sensitivity.qualifier or "",
         )
         risk_weight, citation_ids = csr_nonsec_delta_risk_weight(
             profile_id,

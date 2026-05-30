@@ -41,18 +41,19 @@ _CSR_INTER_CITATION = "basel_mar21_57"
 _CSR_PRESCRIBED_TENORS: frozenset[str] = frozenset({"6m", "1y", "3y", "5y", "10y"})
 
 # MAR21.57 Table 5 lower-triangle sector gammas (sectors 0..10 map to 1/9 .. 18).
+# Row i stores gamma(sector i, sector j) for j = i+1 .. 10.
 _CSR_SECTOR_GAMMA_ROWS: tuple[tuple[float, ...], ...] = (
-    (0.75, 0.10, 0.20, 0.25, 0.20, 0.15, 0.10, 0.00, 0.45, 0.45, 0.45),
-    (0.05, 0.15, 0.20, 0.15, 0.10, 0.10, 0.00, 0.45, 0.45, 0.45),
-    (0.05, 0.15, 0.20, 0.05, 0.20, 0.00, 0.45, 0.45, 0.45),
-    (0.20, 0.25, 0.05, 0.05, 0.00, 0.45, 0.45, 0.45),
-    (0.25, 0.05, 0.15, 0.00, 0.45, 0.45, 0.45),
-    (0.05, 0.20, 0.00, 0.45, 0.45, 0.45),
-    (0.05, 0.00, 0.45, 0.45, 0.45),
-    (0.00, 0.45, 0.45, 0.45),
-    (0.00, 0.00, 0.45, 0.45),
-    (0.75, 0.45, 0.45),
-    (0.45,),
+    (0.75, 0.10, 0.20, 0.25, 0.20, 0.15, 0.10, 0.00, 0.45, 0.45),
+    (0.05, 0.15, 0.20, 0.15, 0.10, 0.10, 0.00, 0.45, 0.45),
+    (0.05, 0.15, 0.20, 0.05, 0.20, 0.00, 0.45, 0.45),
+    (0.20, 0.25, 0.05, 0.05, 0.00, 0.45, 0.45),
+    (0.25, 0.05, 0.15, 0.00, 0.45, 0.45),
+    (0.05, 0.20, 0.00, 0.45, 0.45),
+    (0.05, 0.00, 0.45, 0.45),
+    (0.00, 0.45, 0.45),
+    (0.00, 0.00),
+    (0.75,),
+    (),
 )
 
 _BUCKET_TO_SECTOR_INDEX: dict[str, int] = {
@@ -175,12 +176,14 @@ def csr_nonsec_validate_delta_inputs(
     bucket_id: str,
     risk_factor: str,
     tenor: str,
+    qualifier: str,
 ) -> None:
     """Validate cited CSR non-securitisation delta inputs at the weighting boundary."""
 
     csr_nonsec_bucket_definition(profile, bucket_id)
     _normalise_csr_risk_factor(risk_factor)
     _require_csr_tenor(profile, tenor)
+    _require_text(qualifier, "qualifier")
 
 
 def csr_nonsec_delta_risk_weight(
@@ -301,7 +304,7 @@ def _sector_gamma_from_table(bucket_a: int, bucket_b: int) -> float:
         return 1.0
     row = min(sector_a, sector_b)
     col = max(sector_a, sector_b)
-    offset = col - row
+    offset = col - row - 1
     return _CSR_SECTOR_GAMMA_ROWS[row][offset]
 
 

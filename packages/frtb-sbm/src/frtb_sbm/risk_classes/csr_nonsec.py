@@ -98,9 +98,18 @@ def aggregate_csr_nonsec_delta_measure_capital(
         bucket_ids,
         profile_id=profile_id,
     )
-    intra_citations = _MAR21_CSR_INTRA_CITATION
-    if any(spec.bucket_id in {"17", "18"} for spec in intra_specs):
+    has_index = any(spec.bucket_id in {"17", "18"} for spec in intra_specs)
+    has_non_index = any(spec.bucket_id not in {"17", "18"} for spec in intra_specs)
+    if has_index and has_non_index:
+        intra_citations = (
+            "basel_mar21_4_intra_bucket",
+            "basel_mar21_54",
+            "basel_mar21_55",
+        )
+    elif has_index:
         intra_citations = _MAR21_CSR_INDEX_INTRA_CITATION
+    else:
+        intra_citations = _MAR21_CSR_INTRA_CITATION
     return aggregate_risk_class_with_scenarios(
         tuple(intra_specs),
         inter_bucket_correlations,

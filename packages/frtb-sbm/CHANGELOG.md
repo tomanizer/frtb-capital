@@ -4,6 +4,16 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-05-30
+
+### Fixed
+
+- Correct MAR21.57 Table 5 inter-bucket gamma lookup (`col - row - 1`) and trim
+  sector-gamma row lengths; regenerate `csr_nonsec_delta_v1` expected capital.
+- Validate CSR non-securitisation `qualifier` at the weighting boundary.
+- Union MAR21.54 and MAR21.55 intra-bucket citations when index and non-index
+  buckets are both present.
+
 ## [0.7.0] - 2026-05-30
 
 ### Added

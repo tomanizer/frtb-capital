@@ -138,7 +138,18 @@ def test_csr_nonsec_inter_bucket_correlation_uses_table_five() -> None:
         bucket2="5",
     )
 
-    assert correlation == pytest.approx(0.25)
+    assert correlation == pytest.approx(0.20)
+    assert citations == ("basel_mar21_57",)
+
+
+def test_csr_nonsec_inter_bucket_correlation_other_sector_is_zero() -> None:
+    correlation, citations = csr_nonsec_inter_bucket_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket1="4",
+        bucket2=CSR_OTHER_SECTOR_BUCKET,
+    )
+
+    assert correlation == pytest.approx(0.00)
     assert citations == ("basel_mar21_57",)
 
 
