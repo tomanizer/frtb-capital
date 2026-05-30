@@ -97,9 +97,15 @@ def validate_sbm_result_reconciliation(result: SbmCapitalResult) -> None:
                 "portfolio scenario totals require selected_portfolio_scenario",
                 field="selected_portfolio_scenario",
             )
-        portfolio_total = float(
-            result.portfolio_scenario_totals[result.selected_portfolio_scenario]
+        portfolio_total_value = result.portfolio_scenario_totals.get(
+            result.selected_portfolio_scenario
         )
+        if portfolio_total_value is None:
+            raise SbmInputError(
+                "selected portfolio scenario is missing from portfolio scenario totals",
+                field="selected_portfolio_scenario",
+            )
+        portfolio_total = float(portfolio_total_value)
         if not is_reconciled(result.total_capital, portfolio_total):
             raise SbmInputError(
                 "total capital does not reconcile to selected portfolio scenario total",

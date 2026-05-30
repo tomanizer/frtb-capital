@@ -752,8 +752,6 @@ def compute_portfolio_scenario_totals(
             field="risk_class_results",
         )
     portfolio_totals: dict[SbmScenarioLabel, float] = {}
-    for scenario in _DEFAULT_SCENARIOS:
-        portfolio_totals[scenario] = 0.0
     for risk_class_result in risk_class_results:
         if risk_class_result.scenario_totals is None:
             raise SbmInputError(
@@ -761,7 +759,12 @@ def compute_portfolio_scenario_totals(
                 field="scenario_totals",
             )
         for scenario, total in risk_class_result.scenario_totals.items():
-            portfolio_totals[scenario] += float(total)
+            portfolio_totals[scenario] = portfolio_totals.get(scenario, 0.0) + float(total)
+    if not portfolio_totals:
+        raise SbmInputError(
+            "portfolio scenario totals must not be empty",
+            field="portfolio_scenario_totals",
+        )
     return portfolio_totals
 
 
@@ -823,6 +826,11 @@ def align_risk_class_to_scenario(
             "risk-class capital must include scenario totals",
             field="scenario_totals",
         )
+    if scenario not in risk_class_result.scenario_totals:
+        raise SbmInputError(
+            "risk-class scenario totals do not include requested scenario",
+            field="selected_scenario",
+        )
     if risk_class_result.selected_scenario is scenario:
         return risk_class_result
 
@@ -831,26 +839,29 @@ def align_risk_class_to_scenario(
         (item for item in risk_class_result.scenario_details if item.scenario is scenario),
         None,
     )
+    if detail is None:
+        raise SbmInputError(
+            "risk-class scenario details must include requested scenario",
+            field="scenario_details",
+        )
+    risk_measure = _risk_measure_for_alignment(risk_class_result)
     weighted_by_bucket = {
         bucket.bucket_id: bucket.weighted_sensitivities for bucket in risk_class_result.buckets
     }
-    if detail is not None:
-        buckets = tuple(
-            BucketCapital(
-                bucket_id=intra.bucket_id,
-                risk_class=risk_class_result.risk_class,
-                risk_measure=risk_class_result.risk_measure or SbmRiskMeasure.DELTA,
-                kb=intra.kb,
-                weighted_sensitivities=weighted_by_bucket.get(intra.bucket_id, ()),
-                citation_ids=intra.citation_ids,
-                sb=intra.sb,
-                floor_applied=intra.floor_applied,
-                scenario=scenario,
-            )
-            for intra in detail.intra_buckets
+    buckets = tuple(
+        BucketCapital(
+            bucket_id=intra.bucket_id,
+            risk_class=risk_class_result.risk_class,
+            risk_measure=risk_measure,
+            kb=intra.kb,
+            weighted_sensitivities=weighted_by_bucket.get(intra.bucket_id, ()),
+            citation_ids=intra.citation_ids,
+            sb=intra.sb,
+            floor_applied=intra.floor_applied,
+            scenario=scenario,
         )
-    else:
-        buckets = tuple(replace(bucket, scenario=scenario) for bucket in risk_class_result.buckets)
+        for intra in detail.intra_buckets
+    )
 
     scenario_selection = risk_class_result.scenario_selection
     if scenario_selection is not None:
@@ -867,6 +878,17 @@ def align_risk_class_to_scenario(
         selected_scenario=scenario,
         buckets=buckets,
         scenario_selection=scenario_selection,
+    )
+
+
+def _risk_measure_for_alignment(risk_class_result: RiskClassCapital) -> SbmRiskMeasure:
+    if risk_class_result.risk_measure is not None:
+        return risk_class_result.risk_measure
+    if risk_class_result.buckets:
+        return risk_class_result.buckets[0].risk_measure
+    raise SbmInputError(
+        "risk-class capital must include a risk measure for scenario alignment",
+        field="risk_measure",
     )
 
 
