@@ -128,7 +128,6 @@ def test_multi_class_five_delta_risk_classes_share_portfolio_scenario() -> None:
         result.portfolio_scenario_totals[result.selected_portfolio_scenario]
     )
     assert all(
-        item.selected_scenario is result.selected_portfolio_scenario
-        for item in result.risk_classes
+        item.selected_scenario is result.selected_portfolio_scenario for item in result.risk_classes
     )
     validate_sbm_result_reconciliation(result)
