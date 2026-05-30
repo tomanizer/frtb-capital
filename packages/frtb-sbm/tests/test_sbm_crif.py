@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-from frtb_sbm import SbmRiskClass, SbmRiskMeasure
 import frtb_sbm.crif as crif_module
+from frtb_sbm import SbmRiskClass, SbmRiskMeasure
 from frtb_sbm.crif import adapt_crif_records
 
 

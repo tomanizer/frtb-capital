@@ -27,6 +27,7 @@ from frtb_sbm.audit import (
     _input_hash_for_validated_sensitivities,
     validate_sbm_result_reconciliation,
 )
+from frtb_sbm.curvature import calculate_girr_curvature_risk_class_capital
 from frtb_sbm.data_models import (
     RiskClassCapital,
     SbmBranchMetadata,
@@ -46,7 +47,6 @@ from frtb_sbm.reference_data import (
     girr_vega_intra_bucket_correlation,
 )
 from frtb_sbm.regimes import get_sbm_rule_profile
-from frtb_sbm.curvature import calculate_girr_curvature_risk_class_capital
 from frtb_sbm.risk_classes.commodity import calculate_commodity_delta_risk_class_capital
 from frtb_sbm.risk_classes.csr_nonsec import calculate_csr_nonsec_delta_risk_class_capital
 from frtb_sbm.risk_classes.csr_sec_ctp import calculate_csr_sec_ctp_delta_risk_class_capital

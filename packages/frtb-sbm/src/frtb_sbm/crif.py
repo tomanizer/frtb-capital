@@ -208,7 +208,7 @@ def _map_crif_row(
         risk_measure=risk_measure,
         bucket=bucket,
         risk_factor=qualifier or amount_currency,
-        amount=float(optional.get("amount", amount)),
+        amount=float(optional.get("amount", amount)),  # type: ignore[arg-type]
         amount_currency=amount_currency,
         sign_convention=sign_convention,
         lineage=SbmSourceLineage(
@@ -252,7 +252,9 @@ def _map_risk_type(risk_type: str) -> tuple[SbmRiskClass, SbmRiskMeasure]:
     )
 
 
-def _first_text(record: Mapping[str, object], fields: tuple[str, ...], *, fallback: str = "") -> str:
+def _first_text(
+    record: Mapping[str, object], fields: tuple[str, ...], *, fallback: str = ""
+) -> str:
     for field in fields:
         if field in record and record[field] is not None:
             value = str(record[field]).strip()
@@ -277,7 +279,7 @@ def _first_float(record: Mapping[str, object], fields: tuple[str, ...]) -> float
         if field not in record or record[field] is None:
             continue
         try:
-            return float(record[field])
+            return float(record[field])  # type: ignore[arg-type]
         except (TypeError, ValueError) as exc:
             raise SbmInputError(
                 f"field {field} must be numeric",

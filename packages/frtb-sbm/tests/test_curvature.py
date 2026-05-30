@@ -15,8 +15,8 @@ from frtb_sbm import (
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
-    calculate_sbm_capital,
     calculate_girr_curvature_risk_class_capital,
+    calculate_sbm_capital,
     curvature_capital_unsupported_feature,
     curvature_worst_branch,
     ensure_sbm_capital_paths_supported,
@@ -183,11 +183,7 @@ def test_curvature_capital_unsupported_feature_is_structured() -> None:
 
 @pytest.mark.parametrize(
     "risk_class",
-    [
-        item
-        for item in SbmRiskClass
-        if item is not SbmRiskClass.GIRR
-    ],
+    [item for item in SbmRiskClass if item is not SbmRiskClass.GIRR],
 )
 def test_non_girr_curvature_capital_paths_fail_closed(risk_class: SbmRiskClass) -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):

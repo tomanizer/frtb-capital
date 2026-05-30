@@ -230,10 +230,14 @@ def _raise_unsupported_capital_path(
             f"frtb-sbm phase-1 capital is unsupported for profile={profile.value}; "
             f"use profile={SbmRegulatoryProfile.BASEL_MAR21.value}"
         )
-    if risk_measure is SbmRiskMeasure.CURVATURE and (
-        risk_class,
-        risk_measure,
-    ) not in supported:
+    if (
+        risk_measure is SbmRiskMeasure.CURVATURE
+        and (
+            risk_class,
+            risk_measure,
+        )
+        not in supported
+    ):
         raise UnsupportedRegulatoryFeatureError(
             "frtb-sbm curvature capital is unsupported until the cited curvature "
             f"aggregation path is implemented ({_CURVATURE_CAPITAL_REQUIREMENT_ID}); "

@@ -9,7 +9,6 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-import math
 from collections.abc import Mapping, Sequence
 
 import numpy as np
@@ -27,7 +26,9 @@ from frtb_sbm.csr_sec_nonctp_reference_data import (
     csr_sec_nonctp_inter_bucket_correlation,
 )
 from frtb_sbm.data_models import (
+    BucketCapital,
     RiskClassCapital,
+    RiskClassScenarioDetail,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmScenarioLabel,
@@ -110,11 +111,11 @@ def aggregate_csr_sec_nonctp_delta_measure_capital(
         SbmScenarioLabel.HIGH,
     )
     scenario_totals: dict[SbmScenarioLabel, float] = {}
-    scenario_details = []
-    selected_buckets = ()
+    scenario_details: list[RiskClassScenarioDetail] = []
+    selected_buckets: tuple[BucketCapital, ...] = ()
     for scenario in scenario_labels:
         core_capital = 0.0
-        core_buckets = ()
+        core_buckets: tuple[BucketCapital, ...] = ()
         if core_specs:
             inter_map = build_csr_sec_nonctp_inter_bucket_correlation_map(
                 tuple(spec.bucket_id for spec in core_specs),
@@ -133,7 +134,7 @@ def aggregate_csr_sec_nonctp_delta_measure_capital(
             core_capital = core_result.selected_capital
             core_buckets = core_result.buckets
         other_capital = 0.0
-        other_buckets = ()
+        other_buckets: tuple[BucketCapital, ...] = ()
         if other_spec is not None:
             other_result = aggregate_risk_class_with_scenarios(
                 (other_spec,),

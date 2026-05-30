@@ -13,7 +13,6 @@ from collections.abc import Mapping, Sequence
 
 import numpy as np
 import numpy.typing as npt
-
 from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm.aggregation import (
