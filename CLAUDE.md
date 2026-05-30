@@ -69,7 +69,8 @@ frtb-{ima,sbm,drc,rrao,cva}  ← frtb-orchestration
 
 `frtb-ima` does not import from `frtb-sbm`, `frtb-drc`, `frtb-rrao`, or `frtb-cva`. `frtb-orchestration` is the only package allowed to import from multiple capital components. Shared abstractions belong in `frtb-common`. `SA` is a composition label for `frtb-sbm + frtb-drc + frtb-rrao`, not a standalone package.
 
-Enforced by `importlinter` (to be added per audit-followup work).
+Enforced by `import-linter` via the root `[tool.importlinter]` layers contract
+(`make import-lint`, included in `make quality-control`).
 
 ### Consistent style across packages
 
