@@ -4,6 +4,22 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-30
+
+### Added
+
+- FX delta cited reference data (MAR21.14, MAR21.86-MAR21.89), `risk_classes/fx.py`
+  assembly, and `weight_fx_delta_sensitivities` on the shared aggregation engine.
+- Synthetic `tests/fixtures/fx_delta_v1/` replay bundle and
+  `tests/risk_classes/test_sbm_fx.py`.
+
+### Changed
+
+- `calculate_sbm_capital` supports homogeneous FX delta inputs alongside unchanged
+  GIRR delta/vega behavior.
+- FX vega and curvature paths remain explicitly unsupported.
+- Profile hash and support map include FX delta measure.
+
 ## [0.3.0] - 2026-05-30
 
 ### Added

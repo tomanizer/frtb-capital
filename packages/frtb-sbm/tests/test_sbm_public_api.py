@@ -166,25 +166,25 @@ def test_calculate_sbm_capital_fails_closed_for_unsupported_profiles() -> None:
         )
 
 
-def test_calculate_sbm_capital_fails_closed_for_unsupported_fx_delta() -> None:
+def test_calculate_sbm_capital_returns_fx_delta_result() -> None:
     sensitivity = SbmSensitivity(
-        sensitivity_id="unsupported-001",
-        source_row_id="row-001",
+        sensitivity_id="fx-eur",
+        source_row_id="row-fx",
         desk_id="rates-desk",
         legal_entity="LE-001",
         risk_class=SbmRiskClass.FX,
         risk_measure=SbmRiskMeasure.DELTA,
-        bucket="1",
+        bucket="EUR",
         risk_factor="EUR",
         amount=1_000_000.0,
         amount_currency="USD",
-        tenor="1y",
         sign_convention=SbmSignConvention.RECEIVE,
-        lineage=sample_lineage("row-001"),
+        lineage=sample_lineage("row-fx"),
     )
 
-    with pytest.raises(UnsupportedRegulatoryFeatureError):
-        calculate_sbm_capital((sensitivity,), context=sample_context())
+    result = calculate_sbm_capital((sensitivity,), context=sample_context())
+    assert result.total_capital > 0.0
+    assert result.risk_classes[0].risk_class is SbmRiskClass.FX
 
 
 def sample_vega_sensitivity(

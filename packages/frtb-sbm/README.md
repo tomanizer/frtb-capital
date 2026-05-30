@@ -5,14 +5,15 @@ Standardised Approach sensitivities-based method component for the
 
 ## Status
 
-The package exposes `calculate_sbm_capital` for the phase-1 cited GIRR delta
-vertical slice under the Basel MAR21 profile. Vega, curvature, and non-GIRR
-risk classes fail closed with explicit errors.
+The package exposes `calculate_sbm_capital` for the phase-1 cited GIRR delta,
+GIRR vega, and FX delta slices under the Basel MAR21 profile. Curvature, FX
+vega, and remaining non-GIRR risk classes fail closed with explicit errors.
 
 | Area | Status |
 | --- | --- |
-| GIRR delta capital path | Implemented (phase 1) |
-| Vega, curvature, non-GIRR risk classes | Unsupported (fail-closed) |
+| GIRR delta and vega capital paths | Implemented (phase 1) |
+| FX delta capital path | Implemented (phase 1) |
+| Curvature, FX vega, remaining risk classes | Unsupported (fail-closed) |
 | CRIF/CSV adapters | Out of scope (phase 1) |
 
 Outputs from this prototype package are not final regulatory capital.

@@ -1,0 +1,64 @@
+{
+  "profile_id": "BASEL_MAR21",
+  "profile_hash": "d8f2bbf70baf0bb6c468024c412c3d49dd78b4f954e47f0479490b46dc37c63f",
+  "input_hash": "df872964bd0c24e60f97f43fa5f30bc2995f0e188756526c9c59e51252a56eab",
+  "total_capital": 221680.4639109114,
+  "warnings": [],
+  "risk_classes": [
+    {
+      "risk_class": "FX",
+      "selected_capital": 221680.4639109114,
+      "selected_scenario": "LOW",
+      "risk_measure": "DELTA"
+    }
+  ],
+  "scenario_totals": {
+    "HIGH": 176857.8905965507,
+    "LOW": 221680.4639109114,
+    "MEDIUM": 200525.4865921267
+  },
+  "buckets": [
+    [
+      {
+        "bucket_id": "EUR",
+        "kb": 212132.03435596422,
+        "sb": 212132.03435596422
+      },
+      {
+        "bucket_id": "GBP",
+        "kb": 159099.02576697318,
+        "sb": -159099.02576697318
+      },
+      {
+        "bucket_id": "MYR",
+        "kb": 75000.0,
+        "sb": 75000.0
+      }
+    ]
+  ],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "sensitivity_id": "eur-usd",
+          "risk_weight": 0.10606601717798211,
+          "scaled_amount": 212132.03435596422
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "gbp-usd",
+          "risk_weight": 0.10606601717798211,
+          "scaled_amount": -159099.02576697318
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "myr-usd",
+          "risk_weight": 0.15,
+          "scaled_amount": 75000.0
+        }
+      ]
+    ]
+  ]
+}

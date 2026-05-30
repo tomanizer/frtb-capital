@@ -57,6 +57,7 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
         {
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
         }
     ),
     SbmRegulatoryProfile.EU_CRR3.value: frozenset(),
@@ -366,6 +367,29 @@ def _validate_risk_class_fields(
 
     if risk_measure is SbmRiskMeasure.CURVATURE:
         _validate_curvature_amounts(sensitivity)
+
+    if risk_class is SbmRiskClass.FX and risk_measure is SbmRiskMeasure.DELTA:
+        _validate_fx_delta_fields(sensitivity)
+
+
+def _validate_fx_delta_fields(sensitivity: SbmSensitivity) -> None:
+    sensitivity_id = sensitivity.sensitivity_id
+    bucket = normalise_currency_code(
+        sensitivity.bucket,
+        field="bucket",
+        sensitivity_id=sensitivity_id,
+    )
+    risk_factor = normalise_currency_code(
+        sensitivity.risk_factor,
+        field="risk_factor",
+        sensitivity_id=sensitivity_id,
+    )
+    if bucket != risk_factor:
+        raise SbmInputError(
+            "FX delta bucket must match risk_factor currency",
+            field="bucket",
+            sensitivity_id=sensitivity_id,
+        )
 
 
 def _validate_curvature_amounts(sensitivity: SbmSensitivity) -> None:

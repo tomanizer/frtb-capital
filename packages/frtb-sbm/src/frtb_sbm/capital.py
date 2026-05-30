@@ -1,8 +1,9 @@
 """
-Public SBM capital calculation for supported GIRR delta and vega inputs.
+Public SBM capital calculation for supported GIRR and FX delta/vega inputs.
 
 Regulatory traceability:
     Basel MAR21.4-MAR21.7 — delta aggregation and scenario selection.
+    Basel MAR21.14, MAR21.86-MAR21.89 — FX delta buckets, weights, correlations.
     Basel MAR21.90-MAR21.95 — GIRR vega buckets and inter-bucket gamma.
     U.S. NPR 2.0 section V.A.7.a steps three through six.
     SBM-WS-001, SBM-AGG-001, SBM-AGG-002.
@@ -42,17 +43,27 @@ from frtb_sbm.reference_data import (
     girr_vega_intra_bucket_correlation,
 )
 from frtb_sbm.regimes import get_sbm_rule_profile
+from frtb_sbm.risk_classes.fx import calculate_fx_delta_risk_class_capital
 from frtb_sbm.validation import SbmInputError, ensure_sbm_run_supported
 from frtb_sbm.weighted_sensitivity import (
     weight_girr_delta_sensitivities,
     weight_girr_vega_sensitivities,
 )
 
-_GIRR_REQUIREMENT_IDS = (
+_SBM_REQUIREMENT_IDS = (
     "SBM-WS-001",
     "SBM-AGG-001",
     "SBM-AGG-002",
     "SBM-AUDIT-001",
+    "SBM-FUNC-019",
+)
+
+_PHASE1_SUPPORTED_PATHS: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozenset(
+    {
+        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+    }
 )
 
 
@@ -61,7 +72,7 @@ def calculate_sbm_capital(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate supported canonical-input SBM capital for the GIRR delta/vega slice."""
+    """Calculate supported canonical-input SBM capital for GIRR and FX delta/vega slices."""
 
     if sensitivities is None:
         raise SbmInputError("sensitivities are required", field="sensitivities")
@@ -76,16 +87,16 @@ def calculate_sbm_capital(
     validated = _coerce_sensitivities(sensitivities)
     rule_profile = get_sbm_rule_profile(context.profile_id)
     ensure_sbm_run_supported(context, validated)
-    _ensure_girr_phase1_supported(validated)
+    _ensure_phase1_supported(validated)
 
     risk_class_results: list[RiskClassCapital] = []
-    for risk_measure in (SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA):
+    for risk_class, risk_measure in _ordered_supported_paths(validated):
         measure_sensitivities = tuple(
-            item for item in validated if item.risk_measure is risk_measure
+            item
+            for item in validated
+            if item.risk_class is risk_class and item.risk_measure is risk_measure
         )
-        if not measure_sensitivities:
-            continue
-        if risk_measure is SbmRiskMeasure.DELTA:
+        if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.DELTA:
             risk_class_results.append(
                 _calculate_girr_delta_risk_class_capital(
                     measure_sensitivities,
@@ -93,12 +104,25 @@ def calculate_sbm_capital(
                     reporting_currency=context.reporting_currency,
                 )
             )
-        else:
+        elif risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.VEGA:
             risk_class_results.append(
                 _calculate_girr_vega_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
                 )
+            )
+        elif risk_class is SbmRiskClass.FX and risk_measure is SbmRiskMeasure.DELTA:
+            risk_class_results.append(
+                calculate_fx_delta_risk_class_capital(
+                    measure_sensitivities,
+                    profile_id=rule_profile.profile_id,
+                    reporting_currency=context.reporting_currency,
+                )
+            )
+        else:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm phase-1 capital does not support "
+                f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
             )
 
     total_capital = sum(item.selected_capital for item in risk_class_results)
@@ -113,7 +137,7 @@ def calculate_sbm_capital(
         reconciliation=SbmReconciliationMetadata(
             input_count=len(validated),
             rejected_input_count=0,
-            requirement_ids=_GIRR_REQUIREMENT_IDS,
+            requirement_ids=_SBM_REQUIREMENT_IDS,
             citation_ids=citation_ids,
         ),
     )
@@ -308,23 +332,33 @@ def _append_citation(citation_ids: list[str], seen: set[str], citation_id: str) 
         seen.add(citation_id)
 
 
-def _ensure_girr_phase1_supported(sensitivities: Sequence[SbmSensitivity]) -> None:
+def _ensure_phase1_supported(sensitivities: Sequence[SbmSensitivity]) -> None:
     if not sensitivities:
         raise SbmInputError("sensitivities must not be empty", field="sensitivities")
     for sensitivity in sensitivities:
-        if sensitivity.risk_class is not SbmRiskClass.GIRR:
+        path = (sensitivity.risk_class, sensitivity.risk_measure)
+        if path not in _PHASE1_SUPPORTED_PATHS:
             raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm phase-1 capital supports only GIRR inputs; "
-                f"received risk_class={sensitivity.risk_class.value}"
+                "frtb-sbm phase-1 capital supports only GIRR delta/vega and FX delta inputs; "
+                f"received risk_class={sensitivity.risk_class.value}, "
+                f"risk_measure={sensitivity.risk_measure.value}"
             )
-        if sensitivity.risk_measure not in {
-            SbmRiskMeasure.DELTA,
-            SbmRiskMeasure.VEGA,
-        }:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm phase-1 capital supports only GIRR delta and vega inputs; "
-                f"received risk_measure={sensitivity.risk_measure.value}"
-            )
+
+
+def _ordered_supported_paths(
+    sensitivities: Sequence[SbmSensitivity],
+) -> tuple[tuple[SbmRiskClass, SbmRiskMeasure], ...]:
+    present = {
+        (item.risk_class, item.risk_measure)
+        for item in sensitivities
+        if (item.risk_class, item.risk_measure) in _PHASE1_SUPPORTED_PATHS
+    }
+    ordering = (
+        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+    )
+    return tuple(path for path in ordering if path in present)
 
 
 def _coerce_sensitivities(sensitivities: object) -> tuple[SbmSensitivity, ...]:
