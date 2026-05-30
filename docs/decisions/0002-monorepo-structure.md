@@ -48,7 +48,8 @@ Shared types live in `frtb-common`. The orchestration package is the only one
 allowed to import from multiple capital components and is responsible for
 composing SA from SBM, DRC, and RRAO.
 
-Package boundaries will be enforced by `importlinter` (to be added).
+Package boundaries are enforced by `import-linter` (`make import-lint`, wired
+into `make quality-control` and CI).
 
 ## Consequences
 

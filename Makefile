@@ -10,7 +10,7 @@ COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_rrao
 MUTATION_DIST := dist/mutation
 
 .PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
-.PHONY: test test-no-cov docs-check regulatory-corpus import-smoke maturity-check quality-control build
+.PHONY: test test-no-cov docs-check regulatory-corpus import-lint import-smoke maturity-check quality-control build
 .PHONY: examples-check notebooks-check
 .PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark rrao-benchmark
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
@@ -49,6 +49,9 @@ docs-check: regulatory-corpus
 	python3 scripts/ci/check_markdown_links.py
 	python3 scripts/ci/check_requirement_yaml.py
 
+import-lint:
+	uv run lint-imports
+
 import-smoke:
 	uv run python scripts/ci/import_smoke.py
 
@@ -56,7 +59,7 @@ maturity-check:
 	mkdir -p dist/quality
 	uv run python scripts/ci/check_package_maturity.py --json-output dist/quality/package-maturity.json
 
-quality-control: import-smoke maturity-check
+quality-control: import-lint import-smoke maturity-check
 
 regulatory-corpus:
 	python3 tools/regulatory/lint_regulatory_corpus.py
