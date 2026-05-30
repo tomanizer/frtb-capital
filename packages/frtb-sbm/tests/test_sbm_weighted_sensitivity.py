@@ -102,3 +102,32 @@ def test_compute_weighted_sensitivities_routes_girr_vega() -> None:
 
     assert len(weighted) == 1
     assert weighted[0].risk_measure is SbmRiskMeasure.VEGA
+
+
+def test_compute_weighted_sensitivities_routes_csr_nonsec_delta() -> None:
+    csr_sensitivity = SbmSensitivity(
+        sensitivity_id="csr-001",
+        source_row_id="row-csr-001",
+        desk_id="credit-desk",
+        legal_entity="LE-001",
+        risk_class=SbmRiskClass.CSR_NONSEC,
+        risk_measure=SbmRiskMeasure.DELTA,
+        bucket="4",
+        risk_factor="BOND",
+        qualifier="ISS-A",
+        tenor="5y",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        sign_convention=SbmSignConvention.LONG,
+        lineage=sample_lineage(),
+    )
+    weighted = compute_weighted_sensitivities(
+        (csr_sensitivity,),
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+        reporting_currency="USD",
+    )
+
+    assert len(weighted) == 1
+    assert weighted[0].risk_class is SbmRiskClass.CSR_NONSEC
+    assert weighted[0].risk_measure is SbmRiskMeasure.DELTA
+    assert "basel_mar21_53" in weighted[0].citation_ids

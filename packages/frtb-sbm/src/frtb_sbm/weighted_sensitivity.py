@@ -102,6 +102,11 @@ def compute_weighted_sensitivities(
             sensitivities,
             profile_id=profile_id,
         )
+    if risk_class is SbmRiskClass.CSR_NONSEC and risk_measure is SbmRiskMeasure.DELTA:
+        return weight_csr_nonsec_delta_sensitivities(
+            sensitivities,
+            profile_id=profile_id,
+        )
     raise UnsupportedRegulatoryFeatureError(
         "frtb-sbm weighted sensitivity lookup does not support "
         f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"

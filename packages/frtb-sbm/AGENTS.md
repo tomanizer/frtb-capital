@@ -9,6 +9,14 @@ delta, and CSR non-sec delta slices under BASEL_MAR21. Curvature inputs can be
 validated via `validate_curvature_sensitivities`; curvature capital remains
 explicitly unsupported until #166.
 
+`PACKAGE_METADATA.validation_status` is `PENDING`: fixture packs are synthetic
+and do not constitute independent model validation. Do not treat outputs as
+production regulatory capital.
+
+Only `BASEL_MAR21` produces phase-1 capital. Other profile enum values
+(`US_NPR_2_0`, `EU_CRR3`, `PRA_UK_CRR`) are accepted at the type level but fail
+closed at runtime until cited reference data exists.
+
 Package-local traceability lives under `packages/frtb-sbm/docs/`. See
 `REGULATORY_TRACEABILITY.md` for implemented/unsupported status by area.
 
