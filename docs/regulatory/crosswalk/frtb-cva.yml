@@ -1,20 +1,100 @@
 schema_version: 1
 component: frtb-cva
-status: scaffolded
+status: planned
 source_register: ../sources.yml
+planning_docs:
+  - docs/modules/frtb-cva/DETAILED_REQUIREMENTS.md
+  - docs/modules/frtb-cva/ARCHITECTURE_AND_DATA_DESIGN.md
+  - docs/modules/frtb-cva/DECISIONS_AND_PLAN.md
+  - docs/modules/frtb-cva/ISSUE_BREAKDOWN.md
+  - docs/modules/frtb-cva/requirements/BASEL_FRTB_CVA.yml
 
 requirements:
   - id: CVA-POLICY-001
-    topic: CVA capital approach selection and local implementation profile
+    topic: CVA capital approach selection and Basel MAR50 profile
+    detailed_ids: [CVA-FUNC-006, CVA-FUNC-001]
+    source_refs:
+      - basel_mar50
+      - bcbs_d507_cva_revisions_2020
+    code_refs:
+      - packages/frtb-cva/src/frtb_cva/scope.py
+      - packages/frtb-cva/src/frtb_cva/regimes.py
+    test_refs:
+      - packages/frtb-cva/tests/test_scope.py
+      - packages/frtb-cva/tests/test_regimes.py
+    coverage_status: not_implemented
+    challenger_refs:
+      - frtb_net_frtb
+    notes: First profile target is BASEL_MAR50_2020 with July 2020 calibration.
+  - id: CVA-BA-001
+    topic: Reduced and full BA-CVA capital mechanics
+    detailed_ids: [CVA-FUNC-008, CVA-FUNC-009, CVA-FUNC-010]
+    source_refs:
+      - basel_mar50
+    code_refs:
+      - packages/frtb-cva/src/frtb_cva/ba_cva.py
+    test_refs:
+      - packages/frtb-cva/tests/test_ba_cva_reduced.py
+      - packages/frtb-cva/tests/test_ba_cva_full.py
+    coverage_status: not_implemented
+    notes: Reduced BA-CVA is the first capital slice.
+  - id: CVA-SA-001
+    topic: SA-CVA sensitivity weighting and aggregation
+    detailed_ids: [CVA-FUNC-012, CVA-FUNC-013, CVA-FUNC-014]
+    source_refs:
+      - basel_mar50
+    code_refs:
+      - packages/frtb-cva/src/frtb_cva/weighted_sensitivity.py
+      - packages/frtb-cva/src/frtb_cva/aggregation.py
+    test_refs:
+      - packages/frtb-cva/tests/test_weighted_sensitivity.py
+      - packages/frtb-cva/tests/test_aggregation.py
+    coverage_status: not_implemented
+    notes: Net WS uses minus sign under positive CVA convention (MAR50.52).
+  - id: CVA-SA-RISK-001
+    topic: SA-CVA risk-class modules
+    detailed_ids: [CVA-FUNC-015, CVA-FUNC-016, CVA-FUNC-017, CVA-FUNC-018, CVA-FUNC-019, CVA-FUNC-020]
+    source_refs:
+      - basel_mar50
+    code_refs:
+      - packages/frtb-cva/src/frtb_cva/risk_classes
+    test_refs:
+      - packages/frtb-cva/tests/risk_classes
+    coverage_status: not_implemented
+    notes: GIRR delta first; GIRR/FX vega and remaining classes follow issue plan.
+  - id: CVA-HEDGE-001
+    topic: Eligible CVA hedges and internal transfers
+    detailed_ids: [CVA-FUNC-007, CVA-BOUNDARY-006]
+    source_refs:
+      - basel_mar50
+      - us_npr20_91fr14952
+    code_refs:
+      - packages/frtb-cva/src/frtb_cva/hedges.py
+    test_refs:
+      - packages/frtb-cva/tests/test_hedges.py
+    coverage_status: not_implemented
+    notes: Hedge benefit never implicit; NPR section V.B mapping deferred to US profile.
+  - id: CVA-EU-001
+    topic: EU CRR3 CVA comparison profile
+    detailed_ids: [CVA-FUNC-006]
+    source_refs:
+      - eu_crr3_2024_1623
+      - eba_rts_cva_sft
+    code_refs:
+      - packages/frtb-cva/src/frtb_cva/regimes.py
+    test_refs:
+      - packages/frtb-cva/tests/test_unsupported_features.py
+    coverage_status: not_implemented
+    notes: Fail closed until Articles 382-386 are mapped.
+  - id: CVA-UK-001
+    topic: UK PRA CVA comparison profile
+    detailed_ids: [CVA-FUNC-006]
     source_refs:
       - uk_pra_ps1_26_basel_3_1_final_rules
       - uk_pra_cp16_22_basel_3_1_consultation
     code_refs:
-      - packages/frtb-cva/src/frtb_cva/
+      - packages/frtb-cva/src/frtb_cva/regimes.py
     test_refs:
-      - packages/frtb-cva/tests/
+      - packages/frtb-cva/tests/test_unsupported_features.py
     coverage_status: not_implemented
-    challenger_refs:
-      - frtb_net_frtb
-      - ankitjha67_baselkit
-    notes: "Add separate Basel CVA and EU CVA sources before implementation starts."
+    notes: Comparison profile only; Basel MAR50 is first implementation target.

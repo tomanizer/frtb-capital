@@ -16,5 +16,11 @@ counterparty exposure, credit-spread, and hedge contracts are implemented.
 ## Planning Documents
 
 - [Product requirements](PRD.md)
+- [Detailed requirements](DETAILED_REQUIREMENTS.md)
+- [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
+- [Decisions and implementation plan](DECISIONS_AND_PLAN.md)
+- [Workable issue breakdown](ISSUE_BREAKDOWN.md)
 - [Regulatory requirements](REGULATORY_REQUIREMENTS.md)
 - [Workable requirements](requirements/BASEL_FRTB_CVA.yml)
+
+Implementation order is governed by [ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md).
