@@ -3,6 +3,7 @@ Cited risk-weight lookup and weighted sensitivity records.
 
 Regulatory traceability:
     Basel MAR21.39-MAR21.40 — GIRR delta risk weights.
+    Basel MAR21.92 — GIRR vega liquidity horizon and risk-weight scaling.
     U.S. NPR 2.0 section V.A.7.a step three.
     SBM-WS-001.
 """
@@ -19,7 +20,12 @@ from frtb_sbm.data_models import (
     SbmSensitivity,
     WeightedSensitivity,
 )
-from frtb_sbm.reference_data import girr_bucket_definition, girr_delta_risk_weight
+from frtb_sbm.reference_data import (
+    girr_bucket_definition,
+    girr_delta_risk_weight,
+    girr_vega_liquidity_horizon_days,
+    vega_risk_weight,
+)
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 from frtb_sbm.validation import sort_sensitivities_deterministic
 
@@ -55,14 +61,28 @@ def compute_weighted_sensitivities(
         return ()
     risk_classes = {item.risk_class for item in sensitivities}
     risk_measures = {item.risk_measure for item in sensitivities}
-    if risk_classes == {SbmRiskClass.GIRR} and risk_measures == {SbmRiskMeasure.DELTA}:
+    if len(risk_classes) != 1 or risk_classes != {SbmRiskClass.GIRR}:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm weighted sensitivity lookup supports only homogeneous GIRR inputs in phase 1"
+        )
+    if len(risk_measures) != 1:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm weighted sensitivity lookup requires a single risk measure per call"
+        )
+    risk_measure = next(iter(risk_measures))
+    if risk_measure is SbmRiskMeasure.DELTA:
         return weight_girr_delta_sensitivities(
             sensitivities,
             profile_id=profile_id,
             reporting_currency=reporting_currency,
         )
+    if risk_measure is SbmRiskMeasure.VEGA:
+        return weight_girr_vega_sensitivities(
+            sensitivities,
+            profile_id=profile_id,
+        )
     raise UnsupportedRegulatoryFeatureError(
-        "frtb-sbm weighted sensitivity lookup supports only GIRR delta inputs in phase 1"
+        f"frtb-sbm weighted sensitivity lookup does not support risk_measure={risk_measure.value}"
     )
 
 
@@ -115,9 +135,63 @@ def weight_girr_delta_sensitivities(
     return tuple(weighted)
 
 
+def weight_girr_vega_sensitivities(
+    sensitivities: Sequence[SbmSensitivity],
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted GIRR vega sensitivities for a supported profile."""
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.VEGA,
+    )
+    default_horizon = girr_vega_liquidity_horizon_days(profile_id)
+    weighted: list[WeightedSensitivity] = []
+    for sensitivity in sort_sensitivities_deterministic(sensitivities):
+        if sensitivity.risk_class is not SbmRiskClass.GIRR:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm GIRR vega weighting does not support "
+                f"risk_class={sensitivity.risk_class.value}"
+            )
+        if sensitivity.risk_measure is not SbmRiskMeasure.VEGA:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm GIRR vega weighting does not support "
+                f"risk_measure={sensitivity.risk_measure.value}"
+            )
+        girr_bucket_definition(profile_id, sensitivity.bucket)
+        horizon = (
+            sensitivity.liquidity_horizon_days
+            if sensitivity.liquidity_horizon_days is not None
+            else default_horizon
+        )
+        risk_weight, citation_ids = vega_risk_weight(
+            profile_id,
+            liquidity_horizon_days=horizon,
+        )
+        scaled_amount = sensitivity.amount * risk_weight
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=sensitivity.sensitivity_id,
+                risk_class=SbmRiskClass.GIRR,
+                risk_measure=SbmRiskMeasure.VEGA,
+                bucket=sensitivity.bucket,
+                raw_amount=sensitivity.amount,
+                risk_weight=risk_weight,
+                scaled_amount=scaled_amount,
+                citation_ids=citation_ids,
+                qualifier=sensitivity.option_tenor,
+                liquidity_horizon_days=horizon,
+            )
+        )
+    return tuple(weighted)
+
+
 __all__ = [
     "compute_weighted_sensitivities",
     "sort_weighted_sensitivities_deterministic",
     "weight_girr_delta_sensitivities",
+    "weight_girr_vega_sensitivities",
     "weighted_sensitivity_sort_key",
 ]

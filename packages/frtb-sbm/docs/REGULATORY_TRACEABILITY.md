@@ -41,12 +41,12 @@ Parent issue: [#151](https://github.com/tomanizer/frtb-capital/issues/151).
 | Model documentation and traceability | Implemented | Documentation pack from #152; updated with implementation status. |
 | Canonical data models and validation | Implemented | #153 |
 | Rule profile and GIRR delta reference data | Implemented | #154 — BASEL_MAR21 profile |
-| Weighted sensitivities (GIRR delta) | Implemented | #155 — vega scaling remains unsupported |
+| Weighted sensitivities (GIRR delta and vega) | Implemented | #155, #161 |
 | Intra-bucket aggregation | Implemented | #156 |
 | Inter-bucket aggregation and scenario selection | Implemented | #157 |
 | Public GIRR delta capital API | Implemented | #158 |
 | Audit/replay and synthetic fixtures | Implemented | #159 — `girr_delta_v1` fixture pack |
-| Vega capital | Unsupported | Explicit fail-closed until cited contracts and fixtures exist. |
+| Vega capital (GIRR) | Implemented | #161 — `girr_vega_v1` fixture pack |
 | Curvature capital | Unsupported | Explicit fail-closed until cited contracts and fixtures exist. |
 | CSR, equity, commodity, FX risk classes | Unsupported | Explicit fail-closed until cited mappings and fixtures exist. |
 | CRIF/CSV adapters | Out of scope | Phase 1 uses synthetic canonical fixtures only. |
@@ -89,9 +89,9 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `validation.py` | Input invariants, duplicate identity checks, lineage checks, and explicit package input errors. | MAR21 risk-factor assignment context. | Section V.A.7.a steps one and two. | Implemented (#153). |
 | `regimes.py` | Rule-profile identity, support declarations, unsupported-profile guardrails, and deterministic profile hash. | MAR21 profile for Basel SBM mechanics. | Section V.A.7.a U.S. profile. | Implemented for BASEL_MAR21 GIRR delta (#154). |
 | `reference_data.py` | GIRR bucket definitions, tenor sets, risk weights, correlations, scenario labels, and citation ids. | MAR21 GIRR tables. | Section V.A.7.a risk-weight and correlation steps. | Implemented (#154). |
-| `weighted_sensitivity.py` | Cited risk-weight lookup and weighted sensitivity records for supported measures. | MAR21 risk-weight provisions. | Section V.A.7.a step three. | Implemented for GIRR delta (#155). |
+| `weighted_sensitivity.py` | Cited risk-weight lookup and weighted sensitivity records for supported measures. | MAR21.39-MAR21.40, MAR21.92. | Section V.A.7.a step three. | Implemented for GIRR delta and vega (#155, #161). |
 | `aggregation.py` | Shared intra-bucket and inter-bucket aggregation, scenario evaluation, and floors. | MAR21 aggregation formulas. | Section V.A.7.a steps four through six. | Implemented (#156, #157). |
-| `capital.py` | Public calculation entry point wiring validation, profiles, weighting, aggregation, and result assembly. | MAR21 end-to-end SBM mechanics. | Section V.A.7.a full process. | Implemented for GIRR delta (#158). |
+| `capital.py` | Public calculation entry point wiring validation, profiles, weighting, aggregation, and result assembly. | MAR21 end-to-end SBM mechanics. | Section V.A.7.a full process. | Implemented for GIRR delta and vega (#158, #161). |
 | `audit.py` | Result serialization, input/profile hashes, and reconciliation checks. | MAR21 component traceability by formula. | Section V.A.7.a audit context. | Implemented (#159). |
 | `crif.py` | Optional CRIF-to-canonical mapping with lineage and rejected rows. | MAR21 risk-type mapping context only. | Section V.A.7.a canonical field mapping context. | Out of scope for phase 1. |
 

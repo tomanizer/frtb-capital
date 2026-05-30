@@ -53,18 +53,20 @@
     "case_id": "unsupported_measure",
     "expected_error_match": "frtb-sbm does not support",
     "sensitivity": {
-      "sensitivity_id": "vega-001",
-      "source_row_id": "row-vega",
+      "sensitivity_id": "curvature-001",
+      "source_row_id": "row-curvature",
       "desk_id": "rates-desk",
       "legal_entity": "LE-001",
       "risk_class": "GIRR",
-      "risk_measure": "VEGA",
+      "risk_measure": "CURVATURE",
       "bucket": "1",
       "risk_factor": "EUR",
       "amount": 1000000.0,
       "amount_currency": "USD",
       "tenor": "1y",
-      "sign_convention": "RECEIVE"
+      "sign_convention": "RECEIVE",
+      "up_shock_amount": 100.0,
+      "down_shock_amount": -100.0
     }
   },
   {

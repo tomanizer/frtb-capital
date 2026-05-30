@@ -15,7 +15,7 @@ from frtb_sbm import (
 )
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "girr_delta_v1"
-_RISK_CLASS_KEYS = ("risk_class", "selected_capital", "selected_scenario")
+_RISK_CLASS_KEYS = ("risk_class", "risk_measure", "selected_capital", "selected_scenario")
 _BUCKET_KEYS = ("bucket_id", "kb", "sb")
 _WEIGHTED_KEYS = ("sensitivity_id", "risk_weight", "scaled_amount")
 
@@ -71,6 +71,28 @@ def test_girr_delta_v1_fixture_result_is_replay_stable() -> None:
 
     assert first == second
     assert json.dumps(first, sort_keys=True) == json.dumps(second, sort_keys=True)
+
+
+def test_girr_vega_v1_fixture_matches_expected_outputs() -> None:
+    vega_fixture_dir = Path(__file__).parent / "fixtures" / "girr_vega_v1"
+    spec = importlib.util.spec_from_file_location(
+        "girr_vega_v1_loader",
+        vega_fixture_dir / "loader.py",
+    )
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    context = module.load_fixture_context()
+    sensitivities = module.load_fixture_sensitivities()
+    expected = module.load_expected_outputs()
+
+    result = calculate_sbm_capital(sensitivities, context=context)
+    validate_sbm_result_reconciliation(result)
+    payload = serialize_sbm_result(result)
+
+    assert payload["profile_hash"] == expected["profile_hash"]
+    assert payload["total_capital"] == expected["total_capital"]
 
 
 @pytest.mark.parametrize(

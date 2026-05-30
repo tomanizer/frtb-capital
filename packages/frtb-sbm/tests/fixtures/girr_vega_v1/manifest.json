@@ -1,0 +1,12 @@
+{
+  "fixture_id": "girr_vega_v1",
+  "profile_id": "BASEL_MAR21",
+  "risk_class": "GIRR",
+  "risk_measure": "VEGA",
+  "schema_version": "girr_vega_fixture_v1",
+  "files": [
+    "sensitivities.json",
+    "expected_outputs.json",
+    "invalid_cases.json"
+  ]
+}

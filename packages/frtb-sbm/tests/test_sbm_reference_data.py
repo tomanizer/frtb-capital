@@ -25,6 +25,10 @@ from frtb_sbm.reference_data import (
     girr_inter_bucket_correlation,
     girr_tenor_definition,
     girr_tenors_for_profile,
+    girr_vega_intra_bucket_correlation,
+    girr_vega_liquidity_horizon_days,
+    girr_vega_option_tenors,
+    vega_risk_weight,
 )
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 
@@ -153,6 +157,36 @@ def test_girr_delta_intra_bucket_correlation_handles_inflation_and_xccy() -> Non
     assert xccy_xccy == 1.0
 
 
+def test_girr_vega_liquidity_horizon_and_risk_weight() -> None:
+    horizon = girr_vega_liquidity_horizon_days(SbmRegulatoryProfile.BASEL_MAR21)
+
+    assert horizon == 60
+    risk_weight, citation_ids = vega_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        liquidity_horizon_days=horizon,
+    )
+    assert risk_weight == 1.0
+    assert citation_ids == ("basel_mar21_92",)
+    assert len(girr_vega_option_tenors(SbmRegulatoryProfile.BASEL_MAR21)) == len(
+        girr_tenors_for_profile(SbmRegulatoryProfile.BASEL_MAR21)
+    )
+
+
+def test_girr_vega_intra_bucket_correlation() -> None:
+    correlation, citation_ids = girr_vega_intra_bucket_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        option_tenor1="5y",
+        option_tenor2="5y",
+        tenor1="1y",
+        tenor2="5y",
+    )
+
+    rho_opt = 1.0
+    rho_ul = math.exp(-0.01 * abs(1.0 - 5.0) / 1.0)
+    assert correlation == pytest.approx(min(1.0, rho_opt * rho_ul))
+    assert citation_ids == ("basel_mar21_93",)
+
+
 def test_girr_inter_bucket_correlation() -> None:
     same_bucket, _ = girr_inter_bucket_correlation(
         SbmRegulatoryProfile.BASEL_MAR21,
@@ -225,7 +259,6 @@ def test_missing_lookup_keys_raise_input_errors() -> None:
 @pytest.mark.parametrize(
     ("risk_class", "risk_measure"),
     [
-        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),

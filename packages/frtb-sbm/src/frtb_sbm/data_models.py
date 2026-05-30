@@ -162,6 +162,7 @@ class SbmSensitivity:
     qualifier: str | None = None
     tenor: str | None = None
     option_tenor: str | None = None
+    liquidity_horizon_days: int | None = None
     maturity: str | None = None
     up_shock_amount: float | None = None
     down_shock_amount: float | None = None
@@ -181,6 +182,7 @@ class WeightedSensitivity:
     scaled_amount: float
     citation_ids: tuple[str, ...]
     qualifier: str | None = None
+    liquidity_horizon_days: int | None = None
 
 
 @dataclass(frozen=True)

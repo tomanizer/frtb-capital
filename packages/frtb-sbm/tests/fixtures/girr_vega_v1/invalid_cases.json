@@ -1,0 +1,54 @@
+[
+  {
+    "case_id": "missing-option-tenor",
+    "expected_error_match": "option_tenor",
+    "sensitivity": {
+      "sensitivity_id": "vega-missing-option",
+      "source_row_id": "row-201",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 100000.0,
+      "amount_currency": "USD",
+      "tenor": "1y",
+      "sign_convention": "RECEIVE"
+    }
+  },
+  {
+    "case_id": "duplicate-sensitivity-id",
+    "expected_error_match": "duplicate sensitivity id",
+    "sensitivity": {
+      "sensitivity_id": "dup-vega",
+      "source_row_id": "row-202",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 100000.0,
+      "amount_currency": "USD",
+      "tenor": "1y",
+      "option_tenor": "1y",
+      "sign_convention": "RECEIVE"
+    },
+    "duplicate_of": {
+      "sensitivity_id": "dup-vega",
+      "source_row_id": "row-203",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 50000.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "option_tenor": "5y",
+      "sign_convention": "RECEIVE"
+    }
+  }
+]

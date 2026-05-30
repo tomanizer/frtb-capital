@@ -166,24 +166,14 @@ def test_calculate_sbm_capital_fails_closed_for_unsupported_profiles() -> None:
         )
 
 
-@pytest.mark.parametrize(
-    ("risk_measure", "risk_class"),
-    [
-        (SbmRiskMeasure.VEGA, SbmRiskClass.GIRR),
-        (SbmRiskMeasure.DELTA, SbmRiskClass.FX),
-    ],
-)
-def test_calculate_sbm_capital_fails_closed_for_unsupported_paths(
-    risk_measure: SbmRiskMeasure,
-    risk_class: SbmRiskClass,
-) -> None:
+def test_calculate_sbm_capital_fails_closed_for_unsupported_fx_delta() -> None:
     sensitivity = SbmSensitivity(
         sensitivity_id="unsupported-001",
         source_row_id="row-001",
         desk_id="rates-desk",
         legal_entity="LE-001",
-        risk_class=risk_class,
-        risk_measure=risk_measure,
+        risk_class=SbmRiskClass.FX,
+        risk_measure=SbmRiskMeasure.DELTA,
         bucket="1",
         risk_factor="EUR",
         amount=1_000_000.0,
@@ -195,6 +185,87 @@ def test_calculate_sbm_capital_fails_closed_for_unsupported_paths(
 
     with pytest.raises(UnsupportedRegulatoryFeatureError):
         calculate_sbm_capital((sensitivity,), context=sample_context())
+
+
+def sample_vega_sensitivity(
+    *,
+    sensitivity_id: str,
+    source_row_id: str,
+    bucket: str,
+    risk_factor: str,
+    tenor: str,
+    option_tenor: str,
+    amount: float,
+) -> SbmSensitivity:
+    return SbmSensitivity(
+        sensitivity_id=sensitivity_id,
+        source_row_id=source_row_id,
+        desk_id="rates-desk",
+        legal_entity="LE-001",
+        risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.VEGA,
+        bucket=bucket,
+        risk_factor=risk_factor,
+        amount=amount,
+        amount_currency="USD",
+        tenor=tenor,
+        option_tenor=option_tenor,
+        sign_convention=SbmSignConvention.RECEIVE,
+        lineage=sample_lineage(source_row_id),
+    )
+
+
+def test_calculate_sbm_capital_supports_girr_vega_inputs() -> None:
+    result = calculate_sbm_capital(
+        (
+            sample_vega_sensitivity(
+                sensitivity_id="eur-vega",
+                source_row_id="row-101",
+                bucket="1",
+                risk_factor="EUR",
+                tenor="1y",
+                option_tenor="1y",
+                amount=250_000.0,
+            ),
+        ),
+        context=sample_context(),
+    )
+
+    assert len(result.risk_classes) == 1
+    assert result.risk_classes[0].risk_measure is SbmRiskMeasure.VEGA
+    assert result.total_capital == result.risk_classes[0].selected_capital
+
+
+def test_calculate_sbm_capital_sums_delta_and_vega_measures() -> None:
+    result = calculate_sbm_capital(
+        (
+            sample_sensitivity(
+                sensitivity_id="eur-1y",
+                source_row_id="row-001",
+                bucket="1",
+                risk_factor="EUR",
+                tenor="1y",
+                amount=1_000_000.0,
+            ),
+            sample_vega_sensitivity(
+                sensitivity_id="eur-vega",
+                source_row_id="row-101",
+                bucket="1",
+                risk_factor="EUR",
+                tenor="1y",
+                option_tenor="1y",
+                amount=250_000.0,
+            ),
+        ),
+        context=sample_context(),
+    )
+
+    assert len(result.risk_classes) == 2
+    measures = {item.risk_measure for item in result.risk_classes}
+    assert measures == {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA}
+    assert result.total_capital == pytest.approx(
+        sum(item.selected_capital for item in result.risk_classes)
+    )
 
 
 def test_calculate_sbm_capital_selects_max_correlation_scenario() -> None:

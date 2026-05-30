@@ -63,7 +63,12 @@ from frtb_sbm.reference_data import (
     girr_inter_bucket_correlation,
     girr_tenor_definition,
     girr_tenors_for_profile,
+    girr_vega_intra_bucket_correlation,
+    girr_vega_liquidity_horizon_days,
+    girr_vega_option_tenor_definition,
+    girr_vega_option_tenors,
     profile_reference_payload,
+    vega_risk_weight,
 )
 from frtb_sbm.regimes import (
     ensure_profile_supports_risk_class_measure,
@@ -93,6 +98,7 @@ from frtb_sbm.weighted_sensitivity import (
     compute_weighted_sensitivities,
     sort_weighted_sensitivities_deterministic,
     weight_girr_delta_sensitivities,
+    weight_girr_vega_sensitivities,
     weighted_sensitivity_sort_key,
 )
 
@@ -159,6 +165,10 @@ __all__ = [
     "girr_inter_bucket_correlation",
     "girr_tenor_definition",
     "girr_tenors_for_profile",
+    "girr_vega_intra_bucket_correlation",
+    "girr_vega_liquidity_horizon_days",
+    "girr_vega_option_tenor_definition",
+    "girr_vega_option_tenors",
     "group_weighted_sensitivities_by_bucket",
     "input_hash_for_sensitivities",
     "normalise_currency_code",
@@ -176,6 +186,8 @@ __all__ = [
     "validate_sbm_calculation_context",
     "validate_sbm_result_reconciliation",
     "validate_sbm_sensitivities",
+    "vega_risk_weight",
     "weight_girr_delta_sensitivities",
+    "weight_girr_vega_sensitivities",
     "weighted_sensitivity_sort_key",
 ]

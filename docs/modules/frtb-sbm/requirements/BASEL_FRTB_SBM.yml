@@ -36,10 +36,10 @@ requirements:
   - id: SBM-WS-001
     title: Weighted sensitivity calculation
     source: Basel MAR21 risk-weight provisions; U.S. NPR 2.0 section V.A.7.a step three
-    status: partial
+    status: implemented
     modules: [src/frtb_sbm/weighted_sensitivity.py]
-    tests: [tests/test_sbm_weighted_sensitivity.py]
-    notes: GIRR delta weighting implemented; vega liquidity-horizon scaling remains unsupported.
+    tests: [tests/test_sbm_weighted_sensitivity.py, tests/test_sbm_girr_vega.py]
+    notes: GIRR delta and vega cited weighting for BASEL_MAR21.
   - id: SBM-AGG-001
     title: Intra-bucket aggregation
     source: Basel MAR21 aggregation formulas; U.S. NPR 2.0 section V.A.7.a step four
