@@ -35,7 +35,7 @@
   },
   {
     "case_id": "unsupported_measure",
-    "expected_error_match": "frtb-sbm does not support",
+    "expected_error_match": "phase-1 capital",
     "sensitivity": {
       "sensitivity_id": "com-vega-001",
       "source_row_id": "row-com-vega",

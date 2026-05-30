@@ -4,6 +4,23 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-05-30
+
+### Fixed
+
+- Remove dead `aggregate_equity_delta_intra_bucket` helper; bucket 11 uses shared
+  `absolute_weight_intra` aggregation only.
+- Validate sensitivities once per `calculate_sbm_capital` call; scope checks in
+  `ensure_sbm_run_supported` no longer re-walk validation.
+- Route phase-1 unsupported profile/path errors through `ensure_sbm_capital_paths_supported`
+  with consistent capital-layer messages.
+- Sort equity and commodity inter-bucket pairs with cited bucket-number guards.
+
+### Changed
+
+- Document risk-class-specific semantics for `qualifier` on sensitivity models.
+- Remove unused audit `_normalise` helpers from runtime modules (test helpers retained).
+
 ## [0.7.1] - 2026-05-30
 
 ### Fixed
@@ -29,6 +46,7 @@ All notable changes to `frtb-sbm` will be documented here.
 - `calculate_sbm_capital` supports homogeneous CSR non-securitisation delta inputs.
 - Profile hash and support map include CSR non-securitisation delta measure.
 - Existing fixture profile hashes updated for expanded reference payload.
+
 
 ## [0.6.1] - 2026-05-30
 

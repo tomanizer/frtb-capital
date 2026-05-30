@@ -19,7 +19,10 @@ from frtb_sbm.aggregation import (
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
-from frtb_sbm.commodity_reference_data import commodity_delta_intra_bucket_correlation
+from frtb_sbm.commodity_reference_data import (
+    _require_commodity_bucket_number,
+    commodity_delta_intra_bucket_correlation,
+)
 from frtb_sbm.commodity_reference_data import (
     commodity_inter_bucket_correlation as commodity_inter_bucket_gamma,
 )
@@ -135,7 +138,7 @@ def build_commodity_inter_bucket_correlation_map(
     """Return cited commodity inter-bucket correlations for distinct bucket pairs."""
 
     correlations: dict[tuple[str, str], float] = {}
-    ordered_ids = tuple(sorted(bucket_ids, key=lambda value: int(value)))
+    ordered_ids = tuple(sorted(bucket_ids, key=_require_commodity_bucket_number))
     for left_index, bucket_a in enumerate(ordered_ids):
         for bucket_b in ordered_ids[left_index + 1 :]:
             gamma, _ = commodity_inter_bucket_gamma(

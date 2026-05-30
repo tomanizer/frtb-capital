@@ -262,7 +262,9 @@ def test_audit_normalisation_helpers_are_json_ready() -> None:
         "items": (RraoClassification.EXOTIC,),
     }
 
-    assert audit_module._normalise(payload) == {
+    from audit_normalise import normalise_audit_value
+
+    assert normalise_audit_value(payload) == {
         "date": "2026-03-31",
         "enum": "GAP_RISK",
         "items": ["EXOTIC"],

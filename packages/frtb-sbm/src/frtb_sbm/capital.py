@@ -50,7 +50,12 @@ from frtb_sbm.risk_classes.commodity import calculate_commodity_delta_risk_class
 from frtb_sbm.risk_classes.csr_nonsec import calculate_csr_nonsec_delta_risk_class_capital
 from frtb_sbm.risk_classes.equity import calculate_equity_delta_risk_class_capital
 from frtb_sbm.risk_classes.fx import calculate_fx_delta_risk_class_capital
-from frtb_sbm.validation import SbmInputError, ensure_sbm_run_supported
+from frtb_sbm.validation import (
+    SbmInputError,
+    ensure_sbm_capital_paths_supported,
+    ensure_sbm_run_supported,
+    phase1_capital_supported_paths,
+)
 from frtb_sbm.weighted_sensitivity import (
     weight_girr_delta_sensitivities,
     weight_girr_vega_sensitivities,
@@ -65,17 +70,6 @@ _SBM_REQUIREMENT_IDS = (
     "SBM-FUNC-018",
     "SBM-FUNC-019",
     "SBM-FUNC-014",
-)
-
-_PHASE1_SUPPORTED_PATHS: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozenset(
-    {
-        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
-        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
-        (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
-        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
-        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
-        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
-    }
 )
 
 _MAR21_INTRA_BUCKET_CITATION = ("basel_mar21_4_intra_bucket",)
@@ -106,10 +100,13 @@ def calculate_sbm_capital(
     validated = _coerce_sensitivities(sensitivities)
     rule_profile = get_sbm_rule_profile(context.profile_id)
     ensure_sbm_run_supported(context, validated)
-    _ensure_phase1_supported(validated)
+    ensure_sbm_capital_paths_supported(context.profile_id, validated)
 
     risk_class_results: list[RiskClassCapital] = []
-    for risk_class, risk_measure in _ordered_supported_paths(validated):
+    for risk_class, risk_measure in _ordered_supported_paths(
+        validated,
+        profile_id=context.profile_id,
+    ):
         measure_sensitivities = tuple(
             item
             for item in validated
@@ -412,27 +409,16 @@ def _append_citation(citation_ids: list[str], seen: set[str], citation_id: str) 
         seen.add(citation_id)
 
 
-def _ensure_phase1_supported(sensitivities: Sequence[SbmSensitivity]) -> None:
-    if not sensitivities:
-        raise SbmInputError("sensitivities must not be empty", field="sensitivities")
-    for sensitivity in sensitivities:
-        path = (sensitivity.risk_class, sensitivity.risk_measure)
-        if path not in _PHASE1_SUPPORTED_PATHS:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm phase-1 capital supports GIRR delta/vega, FX delta, "
-                "equity delta, commodity delta, and CSR non-securitisation delta inputs; "
-                f"received risk_class={sensitivity.risk_class.value}, "
-                f"risk_measure={sensitivity.risk_measure.value}"
-            )
-
-
 def _ordered_supported_paths(
     sensitivities: Sequence[SbmSensitivity],
+    *,
+    profile_id: str,
 ) -> tuple[tuple[SbmRiskClass, SbmRiskMeasure], ...]:
+    supported = phase1_capital_supported_paths(profile_id)
     present = {
         (item.risk_class, item.risk_measure)
         for item in sensitivities
-        if (item.risk_class, item.risk_measure) in _PHASE1_SUPPORTED_PATHS
+        if (item.risk_class, item.risk_measure) in supported
     }
     ordering = (
         (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
