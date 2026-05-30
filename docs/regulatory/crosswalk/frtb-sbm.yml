@@ -31,11 +31,11 @@ requirements:
       - packages/frtb-sbm/src/frtb_sbm/
     test_refs:
       - packages/frtb-sbm/tests/
-    coverage_status: not_implemented
+    coverage_status: partial
     challenger_refs:
       - frtb_net_frtb
       - hemanth_frtb_sa_capital_engine
-    notes: "Keep PRA historical-FX treatment separate from generic Basel profile."
+    notes: "Basel MAR21 FX delta implemented; PRA historical-FX treatment remains separate."
 
   - id: SBM-EQUITY-DELTA-001
     topic: Equity delta bucket assignment and correlation scenarios

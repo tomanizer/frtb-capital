@@ -70,24 +70,6 @@
     }
   },
   {
-    "case_id": "unsupported_risk_class",
-    "expected_error_match": "frtb-sbm does not support",
-    "sensitivity": {
-      "sensitivity_id": "fx-001",
-      "source_row_id": "row-fx",
-      "desk_id": "rates-desk",
-      "legal_entity": "LE-001",
-      "risk_class": "FX",
-      "risk_measure": "DELTA",
-      "bucket": "1",
-      "risk_factor": "EURUSD",
-      "amount": 1000000.0,
-      "amount_currency": "USD",
-      "tenor": "1y",
-      "sign_convention": "RECEIVE"
-    }
-  },
-  {
     "case_id": "missing_bucket_definition",
     "expected_error_match": "no GIRR bucket definition",
     "sensitivity": {

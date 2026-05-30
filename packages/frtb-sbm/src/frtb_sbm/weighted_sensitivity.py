@@ -21,13 +21,15 @@ from frtb_sbm.data_models import (
     WeightedSensitivity,
 )
 from frtb_sbm.reference_data import (
+    fx_bucket_definition,
+    fx_delta_risk_weight,
     girr_bucket_definition,
     girr_delta_risk_weight,
     girr_vega_liquidity_horizon_days,
     vega_risk_weight,
 )
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
-from frtb_sbm.validation import sort_sensitivities_deterministic
+from frtb_sbm.validation import SbmInputError, sort_sensitivities_deterministic
 
 
 def weighted_sensitivity_sort_key(item: WeightedSensitivity) -> tuple[str, str, str, str]:
@@ -61,28 +63,32 @@ def compute_weighted_sensitivities(
         return ()
     risk_classes = {item.risk_class for item in sensitivities}
     risk_measures = {item.risk_measure for item in sensitivities}
-    if len(risk_classes) != 1 or risk_classes != {SbmRiskClass.GIRR}:
+    if len(risk_classes) != 1 or len(risk_measures) != 1:
         raise UnsupportedRegulatoryFeatureError(
-            "frtb-sbm weighted sensitivity lookup supports only homogeneous GIRR inputs in phase 1"
+            "frtb-sbm weighted sensitivity lookup requires homogeneous risk class and measure"
         )
-    if len(risk_measures) != 1:
-        raise UnsupportedRegulatoryFeatureError(
-            "frtb-sbm weighted sensitivity lookup requires a single risk measure per call"
-        )
+    risk_class = next(iter(risk_classes))
     risk_measure = next(iter(risk_measures))
-    if risk_measure is SbmRiskMeasure.DELTA:
+    if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.DELTA:
         return weight_girr_delta_sensitivities(
             sensitivities,
             profile_id=profile_id,
             reporting_currency=reporting_currency,
         )
-    if risk_measure is SbmRiskMeasure.VEGA:
+    if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.VEGA:
         return weight_girr_vega_sensitivities(
             sensitivities,
             profile_id=profile_id,
         )
+    if risk_class is SbmRiskClass.FX and risk_measure is SbmRiskMeasure.DELTA:
+        return weight_fx_delta_sensitivities(
+            sensitivities,
+            profile_id=profile_id,
+            reporting_currency=reporting_currency,
+        )
     raise UnsupportedRegulatoryFeatureError(
-        f"frtb-sbm weighted sensitivity lookup does not support risk_measure={risk_measure.value}"
+        "frtb-sbm weighted sensitivity lookup does not support "
+        f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
     )
 
 
@@ -188,9 +194,64 @@ def weight_girr_vega_sensitivities(
     return tuple(weighted)
 
 
+def weight_fx_delta_sensitivities(
+    sensitivities: Sequence[SbmSensitivity],
+    *,
+    profile_id: str,
+    reporting_currency: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted FX delta sensitivities for a supported profile."""
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.FX,
+        SbmRiskMeasure.DELTA,
+    )
+    weighted: list[WeightedSensitivity] = []
+    for sensitivity in sort_sensitivities_deterministic(sensitivities):
+        if sensitivity.risk_class is not SbmRiskClass.FX:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm FX delta weighting does not support "
+                f"risk_class={sensitivity.risk_class.value}"
+            )
+        if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm FX delta weighting does not support "
+                f"risk_measure={sensitivity.risk_measure.value}"
+            )
+        bucket = fx_bucket_definition(profile_id, sensitivity.bucket)
+        if bucket.currency != sensitivity.risk_factor.strip().upper():
+            raise SbmInputError(
+                "FX bucket must match risk_factor currency",
+                field="bucket",
+                sensitivity_id=sensitivity.sensitivity_id,
+            )
+        risk_weight, citation_ids = fx_delta_risk_weight(
+            profile_id,
+            currency=bucket.currency,
+            reporting_currency=reporting_currency,
+        )
+        scaled_amount = sensitivity.amount * risk_weight
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=sensitivity.sensitivity_id,
+                risk_class=SbmRiskClass.FX,
+                risk_measure=SbmRiskMeasure.DELTA,
+                bucket=sensitivity.bucket,
+                raw_amount=sensitivity.amount,
+                risk_weight=risk_weight,
+                scaled_amount=scaled_amount,
+                citation_ids=citation_ids,
+                qualifier=sensitivity.qualifier,
+            )
+        )
+    return tuple(weighted)
+
+
 __all__ = [
     "compute_weighted_sensitivities",
     "sort_weighted_sensitivities_deterministic",
+    "weight_fx_delta_sensitivities",
     "weight_girr_delta_sensitivities",
     "weight_girr_vega_sensitivities",
     "weighted_sensitivity_sort_key",

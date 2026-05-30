@@ -33,8 +33,21 @@ GIRR_DIFFERENT_CURVE_CORRELATION = 0.999
 GIRR_INFLATION_SAME_TENOR_CORRELATION = 1.0
 GIRR_INFLATION_DIFFERENT_TENOR_CORRELATION = 0.40
 
+FX_DELTA_RISK_WEIGHT = 0.15
+FX_INTER_BUCKET_CORRELATION = 0.60
+FX_INTRA_BUCKET_CORRELATION = 1.0
+
 LIQUID_GIRR_CURRENCIES = frozenset({"EUR", "USD", "GBP", "JPY", "AUD", "CAD", "SEK"})
 SQRT2 = math.sqrt(2.0)
+
+
+@dataclass(frozen=True)
+class SbmFxBucketDefinition:
+    """Profile-specific FX currency bucket definition."""
+
+    bucket_id: str
+    currency: str
+    citation_id: str
 
 
 @dataclass(frozen=True)
@@ -151,11 +164,71 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         url=BASEL_MAR21_URL,
         note="GIRR vega intra-bucket correlation from option and underlying tenors.",
     ),
+    "basel_mar21_14": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.14",
+        url=BASEL_MAR21_URL,
+        note="FX delta risk-factor definition relative to reporting currency.",
+    ),
+    "basel_mar21_86": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.86",
+        url=BASEL_MAR21_URL,
+        note="FX delta bucket assignment by exchange rate versus reporting currency.",
+    ),
+    "basel_mar21_87": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.87",
+        url=BASEL_MAR21_URL,
+        note="FX delta uniform 15% risk weight.",
+    ),
+    "basel_mar21_88": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.88",
+        url=BASEL_MAR21_URL,
+        note="FX delta sqrt(2) risk-weight reduction for specified and first-order cross pairs.",
+    ),
+    "basel_mar21_89": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.89",
+        url=BASEL_MAR21_URL,
+        note="FX delta inter-bucket correlation parameter.",
+    ),
 }
 
 PROFILE_CITATIONS: dict[SbmRegulatoryProfile, dict[str, SbmCitation]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_CITATIONS,
 }
+
+BASEL_FX_SPECIFIED_CURRENCIES: frozenset[str] = frozenset(
+    {
+        "USD",
+        "EUR",
+        "JPY",
+        "GBP",
+        "AUD",
+        "CAD",
+        "CHF",
+        "MXN",
+        "CNY",
+        "NZD",
+        "RUB",
+        "HKD",
+        "SGD",
+        "TRY",
+        "KRW",
+        "SEK",
+        "ZAR",
+        "NOK",
+        "INR",
+        "BRL",
+    }
+)
+
+BASEL_FX_BUCKETS: tuple[SbmFxBucketDefinition, ...] = tuple(
+    SbmFxBucketDefinition(currency, currency, "basel_mar21_86")
+    for currency in sorted(BASEL_FX_SPECIFIED_CURRENCIES)
+)
 
 BASEL_GIRR_BUCKETS: tuple[SbmGirrBucketDefinition, ...] = (
     SbmGirrBucketDefinition("1", "EUR", "basel_mar21_38"),
@@ -230,6 +303,14 @@ BASEL_CORRELATION_SCENARIOS: tuple[SbmCorrelationScenarioDefinition, ...] = (
         citation_id="basel_mar21_43",
     ),
 )
+
+PROFILE_FX_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmFxBucketDefinition, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_FX_BUCKETS,
+}
+
+PROFILE_FX_SPECIFIED_CURRENCIES: dict[SbmRegulatoryProfile, frozenset[str]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_FX_SPECIFIED_CURRENCIES,
+}
 
 PROFILE_GIRR_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmGirrBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_BUCKETS,
@@ -531,6 +612,104 @@ def girr_inter_bucket_correlation(
     return GIRR_INTER_BUCKET_CORRELATION, ("basel_mar21_42",)
 
 
+def fx_buckets_for_profile(
+    profile: SbmRegulatoryProfile | str,
+) -> tuple[SbmFxBucketDefinition, ...]:
+    """Return cited FX bucket definitions for a supported profile."""
+
+    resolved = _resolve_supported_profile(profile)
+    _ensure_fx_delta_supported(profile)
+    return PROFILE_FX_BUCKETS[resolved]
+
+
+def fx_specified_currencies_for_profile(
+    profile: SbmRegulatoryProfile | str,
+) -> frozenset[str]:
+    """Return the cited FX specified-currency set for a supported profile."""
+
+    resolved = _resolve_supported_profile(profile)
+    _ensure_fx_delta_supported(profile)
+    return PROFILE_FX_SPECIFIED_CURRENCIES[resolved]
+
+
+def fx_bucket_definition(
+    profile: SbmRegulatoryProfile | str,
+    bucket_id: str,
+) -> SbmFxBucketDefinition:
+    """Return the FX bucket definition for a currency bucket id."""
+
+    _ensure_fx_delta_supported(profile)
+    normalised = _require_currency(bucket_id)
+    for bucket in PROFILE_FX_BUCKETS[_resolve_supported_profile(profile)]:
+        if bucket.bucket_id == normalised:
+            return bucket
+    return SbmFxBucketDefinition(
+        bucket_id=normalised,
+        currency=normalised,
+        citation_id="basel_mar21_86",
+    )
+
+
+def fx_delta_risk_weight(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    currency: str,
+    reporting_currency: str,
+) -> tuple[float, tuple[str, ...]]:
+    """Return the cited FX delta risk weight and citation ids."""
+
+    _ensure_fx_delta_supported(profile)
+    normalised_currency = _require_currency(currency)
+    normalised_reporting = _require_currency(reporting_currency)
+    if normalised_currency == normalised_reporting:
+        return 0.0, ("basel_mar21_87",)
+    citation_ids: list[str] = ["basel_mar21_87"]
+    risk_weight = FX_DELTA_RISK_WEIGHT
+    if _apply_fx_sqrt2_adjustment(
+        currency=normalised_currency,
+        reporting_currency=normalised_reporting,
+        profile=profile,
+    ):
+        risk_weight /= SQRT2
+        citation_ids.append("basel_mar21_88")
+    return risk_weight, tuple(citation_ids)
+
+
+def fx_delta_intra_bucket_correlation(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    bucket1: str,
+    bucket2: str,
+) -> tuple[float, tuple[str, ...]]:
+    """Return the cited FX delta intra-bucket correlation and citation ids."""
+
+    _ensure_fx_delta_supported(profile)
+    normalised_bucket1 = _require_currency(bucket1)
+    normalised_bucket2 = _require_currency(bucket2)
+    fx_bucket_definition(profile, normalised_bucket1)
+    fx_bucket_definition(profile, normalised_bucket2)
+    del normalised_bucket1, normalised_bucket2
+    return FX_INTRA_BUCKET_CORRELATION, ("basel_mar21_86",)
+
+
+def fx_inter_bucket_correlation(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    bucket1: str,
+    bucket2: str,
+) -> tuple[float, tuple[str, ...]]:
+    """Return the cited FX inter-bucket correlation and citation ids."""
+
+    _ensure_fx_delta_supported(profile)
+    normalised_bucket1 = _require_currency(bucket1)
+    normalised_bucket2 = _require_currency(bucket2)
+    fx_bucket_definition(profile, normalised_bucket1)
+    fx_bucket_definition(profile, normalised_bucket2)
+    if normalised_bucket1 == normalised_bucket2:
+        return FX_INTRA_BUCKET_CORRELATION, ("basel_mar21_89",)
+    return FX_INTER_BUCKET_CORRELATION, ("basel_mar21_89",)
+
+
 def correlation_scenarios_for_profile(
     profile: SbmRegulatoryProfile | str,
 ) -> tuple[SbmCorrelationScenarioDefinition, ...]:
@@ -659,6 +838,25 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
             }
             for tenor in girr_vega_option_tenors(resolved)
         ],
+        "fx_buckets": [
+            {
+                "bucket_id": bucket.bucket_id,
+                "currency": bucket.currency,
+                "citation_id": bucket.citation_id,
+            }
+            for bucket in fx_buckets_for_profile(resolved)
+        ],
+        "fx_delta_parameters": {
+            "risk_weight": FX_DELTA_RISK_WEIGHT,
+            "intra_bucket_correlation": FX_INTRA_BUCKET_CORRELATION,
+            "inter_bucket_correlation": FX_INTER_BUCKET_CORRELATION,
+            "risk_weight_citation_id": "basel_mar21_87",
+            "sqrt2_citation_id": "basel_mar21_88",
+            "inter_bucket_citation_id": "basel_mar21_89",
+        },
+        "fx_specified_currencies": sorted(
+            fx_specified_currencies_for_profile(resolved),
+        ),
     }
 
 
@@ -676,6 +874,26 @@ def _ensure_girr_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
 
 def _ensure_girr_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
     _ensure_girr_supported(profile)
+
+
+def _ensure_fx_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
+    resolved = _resolve_supported_profile(profile)
+    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
+        raise UnsupportedRegulatoryFeatureError(
+            f"FX delta reference data is unsupported for profile {resolved.value}"
+        )
+
+
+def _apply_fx_sqrt2_adjustment(
+    *,
+    currency: str,
+    reporting_currency: str,
+    profile: SbmRegulatoryProfile | str,
+) -> bool:
+    if currency == reporting_currency:
+        return False
+    specified = fx_specified_currencies_for_profile(profile)
+    return currency in specified and reporting_currency in specified
 
 
 def _resolve_supported_profile(profile: SbmRegulatoryProfile | str) -> SbmRegulatoryProfile:
@@ -748,10 +966,15 @@ def _require_currency(value: str) -> str:
 
 __all__ = [
     "BASEL_CORRELATION_SCENARIOS",
+    "BASEL_FX_BUCKETS",
+    "BASEL_FX_SPECIFIED_CURRENCIES",
     "BASEL_GIRR_BUCKETS",
     "BASEL_GIRR_DELTA_RISK_WEIGHTS",
     "BASEL_GIRR_SPECIAL_RISK_FACTORS",
     "BASEL_GIRR_TENORS",
+    "FX_DELTA_RISK_WEIGHT",
+    "FX_INTER_BUCKET_CORRELATION",
+    "FX_INTRA_BUCKET_CORRELATION",
     "GIRR_DELTA_INTRA_BUCKET_CONSTANT",
     "GIRR_INTER_BUCKET_CORRELATION",
     "GIRR_VEGA_INTRA_BUCKET_CONSTANT",
@@ -760,6 +983,7 @@ __all__ = [
     "LIQUID_GIRR_CURRENCIES",
     "PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS",
     "SbmCorrelationScenarioDefinition",
+    "SbmFxBucketDefinition",
     "SbmGirrBucketDefinition",
     "SbmGirrRiskWeightRule",
     "SbmGirrSpecialRiskFactorRule",
@@ -768,6 +992,12 @@ __all__ = [
     "citations_for_profile",
     "correlation_scenario_definition",
     "correlation_scenarios_for_profile",
+    "fx_bucket_definition",
+    "fx_buckets_for_profile",
+    "fx_delta_intra_bucket_correlation",
+    "fx_delta_risk_weight",
+    "fx_inter_bucket_correlation",
+    "fx_specified_currencies_for_profile",
     "girr_bucket_definition",
     "girr_bucket_for_currency",
     "girr_buckets_for_profile",

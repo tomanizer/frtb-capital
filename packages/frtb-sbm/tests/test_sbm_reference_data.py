@@ -12,10 +12,15 @@ from frtb_sbm import (
     SbmScenarioLabel,
 )
 from frtb_sbm.reference_data import (
+    FX_DELTA_RISK_WEIGHT,
+    FX_INTER_BUCKET_CORRELATION,
     apply_correlation_scenario,
     citations_for_profile,
     correlation_scenario_definition,
     correlation_scenarios_for_profile,
+    fx_bucket_definition,
+    fx_delta_risk_weight,
+    fx_inter_bucket_correlation,
     girr_bucket_definition,
     girr_bucket_for_currency,
     girr_buckets_for_profile,
@@ -245,6 +250,33 @@ def test_correlation_scenario_definitions_cover_low_medium_high() -> None:
     assert low_scenario.multiplier == 0.75
 
 
+def test_fx_delta_reference_data_matches_basel_mar21() -> None:
+    reduced, citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="EUR",
+        reporting_currency="USD",
+    )
+    full, _ = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="MYR",
+        reporting_currency="USD",
+    )
+    inter_bucket, inter_citations = fx_inter_bucket_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket1="EUR",
+        bucket2="GBP",
+    )
+
+    assert reduced == pytest.approx(FX_DELTA_RISK_WEIGHT / math.sqrt(2.0))
+    assert full == pytest.approx(FX_DELTA_RISK_WEIGHT)
+    assert inter_bucket == pytest.approx(FX_INTER_BUCKET_CORRELATION)
+    assert "basel_mar21_87" in citations
+    assert "basel_mar21_88" in citations
+    assert inter_citations == ("basel_mar21_89",)
+    bucket = fx_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21, "EUR")
+    assert bucket.citation_id == "basel_mar21_86"
+
+
 def test_missing_lookup_keys_raise_input_errors() -> None:
     with pytest.raises(SbmInputError, match="no GIRR bucket for currency"):
         girr_bucket_for_currency(SbmRegulatoryProfile.BASEL_MAR21, "ZZZ")
@@ -260,7 +292,7 @@ def test_missing_lookup_keys_raise_input_errors() -> None:
     ("risk_class", "risk_measure"),
     [
         (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
-        (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
     ],
 )
