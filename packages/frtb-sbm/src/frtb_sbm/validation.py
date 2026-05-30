@@ -201,6 +201,34 @@ def ensure_sbm_profile_known(profile_id: str) -> SbmRegulatoryProfile:
         ) from exc
 
 
+def phase1_capital_supported_paths(
+    profile_id: str,
+) -> frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]:
+    """Return risk-class/measure paths supported for phase-1 capital on a profile."""
+
+    profile = ensure_sbm_profile_known(profile_id)
+    return _PHASE1_SUPPORTED.get(profile.value, frozenset())
+
+
+def _raise_unsupported_capital_path(
+    profile: SbmRegulatoryProfile,
+    risk_class: SbmRiskClass,
+    risk_measure: SbmRiskMeasure,
+) -> None:
+    supported = _PHASE1_SUPPORTED.get(profile.value, frozenset())
+    if not supported:
+        raise UnsupportedRegulatoryFeatureError(
+            f"frtb-sbm phase-1 capital is unsupported for profile={profile.value}; "
+            f"use profile={SbmRegulatoryProfile.BASEL_MAR21.value}"
+        )
+    raise UnsupportedRegulatoryFeatureError(
+        "frtb-sbm phase-1 capital supports GIRR delta/vega, FX delta, "
+        "equity delta, commodity delta, and CSR non-securitisation delta inputs; "
+        f"received risk_class={risk_class.value}, "
+        f"risk_measure={risk_measure.value}"
+    )
+
+
 def ensure_sbm_risk_class_measure_supported(
     profile_id: str,
     risk_class: SbmRiskClass | str,
@@ -211,27 +239,47 @@ def ensure_sbm_risk_class_measure_supported(
     profile = ensure_sbm_profile_known(profile_id)
     resolved_risk_class = coerce_risk_class(risk_class)
     resolved_measure = coerce_risk_measure(risk_measure)
-    supported = _PHASE1_SUPPORTED.get(profile.value, frozenset())
+    supported = phase1_capital_supported_paths(profile_id)
     if (resolved_risk_class, resolved_measure) in supported:
         return
-    raise UnsupportedRegulatoryFeatureError(
-        "frtb-sbm does not support "
-        f"profile={profile.value}, risk_class={resolved_risk_class.value}, "
-        f"risk_measure={resolved_measure.value}"
-    )
+    _raise_unsupported_capital_path(profile, resolved_risk_class, resolved_measure)
+
+
+def ensure_sbm_capital_paths_supported(
+    profile_id: str,
+    sensitivities: Sequence[SbmSensitivity],
+) -> None:
+    """Raise when profile or sensitivity paths are outside phase-1 capital support."""
+
+    profile = ensure_sbm_profile_known(profile_id)
+    supported = phase1_capital_supported_paths(profile_id)
+    if not supported:
+        raise UnsupportedRegulatoryFeatureError(
+            f"frtb-sbm phase-1 capital is unsupported for profile={profile.value}; "
+            f"use profile={SbmRegulatoryProfile.BASEL_MAR21.value}"
+        )
+    if not sensitivities:
+        raise SbmInputError("sensitivities must not be empty", field="sensitivities")
+    for sensitivity in sensitivities:
+        path = (sensitivity.risk_class, sensitivity.risk_measure)
+        if path not in supported:
+            _raise_unsupported_capital_path(
+                profile,
+                sensitivity.risk_class,
+                sensitivity.risk_measure,
+            )
 
 
 def ensure_sbm_run_supported(
     context: SbmCalculationContext,
     sensitivities: Sequence[SbmSensitivity],
 ) -> None:
-    """Validate that the requested run path is supported before capital math."""
+    """Validate run context scope against already-validated sensitivities."""
 
     validated_context = validate_sbm_calculation_context(context)
-    validated_sensitivities = validate_sbm_sensitivities(sensitivities)
     scoped_desk_id = validated_context.desk_id.strip()
     scoped_legal_entity = validated_context.legal_entity.strip()
-    for sensitivity in validated_sensitivities:
+    for sensitivity in sensitivities:
         if scoped_desk_id and sensitivity.desk_id != scoped_desk_id:
             raise SbmInputError(
                 f"desk_id {sensitivity.desk_id} does not match context desk_id {scoped_desk_id}",
@@ -245,11 +293,6 @@ def ensure_sbm_run_supported(
                 field="legal_entity",
                 sensitivity_id=sensitivity.sensitivity_id,
             )
-        ensure_sbm_risk_class_measure_supported(
-            validated_context.profile_id,
-            sensitivity.risk_class,
-            sensitivity.risk_measure,
-        )
 
 
 def _validate_sensitivity(sensitivity: SbmSensitivity, seen_sensitivity_ids: set[str]) -> None:
@@ -509,11 +552,13 @@ __all__ = [
     "coerce_risk_class",
     "coerce_risk_measure",
     "coerce_sign_convention",
+    "ensure_sbm_capital_paths_supported",
     "ensure_sbm_profile_known",
     "ensure_sbm_risk_class_measure_supported",
     "ensure_sbm_run_supported",
     "normalise_currency_code",
     "normalise_sensitivity_amount",
+    "phase1_capital_supported_paths",
     "require_positive_int",
     "sensitivity_sort_key",
     "sort_sensitivities_deterministic",

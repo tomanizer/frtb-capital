@@ -13,6 +13,7 @@ from frtb_sbm import (
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
+    ensure_sbm_capital_paths_supported,
     ensure_sbm_profile_known,
     ensure_sbm_risk_class_measure_supported,
     ensure_sbm_run_supported,
@@ -89,7 +90,7 @@ def test_unsupported_risk_class_measure_paths_fail_closed(
     risk_class: SbmRiskClass,
     risk_measure: SbmRiskMeasure,
 ) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="frtb-sbm does not support"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital"):
         ensure_sbm_risk_class_measure_supported(
             SbmRegulatoryProfile.US_NPR_2_0.value,
             risk_class,
@@ -105,8 +106,27 @@ def test_ensure_sbm_run_supported_rejects_scope_mismatch() -> None:
         ensure_sbm_run_supported(context, (sensitivity,))
 
 
-def test_ensure_sbm_run_supported_identifies_unsupported_capital_path() -> None:
-    context = sample_context()
+def test_ensure_sbm_capital_paths_supported_rejects_non_basel_profile() -> None:
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital is unsupported"):
+        ensure_sbm_capital_paths_supported(
+            SbmRegulatoryProfile.US_NPR_2_0.value,
+            (sample_sensitivity(),),
+        )
 
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="risk_class=GIRR"):
-        ensure_sbm_run_supported(context, (sample_sensitivity(),))
+
+def test_ensure_sbm_run_supported_skips_sensitivity_validation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[object] = []
+
+    def _track_validate(_: object) -> tuple[SbmSensitivity, ...]:
+        calls.append(True)
+        return ()
+
+    monkeypatch.setattr(
+        "frtb_sbm.validation.validate_sbm_sensitivities",
+        _track_validate,
+    )
+    context = sample_context(profile_id=SbmRegulatoryProfile.BASEL_MAR21.value)
+    ensure_sbm_run_supported(context, (sample_sensitivity(),))
+    assert calls == []

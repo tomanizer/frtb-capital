@@ -15,14 +15,11 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_sbm.aggregation import (
-    IntraBucketAggregationResult,
     IntraBucketScenarioSpec,
-    aggregate_intra_bucket,
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
 from frtb_sbm.data_models import (
-    BucketCapital,
     RiskClassCapital,
     SbmRiskClass,
     SbmRiskMeasure,
@@ -31,13 +28,13 @@ from frtb_sbm.data_models import (
 )
 from frtb_sbm.equity_reference_data import (
     EQUITY_OTHER_SECTOR_BUCKET,
+    _require_equity_bucket_number,
     equity_delta_intra_bucket_correlation,
     equity_inter_bucket_correlation,
 )
 from frtb_sbm.weighted_sensitivity import weight_equity_delta_sensitivities
 
 _MAR21_EQUITY_OTHER_SECTOR_CITATION = ("basel_mar21_79",)
-_MAR21_EQUITY_INTRA_CITATION = ("basel_mar21_78",)
 
 
 def calculate_equity_delta_risk_class_capital(
@@ -144,7 +141,7 @@ def build_equity_inter_bucket_correlation_map(
     """Return cited equity inter-bucket correlations for distinct bucket pairs."""
 
     correlations: dict[tuple[str, str], float] = {}
-    ordered_ids = tuple(sorted(bucket_ids, key=lambda value: int(value)))
+    ordered_ids = tuple(sorted(bucket_ids, key=_require_equity_bucket_number))
     for left_index, bucket_a in enumerate(ordered_ids):
         for bucket_b in ordered_ids[left_index + 1 :]:
             gamma, _ = equity_inter_bucket_correlation(
@@ -156,49 +153,7 @@ def build_equity_inter_bucket_correlation_map(
     return correlations
 
 
-def aggregate_equity_delta_intra_bucket(
-    bucket_id: str,
-    weighted_sensitivities: Sequence[WeightedSensitivity],
-    correlation_matrix: npt.NDArray[np.float64],
-) -> IntraBucketAggregationResult:
-    """Aggregate one equity delta bucket, applying MAR21.79 for bucket 11."""
-
-    if bucket_id != EQUITY_OTHER_SECTOR_BUCKET:
-        return aggregate_intra_bucket(
-            bucket_id,
-            weighted_sensitivities,
-            correlation_matrix,
-            risk_class=SbmRiskClass.EQUITY,
-            risk_measure=SbmRiskMeasure.DELTA,
-            sb_correlation_floor=None,
-            citation_ids=_MAR21_EQUITY_INTRA_CITATION,
-        )
-
-    ordered = tuple(sorted(weighted_sensitivities, key=lambda item: item.sensitivity_id))
-    ws = np.array([item.scaled_amount for item in ordered], dtype=np.float64)
-    sb = float(np.sum(ws))
-    kb = float(np.sum(np.abs(ws)))
-    bucket_capital = BucketCapital(
-        bucket_id=bucket_id,
-        risk_class=SbmRiskClass.EQUITY,
-        risk_measure=SbmRiskMeasure.DELTA,
-        kb=kb,
-        weighted_sensitivities=ordered,
-        citation_ids=_MAR21_EQUITY_OTHER_SECTOR_CITATION,
-        sb=sb,
-        floor_applied=False,
-    )
-    return IntraBucketAggregationResult(
-        bucket_capital=bucket_capital,
-        pairwise_correlations=(),
-        variance_before_floor=float(np.dot(ws, ws)),
-        zero_variance_floor_applied=False,
-        sb_correlation_floor_applied=False,
-    )
-
-
 __all__ = [
-    "aggregate_equity_delta_intra_bucket",
     "aggregate_equity_delta_measure_capital",
     "build_equity_delta_intra_bucket_correlation_matrix",
     "build_equity_inter_bucket_correlation_map",

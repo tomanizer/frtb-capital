@@ -31,7 +31,7 @@
   },
   {
     "case_id": "unsupported_measure",
-    "expected_error_match": "frtb-sbm does not support",
+    "expected_error_match": "phase-1 capital",
     "sensitivity": {
       "sensitivity_id": "fx-vega-001",
       "source_row_id": "row-fx-vega",
@@ -50,7 +50,7 @@
   },
   {
     "case_id": "unsupported_curvature",
-    "expected_error_match": "frtb-sbm does not support",
+    "expected_error_match": "phase-1 capital",
     "sensitivity": {
       "sensitivity_id": "fx-curvature-001",
       "source_row_id": "row-fx-curvature",

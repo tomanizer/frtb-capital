@@ -10,9 +10,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import date
-from enum import Enum
-from typing import Any
 
 from frtb_rrao.capital import build_rrao_subtotals, included_rrao_total
 from frtb_rrao.data_models import (
@@ -268,18 +265,6 @@ def _back_to_back_match_payload(match: RraoBackToBackMatch) -> dict[str, object]
         "match_group_id": match.match_group_id,
         "matched_position_id": match.matched_position_id,
     }
-
-
-def _normalise(value: object) -> Any:
-    if isinstance(value, dict):
-        return {str(key): _normalise(item) for key, item in sorted(value.items())}
-    if isinstance(value, tuple | list):
-        return [_normalise(item) for item in value]
-    if isinstance(value, Enum):
-        return value.value
-    if isinstance(value, date):
-        return value.isoformat()
-    return value
 
 
 __all__ = [

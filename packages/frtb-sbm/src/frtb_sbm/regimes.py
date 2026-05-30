@@ -141,15 +141,13 @@ def ensure_profile_supports_risk_class_measure(
 ) -> None:
     """Raise when a profile/risk-class/measure path is unsupported."""
 
+    from frtb_sbm.validation import ensure_sbm_risk_class_measure_supported
+
     resolved = resolve_sbm_profile(profile)
-    resolved_risk_class = _coerce_risk_class(risk_class)
-    resolved_measure = _coerce_risk_measure(risk_measure)
-    if profile_supports_risk_class_measure(resolved, resolved_risk_class, resolved_measure):
-        return
-    raise UnsupportedRegulatoryFeatureError(
-        "frtb-sbm does not support "
-        f"profile={resolved.value}, risk_class={resolved_risk_class.value}, "
-        f"risk_measure={resolved_measure.value}"
+    ensure_sbm_risk_class_measure_supported(
+        resolved.value,
+        risk_class,
+        risk_measure,
     )
 
 

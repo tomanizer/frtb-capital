@@ -434,7 +434,7 @@ def test_unsupported_risk_class_measure_paths_fail_closed(
     risk_class: SbmRiskClass,
     risk_measure: SbmRiskMeasure,
 ) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="frtb-sbm does not support"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital"):
         ensure_profile_supports_risk_class_measure(
             SbmRegulatoryProfile.BASEL_MAR21,
             risk_class,

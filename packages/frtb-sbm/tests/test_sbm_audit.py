@@ -21,7 +21,6 @@ from frtb_sbm import (
     serialize_sbm_result,
     validate_sbm_result_reconciliation,
 )
-from frtb_sbm import audit as audit_module
 
 
 def sample_lineage(row_id: str) -> SbmSourceLineage:
@@ -176,7 +175,9 @@ def test_audit_normalisation_helpers_are_json_ready() -> None:
         "items": (SbmRiskClass.GIRR,),
     }
 
-    assert audit_module._normalise(payload) == {
+    from audit_normalise import normalise_audit_value
+
+    assert normalise_audit_value(payload) == {
         "date": "2026-05-30",
         "enum": "DELTA",
         "items": ["GIRR"],

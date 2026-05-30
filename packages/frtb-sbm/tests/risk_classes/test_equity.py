@@ -30,7 +30,7 @@ from frtb_sbm.equity_reference_data import (
     equity_inter_bucket_correlation,
 )
 from frtb_sbm.risk_classes.equity import (
-    aggregate_equity_delta_intra_bucket,
+    aggregate_equity_delta_measure_capital,
     calculate_equity_delta_risk_class_capital,
 )
 from frtb_sbm.weighted_sensitivity import weight_equity_delta_sensitivities
@@ -193,7 +193,7 @@ def test_weight_equity_delta_sensitivities_preserves_citations() -> None:
     assert "basel_mar21_77" in weighted[0].citation_ids
 
 
-def test_aggregate_equity_delta_intra_bucket_11_uses_absolute_weights() -> None:
+def test_aggregate_equity_delta_measure_capital_bucket_11_uses_absolute_weights() -> None:
     weighted = weight_equity_delta_sensitivities(
         (
             sample_equity_sensitivity(
@@ -215,18 +215,25 @@ def test_aggregate_equity_delta_intra_bucket_11_uses_absolute_weights() -> None:
         ),
         profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
     )
-    import numpy as np
-
-    matrix = np.eye(len(weighted), dtype=np.float64)
-    result = aggregate_equity_delta_intra_bucket(
-        EQUITY_OTHER_SECTOR_BUCKET,
+    result = aggregate_equity_delta_measure_capital(
         weighted,
-        matrix,
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+        issuer_by_id={
+            "eq11-long": "ISS-X",
+            "eq11-short": "ISS-Y",
+        },
+        risk_factor_by_id={
+            "eq11-long": EQUITY_SPOT_RISK_FACTOR,
+            "eq11-short": EQUITY_SPOT_RISK_FACTOR,
+        },
+    )
+    bucket_11 = next(
+        bucket for bucket in result.buckets if bucket.bucket_id == EQUITY_OTHER_SECTOR_BUCKET
     )
 
-    assert result.bucket_capital.kb == pytest.approx(1_260_000.0)
-    assert result.bucket_capital.sb == pytest.approx(140_000.0)
-    assert "basel_mar21_79" in result.bucket_capital.citation_ids
+    assert bucket_11.kb == pytest.approx(1_260_000.0)
+    assert bucket_11.sb == pytest.approx(140_000.0)
+    assert "basel_mar21_79" in bucket_11.citation_ids
 
 
 def test_calculate_equity_delta_risk_class_capital_reconciles() -> None:
@@ -300,7 +307,7 @@ def test_equity_vega_and_curvature_fail_closed() -> None:
             up_shock_amount=100.0 if measure is SbmRiskMeasure.CURVATURE else None,
             down_shock_amount=-100.0 if measure is SbmRiskMeasure.CURVATURE else None,
         )
-        with pytest.raises(UnsupportedRegulatoryFeatureError, match="frtb-sbm does not support"):
+        with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital"):
             calculate_sbm_capital((sensitivity,), context=sample_context())
 
 

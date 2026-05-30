@@ -159,6 +159,7 @@ class SbmSensitivity:
     sign_convention: SbmSignConvention
     lineage: SbmSourceLineage
     position_id: str | None = None
+    # Issuer, currency, or other upstream qualifier; rate/vega tenors use tenor fields.
     qualifier: str | None = None
     tenor: str | None = None
     option_tenor: str | None = None
@@ -181,6 +182,7 @@ class WeightedSensitivity:
     risk_weight: float
     scaled_amount: float
     citation_ids: tuple[str, ...]
+    # Carries issuer/currency qualifier, or the cited tenor key copied for GIRR rows.
     qualifier: str | None = None
     liquidity_horizon_days: int | None = None
 
