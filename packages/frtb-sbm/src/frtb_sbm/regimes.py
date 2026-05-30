@@ -29,7 +29,7 @@ SUPPORTED_PROFILE_METADATA: dict[SbmRegulatoryProfile, dict[str, object]] = {
         "regulator": "Basel Committee on Banking Supervision",
         "version": "Basel Framework MAR21",
         "publication_date": date(2019, 1, 14),
-        "status": "supported_canonical_girr_fx_equity_commodity_delta_slice",
+        "status": "supported_canonical_girr_fx_equity_commodity_csr_nonsec_delta_slice",
         "effective_date": None,
     },
 }
@@ -55,6 +55,7 @@ PROFILE_SUPPORTED_MEASURES: dict[
         SbmRiskClass.FX: frozenset({SbmRiskMeasure.DELTA}),
         SbmRiskClass.EQUITY: frozenset({SbmRiskMeasure.DELTA}),
         SbmRiskClass.COMMODITY: frozenset({SbmRiskMeasure.DELTA}),
+        SbmRiskClass.CSR_NONSEC: frozenset({SbmRiskMeasure.DELTA}),
     },
 }
 

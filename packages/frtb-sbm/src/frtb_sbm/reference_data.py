@@ -20,6 +20,14 @@ from frtb_sbm.commodity_reference_data import (
     commodity_delta_risk_weight,
     commodity_inter_bucket_correlation,
 )
+from frtb_sbm.csr_nonsec_reference_data import (
+    csr_nonsec_bucket_definition,
+    csr_nonsec_buckets_for_profile,
+    csr_nonsec_delta_intra_bucket_correlation,
+    csr_nonsec_delta_risk_weight,
+    csr_nonsec_inter_bucket_correlation,
+    csr_nonsec_validate_delta_inputs,
+)
 from frtb_sbm.data_models import (
     SbmCitation,
     SbmRegulatoryProfile,
@@ -297,6 +305,48 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         location="MAR21.85",
         url=BASEL_MAR21_URL,
         note="Commodity delta inter-bucket correlation parameters.",
+    ),
+    "basel_mar21_9": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.9",
+        url=BASEL_MAR21_URL,
+        note="CSR non-securitisation delta risk factors (bond and CDS credit spreads).",
+    ),
+    "basel_mar21_51": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.51",
+        url=BASEL_MAR21_URL,
+        note="CSR non-securitisation delta bucket assignment (Table 3).",
+    ),
+    "basel_mar21_53": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.53",
+        url=BASEL_MAR21_URL,
+        note="CSR non-securitisation delta risk weights (Table 4).",
+    ),
+    "basel_mar21_54": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.54",
+        url=BASEL_MAR21_URL,
+        note="CSR non-securitisation delta intra-bucket correlations for buckets 1-15.",
+    ),
+    "basel_mar21_55": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.55",
+        url=BASEL_MAR21_URL,
+        note="CSR non-securitisation delta intra-bucket correlations for index buckets 17-18.",
+    ),
+    "basel_mar21_56": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.56",
+        url=BASEL_MAR21_URL,
+        note="CSR non-securitisation other-sector bucket absolute-weight aggregation.",
+    ),
+    "basel_mar21_57": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.57",
+        url=BASEL_MAR21_URL,
+        note="CSR non-securitisation delta inter-bucket gamma (Table 5).",
     ),
 }
 
@@ -963,10 +1013,12 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
         ),
     }
     from frtb_sbm.commodity_reference_data import commodity_reference_payload
+    from frtb_sbm.csr_nonsec_reference_data import csr_nonsec_reference_payload
     from frtb_sbm.equity_reference_data import equity_reference_payload
 
     payload.update(equity_reference_payload(resolved))
     payload.update(commodity_reference_payload(resolved))
+    payload.update(csr_nonsec_reference_payload(resolved))
     return payload
 
 
@@ -1107,6 +1159,12 @@ __all__ = [
     "commodity_inter_bucket_correlation",
     "correlation_scenario_definition",
     "correlation_scenarios_for_profile",
+    "csr_nonsec_bucket_definition",
+    "csr_nonsec_buckets_for_profile",
+    "csr_nonsec_delta_intra_bucket_correlation",
+    "csr_nonsec_delta_risk_weight",
+    "csr_nonsec_inter_bucket_correlation",
+    "csr_nonsec_validate_delta_inputs",
     "equity_bucket_definition",
     "equity_buckets_for_profile",
     "equity_delta_intra_bucket_correlation",

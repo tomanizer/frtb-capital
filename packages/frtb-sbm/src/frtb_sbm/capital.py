@@ -47,6 +47,7 @@ from frtb_sbm.reference_data import (
 )
 from frtb_sbm.regimes import get_sbm_rule_profile
 from frtb_sbm.risk_classes.commodity import calculate_commodity_delta_risk_class_capital
+from frtb_sbm.risk_classes.csr_nonsec import calculate_csr_nonsec_delta_risk_class_capital
 from frtb_sbm.risk_classes.equity import calculate_equity_delta_risk_class_capital
 from frtb_sbm.risk_classes.fx import calculate_fx_delta_risk_class_capital
 from frtb_sbm.validation import SbmInputError, ensure_sbm_run_supported
@@ -63,6 +64,7 @@ _SBM_REQUIREMENT_IDS = (
     "SBM-FUNC-017",
     "SBM-FUNC-018",
     "SBM-FUNC-019",
+    "SBM-FUNC-014",
 )
 
 _PHASE1_SUPPORTED_PATHS: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozenset(
@@ -72,6 +74,7 @@ _PHASE1_SUPPORTED_PATHS: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozen
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
     }
 )
 
@@ -88,7 +91,7 @@ def calculate_sbm_capital(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate supported SBM capital for GIRR, FX, equity, and commodity delta slices."""
+    """Calculate supported SBM capital for GIRR, FX, equity, commodity, and CSR non-sec delta."""
 
     if sensitivities is None:
         raise SbmInputError("sensitivities are required", field="sensitivities")
@@ -145,6 +148,13 @@ def calculate_sbm_capital(
         elif risk_class is SbmRiskClass.COMMODITY and risk_measure is SbmRiskMeasure.DELTA:
             risk_class_results.append(
                 calculate_commodity_delta_risk_class_capital(
+                    measure_sensitivities,
+                    profile_id=rule_profile.profile_id,
+                )
+            )
+        elif risk_class is SbmRiskClass.CSR_NONSEC and risk_measure is SbmRiskMeasure.DELTA:
+            risk_class_results.append(
+                calculate_csr_nonsec_delta_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
                 )
@@ -410,7 +420,7 @@ def _ensure_phase1_supported(sensitivities: Sequence[SbmSensitivity]) -> None:
         if path not in _PHASE1_SUPPORTED_PATHS:
             raise UnsupportedRegulatoryFeatureError(
                 "frtb-sbm phase-1 capital supports GIRR delta/vega, FX delta, "
-                "equity delta, and commodity delta inputs; "
+                "equity delta, commodity delta, and CSR non-securitisation delta inputs; "
                 f"received risk_class={sensitivity.risk_class.value}, "
                 f"risk_measure={sensitivity.risk_measure.value}"
             )
@@ -430,6 +440,7 @@ def _ordered_supported_paths(
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
     )
     return tuple(path for path in ordering if path in present)
 

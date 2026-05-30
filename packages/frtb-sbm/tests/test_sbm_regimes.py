@@ -33,8 +33,10 @@ def test_get_sbm_rule_profile_returns_supported_basel_profile() -> None:
             SbmRiskClass.FX,
             SbmRiskClass.EQUITY,
             SbmRiskClass.COMMODITY,
+            SbmRiskClass.CSR_NONSEC,
         }
     )
+    assert profile.supported_measures[SbmRiskClass.CSR_NONSEC] == frozenset({SbmRiskMeasure.DELTA})
     assert profile.supported_measures[SbmRiskClass.GIRR] == frozenset(
         {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA}
     )
@@ -82,7 +84,7 @@ def test_unknown_profile_fails_as_input_error() -> None:
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA, True),
-        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA, False),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA, True),
     ],
 )
 def test_basel_profile_support_map(
@@ -113,7 +115,9 @@ def test_basel_profile_support_map(
             )
 
 
-def test_supported_risk_class_measures_lists_girr_fx_equity_and_commodity_delta() -> None:
+def test_supported_risk_class_measures_lists_girr_fx_equity_commodity_and_csr_nonsec_delta() -> (
+    None
+):
     supported = supported_risk_class_measures(SbmRegulatoryProfile.BASEL_MAR21)
 
     assert supported == frozenset(
@@ -123,5 +127,6 @@ def test_supported_risk_class_measures_lists_girr_fx_equity_and_commodity_delta(
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
             (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
             (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
         }
     )
