@@ -5,9 +5,10 @@ For a bidirectional code/regulation map, see
 [`REGULATORY_TRACEABILITY.md`](REGULATORY_TRACEABILITY.md). For link-only source
 metadata, see [`regulatory_sources.yml`](regulatory_sources.yml).
 
-`frtb-sbm` is currently scaffolded. Phase 1 targets a cited GIRR delta vertical
-slice only. No document or test in this package should describe outputs as final
-regulatory capital.
+`frtb-sbm` delivers a partial runtime slice for GIRR delta/vega and FX delta
+capital under cited Basel MAR21 mechanics. Phase 1 targets a cited GIRR delta
+vertical slice only. No document or test in this package should describe outputs
+as final regulatory capital.
 
 ## Phase-1 basis
 

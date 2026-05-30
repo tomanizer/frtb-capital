@@ -1,27 +1,27 @@
 {
   "profile_id": "BASEL_MAR21",
-  "profile_hash": "d8f2bbf70baf0bb6c468024c412c3d49dd78b4f954e47f0479490b46dc37c63f",
+  "profile_hash": "f76ff486edd1214e1bad6a1de7fa3cdb2014f2853ef6f4e43e53ed914aca38bc",
   "input_hash": "5bec4d3653e9932584e9badf9e2ea0b444cc220a7242c00973887e491f3d0e32",
-  "total_capital": 542433.1534659342,
+  "total_capital": 547722.5575051662,
   "warnings": [],
   "risk_classes": [
     {
       "risk_class": "GIRR",
-      "selected_capital": 542433.1534659342,
+      "selected_capital": 547722.5575051662,
       "selected_scenario": "HIGH",
       "risk_measure": "VEGA"
     }
   ],
   "scenario_totals": {
-    "HIGH": 542433.1534659342,
-    "LOW": 504215.95173000795,
+    "HIGH": 547722.5575051662,
+    "LOW": 498465.09602779144,
     "MEDIUM": 523673.30080785835
   },
   "buckets": [
     [
       {
         "bucket_id": "1",
-        "kb": 392726.0189737849,
+        "kb": 400000.0,
         "sb": 400000.0
       },
       {

@@ -18,7 +18,7 @@ import numpy.typing as npt
 from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm.aggregation import (
-    aggregate_intra_bucket,
+    IntraBucketScenarioSpec,
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
@@ -33,6 +33,7 @@ from frtb_sbm.data_models import (
     SbmReconciliationMetadata,
     SbmRiskClass,
     SbmRiskMeasure,
+    SbmRunContextSummary,
     SbmSensitivity,
     WeightedSensitivity,
 )
@@ -140,6 +141,12 @@ def calculate_sbm_capital(
             requirement_ids=_SBM_REQUIREMENT_IDS,
             citation_ids=citation_ids,
         ),
+        run_context=SbmRunContextSummary(
+            run_id=context.run_id,
+            calculation_date=context.calculation_date,
+            base_currency=context.base_currency,
+            reporting_currency=context.reporting_currency,
+        ),
     )
     validate_sbm_result_reconciliation(result)
     return result
@@ -198,7 +205,7 @@ def _aggregate_girr_measure_capital(
 ) -> RiskClassCapital:
     grouped = group_weighted_sensitivities_by_bucket(weighted)
 
-    intra_results = []
+    intra_specs: list[IntraBucketScenarioSpec] = []
     for (_risk_class, _risk_measure, bucket_id), bucket_weighted in sorted(grouped.items()):
         if risk_measure is SbmRiskMeasure.DELTA:
             matrix = _build_girr_delta_intra_bucket_correlation_matrix(
@@ -214,26 +221,24 @@ def _aggregate_girr_measure_capital(
                 option_tenor_by_id=option_tenor_by_id or {},
                 tenor_by_id=tenor_by_id,
             )
-        intra_results.append(
-            aggregate_intra_bucket(
-                bucket_id,
-                bucket_weighted,
-                matrix,
-                risk_class=SbmRiskClass.GIRR,
-                risk_measure=risk_measure,
+        intra_specs.append(
+            IntraBucketScenarioSpec(
+                bucket_id=bucket_id,
+                weighted_sensitivities=tuple(bucket_weighted),
+                base_correlation_matrix=matrix,
                 sb_correlation_floor=GIRR_INTRA_BUCKET_CORRELATION_FLOOR
                 if risk_measure is SbmRiskMeasure.DELTA
                 else None,
             )
         )
 
-    bucket_ids = tuple(sorted({result.bucket_capital.bucket_id for result in intra_results}))
+    bucket_ids = tuple(sorted(spec.bucket_id for spec in intra_specs))
     inter_bucket_correlations = _build_inter_bucket_correlation_map(
         bucket_ids,
         profile_id=profile_id,
     )
     return aggregate_risk_class_with_scenarios(
-        intra_results,
+        tuple(intra_specs),
         inter_bucket_correlations,
         risk_class=SbmRiskClass.GIRR,
         risk_measure=risk_measure,
@@ -323,6 +328,15 @@ def _collect_citation_ids(
             for weighted in bucket.weighted_sensitivities:
                 for citation_id in weighted.citation_ids:
                     _append_citation(citation_ids, seen, citation_id)
+        for detail in risk_class_capital.scenario_details:
+            for citation_id in detail.citation_ids:
+                _append_citation(citation_ids, seen, citation_id)
+            for intra_bucket in detail.intra_buckets:
+                for citation_id in intra_bucket.citation_ids:
+                    _append_citation(citation_ids, seen, citation_id)
+        if risk_class_capital.scenario_selection is not None:
+            for citation_id in risk_class_capital.scenario_selection.citation_ids:
+                _append_citation(citation_ids, seen, citation_id)
     return tuple(citation_ids)
 
 

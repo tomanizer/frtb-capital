@@ -14,7 +14,9 @@ from frtb_sbm import (
     WeightedSensitivity,
 )
 from frtb_sbm.aggregation import (
+    IntraBucketScenarioSpec,
     adjust_correlation_for_scenario,
+    adjust_correlation_matrix_for_scenario,
     aggregate_inter_bucket,
     aggregate_intra_bucket,
     aggregate_risk_class_with_scenarios,
@@ -165,31 +167,52 @@ def test_select_max_correlation_scenario_chooses_largest_total() -> None:
     assert selection.branch_metadata.branch_type.value == "SCENARIO_SELECTION"
 
 
+def test_intra_bucket_kb_recomputed_under_correlation_scenarios() -> None:
+    """MAR21.6: intra-bucket rho adjustments change Kb for multi-sensitivity buckets."""
+    usd_ws = (
+        _weighted(sensitivity_id="usd-1y", scaled_amount=100.0, bucket="USD"),
+        _weighted(sensitivity_id="usd-5y", scaled_amount=50.0, bucket="USD"),
+    )
+    usd_matrix = np.array([[1.0, 0.8869], [0.8869, 1.0]], dtype=np.float64)
+    medium = aggregate_intra_bucket(
+        "USD",
+        usd_ws,
+        adjust_correlation_matrix_for_scenario(usd_matrix, SbmScenarioLabel.MEDIUM),
+        risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.DELTA,
+    )
+    high = aggregate_intra_bucket(
+        "USD",
+        usd_ws,
+        adjust_correlation_matrix_for_scenario(usd_matrix, SbmScenarioLabel.HIGH),
+        risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.DELTA,
+    )
+
+    assert high.bucket_capital.kb != pytest.approx(medium.bucket_capital.kb)
+
+
 def test_end_to_end_girr_delta_slice_selects_max_scenario() -> None:
     usd_ws = (
         _weighted(sensitivity_id="usd-1y", scaled_amount=100.0, bucket="USD"),
         _weighted(sensitivity_id="usd-5y", scaled_amount=50.0, bucket="USD"),
     )
     usd_matrix = np.array([[1.0, 0.8869], [0.8869, 1.0]], dtype=np.float64)
-    usd_bucket = aggregate_intra_bucket(
-        "USD",
-        usd_ws,
-        usd_matrix,
-        risk_class=SbmRiskClass.GIRR,
-        risk_measure=SbmRiskMeasure.DELTA,
+    usd_spec = IntraBucketScenarioSpec(
+        bucket_id="USD",
+        weighted_sensitivities=usd_ws,
+        base_correlation_matrix=usd_matrix,
     )
 
     eur_ws = (_weighted(sensitivity_id="eur-1y", scaled_amount=80.0, bucket="EUR"),)
-    eur_bucket = aggregate_intra_bucket(
-        "EUR",
-        eur_ws,
-        np.array([[1.0]], dtype=np.float64),
-        risk_class=SbmRiskClass.GIRR,
-        risk_measure=SbmRiskMeasure.DELTA,
+    eur_spec = IntraBucketScenarioSpec(
+        bucket_id="EUR",
+        weighted_sensitivities=eur_ws,
+        base_correlation_matrix=np.array([[1.0]], dtype=np.float64),
     )
 
     risk_class = aggregate_risk_class_with_scenarios(
-        (usd_bucket, eur_bucket),
+        (usd_spec, eur_spec),
         {("EUR", "USD"): 0.5},
         risk_class=SbmRiskClass.GIRR,
         risk_measure=SbmRiskMeasure.DELTA,
@@ -198,6 +221,8 @@ def test_end_to_end_girr_delta_slice_selects_max_scenario() -> None:
     assert risk_class.selected_scenario is not None
     assert risk_class.scenario_totals is not None
     assert len(risk_class.scenario_totals) == 3
+    assert len(risk_class.scenario_details) == 3
+    assert risk_class.scenario_selection is not None
     assert risk_class.selected_capital == pytest.approx(max(risk_class.scenario_totals.values()))
     assert risk_class.selected_scenario == max(
         risk_class.scenario_totals,

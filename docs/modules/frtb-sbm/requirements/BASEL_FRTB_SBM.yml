@@ -22,10 +22,10 @@ requirements:
   - id: SBM-REF-001
     title: Risk-class, bucket, risk-weight, tenor, and correlation reference data
     source: Basel MAR21 risk-class tables; CRR3 Articles 325e-325az
-    status: implemented
+    status: partial
     modules: [src/frtb_sbm/reference_data.py]
     tests: [tests/test_sbm_reference_data.py]
-    notes: Tables must be profile-keyed and cited.
+    notes: GIRR delta/vega and FX delta tables cited; CSR, equity, commodity remain planned.
   - id: SBM-RISK-001
     title: Seven-risk-class coverage
     source: Basel MAR21; 91 FR 15037
@@ -53,7 +53,7 @@ requirements:
     status: implemented
     modules: [src/frtb_sbm/aggregation.py]
     tests: [tests/test_sbm_correlation_scenarios.py]
-    notes: Low, medium, and high scenario support.
+    notes: Recomputes intra- and inter-bucket capital under MAR21.6 scenarios for supported slices.
   - id: SBM-CURV-001
     title: Curvature capital
     source: Basel MAR21 curvature provisions; 91 FR 15037 footnote 328
@@ -71,7 +71,7 @@ requirements:
   - id: SBM-AUDIT-001
     title: Audit and Euler-compatible reports
     source: Basel MAR21 component traceability by formula
-    status: implemented
+    status: partial
     modules: [src/frtb_sbm/audit.py, src/frtb_sbm/capital.py]
     tests: [tests/test_sbm_audit.py, tests/test_sbm_replay.py, tests/test_sbm_fixture_workflow.py, tests/risk_classes/test_sbm_fx.py]
-    notes: Weighted sensitivities, buckets, scenarios, and capital contributions reconcile.
+    notes: Serializes run context, scenario evidence, and branch metadata for supported GIRR/FX slices.

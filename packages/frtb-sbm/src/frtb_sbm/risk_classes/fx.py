@@ -15,7 +15,7 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_sbm.aggregation import (
-    aggregate_intra_bucket,
+    IntraBucketScenarioSpec,
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
@@ -61,30 +61,28 @@ def aggregate_fx_delta_measure_capital(
 
     grouped = group_weighted_sensitivities_by_bucket(weighted)
 
-    intra_results = []
+    intra_specs: list[IntraBucketScenarioSpec] = []
     for (_risk_class, _risk_measure, bucket_id), bucket_weighted in sorted(grouped.items()):
         matrix = build_fx_delta_intra_bucket_correlation_matrix(
             bucket_weighted,
             profile_id=profile_id,
         )
-        intra_results.append(
-            aggregate_intra_bucket(
-                bucket_id,
-                bucket_weighted,
-                matrix,
-                risk_class=SbmRiskClass.FX,
-                risk_measure=SbmRiskMeasure.DELTA,
+        intra_specs.append(
+            IntraBucketScenarioSpec(
+                bucket_id=bucket_id,
+                weighted_sensitivities=tuple(bucket_weighted),
+                base_correlation_matrix=matrix,
                 sb_correlation_floor=None,
             )
         )
 
-    bucket_ids = tuple(sorted({result.bucket_capital.bucket_id for result in intra_results}))
+    bucket_ids = tuple(sorted(spec.bucket_id for spec in intra_specs))
     inter_bucket_correlations = build_fx_inter_bucket_correlation_map(
         bucket_ids,
         profile_id=profile_id,
     )
     return aggregate_risk_class_with_scenarios(
-        intra_results,
+        tuple(intra_specs),
         inter_bucket_correlations,
         risk_class=SbmRiskClass.FX,
         risk_measure=SbmRiskMeasure.DELTA,

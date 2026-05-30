@@ -97,6 +97,9 @@ def test_result_serialization_is_json_stable() -> None:
     assert json.dumps(payload, sort_keys=True)
     assert payload["profile_id"] == "BASEL_MAR21"
     assert payload["risk_classes"][0]["risk_class"] == "GIRR"
+    assert payload["run_context"]["reporting_currency"] == "USD"
+    assert payload["risk_classes"][0]["scenario_selection"]["branch_type"] == "SCENARIO_SELECTION"
+    assert payload["risk_classes"][0]["scenario_details"]
 
 
 def test_reconciliation_rejects_wrong_total() -> None:
