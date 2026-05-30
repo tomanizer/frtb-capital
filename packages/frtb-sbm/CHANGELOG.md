@@ -4,6 +4,29 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-30
+
+### Fixed
+
+- Recompute intra-bucket capital under MAR21.6 correlation scenarios before
+  inter-bucket aggregation, correcting selected scenario capital for multi-sensitivity
+  buckets.
+
+### Added
+
+- `IntraBucketScenarioSpec`, `RiskClassScenarioDetail`, and `SbmRunContextSummary`
+  on public results; audit serialization now preserves run context, scenario
+  evidence, pairwise correlations, and scenario-selection branch metadata.
+- Missing Basel citation registry entries for MAR21.4(4), MAR21.4(5), MAR21.6,
+  and MAR21.7(2).
+
+### Changed
+
+- GIRR delta/vega and FX delta capital paths pass scenario specs through shared
+  aggregation rather than pre-aggregating intra-bucket capital once.
+- Synthetic fixture expected outputs updated for corrected scenario capital and
+  expanded citation registry profile hash.
+
 ## [0.4.0] - 2026-05-30
 
 ### Added

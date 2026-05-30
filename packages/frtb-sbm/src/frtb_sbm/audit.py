@@ -17,8 +17,10 @@ from typing import Any
 from frtb_sbm.data_models import (
     BucketCapital,
     RiskClassCapital,
+    RiskClassScenarioDetail,
     SbmCapitalResult,
     SbmReconciliationMetadata,
+    SbmRunContextSummary,
     SbmSensitivity,
     SbmSourceLineage,
     WeightedSensitivity,
@@ -49,7 +51,7 @@ def _input_hash_for_validated_sensitivities(
 def serialize_sbm_result(result: SbmCapitalResult) -> dict[str, object]:
     """Return a JSON-serialisable audit payload for an SBM result."""
 
-    return {
+    payload: dict[str, object] = {
         "total_capital": result.total_capital,
         "profile_id": result.profile_id,
         "profile_hash": result.profile_hash,
@@ -59,6 +61,9 @@ def serialize_sbm_result(result: SbmCapitalResult) -> dict[str, object]:
         "risk_classes": [_risk_class_payload(risk_class) for risk_class in result.risk_classes],
         "reconciliation": _reconciliation_payload(result.reconciliation),
     }
+    if result.run_context is not None:
+        payload["run_context"] = _run_context_payload(result.run_context)
+    return payload
 
 
 def validate_sbm_result_reconciliation(result: SbmCapitalResult) -> None:
@@ -124,7 +129,68 @@ def _risk_class_payload(risk_class: RiskClassCapital) -> dict[str, object]:
         }
     if risk_class.selected_scenario is not None:
         payload["selected_scenario"] = risk_class.selected_scenario.value
+    if risk_class.scenario_details:
+        payload["scenario_details"] = [
+            _scenario_detail_payload(detail) for detail in risk_class.scenario_details
+        ]
+    if risk_class.scenario_selection is not None:
+        payload["scenario_selection"] = _branch_metadata_payload(risk_class.scenario_selection)
     return payload
+
+
+def _scenario_detail_payload(detail: RiskClassScenarioDetail) -> dict[str, object]:
+    return {
+        "scenario": detail.scenario.value,
+        "capital": detail.capital,
+        "alternative_sb_used": detail.alternative_sb_used,
+        "inter_bucket_correlations": [
+            {"bucket_a": bucket_a, "bucket_b": bucket_b, "correlation": correlation}
+            for bucket_a, bucket_b, correlation in detail.inter_bucket_correlations
+        ],
+        "intra_buckets": [
+            {
+                "bucket_id": bucket.bucket_id,
+                "kb": bucket.kb,
+                "sb": bucket.sb,
+                "floor_applied": bucket.floor_applied,
+                "citation_ids": list(bucket.citation_ids),
+                "pairwise_correlations": [
+                    {
+                        "sensitivity_a": pair.sensitivity_a,
+                        "sensitivity_b": pair.sensitivity_b,
+                        "correlation": pair.correlation,
+                    }
+                    for pair in bucket.pairwise_correlations
+                ],
+            }
+            for bucket in detail.intra_buckets
+        ],
+        "citation_ids": list(detail.citation_ids),
+    }
+
+
+def _branch_metadata_payload(branch: object) -> dict[str, object]:
+    from frtb_sbm.data_models import SbmBranchMetadata
+
+    if not isinstance(branch, SbmBranchMetadata):
+        raise TypeError("expected SbmBranchMetadata")
+    return {
+        "branch_id": branch.branch_id,
+        "branch_type": branch.branch_type.value,
+        "source_id": branch.source_id,
+        "selected": branch.selected,
+        "reason": branch.reason,
+        "citation_ids": list(branch.citation_ids),
+    }
+
+
+def _run_context_payload(context: SbmRunContextSummary) -> dict[str, object]:
+    return {
+        "run_id": context.run_id,
+        "calculation_date": context.calculation_date.isoformat(),
+        "base_currency": context.base_currency,
+        "reporting_currency": context.reporting_currency,
+    }
 
 
 def _bucket_payload(bucket: BucketCapital) -> dict[str, object]:

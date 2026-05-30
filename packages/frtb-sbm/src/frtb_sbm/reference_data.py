@@ -128,6 +128,30 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         url=BASEL_MAR21_URL,
         note="Liquid-currency and reporting-currency sqrt(2) risk-weight adjustment.",
     ),
+    "basel_mar21_4_intra_bucket": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.4(4)",
+        url=BASEL_MAR21_URL,
+        note="Intra-bucket capital formula Kb.",
+    ),
+    "basel_mar21_4_inter_bucket": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.4(5)",
+        url=BASEL_MAR21_URL,
+        note="Inter-bucket capital formula.",
+    ),
+    "basel_mar21_6_correlation_scenarios": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.6",
+        url=BASEL_MAR21_URL,
+        note="Low, medium, and high correlation scenario parameter adjustments.",
+    ),
+    "basel_mar21_7_scenario_selection": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.7(2)",
+        url=BASEL_MAR21_URL,
+        note="Select maximum scenario capital for GIRR delta.",
+    ),
     "basel_mar21_41": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.41",

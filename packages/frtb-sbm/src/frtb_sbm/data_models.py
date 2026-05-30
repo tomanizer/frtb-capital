@@ -201,6 +201,39 @@ class BucketCapital:
 
 
 @dataclass(frozen=True)
+class PairwiseCorrelationRecord:
+    """Pairwise intra-bucket correlation retained for audit replay."""
+
+    sensitivity_a: str
+    sensitivity_b: str
+    correlation: float
+
+
+@dataclass(frozen=True)
+class IntraBucketScenarioRecord:
+    """Intra-bucket capital and correlation evidence for one scenario."""
+
+    bucket_id: str
+    kb: float
+    sb: float
+    floor_applied: bool
+    pairwise_correlations: tuple[PairwiseCorrelationRecord, ...]
+    citation_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RiskClassScenarioDetail:
+    """Full inter- and intra-bucket evidence for one correlation scenario."""
+
+    scenario: SbmScenarioLabel
+    capital: float
+    inter_bucket_correlations: tuple[tuple[str, str, float], ...]
+    alternative_sb_used: bool
+    intra_buckets: tuple[IntraBucketScenarioRecord, ...]
+    citation_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class RiskClassCapital:
     """Risk-class capital totals by scenario and selected outcome."""
 
@@ -211,6 +244,18 @@ class RiskClassCapital:
     risk_measure: SbmRiskMeasure | None = None
     scenario_totals: Mapping[SbmScenarioLabel, float] | None = None
     selected_scenario: SbmScenarioLabel | None = None
+    scenario_details: tuple[RiskClassScenarioDetail, ...] = ()
+    scenario_selection: SbmBranchMetadata | None = None
+
+
+@dataclass(frozen=True)
+class SbmRunContextSummary:
+    """Run identity and currency context preserved on capital results."""
+
+    run_id: str
+    calculation_date: date
+    base_currency: str
+    reporting_currency: str
 
 
 @dataclass(frozen=True)
@@ -291,6 +336,7 @@ class SbmCapitalResult:
     structured_warnings: tuple[SbmWarning, ...] = ()
     unsupported_features: tuple[SbmUnsupportedFeature, ...] = ()
     reconciliation: SbmReconciliationMetadata | None = None
+    run_context: SbmRunContextSummary | None = None
 
     def as_dict(self) -> dict[str, object]:
         """Return the deterministic audit payload for this result."""
@@ -304,7 +350,10 @@ __all__ = [
     "BucketCapital",
     "CurvatureInput",
     "CurvatureResult",
+    "IntraBucketScenarioRecord",
+    "PairwiseCorrelationRecord",
     "RiskClassCapital",
+    "RiskClassScenarioDetail",
     "SbmBranchMetadata",
     "SbmBranchType",
     "SbmBucketType",
@@ -316,6 +365,7 @@ __all__ = [
     "SbmRiskClass",
     "SbmRiskMeasure",
     "SbmRuleProfile",
+    "SbmRunContextSummary",
     "SbmRunControls",
     "SbmScenarioLabel",
     "SbmSensitivity",
