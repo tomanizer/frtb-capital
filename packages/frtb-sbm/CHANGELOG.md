@@ -14,6 +14,21 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [0.7.3] - 2026-05-30
 
+### Added
+
+- `curvature.py` with canonical `CurvatureInput` parsing, up/down shock validation,
+  worst-branch helper, and explicit fail-closed curvature capital gates (SBM-CURV-001).
+- MAR21.5 `basel_mar21_curvature` citation registry entry and `curvature_citation_ids`.
+- `tests/test_curvature.py` covering contract validation and capital-path rejection.
+
+### Changed
+
+- Expanded `CurvatureInput` with `risk_class`, `risk_factor`, and `amount_currency`.
+- Curvature measure requests on BASEL_MAR21 now report curvature-specific unsupported
+  errors rather than generic phase-1 capital messaging.
+
+## [0.7.2] - 2026-05-30
+
 ### Fixed
 
 - Remove dead `aggregate_equity_delta_intra_bucket` helper; bucket 11 uses shared
