@@ -271,7 +271,7 @@ class CvaNettingSet:
 
 For IMM banks, profile rules set `discount_factor = 1.0` (MAR50.15(4)). For
 non-IMM banks, upstream systems may supply DF or the profile helper may compute
-`DF = exp(-0.05 * M / (1 + 0.05 * M))`.
+`DF = (1 - exp(-0.05 * M)) / (0.05 * M)`.
 
 ### Canonical SA-CVA sensitivity
 

@@ -158,7 +158,7 @@ Each netting-set record must carry, at minimum:
 - `effective_maturity` (`M_NS`) under the profile's cited definition;
 - `discount_factor` (`DF_NS`) where required for non-IMM banks (Basel MAR50.15(4)),
   either supplied explicitly or computed by the profile helper as
-  `DF = exp(-0.05 · M / (1 + 0.05 · M))`;
+  `DF = (1 - exp(-0.05 · M)) / (0.05 · M)`;
 - `uses_imm_ead` flag driving the IMM branch where `DF_NS = 1` (Basel MAR50.15(4));
 - collateral and margin metadata references where supplied for audit, without
   re-simulating margin paths in the kernel;
@@ -304,7 +304,7 @@ The full BA-CVA path must:
   index hedge recognition `IH`, and hedging misalignment `HMA_c` (Basel
   MAR50.21–MAR50.25);
 - apply supervisory floor
-  `K_full = (1 - β) · K_reduced + β · K_hedged` with `β = 0.25` (Basel MAR50.20);
+  `K_full = β · K_reduced + (1 - β) · K_hedged` with `β = 0.25` (Basel MAR50.20);
 - apply discount scalar `D_BA-CVA = 0.65`.
 
 Eligible BA-CVA hedge instruments are limited to single-name CDS, single-name

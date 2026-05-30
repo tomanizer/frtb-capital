@@ -88,7 +88,7 @@ risk class.
   calibration metadata.
 - Add BA-CVA Table 1 sector/credit-quality risk weights (MAR50.16), `α = 1.4`,
   `ρ`, and `D_BA-CVA = 0.65` (MAR50.14–MAR50.15).
-- Add non-IMM discount-factor policy (`DF = exp(-0.05 · M / (1 + 0.05 · M))` or
+- Add non-IMM discount-factor policy (`DF = (1 - exp(-0.05 · M)) / (0.05 · M)` or
   explicit supplied DF) (MAR50.15(4)).
 - Add GIRR delta bucket, tenor, risk-weight, and correlation tables needed for
   the first SA-CVA fixture (MAR50.54–MAR50.57).
@@ -480,7 +480,7 @@ benefit yet.
 
 **Acceptance criteria:**
 
-- Full BA-CVA never falls below `(1 - β) · K_reduced`.
+- Full BA-CVA never falls below `β · K_reduced`.
 - Direct-reference hedge reduces capital; misaligned indirect hedge triggers
   `HMA_c`.
 - Ineligible hedge records produce zero hedge benefit with cited reason.

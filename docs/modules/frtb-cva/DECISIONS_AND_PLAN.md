@@ -111,7 +111,7 @@ result. See [ADR 0012](../../decisions/0012-capital-impact-attribution.md).
 
 **Decision:** Non-IMM netting sets may supply `discount_factor` explicitly or
 allow the profile helper to compute
-`DF = exp(-0.05 * M / (1 + 0.05 * M))` from effective maturity.
+`DF = (1 - exp(-0.05 * M)) / (0.05 * M)` from effective maturity.
 
 **Reason:** MAR50.15(4) defines the supervisory discount factor for banks not
 using IMM.
