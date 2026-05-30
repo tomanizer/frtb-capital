@@ -162,6 +162,12 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         url=BASEL_MAR21_URL,
         note="Inter-bucket capital formula.",
     ),
+    "basel_mar21_curvature": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.5",
+        url=BASEL_MAR21_URL,
+        note="Curvature risk capital with up/down shock inputs and delta exclusion.",
+    ),
     "basel_mar21_6_correlation_scenarios": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.6",
@@ -514,6 +520,17 @@ def citations_for_profile(
 
     resolved = _resolve_supported_profile(profile)
     return dict(PROFILE_CITATIONS[resolved])
+
+
+def curvature_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ...]:
+    """Return ordered citation ids for curvature contract validation."""
+
+    citations = citations_for_profile(profile)
+    if "basel_mar21_curvature" not in citations:
+        raise UnsupportedRegulatoryFeatureError(
+            f"curvature citations are unavailable for profile={profile!r}"
+        )
+    return ("basel_mar21_curvature",)
 
 
 def girr_buckets_for_profile(
@@ -1152,6 +1169,7 @@ __all__ = [
     "SbmGirrTenorDefinition",
     "apply_correlation_scenario",
     "citations_for_profile",
+    "curvature_citation_ids",
     "commodity_bucket_definition",
     "commodity_buckets_for_profile",
     "commodity_delta_intra_bucket_correlation",

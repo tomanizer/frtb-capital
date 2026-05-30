@@ -57,10 +57,10 @@ requirements:
   - id: SBM-CURV-001
     title: Curvature capital
     source: Basel MAR21 curvature provisions; 91 FR 15037 footnote 328
-    status: planned
+    status: partial
     modules: [src/frtb_sbm/curvature.py]
     tests: [tests/test_curvature.py]
-    notes: Up/down scenario inputs and delta-exclusion treatment must be explicit.
+    notes: Curvature contracts and fail-closed gates implemented; capital aggregation remains planned (#166).
   - id: SBM-CRIF-001
     title: CRIF-to-canonical mapping
     source: ISDA CRIF field convention; implementation support requirement

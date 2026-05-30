@@ -265,7 +265,10 @@ class CurvatureInput:
     """Curvature-specific up/down shock inputs for one sensitivity."""
 
     sensitivity_id: str
+    risk_class: SbmRiskClass
     bucket: str
+    risk_factor: str
+    amount_currency: str
     up_shock_amount: float
     down_shock_amount: float
     citation_ids: tuple[str, ...]

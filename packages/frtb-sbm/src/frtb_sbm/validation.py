@@ -221,6 +221,13 @@ def _raise_unsupported_capital_path(
             f"frtb-sbm phase-1 capital is unsupported for profile={profile.value}; "
             f"use profile={SbmRegulatoryProfile.BASEL_MAR21.value}"
         )
+    if risk_measure is SbmRiskMeasure.CURVATURE:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm curvature capital is unsupported until the cited curvature "
+            "aggregation path is implemented (SBM-CURV-001); "
+            f"received risk_class={risk_class.value}; "
+            "use validate_curvature_sensitivities to validate up/down shock inputs"
+        )
     raise UnsupportedRegulatoryFeatureError(
         "frtb-sbm phase-1 capital supports GIRR delta/vega, FX delta, "
         "equity delta, commodity delta, and CSR non-securitisation delta inputs; "

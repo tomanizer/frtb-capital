@@ -50,7 +50,7 @@
   },
   {
     "case_id": "unsupported_curvature",
-    "expected_error_match": "phase-1 capital",
+    "expected_error_match": "curvature capital is unsupported",
     "sensitivity": {
       "sensitivity_id": "fx-curvature-001",
       "source_row_id": "row-fx-curvature",

@@ -248,7 +248,12 @@ def test_commodity_vega_and_curvature_fail_closed() -> None:
             up_shock_amount=100.0 if measure is SbmRiskMeasure.CURVATURE else None,
             down_shock_amount=-100.0 if measure is SbmRiskMeasure.CURVATURE else None,
         )
-        with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital"):
+        error_match = (
+            "curvature capital is unsupported"
+            if measure is SbmRiskMeasure.CURVATURE
+            else "phase-1 capital"
+        )
+        with pytest.raises(UnsupportedRegulatoryFeatureError, match=error_match):
             calculate_sbm_capital((sensitivity,), context=sample_context())
 
 
