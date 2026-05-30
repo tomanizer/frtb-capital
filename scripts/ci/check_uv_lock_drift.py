@@ -27,7 +27,7 @@ def _head_ref() -> str:
 def _base_sha() -> str:
     event_path = os.environ.get("GITHUB_EVENT_PATH")
     if event_path:
-        payload = json.loads(Path(event_path).read_text())
+        payload = json.loads(Path(event_path).read_text(encoding="utf-8"))
         sha = payload.get("pull_request", {}).get("base", {}).get("sha", "")
         if sha:
             return sha
@@ -59,10 +59,7 @@ def _file_bytes_at(ref: str, path: str) -> bytes | None:
 def _normalize_sources(sources: Any) -> tuple[tuple[str, str], ...]:
     if not isinstance(sources, dict):
         return ()
-    return tuple(
-        (name, json.dumps(sources[name], sort_keys=True))
-        for name in sorted(sources)
-    )
+    return tuple((name, json.dumps(sources[name], sort_keys=True)) for name in sorted(sources))
 
 
 def _dependency_spec_snapshot(content: bytes) -> tuple[Any, ...]:
@@ -70,10 +67,7 @@ def _dependency_spec_snapshot(content: bytes) -> tuple[Any, ...]:
     project = data.get("project") or {}
     deps = tuple(project.get("dependencies") or ())
     groups_raw = data.get("dependency-groups") or {}
-    groups = tuple(
-        (group, tuple(sorted(specs)))
-        for group, specs in sorted(groups_raw.items())
-    )
+    groups = tuple((group, tuple(sorted(specs))) for group, specs in sorted(groups_raw.items()))
     uv_tool = (data.get("tool") or {}).get("uv") or {}
     sources = _normalize_sources(uv_tool.get("sources"))
     return (deps, groups, sources)
@@ -86,6 +80,15 @@ def _dep_spec_changed(base: str, path: str) -> bool:
     if before is None or after is None:
         return before != after
     return _dependency_spec_snapshot(before) != _dependency_spec_snapshot(after)
+
+
+def _all_pyproject_files() -> list[str]:
+    """Return root and package pyproject.toml paths present at HEAD."""
+    paths = ["pyproject.toml"]
+    packages_dir = Path("packages")
+    if packages_dir.is_dir():
+        paths.extend(str(path) for path in sorted(packages_dir.glob("*/pyproject.toml")))
+    return paths
 
 
 def main() -> int:
@@ -106,9 +109,13 @@ def main() -> int:
         print("uv-lock-guard: uv.lock not changed, nothing to check")
         return 0
 
-    # Check all pyproject.toml files (root + packages) for dep-spec changes
-    pyproject_files = [p for p in changed if p.endswith("pyproject.toml")]
-    dep_changed = any(_dep_spec_changed(base, p) for p in pyproject_files)
+    # Compare dependency specs for every pyproject.toml that exists at HEAD.
+    # Do not limit to files in the PR diff: a lock refresh is valid when any
+    # workspace manifest changes dependency-groups, project.dependencies, or
+    # tool.uv.sources relative to the merge base.
+    pyproject_files = _all_pyproject_files()
+    dep_changed = any(_dep_spec_changed(base, path) for path in pyproject_files)
+    changed_pyprojects = sorted(p for p in pyproject_files if p in changed)
 
     if not dep_changed:
         print(
@@ -130,7 +137,8 @@ def main() -> int:
 
     print(
         f"uv-lock-guard: OK (uv.lock changed alongside dependency-spec "
-        f"changes in: {', '.join(pyproject_files)})"
+        f"changes; changed manifests in diff: "
+        f"{', '.join(changed_pyprojects) or 'none listed'})"
     )
     return 0
 
