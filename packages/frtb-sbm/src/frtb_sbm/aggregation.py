@@ -116,7 +116,7 @@ def adjust_correlation_for_scenario(
     base_correlation: float,
     scenario: SbmScenarioLabel,
     *,
-    profile_id: str = SbmRegulatoryProfile.BASEL_MAR21.value,
+    profile_id: SbmRegulatoryProfile | str = SbmRegulatoryProfile.BASEL_MAR21,
 ) -> float:
     """
     Apply MAR21.6 correlation-scenario adjustments to one parameter.

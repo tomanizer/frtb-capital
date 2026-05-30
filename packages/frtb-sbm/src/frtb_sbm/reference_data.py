@@ -920,7 +920,8 @@ def apply_correlation_scenario_definition(
             definition.multiplier * base_correlation,
         )
     if definition.scenario is SbmScenarioLabel.HIGH:
-        return min(definition.cap or 1.0, definition.multiplier * base_correlation)
+        cap = definition.cap if definition.cap is not None else 1.0
+        return min(cap, definition.multiplier * base_correlation)
     return definition.multiplier * base_correlation
 
 
