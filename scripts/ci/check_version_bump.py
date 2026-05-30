@@ -7,6 +7,7 @@ numbers; that work belongs in the release PR.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -22,11 +23,9 @@ def _head_ref() -> str:
 
 def _base_sha() -> str:
     """Best-effort base SHA for the diff."""
-    import json
-
     event_path = os.environ.get("GITHUB_EVENT_PATH")
     if event_path:
-        payload = json.loads(Path(event_path).read_text())
+        payload = json.loads(Path(event_path).read_text(encoding="utf-8"))
         sha = payload.get("pull_request", {}).get("base", {}).get("sha", "")
         if sha:
             return sha
