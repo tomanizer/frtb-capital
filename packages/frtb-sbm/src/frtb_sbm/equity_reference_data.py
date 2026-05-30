@@ -183,8 +183,8 @@ def equity_delta_intra_bucket_correlation(
     issuer_b_norm = _require_text(issuer_b, "qualifier")
 
     if factor_a == factor_b:
-        if factor_a is EQUITY_SPOT_RISK_FACTOR:
-            return _EQUITY_SPOT_SPOT_CORRELATIONS[normalised_bucket], (_EQUITY_INTRA_CITATION,)
+        if issuer_a_norm == issuer_b_norm:
+            return 1.0, (_EQUITY_INTRA_CITATION,)
         return _EQUITY_SPOT_SPOT_CORRELATIONS[normalised_bucket], (_EQUITY_INTRA_CITATION,)
 
     if issuer_a_norm == issuer_b_norm:

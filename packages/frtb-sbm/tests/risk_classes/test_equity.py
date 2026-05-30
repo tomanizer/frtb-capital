@@ -134,6 +134,20 @@ def test_equity_delta_intra_bucket_correlation_same_issuer_spot_repo() -> None:
     assert citations == ("basel_mar21_78",)
 
 
+def test_equity_delta_intra_bucket_correlation_same_issuer_same_factor_is_one() -> None:
+    correlation, citations = equity_delta_intra_bucket_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket_id="5",
+        risk_factor_a=EQUITY_SPOT_RISK_FACTOR,
+        risk_factor_b=EQUITY_SPOT_RISK_FACTOR,
+        issuer_a="ISS-A",
+        issuer_b="ISS-A",
+    )
+
+    assert correlation == pytest.approx(1.0)
+    assert citations == ("basel_mar21_78",)
+
+
 def test_equity_delta_intra_bucket_correlation_cross_issuer_spot() -> None:
     correlation, citations = equity_delta_intra_bucket_correlation(
         SbmRegulatoryProfile.BASEL_MAR21,

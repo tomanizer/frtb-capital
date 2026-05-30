@@ -83,9 +83,7 @@ def aggregate_commodity_delta_measure_capital(
             )
         )
 
-    bucket_ids = tuple(
-        sorted((spec.bucket_id for spec in intra_specs), key=lambda value: int(value))
-    )
+    bucket_ids = tuple(spec.bucket_id for spec in intra_specs)
     inter_bucket_correlations = build_commodity_inter_bucket_correlation_map(
         bucket_ids,
         profile_id=profile_id,
