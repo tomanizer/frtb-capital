@@ -13,10 +13,24 @@ from dataclasses import dataclass
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_sbm.commodity_reference_data import (
+    commodity_bucket_definition,
+    commodity_buckets_for_profile,
+    commodity_delta_intra_bucket_correlation,
+    commodity_delta_risk_weight,
+    commodity_inter_bucket_correlation,
+)
 from frtb_sbm.data_models import (
     SbmCitation,
     SbmRegulatoryProfile,
     SbmScenarioLabel,
+)
+from frtb_sbm.equity_reference_data import (
+    equity_bucket_definition,
+    equity_buckets_for_profile,
+    equity_delta_intra_bucket_correlation,
+    equity_delta_risk_weight,
+    equity_inter_bucket_correlation,
 )
 from frtb_sbm.validation import SbmInputError, require_positive_int
 
@@ -217,6 +231,72 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         location="MAR21.89",
         url=BASEL_MAR21_URL,
         note="FX delta inter-bucket correlation parameter.",
+    ),
+    "basel_mar21_12": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.12",
+        url=BASEL_MAR21_URL,
+        note="Equity delta and vega risk-factor definitions.",
+    ),
+    "basel_mar21_13": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.13",
+        url=BASEL_MAR21_URL,
+        note="Commodity delta and vega risk-factor definitions and tenors.",
+    ),
+    "basel_mar21_72": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.72",
+        url=BASEL_MAR21_URL,
+        note="Equity delta bucket assignment (Table 9).",
+    ),
+    "basel_mar21_77": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.77",
+        url=BASEL_MAR21_URL,
+        note="Equity delta risk weights for spot and repo (Table 10).",
+    ),
+    "basel_mar21_78": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.78",
+        url=BASEL_MAR21_URL,
+        note="Equity delta intra-bucket correlation parameters.",
+    ),
+    "basel_mar21_79": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.79",
+        url=BASEL_MAR21_URL,
+        note="Equity other-sector bucket absolute-weight aggregation.",
+    ),
+    "basel_mar21_80": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.80",
+        url=BASEL_MAR21_URL,
+        note="Equity delta inter-bucket correlation parameters.",
+    ),
+    "basel_mar21_81": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.81",
+        url=BASEL_MAR21_URL,
+        note="Commodity delta bucket assignment (Table 11).",
+    ),
+    "basel_mar21_82": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.82",
+        url=BASEL_MAR21_URL,
+        note="Commodity delta risk weights (Table 11).",
+    ),
+    "basel_mar21_83": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.83",
+        url=BASEL_MAR21_URL,
+        note="Commodity delta intra-bucket correlation parameters (Table 12).",
+    ),
+    "basel_mar21_85": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.85",
+        url=BASEL_MAR21_URL,
+        note="Commodity delta inter-bucket correlation parameters.",
     ),
 }
 
@@ -783,7 +863,7 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
 
     resolved = _resolve_supported_profile(profile)
     citations = citations_for_profile(resolved)
-    return {
+    payload: dict[str, object] = {
         "profile": resolved.value,
         "citations": {
             citation_id: {
@@ -882,6 +962,12 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
             fx_specified_currencies_for_profile(resolved),
         ),
     }
+    from frtb_sbm.commodity_reference_data import commodity_reference_payload
+    from frtb_sbm.equity_reference_data import equity_reference_payload
+
+    payload.update(equity_reference_payload(resolved))
+    payload.update(commodity_reference_payload(resolved))
+    return payload
 
 
 def _ensure_girr_supported(profile: SbmRegulatoryProfile | str) -> None:
@@ -1014,8 +1100,18 @@ __all__ = [
     "SbmGirrTenorDefinition",
     "apply_correlation_scenario",
     "citations_for_profile",
+    "commodity_bucket_definition",
+    "commodity_buckets_for_profile",
+    "commodity_delta_intra_bucket_correlation",
+    "commodity_delta_risk_weight",
+    "commodity_inter_bucket_correlation",
     "correlation_scenario_definition",
     "correlation_scenarios_for_profile",
+    "equity_bucket_definition",
+    "equity_buckets_for_profile",
+    "equity_delta_intra_bucket_correlation",
+    "equity_delta_risk_weight",
+    "equity_inter_bucket_correlation",
     "fx_bucket_definition",
     "fx_buckets_for_profile",
     "fx_delta_intra_bucket_correlation",

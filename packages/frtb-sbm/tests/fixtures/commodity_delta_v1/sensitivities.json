@@ -1,0 +1,71 @@
+{
+  "context": {
+    "run_id": "sbm-commodity-delta-v1",
+    "calculation_date": "2026-05-30",
+    "base_currency": "USD",
+    "reporting_currency": "USD",
+    "profile_id": "BASEL_MAR21"
+  },
+  "sensitivities": [
+    {
+      "sensitivity_id": "com2-wti-3m",
+      "source_row_id": "row-001",
+      "desk_id": "com-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "2",
+      "risk_factor": "WTI",
+      "qualifier": "NYMEX",
+      "tenor": "3m",
+      "amount": 3000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "com2-wti-6m",
+      "source_row_id": "row-002",
+      "desk_id": "com-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "2",
+      "risk_factor": "WTI",
+      "qualifier": "NYMEX",
+      "tenor": "6m",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "com2-brent-3m",
+      "source_row_id": "row-003",
+      "desk_id": "com-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "2",
+      "risk_factor": "BRENT",
+      "qualifier": "ICE",
+      "tenor": "3m",
+      "amount": -2000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "SHORT"
+    },
+    {
+      "sensitivity_id": "com5-alu-1y",
+      "source_row_id": "row-004",
+      "desk_id": "com-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "5",
+      "risk_factor": "ALU",
+      "qualifier": "LME",
+      "tenor": "1y",
+      "amount": 1500000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  ]
+}

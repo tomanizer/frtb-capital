@@ -16,8 +16,18 @@ from frtb_sbm.reference_data import (
     FX_INTER_BUCKET_CORRELATION,
     apply_correlation_scenario,
     citations_for_profile,
+    commodity_bucket_definition,
+    commodity_buckets_for_profile,
+    commodity_delta_intra_bucket_correlation,
+    commodity_delta_risk_weight,
+    commodity_inter_bucket_correlation,
     correlation_scenario_definition,
     correlation_scenarios_for_profile,
+    equity_bucket_definition,
+    equity_buckets_for_profile,
+    equity_delta_intra_bucket_correlation,
+    equity_delta_risk_weight,
+    equity_inter_bucket_correlation,
     fx_bucket_definition,
     fx_delta_risk_weight,
     fx_inter_bucket_correlation,
@@ -49,6 +59,10 @@ def test_reference_data_entries_have_citations() -> None:
         assert tenor.citation_id in citations
     for scenario in correlation_scenarios_for_profile(profile):
         assert scenario.citation_id in citations
+    for bucket in equity_buckets_for_profile(profile):
+        assert bucket.citation_id in citations
+    for bucket in commodity_buckets_for_profile(profile):
+        assert bucket.citation_id in citations
 
 
 @pytest.mark.parametrize(
@@ -277,6 +291,121 @@ def test_fx_delta_reference_data_matches_basel_mar21() -> None:
     assert bucket.citation_id == "basel_mar21_86"
 
 
+@pytest.mark.parametrize(
+    ("bucket_id", "spot_weight", "repo_weight"),
+    [
+        ("5", 0.30, 0.0030),
+        ("6", 0.35, 0.0035),
+    ],
+)
+def test_equity_delta_reference_data_matches_basel_mar21(
+    bucket_id: str,
+    spot_weight: float,
+    repo_weight: float,
+) -> None:
+    spot, spot_citations = equity_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket_id=bucket_id,
+        risk_factor="SPOT",
+    )
+    repo, repo_citations = equity_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket_id=bucket_id,
+        risk_factor="REPO",
+    )
+    intra, intra_citations = equity_delta_intra_bucket_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket_id=bucket_id,
+        risk_factor_a="SPOT",
+        risk_factor_b="SPOT",
+        issuer_a="ISS-A",
+        issuer_b="ISS-B",
+    )
+    _inter, inter_citations = equity_inter_bucket_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket1=bucket_id,
+        bucket2="6" if bucket_id != "6" else "5",
+    )
+
+    assert spot == pytest.approx(spot_weight)
+    assert repo == pytest.approx(repo_weight)
+    assert spot_citations == ("basel_mar21_77",)
+    assert repo_citations == ("basel_mar21_77",)
+    assert intra_citations == ("basel_mar21_78",)
+    assert inter_citations == ("basel_mar21_80",)
+    assert intra > 0.0
+    bucket = equity_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21, bucket_id)
+    assert bucket.citation_id == "basel_mar21_72"
+
+
+def test_equity_other_sector_bucket_weights_and_zero_inter_correlation() -> None:
+    spot, repo = (
+        equity_delta_risk_weight(
+            SbmRegulatoryProfile.BASEL_MAR21,
+            bucket_id="11",
+            risk_factor="SPOT",
+        ),
+        equity_delta_risk_weight(
+            SbmRegulatoryProfile.BASEL_MAR21,
+            bucket_id="11",
+            risk_factor="REPO",
+        ),
+    )
+    inter, inter_citations = equity_inter_bucket_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket1="11",
+        bucket2="5",
+    )
+
+    assert spot[0] == pytest.approx(0.70)
+    assert repo[0] == pytest.approx(0.0070)
+    assert inter == pytest.approx(0.0)
+    assert inter_citations == ("basel_mar21_80",)
+
+
+@pytest.mark.parametrize(
+    ("bucket_id", "risk_weight", "commodity_correlation"),
+    [
+        ("2", 0.35, 0.95),
+        ("5", 0.40, 0.60),
+        ("11", 0.50, 0.15),
+    ],
+)
+def test_commodity_delta_reference_data_matches_basel_mar21(
+    bucket_id: str,
+    risk_weight: float,
+    commodity_correlation: float,
+) -> None:
+    weight, weight_citations = commodity_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket_id=bucket_id,
+    )
+    intra, intra_citations = commodity_delta_intra_bucket_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket_id=bucket_id,
+        commodity_a="WTI",
+        commodity_b="BRENT",
+        tenor_a="3m",
+        tenor_b="3m",
+        location_a="NYMEX",
+        location_b="ICE",
+    )
+    _inter, inter_citations = commodity_inter_bucket_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        bucket1=bucket_id,
+        bucket2="5" if bucket_id != "5" else "2",
+    )
+
+    assert weight == pytest.approx(risk_weight)
+    assert weight_citations == ("basel_mar21_82",)
+    assert intra == pytest.approx(commodity_correlation * 0.999)
+    assert intra_citations == ("basel_mar21_83",)
+    assert inter_citations == ("basel_mar21_85",)
+    bucket = commodity_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21, bucket_id)
+    assert bucket.commodity_correlation == pytest.approx(commodity_correlation)
+    assert bucket.citation_id == "basel_mar21_81"
+
+
 def test_missing_lookup_keys_raise_input_errors() -> None:
     with pytest.raises(SbmInputError, match="no GIRR bucket for currency"):
         girr_bucket_for_currency(SbmRegulatoryProfile.BASEL_MAR21, "ZZZ")
@@ -286,6 +415,10 @@ def test_missing_lookup_keys_raise_input_errors() -> None:
         girr_tenor_definition(SbmRegulatoryProfile.BASEL_MAR21, "7y")
     with pytest.raises(SbmInputError, match="no GIRR delta risk weight"):
         girr_delta_risk_weight_rule(SbmRegulatoryProfile.BASEL_MAR21, "7y")
+    with pytest.raises(SbmInputError, match="no equity bucket definition"):
+        equity_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21, "99")
+    with pytest.raises(SbmInputError, match="no commodity bucket definition"):
+        commodity_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21, "99")
 
 
 @pytest.mark.parametrize(
@@ -293,7 +426,8 @@ def test_missing_lookup_keys_raise_input_errors() -> None:
     [
         (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
-        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
     ],
 )
 def test_unsupported_risk_class_measure_paths_fail_closed(

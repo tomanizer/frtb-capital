@@ -4,6 +4,30 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-30
+
+### Added
+
+- Equity and commodity delta cited reference data (MAR21.71-MAR21.85),
+  `risk_classes/equity.py` and `risk_classes/commodity.py` assembly, and
+  weighted-sensitivity helpers on the shared aggregation engine.
+- Synthetic `tests/fixtures/equity_delta_v1/` and
+  `tests/fixtures/commodity_delta_v1/` replay bundles with negative cases.
+- `tests/risk_classes/test_equity.py` and `tests/risk_classes/test_commodity.py`
+  covering weighting, intra/inter correlations, bucket-11 absolute aggregation,
+  and fixture replay.
+
+### Changed
+
+- `calculate_sbm_capital` supports homogeneous equity and commodity delta inputs.
+- Profile hash and support map include equity and commodity delta measures.
+- Existing GIRR, FX, and fixture expected outputs updated for expanded profile hash.
+
+### Fixed
+
+- Equity spot/repo risk-weight lookup now compares normalised factor strings with `==`.
+- Commodity delta bucket-id sorting syntax in `risk_classes/commodity.py`.
+
 ## [0.5.0] - 2026-05-30
 
 ### Fixed

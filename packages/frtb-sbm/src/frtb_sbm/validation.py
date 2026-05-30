@@ -58,6 +58,8 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
         }
     ),
     SbmRegulatoryProfile.EU_CRR3.value: frozenset(),
@@ -370,6 +372,10 @@ def _validate_risk_class_fields(
 
     if risk_class is SbmRiskClass.FX and risk_measure is SbmRiskMeasure.DELTA:
         _validate_fx_delta_fields(sensitivity)
+    if risk_class is SbmRiskClass.EQUITY and risk_measure is SbmRiskMeasure.DELTA:
+        _validate_equity_delta_fields(sensitivity)
+    if risk_class is SbmRiskClass.COMMODITY and risk_measure is SbmRiskMeasure.DELTA:
+        _validate_commodity_delta_fields(sensitivity)
 
 
 def _validate_fx_delta_fields(sensitivity: SbmSensitivity) -> None:
@@ -390,6 +396,30 @@ def _validate_fx_delta_fields(sensitivity: SbmSensitivity) -> None:
             field="bucket",
             sensitivity_id=sensitivity_id,
         )
+
+
+def _validate_equity_delta_fields(sensitivity: SbmSensitivity) -> None:
+    from frtb_sbm.equity_reference_data import (
+        EQUITY_REPO_RISK_FACTOR,
+        EQUITY_SPOT_RISK_FACTOR,
+        equity_bucket_definition,
+    )
+
+    sensitivity_id = sensitivity.sensitivity_id
+    equity_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21.value, sensitivity.bucket)
+    risk_factor = sensitivity.risk_factor.strip().upper()
+    if risk_factor not in {EQUITY_SPOT_RISK_FACTOR, EQUITY_REPO_RISK_FACTOR}:
+        raise SbmInputError(
+            "equity delta risk_factor must be SPOT or REPO",
+            field="risk_factor",
+            sensitivity_id=sensitivity_id,
+        )
+
+
+def _validate_commodity_delta_fields(sensitivity: SbmSensitivity) -> None:
+    from frtb_sbm.commodity_reference_data import commodity_bucket_definition
+
+    commodity_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21.value, sensitivity.bucket)
 
 
 def _validate_curvature_amounts(sensitivity: SbmSensitivity) -> None:
