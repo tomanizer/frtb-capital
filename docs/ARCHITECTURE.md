@@ -39,7 +39,7 @@ desks to that SA component stack for fallback capital.
                               └───────────┘
 ```
 
-**Allowed imports:** `frtb-*` capital components may import from `frtb-common`. `frtb-orchestration` may import from any sibling. **No other cross-package imports are allowed.**
+**Allowed imports:** `frtb-*` capital components may import from `frtb-common`. `frtb-orchestration` may import from any sibling. **No other cross-package imports are allowed.** The root `import-linter` layers contract (`make import-lint`, part of `make quality-control`) enforces this graph in CI.
 
 ## Package responsibilities
 

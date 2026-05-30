@@ -2,61 +2,168 @@ schema_version: 1
 name: BASEL_FRTB_CVA
 module: frtb-cva
 status_values: [planned, implemented, partial, unsupported, out_of_scope]
+detailed_requirements_doc: ../DETAILED_REQUIREMENTS.md
+architecture_doc: ../ARCHITECTURE_AND_DATA_DESIGN.md
+decisions_doc: ../DECISIONS_AND_PLAN.md
 source_register:
   - name: Basel MAR50
     url: https://www.bis.org/basel_framework/chapter/MAR/50.htm
+  - name: BCBS d507 July 2020 CVA revisions
+    url: https://www.bis.org/bcbs/publ/d507.pdf
   - name: U.S. NPR 2.0 91 FR 14952
     url: https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
   - name: CRR3 Regulation (EU) 2024/1623
     url: https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
 requirements:
+  - id: CVA-BOUNDARY-001
+    title: Package responsibility and orchestration boundary
+    detailed_ids: [CVA-BOUNDARY-001]
+    source: Basel MAR50.6-MAR50.7; ADR 0003
+    status: planned
+    modules: [src/frtb_cva/capital.py]
+    tests: [tests/test_public_api.py]
+    notes: Package-level CVA outputs only; no SA composition.
+  - id: CVA-BOUNDARY-002
+    title: No sibling capital-package imports
+    detailed_ids: [CVA-BOUNDARY-002]
+    source: ADR 0003; workspace package-boundary policy
+    status: planned
+    modules: [src/frtb_cva]
+    tests: [tests/test_import_boundaries.py]
+    notes: May import frtb-common only.
+  - id: CVA-BOUNDARY-003
+    title: Upstream exposure and sensitivity inputs only
+    detailed_ids: [CVA-BOUNDARY-003]
+    source: Basel MAR50.31-MAR50.36
+    status: planned
+    modules: [src/frtb_cva/validation.py]
+    tests: [tests/test_validation.py]
+    notes: No exposure simulation or sensitivity generation in kernels.
   - id: CVA-DATA-001
     title: Frozen CVA counterparty, netting-set, hedge, and sensitivity models
-    source: Basel MAR50.1-MAR50.9; U.S. NPR 2.0 section V.B
+    detailed_ids: [CVA-FUNC-002, CVA-FUNC-003, CVA-FUNC-004, CVA-FUNC-005]
+    source: Basel MAR50.1-MAR50.9; MAR50.47
     status: planned
     modules: [src/frtb_cva/data_models.py]
     tests: [tests/test_data_models.py]
-    notes: Include EAD/source lineage and CVA/hedge tags.
+    notes: Include region, uses_imm_ead, volatility_input, portfolio-level SA-CVA semantics.
   - id: CVA-SCOPE-001
     title: CVA scope, exclusions, and method selection
+    detailed_ids: [CVA-FUNC-006, CVA-FUNC-022]
     source: Basel MAR50.1-MAR50.13; U.S. NPR 2.0 section V.B.2
     status: planned
     modules: [src/frtb_cva/regimes.py, src/frtb_cva/scope.py]
     tests: [tests/test_scope.py]
-    notes: BA-CVA, SA-CVA, threshold, and unsupported cases must be explicit.
+    notes: BA-CVA default, SA-CVA approval, carve-out; materiality alternative fail closed.
   - id: CVA-HEDGE-001
     title: Eligible CVA hedge and internal transfer treatment
-    source: Basel MAR50 hedge provisions; U.S. NPR 2.0 section V.A.6.c and V.B.3
+    detailed_ids: [CVA-FUNC-004, CVA-FUNC-007, CVA-BOUNDARY-006]
+    source: Basel MAR50.10-MAR50.11; MAR50.37-MAR50.39
     status: planned
     modules: [src/frtb_cva/hedges.py]
     tests: [tests/test_hedges.py]
-    notes: Ineligible hedge benefit must be disallowed.
+    notes: Ineligible hedge benefit must be disallowed with cited reasons.
   - id: CVA-BA-001
-    title: Basic approach CVA capital
-    source: Basel MAR50 BA-CVA provisions, including MAR50.14 and following
+    title: Reduced BA-CVA capital
+    detailed_ids: [CVA-FUNC-008, CVA-FUNC-009]
+    source: Basel MAR50.14-MAR50.16
     status: planned
     modules: [src/frtb_cva/ba_cva.py]
-    tests: [tests/test_ba_cva.py]
-    notes: Counterparty/netting-set exposure and maturity inputs drive capital.
+    tests: [tests/test_ba_cva_reduced.py, tests/test_ba_cva_standalone.py]
+    notes: alpha=1.4, rho=50%, D_BA-CVA=0.65, Table 1 RW, non-IMM DF policy.
+  - id: CVA-BA-002
+    title: Full BA-CVA hedge recognition and floor
+    detailed_ids: [CVA-FUNC-010]
+    source: Basel MAR50.17-MAR50.26
+    status: planned
+    modules: [src/frtb_cva/ba_cva.py]
+    tests: [tests/test_ba_cva_full.py]
+    notes: SNH, IH, HMA, beta floor; CDS/index hedge types only.
   - id: CVA-SA-001
-    title: SA-CVA weighted sensitivity netting and risk-class capital
-    source: Basel MAR50.47-MAR50.53 and SA-CVA risk-class provisions
+    title: SA-CVA weighted sensitivity netting
+    detailed_ids: [CVA-FUNC-012]
+    source: Basel MAR50.47-MAR50.52
     status: planned
-    modules: [src/frtb_cva/sa_cva.py, src/frtb_cva/risk_classes]
-    tests: [tests/test_sa_cva.py]
-    notes: Cover GIRR, FX, CCS, RCS, equity, and commodity risk classes.
+    modules: [src/frtb_cva/weighted_sensitivity.py]
+    tests: [tests/test_weighted_sensitivity.py]
+    notes: WS_k = WS_k^CVA - WS_k^Hdg under positive CVA convention.
+  - id: CVA-SA-002
+    title: SA-CVA shared aggregation engine and multiplier
+    detailed_ids: [CVA-FUNC-013, CVA-FUNC-014]
+    source: Basel MAR50.40-MAR50.53
+    status: planned
+    modules: [src/frtb_cva/aggregation.py]
+    tests: [tests/test_aggregation.py]
+    notes: K_b, S_b floor/cap, gamma_bc, R=0.01, m_CVA default 1.0.
+  - id: CVA-SA-GIRR
+    title: SA-CVA GIRR delta and vega
+    detailed_ids: [CVA-FUNC-015]
+    source: Basel MAR50.54-MAR50.58
+    status: planned
+    modules: [src/frtb_cva/risk_classes/girr.py]
+    tests: [tests/risk_classes/test_girr.py]
+    notes: Delta first; vega requires volatility_input.
+  - id: CVA-SA-FX
+    title: SA-CVA FX delta and vega
+    detailed_ids: [CVA-FUNC-016]
+    source: Basel MAR50.59-MAR50.62
+    status: planned
+    modules: [src/frtb_cva/risk_classes/fx.py]
+    tests: [tests/risk_classes/test_fx.py]
+    notes: Reporting-currency leg decomposition for non-reporting pairs.
+  - id: CVA-SA-CCS
+    title: SA-CVA counterparty credit spread delta
+    detailed_ids: [CVA-FUNC-017]
+    source: Basel MAR50.63-MAR50.65
+    status: planned
+    modules: [src/frtb_cva/risk_classes/ccs.py]
+    tests: [tests/risk_classes/test_ccs.py]
+    notes: No CCS vega capital.
+  - id: CVA-SA-RCS
+    title: SA-CVA reference credit spread delta and vega
+    detailed_ids: [CVA-FUNC-018]
+    source: Basel MAR50.66-MAR50.69
+    status: planned
+    modules: [src/frtb_cva/risk_classes/rcs.py]
+    tests: [tests/risk_classes/test_rcs.py]
+    notes: Cross-quality gamma_bc divide-by-2 rule.
+  - id: CVA-SA-EQ
+    title: SA-CVA equity delta and vega
+    detailed_ids: [CVA-FUNC-019]
+    source: Basel MAR50.70-MAR50.73
+    status: planned
+    modules: [src/frtb_cva/risk_classes/equity.py]
+    tests: [tests/risk_classes/test_equity.py]
+    notes: Size, region, sector buckets; qualified-index hooks.
+  - id: CVA-SA-COM
+    title: SA-CVA commodity delta and vega
+    detailed_ids: [CVA-FUNC-020]
+    source: Basel MAR50.74-MAR50.77
+    status: planned
+    modules: [src/frtb_cva/risk_classes/commodity.py]
+    tests: [tests/risk_classes/test_commodity.py]
+    notes: Eleven commodity buckets plus other bucket.
+  - id: CVA-SA-INDEX
+    title: Qualified index option for CCS, RCS, and equity
+    detailed_ids: [CVA-FUNC-021]
+    source: Basel MAR50.50
+    status: planned
+    modules: [src/frtb_cva/risk_classes]
+    tests: [tests/test_qualified_index.py]
+    notes: Look-through vs index bucket; 75% sector concentration rule.
   - id: CVA-AGG-001
-    title: CVA aggregation and multiplier
-    source: Basel MAR50.1 and MAR50 aggregation provisions
+    title: Public CVA run API and method assembly
+    detailed_ids: [CVA-FUNC-001, CVA-FUNC-023]
+    source: Basel MAR50.6-MAR50.8; MAR50.42
     status: planned
-    modules: [src/frtb_cva/capital.py]
-    tests: [tests/test_capital.py]
-    notes: Preserve pre- and post-multiplier amounts.
+    modules: [src/frtb_cva/capital.py, src/frtb_cva/sa_cva.py]
+    tests: [tests/test_public_api.py, tests/test_mixed_method.py]
+    notes: Reduced BA-CVA first; mixed carve-out later.
   - id: CVA-AUDIT-001
-    title: CVA audit and benchmark output
+    title: CVA audit, replay, and benchmark output
+    detailed_ids: [CVA-FUNC-024, CVA-FUNC-025, CVA-NFR-001]
     source: Basel MAR50 traceability by component; U.S. NPR 2.0 section V.B.6
     status: planned
     modules: [src/frtb_cva/audit.py]
-    tests: [tests/test_audit.py]
-    notes: Include counterparty, netting set, risk class, bucket, CVA/hedge, and contribution.
-
+    tests: [tests/test_audit.py, tests/test_replay.py]
+    notes: Deterministic hashes; attribution-ready lineage per ADR 0012.

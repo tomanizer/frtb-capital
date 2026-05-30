@@ -31,6 +31,7 @@ frtb-sbm = { workspace = true }
 dev = [
     "cyclonedx-bom>=7.3,<7.4",
     "hypothesis>=6.152,<6.153",
+    "import-linter>=2.8,<2.9",
     "mutmut>=3.5,<3.6",
     "mypy>=2.1,<2.2",
     "pip-audit>=2.10,<2.11",
@@ -39,6 +40,26 @@ dev = [
     "ruff>=0.15,<0.16",
     "scipy>=1.16,<1.17",
     "towncrier>=24.8,<25.0",
+]
+
+[tool.importlinter]
+root_packages = [
+    "frtb_common",
+    "frtb_cva",
+    "frtb_drc",
+    "frtb_ima",
+    "frtb_orchestration",
+    "frtb_rrao",
+    "frtb_sbm",
+]
+
+[[tool.importlinter.contracts]]
+name = "Capital suite package layering"
+type = "layers"
+layers = [
+    "frtb_orchestration",
+    "frtb_ima | frtb_sbm | frtb_drc | frtb_rrao | frtb_cva",
+    "frtb_common",
 ]
 
 [tool.ruff]

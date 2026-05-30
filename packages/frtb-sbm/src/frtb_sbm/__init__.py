@@ -91,6 +91,7 @@ from frtb_sbm.reference_data import (
     girr_vega_liquidity_horizon_days,
     girr_vega_option_tenor_definition,
     girr_vega_option_tenors,
+    normalise_fx_delta_currency_code,
     profile_reference_payload,
     vega_risk_weight,
 )
@@ -220,6 +221,7 @@ __all__ = [
     "group_weighted_sensitivities_by_bucket",
     "input_hash_for_sensitivities",
     "normalise_currency_code",
+    "normalise_fx_delta_currency_code",
     "normalise_sensitivity_amount",
     "parse_curvature_input",
     "phase1_capital_supported_paths",

@@ -34,8 +34,9 @@ def test_capital_packages_do_not_import_sibling_capital_packages() -> None:
     # Orchestration is included in CAPITAL_IMPORTS to prevent component packages
     # importing upward into the aggregator, but it is intentionally omitted from
     # CAPITAL_PACKAGE_BY_IMPORT because orchestration may compose components.
-    # This AST guard catches source imports. Declared dependency drift in
-    # pyproject.toml should be closed by the planned import-linter control.
+    # This AST guard catches source imports in capital component src trees.
+    # The root import-linter layers contract (`make import-lint`) enforces the
+    # same graph across installed package modules, including orchestration.
     for import_name, package_name in CAPITAL_PACKAGE_BY_IMPORT.items():
         src_root = REPO_ROOT / "packages" / package_name / "src"
         assert src_root.is_dir(), f"Source directory not found: {src_root}"

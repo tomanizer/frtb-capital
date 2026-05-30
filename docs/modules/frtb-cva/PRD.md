@@ -53,10 +53,11 @@ sign convention explicit. Hedge records keep eligibility evidence separate
 from exposure records.
 
 BA-CVA and SA-CVA method policy, multipliers, hedge eligibility, risk weights,
-correlations, and profile-specific exclusions come from a versioned rule
-profile supplied through `frtb-common`. CVA kernels receive typed inputs and
-profile data; they do not simulate exposures, source market data, or read
-external hedge systems.
+correlations, and profile-specific exclusions come from versioned rule profiles
+owned by `frtb-cva` (`regimes.py`, `reference_data.py`) in the first implementation
+phase. Shared primitives may later move to `frtb-common` under a cross-cutting ADR.
+CVA kernels receive typed inputs and profile data; they do not simulate exposures,
+source market data, or read external hedge systems.
 
 Results must expose method selection, counterparty or risk-class contribution,
 hedge benefit applied or rejected, total CVA capital, rule profile id and hash,
@@ -65,6 +66,10 @@ status where applicable. Hedge benefit is never applied unless eligibility is
 explicitly recorded.
 
 ## Delivery Slices
+
+Implementation order is governed by
+[ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md), which supersedes this list where they
+differ.
 
 1. **Skeleton and source map**.
 2. **Data contracts and method policy**.

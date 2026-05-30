@@ -8,6 +8,8 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
 
 ### Added
 
+- Root `import-linter` layers contract and `make import-lint` gate wired into
+  `make quality-control` to enforce capital-package import boundaries in CI.
 - Weekly/manual mutation-testing workflow and root `make mutation` target for
   the FRTB-IMA calculation-module baseline.
 - Per-module IMA coverage gate with a documented 90% interim floor and CI
