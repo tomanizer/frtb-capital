@@ -54,6 +54,7 @@ class IntraBucketScenarioSpec:
     sb_correlation_floor: float | None = None
     absolute_weight_intra: bool = False
     absolute_weight_citation_ids: tuple[str, ...] = ()
+    curvature_absolute_floor: bool = False
 
 
 _MAR21_SCENARIO_SELECTION_CITATION = ("basel_mar21_7_scenario_selection",)
@@ -157,6 +158,7 @@ def aggregate_intra_bucket(
     risk_class: SbmRiskClass,
     risk_measure: SbmRiskMeasure,
     sb_correlation_floor: float | None = None,
+    curvature_absolute_floor: bool = False,
     citation_ids: tuple[str, ...] = _MAR21_INTRA_BUCKET_CITATION,
 ) -> IntraBucketAggregationResult:
     """
@@ -165,6 +167,8 @@ def aggregate_intra_bucket(
     Computes the signed bucket aggregate ``Sb = sum_k WS_k`` and bucket capital
     ``Kb = sqrt(max(0, sum_k sum_l rho_kl WS_k WS_l))``. When ``sb_correlation_floor``
     is supplied, ``Kb`` is additionally floored at ``abs(sb_correlation_floor * Sb)``.
+    When ``curvature_absolute_floor`` is True, ``Kb`` is floored at ``sum_k |WS_k|``
+    per MAR21.5(3).
     """
     ordered = _sort_weighted_sensitivities(weighted_sensitivities)
     _validate_bucket_scope(bucket_id, ordered, risk_class, risk_measure)
@@ -191,6 +195,12 @@ def aggregate_intra_bucket(
             sb_floor_applied = True
 
     kb = math.sqrt(kb_squared)
+    absolute_sum_floor_applied = False
+    if curvature_absolute_floor:
+        absolute_kb = float(np.sum(np.abs(ws)))
+        if absolute_kb > kb:
+            kb = absolute_kb
+            absolute_sum_floor_applied = True
     pairwise = _pairwise_correlation_evidence(ordered, matrix, citation_ids)
 
     bucket_capital = BucketCapital(
@@ -201,7 +211,7 @@ def aggregate_intra_bucket(
         weighted_sensitivities=tuple(ordered),
         citation_ids=citation_ids,
         sb=sb,
-        floor_applied=zero_floor_applied or sb_floor_applied,
+        floor_applied=zero_floor_applied or sb_floor_applied or absolute_sum_floor_applied,
     )
     return IntraBucketAggregationResult(
         bucket_capital=bucket_capital,
@@ -363,6 +373,7 @@ def _aggregate_intra_buckets_for_scenario(
                 risk_class=risk_class,
                 risk_measure=risk_measure,
                 sb_correlation_floor=spec.sb_correlation_floor,
+                curvature_absolute_floor=spec.curvature_absolute_floor,
                 citation_ids=intra_bucket_citation_ids,
             )
         )

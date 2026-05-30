@@ -107,6 +107,16 @@ def compute_weighted_sensitivities(
             sensitivities,
             profile_id=profile_id,
         )
+    if risk_class is SbmRiskClass.CSR_SEC_NONCTP and risk_measure is SbmRiskMeasure.DELTA:
+        return weight_csr_sec_nonctp_delta_sensitivities(
+            sensitivities,
+            profile_id=profile_id,
+        )
+    if risk_class is SbmRiskClass.CSR_SEC_CTP and risk_measure is SbmRiskMeasure.DELTA:
+        return weight_csr_sec_ctp_delta_sensitivities(
+            sensitivities,
+            profile_id=profile_id,
+        )
     raise UnsupportedRegulatoryFeatureError(
         "frtb-sbm weighted sensitivity lookup does not support "
         f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
@@ -414,11 +424,129 @@ def weight_csr_nonsec_delta_sensitivities(
     return tuple(weighted)
 
 
+def weight_csr_sec_nonctp_delta_sensitivities(
+    sensitivities: Sequence[SbmSensitivity],
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted CSR securitisation non-CTP delta sensitivities."""
+
+    from frtb_sbm.csr_sec_nonctp_reference_data import (
+        csr_sec_nonctp_delta_risk_weight,
+        csr_sec_nonctp_validate_delta_inputs,
+    )
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.CSR_SEC_NONCTP,
+        SbmRiskMeasure.DELTA,
+    )
+    weighted: list[WeightedSensitivity] = []
+    for sensitivity in sort_sensitivities_deterministic(sensitivities):
+        if sensitivity.risk_class is not SbmRiskClass.CSR_SEC_NONCTP:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm CSR securitisation non-CTP delta weighting does not support "
+                f"risk_class={sensitivity.risk_class.value}"
+            )
+        if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm CSR securitisation non-CTP delta weighting does not support "
+                f"risk_measure={sensitivity.risk_measure.value}"
+            )
+        csr_sec_nonctp_validate_delta_inputs(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+            risk_factor=sensitivity.risk_factor,
+            tenor=sensitivity.tenor or "",
+            qualifier=sensitivity.qualifier or "",
+        )
+        risk_weight, citation_ids = csr_sec_nonctp_delta_risk_weight(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+        )
+        scaled_amount = sensitivity.amount * risk_weight
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=sensitivity.sensitivity_id,
+                risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+                risk_measure=SbmRiskMeasure.DELTA,
+                bucket=sensitivity.bucket,
+                raw_amount=sensitivity.amount,
+                risk_weight=risk_weight,
+                scaled_amount=scaled_amount,
+                citation_ids=citation_ids,
+                qualifier=sensitivity.qualifier,
+            )
+        )
+    return tuple(weighted)
+
+
+def weight_csr_sec_ctp_delta_sensitivities(
+    sensitivities: Sequence[SbmSensitivity],
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted CSR securitisation CTP delta sensitivities."""
+
+    from frtb_sbm.csr_sec_ctp_reference_data import (
+        csr_sec_ctp_delta_risk_weight,
+        csr_sec_ctp_validate_delta_inputs,
+        ensure_csr_sec_ctp_decomposition_evidence,
+    )
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.CSR_SEC_CTP,
+        SbmRiskMeasure.DELTA,
+    )
+    weighted: list[WeightedSensitivity] = []
+    for sensitivity in sort_sensitivities_deterministic(sensitivities):
+        if sensitivity.risk_class is not SbmRiskClass.CSR_SEC_CTP:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm CSR securitisation CTP delta weighting does not support "
+                f"risk_class={sensitivity.risk_class.value}"
+            )
+        if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm CSR securitisation CTP delta weighting does not support "
+                f"risk_measure={sensitivity.risk_measure.value}"
+            )
+        ensure_csr_sec_ctp_decomposition_evidence(sensitivity)
+        csr_sec_ctp_validate_delta_inputs(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+            risk_factor=sensitivity.risk_factor,
+            tenor=sensitivity.tenor or "",
+            qualifier=sensitivity.qualifier or "",
+        )
+        risk_weight, citation_ids = csr_sec_ctp_delta_risk_weight(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+        )
+        scaled_amount = sensitivity.amount * risk_weight
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=sensitivity.sensitivity_id,
+                risk_class=SbmRiskClass.CSR_SEC_CTP,
+                risk_measure=SbmRiskMeasure.DELTA,
+                bucket=sensitivity.bucket,
+                raw_amount=sensitivity.amount,
+                risk_weight=risk_weight,
+                scaled_amount=scaled_amount,
+                citation_ids=citation_ids,
+                qualifier=sensitivity.qualifier,
+            )
+        )
+    return tuple(weighted)
+
+
 __all__ = [
     "compute_weighted_sensitivities",
     "sort_weighted_sensitivities_deterministic",
     "weight_commodity_delta_sensitivities",
     "weight_csr_nonsec_delta_sensitivities",
+    "weight_csr_sec_ctp_delta_sensitivities",
+    "weight_csr_sec_nonctp_delta_sensitivities",
     "weight_equity_delta_sensitivities",
     "weight_fx_delta_sensitivities",
     "weight_girr_delta_sensitivities",

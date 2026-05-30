@@ -15,14 +15,15 @@ from frtb_sbm import (
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
+    calculate_girr_curvature_risk_class_capital,
     calculate_sbm_capital,
     curvature_capital_unsupported_feature,
     curvature_worst_branch,
     ensure_sbm_capital_paths_supported,
-    ensure_sbm_curvature_capital_unsupported,
     ensure_sbm_risk_class_measure_supported,
     parse_curvature_input,
     validate_curvature_sensitivities,
+    weight_girr_curvature_sensitivities,
 )
 
 
@@ -133,17 +134,43 @@ def test_curvature_worst_branch_selects_more_negative_shock() -> None:
     assert curvature_worst_branch(-10_000.0, -10_000.0) == "up"
 
 
-def test_ensure_sbm_curvature_capital_unsupported_fails_closed() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=CURVATURE_CAPITAL_REQUIREMENT_ID):
-        ensure_sbm_curvature_capital_unsupported(SbmRegulatoryProfile.BASEL_MAR21.value)
+def test_weight_girr_curvature_selects_down_branch_and_applies_risk_weight() -> None:
+    weighted, branches = weight_girr_curvature_sensitivities(
+        (sample_curvature_sensitivity(),),
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+        reporting_currency="USD",
+    )
+
+    assert len(weighted) == 1
+    assert weighted[0].raw_amount == -18_000.0
+    assert weighted[0].risk_measure is SbmRiskMeasure.CURVATURE
+    assert branches[0].selected_branch == "down"
+    assert branches[0].up_shock_amount == -12_000.0
+    assert branches[0].down_shock_amount == -18_000.0
 
 
-def test_ensure_sbm_curvature_capital_unsupported_validates_inputs_first() -> None:
-    with pytest.raises(SbmInputError, match="curvature inputs require"):
-        ensure_sbm_curvature_capital_unsupported(
-            SbmRegulatoryProfile.BASEL_MAR21.value,
-            (sample_curvature_sensitivity(up_shock_amount=None),),
-        )
+def test_calculate_girr_curvature_risk_class_capital_reconciles() -> None:
+    result = calculate_girr_curvature_risk_class_capital(
+        (sample_curvature_sensitivity(),),
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+        reporting_currency="USD",
+    )
+
+    assert result.risk_class is SbmRiskClass.GIRR
+    assert result.risk_measure is SbmRiskMeasure.CURVATURE
+    assert result.selected_capital > 0.0
+    assert result.curvature_branches[0].selected_branch == "down"
+    assert result.scenario_selection is not None
+
+
+def test_calculate_sbm_capital_supports_girr_curvature() -> None:
+    result = calculate_sbm_capital(
+        (sample_curvature_sensitivity(),),
+        context=sample_context(),
+    )
+
+    assert result.total_capital > 0.0
+    assert result.risk_classes[0].risk_measure is SbmRiskMeasure.CURVATURE
 
 
 def test_curvature_capital_unsupported_feature_is_structured() -> None:
@@ -154,8 +181,11 @@ def test_curvature_capital_unsupported_feature_is_structured() -> None:
     assert feature.requirement_id == CURVATURE_CAPITAL_REQUIREMENT_ID
 
 
-@pytest.mark.parametrize("risk_class", list(SbmRiskClass))
-def test_basel_curvature_capital_paths_fail_closed(risk_class: SbmRiskClass) -> None:
+@pytest.mark.parametrize(
+    "risk_class",
+    [item for item in SbmRiskClass if item is not SbmRiskClass.GIRR],
+)
+def test_non_girr_curvature_capital_paths_fail_closed(risk_class: SbmRiskClass) -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):
         ensure_sbm_risk_class_measure_supported(
             SbmRegulatoryProfile.BASEL_MAR21.value,
@@ -164,17 +194,16 @@ def test_basel_curvature_capital_paths_fail_closed(risk_class: SbmRiskClass) -> 
         )
 
 
-def test_calculate_sbm_capital_rejects_curvature_without_placeholder_totals() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):
-        calculate_sbm_capital(
-            (sample_curvature_sensitivity(),),
-            context=sample_context(),
-        )
+def test_girr_curvature_path_is_supported() -> None:
+    ensure_sbm_risk_class_measure_supported(
+        SbmRegulatoryProfile.BASEL_MAR21.value,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.CURVATURE,
+    )
 
 
-def test_ensure_sbm_capital_paths_supported_reports_curvature_dimension() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="validate_curvature_sensitivities"):
-        ensure_sbm_capital_paths_supported(
-            SbmRegulatoryProfile.BASEL_MAR21.value,
-            (sample_curvature_sensitivity(),),
-        )
+def test_ensure_sbm_capital_paths_supported_accepts_girr_curvature() -> None:
+    ensure_sbm_capital_paths_supported(
+        SbmRegulatoryProfile.BASEL_MAR21.value,
+        (sample_curvature_sensitivity(),),
+    )

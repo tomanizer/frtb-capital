@@ -32,9 +32,12 @@ _TENOR_REQUIRED: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozenset(
     {
         (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
     }
 )
 
@@ -58,15 +61,21 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
         {
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
             (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
             (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
             (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
         }
     ),
     SbmRegulatoryProfile.EU_CRR3.value: frozenset(),
     SbmRegulatoryProfile.PRA_UK_CRR.value: frozenset(),
 }
+
+
+_CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"
 
 
 class SbmInputError(ValueError):
@@ -221,16 +230,29 @@ def _raise_unsupported_capital_path(
             f"frtb-sbm phase-1 capital is unsupported for profile={profile.value}; "
             f"use profile={SbmRegulatoryProfile.BASEL_MAR21.value}"
         )
-    if risk_measure is SbmRiskMeasure.CURVATURE:
+    if (
+        risk_measure is SbmRiskMeasure.CURVATURE
+        and (
+            risk_class,
+            risk_measure,
+        )
+        not in supported
+    ):
         raise UnsupportedRegulatoryFeatureError(
             "frtb-sbm curvature capital is unsupported until the cited curvature "
-            "aggregation path is implemented (SBM-CURV-001); "
+            f"aggregation path is implemented ({_CURVATURE_CAPITAL_REQUIREMENT_ID}); "
             f"received risk_class={risk_class.value}; "
             "use validate_curvature_sensitivities to validate up/down shock inputs"
         )
+    if risk_measure is SbmRiskMeasure.CURVATURE:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm curvature capital is unsupported for "
+            f"risk_class={risk_class.value}, profile={profile.value}"
+        )
     raise UnsupportedRegulatoryFeatureError(
-        "frtb-sbm phase-1 capital supports GIRR delta/vega, FX delta, "
-        "equity delta, commodity delta, and CSR non-securitisation delta inputs; "
+        "frtb-sbm phase-1 capital supports GIRR delta/vega/curvature, FX delta, "
+        "equity delta, commodity delta, CSR non-securitisation delta, and "
+        "CSR securitisation delta inputs; "
         f"received risk_class={risk_class.value}, "
         f"risk_measure={risk_measure.value}"
     )

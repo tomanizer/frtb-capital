@@ -34,11 +34,13 @@ def test_get_sbm_rule_profile_returns_supported_basel_profile() -> None:
             SbmRiskClass.EQUITY,
             SbmRiskClass.COMMODITY,
             SbmRiskClass.CSR_NONSEC,
+            SbmRiskClass.CSR_SEC_NONCTP,
+            SbmRiskClass.CSR_SEC_CTP,
         }
     )
     assert profile.supported_measures[SbmRiskClass.CSR_NONSEC] == frozenset({SbmRiskMeasure.DELTA})
     assert profile.supported_measures[SbmRiskClass.GIRR] == frozenset(
-        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA}
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
     )
     assert profile.supported_measures[SbmRiskClass.FX] == frozenset({SbmRiskMeasure.DELTA})
     assert "basel_mar21_39" in profile.citations
@@ -80,11 +82,14 @@ def test_unknown_profile_fails_as_input_error() -> None:
     [
         (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, True),
-        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, False),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, True),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE, False),
     ],
 )
 def test_basel_profile_support_map(
@@ -129,9 +134,12 @@ def test_supported_risk_class_measures_lists_girr_fx_equity_commodity_and_csr_no
         {
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
             (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
             (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
             (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
         }
     )

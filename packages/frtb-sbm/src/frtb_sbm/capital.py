@@ -27,6 +27,7 @@ from frtb_sbm.audit import (
     _input_hash_for_validated_sensitivities,
     validate_sbm_result_reconciliation,
 )
+from frtb_sbm.curvature import calculate_girr_curvature_risk_class_capital
 from frtb_sbm.data_models import (
     RiskClassCapital,
     SbmBranchMetadata,
@@ -48,6 +49,8 @@ from frtb_sbm.reference_data import (
 from frtb_sbm.regimes import get_sbm_rule_profile
 from frtb_sbm.risk_classes.commodity import calculate_commodity_delta_risk_class_capital
 from frtb_sbm.risk_classes.csr_nonsec import calculate_csr_nonsec_delta_risk_class_capital
+from frtb_sbm.risk_classes.csr_sec_ctp import calculate_csr_sec_ctp_delta_risk_class_capital
+from frtb_sbm.risk_classes.csr_sec_nonctp import calculate_csr_sec_nonctp_delta_risk_class_capital
 from frtb_sbm.risk_classes.equity import calculate_equity_delta_risk_class_capital
 from frtb_sbm.risk_classes.fx import calculate_fx_delta_risk_class_capital
 from frtb_sbm.validation import (
@@ -70,6 +73,9 @@ _SBM_REQUIREMENT_IDS = (
     "SBM-FUNC-018",
     "SBM-FUNC-019",
     "SBM-FUNC-014",
+    "SBM-FUNC-015",
+    "SBM-FUNC-016",
+    "SBM-CURV-001",
 )
 
 _MAR21_INTRA_BUCKET_CITATION = ("basel_mar21_4_intra_bucket",)
@@ -127,6 +133,14 @@ def calculate_sbm_capital(
                     profile_id=rule_profile.profile_id,
                 )
             )
+        elif risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.CURVATURE:
+            risk_class_results.append(
+                calculate_girr_curvature_risk_class_capital(
+                    measure_sensitivities,
+                    profile_id=rule_profile.profile_id,
+                    reporting_currency=context.reporting_currency,
+                )
+            )
         elif risk_class is SbmRiskClass.FX and risk_measure is SbmRiskMeasure.DELTA:
             risk_class_results.append(
                 calculate_fx_delta_risk_class_capital(
@@ -152,6 +166,20 @@ def calculate_sbm_capital(
         elif risk_class is SbmRiskClass.CSR_NONSEC and risk_measure is SbmRiskMeasure.DELTA:
             risk_class_results.append(
                 calculate_csr_nonsec_delta_risk_class_capital(
+                    measure_sensitivities,
+                    profile_id=rule_profile.profile_id,
+                )
+            )
+        elif risk_class is SbmRiskClass.CSR_SEC_NONCTP and risk_measure is SbmRiskMeasure.DELTA:
+            risk_class_results.append(
+                calculate_csr_sec_nonctp_delta_risk_class_capital(
+                    measure_sensitivities,
+                    profile_id=rule_profile.profile_id,
+                )
+            )
+        elif risk_class is SbmRiskClass.CSR_SEC_CTP and risk_measure is SbmRiskMeasure.DELTA:
+            risk_class_results.append(
+                calculate_csr_sec_ctp_delta_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
                 )
@@ -423,10 +451,13 @@ def _ordered_supported_paths(
     ordering = (
         (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
     )
     ordered = tuple(path for path in ordering if path in present)
     remaining = tuple(sorted(present - set(ordering), key=lambda p: (p[0].value, p[1].value)))

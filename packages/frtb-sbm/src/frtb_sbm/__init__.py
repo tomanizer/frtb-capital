@@ -23,11 +23,13 @@ from frtb_sbm.audit import (
 from frtb_sbm.capital import calculate_sbm_capital
 from frtb_sbm.curvature import (
     CURVATURE_CAPITAL_REQUIREMENT_ID,
+    calculate_curvature_risk_class_capital,
+    calculate_girr_curvature_risk_class_capital,
     curvature_capital_unsupported_feature,
     curvature_worst_branch,
-    ensure_sbm_curvature_capital_unsupported,
     parse_curvature_input,
     validate_curvature_sensitivities,
+    weight_girr_curvature_sensitivities,
 )
 from frtb_sbm.data_models import (
     BucketCapital,
@@ -181,6 +183,8 @@ __all__ = [
     "aggregate_risk_class_with_scenarios",
     "apply_correlation_scenario",
     "apply_correlation_scenario_definition",
+    "calculate_curvature_risk_class_capital",
+    "calculate_girr_curvature_risk_class_capital",
     "calculate_sbm_capital",
     "citations_for_profile",
     "coerce_risk_class",
@@ -194,7 +198,6 @@ __all__ = [
     "curvature_worst_branch",
     "ensure_profile_supports_risk_class_measure",
     "ensure_sbm_capital_paths_supported",
-    "ensure_sbm_curvature_capital_unsupported",
     "ensure_sbm_profile_known",
     "ensure_sbm_risk_class_measure_supported",
     "ensure_sbm_run_supported",
@@ -241,6 +244,7 @@ __all__ = [
     "validate_sbm_sensitivities",
     "vega_risk_weight",
     "weight_fx_delta_sensitivities",
+    "weight_girr_curvature_sensitivities",
     "weight_girr_delta_sensitivities",
     "weight_girr_vega_sensitivities",
     "weighted_sensitivity_sort_key",
