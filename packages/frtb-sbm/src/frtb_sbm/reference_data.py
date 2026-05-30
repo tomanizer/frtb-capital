@@ -906,6 +906,25 @@ def correlation_scenario_definition(
     )
 
 
+def apply_correlation_scenario_definition(
+    base_correlation: float,
+    definition: SbmCorrelationScenarioDefinition,
+) -> float:
+    """Apply one profile-owned MAR21.6 correlation-scenario rule to a base parameter."""
+
+    if not math.isfinite(base_correlation):
+        raise SbmInputError("base_correlation must be finite", field="base_correlation")
+    if definition.scenario is SbmScenarioLabel.LOW:
+        return max(
+            2.0 * base_correlation - 1.0,
+            definition.multiplier * base_correlation,
+        )
+    if definition.scenario is SbmScenarioLabel.HIGH:
+        cap = definition.cap if definition.cap is not None else 1.0
+        return min(cap, definition.multiplier * base_correlation)
+    return definition.multiplier * base_correlation
+
+
 def apply_correlation_scenario(
     profile: SbmRegulatoryProfile | str,
     *,
@@ -915,13 +934,7 @@ def apply_correlation_scenario(
     """Apply a profile correlation scenario to a base correlation parameter."""
 
     definition = correlation_scenario_definition(profile, scenario)
-    adjusted = base_correlation
-    if definition.scenario is SbmScenarioLabel.LOW:
-        adjusted = max(2.0 * base_correlation - 1.0, definition.multiplier * base_correlation)
-    elif definition.scenario is SbmScenarioLabel.HIGH:
-        adjusted = min(definition.cap or 1.0, definition.multiplier * base_correlation)
-    else:
-        adjusted = definition.multiplier * base_correlation
+    adjusted = apply_correlation_scenario_definition(base_correlation, definition)
     return adjusted, (definition.citation_id,)
 
 
@@ -1168,6 +1181,7 @@ __all__ = [
     "SbmGirrSpecialRiskFactorRule",
     "SbmGirrTenorDefinition",
     "apply_correlation_scenario",
+    "apply_correlation_scenario_definition",
     "citations_for_profile",
     "commodity_bucket_definition",
     "commodity_buckets_for_profile",

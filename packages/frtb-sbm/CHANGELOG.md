@@ -4,6 +4,14 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-05-30
+
+### Fixed
+
+- Consolidate MAR21.6 correlation-scenario adjustment into
+  `apply_correlation_scenario_definition`; `adjust_correlation_for_scenario`
+  now delegates to profile-owned reference data.
+
 ## [0.7.4] - 2026-05-30
 
 ### Fixed
