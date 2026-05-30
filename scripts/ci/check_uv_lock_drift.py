@@ -11,17 +11,13 @@ versions and regenerate the lock.
 
 from __future__ import annotations
 
+import json
 import os
-import re
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
-
-
-_DEP_SECTION_RE = re.compile(
-    r"^\[(?:project\.dependencies|dependency-groups|tool\.uv\.sources)\]",
-    re.MULTILINE,
-)
+from typing import Any
 
 
 def _head_ref() -> str:
@@ -29,8 +25,6 @@ def _head_ref() -> str:
 
 
 def _base_sha() -> str:
-    import json
-
     event_path = os.environ.get("GITHUB_EVENT_PATH")
     if event_path:
         payload = json.loads(Path(event_path).read_text())
@@ -51,27 +45,47 @@ def _changed_files(base: str) -> set[str]:
     return set(result.stdout.splitlines())
 
 
-def _dep_section_changed(base: str, path: str) -> bool:
-    """Return True if any dependency-specification section changed in path."""
+def _file_bytes_at(ref: str, path: str) -> bytes | None:
     result = subprocess.run(
-        ["git", "diff", f"{base}...HEAD", "--", path],
-        check=True,
-        text=True,
+        ["git", "show", f"{ref}:{path}"],
         stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
     )
-    diff = result.stdout
-    if not diff:
-        return False
-    # Look for +/- lines inside a dependency section header context
-    in_dep_section = False
-    for line in diff.splitlines():
-        if line.startswith("@@"):
-            in_dep_section = False
-        if _DEP_SECTION_RE.search(line.lstrip("+-")):
-            in_dep_section = True
-        if in_dep_section and line.startswith(("+", "-")) and not line.startswith(("+++", "---")):
-            return True
-    return False
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
+
+def _normalize_sources(sources: Any) -> tuple[tuple[str, str], ...]:
+    if not isinstance(sources, dict):
+        return ()
+    return tuple(
+        (name, json.dumps(sources[name], sort_keys=True))
+        for name in sorted(sources)
+    )
+
+
+def _dependency_spec_snapshot(content: bytes) -> tuple[Any, ...]:
+    data = tomllib.loads(content.decode())
+    project = data.get("project") or {}
+    deps = tuple(project.get("dependencies") or ())
+    groups_raw = data.get("dependency-groups") or {}
+    groups = tuple(
+        (group, tuple(sorted(specs)))
+        for group, specs in sorted(groups_raw.items())
+    )
+    uv_tool = (data.get("tool") or {}).get("uv") or {}
+    sources = _normalize_sources(uv_tool.get("sources"))
+    return (deps, groups, sources)
+
+
+def _dep_spec_changed(base: str, path: str) -> bool:
+    """Return True if dependency specifications differ between base and HEAD."""
+    before = _file_bytes_at(base, path)
+    after = _file_bytes_at("HEAD", path)
+    if before is None or after is None:
+        return before != after
+    return _dependency_spec_snapshot(before) != _dependency_spec_snapshot(after)
 
 
 def main() -> int:
@@ -94,7 +108,7 @@ def main() -> int:
 
     # Check all pyproject.toml files (root + packages) for dep-spec changes
     pyproject_files = [p for p in changed if p.endswith("pyproject.toml")]
-    dep_changed = any(_dep_section_changed(base, p) for p in pyproject_files)
+    dep_changed = any(_dep_spec_changed(base, p) for p in pyproject_files)
 
     if not dep_changed:
         print(

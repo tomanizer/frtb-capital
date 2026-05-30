@@ -13,7 +13,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 _VERSION_RE = re.compile(r'^version\s*=\s*"([^"]+)"', re.MULTILINE)
 
 
