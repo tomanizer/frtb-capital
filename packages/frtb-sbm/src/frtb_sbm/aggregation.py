@@ -381,7 +381,8 @@ def aggregate_risk_class_with_scenarios(
         raise SbmInputError("scenarios must not be empty", field="scenarios")
 
     specs: tuple[IntraBucketScenarioSpec, ...] | None = None
-    if isinstance(bucket_inputs[0], IntraBucketScenarioSpec):
+    has_specs = any(isinstance(item, IntraBucketScenarioSpec) for item in bucket_inputs)
+    if has_specs:
         specs = tuple(item for item in bucket_inputs if isinstance(item, IntraBucketScenarioSpec))
         if len(specs) != len(bucket_inputs):
             raise SbmInputError(
@@ -392,6 +393,7 @@ def aggregate_risk_class_with_scenarios(
 
     scenario_details: list[RiskClassScenarioDetail] = []
     scenario_results: dict[SbmScenarioLabel, InterBucketScenarioResult] = {}
+    intra_by_scenario: dict[SbmScenarioLabel, tuple[IntraBucketAggregationResult, ...]] = {}
 
     for scenario in scenarios:
         if specs is not None:
@@ -401,6 +403,7 @@ def aggregate_risk_class_with_scenarios(
                 risk_class=risk_class,
                 risk_measure=risk_measure,
             )
+            intra_by_scenario[scenario] = intra_results
             inter_input: Sequence[IntraBucketAggregationResult | BucketCapital] = intra_results
         else:
             inter_input = cast(
@@ -438,12 +441,7 @@ def aggregate_risk_class_with_scenarios(
     )
 
     if specs is not None:
-        selected_intra = _aggregate_intra_buckets_for_scenario(
-            specs,
-            scenario=selection.selected_scenario,
-            risk_class=risk_class,
-            risk_measure=risk_measure,
-        )
+        selected_intra = intra_by_scenario[selection.selected_scenario]
         weighted_by_bucket = {spec.bucket_id: spec.weighted_sensitivities for spec in specs}
         buckets = tuple(
             replace(

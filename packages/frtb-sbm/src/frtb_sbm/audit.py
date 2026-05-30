@@ -18,6 +18,7 @@ from frtb_sbm.data_models import (
     BucketCapital,
     RiskClassCapital,
     RiskClassScenarioDetail,
+    SbmBranchMetadata,
     SbmCapitalResult,
     SbmReconciliationMetadata,
     SbmRunContextSummary,
@@ -169,11 +170,7 @@ def _scenario_detail_payload(detail: RiskClassScenarioDetail) -> dict[str, objec
     }
 
 
-def _branch_metadata_payload(branch: object) -> dict[str, object]:
-    from frtb_sbm.data_models import SbmBranchMetadata
-
-    if not isinstance(branch, SbmBranchMetadata):
-        raise TypeError("expected SbmBranchMetadata")
+def _branch_metadata_payload(branch: SbmBranchMetadata) -> dict[str, object]:
     return {
         "branch_id": branch.branch_id,
         "branch_type": branch.branch_type.value,
