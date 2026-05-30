@@ -134,9 +134,12 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
     ),
     "basel_mar21_38": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
-        location="MAR21.38",
+        location="MAR21.38-MAR21.41",
         url=BASEL_MAR21_URL,
-        note="GIRR bucket definitions by currency.",
+        note=(
+            "GIRR bucket registry keyed to MAR21.41 one-currency-one-bucket rule; "
+            "see ADR 0015 for CNH/CNY mapping."
+        ),
     ),
     "basel_mar21_39": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
@@ -398,7 +401,7 @@ BASEL_GIRR_BUCKETS: tuple[SbmGirrBucketDefinition, ...] = (
     SbmGirrBucketDefinition("5", "AUD", "basel_mar21_38"),
     SbmGirrBucketDefinition("6", "CAD", "basel_mar21_38"),
     SbmGirrBucketDefinition("7", "CHF", "basel_mar21_38"),
-    SbmGirrBucketDefinition("8", "CNH", "basel_mar21_38"),
+    SbmGirrBucketDefinition("8", "CNY", "basel_mar21_38"),
     SbmGirrBucketDefinition("9", "HKD", "basel_mar21_38"),
     SbmGirrBucketDefinition("10", "KRW", "basel_mar21_38"),
     SbmGirrBucketDefinition("11", "MXN", "basel_mar21_38"),
@@ -407,6 +410,7 @@ BASEL_GIRR_BUCKETS: tuple[SbmGirrBucketDefinition, ...] = (
     SbmGirrBucketDefinition("14", "SEK", "basel_mar21_38"),
     SbmGirrBucketDefinition("15", "SGD", "basel_mar21_38"),
     SbmGirrBucketDefinition("16", "TRY", "basel_mar21_38"),
+    SbmGirrBucketDefinition("17", "CNH", "basel_mar21_38"),
 )
 
 BASEL_GIRR_TENORS: tuple[SbmGirrTenorDefinition, ...] = (
@@ -803,6 +807,15 @@ def fx_specified_currencies_for_profile(
     return PROFILE_FX_SPECIFIED_CURRENCIES[resolved]
 
 
+def normalise_fx_delta_currency_code(currency: str) -> str:
+    """Map FX delta currency codes to MAR21.88 canonical bucket codes (ADR 0015)."""
+
+    normalised = _require_currency(currency)
+    if normalised == "CNH":
+        return "CNY"
+    return normalised
+
+
 def fx_bucket_definition(
     profile: SbmRegulatoryProfile | str,
     bucket_id: str,
@@ -810,7 +823,7 @@ def fx_bucket_definition(
     """Return the FX bucket definition for a currency bucket id."""
 
     _ensure_fx_delta_supported(profile)
-    normalised = _require_currency(bucket_id)
+    normalised = normalise_fx_delta_currency_code(bucket_id)
     for bucket in PROFILE_FX_BUCKETS[_resolve_supported_profile(profile)]:
         if bucket.bucket_id == normalised:
             return bucket
@@ -830,8 +843,8 @@ def fx_delta_risk_weight(
     """Return the cited FX delta risk weight and citation ids."""
 
     _ensure_fx_delta_supported(profile)
-    normalised_currency = _require_currency(currency)
-    normalised_reporting = _require_currency(reporting_currency)
+    normalised_currency = normalise_fx_delta_currency_code(currency)
+    normalised_reporting = normalise_fx_delta_currency_code(reporting_currency)
     if normalised_currency == normalised_reporting:
         return 0.0, ("basel_mar21_87",)
     citation_ids: list[str] = ["basel_mar21_87"]
@@ -855,8 +868,8 @@ def fx_delta_intra_bucket_correlation(
     """Return the cited FX delta intra-bucket correlation and citation ids."""
 
     _ensure_fx_delta_supported(profile)
-    normalised_bucket1 = _require_currency(bucket1)
-    normalised_bucket2 = _require_currency(bucket2)
+    normalised_bucket1 = normalise_fx_delta_currency_code(bucket1)
+    normalised_bucket2 = normalise_fx_delta_currency_code(bucket2)
     fx_bucket_definition(profile, normalised_bucket1)
     fx_bucket_definition(profile, normalised_bucket2)
     del normalised_bucket1, normalised_bucket2
@@ -872,8 +885,8 @@ def fx_inter_bucket_correlation(
     """Return the cited FX inter-bucket correlation and citation ids."""
 
     _ensure_fx_delta_supported(profile)
-    normalised_bucket1 = _require_currency(bucket1)
-    normalised_bucket2 = _require_currency(bucket2)
+    normalised_bucket1 = normalise_fx_delta_currency_code(bucket1)
+    normalised_bucket2 = normalise_fx_delta_currency_code(bucket2)
     fx_bucket_definition(profile, normalised_bucket1)
     fx_bucket_definition(profile, normalised_bucket2)
     if normalised_bucket1 == normalised_bucket2:
@@ -906,6 +919,25 @@ def correlation_scenario_definition(
     )
 
 
+def apply_correlation_scenario_definition(
+    base_correlation: float,
+    definition: SbmCorrelationScenarioDefinition,
+) -> float:
+    """Apply one profile-owned MAR21.6 correlation-scenario rule to a base parameter."""
+
+    if not math.isfinite(base_correlation):
+        raise SbmInputError("base_correlation must be finite", field="base_correlation")
+    if definition.scenario is SbmScenarioLabel.LOW:
+        return max(
+            2.0 * base_correlation - 1.0,
+            definition.multiplier * base_correlation,
+        )
+    if definition.scenario is SbmScenarioLabel.HIGH:
+        cap = definition.cap if definition.cap is not None else 1.0
+        return min(cap, definition.multiplier * base_correlation)
+    return definition.multiplier * base_correlation
+
+
 def apply_correlation_scenario(
     profile: SbmRegulatoryProfile | str,
     *,
@@ -915,13 +947,7 @@ def apply_correlation_scenario(
     """Apply a profile correlation scenario to a base correlation parameter."""
 
     definition = correlation_scenario_definition(profile, scenario)
-    adjusted = base_correlation
-    if definition.scenario is SbmScenarioLabel.LOW:
-        adjusted = max(2.0 * base_correlation - 1.0, definition.multiplier * base_correlation)
-    elif definition.scenario is SbmScenarioLabel.HIGH:
-        adjusted = min(definition.cap or 1.0, definition.multiplier * base_correlation)
-    else:
-        adjusted = definition.multiplier * base_correlation
+    adjusted = apply_correlation_scenario_definition(base_correlation, definition)
     return adjusted, (definition.citation_id,)
 
 
@@ -1168,6 +1194,7 @@ __all__ = [
     "SbmGirrSpecialRiskFactorRule",
     "SbmGirrTenorDefinition",
     "apply_correlation_scenario",
+    "apply_correlation_scenario_definition",
     "citations_for_profile",
     "commodity_bucket_definition",
     "commodity_buckets_for_profile",

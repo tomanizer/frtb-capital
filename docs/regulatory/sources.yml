@@ -139,8 +139,77 @@ sources:
       - frtb-sbm
       - frtb-drc
       - frtb-rrao
+      - frtb-cva
       - frtb-orchestration
     reuse_note: "Use as EU Level 1 anchor; RTS/ITS provide technical detail."
+
+  - id: basel_mar50
+    issuer: BCBS
+    jurisdiction: GLOBAL
+    family: BASEL_FRTB
+    title: "Basel Framework MAR50 - CVA risk"
+    publication_date: "2020-07-01"
+    status: baseline_standard
+    source_type: standard
+    url: "https://www.bis.org/basel_framework/chapter/MAR/50.htm"
+    section_hints:
+      - "MAR50.1-MAR50.13 scope and method selection"
+      - "MAR50.14-MAR50.26 BA-CVA"
+      - "MAR50.27-MAR50.53 SA-CVA aggregation"
+      - "MAR50.54-MAR50.77 SA-CVA risk classes"
+    components:
+      - frtb-cva
+    reuse_note: "Primary Basel anchor for CVA capital mechanics."
+
+  - id: bcbs_d507_cva_revisions_2020
+    issuer: BCBS
+    jurisdiction: GLOBAL
+    family: BASEL_FRTB
+    title: "Targeted revisions to the credit valuation adjustment risk framework"
+    publication_date: "2020-07-01"
+    status: baseline_standard
+    source_type: standard
+    url: "https://www.bis.org/bcbs/publ/d507.pdf"
+    section_hints:
+      - "m_CVA reduced to 1.0"
+      - "D_BA-CVA = 0.65"
+      - "Revised SA-CVA risk weights"
+      - "Qualified index buckets"
+    components:
+      - frtb-cva
+    reuse_note: "July 2020 calibration and MAR50 tracked changes."
+
+  - id: us_npr20_91fr14952
+    issuer: FED_OCC_FDIC
+    jurisdiction: US
+    family: US_MARKET_RISK_2026_PROPOSED
+    title: "Regulatory Capital Rule: Large Banking Organizations and Banking Organizations with Significant Trading Activity (91 FR 14952)"
+    publication_date: "2026-03-27"
+    status: proposed_rule
+    source_type: npr
+    url: "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
+    section_hints:
+      - "Section V.B CVA risk"
+      - "Section V.A.6.c internal CVA risk transfers"
+      - "CVA hedges and CVA measures"
+    components:
+      - frtb-cva
+    reuse_note: "Proposed U.S. CVA source; paragraph map deferred to US profile issue."
+
+  - id: eba_rts_cva_sft
+    issuer: EBA
+    jurisdiction: EU
+    family: EU_CRR3_FRTB
+    title: "RTS on CVA risk of securities financing transactions"
+    status: technical_standard
+    source_type: rts
+    url: "https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/market-counterparty-and-cva-risk/regulatory-technical-standards-cva-risk-securities-financing-transactions"
+    section_hints:
+      - "SFT CVA scope"
+      - "Materiality of SFT CVA exposures"
+    components:
+      - frtb-cva
+    reuse_note: "EU technical context for SFT CVA scope; fail closed until mapped."
 
   - id: eu_eba_ima_under_frtb_technical_standards
     issuer: EBA

@@ -15,6 +15,7 @@ from frtb_sbm.reference_data import (
     FX_DELTA_RISK_WEIGHT,
     FX_INTER_BUCKET_CORRELATION,
     apply_correlation_scenario,
+    apply_correlation_scenario_definition,
     citations_for_profile,
     commodity_bucket_definition,
     commodity_buckets_for_profile,
@@ -87,6 +88,56 @@ def test_girr_bucket_lookup_by_id() -> None:
     bucket = girr_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21, "2")
 
     assert bucket.currency == "USD"
+
+
+def test_girr_cny_and_cnh_are_distinct_buckets() -> None:
+    cny = girr_bucket_for_currency(SbmRegulatoryProfile.BASEL_MAR21, "CNY")
+    cnh = girr_bucket_for_currency(SbmRegulatoryProfile.BASEL_MAR21, "CNH")
+
+    assert cny.bucket_id == "8"
+    assert cny.currency == "CNY"
+    assert cnh.bucket_id == "17"
+    assert cnh.currency == "CNH"
+
+
+def test_fx_delta_normalises_cnh_to_cny_bucket() -> None:
+    bucket = fx_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21, "CNH")
+
+    assert bucket.bucket_id == "CNY"
+    assert bucket.currency == "CNY"
+
+
+def test_fx_delta_risk_weight_treats_cnh_as_cny_for_specified_pairs() -> None:
+    reduced, citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="CNH",
+        reporting_currency="USD",
+    )
+    cny_reduced, _ = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="CNY",
+        reporting_currency="USD",
+    )
+
+    assert reduced == cny_reduced
+    assert reduced == pytest.approx(FX_DELTA_RISK_WEIGHT / math.sqrt(2.0))
+    assert "basel_mar21_88" in citations
+
+    zero_rw, zero_citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="CNH",
+        reporting_currency="CNH",
+    )
+    assert zero_rw == 0.0
+    assert "basel_mar21_87" in zero_citations
+
+    cny_zero_rw, cny_zero_citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="CNY",
+        reporting_currency="CNH",
+    )
+    assert cny_zero_rw == 0.0
+    assert "basel_mar21_87" in cny_zero_citations
 
 
 @pytest.mark.parametrize(
@@ -244,6 +295,15 @@ def test_correlation_scenario_adjustments(
 
     assert adjusted == pytest.approx(expected)
     assert citation_ids == ("basel_mar21_43",)
+
+
+def test_apply_correlation_scenario_definition_rejects_non_finite_base() -> None:
+    definition = correlation_scenario_definition(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        SbmScenarioLabel.MEDIUM,
+    )
+    with pytest.raises(SbmInputError, match="base_correlation must be finite"):
+        apply_correlation_scenario_definition(float("nan"), definition)
 
 
 def test_correlation_scenario_definitions_cover_low_medium_high() -> None:

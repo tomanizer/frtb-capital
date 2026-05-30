@@ -4,6 +4,29 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-05-30
+
+### Added
+
+- ADR 0015 documenting CNH/CNY GIRR and FX delta mapping under Basel MAR21.8(c),
+  MAR21.14(4), MAR21.41, and MAR21.88.
+- GIRR bucket `17` for offshore renminbi (`CNH`); bucket `8` now maps to onshore
+  `CNY`.
+- `normalise_fx_delta_currency_code` mapping FX `CNH` inputs to the `CNY` bucket.
+
+### Changed
+
+- BASEL_MAR21 profile hash updates for the expanded GIRR bucket registry.
+- `basel_mar21_38` citation note references MAR21.41 and ADR 0015.
+
+## [0.7.5] - 2026-05-30
+
+### Fixed
+
+- Consolidate MAR21.6 correlation-scenario adjustment into
+  `apply_correlation_scenario_definition`; `adjust_correlation_for_scenario`
+  now delegates to profile-owned reference data.
+
 ## [0.7.4] - 2026-05-30
 
 ### Fixed
