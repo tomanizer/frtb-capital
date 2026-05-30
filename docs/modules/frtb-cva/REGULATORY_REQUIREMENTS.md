@@ -2,10 +2,17 @@
 
 ## Purpose
 
-This document captures requirements for `frtb-cva`, a package for CVA risk
-capital. The package should support the Basel CVA framework with profile hooks
-for U.S. NPR 2.0, CRR3, and PRA comparison. CVA is distinct from market-risk SA
-SBM even when SA-CVA reuses SBM-style delta and vega aggregation mechanics.
+This document captures high-level regulatory requirements for `frtb-cva`. Issue-ready
+detail, module layout, and implementation decisions live in:
+
+- [DETAILED_REQUIREMENTS.md](DETAILED_REQUIREMENTS.md)
+- [ARCHITECTURE_AND_DATA_DESIGN.md](ARCHITECTURE_AND_DATA_DESIGN.md)
+- [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN.md)
+- [ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md)
+
+The package should support the Basel CVA framework with profile hooks for U.S.
+NPR 2.0, CRR3, and PRA comparison. CVA is distinct from market-risk SA SBM even
+when SA-CVA reuses SBM-style delta and vega aggregation mechanics.
 
 ## Primary Sources
 
