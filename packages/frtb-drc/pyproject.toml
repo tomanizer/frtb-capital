@@ -20,3 +20,42 @@ where = ["src"]
 dev = [
     "matplotlib>=3.10.9",
 ]
+
+[tool.towncrier]
+package = "frtb_drc"
+package_dir = "src"
+filename = "CHANGELOG.md"
+directory = "changelog.d"
+title_format = "## [{version}] - {project_date}"
+issue_format = "#{issue}"
+underlines = ["", "", ""]
+
+[[tool.towncrier.type]]
+directory = "fix"
+name = "Fixed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "feat"
+name = "Added"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "security"
+name = "Security"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "chore"
+name = "Changed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
+showcontent = true

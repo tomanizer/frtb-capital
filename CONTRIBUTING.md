@@ -16,15 +16,46 @@ Requires Python 3.11+ and [`uv`](https://docs.astral.sh/uv/).
 ## Workflow
 
 1. Open an issue or pick one labelled `audit-followup`, `enhancement`, or `bug`.
-2. Branch from `main`.
+2. Branch from `main` (not from `release/*`).
 3. Make the change in a single package where possible. Cross-package model
    changes require an ADR.
 4. Run `make check` until green.
-5. Open a PR. The PR template will prompt for:
+5. Add a changelog fragment if the change is user-visible (see below).
+6. Open a PR. The PR template will prompt for:
    - Affected package(s).
    - Whether the change is material under
      [ADR 0005](docs/decisions/0005-material-change-policy.md).
    - Link to ADR if material.
+
+### What not to do in a feature PR
+
+Per [ADR 0015](docs/decisions/0015-deferred-versioning-and-changelog-fragments.md),
+feature and fix PRs **must not**:
+
+- Bump `version =` in any `packages/*/pyproject.toml`.
+- Add a `## [x.y.z]` release section to any `CHANGELOG.md`.
+- Regenerate `uv.lock` unless the PR itself changes dependency specifications.
+
+CI will reject PRs that violate these constraints. Version bumps and changelog
+assembly happen in a dedicated `release/*` PR (see
+[Release process](docs/RELEASE_PROCESS.md)).
+
+### Changelog fragments
+
+Each user-visible change should add a fragment file under
+`packages/<pkg>/changelog.d/`. The filename is `<pr-number>.<type>.md`.
+
+Allowed types: `fix`, `feat`, `breaking`, `security`, `chore`, `docs`.
+
+```
+# Example: packages/frtb-sbm/changelog.d/181.fix.md
+Fix cap sentinel handling in `apply_correlation_scenario_definition` to
+distinguish an explicit `cap=0.0` from an absent cap (MAR21.6).
+```
+
+Fragment content is a single sentence or short paragraph from a consumer's
+perspective. Do not include version numbers. Pure CI/tooling/docs PRs with no
+consumer-visible impact do not need a fragment.
 
 ## Material change policy
 
@@ -38,14 +69,14 @@ boundary changes, audit-record semantic changes, and model-version or release
 semantics changes.
 
 Material changes require an ADR, package-owner approval, model-validation
-reviewer approval, affected package version bump, changelog entry, and fixture
-review when fixture outputs or hashes change.
+reviewer approval, a changelog fragment (per ADR 0015, the version bump and
+final changelog entry are assembled in the release PR), and fixture review when
+fixture outputs or hashes change.
 
 Non-material changes include refactors with identical outputs, documentation
 changes that do not reinterpret regulatory treatment, test additions,
 performance optimisations with identical outputs, and CI/formatting changes.
-They do not require an ADR but should still update changelogs when useful for
-release notes.
+They do not require an ADR; a changelog fragment is optional but encouraged.
 
 ## Package discipline
 

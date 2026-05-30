@@ -83,8 +83,20 @@ release-integrity policy.
    make sbom
    ```
 
-5. Update affected package versions, refresh `uv.lock` with `uv lock`, and
-   update changelogs in a release PR.
+5. In a `release/*` branch, for each package being released:
+   a. Assemble changelog fragments and bump the version in one step:
+      ```bash
+      uv run towncrier build --package <pkg> --version <new-version> \
+          --dir packages/<pkg>
+      ```
+      This writes the new `## [x.y.z]` section into `CHANGELOG.md`, removes
+      the processed fragment files, and leaves `pyproject.toml` version
+      unchanged — bump `version =` manually afterwards.
+   b. Bump `version =` in `packages/<pkg>/pyproject.toml`.
+   c. Regenerate the lock: `uv lock`.
+
+   Open this as a `release/*` PR against `main`.  The CI version-bump and
+   uv-lock guards are skipped on `release/*` branches.
 6. Confirm material changes have an ADR, package-owner approval,
    model-validation approval, and fixture review where applicable.
 7. Merge the release PR through the protected-branch workflow.
