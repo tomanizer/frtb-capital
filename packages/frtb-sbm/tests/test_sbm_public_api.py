@@ -263,8 +263,16 @@ def test_calculate_sbm_capital_sums_delta_and_vega_measures() -> None:
     assert len(result.risk_classes) == 2
     measures = {item.risk_measure for item in result.risk_classes}
     assert measures == {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA}
+    assert result.selected_portfolio_scenario is not None
+    assert result.portfolio_scenario_totals is not None
+    assert result.total_capital == pytest.approx(
+        result.portfolio_scenario_totals[result.selected_portfolio_scenario]
+    )
     assert result.total_capital == pytest.approx(
         sum(item.selected_capital for item in result.risk_classes)
+    )
+    assert all(
+        item.selected_scenario is result.selected_portfolio_scenario for item in result.risk_classes
     )
 
 
@@ -302,3 +310,56 @@ def test_calculate_sbm_capital_selects_max_correlation_scenario() -> None:
         SbmScenarioLabel.MEDIUM,
         SbmScenarioLabel.HIGH,
     }
+
+
+def test_calculate_sbm_capital_applies_mar21_7_portfolio_scenario_selection() -> None:
+    """MAR21.7: sum risk classes by scenario before selecting portfolio total."""
+    import importlib.util
+    from pathlib import Path
+
+    def _load_fixture(name: str, loader_path: Path):
+        spec = importlib.util.spec_from_file_location(name, loader_path)
+        module = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(module)
+        return module
+
+    fixture_root = Path(__file__).parent / "fixtures"
+    girr_delta = _load_fixture(
+        "girr_delta_v1_loader",
+        fixture_root / "girr_delta_v1" / "loader.py",
+    )
+    girr_vega = _load_fixture(
+        "girr_vega_v1_loader",
+        fixture_root / "girr_vega_v1" / "loader.py",
+    )
+    fx_delta = _load_fixture(
+        "fx_delta_v1_loader",
+        fixture_root / "fx_delta_v1" / "loader.py",
+    )
+
+    sensitivities = (
+        girr_delta.load_fixture_sensitivities()
+        + girr_vega.load_fixture_sensitivities()
+        + fx_delta.load_fixture_sensitivities()
+    )
+    result = calculate_sbm_capital(
+        sensitivities,
+        context=girr_delta.load_fixture_context(),
+    )
+
+    assert result.selected_portfolio_scenario is SbmScenarioLabel.HIGH
+    assert result.total_capital == pytest.approx(744_280.5750048613)
+    assert result.portfolio_scenario_totals is not None
+    assert result.portfolio_scenario_totals[SbmScenarioLabel.LOW] == pytest.approx(
+        738_059.0463905977
+    )
+    assert result.portfolio_scenario_totals[SbmScenarioLabel.MEDIUM] == pytest.approx(
+        743_026.7984056943
+    )
+    assert result.portfolio_scenario_totals[SbmScenarioLabel.HIGH] == pytest.approx(
+        744_280.5750048613
+    )
+    assert all(item.selected_scenario is SbmScenarioLabel.HIGH for item in result.risk_classes)
+    assert result.portfolio_scenario_selection is not None
+    assert result.portfolio_scenario_selection.branch_id == "portfolio_scenario_selection"

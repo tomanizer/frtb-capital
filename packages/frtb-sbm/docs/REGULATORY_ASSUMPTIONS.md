@@ -5,21 +5,24 @@ For a bidirectional code/regulation map, see
 [`REGULATORY_TRACEABILITY.md`](REGULATORY_TRACEABILITY.md). For link-only source
 metadata, see [`regulatory_sources.yml`](regulatory_sources.yml).
 
-`frtb-sbm` delivers a partial runtime slice for GIRR delta/vega and FX delta
-capital under cited Basel MAR21 mechanics. Phase 1 targets a cited GIRR delta
-vertical slice only. No document or test in this package should describe outputs
-as final regulatory capital.
+`frtb-sbm` delivers a partial runtime slice for GIRR delta/vega, FX delta,
+equity delta, and commodity delta capital under cited Basel MAR21 mechanics.
+No document or test in this package should describe outputs as final regulatory
+capital.
 
 ## Phase-1 basis
 
-The first capital-producing slice targets canonical inputs for:
+The first capital-producing slices target canonical inputs for:
 
-1. Basel MAR21 GIRR delta mechanics, including bucket assignment, risk weights,
-   intra-bucket aggregation, inter-bucket aggregation, and correlation scenarios.
-2. U.S. NPR 2.0 proposed standardized non-default capital requirement, section
+1. Basel MAR21 GIRR delta and vega mechanics, including bucket assignment,
+   risk weights, intra-bucket aggregation, inter-bucket aggregation, and
+   correlation scenarios.
+2. Basel MAR21 FX, equity, and commodity delta mechanics on the shared
+   aggregation engine.
+3. U.S. NPR 2.0 proposed standardized non-default capital requirement, section
    V.A.7.a, as a comparison profile where explicitly supported.
-3. Explicit fail-closed behavior for vega, curvature, and all non-GIRR risk
-   classes until their own cited issues land.
+4. Explicit fail-closed behavior for curvature and unsupported risk-class or
+   measure combinations until their own cited issues land.
 
 The package treats the U.S. NPR 2.0 profile as proposed-rule material. Any
 future final-rule change must update citations, profiles, fixtures, and expected

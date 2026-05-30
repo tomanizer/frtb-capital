@@ -22,6 +22,7 @@ from frtb_sbm.data_models import (
     SbmCapitalResult,
     SbmReconciliationMetadata,
     SbmRunContextSummary,
+    SbmScenarioLabel,
     SbmSensitivity,
     SbmSourceLineage,
     WeightedSensitivity,
@@ -64,6 +65,16 @@ def serialize_sbm_result(result: SbmCapitalResult) -> dict[str, object]:
     }
     if result.run_context is not None:
         payload["run_context"] = _run_context_payload(result.run_context)
+    if result.portfolio_scenario_totals is not None:
+        payload["portfolio_scenario_totals"] = {
+            label.value: total for label, total in sorted(result.portfolio_scenario_totals.items())
+        }
+    if result.selected_portfolio_scenario is not None:
+        payload["selected_portfolio_scenario"] = result.selected_portfolio_scenario.value
+    if result.portfolio_scenario_selection is not None:
+        payload["portfolio_scenario_selection"] = _branch_metadata_payload(
+            result.portfolio_scenario_selection
+        )
     return payload
 
 
@@ -80,11 +91,35 @@ def validate_sbm_result_reconciliation(result: SbmCapitalResult) -> None:
             field="total_capital",
         )
 
+    if result.portfolio_scenario_totals is not None:
+        if result.selected_portfolio_scenario is None:
+            raise SbmInputError(
+                "portfolio scenario totals require selected_portfolio_scenario",
+                field="selected_portfolio_scenario",
+            )
+        portfolio_total_value = result.portfolio_scenario_totals.get(
+            result.selected_portfolio_scenario
+        )
+        if portfolio_total_value is None:
+            raise SbmInputError(
+                "selected portfolio scenario is missing from portfolio scenario totals",
+                field="selected_portfolio_scenario",
+            )
+        portfolio_total = float(portfolio_total_value)
+        if not is_reconciled(result.total_capital, portfolio_total):
+            raise SbmInputError(
+                "total capital does not reconcile to selected portfolio scenario total",
+                field="total_capital",
+            )
+
     for risk_class in result.risk_classes:
-        _validate_risk_class_reconciliation(risk_class)
+        _validate_risk_class_reconciliation(risk_class, result.selected_portfolio_scenario)
 
 
-def _validate_risk_class_reconciliation(risk_class: RiskClassCapital) -> None:
+def _validate_risk_class_reconciliation(
+    risk_class: RiskClassCapital,
+    selected_portfolio_scenario: SbmScenarioLabel | None = None,
+) -> None:
     if risk_class.scenario_totals is None or risk_class.selected_scenario is None:
         raise SbmInputError(
             "risk-class capital must include scenario totals and selected scenario",
@@ -98,12 +133,12 @@ def _validate_risk_class_reconciliation(risk_class: RiskClassCapital) -> None:
             field="selected_capital",
         )
 
-    expected_selected = max(risk_class.scenario_totals.values())
-    if not is_reconciled(risk_class.selected_capital, expected_selected):
-        raise SbmInputError(
-            "selected risk-class capital does not reconcile to maximum scenario total",
-            field="selected_capital",
-        )
+    if selected_portfolio_scenario is not None:
+        if risk_class.selected_scenario is not selected_portfolio_scenario:
+            raise SbmInputError(
+                "risk-class selected scenario must match portfolio scenario selection",
+                field="selected_scenario",
+            )
 
 
 def _validate_hash(field: str, value: str) -> None:

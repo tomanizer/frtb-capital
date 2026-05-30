@@ -337,6 +337,9 @@ class SbmCapitalResult:
     unsupported_features: tuple[SbmUnsupportedFeature, ...] = ()
     reconciliation: SbmReconciliationMetadata | None = None
     run_context: SbmRunContextSummary | None = None
+    portfolio_scenario_totals: Mapping[SbmScenarioLabel, float] | None = None
+    selected_portfolio_scenario: SbmScenarioLabel | None = None
+    portfolio_scenario_selection: SbmBranchMetadata | None = None
 
     def as_dict(self) -> dict[str, object]:
         """Return the deterministic audit payload for this result."""

@@ -86,6 +86,8 @@ def aggregate_fx_delta_measure_capital(
         inter_bucket_correlations,
         risk_class=SbmRiskClass.FX,
         risk_measure=SbmRiskMeasure.DELTA,
+        intra_bucket_citation_ids=("basel_mar21_4_intra_bucket", "basel_mar21_86"),
+        inter_bucket_citation_ids=("basel_mar21_4_inter_bucket", "basel_mar21_89"),
     )
 
 
