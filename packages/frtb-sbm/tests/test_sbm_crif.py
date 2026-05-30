@@ -57,6 +57,25 @@ def test_crif_adapter_maps_girr_curvature_row() -> None:
     assert sensitivity.tenor == "5y"
 
 
+def test_crif_adapter_rejects_non_finite_amount() -> None:
+    result = adapt_crif_records(
+        [
+            {
+                "SensitivityId": "crif-nan-001",
+                "RiskType": "RISK_IRCURVE",
+                "Qualifier": "USD",
+                "Bucket": "1",
+                "Label1": "5y",
+                "Amount": "NaN",
+                "AmountCurrency": "USD",
+            }
+        ]
+    )
+    assert result.rejected_rows
+    assert "finite" in result.rejected_rows[0].reason
+    assert result.rejected_rows[0].field == "Amount"
+
+
 def test_crif_adapter_rejects_unsupported_risk_type() -> None:
     result = adapt_crif_records([{"RiskType": "UNKNOWN_RISK", "Amount": 1.0}])
     assert result.rejected_rows

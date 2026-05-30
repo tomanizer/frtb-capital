@@ -8,8 +8,10 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import cast
 
 from frtb_sbm.data_models import (
     SbmRiskClass,
@@ -208,7 +210,7 @@ def _map_crif_row(
         risk_measure=risk_measure,
         bucket=bucket,
         risk_factor=qualifier or amount_currency,
-        amount=float(optional.get("amount", amount)),  # type: ignore[arg-type]
+        amount=amount,
         amount_currency=amount_currency,
         sign_convention=sign_convention,
         lineage=SbmSourceLineage(
@@ -253,7 +255,10 @@ def _map_risk_type(risk_type: str) -> tuple[SbmRiskClass, SbmRiskMeasure]:
 
 
 def _first_text(
-    record: Mapping[str, object], fields: tuple[str, ...], *, fallback: str = ""
+    record: Mapping[str, object],
+    fields: tuple[str, ...],
+    *,
+    fallback: str = "",
 ) -> str:
     for field in fields:
         if field in record and record[field] is not None:
@@ -279,10 +284,13 @@ def _first_float(record: Mapping[str, object], fields: tuple[str, ...]) -> float
         if field not in record or record[field] is None:
             continue
         try:
-            return float(record[field])  # type: ignore[arg-type]
+            value = float(cast(str | float | int, record[field]))
+            if not math.isfinite(value):
+                raise ValueError("value must be finite")
+            return value
         except (TypeError, ValueError) as exc:
             raise SbmInputError(
-                f"field {field} must be numeric",
+                f"field {field} must be numeric and finite",
                 field=field,
             ) from exc
     raise SbmInputError(f"missing required numeric field; tried {fields}", field=fields[0])

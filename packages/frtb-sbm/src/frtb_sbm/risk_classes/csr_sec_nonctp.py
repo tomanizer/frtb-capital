@@ -116,6 +116,7 @@ def aggregate_csr_sec_nonctp_delta_measure_capital(
     for scenario in scenario_labels:
         core_capital = 0.0
         core_buckets: tuple[BucketCapital, ...] = ()
+        core_details: tuple[RiskClassScenarioDetail, ...] = ()
         if core_specs:
             inter_map = build_csr_sec_nonctp_inter_bucket_correlation_map(
                 tuple(spec.bucket_id for spec in core_specs),
@@ -133,8 +134,10 @@ def aggregate_csr_sec_nonctp_delta_measure_capital(
             )
             core_capital = core_result.selected_capital
             core_buckets = core_result.buckets
+            core_details = core_result.scenario_details
         other_capital = 0.0
         other_buckets: tuple[BucketCapital, ...] = ()
+        other_details: tuple[RiskClassScenarioDetail, ...] = ()
         if other_spec is not None:
             other_result = aggregate_risk_class_with_scenarios(
                 (other_spec,),
@@ -148,9 +151,31 @@ def aggregate_csr_sec_nonctp_delta_measure_capital(
             )
             other_capital = other_result.selected_capital
             other_buckets = other_result.buckets
+            other_details = other_result.scenario_details
         scenario_totals[scenario] = core_capital + other_capital
         if scenario is SbmScenarioLabel.MEDIUM:
             selected_buckets = core_buckets + other_buckets
+        core_detail = core_details[0] if core_details else None
+        other_detail = other_details[0] if other_details else None
+        scenario_details.append(
+            RiskClassScenarioDetail(
+                scenario=scenario,
+                capital=core_capital + other_capital,
+                inter_bucket_correlations=(
+                    (core_detail.inter_bucket_correlations if core_detail else ())
+                    + (other_detail.inter_bucket_correlations if other_detail else ())
+                ),
+                alternative_sb_used=(
+                    (core_detail.alternative_sb_used if core_detail else False)
+                    or (other_detail.alternative_sb_used if other_detail else False)
+                ),
+                intra_buckets=(
+                    (core_detail.intra_buckets if core_detail else ())
+                    + (other_detail.intra_buckets if other_detail else ())
+                ),
+                citation_ids=_MAR21_SCENARIO_CITATION,
+            )
+        )
 
     selection = select_max_correlation_scenario(
         scenario_totals,

@@ -97,7 +97,9 @@ def test_csr_sec_nonctp_delta_capital_reconciles() -> None:
     )
 
     assert result.total_capital > 0.0
-    assert result.risk_classes[0].risk_class is SbmRiskClass.CSR_SEC_NONCTP
+    risk_class = result.risk_classes[0]
+    assert risk_class.risk_class is SbmRiskClass.CSR_SEC_NONCTP
+    assert len(risk_class.scenario_details) == 3
 
 
 def test_csr_sec_nonctp_rejects_missing_qualifier() -> None:

@@ -385,7 +385,7 @@ def _build_girr_curvature_intra_bucket_correlation_matrix(
     size = len(ordered)
     matrix = np.eye(size, dtype=np.float64)
     for row_index, sensitivity_a in enumerate(ordered):
-        for col_index in range(row_index, size):
+        for col_index in range(row_index + 1, size):
             sensitivity_b = ordered[col_index]
             same_curve = (
                 risk_factor_by_id[sensitivity_a.sensitivity_id]
