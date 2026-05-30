@@ -90,6 +90,56 @@ def test_girr_bucket_lookup_by_id() -> None:
     assert bucket.currency == "USD"
 
 
+def test_girr_cny_and_cnh_are_distinct_buckets() -> None:
+    cny = girr_bucket_for_currency(SbmRegulatoryProfile.BASEL_MAR21, "CNY")
+    cnh = girr_bucket_for_currency(SbmRegulatoryProfile.BASEL_MAR21, "CNH")
+
+    assert cny.bucket_id == "8"
+    assert cny.currency == "CNY"
+    assert cnh.bucket_id == "17"
+    assert cnh.currency == "CNH"
+
+
+def test_fx_delta_normalises_cnh_to_cny_bucket() -> None:
+    bucket = fx_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21, "CNH")
+
+    assert bucket.bucket_id == "CNY"
+    assert bucket.currency == "CNY"
+
+
+def test_fx_delta_risk_weight_treats_cnh_as_cny_for_specified_pairs() -> None:
+    reduced, citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="CNH",
+        reporting_currency="USD",
+    )
+    cny_reduced, _ = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="CNY",
+        reporting_currency="USD",
+    )
+
+    assert reduced == cny_reduced
+    assert reduced == pytest.approx(FX_DELTA_RISK_WEIGHT / math.sqrt(2.0))
+    assert "basel_mar21_88" in citations
+
+    zero_rw, zero_citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="CNH",
+        reporting_currency="CNH",
+    )
+    assert zero_rw == 0.0
+    assert "basel_mar21_87" in zero_citations
+
+    cny_zero_rw, cny_zero_citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="CNY",
+        reporting_currency="CNH",
+    )
+    assert cny_zero_rw == 0.0
+    assert "basel_mar21_87" in cny_zero_citations
+
+
 @pytest.mark.parametrize(
     ("tenor", "maturity_years", "risk_weight"),
     [
