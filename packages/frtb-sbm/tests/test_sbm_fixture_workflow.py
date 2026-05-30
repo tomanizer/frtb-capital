@@ -96,6 +96,10 @@ def test_girr_vega_v1_fixture_matches_expected_outputs() -> None:
 
 
 def test_fx_delta_v1_fixture_matches_expected_outputs() -> None:
+    """Replay fx_delta_v1 through the public API and compare audit payloads.
+
+    Deterministic under CPython 3.11; relies on stable fixture ordering only.
+    """
     fx_fixture_dir = Path(__file__).parent / "fixtures" / "fx_delta_v1"
     spec = importlib.util.spec_from_file_location(
         "fx_delta_v1_loader",

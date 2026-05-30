@@ -99,17 +99,16 @@ def build_fx_delta_intra_bucket_correlation_matrix(
     """Return the cited FX delta intra-bucket correlation matrix."""
 
     size = len(ordered)
-    matrix = np.eye(size, dtype=np.float64)
-    for row_index, sensitivity_a in enumerate(ordered):
-        for col_index in range(row_index, size):
-            sensitivity_b = ordered[col_index]
-            correlation, _ = fx_delta_intra_bucket_correlation(
-                profile_id,
-                bucket1=sensitivity_a.bucket,
-                bucket2=sensitivity_b.bucket,
-            )
-            matrix[row_index, col_index] = correlation
-            matrix[col_index, row_index] = correlation
+    if size == 0:
+        return np.zeros((0, 0), dtype=np.float64)
+    # MAR21.86: FX delta intra-bucket correlation is constant within a bucket.
+    correlation, _ = fx_delta_intra_bucket_correlation(
+        profile_id,
+        bucket1=ordered[0].bucket,
+        bucket2=ordered[0].bucket,
+    )
+    matrix = np.full((size, size), correlation, dtype=np.float64)
+    np.fill_diagonal(matrix, 1.0)
     return matrix
 
 

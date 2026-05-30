@@ -208,6 +208,11 @@ def test_fx_vega_and_curvature_fail_closed() -> None:
 
 
 def test_fx_delta_v1_fixture_matches_expected_outputs() -> None:
+    """Replay fx_delta_v1 and assert bit-identical hashes and capital totals.
+
+    Uses raw numeric equality on serialized payloads; no BLAS-dependent paths
+    are exercised beyond the existing numpy aggregation kernels.
+    """
     loader = load_fixture_module()
     context = loader.load_fixture_context()
     sensitivities = loader.load_fixture_sensitivities()
