@@ -12,6 +12,18 @@ All notable changes to `frtb-sbm` will be documented here.
   `apply_correlation_scenario_definition`; `adjust_correlation_for_scenario`
   now delegates to profile-owned reference data.
 
+## [0.7.4] - 2026-05-30
+
+### Fixed
+
+- Route `CSR_NONSEC`/`DELTA` through `compute_weighted_sensitivities` dispatch.
+- Treat `importlib.metadata.version` returning `None` as unknown in `__version__`.
+
+### Changed
+
+- Refresh `CLAUDE.md` and `AGENTS.md` to reflect current phase-1 scope and
+  `ValidationStatus.PENDING`.
+
 ## [0.7.3] - 2026-05-30
 
 ### Added
