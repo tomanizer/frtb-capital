@@ -8,7 +8,9 @@ All notable changes to `frtb-rrao` will be documented here.
 
 ### Fixed
 
-- Treat `importlib.metadata.version` returning `None` as unknown in `__version__`.
+- Guard against `importlib.metadata.version` returning an empty string in `__version__`.
+
+## [0.12.0] - 2026-05-29
 
 ### Added
 
