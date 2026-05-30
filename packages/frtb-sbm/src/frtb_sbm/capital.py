@@ -21,6 +21,7 @@ from frtb_sbm.aggregation import (
     IntraBucketScenarioSpec,
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
+    select_portfolio_correlation_scenario,
 )
 from frtb_sbm.audit import (
     _input_hash_for_validated_sensitivities,
@@ -28,6 +29,7 @@ from frtb_sbm.audit import (
 )
 from frtb_sbm.data_models import (
     RiskClassCapital,
+    SbmBranchMetadata,
     SbmCalculationContext,
     SbmCapitalResult,
     SbmReconciliationMetadata,
@@ -72,6 +74,13 @@ _PHASE1_SUPPORTED_PATHS: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozen
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
     }
 )
+
+_MAR21_INTRA_BUCKET_CITATION = ("basel_mar21_4_intra_bucket",)
+_MAR21_INTER_BUCKET_CITATION = ("basel_mar21_4_inter_bucket",)
+_GIRR_DELTA_INTRA_CITATIONS = (*_MAR21_INTRA_BUCKET_CITATION, "basel_mar21_41")
+_GIRR_DELTA_INTER_CITATIONS = (*_MAR21_INTER_BUCKET_CITATION, "basel_mar21_42")
+_GIRR_VEGA_INTRA_CITATIONS = (*_MAR21_INTRA_BUCKET_CITATION, "basel_mar21_93")
+_GIRR_VEGA_INTER_CITATIONS = (*_MAR21_INTER_BUCKET_CITATION, "basel_mar21_42")
 
 
 def calculate_sbm_capital(
@@ -146,11 +155,20 @@ def calculate_sbm_capital(
                 f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
             )
 
-    total_capital = sum(item.selected_capital for item in risk_class_results)
-    citation_ids = _collect_citation_ids(risk_class_results)
+    (
+        aligned_risk_classes,
+        total_capital,
+        portfolio_scenario_totals,
+        selected_portfolio_scenario,
+        portfolio_scenario_selection,
+    ) = select_portfolio_correlation_scenario(risk_class_results)
+    citation_ids = _collect_citation_ids(
+        aligned_risk_classes,
+        portfolio_scenario_selection=portfolio_scenario_selection,
+    )
     result = SbmCapitalResult(
         total_capital=total_capital,
-        risk_classes=tuple(risk_class_results),
+        risk_classes=aligned_risk_classes,
         profile_id=rule_profile.profile_id,
         profile_hash=rule_profile.content_hash,
         input_hash=_input_hash_for_validated_sensitivities(validated),
@@ -167,6 +185,9 @@ def calculate_sbm_capital(
             base_currency=context.base_currency,
             reporting_currency=context.reporting_currency,
         ),
+        portfolio_scenario_totals=portfolio_scenario_totals,
+        selected_portfolio_scenario=selected_portfolio_scenario,
+        portfolio_scenario_selection=portfolio_scenario_selection,
     )
     validate_sbm_result_reconciliation(result)
     return result
@@ -262,6 +283,16 @@ def _aggregate_girr_measure_capital(
         inter_bucket_correlations,
         risk_class=SbmRiskClass.GIRR,
         risk_measure=risk_measure,
+        intra_bucket_citation_ids=(
+            _GIRR_DELTA_INTRA_CITATIONS
+            if risk_measure is SbmRiskMeasure.DELTA
+            else _GIRR_VEGA_INTRA_CITATIONS
+        ),
+        inter_bucket_citation_ids=(
+            _GIRR_DELTA_INTER_CITATIONS
+            if risk_measure is SbmRiskMeasure.DELTA
+            else _GIRR_VEGA_INTER_CITATIONS
+        ),
     )
 
 
@@ -336,6 +367,8 @@ def _build_inter_bucket_correlation_map(
 
 def _collect_citation_ids(
     risk_class_capitals: Sequence[RiskClassCapital],
+    *,
+    portfolio_scenario_selection: SbmBranchMetadata | None = None,
 ) -> tuple[str, ...]:
     citation_ids: list[str] = []
     seen: set[str] = set()
@@ -357,6 +390,9 @@ def _collect_citation_ids(
         if risk_class_capital.scenario_selection is not None:
             for citation_id in risk_class_capital.scenario_selection.citation_ids:
                 _append_citation(citation_ids, seen, citation_id)
+    if portfolio_scenario_selection is not None:
+        for citation_id in portfolio_scenario_selection.citation_ids:
+            _append_citation(citation_ids, seen, citation_id)
     return tuple(citation_ids)
 
 

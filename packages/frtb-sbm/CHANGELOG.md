@@ -4,6 +4,28 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-05-30
+
+### Fixed
+
+- Apply Basel MAR21.7 portfolio-level correlation scenario selection in
+  `calculate_sbm_capital` by summing risk-class scenario totals before selecting
+  the maximum combined total; align per-class selected capital and buckets to
+  the portfolio scenario for reconciliation.
+- Propagate risk-specific intra- and inter-bucket Basel citation ids into
+  aggregation audit records for GIRR delta/vega and FX delta paths.
+- Use distinct scenario-selection branch ids per GIRR risk measure.
+
+### Added
+
+- `portfolio_scenario_totals`, `selected_portfolio_scenario`, and
+  `portfolio_scenario_selection` on `SbmCapitalResult`.
+- Combined GIRR delta + GIRR vega + FX delta MAR21.7 regression test.
+
+### Changed
+
+- Updated `REGULATORY_ASSUMPTIONS.md` to reflect supported delta/vega slices.
+
 ## [0.6.0] - 2026-05-30
 
 ### Added

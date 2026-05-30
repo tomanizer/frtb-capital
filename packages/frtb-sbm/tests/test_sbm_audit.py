@@ -135,10 +135,14 @@ def test_reconciliation_rejects_wrong_selected_scenario_total() -> None:
         girr,
         selected_capital=girr.selected_capital + 1.0,
     )
+    corrupted_portfolio_totals = dict(result.portfolio_scenario_totals or {})
+    assert result.selected_portfolio_scenario is not None
+    corrupted_portfolio_totals[result.selected_portfolio_scenario] = corrupted_girr.selected_capital
     corrupted = replace(
         result,
         risk_classes=(corrupted_girr,),
         total_capital=corrupted_girr.selected_capital,
+        portfolio_scenario_totals=corrupted_portfolio_totals,
     )
 
     with pytest.raises(SbmInputError, match="selected risk-class capital does not reconcile"):

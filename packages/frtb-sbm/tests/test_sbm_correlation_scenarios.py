@@ -160,11 +160,13 @@ def test_select_max_correlation_scenario_chooses_largest_total() -> None:
     selection = select_max_correlation_scenario(
         totals,
         risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.DELTA,
     )
 
     assert selection.selected_scenario is SbmScenarioLabel.MEDIUM
     assert selection.selected_capital == pytest.approx(120.0)
     assert selection.branch_metadata.branch_type.value == "SCENARIO_SELECTION"
+    assert selection.branch_metadata.branch_id == "girr_delta_scenario_selection"
 
 
 def test_intra_bucket_kb_recomputed_under_correlation_scenarios() -> None:
@@ -223,6 +225,7 @@ def test_end_to_end_girr_delta_slice_selects_max_scenario() -> None:
     assert len(risk_class.scenario_totals) == 3
     assert len(risk_class.scenario_details) == 3
     assert risk_class.scenario_selection is not None
+    assert risk_class.scenario_selection.branch_id == "girr_delta_scenario_selection"
     assert risk_class.selected_capital == pytest.approx(max(risk_class.scenario_totals.values()))
     assert risk_class.selected_scenario == max(
         risk_class.scenario_totals,

@@ -278,6 +278,8 @@ def select_max_correlation_scenario(
     scenario_totals: Mapping[SbmScenarioLabel, float],
     *,
     risk_class: SbmRiskClass,
+    risk_measure: SbmRiskMeasure | None = None,
+    branch_id: str | None = None,
     citation_ids: tuple[str, ...] = _MAR21_SCENARIO_SELECTION_CITATION,
 ) -> ScenarioSelectionResult:
     """
@@ -293,8 +295,12 @@ def select_max_correlation_scenario(
         key=lambda label: (scenario_totals[label], _scenario_rank(label)),
     )
     selected_capital = float(scenario_totals[selected_scenario])
+    resolved_branch_id = branch_id
+    if resolved_branch_id is None:
+        measure_suffix = f"_{risk_measure.value.lower()}" if risk_measure is not None else ""
+        resolved_branch_id = f"{risk_class.value.lower()}{measure_suffix}_scenario_selection"
     branch = SbmBranchMetadata(
-        branch_id=f"{risk_class.value.lower()}_scenario_selection",
+        branch_id=resolved_branch_id,
         branch_type=SbmBranchType.SCENARIO_SELECTION,
         source_id="mar21_7_2",
         selected=True,
@@ -339,6 +345,7 @@ def _aggregate_intra_buckets_for_scenario(
     scenario: SbmScenarioLabel,
     risk_class: SbmRiskClass,
     risk_measure: SbmRiskMeasure,
+    intra_bucket_citation_ids: tuple[str, ...] = _MAR21_INTRA_BUCKET_CITATION,
 ) -> tuple[IntraBucketAggregationResult, ...]:
     results: list[IntraBucketAggregationResult] = []
     for spec in specs:
@@ -357,6 +364,7 @@ def _aggregate_intra_buckets_for_scenario(
                 risk_class=risk_class,
                 risk_measure=risk_measure,
                 sb_correlation_floor=spec.sb_correlation_floor,
+                citation_ids=intra_bucket_citation_ids,
             )
         )
     return tuple(results)
@@ -408,6 +416,8 @@ def aggregate_risk_class_with_scenarios(
     scenarios: Sequence[SbmScenarioLabel] = _DEFAULT_SCENARIOS,
     apply_scenario_adjustment: bool = True,
     citation_ids: tuple[str, ...] = _MAR21_SCENARIO_CITATION,
+    intra_bucket_citation_ids: tuple[str, ...] = _MAR21_INTRA_BUCKET_CITATION,
+    inter_bucket_citation_ids: tuple[str, ...] = _MAR21_INTER_BUCKET_CITATION,
 ) -> RiskClassCapital:
     """
     Evaluate low/medium/high scenarios with full intra- and inter-bucket recomputation.
@@ -444,6 +454,7 @@ def aggregate_risk_class_with_scenarios(
                 scenario=scenario,
                 risk_class=risk_class,
                 risk_measure=risk_measure,
+                intra_bucket_citation_ids=intra_bucket_citation_ids,
             )
             intra_by_scenario[scenario] = intra_results
             inter_input: Sequence[IntraBucketAggregationResult | BucketCapital] = intra_results
@@ -458,7 +469,7 @@ def aggregate_risk_class_with_scenarios(
             inter_bucket_correlations,
             scenario=scenario,
             apply_scenario_adjustment=apply_scenario_adjustment,
-            citation_ids=_MAR21_INTER_BUCKET_CITATION,
+            citation_ids=inter_bucket_citation_ids,
         )
         scenario_results[scenario] = inter_result
         if specs is not None:
@@ -479,6 +490,7 @@ def aggregate_risk_class_with_scenarios(
     selection = select_max_correlation_scenario(
         scenario_totals,
         risk_class=risk_class,
+        risk_measure=risk_measure,
         citation_ids=_MAR21_SCENARIO_SELECTION_CITATION,
     )
 
@@ -500,12 +512,17 @@ def aggregate_risk_class_with_scenarios(
         )
         buckets = tuple(_as_bucket_capital(item) for item in legacy_inputs)
 
+    merged_citation_ids = _merge_citation_ids(
+        citation_ids,
+        intra_bucket_citation_ids,
+        inter_bucket_citation_ids,
+    )
     return RiskClassCapital(
         risk_class=risk_class,
         risk_measure=risk_measure,
         selected_capital=selection.selected_capital,
         buckets=buckets,
-        citation_ids=citation_ids,
+        citation_ids=merged_citation_ids,
         scenario_totals=selection.scenario_totals,
         selected_scenario=selection.selected_scenario,
         scenario_details=tuple(scenario_details),
@@ -713,6 +730,146 @@ def _scenario_rank(label: SbmScenarioLabel) -> int:
     return order[label]
 
 
+def _merge_citation_ids(*groups: tuple[str, ...]) -> tuple[str, ...]:
+    merged: list[str] = []
+    seen: set[str] = set()
+    for group in groups:
+        for citation_id in group:
+            if citation_id not in seen:
+                merged.append(citation_id)
+                seen.add(citation_id)
+    return tuple(merged)
+
+
+def compute_portfolio_scenario_totals(
+    risk_class_results: Sequence[RiskClassCapital],
+) -> dict[SbmScenarioLabel, float]:
+    """Sum risk-class scenario totals across supported measures per MAR21.7."""
+
+    if not risk_class_results:
+        raise SbmInputError(
+            "risk_class_results must not be empty",
+            field="risk_class_results",
+        )
+    portfolio_totals: dict[SbmScenarioLabel, float] = {}
+    for scenario in _DEFAULT_SCENARIOS:
+        portfolio_totals[scenario] = 0.0
+    for risk_class_result in risk_class_results:
+        if risk_class_result.scenario_totals is None:
+            raise SbmInputError(
+                "risk-class capital must include scenario totals for portfolio selection",
+                field="scenario_totals",
+            )
+        for scenario, total in risk_class_result.scenario_totals.items():
+            portfolio_totals[scenario] += float(total)
+    return portfolio_totals
+
+
+def select_portfolio_correlation_scenario(
+    risk_class_results: Sequence[RiskClassCapital],
+    *,
+    citation_ids: tuple[str, ...] = _MAR21_SCENARIO_SELECTION_CITATION,
+) -> tuple[
+    tuple[RiskClassCapital, ...],
+    float,
+    dict[SbmScenarioLabel, float],
+    SbmScenarioLabel,
+    SbmBranchMetadata,
+]:
+    """
+    Apply MAR21.7 portfolio-level scenario selection across risk classes.
+
+    Sums delta, vega, and curvature capital by scenario across present risk
+    classes, selects the largest portfolio total, and aligns each risk-class
+    result to that scenario for reconciliation.
+    """
+    if not risk_class_results:
+        raise SbmInputError(
+            "risk_class_results must not be empty",
+            field="risk_class_results",
+        )
+
+    portfolio_totals = compute_portfolio_scenario_totals(risk_class_results)
+    selection = select_max_correlation_scenario(
+        portfolio_totals,
+        risk_class=SbmRiskClass.GIRR,
+        branch_id="portfolio_scenario_selection",
+        citation_ids=citation_ids,
+    )
+    aligned = tuple(
+        align_risk_class_to_scenario(
+            risk_class_result,
+            selection.selected_scenario,
+        )
+        for risk_class_result in risk_class_results
+    )
+    return (
+        aligned,
+        selection.selected_capital,
+        portfolio_totals,
+        selection.selected_scenario,
+        selection.branch_metadata,
+    )
+
+
+def align_risk_class_to_scenario(
+    risk_class_result: RiskClassCapital,
+    scenario: SbmScenarioLabel,
+) -> RiskClassCapital:
+    """Return a risk-class result whose selected buckets match ``scenario``."""
+
+    if risk_class_result.scenario_totals is None:
+        raise SbmInputError(
+            "risk-class capital must include scenario totals",
+            field="scenario_totals",
+        )
+    if risk_class_result.selected_scenario is scenario:
+        return risk_class_result
+
+    selected_capital = float(risk_class_result.scenario_totals[scenario])
+    detail = next(
+        (item for item in risk_class_result.scenario_details if item.scenario is scenario),
+        None,
+    )
+    weighted_by_bucket = {
+        bucket.bucket_id: bucket.weighted_sensitivities for bucket in risk_class_result.buckets
+    }
+    if detail is not None:
+        buckets = tuple(
+            BucketCapital(
+                bucket_id=intra.bucket_id,
+                risk_class=risk_class_result.risk_class,
+                risk_measure=risk_class_result.risk_measure or SbmRiskMeasure.DELTA,
+                kb=intra.kb,
+                weighted_sensitivities=weighted_by_bucket.get(intra.bucket_id, ()),
+                citation_ids=intra.citation_ids,
+                sb=intra.sb,
+                floor_applied=intra.floor_applied,
+                scenario=scenario,
+            )
+            for intra in detail.intra_buckets
+        )
+    else:
+        buckets = tuple(replace(bucket, scenario=scenario) for bucket in risk_class_result.buckets)
+
+    scenario_selection = risk_class_result.scenario_selection
+    if scenario_selection is not None:
+        scenario_selection = replace(
+            scenario_selection,
+            reason=(
+                f"aligned to portfolio {scenario.value} scenario with capital {selected_capital}"
+            ),
+        )
+
+    return replace(
+        risk_class_result,
+        selected_capital=selected_capital,
+        selected_scenario=scenario,
+        buckets=buckets,
+        scenario_selection=scenario_selection,
+    )
+
+
 __all__ = [
     "InterBucketScenarioResult",
     "IntraBucketAggregationResult",
@@ -724,6 +881,9 @@ __all__ = [
     "aggregate_inter_bucket",
     "aggregate_intra_bucket",
     "aggregate_risk_class_with_scenarios",
+    "align_risk_class_to_scenario",
+    "compute_portfolio_scenario_totals",
     "group_weighted_sensitivities_by_bucket",
     "select_max_correlation_scenario",
+    "select_portfolio_correlation_scenario",
 ]
