@@ -19,6 +19,26 @@ All notable changes to `frtb-sbm` will be documented here.
 - BASEL_MAR21 profile hash updates for the expanded GIRR bucket registry.
 - `basel_mar21_38` citation note references MAR21.41 and ADR 0015.
 
+## [0.7.5] - 2026-05-30
+
+### Fixed
+
+- Consolidate MAR21.6 correlation-scenario adjustment into
+  `apply_correlation_scenario_definition`; `adjust_correlation_for_scenario`
+  now delegates to profile-owned reference data.
+
+## [0.7.4] - 2026-05-30
+
+### Fixed
+
+- Route `CSR_NONSEC`/`DELTA` through `compute_weighted_sensitivities` dispatch.
+- Treat `importlib.metadata.version` returning `None` as unknown in `__version__`.
+
+### Changed
+
+- Refresh `CLAUDE.md` and `AGENTS.md` to reflect current phase-1 scope and
+  `ValidationStatus.PENDING`.
+
 ## [0.7.3] - 2026-05-30
 
 ### Added

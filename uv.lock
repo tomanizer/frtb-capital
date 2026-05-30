@@ -953,7 +953,7 @@ requires-dist = [
 
 [[package]]
 name = "frtb-rrao"
-version = "0.12.0"
+version = "0.12.1"
 source = { editable = "packages/frtb-rrao" }
 dependencies = [
     { name = "frtb-common" },

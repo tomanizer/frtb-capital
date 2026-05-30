@@ -4,6 +4,14 @@ All notable changes to `frtb-rrao` will be documented here.
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-05-30
+
+### Fixed
+
+- Guard against `importlib.metadata.version` returning an empty string in `__version__`.
+
+## [0.12.0] - 2026-05-29
+
 ### Added
 
 - Added initial importable scaffold with explicit unimplemented calculation

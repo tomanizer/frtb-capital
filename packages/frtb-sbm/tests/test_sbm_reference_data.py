@@ -15,6 +15,7 @@ from frtb_sbm.reference_data import (
     FX_DELTA_RISK_WEIGHT,
     FX_INTER_BUCKET_CORRELATION,
     apply_correlation_scenario,
+    apply_correlation_scenario_definition,
     citations_for_profile,
     commodity_bucket_definition,
     commodity_buckets_for_profile,
@@ -294,6 +295,15 @@ def test_correlation_scenario_adjustments(
 
     assert adjusted == pytest.approx(expected)
     assert citation_ids == ("basel_mar21_43",)
+
+
+def test_apply_correlation_scenario_definition_rejects_non_finite_base() -> None:
+    definition = correlation_scenario_definition(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        SbmScenarioLabel.MEDIUM,
+    )
+    with pytest.raises(SbmInputError, match="base_correlation must be finite"):
+        apply_correlation_scenario_definition(float("nan"), definition)
 
 
 def test_correlation_scenario_definitions_cover_low_medium_high() -> None:
