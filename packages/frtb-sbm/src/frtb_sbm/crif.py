@@ -293,6 +293,12 @@ def _first_float(record: Mapping[str, object], fields: tuple[str, ...]) -> float
                 f"field {field} must be numeric and finite",
                 field=field,
             ) from exc
+        if not math.isfinite(value):
+            raise SbmInputError(
+                f"field {field} must be finite, got {value}",
+                field=field,
+            )
+        return value
     raise SbmInputError(f"missing required numeric field; tried {fields}", field=fields[0])
 
 
