@@ -1,0 +1,7 @@
+{
+  "fixture_id": "csr_nonsec_delta_v1",
+  "description": "Synthetic CSR non-securitisation delta replay bundle for MAR21.51-MAR21.57.",
+  "profile_id": "BASEL_MAR21",
+  "risk_class": "CSR_NONSEC",
+  "risk_measure": "DELTA"
+}

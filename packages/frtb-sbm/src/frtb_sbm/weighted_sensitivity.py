@@ -23,6 +23,8 @@ from frtb_sbm.data_models import (
 from frtb_sbm.reference_data import (
     commodity_bucket_definition,
     commodity_delta_risk_weight,
+    csr_nonsec_delta_risk_weight,
+    csr_nonsec_validate_delta_inputs,
     equity_bucket_definition,
     equity_delta_risk_weight,
     fx_bucket_definition,
@@ -355,10 +357,63 @@ def weight_commodity_delta_sensitivities(
     return tuple(weighted)
 
 
+def weight_csr_nonsec_delta_sensitivities(
+    sensitivities: Sequence[SbmSensitivity],
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted CSR non-securitisation delta sensitivities."""
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.CSR_NONSEC,
+        SbmRiskMeasure.DELTA,
+    )
+    weighted: list[WeightedSensitivity] = []
+    for sensitivity in sort_sensitivities_deterministic(sensitivities):
+        if sensitivity.risk_class is not SbmRiskClass.CSR_NONSEC:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm CSR non-securitisation delta weighting does not support "
+                f"risk_class={sensitivity.risk_class.value}"
+            )
+        if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm CSR non-securitisation delta weighting does not support "
+                f"risk_measure={sensitivity.risk_measure.value}"
+            )
+        csr_nonsec_validate_delta_inputs(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+            risk_factor=sensitivity.risk_factor,
+            tenor=sensitivity.tenor or "",
+            qualifier=sensitivity.qualifier or "",
+        )
+        risk_weight, citation_ids = csr_nonsec_delta_risk_weight(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+        )
+        scaled_amount = sensitivity.amount * risk_weight
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=sensitivity.sensitivity_id,
+                risk_class=SbmRiskClass.CSR_NONSEC,
+                risk_measure=SbmRiskMeasure.DELTA,
+                bucket=sensitivity.bucket,
+                raw_amount=sensitivity.amount,
+                risk_weight=risk_weight,
+                scaled_amount=scaled_amount,
+                citation_ids=citation_ids,
+                qualifier=sensitivity.qualifier,
+            )
+        )
+    return tuple(weighted)
+
+
 __all__ = [
     "compute_weighted_sensitivities",
     "sort_weighted_sensitivities_deterministic",
     "weight_commodity_delta_sensitivities",
+    "weight_csr_nonsec_delta_sensitivities",
     "weight_equity_delta_sensitivities",
     "weight_fx_delta_sensitivities",
     "weight_girr_delta_sensitivities",

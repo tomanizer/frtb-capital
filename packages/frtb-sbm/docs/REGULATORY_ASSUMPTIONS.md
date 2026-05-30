@@ -6,7 +6,8 @@ For a bidirectional code/regulation map, see
 metadata, see [`regulatory_sources.yml`](regulatory_sources.yml).
 
 `frtb-sbm` delivers a partial runtime slice for GIRR delta/vega, FX delta,
-equity delta, and commodity delta capital under cited Basel MAR21 mechanics.
+equity delta, commodity delta, and CSR non-securitisation delta capital under cited
+Basel MAR21 mechanics.
 No document or test in this package should describe outputs as final regulatory
 capital.
 
@@ -17,8 +18,8 @@ The first capital-producing slices target canonical inputs for:
 1. Basel MAR21 GIRR delta and vega mechanics, including bucket assignment,
    risk weights, intra-bucket aggregation, inter-bucket aggregation, and
    correlation scenarios.
-2. Basel MAR21 FX, equity, and commodity delta mechanics on the shared
-   aggregation engine.
+2. Basel MAR21 FX, equity, commodity, and CSR non-securitisation delta mechanics
+   on the shared aggregation engine.
 3. U.S. NPR 2.0 proposed standardized non-default capital requirement, section
    V.A.7.a, as a comparison profile where explicitly supported.
 4. Explicit fail-closed behavior for curvature and unsupported risk-class or

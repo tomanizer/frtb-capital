@@ -1,0 +1,111 @@
+[
+  {
+    "case_id": "invalid_bucket",
+    "expected_error_match": "no CSR non-securitisation bucket definition",
+    "sensitivity": {
+      "sensitivity_id": "invalid-bucket",
+      "source_row_id": "row-invalid-bucket",
+      "desk_id": "credit-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "CSR_NONSEC",
+      "risk_measure": "DELTA",
+      "bucket": "99",
+      "risk_factor": "BOND",
+      "qualifier": "ISS-A",
+      "tenor": "1y",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "unsupported_basis_risk_factor",
+    "expected_error_match": "supports BOND and CDS risk factors only",
+    "sensitivity": {
+      "sensitivity_id": "unsupported-basis",
+      "source_row_id": "row-unsupported-basis",
+      "desk_id": "credit-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "CSR_NONSEC",
+      "risk_measure": "DELTA",
+      "bucket": "4",
+      "risk_factor": "BASIS",
+      "qualifier": "ISS-A",
+      "tenor": "1y",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "invalid_tenor",
+    "expected_error_match": "prescribed CSR non-securitisation tenors",
+    "sensitivity": {
+      "sensitivity_id": "invalid-tenor",
+      "source_row_id": "row-invalid-tenor",
+      "desk_id": "credit-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "CSR_NONSEC",
+      "risk_measure": "DELTA",
+      "bucket": "4",
+      "risk_factor": "BOND",
+      "qualifier": "ISS-A",
+      "tenor": "2y",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "missing_qualifier",
+    "expected_error_match": "qualifier is required",
+    "sensitivity": {
+      "sensitivity_id": "missing-qualifier",
+      "source_row_id": "row-missing-qualifier",
+      "desk_id": "credit-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "CSR_NONSEC",
+      "risk_measure": "DELTA",
+      "bucket": "4",
+      "risk_factor": "BOND",
+      "tenor": "1y",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "duplicate_sensitivity_id",
+    "expected_error_match": "duplicate sensitivity id",
+    "sensitivity": {
+      "sensitivity_id": "dup-id",
+      "source_row_id": "row-dup-a",
+      "desk_id": "credit-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "CSR_NONSEC",
+      "risk_measure": "DELTA",
+      "bucket": "4",
+      "risk_factor": "BOND",
+      "qualifier": "ISS-A",
+      "tenor": "1y",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    "duplicate_of": {
+      "sensitivity_id": "dup-id",
+      "source_row_id": "row-dup-b",
+      "desk_id": "credit-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "CSR_NONSEC",
+      "risk_measure": "DELTA",
+      "bucket": "5",
+      "risk_factor": "BOND",
+      "qualifier": "ISS-B",
+      "tenor": "3y",
+      "amount": 500000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  }
+]

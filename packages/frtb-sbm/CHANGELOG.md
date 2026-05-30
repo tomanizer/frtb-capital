@@ -4,6 +4,32 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-05-30
+
+### Fixed
+
+- Correct MAR21.57 Table 5 inter-bucket gamma lookup (`col - row - 1`) and trim
+  sector-gamma row lengths; regenerate `csr_nonsec_delta_v1` expected capital.
+- Validate CSR non-securitisation `qualifier` at the weighting boundary.
+- Union MAR21.54 and MAR21.55 intra-bucket citations when index and non-index
+  buckets are both present.
+
+## [0.7.0] - 2026-05-30
+
+### Added
+
+- CSR non-securitisation delta cited reference data (MAR21.51-MAR21.57),
+  `risk_classes/csr_nonsec.py`, and `weight_csr_nonsec_delta_sensitivities`.
+- Synthetic `tests/fixtures/csr_nonsec_delta_v1/` replay bundle with negative cases.
+- `tests/risk_classes/test_csr_nonsec.py` covering weights, correlations, bucket-16
+  absolute aggregation, and fixture replay.
+
+### Changed
+
+- `calculate_sbm_capital` supports homogeneous CSR non-securitisation delta inputs.
+- Profile hash and support map include CSR non-securitisation delta measure.
+- Existing fixture profile hashes updated for expanded reference payload.
+
 ## [0.6.1] - 2026-05-30
 
 ### Fixed

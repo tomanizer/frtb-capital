@@ -1,0 +1,91 @@
+{
+  "profile_id": "BASEL_MAR21",
+  "profile_hash": "7b91370a5764775956b5c866f4e0733d6c1e91a8b1242e9752608ab4174fff87",
+  "input_hash": "90776936e8b5bae97ea0b706e65161598bd5a6b3bb511cb9e7f75dd603a9d8b3",
+  "total_capital": 212390.49766879872,
+  "warnings": [],
+  "risk_classes": [
+    {
+      "risk_class": "CSR_NONSEC",
+      "risk_measure": "DELTA",
+      "selected_capital": 212390.49766879872,
+      "selected_scenario": "HIGH"
+    }
+  ],
+  "scenario_totals": {
+    "LOW": 210456.25222359158,
+    "MEDIUM": 211425.58690943723,
+    "HIGH": 212390.49766879872
+  },
+  "buckets": [
+    [
+      {
+        "bucket_id": "16",
+        "kb": 192000.0,
+        "sb": 48000.0
+      },
+      {
+        "bucket_id": "4",
+        "kb": 39962.15084301645,
+        "sb": 21000.0
+      },
+      {
+        "bucket_id": "5",
+        "kb": 60000.0,
+        "sb": 60000.0
+      },
+      {
+        "bucket_id": "6",
+        "kb": 30000.0,
+        "sb": 30000.0
+      }
+    ]
+  ],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "sensitivity_id": "csr16-bond-x-1y",
+          "risk_weight": 0.12,
+          "scaled_amount": 120000.0
+        },
+        {
+          "sensitivity_id": "csr16-bond-y-1y",
+          "risk_weight": 0.12,
+          "scaled_amount": -72000.0
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "csr4-bond-a-1y",
+          "risk_weight": 0.03,
+          "scaled_amount": 30000.0
+        },
+        {
+          "sensitivity_id": "csr4-bond-b-1y",
+          "risk_weight": 0.03,
+          "scaled_amount": -24000.0
+        },
+        {
+          "sensitivity_id": "csr4-cds-a-5y",
+          "risk_weight": 0.03,
+          "scaled_amount": 15000.0
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "csr5-bond-c-3y",
+          "risk_weight": 0.03,
+          "scaled_amount": 60000.0
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "csr6-bond-d-1y",
+          "risk_weight": 0.02,
+          "scaled_amount": 30000.0
+        }
+      ]
+    ]
+  ]
+}

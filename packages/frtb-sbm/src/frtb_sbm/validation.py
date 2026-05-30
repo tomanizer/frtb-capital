@@ -34,6 +34,7 @@ _TENOR_REQUIRED: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozenset(
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
     }
 )
 
@@ -60,6 +61,7 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
             (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
             (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
         }
     ),
     SbmRegulatoryProfile.EU_CRR3.value: frozenset(),

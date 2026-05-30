@@ -49,7 +49,10 @@ Parent issue: [#151](https://github.com/tomanizer/frtb-capital/issues/151).
 | Vega capital (GIRR) | Implemented | #161 — `girr_vega_v1` fixture pack |
 | FX delta capital | Implemented | #162 — `fx_delta_v1` fixture pack, MAR21.86-MAR21.89 |
 | Curvature capital | Unsupported | Explicit fail-closed until cited contracts and fixtures exist. |
-| CSR, equity, commodity risk classes | Unsupported | Explicit fail-closed until cited mappings and fixtures exist. |
+| Equity delta capital | Implemented | `equity_delta_v1` fixture pack, MAR21.71–MAR21.75. |
+| Commodity delta capital | Implemented | `commodity_delta_v1` fixture pack, MAR21.76–MAR21.80. |
+| CSR non-securitisation delta capital | Implemented | #164 — `csr_nonsec_delta_v1` fixture pack, MAR21.51–MAR21.57. |
+| CSR securitisation (CTP / non-CTP) | Unsupported | Explicit fail-closed until cited mappings and fixtures exist. |
 | CRIF/CSV adapters | Out of scope | Phase 1 uses synthetic canonical fixtures only. |
 | SA composition | Excluded | Belongs in `frtb-orchestration`. |
 | Analytical Euler attribution | Out of scope | Stable ids and branch metadata preserved for future work. |
@@ -88,12 +91,14 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `__init__.py` | Stable package export boundary. | MAR20.4 SA component context. | Section V.A.7.a package-scope context. | Implemented public surface for phase-1 slice. |
 | `data_models.py` | Frozen sensitivity, context, weighted sensitivity, bucket, risk-class, and result dataclasses. | MAR21.1-MAR21.8. | Section V.A.7.a steps one through three. | Implemented (#153). |
 | `validation.py` | Input invariants, duplicate identity checks, lineage checks, and explicit package input errors. | MAR21 risk-factor assignment context. | Section V.A.7.a steps one and two. | Implemented (#153). |
-| `regimes.py` | Rule-profile identity, support declarations, unsupported-profile guardrails, and deterministic profile hash. | MAR21 profile for Basel SBM mechanics. | Section V.A.7.a U.S. profile. | Implemented for BASEL_MAR21 GIRR and FX delta (#154, #162). |
-| `reference_data.py` | GIRR and FX bucket definitions, tenor sets, risk weights, correlations, scenario labels, and citation ids. | MAR21 GIRR and FX tables. | Section V.A.7.a risk-weight and correlation steps. | Implemented (#154, #162). |
-| `weighted_sensitivity.py` | Cited risk-weight lookup and weighted sensitivity records for supported measures. | MAR21.39-MAR21.40, MAR21.87-MAR21.88, MAR21.92. | Section V.A.7.a step three. | Implemented for GIRR delta/vega and FX delta (#155, #161, #162). |
+| `regimes.py` | Rule-profile identity, support declarations, unsupported-profile guardrails, and deterministic profile hash. | MAR21 profile for Basel SBM mechanics. | Section V.A.7.a U.S. profile. | Implemented for BASEL_MAR21 supported delta/vega slices. |
+| `reference_data.py` | Risk-class bucket definitions, tenor sets, risk weights, correlations, scenario labels, and citation ids. | MAR21 risk-class tables. | Section V.A.7.a risk-weight and correlation steps. | Implemented for GIRR, FX, equity, commodity, CSR non-sec delta. |
+| `csr_nonsec_reference_data.py` | CSR non-sec buckets, weights, intra/inter correlations, and validation helpers. | MAR21.51-MAR21.57. | Section V.A.7.a CSR non-sec context. | Implemented (#164). |
+| `weighted_sensitivity.py` | Cited risk-weight lookup and weighted sensitivity records for supported measures. | MAR21 risk-weight provisions by class. | Section V.A.7.a step three. | Implemented for supported delta/vega slices. |
 | `aggregation.py` | Shared intra-bucket and inter-bucket aggregation, scenario evaluation, and floors. | MAR21 aggregation formulas. | Section V.A.7.a steps four through six. | Implemented (#156, #157). |
-| `capital.py` | Public calculation entry point wiring validation, profiles, weighting, aggregation, and result assembly. | MAR21 end-to-end SBM mechanics. | Section V.A.7.a full process. | Implemented for GIRR delta/vega and FX delta (#158, #161, #162). |
+| `capital.py` | Public calculation entry point wiring validation, profiles, weighting, aggregation, and result assembly. | MAR21 end-to-end SBM mechanics. | Section V.A.7.a full process. | Implemented for supported delta/vega slices including CSR non-sec (#164). |
 | `risk_classes/fx.py` | FX delta assembly onto shared aggregation primitives. | MAR21.14, MAR21.86-MAR21.89. | Section V.A.7.a FX delta context. | Implemented (#162). |
+| `risk_classes/csr_nonsec.py` | CSR non-securitisation delta assembly onto shared aggregation primitives. | MAR21.9, MAR21.51-MAR21.57. | Section V.A.7.a CSR non-sec context. | Implemented (#164). |
 | `audit.py` | Result serialization, input/profile hashes, and reconciliation checks. | MAR21 component traceability by formula. | Section V.A.7.a audit context. | Implemented (#159). |
 | `crif.py` | Optional CRIF-to-canonical mapping with lineage and rejected rows. | MAR21 risk-type mapping context only. | Section V.A.7.a canonical field mapping context. | Out of scope for phase 1. |
 
