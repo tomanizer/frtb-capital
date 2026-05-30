@@ -64,6 +64,28 @@ def test_correlation_scenario_adjustments_follow_mar21_6() -> None:
     assert adjust_correlation_for_scenario(0.9, SbmScenarioLabel.HIGH) == pytest.approx(1.0)
 
 
+@pytest.mark.parametrize(
+    ("scenario", "base"),
+    [
+        (SbmScenarioLabel.LOW, 0.30),
+        (SbmScenarioLabel.MEDIUM, 0.40),
+        (SbmScenarioLabel.HIGH, 0.90),
+    ],
+)
+def test_adjust_correlation_for_scenario_matches_profile_lookup(
+    scenario: SbmScenarioLabel,
+    base: float,
+) -> None:
+    from frtb_sbm import SbmRegulatoryProfile, apply_correlation_scenario
+
+    adjusted_lookup, _ = apply_correlation_scenario(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        base_correlation=base,
+        scenario=scenario,
+    )
+    assert adjust_correlation_for_scenario(base, scenario) == pytest.approx(adjusted_lookup)
+
+
 def test_inter_bucket_aggregation_uses_kb_and_sb_terms() -> None:
     """MAR21.4(5): K^2 = sum Kb^2 + sum gamma_bc Sb Sc."""
     usd = _bucket(

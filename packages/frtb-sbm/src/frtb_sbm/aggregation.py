@@ -27,11 +27,13 @@ from frtb_sbm.data_models import (
     RiskClassScenarioDetail,
     SbmBranchMetadata,
     SbmBranchType,
+    SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmScenarioLabel,
     WeightedSensitivity,
 )
+from frtb_sbm.reference_data import apply_correlation_scenario
 from frtb_sbm.validation import SbmInputError
 
 _MAR21_INTRA_BUCKET_CITATION = ("basel_mar21_4_intra_bucket",)
@@ -113,24 +115,21 @@ class ScenarioSelectionResult:
 def adjust_correlation_for_scenario(
     base_correlation: float,
     scenario: SbmScenarioLabel,
+    *,
+    profile_id: str = SbmRegulatoryProfile.BASEL_MAR21.value,
 ) -> float:
     """
     Apply MAR21.6 correlation-scenario adjustments to one parameter.
 
-    Medium scenario uses the base value unchanged. High scenario multiplies by
-    1.25 and caps at 100%. Low scenario uses max(2 * rho - 100%, 75% * rho).
+    Delegates to profile-owned reference data so aggregation and lookup paths
+    share one implementation.
     """
-    _validate_finite_correlation(base_correlation, field="base_correlation")
-    if scenario is SbmScenarioLabel.MEDIUM:
-        return base_correlation
-    if scenario is SbmScenarioLabel.HIGH:
-        return min(base_correlation * 1.25, 1.0)
-    if scenario is SbmScenarioLabel.LOW:
-        return max(2.0 * base_correlation - 1.0, 0.75 * base_correlation)
-    raise SbmInputError(
-        f"unsupported correlation scenario: {scenario!r}",
-        field="scenario",
+    adjusted, _ = apply_correlation_scenario(
+        profile_id,
+        base_correlation=base_correlation,
+        scenario=scenario,
     )
+    return adjusted
 
 
 def adjust_correlation_matrix_for_scenario(
@@ -700,11 +699,6 @@ def _validate_correlation_matrix(
     if not np.allclose(np.diag(matrix), 1.0):
         raise SbmInputError("correlation_matrix diagonal must be 1.0", field="correlation_matrix")
     return matrix
-
-
-def _validate_finite_correlation(value: float, *, field: str) -> None:
-    if not math.isfinite(value):
-        raise SbmInputError(f"{field} must be finite", field=field)
 
 
 def _as_bucket_capital(
