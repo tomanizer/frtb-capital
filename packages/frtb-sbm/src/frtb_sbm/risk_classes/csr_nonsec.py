@@ -100,6 +100,7 @@ def aggregate_csr_nonsec_delta_measure_capital(
     )
     has_index = any(spec.bucket_id in {"17", "18"} for spec in intra_specs)
     has_non_index = any(spec.bucket_id not in {"17", "18"} for spec in intra_specs)
+    intra_citations: tuple[str, ...]
     if has_index and has_non_index:
         intra_citations = (
             "basel_mar21_4_intra_bucket",
