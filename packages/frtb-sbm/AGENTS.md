@@ -4,9 +4,10 @@
 
 ## Current status
 
-Phase 1 (#151) delivers a cited GIRR delta vertical slice. `calculate_sbm_capital`
-returns `SbmCapitalResult` for supported BASEL_MAR21 GIRR delta inputs and fails
-explicitly for vega, curvature, and non-GIRR paths.
+Phase 1 (#151) delivers cited GIRR delta/vega, FX delta, equity delta, commodity
+delta, and CSR non-sec delta slices under BASEL_MAR21. Curvature inputs can be
+validated via `validate_curvature_sensitivities`; curvature capital remains
+explicitly unsupported until #166.
 
 Package-local traceability lives under `packages/frtb-sbm/docs/`. See
 `REGULATORY_TRACEABILITY.md` for implemented/unsupported status by area.

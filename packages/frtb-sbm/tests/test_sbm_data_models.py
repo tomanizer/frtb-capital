@@ -145,7 +145,10 @@ def test_public_result_model_covers_weighted_bucket_risk_class_and_total() -> No
 def test_curvature_records_are_frozen() -> None:
     curvature_input = CurvatureInput(
         sensitivity_id="sens-curv-001",
+        risk_class=SbmRiskClass.GIRR,
         bucket="1",
+        risk_factor="USD",
+        amount_currency="USD",
         up_shock_amount=10_000.0,
         down_shock_amount=-8_000.0,
         citation_ids=("basel_mar21_curvature",),

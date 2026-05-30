@@ -21,6 +21,14 @@ from frtb_sbm.audit import (
     validate_sbm_result_reconciliation,
 )
 from frtb_sbm.capital import calculate_sbm_capital
+from frtb_sbm.curvature import (
+    CURVATURE_CAPITAL_REQUIREMENT_ID,
+    curvature_capital_unsupported_feature,
+    curvature_worst_branch,
+    ensure_sbm_curvature_capital_unsupported,
+    parse_curvature_input,
+    validate_curvature_sensitivities,
+)
 from frtb_sbm.data_models import (
     BucketCapital,
     CurvatureInput,
@@ -62,6 +70,7 @@ from frtb_sbm.reference_data import (
     citations_for_profile,
     correlation_scenario_definition,
     correlation_scenarios_for_profile,
+    curvature_citation_ids,
     fx_bucket_definition,
     fx_buckets_for_profile,
     fx_delta_intra_bucket_correlation,
@@ -120,6 +129,7 @@ from frtb_sbm.weighted_sensitivity import (
 )
 
 __all__ = [
+    "CURVATURE_CAPITAL_REQUIREMENT_ID",
     "FX_DELTA_RISK_WEIGHT",
     "FX_INTER_BUCKET_CORRELATION",
     "PACKAGE_METADATA",
@@ -176,8 +186,12 @@ __all__ = [
     "compute_weighted_sensitivities",
     "correlation_scenario_definition",
     "correlation_scenarios_for_profile",
+    "curvature_capital_unsupported_feature",
+    "curvature_citation_ids",
+    "curvature_worst_branch",
     "ensure_profile_supports_risk_class_measure",
     "ensure_sbm_capital_paths_supported",
+    "ensure_sbm_curvature_capital_unsupported",
     "ensure_sbm_profile_known",
     "ensure_sbm_risk_class_measure_supported",
     "ensure_sbm_run_supported",
@@ -205,6 +219,7 @@ __all__ = [
     "input_hash_for_sensitivities",
     "normalise_currency_code",
     "normalise_sensitivity_amount",
+    "parse_curvature_input",
     "phase1_capital_supported_paths",
     "profile_content_hash",
     "profile_reference_payload",
@@ -216,6 +231,7 @@ __all__ = [
     "sort_sensitivities_deterministic",
     "sort_weighted_sensitivities_deterministic",
     "supported_risk_class_measures",
+    "validate_curvature_sensitivities",
     "validate_sbm_calculation_context",
     "validate_sbm_result_reconciliation",
     "validate_sbm_sensitivities",
