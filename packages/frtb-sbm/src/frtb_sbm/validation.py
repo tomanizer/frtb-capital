@@ -431,6 +431,7 @@ def _validate_risk_class_fields(
 
 
 def _validate_fx_delta_fields(sensitivity: SbmSensitivity) -> None:
+    # Local import: reference_data -> commodity_reference_data -> validation.
     from frtb_sbm.reference_data import normalise_fx_delta_currency_code
 
     sensitivity_id = sensitivity.sensitivity_id

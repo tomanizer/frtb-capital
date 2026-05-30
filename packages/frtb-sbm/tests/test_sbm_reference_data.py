@@ -122,6 +122,22 @@ def test_fx_delta_risk_weight_treats_cnh_as_cny_for_specified_pairs() -> None:
     assert reduced == pytest.approx(FX_DELTA_RISK_WEIGHT / math.sqrt(2.0))
     assert "basel_mar21_88" in citations
 
+    zero_rw, zero_citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="CNH",
+        reporting_currency="CNH",
+    )
+    assert zero_rw == 0.0
+    assert "basel_mar21_87" in zero_citations
+
+    cny_zero_rw, cny_zero_citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        currency="CNY",
+        reporting_currency="CNH",
+    )
+    assert cny_zero_rw == 0.0
+    assert "basel_mar21_87" in cny_zero_citations
+
 
 @pytest.mark.parametrize(
     ("tenor", "maturity_years", "risk_weight"),

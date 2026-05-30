@@ -844,7 +844,7 @@ def fx_delta_risk_weight(
 
     _ensure_fx_delta_supported(profile)
     normalised_currency = normalise_fx_delta_currency_code(currency)
-    normalised_reporting = _require_currency(reporting_currency)
+    normalised_reporting = normalise_fx_delta_currency_code(reporting_currency)
     if normalised_currency == normalised_reporting:
         return 0.0, ("basel_mar21_87",)
     citation_ids: list[str] = ["basel_mar21_87"]
