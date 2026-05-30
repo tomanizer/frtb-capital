@@ -114,11 +114,13 @@ def test_ensure_sbm_capital_paths_supported_rejects_non_basel_profile() -> None:
         )
 
 
-def test_basel_curvature_measure_reports_curvature_specific_error() -> None:
+def test_basel_fx_curvature_measure_reports_unsupported_error() -> None:
     curvature = sample_sensitivity(
+        risk_class=SbmRiskClass.FX,
         risk_measure=SbmRiskMeasure.CURVATURE,
         up_shock_amount=-100.0,
         down_shock_amount=-200.0,
+        tenor="1y",
     )
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):
         ensure_sbm_capital_paths_supported(

@@ -25,9 +25,11 @@ from frtb_sbm.curvature import (
     CURVATURE_CAPITAL_REQUIREMENT_ID,
     curvature_capital_unsupported_feature,
     curvature_worst_branch,
-    ensure_sbm_curvature_capital_unsupported,
+    calculate_curvature_risk_class_capital,
+    calculate_girr_curvature_risk_class_capital,
     parse_curvature_input,
     validate_curvature_sensitivities,
+    weight_girr_curvature_sensitivities,
 )
 from frtb_sbm.data_models import (
     BucketCapital,
@@ -194,7 +196,6 @@ __all__ = [
     "curvature_worst_branch",
     "ensure_profile_supports_risk_class_measure",
     "ensure_sbm_capital_paths_supported",
-    "ensure_sbm_curvature_capital_unsupported",
     "ensure_sbm_profile_known",
     "ensure_sbm_risk_class_measure_supported",
     "ensure_sbm_run_supported",
@@ -236,6 +237,7 @@ __all__ = [
     "sort_weighted_sensitivities_deterministic",
     "supported_risk_class_measures",
     "validate_curvature_sensitivities",
+    "weight_girr_curvature_sensitivities",
     "validate_sbm_calculation_context",
     "validate_sbm_result_reconciliation",
     "validate_sbm_sensitivities",

@@ -248,6 +248,7 @@ class RiskClassCapital:
     selected_scenario: SbmScenarioLabel | None = None
     scenario_details: tuple[RiskClassScenarioDetail, ...] = ()
     scenario_selection: SbmBranchMetadata | None = None
+    curvature_branches: tuple[CurvatureBranchRecord, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -269,6 +270,17 @@ class CurvatureInput:
     bucket: str
     risk_factor: str
     amount_currency: str
+    up_shock_amount: float
+    down_shock_amount: float
+    citation_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CurvatureBranchRecord:
+    """Per-sensitivity curvature branch selection retained for audit replay."""
+
+    sensitivity_id: str
+    selected_branch: str
     up_shock_amount: float
     down_shock_amount: float
     citation_ids: tuple[str, ...]
@@ -356,6 +368,7 @@ class SbmCapitalResult:
 
 __all__ = [
     "BucketCapital",
+    "CurvatureBranchRecord",
     "CurvatureInput",
     "CurvatureResult",
     "IntraBucketScenarioRecord",

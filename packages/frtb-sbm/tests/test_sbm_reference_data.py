@@ -484,8 +484,8 @@ def test_missing_lookup_keys_raise_input_errors() -> None:
 @pytest.mark.parametrize(
     ("risk_class", "risk_measure"),
     [
-        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
     ],

@@ -200,7 +200,7 @@ def test_validate_sbm_sensitivities_requires_curvature_shock_amounts() -> None:
     assert_rejects(
         sample_sensitivity(
             risk_measure=SbmRiskMeasure.CURVATURE,
-            tenor=None,
+            tenor="5y",
             up_shock_amount=None,
             down_shock_amount=None,
         ),

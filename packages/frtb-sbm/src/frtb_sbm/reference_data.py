@@ -1057,11 +1057,15 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
     }
     from frtb_sbm.commodity_reference_data import commodity_reference_payload
     from frtb_sbm.csr_nonsec_reference_data import csr_nonsec_reference_payload
+    from frtb_sbm.csr_sec_ctp_reference_data import csr_sec_ctp_reference_payload
+    from frtb_sbm.csr_sec_nonctp_reference_data import csr_sec_nonctp_reference_payload
     from frtb_sbm.equity_reference_data import equity_reference_payload
 
     payload.update(equity_reference_payload(resolved))
     payload.update(commodity_reference_payload(resolved))
     payload.update(csr_nonsec_reference_payload(resolved))
+    payload.update(csr_sec_nonctp_reference_payload(resolved))
+    payload.update(csr_sec_ctp_reference_payload(resolved))
     return payload
 
 
