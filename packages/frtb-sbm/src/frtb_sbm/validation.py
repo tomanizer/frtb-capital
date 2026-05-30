@@ -37,6 +37,10 @@ _TENOR_REQUIRED: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozenset(
     }
 )
 
+_OPTION_TENOR_REQUIRED: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozenset(
+    {(SbmRiskClass.GIRR, SbmRiskMeasure.VEGA)}
+)
+
 _QUALIFIER_REQUIRED: frozenset[SbmRiskClass] = frozenset(
     {
         SbmRiskClass.CSR_NONSEC,
@@ -49,7 +53,12 @@ _QUALIFIER_REQUIRED: frozenset[SbmRiskClass] = frozenset(
 
 _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
     SbmRegulatoryProfile.US_NPR_2_0.value: frozenset(),
-    SbmRegulatoryProfile.BASEL_MAR21.value: frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)}),
+    SbmRegulatoryProfile.BASEL_MAR21.value: frozenset(
+        {
+            (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+        }
+    ),
     SbmRegulatoryProfile.EU_CRR3.value: frozenset(),
     SbmRegulatoryProfile.PRA_UK_CRR.value: frozenset(),
 }
@@ -340,6 +349,16 @@ def _validate_risk_class_fields(
     if (risk_class, risk_measure) in _TENOR_REQUIRED:
         _require_text(sensitivity.tenor, "tenor", sensitivity_id)
 
+    if (risk_class, risk_measure) in _OPTION_TENOR_REQUIRED:
+        _require_text(sensitivity.option_tenor, "option_tenor", sensitivity_id)
+
+    if sensitivity.liquidity_horizon_days is not None:
+        _require_positive_int(
+            sensitivity.liquidity_horizon_days,
+            "liquidity_horizon_days",
+            sensitivity_id,
+        )
+
     for field_name in ("tenor", "option_tenor", "maturity", "qualifier"):
         value = getattr(sensitivity, field_name)
         if value is not None:
@@ -411,6 +430,22 @@ def _require_text(value: object, field: str, sensitivity_id: str = "") -> str:
 
 def _is_blank(value: str | None) -> bool:
     return value is None or value.strip() == ""
+
+
+def _require_positive_int(value: object, field: str, sensitivity_id: str = "") -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise SbmInputError(
+            "value must be a positive integer",
+            field=field,
+            sensitivity_id=sensitivity_id,
+        )
+    if value <= 0:
+        raise SbmInputError(
+            "value must be a positive integer",
+            field=field,
+            sensitivity_id=sensitivity_id,
+        )
+    return value
 
 
 __all__ = [

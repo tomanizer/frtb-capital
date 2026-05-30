@@ -69,10 +69,6 @@ def _sensitivity_from_payload(payload: dict[str, Any]) -> SbmSensitivity:
         optional_fields["option_tenor"] = str(payload["option_tenor"])
     if "liquidity_horizon_days" in payload:
         optional_fields["liquidity_horizon_days"] = int(payload["liquidity_horizon_days"])
-    if "up_shock_amount" in payload:
-        optional_fields["up_shock_amount"] = float(payload["up_shock_amount"])
-    if "down_shock_amount" in payload:
-        optional_fields["down_shock_amount"] = float(payload["down_shock_amount"])
     return SbmSensitivity(
         sensitivity_id=str(payload["sensitivity_id"]),
         source_row_id=source_row_id,

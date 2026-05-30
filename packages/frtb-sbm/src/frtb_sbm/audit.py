@@ -196,6 +196,7 @@ def _sensitivity_payload(sensitivity: SbmSensitivity) -> dict[str, object]:
         "qualifier": sensitivity.qualifier,
         "tenor": sensitivity.tenor,
         "option_tenor": sensitivity.option_tenor,
+        "liquidity_horizon_days": sensitivity.liquidity_horizon_days,
         "maturity": sensitivity.maturity,
         "up_shock_amount": sensitivity.up_shock_amount,
         "down_shock_amount": sensitivity.down_shock_amount,

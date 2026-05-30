@@ -23,6 +23,9 @@ from frtb_sbm.validation import SbmInputError
 BASEL_MAR21_URL = "https://www.bis.org/basel_framework/chapter/MAR/21.htm"
 
 GIRR_DELTA_INTRA_BUCKET_CONSTANT = 0.03
+GIRR_VEGA_INTRA_BUCKET_CONSTANT = 0.01
+GIRR_VEGA_RISK_WEIGHT_FACTOR = 0.55
+GIRR_VEGA_RISK_WEIGHT_CAP = 1.0
 GIRR_INTRA_BUCKET_CORRELATION_FLOOR = 0.40
 GIRR_INTER_BUCKET_CORRELATION = 0.50
 GIRR_SAME_CURVE_CORRELATION = 1.0
@@ -129,6 +132,24 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         location="MAR21.43",
         url=BASEL_MAR21_URL,
         note="Low, medium, and high correlation scenario adjustments.",
+    ),
+    "basel_mar21_91": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.91",
+        url=BASEL_MAR21_URL,
+        note="GIRR vega risk-factor and bucket assignment.",
+    ),
+    "basel_mar21_92": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.92",
+        url=BASEL_MAR21_URL,
+        note="GIRR vega liquidity horizon and risk-weight scaling (Table 13).",
+    ),
+    "basel_mar21_93": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.93",
+        url=BASEL_MAR21_URL,
+        note="GIRR vega intra-bucket correlation from option and underlying tenors.",
     ),
 }
 
@@ -237,6 +258,17 @@ PROFILE_CORRELATION_SCENARIOS: dict[
     tuple[SbmCorrelationScenarioDefinition, ...],
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_CORRELATION_SCENARIOS,
+}
+
+PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS: dict[SbmRegulatoryProfile, int] = {
+    SbmRegulatoryProfile.BASEL_MAR21: 60,
+}
+
+PROFILE_GIRR_VEGA_OPTION_TENORS: dict[
+    SbmRegulatoryProfile,
+    tuple[SbmGirrTenorDefinition, ...],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_TENORS,
 }
 
 
@@ -389,11 +421,96 @@ def girr_delta_intra_bucket_correlation(
 
     maturity1 = girr_tenor_definition(profile, normalised_tenor1).maturity_years
     maturity2 = girr_tenor_definition(profile, normalised_tenor2).maturity_years
-    tenor_correlation = _exponential_tenor_correlation(maturity1, maturity2)
+    tenor_correlation = _exponential_tenor_correlation(
+        maturity1,
+        maturity2,
+        constant=GIRR_DELTA_INTRA_BUCKET_CONSTANT,
+        floor=GIRR_INTRA_BUCKET_CORRELATION_FLOOR,
+    )
     curve_correlation = (
         GIRR_SAME_CURVE_CORRELATION if same_curve else GIRR_DIFFERENT_CURVE_CORRELATION
     )
     return curve_correlation * tenor_correlation, citation_ids
+
+
+def girr_vega_liquidity_horizon_days(profile: SbmRegulatoryProfile | str) -> int:
+    """Return the cited GIRR vega liquidity horizon in days for a profile."""
+
+    resolved = _resolve_supported_profile(profile)
+    _ensure_girr_vega_supported(profile)
+    return PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS[resolved]
+
+
+def vega_risk_weight(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    liquidity_horizon_days: int,
+) -> tuple[float, tuple[str, ...]]:
+    """Return the cited vega risk weight min(100%, 55% * sqrt(LH/10))."""
+
+    _ensure_girr_vega_supported(profile)
+    horizon = _require_positive_int(liquidity_horizon_days, "liquidity_horizon_days")
+    risk_weight = min(
+        GIRR_VEGA_RISK_WEIGHT_CAP,
+        GIRR_VEGA_RISK_WEIGHT_FACTOR * math.sqrt(horizon / 10.0),
+    )
+    return risk_weight, ("basel_mar21_92",)
+
+
+def girr_vega_option_tenors(
+    profile: SbmRegulatoryProfile | str,
+) -> tuple[SbmGirrTenorDefinition, ...]:
+    """Return the prescribed GIRR vega option-tenor set for a supported profile."""
+
+    resolved = _resolve_supported_profile(profile)
+    _ensure_girr_vega_supported(profile)
+    return PROFILE_GIRR_VEGA_OPTION_TENORS[resolved]
+
+
+def girr_vega_option_tenor_definition(
+    profile: SbmRegulatoryProfile | str,
+    option_tenor: str,
+) -> SbmGirrTenorDefinition:
+    """Return the GIRR vega option-tenor definition for a canonical label."""
+
+    normalised = _require_text(option_tenor, "option_tenor")
+    for tenor_definition in girr_vega_option_tenors(profile):
+        if tenor_definition.tenor == normalised:
+            return tenor_definition
+    raise SbmInputError(
+        f"no GIRR vega option tenor definition for option_tenor {normalised}",
+        field="option_tenor",
+    )
+
+
+def girr_vega_intra_bucket_correlation(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    option_tenor1: str,
+    option_tenor2: str,
+    tenor1: str,
+    tenor2: str,
+) -> tuple[float, tuple[str, ...]]:
+    """Return min(1, rho_opt * rho_ul) with 1% exponential tenor constants."""
+
+    _ensure_girr_vega_supported(profile)
+    option_maturity1 = girr_vega_option_tenor_definition(profile, option_tenor1).maturity_years
+    option_maturity2 = girr_vega_option_tenor_definition(profile, option_tenor2).maturity_years
+    underlying_maturity1 = girr_tenor_definition(profile, tenor1).maturity_years
+    underlying_maturity2 = girr_tenor_definition(profile, tenor2).maturity_years
+    rho_opt = _exponential_tenor_correlation(
+        option_maturity1,
+        option_maturity2,
+        constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
+        floor=None,
+    )
+    rho_ul = _exponential_tenor_correlation(
+        underlying_maturity1,
+        underlying_maturity2,
+        constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
+        floor=None,
+    )
+    return min(1.0, rho_opt * rho_ul), ("basel_mar21_93",)
 
 
 def girr_inter_bucket_correlation(
@@ -404,7 +521,7 @@ def girr_inter_bucket_correlation(
 ) -> tuple[float, tuple[str, ...]]:
     """Return the cited GIRR inter-bucket correlation and citation ids."""
 
-    _ensure_girr_delta_supported(profile)
+    _ensure_girr_supported(profile)
     normalised_bucket1 = _require_text(bucket1, "bucket1")
     normalised_bucket2 = _require_text(bucket2, "bucket2")
     girr_bucket_definition(profile, normalised_bucket1)
@@ -526,15 +643,39 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
             "intra_bucket_citation_id": "basel_mar21_41",
             "inter_bucket_citation_id": "basel_mar21_42",
         },
+        "girr_vega_parameters": {
+            "liquidity_horizon_days": PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS[resolved],
+            "risk_weight_factor": GIRR_VEGA_RISK_WEIGHT_FACTOR,
+            "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
+            "intra_bucket_constant": GIRR_VEGA_INTRA_BUCKET_CONSTANT,
+            "liquidity_horizon_citation_id": "basel_mar21_92",
+            "intra_bucket_citation_id": "basel_mar21_93",
+        },
+        "girr_vega_option_tenors": [
+            {
+                "tenor": tenor.tenor,
+                "maturity_years": tenor.maturity_years,
+                "citation_id": tenor.citation_id,
+            }
+            for tenor in girr_vega_option_tenors(resolved)
+        ],
     }
 
 
-def _ensure_girr_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
+def _ensure_girr_supported(profile: SbmRegulatoryProfile | str) -> None:
     resolved = _resolve_supported_profile(profile)
     if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
         raise UnsupportedRegulatoryFeatureError(
-            f"GIRR delta reference data is unsupported for profile {resolved.value}"
+            f"GIRR reference data is unsupported for profile {resolved.value}"
         )
+
+
+def _ensure_girr_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
+    _ensure_girr_supported(profile)
+
+
+def _ensure_girr_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
+    _ensure_girr_supported(profile)
 
 
 def _resolve_supported_profile(profile: SbmRegulatoryProfile | str) -> SbmRegulatoryProfile:
@@ -559,12 +700,29 @@ def _apply_sqrt2_adjustment(*, tenor: str, currency: str, reporting_currency: st
     return currency == reporting_currency or currency in LIQUID_GIRR_CURRENCIES
 
 
-def _exponential_tenor_correlation(tenor1_years: float, tenor2_years: float) -> float:
+def _exponential_tenor_correlation(
+    tenor1_years: float,
+    tenor2_years: float,
+    *,
+    constant: float,
+    floor: float | None,
+) -> float:
     if tenor1_years <= 0.0 or tenor2_years <= 0.0:
         return GIRR_SAME_CURVE_CORRELATION
     minimum_tenor = min(tenor1_years, tenor2_years)
-    exponent = -GIRR_DELTA_INTRA_BUCKET_CONSTANT * abs(tenor1_years - tenor2_years) / minimum_tenor
-    return max(math.exp(exponent), GIRR_INTRA_BUCKET_CORRELATION_FLOOR)
+    exponent = -constant * abs(tenor1_years - tenor2_years) / minimum_tenor
+    correlation = math.exp(exponent)
+    if floor is None:
+        return correlation
+    return max(correlation, floor)
+
+
+def _require_positive_int(value: object, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise SbmInputError(f"{field} must be a positive integer", field=field)
+    if value <= 0:
+        raise SbmInputError(f"{field} must be a positive integer", field=field)
+    return value
 
 
 def _coerce_scenario(value: SbmScenarioLabel | str) -> SbmScenarioLabel:
@@ -604,7 +762,11 @@ __all__ = [
     "BASEL_GIRR_TENORS",
     "GIRR_DELTA_INTRA_BUCKET_CONSTANT",
     "GIRR_INTER_BUCKET_CORRELATION",
+    "GIRR_VEGA_INTRA_BUCKET_CONSTANT",
+    "GIRR_VEGA_RISK_WEIGHT_CAP",
+    "GIRR_VEGA_RISK_WEIGHT_FACTOR",
     "LIQUID_GIRR_CURRENCIES",
+    "PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS",
     "SbmCorrelationScenarioDefinition",
     "SbmGirrBucketDefinition",
     "SbmGirrRiskWeightRule",
@@ -623,5 +785,10 @@ __all__ = [
     "girr_inter_bucket_correlation",
     "girr_tenor_definition",
     "girr_tenors_for_profile",
+    "girr_vega_intra_bucket_correlation",
+    "girr_vega_liquidity_horizon_days",
+    "girr_vega_option_tenor_definition",
+    "girr_vega_option_tenors",
     "profile_reference_payload",
+    "vega_risk_weight",
 ]
