@@ -72,6 +72,19 @@ must raise an explicit unsupported-feature or input error. The package must not
 emit zero, empty, or placeholder capital for unsupported risk classes, risk
 measures, buckets, or profile features (SBM-BOUNDARY-003).
 
+## CNH/CNY mapping (ADR 0015)
+
+Basel MAR21 treats onshore/offshore renminbi differently across risk classes:
+
+| Risk class | CNY | CNH | Regulatory basis |
+| --- | --- | --- | --- |
+| GIRR delta/vega | Bucket `8` | Bucket `17` (separate bucket) | MAR21.41; MAR21.8(c) separate curves |
+| FX delta | Bucket `CNY` | Normalised to `CNY` bucket | MAR21.14(4); MAR21.88 specified pairs |
+
+Callers must supply GIRR sensitivities with the curve denomination matching the
+canonical bucket currency. FX inputs may use `CNH`; `normalise_fx_delta_currency_code`
+maps to `CNY` before bucket lookup.
+
 ## Audit and orchestration boundary
 
 The first successful `SbmCapitalResult` must already include stable ids, profile

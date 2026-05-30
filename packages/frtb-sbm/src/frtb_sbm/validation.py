@@ -431,16 +431,22 @@ def _validate_risk_class_fields(
 
 
 def _validate_fx_delta_fields(sensitivity: SbmSensitivity) -> None:
+    from frtb_sbm.reference_data import normalise_fx_delta_currency_code
+
     sensitivity_id = sensitivity.sensitivity_id
-    bucket = normalise_currency_code(
-        sensitivity.bucket,
-        field="bucket",
-        sensitivity_id=sensitivity_id,
+    bucket = normalise_fx_delta_currency_code(
+        normalise_currency_code(
+            sensitivity.bucket,
+            field="bucket",
+            sensitivity_id=sensitivity_id,
+        )
     )
-    risk_factor = normalise_currency_code(
-        sensitivity.risk_factor,
-        field="risk_factor",
-        sensitivity_id=sensitivity_id,
+    risk_factor = normalise_fx_delta_currency_code(
+        normalise_currency_code(
+            sensitivity.risk_factor,
+            field="risk_factor",
+            sensitivity_id=sensitivity_id,
+        )
     )
     if bucket != risk_factor:
         raise SbmInputError(
