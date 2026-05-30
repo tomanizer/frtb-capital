@@ -353,7 +353,7 @@ def _validate_risk_class_fields(
         _require_text(sensitivity.option_tenor, "option_tenor", sensitivity_id)
 
     if sensitivity.liquidity_horizon_days is not None:
-        _require_positive_int(
+        require_positive_int(
             sensitivity.liquidity_horizon_days,
             "liquidity_horizon_days",
             sensitivity_id,
@@ -432,7 +432,7 @@ def _is_blank(value: str | None) -> bool:
     return value is None or value.strip() == ""
 
 
-def _require_positive_int(value: object, field: str, sensitivity_id: str = "") -> int:
+def require_positive_int(value: object, field: str, sensitivity_id: str = "") -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise SbmInputError(
             "value must be a positive integer",
@@ -458,6 +458,7 @@ __all__ = [
     "ensure_sbm_run_supported",
     "normalise_currency_code",
     "normalise_sensitivity_amount",
+    "require_positive_int",
     "sensitivity_sort_key",
     "sort_sensitivities_deterministic",
     "validate_sbm_calculation_context",

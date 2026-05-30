@@ -135,7 +135,6 @@ def _calculate_girr_delta_risk_class_capital(
     tenor_by_id = {item.sensitivity_id: item.tenor or "" for item in sensitivities}
     risk_factor_by_id = {item.sensitivity_id: item.risk_factor for item in sensitivities}
     return _aggregate_girr_measure_capital(
-        sensitivities,
         weighted,
         profile_id=profile_id,
         risk_measure=SbmRiskMeasure.DELTA,
@@ -156,7 +155,6 @@ def _calculate_girr_vega_risk_class_capital(
     option_tenor_by_id = {item.sensitivity_id: item.option_tenor or "" for item in sensitivities}
     tenor_by_id = {item.sensitivity_id: item.tenor or "" for item in sensitivities}
     return _aggregate_girr_measure_capital(
-        sensitivities,
         weighted,
         profile_id=profile_id,
         risk_measure=SbmRiskMeasure.VEGA,
@@ -166,7 +164,6 @@ def _calculate_girr_vega_risk_class_capital(
 
 
 def _aggregate_girr_measure_capital(
-    sensitivities: tuple[SbmSensitivity, ...],
     weighted: tuple[WeightedSensitivity, ...],
     *,
     profile_id: str,
@@ -175,7 +172,6 @@ def _aggregate_girr_measure_capital(
     risk_factor_by_id: Mapping[str, str] | None = None,
     option_tenor_by_id: Mapping[str, str] | None = None,
 ) -> RiskClassCapital:
-    del sensitivities
     grouped = group_weighted_sensitivities_by_bucket(weighted)
 
     intra_results = []

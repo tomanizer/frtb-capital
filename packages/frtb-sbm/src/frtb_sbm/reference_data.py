@@ -18,7 +18,7 @@ from frtb_sbm.data_models import (
     SbmRegulatoryProfile,
     SbmScenarioLabel,
 )
-from frtb_sbm.validation import SbmInputError
+from frtb_sbm.validation import SbmInputError, require_positive_int
 
 BASEL_MAR21_URL = "https://www.bis.org/basel_framework/chapter/MAR/21.htm"
 
@@ -449,7 +449,7 @@ def vega_risk_weight(
     """Return the cited vega risk weight min(100%, 55% * sqrt(LH/10))."""
 
     _ensure_girr_vega_supported(profile)
-    horizon = _require_positive_int(liquidity_horizon_days, "liquidity_horizon_days")
+    horizon = require_positive_int(liquidity_horizon_days, "liquidity_horizon_days")
     risk_weight = min(
         GIRR_VEGA_RISK_WEIGHT_CAP,
         GIRR_VEGA_RISK_WEIGHT_FACTOR * math.sqrt(horizon / 10.0),
@@ -715,14 +715,6 @@ def _exponential_tenor_correlation(
     if floor is None:
         return correlation
     return max(correlation, floor)
-
-
-def _require_positive_int(value: object, field: str) -> int:
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise SbmInputError(f"{field} must be a positive integer", field=field)
-    if value <= 0:
-        raise SbmInputError(f"{field} must be a positive integer", field=field)
-    return value
 
 
 def _coerce_scenario(value: SbmScenarioLabel | str) -> SbmScenarioLabel:
