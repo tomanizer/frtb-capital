@@ -133,152 +133,173 @@ def serialize_cva_result(result: CvaCapitalResult) -> dict[str, object]:
 def validate_cva_result_reconciliation(result: CvaCapitalResult) -> None:
     """Raise when a public CVA result does not reconcile to its line records."""
 
+    _validate_cva_result_hashes(result)
+    _validate_mixed_method_reconciliation(result)
+    _validate_ba_cva_full_reconciliation(result)
+    _validate_ba_cva_reduced_reconciliation(result)
+
+    if result.method is CvaMethod.SA_CVA:
+        _validate_sa_cva_reconciliation(result)
+
+
+def _validate_cva_result_hashes(result: CvaCapitalResult) -> None:
     _validate_hash("profile_hash", result.profile_hash)
     _validate_hash("input_hash", result.input_hash)
 
+
+def _validate_mixed_method_reconciliation(result: CvaCapitalResult) -> None:
+    if result.method is not CvaMethod.MIXED_CARVE_OUT:
+        return
+    if not result.method_components:
+        raise CvaInputError(
+            "mixed carve-out result requires method component totals",
+            field="method_components",
+        )
+    expected_total = sum(component.total_capital for component in result.method_components)
+    if not is_reconciled(result.total_cva_capital, expected_total):
+        raise CvaInputError(
+            "total CVA capital does not reconcile to mixed-method components",
+            field="total_cva_capital",
+        )
+
+
+def _validate_ba_cva_full_reconciliation(result: CvaCapitalResult) -> None:
+    if result.method is not CvaMethod.BA_CVA_FULL:
+        return
+    if result.ba_cva_full is None:
+        raise CvaInputError(
+            "BA-CVA full result is required for reconciliation",
+            field="ba_cva_full",
+        )
+    full = result.ba_cva_full
+    if not is_reconciled(result.total_cva_capital, full.k_full):
+        raise CvaInputError(
+            "total CVA capital does not reconcile to full BA-CVA capital",
+            field="total_cva_capital",
+        )
+    floor = full.beta * full.k_reduced
+    if full.k_full + 1e-12 < floor:
+        raise CvaInputError(
+            "full BA-CVA capital is below beta floor",
+            field="k_full",
+        )
+
+
+def _validate_ba_cva_reduced_reconciliation(result: CvaCapitalResult) -> None:
     if result.ba_cva_reduced is None and result.method is CvaMethod.BA_CVA_REDUCED:
         raise CvaInputError(
             "BA-CVA reduced result is required for reconciliation",
             field="ba_cva_reduced",
         )
 
-    if result.method is CvaMethod.MIXED_CARVE_OUT:
-        if not result.method_components:
+    reduced = result.ba_cva_reduced
+    if reduced is None:
+        return
+
+    if result.method is CvaMethod.BA_CVA_REDUCED and not is_reconciled(
+        result.total_cva_capital, reduced.k_reduced
+    ):
+        raise CvaInputError(
+            "total CVA capital does not reconcile to reduced BA-CVA capital",
+            field="total_cva_capital",
+        )
+
+    if result.ba_cva_netting_set_lines != reduced.netting_set_lines:
+        raise CvaInputError(
+            "netting-set lines do not reconcile to reduced portfolio records",
+            field="ba_cva_netting_set_lines",
+        )
+
+    if result.ba_cva_counterparty_capitals != reduced.counterparty_capitals:
+        raise CvaInputError(
+            "counterparty capitals do not reconcile to reduced portfolio records",
+            field="ba_cva_counterparty_capitals",
+        )
+
+    for counterparty in reduced.counterparty_capitals:
+        expected_total = sum(
+            line.standalone_capital
+            for line in reduced.netting_set_lines
+            if line.counterparty_id == counterparty.counterparty_id
+        )
+        if not is_reconciled(counterparty.standalone_capital, expected_total):
             raise CvaInputError(
-                "mixed carve-out result requires method component totals",
-                field="method_components",
-            )
-        expected_total = sum(component.total_capital for component in result.method_components)
-        if not is_reconciled(result.total_cva_capital, expected_total):
-            raise CvaInputError(
-                "total CVA capital does not reconcile to mixed-method components",
-                field="total_cva_capital",
+                "counterparty stand-alone capital does not reconcile to netting-set lines",
+                field="standalone_capital",
+                record_id=counterparty.counterparty_id,
             )
 
-    if result.method is CvaMethod.BA_CVA_FULL:
-        if result.ba_cva_full is None:
-            raise CvaInputError(
-                "BA-CVA full result is required for reconciliation",
-                field="ba_cva_full",
-            )
-        full = result.ba_cva_full
-        if not is_reconciled(result.total_cva_capital, full.k_full):
-            raise CvaInputError(
-                "total CVA capital does not reconcile to full BA-CVA capital",
-                field="total_cva_capital",
-            )
-        floor = full.beta * full.k_reduced
-        if full.k_full + 1e-12 < floor:
-            raise CvaInputError(
-                "full BA-CVA capital is below beta floor",
-                field="k_full",
-            )
+    standalones = [capital.standalone_capital for capital in reduced.counterparty_capitals]
+    if not is_reconciled(reduced.sum_scva, sum(standalones)):
+        raise CvaInputError(
+            "reduced portfolio sum_scva does not reconcile",
+            field="sum_scva",
+        )
 
-    if result.ba_cva_reduced is not None:
-        reduced = result.ba_cva_reduced
-        if result.method is CvaMethod.BA_CVA_REDUCED and not is_reconciled(
-            result.total_cva_capital, reduced.k_reduced
+    expected_portfolio = (
+        reduced.rho * (reduced.sum_scva**2) + (1.0 - reduced.rho) * reduced.sum_scva_squared
+    ) ** 0.5
+    if not is_reconciled(reduced.k_portfolio, expected_portfolio):
+        raise CvaInputError(
+            "portfolio capital does not reconcile to MAR50.14 components",
+            field="k_portfolio",
+        )
+
+    if not is_reconciled(reduced.k_reduced, reduced.d_ba_cva * reduced.k_portfolio):
+        raise CvaInputError(
+            "reduced capital does not reconcile to discount scalar",
+            field="k_reduced",
+        )
+
+
+def _validate_sa_cva_reconciliation(result: CvaCapitalResult) -> None:
+    if not result.sa_cva_risk_class_capitals:
+        raise CvaInputError(
+            "SA-CVA result requires at least one risk-class capital record",
+            field="sa_cva_risk_class_capitals",
+        )
+    expected_total = sum(
+        risk_class_capital.post_multiplier_capital
+        for risk_class_capital in result.sa_cva_risk_class_capitals
+    )
+    if not is_reconciled(result.total_cva_capital, expected_total):
+        raise CvaInputError(
+            "total CVA capital does not reconcile to SA-CVA risk-class totals",
+            field="total_cva_capital",
+        )
+    for risk_class_capital in result.sa_cva_risk_class_capitals:
+        expected_post = risk_class_capital.m_cva * risk_class_capital.pre_multiplier_capital
+        if not is_reconciled(risk_class_capital.post_multiplier_capital, expected_post):
+            raise CvaInputError(
+                "SA-CVA risk-class post-multiplier capital does not reconcile",
+                field="post_multiplier_capital",
+                record_id=risk_class_capital.risk_class.value,
+            )
+        if not risk_class_capital.bucket_capitals:
+            raise CvaInputError(
+                "SA-CVA risk-class result requires at least one bucket capital",
+                field="bucket_capitals",
+                record_id=risk_class_capital.risk_class.value,
+            )
+        recomputed = aggregate_inter_bucket(
+            risk_class_capital.bucket_capitals,
+            config=sa_cva_aggregation_config(
+                risk_class_capital.risk_class,
+                risk_class_capital.risk_measure,
+                profile=result.profile_id,
+            ),
+            m_cva=risk_class_capital.m_cva,
+            profile=result.profile_id,
+        )
+        if not is_reconciled(
+            risk_class_capital.pre_multiplier_capital,
+            recomputed.pre_multiplier_capital,
         ):
             raise CvaInputError(
-                "total CVA capital does not reconcile to reduced BA-CVA capital",
-                field="total_cva_capital",
+                "SA-CVA pre-multiplier capital does not reconcile to bucket capitals",
+                field="pre_multiplier_capital",
+                record_id=risk_class_capital.risk_class.value,
             )
-
-        if result.ba_cva_netting_set_lines != reduced.netting_set_lines:
-            raise CvaInputError(
-                "netting-set lines do not reconcile to reduced portfolio records",
-                field="ba_cva_netting_set_lines",
-            )
-
-        if result.ba_cva_counterparty_capitals != reduced.counterparty_capitals:
-            raise CvaInputError(
-                "counterparty capitals do not reconcile to reduced portfolio records",
-                field="ba_cva_counterparty_capitals",
-            )
-
-        for counterparty in reduced.counterparty_capitals:
-            expected_total = sum(
-                line.standalone_capital
-                for line in reduced.netting_set_lines
-                if line.counterparty_id == counterparty.counterparty_id
-            )
-            if not is_reconciled(counterparty.standalone_capital, expected_total):
-                raise CvaInputError(
-                    "counterparty stand-alone capital does not reconcile to netting-set lines",
-                    field="standalone_capital",
-                    record_id=counterparty.counterparty_id,
-                )
-
-        standalones = [capital.standalone_capital for capital in reduced.counterparty_capitals]
-        if not is_reconciled(reduced.sum_scva, sum(standalones)):
-            raise CvaInputError(
-                "reduced portfolio sum_scva does not reconcile",
-                field="sum_scva",
-            )
-
-        expected_portfolio = (
-            reduced.rho * (reduced.sum_scva**2) + (1.0 - reduced.rho) * reduced.sum_scva_squared
-        ) ** 0.5
-        if not is_reconciled(reduced.k_portfolio, expected_portfolio):
-            raise CvaInputError(
-                "portfolio capital does not reconcile to MAR50.14 components",
-                field="k_portfolio",
-            )
-
-        if not is_reconciled(reduced.k_reduced, reduced.d_ba_cva * reduced.k_portfolio):
-            raise CvaInputError(
-                "reduced capital does not reconcile to discount scalar",
-                field="k_reduced",
-            )
-
-    if result.method is CvaMethod.SA_CVA:
-        if not result.sa_cva_risk_class_capitals:
-            raise CvaInputError(
-                "SA-CVA result requires at least one risk-class capital record",
-                field="sa_cva_risk_class_capitals",
-            )
-        expected_total = sum(
-            risk_class_capital.post_multiplier_capital
-            for risk_class_capital in result.sa_cva_risk_class_capitals
-        )
-        if not is_reconciled(result.total_cva_capital, expected_total):
-            raise CvaInputError(
-                "total CVA capital does not reconcile to SA-CVA risk-class totals",
-                field="total_cva_capital",
-            )
-        for risk_class_capital in result.sa_cva_risk_class_capitals:
-            expected_post = risk_class_capital.m_cva * risk_class_capital.pre_multiplier_capital
-            if not is_reconciled(risk_class_capital.post_multiplier_capital, expected_post):
-                raise CvaInputError(
-                    "SA-CVA risk-class post-multiplier capital does not reconcile",
-                    field="post_multiplier_capital",
-                    record_id=risk_class_capital.risk_class.value,
-                )
-            if not risk_class_capital.bucket_capitals:
-                raise CvaInputError(
-                    "SA-CVA risk-class result requires at least one bucket capital",
-                    field="bucket_capitals",
-                    record_id=risk_class_capital.risk_class.value,
-                )
-            recomputed = aggregate_inter_bucket(
-                risk_class_capital.bucket_capitals,
-                config=sa_cva_aggregation_config(
-                    risk_class_capital.risk_class,
-                    risk_class_capital.risk_measure,
-                    profile=result.profile_id,
-                ),
-                m_cva=risk_class_capital.m_cva,
-                profile=result.profile_id,
-            )
-            if not is_reconciled(
-                risk_class_capital.pre_multiplier_capital,
-                recomputed.pre_multiplier_capital,
-            ):
-                raise CvaInputError(
-                    "SA-CVA pre-multiplier capital does not reconcile to bucket capitals",
-                    field="pre_multiplier_capital",
-                    record_id=risk_class_capital.risk_class.value,
-                )
 
 
 def _validate_hash(field: str, value: str) -> None:

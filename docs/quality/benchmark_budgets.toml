@@ -1,0 +1,21 @@
+schema_version = 1
+
+# Regression budgets for local/CI benchmark checks. Thresholds are intentionally
+# generous relative to the 2026-05-31 audit snapshot to catch large regressions
+# without blocking normal CI on developer hardware variance.
+
+[[benchmarks]]
+name = "frtb-ima-target-scale"
+artifact = "dist/benchmarks/frtb-ima-target-scale.json"
+wall_clock_path = ["totals", "wall_clock_seconds"]
+wall_clock_seconds_max = 120.0
+metric_path = ["phase_timings", "imcc_decomposition", "seconds"]
+metric_max = 90.0
+
+[[benchmarks]]
+name = "frtb-rrao-target-scale"
+artifact = "dist/benchmarks/frtb-rrao-target-scale.json"
+wall_clock_path = ["timings", "wall_seconds"]
+wall_clock_seconds_max = 75.0
+metric_path = ["timings", "positions_per_second"]
+metric_min = 1500.0

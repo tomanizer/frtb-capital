@@ -50,6 +50,7 @@ make check          # lint + typecheck + coverage-gated tests across the workspa
 make ima            # work on the IMA package only
 make mutation       # run the focused IMA mutation-testing baseline
 make mutation-rrao  # run the focused RRAO mutation-testing baseline
+make mutation-score-check  # verify exported mutmut CI stats (run mutation targets first)
 ```
 
 Per-package targets are available from each package's own `Makefile` or via `uv run`.
@@ -69,6 +70,9 @@ Per-package targets are available from each package's own `Makefile` or via `uv 
 - [`packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md`](packages/frtb-ima/docs/REGULATORY_ASSUMPTIONS.md) — IMA modelling boundaries and proposed-rule basis
 - [`docs/decisions/`](docs/decisions/) — architectural decision records (ADRs)
 - [`docs/quality/coverage_policy.md`](docs/quality/coverage_policy.md) — implemented-package coverage floor and later production-quality target
+- [`docs/quality/PACKAGE_STATUS.md`](docs/quality/PACKAGE_STATUS.md) — generated package maturity and crosswalk dashboard
+- [`docs/quality/DEPENDENCY_AUDIT_AND_SBOM.md`](docs/quality/DEPENDENCY_AUDIT_AND_SBOM.md) — pip-audit and SBOM scope
+- [`docs/quality/BENCHMARK_PROFILE.md`](docs/quality/BENCHMARK_PROFILE.md) — benchmark regression budgets and profiling notes
 - [`docs/quality/frtb-ima/mutation_baseline.md`](docs/quality/frtb-ima/mutation_baseline.md) — IMA mutation-testing baseline and survivor review policy
 - [`docs/quality/frtb-rrao/mutation_baseline.md`](docs/quality/frtb-rrao/mutation_baseline.md) — RRAO mutation-testing baseline and survivor review policy
 
