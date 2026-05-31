@@ -22,13 +22,11 @@ from frtb_cva.data_models import (
     CvaRunControls,
     CvaSourceLineage,
     SaCvaBucketCapital,
-    SaCvaRiskClass,
     SaCvaRiskClassCapital,
-    SaCvaRiskMeasure,
     SaCvaSensitivity,
 )
-from frtb_cva.sa_cva import sa_cva_aggregation_config
 from frtb_cva.numeric import is_reconciled
+from frtb_cva.sa_cva import sa_cva_aggregation_config
 from frtb_cva.validation import (
     CvaInputError,
     validate_calculation_context,

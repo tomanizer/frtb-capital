@@ -7,7 +7,10 @@ from frtb_cva import (
     SaCvaSensitivity,
     SensitivityTag,
 )
-from frtb_cva.risk_classes.equity import calculate_equity_delta_capital, calculate_equity_vega_capital
+from frtb_cva.risk_classes.equity import (
+    calculate_equity_delta_capital,
+    calculate_equity_vega_capital,
+)
 
 
 def _equity_sensitivity(

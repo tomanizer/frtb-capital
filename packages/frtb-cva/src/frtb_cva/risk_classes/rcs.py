@@ -53,7 +53,7 @@ def calculate_rcs_delta_capital(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Calculate SA-CVA RCS delta capital per MAR50.66–MAR50.68."""
+    """Calculate SA-CVA RCS delta capital per MAR50.66-MAR50.68."""
 
     del reporting_currency
     if not sensitivities:

@@ -19,7 +19,10 @@ from frtb_cva.data_models import (
     SaCvaRiskMeasure,
     SaCvaWeightedSensitivity,
 )
-from frtb_cva.reference_data import girr_delta_intra_bucket_correlation, girr_inter_bucket_correlation
+from frtb_cva.reference_data import (
+    girr_delta_intra_bucket_correlation,
+    girr_inter_bucket_correlation,
+)
 from frtb_cva.sa_cva_reference_data import girr_vega_intra_bucket_correlation
 from frtb_cva.validation import CvaInputError, validate_m_cva_multiplier
 
@@ -156,8 +159,6 @@ def aggregate_inter_bucket(
         count=bucket_count,
     )
     sum_kb_squared = float(np.dot(bucket_kb, bucket_kb))
-    sum_sb = float(bucket_sb.sum())
-    sum_sb_squared = float(np.dot(bucket_sb, bucket_sb))
     cross_term = 0.0
     gamma_citations: list[str] = []
     for left_index, left_bucket in enumerate(bucket_capitals):
@@ -173,7 +174,7 @@ def aggregate_inter_bucket(
             cross_term += gamma_bc * bucket_sb[left_index] * bucket_sb[right_index]
     pre_multiplier = math.sqrt(max(sum_kb_squared + cross_term, 0.0))
     post_multiplier = validated_m_cva * pre_multiplier
-    citations = tuple(gamma_citations) + ("basel_mar50_53",)
+    citations = (*tuple(gamma_citations), "basel_mar50_53")
     return SaCvaRiskClassCapital(
         risk_class=config.risk_class,
         risk_measure=config.risk_measure,
@@ -256,7 +257,9 @@ def girr_delta_aggregation_config(
 ) -> SaCvaAggregationConfig:
     """Return cited GIRR delta aggregation configuration."""
 
-    def _intra(left: SaCvaWeightedSensitivity, right: SaCvaWeightedSensitivity) -> tuple[float, str]:
+    def _intra(
+        left: SaCvaWeightedSensitivity, right: SaCvaWeightedSensitivity
+    ) -> tuple[float, str]:
         return _girr_delta_intra_correlation(left, right, profile=profile)
 
     gamma_bc, gamma_citation = girr_inter_bucket_correlation(profile=profile)
@@ -275,7 +278,9 @@ def girr_vega_aggregation_config(
 ) -> SaCvaAggregationConfig:
     """Return cited GIRR vega aggregation configuration."""
 
-    def _intra(left: SaCvaWeightedSensitivity, right: SaCvaWeightedSensitivity) -> tuple[float, str]:
+    def _intra(
+        left: SaCvaWeightedSensitivity, right: SaCvaWeightedSensitivity
+    ) -> tuple[float, str]:
         return _girr_vega_intra_correlation(left, right, profile=profile)
 
     return SaCvaAggregationConfig(
@@ -290,8 +295,8 @@ def girr_vega_aggregation_config(
 __all__ = [
     "HEDGING_DISALLOWANCE_R",
     "M_CVA_DEFAULT",
-    "IntraBucketCorrelationFn",
     "InterBucketGammaFn",
+    "IntraBucketCorrelationFn",
     "SaCvaAggregationConfig",
     "aggregate_inter_bucket",
     "aggregate_intra_bucket",

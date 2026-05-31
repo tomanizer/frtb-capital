@@ -1,7 +1,7 @@
 """
-SA-CVA risk-class reference tables for Basel MAR50.54–MAR50.77.
+SA-CVA risk-class reference tables for Basel MAR50.54-MAR50.77.
 
-Regulatory traceability: Basel MAR50.59–MAR50.77 (FX through commodity),
+Regulatory traceability: Basel MAR50.59-MAR50.77 (FX through commodity),
 MAR50.58 (GIRR vega), MAR50.45 (no CCS vega).
 """
 
@@ -451,7 +451,8 @@ def ccs_delta_risk_weight(
     bucket = _normalise_bucket(bucket_id)
     if bucket == CCS_QUALIFIED_INDEX_BUCKET:
         raise CvaInputError(
-            "CCS qualified-index bucket 8 is unsupported until qualified-index mapping is delivered",
+            "CCS qualified-index bucket 8 is unsupported"
+            " until qualified-index mapping is delivered",
             field="bucket_id",
         )
     quality = _resolve_credit_quality(credit_quality)
@@ -475,7 +476,8 @@ def ccs_inter_bucket_correlation(
     _resolve_profile(profile)
     if bucket1 == CCS_QUALIFIED_INDEX_BUCKET or bucket2 == CCS_QUALIFIED_INDEX_BUCKET:
         raise CvaInputError(
-            "CCS qualified-index bucket 8 is unsupported until qualified-index mapping is delivered",
+            "CCS qualified-index bucket 8 is unsupported"
+            " until qualified-index mapping is delivered",
             field="bucket_id",
         )
     return _symmetric_gamma_lookup(CCS_GAMMA_BC, bucket1, bucket2), "basel_mar50_64"

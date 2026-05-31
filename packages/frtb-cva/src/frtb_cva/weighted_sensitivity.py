@@ -189,11 +189,20 @@ def compute_weighted_sensitivities(
             grouped_volatility,
             profile=profile,
         )
-    if risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD and risk_measure is SaCvaRiskMeasure.DELTA:
+    if (
+        risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD
+        and risk_measure is SaCvaRiskMeasure.DELTA
+    ):
         return _weight_ccs_delta(keys, grouped_cva, grouped_hedge, grouped_ids, profile=profile)
-    if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD and risk_measure is SaCvaRiskMeasure.DELTA:
+    if (
+        risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD
+        and risk_measure is SaCvaRiskMeasure.DELTA
+    ):
         return _weight_rcs_delta(keys, grouped_cva, grouped_hedge, grouped_ids, profile=profile)
-    if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD and risk_measure is SaCvaRiskMeasure.VEGA:
+    if (
+        risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD
+        and risk_measure is SaCvaRiskMeasure.VEGA
+    ):
         return _weight_rcs_vega(
             keys,
             grouped_cva,
@@ -214,7 +223,9 @@ def compute_weighted_sensitivities(
             profile=profile,
         )
     if risk_class is SaCvaRiskClass.COMMODITY and risk_measure is SaCvaRiskMeasure.DELTA:
-        return _weight_commodity_delta(keys, grouped_cva, grouped_hedge, grouped_ids, profile=profile)
+        return _weight_commodity_delta(
+            keys, grouped_cva, grouped_hedge, grouped_ids, profile=profile
+        )
     if risk_class is SaCvaRiskClass.COMMODITY and risk_measure is SaCvaRiskMeasure.VEGA:
         return _weight_commodity_vega(
             keys,
@@ -381,7 +392,8 @@ def _weight_ccs_delta(
     for key in keys:
         if key.bucket_id == CCS_QUALIFIED_INDEX_BUCKET:
             raise CvaInputError(
-                "CCS qualified-index bucket 8 is unsupported until qualified-index mapping is delivered",
+                "CCS qualified-index bucket 8 is unsupported"
+                " until qualified-index mapping is delivered",
                 field="bucket_id",
             )
         if key.tenor is None or key.tenor not in CCS_DELTA_TENORS:

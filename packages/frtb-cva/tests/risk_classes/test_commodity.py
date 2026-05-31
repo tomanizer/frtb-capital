@@ -36,7 +36,9 @@ def _commodity_sensitivity(
 
 
 def test_commodity_delta_reconciles() -> None:
-    capital = calculate_commodity_delta_capital((_commodity_sensitivity(bucket="1", amount=2_000_000.0),))
+    capital = calculate_commodity_delta_capital(
+        (_commodity_sensitivity(bucket="1", amount=2_000_000.0),)
+    )
     assert capital.post_multiplier_capital == pytest.approx(2_000_000.0 * 0.30)
 
 

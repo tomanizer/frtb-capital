@@ -52,7 +52,9 @@ def test_sa_cva_total_sums_supported_risk_classes() -> None:
     total = sum(item.post_multiplier_capital for item in risk_classes)
     girr_capital = next(item for item in risk_classes if item.risk_class is SaCvaRiskClass.GIRR)
     fx_capital = next(item for item in risk_classes if item.risk_class is SaCvaRiskClass.FX)
-    assert total == pytest.approx(girr_capital.post_multiplier_capital + fx_capital.post_multiplier_capital)
+    assert total == pytest.approx(
+        girr_capital.post_multiplier_capital + fx_capital.post_multiplier_capital
+    )
 
 
 def test_sa_cva_delta_and_vega_paths_sum() -> None:

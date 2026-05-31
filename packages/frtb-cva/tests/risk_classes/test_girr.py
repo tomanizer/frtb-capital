@@ -14,7 +14,9 @@ from frtb_cva.sa_cva_reference_data import GIRR_VEGA_INFLATION_FACTOR, GIRR_VEGA
 from frtb_cva.validation import CvaInputError
 
 
-def _girr_delta(bucket: str = "USD", tenor: str = "5y", amount: float = 1_000_000.0) -> SaCvaSensitivity:
+def _girr_delta(
+    bucket: str = "USD", tenor: str = "5y", amount: float = 1_000_000.0
+) -> SaCvaSensitivity:
     return SaCvaSensitivity(
         sensitivity_id=f"sens-girr-{bucket}-{tenor}",
         risk_class=SaCvaRiskClass.GIRR,

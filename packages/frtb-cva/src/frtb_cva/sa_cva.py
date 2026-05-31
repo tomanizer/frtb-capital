@@ -5,6 +5,10 @@ SA-CVA orchestration for supported public API slices.
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from frtb_cva.aggregation import SaCvaAggregationConfig
 
 from frtb_cva.data_models import (
     CvaHedge,
@@ -19,7 +23,10 @@ from frtb_cva.risk_classes.commodity import (
     calculate_commodity_delta_capital,
     calculate_commodity_vega_capital,
 )
-from frtb_cva.risk_classes.equity import calculate_equity_delta_capital, calculate_equity_vega_capital
+from frtb_cva.risk_classes.equity import (
+    calculate_equity_delta_capital,
+    calculate_equity_vega_capital,
+)
 from frtb_cva.risk_classes.fx import calculate_fx_delta_capital, calculate_fx_vega_capital
 from frtb_cva.risk_classes.girr import calculate_girr_delta_capital, calculate_girr_vega_capital
 from frtb_cva.risk_classes.rcs import calculate_rcs_delta_capital, calculate_rcs_vega_capital
@@ -48,13 +55,15 @@ def calculate_sa_cva_capital(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> tuple[SaCvaRiskClassCapital, ...]:
-    """Calculate supported SA-CVA risk-class totals per MAR50.42–MAR50.45."""
+    """Calculate supported SA-CVA risk-class totals per MAR50.42-MAR50.45."""
 
     validated_m_cva = validate_m_cva_multiplier(m_cva)
     if not sensitivities:
         raise CvaInputError("SA-CVA requires at least one sensitivity", field="sensitivities")
 
-    grouped: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], list[SaCvaSensitivity]] = defaultdict(list)
+    grouped: dict[
+        tuple[SaCvaRiskClass, SaCvaRiskMeasure], list[SaCvaSensitivity]
+    ] = defaultdict(list)
     for item in sensitivities:
         grouped[(item.risk_class, item.risk_measure)].append(item)
 
@@ -134,21 +143,30 @@ def _calculate_path(
             reporting_currency=reporting_currency,
             profile=profile,
         )
-    if risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD and risk_measure is SaCvaRiskMeasure.DELTA:
+    if (
+        risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD
+        and risk_measure is SaCvaRiskMeasure.DELTA
+    ):
         return calculate_ccs_delta_capital(
             sensitivities,
             hedges=hedges,
             m_cva=m_cva,
             profile=profile,
         )
-    if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD and risk_measure is SaCvaRiskMeasure.DELTA:
+    if (
+        risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD
+        and risk_measure is SaCvaRiskMeasure.DELTA
+    ):
         return calculate_rcs_delta_capital(
             sensitivities,
             hedges=hedges,
             m_cva=m_cva,
             profile=profile,
         )
-    if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD and risk_measure is SaCvaRiskMeasure.VEGA:
+    if (
+        risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD
+        and risk_measure is SaCvaRiskMeasure.VEGA
+    ):
         return calculate_rcs_vega_capital(
             sensitivities,
             hedges=hedges,
@@ -197,11 +215,10 @@ def sa_cva_aggregation_config(
     risk_measure: SaCvaRiskMeasure,
     *,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
-):
+) -> SaCvaAggregationConfig:
     """Return the cited aggregation config for audit reconciliation."""
 
     from frtb_cva.aggregation import (
-        SaCvaAggregationConfig,
         girr_delta_aggregation_config,
         girr_vega_aggregation_config,
     )
@@ -219,7 +236,10 @@ def sa_cva_aggregation_config(
         return _fx_delta_config(profile)
     if risk_class is SaCvaRiskClass.FX and risk_measure is SaCvaRiskMeasure.VEGA:
         return _fx_vega_config(profile)
-    if risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD and risk_measure is SaCvaRiskMeasure.DELTA:
+    if (
+        risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD
+        and risk_measure is SaCvaRiskMeasure.DELTA
+    ):
         return _ccs_delta_config(profile)
     if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD:
         return _rcs_config(risk_measure, profile=profile)

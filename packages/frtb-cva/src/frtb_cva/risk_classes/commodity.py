@@ -53,11 +53,14 @@ def calculate_commodity_delta_capital(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Calculate SA-CVA commodity delta capital per MAR50.74–MAR50.76."""
+    """Calculate SA-CVA commodity delta capital per MAR50.74-MAR50.76."""
 
     del reporting_currency
     if not sensitivities:
-        raise CvaInputError("commodity delta requires at least one sensitivity", field="sensitivities")
+        raise CvaInputError(
+            "commodity delta requires at least one sensitivity",
+            field="sensitivities",
+        )
     return calculate_risk_class_capital(
         sensitivities,
         aggregation_config=_commodity_config(SaCvaRiskMeasure.DELTA, profile=profile),
@@ -79,7 +82,10 @@ def calculate_commodity_vega_capital(
 
     del reporting_currency
     if not sensitivities:
-        raise CvaInputError("commodity vega requires at least one sensitivity", field="sensitivities")
+        raise CvaInputError(
+            "commodity vega requires at least one sensitivity",
+            field="sensitivities",
+        )
     return calculate_risk_class_capital(
         sensitivities,
         aggregation_config=_commodity_config(SaCvaRiskMeasure.VEGA, profile=profile),

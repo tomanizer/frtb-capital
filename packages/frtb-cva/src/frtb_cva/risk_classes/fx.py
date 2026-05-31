@@ -61,7 +61,7 @@ def calculate_fx_delta_capital(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Calculate SA-CVA FX delta capital per MAR50.59–MAR50.61."""
+    """Calculate SA-CVA FX delta capital per MAR50.59-MAR50.61."""
 
     if not sensitivities:
         raise CvaInputError("FX delta requires at least one sensitivity", field="sensitivities")

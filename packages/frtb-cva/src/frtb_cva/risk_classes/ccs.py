@@ -39,7 +39,9 @@ def _ccs_intra_bucket_correlation(
     *,
     profile: CvaRegulatoryProfile | str,
 ) -> tuple[float, str]:
-    left_entity, left_quality, left_legal = parse_ccs_entity_key(left.risk_factor_key.risk_factor_key)
+    left_entity, left_quality, left_legal = parse_ccs_entity_key(
+        left.risk_factor_key.risk_factor_key
+    )
     right_entity, right_quality, right_legal = parse_ccs_entity_key(
         right.risk_factor_key.risk_factor_key
     )
@@ -80,7 +82,9 @@ def _ccs_inter_bucket_gamma(
 def _ccs_delta_config(
     profile: CvaRegulatoryProfile | str,
 ) -> SaCvaAggregationConfig:
-    def _intra(left: SaCvaWeightedSensitivity, right: SaCvaWeightedSensitivity) -> tuple[float, str]:
+    def _intra(
+        left: SaCvaWeightedSensitivity, right: SaCvaWeightedSensitivity
+    ) -> tuple[float, str]:
         return _ccs_intra_bucket_correlation(left, right, profile=profile)
 
     def _gamma(left_bucket: str, right_bucket: str) -> tuple[float, str]:
@@ -103,7 +107,7 @@ def calculate_ccs_delta_capital(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Calculate SA-CVA CCS delta capital per MAR50.63–MAR50.65."""
+    """Calculate SA-CVA CCS delta capital per MAR50.63-MAR50.65."""
 
     del reporting_currency
     if not sensitivities:

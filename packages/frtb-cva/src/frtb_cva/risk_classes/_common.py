@@ -11,7 +11,10 @@ from frtb_cva.data_models import (
 )
 from frtb_cva.hedges import eligible_sa_cva_hedge_ids
 from frtb_cva.validation import validate_cva_hedges, validate_sa_cva_sensitivities
-from frtb_cva.weighted_sensitivity import compute_weighted_sensitivities, sort_weighted_sensitivities
+from frtb_cva.weighted_sensitivity import (
+    compute_weighted_sensitivities,
+    sort_weighted_sensitivities,
+)
 
 
 def calculate_risk_class_capital(
