@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_cva import (
     CvaMethod,
     calculate_cva_capital,
@@ -61,7 +59,7 @@ def test_serialize_result_is_json_ready(
     assert payload["ba_cva_reduced"] is not None
 
 
-def test_full_ba_cva_fails_at_public_api(
+def test_full_ba_cva_returns_reconciled_result(
     reduced_context,
     sovereign_counterparty,
     sovereign_netting_set,
@@ -75,5 +73,8 @@ def test_full_ba_cva_fails_at_public_api(
         profile=reduced_context.profile,
         method=CvaMethod.BA_CVA_FULL,
     )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="delivered slice"):
-        calculate_cva_capital(context, (sovereign_counterparty,), (sovereign_netting_set,))
+    result = calculate_cva_capital(context, (sovereign_counterparty,), (sovereign_netting_set,))
+    assert result.method is CvaMethod.BA_CVA_FULL
+    assert result.ba_cva_full is not None
+    assert result.total_cva_capital == result.ba_cva_full.k_full
+    validate_cva_result_reconciliation(result)

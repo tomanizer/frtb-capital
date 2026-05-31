@@ -17,6 +17,7 @@ from frtb_cva.data_models import (
     SensitivityTag,
 )
 from frtb_cva.hedges import eligible_sa_cva_hedge_ids
+from frtb_cva.qualified_index import resolve_sa_cva_bucket
 from frtb_cva.reference_data import (
     girr_delta_risk_weight,
     girr_is_specified_currency,
@@ -24,7 +25,6 @@ from frtb_cva.reference_data import (
 )
 from frtb_cva.sa_cva_reference_data import (
     CCS_DELTA_TENORS,
-    CCS_QUALIFIED_INDEX_BUCKET,
     GIRR_VEGA_INFLATION_FACTOR,
     GIRR_VEGA_RATE_FACTOR,
     ccs_delta_risk_weight,
@@ -39,11 +39,16 @@ from frtb_cva.sa_cva_reference_data import (
 from frtb_cva.validation import CvaInputError
 
 
-def _risk_factor_key(sensitivity: SaCvaSensitivity) -> SaCvaRiskFactorKey:
+def _risk_factor_key(
+    sensitivity: SaCvaSensitivity,
+    *,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> SaCvaRiskFactorKey:
+    bucket_id, _ = resolve_sa_cva_bucket(sensitivity, profile=profile)
     return SaCvaRiskFactorKey(
         risk_class=sensitivity.risk_class,
         risk_measure=sensitivity.risk_measure,
-        bucket_id=sensitivity.bucket_id,
+        bucket_id=bucket_id,
         risk_factor_key=sensitivity.risk_factor_key,
         tenor=sensitivity.tenor,
     )
@@ -54,6 +59,7 @@ def _group_sensitivity_amounts(
     *,
     hedges: tuple[CvaHedge, ...],
     eligible_hedge_ids: frozenset[str] | None,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> tuple[
     dict[SaCvaRiskFactorKey, float],
     dict[SaCvaRiskFactorKey, float],
@@ -69,7 +75,7 @@ def _group_sensitivity_amounts(
     )
 
     for sensitivity in sensitivities:
-        key = _risk_factor_key(sensitivity)
+        key = _risk_factor_key(sensitivity, profile=profile)
         if key in grouped_volatility:
             if sensitivity.volatility_input != grouped_volatility[key]:
                 raise CvaInputError(
@@ -143,6 +149,7 @@ def compute_weighted_sensitivities(
         sensitivities,
         hedges=hedges,
         eligible_hedge_ids=eligible_hedge_ids,
+        profile=profile,
     )
     keys = sorted(
         set(grouped_cva) | set(grouped_hedge),
@@ -390,12 +397,6 @@ def _weight_ccs_delta(
 ) -> tuple[SaCvaWeightedSensitivity, ...]:
     weighted: list[SaCvaWeightedSensitivity] = []
     for key in keys:
-        if key.bucket_id == CCS_QUALIFIED_INDEX_BUCKET:
-            raise CvaInputError(
-                "CCS qualified-index bucket 8 is unsupported"
-                " until qualified-index mapping is delivered",
-                field="bucket_id",
-            )
         if key.tenor is None or key.tenor not in CCS_DELTA_TENORS:
             raise CvaInputError(
                 f"CCS delta requires tenor in {CCS_DELTA_TENORS}",

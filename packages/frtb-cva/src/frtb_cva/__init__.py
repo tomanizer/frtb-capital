@@ -1,15 +1,24 @@
 """Credit Valuation Adjustment capital package."""
 
 from frtb_cva._version import __version__
+from frtb_cva.attribution import (
+    CvaAttributionContribution,
+    CvaAttributionResult,
+    attribute_cva_capital,
+)
 from frtb_cva.audit import input_hash, serialize_cva_result, validate_cva_result_reconciliation
 from frtb_cva.ba_cva import (
     calculate_counterparty_standalone,
+    calculate_full_portfolio,
     calculate_netting_set_standalone,
     calculate_reduced_portfolio,
 )
 from frtb_cva.capital import calculate_cva_capital
+from frtb_cva.crif import CvaAdapterResult, adapt_cva_records
 from frtb_cva.data_models import (
     BaCvaCounterpartyCapital,
+    BaCvaFullPortfolioResult,
+    BaCvaHedgeRecognitionLine,
     BaCvaHedgeType,
     BaCvaNettingSetLine,
     BaCvaReducedPortfolioResult,
@@ -21,6 +30,7 @@ from frtb_cva.data_models import (
     CvaCounterparty,
     CvaHedge,
     CvaMethod,
+    CvaMethodComponentTotal,
     CvaNettingSet,
     CvaRegulatoryProfile,
     CvaRunControls,
@@ -29,6 +39,7 @@ from frtb_cva.data_models import (
     HedgeEligibility,
     HedgeReferenceRelation,
     SaCvaBucketCapital,
+    SaCvaIndexTreatment,
     SaCvaRiskClass,
     SaCvaRiskClassCapital,
     SaCvaRiskFactorKey,
@@ -37,6 +48,7 @@ from frtb_cva.data_models import (
     SaCvaWeightedSensitivity,
     SensitivityTag,
 )
+from frtb_cva.impact import CvaCapitalImpact, assess_cva_capital_impact
 from frtb_cva.numeric import is_reconciled
 from frtb_cva.reference_data import (
     ba_cva_alpha,
@@ -53,7 +65,12 @@ from frtb_cva.reference_data import (
 )
 from frtb_cva.regimes import CvaRuleProfile, get_cva_rule_profile, profile_content_hash
 from frtb_cva.scaffold import PACKAGE_METADATA
-from frtb_cva.scope import ScopeResolution, resolve_calculation_method, validate_method_selection
+from frtb_cva.scope import (
+    ScopeResolution,
+    partition_mixed_method_inputs,
+    resolve_calculation_method,
+    validate_method_selection,
+)
 from frtb_cva.validation import (
     CvaInputError,
     normalise_ead_amount,
@@ -68,18 +85,25 @@ from frtb_cva.validation import (
 __all__ = [
     "PACKAGE_METADATA",
     "BaCvaCounterpartyCapital",
+    "BaCvaFullPortfolioResult",
+    "BaCvaHedgeRecognitionLine",
     "BaCvaHedgeType",
     "BaCvaNettingSetLine",
     "BaCvaReducedPortfolioResult",
     "BaCvaStandAloneLine",
     "CreditQuality",
+    "CvaAdapterResult",
+    "CvaAttributionContribution",
+    "CvaAttributionResult",
     "CvaCalculationContext",
+    "CvaCapitalImpact",
     "CvaCapitalResult",
     "CvaCitation",
     "CvaCounterparty",
     "CvaHedge",
     "CvaInputError",
     "CvaMethod",
+    "CvaMethodComponentTotal",
     "CvaNettingSet",
     "CvaRegulatoryProfile",
     "CvaRuleProfile",
@@ -89,6 +113,7 @@ __all__ = [
     "HedgeEligibility",
     "HedgeReferenceRelation",
     "SaCvaBucketCapital",
+    "SaCvaIndexTreatment",
     "SaCvaRiskClass",
     "SaCvaRiskClassCapital",
     "SaCvaRiskFactorKey",
@@ -98,6 +123,9 @@ __all__ = [
     "ScopeResolution",
     "SensitivityTag",
     "__version__",
+    "adapt_cva_records",
+    "assess_cva_capital_impact",
+    "attribute_cva_capital",
     "ba_cva_alpha",
     "ba_cva_beta",
     "ba_cva_discount_scalar",
@@ -105,6 +133,7 @@ __all__ = [
     "ba_cva_risk_weight",
     "calculate_counterparty_standalone",
     "calculate_cva_capital",
+    "calculate_full_portfolio",
     "calculate_netting_set_standalone",
     "calculate_reduced_portfolio",
     "compute_non_imm_discount_factor",
@@ -118,6 +147,7 @@ __all__ = [
     "is_reconciled",
     "normalise_ead_amount",
     "normalise_sensitivity_amount",
+    "partition_mixed_method_inputs",
     "profile_content_hash",
     "resolve_calculation_method",
     "serialize_cva_result",

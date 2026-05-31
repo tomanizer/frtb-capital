@@ -30,7 +30,12 @@ Companion source manifest: [`regulatory_sources.yml`](regulatory_sources.yml).
 | `ba_cva.py` | Stand-alone and reduced portfolio BA-CVA | MAR50.14-MAR50.15 | Implemented |
 | `weighted_sensitivity.py` | SA-CVA weighted sensitivity assembly | MAR50.56 | Implemented |
 | `aggregation.py` | SA-CVA intra- and inter-bucket capital | MAR50.53, MAR50.55-MAR50.57 | Implemented |
-| `hedges.py` | SA-CVA hedge eligibility assessment | MAR50.37-MAR50.39 | Partial |
+| `hedges.py` | SA-CVA and BA-CVA hedge eligibility | MAR50.18-MAR50.19, MAR50.37-MAR50.39 | Implemented |
+| `ba_cva.py` | Full BA-CVA hedge recognition | MAR50.17-MAR50.26 | Implemented |
+| `qualified_index.py` | MAR50.50 index-bucket routing | MAR50.50, MAR50.63, MAR50.72 | Implemented |
+| `crif.py` | Vendor-to-canonical adapter | CVA-FUNC-026 | Implemented |
+| `attribution.py` | Analytical attribution (supported branches) | ADR 0012 | Partial |
+| `impact.py` | Baseline-vs-candidate impact | ADR 0012 | Implemented |
 | `risk_classes/girr.py` | GIRR delta bucket routing | MAR50.54-MAR50.57 | Implemented |
 | `sa_cva.py` | SA-CVA GIRR delta orchestration | MAR50.53-MAR50.57 | Implemented |
 | `capital.py` | Public `calculate_cva_capital` | MAR50.14 reduced, MAR50.53 SA-CVA | Implemented |
@@ -40,8 +45,6 @@ July 2020 calibration revision notes: `m_CVA = 1.0`, `D_BA-CVA = 0.65`.
 
 ## Unsupported in the delivered slice
 
-- Full BA-CVA hedge recognition (MAR50.17-MAR50.26)
-- SA-CVA risk classes other than GIRR delta (MAR50.40-MAR50.52, MAR50.58+)
-- Mixed carve-out assembly (MAR50.8 with SA-CVA)
+- U.S./EU/UK comparison CVA profiles
 - Materiality-threshold alternative (MAR50.9)
 - U.S., EU, and UK comparison profiles

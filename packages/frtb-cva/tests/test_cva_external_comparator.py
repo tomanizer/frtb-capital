@@ -75,6 +75,7 @@ def test_offsetting_hedge_reconciles_to_mar50_55_disallowance_floor() -> None:
 
     from frtb_cva import (
         BaCvaHedgeType,
+        CreditQuality,
         CvaHedge,
         CvaSector,
         HedgeEligibility,
@@ -90,6 +91,7 @@ def test_offsetting_hedge_reconciles_to_mar50_55_disallowance_floor() -> None:
         remaining_maturity=2.0,
         discount_factor=1.0,
         reference_sector=CvaSector.SOVEREIGN,
+        reference_credit_quality=CreditQuality.INVESTMENT_GRADE,
         reference_region="EMEA",
         reference_relation=HedgeReferenceRelation.DIRECT,
         eligibility=HedgeEligibility.ELIGIBLE,

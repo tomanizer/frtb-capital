@@ -6,15 +6,17 @@
 
 **Partial implementation.** The delivered slice supports:
 
-- Reduced BA-CVA (`BA_CVA_REDUCED`) per MAR50.14–15.
+- Reduced and full BA-CVA (`BA_CVA_REDUCED`, `BA_CVA_FULL`) per MAR50.14–26.
 - SA-CVA across all six delta risk classes and five vega risk classes per
   MAR50.42–MAR50.77 when `sa_cva_approved=True`.
-- GIRR, FX, CCS (delta only), RCS, equity, and commodity paths with cited
-  bucket tables, risk weights, and correlations.
-- CCS qualified-index bucket 8 remains unsupported until the qualified-index issue.
+- Mixed SA-CVA with BA-CVA netting-set carve-outs (`MIXED_CARVE_OUT`) per MAR50.8.
+- CCS qualified-index bucket 8, RCS/equity qualified-index paths, and MAR50.50
+  routing where metadata is supplied.
+- Optional CRIF adapter (`crif.py`), attribution (`attribution.py`), and impact
+  (`impact.py`) without changing capital totals.
 
-Full BA-CVA hedge recognition, mixed carve-out assembly, and comparison profiles
-remain unsupported and must fail closed.
+Comparison profiles and the MAR50.9 materiality-threshold alternative remain
+unsupported and must fail closed.
 
 ## Rules
 

@@ -91,6 +91,14 @@ class HedgeReferenceRelation(StrEnum):
     SAME_SECTOR_AND_REGION = "SAME_SECTOR_AND_REGION"
 
 
+class SaCvaIndexTreatment(StrEnum):
+    """Qualified-index routing for SA-CVA sensitivities (MAR50.50)."""
+
+    SINGLE_NAME = "SINGLE_NAME"
+    QUALIFIED_INDEX = "QUALIFIED_INDEX"
+    LOOK_THROUGH_REQUIRED = "LOOK_THROUGH_REQUIRED"
+
+
 class CvaRegulatoryProfile(StrEnum):
     """Supported and planned CVA rule-profile identifiers."""
 
@@ -164,10 +172,12 @@ class CvaHedge:
     remaining_maturity: float
     discount_factor: float
     reference_sector: CvaSector
+    reference_credit_quality: CreditQuality
     reference_region: str
     reference_relation: HedgeReferenceRelation
     eligibility: HedgeEligibility
     is_internal: bool
+    discount_factor_explicit: bool = False
     internal_desk_counterparty_id: str | None = None
     sa_cva_risk_class: SaCvaRiskClass | None = None
     eligibility_evidence_id: str | None = None
@@ -192,6 +202,11 @@ class SaCvaSensitivity:
     tenor: str | None = None
     volatility_input: float | None = None
     hedge_id: str | None = None
+    index_treatment: SaCvaIndexTreatment | None = None
+    index_max_sector_weight: float | None = None
+    index_homogeneous_sector_quality: bool = False
+    index_dominant_sector: CvaSector | None = None
+    index_remap_bucket_id: str | None = None
     lineage: CvaSourceLineage | None = None
 
 
@@ -272,6 +287,52 @@ class BaCvaCounterpartyCapital:
 
 
 @dataclass(frozen=True)
+class BaCvaHedgeRecognitionLine:
+    """Per-hedge BA-CVA recognition audit line."""
+
+    hedge_id: str
+    counterparty_id: str
+    hedge_type: BaCvaHedgeType
+    eligibility: HedgeEligibility
+    reference_relation: HedgeReferenceRelation
+    r_hc: float
+    risk_weight: float
+    snh_contribution: float
+    hma_contribution: float
+    index_contribution: float
+    reason_code: str
+    citations: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class BaCvaFullPortfolioResult:
+    """Full BA-CVA portfolio result with hedge recognition (MAR50.17-MAR50.26)."""
+
+    k_full: float
+    k_hedged: float
+    k_reduced: float
+    k_portfolio_hedged: float
+    ih: float
+    beta: float
+    beta_floor_binding: bool
+    rho: float
+    d_ba_cva: float
+    reduced: BaCvaReducedPortfolioResult
+    hedge_lines: tuple[BaCvaHedgeRecognitionLine, ...]
+    counterparty_adjusted_standalone: tuple[tuple[str, float], ...]
+    citations: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CvaMethodComponentTotal:
+    """Component capital total for mixed-method assembly."""
+
+    method: CvaMethod
+    total_capital: float
+    citations: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class BaCvaReducedPortfolioResult:
     """Reduced BA-CVA portfolio aggregation result."""
 
@@ -343,10 +404,12 @@ class CvaCapitalResult:
     method: CvaMethod
     total_cva_capital: float
     ba_cva_reduced: BaCvaReducedPortfolioResult | None
+    ba_cva_full: BaCvaFullPortfolioResult | None
     ba_cva_counterparty_capitals: tuple[BaCvaCounterpartyCapital, ...]
     ba_cva_netting_set_lines: tuple[BaCvaStandAloneLine, ...]
     sa_cva_risk_class_capitals: tuple[SaCvaRiskClassCapital, ...]
     citations: tuple[str, ...]
+    method_components: tuple[CvaMethodComponentTotal, ...] = ()
     warnings: tuple[str, ...] = ()
     unsupported_flags: tuple[str, ...] = ()
     audit_metadata: tuple[tuple[str, str], ...] = ()
@@ -361,6 +424,8 @@ class CvaCapitalResult:
 
 __all__ = [
     "BaCvaCounterpartyCapital",
+    "BaCvaFullPortfolioResult",
+    "BaCvaHedgeRecognitionLine",
     "BaCvaHedgeType",
     "BaCvaNettingSetLine",
     "BaCvaReducedPortfolioResult",
@@ -372,6 +437,7 @@ __all__ = [
     "CvaCounterparty",
     "CvaHedge",
     "CvaMethod",
+    "CvaMethodComponentTotal",
     "CvaNettingSet",
     "CvaRegulatoryProfile",
     "CvaRunControls",
@@ -380,6 +446,7 @@ __all__ = [
     "HedgeEligibility",
     "HedgeReferenceRelation",
     "SaCvaBucketCapital",
+    "SaCvaIndexTreatment",
     "SaCvaRiskClass",
     "SaCvaRiskClassCapital",
     "SaCvaRiskFactorKey",
