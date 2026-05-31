@@ -7,11 +7,12 @@ guidance, and the ADR log in [`docs/decisions/`](docs/decisions/).
 ## Setup
 
 ```bash
-uv sync
+uv sync --locked
 make check
 ```
 
-Requires Python 3.11+ and [`uv`](https://docs.astral.sh/uv/).
+Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). The repo pins
+3.11 in .python-version so local runs match CI (test (3.11)) automatically.
 
 ## Workflow
 
@@ -26,6 +27,28 @@ Requires Python 3.11+ and [`uv`](https://docs.astral.sh/uv/).
    - Whether the change is material under
      [ADR 0005](docs/decisions/0005-material-change-policy.md).
    - Link to ADR if material.
+
+### Closing issues via PR
+
+GitHub only closes issues that are explicitly named in the PR body with
+`Closes #N` (or `Fixes #N`, `Resolves #N`). Checkboxes inside a parent issue
+body (`- [x] #N`) are not followed automatically.
+
+**Rule:** when a PR closes a parent/phase issue that contains checked
+sub-issues, every closed sub-issue must also appear as an explicit `Closes #N`
+line in the PR body.
+
+```
+Closes #187, #188, #189, #190, #191, #192, #193, #194
+Closes #195, #196, #197, #198, #199
+Closes #214
+```
+
+As a safety net, the `cascade-close-subissues` GitHub Action will
+automatically close any checked `- [x] #N` sub-issues when the parent issue is
+closed. The explicit `Closes #N` lines in the PR body are still preferred
+because they appear in the merge event audit trail and create a visible link on
+each child issue.
 
 ### What not to do in a feature PR
 
