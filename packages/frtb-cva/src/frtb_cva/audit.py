@@ -8,6 +8,7 @@ import hashlib
 import json
 from collections.abc import Iterable
 
+from frtb_cva.aggregation import aggregate_inter_bucket
 from frtb_cva.data_models import (
     BaCvaCounterpartyCapital,
     BaCvaReducedPortfolioResult,
@@ -24,7 +25,6 @@ from frtb_cva.data_models import (
     SaCvaRiskClassCapital,
     SaCvaSensitivity,
 )
-from frtb_cva.aggregation import aggregate_inter_bucket
 from frtb_cva.numeric import is_reconciled
 from frtb_cva.validation import (
     CvaInputError,
@@ -225,7 +225,7 @@ def validate_cva_result_reconciliation(result: CvaCapitalResult) -> None:
                 recomputed.pre_multiplier_capital,
             ):
                 raise CvaInputError(
-                    "SA-CVA risk-class pre-multiplier capital does not reconcile to bucket capitals",
+                    "SA-CVA pre-multiplier capital does not reconcile to bucket capitals",
                     field="pre_multiplier_capital",
                     record_id=risk_class_capital.risk_class.value,
                 )
