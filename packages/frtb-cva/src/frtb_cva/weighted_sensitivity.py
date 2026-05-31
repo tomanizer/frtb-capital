@@ -7,6 +7,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from frtb_cva.data_models import (
+    CvaHedge,
     CvaRegulatoryProfile,
     SaCvaRiskClass,
     SaCvaRiskFactorKey,
@@ -37,7 +38,7 @@ def _risk_factor_key(sensitivity: SaCvaSensitivity) -> SaCvaRiskFactorKey:
 def compute_weighted_sensitivities(
     sensitivities: tuple[SaCvaSensitivity, ...],
     *,
-    hedges: tuple[object, ...] = (),
+    hedges: tuple[CvaHedge, ...] = (),
     eligible_hedge_ids: frozenset[str] | None = None,
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
@@ -58,30 +59,27 @@ def compute_weighted_sensitivities(
     risk_measure = next(iter(risk_measures))
     if risk_class is not SaCvaRiskClass.GIRR or risk_measure is not SaCvaRiskMeasure.DELTA:
         raise CvaInputError(
-            "only GIRR delta weighted sensitivities are supported in phase 2",
+            "only GIRR delta weighted sensitivities are supported in the delivered slice",
             field="risk_class",
         )
 
     grouped_cva: dict[SaCvaRiskFactorKey, float] = defaultdict(float)
     grouped_hedge: dict[SaCvaRiskFactorKey, float] = defaultdict(float)
-    hedge_ids = eligible_hedge_ids
-    if hedge_ids is None:
-        if hedges:
-            from frtb_cva.data_models import CvaHedge
-
-            validated_hedges = tuple(hedge for hedge in hedges if isinstance(hedge, CvaHedge))
-            hedge_ids = eligible_sa_cva_hedge_ids(validated_hedges)
-        else:
-            hedge_ids = frozenset()
+    grouped_ids: dict[SaCvaRiskFactorKey, list[str]] = defaultdict(list)
+    hedge_ids = (
+        eligible_hedge_ids if eligible_hedge_ids is not None else eligible_sa_cva_hedge_ids(hedges)
+    )
 
     for sensitivity in sensitivities:
         key = _risk_factor_key(sensitivity)
         if sensitivity.sensitivity_tag is SensitivityTag.CVA:
             grouped_cva[key] += sensitivity.amount
+            grouped_ids[key].append(sensitivity.sensitivity_id)
         elif sensitivity.sensitivity_tag is SensitivityTag.HDG:
             if sensitivity.hedge_id not in hedge_ids:
                 continue
             grouped_hedge[key] += sensitivity.amount
+            grouped_ids[key].append(sensitivity.sensitivity_id)
 
     keys = sorted(
         set(grouped_cva) | set(grouped_hedge),
@@ -96,9 +94,12 @@ def compute_weighted_sensitivities(
         gross_cva = grouped_cva.get(key, 0.0)
         gross_hedge = grouped_hedge.get(key, 0.0)
         net_amount = gross_cva - gross_hedge
-        # tenor is required for GIRR delta (validated at input boundary)
-        tenor = key.tenor if key.tenor is not None else key.risk_factor_key
-        base_risk_weight, citation_id = girr_delta_risk_weight(tenor, profile=profile)
+        if key.tenor is None:
+            raise CvaInputError(
+                "GIRR delta weighted sensitivity requires tenor",
+                field="tenor",
+            )
+        base_risk_weight, citation_id = girr_delta_risk_weight(key.tenor, profile=profile)
         citations: tuple[str, ...] = (citation_id, "basel_mar50_52")
         risk_weight = base_risk_weight
         if not girr_is_specified_currency(
@@ -121,6 +122,7 @@ def compute_weighted_sensitivities(
                 weighted_cva=weighted_cva,
                 weighted_hedge=weighted_hedge,
                 weighted_net=weighted_net,
+                source_sensitivity_ids=tuple(sorted(set(grouped_ids[key]))),
                 citations=citations,
             )
         )

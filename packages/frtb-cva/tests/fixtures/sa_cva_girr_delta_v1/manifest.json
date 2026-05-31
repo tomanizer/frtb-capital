@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "fixture_id": "sa_cva_girr_delta_v1",
+  "profile": "BASEL_MAR50_2020",
+  "method": "SA_CVA",
+  "cases": [
+    "single_usd_5y",
+    "usd_eur_two_bucket",
+    "offsetting_hedge",
+    "chf_other_currency"
+  ]
+}

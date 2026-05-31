@@ -31,6 +31,18 @@ path = "packages/frtb-cva/tests/test_cva_public_api.py"
 id = "unsupported-runtime-paths"
 path = "packages/frtb-cva/tests/test_cva_unsupported_features.py"
 
+[[packages.required_tests]]
+id = "sa-cva-fixture-workflow"
+path = "packages/frtb-cva/tests/test_sa_cva_fixture_workflow.py"
+
+[[packages.required_tests]]
+id = "properties"
+path = "packages/frtb-cva/tests/test_cva_properties.py"
+
+[[packages.required_tests]]
+id = "external-comparator"
+path = "packages/frtb-cva/tests/test_cva_external_comparator.py"
+
 [[packages]]
 package = "frtb-drc"
 import_name = "frtb_drc"

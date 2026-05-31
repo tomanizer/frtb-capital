@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 
-CVA_RECONCILIATION_REL_TOLERANCE = 1e-10
+CVA_RECONCILIATION_REL_TOLERANCE = 1e-12  # aligned with frtb-rrao
 CVA_RECONCILIATION_ABS_TOLERANCE = 1e-9
 
 
