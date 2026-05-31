@@ -66,9 +66,7 @@ def compute_weighted_sensitivities(
     grouped_cva: dict[SaCvaRiskFactorKey, float] = defaultdict(float)
     grouped_hedge: dict[SaCvaRiskFactorKey, float] = defaultdict(float)
     hedge_ids = (
-        eligible_hedge_ids
-        if eligible_hedge_ids is not None
-        else eligible_sa_cva_hedge_ids(hedges)
+        eligible_hedge_ids if eligible_hedge_ids is not None else eligible_sa_cva_hedge_ids(hedges)
     )
 
     for sensitivity in sensitivities:

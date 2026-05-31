@@ -37,11 +37,11 @@ path = "packages/frtb-cva/tests/test_sa_cva_fixture_workflow.py"
 
 [[packages.required_tests]]
 id = "properties"
-path = "packages/frtb-cva/tests/test_properties.py"
+path = "packages/frtb-cva/tests/test_cva_properties.py"
 
 [[packages.required_tests]]
 id = "external-comparator"
-path = "packages/frtb-cva/tests/test_external_comparator.py"
+path = "packages/frtb-cva/tests/test_cva_external_comparator.py"
 
 [[packages]]
 package = "frtb-drc"

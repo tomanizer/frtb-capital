@@ -102,7 +102,13 @@ def test_sa_cva_rejects_counterparty_and_netting_set_inputs(
     sovereign_counterparty,
     sovereign_netting_set,
 ) -> None:
-    from frtb_cva import CvaInputError, SaCvaRiskClass, SaCvaRiskMeasure, SaCvaSensitivity, SensitivityTag
+    from frtb_cva import (
+        CvaInputError,
+        SaCvaRiskClass,
+        SaCvaRiskMeasure,
+        SaCvaSensitivity,
+        SensitivityTag,
+    )
 
     context = CvaCalculationContext(
         run_id="run-sa-reject-ba-inputs",

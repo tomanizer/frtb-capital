@@ -2,9 +2,6 @@ from __future__ import annotations
 
 from datetime import date
 
-from hypothesis import given
-from hypothesis import strategies as st
-
 from frtb_cva import (
     CreditQuality,
     CvaCalculationContext,
@@ -25,6 +22,8 @@ from frtb_cva import (
 from frtb_cva.aggregation import aggregate_intra_bucket
 from frtb_cva.numeric import is_reconciled
 from frtb_cva.weighted_sensitivity import compute_weighted_sensitivities
+from hypothesis import given
+from hypothesis import strategies as st
 
 POSITIVE_EAD = st.floats(
     min_value=1.0,
@@ -121,9 +120,10 @@ def test_reduced_ba_cva_portfolio_is_subadditive(ead: float) -> None:
     counterparty = _counterparty()
     netting_set = _netting_set(ead)
     reduced = calculate_reduced_portfolio((counterparty,), (netting_set,))
-    assert reduced.k_reduced <= sum(
-        line.standalone_capital for line in reduced.netting_set_lines
-    ) + 1e-9
+    assert (
+        reduced.k_reduced
+        <= sum(line.standalone_capital for line in reduced.netting_set_lines) + 1e-9
+    )
 
 
 @given(amount=POSITIVE_AMOUNT)

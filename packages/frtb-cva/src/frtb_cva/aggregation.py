@@ -123,10 +123,21 @@ def aggregate_inter_bucket(
 
     validated_m_cva = validate_m_cva_multiplier(m_cva)
     gamma_bc, gamma_citation = girr_inter_bucket_correlation(profile=profile)
-    bucket_kb = np.fromiter((bucket.k_b for bucket in bucket_capitals), dtype=np.float64)
-    bucket_sb = np.fromiter((bucket.s_b for bucket in bucket_capitals), dtype=np.float64)
+    bucket_count = len(bucket_capitals)
+    bucket_kb = np.fromiter(
+        (bucket.k_b for bucket in bucket_capitals),
+        dtype=np.float64,
+        count=bucket_count,
+    )
+    bucket_sb = np.fromiter(
+        (bucket.s_b for bucket in bucket_capitals),
+        dtype=np.float64,
+        count=bucket_count,
+    )
     sum_kb_squared = float(np.dot(bucket_kb, bucket_kb))
-    cross_term = float(2.0 * gamma_bc * np.triu(np.outer(bucket_sb, bucket_sb), k=1).sum())
+    sum_sb = float(bucket_sb.sum())
+    sum_sb_squared = float(np.dot(bucket_sb, bucket_sb))
+    cross_term = gamma_bc * (sum_sb * sum_sb - sum_sb_squared)
     pre_multiplier = math.sqrt(max(sum_kb_squared + cross_term, 0.0))
     post_multiplier = validated_m_cva * pre_multiplier
     return SaCvaRiskClassCapital(
