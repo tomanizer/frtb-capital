@@ -42,6 +42,7 @@ def _weighted(
         weighted_cva=weighted_cva,
         weighted_hedge=weighted_hedge,
         weighted_net=weighted_cva + weighted_hedge,
+        source_sensitivity_ids=(),
         citations=("basel_mar50_56",),
     )
 

@@ -64,4 +64,5 @@ def test_sa_cva_audit_payload_includes_risk_class_breakdown() -> None:
     assert risk_class_rows[0]["risk_class"] == "GIRR"
     assert len(risk_class_rows[0]["bucket_capitals"]) == 1
     assert risk_class_rows[0]["bucket_capitals"][0]["k_b"] > 0.0
+    assert risk_class_rows[0]["bucket_capitals"][0]["sensitivity_ids"] == ["sens-girr-5y"]
     validate_cva_result_reconciliation(result)

@@ -65,6 +65,7 @@ def compute_weighted_sensitivities(
 
     grouped_cva: dict[SaCvaRiskFactorKey, float] = defaultdict(float)
     grouped_hedge: dict[SaCvaRiskFactorKey, float] = defaultdict(float)
+    grouped_ids: dict[SaCvaRiskFactorKey, list[str]] = defaultdict(list)
     hedge_ids = (
         eligible_hedge_ids if eligible_hedge_ids is not None else eligible_sa_cva_hedge_ids(hedges)
     )
@@ -73,10 +74,12 @@ def compute_weighted_sensitivities(
         key = _risk_factor_key(sensitivity)
         if sensitivity.sensitivity_tag is SensitivityTag.CVA:
             grouped_cva[key] += sensitivity.amount
+            grouped_ids[key].append(sensitivity.sensitivity_id)
         elif sensitivity.sensitivity_tag is SensitivityTag.HDG:
             if sensitivity.hedge_id not in hedge_ids:
                 continue
             grouped_hedge[key] += sensitivity.amount
+            grouped_ids[key].append(sensitivity.sensitivity_id)
 
     keys = sorted(
         set(grouped_cva) | set(grouped_hedge),
@@ -119,6 +122,7 @@ def compute_weighted_sensitivities(
                 weighted_cva=weighted_cva,
                 weighted_hedge=weighted_hedge,
                 weighted_net=weighted_net,
+                source_sensitivity_ids=tuple(sorted(set(grouped_ids[key]))),
                 citations=citations,
             )
         )

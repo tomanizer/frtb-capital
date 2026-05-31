@@ -98,13 +98,22 @@ def aggregate_intra_bucket(
     floor_applied = abs(s_b) > k_b
     if floor_applied:
         s_b = math.copysign(k_b, s_b) if s_b != 0.0 else 0.0
+    sensitivity_ids = tuple(
+        sorted(
+            {
+                sensitivity_id
+                for item in weighted_sensitivities
+                for sensitivity_id in item.source_sensitivity_ids
+            }
+        )
+    )
     return SaCvaBucketCapital(
         bucket_id=bucket_id,
         risk_class=SaCvaRiskClass.GIRR,
         risk_measure=SaCvaRiskMeasure.DELTA,
         k_b=k_b,
         s_b=s_b,
-        sensitivity_ids=(),
+        sensitivity_ids=sensitivity_ids,
         citations=("basel_mar50_53", "basel_mar50_56"),
         branch_metadata=(("floor_applied", str(floor_applied)),),
     )

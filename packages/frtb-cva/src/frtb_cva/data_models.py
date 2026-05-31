@@ -299,6 +299,7 @@ class SaCvaWeightedSensitivity:
     weighted_cva: float
     weighted_hedge: float
     weighted_net: float
+    source_sensitivity_ids: tuple[str, ...]
     citations: tuple[str, ...]
 
 

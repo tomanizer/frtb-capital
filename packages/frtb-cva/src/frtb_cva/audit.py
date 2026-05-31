@@ -24,6 +24,7 @@ from frtb_cva.data_models import (
     SaCvaRiskClassCapital,
     SaCvaSensitivity,
 )
+from frtb_cva.aggregation import aggregate_inter_bucket
 from frtb_cva.numeric import is_reconciled
 from frtb_cva.validation import (
     CvaInputError,
@@ -212,6 +213,20 @@ def validate_cva_result_reconciliation(result: CvaCapitalResult) -> None:
                 raise CvaInputError(
                     "SA-CVA risk-class result requires at least one bucket capital",
                     field="bucket_capitals",
+                    record_id=risk_class_capital.risk_class.value,
+                )
+            recomputed = aggregate_inter_bucket(
+                risk_class_capital.bucket_capitals,
+                m_cva=risk_class_capital.m_cva,
+                profile=result.profile_id,
+            )
+            if not is_reconciled(
+                risk_class_capital.pre_multiplier_capital,
+                recomputed.pre_multiplier_capital,
+            ):
+                raise CvaInputError(
+                    "SA-CVA risk-class pre-multiplier capital does not reconcile to bucket capitals",
+                    field="pre_multiplier_capital",
                     record_id=risk_class_capital.risk_class.value,
                 )
 
