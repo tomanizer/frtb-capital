@@ -61,7 +61,6 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
         {
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
-            (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
             (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
             (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),

@@ -27,7 +27,6 @@ from frtb_sbm.audit import (
     _input_hash_for_validated_sensitivities,
     validate_sbm_result_reconciliation,
 )
-from frtb_sbm.curvature import calculate_girr_curvature_risk_class_capital
 from frtb_sbm.data_models import (
     RiskClassCapital,
     SbmBranchMetadata,
@@ -131,14 +130,6 @@ def calculate_sbm_capital(
                 _calculate_girr_vega_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
-                )
-            )
-        elif risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.CURVATURE:
-            risk_class_results.append(
-                calculate_girr_curvature_risk_class_capital(
-                    measure_sensitivities,
-                    profile_id=rule_profile.profile_id,
-                    reporting_currency=context.reporting_currency,
                 )
             )
         elif risk_class is SbmRiskClass.FX and risk_measure is SbmRiskMeasure.DELTA:

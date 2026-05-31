@@ -82,7 +82,6 @@ def test_unknown_profile_fails_as_input_error() -> None:
     [
         (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, True),
-        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, True),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA, True),
