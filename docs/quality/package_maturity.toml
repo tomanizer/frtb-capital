@@ -18,14 +18,18 @@ package = "frtb-cva"
 import_name = "frtb_cva"
 path = "packages/frtb-cva"
 module_docs = "docs/modules/frtb-cva"
-maturity = "scaffolded"
+maturity = "partial_runtime"
 component_type = "capital"
 metadata_object = "frtb_cva:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_cva:calculate_cva_capital"
 
 [[packages.required_tests]]
-id = "scaffold-boundary"
-path = "packages/frtb-cva/tests/test_cva_scaffold.py"
+id = "public-api"
+path = "packages/frtb-cva/tests/test_cva_public_api.py"
+
+[[packages.required_tests]]
+id = "unsupported-runtime-paths"
+path = "packages/frtb-cva/tests/test_cva_unsupported_features.py"
 
 [[packages]]
 package = "frtb-drc"

@@ -1,6 +1,6 @@
 schema_version: 1
 component: frtb-cva
-status: planned
+status: partial
 source_register: ../sources.yml
 planning_docs:
   - docs/modules/frtb-cva/DETAILED_REQUIREMENTS.md
@@ -22,7 +22,7 @@ requirements:
     test_refs:
       - packages/frtb-cva/tests/test_scope.py
       - packages/frtb-cva/tests/test_regimes.py
-    coverage_status: not_implemented
+    coverage_status: partial
     challenger_refs:
       - frtb_net_frtb
     notes: First profile target is BASEL_MAR50_2020 with July 2020 calibration.
@@ -36,7 +36,7 @@ requirements:
     test_refs:
       - packages/frtb-cva/tests/test_ba_cva_reduced.py
       - packages/frtb-cva/tests/test_ba_cva_full.py
-    coverage_status: not_implemented
+    coverage_status: partial
     notes: Reduced BA-CVA is the first capital slice.
   - id: CVA-SA-001
     topic: SA-CVA sensitivity weighting and aggregation
