@@ -7,7 +7,7 @@ guidance, and the ADR log in [`docs/decisions/`](docs/decisions/).
 ## Setup
 
 ```bash
-uv sync --locked --python 3.11
+uv sync --locked
 make check
 ```
 
