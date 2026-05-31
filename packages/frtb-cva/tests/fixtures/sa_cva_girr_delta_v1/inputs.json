@@ -131,7 +131,7 @@
   "invalid_cases": [
     {
       "case_id": "invalid_non_girr",
-      "expected_error_match": "delivered slice",
+      "expected_error_match": "reporting currency",
       "sensitivities": [
         {
           "sensitivity_id": "sens-fx",

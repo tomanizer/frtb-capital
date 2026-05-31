@@ -13,6 +13,7 @@ from frtb_cva.aggregation import (
     HEDGING_DISALLOWANCE_R,
     aggregate_intra_bucket,
     aggregate_weighted_sensitivities,
+    girr_delta_aggregation_config,
 )
 
 
@@ -48,7 +49,8 @@ def _weighted(
 
 
 def test_intra_bucket_reconciles_to_weighted_inputs() -> None:
-    bucket = aggregate_intra_bucket("USD", (_weighted(1_000_000.0),))
+    config = girr_delta_aggregation_config()
+    bucket = aggregate_intra_bucket("USD", (_weighted(1_000_000.0),), config=config)
     assert bucket.k_b == pytest.approx(1_000_000.0 * 0.0074)
     assert bucket.s_b == pytest.approx(1_000_000.0 * 0.0074)
 
@@ -59,9 +61,10 @@ def test_hedging_disallowance_constant_is_cited() -> None:
 
 def test_hedging_disallowance_adds_non_negative_penalty_for_offsetting_hedge() -> None:
     """MAR50.55: R · Σ (WS^HDG)² must not reduce K_b when CVA and hedge offset."""
+    config = girr_delta_aggregation_config()
     hedge_amount = -1_000_000.0
     item = _weighted(1_000_000.0, hedge=hedge_amount)
-    bucket = aggregate_intra_bucket("USD", (item,))
+    bucket = aggregate_intra_bucket("USD", (item,), config=config)
     weighted_hedge = hedge_amount * item.risk_weight
     expected = math.sqrt(HEDGING_DISALLOWANCE_R * weighted_hedge * weighted_hedge)
     assert item.weighted_net == pytest.approx(0.0)
@@ -70,11 +73,13 @@ def test_hedging_disallowance_adds_non_negative_penalty_for_offsetting_hedge() -
 
 
 def test_inter_bucket_aggregation_produces_risk_class_total() -> None:
+    config = girr_delta_aggregation_config()
     risk_class = aggregate_weighted_sensitivities(
         (
             _weighted(1_000_000.0, bucket="USD", factor="5y"),
             _weighted(500_000.0, bucket="EUR", factor="5y"),
-        )
+        ),
+        config=config,
     )
     assert risk_class.post_multiplier_capital > 0.0
     assert len(risk_class.bucket_capitals) == 2

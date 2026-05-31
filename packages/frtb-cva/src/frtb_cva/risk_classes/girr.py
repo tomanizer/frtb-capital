@@ -1,22 +1,21 @@
 """
-SA-CVA GIRR delta risk-class calculation.
+SA-CVA GIRR delta and vega risk-class calculation.
 """
 
 from __future__ import annotations
 
-from frtb_cva.aggregation import aggregate_weighted_sensitivities
+from frtb_cva.aggregation import (
+    girr_delta_aggregation_config,
+    girr_vega_aggregation_config,
+)
 from frtb_cva.data_models import (
     CvaHedge,
     CvaRegulatoryProfile,
     SaCvaRiskClassCapital,
     SaCvaSensitivity,
 )
-from frtb_cva.hedges import eligible_sa_cva_hedge_ids
-from frtb_cva.validation import CvaInputError, validate_cva_hedges, validate_sa_cva_sensitivities
-from frtb_cva.weighted_sensitivity import (
-    compute_weighted_sensitivities,
-    sort_weighted_sensitivities,
-)
+from frtb_cva.risk_classes._common import calculate_risk_class_capital
+from frtb_cva.validation import CvaInputError
 
 
 def calculate_girr_delta_capital(
@@ -31,19 +30,36 @@ def calculate_girr_delta_capital(
 
     if not sensitivities:
         raise CvaInputError("GIRR delta requires at least one sensitivity", field="sensitivities")
-
-    validated = validate_sa_cva_sensitivities(sensitivities)
-    validated_hedges = validate_cva_hedges(hedges)
-    eligible_ids = eligible_sa_cva_hedge_ids(validated_hedges)
-    weighted = sort_weighted_sensitivities(
-        compute_weighted_sensitivities(
-            validated,
-            eligible_hedge_ids=eligible_ids,
-            reporting_currency=reporting_currency,
-            profile=profile,
-        )
+    return calculate_risk_class_capital(
+        sensitivities,
+        aggregation_config=girr_delta_aggregation_config(profile=profile),
+        hedges=hedges,
+        m_cva=m_cva,
+        reporting_currency=reporting_currency,
+        profile=profile,
     )
-    return aggregate_weighted_sensitivities(weighted, m_cva=m_cva, profile=profile)
 
 
-__all__ = ["calculate_girr_delta_capital"]
+def calculate_girr_vega_capital(
+    sensitivities: tuple[SaCvaSensitivity, ...],
+    *,
+    hedges: tuple[CvaHedge, ...] = (),
+    m_cva: float = 1.0,
+    reporting_currency: str = "USD",
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> SaCvaRiskClassCapital:
+    """Calculate SA-CVA GIRR vega capital per MAR50.58."""
+
+    if not sensitivities:
+        raise CvaInputError("GIRR vega requires at least one sensitivity", field="sensitivities")
+    return calculate_risk_class_capital(
+        sensitivities,
+        aggregation_config=girr_vega_aggregation_config(profile=profile),
+        hedges=hedges,
+        m_cva=m_cva,
+        reporting_currency=reporting_currency,
+        profile=profile,
+    )
+
+
+__all__ = ["calculate_girr_delta_capital", "calculate_girr_vega_capital"]

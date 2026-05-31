@@ -7,10 +7,14 @@
 **Partial implementation.** The delivered slice supports:
 
 - Reduced BA-CVA (`BA_CVA_REDUCED`) per MAR50.14–15.
-- SA-CVA GIRR delta (`SA_CVA`) per MAR50.53–57 when `sa_cva_approved=True`.
+- SA-CVA across all six delta risk classes and five vega risk classes per
+  MAR50.42–MAR50.77 when `sa_cva_approved=True`.
+- GIRR, FX, CCS (delta only), RCS, equity, and commodity paths with cited
+  bucket tables, risk weights, and correlations.
+- CCS qualified-index bucket 8 remains unsupported until the qualified-index issue.
 
-Full BA-CVA hedge recognition, non-GIRR SA-CVA risk classes, mixed carve-out
-assembly, and comparison profiles remain unsupported and must fail closed.
+Full BA-CVA hedge recognition, mixed carve-out assembly, and comparison profiles
+remain unsupported and must fail closed.
 
 ## Rules
 

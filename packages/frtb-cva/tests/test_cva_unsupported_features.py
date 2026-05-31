@@ -80,11 +80,11 @@ def test_unsupported_profile_fails_at_public_api() -> None:
         calculate_cva_capital(context, (), (), sensitivities=(sensitivity,))
 
 
-def test_non_girr_sa_cva_sensitivity_fails_at_public_api() -> None:
+def test_ccs_vega_fails_at_public_api() -> None:
     from frtb_cva import CvaInputError
 
     context = CvaCalculationContext(
-        run_id="run-non-girr",
+        run_id="run-ccs-vega",
         calculation_date=date(2026, 5, 31),
         base_currency="USD",
         profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
@@ -92,17 +92,18 @@ def test_non_girr_sa_cva_sensitivity_fails_at_public_api() -> None:
         sa_cva_approved=True,
     )
     sensitivity = SaCvaSensitivity(
-        sensitivity_id="sens-fx",
-        risk_class=SaCvaRiskClass.FX,
-        risk_measure=SaCvaRiskMeasure.DELTA,
+        sensitivity_id="sens-ccs-vega",
+        risk_class=SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        risk_measure=SaCvaRiskMeasure.VEGA,
         sensitivity_tag=SensitivityTag.CVA,
-        bucket_id="1",
-        risk_factor_key="5y",
+        bucket_id="2",
+        risk_factor_key="CP1|INVESTMENT_GRADE",
         tenor="5y",
         amount=1_000_000.0,
         amount_currency="USD",
         sign_convention="positive_loss",
-        source_row_id="row-sens-fx",
+        source_row_id="row-sens-ccs-vega",
+        volatility_input=0.2,
     )
-    with pytest.raises(CvaInputError, match="delivered slice"):
+    with pytest.raises(CvaInputError, match="CCS vega"):
         calculate_cva_capital(context, (), (), sensitivities=(sensitivity,))

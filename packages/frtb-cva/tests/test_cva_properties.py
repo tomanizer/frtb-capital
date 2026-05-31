@@ -19,7 +19,7 @@ from frtb_cva import (
     calculate_reduced_portfolio,
     input_hash,
 )
-from frtb_cva.aggregation import aggregate_intra_bucket
+from frtb_cva.aggregation import aggregate_intra_bucket, girr_delta_aggregation_config
 from frtb_cva.numeric import is_reconciled
 from frtb_cva.weighted_sensitivity import compute_weighted_sensitivities
 from hypothesis import given
@@ -149,7 +149,8 @@ def test_sa_cva_input_hash_is_stable(amount: float) -> None:
 @given(amount=POSITIVE_AMOUNT)
 def test_intra_bucket_capital_reconciles_to_weighted_inputs(amount: float) -> None:
     weighted = compute_weighted_sensitivities((_girr_sensitivity(amount),))
-    bucket = aggregate_intra_bucket("USD", weighted)
+    config = girr_delta_aggregation_config()
+    bucket = aggregate_intra_bucket("USD", weighted, config=config)
     assert bucket.k_b >= 0.0
     assert is_reconciled(bucket.k_b, abs(weighted[0].weighted_net))
 
@@ -190,6 +191,7 @@ def test_partial_eligible_hedge_does_not_increase_sa_cva_capital(
         ),
         eligible_hedge_ids=frozenset({"hedge-prop"}),
     )
-    unhedged_capital = aggregate_intra_bucket("USD", unhedged).k_b
-    hedged_capital = aggregate_intra_bucket("USD", hedged).k_b
+    config = girr_delta_aggregation_config()
+    unhedged_capital = aggregate_intra_bucket("USD", unhedged, config=config).k_b
+    hedged_capital = aggregate_intra_bucket("USD", hedged, config=config).k_b
     assert hedged_capital <= unhedged_capital + 1e-9
