@@ -56,7 +56,7 @@ def load_budgets(
 def _read_metric(report: dict[str, object], path: tuple[str, ...]) -> float:
     current: object = report
     for key in path:
-        if not isinstance(current, dict):
+        if not isinstance(current, dict) or key not in current:
             raise ValueError(f"metric path {path!r} is not present")
         current = current[key]
     if not isinstance(current, (int, float)):
@@ -73,7 +73,10 @@ def check_budget(budget: BenchmarkBudget, *, root: Path | None = None) -> list[s
             f"run the benchmark command documented in docs/quality/BENCHMARK_PROFILE.md"
         ]
 
-    report = json.loads(artifact_path.read_text(encoding="utf-8"))
+    try:
+        report = json.loads(artifact_path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        return [f"{budget.name}: invalid JSON artifact: {exc}"]
     if not isinstance(report, dict):
         return [f"{budget.name}: artifact must be a JSON object"]
 

@@ -125,8 +125,7 @@ def validate_cva_result_reconciliation(result: CvaCapitalResult) -> None:
 
     _validate_cva_result_hashes(result)
 
-    if result.ba_cva_reduced is not None:
-        _validate_ba_cva_reduced_reconciliation(result)
+    _validate_ba_cva_reduced_reconciliation(result)
 
     if result.method is CvaMethod.SA_CVA:
         _validate_sa_cva_reconciliation(result)
