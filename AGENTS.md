@@ -56,6 +56,12 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
 - **One package per PR** unless the change is genuinely cross-cutting (regulatory definition change, shared type update). Cross-cutting PRs must reference an ADR.
 - **Per-package versioning.** Bump only the affected package's version.
 - **Material changes need ADRs.** See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- **Close all sub-issues explicitly in the PR body.** GitHub only closes issues
+  named directly in the PR body with `Closes #N`. Checkboxes inside a parent
+  issue (`- [x] #N`) are not followed. When a PR closes a parent/phase issue,
+  list every delivered sub-issue with its own `Closes #N` line — do not rely on
+  the parent's checkbox list. The `cascade-close-subissues` action is a fallback,
+  not a substitute for explicit closing references.
 
 ## Quality control plane
 
