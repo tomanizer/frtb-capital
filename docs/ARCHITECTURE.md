@@ -6,10 +6,12 @@
 The structure covers IMA, the three Standardised Approach components, CVA, and
 a suite-level aggregator, with a shared foundation package. Today,
 `packages/frtb-ima` contains the migrated IMA implementation, `frtb-rrao`
-contains an implemented canonical-input RRAO path, and `frtb-drc` contains a
-partial non-securitisation DRC runtime path. `frtb-sbm` and `frtb-cva` remain
-importable scaffolds. Suite aggregation still fails explicitly until all
-required component result contracts are available.
+contains an implemented canonical-input RRAO path, `frtb-drc` contains a
+partial non-securitisation DRC runtime path, `frtb-sbm` has delta capital
+implemented for GIRR, FX, Equity, Commodity, and CSR non-securitisation (GIRR
+vega also implemented; curvature aggregation pending), and `frtb-cva` has
+Reduced BA-CVA and SA-CVA GIRR delta implemented. Suite aggregation still
+fails explicitly until all required component result contracts are available.
 
 The Standardised Approach is a composed regulatory approach, not a standalone
 package. In this suite, `frtb-sbm`, `frtb-drc`, and `frtb-rrao` together produce
@@ -78,8 +80,12 @@ Inputs: canonical or CRIF-mapped sensitivities by risk class, bucket, tenor, and
 risk measure. Outputs: SBM capital, risk-class totals, correlation-scenario
 selection, and audit breakdowns.
 
-Status: scaffolded. Calculation not implemented; public calculation entry
-points raise explicit unimplemented-component errors.
+Status: partial runtime. Delta capital implemented for GIRR, FX, Equity,
+Commodity, and CSR non-securitisation under BASEL_MAR21. GIRR vega
+implemented. Curvature input validation is supported; curvature capital
+aggregation is not yet implemented. CSR securitisation (CTP and non-CTP)
+unsupported. Public entry point: `calculate_sbm_capital`. Unsupported paths
+fail closed; no silent zero-capital placeholders.
 
 ### `frtb-drc` — Default Risk Charge
 
@@ -109,8 +115,10 @@ closed.
 
 CVA capital under the Basic Approach or Standardized Approach. Inputs: counterparty exposures, credit spreads, hedge positions.
 
-Status: scaffolded. Calculation not implemented; public calculation entry
-points raise explicit unimplemented-component errors.
+Status: partial runtime. Reduced BA-CVA stand-alone and portfolio capital
+implemented. SA-CVA GIRR delta weighting and aggregation implemented. Full
+BA-CVA hedge recognition (MAR50.17–26) and SA-CVA risk classes other than
+GIRR delta are unsupported and fail closed.
 
 ### `frtb-orchestration` — Suite aggregation
 
@@ -143,9 +151,9 @@ Each capital component should have a suite-level documentation front door under
 `docs/modules/<component>/`. For IMA, the formal model documentation pack lives
 under [`docs/modules/frtb-ima/model_documentation/`](modules/frtb-ima/model_documentation/README.md)
 and package-specific supporting evidence remains under `packages/frtb-ima/docs/`.
-SBM and CVA have scaffold front doors. DRC has partial-runtime planning and
-requirements documents, RRAO has a formal model documentation pack, and
-orchestration/common have suite-support front doors. Formal model documentation
+SBM and CVA have partial-runtime module documentation front doors. DRC has
+partial-runtime planning and requirements documents, RRAO has a formal model
+documentation pack, and orchestration/common have suite-support front doors. Formal model documentation
 packs should be added or promoted when each capital package moves to an
 implemented calculation maturity profile.
 

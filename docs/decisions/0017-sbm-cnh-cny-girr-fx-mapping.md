@@ -1,4 +1,4 @@
-# 15. SBM CNH/CNY GIRR and FX currency mapping
+# 17. SBM CNH/CNY GIRR and FX currency mapping
 
 Date: 2026-05-30
 

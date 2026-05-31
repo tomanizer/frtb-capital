@@ -8,7 +8,7 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ### Added
 
-- ADR 0015 documenting CNH/CNY GIRR and FX delta mapping under Basel MAR21.8(c),
+- ADR 0017 documenting CNH/CNY GIRR and FX delta mapping under Basel MAR21.8(c),
   MAR21.14(4), MAR21.41, and MAR21.88.
 - GIRR bucket `17` for offshore renminbi (`CNH`); bucket `8` now maps to onshore
   `CNY`.
@@ -17,7 +17,7 @@ All notable changes to `frtb-sbm` will be documented here.
 ### Changed
 
 - BASEL_MAR21 profile hash updates for the expanded GIRR bucket registry.
-- `basel_mar21_38` citation note references MAR21.41 and ADR 0015.
+- `basel_mar21_38` citation note references MAR21.41 and ADR 0017.
 
 ## [0.7.5] - 2026-05-30
 
