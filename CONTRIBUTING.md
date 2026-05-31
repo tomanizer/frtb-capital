@@ -7,11 +7,13 @@ guidance, and the ADR log in [`docs/decisions/`](docs/decisions/).
 ## Setup
 
 ```bash
-uv sync
+uv sync --locked --python 3.11
 make check
 ```
 
-Requires Python 3.11+ and [`uv`](https://docs.astral.sh/uv/).
+Requires Python 3.11+ and [`uv`](https://docs.astral.sh/uv/). The repo pins
+`3.11` in `.python-version` so local runs match CI (`test (3.11)`); use
+`uv sync --locked --python 3.11` if your default interpreter is newer.
 
 ## Workflow
 
