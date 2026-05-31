@@ -56,14 +56,23 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
 - **One package per PR** unless the change is genuinely cross-cutting (regulatory definition change, shared type update). Cross-cutting PRs must reference an ADR.
 - **Per-package versioning.** Bump only the affected package's version.
 - **Material changes need ADRs.** See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- **Close all sub-issues explicitly in the PR body.** GitHub only closes issues
+  named directly in the PR body with `Closes #N`. Checkboxes inside a parent
+  issue (`- [x] #N`) are not followed. When a PR closes a parent/phase issue,
+  list every delivered sub-issue with its own `Closes #N` line — do not rely on
+  the parent's checkbox list. The `cascade-close-subissues` action is a fallback,
+  not a substitute for explicit closing references.
 
 ## Quality control plane
 
 - Run `make agent-guard` and `make quality-control` before pushing any branch
   that changes package code, package metadata, model documentation, regulatory
   traceability, CI controls, or repository governance files.
-- For substantive package changes, also run `make check` before review. If the
-  full suite is impractical, run the affected package tests plus
+- For substantive package changes, run make ci-local (or at minimum
+  make check) before push. Use Python 3.11 locally (via .python-version)
+  so results match CI; newer interpreters can fail fixture hash gates such as
+  frtb-drc drc_nonsec_v2.
+- If the full suite is impractical, run the affected package tests plus
   `make quality-control`, and state the narrower validation in the PR.
 - Keep [`docs/quality/package_maturity.toml`](docs/quality/package_maturity.toml)
   in sync with package additions, removals, renames, or implementation-status

@@ -2,6 +2,14 @@
 
 - 
 
+## Closes
+
+<!-- List every issue closed by this PR. GitHub only closes issues named here,
+     not checkboxes inside a parent issue body. When closing a parent/phase
+     issue, list every delivered sub-issue explicitly:
+     Closes #N, #N, #N
+     Closes #N  (parent) -->
+
 ## Affected Packages
 
 - [ ] Suite-only documentation/governance

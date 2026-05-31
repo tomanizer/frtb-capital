@@ -1,0 +1,64 @@
+name: cascade-close-subissues
+
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  cascade-close:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Close checked sub-issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || '';
+            const parentNumber = context.payload.issue.number;
+            const parentTitle = context.payload.issue.title;
+
+            // Match checked checkbox lines referencing issues: "- [x] #NNN" or "- [X] #NNN"
+            const matches = [...body.matchAll(/- \[[xX]\]\s+#(\d+)/g)];
+            const childNumbers = matches.map(m => parseInt(m[1], 10));
+
+            if (childNumbers.length === 0) {
+              console.log('No checked sub-issue references found in issue body.');
+              return;
+            }
+
+            console.log(`Parent #${parentNumber} closed. Found checked sub-issues: ${childNumbers.join(', ')}`);
+
+            for (const number of childNumbers) {
+              try {
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: number,
+                });
+
+                if (issue.state === 'closed') {
+                  console.log(`#${number} already closed, skipping.`);
+                  continue;
+                }
+
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: number,
+                  state: 'closed',
+                  state_reason: 'completed',
+                });
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: number,
+                  body: `Automatically closed as a checked sub-issue of #${parentNumber} (${parentTitle}).`,
+                });
+
+                console.log(`Closed #${number}`);
+              } catch (err) {
+                console.error(`Failed to close #${number}: ${err.message}`);
+              }
+            }
