@@ -186,7 +186,8 @@ def _validate_ba_cva_reduced_reconciliation(result: CvaCapitalResult) -> None:
         )
 
     expected_portfolio = (
-        reduced.rho * (reduced.sum_scva**2) + (1.0 - reduced.rho) * reduced.sum_scva_squared
+        (reduced.rho * reduced.sum_scva) ** 2
+        + (1.0 - reduced.rho**2) * reduced.sum_scva_squared
     ) ** 0.5
     if not is_reconciled(reduced.k_portfolio, expected_portfolio):
         raise CvaInputError(

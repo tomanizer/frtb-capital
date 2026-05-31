@@ -85,8 +85,7 @@ def test_portfolio_components_reconcile(sample_lineage) -> None:
     netting_set = _netting_set("ns-1", "ctp-1", 750_000.0, sample_lineage)
     reduced = calculate_reduced_portfolio((counterparty,), (netting_set,))
     expected_portfolio = (
-        (reduced.rho * reduced.sum_scva) ** 2
-        + (1.0 - reduced.rho**2) * reduced.sum_scva_squared
+        (reduced.rho * reduced.sum_scva) ** 2 + (1.0 - reduced.rho**2) * reduced.sum_scva_squared
     ) ** 0.5
     assert reduced.k_portfolio == pytest.approx(expected_portfolio)
     assert reduced.k_reduced == pytest.approx(reduced.d_ba_cva * reduced.k_portfolio)
