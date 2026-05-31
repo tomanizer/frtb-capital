@@ -808,7 +808,7 @@ def fx_specified_currencies_for_profile(
 
 
 def normalise_fx_delta_currency_code(currency: str) -> str:
-    """Map FX delta currency codes to MAR21.88 canonical bucket codes (ADR 0015)."""
+    """Map FX delta currency codes to MAR21.88 canonical bucket codes (ADR 0017)."""
 
     normalised = _require_currency(currency)
     if normalised == "CNH":

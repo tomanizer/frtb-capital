@@ -17,7 +17,7 @@ All notable changes to `frtb-sbm` will be documented here.
 ### Changed
 
 - BASEL_MAR21 profile hash updates for the expanded GIRR bucket registry.
-- `basel_mar21_38` citation note references MAR21.41 and ADR 0015.
+- `basel_mar21_38` citation note references MAR21.41 and ADR 0017.
 
 ## [0.7.5] - 2026-05-30
 
