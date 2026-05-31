@@ -26,6 +26,29 @@ def test_implemented_coverage_targets_come_from_registry(tmp_path: Path) -> None
     )
 
 
+def test_partial_runtime_coverage_targets_use_maturity_filter(tmp_path: Path) -> None:
+    _write_registry(
+        tmp_path,
+        [
+            ("frtb-alpha", "frtb_alpha", "implemented"),
+            ("frtb-beta", "frtb_beta", "partial_runtime"),
+        ],
+    )
+
+    targets = coverage.implemented_coverage_targets(
+        root=tmp_path,
+        maturity="partial_runtime",
+    )
+
+    assert targets == (
+        coverage.CoverageTarget(
+            package="frtb-beta",
+            import_name="frtb_beta",
+            source_root=tmp_path / "packages/frtb-beta/src/frtb_beta",
+        ),
+    )
+
+
 def test_coverage_check_enforces_floor_for_all_implemented_packages(
     tmp_path: Path,
     monkeypatch,

@@ -165,6 +165,21 @@ def test_sa_aggregation_remains_unimplemented_with_placeholder_components() -> N
         )
 
 
+def test_m1_contract_boundary_recognises_all_sa_component_handoffs() -> None:
+    """ADR 0018 M1: each SA component handoff is recognised before aggregation."""
+
+    rrao_result = sample_rrao_result()
+    drc_result = sample_drc_result()
+
+    rrao_handoff = recognise_rrao_result(rrao_result)
+    drc_handoff = recognise_drc_result(drc_result)
+
+    assert rrao_handoff.component is StandardisedComponent.RRAO
+    assert drc_handoff.component is StandardisedComponent.DRC
+    assert rrao_handoff.total_capital == rrao_result.total_rrao
+    assert drc_handoff.total_capital == drc_result.total_drc
+
+
 def test_rrao_handoff_rejects_invalid_result_shape() -> None:
     with pytest.raises(OrchestrationInputError, match="missing required field total_rrao"):
         recognise_rrao_result(

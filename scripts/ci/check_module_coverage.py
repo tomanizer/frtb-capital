@@ -34,6 +34,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--registry", type=Path, default=REGISTRY_PATH)
     parser.add_argument("--package", action="append", default=[])
+    parser.add_argument(
+        "--maturity",
+        default="implemented",
+        help="Package maturity profile to select from the registry (default: implemented).",
+    )
+    parser.add_argument(
+        "--report-only",
+        action="store_true",
+        help="Print coverage results but do not fail when modules are below the floor.",
+    )
     parser.add_argument("--floor", type=float, default=90.0)
     parser.add_argument("--exclude", action="append", default=list(DEFAULT_EXCLUDES))
     args = parser.parse_args(argv)
@@ -51,11 +61,15 @@ def main(argv: list[str] | None = None) -> int:
             for source_root in args.source_root
         )
         if args.source_root
-        else implemented_coverage_targets(args.registry, selected_packages=set(args.package))
+        else implemented_coverage_targets(
+            args.registry,
+            selected_packages=set(args.package),
+            maturity=args.maturity,
+        )
     )
 
     if not targets:
-        print("No implemented package coverage targets found.")
+        print(f"No {args.maturity!r} package coverage targets found.")
         return 1
 
     measured: list[tuple[Path, float]] = []
@@ -93,8 +107,14 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Modules below {args.floor:.2f}% coverage:")
         for path, percent in failures:
             print(f"  {path.relative_to(Path.cwd())}: {percent:.2f}%")
-    if missing_or_empty_source_roots or missing_report_entries or failures:
+    if missing_or_empty_source_roots or missing_report_entries:
         return 1
+    if failures and not args.report_only:
+        return 1
+
+    if failures and args.report_only:
+        print(f"Report-only mode: {len(failures)} module(s) below {args.floor:.2f}% coverage.")
+        return 0
 
     print(f"All measured modules meet the {args.floor:.2f}% coverage floor.")
     return 0
@@ -104,16 +124,17 @@ def implemented_coverage_targets(
     registry_path: Path = REGISTRY_PATH,
     *,
     selected_packages: set[str] | None = None,
+    maturity: str = "implemented",
     root: Path | None = None,
 ) -> tuple[CoverageTarget, ...]:
-    """Return source roots for implemented packages in the maturity registry."""
+    """Return source roots for packages at the requested maturity in the registry."""
 
     root = root or Path.cwd()
     selected = selected_packages or set()
     data = tomllib.loads((root / registry_path).read_text(encoding="utf-8"))
     targets: list[CoverageTarget] = []
     for raw_package in data.get("packages", []):
-        if raw_package.get("maturity") != "implemented":
+        if raw_package.get("maturity") != maturity:
             continue
         package = str(raw_package["package"])
         if selected and package not in selected:
