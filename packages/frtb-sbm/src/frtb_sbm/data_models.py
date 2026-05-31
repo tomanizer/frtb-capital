@@ -185,6 +185,10 @@ class WeightedSensitivity:
     # Carries issuer/currency qualifier, or the cited tenor key copied for GIRR rows.
     qualifier: str | None = None
     liquidity_horizon_days: int | None = None
+    # Populated when multiple input rows are netted to one regulatory factor.
+    factor_key: tuple[str, ...] = ()
+    contributing_sensitivity_ids: tuple[str, ...] = ()
+    contributing_source_row_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

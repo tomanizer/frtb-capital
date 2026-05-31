@@ -39,6 +39,7 @@ from frtb_sbm.data_models import (
     SbmSensitivity,
     WeightedSensitivity,
 )
+from frtb_sbm.factor_grid import net_girr_delta_weighted_sensitivities
 from frtb_sbm.reference_data import (
     GIRR_INTRA_BUCKET_CORRELATION_FLOOR,
     girr_delta_intra_bucket_correlation,
@@ -230,14 +231,13 @@ def _calculate_girr_delta_risk_class_capital(
         profile_id=profile_id,
         reporting_currency=reporting_currency,
     )
-    tenor_by_id = {item.sensitivity_id: item.tenor or "" for item in sensitivities}
-    risk_factor_by_id = {item.sensitivity_id: item.risk_factor for item in sensitivities}
+    factor_grid = net_girr_delta_weighted_sensitivities(sensitivities, weighted)
     return _aggregate_girr_measure_capital(
-        weighted,
+        factor_grid.weighted_sensitivities,
         profile_id=profile_id,
         risk_measure=SbmRiskMeasure.DELTA,
-        tenor_by_id=tenor_by_id,
-        risk_factor_by_id=risk_factor_by_id,
+        tenor_by_id=factor_grid.tenor_by_id,
+        risk_factor_by_id=factor_grid.risk_factor_by_id,
     )
 
 

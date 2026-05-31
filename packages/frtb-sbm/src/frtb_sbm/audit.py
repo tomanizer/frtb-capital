@@ -254,6 +254,12 @@ def _weighted_sensitivity_payload(item: WeightedSensitivity) -> dict[str, object
     }
     if item.qualifier is not None:
         payload["qualifier"] = item.qualifier
+    if item.factor_key:
+        payload["factor_key"] = list(item.factor_key)
+    if item.contributing_sensitivity_ids:
+        payload["contributing_sensitivity_ids"] = list(item.contributing_sensitivity_ids)
+    if item.contributing_source_row_ids:
+        payload["contributing_source_row_ids"] = list(item.contributing_source_row_ids)
     return payload
 
 
