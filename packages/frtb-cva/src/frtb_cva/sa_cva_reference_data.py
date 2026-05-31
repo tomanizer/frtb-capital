@@ -7,6 +7,8 @@ MAR50.58 (GIRR vega), MAR50.45 (no CCS vega).
 
 from __future__ import annotations
 
+from functools import cache
+
 from frtb_cva.data_models import CreditQuality, CvaRegulatoryProfile
 from frtb_cva.validation import CvaInputError
 
@@ -641,6 +643,7 @@ def _resolve_credit_quality(credit_quality: CreditQuality | str) -> CreditQualit
         ) from exc
 
 
+@cache
 def parse_ccs_entity_key(risk_factor_key: str) -> tuple[str, CreditQuality, str | None]:
     """
     Parse CCS risk_factor_key as ``entity|QUALITY`` with optional ``|legal:GROUP``.

@@ -19,12 +19,14 @@ from frtb_cva.sa_cva_reference_data import rcs_inter_bucket_correlation
 from frtb_cva.validation import CvaInputError
 
 
-def _single_factor_correlation(
+def _rcs_intra_bucket_correlation(
     left: SaCvaWeightedSensitivity,
     right: SaCvaWeightedSensitivity,
 ) -> tuple[float, str]:
-    del left, right
-    return 1.0, "basel_mar50_68"
+    # MAR50.68: rho_kl = 1 if same reference name, 0.50 otherwise.
+    same_name = left.risk_factor_key.risk_factor_key == right.risk_factor_key.risk_factor_key
+    rho = 1.0 if same_name else 0.50
+    return rho, "basel_mar50_68"
 
 
 def _rcs_config(
@@ -39,7 +41,7 @@ def _rcs_config(
     return SaCvaAggregationConfig(
         risk_class=SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
         risk_measure=risk_measure,
-        intra_bucket_correlation=_single_factor_correlation,
+        intra_bucket_correlation=_rcs_intra_bucket_correlation,
         inter_bucket_gamma=_gamma,
         intra_bucket_citations=("basel_mar50_53", citation),
     )
