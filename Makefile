@@ -62,10 +62,10 @@ regulatory-wording:
 	python3 scripts/ci/check_regulatory_wording.py
 
 package-status-dashboard:
-	uv run python scripts/ci/generate_package_status_dashboard.py --check
+	python3 scripts/ci/generate_package_status_dashboard.py --check
 
 package-status-dashboard-regenerate:
-	uv run python scripts/ci/generate_package_status_dashboard.py
+	python3 scripts/ci/generate_package_status_dashboard.py
 
 import-lint:
 	uv run lint-imports
