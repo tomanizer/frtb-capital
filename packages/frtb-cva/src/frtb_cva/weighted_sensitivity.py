@@ -69,9 +69,7 @@ def compute_weighted_sensitivities(
         if hedges:
             from frtb_cva.data_models import CvaHedge
 
-            validated_hedges = tuple(
-                hedge for hedge in hedges if isinstance(hedge, CvaHedge)
-            )
+            validated_hedges = tuple(hedge for hedge in hedges if isinstance(hedge, CvaHedge))
             hedge_ids = eligible_sa_cva_hedge_ids(validated_hedges)
         else:
             hedge_ids = frozenset()

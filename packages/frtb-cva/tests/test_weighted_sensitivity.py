@@ -103,7 +103,14 @@ def test_hdg_sensitivity_dropped_when_no_eligible_hedges_provided() -> None:
 
 def test_other_currency_risk_weight_scaled_per_mar50_57() -> None:
     weighted = compute_weighted_sensitivities(
-        (_sensitivity(sensitivity_id="cva-chf", tag=SensitivityTag.CVA, amount=1.0, bucket_id="CHF"),),
+        (
+            _sensitivity(
+                sensitivity_id="cva-chf",
+                tag=SensitivityTag.CVA,
+                amount=1.0,
+                bucket_id="CHF",
+            ),
+        ),
         reporting_currency="USD",
     )
     base_risk_weight, _ = girr_delta_risk_weight("5y")
@@ -113,7 +120,14 @@ def test_other_currency_risk_weight_scaled_per_mar50_57() -> None:
 
 def test_reporting_currency_uses_specified_currency_tables() -> None:
     weighted = compute_weighted_sensitivities(
-        (_sensitivity(sensitivity_id="cva-chf", tag=SensitivityTag.CVA, amount=1.0, bucket_id="CHF"),),
+        (
+            _sensitivity(
+                sensitivity_id="cva-chf",
+                tag=SensitivityTag.CVA,
+                amount=1.0,
+                bucket_id="CHF",
+            ),
+        ),
         reporting_currency="CHF",
     )
     base_risk_weight, _ = girr_delta_risk_weight("5y")
