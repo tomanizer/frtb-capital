@@ -131,7 +131,8 @@ def _required_finite_number_attr(result: object, field: str, *, component: str) 
 def _optional_object_attr(result: object, field: str, *, component: str) -> object | None:
     if not hasattr(result, field):
         return None
-    return getattr(result, field)
+    val: object | None = getattr(result, field)
+    return val
 
 
 def _optional_sequence_attr(result: object, field: str, *, component: str) -> tuple[object, ...]:

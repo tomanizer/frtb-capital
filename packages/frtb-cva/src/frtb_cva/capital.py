@@ -100,9 +100,7 @@ def calculate_cva_capital(
                 method=CvaMethod.SA_CVA,
                 total_capital=sa_total,
                 citations=tuple(
-                    citation
-                    for item in sa_cva_risk_class_capitals
-                    for citation in item.citations
+                    citation for item in sa_cva_risk_class_capitals for citation in item.citations
                 ),
             )
         )

@@ -73,9 +73,7 @@ def attribute_cva_capital(result: CvaCapitalResult) -> CvaAttributionResult:
                             citations=bucket.citations,
                         )
                     )
-            unsupported.append(
-                f"sa_cva_risk_class_sqrt:{risk_class_capital.risk_class.value}"
-            )
+            unsupported.append(f"sa_cva_risk_class_sqrt:{risk_class_capital.risk_class.value}")
 
     total = result.total_cva_capital
     sum_contributions = sum(item.amount for item in contributions)
