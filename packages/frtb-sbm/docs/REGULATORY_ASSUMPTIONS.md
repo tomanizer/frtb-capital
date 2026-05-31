@@ -85,6 +85,28 @@ Callers must supply GIRR sensitivities with the curve denomination matching the
 canonical bucket currency. FX inputs may use `CNH`; `normalise_fx_delta_currency_code`
 maps to `CNY` before bucket lookup.
 
+## CSR securitisation reference tables (verified; capital path still fail-closed)
+
+The CSR securitisation **CTP** and **non-CTP** reference tables
+(`csr_sec_ctp_reference_data.py`, `csr_sec_nonctp_reference_data.py`) are
+present and parameter-complete even though the *capital-producing* path for both
+remains explicitly unsupported (see the status table in
+[`REGULATORY_TRACEABILITY.md`](REGULATORY_TRACEABILITY.md) and
+`_ensure_csr_sec_*_supported`). The tables were cross-checked against the Basel
+MAR21 consolidated text on 2026-05-31 and confirmed correct:
+
+| Table | Basel source | Verification outcome |
+| --- | --- | --- |
+| CSR sec **CTP** delta risk weights, buckets 1–16 | MAR21.59 (Table 6) | Match exactly: IG `4/4/8/5/4/3/2/6%`, HY `13/13/16/10/12/12/12/13%`. |
+| CSR sec **non-CTP** senior-IG weights, buckets 1–8 | MAR21.71 | Match exactly: `0.9/1.5/2.0/2.0/0.8/1.2/1.2/1.4%`. |
+| CSR sec **non-CTP** non-senior / non-IG weights | MAR21.71 | `_NON_SENIOR_MULTIPLIER = 1.25` and `_HIGH_YIELD_MULTIPLIER = 1.75` are the **literal regulatory derivation**, not an approximation. MAR21.71 gives the worked example "the risk weight for bucket 17 is equal to 1.75 × 0.9% = 1.575%". |
+
+**Note for future audits:** the `×1.25` / `×1.75` multipliers in
+`csr_sec_nonctp_reference_data.py` are prescribed by MAR21.71 itself. They are
+not a modelling shortcut and do not need re-derivation. The remaining gap for
+these risk classes is the aggregation/capital assembly and fixtures, not the
+risk-weight tables.
+
 ## Audit and orchestration boundary
 
 The first successful `SbmCapitalResult` must already include stable ids, profile
