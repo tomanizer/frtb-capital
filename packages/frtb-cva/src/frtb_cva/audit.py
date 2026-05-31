@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
 
 from frtb_cva.data_models import (
     BaCvaCounterpartyCapital,
@@ -36,11 +37,11 @@ _HASH_HEX_LENGTH = 64
 
 def input_hash(
     context: CvaCalculationContext,
-    counterparties: object,
-    netting_sets: object,
+    counterparties: Iterable[CvaCounterparty],
+    netting_sets: Iterable[CvaNettingSet],
     *,
-    hedges: object = (),
-    sensitivities: object = (),
+    hedges: Iterable[CvaHedge] = (),
+    sensitivities: Iterable[SaCvaSensitivity] = (),
 ) -> str:
     """Return a deterministic hash of canonical CVA inputs."""
 
@@ -52,19 +53,34 @@ def input_hash(
     )
     validated_hedges = validate_cva_hedges(hedges)
     validated_sensitivities = validate_sa_cva_sensitivities(sensitivities)
+    return _input_hash_from_validated(
+        validated_context,
+        validated_counterparties,
+        validated_netting_sets,
+        hedges=validated_hedges,
+        sensitivities=validated_sensitivities,
+    )
+
+
+def _input_hash_from_validated(
+    context: CvaCalculationContext,
+    counterparties: tuple[CvaCounterparty, ...],
+    netting_sets: tuple[CvaNettingSet, ...],
+    *,
+    hedges: tuple[CvaHedge, ...] = (),
+    sensitivities: tuple[SaCvaSensitivity, ...] = (),
+) -> str:
+    """Return hash from pre-validated inputs, avoiding double validation."""
+
     return _hash_payload(
         {
-            "context": _context_payload(validated_context),
+            "context": _context_payload(context),
             "counterparties": [
-                _counterparty_payload(counterparty) for counterparty in validated_counterparties
+                _counterparty_payload(counterparty) for counterparty in counterparties
             ],
-            "netting_sets": [
-                _netting_set_payload(netting_set) for netting_set in validated_netting_sets
-            ],
-            "hedges": [_hedge_payload(hedge) for hedge in validated_hedges],
-            "sensitivities": [
-                _sensitivity_payload(sensitivity) for sensitivity in validated_sensitivities
-            ],
+            "netting_sets": [_netting_set_payload(netting_set) for netting_set in netting_sets],
+            "hedges": [_hedge_payload(hedge) for hedge in hedges],
+            "sensitivities": [_sensitivity_payload(sensitivity) for sensitivity in sensitivities],
         }
     )
 
@@ -232,6 +248,7 @@ def _netting_set_payload(netting_set: CvaNettingSet) -> dict[str, object]:
         "ead": netting_set.ead,
         "effective_maturity": netting_set.effective_maturity,
         "discount_factor": netting_set.discount_factor,
+        "discount_factor_explicit": netting_set.discount_factor_explicit,
         "currency": netting_set.currency,
         "sign_convention": netting_set.sign_convention,
         "uses_imm_ead": netting_set.uses_imm_ead,
@@ -278,6 +295,7 @@ def _sensitivity_payload(sensitivity: SaCvaSensitivity) -> dict[str, object]:
         "amount_currency": sensitivity.amount_currency,
         "sign_convention": sensitivity.sign_convention,
         "volatility_input": sensitivity.volatility_input,
+        "hedge_id": sensitivity.hedge_id,
         "source_row_id": sensitivity.source_row_id,
         "lineage": _lineage_payload(sensitivity.lineage),
     }
@@ -351,6 +369,7 @@ def _netting_set_line_payload(line: BaCvaStandAloneLine) -> dict[str, object]:
 
 
 __all__ = [
+    "_input_hash_from_validated",
     "input_hash",
     "serialize_cva_result",
     "validate_cva_result_reconciliation",

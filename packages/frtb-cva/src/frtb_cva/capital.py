@@ -4,24 +4,28 @@ Public CVA capital calculation entry point.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from frtb_common import UnsupportedRegulatoryFeatureError
 
-from frtb_cva.audit import input_hash, validate_cva_result_reconciliation
+from frtb_cva.audit import _input_hash_from_validated, validate_cva_result_reconciliation
 from frtb_cva.ba_cva import calculate_reduced_portfolio
 from frtb_cva.data_models import (
     BaCvaCounterpartyCapital,
     BaCvaStandAloneLine,
     CvaCalculationContext,
     CvaCapitalResult,
+    CvaCounterparty,
     CvaHedge,
     CvaMethod,
+    CvaNettingSet,
     SaCvaRiskClassCapital,
+    SaCvaSensitivity,
 )
 from frtb_cva.regimes import get_cva_rule_profile
 from frtb_cva.sa_cva import calculate_sa_cva_capital
 from frtb_cva.scope import validate_method_selection
 from frtb_cva.validation import (
-    CvaInputError,
     validate_calculation_context,
     validate_cva_counterparties,
     validate_cva_hedges,
@@ -32,11 +36,11 @@ from frtb_cva.validation import (
 
 def calculate_cva_capital(
     context: CvaCalculationContext,
-    counterparties: object,
-    netting_sets: object,
+    counterparties: Iterable[CvaCounterparty],
+    netting_sets: Iterable[CvaNettingSet],
     *,
-    hedges: object = (),
-    sensitivities: object = (),
+    hedges: Iterable[CvaHedge] = (),
+    sensitivities: Iterable[SaCvaSensitivity] = (),
 ) -> CvaCapitalResult:
     """Calculate supported reduced BA-CVA or SA-CVA GIRR delta capital."""
 
@@ -77,13 +81,18 @@ def calculate_cva_capital(
         total_cva_capital = ba_cva_reduced.k_reduced
     elif scope.method is CvaMethod.SA_CVA:
         if validated_counterparties or validated_netting_sets:
-            raise CvaInputError(
-                "SA-CVA GIRR delta slice does not consume counterparty or netting-set inputs",
-                field="counterparties",
+            scope = scope.__class__(
+                method=scope.method,
+                carve_out_netting_set_ids=scope.carve_out_netting_set_ids,
+                audit_metadata=scope.audit_metadata,
+                unsupported_flags=(
+                    *scope.unsupported_flags,
+                    "SA_CVA_IGNORES_COUNTERPARTY_NETTING_SET_INPUTS",
+                ),
             )
         sa_cva_risk_class_capitals = calculate_sa_cva_capital(
             validated_sensitivities,
-            hedges=tuple(hedge for hedge in validated_hedges if isinstance(hedge, CvaHedge)),
+            hedges=validated_hedges,
         )
         total_cva_capital = sum(
             risk_class_capital.post_multiplier_capital
@@ -107,7 +116,7 @@ def calculate_cva_capital(
         base_currency=validated_context.base_currency,
         profile_id=rule_profile.profile.value,
         profile_hash=rule_profile.content_hash,
-        input_hash=input_hash(
+        input_hash=_input_hash_from_validated(
             validated_context,
             validated_counterparties,
             validated_netting_sets,

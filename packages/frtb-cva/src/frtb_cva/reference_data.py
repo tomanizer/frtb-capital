@@ -302,14 +302,21 @@ def resolve_netting_set_discount_factor(
     uses_imm_ead: bool,
     effective_maturity: float,
     supplied_discount_factor: float,
+    discount_factor_explicit: bool = False,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> tuple[float, str, bool]:
-    """Return discount factor, citation id, and whether the supplied value was used."""
+    """Return discount factor, citation id, and whether the supplied value was used.
+
+    When ``discount_factor_explicit=True`` the caller signals that the supplied
+    value should be used verbatim, even when it equals 1.0.  Without this flag
+    the sentinel-equals-1.0 pattern would silently override a legitimately
+    supplied discount factor of 1.0 with the computed non-IMM formula.
+    """
 
     _resolve_supported_profile(profile)
     if uses_imm_ead:
         return 1.0, "basel_mar50_15_4", False
-    if supplied_discount_factor != 1.0:
+    if discount_factor_explicit:
         return supplied_discount_factor, "basel_mar50_15_4", True
     computed, citation_id = compute_non_imm_discount_factor(effective_maturity)
     return computed, citation_id, False

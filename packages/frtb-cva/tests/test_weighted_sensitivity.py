@@ -16,6 +16,7 @@ def _sensitivity(
     tag: SensitivityTag,
     amount: float,
     tenor: str = "5y",
+    hedge_id: str | None = None,
 ) -> SaCvaSensitivity:
     return SaCvaSensitivity(
         sensitivity_id=sensitivity_id,
@@ -29,6 +30,7 @@ def _sensitivity(
         amount_currency="USD",
         sign_convention="positive_loss",
         source_row_id=f"row-{sensitivity_id}",
+        hedge_id=hedge_id,
     )
 
 
@@ -36,9 +38,14 @@ def test_girr_delta_weighted_sensitivity_preserves_gross_and_net() -> None:
     weighted = compute_weighted_sensitivities(
         (
             _sensitivity(sensitivity_id="cva-1", tag=SensitivityTag.CVA, amount=1_000_000.0),
-            _sensitivity(sensitivity_id="hdg-1", tag=SensitivityTag.HDG, amount=250_000.0),
+            _sensitivity(
+                sensitivity_id="hdg-s1",
+                tag=SensitivityTag.HDG,
+                amount=250_000.0,
+                hedge_id="hedge-A",
+            ),
         ),
-        eligible_hedge_ids=frozenset({"hdg-1"}),
+        eligible_hedge_ids=frozenset({"hedge-A"}),
     )
     assert len(weighted) == 1
     line = weighted[0]
@@ -56,3 +63,38 @@ def test_duplicate_risk_factor_keys_are_summed() -> None:
         )
     )
     assert weighted[0].gross_cva_amount == pytest.approx(800_000.0)
+
+
+def test_hdg_sensitivity_filtered_by_hedge_id_not_sensitivity_id() -> None:
+    """HDG filtering uses hedge_id, not sensitivity_id (regression for review finding #1)."""
+    weighted = compute_weighted_sensitivities(
+        (
+            _sensitivity(sensitivity_id="cva-1", tag=SensitivityTag.CVA, amount=1_000_000.0),
+            _sensitivity(
+                sensitivity_id="s-unrelated-id",
+                tag=SensitivityTag.HDG,
+                amount=250_000.0,
+                hedge_id="hedge-A",
+            ),
+        ),
+        eligible_hedge_ids=frozenset({"hedge-A"}),
+    )
+    assert len(weighted) == 1
+    assert weighted[0].gross_hedge_amount == pytest.approx(250_000.0)
+
+
+def test_hdg_sensitivity_dropped_when_hedge_not_eligible() -> None:
+    weighted = compute_weighted_sensitivities(
+        (
+            _sensitivity(sensitivity_id="cva-1", tag=SensitivityTag.CVA, amount=1_000_000.0),
+            _sensitivity(
+                sensitivity_id="s-hdg-1",
+                tag=SensitivityTag.HDG,
+                amount=250_000.0,
+                hedge_id="hedge-B",
+            ),
+        ),
+        eligible_hedge_ids=frozenset({"hedge-A"}),
+    )
+    assert len(weighted) == 1
+    assert weighted[0].gross_hedge_amount == pytest.approx(0.0)

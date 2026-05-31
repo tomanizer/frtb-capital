@@ -1,15 +1,23 @@
 from __future__ import annotations
 
 import importlib
-import sys
+import importlib.util
 from pathlib import Path
 
 import pytest
 from frtb_cva import calculate_cva_capital
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "ba_cva_reduced_v1"
-sys.path.insert(0, str(FIXTURE_DIR))
-from loader import load_fixture_cases, load_fixture_context, load_invalid_cases  # noqa: E402
+
+_loader_spec = importlib.util.spec_from_file_location(
+    "ba_cva_reduced_v1_loader",
+    FIXTURE_DIR / "loader.py",
+)
+_loader_module = importlib.util.module_from_spec(_loader_spec)  # type: ignore[arg-type]
+_loader_spec.loader.exec_module(_loader_module)  # type: ignore[union-attr]
+load_fixture_cases = _loader_module.load_fixture_cases
+load_fixture_context = _loader_module.load_fixture_context
+load_invalid_cases = _loader_module.load_invalid_cases
 
 
 def test_fixture_cases_produce_deterministic_capital() -> None:

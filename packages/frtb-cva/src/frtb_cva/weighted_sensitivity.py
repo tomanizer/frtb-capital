@@ -69,7 +69,7 @@ def compute_weighted_sensitivities(
         if sensitivity.sensitivity_tag is SensitivityTag.CVA:
             grouped_cva[key] += sensitivity.amount
         elif sensitivity.sensitivity_tag is SensitivityTag.HDG:
-            if hedge_ids is not None and sensitivity.sensitivity_id not in hedge_ids:
+            if hedge_ids is not None and sensitivity.hedge_id not in hedge_ids:
                 continue
             grouped_hedge[key] += sensitivity.amount
 
@@ -86,7 +86,8 @@ def compute_weighted_sensitivities(
         gross_cva = grouped_cva.get(key, 0.0)
         gross_hedge = grouped_hedge.get(key, 0.0)
         net_amount = gross_cva - gross_hedge
-        tenor = key.tenor or key.risk_factor_key
+        # tenor is required for GIRR delta (validated at input boundary)
+        tenor = key.tenor if key.tenor is not None else key.risk_factor_key
         risk_weight, citation_id = girr_delta_risk_weight(tenor)
         weighted_cva = gross_cva * risk_weight
         weighted_hedge = gross_hedge * risk_weight

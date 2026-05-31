@@ -9,9 +9,14 @@ from frtb_cva import (
     CvaInputError,
     CvaNettingSet,
     CvaSector,
+    SaCvaRiskClass,
+    SaCvaRiskMeasure,
+    SaCvaSensitivity,
+    SensitivityTag,
     normalise_ead_amount,
     validate_cva_counterparties,
     validate_cva_netting_sets,
+    validate_sa_cva_sensitivities,
 )
 
 
@@ -74,3 +79,61 @@ def test_unknown_counterparty_reference_fails(
     )
     with pytest.raises(CvaInputError, match="unknown counterparty"):
         validate_cva_netting_sets((unknown,), counterparties=(sovereign_counterparty,))
+
+
+def test_girr_delta_sensitivity_without_tenor_fails() -> None:
+    sensitivity = SaCvaSensitivity(
+        sensitivity_id="s-no-tenor",
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        sensitivity_tag=SensitivityTag.CVA,
+        bucket_id="USD",
+        risk_factor_key="5y",
+        tenor=None,
+        amount=1.0,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="row-s",
+    )
+    with pytest.raises(CvaInputError, match="tenor"):
+        validate_sa_cva_sensitivities((sensitivity,))
+
+
+def test_hdg_sensitivity_without_hedge_id_fails() -> None:
+    sensitivity = SaCvaSensitivity(
+        sensitivity_id="s-hdg-no-ref",
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        sensitivity_tag=SensitivityTag.HDG,
+        bucket_id="USD",
+        risk_factor_key="5y",
+        tenor="5y",
+        amount=1.0,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="row-s",
+        hedge_id=None,
+    )
+    with pytest.raises(CvaInputError, match="hedge_id"):
+        validate_sa_cva_sensitivities((sensitivity,))
+
+
+def test_netting_set_explicit_df_unity_passes_without_recompute(sovereign_counterparty) -> None:
+    """When discount_factor_explicit=True, DF=1.0 must be used verbatim (review finding #3)."""
+    from frtb_cva import calculate_netting_set_standalone
+
+    netting_set = CvaNettingSet(
+        netting_set_id="ns-df-explicit",
+        counterparty_id=sovereign_counterparty.counterparty_id,
+        ead=1_000_000.0,
+        effective_maturity=5.0,
+        discount_factor=1.0,
+        discount_factor_explicit=True,
+        currency="USD",
+        sign_convention="positive_loss",
+        uses_imm_ead=False,
+        source_row_id="row-ns-df-explicit",
+    )
+    line = calculate_netting_set_standalone(netting_set, sovereign_counterparty)
+    assert line.discount_factor == pytest.approx(1.0)
+    assert line.discount_factor_supplied is True

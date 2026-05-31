@@ -265,6 +265,12 @@ def _validate_netting_set(
             field="carved_out_to_ba_cva",
             record_id=record_id,
         )
+    if not isinstance(netting_set.discount_factor_explicit, bool):
+        raise CvaInputError(
+            "discount_factor_explicit must be a bool",
+            field="discount_factor_explicit",
+            record_id=record_id,
+        )
     _validate_lineage(netting_set.lineage, record_id)
 
 
@@ -342,6 +348,18 @@ def _validate_sa_cva_sensitivity(sensitivity: SaCvaSensitivity, seen_ids: set[st
             )
     if sensitivity.tenor is not None:
         _require_text(sensitivity.tenor, "tenor", record_id)
+    if (
+        sensitivity.risk_class is SaCvaRiskClass.GIRR
+        and sensitivity.risk_measure is SaCvaRiskMeasure.DELTA
+        and sensitivity.tenor is None
+    ):
+        raise CvaInputError(
+            "GIRR delta sensitivities must specify tenor",
+            field="tenor",
+            record_id=record_id,
+        )
+    if sensitivity.sensitivity_tag is SensitivityTag.HDG:
+        _require_text(sensitivity.hedge_id, "hedge_id", record_id)
     _validate_lineage(sensitivity.lineage, record_id)
 
 

@@ -7,14 +7,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from frtb_cva.data_models import (
-    BaCvaHedgeType,
     CvaHedge,
     HedgeEligibility,
     SaCvaRiskClass,
 )
 from frtb_cva.validation import CvaInputError
-
-_INELIGIBLE_HEDGE_TYPES: frozenset[BaCvaHedgeType] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -30,15 +27,6 @@ class HedgeEligibilityDecision:
 
 def assess_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision:
     """Return an explicit eligibility decision without applying capital benefit."""
-
-    if hedge.hedge_type in _INELIGIBLE_HEDGE_TYPES:
-        return HedgeEligibilityDecision(
-            hedge_id=hedge.hedge_id,
-            eligibility=HedgeEligibility.INELIGIBLE,
-            sa_cva_risk_class=hedge.sa_cva_risk_class,
-            reason_code="unsupported_hedge_type",
-            citations=("basel_mar50_18",),
-        )
 
     if hedge.eligibility is HedgeEligibility.INELIGIBLE:
         return HedgeEligibilityDecision(

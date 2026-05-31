@@ -50,6 +50,7 @@ def calculate_netting_set_standalone(
         uses_imm_ead=netting_set.uses_imm_ead,
         effective_maturity=netting_set.effective_maturity,
         supplied_discount_factor=netting_set.discount_factor,
+        discount_factor_explicit=netting_set.discount_factor_explicit,
         profile=profile,
     )
     standalone = (
@@ -82,6 +83,18 @@ def calculate_counterparty_standalone(
 ) -> BaCvaCounterpartyCapital:
     """Aggregate netting-set stand-alone capital to counterparty stand-alone capital."""
 
+    capital, _ = _counterparty_standalone_with_lines(counterparty, netting_sets, profile=profile)
+    return capital
+
+
+def _counterparty_standalone_with_lines(
+    counterparty: CvaCounterparty,
+    netting_sets: tuple[CvaNettingSet, ...],
+    *,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> tuple[BaCvaCounterpartyCapital, tuple[BaCvaStandAloneLine, ...]]:
+    """Return counterparty capital and netting-set lines in a single pass."""
+
     counterparty_netting_sets = tuple(
         sorted(
             (
@@ -109,7 +122,7 @@ def calculate_counterparty_standalone(
         profile=profile,
     )
     standalone_total = sum(line.standalone_capital for line in lines)
-    return BaCvaCounterpartyCapital(
+    capital = BaCvaCounterpartyCapital(
         counterparty_id=counterparty.counterparty_id,
         standalone_capital=standalone_total,
         netting_set_ids=tuple(line.netting_set_id for line in lines),
@@ -118,6 +131,7 @@ def calculate_counterparty_standalone(
         region=counterparty.region,
         citations=_unique_citations(rw_citation, "basel_mar50_15"),
     )
+    return capital, lines
 
 
 def calculate_reduced_portfolio(
@@ -132,16 +146,19 @@ def calculate_reduced_portfolio(
     for netting_set in netting_sets:
         netting_sets_by_counterparty[netting_set.counterparty_id].append(netting_set)
 
-    counterparty_capitals = tuple(
-        calculate_counterparty_standalone(
+    capitals_and_lines = [
+        _counterparty_standalone_with_lines(
             counterparty,
             tuple(netting_sets_by_counterparty[counterparty.counterparty_id]),
             profile=profile,
         )
         for counterparty in sorted(counterparties, key=lambda item: item.counterparty_id)
-    )
-    if not counterparty_capitals:
+    ]
+    if not capitals_and_lines:
         raise CvaInputError("at least one counterparty is required", field="counterparties")
+
+    counterparty_capitals = tuple(capital for capital, _ in capitals_and_lines)
+    netting_set_lines = tuple(line for _, lines in capitals_and_lines for line in lines)
 
     rho, rho_citation = ba_cva_rho(profile=profile)
     discount_scalar, discount_citation = ba_cva_discount_scalar(profile=profile)
@@ -151,18 +168,6 @@ def calculate_reduced_portfolio(
     sum_scva_squared = sum(value * value for value in standalones)
     k_portfolio = math.sqrt(rho * (sum_scva**2) + (1.0 - rho) * sum_scva_squared)
     k_reduced = discount_scalar * k_portfolio
-
-    netting_set_lines = tuple(
-        line
-        for counterparty in sorted(counterparties, key=lambda item: item.counterparty_id)
-        for line in sorted(
-            (
-                calculate_netting_set_standalone(netting_set, counterparty, profile=profile)
-                for netting_set in netting_sets_by_counterparty[counterparty.counterparty_id]
-            ),
-            key=lambda item: item.netting_set_id,
-        )
-    )
 
     return BaCvaReducedPortfolioResult(
         k_portfolio=k_portfolio,

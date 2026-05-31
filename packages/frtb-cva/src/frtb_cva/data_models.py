@@ -148,6 +148,7 @@ class CvaNettingSet:
     uses_imm_ead: bool
     source_row_id: str
     carved_out_to_ba_cva: bool = False
+    discount_factor_explicit: bool = False
     lineage: CvaSourceLineage | None = None
 
 
@@ -190,6 +191,7 @@ class SaCvaSensitivity:
     source_row_id: str
     tenor: str | None = None
     volatility_input: float | None = None
+    hedge_id: str | None = None
     lineage: CvaSourceLineage | None = None
 
 
