@@ -63,7 +63,9 @@ def test_reduced_ba_cva_produces_capital_result() -> None:
         method=CvaMethod.BA_CVA_REDUCED,
     )
     result = calculate_cva_capital(context, (counterparty,), (netting_set,))
-    assert result.total_cva_capital == pytest.approx(11_375.0)
+    # MAR50.15/14: SCVA = RW*M*EAD*DF/alpha = 0.005*2.5*1e6*1/1.4 = 8928.571...
+    # K_reduced = 0.65*SCVA (single counterparty collapses K_portfolio to SCVA)
+    assert result.total_cva_capital == pytest.approx(0.65 * 0.005 * 2.5 * 1_000_000.0 / 1.4)
     assert result.method is CvaMethod.BA_CVA_REDUCED
     assert len(result.ba_cva_netting_set_lines) == 1
 

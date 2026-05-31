@@ -1,4 +1,16 @@
-"""Cited reference data for DRC rule profiles."""
+"""Cited reference data for DRC rule profiles.
+
+Verification status (audit 2026-05-31):
+    - LGD ladder (`_LGD_RULES`): equity/non-senior 100%, senior 75%, covered
+      bond 25% confirmed against Basel MAR22.18-22.20; PSE/GSE/not-recovery-
+      linked entries are US-NPR-specific additions.
+    - Maturity policy (0.25y floor, 1.0y full weight) confirmed against
+      MAR22.22.
+    - Default risk weights (`_RISK_WEIGHT_RULES`, US NPR 2.0 §_.210(b)(3)(ii)):
+      NOT yet independently confirmed against the primary re-proposal text.
+      Tracked as an open verification item — see issue #242. Do not treat these
+      five percentages as audited until that issue is closed.
+"""
 
 from __future__ import annotations
 

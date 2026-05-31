@@ -140,13 +140,13 @@ def test_standardised_approach_aggregation_requires_missing_component_outputs() 
 
 
 def test_sa_aggregation_remains_unimplemented_with_placeholder_components() -> None:
-    result = sample_rrao_result()
-    drc_result = sample_drc_result()
+    rrao_result = sample_rrao_result()  # profile_id="US_NPR_2_0"
+    drc_result = sample_drc_result()  # profile_id="US_NPR_2_0"
     sbm_result = MinimalResult(
         run_id="orchestration-sbm-run",
         calculation_date=date(2026, 3, 31),
         base_currency="USD",
-        profile_id="BASEL_MAR21",
+        profile_id="US_NPR_2_0",  # consistent with RRAO and DRC
         total_sbm=42.0,
         profile_hash="profile-hash",
         input_hash="input-hash",
@@ -161,7 +161,111 @@ def test_sa_aggregation_remains_unimplemented_with_placeholder_components() -> N
         compose_standardised_approach_capital(
             sbm_result=sbm_result,
             drc_result=drc_result,
-            rrao_result=result,
+            rrao_result=rrao_result,
+        )
+
+
+def test_sa_composition_rejects_mixed_jurisdiction_profiles() -> None:
+    """ADR 0022: SA components from different jurisdiction families must be rejected."""
+    rrao_result = sample_rrao_result()  # profile_id="US_NPR_2_0"
+    drc_result = sample_drc_result()  # profile_id="US_NPR_2_0"
+    sbm_result = MinimalResult(
+        run_id="orchestration-sbm-run",
+        calculation_date=date(2026, 3, 31),
+        base_currency="USD",
+        profile_id="BASEL_MAR21",  # different jurisdiction family -- must be rejected
+        total_sbm=42.0,
+        profile_hash="profile-hash",
+        input_hash="input-hash",
+        sensitivities=(object(),),
+        unsupported_features=(),
+        risk_class_results=(object(),),
+        citations=("MAR21.4",),
+        warnings=(),
+    )
+
+    with pytest.raises(OrchestrationInputError, match="mixed profiles"):
+        compose_standardised_approach_capital(
+            sbm_result=sbm_result,
+            drc_result=drc_result,
+            rrao_result=rrao_result,
+        )
+
+
+def test_sa_composition_rejects_unknown_profile_id() -> None:
+    """Unrecognised profile_id must fail closed rather than silently pass."""
+    rrao_result = sample_rrao_result()
+    sbm_result = MinimalResult(
+        run_id="orchestration-sbm-run",
+        calculation_date=date(2026, 3, 31),
+        base_currency="USD",
+        profile_id="UNKNOWN_PROFILE_XYZ",
+        total_sbm=42.0,
+        profile_hash="profile-hash",
+        input_hash="input-hash",
+        sensitivities=(object(),),
+        unsupported_features=(),
+        risk_class_results=(object(),),
+        citations=(),
+        warnings=(),
+    )
+
+    with pytest.raises(OrchestrationInputError, match="not recognised as a known SA jurisdiction"):
+        compose_standardised_approach_capital(
+            sbm_result=sbm_result,
+            rrao_result=rrao_result,
+        )
+
+
+def test_sa_composition_accepts_consistent_basel_family() -> None:
+    """RRAO BASEL_MAR23 and SBM BASEL_MAR21 are the same jurisdiction family (ADR 0022)."""
+    rrao_basel = calculate_rrao_capital(
+        (
+            RraoPosition(
+                position_id="rrao-basel-001",
+                source_row_id="row-001",
+                desk_id="desk-rrao",
+                legal_entity="LE-001",
+                gross_effective_notional=500_000.0,
+                currency="USD",
+                evidence_type=RraoEvidenceType.EXOTIC_UNDERLYING,
+                evidence_label="weather derivative",
+                lineage=RraoSourceLineage(
+                    source_system="orchestration-test",
+                    source_file="rrao.csv",
+                    source_row_id="row-001",
+                    source_column_map=(("gross", "gross_effective_notional"),),
+                ),
+                classification_hint=RraoClassification.EXOTIC,
+            ),
+        ),
+        context=RraoCalculationContext(
+            run_id="basel-rrao-run",
+            calculation_date=date(2026, 3, 31),
+            base_currency="USD",
+            profile=RraoRegulatoryProfile.BASEL_MAR23,
+        ),
+    )
+    sbm_result = MinimalResult(
+        run_id="basel-sbm-run",
+        calculation_date=date(2026, 3, 31),
+        base_currency="USD",
+        profile_id="BASEL_MAR21",  # same BASEL family as RRAO -- must pass guard
+        total_sbm=100.0,
+        profile_hash="ph",
+        input_hash="ih",
+        sensitivities=(object(),),
+        unsupported_features=(),
+        risk_class_results=(object(),),
+        citations=(),
+        warnings=(),
+    )
+
+    # Jurisdiction guard passes; aggregation fails because DRC is still missing
+    with pytest.raises(NotImplementedCapitalComponentError, match="DRC"):
+        compose_standardised_approach_capital(
+            sbm_result=sbm_result,
+            rrao_result=rrao_basel,
         )
 
 

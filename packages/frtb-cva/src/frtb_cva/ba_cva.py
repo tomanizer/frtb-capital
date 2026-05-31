@@ -64,7 +64,7 @@ def calculate_netting_set_standalone(
         profile=profile,
     )
     standalone = (
-        alpha * risk_weight * netting_set.effective_maturity * netting_set.ead * discount_factor
+        risk_weight * netting_set.effective_maturity * netting_set.ead * discount_factor / alpha
     )
     return BaCvaStandAloneLine(
         netting_set_id=netting_set.netting_set_id,
@@ -174,9 +174,16 @@ def calculate_reduced_portfolio(
     discount_scalar, discount_citation = ba_cva_discount_scalar(profile=profile)
     alpha, alpha_citation = ba_cva_alpha(profile=profile)
     standalones = [capital.standalone_capital for capital in counterparty_capitals]
+    for counterparty_capital in counterparty_capitals:
+        if not math.isfinite(counterparty_capital.standalone_capital):
+            raise CvaInputError(
+                "standalone capital must be finite",
+                field="standalone_capital",
+                record_id=counterparty_capital.counterparty_id,
+            )
     sum_scva = sum(standalones)
     sum_scva_squared = sum(value * value for value in standalones)
-    k_portfolio = math.sqrt(rho * (sum_scva**2) + (1.0 - rho) * sum_scva_squared)
+    k_portfolio = math.sqrt((rho * sum_scva) ** 2 + (1.0 - rho**2) * sum_scva_squared)
     k_reduced = discount_scalar * k_portfolio
 
     return BaCvaReducedPortfolioResult(
