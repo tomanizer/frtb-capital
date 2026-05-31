@@ -13,6 +13,7 @@ from frtb_cva.risk_classes.equity import (
     calculate_equity_delta_capital,
     calculate_equity_vega_capital,
 )
+from frtb_cva.validation import CvaInputError
 
 
 def _equity_sensitivity(
@@ -36,6 +37,11 @@ def _equity_sensitivity(
         source_row_id=f"row-eq-{bucket}",
         volatility_input=volatility_input,
     )
+
+
+def test_equity_delta_rejects_empty() -> None:
+    with pytest.raises(CvaInputError):
+        calculate_equity_delta_capital(())
 
 
 def test_equity_delta_reconciles_by_bucket() -> None:
@@ -65,6 +71,19 @@ def test_equity_delta_distinct_names_bucket_11_uses_mar50_72_rho() -> None:
         ),
     )
     ws = 1_000_000.0 * 0.70
+    kb = math.sqrt(ws**2 + ws**2 + 2 * 0.25 * ws * ws)
+    assert capital.bucket_capitals[0].k_b == pytest.approx(kb)
+
+
+def test_equity_delta_distinct_names_bucket_12_uses_0_25_rho() -> None:
+    # MAR50.72: bucket 12 (qualified index) uses rho=0.25, not large-cap 0.15.
+    ws = 1_000_000.0 * 0.15  # bucket-12 risk weight
+    capital = calculate_equity_delta_capital(
+        (
+            _equity_sensitivity(bucket="12", equity_name="IDX_A", amount=1_000_000.0),
+            _equity_sensitivity(bucket="12", equity_name="IDX_B", amount=1_000_000.0),
+        ),
+    )
     kb = math.sqrt(ws**2 + ws**2 + 2 * 0.25 * ws * ws)
     assert capital.bucket_capitals[0].k_b == pytest.approx(kb)
 

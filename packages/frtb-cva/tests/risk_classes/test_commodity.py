@@ -13,6 +13,7 @@ from frtb_cva.risk_classes.commodity import (
     calculate_commodity_delta_capital,
     calculate_commodity_vega_capital,
 )
+from frtb_cva.validation import CvaInputError
 
 
 def _commodity_sensitivity(
@@ -36,6 +37,11 @@ def _commodity_sensitivity(
         source_row_id=f"row-com-{bucket}",
         volatility_input=volatility_input,
     )
+
+
+def test_commodity_delta_rejects_empty() -> None:
+    with pytest.raises(CvaInputError):
+        calculate_commodity_delta_capital(())
 
 
 def test_commodity_delta_reconciles() -> None:

@@ -10,6 +10,7 @@ from frtb_cva import (
     SensitivityTag,
 )
 from frtb_cva.risk_classes.rcs import calculate_rcs_delta_capital, calculate_rcs_vega_capital
+from frtb_cva.validation import CvaInputError
 
 
 def _rcs_sensitivity(
@@ -33,6 +34,11 @@ def _rcs_sensitivity(
         source_row_id=f"row-rcs-{bucket}",
         volatility_input=volatility_input,
     )
+
+
+def test_rcs_delta_rejects_empty() -> None:
+    with pytest.raises(CvaInputError):
+        calculate_rcs_delta_capital(())
 
 
 def test_rcs_delta_single_bucket_reconciles() -> None:
