@@ -40,7 +40,7 @@ def calculate_sa_cva_capital(
             for risk_class, risk_measure in sorted(unsupported, key=str)
         )
         raise CvaInputError(
-            f"unsupported SA-CVA risk classes in phase 2: {labels}",
+            f"unsupported SA-CVA risk classes in the delivered slice: {labels}",
             field="sensitivities",
         )
     return (

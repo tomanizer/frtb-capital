@@ -50,7 +50,7 @@ def test_negative_ead_fails(sovereign_counterparty, sample_lineage) -> None:
         effective_maturity=2.0,
         discount_factor=0.9,
         currency="USD",
-        sign_convention="positive_loss",
+        sign_convention="non_negative",
         uses_imm_ead=False,
         source_row_id="row-ns-1",
         lineage=sample_lineage,
@@ -75,7 +75,7 @@ def test_unknown_counterparty_reference_fails(
         effective_maturity=1.0,
         discount_factor=1.0,
         currency="USD",
-        sign_convention="positive_loss",
+        sign_convention="non_negative",
         uses_imm_ead=True,
         source_row_id="row-unknown",
     )
@@ -132,7 +132,7 @@ def test_netting_set_explicit_df_unity_passes_without_recompute(sovereign_counte
         discount_factor=1.0,
         discount_factor_explicit=True,
         currency="USD",
-        sign_convention="positive_loss",
+        sign_convention="non_negative",
         uses_imm_ead=False,
         source_row_id="row-ns-df-explicit",
     )
@@ -160,3 +160,38 @@ def test_m_cva_multiplier_must_be_finite_and_positive() -> None:
     with pytest.raises(CvaInputError, match="positive"):
         calculate_sa_cva_capital((sensitivity,), m_cva=0.0)
     assert validate_m_cva_multiplier(1.0) == pytest.approx(1.0)
+
+
+def test_invalid_netting_set_sign_convention_fails(sovereign_counterparty, sample_lineage) -> None:
+    netting_set = CvaNettingSet(
+        netting_set_id="ns-bad-sign",
+        counterparty_id=sovereign_counterparty.counterparty_id,
+        ead=1.0,
+        effective_maturity=1.0,
+        discount_factor=1.0,
+        currency="USD",
+        sign_convention="bananas",
+        uses_imm_ead=True,
+        source_row_id="row-ns-bad-sign",
+        lineage=sample_lineage,
+    )
+    with pytest.raises(CvaInputError, match="sign_convention"):
+        validate_cva_netting_sets((netting_set,), counterparties=(sovereign_counterparty,))
+
+
+def test_invalid_sensitivity_sign_convention_fails() -> None:
+    sensitivity = SaCvaSensitivity(
+        sensitivity_id="s-bad-sign",
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        sensitivity_tag=SensitivityTag.CVA,
+        bucket_id="USD",
+        risk_factor_key="5y",
+        tenor="5y",
+        amount=1.0,
+        amount_currency="USD",
+        sign_convention="bananas",
+        source_row_id="row-s",
+    )
+    with pytest.raises(CvaInputError, match="sign_convention"):
+        validate_sa_cva_sensitivities((sensitivity,))

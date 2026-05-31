@@ -5,6 +5,7 @@ Validation helpers for canonical CVA inputs.
 from __future__ import annotations
 
 import math
+from enum import StrEnum
 from typing import Literal
 
 from frtb_cva.data_models import (
@@ -26,6 +27,20 @@ from frtb_cva.data_models import (
 
 AmountSignConvention = Literal["positive_loss", "signed_absolute"]
 EADSignConvention = Literal["non_negative", "signed_absolute"]
+
+
+class EadSignConvention(StrEnum):
+    NON_NEGATIVE = "non_negative"
+    SIGNED_ABSOLUTE = "signed_absolute"
+
+
+class AmountSignConventionEnum(StrEnum):
+    POSITIVE_LOSS = "positive_loss"
+    SIGNED_ABSOLUTE = "signed_absolute"
+
+
+VALID_EAD_SIGN_CONVENTIONS: frozenset[str] = frozenset(EadSignConvention)
+VALID_AMOUNT_SIGN_CONVENTIONS: frozenset[str] = frozenset(AmountSignConventionEnum)
 
 
 class CvaInputError(ValueError):
@@ -238,7 +253,16 @@ def _validate_netting_set(
     _require_text(netting_set.source_row_id, "source_row_id", record_id)
     _require_text(netting_set.currency, "currency", record_id)
     _require_text(netting_set.sign_convention, "sign_convention", record_id)
-    normalise_ead_amount(netting_set.ead)
+    if netting_set.sign_convention not in VALID_EAD_SIGN_CONVENTIONS:
+        raise CvaInputError(
+            f"sign_convention must be one of {sorted(VALID_EAD_SIGN_CONVENTIONS)}",
+            field="sign_convention",
+            record_id=record_id,
+        )
+    normalise_ead_amount(
+        netting_set.ead,
+        source_sign_convention=netting_set.sign_convention,  # type: ignore[arg-type]
+    )
     _finite_float(netting_set.effective_maturity, field="effective_maturity")
     if netting_set.effective_maturity < 0:
         raise CvaInputError(
@@ -327,6 +351,12 @@ def _validate_sa_cva_sensitivity(sensitivity: SaCvaSensitivity, seen_ids: set[st
     _require_text(sensitivity.risk_factor_key, "risk_factor_key", record_id)
     _require_text(sensitivity.amount_currency, "amount_currency", record_id)
     _require_text(sensitivity.sign_convention, "sign_convention", record_id)
+    if sensitivity.sign_convention not in VALID_AMOUNT_SIGN_CONVENTIONS:
+        raise CvaInputError(
+            f"sign_convention must be one of {sorted(VALID_AMOUNT_SIGN_CONVENTIONS)}",
+            field="sign_convention",
+            record_id=record_id,
+        )
     if not isinstance(sensitivity.risk_class, SaCvaRiskClass):
         raise CvaInputError("invalid risk class", field="risk_class", record_id=record_id)
     if not isinstance(sensitivity.risk_measure, SaCvaRiskMeasure):
@@ -408,9 +438,13 @@ def _require_text(value: object, field: str, record_id: str = "") -> str:
 
 
 __all__ = [
+    "VALID_AMOUNT_SIGN_CONVENTIONS",
+    "VALID_EAD_SIGN_CONVENTIONS",
     "AmountSignConvention",
+    "AmountSignConventionEnum",
     "CvaInputError",
     "EADSignConvention",
+    "EadSignConvention",
     "normalise_cva_amount",
     "normalise_ead_amount",
     "normalise_sensitivity_amount",

@@ -41,7 +41,7 @@ def _netting_set(
         effective_maturity=1.0,
         discount_factor=1.0,
         currency="USD",
-        sign_convention="positive_loss",
+        sign_convention="non_negative",
         uses_imm_ead=True,
         source_row_id=f"row-{netting_set_id}",
         lineage=sample_lineage,

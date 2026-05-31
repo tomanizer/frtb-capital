@@ -75,5 +75,5 @@ def test_full_ba_cva_fails_at_public_api(
         profile=reduced_context.profile,
         method=CvaMethod.BA_CVA_FULL,
     )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase 1"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="delivered slice"):
         calculate_cva_capital(context, (sovereign_counterparty,), (sovereign_netting_set,))

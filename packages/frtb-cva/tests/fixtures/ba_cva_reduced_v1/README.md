@@ -1,6 +1,6 @@
 # ba_cva_reduced_v1 fixture pack
 
-Synthetic reduced BA-CVA cases for phase 1 validation.
+Synthetic reduced BA-CVA cases for delivered-slice validation.
 
 | Case | Regulatory intent | Citation ids |
 | --- | --- | --- |

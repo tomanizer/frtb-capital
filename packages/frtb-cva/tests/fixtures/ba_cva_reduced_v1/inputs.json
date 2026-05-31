@@ -28,7 +28,7 @@
           "effective_maturity": 2.5,
           "discount_factor": 0.9400247793232364,
           "currency": "USD",
-          "sign_convention": "positive_loss",
+          "sign_convention": "non_negative",
           "uses_imm_ead": false,
           "source_row_id": "row-ns-sovereign-ig"
         }
@@ -55,7 +55,7 @@
           "effective_maturity": 1.0,
           "discount_factor": 1.0,
           "currency": "USD",
-          "sign_convention": "positive_loss",
+          "sign_convention": "non_negative",
           "uses_imm_ead": true,
           "source_row_id": "row-ns-fin-hy"
         }
@@ -85,7 +85,7 @@
           "effective_maturity": 1.0,
           "discount_factor": 1.0,
           "currency": "USD",
-          "sign_convention": "positive_loss",
+          "sign_convention": "non_negative",
           "uses_imm_ead": true,
           "source_row_id": "row-ns-invalid"
         }

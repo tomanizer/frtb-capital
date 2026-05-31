@@ -254,6 +254,7 @@ class BaCvaStandAloneLine:
     discount_factor_supplied: bool = True
 
 
+# Public audit alias retained for netting-set line records in orchestration docs.
 BaCvaNettingSetLine = BaCvaStandAloneLine
 
 
@@ -298,6 +299,7 @@ class SaCvaWeightedSensitivity:
     weighted_cva: float
     weighted_hedge: float
     weighted_net: float
+    source_sensitivity_ids: tuple[str, ...]
     citations: tuple[str, ...]
 
 

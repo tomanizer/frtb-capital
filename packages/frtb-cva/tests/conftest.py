@@ -48,7 +48,7 @@ def sovereign_netting_set(sample_lineage: CvaSourceLineage) -> CvaNettingSet:
         effective_maturity=2.5,
         discount_factor=0.9400247793232364,
         currency="USD",
-        sign_convention="positive_loss",
+        sign_convention="non_negative",
         uses_imm_ead=False,
         source_row_id="row-ns-sovereign-ig",
         lineage=sample_lineage,
