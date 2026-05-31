@@ -4,6 +4,7 @@ import math
 
 import pytest
 from frtb_cva import (
+    SaCvaIndexTreatment,
     SaCvaRiskClass,
     SaCvaRiskMeasure,
     SaCvaSensitivity,
@@ -23,7 +24,10 @@ def _equity_sensitivity(
     amount: float = 1_000_000.0,
     measure: SaCvaRiskMeasure = SaCvaRiskMeasure.DELTA,
     volatility_input: float | None = None,
+    index_treatment: SaCvaIndexTreatment | None = None,
 ) -> SaCvaSensitivity:
+    if bucket in {"12", "13"} and index_treatment is None:
+        index_treatment = SaCvaIndexTreatment.QUALIFIED_INDEX
     return SaCvaSensitivity(
         sensitivity_id=f"sens-eq-{bucket}-{equity_name}-{measure.value}",
         risk_class=SaCvaRiskClass.EQUITY,
@@ -33,6 +37,7 @@ def _equity_sensitivity(
         risk_factor_key=equity_name,
         amount=amount,
         amount_currency="USD",
+        index_treatment=index_treatment,
         sign_convention="positive_loss",
         source_row_id=f"row-eq-{bucket}",
         volatility_input=volatility_input,

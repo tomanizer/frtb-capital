@@ -53,6 +53,6 @@ def test_ccs_delta_unrelated_same_quality_uses_cited_rho() -> None:
     assert capital.bucket_capitals[0].k_b == pytest.approx(kb)
 
 
-def test_ccs_qualified_index_bucket_fails_closed() -> None:
+def test_ccs_qualified_index_bucket_requires_metadata() -> None:
     with pytest.raises(CvaInputError, match="qualified-index"):
         calculate_ccs_delta_capital((_ccs_sensitivity(bucket="8"),))

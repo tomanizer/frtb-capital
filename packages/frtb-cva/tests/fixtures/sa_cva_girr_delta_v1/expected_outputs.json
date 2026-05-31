@@ -1,18 +1,18 @@
 {
   "single_usd_5y": {
     "total_cva_capital": 7400.0,
-    "input_hash": "514655e0f743788d4f513feeb44ee2ab392ee4c8765365298b3c51e2c5d69ec2"
+    "input_hash": "9afd22670f2a8b5f96a80e0909f4afdd315e0fa83817d1f9493275eef4ee35d7"
   },
   "usd_eur_two_bucket": {
     "total_cva_capital": 9789.279850938985,
-    "input_hash": "44058192b799ac4cf68c0c9d0b01d5c3241558bfa4a4245da5dc85dc3986a171"
+    "input_hash": "59d53f6df64caf1307d2b291ff111b391e9bcca3357b082f34797e552fe3265c"
   },
   "offsetting_hedge": {
     "total_cva_capital": 740.0,
-    "input_hash": "1b8baccbfb8a66fcbd466ca9203bd8aad4d8b55e918b4b23349693e6cb8c0b86"
+    "input_hash": "7afd2e83774cd7abf2c20c33d4f5edc21f29d5c6b7fadae9cdb116aa0145ad8e"
   },
   "chf_other_currency": {
     "total_cva_capital": 10360.0,
-    "input_hash": "db86919d16ce63300fd92de7fe571f354f63d063a3218f7495cd5ec829b63f41"
+    "input_hash": "d489bddfd17c6ad1ecc97bc95e45234f207f74cbe79ead815763e35f044cc849"
   }
 }

@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 from frtb_cva import (
     BaCvaHedgeType,
+    CreditQuality,
     CvaHedge,
     CvaSector,
     HedgeEligibility,
@@ -22,6 +23,7 @@ def _eligible_hedge(**overrides: object) -> CvaHedge:
         remaining_maturity=2.0,
         discount_factor=1.0,
         reference_sector=CvaSector.SOVEREIGN,
+        reference_credit_quality=CreditQuality.INVESTMENT_GRADE,
         reference_region="EMEA",
         reference_relation=HedgeReferenceRelation.DIRECT,
         eligibility=HedgeEligibility.ELIGIBLE,
