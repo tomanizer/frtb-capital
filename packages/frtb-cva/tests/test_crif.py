@@ -56,3 +56,18 @@ def test_ambiguous_sensitivity_tag_is_rejected() -> None:
 def test_invalid_record_kind_fails() -> None:
     with pytest.raises(CvaInputError, match="record_kind"):
         adapt_cva_records((), record_kind="invalid")
+
+
+def test_records_string_is_rejected() -> None:
+    with pytest.raises(CvaInputError, match="iterable"):
+        adapt_cva_records("not-rows", record_kind="counterparty")  # type: ignore[arg-type]
+
+
+def test_missing_counterparty_id_is_rejected() -> None:
+    result = adapt_cva_records(
+        ({"sector": "SOVEREIGN", "source_row_id": "row-1"},),
+        record_kind="counterparty",
+    )
+    assert result.counterparties == ()
+    assert result.rejected_rows
+    assert "counterparty_id" in result.rejected_rows[0].reason

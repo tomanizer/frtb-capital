@@ -16,6 +16,7 @@ from frtb_cva.data_models import (
     CvaMethod,
     CvaNettingSet,
     CvaRegulatoryProfile,
+    CvaSector,
     CvaSourceLineage,
     HedgeEligibility,
     HedgeReferenceRelation,
@@ -329,6 +330,12 @@ def _validate_hedge(hedge: CvaHedge, seen_ids: set[str]) -> None:
         raise CvaInputError("notional must be non-negative", field="notional", record_id=record_id)
     _finite_float(hedge.remaining_maturity, field="remaining_maturity")
     _finite_float(hedge.discount_factor, field="discount_factor")
+    if not isinstance(hedge.discount_factor_explicit, bool):
+        raise CvaInputError(
+            "discount_factor_explicit must be a bool",
+            field="discount_factor_explicit",
+            record_id=record_id,
+        )
     if not isinstance(hedge.is_internal, bool):
         raise CvaInputError("is_internal must be a bool", field="is_internal", record_id=record_id)
     if hedge.eligibility is HedgeEligibility.ELIGIBLE:
@@ -396,6 +403,25 @@ def _validate_sa_cva_sensitivity(sensitivity: SaCvaSensitivity, seen_ids: set[st
         )
     if sensitivity.sensitivity_tag is SensitivityTag.HDG:
         _require_text(sensitivity.hedge_id, "hedge_id", record_id)
+    if sensitivity.index_max_sector_weight is not None:
+        weight = _finite_float(sensitivity.index_max_sector_weight, field="index_max_sector_weight")
+        if not (0.0 <= weight <= 1.0):
+            raise CvaInputError(
+                "index_max_sector_weight must be between 0.0 and 1.0",
+                field="index_max_sector_weight",
+                record_id=record_id,
+            )
+    if sensitivity.index_remap_bucket_id is not None:
+        _require_text(sensitivity.index_remap_bucket_id, "index_remap_bucket_id", record_id)
+    if sensitivity.index_dominant_sector is not None and not isinstance(
+        sensitivity.index_dominant_sector,
+        CvaSector,
+    ):
+        raise CvaInputError(
+            "invalid index dominant sector",
+            field="index_dominant_sector",
+            record_id=record_id,
+        )
     _validate_lineage(sensitivity.lineage, record_id)
 
 

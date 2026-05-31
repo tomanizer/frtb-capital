@@ -382,6 +382,7 @@ def _hedge_payload(hedge: CvaHedge) -> dict[str, object]:
         "notional": hedge.notional,
         "remaining_maturity": hedge.remaining_maturity,
         "discount_factor": hedge.discount_factor,
+        "discount_factor_explicit": hedge.discount_factor_explicit,
         "is_internal": hedge.is_internal,
         "internal_desk_counterparty_id": hedge.internal_desk_counterparty_id,
         "eligibility_evidence_id": hedge.eligibility_evidence_id,
@@ -412,6 +413,10 @@ def _sensitivity_payload(sensitivity: SaCvaSensitivity) -> dict[str, object]:
         else None,
         "index_max_sector_weight": sensitivity.index_max_sector_weight,
         "index_homogeneous_sector_quality": sensitivity.index_homogeneous_sector_quality,
+        "index_dominant_sector": sensitivity.index_dominant_sector.value
+        if sensitivity.index_dominant_sector is not None
+        else None,
+        "index_remap_bucket_id": sensitivity.index_remap_bucket_id,
         "source_row_id": sensitivity.source_row_id,
         "lineage": _lineage_payload(sensitivity.lineage),
     }

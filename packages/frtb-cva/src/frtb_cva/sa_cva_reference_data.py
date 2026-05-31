@@ -9,8 +9,10 @@ from __future__ import annotations
 
 from functools import cache
 
-from frtb_cva.data_models import CreditQuality, CvaRegulatoryProfile
+from frtb_cva.data_models import CreditQuality, CvaRegulatoryProfile, CvaSector
 from frtb_cva.validation import CvaInputError
+
+CCS_SINGLE_NAME_BUCKETS = frozenset({"1a", "1b", "2", "3", "4", "5", "6", "7"})
 
 SA_CVA_VEGA_RW_SIGMA = 0.55
 
@@ -511,6 +513,36 @@ def commodity_inter_bucket_correlation(
     return 0.2, "basel_mar50_75"
 
 
+def ccs_single_name_bucket_for_sector(
+    sector: CvaSector,
+    credit_quality: CreditQuality,
+    *,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> tuple[str, str]:
+    """MAR50.63(2): map a dominant CCS sector to the single-name bucket id."""
+
+    _resolve_profile(profile)
+    if sector is CvaSector.SOVEREIGN:
+        bucket = "1a" if credit_quality is CreditQuality.INVESTMENT_GRADE else "1b"
+        return bucket, "basel_mar50_63"
+    sector_buckets: dict[CvaSector, str] = {
+        CvaSector.LOCAL_GOVERNMENT: "2",
+        CvaSector.FINANCIALS: "3",
+        CvaSector.BASIC_MATERIALS_ENERGY_INDUSTRIALS: "4",
+        CvaSector.CONSUMER_TRANSPORT_ADMIN: "5",
+        CvaSector.TECHNOLOGY_TELECOM: "6",
+        CvaSector.HEALTH_UTILITIES_PROFESSIONAL: "7",
+        CvaSector.OTHER: "7",
+    }
+    try:
+        return sector_buckets[sector], "basel_mar50_63"
+    except KeyError as exc:
+        raise CvaInputError(
+            f"no CCS single-name bucket for sector {sector.value}",
+            field="index_dominant_sector",
+        ) from exc
+
+
 def _resolve_credit_quality(credit_quality: CreditQuality | str) -> CreditQuality:
     if isinstance(credit_quality, CreditQuality):
         return credit_quality
@@ -557,6 +589,7 @@ __all__ = [
     "CCS_DELTA_TENORS",
     "CCS_GAMMA_BC",
     "CCS_QUALIFIED_INDEX_BUCKET",
+    "CCS_SINGLE_NAME_BUCKETS",
     "COMMODITY_DELTA_RISK_WEIGHTS",
     "COMMODITY_MAIN_BUCKETS",
     "COMMODITY_OTHER_BUCKET",
@@ -576,6 +609,7 @@ __all__ = [
     "ccs_delta_intra_bucket_correlation",
     "ccs_delta_risk_weight",
     "ccs_inter_bucket_correlation",
+    "ccs_single_name_bucket_for_sector",
     "commodity_delta_risk_weight",
     "commodity_inter_bucket_correlation",
     "equity_delta_risk_weight",

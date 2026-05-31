@@ -4,6 +4,8 @@ SA-CVA qualified-index routing per Basel MAR50.50.
 
 from __future__ import annotations
 
+import math
+
 from frtb_cva.data_models import (
     CvaRegulatoryProfile,
     SaCvaIndexTreatment,
@@ -12,12 +14,17 @@ from frtb_cva.data_models import (
 )
 from frtb_cva.sa_cva_reference_data import (
     CCS_QUALIFIED_INDEX_BUCKET,
+    CCS_SINGLE_NAME_BUCKETS,
     EQUITY_QUALIFIED_INDEX_BUCKETS,
+    RCS_DELTA_RISK_WEIGHTS,
+    ccs_single_name_bucket_for_sector,
+    parse_ccs_entity_key,
 )
 from frtb_cva.validation import CvaInputError
 
 _SECTOR_CONCENTRATION_THRESHOLD = 0.75
 _CCS_INDEX_BUCKETS = frozenset({"1", "2", "3", "4", "5", "6", "7", CCS_QUALIFIED_INDEX_BUCKET})
+_RCS_SINGLE_NAME_BUCKETS = frozenset(RCS_DELTA_RISK_WEIGHTS) - {CCS_QUALIFIED_INDEX_BUCKET}
 
 
 def resolve_sa_cva_bucket(
@@ -120,19 +127,86 @@ def _resolve_equity_bucket(
     return bucket, ()
 
 
+def _validate_sector_weight(weight: float, *, record_id: str) -> None:
+    if not math.isfinite(weight) or not (0.0 <= weight <= 1.0):
+        raise CvaInputError(
+            "index_max_sector_weight must be a finite probability between 0.0 and 1.0",
+            field="index_max_sector_weight",
+            record_id=record_id,
+        )
+
+
 def _sector_concentration_bucket(sensitivity: SaCvaSensitivity, *, default_bucket: str) -> str:
     weight = sensitivity.index_max_sector_weight
     if weight is None:
         return default_bucket
-    if weight > _SECTOR_CONCENTRATION_THRESHOLD:
-        if not sensitivity.index_homogeneous_sector_quality:
+    _validate_sector_weight(weight, record_id=sensitivity.sensitivity_id)
+    if weight <= _SECTOR_CONCENTRATION_THRESHOLD:
+        return default_bucket
+    if not sensitivity.index_homogeneous_sector_quality:
+        raise CvaInputError(
+            "index with >75% sector concentration must map to single-name bucket",
+            field="index_max_sector_weight",
+            record_id=sensitivity.sensitivity_id,
+        )
+    return _resolve_concentration_remap_bucket(sensitivity)
+
+
+def _resolve_concentration_remap_bucket(sensitivity: SaCvaSensitivity) -> str:
+    if sensitivity.index_remap_bucket_id is not None:
+        bucket = sensitivity.index_remap_bucket_id.strip()
+        if not bucket:
             raise CvaInputError(
-                "index with >75% sector concentration must map to single-name bucket",
-                field="index_max_sector_weight",
+                "index_remap_bucket_id must be a non-empty bucket id",
+                field="index_remap_bucket_id",
                 record_id=sensitivity.sensitivity_id,
             )
-        return "2"
-    return default_bucket
+        _validate_remap_bucket(sensitivity.risk_class, bucket, record_id=sensitivity.sensitivity_id)
+        return bucket
+
+    if sensitivity.risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD:
+        if sensitivity.index_dominant_sector is None:
+            raise CvaInputError(
+                "CCS index sector concentration requires index_dominant_sector "
+                "or index_remap_bucket_id",
+                field="index_dominant_sector",
+                record_id=sensitivity.sensitivity_id,
+            )
+        _, credit_quality, _ = parse_ccs_entity_key(sensitivity.risk_factor_key)
+        bucket, _ = ccs_single_name_bucket_for_sector(
+            sensitivity.index_dominant_sector,
+            credit_quality,
+        )
+        return bucket
+
+    raise CvaInputError(
+        "index with >75% sector concentration requires index_remap_bucket_id for this risk class",
+        field="index_remap_bucket_id",
+        record_id=sensitivity.sensitivity_id,
+    )
+
+
+def _validate_remap_bucket(
+    risk_class: SaCvaRiskClass,
+    bucket: str,
+    *,
+    record_id: str,
+) -> None:
+    if risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD:
+        if bucket not in CCS_SINGLE_NAME_BUCKETS:
+            raise CvaInputError(
+                f"CCS index remap bucket {bucket} is not a single-name bucket",
+                field="index_remap_bucket_id",
+                record_id=record_id,
+            )
+        return
+    if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD:
+        if bucket not in _RCS_SINGLE_NAME_BUCKETS:
+            raise CvaInputError(
+                f"RCS index remap bucket {bucket} is not a single-name bucket",
+                field="index_remap_bucket_id",
+                record_id=record_id,
+            )
 
 
 __all__ = ["resolve_sa_cva_bucket"]

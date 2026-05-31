@@ -209,7 +209,7 @@ def _unique_citations(*citation_ids: str) -> tuple[str, ...]:
 
 
 def _resolve_hedge_discount_factor(hedge: CvaHedge) -> tuple[float, str, bool]:
-    if hedge.discount_factor != 1.0:
+    if hedge.discount_factor_explicit or hedge.discount_factor != 1.0:
         return hedge.discount_factor, "basel_mar50_23", True
     discount_factor, citation = compute_non_imm_discount_factor(hedge.remaining_maturity)
     return discount_factor, citation, False

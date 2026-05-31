@@ -88,7 +88,7 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
     elapsed = time.perf_counter() - started
     payload = serialize_cva_result(result)
     payload_hash = hashlib.sha256(
-        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
     ).hexdigest()
     return {
         "parameters": {

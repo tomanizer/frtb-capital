@@ -177,6 +177,7 @@ class CvaHedge:
     reference_relation: HedgeReferenceRelation
     eligibility: HedgeEligibility
     is_internal: bool
+    discount_factor_explicit: bool = False
     internal_desk_counterparty_id: str | None = None
     sa_cva_risk_class: SaCvaRiskClass | None = None
     eligibility_evidence_id: str | None = None
@@ -204,6 +205,8 @@ class SaCvaSensitivity:
     index_treatment: SaCvaIndexTreatment | None = None
     index_max_sector_weight: float | None = None
     index_homogeneous_sector_quality: bool = False
+    index_dominant_sector: CvaSector | None = None
+    index_remap_bucket_id: str | None = None
     lineage: CvaSourceLineage | None = None
 
 

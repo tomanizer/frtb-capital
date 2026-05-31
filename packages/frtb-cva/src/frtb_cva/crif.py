@@ -4,7 +4,7 @@ Optional CRIF/vendor-to-canonical CVA adapter (stdlib only).
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
 from frtb_cva.data_models import (
@@ -78,12 +78,12 @@ def adapt_cva_records(
 ) -> CvaAdapterResult:
     """Map external rows to canonical CVA records for one record kind."""
 
-    if isinstance(records, Mapping):
+    if isinstance(records, (str, bytes, Mapping)) or not isinstance(records, Iterable):
         raise CvaInputError("records must be an iterable of mapping rows", field="records")
     allowed_kinds = {"counterparty", "netting_set", "hedge", "sensitivity"}
     if record_kind not in allowed_kinds:
         raise CvaInputError(f"unsupported record_kind {record_kind}", field="record_kind")
-    materialised = tuple(records)  # type: ignore[arg-type]
+    materialised = tuple(records)
     warnings: list[CvaAdapterWarning] = []
     rejected: list[CvaRejectedRow] = []
     counterparties: list[CvaCounterparty] = []
@@ -173,6 +173,25 @@ def _first_field(record: Mapping[str, object], *names: str) -> object | None:
     return None
 
 
+def _required_field(
+    record: Mapping[str, object],
+    *names: str,
+    field_name: str,
+) -> str:
+    value = _first_field(record, *names)
+    if value is None:
+        raise CvaInputError(f"missing required field: {field_name}", field=field_name)
+    return str(value)
+
+
+def _optional_float(value: object | None, default: float) -> float:
+    if value is None:
+        return default
+    if isinstance(value, bool) or not isinstance(value, int | float | str):
+        raise CvaInputError("value must be numeric", field="value")
+    return float(value)
+
+
 def _lineage(
     source_row_id: str,
     *,
@@ -194,7 +213,11 @@ def _counterparty_from_record(
     source_system: str,
     source_file: str,
 ) -> CvaCounterparty:
-    counterparty_id = str(_first_field(record, *_COUNTERPARTY_ID_FIELDS))
+    counterparty_id = _required_field(
+        record,
+        *_COUNTERPARTY_ID_FIELDS,
+        field_name="counterparty_id",
+    )
     return CvaCounterparty(
         counterparty_id=counterparty_id,
         desk_id=str(record.get("desk_id") or record.get("DeskID") or "desk-1"),
@@ -223,15 +246,26 @@ def _netting_set_from_record(
     ead_sign_convention: str,
 ) -> CvaNettingSet:
     ead = normalise_ead_amount(
-        float(_first_field(record, *_EAD_FIELDS) or 0.0),
+        _optional_float(_first_field(record, *_EAD_FIELDS), 0.0),
         source_sign_convention=ead_sign_convention,  # type: ignore[arg-type]
     )
     return CvaNettingSet(
-        netting_set_id=str(_first_field(record, *_NETTING_SET_ID_FIELDS)),
-        counterparty_id=str(_first_field(record, *_COUNTERPARTY_ID_FIELDS)),
+        netting_set_id=_required_field(
+            record,
+            *_NETTING_SET_ID_FIELDS,
+            field_name="netting_set_id",
+        ),
+        counterparty_id=_required_field(
+            record,
+            *_COUNTERPARTY_ID_FIELDS,
+            field_name="counterparty_id",
+        ),
         ead=ead,
-        effective_maturity=float(record.get("effective_maturity") or record.get("Maturity") or 1.0),
-        discount_factor=float(record.get("discount_factor") or 1.0),
+        effective_maturity=_optional_float(
+            record.get("effective_maturity") or record.get("Maturity"),
+            1.0,
+        ),
+        discount_factor=_optional_float(record.get("discount_factor"), 1.0),
         currency=str(record.get("currency") or "USD"),
         sign_convention=str(record.get("sign_convention") or "non_negative"),
         uses_imm_ead=bool(record.get("uses_imm_ead", True)),
@@ -253,13 +287,18 @@ def _hedge_from_record(
     source_file: str,
 ) -> CvaHedge:
     return CvaHedge(
-        hedge_id=str(_first_field(record, *_HEDGE_ID_FIELDS)),
+        hedge_id=_required_field(record, *_HEDGE_ID_FIELDS, field_name="hedge_id"),
         source_row_id=source_row_id,
-        counterparty_id=str(_first_field(record, *_COUNTERPARTY_ID_FIELDS)),
+        counterparty_id=_required_field(
+            record,
+            *_COUNTERPARTY_ID_FIELDS,
+            field_name="counterparty_id",
+        ),
         hedge_type=BaCvaHedgeType(str(record.get("hedge_type") or "SINGLE_NAME_CDS")),
-        notional=float(record.get("notional") or 0.0),
-        remaining_maturity=float(record.get("remaining_maturity") or 1.0),
-        discount_factor=float(record.get("discount_factor") or 1.0),
+        notional=_optional_float(record.get("notional"), 0.0),
+        remaining_maturity=_optional_float(record.get("remaining_maturity"), 1.0),
+        discount_factor=_optional_float(record.get("discount_factor"), 1.0),
+        discount_factor_explicit=bool(record.get("discount_factor_explicit", False)),
         reference_sector=CvaSector(str(record.get("reference_sector") or "SOVEREIGN")),
         reference_credit_quality=CreditQuality(
             str(record.get("reference_credit_quality") or "INVESTMENT_GRADE")
@@ -303,11 +342,15 @@ def _sensitivity_from_record(
         raise CvaInputError("ambiguous CVA/HDG sensitivity tag", field="sensitivity_tag")
     sign_raw = str(_first_field(record, *_SIGN_FIELDS) or amount_sign_convention)
     amount = normalise_sensitivity_amount(
-        float(_first_field(record, *_AMOUNT_FIELDS) or 0.0),
+        _optional_float(_first_field(record, *_AMOUNT_FIELDS), 0.0),
         source_sign_convention=amount_sign_convention,
     )
     return SaCvaSensitivity(
-        sensitivity_id=str(_first_field(record, *_SENSITIVITY_ID_FIELDS)),
+        sensitivity_id=_required_field(
+            record,
+            *_SENSITIVITY_ID_FIELDS,
+            field_name="sensitivity_id",
+        ),
         risk_class=SaCvaRiskClass(str(record.get("risk_class") or "GIRR")),
         risk_measure=SaCvaRiskMeasure(str(record.get("risk_measure") or "DELTA")),
         sensitivity_tag=SensitivityTag(tag_raw),

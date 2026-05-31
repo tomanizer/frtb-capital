@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import math
+
 import pytest
 from frtb_cva import (
+    CvaSector,
     SaCvaIndexTreatment,
     SaCvaRiskClass,
     SaCvaRiskMeasure,
@@ -53,3 +56,43 @@ def test_non_qualified_index_without_look_through_fails() -> None:
 def test_qualified_index_fixture_reconciles() -> None:
     capital = calculate_ccs_delta_capital((_ccs_sensitivity(),))
     assert capital.post_multiplier_capital == pytest.approx(1_000_000.0 * 0.015)
+
+
+def test_sector_concentration_maps_dominant_ccs_sector() -> None:
+    sensitivity = _ccs_sensitivity(
+        index_max_sector_weight=0.8,
+        index_dominant_sector=CvaSector.FINANCIALS,
+    )
+    bucket, _ = resolve_sa_cva_bucket(sensitivity)
+    assert bucket == "3"
+
+
+def test_sector_concentration_explicit_remap_bucket() -> None:
+    sensitivity = _ccs_sensitivity(
+        index_max_sector_weight=0.9,
+        index_remap_bucket_id="5",
+    )
+    bucket, _ = resolve_sa_cva_bucket(sensitivity)
+    assert bucket == "5"
+
+
+def test_non_finite_sector_weight_fails() -> None:
+    with pytest.raises(CvaInputError, match="index_max_sector_weight"):
+        resolve_sa_cva_bucket(_ccs_sensitivity(index_max_sector_weight=math.nan))
+
+
+def test_sector_concentration_without_remap_metadata_fails() -> None:
+    with pytest.raises(CvaInputError, match="sector concentration"):
+        resolve_sa_cva_bucket(
+            _ccs_sensitivity(
+                index_max_sector_weight=0.8,
+                index_homogeneous_sector_quality=False,
+            )
+        )
+
+    with pytest.raises(CvaInputError, match="index_dominant_sector"):
+        resolve_sa_cva_bucket(
+            _ccs_sensitivity(
+                index_max_sector_weight=0.8,
+            )
+        )
