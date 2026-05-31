@@ -40,7 +40,7 @@ def test_get_sbm_rule_profile_returns_supported_basel_profile() -> None:
     )
     assert profile.supported_measures[SbmRiskClass.CSR_NONSEC] == frozenset({SbmRiskMeasure.DELTA})
     assert profile.supported_measures[SbmRiskClass.GIRR] == frozenset(
-        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA}
     )
     assert profile.supported_measures[SbmRiskClass.FX] == frozenset({SbmRiskMeasure.DELTA})
     assert "basel_mar21_39" in profile.citations
@@ -82,6 +82,7 @@ def test_unknown_profile_fails_as_input_error() -> None:
     [
         (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, True),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, False),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, True),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA, True),
@@ -133,7 +134,6 @@ def test_supported_risk_class_measures_lists_girr_fx_equity_commodity_and_csr_no
         {
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
-            (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
             (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
             (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),

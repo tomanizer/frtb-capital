@@ -51,9 +51,7 @@ PROFILE_SUPPORTED_MEASURES: dict[
     SbmRegulatoryProfile, dict[SbmRiskClass, frozenset[SbmRiskMeasure]]
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: {
-        SbmRiskClass.GIRR: frozenset(
-            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
-        ),
+        SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA}),
         SbmRiskClass.FX: frozenset({SbmRiskMeasure.DELTA}),
         SbmRiskClass.EQUITY: frozenset({SbmRiskMeasure.DELTA}),
         SbmRiskClass.COMMODITY: frozenset({SbmRiskMeasure.DELTA}),
