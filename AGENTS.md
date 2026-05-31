@@ -62,10 +62,10 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
 - Run `make agent-guard` and `make quality-control` before pushing any branch
   that changes package code, package metadata, model documentation, regulatory
   traceability, CI controls, or repository governance files.
-- For substantive package changes, run `make ci-local` (or at minimum
-  `make check`) before push. Use Python 3.11 locally (`.python-version` /
-  `uv sync --locked --python 3.11`) so results match CI; newer interpreters can
-  fail fixture hash gates such as `frtb-drc` `drc_nonsec_v2`.
+- For substantive package changes, run make ci-local (or at minimum
+  make check) before push. Use Python 3.11 locally (via .python-version)
+  so results match CI; newer interpreters can fail fixture hash gates such as
+  frtb-drc drc_nonsec_v2.
 - If the full suite is impractical, run the affected package tests plus
   `make quality-control`, and state the narrower validation in the PR.
 - Keep [`docs/quality/package_maturity.toml`](docs/quality/package_maturity.toml)
