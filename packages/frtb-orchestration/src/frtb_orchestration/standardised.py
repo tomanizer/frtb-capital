@@ -16,6 +16,19 @@ from typing import NoReturn
 
 from frtb_common import NotImplementedCapitalComponentError
 
+# Maps every known SA component profile_id to a jurisdiction family.
+# Components from different families must never be composed into a single SA charge.
+# Basel note: SBM uses "BASEL_MAR21", RRAO uses "BASEL_MAR23", and DRC would use
+# "BASEL_MAR22" — three different MAR chapter labels, one Basel jurisdiction.
+# See ADR 0022.
+_SA_JURISDICTION_FAMILY: dict[str, str] = {
+    "BASEL_MAR21": "BASEL",
+    "BASEL_MAR22": "BASEL",
+    "BASEL_MAR23": "BASEL",
+    "US_NPR_2_0": "US_NPR",
+    "EU_CRR3": "EU_CRR3",
+}
+
 
 class OrchestrationInputError(ValueError):
     """Raised when a component result cannot be consumed by orchestration."""
@@ -146,14 +159,22 @@ def compose_standardised_approach_capital(
     drc_result: object | None = None,
     rrao_result: object | None = None,
 ) -> NoReturn:
-    """Fail explicitly until all SA component output contracts are available."""
+    """Fail explicitly until all SA component output contracts are available.
 
+    Before checking for missing components, validates that all supplied component
+    results share the same regulatory jurisdiction family (Basel, US-NPR, or
+    EU-CRR3).  Mixing jurisdictions within a single SA charge is not a valid
+    regulatory result.  See ADR 0022.
+    """
+    handoffs: list[ComponentResultHandoff] = []
     if rrao_result is not None:
-        recognise_rrao_result(rrao_result)
+        handoffs.append(recognise_rrao_result(rrao_result))
     if drc_result is not None:
-        recognise_drc_result(drc_result)
+        handoffs.append(recognise_drc_result(drc_result))
     if sbm_result is not None:
-        recognise_sbm_result(sbm_result)
+        handoffs.append(recognise_sbm_result(sbm_result))
+
+    _assert_consistent_jurisdiction(handoffs)
 
     missing = _missing_standardised_components(
         sbm_result=sbm_result,
@@ -173,6 +194,37 @@ def compose_standardised_approach_capital(
         component="frtb-orchestration",
         feature="standardised approach aggregation arithmetic",
     )
+
+
+def _assert_consistent_jurisdiction(
+    handoffs: Sequence[ComponentResultHandoff],
+) -> None:
+    """Raise OrchestrationInputError when supplied components span multiple jurisdictions."""
+    families: dict[StandardisedComponent, tuple[str, str]] = {}
+    for handoff in handoffs:
+        family = _SA_JURISDICTION_FAMILY.get(handoff.profile_id)
+        if family is None:
+            raise OrchestrationInputError(
+                f"{handoff.component.value} profile_id {handoff.profile_id!r} is not "
+                "recognised as a known SA jurisdiction profile; add it to "
+                "_SA_JURISDICTION_FAMILY in standardised.py",
+                field="profile_id",
+            )
+        families[handoff.component] = (handoff.profile_id, family)
+
+    unique_families = {family for _, family in families.values()}
+    if len(unique_families) > 1:
+        detail = ", ".join(
+            f"{component.value}={profile_id!r}"
+            for component, (profile_id, _) in sorted(families.items(), key=lambda item: item[0])
+        )
+        raise OrchestrationInputError(
+            "SA components must share the same regulatory jurisdiction; "
+            f"mixed profiles supplied: {detail}. "
+            "All components must be from the same family (Basel, US_NPR, or EU_CRR3). "
+            "See ADR 0022.",
+            field="profile_id",
+        )
 
 
 def _missing_standardised_components(
