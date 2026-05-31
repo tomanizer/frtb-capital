@@ -20,6 +20,8 @@ from frtb_cva.data_models import (
     CvaNettingSet,
     CvaRunControls,
     CvaSourceLineage,
+    SaCvaBucketCapital,
+    SaCvaRiskClassCapital,
     SaCvaSensitivity,
 )
 from frtb_cva.numeric import is_reconciled
@@ -109,7 +111,10 @@ def serialize_cva_result(result: CvaCapitalResult) -> dict[str, object]:
         "ba_cva_netting_set_lines": [
             _netting_set_line_payload(line) for line in result.ba_cva_netting_set_lines
         ],
-        "sa_cva_risk_class_capitals": [],
+        "sa_cva_risk_class_capitals": [
+            _risk_class_capital_payload(risk_class_capital)
+            for risk_class_capital in result.sa_cva_risk_class_capitals
+        ],
     }
 
 
@@ -181,6 +186,11 @@ def validate_cva_result_reconciliation(result: CvaCapitalResult) -> None:
             )
 
     if result.method is CvaMethod.SA_CVA:
+        if not result.sa_cva_risk_class_capitals:
+            raise CvaInputError(
+                "SA-CVA result requires at least one risk-class capital record",
+                field="sa_cva_risk_class_capitals",
+            )
         expected_total = sum(
             risk_class_capital.post_multiplier_capital
             for risk_class_capital in result.sa_cva_risk_class_capitals
@@ -190,6 +200,20 @@ def validate_cva_result_reconciliation(result: CvaCapitalResult) -> None:
                 "total CVA capital does not reconcile to SA-CVA risk-class totals",
                 field="total_cva_capital",
             )
+        for risk_class_capital in result.sa_cva_risk_class_capitals:
+            expected_post = risk_class_capital.m_cva * risk_class_capital.pre_multiplier_capital
+            if not is_reconciled(risk_class_capital.post_multiplier_capital, expected_post):
+                raise CvaInputError(
+                    "SA-CVA risk-class post-multiplier capital does not reconcile",
+                    field="post_multiplier_capital",
+                    record_id=risk_class_capital.risk_class.value,
+                )
+            if not risk_class_capital.bucket_capitals:
+                raise CvaInputError(
+                    "SA-CVA risk-class result requires at least one bucket capital",
+                    field="bucket_capitals",
+                    record_id=risk_class_capital.risk_class.value,
+                )
 
 
 def _validate_hash(field: str, value: str) -> None:
@@ -365,6 +389,35 @@ def _netting_set_line_payload(line: BaCvaStandAloneLine) -> dict[str, object]:
         "citations": list(line.citations),
         "uses_imm_ead": line.uses_imm_ead,
         "discount_factor_supplied": line.discount_factor_supplied,
+    }
+
+
+def _risk_class_capital_payload(
+    risk_class_capital: SaCvaRiskClassCapital,
+) -> dict[str, object]:
+    return {
+        "risk_class": risk_class_capital.risk_class.value,
+        "risk_measure": risk_class_capital.risk_measure.value,
+        "pre_multiplier_capital": risk_class_capital.pre_multiplier_capital,
+        "post_multiplier_capital": risk_class_capital.post_multiplier_capital,
+        "m_cva": risk_class_capital.m_cva,
+        "citations": list(risk_class_capital.citations),
+        "bucket_capitals": [
+            _bucket_capital_payload(bucket) for bucket in risk_class_capital.bucket_capitals
+        ],
+    }
+
+
+def _bucket_capital_payload(bucket: SaCvaBucketCapital) -> dict[str, object]:
+    return {
+        "bucket_id": bucket.bucket_id,
+        "risk_class": bucket.risk_class.value,
+        "risk_measure": bucket.risk_measure.value,
+        "k_b": bucket.k_b,
+        "s_b": bucket.s_b,
+        "sensitivity_ids": list(bucket.sensitivity_ids),
+        "citations": list(bucket.citations),
+        "branch_metadata": [list(pair) for pair in bucket.branch_metadata],
     }
 
 

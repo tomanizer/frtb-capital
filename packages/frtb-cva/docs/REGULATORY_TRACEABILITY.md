@@ -14,11 +14,11 @@ Companion source manifest: [`regulatory_sources.yml`](regulatory_sources.yml).
 | --- | --- |
 | Scaffold | Importable boundary with explicit failure for unsupported paths. |
 | Planned | Issue-backed and source-mapped, but not yet capital-producing. |
-| Partial | Reduced BA-CVA slice implemented; SA-CVA and full BA-CVA remain unsupported. |
+| Partial | Delivered slice with cited behaviour; broader MAR50 scope still unsupported. |
 | Implemented | Tested code produces cited behaviour for supported inputs. |
 | Unsupported | Fail closed until profile or feature has cited rules and fixtures. |
 
-## Phase 1 implemented slice
+## Delivered slice (implemented modules)
 
 | Module | Responsibility | Basel reference | Status |
 | --- | --- | --- | --- |
@@ -28,15 +28,20 @@ Companion source manifest: [`regulatory_sources.yml`](regulatory_sources.yml).
 | `regimes.py` | Profile lookup and deterministic profile hash | MAR50 profile context | Implemented |
 | `scope.py` | Method selection and carve-out policy | MAR50.8-MAR50.9 | Implemented |
 | `ba_cva.py` | Stand-alone and reduced portfolio BA-CVA | MAR50.14-MAR50.15 | Implemented |
-| `capital.py` | Public `calculate_cva_capital` | MAR50.14 reduced path | Implemented |
+| `weighted_sensitivity.py` | SA-CVA weighted sensitivity assembly | MAR50.56 | Implemented |
+| `aggregation.py` | SA-CVA intra- and inter-bucket capital | MAR50.53, MAR50.55-MAR50.57 | Implemented |
+| `hedges.py` | SA-CVA hedge eligibility assessment | MAR50.37-MAR50.39 | Partial |
+| `risk_classes/girr.py` | GIRR delta bucket routing | MAR50.54-MAR50.57 | Implemented |
+| `sa_cva.py` | SA-CVA GIRR delta orchestration | MAR50.53-MAR50.57 | Implemented |
+| `capital.py` | Public `calculate_cva_capital` | MAR50.14 reduced, MAR50.53 SA-CVA | Implemented |
 | `audit.py` | Input hash, serialization, reconciliation | Audit traceability | Implemented |
 
 July 2020 calibration revision notes: `m_CVA = 1.0`, `D_BA-CVA = 0.65`.
 
-## Unsupported in phase 1
+## Unsupported in the delivered slice
 
 - Full BA-CVA hedge recognition (MAR50.17-MAR50.26)
-- SA-CVA capital calculation (MAR50.40-MAR50.77)
+- SA-CVA risk classes other than GIRR delta (MAR50.40-MAR50.52, MAR50.58+)
 - Mixed carve-out assembly (MAR50.8 with SA-CVA)
 - Materiality-threshold alternative (MAR50.9)
 - U.S., EU, and UK comparison profiles

@@ -50,7 +50,7 @@ def test_reduced_ba_cva_produces_capital_result() -> None:
         effective_maturity=2.5,
         discount_factor=1.0,
         currency="USD",
-        sign_convention="positive_loss",
+        sign_convention="non_negative",
         uses_imm_ead=True,
         source_row_id="row-ns-1",
         lineage=_lineage("row-ns-1"),
@@ -96,3 +96,39 @@ def test_sa_cva_girr_delta_produces_capital_result() -> None:
     assert result.method is CvaMethod.SA_CVA
     assert result.total_cva_capital > 0.0
     assert len(result.sa_cva_risk_class_capitals) == 1
+
+
+def test_sa_cva_rejects_counterparty_and_netting_set_inputs(
+    sovereign_counterparty,
+    sovereign_netting_set,
+) -> None:
+    from frtb_cva import CvaInputError, SaCvaRiskClass, SaCvaRiskMeasure, SaCvaSensitivity, SensitivityTag
+
+    context = CvaCalculationContext(
+        run_id="run-sa-reject-ba-inputs",
+        calculation_date=date(2026, 5, 31),
+        base_currency="USD",
+        profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
+        method=CvaMethod.SA_CVA,
+        sa_cva_approved=True,
+    )
+    sensitivity = SaCvaSensitivity(
+        sensitivity_id="sens-girr-5y",
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        sensitivity_tag=SensitivityTag.CVA,
+        bucket_id="USD",
+        risk_factor_key="5y",
+        tenor="5y",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="row-sens-girr-5y",
+    )
+    with pytest.raises(CvaInputError, match="does not accept counterparty or netting-set inputs"):
+        calculate_cva_capital(
+            context,
+            (sovereign_counterparty,),
+            (sovereign_netting_set,),
+            sensitivities=(sensitivity,),
+        )

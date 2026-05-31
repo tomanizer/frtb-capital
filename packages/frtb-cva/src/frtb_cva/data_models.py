@@ -254,6 +254,7 @@ class BaCvaStandAloneLine:
     discount_factor_supplied: bool = True
 
 
+# Public audit alias retained for netting-set line records in orchestration docs.
 BaCvaNettingSetLine = BaCvaStandAloneLine
 
 

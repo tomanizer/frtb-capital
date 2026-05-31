@@ -37,13 +37,14 @@ def resolve_calculation_method(
 
     if context.materiality_threshold_elected:
         raise UnsupportedRegulatoryFeatureError(
-            "Materiality-threshold 100% CCR alternative (MAR50.9) is unsupported in phase 1."
+            "Materiality-threshold 100% CCR alternative (MAR50.9) is unsupported "
+            "in the delivered slice."
         )
 
     if context.method is CvaMethod.BA_CVA_FULL:
         unsupported_flags.append("BA_CVA_FULL")
         raise UnsupportedRegulatoryFeatureError(
-            "Full BA-CVA with hedge recognition is unsupported in phase 1."
+            "Full BA-CVA with hedge recognition is unsupported in the delivered slice."
         )
 
     if context.method is CvaMethod.SA_CVA:
@@ -63,7 +64,7 @@ def resolve_calculation_method(
     if context.method is CvaMethod.MIXED_CARVE_OUT:
         unsupported_flags.append("MIXED_CARVE_OUT")
         raise UnsupportedRegulatoryFeatureError(
-            "Mixed SA-CVA and BA-CVA carve-out assembly is unsupported in phase 1."
+            "Mixed SA-CVA and BA-CVA carve-out assembly is unsupported in the delivered slice."
         )
 
     if context.carve_out_netting_set_ids:

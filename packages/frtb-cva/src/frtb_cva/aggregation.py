@@ -7,6 +7,8 @@ from __future__ import annotations
 import math
 from collections import defaultdict
 
+import numpy as np
+
 from frtb_cva.data_models import (
     CvaRegulatoryProfile,
     SaCvaBucketCapital,
@@ -25,23 +27,45 @@ HEDGING_DISALLOWANCE_R = 0.01
 M_CVA_DEFAULT = 1.0
 
 
-def _positive_part(value: float) -> float:
-    return max(value, 0.0)
+def _hedging_disallowance_term(weighted_hedges: np.ndarray) -> float:
+    # MAR50.55 indirect-hedge disallowance: R · Σ_k (WS_k^HDG)². Always
+    # non-negative — a partial hedge offsets the net sensitivity term but
+    # leaves an R·(WS_HDG)² residual under the square root, so K_b is never
+    # driven below sqrt(R)·|WS_HDG|. See ADR 0016 for the derivation and the
+    # bug history (the original signed-cross-product form reduced K_b).
+    return float(HEDGING_DISALLOWANCE_R * np.dot(weighted_hedges, weighted_hedges))
 
 
-def _negative_part(value: float) -> float:
-    return min(value, 0.0)
-
-
-def _hedging_disallowance_term(
+def _intra_bucket_correlation_matrix(
     weighted_sensitivities: tuple[SaCvaWeightedSensitivity, ...],
-) -> float:
-    total = 0.0
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> np.ndarray:
+    count = len(weighted_sensitivities)
+    rho_matrix = np.eye(count, dtype=np.float64)
+    if count < 2:
+        return rho_matrix
+
+    tenors: list[str] = []
     for item in weighted_sensitivities:
-        total += _positive_part(item.weighted_cva) * _negative_part(
-            item.weighted_hedge
-        ) + _negative_part(item.weighted_cva) * _positive_part(item.weighted_hedge)
-    return HEDGING_DISALLOWANCE_R * total
+        tenor = item.risk_factor_key.tenor
+        if tenor is None:
+            raise CvaInputError(
+                "GIRR delta intra-bucket aggregation requires tenor",
+                field="tenor",
+            )
+        tenors.append(tenor)
+
+    for left_index in range(count):
+        for right_index in range(left_index + 1, count):
+            rho, _ = girr_delta_intra_bucket_correlation(
+                tenors[left_index],
+                tenors[right_index],
+                profile=profile,
+            )
+            rho_matrix[left_index, right_index] = rho
+            rho_matrix[right_index, left_index] = rho
+    return rho_matrix
 
 
 def aggregate_intra_bucket(
@@ -55,21 +79,22 @@ def aggregate_intra_bucket(
     if not weighted_sensitivities:
         raise CvaInputError("bucket requires at least one weighted sensitivity", field="bucket_id")
 
-    variance = 0.0
-    for index, left in enumerate(weighted_sensitivities):
-        variance += left.weighted_net * left.weighted_net
-        for right in weighted_sensitivities[index + 1 :]:
-            tenor_left = left.risk_factor_key.tenor or left.risk_factor_key.risk_factor_key
-            tenor_right = right.risk_factor_key.tenor or right.risk_factor_key.risk_factor_key
-            rho, _ = girr_delta_intra_bucket_correlation(
-                tenor_left,
-                tenor_right,
-                profile=profile,
-            )
-            variance += 2.0 * rho * left.weighted_net * right.weighted_net
-    variance += _hedging_disallowance_term(weighted_sensitivities)
+    weighted_nets = np.fromiter(
+        (item.weighted_net for item in weighted_sensitivities),
+        dtype=np.float64,
+        count=len(weighted_sensitivities),
+    )
+    weighted_hedges = np.fromiter(
+        (item.weighted_hedge for item in weighted_sensitivities),
+        dtype=np.float64,
+        count=len(weighted_sensitivities),
+    )
+    rho_matrix = _intra_bucket_correlation_matrix(weighted_sensitivities, profile=profile)
+    variance = float(weighted_nets @ rho_matrix @ weighted_nets) + _hedging_disallowance_term(
+        weighted_hedges
+    )
     k_b = math.sqrt(max(variance, 0.0))
-    s_b = sum(item.weighted_net for item in weighted_sensitivities)
+    s_b = float(np.sum(weighted_nets))
     floor_applied = abs(s_b) > k_b
     if floor_applied:
         s_b = math.copysign(k_b, s_b) if s_b != 0.0 else 0.0
@@ -98,12 +123,10 @@ def aggregate_inter_bucket(
 
     validated_m_cva = validate_m_cva_multiplier(m_cva)
     gamma_bc, gamma_citation = girr_inter_bucket_correlation(profile=profile)
-    cross_term = 0.0
-    sum_kb_squared = 0.0
-    for index, left in enumerate(bucket_capitals):
-        sum_kb_squared += left.k_b * left.k_b
-        for right in bucket_capitals[index + 1 :]:
-            cross_term += 2.0 * gamma_bc * left.s_b * right.s_b
+    bucket_kb = np.fromiter((bucket.k_b for bucket in bucket_capitals), dtype=np.float64)
+    bucket_sb = np.fromiter((bucket.s_b for bucket in bucket_capitals), dtype=np.float64)
+    sum_kb_squared = float(np.dot(bucket_kb, bucket_kb))
+    cross_term = float(2.0 * gamma_bc * np.triu(np.outer(bucket_sb, bucket_sb), k=1).sum())
     pre_multiplier = math.sqrt(max(sum_kb_squared + cross_term, 0.0))
     post_multiplier = validated_m_cva * pre_multiplier
     return SaCvaRiskClassCapital(

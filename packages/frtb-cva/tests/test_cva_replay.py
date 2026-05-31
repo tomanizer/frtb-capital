@@ -1,6 +1,19 @@
 from __future__ import annotations
 
-from frtb_cva import CvaRegulatoryProfile, calculate_cva_capital, input_hash, profile_content_hash
+from datetime import date
+
+from frtb_cva import (
+    CvaCalculationContext,
+    CvaMethod,
+    CvaRegulatoryProfile,
+    SaCvaRiskClass,
+    SaCvaRiskMeasure,
+    SaCvaSensitivity,
+    SensitivityTag,
+    calculate_cva_capital,
+    input_hash,
+    profile_content_hash,
+)
 
 
 def test_repeated_runs_are_deterministic(
@@ -29,3 +42,32 @@ def test_repeated_runs_are_deterministic(
         )
         == first.input_hash
     )
+
+
+def test_sa_cva_repeated_runs_are_deterministic() -> None:
+    context = CvaCalculationContext(
+        run_id="run-sa-replay",
+        calculation_date=date(2026, 5, 31),
+        base_currency="USD",
+        profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
+        method=CvaMethod.SA_CVA,
+        sa_cva_approved=True,
+    )
+    sensitivity = SaCvaSensitivity(
+        sensitivity_id="sens-girr-5y",
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        sensitivity_tag=SensitivityTag.CVA,
+        bucket_id="USD",
+        risk_factor_key="5y",
+        tenor="5y",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="row-sens-girr-5y",
+    )
+    first = calculate_cva_capital(context, (), (), sensitivities=(sensitivity,))
+    second = calculate_cva_capital(context, (), (), sensitivities=(sensitivity,))
+    assert first.total_cva_capital == second.total_cva_capital
+    assert first.input_hash == second.input_hash
+    assert first.input_hash == input_hash(context, (), (), sensitivities=(sensitivity,))

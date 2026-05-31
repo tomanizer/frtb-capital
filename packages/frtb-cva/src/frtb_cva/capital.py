@@ -26,6 +26,7 @@ from frtb_cva.regimes import get_cva_rule_profile
 from frtb_cva.sa_cva import calculate_sa_cva_capital
 from frtb_cva.scope import validate_method_selection
 from frtb_cva.validation import (
+    CvaInputError,
     validate_calculation_context,
     validate_cva_counterparties,
     validate_cva_hedges,
@@ -81,14 +82,10 @@ def calculate_cva_capital(
         total_cva_capital = ba_cva_reduced.k_reduced
     elif scope.method is CvaMethod.SA_CVA:
         if validated_counterparties or validated_netting_sets:
-            scope = scope.__class__(
-                method=scope.method,
-                carve_out_netting_set_ids=scope.carve_out_netting_set_ids,
-                audit_metadata=scope.audit_metadata,
-                unsupported_flags=(
-                    *scope.unsupported_flags,
-                    "SA_CVA_IGNORES_COUNTERPARTY_NETTING_SET_INPUTS",
-                ),
+            raise CvaInputError(
+                "SA-CVA does not accept counterparty or netting-set inputs; "
+                "pass them only when method is BA_CVA_REDUCED",
+                field="counterparties_or_netting_sets",
             )
         sa_cva_risk_class_capitals = calculate_sa_cva_capital(
             validated_sensitivities,

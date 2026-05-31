@@ -49,6 +49,9 @@ def test_package_does_not_import_sibling_capital_packages() -> None:
         "frtb_cva.ba_cva",
         "frtb_cva.capital",
         "frtb_cva.audit",
+        "frtb_cva.sa_cva",
+        "frtb_cva.aggregation",
+        "frtb_cva.weighted_sensitivity",
     ):
         module = importlib.import_module(module_name)
         source = Path(module.__file__).read_text(encoding="utf-8")
