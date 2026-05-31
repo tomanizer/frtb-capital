@@ -4,12 +4,10 @@ from datetime import date
 
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
-
 from frtb_cva import (
     CvaCalculationContext,
     CvaMethod,
     CvaRegulatoryProfile,
-    get_cva_rule_profile,
 )
 
 

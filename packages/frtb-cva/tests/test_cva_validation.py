@@ -3,12 +3,11 @@ from __future__ import annotations
 import math
 
 import pytest
-
 from frtb_cva import (
+    CreditQuality,
     CvaCounterparty,
     CvaInputError,
     CvaNettingSet,
-    CreditQuality,
     CvaSector,
     normalise_ead_amount,
     validate_cva_counterparties,
@@ -58,7 +57,10 @@ def test_non_finite_ead_fails() -> None:
         normalise_ead_amount(math.inf)
 
 
-def test_unknown_counterparty_reference_fails(sovereign_counterparty, sovereign_netting_set) -> None:
+def test_unknown_counterparty_reference_fails(
+    sovereign_counterparty,
+    sovereign_netting_set,
+) -> None:
     unknown = CvaNettingSet(
         netting_set_id="ns-unknown",
         counterparty_id="missing-ctp",

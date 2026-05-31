@@ -4,7 +4,6 @@ from datetime import date
 
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
-
 from frtb_cva import (
     CvaCalculationContext,
     CvaInputError,
@@ -61,7 +60,7 @@ def test_materiality_threshold_fails_closed() -> None:
         profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
         materiality_threshold_elected=True,
     )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="MAR50.9"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match=r"MAR50\.9"):
         resolve_calculation_method(context)
 
 

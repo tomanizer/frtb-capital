@@ -4,7 +4,7 @@ import pytest
 from frtb_common import ImplementationStatus
 from frtb_cva import (
     PACKAGE_METADATA,
-    __version__,
+    CreditQuality,
     CvaCalculationContext,
     CvaCounterparty,
     CvaMethod,
@@ -12,7 +12,7 @@ from frtb_cva import (
     CvaRegulatoryProfile,
     CvaSector,
     CvaSourceLineage,
-    CreditQuality,
+    __version__,
     calculate_cva_capital,
 )
 

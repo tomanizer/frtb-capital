@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import FrozenInstanceError
-from datetime import date
 
 import pytest
-
 from frtb_cva import (
     BaCvaCounterpartyCapital,
     BaCvaReducedPortfolioResult,
     BaCvaStandAloneLine,
     CreditQuality,
     CvaCalculationContext,
-    CvaCapitalResult,
     CvaMethod,
     CvaRegulatoryProfile,
     CvaSector,

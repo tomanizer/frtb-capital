@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
-
 from frtb_cva import (
+    CreditQuality,
     CvaInputError,
     CvaRegulatoryProfile,
     CvaSector,
-    CreditQuality,
     ba_cva_alpha,
     ba_cva_discount_scalar,
     ba_cva_rho,

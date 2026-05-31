@@ -5,7 +5,6 @@ Validation helpers for canonical CVA inputs.
 from __future__ import annotations
 
 import math
-from datetime import date
 from typing import Literal
 
 from frtb_cva.data_models import (
@@ -261,7 +260,11 @@ def _validate_netting_set(
             record_id=record_id,
         )
     if not isinstance(netting_set.uses_imm_ead, bool):
-        raise CvaInputError("uses_imm_ead must be a bool", field="uses_imm_ead", record_id=record_id)
+        raise CvaInputError(
+            "uses_imm_ead must be a bool",
+            field="uses_imm_ead",
+            record_id=record_id,
+        )
     if not isinstance(netting_set.carved_out_to_ba_cva, bool):
         raise CvaInputError(
             "carved_out_to_ba_cva must be a bool",

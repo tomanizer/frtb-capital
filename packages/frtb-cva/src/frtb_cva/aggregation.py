@@ -53,7 +53,6 @@ def aggregate_intra_bucket(
     if not weighted_sensitivities:
         raise CvaInputError("bucket requires at least one weighted sensitivity", field="bucket_id")
 
-    size = len(weighted_sensitivities)
     variance = 0.0
     for index, left in enumerate(weighted_sensitivities):
         variance += left.weighted_net * left.weighted_net
@@ -133,7 +132,7 @@ def aggregate_weighted_sensitivities(
 __all__ = [
     "HEDGING_DISALLOWANCE_R",
     "M_CVA_DEFAULT",
-    "aggregate_intra_bucket",
     "aggregate_inter_bucket",
+    "aggregate_intra_bucket",
     "aggregate_weighted_sensitivities",
 ]

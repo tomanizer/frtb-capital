@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frtb_cva import calculate_cva_capital, input_hash, profile_content_hash, CvaRegulatoryProfile
+from frtb_cva import CvaRegulatoryProfile, calculate_cva_capital, input_hash, profile_content_hash
 
 
 def test_repeated_runs_are_deterministic(

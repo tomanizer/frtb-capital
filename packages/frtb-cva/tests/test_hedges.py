@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
-from frtb_cva.hedges import assess_hedge_eligibility
 from frtb_cva import (
     BaCvaHedgeType,
     CvaHedge,
@@ -10,6 +8,7 @@ from frtb_cva import (
     HedgeEligibility,
     HedgeReferenceRelation,
 )
+from frtb_cva.hedges import assess_hedge_eligibility
 from frtb_cva.validation import CvaInputError
 
 

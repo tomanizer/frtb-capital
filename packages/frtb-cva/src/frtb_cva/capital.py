@@ -9,6 +9,7 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_cva.audit import input_hash, validate_cva_result_reconciliation
 from frtb_cva.ba_cva import calculate_reduced_portfolio
 from frtb_cva.data_models import (
+    BaCvaCounterpartyCapital,
     BaCvaStandAloneLine,
     CvaCalculationContext,
     CvaCapitalResult,
@@ -60,7 +61,7 @@ def calculate_cva_capital(
         )
 
     ba_cva_reduced = None
-    ba_cva_counterparty_capitals = ()
+    ba_cva_counterparty_capitals: tuple[BaCvaCounterpartyCapital, ...] = ()
     ba_cva_netting_set_lines: tuple[BaCvaStandAloneLine, ...] = ()
     sa_cva_risk_class_capitals: tuple[SaCvaRiskClassCapital, ...] = ()
     total_cva_capital = 0.0

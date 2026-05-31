@@ -174,7 +174,12 @@ def calculate_reduced_portfolio(
         alpha=alpha,
         counterparty_capitals=counterparty_capitals,
         netting_set_lines=netting_set_lines,
-        citations=_unique_citations(rho_citation, discount_citation, alpha_citation, "basel_mar50_14"),
+        citations=_unique_citations(
+            rho_citation,
+            discount_citation,
+            alpha_citation,
+            "basel_mar50_14",
+        ),
     )
 
 

@@ -4,7 +4,13 @@ SA-CVA orchestration for supported public API slices.
 
 from __future__ import annotations
 
-from frtb_cva.data_models import CvaHedge, SaCvaRiskClass, SaCvaRiskMeasure, SaCvaSensitivity
+from frtb_cva.data_models import (
+    CvaHedge,
+    SaCvaRiskClass,
+    SaCvaRiskClassCapital,
+    SaCvaRiskMeasure,
+    SaCvaSensitivity,
+)
 from frtb_cva.risk_classes.girr import calculate_girr_delta_capital
 from frtb_cva.validation import CvaInputError
 
@@ -14,7 +20,7 @@ def calculate_sa_cva_capital(
     *,
     hedges: tuple[CvaHedge, ...] = (),
     m_cva: float = 1.0,
-) -> tuple[object, ...]:
+) -> tuple[SaCvaRiskClassCapital, ...]:
     """Calculate supported SA-CVA risk-class totals."""
 
     unsupported = {

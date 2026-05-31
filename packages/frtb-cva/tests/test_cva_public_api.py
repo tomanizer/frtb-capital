@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
-
 from frtb_cva import (
     CvaMethod,
     calculate_cva_capital,
@@ -62,7 +61,11 @@ def test_serialize_result_is_json_ready(
     assert payload["ba_cva_reduced"] is not None
 
 
-def test_full_ba_cva_fails_at_public_api(reduced_context, sovereign_counterparty, sovereign_netting_set) -> None:
+def test_full_ba_cva_fails_at_public_api(
+    reduced_context,
+    sovereign_counterparty,
+    sovereign_netting_set,
+) -> None:
     from frtb_cva import CvaCalculationContext
 
     context = CvaCalculationContext(

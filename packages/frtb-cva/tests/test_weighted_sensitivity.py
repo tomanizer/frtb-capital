@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import pytest
-
-from frtb_cva.weighted_sensitivity import compute_weighted_sensitivities
 from frtb_cva import (
     SaCvaRiskClass,
     SaCvaRiskMeasure,
     SaCvaSensitivity,
     SensitivityTag,
 )
+from frtb_cva.weighted_sensitivity import compute_weighted_sensitivities
 
 
 def _sensitivity(

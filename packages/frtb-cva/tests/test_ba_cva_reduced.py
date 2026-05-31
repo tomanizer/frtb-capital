@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from frtb_cva import (
     CreditQuality,
     CvaCounterparty,
@@ -50,10 +49,16 @@ def _netting_set(
 
 
 def test_single_counterparty_equals_scaled_standalone(sample_lineage) -> None:
-    counterparty = _counterparty("ctp-1", CvaSector.SOVEREIGN, CreditQuality.INVESTMENT_GRADE, sample_lineage)
+    counterparty = _counterparty(
+        "ctp-1",
+        CvaSector.SOVEREIGN,
+        CreditQuality.INVESTMENT_GRADE,
+        sample_lineage,
+    )
     netting_set = _netting_set("ns-1", "ctp-1", 1_000_000.0, sample_lineage)
     reduced = calculate_reduced_portfolio((counterparty,), (netting_set,))
-    assert reduced.k_reduced == pytest.approx(0.65 * reduced.counterparty_capitals[0].standalone_capital)
+    standalone = reduced.counterparty_capitals[0].standalone_capital
+    assert reduced.k_reduced == pytest.approx(0.65 * standalone)
 
 
 def test_multi_counterparty_diversifies_below_sum(sample_lineage) -> None:
@@ -71,7 +76,12 @@ def test_multi_counterparty_diversifies_below_sum(sample_lineage) -> None:
 
 
 def test_portfolio_components_reconcile(sample_lineage) -> None:
-    counterparty = _counterparty("ctp-1", CvaSector.SOVEREIGN, CreditQuality.INVESTMENT_GRADE, sample_lineage)
+    counterparty = _counterparty(
+        "ctp-1",
+        CvaSector.SOVEREIGN,
+        CreditQuality.INVESTMENT_GRADE,
+        sample_lineage,
+    )
     netting_set = _netting_set("ns-1", "ctp-1", 750_000.0, sample_lineage)
     reduced = calculate_reduced_portfolio((counterparty,), (netting_set,))
     expected_portfolio = (

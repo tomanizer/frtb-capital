@@ -34,7 +34,11 @@ def load_fixture_context() -> CvaCalculationContext:
     )
 
 
-def load_fixture_cases() -> tuple[tuple[str, tuple[CvaCounterparty, ...], tuple[CvaNettingSet, ...]], ...]:
+FixtureCase = tuple[str, tuple[CvaCounterparty, ...], tuple[CvaNettingSet, ...]]
+InvalidFixtureCase = tuple[str, str, tuple[CvaCounterparty, ...], tuple[CvaNettingSet, ...]]
+
+
+def load_fixture_cases() -> tuple[FixtureCase, ...]:
     payload = load_fixture_payload()
     return tuple(
         (
@@ -46,7 +50,7 @@ def load_fixture_cases() -> tuple[tuple[str, tuple[CvaCounterparty, ...], tuple[
     )
 
 
-def load_invalid_cases() -> tuple[tuple[str, str, tuple[CvaCounterparty, ...], tuple[CvaNettingSet, ...]], ...]:
+def load_invalid_cases() -> tuple[InvalidFixtureCase, ...]:
     payload = load_fixture_payload()
     return tuple(
         (

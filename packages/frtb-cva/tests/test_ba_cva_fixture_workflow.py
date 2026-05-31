@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from frtb_cva import calculate_cva_capital
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "ba_cva_reduced_v1"

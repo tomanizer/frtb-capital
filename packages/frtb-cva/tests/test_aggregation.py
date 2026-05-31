@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import pytest
-
-from frtb_cva.aggregation import (
-    HEDGING_DISALLOWANCE_R,
-    aggregate_intra_bucket,
-    aggregate_weighted_sensitivities,
-)
 from frtb_cva import (
     SaCvaRiskClass,
     SaCvaRiskFactorKey,
     SaCvaRiskMeasure,
     SaCvaWeightedSensitivity,
+)
+from frtb_cva.aggregation import (
+    HEDGING_DISALLOWANCE_R,
+    aggregate_intra_bucket,
+    aggregate_weighted_sensitivities,
 )
 
 

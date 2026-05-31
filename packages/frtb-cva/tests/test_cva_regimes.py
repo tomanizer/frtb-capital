@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
-
 from frtb_cva import (
     CvaRegulatoryProfile,
     get_cva_rule_profile,

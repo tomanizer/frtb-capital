@@ -52,8 +52,8 @@ from frtb_cva.reference_data import (
     girr_specified_currencies,
 )
 from frtb_cva.regimes import CvaRuleProfile, get_cva_rule_profile, profile_content_hash
-from frtb_cva.scope import ScopeResolution, resolve_calculation_method, validate_method_selection
 from frtb_cva.scaffold import PACKAGE_METADATA
+from frtb_cva.scope import ScopeResolution, resolve_calculation_method, validate_method_selection
 from frtb_cva.validation import (
     CvaInputError,
     normalise_ead_amount,
@@ -66,6 +66,7 @@ from frtb_cva.validation import (
 )
 
 __all__ = [
+    "PACKAGE_METADATA",
     "BaCvaCounterpartyCapital",
     "BaCvaHedgeType",
     "BaCvaNettingSetLine",
@@ -87,7 +88,6 @@ __all__ = [
     "CvaSourceLineage",
     "HedgeEligibility",
     "HedgeReferenceRelation",
-    "PACKAGE_METADATA",
     "SaCvaBucketCapital",
     "SaCvaRiskClass",
     "SaCvaRiskClassCapital",
