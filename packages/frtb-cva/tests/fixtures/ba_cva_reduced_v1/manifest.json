@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture_id": "ba_cva_reduced_v1",
+  "profile": "BASEL_MAR50_2020",
+  "method": "BA_CVA_REDUCED",
+  "cases": [
+    "sovereign_ig",
+    "local_government_ig",
+    "financial_hy",
+    "multi_netting_set",
+    "imm_discount_factor",
+    "non_imm_discount_factor"
+  ]
+}

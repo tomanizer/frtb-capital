@@ -1,0 +1,95 @@
+{
+  "context": {
+    "run_id": "fixture-ba-cva-reduced-v1",
+    "calculation_date": "2026-05-31",
+    "base_currency": "USD",
+    "profile": "BASEL_MAR50_2020",
+    "method": "BA_CVA_REDUCED"
+  },
+  "cases": [
+    {
+      "case_id": "sovereign_ig",
+      "counterparties": [
+        {
+          "counterparty_id": "ctp-sovereign-ig",
+          "desk_id": "desk-a",
+          "legal_entity": "LE-001",
+          "sector": "SOVEREIGN",
+          "credit_quality": "INVESTMENT_GRADE",
+          "region": "EMEA",
+          "source_row_id": "row-ctp-sovereign-ig"
+        }
+      ],
+      "netting_sets": [
+        {
+          "netting_set_id": "ns-sovereign-ig",
+          "counterparty_id": "ctp-sovereign-ig",
+          "ead": 1000000.0,
+          "effective_maturity": 2.5,
+          "discount_factor": 0.9400247793232364,
+          "currency": "USD",
+          "sign_convention": "positive_loss",
+          "uses_imm_ead": false,
+          "source_row_id": "row-ns-sovereign-ig"
+        }
+      ]
+    },
+    {
+      "case_id": "financial_hy",
+      "counterparties": [
+        {
+          "counterparty_id": "ctp-fin-hy",
+          "desk_id": "desk-b",
+          "legal_entity": "LE-002",
+          "sector": "FINANCIALS",
+          "credit_quality": "HIGH_YIELD",
+          "region": "AMER",
+          "source_row_id": "row-ctp-fin-hy"
+        }
+      ],
+      "netting_sets": [
+        {
+          "netting_set_id": "ns-fin-hy",
+          "counterparty_id": "ctp-fin-hy",
+          "ead": 500000.0,
+          "effective_maturity": 1.0,
+          "discount_factor": 1.0,
+          "currency": "USD",
+          "sign_convention": "positive_loss",
+          "uses_imm_ead": true,
+          "source_row_id": "row-ns-fin-hy"
+        }
+      ]
+    }
+  ],
+  "invalid_cases": [
+    {
+      "case_id": "invalid_ead",
+      "expected_error_match": "EAD must be non-negative",
+      "counterparties": [
+        {
+          "counterparty_id": "ctp-invalid",
+          "desk_id": "desk-a",
+          "legal_entity": "LE-001",
+          "sector": "SOVEREIGN",
+          "credit_quality": "INVESTMENT_GRADE",
+          "region": "EMEA",
+          "source_row_id": "row-ctp-invalid"
+        }
+      ],
+      "netting_sets": [
+        {
+          "netting_set_id": "ns-invalid",
+          "counterparty_id": "ctp-invalid",
+          "ead": -1.0,
+          "effective_maturity": 1.0,
+          "discount_factor": 1.0,
+          "currency": "USD",
+          "sign_convention": "positive_loss",
+          "uses_imm_ead": true,
+          "source_row_id": "row-ns-invalid"
+        }
+      ]
+    }
+  ]
+}

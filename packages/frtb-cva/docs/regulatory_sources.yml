@@ -1,0 +1,25 @@
+schema_version: 1
+package: frtb-cva
+status_values: [scaffold, planned, partial, implemented, unsupported]
+
+sources:
+  - id: basel_mar50
+    title: Basel Framework MAR50 — CVA framework
+    url: https://www.bis.org/basel_framework/chapter/MAR/50.htm
+    status: implemented
+    notes: Primary source for phase 1 reduced BA-CVA and GIRR reference tables.
+  - id: bcbs_d507_cva_revisions_2020
+    title: BCBS d507 July 2020 CVA revisions
+    url: https://www.bis.org/bcbs/publ/d507.pdf
+    status: implemented
+    notes: Documents D_BA-CVA = 0.65 and m_CVA = 1.0 calibration revision.
+  - id: us_npr20_91fr14952
+    title: U.S. NPR 2.0 91 FR 14952
+    url: https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
+    status: unsupported
+    notes: Planned comparison profile US_NPR20_VB.
+  - id: eu_crr3_2024_1623
+    title: CRR3 Regulation (EU) 2024/1623
+    url: https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
+    status: unsupported
+    notes: Planned comparison profile EU_CRR3_CVA.
