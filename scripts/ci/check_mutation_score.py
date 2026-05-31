@@ -16,6 +16,11 @@ DEFAULT_STATS_PATHS = {
     "frtb-rrao": Path("dist/mutation/frtb-rrao/mutmut-cicd-stats.json"),
 }
 
+MUTATION_PREREQ_HINTS = {
+    "frtb-ima": "make mutation",
+    "frtb-rrao": "make mutation-rrao",
+}
+
 
 def _floors_from_registry(registry_path: Path = REGISTRY_PATH) -> dict[str, float]:
     """Read mutation_floor values from package_maturity.toml."""
@@ -64,6 +69,14 @@ def check_stats_file(package: str, stats_path: Path, *, floor: float) -> Mutatio
         if total <= 0:
             raise ValueError("total must be positive")
     except (OSError, ValueError, json.JSONDecodeError, TypeError) as exc:
+        error = str(exc)
+        if isinstance(exc, OSError):
+            hint = MUTATION_PREREQ_HINTS.get(package)
+            if hint is not None:
+                error = (
+                    f"{exc}; run `{hint}` to export mutmut-cicd-stats.json, "
+                    "then re-run `make mutation-score-check`"
+                )
         return MutationScoreResult(
             package=package,
             stats_path=stats_path,
@@ -72,7 +85,7 @@ def check_stats_file(package: str, stats_path: Path, *, floor: float) -> Mutatio
             score=0.0,
             floor=floor,
             passed=False,
-            error=str(exc),
+            error=error,
         )
 
     score = killed / total * 100

@@ -10,9 +10,10 @@ COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_rrao
 MUTATION_DIST := dist/mutation
 
 .PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
-.PHONY: test test-no-cov docs-check regulatory-corpus import-lint import-smoke maturity-check quality-control build
-.PHONY: examples-check notebooks-check
-.PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark rrao-benchmark
+.PHONY: test test-no-cov test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording
+.PHONY: import-lint import-smoke maturity-check quality-control build
+.PHONY: examples-check notebooks-check package-status-dashboard
+.PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark rrao-benchmark benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
 .PHONY: validation-pack agent-setup agent-sync-main agent-new agent-guard
 .PHONY: agent-worktrees agent-doctor ima sa sbm drc rrao cva orchestration clean
@@ -45,9 +46,26 @@ test:
 test-no-cov:
 	uv run pytest packages
 
-docs-check: regulatory-corpus
+test-partial-runtime-coverage:
+	mkdir -p dist/coverage
+	uv run pytest packages/frtb-drc packages/frtb-cva packages/frtb-sbm \
+		--cov=frtb_drc --cov=frtb_cva --cov=frtb_sbm \
+		--cov-report=json:dist/coverage/partial-runtime.json
+	uv run python scripts/ci/check_module_coverage.py dist/coverage/partial-runtime.json \
+		--maturity partial_runtime --report-only
+
+docs-check: regulatory-corpus regulatory-wording package-status-dashboard
 	python3 scripts/ci/check_markdown_links.py
 	python3 scripts/ci/check_requirement_yaml.py
+
+regulatory-wording:
+	python3 scripts/ci/check_regulatory_wording.py
+
+package-status-dashboard:
+	uv run python scripts/ci/generate_package_status_dashboard.py --check
+
+package-status-dashboard-regenerate:
+	uv run python scripts/ci/generate_package_status_dashboard.py
 
 import-lint:
 	uv run lint-imports
@@ -98,6 +116,9 @@ benchmark:
 
 rrao-benchmark:
 	uv run python packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py --output dist/benchmarks/frtb-rrao-target-scale.json
+
+benchmark-budget-check:
+	uv run python scripts/ci/check_benchmark_budgets.py
 
 audit-deps:
 	uv run pip-audit

@@ -36,7 +36,7 @@ def test_mutation_score_fails_below_floor(tmp_path: Path) -> None:
 
 def test_mutation_score_reports_missing_stats(tmp_path: Path) -> None:
     result = mutation_score.check_stats_file(
-        "frtb-example",
+        "frtb-ima",
         tmp_path / "missing.json",
         floor=85.0,
     )
@@ -44,6 +44,7 @@ def test_mutation_score_reports_missing_stats(tmp_path: Path) -> None:
     assert not result.passed
     assert result.failed_requirement_ids == ("mutation-stats-readable",)
     assert result.error is not None
+    assert "make mutation" in result.error
 
 
 def test_mutation_score_reports_non_mapping_stats(tmp_path: Path) -> None:

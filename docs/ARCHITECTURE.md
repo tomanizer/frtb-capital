@@ -167,6 +167,10 @@ Model documentation packs cover:
 - Monitoring plan.
 - Change history.
 
+Machine-readable package maturity and crosswalk status live in
+[`docs/quality/PACKAGE_STATUS.md`](quality/PACKAGE_STATUS.md), generated from
+[`package_maturity.toml`](quality/package_maturity.toml).
+
 This structure supports independent SR 11-7 validation per component.
 
 ## Versioning

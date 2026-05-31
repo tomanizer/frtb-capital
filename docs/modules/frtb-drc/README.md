@@ -24,6 +24,8 @@ Securitisation non-CTP and CTP paths fail closed until separately implemented.
 - [Decisions and implementation plan](DECISIONS_AND_PLAN.md)
 - [Workable issue breakdown](ISSUE_BREAKDOWN.md)
 - [Workable requirements](requirements/BASEL_FRTB_DRC.yml)
+- [Model documentation — intended use](model_documentation/00_intended_use.md)
+- [Model documentation promotion plan](../MODEL_DOCUMENTATION_PROMOTION_PLAN.md)
 
 ## Related ADRs
 
