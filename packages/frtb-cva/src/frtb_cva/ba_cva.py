@@ -54,7 +54,7 @@ def calculate_netting_set_standalone(
         profile=profile,
     )
     standalone = (
-        alpha * risk_weight * netting_set.effective_maturity * netting_set.ead * discount_factor
+        risk_weight * netting_set.effective_maturity * netting_set.ead * discount_factor / alpha
     )
     return BaCvaStandAloneLine(
         netting_set_id=netting_set.netting_set_id,
