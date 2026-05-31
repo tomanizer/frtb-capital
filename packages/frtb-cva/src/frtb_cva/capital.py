@@ -83,9 +83,7 @@ def calculate_cva_capital(
             )
         sa_cva_risk_class_capitals = calculate_sa_cva_capital(
             validated_sensitivities,
-            hedges=tuple(
-                hedge for hedge in validated_hedges if isinstance(hedge, CvaHedge)
-            ),
+            hedges=tuple(hedge for hedge in validated_hedges if isinstance(hedge, CvaHedge)),
         )
         total_cva_capital = sum(
             risk_class_capital.post_multiplier_capital

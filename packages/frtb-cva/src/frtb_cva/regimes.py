@@ -49,12 +49,10 @@ UNSUPPORTED_PROFILE_REASONS: dict[CvaRegulatoryProfile, str] = {
         "and fixtures are added."
     ),
     CvaRegulatoryProfile.EU_CRR3_CVA: (
-        "EU CRR3 CVA profile is unsupported until Articles 382-386 mapping "
-        "and fixtures are added."
+        "EU CRR3 CVA profile is unsupported until Articles 382-386 mapping and fixtures are added."
     ),
     CvaRegulatoryProfile.UK_PRA_CVA: (
-        "UK PRA CVA profile is unsupported until UK-specific source mapping "
-        "and fixtures are added."
+        "UK PRA CVA profile is unsupported until UK-specific source mapping and fixtures are added."
     ),
 }
 

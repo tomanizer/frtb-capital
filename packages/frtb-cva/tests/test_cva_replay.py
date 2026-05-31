@@ -21,8 +21,11 @@ def test_repeated_runs_are_deterministic(
     assert first.total_cva_capital == second.total_cva_capital
     assert first.input_hash == second.input_hash
     assert first.profile_hash == profile_content_hash(CvaRegulatoryProfile.BASEL_MAR50_2020)
-    assert input_hash(
-        reduced_context,
-        (sovereign_counterparty,),
-        (sovereign_netting_set,),
-    ) == first.input_hash
+    assert (
+        input_hash(
+            reduced_context,
+            (sovereign_counterparty,),
+            (sovereign_netting_set,),
+        )
+        == first.input_hash
+    )

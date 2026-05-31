@@ -113,9 +113,7 @@ def validate_cva_netting_sets(
     try:
         candidates: tuple[object, ...] = tuple(netting_sets)  # type: ignore[arg-type]
     except TypeError as exc:
-        raise CvaInputError(
-            "netting_sets must be an iterable of CvaNettingSet objects"
-        ) from exc
+        raise CvaInputError("netting_sets must be an iterable of CvaNettingSet objects") from exc
 
     counterparty_ids = (
         {counterparty.counterparty_id for counterparty in counterparties}
@@ -162,9 +160,7 @@ def validate_sa_cva_sensitivities(
     """Validate canonical SA-CVA sensitivity records and return them as a tuple."""
 
     if isinstance(sensitivities, SaCvaSensitivity):
-        raise CvaInputError(
-            "sensitivities must be an iterable of SaCvaSensitivity objects"
-        )
+        raise CvaInputError("sensitivities must be an iterable of SaCvaSensitivity objects")
     try:
         candidates: tuple[object, ...] = tuple(sensitivities)  # type: ignore[arg-type]
     except TypeError as exc:
@@ -176,9 +172,7 @@ def validate_sa_cva_sensitivities(
     validated: list[SaCvaSensitivity] = []
     for candidate in candidates:
         if not isinstance(candidate, SaCvaSensitivity):
-            raise CvaInputError(
-                "sensitivities must contain only SaCvaSensitivity objects"
-            )
+            raise CvaInputError("sensitivities must contain only SaCvaSensitivity objects")
         sensitivity = candidate
         _validate_sa_cva_sensitivity(sensitivity, seen_ids)
         seen_ids.add(sensitivity.sensitivity_id)

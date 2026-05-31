@@ -27,8 +27,7 @@ def calculate_sa_cva_capital(
         (item.risk_class, item.risk_measure)
         for item in sensitivities
         if not (
-            item.risk_class is SaCvaRiskClass.GIRR
-            and item.risk_measure is SaCvaRiskMeasure.DELTA
+            item.risk_class is SaCvaRiskClass.GIRR and item.risk_measure is SaCvaRiskMeasure.DELTA
         )
     }
     if unsupported:

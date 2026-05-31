@@ -37,10 +37,9 @@ def _hedging_disallowance_term(
 ) -> float:
     total = 0.0
     for item in weighted_sensitivities:
-        total += (
-            _positive_part(item.weighted_cva) * _negative_part(item.weighted_hedge)
-            + _negative_part(item.weighted_cva) * _positive_part(item.weighted_hedge)
-        )
+        total += _positive_part(item.weighted_cva) * _negative_part(
+            item.weighted_hedge
+        ) + _negative_part(item.weighted_cva) * _positive_part(item.weighted_hedge)
     return HEDGING_DISALLOWANCE_R * total
 
 

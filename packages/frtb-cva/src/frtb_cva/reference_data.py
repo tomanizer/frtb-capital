@@ -502,9 +502,7 @@ def profile_reference_payload(profile: CvaRegulatoryProfile | str) -> dict[str, 
                     if "PARALLEL" in {tenor1, tenor2}
                     else "basel_mar50_56",
                 }
-                for (tenor1, tenor2), correlation in sorted(
-                    BASEL_GIRR_DELTA_CORRELATIONS.items()
-                )
+                for (tenor1, tenor2), correlation in sorted(BASEL_GIRR_DELTA_CORRELATIONS.items())
             ],
             "inter_bucket_correlation": GIRR_INTER_BUCKET_CORRELATION,
             "inter_bucket_correlation_citation_id": "basel_mar50_55",
