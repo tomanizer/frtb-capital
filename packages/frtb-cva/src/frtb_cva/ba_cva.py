@@ -166,7 +166,7 @@ def calculate_reduced_portfolio(
     standalones = [capital.standalone_capital for capital in counterparty_capitals]
     sum_scva = sum(standalones)
     sum_scva_squared = sum(value * value for value in standalones)
-    k_portfolio = math.sqrt(rho * (sum_scva**2) + (1.0 - rho) * sum_scva_squared)
+    k_portfolio = math.sqrt((rho * sum_scva) ** 2 + (1.0 - rho**2) * sum_scva_squared)
     k_reduced = discount_scalar * k_portfolio
 
     return BaCvaReducedPortfolioResult(
