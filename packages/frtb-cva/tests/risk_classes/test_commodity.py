@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import pytest
 from frtb_cva import (
     SaCvaRiskClass,
@@ -16,17 +18,18 @@ from frtb_cva.risk_classes.commodity import (
 def _commodity_sensitivity(
     *,
     bucket: str = "1",
+    commodity_name: str = "COM_A",
     amount: float = 1_000_000.0,
     measure: SaCvaRiskMeasure = SaCvaRiskMeasure.DELTA,
     volatility_input: float | None = None,
 ) -> SaCvaSensitivity:
     return SaCvaSensitivity(
-        sensitivity_id=f"sens-com-{bucket}-{measure.value}",
+        sensitivity_id=f"sens-com-{bucket}-{commodity_name}-{measure.value}",
         risk_class=SaCvaRiskClass.COMMODITY,
         risk_measure=measure,
         sensitivity_tag=SensitivityTag.CVA,
         bucket_id=bucket,
-        risk_factor_key="BUCKET_WIDE",
+        risk_factor_key=commodity_name,
         amount=amount,
         amount_currency="USD",
         sign_convention="positive_loss",
@@ -40,6 +43,19 @@ def test_commodity_delta_reconciles() -> None:
         (_commodity_sensitivity(bucket="1", amount=2_000_000.0),)
     )
     assert capital.post_multiplier_capital == pytest.approx(2_000_000.0 * 0.30)
+
+
+def test_commodity_delta_distinct_names_use_mar50_76_rho() -> None:
+    """MAR50.76: rho_kl = 0.20 when commodity names differ within the same bucket."""
+    capital = calculate_commodity_delta_capital(
+        (
+            _commodity_sensitivity(bucket="1", commodity_name="COM_A", amount=1_000_000.0),
+            _commodity_sensitivity(bucket="1", commodity_name="COM_B", amount=1_000_000.0),
+        ),
+    )
+    ws = 1_000_000.0 * 0.30
+    kb = math.sqrt(ws**2 + ws**2 + 2 * 0.20 * ws * ws)
+    assert capital.bucket_capitals[0].k_b == pytest.approx(kb)
 
 
 def test_commodity_bucket_11_cross_gamma_is_zero() -> None:
