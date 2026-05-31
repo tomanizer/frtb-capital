@@ -162,10 +162,7 @@ def _profile_warnings(profile_id: str, method: CvaMethod) -> tuple[str, ...]:
     if profile_id != "BASEL_MAR50_2020":
         return ()
     if method is CvaMethod.SA_CVA:
-        return (
-            "BASEL_MAR50_2020 currently supports SA-CVA GIRR delta only; "
-            "other SA-CVA risk classes and measures remain unsupported.",
-        )
+        return ()
     return (
         "BASEL_MAR50_2020 currently supports reduced BA-CVA only; "
         "full BA-CVA and mixed carve-out remain unsupported at the public API.",

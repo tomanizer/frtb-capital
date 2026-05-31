@@ -388,6 +388,12 @@ def _validate_sa_cva_sensitivity(sensitivity: SaCvaSensitivity, seen_ids: set[st
             field="tenor",
             record_id=record_id,
         )
+    if sensitivity.risk_measure is SaCvaRiskMeasure.VEGA and sensitivity.volatility_input is None:
+        raise CvaInputError(
+            "vega sensitivities must specify volatility_input",
+            field="volatility_input",
+            record_id=record_id,
+        )
     if sensitivity.sensitivity_tag is SensitivityTag.HDG:
         _require_text(sensitivity.hedge_id, "hedge_id", record_id)
     _validate_lineage(sensitivity.lineage, record_id)

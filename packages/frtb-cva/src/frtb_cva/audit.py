@@ -22,9 +22,12 @@ from frtb_cva.data_models import (
     CvaRunControls,
     CvaSourceLineage,
     SaCvaBucketCapital,
+    SaCvaRiskClass,
     SaCvaRiskClassCapital,
+    SaCvaRiskMeasure,
     SaCvaSensitivity,
 )
+from frtb_cva.sa_cva import sa_cva_aggregation_config
 from frtb_cva.numeric import is_reconciled
 from frtb_cva.validation import (
     CvaInputError,
@@ -217,6 +220,11 @@ def validate_cva_result_reconciliation(result: CvaCapitalResult) -> None:
                 )
             recomputed = aggregate_inter_bucket(
                 risk_class_capital.bucket_capitals,
+                config=sa_cva_aggregation_config(
+                    risk_class_capital.risk_class,
+                    risk_class_capital.risk_measure,
+                    profile=result.profile_id,
+                ),
                 m_cva=risk_class_capital.m_cva,
                 profile=result.profile_id,
             )

@@ -38,7 +38,7 @@ SUPPORTED_PROFILE_METADATA: dict[CvaRegulatoryProfile, dict[str, object]] = {
         "regulator": "Basel Committee on Banking Supervision",
         "version": "Basel Framework MAR50 (July 2020 calibration)",
         "publication_date": date(2020, 7, 8),
-        "status": "supported_ba_cva_reduced_and_girr_reference_slice",
+        "status": "supported_ba_cva_reduced_and_sa_cva_risk_classes",
         "effective_date": None,
     },
 }
@@ -57,7 +57,7 @@ UNSUPPORTED_PROFILE_REASONS: dict[CvaRegulatoryProfile, str] = {
 }
 
 _BASEL_SUPPORTED_METHODS = frozenset({CvaMethod.BA_CVA_REDUCED, CvaMethod.SA_CVA})
-_BASEL_SUPPORTED_SA_CVA_RISK_CLASSES = frozenset({SaCvaRiskClass.GIRR})
+_BASEL_SUPPORTED_SA_CVA_RISK_CLASSES = frozenset(SaCvaRiskClass)
 
 
 def get_cva_rule_profile(profile: CvaRegulatoryProfile | str) -> CvaRuleProfile:

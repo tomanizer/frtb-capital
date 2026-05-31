@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -17,14 +19,29 @@ from frtb_cva.data_models import (
     SaCvaRiskMeasure,
     SaCvaWeightedSensitivity,
 )
-from frtb_cva.reference_data import (
-    girr_delta_intra_bucket_correlation,
-    girr_inter_bucket_correlation,
-)
+from frtb_cva.reference_data import girr_delta_intra_bucket_correlation, girr_inter_bucket_correlation
+from frtb_cva.sa_cva_reference_data import girr_vega_intra_bucket_correlation
 from frtb_cva.validation import CvaInputError, validate_m_cva_multiplier
 
 HEDGING_DISALLOWANCE_R = 0.01
 M_CVA_DEFAULT = 1.0
+
+IntraBucketCorrelationFn = Callable[
+    [SaCvaWeightedSensitivity, SaCvaWeightedSensitivity],
+    tuple[float, str],
+]
+InterBucketGammaFn = Callable[[str, str], tuple[float, str]]
+
+
+@dataclass(frozen=True)
+class SaCvaAggregationConfig:
+    """Risk-class-specific aggregation hooks for MAR50.53."""
+
+    risk_class: SaCvaRiskClass
+    risk_measure: SaCvaRiskMeasure
+    intra_bucket_correlation: IntraBucketCorrelationFn
+    inter_bucket_gamma: InterBucketGammaFn
+    intra_bucket_citations: tuple[str, ...] = ("basel_mar50_53",)
 
 
 def _hedging_disallowance_term(weighted_hedges: np.ndarray) -> float:
@@ -39,29 +56,18 @@ def _hedging_disallowance_term(weighted_hedges: np.ndarray) -> float:
 def _intra_bucket_correlation_matrix(
     weighted_sensitivities: tuple[SaCvaWeightedSensitivity, ...],
     *,
-    profile: CvaRegulatoryProfile | str,
+    correlation_fn: IntraBucketCorrelationFn,
 ) -> np.ndarray:
     count = len(weighted_sensitivities)
     rho_matrix = np.eye(count, dtype=np.float64)
     if count < 2:
         return rho_matrix
 
-    tenors: list[str] = []
-    for item in weighted_sensitivities:
-        tenor = item.risk_factor_key.tenor
-        if tenor is None:
-            raise CvaInputError(
-                "GIRR delta intra-bucket aggregation requires tenor",
-                field="tenor",
-            )
-        tenors.append(tenor)
-
     for left_index in range(count):
         for right_index in range(left_index + 1, count):
-            rho, _ = girr_delta_intra_bucket_correlation(
-                tenors[left_index],
-                tenors[right_index],
-                profile=profile,
+            rho, _ = correlation_fn(
+                weighted_sensitivities[left_index],
+                weighted_sensitivities[right_index],
             )
             rho_matrix[left_index, right_index] = rho
             rho_matrix[right_index, left_index] = rho
@@ -72,10 +78,12 @@ def aggregate_intra_bucket(
     bucket_id: str,
     weighted_sensitivities: tuple[SaCvaWeightedSensitivity, ...],
     *,
+    config: SaCvaAggregationConfig,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaBucketCapital:
     """Aggregate weighted sensitivities to bucket capital K_b."""
 
+    del profile  # reserved for future profile-specific aggregation branches
     if not weighted_sensitivities:
         raise CvaInputError("bucket requires at least one weighted sensitivity", field="bucket_id")
 
@@ -89,7 +97,10 @@ def aggregate_intra_bucket(
         dtype=np.float64,
         count=len(weighted_sensitivities),
     )
-    rho_matrix = _intra_bucket_correlation_matrix(weighted_sensitivities, profile=profile)
+    rho_matrix = _intra_bucket_correlation_matrix(
+        weighted_sensitivities,
+        correlation_fn=config.intra_bucket_correlation,
+    )
     variance = float(weighted_nets @ rho_matrix @ weighted_nets) + _hedging_disallowance_term(
         weighted_hedges
     )
@@ -109,12 +120,12 @@ def aggregate_intra_bucket(
     )
     return SaCvaBucketCapital(
         bucket_id=bucket_id,
-        risk_class=SaCvaRiskClass.GIRR,
-        risk_measure=SaCvaRiskMeasure.DELTA,
+        risk_class=config.risk_class,
+        risk_measure=config.risk_measure,
         k_b=k_b,
         s_b=s_b,
         sensitivity_ids=sensitivity_ids,
-        citations=("basel_mar50_53", "basel_mar50_56"),
+        citations=config.intra_bucket_citations,
         branch_metadata=(("floor_applied", str(floor_applied)),),
     )
 
@@ -122,16 +133,17 @@ def aggregate_intra_bucket(
 def aggregate_inter_bucket(
     bucket_capitals: tuple[SaCvaBucketCapital, ...],
     *,
+    config: SaCvaAggregationConfig,
     m_cva: float = M_CVA_DEFAULT,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Aggregate bucket capitals to GIRR delta risk-class capital."""
+    """Aggregate bucket capitals to risk-class capital."""
 
+    del profile  # reserved for future profile-specific aggregation branches
     if not bucket_capitals:
         raise CvaInputError("risk class requires at least one bucket", field="bucket_capitals")
 
     validated_m_cva = validate_m_cva_multiplier(m_cva)
-    gamma_bc, gamma_citation = girr_inter_bucket_correlation(profile=profile)
     bucket_count = len(bucket_capitals)
     bucket_kb = np.fromiter(
         (bucket.k_b for bucket in bucket_capitals),
@@ -146,23 +158,37 @@ def aggregate_inter_bucket(
     sum_kb_squared = float(np.dot(bucket_kb, bucket_kb))
     sum_sb = float(bucket_sb.sum())
     sum_sb_squared = float(np.dot(bucket_sb, bucket_sb))
-    cross_term = gamma_bc * (sum_sb * sum_sb - sum_sb_squared)
+    cross_term = 0.0
+    gamma_citations: list[str] = []
+    for left_index, left_bucket in enumerate(bucket_capitals):
+        for right_index, right_bucket in enumerate(bucket_capitals):
+            if left_index == right_index:
+                continue
+            gamma_bc, gamma_citation = config.inter_bucket_gamma(
+                left_bucket.bucket_id,
+                right_bucket.bucket_id,
+            )
+            if gamma_citation not in gamma_citations:
+                gamma_citations.append(gamma_citation)
+            cross_term += gamma_bc * bucket_sb[left_index] * bucket_sb[right_index]
     pre_multiplier = math.sqrt(max(sum_kb_squared + cross_term, 0.0))
     post_multiplier = validated_m_cva * pre_multiplier
+    citations = tuple(gamma_citations) + ("basel_mar50_53",)
     return SaCvaRiskClassCapital(
-        risk_class=SaCvaRiskClass.GIRR,
-        risk_measure=SaCvaRiskMeasure.DELTA,
+        risk_class=config.risk_class,
+        risk_measure=config.risk_measure,
         pre_multiplier_capital=pre_multiplier,
         post_multiplier_capital=post_multiplier,
         m_cva=validated_m_cva,
         bucket_capitals=bucket_capitals,
-        citations=(gamma_citation, "basel_mar50_53"),
+        citations=citations,
     )
 
 
 def aggregate_weighted_sensitivities(
     weighted_sensitivities: tuple[SaCvaWeightedSensitivity, ...],
     *,
+    config: SaCvaAggregationConfig,
     m_cva: float = M_CVA_DEFAULT,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
@@ -175,17 +201,102 @@ def aggregate_weighted_sensitivities(
         aggregate_intra_bucket(
             bucket_id,
             tuple(sorted(items, key=lambda entry: entry.risk_factor_key.risk_factor_key)),
+            config=config,
             profile=profile,
         )
         for bucket_id, items in sorted(buckets.items())
     )
-    return aggregate_inter_bucket(bucket_capitals, m_cva=m_cva, profile=profile)
+    return aggregate_inter_bucket(
+        bucket_capitals,
+        config=config,
+        m_cva=m_cva,
+        profile=profile,
+    )
+
+
+def uniform_inter_bucket_gamma(gamma_bc: float, citation_id: str) -> InterBucketGammaFn:
+    def _lookup(left_bucket: str, right_bucket: str) -> tuple[float, str]:
+        del left_bucket, right_bucket
+        return gamma_bc, citation_id
+
+    return _lookup
+
+
+def _girr_delta_intra_correlation(
+    left: SaCvaWeightedSensitivity,
+    right: SaCvaWeightedSensitivity,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> tuple[float, str]:
+    left_tenor = left.risk_factor_key.tenor
+    right_tenor = right.risk_factor_key.tenor
+    if left_tenor is None or right_tenor is None:
+        raise CvaInputError(
+            "GIRR delta intra-bucket aggregation requires tenor",
+            field="tenor",
+        )
+    return girr_delta_intra_bucket_correlation(left_tenor, right_tenor, profile=profile)
+
+
+def _girr_vega_intra_correlation(
+    left: SaCvaWeightedSensitivity,
+    right: SaCvaWeightedSensitivity,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> tuple[float, str]:
+    return girr_vega_intra_bucket_correlation(
+        left.risk_factor_key.risk_factor_key,
+        right.risk_factor_key.risk_factor_key,
+        profile=profile,
+    )
+
+
+def girr_delta_aggregation_config(
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> SaCvaAggregationConfig:
+    """Return cited GIRR delta aggregation configuration."""
+
+    def _intra(left: SaCvaWeightedSensitivity, right: SaCvaWeightedSensitivity) -> tuple[float, str]:
+        return _girr_delta_intra_correlation(left, right, profile=profile)
+
+    gamma_bc, gamma_citation = girr_inter_bucket_correlation(profile=profile)
+
+    return SaCvaAggregationConfig(
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        intra_bucket_correlation=_intra,
+        inter_bucket_gamma=uniform_inter_bucket_gamma(gamma_bc, gamma_citation),
+        intra_bucket_citations=("basel_mar50_53", "basel_mar50_56"),
+    )
+
+
+def girr_vega_aggregation_config(
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> SaCvaAggregationConfig:
+    """Return cited GIRR vega aggregation configuration."""
+
+    def _intra(left: SaCvaWeightedSensitivity, right: SaCvaWeightedSensitivity) -> tuple[float, str]:
+        return _girr_vega_intra_correlation(left, right, profile=profile)
+
+    return SaCvaAggregationConfig(
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.VEGA,
+        intra_bucket_correlation=_intra,
+        inter_bucket_gamma=uniform_inter_bucket_gamma(0.5, "basel_mar50_55"),
+        intra_bucket_citations=("basel_mar50_53", "basel_mar50_58"),
+    )
 
 
 __all__ = [
     "HEDGING_DISALLOWANCE_R",
     "M_CVA_DEFAULT",
+    "IntraBucketCorrelationFn",
+    "InterBucketGammaFn",
+    "SaCvaAggregationConfig",
     "aggregate_inter_bucket",
     "aggregate_intra_bucket",
     "aggregate_weighted_sensitivities",
+    "girr_delta_aggregation_config",
+    "girr_vega_aggregation_config",
+    "uniform_inter_bucket_gamma",
 ]
