@@ -7,10 +7,10 @@
 ## Components
 
 This repository is a `uv` workspace with one Python package per capital
-component plus a shared common package. IMA and RRAO have implemented public
-calculation paths, DRC has a partial non-securitisation runtime path, and SBM
-and CVA remain importable scaffolds that fail explicitly until their
-calculations are implemented.
+component plus a shared common package. IMA and RRAO have implemented public calculation paths, DRC has a partial
+non-securitisation runtime path, SBM has delta capital implemented for five
+risk classes (GIRR vega also implemented; curvature pending), and CVA has
+Reduced BA-CVA and SA-CVA GIRR delta implemented.
 
 The Standardised Approach is a composed calculation stack, not a standalone
 package. Planned SA capital is `frtb-sbm + frtb-drc + frtb-rrao`; suite
@@ -21,10 +21,10 @@ capital when a desk is not IMA-eligible.
 |---|---|---|
 | `packages/frtb-common` | Shared primitives: status metadata, unsupported-feature errors, serialization, and regulatory citation helpers | Shared |
 | `packages/frtb-ima` | Internal Models Approach capital for model-eligible trading desks | Implemented; migrated from `tomanizer/FRTB-IMA` |
-| `packages/frtb-sbm` | Standardised Approach sensitivities-based method component | Scaffolded; calculation not implemented |
+| `packages/frtb-sbm` | Standardised Approach sensitivities-based method component | Partial runtime; delta implemented for GIRR, FX, Equity, Commodity, CSR non-sec; GIRR vega implemented; curvature pending |
 | `packages/frtb-drc` | Standardised Approach default risk charge component | Partial runtime; supported non-securitisation path only |
 | `packages/frtb-rrao` | Standardised Approach residual risk add-on component | Implemented for supported canonical-input profiles |
-| `packages/frtb-cva` | Credit Valuation Adjustment capital | Scaffolded; calculation not implemented |
+| `packages/frtb-cva` | Credit Valuation Adjustment capital | Partial runtime; Reduced BA-CVA and SA-CVA GIRR delta implemented; other SA-CVA risk classes and full hedge recognition unsupported |
 | `packages/frtb-orchestration` | Suite-level capital aggregation and firm-level consolidation | Partial; component handoff contracts exist, aggregation not implemented |
 
 ## Why a monorepo

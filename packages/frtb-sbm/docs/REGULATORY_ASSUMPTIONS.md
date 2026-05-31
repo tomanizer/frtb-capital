@@ -72,7 +72,7 @@ must raise an explicit unsupported-feature or input error. The package must not
 emit zero, empty, or placeholder capital for unsupported risk classes, risk
 measures, buckets, or profile features (SBM-BOUNDARY-003).
 
-## CNH/CNY mapping (ADR 0015)
+## CNH/CNY mapping (ADR 0017)
 
 Basel MAR21 treats onshore/offshore renminbi differently across risk classes:
 

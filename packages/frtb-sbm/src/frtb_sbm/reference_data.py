@@ -138,7 +138,7 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         url=BASEL_MAR21_URL,
         note=(
             "GIRR bucket registry keyed to MAR21.41 one-currency-one-bucket rule; "
-            "see ADR 0015 for CNH/CNY mapping."
+            "see ADR 0017 for CNH/CNY mapping."
         ),
     ),
     "basel_mar21_39": SbmCitation(
@@ -808,7 +808,7 @@ def fx_specified_currencies_for_profile(
 
 
 def normalise_fx_delta_currency_code(currency: str) -> str:
-    """Map FX delta currency codes to MAR21.88 canonical bucket codes (ADR 0015)."""
+    """Map FX delta currency codes to MAR21.88 canonical bucket codes (ADR 0017)."""
 
     normalised = _require_currency(currency)
     if normalised == "CNH":
