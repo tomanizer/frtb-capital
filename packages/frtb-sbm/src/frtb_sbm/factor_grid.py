@@ -141,9 +141,9 @@ def _net_weighted_group(
         risk_class=SbmRiskClass.GIRR,
         risk_measure=SbmRiskMeasure.DELTA,
         bucket=key.bucket,
-        raw_amount=float(sum(item.raw_amount for item in members)),
+        raw_amount=math.fsum(item.raw_amount for item in members),
         risk_weight=first.risk_weight,
-        scaled_amount=float(sum(item.scaled_amount for item in members)),
+        scaled_amount=math.fsum(item.scaled_amount for item in members),
         citation_ids=_merge_citation_ids(item.citation_ids for item in members),
         qualifier=key.tenor,
         factor_key=key.as_tuple(),
@@ -158,7 +158,7 @@ def _validate_group_has_consistent_weighting(
 ) -> None:
     first = members[0]
     for item in members[1:]:
-        if not math.isclose(item.risk_weight, first.risk_weight, rel_tol=0.0, abs_tol=0.0):
+        if item.risk_weight != first.risk_weight:
             raise SbmInputError(
                 "duplicate GIRR delta factor rows must share one risk weight",
                 field=f"risk_weight[{key.as_tuple()}]",
