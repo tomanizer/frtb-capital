@@ -18,6 +18,8 @@ from frtb_cva import (
     validate_cva_netting_sets,
     validate_sa_cva_sensitivities,
 )
+from frtb_cva.sa_cva import calculate_sa_cva_capital
+from frtb_cva.validation import validate_m_cva_multiplier
 
 
 def test_duplicate_counterparty_id_fails(sovereign_counterparty) -> None:
@@ -137,3 +139,24 @@ def test_netting_set_explicit_df_unity_passes_without_recompute(sovereign_counte
     line = calculate_netting_set_standalone(netting_set, sovereign_counterparty)
     assert line.discount_factor == pytest.approx(1.0)
     assert line.discount_factor_supplied is True
+
+
+def test_m_cva_multiplier_must_be_finite_and_positive() -> None:
+    sensitivity = SaCvaSensitivity(
+        sensitivity_id="sens-girr-5y",
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        sensitivity_tag=SensitivityTag.CVA,
+        bucket_id="USD",
+        risk_factor_key="5y",
+        tenor="5y",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="row-sens-girr-5y",
+    )
+    with pytest.raises(CvaInputError, match="finite"):
+        calculate_sa_cva_capital((sensitivity,), m_cva=float("nan"))
+    with pytest.raises(CvaInputError, match="positive"):
+        calculate_sa_cva_capital((sensitivity,), m_cva=0.0)
+    assert validate_m_cva_multiplier(1.0) == pytest.approx(1.0)

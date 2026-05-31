@@ -202,7 +202,7 @@ def _validate_hash(field: str, value: str) -> None:
 
 
 def _hash_payload(payload: dict[str, object]) -> str:
-    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
 

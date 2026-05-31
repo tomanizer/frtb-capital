@@ -17,7 +17,10 @@ from frtb_cva import (
 )
 from frtb_cva.reference_data import (
     BASEL_BA_CVA_RISK_WEIGHT_RULES,
+    GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR,
     citations_for_profile,
+    girr_is_specified_currency,
+    girr_other_currency_risk_weight_scalar,
     profile_reference_payload,
 )
 
@@ -52,6 +55,15 @@ def test_non_imm_discount_factor() -> None:
     discount_factor, citation_id = compute_non_imm_discount_factor(2.5)
     assert discount_factor == pytest.approx(0.9400247793232364, rel=1e-9)
     assert citation_id == "basel_mar50_15_4"
+
+
+def test_girr_other_currency_scalar_is_cited() -> None:
+    scalar, citation_id = girr_other_currency_risk_weight_scalar()
+    assert scalar == pytest.approx(GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR)
+    assert citation_id == "basel_mar50_57"
+    assert girr_is_specified_currency("USD", reporting_currency="USD")
+    assert not girr_is_specified_currency("CHF", reporting_currency="USD")
+    assert girr_is_specified_currency("CHF", reporting_currency="CHF")
 
 
 def test_girr_delta_tables_are_cited() -> None:

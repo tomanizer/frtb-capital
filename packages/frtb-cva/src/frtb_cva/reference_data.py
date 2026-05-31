@@ -30,6 +30,7 @@ NON_IMM_DISCOUNT_RATE = 0.05
 
 GIRR_SPECIFIED_CURRENCIES = frozenset({"USD", "EUR", "GBP", "AUD", "CAD", "SEK", "JPY"})
 GIRR_INTER_BUCKET_CORRELATION = 0.5
+GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR = 1.4
 GIRR_OTHER_CURRENCY_PARALLEL_CORRELATION = 0.4
 
 
@@ -410,6 +411,15 @@ def girr_is_specified_currency(currency: str, *, reporting_currency: str) -> boo
     return normalised in GIRR_SPECIFIED_CURRENCIES
 
 
+def girr_other_currency_risk_weight_scalar(
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> tuple[float, str]:
+    """Return the cited MAR50.57 scalar for non-specified GIRR currency buckets."""
+
+    _resolve_supported_profile(profile)
+    return GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR, "basel_mar50_57"
+
+
 def girr_delta_tenors(
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> tuple[str, ...]:
@@ -513,6 +523,8 @@ def profile_reference_payload(profile: CvaRegulatoryProfile | str) -> dict[str, 
             ],
             "inter_bucket_correlation": GIRR_INTER_BUCKET_CORRELATION,
             "inter_bucket_correlation_citation_id": "basel_mar50_55",
+            "other_currency_risk_weight_scalar": GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR,
+            "other_currency_risk_weight_scalar_citation_id": "basel_mar50_57",
         },
     }
 
@@ -571,6 +583,7 @@ __all__ = [
     "BA_CVA_RHO",
     "D_BA_CVA",
     "GIRR_INTER_BUCKET_CORRELATION",
+    "GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR",
     "GIRR_SPECIFIED_CURRENCIES",
     "NON_IMM_DISCOUNT_RATE",
     "BaCvaRiskWeightRule",
@@ -590,6 +603,7 @@ __all__ = [
     "girr_delta_tenors",
     "girr_inter_bucket_correlation",
     "girr_is_specified_currency",
+    "girr_other_currency_risk_weight_scalar",
     "girr_specified_currencies",
     "girr_tenor_definition",
     "profile_reference_payload",

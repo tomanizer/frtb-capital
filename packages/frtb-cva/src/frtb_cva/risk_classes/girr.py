@@ -7,6 +7,7 @@ from __future__ import annotations
 from frtb_cva.aggregation import aggregate_weighted_sensitivities
 from frtb_cva.data_models import (
     CvaHedge,
+    CvaRegulatoryProfile,
     SaCvaRiskClassCapital,
     SaCvaSensitivity,
 )
@@ -23,6 +24,8 @@ def calculate_girr_delta_capital(
     *,
     hedges: tuple[CvaHedge, ...] = (),
     m_cva: float = 1.0,
+    reporting_currency: str = "USD",
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
     """Calculate SA-CVA GIRR delta capital for supported sensitivities."""
 
@@ -36,9 +39,11 @@ def calculate_girr_delta_capital(
         compute_weighted_sensitivities(
             validated,
             eligible_hedge_ids=eligible_ids,
+            reporting_currency=reporting_currency,
+            profile=profile,
         )
     )
-    return aggregate_weighted_sensitivities(weighted, m_cva=m_cva)
+    return aggregate_weighted_sensitivities(weighted, m_cva=m_cva, profile=profile)
 
 
 __all__ = ["calculate_girr_delta_capital"]

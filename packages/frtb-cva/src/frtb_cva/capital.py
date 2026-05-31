@@ -93,6 +93,8 @@ def calculate_cva_capital(
         sa_cva_risk_class_capitals = calculate_sa_cva_capital(
             validated_sensitivities,
             hedges=validated_hedges,
+            profile=rule_profile.profile,
+            reporting_currency=validated_context.base_currency,
         )
         total_cva_capital = sum(
             risk_class_capital.post_multiplier_capital

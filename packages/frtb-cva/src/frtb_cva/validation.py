@@ -392,6 +392,15 @@ def _finite_float(value: object, *, field: str) -> float:
     return number
 
 
+def validate_m_cva_multiplier(value: object) -> float:
+    """Return a finite, positive SA-CVA multiplier."""
+
+    m_cva = _finite_float(value, field="m_cva")
+    if m_cva <= 0.0:
+        raise CvaInputError("m_cva must be positive", field="m_cva")
+    return m_cva
+
+
 def _require_text(value: object, field: str, record_id: str = "") -> str:
     if not isinstance(value, str) or not value.strip():
         raise CvaInputError("non-empty text is required", field=field, record_id=record_id)
@@ -409,5 +418,6 @@ __all__ = [
     "validate_cva_counterparties",
     "validate_cva_hedges",
     "validate_cva_netting_sets",
+    "validate_m_cva_multiplier",
     "validate_sa_cva_sensitivities",
 ]

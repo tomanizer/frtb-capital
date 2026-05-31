@@ -8,6 +8,7 @@ import math
 from collections import defaultdict
 
 from frtb_cva.data_models import (
+    CvaRegulatoryProfile,
     SaCvaBucketCapital,
     SaCvaRiskClass,
     SaCvaRiskClassCapital,
@@ -18,7 +19,7 @@ from frtb_cva.reference_data import (
     girr_delta_intra_bucket_correlation,
     girr_inter_bucket_correlation,
 )
-from frtb_cva.validation import CvaInputError
+from frtb_cva.validation import CvaInputError, validate_m_cva_multiplier
 
 HEDGING_DISALLOWANCE_R = 0.01
 M_CVA_DEFAULT = 1.0
@@ -46,6 +47,8 @@ def _hedging_disallowance_term(
 def aggregate_intra_bucket(
     bucket_id: str,
     weighted_sensitivities: tuple[SaCvaWeightedSensitivity, ...],
+    *,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaBucketCapital:
     """Aggregate weighted sensitivities to bucket capital K_b."""
 
@@ -58,7 +61,11 @@ def aggregate_intra_bucket(
         for right in weighted_sensitivities[index + 1 :]:
             tenor_left = left.risk_factor_key.tenor or left.risk_factor_key.risk_factor_key
             tenor_right = right.risk_factor_key.tenor or right.risk_factor_key.risk_factor_key
-            rho, _ = girr_delta_intra_bucket_correlation(tenor_left, tenor_right)
+            rho, _ = girr_delta_intra_bucket_correlation(
+                tenor_left,
+                tenor_right,
+                profile=profile,
+            )
             variance += 2.0 * rho * left.weighted_net * right.weighted_net
     variance += _hedging_disallowance_term(weighted_sensitivities)
     k_b = math.sqrt(max(variance, 0.0))
@@ -82,13 +89,15 @@ def aggregate_inter_bucket(
     bucket_capitals: tuple[SaCvaBucketCapital, ...],
     *,
     m_cva: float = M_CVA_DEFAULT,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
     """Aggregate bucket capitals to GIRR delta risk-class capital."""
 
     if not bucket_capitals:
         raise CvaInputError("risk class requires at least one bucket", field="bucket_capitals")
 
-    gamma_bc, gamma_citation = girr_inter_bucket_correlation()
+    validated_m_cva = validate_m_cva_multiplier(m_cva)
+    gamma_bc, gamma_citation = girr_inter_bucket_correlation(profile=profile)
     cross_term = 0.0
     sum_kb_squared = 0.0
     for index, left in enumerate(bucket_capitals):
@@ -96,13 +105,13 @@ def aggregate_inter_bucket(
         for right in bucket_capitals[index + 1 :]:
             cross_term += 2.0 * gamma_bc * left.s_b * right.s_b
     pre_multiplier = math.sqrt(max(sum_kb_squared + cross_term, 0.0))
-    post_multiplier = m_cva * pre_multiplier
+    post_multiplier = validated_m_cva * pre_multiplier
     return SaCvaRiskClassCapital(
         risk_class=SaCvaRiskClass.GIRR,
         risk_measure=SaCvaRiskMeasure.DELTA,
         pre_multiplier_capital=pre_multiplier,
         post_multiplier_capital=post_multiplier,
-        m_cva=m_cva,
+        m_cva=validated_m_cva,
         bucket_capitals=bucket_capitals,
         citations=(gamma_citation, "basel_mar50_53"),
     )
@@ -112,6 +121,7 @@ def aggregate_weighted_sensitivities(
     weighted_sensitivities: tuple[SaCvaWeightedSensitivity, ...],
     *,
     m_cva: float = M_CVA_DEFAULT,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
     """Group weighted sensitivities by bucket and aggregate to risk-class capital."""
 
@@ -122,10 +132,11 @@ def aggregate_weighted_sensitivities(
         aggregate_intra_bucket(
             bucket_id,
             tuple(sorted(items, key=lambda entry: entry.risk_factor_key.risk_factor_key)),
+            profile=profile,
         )
         for bucket_id, items in sorted(buckets.items())
     )
-    return aggregate_inter_bucket(bucket_capitals, m_cva=m_cva)
+    return aggregate_inter_bucket(bucket_capitals, m_cva=m_cva, profile=profile)
 
 
 __all__ = [
