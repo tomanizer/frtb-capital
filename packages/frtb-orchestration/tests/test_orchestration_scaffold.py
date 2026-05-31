@@ -140,13 +140,13 @@ def test_standardised_approach_aggregation_requires_missing_component_outputs() 
 
 
 def test_sa_aggregation_remains_unimplemented_with_placeholder_components() -> None:
-    rrao_result = sample_rrao_result()   # profile_id="US_NPR_2_0"
-    drc_result = sample_drc_result()     # profile_id="US_NPR_2_0"
+    rrao_result = sample_rrao_result()  # profile_id="US_NPR_2_0"
+    drc_result = sample_drc_result()  # profile_id="US_NPR_2_0"
     sbm_result = MinimalResult(
         run_id="orchestration-sbm-run",
         calculation_date=date(2026, 3, 31),
         base_currency="USD",
-        profile_id="US_NPR_2_0",        # consistent with RRAO and DRC
+        profile_id="US_NPR_2_0",  # consistent with RRAO and DRC
         total_sbm=42.0,
         profile_hash="profile-hash",
         input_hash="input-hash",
@@ -167,13 +167,13 @@ def test_sa_aggregation_remains_unimplemented_with_placeholder_components() -> N
 
 def test_sa_composition_rejects_mixed_jurisdiction_profiles() -> None:
     """ADR 0022: SA components from different jurisdiction families must be rejected."""
-    rrao_result = sample_rrao_result()   # profile_id="US_NPR_2_0"
-    drc_result = sample_drc_result()     # profile_id="US_NPR_2_0"
+    rrao_result = sample_rrao_result()  # profile_id="US_NPR_2_0"
+    drc_result = sample_drc_result()  # profile_id="US_NPR_2_0"
     sbm_result = MinimalResult(
         run_id="orchestration-sbm-run",
         calculation_date=date(2026, 3, 31),
         base_currency="USD",
-        profile_id="BASEL_MAR21",        # different jurisdiction family -- must be rejected
+        profile_id="BASEL_MAR21",  # different jurisdiction family -- must be rejected
         total_sbm=42.0,
         profile_hash="profile-hash",
         input_hash="input-hash",
@@ -250,7 +250,7 @@ def test_sa_composition_accepts_consistent_basel_family() -> None:
         run_id="basel-sbm-run",
         calculation_date=date(2026, 3, 31),
         base_currency="USD",
-        profile_id="BASEL_MAR21",        # same BASEL family as RRAO -- must pass guard
+        profile_id="BASEL_MAR21",  # same BASEL family as RRAO -- must pass guard
         total_sbm=100.0,
         profile_hash="ph",
         input_hash="ih",
