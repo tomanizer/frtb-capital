@@ -17,6 +17,7 @@ from frtb_cva.data_models import (
     CvaCitation,
     CvaRegulatoryProfile,
     CvaSector,
+    HedgeReferenceRelation,
 )
 from frtb_cva.validation import CvaInputError
 
@@ -25,8 +26,15 @@ BASEL_MAR50_URL = "https://www.bis.org/basel_framework/chapter/MAR/50.htm"
 BA_CVA_ALPHA = 1.4
 BA_CVA_RHO = 0.5
 BA_CVA_BETA = 0.25
+BA_CVA_INDEX_RW_SCALAR = 0.7
 D_BA_CVA = 0.65
 NON_IMM_DISCOUNT_RATE = 0.05
+
+_HEDGE_REFERENCE_CORRELATIONS: dict[HedgeReferenceRelation, float] = {
+    HedgeReferenceRelation.DIRECT: 1.0,
+    HedgeReferenceRelation.LEGAL_RELATION: 0.8,
+    HedgeReferenceRelation.SAME_SECTOR_AND_REGION: 0.5,
+}
 
 GIRR_SPECIFIED_CURRENCIES = frozenset({"USD", "EUR", "GBP", "AUD", "CAD", "SEK", "JPY"})
 GIRR_INTER_BUCKET_CORRELATION = 0.5
@@ -386,6 +394,32 @@ def ba_cva_beta(
     return BA_CVA_BETA, "basel_mar50_20"
 
 
+def ba_cva_hedge_counterparty_correlation(
+    relation: HedgeReferenceRelation,
+    *,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> tuple[float, str]:
+    """Return Table 2 hedge-counterparty correlation r_hc (MAR50.26)."""
+
+    _resolve_supported_profile(profile)
+    if relation not in _HEDGE_REFERENCE_CORRELATIONS:
+        raise CvaInputError(
+            f"unsupported hedge reference relation {relation.value}",
+            field="reference_relation",
+        )
+    return _HEDGE_REFERENCE_CORRELATIONS[relation], "basel_mar50_26"
+
+
+def ba_cva_index_risk_weight_scalar(
+    *,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> tuple[float, str]:
+    """Return the cited index hedge diversification scalar (MAR50.24(4))."""
+
+    _resolve_supported_profile(profile)
+    return BA_CVA_INDEX_RW_SCALAR, "basel_mar50_24"
+
+
 def ba_cva_rho(
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> tuple[float, str]:
@@ -699,6 +733,7 @@ __all__ = [
     "BASEL_MAR50_CITATIONS",
     "BA_CVA_ALPHA",
     "BA_CVA_BETA",
+    "BA_CVA_INDEX_RW_SCALAR",
     "BA_CVA_RHO",
     "D_BA_CVA",
     "GIRR_INTER_BUCKET_CORRELATION",
@@ -712,6 +747,8 @@ __all__ = [
     "ba_cva_alpha",
     "ba_cva_beta",
     "ba_cva_discount_scalar",
+    "ba_cva_hedge_counterparty_correlation",
+    "ba_cva_index_risk_weight_scalar",
     "ba_cva_rho",
     "ba_cva_risk_weight",
     "citations_for_profile",

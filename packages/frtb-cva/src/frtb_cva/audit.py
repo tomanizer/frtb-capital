@@ -11,6 +11,7 @@ from collections.abc import Iterable
 from frtb_cva.aggregation import aggregate_inter_bucket
 from frtb_cva.data_models import (
     BaCvaCounterpartyCapital,
+    BaCvaFullPortfolioResult,
     BaCvaReducedPortfolioResult,
     BaCvaStandAloneLine,
     CvaCalculationContext,
@@ -106,6 +107,15 @@ def serialize_cva_result(result: CvaCapitalResult) -> dict[str, object]:
         "unsupported_flags": list(result.unsupported_flags),
         "audit_metadata": [list(pair) for pair in result.audit_metadata],
         "ba_cva_reduced": _reduced_portfolio_payload(result.ba_cva_reduced),
+        "ba_cva_full": _full_portfolio_payload(result.ba_cva_full),
+        "method_components": [
+            {
+                "method": component.method.value,
+                "total_capital": component.total_capital,
+                "citations": list(component.citations),
+            }
+            for component in result.method_components
+        ],
         "ba_cva_counterparty_capitals": [
             _counterparty_capital_payload(counterparty)
             for counterparty in result.ba_cva_counterparty_capitals
@@ -132,9 +142,43 @@ def validate_cva_result_reconciliation(result: CvaCapitalResult) -> None:
             field="ba_cva_reduced",
         )
 
+    if result.method is CvaMethod.MIXED_CARVE_OUT:
+        if not result.method_components:
+            raise CvaInputError(
+                "mixed carve-out result requires method component totals",
+                field="method_components",
+            )
+        expected_total = sum(component.total_capital for component in result.method_components)
+        if not is_reconciled(result.total_cva_capital, expected_total):
+            raise CvaInputError(
+                "total CVA capital does not reconcile to mixed-method components",
+                field="total_cva_capital",
+            )
+
+    if result.method is CvaMethod.BA_CVA_FULL:
+        if result.ba_cva_full is None:
+            raise CvaInputError(
+                "BA-CVA full result is required for reconciliation",
+                field="ba_cva_full",
+            )
+        full = result.ba_cva_full
+        if not is_reconciled(result.total_cva_capital, full.k_full):
+            raise CvaInputError(
+                "total CVA capital does not reconcile to full BA-CVA capital",
+                field="total_cva_capital",
+            )
+        floor = full.beta * full.k_reduced
+        if full.k_full + 1e-12 < floor:
+            raise CvaInputError(
+                "full BA-CVA capital is below beta floor",
+                field="k_full",
+            )
+
     if result.ba_cva_reduced is not None:
         reduced = result.ba_cva_reduced
-        if not is_reconciled(result.total_cva_capital, reduced.k_reduced):
+        if result.method is CvaMethod.BA_CVA_REDUCED and not is_reconciled(
+            result.total_cva_capital, reduced.k_reduced
+        ):
             raise CvaInputError(
                 "total CVA capital does not reconcile to reduced BA-CVA capital",
                 field="total_cva_capital",
@@ -311,6 +355,7 @@ def _hedge_payload(hedge: CvaHedge) -> dict[str, object]:
         "eligibility": hedge.eligibility.value,
         "counterparty_id": hedge.counterparty_id,
         "reference_sector": hedge.reference_sector.value,
+        "reference_credit_quality": hedge.reference_credit_quality.value,
         "reference_region": hedge.reference_region,
         "reference_relation": hedge.reference_relation.value,
         "notional": hedge.notional,
@@ -341,6 +386,11 @@ def _sensitivity_payload(sensitivity: SaCvaSensitivity) -> dict[str, object]:
         "sign_convention": sensitivity.sign_convention,
         "volatility_input": sensitivity.volatility_input,
         "hedge_id": sensitivity.hedge_id,
+        "index_treatment": sensitivity.index_treatment.value
+        if sensitivity.index_treatment is not None
+        else None,
+        "index_max_sector_weight": sensitivity.index_max_sector_weight,
+        "index_homogeneous_sector_quality": sensitivity.index_homogeneous_sector_quality,
         "source_row_id": sensitivity.source_row_id,
         "lineage": _lineage_payload(sensitivity.lineage),
     }
@@ -354,6 +404,36 @@ def _lineage_payload(lineage: CvaSourceLineage | None) -> dict[str, object] | No
         "source_file": lineage.source_file,
         "source_row_id": lineage.source_row_id,
         "source_column_map": [list(pair) for pair in lineage.source_column_map],
+    }
+
+
+def _full_portfolio_payload(
+    full: BaCvaFullPortfolioResult | None,
+) -> dict[str, object] | None:
+    if full is None:
+        return None
+    return {
+        "k_full": full.k_full,
+        "k_hedged": full.k_hedged,
+        "k_reduced": full.k_reduced,
+        "k_portfolio_hedged": full.k_portfolio_hedged,
+        "ih": full.ih,
+        "beta": full.beta,
+        "beta_floor_binding": full.beta_floor_binding,
+        "rho": full.rho,
+        "d_ba_cva": full.d_ba_cva,
+        "citations": list(full.citations),
+        "hedge_lines": [
+            {
+                "hedge_id": line.hedge_id,
+                "counterparty_id": line.counterparty_id,
+                "snh_contribution": line.snh_contribution,
+                "hma_contribution": line.hma_contribution,
+                "index_contribution": line.index_contribution,
+                "reason_code": line.reason_code,
+            }
+            for line in full.hedge_lines
+        ],
     }
 
 

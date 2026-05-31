@@ -14,7 +14,8 @@ The current handoff slice can recognise audited Standardised Approach component
 result shapes structurally and summarize them for future aggregation:
 
 - the public `frtb-rrao` `RraoCapitalResult` shape;
-- the public `frtb-drc` non-securitisation `DrcCapitalResult` shape; and
+- the public `frtb-drc` non-securitisation `DrcCapitalResult` shape;
+- the public `frtb-cva` `CvaCapitalResult` shape (separate from SA composition); and
 - the planned `frtb-sbm` result shape used to settle the SA handoff contract
   before SBM runtime implementation.
 

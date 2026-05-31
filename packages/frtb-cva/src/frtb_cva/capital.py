@@ -6,25 +6,26 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from frtb_common import UnsupportedRegulatoryFeatureError
-
 from frtb_cva.audit import _input_hash_from_validated, validate_cva_result_reconciliation
-from frtb_cva.ba_cva import calculate_reduced_portfolio
+from frtb_cva.ba_cva import calculate_full_portfolio, calculate_reduced_portfolio
 from frtb_cva.data_models import (
     BaCvaCounterpartyCapital,
+    BaCvaFullPortfolioResult,
+    BaCvaReducedPortfolioResult,
     BaCvaStandAloneLine,
     CvaCalculationContext,
     CvaCapitalResult,
     CvaCounterparty,
     CvaHedge,
     CvaMethod,
+    CvaMethodComponentTotal,
     CvaNettingSet,
     SaCvaRiskClassCapital,
     SaCvaSensitivity,
 )
 from frtb_cva.regimes import get_cva_rule_profile
 from frtb_cva.sa_cva import calculate_sa_cva_capital
-from frtb_cva.scope import validate_method_selection
+from frtb_cva.scope import partition_mixed_method_inputs, validate_method_selection
 from frtb_cva.validation import (
     CvaInputError,
     validate_calculation_context,
@@ -43,7 +44,7 @@ def calculate_cva_capital(
     hedges: Iterable[CvaHedge] = (),
     sensitivities: Iterable[SaCvaSensitivity] = (),
 ) -> CvaCapitalResult:
-    """Calculate supported reduced BA-CVA or SA-CVA GIRR delta capital."""
+    """Calculate supported BA-CVA, SA-CVA, or mixed carve-out CVA capital."""
 
     validated_context = validate_calculation_context(context)
     validated_counterparties = validate_cva_counterparties(counterparties)
@@ -60,18 +61,78 @@ def calculate_cva_capital(
         netting_sets=validated_netting_sets,
     )
 
-    if scope.method is CvaMethod.BA_CVA_FULL or scope.method is CvaMethod.MIXED_CARVE_OUT:
-        raise UnsupportedRegulatoryFeatureError(
-            f"CVA method {scope.method.value} is unsupported in this package slice"
-        )
-
-    ba_cva_reduced = None
+    ba_cva_reduced: BaCvaReducedPortfolioResult | None = None
+    ba_cva_full: BaCvaFullPortfolioResult | None = None
     ba_cva_counterparty_capitals: tuple[BaCvaCounterpartyCapital, ...] = ()
     ba_cva_netting_set_lines: tuple[BaCvaStandAloneLine, ...] = ()
     sa_cva_risk_class_capitals: tuple[SaCvaRiskClassCapital, ...] = ()
+    method_components: list[CvaMethodComponentTotal] = []
     total_cva_capital = 0.0
 
-    if scope.method is CvaMethod.BA_CVA_REDUCED:
+    if scope.method is CvaMethod.MIXED_CARVE_OUT:
+        (
+            ba_counterparties,
+            ba_netting_sets,
+            _ba_hedges,
+            _,
+            _,
+            sa_hedges,
+        ) = partition_mixed_method_inputs(
+            validated_counterparties,
+            validated_netting_sets,
+            validated_hedges,
+            carve_out_netting_set_ids=scope.carve_out_netting_set_ids,
+        )
+        if not validated_sensitivities:
+            raise CvaInputError(
+                "mixed carve-out requires SA-CVA sensitivities",
+                field="sensitivities",
+            )
+        sa_cva_risk_class_capitals = calculate_sa_cva_capital(
+            validated_sensitivities,
+            hedges=sa_hedges,
+            profile=rule_profile.profile,
+            reporting_currency=validated_context.base_currency,
+        )
+        sa_total = sum(item.post_multiplier_capital for item in sa_cva_risk_class_capitals)
+        method_components.append(
+            CvaMethodComponentTotal(
+                method=CvaMethod.SA_CVA,
+                total_capital=sa_total,
+                citations=tuple(
+                    citation
+                    for item in sa_cva_risk_class_capitals
+                    for citation in item.citations
+                ),
+            )
+        )
+        ba_cva_reduced = calculate_reduced_portfolio(
+            ba_counterparties,
+            ba_netting_sets,
+            profile=rule_profile.profile,
+        )
+        method_components.append(
+            CvaMethodComponentTotal(
+                method=CvaMethod.BA_CVA_REDUCED,
+                total_capital=ba_cva_reduced.k_reduced,
+                citations=ba_cva_reduced.citations,
+            )
+        )
+        ba_cva_counterparty_capitals = ba_cva_reduced.counterparty_capitals
+        ba_cva_netting_set_lines = ba_cva_reduced.netting_set_lines
+        total_cva_capital = sa_total + ba_cva_reduced.k_reduced
+    elif scope.method is CvaMethod.BA_CVA_FULL:
+        ba_cva_full = calculate_full_portfolio(
+            validated_counterparties,
+            validated_netting_sets,
+            validated_hedges,
+            profile=rule_profile.profile,
+        )
+        ba_cva_reduced = ba_cva_full.reduced
+        ba_cva_counterparty_capitals = ba_cva_reduced.counterparty_capitals
+        ba_cva_netting_set_lines = ba_cva_reduced.netting_set_lines
+        total_cva_capital = ba_cva_full.k_full
+    elif scope.method is CvaMethod.BA_CVA_REDUCED:
         ba_cva_reduced = calculate_reduced_portfolio(
             validated_counterparties,
             validated_netting_sets,
@@ -84,7 +145,7 @@ def calculate_cva_capital(
         if validated_counterparties or validated_netting_sets:
             raise CvaInputError(
                 "SA-CVA does not accept counterparty or netting-set inputs; "
-                "pass them only when method is BA_CVA_REDUCED",
+                "pass them only when method is BA_CVA_REDUCED or MIXED_CARVE_OUT",
                 field="counterparties_or_netting_sets",
             )
         sa_cva_risk_class_capitals = calculate_sa_cva_capital(
@@ -99,6 +160,8 @@ def calculate_cva_capital(
         )
 
     citations: tuple[str, ...] = ()
+    if ba_cva_full is not None:
+        citations = _merge_citations(citations, ba_cva_full.citations)
     if ba_cva_reduced is not None:
         citations = _collect_citations(ba_cva_reduced.citations, ba_cva_netting_set_lines)
     if sa_cva_risk_class_capitals:
@@ -125,9 +188,11 @@ def calculate_cva_capital(
         method=scope.method,
         total_cva_capital=total_cva_capital,
         ba_cva_reduced=ba_cva_reduced,
+        ba_cva_full=ba_cva_full,
         ba_cva_counterparty_capitals=ba_cva_counterparty_capitals,
         ba_cva_netting_set_lines=ba_cva_netting_set_lines,
         sa_cva_risk_class_capitals=sa_cva_risk_class_capitals,
+        method_components=tuple(method_components),
         citations=citations,
         warnings=_profile_warnings(rule_profile.profile.value, scope.method),
         unsupported_flags=scope.unsupported_flags,
@@ -161,12 +226,9 @@ def _merge_citations(*groups: tuple[str, ...]) -> tuple[str, ...]:
 def _profile_warnings(profile_id: str, method: CvaMethod) -> tuple[str, ...]:
     if profile_id != "BASEL_MAR50_2020":
         return ()
-    if method is CvaMethod.SA_CVA:
+    if method in {CvaMethod.SA_CVA, CvaMethod.MIXED_CARVE_OUT, CvaMethod.BA_CVA_FULL}:
         return ()
-    return (
-        "BASEL_MAR50_2020 currently supports reduced BA-CVA only; "
-        "full BA-CVA and mixed carve-out remain unsupported at the public API.",
-    )
+    return ()
 
 
 __all__ = ["calculate_cva_capital"]

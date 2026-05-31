@@ -7,6 +7,7 @@ from typing import Any
 
 from frtb_cva import (
     BaCvaHedgeType,
+    CreditQuality,
     CvaCalculationContext,
     CvaHedge,
     CvaMethod,
@@ -113,6 +114,9 @@ def _hedge_from_payload(payload: dict[str, Any]) -> CvaHedge:
         remaining_maturity=float(payload["remaining_maturity"]),
         discount_factor=float(payload["discount_factor"]),
         reference_sector=CvaSector(str(payload["reference_sector"])),
+        reference_credit_quality=CreditQuality(
+            str(payload.get("reference_credit_quality", "INVESTMENT_GRADE"))
+        ),
         reference_region=str(payload["reference_region"]),
         reference_relation=HedgeReferenceRelation(str(payload["reference_relation"])),
         eligibility=HedgeEligibility(str(payload["eligibility"])),

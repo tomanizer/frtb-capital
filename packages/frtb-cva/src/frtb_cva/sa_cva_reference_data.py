@@ -343,12 +343,6 @@ def ccs_delta_risk_weight(
 
     _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
-    if bucket == CCS_QUALIFIED_INDEX_BUCKET:
-        raise CvaInputError(
-            "CCS qualified-index bucket 8 is unsupported"
-            " until qualified-index mapping is delivered",
-            field="bucket_id",
-        )
     quality = _resolve_credit_quality(credit_quality)
     key = (bucket, quality)
     if key not in CCS_DELTA_RISK_WEIGHTS:
@@ -368,12 +362,6 @@ def ccs_inter_bucket_correlation(
     """MAR50.64: CCS cross-bucket gamma_bc."""
 
     _resolve_profile(profile)
-    if bucket1 == CCS_QUALIFIED_INDEX_BUCKET or bucket2 == CCS_QUALIFIED_INDEX_BUCKET:
-        raise CvaInputError(
-            "CCS qualified-index bucket 8 is unsupported"
-            " until qualified-index mapping is delivered",
-            field="bucket_id",
-        )
     return _symmetric_gamma_lookup(CCS_GAMMA_BC, bucket1, bucket2), "basel_mar50_64"
 
 

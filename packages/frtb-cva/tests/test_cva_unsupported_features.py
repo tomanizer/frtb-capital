@@ -13,26 +13,7 @@ from frtb_cva import (
     SaCvaSensitivity,
     SensitivityTag,
     calculate_cva_capital,
-    resolve_calculation_method,
 )
-
-
-@pytest.mark.parametrize(
-    "method",
-    [CvaMethod.BA_CVA_FULL, CvaMethod.MIXED_CARVE_OUT],
-)
-def test_unsupported_methods_fail_closed(method: CvaMethod) -> None:
-    context = CvaCalculationContext(
-        run_id="run-unsupported",
-        calculation_date=date(2026, 5, 31),
-        base_currency="USD",
-        profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
-        method=method,
-        sa_cva_approved=True,
-        carve_out_netting_set_ids=("ns-1",) if method is CvaMethod.MIXED_CARVE_OUT else (),
-    )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="delivered slice"):
-        resolve_calculation_method(context)
 
 
 def test_materiality_threshold_fails_at_public_api(

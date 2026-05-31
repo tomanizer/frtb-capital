@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from frtb_cva.data_models import (
+    BaCvaHedgeType,
     CvaHedge,
     HedgeEligibility,
     SaCvaRiskClass,
@@ -71,6 +72,46 @@ def assess_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision:
     )
 
 
+_BA_CVA_ELIGIBLE_TYPES = frozenset(
+    {
+        BaCvaHedgeType.SINGLE_NAME_CDS,
+        BaCvaHedgeType.SINGLE_NAME_CONTINGENT_CDS,
+        BaCvaHedgeType.INDEX_CDS,
+    }
+)
+
+
+def assess_ba_cva_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision:
+    """Return BA-CVA hedge eligibility for full BA-CVA recognition (MAR50.18-MAR50.19)."""
+
+    if hedge.hedge_type not in _BA_CVA_ELIGIBLE_TYPES:
+        return HedgeEligibilityDecision(
+            hedge_id=hedge.hedge_id,
+            eligibility=HedgeEligibility.INELIGIBLE,
+            sa_cva_risk_class=hedge.sa_cva_risk_class,
+            reason_code="instrument_type_not_eligible_for_ba_cva",
+            citations=("basel_mar50_18",),
+        )
+
+    sa_decision = assess_hedge_eligibility(hedge)
+    if sa_decision.eligibility is not HedgeEligibility.ELIGIBLE:
+        return HedgeEligibilityDecision(
+            hedge_id=hedge.hedge_id,
+            eligibility=HedgeEligibility.INELIGIBLE,
+            sa_cva_risk_class=hedge.sa_cva_risk_class,
+            reason_code=sa_decision.reason_code,
+            citations=sa_decision.citations,
+        )
+
+    return HedgeEligibilityDecision(
+        hedge_id=hedge.hedge_id,
+        eligibility=HedgeEligibility.ELIGIBLE,
+        sa_cva_risk_class=hedge.sa_cva_risk_class,
+        reason_code="eligible_ba_cva_credit_spread_hedge",
+        citations=("basel_mar50_18", "basel_mar50_19", "basel_mar50_37"),
+    )
+
+
 def eligible_sa_cva_hedge_ids(hedges: tuple[CvaHedge, ...]) -> frozenset[str]:
     """Return hedge ids eligible to contribute SA-CVA hedge sensitivities."""
 
@@ -84,6 +125,7 @@ def eligible_sa_cva_hedge_ids(hedges: tuple[CvaHedge, ...]) -> frozenset[str]:
 
 __all__ = [
     "HedgeEligibilityDecision",
+    "assess_ba_cva_hedge_eligibility",
     "assess_hedge_eligibility",
     "eligible_sa_cva_hedge_ids",
 ]
