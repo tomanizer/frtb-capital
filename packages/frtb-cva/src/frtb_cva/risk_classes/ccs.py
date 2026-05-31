@@ -46,11 +46,7 @@ def _ccs_intra_bucket_correlation(
         right.risk_factor_key.risk_factor_key
     )
     same_entity = left_entity == right_entity
-    legally_related = (
-        not same_entity
-        and left_legal is not None
-        and left_legal == right_legal
-    )
+    legally_related = not same_entity and left_legal is not None and left_legal == right_legal
     same_credit_quality = left_quality == right_quality
     left_tenor = left.risk_factor_key.tenor
     right_tenor = right.risk_factor_key.tenor

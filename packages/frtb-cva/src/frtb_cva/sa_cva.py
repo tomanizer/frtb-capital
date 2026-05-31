@@ -61,9 +61,9 @@ def calculate_sa_cva_capital(
     if not sensitivities:
         raise CvaInputError("SA-CVA requires at least one sensitivity", field="sensitivities")
 
-    grouped: dict[
-        tuple[SaCvaRiskClass, SaCvaRiskMeasure], list[SaCvaSensitivity]
-    ] = defaultdict(list)
+    grouped: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], list[SaCvaSensitivity]] = defaultdict(
+        list
+    )
     for item in sensitivities:
         grouped[(item.risk_class, item.risk_measure)].append(item)
 
@@ -73,9 +73,7 @@ def calculate_sa_cva_capital(
             field="sensitivities",
         )
 
-    unsupported = {
-        key for key in grouped if key not in _SUPPORTED_PATHS
-    }
+    unsupported = {key for key in grouped if key not in _SUPPORTED_PATHS}
     if unsupported:
         labels = ", ".join(
             f"{risk_class.value}/{risk_measure.value}"
