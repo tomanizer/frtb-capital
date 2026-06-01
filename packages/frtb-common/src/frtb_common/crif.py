@@ -519,14 +519,26 @@ def _table_from_columns(
     for column_name in sorted(columns):
         values = [columns[column_name][index] for index in indices]
         logical_type = spec_by_name.get(column_name, CrifColumnSpec(column_name)).logical_type
-        if (
-            column_name in mapping_outputs
-            and values
-            and all(isinstance(value, float) for value in values)
-        ):
-            logical_type = TabularLogicalType.FLOAT
+        if column_name in mapping_outputs:
+            logical_type = _mapping_output_logical_type(values, default=logical_type)
         accepted_columns[column_name] = _arrow_array(values, logical_type)
     return pa.table(accepted_columns)
+
+
+def _mapping_output_logical_type(
+    values: Sequence[object | None],
+    *,
+    default: TabularLogicalType,
+) -> TabularLogicalType:
+    non_null_values = [value for value in values if value is not None]
+    if not non_null_values:
+        return default
+    if all(isinstance(value, float) for value in non_null_values):
+        for value in non_null_values:
+            if not math.isfinite(cast(float, value)):
+                raise TabularHandoffError("CRIF mapping output float values must be finite")
+        return TabularLogicalType.FLOAT
+    return default
 
 
 def _arrow_array(values: Sequence[object | None], logical_type: TabularLogicalType) -> pa.Array:
@@ -556,7 +568,7 @@ def _rejected_table(
         "source_row_json": [],
     }
     raw_columns = {
-        column_name: raw_table.column(column_name).combine_chunks().to_pylist()
+        column_name: raw_table.column(column_name).combine_chunks()
         for column_name in raw_table.column_names
     }
     for row_index in rejected_indices:
@@ -566,7 +578,7 @@ def _rejected_table(
         columns["rejection_column"].append(diagnostic.column_name or "")
         columns["rejection_reason"].append(diagnostic.message)
         source_row = {
-            column_name: _stringify_record_value(values[row_index])
+            column_name: _stringify_record_value(values[row_index].as_py())
             for column_name, values in raw_columns.items()
         }
         columns["source_row_json"].append(

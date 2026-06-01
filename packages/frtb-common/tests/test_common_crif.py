@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import pyarrow as pa
 import pytest
 from frtb_common import (
@@ -130,6 +132,41 @@ def test_risk_type_callback_can_partition_without_common_semantics() -> None:
 
     assert handoff.accepted["package_bucket"].to_pylist() == ["rates:t-1"]
     assert handoff.diagnostics == ()
+
+
+def test_optional_float_mapping_outputs_remain_float_columns() -> None:
+    def mapper(risk_type: str, row: dict[str, object]) -> dict[str, object] | None:
+        if normalise_crif_risk_type(risk_type) != "RISK_IRCURVE":
+            return None
+        if row["trade_id"] == "t-1":
+            return {"package_scalar": 1.5}
+        return {}
+
+    handoff = normalize_crif_records(
+        (
+            {"TradeId": "t-1", "RiskType": "RISK_IRCURVE", "Amount": "1.0"},
+            {"TradeId": "t-2", "RiskType": "RISK_IRCURVE", "Amount": "2.0"},
+        ),
+        column_specs=_column_specs(),
+        risk_type_mapper=mapper,
+    )
+
+    assert pa.types.is_float64(handoff.accepted["package_scalar"].type)
+    assert handoff.accepted["package_scalar"].to_pylist() == [1.5, None]
+
+
+def test_non_finite_float_mapping_outputs_fail() -> None:
+    def mapper(risk_type: str, row: dict[str, object]) -> dict[str, object] | None:
+        if normalise_crif_risk_type(risk_type) != "RISK_IRCURVE":
+            return None
+        return {"package_scalar": math.inf}
+
+    with pytest.raises(TabularHandoffError, match="float values must be finite"):
+        normalize_crif_records(
+            ({"TradeId": "t-1", "RiskType": "RISK_IRCURVE", "Amount": "1.0"},),
+            column_specs=_column_specs(),
+            risk_type_mapper=mapper,
+        )
 
 
 def test_diagnostics_are_immutable_handoff_records() -> None:
