@@ -48,3 +48,19 @@ accepted-row `SbmSensitivity` dataclasses on the high-volume handoff path.
 The JSON report records wall-clock seconds and `tracemalloc` peak bytes for the
 row compatibility path, the vectorized common path, and the SBM batch consumer.
 The timings are useful for order-of-magnitude regression checks, not as an SLA.
+
+## Issue #315 Conversion Check
+
+After the Arrow conversion-copy reduction in #315, the same 20,000-row local
+benchmark on macOS-26.5 arm64 / Python 3.11.15 recorded:
+
+| Path | Seconds | Python peak bytes | Accepted-row dataclasses |
+| --- | ---: | ---: | ---: |
+| Row compatibility normalizer | 3.809 | 16,317,668 | n/a |
+| Vectorized static mapping normalizer | 0.044 | 2,403,121 | 0 |
+| SBM GIRR delta CRIF-to-batch consumer | 1.083 | 49,765,563 | 0 |
+
+The common vectorized path remained about 86.8x faster than row compatibility.
+The SBM consumer improved from the checked-in 1.470s baseline to 1.083s while
+preserving accepted/rejected rows, diagnostics, source hashes, handoff hashes,
+and zero accepted-row dataclass materialization.

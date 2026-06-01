@@ -576,7 +576,7 @@ def _coerce_column_arrow(
 def _source_column_is_all_null(table: pa.Table, source_name: str | None) -> bool:
     if source_name is None or table.num_rows == 0:
         return source_name is None
-    column = table.column(source_name).combine_chunks()
+    column = table.column(source_name)
     return bool(pc.all(pc.is_null(column)).as_py())
 
 
@@ -734,10 +734,10 @@ def _unsupported_risk_type_messages(
     indices = _true_indices(unsupported_mask)
     if not indices:
         return {}
-    values = risk_type_keys.take(pa.array(indices, type=pa.int64())).to_pylist()
+    values = risk_type_keys.take(pa.array(indices, type=pa.int64()))
     return {
-        index: f"unsupported CRIF RiskType {cast(str, value)!r}"
-        for index, value in zip(indices, values, strict=True)
+        index: f"unsupported CRIF RiskType {cast(str, values[offset].as_py())!r}"
+        for offset, index in enumerate(indices)
     }
 
 
@@ -897,8 +897,7 @@ def _rejected_table_from_diagnostics(
         "source_row_json": [],
     }
     raw_columns = {
-        column_name: raw_table.column(column_name).combine_chunks()
-        for column_name in raw_table.column_names
+        column_name: raw_table.column(column_name) for column_name in raw_table.column_names
     }
     for row_index in rejected_indices:
         diagnostic = diagnostics_by_index[row_index]
@@ -942,8 +941,8 @@ def _mask_not(mask: pa.Array) -> pa.Array:
 
 
 def _true_indices(mask: pa.Array) -> tuple[int, ...]:
-    indices = pc.indices_nonzero(pc.fill_null(mask, False)).to_pylist()
-    return tuple(cast(int, index) for index in indices)
+    indices = pc.indices_nonzero(pc.fill_null(mask, False)).to_numpy(zero_copy_only=False)
+    return tuple(indices.tolist())
 
 
 def _source_values(table: pa.Table, column_name: str | None) -> list[object | None]:
