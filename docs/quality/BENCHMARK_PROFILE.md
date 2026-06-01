@@ -7,15 +7,20 @@ budgets used by `scripts/ci/check_benchmark_budgets.py`.
 
 ```bash
 make benchmark              # IMA target-scale JSON -> dist/benchmarks/frtb-ima-target-scale.json
+make ima-arrow-handoff-benchmark # IMA Arrow handoff JSON -> dist/benchmarks/frtb-ima-arrow-handoff.json
 make sbm-benchmark          # SBM Arrow/batch JSON -> dist/benchmarks/frtb-sbm-batch-arrow.json
+make drc-benchmark          # DRC Arrow/batch JSON -> dist/benchmarks/frtb-drc-batch-arrow.json
 make rrao-benchmark         # RRAO target-scale JSON -> dist/benchmarks/frtb-rrao-target-scale.json
+make cva-benchmark          # CVA target-scale JSON -> dist/benchmarks/frtb-cva-target-scale.json
+make benchmark-suite        # run all budgeted benchmark artifacts
 make benchmark-budget-check # compare artifacts to docs/quality/benchmark_budgets.toml
 ```
 
-Benchmark budget checks are **manual/local by default**. They are not part of
-the standard PR CI matrix because wall-clock timings vary across developer
-hardware and GitHub-hosted runners. Run them before performance-sensitive
-changes or when investigating regressions.
+Benchmark budget checks are **manual/local for pull requests** and run in the
+scheduled/dispatchable `Benchmark` GitHub Actions workflow. They are not part of
+the standard PR CI matrix because target-scale wall-clock timings vary across
+developer hardware and GitHub-hosted runners. Run them before
+performance-sensitive changes or when investigating regressions.
 
 ## Audit snapshot (2026-05-31)
 
@@ -24,6 +29,11 @@ changes or when investigating regressions.
 | IMA target-scale | ~73.9 s | `imcc_decomposition` ~54.2 s | 10k scenarios, 100 desks |
 | SBM Arrow/batch | ~3.4 s wall-clock proxy | migrated batch capital calculations | 5,760 synthetic rows across migrated paths, zero accepted-row dataclasses, 1,111,320 pairwise relationships summarized |
 | RRAO target-scale | ~45.2 s | validation/classification/allocation | 100k positions, ~3,024 positions/s, ~402 MB peak traced memory |
+
+The suite gate also covers generated DRC, CVA, and IMA Arrow handoff artifacts.
+Those artifacts hard-gate accepted-row dataclass materialization at zero on the
+Arrow/batch paths, require parse/adapt/build/calculate phase timings, and check
+capital or audit-hash equivalence where a row-compatibility comparison exists.
 
 The SBM benchmark uses the checked-in
 [`frtb-sbm-batch-arrow-baseline.json`](../performance/frtb-sbm-batch-arrow-baseline.json)
@@ -58,9 +68,9 @@ materially after the core capital sum. Opportunities:
 
 ## Budget file
 
-Thresholds live in [`benchmark_budgets.toml`](benchmark_budgets.toml). Update
-that file when a deliberate optimization lands and the new baseline is measured
-on representative hardware.
+Thresholds live in [`benchmark_budgets.toml`](benchmark_budgets.toml). The file
+is schema-versioned. Update it when a deliberate optimization lands and the new
+baseline is measured on representative hardware.
 
 When refreshing a baseline, run the benchmark command, inspect the split metrics
 for ingestion, validation, weighting, netting/factor-grid, correlation/scenario,

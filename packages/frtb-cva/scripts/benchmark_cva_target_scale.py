@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
+import platform
+import sys
 import time
 import tracemalloc
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
+from pathlib import Path
 from typing import Any, Generic, TypeVar
 
 import pyarrow as pa  # type: ignore[import-untyped]
@@ -31,14 +35,17 @@ from frtb_cva import (
     build_cva_netting_set_batch_from_columns,
     build_cva_netting_set_batch_from_handoff,
     build_sa_cva_sensitivity_batch_from_columns,
+    build_sa_cva_sensitivity_batch_from_handoff,
     calculate_cva_capital,
     calculate_cva_capital_from_batches,
     normalize_cva_counterparty_arrow_table,
     normalize_cva_netting_set_arrow_table,
+    normalize_sa_cva_sensitivity_arrow_table,
     serialize_cva_result,
 )
 
 T = TypeVar("T")
+DEFAULT_OUTPUT = Path("dist/benchmarks/frtb-cva-target-scale.json")
 
 
 @dataclass(frozen=True)
@@ -55,7 +62,24 @@ class TimedResult(Generic[T]):
     peak_bytes: int
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--counterparties", type=int, default=100)
+    parser.add_argument("--netting-sets", type=int, default=10_000)
+    parser.add_argument("--sensitivities", type=int, default=100_000)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    return parser.parse_args()
+
+
 def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
+    if config.counterparties <= 0:
+        raise ValueError("counterparties must be positive")
+    if config.netting_sets <= 0:
+        raise ValueError("netting_sets must be positive")
+    if config.sensitivities <= 0:
+        raise ValueError("sensitivities must be positive")
+
+    wall_started = time.perf_counter()
     counterparties = _synthetic_counterparties(config.counterparties)
     netting_sets = _synthetic_netting_sets(
         config.netting_sets,
@@ -80,16 +104,24 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
             column_netting_sets,
         )
     )
-    counterparty_table = pa.table(_counterparty_handoff_columns(counterparties))
-    netting_set_table = pa.table(_netting_set_handoff_columns(netting_sets))
+    ba_arrow_table = _measure(
+        lambda: (
+            pa.table(_counterparty_handoff_columns(counterparties)),
+            pa.table(_netting_set_handoff_columns(netting_sets)),
+        )
+    )
+    counterparty_table, netting_set_table = ba_arrow_table.value
+    ba_arrow_handoff = _measure(
+        lambda: (
+            normalize_cva_counterparty_arrow_table(counterparty_table),
+            normalize_cva_netting_set_arrow_table(netting_set_table),
+        )
+    )
+    counterparty_handoff, netting_set_handoff = ba_arrow_handoff.value
     arrow_ba_build = _measure(
         lambda: (
-            build_cva_counterparty_batch_from_handoff(
-                normalize_cva_counterparty_arrow_table(counterparty_table)
-            ),
-            build_cva_netting_set_batch_from_handoff(
-                normalize_cva_netting_set_arrow_table(netting_set_table)
-            ),
+            build_cva_counterparty_batch_from_handoff(counterparty_handoff),
+            build_cva_netting_set_batch_from_handoff(netting_set_handoff),
         )
     )
     arrow_counterparties, arrow_netting_sets = arrow_ba_build.value
@@ -121,62 +153,149 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
             sensitivities=column_sa_build.value,
         )
     )
+    sensitivity_table = _measure(lambda: pa.table(_sensitivity_handoff_columns(sensitivities)))
+    sensitivity_handoff = _measure(
+        lambda: normalize_sa_cva_sensitivity_arrow_table(sensitivity_table.value)
+    )
+    arrow_sa_build = _measure(
+        lambda: build_sa_cva_sensitivity_batch_from_handoff(sensitivity_handoff.value)
+    )
+    arrow_sa = _measure(
+        lambda: calculate_cva_capital_from_batches(
+            sa_context,
+            sensitivities=arrow_sa_build.value,
+        )
+    )
+    ba_arrow_parse_seconds = ba_arrow_table.seconds
+    ba_arrow_adapt_seconds = ba_arrow_handoff.seconds
+    ba_arrow_build_seconds = arrow_ba_build.seconds
+    ba_arrow_calculate_seconds = arrow_ba.seconds
+    sa_arrow_parse_seconds = sensitivity_table.seconds
+    sa_arrow_adapt_seconds = sensitivity_handoff.seconds
+    sa_arrow_build_seconds = arrow_sa_build.seconds
+    sa_arrow_calculate_seconds = arrow_sa.seconds
+    parse_seconds = ba_arrow_parse_seconds + sa_arrow_parse_seconds
+    adapt_seconds = ba_arrow_adapt_seconds + sa_arrow_adapt_seconds
+    build_seconds = ba_arrow_build_seconds + sa_arrow_build_seconds
+    calculate_seconds = ba_arrow_calculate_seconds + sa_arrow_calculate_seconds
+    ba_column_delta = abs(column_ba.value.result.total_cva_capital - row_ba.value.total_cva_capital)
+    ba_arrow_delta = abs(arrow_ba.value.result.total_cva_capital - row_ba.value.total_cva_capital)
+    sa_column_delta = abs(column_sa.value.result.total_cva_capital - row_sa.value.total_cva_capital)
+    sa_arrow_delta = abs(arrow_sa.value.result.total_cva_capital - row_sa.value.total_cva_capital)
+    dataclasses_materialized = _dataclass_counts(column_ba, arrow_ba, column_sa, arrow_sa)
+    arrow_dataclasses_materialized = (
+        dataclasses_materialized["ba_arrow_counterparties"]
+        + dataclasses_materialized["ba_arrow_netting_sets"]
+        + dataclasses_materialized["sa_arrow_sensitivities"]
+    )
 
     return {
+        "schema_version": "frtb_cva_target_scale_benchmark_v1",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "environment": {
+            "python_version": platform.python_version(),
+            "platform": platform.platform(),
+        },
         "parameters": {
             "counterparties": config.counterparties,
             "netting_sets": config.netting_sets,
             "sensitivities": config.sensitivities,
         },
+        "summary": {
+            "timings_seconds": {
+                "parse": parse_seconds,
+                "adapt": adapt_seconds,
+                "build": build_seconds,
+                "calculate": calculate_seconds,
+                "wall_clock": time.perf_counter() - wall_started,
+                "wall_clock_proxy": parse_seconds
+                + adapt_seconds
+                + build_seconds
+                + calculate_seconds,
+            },
+            "materialized_dataclass_count": {
+                "arrow_batch_path": arrow_dataclasses_materialized,
+                "column_batch_path": dataclasses_materialized["ba_column_counterparties"]
+                + dataclasses_materialized["ba_column_netting_sets"]
+                + dataclasses_materialized["sa_column_sensitivities"],
+            },
+            "accepted_row_dataclasses_materialized": arrow_dataclasses_materialized,
+            "capital_delta_abs_max": max(
+                ba_column_delta,
+                ba_arrow_delta,
+                sa_column_delta,
+                sa_arrow_delta,
+            ),
+            "tracemalloc_peak_bytes": max(
+                ba_arrow_table.peak_bytes,
+                ba_arrow_handoff.peak_bytes,
+                arrow_ba_build.peak_bytes,
+                arrow_ba.peak_bytes,
+                sensitivity_table.peak_bytes,
+                sensitivity_handoff.peak_bytes,
+                arrow_sa_build.peak_bytes,
+                arrow_sa.peak_bytes,
+            ),
+        },
         "timings": {
             "ba_row_calculate_seconds": row_ba.seconds,
             "ba_column_build_seconds": column_ba_build.seconds,
             "ba_column_calculate_seconds": column_ba.seconds,
+            "ba_arrow_table_seconds": ba_arrow_table.seconds,
+            "ba_arrow_handoff_seconds": ba_arrow_handoff.seconds,
             "ba_arrow_build_seconds": arrow_ba_build.seconds,
             "ba_arrow_calculate_seconds": arrow_ba.seconds,
             "sa_row_calculate_seconds": row_sa.seconds,
             "sa_column_build_seconds": column_sa_build.seconds,
             "sa_column_calculate_seconds": column_sa.seconds,
+            "sa_arrow_table_seconds": sensitivity_table.seconds,
+            "sa_arrow_handoff_seconds": sensitivity_handoff.seconds,
+            "sa_arrow_build_seconds": arrow_sa_build.seconds,
+            "sa_arrow_calculate_seconds": arrow_sa.seconds,
         },
         "memory": {
             "ba_row_peak_bytes": row_ba.peak_bytes,
             "ba_column_build_peak_bytes": column_ba_build.peak_bytes,
             "ba_column_calculate_peak_bytes": column_ba.peak_bytes,
+            "ba_arrow_table_peak_bytes": ba_arrow_table.peak_bytes,
+            "ba_arrow_handoff_peak_bytes": ba_arrow_handoff.peak_bytes,
             "ba_arrow_build_peak_bytes": arrow_ba_build.peak_bytes,
             "ba_arrow_calculate_peak_bytes": arrow_ba.peak_bytes,
             "sa_row_peak_bytes": row_sa.peak_bytes,
             "sa_column_build_peak_bytes": column_sa_build.peak_bytes,
             "sa_column_calculate_peak_bytes": column_sa.peak_bytes,
+            "sa_arrow_table_peak_bytes": sensitivity_table.peak_bytes,
+            "sa_arrow_handoff_peak_bytes": sensitivity_handoff.peak_bytes,
+            "sa_arrow_build_peak_bytes": arrow_sa_build.peak_bytes,
+            "sa_arrow_calculate_peak_bytes": arrow_sa.peak_bytes,
         },
-        "dataclasses_materialized": _dataclass_counts(column_ba, arrow_ba, column_sa),
+        "dataclasses_materialized": dataclasses_materialized,
         "result": {
             "ba_total_cva_capital": row_ba.value.total_cva_capital,
             "ba_row_payload_hash": _payload_hash(row_ba.value),
             "ba_column_payload_hash": _payload_hash(column_ba.value.result),
             "ba_arrow_payload_hash": _payload_hash(arrow_ba.value.result),
-            "ba_column_capital_delta": abs(
-                column_ba.value.result.total_cva_capital - row_ba.value.total_cva_capital
-            ),
-            "ba_arrow_capital_delta": abs(
-                arrow_ba.value.result.total_cva_capital - row_ba.value.total_cva_capital
-            ),
+            "ba_column_capital_delta": ba_column_delta,
+            "ba_arrow_capital_delta": ba_arrow_delta,
             "sa_total_cva_capital": row_sa.value.total_cva_capital,
             "sa_row_payload_hash": _payload_hash(row_sa.value),
             "sa_column_payload_hash": _payload_hash(column_sa.value.result),
-            "sa_column_capital_delta": abs(
-                column_sa.value.result.total_cva_capital - row_sa.value.total_cva_capital
-            ),
+            "sa_arrow_payload_hash": _payload_hash(arrow_sa.value.result),
+            "sa_column_capital_delta": sa_column_delta,
+            "sa_arrow_capital_delta": sa_arrow_delta,
         },
     }
 
 
 def _measure(fn: Callable[[], T]) -> TimedResult[T]:
     tracemalloc.start()
-    started = time.perf_counter()
-    value = fn()
-    seconds = time.perf_counter() - started
-    _, peak_bytes = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
+    try:
+        started = time.perf_counter()
+        value = fn()
+        seconds = time.perf_counter() - started
+        _, peak_bytes = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
     return TimedResult(value=value, seconds=seconds, peak_bytes=peak_bytes)
 
 
@@ -184,10 +303,12 @@ def _dataclass_counts(
     column_ba: Any,
     arrow_ba: Any,
     column_sa: Any,
+    arrow_sa: Any,
 ) -> dict[str, int]:
     column_ba_value = column_ba.value
     arrow_ba_value = arrow_ba.value
     column_sa_value = column_sa.value
+    arrow_sa_value = arrow_sa.value
     return {
         "ba_column_counterparties": getattr(
             column_ba_value,
@@ -207,6 +328,10 @@ def _dataclass_counts(
         ),
         "sa_column_sensitivities": getattr(
             column_sa_value,
+            "accepted_sensitivity_dataclasses_materialized",
+        ),
+        "sa_arrow_sensitivities": getattr(
+            arrow_sa_value,
             "accepted_sensitivity_dataclasses_materialized",
         ),
     }
@@ -366,6 +491,36 @@ def _sensitivity_columns(sensitivities: tuple[SaCvaSensitivity, ...]) -> dict[st
     }
 
 
+def _sensitivity_handoff_columns(
+    sensitivities: tuple[SaCvaSensitivity, ...],
+) -> dict[str, object]:
+    return {
+        "sensitivity_id": [item.sensitivity_id for item in sensitivities],
+        "risk_class": [item.risk_class.value for item in sensitivities],
+        "risk_measure": [item.risk_measure.value for item in sensitivities],
+        "sensitivity_tag": [item.sensitivity_tag.value for item in sensitivities],
+        "bucket_id": [item.bucket_id for item in sensitivities],
+        "risk_factor_key": [item.risk_factor_key for item in sensitivities],
+        "amount": [item.amount for item in sensitivities],
+        "amount_currency": [item.amount_currency for item in sensitivities],
+        "sign_convention": [item.sign_convention for item in sensitivities],
+        "source_row_id": [item.source_row_id for item in sensitivities],
+        "tenor": [item.tenor for item in sensitivities],
+        "volatility_input": [item.volatility_input for item in sensitivities],
+        "hedge_id": [item.hedge_id for item in sensitivities],
+        "lineage_source_system": [
+            "" if item.lineage is None else item.lineage.source_system for item in sensitivities
+        ],
+        "lineage_source_file": [
+            "" if item.lineage is None else item.lineage.source_file for item in sensitivities
+        ],
+        "lineage_source_row_id": [
+            item.source_row_id if item.lineage is None else item.lineage.source_row_id
+            for item in sensitivities
+        ],
+    }
+
+
 def _counterparty_handoff_columns(
     counterparties: tuple[CvaCounterparty, ...],
 ) -> dict[str, object]:
@@ -423,5 +578,24 @@ def _payload_hash(result: CvaCapitalResult) -> str:
     ).hexdigest()
 
 
+def write_report(report: dict[str, object], output: Path) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def main() -> int:
+    args = parse_args()
+    report = run_benchmark(
+        CvaBenchmarkConfig(
+            counterparties=args.counterparties,
+            netting_sets=args.netting_sets,
+            sensitivities=args.sensitivities,
+        )
+    )
+    write_report(report, args.output)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
 if __name__ == "__main__":
-    print(json.dumps(run_benchmark(CvaBenchmarkConfig(netting_sets=1_000)), indent=2))
+    sys.exit(main())

@@ -13,7 +13,7 @@ MUTATION_DIST := dist/mutation
 .PHONY: test test-no-cov test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording
 .PHONY: import-lint kernel-import-boundary import-smoke maturity-check quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
-.PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark sbm-benchmark drc-benchmark rrao-benchmark benchmark-budget-check
+.PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-handoff-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
 .PHONY: validation-pack agent-setup agent-sync-main agent-new agent-guard
 .PHONY: agent-worktrees agent-doctor ima sa sbm drc rrao cva orchestration clean
@@ -117,6 +117,9 @@ mutation-score-check:
 benchmark:
 	uv run python scripts/benchmark_target_scale.py --output dist/benchmarks/frtb-ima-target-scale.json
 
+ima-arrow-handoff-benchmark:
+	uv run python benchmarks/ima_arrow_handoff_harness.py --output dist/benchmarks/frtb-ima-arrow-handoff.json
+
 sbm-benchmark:
 	uv run python benchmarks/sbm_adapter_harness.py --output dist/benchmarks/frtb-sbm-batch-arrow.json
 
@@ -125,6 +128,11 @@ drc-benchmark:
 
 rrao-benchmark:
 	PYTHONPATH=packages/frtb-common/src:packages/frtb-rrao/src uv run python packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py --output dist/benchmarks/frtb-rrao-target-scale.json
+
+cva-benchmark:
+	PYTHONPATH=packages/frtb-common/src:packages/frtb-cva/src uv run python packages/frtb-cva/scripts/benchmark_cva_target_scale.py --output dist/benchmarks/frtb-cva-target-scale.json
+
+benchmark-suite: benchmark ima-arrow-handoff-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark
 
 benchmark-budget-check:
 	uv run python scripts/ci/check_benchmark_budgets.py

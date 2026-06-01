@@ -77,6 +77,7 @@ def test_summary_exposes_budgetable_split_metrics_and_hashes() -> None:
             "label": "case",
             "raw_row_count": 10,
             "regulatory_factor_count": 4,
+            "capital_delta_abs": 0.0,
             "row_compatibility_path": {
                 "materialized_dataclass_count": 10,
                 "timings_seconds": {"row_dataclass_construction": 0.1},
@@ -124,6 +125,7 @@ def test_summary_exposes_budgetable_split_metrics_and_hashes() -> None:
     assert summary["netted_factor_count"] == 4
     assert summary["pairwise_evidence_count"] == 6
     assert summary["pairwise_evidence_materialized_count"] == 0
+    assert summary["capital_delta_abs_max"] == 0.0
     assert summary["accepted_row_dataclasses_materialized"] == 0
     assert summary["accepted_row_dataclasses_avoided"] is True
     assert summary["materialized_dataclass_count"]["row_compatibility_path"] == 10
