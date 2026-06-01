@@ -17,6 +17,7 @@ from frtb_sbm import (
     SbmSensitivityBatch,
     SbmSignConvention,
     SbmSourceLineage,
+    build_girr_delta_batch_from_columns,
     build_girr_delta_batch_from_sensitivities,
     calculate_sbm_capital,
     calculate_sbm_capital_from_girr_delta_batch,
@@ -105,6 +106,25 @@ def _arrow_table(sensitivities: tuple[SbmSensitivity, ...]) -> pa.Table:
     )
 
 
+def _batch_columns(sensitivities: tuple[SbmSensitivity, ...]) -> dict[str, list[object]]:
+    return {
+        "sensitivity_ids": [item.sensitivity_id for item in sensitivities],
+        "source_row_ids": [item.source_row_id for item in sensitivities],
+        "desk_ids": [item.desk_id for item in sensitivities],
+        "legal_entities": [item.legal_entity for item in sensitivities],
+        "risk_classes": [item.risk_class.value for item in sensitivities],
+        "risk_measures": [item.risk_measure.value for item in sensitivities],
+        "buckets": [item.bucket for item in sensitivities],
+        "risk_factors": [item.risk_factor for item in sensitivities],
+        "amounts": [item.amount for item in sensitivities],
+        "amount_currencies": [item.amount_currency for item in sensitivities],
+        "sign_conventions": [item.sign_convention.value for item in sensitivities],
+        "tenors": [item.tenor for item in sensitivities],
+        "lineage_source_systems": [item.lineage.source_system for item in sensitivities],
+        "lineage_source_files": [item.lineage.source_file for item in sensitivities],
+    }
+
+
 def _dictionary(values: list[str | None]) -> pa.Array:
     return pa.array(values).dictionary_encode()
 
@@ -161,6 +181,26 @@ def test_arrow_handoff_rejects_non_finite_optional_float_columns() -> None:
 
     with pytest.raises(SbmInputError, match="value must be finite"):
         build_girr_delta_batch_from_handoff(handoff)
+
+
+def test_column_builder_rejects_malformed_source_column_maps() -> None:
+    columns = _batch_columns(_sensitivities()[:1])
+
+    with pytest.raises(SbmInputError, match="source column map entries must be field pairs"):
+        build_girr_delta_batch_from_columns(
+            **columns,
+            source_column_maps=(("bad",),),
+        )
+
+
+def test_column_builder_rejects_string_mapping_citation_rows() -> None:
+    columns = _batch_columns(_sensitivities()[:1])
+
+    with pytest.raises(SbmInputError, match="mapping_citation_ids rows"):
+        build_girr_delta_batch_from_columns(
+            **columns,
+            mapping_citation_ids=("abc",),
+        )
 
 
 def test_row_and_arrow_calculation_paths_produce_same_girr_delta_capital() -> None:

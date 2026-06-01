@@ -448,7 +448,18 @@ def _validate_source_column_maps(
             field="lineage.source_column_map",
         )
     for row_map in source_column_maps:
-        for source_field, canonical_field in row_map:
+        if not isinstance(row_map, tuple | list):
+            raise SbmInputError(
+                "source column map rows must be field-pair sequences",
+                field="lineage.source_column_map",
+            )
+        for mapping in row_map:
+            if not isinstance(mapping, tuple | list) or len(mapping) != 2:
+                raise SbmInputError(
+                    "source column map entries must be field pairs",
+                    field="lineage.source_column_map",
+                )
+            source_field, canonical_field = mapping
             if not isinstance(source_field, str) or not source_field.strip():
                 raise SbmInputError(
                     "source column map entries require non-empty source fields",
@@ -473,6 +484,11 @@ def _validate_mapping_citations(
             field="mapping_citation_ids",
         )
     for row_citations in mapping_citation_ids:
+        if not isinstance(row_citations, tuple | list):
+            raise SbmInputError(
+                "mapping_citation_ids rows must be citation-id sequences",
+                field="mapping_citation_ids",
+            )
         for citation_id in row_citations:
             if not isinstance(citation_id, str) or not citation_id.strip():
                 raise SbmInputError(
