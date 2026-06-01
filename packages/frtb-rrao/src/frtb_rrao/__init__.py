@@ -9,10 +9,23 @@ from frtb_rrao.allocation import (
     serialize_rrao_allocation_report,
     validate_rrao_allocation_report,
 )
+from frtb_rrao.arrow_handoff import (
+    RRAO_HANDOFF_COLUMN_SPECS,
+    build_rrao_batch_from_handoff,
+    normalize_rrao_arrow_table,
+)
 from frtb_rrao.audit import (
     input_hash_for_positions,
     serialize_rrao_result,
     validate_rrao_result_reconciliation,
+)
+from frtb_rrao.batch import (
+    RraoBatchCapitalCalculation,
+    RraoPositionBatch,
+    build_rrao_batch_from_columns,
+    build_rrao_batch_from_positions,
+    calculate_rrao_capital_from_batch,
+    input_hash_for_rrao_batch,
 )
 from frtb_rrao.classification import classify_rrao_position, classify_rrao_positions
 from frtb_rrao.crif import (
@@ -56,6 +69,7 @@ from frtb_rrao.validation import (
 
 __all__ = [
     "PACKAGE_METADATA",
+    "RRAO_HANDOFF_COLUMN_SPECS",
     "SUPPORTED_RRAO_ALLOCATION_DIMENSIONS",
     "RraoAdapterResult",
     "RraoAdapterWarning",
@@ -63,6 +77,7 @@ __all__ = [
     "RraoAllocationDimension",
     "RraoAllocationReport",
     "RraoBackToBackMatch",
+    "RraoBatchCapitalCalculation",
     "RraoCalculationContext",
     "RraoCapitalLine",
     "RraoCapitalResult",
@@ -76,6 +91,7 @@ __all__ = [
     "RraoInvestmentFundExposureType",
     "RraoInvestmentFundMethod",
     "RraoPosition",
+    "RraoPositionBatch",
     "RraoRegulatoryProfile",
     "RraoRejectedRow",
     "RraoRuleProfile",
@@ -87,11 +103,17 @@ __all__ = [
     "adapt_rrao_records",
     "build_rrao_allocation_report",
     "build_rrao_allocation_reports",
+    "build_rrao_batch_from_columns",
+    "build_rrao_batch_from_handoff",
+    "build_rrao_batch_from_positions",
     "calculate_rrao_capital",
+    "calculate_rrao_capital_from_batch",
     "classify_rrao_position",
     "classify_rrao_positions",
     "get_rrao_rule_profile",
     "input_hash_for_positions",
+    "input_hash_for_rrao_batch",
+    "normalize_rrao_arrow_table",
     "resolve_rrao_allocation_dimension",
     "serialize_rrao_allocation_report",
     "serialize_rrao_result",
