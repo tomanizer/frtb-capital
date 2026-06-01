@@ -33,14 +33,18 @@ from frtb_drc.data_models import (
     NetJtd,
     RejectedOffset,
 )
-from frtb_drc.reference_data import get_lgd_rule, get_maturity_policy
+from frtb_drc.reference_data import get_lgd_rule, get_maturity_policy, iter_lgd_rules
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
 from frtb_drc.validation import DrcInputError, validate_positions
 
 ObjectArray = npt.NDArray[np.object_]
 FloatArray = npt.NDArray[np.float64]
 BoolArray = npt.NDArray[np.bool_]
+ArrayInput = npt.NDArray[Any]
+ColumnInput = Sequence[object] | ArrayInput
+NullableColumnInput = Sequence[object | None] | ArrayInput
 EnumT = TypeVar("EnumT", bound=StrEnum)
+ArrayScalarT = TypeVar("ArrayScalarT", bound=np.generic)
 
 _FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
 _NETTING_CITATION = "US_NPR_210_B_2"
@@ -188,32 +192,32 @@ def build_drc_nonsec_batch_from_positions(
 
 def build_drc_nonsec_batch_from_columns(
     *,
-    position_ids: Sequence[object],
-    source_row_ids: Sequence[object],
-    desk_ids: Sequence[object],
-    legal_entities: Sequence[object],
-    risk_classes: Sequence[object],
-    instrument_types: Sequence[object],
-    default_directions: Sequence[object],
-    issuer_ids: Sequence[object | None],
-    tranche_ids: Sequence[object | None] | None = None,
-    index_series_ids: Sequence[object | None] | None = None,
-    bucket_keys: Sequence[object | None],
-    seniorities: Sequence[object | None],
-    credit_qualities: Sequence[object | None],
-    notionals: Sequence[object],
-    market_values: Sequence[object | None] | None = None,
-    cumulative_pnls: Sequence[object | None] | None = None,
-    maturity_years: Sequence[object],
-    currencies: Sequence[object],
-    lgd_overrides: Sequence[object | None] | None = None,
-    is_defaulted: Sequence[object] | None = None,
-    is_gse: Sequence[object] | None = None,
-    is_pse: Sequence[object] | None = None,
-    is_covered_bond: Sequence[object] | None = None,
-    lineage_source_systems: Sequence[object] | None = None,
-    lineage_source_files: Sequence[object] | None = None,
-    lineage_present: Sequence[object] | None = None,
+    position_ids: ColumnInput,
+    source_row_ids: ColumnInput,
+    desk_ids: ColumnInput,
+    legal_entities: ColumnInput,
+    risk_classes: ColumnInput,
+    instrument_types: ColumnInput,
+    default_directions: ColumnInput,
+    issuer_ids: NullableColumnInput,
+    tranche_ids: NullableColumnInput | None = None,
+    index_series_ids: NullableColumnInput | None = None,
+    bucket_keys: NullableColumnInput,
+    seniorities: NullableColumnInput,
+    credit_qualities: NullableColumnInput,
+    notionals: ColumnInput,
+    market_values: NullableColumnInput | None = None,
+    cumulative_pnls: NullableColumnInput | None = None,
+    maturity_years: ColumnInput,
+    currencies: ColumnInput,
+    lgd_overrides: NullableColumnInput | None = None,
+    is_defaulted: ColumnInput | None = None,
+    is_gse: ColumnInput | None = None,
+    is_pse: ColumnInput | None = None,
+    is_covered_bond: ColumnInput | None = None,
+    lineage_source_systems: ColumnInput | None = None,
+    lineage_source_files: ColumnInput | None = None,
+    lineage_present: ColumnInput | None = None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
     citation_ids: Sequence[Sequence[str]] | None = None,
     source_hash: str | None = None,
@@ -512,17 +516,7 @@ def _gross_jtd_array(
     if bool(np.any(~np.isnan(batch.lgd_overrides))):
         raise DrcInputError("explicit LGD overrides are not supported by the selected profile")
 
-    lgd_rates = np.empty(batch.row_count, dtype=np.float64)
-    citations: list[str] = []
-    for index in range(batch.row_count):
-        lgd_rule = get_lgd_rule(
-            DrcSeniority(cast(str, batch.seniorities[index])),
-            profile_id=profile_id,
-            is_defaulted=bool(batch.is_defaulted[index]),
-        )
-        lgd_rates[index] = lgd_rule.lgd_rate
-        citations.append(lgd_rule.citation_id)
-
+    lgd_rates, citations = _lgd_rate_array(batch, profile_id=profile_id)
     pnl_component = np.empty(batch.row_count, dtype=np.float64)
     has_cumulative = ~np.isnan(batch.cumulative_pnls)
     pnl_component[has_cumulative] = batch.cumulative_pnls[has_cumulative]
@@ -546,7 +540,43 @@ def _gross_jtd_array(
     signed_notional = np.where(long_mask, notionals_abs, -notionals_abs)
     raw_jtd = lgd_rates * signed_notional + pnl_component
     gross = np.where(long_mask, np.maximum(raw_jtd, 0.0), np.abs(np.minimum(raw_jtd, 0.0)))
-    return gross.astype(np.float64), tuple(sorted(set(citations)))
+    return gross.astype(np.float64), citations
+
+
+def _lgd_rate_array(
+    batch: DrcPositionBatch,
+    *,
+    profile_id: str,
+) -> tuple[FloatArray, tuple[str, ...]]:
+    rule_by_seniority = {
+        rule.seniority.value: rule for rule in iter_lgd_rules(profile_id=profile_id)
+    }
+
+    lgd_rates = np.empty(batch.row_count, dtype=np.float64)
+    citations: set[str] = set()
+
+    defaulted_mask = batch.is_defaulted
+    if bool(np.any(defaulted_mask)):
+        defaulted_rule = get_lgd_rule(
+            DrcSeniority.EQUITY,
+            profile_id=profile_id,
+            is_defaulted=True,
+        )
+        lgd_rates[defaulted_mask] = defaulted_rule.lgd_rate
+        citations.add(defaulted_rule.citation_id)
+
+    non_defaulted_mask = ~defaulted_mask
+    for seniority_value in np.unique(batch.seniorities[non_defaulted_mask]):
+        seniority_text = cast(str, seniority_value)
+        try:
+            rule = rule_by_seniority[seniority_text]
+        except KeyError as exc:
+            raise DrcInputError(f"missing DRC LGD rule: {profile_id}/{seniority_text}") from exc
+        seniority_mask = non_defaulted_mask & (batch.seniorities == seniority_text)
+        lgd_rates[seniority_mask] = rule.lgd_rate
+        citations.add(rule.citation_id)
+
+    return lgd_rates, tuple(sorted(citations))
 
 
 def _scaled_jtd_array(
@@ -948,21 +978,21 @@ def _sorted_indices(batch: DrcPositionBatch) -> tuple[int, ...]:
     )
 
 
-def _require_lengths(row_count: int, **columns: Sequence[object]) -> None:
+def _require_lengths(row_count: int, **columns: ColumnInput | NullableColumnInput) -> None:
     for name, values in columns.items():
         if len(values) != row_count:
             raise DrcInputError(f"{name} length does not match position_ids")
 
 
 def _required_text_array(
-    values: Sequence[object | None], field_name: str, *, copy: bool
+    values: NullableColumnInput, field_name: str, *, copy: bool
 ) -> ObjectArray:
     array = _object_array([_required_text(value, field_name) for value in values], copy=copy)
     return array
 
 
 def _optional_text_array(
-    values: Sequence[object | None] | None,
+    values: NullableColumnInput | None,
     row_count: int,
     *,
     copy: bool,
@@ -973,7 +1003,7 @@ def _optional_text_array(
 
 
 def _text_array_with_default(
-    values: Sequence[object] | None,
+    values: ColumnInput | None,
     row_count: int,
     *,
     default: str,
@@ -985,7 +1015,7 @@ def _text_array_with_default(
 
 
 def _enum_array(
-    values: Sequence[object | None],
+    values: NullableColumnInput,
     enum_type: type[EnumT],
     field_name: str,
     *,
@@ -997,32 +1027,31 @@ def _enum_array(
     )
 
 
-def _required_float_array(values: Sequence[object], field_name: str, *, copy: bool) -> FloatArray:
+def _required_float_array(values: ColumnInput, field_name: str, *, copy: bool) -> FloatArray:
+    fast_array = _float_array_from_numpy(values, copy=copy)
+    if fast_array is not None:
+        return fast_array
     array = np.asarray([_required_float(value, field_name) for value in values], dtype=np.float64)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
 
 
 def _optional_float_array(
-    values: Sequence[object | None] | None,
+    values: NullableColumnInput | None,
     row_count: int,
     *,
     copy: bool,
 ) -> FloatArray:
     if values is None:
         array = np.full(row_count, np.nan, dtype=np.float64)
+    elif (fast_array := _float_array_from_numpy(values, copy=copy)) is not None:
+        return fast_array
     else:
         array = np.asarray([_optional_float(value) for value in values], dtype=np.float64)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
 
 
 def _bool_array(
-    values: Sequence[object] | None,
+    values: ColumnInput | None,
     row_count: int,
     *,
     default: bool = False,
@@ -1030,20 +1059,37 @@ def _bool_array(
 ) -> BoolArray:
     if values is None:
         array = np.full(row_count, default, dtype=np.bool_)
+    elif isinstance(values, np.ndarray) and values.dtype == np.bool_:
+        array = np.asarray(values, dtype=np.bool_)
     else:
         array = np.asarray([_bool_value(value) for value in values], dtype=np.bool_)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
 
 
-def _object_array(values: Sequence[object | None], *, copy: bool) -> ObjectArray:
+def _float_array_from_numpy(
+    values: ColumnInput | NullableColumnInput,
+    *,
+    copy: bool,
+) -> FloatArray | None:
+    if not isinstance(values, np.ndarray) or values.dtype.kind not in {"f", "i", "u"}:
+        return None
+    array = np.asarray(values, dtype=np.float64)
+    return _readonly_array(array, copy=copy)
+
+
+def _object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
     array = np.asarray(values, dtype=object)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
+
+
+def _readonly_array(
+    array: npt.NDArray[ArrayScalarT],
+    *,
+    copy: bool,
+) -> npt.NDArray[ArrayScalarT]:
+    frozen = array.copy() if copy else array.view()
+    frozen.setflags(write=False)
+    return frozen
 
 
 def _immutable_float_array(values: FloatArray) -> FloatArray:

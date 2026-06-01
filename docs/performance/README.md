@@ -85,6 +85,16 @@ NumPy batch -> kernel path. It explains why DRC keeps issuer/seniority netting
 inside package NumPy code instead of moving regulatory calculations into a
 dataframe expression layer.
 
+Run the DRC row-vs-Arrow benchmark from the workspace root:
+
+```bash
+make drc-benchmark
+```
+
+The command writes `dist/benchmarks/frtb-drc-batch-arrow.json` and compares
+row-compatible `DrcPosition` processing with the Arrow handoff ->
+`DrcPositionBatch` path for deterministic synthetic non-securitisation inputs.
+
 ## FRTB-RRAO Arrow Batch Triage
 
 `frtb-rrao-arrow-batch-triage.md` documents the RRAO residual-risk data-shape
