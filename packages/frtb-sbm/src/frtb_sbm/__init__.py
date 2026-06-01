@@ -24,7 +24,11 @@ from frtb_sbm.batch import (
     SbmSensitivityBatch,
     build_girr_delta_batch_from_columns,
     build_girr_delta_batch_from_sensitivities,
+    build_sbm_batch_from_columns,
+    build_sbm_batch_from_sensitivities,
     input_hash_for_girr_delta_batch,
+    input_hash_for_sbm_batch,
+    sorted_sbm_batch_indices,
 )
 from frtb_sbm.capital import calculate_sbm_capital, calculate_sbm_capital_from_girr_delta_batch
 from frtb_sbm.curvature import (
@@ -199,6 +203,8 @@ __all__ = [
     "apply_correlation_scenario_definition",
     "build_girr_delta_batch_from_columns",
     "build_girr_delta_batch_from_sensitivities",
+    "build_sbm_batch_from_columns",
+    "build_sbm_batch_from_sensitivities",
     "calculate_curvature_risk_class_capital",
     "calculate_girr_curvature_risk_class_capital",
     "calculate_sbm_capital",
@@ -241,6 +247,7 @@ __all__ = [
     "girr_vega_option_tenors",
     "group_weighted_sensitivities_by_bucket",
     "input_hash_for_girr_delta_batch",
+    "input_hash_for_sbm_batch",
     "input_hash_for_sensitivities",
     "normalise_currency_code",
     "normalise_fx_delta_currency_code",
@@ -256,6 +263,7 @@ __all__ = [
     "serialize_sbm_result",
     "sort_sensitivities_deterministic",
     "sort_weighted_sensitivities_deterministic",
+    "sorted_sbm_batch_indices",
     "supported_risk_class_measures",
     "validate_curvature_sensitivities",
     "validate_sbm_calculation_context",

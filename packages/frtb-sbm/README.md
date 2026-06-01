@@ -14,7 +14,7 @@ vega, and remaining non-GIRR risk classes fail closed with explicit errors.
 | GIRR delta and vega capital paths | Implemented (phase 1) |
 | FX delta capital path | Implemented (phase 1) |
 | Curvature, FX vega, remaining risk classes | Unsupported (fail-closed) |
-| Arrow handoff | GIRR delta batch path implemented; broader adapters pending |
+| Arrow handoff | GIRR delta batch path implemented; homogeneous batch foundation generalized; broader adapters pending |
 | CRIF/CSV adapters | Partial: row-dict compatibility plus GIRR delta CRIF-to-Arrow handoff |
 
 Outputs from this prototype package are not final regulatory capital.
@@ -44,6 +44,11 @@ from frtb_sbm.arrow_handoff import (
     normalize_girr_delta_arrow_table,
 )
 ```
+
+The package-owned batch type now represents one homogeneous SBM
+`(risk_class, risk_measure)` path. GIRR delta remains the only public
+capital-from-Arrow handoff; broader path-specific Arrow entrypoints are tracked
+under #270.
 
 CRIF-shaped GIRR delta inputs can first use the package-owned CRIF mapping,
 which delegates package-neutral column discovery and rejected-row partitioning

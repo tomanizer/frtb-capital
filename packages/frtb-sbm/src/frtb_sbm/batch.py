@@ -2,7 +2,8 @@
 
 Regulatory traceability:
     Basel MAR21.4-MAR21.7 and MAR21.39-MAR21.42 — GIRR delta weighting,
-    factor netting, and aggregation.
+    factor netting, and aggregation. Other supported SBM paths use the same
+    package-owned tabular boundary before path-specific weighting.
     SBM-NFR-001, SBM-NFR-002, SBM-AUDIT-001.
 """
 
@@ -33,6 +34,47 @@ from frtb_sbm.validation import (
 
 ObjectArray = npt.NDArray[np.object_]
 FloatArray = npt.NDArray[np.float64]
+
+_CORE_REQUIRED_TEXT_FIELDS = frozenset(
+    {
+        "sensitivity_ids",
+        "source_row_ids",
+        "desk_ids",
+        "legal_entities",
+        "risk_classes",
+        "risk_measures",
+        "buckets",
+        "risk_factors",
+        "amount_currencies",
+        "sign_conventions",
+        "lineage_source_systems",
+        "lineage_source_files",
+    }
+)
+
+_TENOR_REQUIRED_PATHS = frozenset(
+    {
+        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
+    }
+)
+
+_OPTION_TENOR_REQUIRED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.VEGA)})
+
+_QUALIFIER_REQUIRED_RISK_CLASSES = frozenset(
+    {
+        SbmRiskClass.CSR_NONSEC,
+        SbmRiskClass.CSR_SEC_CTP,
+        SbmRiskClass.CSR_SEC_NONCTP,
+        SbmRiskClass.EQUITY,
+        SbmRiskClass.COMMODITY,
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -82,13 +124,83 @@ class SbmSensitivityBatch:
     def risk_class(self) -> SbmRiskClass:
         """Return the homogeneous risk class represented by this batch."""
 
-        return SbmRiskClass.GIRR
+        if self.row_count == 0:
+            raise SbmInputError("batch must not be empty", field="batch")
+        return coerce_risk_class(cast(SbmRiskClass | str, self.risk_classes[0]))
 
     @property
     def risk_measure(self) -> SbmRiskMeasure:
         """Return the homogeneous risk measure represented by this batch."""
 
-        return SbmRiskMeasure.DELTA
+        if self.row_count == 0:
+            raise SbmInputError("batch must not be empty", field="batch")
+        return coerce_risk_measure(cast(SbmRiskMeasure | str, self.risk_measures[0]))
+
+
+def build_sbm_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    expected_risk_class: SbmRiskClass | str | None = None,
+    expected_risk_measure: SbmRiskMeasure | str | None = None,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a homogeneous SBM batch from existing row-wise canonical sensitivities.
+
+    This is a compatibility builder for callers that already hold
+    ``SbmSensitivity`` rows. High-volume adapters should use
+    ``build_sbm_batch_from_columns`` so accepted rows are never materialised as
+    dataclasses.
+    """
+
+    validated = validate_sbm_sensitivities(sensitivities)
+    _require_non_empty(validated)
+    risk_class, risk_measure = _homogeneous_path_from_sensitivities(validated)
+    if expected_risk_class is not None:
+        expected = coerce_risk_class(expected_risk_class)
+        if risk_class is not expected:
+            raise SbmInputError(
+                f"batch only accepts {expected.value} sensitivities",
+                field="risk_class",
+            )
+    if expected_risk_measure is not None:
+        expected_measure = coerce_risk_measure(expected_risk_measure)
+        if risk_measure is not expected_measure:
+            raise SbmInputError(
+                f"batch only accepts {expected_measure.value} sensitivities",
+                field="risk_measure",
+            )
+
+    optional_arrays = _optional_arrays_from_sensitivities(validated)
+    source_column_maps = _source_column_maps_from_sensitivities(validated)
+    mapping_citations = _mapping_citations_from_sensitivities(validated)
+    return build_sbm_batch_from_columns(
+        expected_risk_class=risk_class,
+        expected_risk_measure=risk_measure,
+        sensitivity_ids=[item.sensitivity_id for item in validated],
+        source_row_ids=[item.source_row_id for item in validated],
+        desk_ids=[item.desk_id for item in validated],
+        legal_entities=[item.legal_entity for item in validated],
+        risk_classes=[item.risk_class.value for item in validated],
+        risk_measures=[item.risk_measure.value for item in validated],
+        buckets=[item.bucket for item in validated],
+        risk_factors=[item.risk_factor for item in validated],
+        amounts=[item.amount for item in validated],
+        amount_currencies=[item.amount_currency for item in validated],
+        sign_conventions=[item.sign_convention.value for item in validated],
+        tenors=[item.tenor for item in validated],
+        lineage_source_systems=[item.lineage.source_system for item in validated],
+        lineage_source_files=[item.lineage.source_file for item in validated],
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        source_column_maps=source_column_maps,
+        mapping_citation_ids=mapping_citations,
+        copy_arrays=True,
+        **optional_arrays,
+    )
 
 
 def build_girr_delta_batch_from_sensitivities(
@@ -106,41 +218,20 @@ def build_girr_delta_batch_from_sensitivities(
     converts them to the same batch representation used by Arrow handoffs.
     """
 
-    validated = validate_sbm_sensitivities(sensitivities)
-    _require_non_empty(validated)
-    for sensitivity in validated:
-        _require_girr_delta_sensitivity(sensitivity)
-
-    optional_arrays = _optional_arrays_from_sensitivities(validated)
-    source_column_maps = _source_column_maps_from_sensitivities(validated)
-    mapping_citations = _mapping_citations_from_sensitivities(validated)
-    return build_girr_delta_batch_from_columns(
-        sensitivity_ids=[item.sensitivity_id for item in validated],
-        source_row_ids=[item.source_row_id for item in validated],
-        desk_ids=[item.desk_id for item in validated],
-        legal_entities=[item.legal_entity for item in validated],
-        risk_classes=[item.risk_class.value for item in validated],
-        risk_measures=[item.risk_measure.value for item in validated],
-        buckets=[item.bucket for item in validated],
-        risk_factors=[item.risk_factor for item in validated],
-        amounts=[item.amount for item in validated],
-        amount_currencies=[item.amount_currency for item in validated],
-        sign_conventions=[item.sign_convention.value for item in validated],
-        tenors=[item.tenor or "" for item in validated],
-        lineage_source_systems=[item.lineage.source_system for item in validated],
-        lineage_source_files=[item.lineage.source_file for item in validated],
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
-        source_column_maps=source_column_maps,
-        mapping_citation_ids=mapping_citations,
-        copy_arrays=True,
-        **optional_arrays,
     )
 
 
-def build_girr_delta_batch_from_columns(
+def build_sbm_batch_from_columns(
     *,
+    expected_risk_class: SbmRiskClass | str,
+    expected_risk_measure: SbmRiskMeasure | str,
     sensitivity_ids: Iterable[object],
     source_row_ids: Iterable[object],
     desk_ids: Iterable[object],
@@ -169,8 +260,10 @@ def build_girr_delta_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """Build a GIRR delta batch from columnar arrays owned by an adapter."""
+    """Build a homogeneous SBM batch from columnar arrays owned by an adapter."""
 
+    resolved_risk_class = coerce_risk_class(expected_risk_class)
+    resolved_risk_measure = coerce_risk_measure(expected_risk_measure)
     arrays = {
         "sensitivity_ids": _object_array(sensitivity_ids, "sensitivity_id", copy=copy_arrays),
         "source_row_ids": _object_array(source_row_ids, "source_row_id", copy=copy_arrays),
@@ -206,6 +299,18 @@ def build_girr_delta_batch_from_columns(
     row_count = int(amount_array.shape[0])
     _require_common_length(row_count, arrays)
     _require_non_empty_length(row_count)
+    arrays["risk_classes"] = _normalise_risk_class_array(
+        arrays["risk_classes"],
+        sensitivity_ids=arrays["sensitivity_ids"],
+    )
+    arrays["risk_measures"] = _normalise_risk_measure_array(
+        arrays["risk_measures"],
+        sensitivity_ids=arrays["sensitivity_ids"],
+    )
+    arrays["sign_conventions"] = _normalise_sign_convention_array(
+        arrays["sign_conventions"],
+        sensitivity_ids=arrays["sensitivity_ids"],
+    )
 
     optional = {
         "position_ids": _optional_object_array(position_ids, "position_id", row_count, copy_arrays),
@@ -239,7 +344,13 @@ def build_girr_delta_batch_from_columns(
 
     _validate_source_column_maps(source_column_maps, row_count)
     _validate_mapping_citations(mapping_citation_ids, row_count)
-    _validate_girr_delta_batch_arrays(arrays, amount_array)
+    _validate_homogeneous_batch_arrays(
+        arrays,
+        amount_array,
+        expected_risk_class=resolved_risk_class,
+        expected_risk_measure=resolved_risk_measure,
+        optional_arrays=optional,
+    )
     diagnostic_payloads = tuple(MappingProxyType(dict(item)) for item in diagnostics)
     batch_without_hash = SbmSensitivityBatch(
         sensitivity_ids=arrays["sensitivity_ids"],
@@ -264,19 +375,94 @@ def build_girr_delta_batch_from_columns(
         mapping_citation_ids=mapping_citation_ids,
         **optional,
     )
-    return replace(
-        batch_without_hash, input_hash=input_hash_for_girr_delta_batch(batch_without_hash)
+    return replace(batch_without_hash, input_hash=input_hash_for_sbm_batch(batch_without_hash))
+
+
+def build_girr_delta_batch_from_columns(
+    *,
+    sensitivity_ids: Iterable[object],
+    source_row_ids: Iterable[object],
+    desk_ids: Iterable[object],
+    legal_entities: Iterable[object],
+    risk_classes: Iterable[object],
+    risk_measures: Iterable[object],
+    buckets: Iterable[object],
+    risk_factors: Iterable[object],
+    amounts: Iterable[object],
+    amount_currencies: Iterable[object],
+    sign_conventions: Iterable[object],
+    tenors: Iterable[object],
+    lineage_source_systems: Iterable[object],
+    lineage_source_files: Iterable[object],
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    position_ids: Iterable[object] | None = None,
+    qualifiers: Iterable[object] | None = None,
+    option_tenors: Iterable[object] | None = None,
+    liquidity_horizon_days: Iterable[object] | None = None,
+    maturities: Iterable[object] | None = None,
+    up_shock_amounts: Iterable[object] | None = None,
+    down_shock_amounts: Iterable[object] | None = None,
+    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
+    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    copy_arrays: bool = True,
+) -> SbmSensitivityBatch:
+    """Build a GIRR delta batch from columnar arrays owned by an adapter."""
+
+    return build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        sensitivity_ids=sensitivity_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        risk_measures=risk_measures,
+        buckets=buckets,
+        risk_factors=risk_factors,
+        amounts=amounts,
+        amount_currencies=amount_currencies,
+        sign_conventions=sign_conventions,
+        tenors=tenors,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        position_ids=position_ids,
+        qualifiers=qualifiers,
+        option_tenors=option_tenors,
+        liquidity_horizon_days=liquidity_horizon_days,
+        maturities=maturities,
+        up_shock_amounts=up_shock_amounts,
+        down_shock_amounts=down_shock_amounts,
+        source_column_maps=source_column_maps,
+        mapping_citation_ids=mapping_citation_ids,
+        copy_arrays=copy_arrays,
     )
+
+
+def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the row-equivalent deterministic input hash for a homogeneous batch."""
+
+    return _hash_payload({"sensitivities": list(_sensitivity_payloads_from_batch(batch))})
 
 
 def input_hash_for_girr_delta_batch(batch: SbmSensitivityBatch) -> str:
     """Return the row-equivalent deterministic input hash for a GIRR delta batch."""
 
-    return _hash_payload({"sensitivities": list(_sensitivity_payloads_from_batch(batch))})
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="GIRR delta",
+    )
+    return input_hash_for_sbm_batch(batch)
 
 
-def sorted_girr_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in the same stable order used by row-wise GIRR delta weighting."""
+def sorted_sbm_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in stable risk-class, bucket, factor, and id order."""
 
     return np.lexsort(
         (
@@ -287,6 +473,18 @@ def sorted_girr_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[n
             batch.risk_classes,
         )
     )
+
+
+def sorted_girr_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in the same stable order used by row-wise GIRR delta weighting."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="GIRR delta",
+    )
+    return sorted_sbm_batch_indices(batch)
 
 
 def _optional_arrays_from_sensitivities(
@@ -406,34 +604,162 @@ def _mapping_citation_ids_at(batch: SbmSensitivityBatch, row_index: int) -> tupl
     return batch.mapping_citation_ids[row_index]
 
 
-def _validate_girr_delta_batch_arrays(
+def _homogeneous_path_from_sensitivities(
+    sensitivities: Sequence[SbmSensitivity],
+) -> tuple[SbmRiskClass, SbmRiskMeasure]:
+    first = sensitivities[0]
+    risk_class = first.risk_class
+    risk_measure = first.risk_measure
+    for sensitivity in sensitivities[1:]:
+        if sensitivity.risk_class is not risk_class:
+            raise SbmInputError(
+                "batch requires one homogeneous risk_class",
+                field="risk_class",
+                sensitivity_id=sensitivity.sensitivity_id,
+            )
+        if sensitivity.risk_measure is not risk_measure:
+            raise SbmInputError(
+                "batch requires one homogeneous risk_measure",
+                field="risk_measure",
+                sensitivity_id=sensitivity.sensitivity_id,
+            )
+    return risk_class, risk_measure
+
+
+def _validate_homogeneous_batch_arrays(
     arrays: Mapping[str, ObjectArray],
     amount_array: FloatArray,
+    *,
+    expected_risk_class: SbmRiskClass,
+    expected_risk_measure: SbmRiskMeasure,
+    optional_arrays: Mapping[str, ObjectArray | None],
 ) -> None:
     sensitivity_ids = arrays["sensitivity_ids"]
     for field_name, column in arrays.items():
-        _validate_required_text_column(column, field_name, sensitivity_ids=sensitivity_ids)
+        if field_name in _CORE_REQUIRED_TEXT_FIELDS:
+            _validate_required_text_column(column, field_name, sensitivity_ids=sensitivity_ids)
+        else:
+            _validate_optional_text_column(column, field_name, sensitivity_ids=sensitivity_ids)
     _validate_unique_sensitivity_ids(sensitivity_ids)
     _validate_constant_column(
         arrays["risk_classes"],
-        expected=SbmRiskClass.GIRR.value,
+        expected=expected_risk_class.value,
         field="risk_class",
-        message="GIRR delta batch only accepts GIRR sensitivities",
+        message=f"batch only accepts {expected_risk_class.value} sensitivities",
         sensitivity_ids=sensitivity_ids,
     )
     _validate_constant_column(
         arrays["risk_measures"],
-        expected=SbmRiskMeasure.DELTA.value,
+        expected=expected_risk_measure.value,
         field="risk_measure",
-        message="GIRR delta batch only accepts delta sensitivities",
+        message=f"batch only accepts {expected_risk_measure.value} sensitivities",
         sensitivity_ids=sensitivity_ids,
     )
+    path = (expected_risk_class, expected_risk_measure)
+    if path in _TENOR_REQUIRED_PATHS:
+        _validate_required_text_column(
+            arrays["tenors"],
+            "tenor",
+            sensitivity_ids=sensitivity_ids,
+        )
+
+    option_tenors = optional_arrays["option_tenors"]
+    if path in _OPTION_TENOR_REQUIRED_PATHS:
+        if option_tenors is None:
+            raise SbmInputError("option_tenor is required", field="option_tenor")
+        _validate_required_text_column(
+            option_tenors,
+            "option_tenor",
+            sensitivity_ids=sensitivity_ids,
+        )
+    elif option_tenors is not None:
+        _validate_optional_text_column(
+            option_tenors,
+            "option_tenor",
+            sensitivity_ids=sensitivity_ids,
+        )
+
+    qualifiers = optional_arrays["qualifiers"]
+    if expected_risk_class in _QUALIFIER_REQUIRED_RISK_CLASSES:
+        if qualifiers is None:
+            raise SbmInputError("qualifier is required", field="qualifier")
+        _validate_required_text_column(
+            qualifiers,
+            "qualifier",
+            sensitivity_ids=sensitivity_ids,
+        )
+    elif qualifiers is not None:
+        _validate_optional_text_column(qualifiers, "qualifier", sensitivity_ids=sensitivity_ids)
+
     for amount_currency in np.unique(arrays["amount_currencies"]):
         normalise_currency_code(cast(str, amount_currency))
     for sign_convention in np.unique(arrays["sign_conventions"]):
         coerce_sign_convention(sign_convention)
     if not np.all(np.isfinite(amount_array)):
         raise SbmInputError("value must be finite", field="amount")
+
+
+def _normalise_risk_class_array(
+    values: ObjectArray,
+    *,
+    sensitivity_ids: ObjectArray,
+) -> ObjectArray:
+    items: list[str] = []
+    for row_index, value in enumerate(values):
+        try:
+            items.append(coerce_risk_class(cast(SbmRiskClass | str, value)).value)
+        except SbmInputError as exc:
+            raise SbmInputError(
+                str(exc),
+                field="risk_class",
+                sensitivity_id=_sensitivity_id_for_index(sensitivity_ids, row_index),
+            ) from exc
+    normalised = np.asarray(tuple(items), dtype=object)
+    _require_common_length(int(values.shape[0]), {"risk_classes": normalised})
+    _freeze_array(normalised)
+    return cast(ObjectArray, normalised)
+
+
+def _normalise_risk_measure_array(
+    values: ObjectArray,
+    *,
+    sensitivity_ids: ObjectArray,
+) -> ObjectArray:
+    items: list[str] = []
+    for row_index, value in enumerate(values):
+        try:
+            items.append(coerce_risk_measure(cast(SbmRiskMeasure | str, value)).value)
+        except SbmInputError as exc:
+            raise SbmInputError(
+                str(exc),
+                field="risk_measure",
+                sensitivity_id=_sensitivity_id_for_index(sensitivity_ids, row_index),
+            ) from exc
+    normalised = np.asarray(tuple(items), dtype=object)
+    _require_common_length(int(values.shape[0]), {"risk_measures": normalised})
+    _freeze_array(normalised)
+    return cast(ObjectArray, normalised)
+
+
+def _normalise_sign_convention_array(
+    values: ObjectArray,
+    *,
+    sensitivity_ids: ObjectArray,
+) -> ObjectArray:
+    items: list[str] = []
+    for row_index, value in enumerate(values):
+        try:
+            items.append(coerce_sign_convention(value).value)
+        except SbmInputError as exc:
+            raise SbmInputError(
+                str(exc),
+                field="sign_convention",
+                sensitivity_id=_sensitivity_id_for_index(sensitivity_ids, row_index),
+            ) from exc
+    normalised = np.asarray(tuple(items), dtype=object)
+    _require_common_length(int(values.shape[0]), {"sign_conventions": normalised})
+    _freeze_array(normalised)
+    return cast(ObjectArray, normalised)
 
 
 def _validate_source_column_maps(
@@ -557,21 +883,25 @@ def _require_non_empty(values: Sequence[SbmSensitivity]) -> None:
 
 def _require_non_empty_length(row_count: int) -> None:
     if row_count == 0:
-        raise SbmInputError("GIRR delta batch must not be empty", field="sensitivities")
+        raise SbmInputError("SBM batch must not be empty", field="sensitivities")
 
 
-def _require_girr_delta_sensitivity(sensitivity: SbmSensitivity) -> None:
-    if sensitivity.risk_class is not SbmRiskClass.GIRR:
+def _require_batch_path(
+    batch: SbmSensitivityBatch,
+    *,
+    expected_risk_class: SbmRiskClass,
+    expected_risk_measure: SbmRiskMeasure,
+    label: str,
+) -> None:
+    if batch.risk_class is not expected_risk_class:
         raise SbmInputError(
-            "GIRR delta batch only accepts GIRR sensitivities",
+            f"{label} batch only accepts {expected_risk_class.value} sensitivities",
             field="risk_class",
-            sensitivity_id=sensitivity.sensitivity_id,
         )
-    if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
+    if batch.risk_measure is not expected_risk_measure:
         raise SbmInputError(
-            "GIRR delta batch only accepts delta sensitivities",
+            f"{label} batch only accepts {expected_risk_measure.value} sensitivities",
             field="risk_measure",
-            sensitivity_id=sensitivity.sensitivity_id,
         )
 
 
@@ -590,6 +920,26 @@ def _validate_required_text_column(
         row_index = int(np.flatnonzero(invalid_mask)[0])
         raise SbmInputError(
             "non-empty text is required",
+            field=field,
+            sensitivity_id=_sensitivity_id_for_index(sensitivity_ids, row_index),
+        )
+
+
+def _validate_optional_text_column(
+    values: ObjectArray,
+    field: str,
+    *,
+    sensitivity_ids: ObjectArray,
+) -> None:
+    invalid_mask = np.fromiter(
+        (value is not None and not isinstance(value, str) for value in values),
+        dtype=np.bool_,
+        count=int(values.shape[0]),
+    )
+    if np.any(invalid_mask):
+        row_index = int(np.flatnonzero(invalid_mask)[0])
+        raise SbmInputError(
+            "text is required when present",
             field=field,
             sensitivity_id=_sensitivity_id_for_index(sensitivity_ids, row_index),
         )
@@ -661,6 +1011,10 @@ __all__ = [
     "SbmSensitivityBatch",
     "build_girr_delta_batch_from_columns",
     "build_girr_delta_batch_from_sensitivities",
+    "build_sbm_batch_from_columns",
+    "build_sbm_batch_from_sensitivities",
     "input_hash_for_girr_delta_batch",
+    "input_hash_for_sbm_batch",
     "sorted_girr_delta_batch_indices",
+    "sorted_sbm_batch_indices",
 ]
