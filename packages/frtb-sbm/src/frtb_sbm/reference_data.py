@@ -27,6 +27,7 @@ from frtb_sbm.csr_nonsec_reference_data import (
     csr_nonsec_delta_risk_weight,
     csr_nonsec_inter_bucket_correlation,
     csr_nonsec_validate_delta_inputs,
+    csr_nonsec_validate_vega_inputs,
 )
 from frtb_sbm.data_models import (
     SbmCitation,
@@ -245,19 +246,40 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.91",
         url=BASEL_MAR21_URL,
-        note="GIRR vega risk-factor and bucket assignment.",
+        note="Vega uses the same bucket definitions for each risk class as delta.",
     ),
     "basel_mar21_92": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.92",
         url=BASEL_MAR21_URL,
-        note="GIRR vega liquidity horizon and risk-weight scaling (Table 13).",
+        note="Vega liquidity horizon and risk-weight scaling by risk class (Table 13).",
     ),
     "basel_mar21_93": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.93",
         url=BASEL_MAR21_URL,
         note="GIRR vega intra-bucket correlation from option and underlying tenors.",
+    ),
+    "basel_mar21_90": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.90",
+        url=BASEL_MAR21_URL,
+        note="Vega risk capital requirement scope.",
+    ),
+    "basel_mar21_94": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.94",
+        url=BASEL_MAR21_URL,
+        note=(
+            "Non-GIRR vega intra-bucket correlation equals the corresponding "
+            "delta correlation times option-tenor correlation, capped at 1."
+        ),
+    ),
+    "basel_mar21_95": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.95",
+        url=BASEL_MAR21_URL,
+        note="Vega inter-bucket correlations reuse the corresponding delta gammas.",
     ),
     "basel_mar21_14": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
@@ -615,6 +637,27 @@ PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS: dict[SbmRegulatoryProfile, int] = {
     SbmRegulatoryProfile.BASEL_MAR21: 60,
 }
 
+PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
+    SbmRegulatoryProfile,
+    dict[SbmRiskClass, int],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: {
+        SbmRiskClass.GIRR: 60,
+        SbmRiskClass.CSR_NONSEC: 120,
+        SbmRiskClass.CSR_SEC_CTP: 120,
+        SbmRiskClass.CSR_SEC_NONCTP: 120,
+        SbmRiskClass.COMMODITY: 120,
+        SbmRiskClass.FX: 40,
+    }
+}
+
+EQUITY_VEGA_LARGE_CAP_INDEX_LIQUIDITY_HORIZON_DAYS = 20
+EQUITY_VEGA_SMALL_CAP_OTHER_LIQUIDITY_HORIZON_DAYS = 60
+EQUITY_VEGA_LARGE_CAP_INDEX_BUCKETS = frozenset(
+    {"1", "2", "3", "4", "5", "6", "7", "8", "12", "13"}
+)
+EQUITY_VEGA_SMALL_CAP_OTHER_BUCKETS = frozenset({"9", "10", "11"})
+
 PROFILE_GIRR_VEGA_OPTION_TENORS: dict[
     SbmRegulatoryProfile,
     tuple[SbmGirrTenorDefinition, ...],
@@ -869,9 +912,39 @@ def girr_delta_intra_bucket_correlation(
 def girr_vega_liquidity_horizon_days(profile: SbmRegulatoryProfile | str) -> int:
     """Return the cited GIRR vega liquidity horizon in days for a profile."""
 
+    return vega_liquidity_horizon_days(
+        profile,
+        risk_class=SbmRiskClass.GIRR,
+    )
+
+
+def vega_liquidity_horizon_days(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    risk_class: SbmRiskClass | str,
+    bucket_id: str = "",
+) -> int:
+    """Return the cited MAR21.92 Table 13 vega liquidity horizon in days."""
+
     resolved = _resolve_supported_profile(profile)
-    _ensure_girr_vega_supported(profile)
-    return PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS[resolved]
+    _ensure_vega_supported(profile)
+    resolved_class = _coerce_risk_class(risk_class)
+    if resolved_class is SbmRiskClass.EQUITY:
+        normalised_bucket = equity_bucket_definition(profile, bucket_id).bucket_id
+        if normalised_bucket in EQUITY_VEGA_LARGE_CAP_INDEX_BUCKETS:
+            return EQUITY_VEGA_LARGE_CAP_INDEX_LIQUIDITY_HORIZON_DAYS
+        if normalised_bucket in EQUITY_VEGA_SMALL_CAP_OTHER_BUCKETS:
+            return EQUITY_VEGA_SMALL_CAP_OTHER_LIQUIDITY_HORIZON_DAYS
+        raise SbmInputError(
+            f"no equity vega liquidity horizon for bucket_id {normalised_bucket}",
+            field="bucket_id",
+        )
+    try:
+        return PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS[resolved][resolved_class]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"vega liquidity horizon is unsupported for risk_class={resolved_class.value}"
+        ) from exc
 
 
 def vega_risk_weight(
@@ -881,7 +954,7 @@ def vega_risk_weight(
 ) -> tuple[float, tuple[str, ...]]:
     """Return the cited vega risk weight min(100%, 55% * sqrt(LH/10))."""
 
-    _ensure_girr_vega_supported(profile)
+    _ensure_vega_supported(profile)
     horizon = require_positive_int(liquidity_horizon_days, "liquidity_horizon_days")
     risk_weight = min(
         GIRR_VEGA_RISK_WEIGHT_CAP,
@@ -927,16 +1000,13 @@ def girr_vega_intra_bucket_correlation(
     """Return min(1, rho_opt * rho_ul) with 1% exponential tenor constants."""
 
     _ensure_girr_vega_supported(profile)
-    option_maturity1 = girr_vega_option_tenor_definition(profile, option_tenor1).maturity_years
-    option_maturity2 = girr_vega_option_tenor_definition(profile, option_tenor2).maturity_years
+    rho_opt, _ = vega_option_tenor_correlation(
+        profile,
+        option_tenor1=option_tenor1,
+        option_tenor2=option_tenor2,
+    )
     underlying_maturity1 = girr_tenor_definition(profile, tenor1).maturity_years
     underlying_maturity2 = girr_tenor_definition(profile, tenor2).maturity_years
-    rho_opt = _exponential_tenor_correlation(
-        option_maturity1,
-        option_maturity2,
-        constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
-        floor=None,
-    )
     rho_ul = _exponential_tenor_correlation(
         underlying_maturity1,
         underlying_maturity2,
@@ -944,6 +1014,28 @@ def girr_vega_intra_bucket_correlation(
         floor=None,
     )
     return min(1.0, rho_opt * rho_ul), ("basel_mar21_93",)
+
+
+def vega_option_tenor_correlation(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    option_tenor1: str,
+    option_tenor2: str,
+) -> tuple[float, tuple[str, ...]]:
+    """Return the MAR21.93 option-tenor correlation term used by vega paths."""
+
+    _ensure_vega_supported(profile)
+    option_maturity1 = girr_vega_option_tenor_definition(profile, option_tenor1).maturity_years
+    option_maturity2 = girr_vega_option_tenor_definition(profile, option_tenor2).maturity_years
+    return (
+        _exponential_tenor_correlation(
+            option_maturity1,
+            option_maturity2,
+            constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
+            floor=None,
+        ),
+        ("basel_mar21_93",),
+    )
 
 
 def girr_inter_bucket_correlation(
@@ -1212,6 +1304,28 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
             }
             for tenor in girr_vega_option_tenors(resolved)
         ],
+        "non_girr_vega_parameters": {
+            "liquidity_horizon_days": {
+                risk_class.value: horizon
+                for risk_class, horizon in sorted(
+                    PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS[resolved].items(),
+                    key=lambda item: item[0].value,
+                )
+                if risk_class not in {SbmRiskClass.EQUITY, SbmRiskClass.GIRR}
+            },
+            "equity_large_cap_index_bucket_ids": sorted(EQUITY_VEGA_LARGE_CAP_INDEX_BUCKETS),
+            "equity_large_cap_index_liquidity_horizon_days": (
+                EQUITY_VEGA_LARGE_CAP_INDEX_LIQUIDITY_HORIZON_DAYS
+            ),
+            "equity_small_cap_other_bucket_ids": sorted(EQUITY_VEGA_SMALL_CAP_OTHER_BUCKETS),
+            "equity_small_cap_other_liquidity_horizon_days": (
+                EQUITY_VEGA_SMALL_CAP_OTHER_LIQUIDITY_HORIZON_DAYS
+            ),
+            "risk_weight_factor": GIRR_VEGA_RISK_WEIGHT_FACTOR,
+            "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
+            "intra_bucket_citation_id": "basel_mar21_94",
+            "inter_bucket_citation_id": "basel_mar21_95",
+        },
         "fx_buckets": [
             {
                 "bucket_id": bucket.bucket_id,
@@ -1270,6 +1384,14 @@ def _ensure_girr_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
 
 def _ensure_girr_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
     _ensure_girr_supported(profile)
+
+
+def _ensure_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
+    resolved = _resolve_supported_profile(profile)
+    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
+        raise UnsupportedRegulatoryFeatureError(
+            f"vega reference data is unsupported for profile {resolved.value}"
+        )
 
 
 def _ensure_fx_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
@@ -1402,6 +1524,7 @@ __all__ = [
     "GIRR_VEGA_RISK_WEIGHT_FACTOR",
     "LIQUID_GIRR_CURRENCIES",
     "PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS",
+    "PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS",
     "SbmCorrelationScenarioDefinition",
     "SbmFxBucketDefinition",
     "SbmGirrBucketDefinition",
@@ -1424,6 +1547,7 @@ __all__ = [
     "csr_nonsec_delta_risk_weight",
     "csr_nonsec_inter_bucket_correlation",
     "csr_nonsec_validate_delta_inputs",
+    "csr_nonsec_validate_vega_inputs",
     "curvature_citation_ids",
     "curvature_risk_weight",
     "equity_bucket_definition",
@@ -1451,5 +1575,7 @@ __all__ = [
     "girr_vega_option_tenor_definition",
     "girr_vega_option_tenors",
     "profile_reference_payload",
+    "vega_liquidity_horizon_days",
+    "vega_option_tenor_correlation",
     "vega_risk_weight",
 ]

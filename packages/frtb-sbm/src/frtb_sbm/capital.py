@@ -4,7 +4,7 @@ Public SBM capital calculation for supported SBM phase-1 delta/vega/curvature in
 Regulatory traceability:
     Basel MAR21.4-MAR21.7 — delta aggregation and scenario selection.
     Basel MAR21.14, MAR21.86-MAR21.89 — FX delta buckets, weights, correlations.
-    Basel MAR21.90-MAR21.95 — GIRR vega buckets and inter-bucket gamma.
+    Basel MAR21.90-MAR21.95 — vega buckets, weights, and correlations.
     U.S. NPR 2.0 section V.A.7.a steps three through six.
     SBM-WS-001, SBM-AGG-001, SBM-AGG-002, SBM-FUNC-014, SBM-FUNC-015,
     SBM-FUNC-016, SBM-FUNC-017, SBM-FUNC-018.
@@ -87,6 +87,7 @@ from frtb_sbm.risk_classes.fx import (
     calculate_fx_delta_risk_class_capital,
     calculate_fx_delta_risk_class_capital_from_batch,
 )
+from frtb_sbm.risk_classes.vega import calculate_non_girr_vega_risk_class_capital
 from frtb_sbm.validation import (
     SbmInputError,
     ensure_sbm_capital_paths_supported,
@@ -127,7 +128,7 @@ def calculate_sbm_capital(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate supported SBM capital for Basel MAR21 delta, GIRR vega, and curvature."""
+    """Calculate supported SBM capital for Basel MAR21 delta, vega, and curvature."""
 
     if sensitivities is None:
         raise SbmInputError("sensitivities are required", field="sensitivities")
@@ -176,6 +177,15 @@ def calculate_sbm_capital(
         elif risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.VEGA:
             risk_class_results.append(
                 _calculate_girr_vega_risk_class_capital(
+                    measure_sensitivities,
+                    profile_id=rule_profile.profile_id,
+                    pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+                    pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
+                )
+            )
+        elif risk_measure is SbmRiskMeasure.VEGA:
+            risk_class_results.append(
+                calculate_non_girr_vega_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
                     pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
@@ -1140,16 +1150,22 @@ def _ordered_supported_paths(
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
         (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA),
         (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA),
         (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE),
     )
     ordered = tuple(path for path in ordering if path in present)

@@ -13,6 +13,7 @@ from frtb_sbm import (
     compute_weighted_sensitivities,
     weight_girr_delta_sensitivities,
     weight_girr_vega_sensitivities,
+    weight_non_girr_vega_sensitivities,
 )
 
 
@@ -131,3 +132,30 @@ def test_compute_weighted_sensitivities_routes_csr_nonsec_delta() -> None:
     assert weighted[0].risk_class is SbmRiskClass.CSR_NONSEC
     assert weighted[0].risk_measure is SbmRiskMeasure.DELTA
     assert "basel_mar21_53" in weighted[0].citation_ids
+
+
+def test_weight_non_girr_vega_applies_table_13_horizon() -> None:
+    sensitivity = SbmSensitivity(
+        sensitivity_id="eq-vega-001",
+        source_row_id="row-eq-vega-001",
+        desk_id="equity-desk",
+        legal_entity="LE-001",
+        risk_class=SbmRiskClass.EQUITY,
+        risk_measure=SbmRiskMeasure.VEGA,
+        bucket="5",
+        risk_factor="SPOT",
+        qualifier="ISS-A",
+        option_tenor="1y",
+        amount=100_000.0,
+        amount_currency="USD",
+        sign_convention=SbmSignConvention.LONG,
+        lineage=sample_lineage(),
+    )
+    weighted = weight_non_girr_vega_sensitivities(
+        (sensitivity,),
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+    )
+
+    assert weighted[0].risk_weight == pytest.approx(0.55 * math.sqrt(20.0 / 10.0))
+    assert weighted[0].liquidity_horizon_days == 20
+    assert "basel_mar21_92" in weighted[0].citation_ids

@@ -1,0 +1,183 @@
+{
+  "profile_id": "BASEL_MAR21",
+  "profile_hash": "2b76ac8c502937a3b8cea8cc8258b7b7a74c4cfa999a09f848939c19a5ca0bae",
+  "input_hash": "9ca56279d9fc9a01e93f2f1787e27f4e104382ac827700bf410d6012e0f1e6e0",
+  "total_capital": 430003.5713374682,
+  "warnings": [],
+  "selected_portfolio_scenario": "HIGH",
+  "portfolio_scenario_totals": {
+    "HIGH": 430003.5713374682,
+    "LOW": 430003.5713374682,
+    "MEDIUM": 430003.5713374682
+  },
+  "risk_classes": [
+    {
+      "risk_class": "FX",
+      "risk_measure": "VEGA",
+      "selected_capital": 100000.0,
+      "selected_scenario": "HIGH"
+    },
+    {
+      "risk_class": "EQUITY",
+      "risk_measure": "VEGA",
+      "selected_capital": 70003.57133746822,
+      "selected_scenario": "HIGH"
+    },
+    {
+      "risk_class": "COMMODITY",
+      "risk_measure": "VEGA",
+      "selected_capital": 80000.0,
+      "selected_scenario": "HIGH"
+    },
+    {
+      "risk_class": "CSR_NONSEC",
+      "risk_measure": "VEGA",
+      "selected_capital": 70000.0,
+      "selected_scenario": "HIGH"
+    },
+    {
+      "risk_class": "CSR_SEC_NONCTP",
+      "risk_measure": "VEGA",
+      "selected_capital": 60000.0,
+      "selected_scenario": "HIGH"
+    },
+    {
+      "risk_class": "CSR_SEC_CTP",
+      "risk_measure": "VEGA",
+      "selected_capital": 50000.0,
+      "selected_scenario": "HIGH"
+    }
+  ],
+  "risk_class_scenario_totals": [
+    {
+      "HIGH": 100000.0,
+      "LOW": 100000.0,
+      "MEDIUM": 100000.0
+    },
+    {
+      "HIGH": 70003.57133746822,
+      "LOW": 70003.57133746822,
+      "MEDIUM": 70003.57133746822
+    },
+    {
+      "HIGH": 80000.0,
+      "LOW": 80000.0,
+      "MEDIUM": 80000.0
+    },
+    {
+      "HIGH": 70000.0,
+      "LOW": 70000.0,
+      "MEDIUM": 70000.0
+    },
+    {
+      "HIGH": 60000.0,
+      "LOW": 60000.0,
+      "MEDIUM": 60000.0
+    },
+    {
+      "HIGH": 50000.0,
+      "LOW": 50000.0,
+      "MEDIUM": 50000.0
+    }
+  ],
+  "buckets": [
+    [
+      {
+        "bucket_id": "EUR",
+        "kb": 100000.0,
+        "sb": 100000.0
+      }
+    ],
+    [
+      {
+        "bucket_id": "5",
+        "kb": 70003.57133746822,
+        "sb": 70003.57133746822
+      }
+    ],
+    [
+      {
+        "bucket_id": "2",
+        "kb": 80000.0,
+        "sb": 80000.0
+      }
+    ],
+    [
+      {
+        "bucket_id": "4",
+        "kb": 70000.0,
+        "sb": 70000.0
+      }
+    ],
+    [
+      {
+        "bucket_id": "1",
+        "kb": 60000.0,
+        "sb": 60000.0
+      }
+    ],
+    [
+      {
+        "bucket_id": "4",
+        "kb": 50000.0,
+        "sb": 50000.0
+      }
+    ]
+  ],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "sensitivity_id": "fx-eur-vega-1y",
+          "risk_weight": 1.0,
+          "scaled_amount": 100000.0
+        }
+      ]
+    ],
+    [
+      [
+        {
+          "sensitivity_id": "equity-spot-vega-1y",
+          "risk_weight": 0.7778174593052024,
+          "scaled_amount": 70003.57133746822
+        }
+      ]
+    ],
+    [
+      [
+        {
+          "sensitivity_id": "commodity-wti-vega-1y",
+          "risk_weight": 1.0,
+          "scaled_amount": 80000.0
+        }
+      ]
+    ],
+    [
+      [
+        {
+          "sensitivity_id": "csr-nonsec-bond-vega-1y",
+          "risk_weight": 1.0,
+          "scaled_amount": 70000.0
+        }
+      ]
+    ],
+    [
+      [
+        {
+          "sensitivity_id": "csr-sec-nonctp-bond-vega-1y",
+          "risk_weight": 1.0,
+          "scaled_amount": 60000.0
+        }
+      ]
+    ],
+    [
+      [
+        {
+          "sensitivity_id": "csr-sec-ctp-bond-vega-1y",
+          "risk_weight": 1.0,
+          "scaled_amount": 50000.0
+        }
+      ]
+    ]
+  ]
+}
