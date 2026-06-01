@@ -6,12 +6,14 @@
 
 - Package directory: `packages/frtb-sbm`
 - Import name: `frtb_sbm`
-- Implementation status: partial runtime — GIRR delta capital path implemented (#151 phase 1)
+- Implementation status: partial runtime — BASEL_MAR21 delta, vega, and
+  curvature paths implemented under audit across all seven SBM risk classes
 - Validation status: deterministic fixture, audit, replay, and public API tests available
 
 The package is importable and exposes `calculate_sbm_capital` for supported
-Basel MAR21 GIRR delta canonical inputs. Unsupported profiles, risk classes,
-and risk measures fail closed.
+Basel MAR21 delta, vega, and curvature canonical inputs. Row-wise,
+package-owned batch, and Arrow handoff paths are available for the supported
+matrix. Unsupported profiles and unmapped sub-features fail closed.
 
 ## Package-Local Documentation
 
@@ -42,3 +44,8 @@ Parent: [#151](https://github.com/tomanizer/frtb-capital/issues/151)
 6. #157 — inter-bucket aggregation and scenario selection
 7. #158 — public GIRR delta capital API
 8. #159 — audit/replay records and synthetic GIRR fixtures
+
+Follow-on issues #160, #161, #166, #169, #226, #244, and the later
+vectorisation sprint are reconciled in the support matrix and closed-issue audit
+inside
+[`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).

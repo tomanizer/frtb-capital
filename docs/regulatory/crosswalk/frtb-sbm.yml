@@ -1,6 +1,6 @@
 schema_version: 1
 component: frtb-sbm
-status: scaffolded
+status: partial_runtime
 source_register: ../sources.yml
 
 requirements:
@@ -12,14 +12,20 @@ requirements:
       - uk_pra_ps1_26_basel_3_1_final_rules
       - us_fed_occ_fdic_2026_capital_framework_proposal
     code_refs:
-      - packages/frtb-sbm/src/frtb_sbm/
+      - packages/frtb-sbm/src/frtb_sbm/reference_data.py
+      - packages/frtb-sbm/src/frtb_sbm/weighted_sensitivity.py
+      - packages/frtb-sbm/src/frtb_sbm/capital.py
+      - packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py
     test_refs:
-      - packages/frtb-sbm/tests/
-    coverage_status: not_implemented
+      - packages/frtb-sbm/tests/test_sbm_girr_delta_factor_grid.py
+      - packages/frtb-sbm/tests/test_sbm_girr_delta_batch.py
+      - packages/frtb-sbm/tests/test_sbm_public_api.py
+      - packages/frtb-sbm/tests/test_sbm_support_matrix.py
+    coverage_status: implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
       - hemanth_frtb_sa_capital_engine
-    notes: "Implement before vega/curvature to exercise bucket/rho/gamma scaffolding."
+    notes: "BASEL_MAR21 GIRR delta is capital-producing through row, batch, and Arrow handoff paths. Non-Basel profiles remain unsupported fail-closed."
 
   - id: SBM-FX-DELTA-001
     topic: FX delta, reporting currency, major pairs, and historical FX-rate treatment
@@ -28,30 +34,46 @@ requirements:
       - uk_pra_ps1_26_basel_3_1_final_rules
       - eu_eba_non_trading_book_fx_commodity_rts
     code_refs:
-      - packages/frtb-sbm/src/frtb_sbm/
+      - packages/frtb-sbm/src/frtb_sbm/reference_data.py
+      - packages/frtb-sbm/src/frtb_sbm/risk_classes/fx.py
+      - packages/frtb-sbm/src/frtb_sbm/capital.py
+      - packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py
     test_refs:
-      - packages/frtb-sbm/tests/
-    coverage_status: partial
+      - packages/frtb-sbm/tests/risk_classes/test_sbm_fx.py
+      - packages/frtb-sbm/tests/test_sbm_fx_equity_commodity_batch_arrow.py
+      - packages/frtb-sbm/tests/test_sbm_support_matrix.py
+    coverage_status: implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
       - hemanth_frtb_sa_capital_engine
-    notes: "Basel MAR21 FX delta implemented; PRA historical-FX treatment remains separate."
+    notes: "Basel MAR21 FX delta is implemented. PRA historical-FX treatment and other non-Basel profile variations remain planned and runtime fail-closed."
 
-  - id: SBM-EQUITY-DELTA-001
-    topic: Equity delta bucket assignment and correlation scenarios
+  - id: SBM-NON-FX-DELTA-001
+    topic: Equity, commodity, and CSR delta bucket assignment and correlation scenarios
     source_refs:
       - basel_bcbs_d457_2019_market_risk
       - basel_bcbs_d457_2019_explanatory_note
     code_refs:
-      - packages/frtb-sbm/src/frtb_sbm/
+      - packages/frtb-sbm/src/frtb_sbm/risk_classes/equity.py
+      - packages/frtb-sbm/src/frtb_sbm/risk_classes/commodity.py
+      - packages/frtb-sbm/src/frtb_sbm/risk_classes/csr_nonsec.py
+      - packages/frtb-sbm/src/frtb_sbm/risk_classes/csr_sec_nonctp.py
+      - packages/frtb-sbm/src/frtb_sbm/risk_classes/csr_sec_ctp.py
+      - packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py
     test_refs:
-      - packages/frtb-sbm/tests/
-    coverage_status: not_implemented
+      - packages/frtb-sbm/tests/risk_classes/test_equity.py
+      - packages/frtb-sbm/tests/risk_classes/test_commodity.py
+      - packages/frtb-sbm/tests/risk_classes/test_csr_nonsec.py
+      - packages/frtb-sbm/tests/risk_classes/test_csr_sec_nonctp.py
+      - packages/frtb-sbm/tests/risk_classes/test_csr_sec_ctp.py
+      - packages/frtb-sbm/tests/test_sbm_csr_delta_batch_arrow.py
+      - packages/frtb-sbm/tests/test_sbm_support_matrix.py
+    coverage_status: implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
       - hemanth_frtb_sa_capital_engine
       - subhamsharma7_frtb_market_risk
-    notes: "Use small deterministic bucket-assignment portfolios first."
+    notes: "BASEL_MAR21 non-FX delta is capital-producing for equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP; CTP decomposition evidence is fail-closed when absent."
 
   - id: SBM-VEGA-001
     topic: Vega sensitivities and risk-class aggregation
@@ -59,15 +81,22 @@ requirements:
       - basel_bcbs_d457_2019_market_risk
       - basel_bcbs_d457_2019_explanatory_note
     code_refs:
-      - packages/frtb-sbm/src/frtb_sbm/
+      - packages/frtb-sbm/src/frtb_sbm/reference_data.py
+      - packages/frtb-sbm/src/frtb_sbm/weighted_sensitivity.py
+      - packages/frtb-sbm/src/frtb_sbm/risk_classes/vega.py
+      - packages/frtb-sbm/src/frtb_sbm/capital.py
+      - packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py
     test_refs:
-      - packages/frtb-sbm/tests/
-    coverage_status: not_implemented
+      - packages/frtb-sbm/tests/test_sbm_girr_vega.py
+      - packages/frtb-sbm/tests/test_sbm_non_girr_vega.py
+      - packages/frtb-sbm/tests/test_sbm_non_girr_vega_batch_arrow.py
+      - packages/frtb-sbm/tests/test_sbm_support_matrix.py
+    coverage_status: implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
       - levan_danelia_frtb
       - ivanshuer_frtb
-    notes: "Record option-maturity and underlying-maturity conventions explicitly."
+    notes: "BASEL_MAR21 vega is implemented for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP with row, batch, and Arrow handoff paths. Equity repo vega remains unsupported fail-closed."
 
   - id: SBM-CURVATURE-001
     topic: Curvature scenario selection and correlation treatment
@@ -75,12 +104,18 @@ requirements:
       - basel_bcbs_d457_2019_market_risk
       - basel_bcbs_d457_2019_explanatory_note
     code_refs:
-      - packages/frtb-sbm/src/frtb_sbm/
+      - packages/frtb-sbm/src/frtb_sbm/curvature.py
+      - packages/frtb-sbm/src/frtb_sbm/reference_data.py
+      - packages/frtb-sbm/src/frtb_sbm/capital.py
+      - packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py
     test_refs:
-      - packages/frtb-sbm/tests/
-    coverage_status: not_implemented
+      - packages/frtb-sbm/tests/test_curvature.py
+      - packages/frtb-sbm/tests/test_sbm_curvature_batch_arrow.py
+      - packages/frtb-sbm/tests/test_sbm_portfolio_batch_dispatcher.py
+      - packages/frtb-sbm/tests/test_sbm_support_matrix.py
+    coverage_status: implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
       - levan_danelia_frtb
       - ivanshuer_frtb
-    notes: "Explicitly record sign convention and correlation-squaring convention."
+    notes: "BASEL_MAR21 curvature is capital-producing across all seven SBM risk classes with row, batch, and Arrow handoff paths. Equity repo curvature and unsupported profile variants fail closed."
