@@ -30,10 +30,10 @@ from frtb_rrao.data_models import (
     RraoRegulatoryProfile,
 )
 from frtb_rrao.reference_data import (
-    evidence_rule_for,
-    exclusion_rule_for,
-    investment_fund_rule_for,
-    risk_weight_rule_for,
+    evidence_rules_for_profile,
+    exclusion_rules_for_profile,
+    investment_fund_rules_for_profile,
+    risk_weight_rules_for_profile,
 )
 from frtb_rrao.regimes import RraoRuleProfile, get_rrao_rule_profile
 from frtb_rrao.validation import RraoInputError, validate_rrao_positions
@@ -41,7 +41,11 @@ from frtb_rrao.validation import RraoInputError, validate_rrao_positions
 ObjectArray = npt.NDArray[np.object_]
 FloatArray = npt.NDArray[np.float64]
 BoolArray = npt.NDArray[np.bool_]
+ArrayInput = npt.NDArray[Any]
+ColumnInput = Sequence[object] | ArrayInput
+NullableColumnInput = Sequence[object | None] | ArrayInput
 EnumT = TypeVar("EnumT", bound=StrEnum)
+ArrayScalarT = TypeVar("ArrayScalarT", bound=np.generic)
 
 
 @dataclass(frozen=True)
@@ -104,6 +108,14 @@ class RraoBatchCapitalCalculation:
     risk_weights: FloatArray
     add_ons: FloatArray
     accepted_row_dataclasses_materialized: int = 0
+
+
+@dataclass(frozen=True)
+class _RraoDecisionArrays:
+    classifications: ObjectArray
+    risk_weight_keys: ObjectArray
+    reason_codes: ObjectArray
+    decision_citations: tuple[tuple[str, ...], ...]
 
 
 def build_rrao_batch_from_positions(
@@ -246,41 +258,41 @@ def build_rrao_batch_from_positions(
 
 def build_rrao_batch_from_columns(
     *,
-    position_ids: Sequence[object],
-    source_row_ids: Sequence[object],
-    desk_ids: Sequence[object],
-    legal_entities: Sequence[object],
-    gross_effective_notionals: Sequence[object],
-    currencies: Sequence[object],
-    evidence_types: Sequence[object],
-    evidence_labels: Sequence[object],
-    classification_hints: Sequence[object | None] | None = None,
-    exclusion_reasons: Sequence[object | None] | None = None,
-    exclusion_evidence_ids: Sequence[object | None] | None = None,
-    back_to_back_match_group_ids: Sequence[object | None] | None = None,
-    back_to_back_matched_position_ids: Sequence[object | None] | None = None,
-    supervisor_directive_ids: Sequence[object | None] | None = None,
-    underlying_counts: Sequence[object | None] | None = None,
-    is_path_dependents: Sequence[object | None] | None = None,
-    has_maturities: Sequence[object | None] | None = None,
-    has_strike_or_barriers: Sequence[object | None] | None = None,
-    has_multiple_strikes_or_barriers: Sequence[object | None] | None = None,
-    is_ctp_hedges: Sequence[object] | None = None,
-    is_investment_fund_exposures: Sequence[object] | None = None,
-    investment_fund_ids: Sequence[object | None] | None = None,
-    investment_fund_section_205_methods: Sequence[object | None] | None = None,
-    investment_fund_included_exposure_types: Sequence[object | None] | None = None,
-    investment_fund_mandate_evidence_ids: Sequence[object | None] | None = None,
-    investment_fund_section_205_evidence_ids: Sequence[object | None] | None = None,
-    investment_fund_gross_effective_notionals: Sequence[object | None] | None = None,
-    investment_fund_included_exposure_ratios: Sequence[object | None] | None = None,
-    investment_fund_look_through_availables: Sequence[object] | None = None,
-    investment_fund_mandate_allows_rrao_exposures: Sequence[object] | None = None,
-    notional_sources: Sequence[object] | None = None,
-    lineage_source_systems: Sequence[object] | None = None,
-    lineage_source_files: Sequence[object] | None = None,
-    lineage_source_row_ids: Sequence[object] | None = None,
-    lineage_present: Sequence[object] | None = None,
+    position_ids: ColumnInput,
+    source_row_ids: ColumnInput,
+    desk_ids: ColumnInput,
+    legal_entities: ColumnInput,
+    gross_effective_notionals: ColumnInput,
+    currencies: ColumnInput,
+    evidence_types: ColumnInput,
+    evidence_labels: ColumnInput,
+    classification_hints: NullableColumnInput | None = None,
+    exclusion_reasons: NullableColumnInput | None = None,
+    exclusion_evidence_ids: NullableColumnInput | None = None,
+    back_to_back_match_group_ids: NullableColumnInput | None = None,
+    back_to_back_matched_position_ids: NullableColumnInput | None = None,
+    supervisor_directive_ids: NullableColumnInput | None = None,
+    underlying_counts: NullableColumnInput | None = None,
+    is_path_dependents: NullableColumnInput | None = None,
+    has_maturities: NullableColumnInput | None = None,
+    has_strike_or_barriers: NullableColumnInput | None = None,
+    has_multiple_strikes_or_barriers: NullableColumnInput | None = None,
+    is_ctp_hedges: ColumnInput | None = None,
+    is_investment_fund_exposures: ColumnInput | None = None,
+    investment_fund_ids: NullableColumnInput | None = None,
+    investment_fund_section_205_methods: NullableColumnInput | None = None,
+    investment_fund_included_exposure_types: NullableColumnInput | None = None,
+    investment_fund_mandate_evidence_ids: NullableColumnInput | None = None,
+    investment_fund_section_205_evidence_ids: NullableColumnInput | None = None,
+    investment_fund_gross_effective_notionals: NullableColumnInput | None = None,
+    investment_fund_included_exposure_ratios: NullableColumnInput | None = None,
+    investment_fund_look_through_availables: ColumnInput | None = None,
+    investment_fund_mandate_allows_rrao_exposures: ColumnInput | None = None,
+    notional_sources: ColumnInput | None = None,
+    lineage_source_systems: ColumnInput | None = None,
+    lineage_source_files: ColumnInput | None = None,
+    lineage_source_row_ids: ColumnInput | None = None,
+    lineage_present: ColumnInput | None = None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
     citations: Sequence[Sequence[str]] | None = None,
     source_hash: str | None = None,
@@ -724,27 +736,47 @@ def _validate_evidence_requirements(batch: RraoPositionBatch) -> None:
 
 
 def _validate_back_to_back_match_groups(batch: RraoPositionBatch) -> None:
+    match_mask = batch.back_to_back_match_group_ids != None  # noqa: E711
+    if not bool(np.any(match_mask)):
+        return
+
+    match_indices = np.nonzero(match_mask)[0]
+    self_matches = (
+        batch.back_to_back_matched_position_ids[match_indices] == batch.position_ids[match_indices]
+    )
+    if bool(np.any(self_matches)):
+        index = int(match_indices[np.nonzero(self_matches)[0][0]])
+        raise RraoInputError(
+            "back-to-back match must reference the opposite transaction",
+            field="back_to_back_match.matched_position_id",
+            position_id=cast(str, batch.position_ids[index]),
+        )
+
+    missing_matches = ~np.isin(
+        batch.back_to_back_matched_position_ids[match_indices],
+        batch.position_ids,
+    )
+    if bool(np.any(missing_matches)):
+        index = int(match_indices[np.nonzero(missing_matches)[0][0]])
+        raise RraoInputError(
+            "back-to-back matched position is missing from input",
+            field="back_to_back_match.matched_position_id",
+            position_id=cast(str, batch.position_ids[index]),
+        )
+
     positions_by_id = {
-        cast(str, batch.position_ids[index]): index for index in range(batch.row_count)
+        cast(str, batch.position_ids[int(index)]): int(index) for index in match_indices
     }
     match_groups: dict[str, list[int]] = {}
-    for index in range(batch.row_count):
+    for raw_index in match_indices:
+        index = int(raw_index)
         match_group_id = batch.back_to_back_match_group_ids[index]
-        if match_group_id is None:
-            continue
         matched_position_id = cast(str, batch.back_to_back_matched_position_ids[index])
-        position_id = cast(str, batch.position_ids[index])
-        if matched_position_id == position_id:
-            raise RraoInputError(
-                "back-to-back match must reference the opposite transaction",
-                field="back_to_back_match.matched_position_id",
-                position_id=position_id,
-            )
         if matched_position_id not in positions_by_id:
             raise RraoInputError(
-                "back-to-back matched position is missing from input",
+                "back-to-back matched position must also carry back-to-back evidence",
                 field="back_to_back_match.matched_position_id",
-                position_id=position_id,
+                position_id=cast(str, batch.position_ids[index]),
             )
         match_groups.setdefault(cast(str, match_group_id), []).append(index)
 
@@ -941,56 +973,243 @@ def _capital_lines_from_batch(
     *,
     profile: RraoRegulatoryProfile,
 ) -> tuple[tuple[RraoCapitalLine, ...], ObjectArray, FloatArray, FloatArray]:
-    lines: list[RraoCapitalLine] = []
-    classifications: list[str] = []
-    risk_weights: list[float] = []
-    add_ons: list[float] = []
-    for index in range(batch.row_count):
-        line = _capital_line_for_index(batch, index, profile=profile)
-        lines.append(line)
-        classifications.append(line.classification.value)
-        risk_weights.append(line.risk_weight)
-        add_ons.append(line.add_on)
-    return (
-        tuple(lines),
-        _object_array(classifications, copy=True),
-        np.asarray(risk_weights, dtype=np.float64),
-        np.asarray(add_ons, dtype=np.float64),
-    )
-
-
-def _capital_line_for_index(
-    batch: RraoPositionBatch,
-    index: int,
-    *,
-    profile: RraoRegulatoryProfile,
-) -> RraoCapitalLine:
-    classification, risk_weight_key, reason_code, decision_citations = _decision_for_index(
+    decisions = _decision_arrays_for_batch(batch, profile=profile)
+    risk_weights, risk_weight_citations = _risk_weight_arrays_for_decisions(
         batch,
-        index,
+        decisions,
         profile=profile,
     )
-    risk_weight_rule = risk_weight_rule_for(profile, risk_weight_key)
-    if risk_weight_rule.classification is not classification:
-        raise RraoInputError(
-            "risk-weight classification does not match decision",
-            field="risk_weight_key",
-            position_id=cast(str, batch.position_ids[index]),
+    add_ons = batch.gross_effective_notionals * risk_weights
+    lines = tuple(
+        _capital_line_from_decision(
+            batch,
+            decisions,
+            risk_weights=risk_weights,
+            risk_weight_citations=risk_weight_citations,
+            add_ons=add_ons,
+            index=index,
         )
-    risk_weight = risk_weight_rule.risk_weight
-    add_on = float(batch.gross_effective_notionals[index]) * risk_weight
-    is_excluded = classification is RraoClassification.EXCLUDED
+        for index in range(batch.row_count)
+    )
+    return (lines, decisions.classifications, risk_weights, add_ons)
+
+
+def _decision_arrays_for_batch(
+    batch: RraoPositionBatch,
+    *,
+    profile: RraoRegulatoryProfile,
+) -> _RraoDecisionArrays:
+    row_count = batch.row_count
+    classifications = np.empty(row_count, dtype=object)
+    risk_weight_keys = np.empty(row_count, dtype=object)
+    reason_codes = np.empty(row_count, dtype=object)
+    citation_groups: list[tuple[str, ...]] = [() for _ in range(row_count)]
+    assigned = np.zeros(row_count, dtype=np.bool_)
+    hint_check_mask = np.zeros(row_count, dtype=np.bool_)
+
+    exclusion_mask = _exclusion_path_mask(batch)
+    if bool(np.any(exclusion_mask)):
+        exclusion_assigned = np.zeros(row_count, dtype=np.bool_)
+        for exclusion_rule in exclusion_rules_for_profile(profile):
+            mask = exclusion_mask & (
+                batch.exclusion_reasons == exclusion_rule.exclusion_reason.value
+            )
+            _assign_decision_mask(
+                mask,
+                classifications=classifications,
+                risk_weight_keys=risk_weight_keys,
+                reason_codes=reason_codes,
+                citation_groups=citation_groups,
+                classification=RraoClassification.EXCLUDED,
+                risk_weight_key=exclusion_rule.risk_weight_key,
+                reason_code=exclusion_rule.reason_code,
+                citation_ids=(exclusion_rule.citation_id,),
+            )
+            exclusion_assigned |= mask
+        unsupported_exclusions = exclusion_mask & ~exclusion_assigned
+        if bool(np.any(unsupported_exclusions)):
+            index = int(np.nonzero(unsupported_exclusions)[0][0])
+            raise RraoInputError(
+                f"no RRAO exclusion rule for {batch.exclusion_reasons[index]}",
+                field="exclusion_reason",
+                position_id=cast(str, batch.position_ids[index]),
+            )
+        assigned |= exclusion_assigned
+
+    fund_mask = (~assigned) & (
+        batch.evidence_types == RraoEvidenceType.INVESTMENT_FUND_EXPOSURE.value
+    )
+    if bool(np.any(fund_mask)):
+        fund_assigned = np.zeros(row_count, dtype=np.bool_)
+        for fund_rule in investment_fund_rules_for_profile(profile):
+            mask = fund_mask & (
+                batch.investment_fund_included_exposure_types
+                == fund_rule.included_exposure_type.value
+            )
+            _assign_decision_mask(
+                mask,
+                classifications=classifications,
+                risk_weight_keys=risk_weight_keys,
+                reason_codes=reason_codes,
+                citation_groups=citation_groups,
+                classification=fund_rule.classification,
+                risk_weight_key=fund_rule.risk_weight_key,
+                reason_code=fund_rule.reason_code,
+                citation_ids=fund_rule.citation_ids,
+            )
+            fund_assigned |= mask
+        unsupported_funds = fund_mask & ~fund_assigned
+        if bool(np.any(unsupported_funds)):
+            index = int(np.nonzero(unsupported_funds)[0][0])
+            raise RraoInputError(
+                (
+                    "no RRAO investment-fund rule for "
+                    f"{batch.investment_fund_included_exposure_types[index]}"
+                ),
+                field="investment_fund_descriptor.included_exposure_type",
+                position_id=cast(str, batch.position_ids[index]),
+            )
+        assigned |= fund_assigned
+        hint_check_mask |= fund_assigned
+
+    evidence_mask = ~assigned
+    if bool(np.any(evidence_mask)):
+        evidence_assigned = np.zeros(row_count, dtype=np.bool_)
+        for evidence_rule in evidence_rules_for_profile(profile):
+            mask = evidence_mask & (batch.evidence_types == evidence_rule.evidence_type.value)
+            _assign_decision_mask(
+                mask,
+                classifications=classifications,
+                risk_weight_keys=risk_weight_keys,
+                reason_codes=reason_codes,
+                citation_groups=citation_groups,
+                classification=evidence_rule.classification,
+                risk_weight_key=evidence_rule.risk_weight_key,
+                reason_code=evidence_rule.reason_code,
+                citation_ids=(evidence_rule.citation_id,),
+            )
+            evidence_assigned |= mask
+        unsupported_evidence = evidence_mask & ~evidence_assigned
+        if bool(np.any(unsupported_evidence)):
+            index = int(np.nonzero(unsupported_evidence)[0][0])
+            raise RraoInputError(
+                f"no RRAO evidence rule for {batch.evidence_types[index]}",
+                field="evidence_type",
+                position_id=cast(str, batch.position_ids[index]),
+            )
+        assigned |= evidence_assigned
+        hint_check_mask |= evidence_assigned
+
+    _validate_hint_compatibility(batch, classifications, mask=hint_check_mask)
+    return _RraoDecisionArrays(
+        classifications=_object_array(classifications, copy=False),
+        risk_weight_keys=_object_array(risk_weight_keys, copy=False),
+        reason_codes=_object_array(reason_codes, copy=False),
+        decision_citations=tuple(citation_groups),
+    )
+
+
+def _assign_decision_mask(
+    mask: npt.NDArray[np.bool_],
+    *,
+    classifications: ObjectArray,
+    risk_weight_keys: ObjectArray,
+    reason_codes: ObjectArray,
+    citation_groups: list[tuple[str, ...]],
+    classification: RraoClassification,
+    risk_weight_key: str,
+    reason_code: str,
+    citation_ids: tuple[str, ...],
+) -> None:
+    if not bool(np.any(mask)):
+        return
+    classifications[mask] = classification.value
+    risk_weight_keys[mask] = risk_weight_key
+    reason_codes[mask] = reason_code
+    for index in np.nonzero(mask)[0]:
+        citation_groups[int(index)] = citation_ids
+
+
+def _validate_hint_compatibility(
+    batch: RraoPositionBatch,
+    classifications: ObjectArray,
+    *,
+    mask: npt.NDArray[np.bool_],
+) -> None:
+    has_hint = mask & (batch.classification_hints != None)  # noqa: E711
+    conflicts = has_hint & (batch.classification_hints != classifications)
+    if not bool(np.any(conflicts)):
+        return
+    index = int(np.nonzero(conflicts)[0][0])
+    raise RraoInputError(
+        (
+            "classification hint conflicts with profile evidence rule: "
+            f"{batch.classification_hints[index]} != {classifications[index]}"
+        ),
+        field="classification_hint",
+        position_id=cast(str, batch.position_ids[index]),
+    )
+
+
+def _risk_weight_arrays_for_decisions(
+    batch: RraoPositionBatch,
+    decisions: _RraoDecisionArrays,
+    *,
+    profile: RraoRegulatoryProfile,
+) -> tuple[FloatArray, tuple[str, ...]]:
+    risk_weights = np.empty(batch.row_count, dtype=np.float64)
+    risk_weight_citations: list[str] = [""] * batch.row_count
+    assigned = np.zeros(batch.row_count, dtype=np.bool_)
+    for rule in risk_weight_rules_for_profile(profile):
+        mask = decisions.risk_weight_keys == rule.key
+        if not bool(np.any(mask)):
+            continue
+        mismatch = mask & (decisions.classifications != rule.classification.value)
+        if bool(np.any(mismatch)):
+            raise RraoInputError(
+                "risk-weight classification does not match decision",
+                field="risk_weight_key",
+                position_id=_position_id_at_first(batch, mismatch),
+            )
+        risk_weights[mask] = rule.risk_weight
+        for index in np.nonzero(mask)[0]:
+            risk_weight_citations[int(index)] = rule.citation_id
+        assigned |= mask
+    if bool(np.any(~assigned)):
+        missing_index = int(np.nonzero(~assigned)[0][0])
+        raise RraoInputError(
+            f"no RRAO risk-weight rule for {decisions.risk_weight_keys[missing_index]}",
+            field="risk_weight_key",
+            position_id=cast(str, batch.position_ids[missing_index]),
+        )
+    return _readonly_array(risk_weights, copy=False), tuple(risk_weight_citations)
+
+
+def _capital_line_from_decision(
+    batch: RraoPositionBatch,
+    decisions: _RraoDecisionArrays,
+    *,
+    risk_weights: FloatArray,
+    risk_weight_citations: tuple[str, ...],
+    add_ons: FloatArray,
+    index: int,
+) -> RraoCapitalLine:
+    classification = RraoClassification(cast(str, decisions.classifications[index]))
     return RraoCapitalLine(
         position_id=cast(str, batch.position_ids[index]),
         classification=classification,
         evidence_type=RraoEvidenceType(cast(str, batch.evidence_types[index])),
         gross_effective_notional=float(batch.gross_effective_notionals[index]),
-        risk_weight=risk_weight,
-        add_on=add_on,
+        risk_weight=float(risk_weights[index]),
+        add_on=float(add_ons[index]),
         currency=cast(str, batch.currencies[index]),
-        is_excluded=is_excluded,
-        reason_code=reason_code,
-        citations=_merged_citation_ids(decision_citations, (risk_weight_rule.citation_id,)),
+        is_excluded=classification is RraoClassification.EXCLUDED,
+        reason_code=cast(str, decisions.reason_codes[index]),
+        citations=_merged_citation_ids(
+            decisions.decision_citations[index],
+            batch.citations[index],
+            (risk_weight_citations[index],),
+        ),
         desk_id=cast(str, batch.desk_ids[index]),
         legal_entity=cast(str, batch.legal_entities[index]),
         source_row_id=cast(str, batch.source_row_ids[index]),
@@ -1003,73 +1222,12 @@ def _capital_line_for_index(
     )
 
 
-def _decision_for_index(
-    batch: RraoPositionBatch,
-    index: int,
-    *,
-    profile: RraoRegulatoryProfile,
-) -> tuple[RraoClassification, str, str, tuple[str, ...]]:
-    if _is_exclusion_path(batch, index):
-        exclusion_reason = RraoExclusionReason(cast(str, batch.exclusion_reasons[index]))
-        exclusion_rule = exclusion_rule_for(profile, exclusion_reason)
-        return (
-            RraoClassification.EXCLUDED,
-            exclusion_rule.risk_weight_key,
-            exclusion_rule.reason_code,
-            _merged_citation_ids((exclusion_rule.citation_id,), batch.citations[index]),
-        )
-
-    evidence_type = RraoEvidenceType(cast(str, batch.evidence_types[index]))
-    if evidence_type is RraoEvidenceType.INVESTMENT_FUND_EXPOSURE:
-        investment_fund_rule = investment_fund_rule_for(
-            profile,
-            RraoInvestmentFundExposureType(
-                cast(str, batch.investment_fund_included_exposure_types[index])
-            ),
-        )
-        _check_hint_compatibility(batch, index, investment_fund_rule.classification)
-        return (
-            investment_fund_rule.classification,
-            investment_fund_rule.risk_weight_key,
-            investment_fund_rule.reason_code,
-            _merged_citation_ids(investment_fund_rule.citation_ids, batch.citations[index]),
-        )
-
-    evidence_rule = evidence_rule_for(profile, evidence_type)
-    _check_hint_compatibility(batch, index, evidence_rule.classification)
-    return (
-        evidence_rule.classification,
-        evidence_rule.risk_weight_key,
-        evidence_rule.reason_code,
-        _merged_citation_ids((evidence_rule.citation_id,), batch.citations[index]),
-    )
-
-
-def _check_hint_compatibility(
-    batch: RraoPositionBatch,
-    index: int,
-    classification: RraoClassification,
-) -> None:
-    hint = batch.classification_hints[index]
-    if hint is None:
-        return
-    if RraoClassification(cast(str, hint)) is classification:
-        return
-    raise RraoInputError(
-        (
-            "classification hint conflicts with profile evidence rule: "
-            f"{hint} != {classification.value}"
-        ),
-        field="classification_hint",
-        position_id=cast(str, batch.position_ids[index]),
-    )
-
-
-def _is_exclusion_path(batch: RraoPositionBatch, index: int) -> bool:
-    return (
-        batch.classification_hints[index] == RraoClassification.EXCLUDED.value
-        or batch.exclusion_reasons[index] is not None
-        or batch.evidence_types[index] == RraoEvidenceType.EXPLICIT_EXCLUSION.value
+def _exclusion_path_mask(batch: RraoPositionBatch) -> npt.NDArray[np.bool_]:
+    return cast(
+        npt.NDArray[np.bool_],
+        (batch.classification_hints == RraoClassification.EXCLUDED.value)
+        | (batch.exclusion_reasons != None)  # noqa: E711
+        | (batch.evidence_types == RraoEvidenceType.EXPLICIT_EXCLUSION.value),
     )
 
 
@@ -1179,7 +1337,7 @@ def _merged_citation_ids(*citation_groups: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(merged)
 
 
-def _require_lengths(row_count: int, **columns: Sequence[object]) -> None:
+def _require_lengths(row_count: int, **columns: ColumnInput) -> None:
     for name, values in columns.items():
         if len(values) != row_count:
             raise RraoInputError(f"{name} length does not match position_ids", field=name)
@@ -1234,7 +1392,7 @@ def _require_text_where(
 
 
 def _required_text_array(
-    values: Sequence[object | None],
+    values: NullableColumnInput,
     field_name: str,
     *,
     copy: bool,
@@ -1243,7 +1401,7 @@ def _required_text_array(
 
 
 def _optional_text_array(
-    values: Sequence[object | None] | None,
+    values: NullableColumnInput | None,
     row_count: int,
     *,
     copy: bool,
@@ -1254,7 +1412,7 @@ def _optional_text_array(
 
 
 def _text_array_with_default(
-    values: Sequence[object] | None,
+    values: ColumnInput | None,
     row_count: int,
     *,
     default: str,
@@ -1266,7 +1424,7 @@ def _text_array_with_default(
 
 
 def _enum_array(
-    values: Sequence[object | None],
+    values: NullableColumnInput,
     enum_type: type[EnumT],
     field_name: str,
     *,
@@ -1279,7 +1437,7 @@ def _enum_array(
 
 
 def _optional_enum_array(
-    values: Sequence[object | None] | None,
+    values: NullableColumnInput | None,
     row_count: int,
     enum_type: type[EnumT],
     field_name: str,
@@ -1300,36 +1458,35 @@ def _optional_enum_array(
 
 
 def _required_float_array(
-    values: Sequence[object],
+    values: ColumnInput,
     field_name: str,
     *,
     copy: bool,
 ) -> FloatArray:
+    fast_array = _float_array_from_numpy(values, copy=copy)
+    if fast_array is not None:
+        return fast_array
     array = np.asarray([_required_float(value, field_name) for value in values], dtype=np.float64)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
 
 
 def _optional_float_array(
-    values: Sequence[object | None] | None,
+    values: NullableColumnInput | None,
     row_count: int,
     *,
     copy: bool,
 ) -> FloatArray:
     if values is None:
         array = np.full(row_count, np.nan, dtype=np.float64)
+    elif (fast_array := _float_array_from_numpy(values, copy=copy)) is not None:
+        return fast_array
     else:
         array = np.asarray([_optional_float(value) for value in values], dtype=np.float64)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
 
 
 def _optional_int_array(
-    values: Sequence[object | None] | None,
+    values: NullableColumnInput | None,
     row_count: int,
     *,
     copy: bool,
@@ -1340,7 +1497,7 @@ def _optional_int_array(
 
 
 def _bool_array(
-    values: Sequence[object] | None,
+    values: ColumnInput | None,
     row_count: int,
     *,
     default: bool,
@@ -1348,16 +1505,15 @@ def _bool_array(
 ) -> BoolArray:
     if values is None:
         array = np.full(row_count, default, dtype=np.bool_)
+    elif isinstance(values, np.ndarray) and values.dtype == np.bool_:
+        array = np.asarray(values, dtype=np.bool_)
     else:
         array = np.asarray([_bool_value(value) for value in values], dtype=np.bool_)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
 
 
 def _optional_bool_object_array(
-    values: Sequence[object | None] | None,
+    values: NullableColumnInput | None,
     row_count: int,
     *,
     copy: bool,
@@ -1367,12 +1523,30 @@ def _optional_bool_object_array(
     return _object_array([_optional_bool_value(value) for value in values], copy=copy)
 
 
-def _object_array(values: Sequence[object | None], *, copy: bool) -> ObjectArray:
+def _float_array_from_numpy(
+    values: ColumnInput | NullableColumnInput,
+    *,
+    copy: bool,
+) -> FloatArray | None:
+    if not isinstance(values, np.ndarray) or values.dtype.kind not in {"f", "i", "u"}:
+        return None
+    array = np.asarray(values, dtype=np.float64)
+    return _readonly_array(array, copy=copy)
+
+
+def _object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
     array = np.asarray(values, dtype=object)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
+
+
+def _readonly_array(
+    array: npt.NDArray[ArrayScalarT],
+    *,
+    copy: bool,
+) -> npt.NDArray[ArrayScalarT]:
+    frozen = array.copy() if copy else array.view()
+    frozen.setflags(write=False)
+    return frozen
 
 
 def _immutable_object_array(values: ObjectArray) -> ObjectArray:

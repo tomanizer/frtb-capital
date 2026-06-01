@@ -97,6 +97,63 @@ def test_rrao_arrow_handoff_batch_matches_v1_row_capital() -> None:
     )
 
 
+def test_rrao_arrow_handoff_uses_zero_copy_float64_columns_when_possible() -> None:
+    loader = _load_fixture_module()
+    positions = loader.load_fixture_positions()
+    handoff = normalize_rrao_arrow_table(_arrow_table(positions))
+
+    batch = build_rrao_batch_from_handoff(handoff)
+
+    gross_notional_view = (
+        handoff.accepted.column("gross_effective_notional").chunk(0).to_numpy(zero_copy_only=True)
+    )
+    assert np.shares_memory(batch.gross_effective_notionals, gross_notional_view)
+    np.testing.assert_allclose(
+        batch.gross_effective_notionals,
+        [position.gross_effective_notional for position in positions],
+    )
+
+
+def test_rrao_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
+    payload = _minimal_column_payload(row_count=4)
+    plain_table = pa.table(
+        {
+            "position_id": payload["position_ids"],
+            "source_row_id": payload["source_row_ids"],
+            "desk_id": payload["desk_ids"],
+            "legal_entity": payload["legal_entities"],
+            "gross_effective_notional": payload["gross_effective_notionals"],
+            "currency": payload["currencies"],
+            "evidence_type": payload["evidence_types"],
+            "evidence_label": payload["evidence_labels"],
+            "classification_hint": payload["classification_hints"],
+            "lineage_source_system": payload["lineage_source_systems"],
+            "lineage_source_file": payload["lineage_source_files"],
+        }
+    )
+    table = pa.concat_tables(
+        [
+            _dictionary_encoded_text_table(plain_table.slice(0, 2)),
+            _dictionary_encoded_text_table(plain_table.slice(2, 2)),
+        ]
+    )
+    column_batch = build_rrao_batch_from_columns(**payload)
+
+    arrow_batch = build_rrao_batch_from_handoff(normalize_rrao_arrow_table(table))
+
+    assert table.column("evidence_type").num_chunks == 2
+    assert pa.types.is_dictionary(table.column("evidence_type").type)
+    assert arrow_batch.input_hash == column_batch.input_hash
+    np.testing.assert_array_equal(
+        arrow_batch.position_ids,
+        payload["position_ids"],
+    )
+    np.testing.assert_array_equal(
+        arrow_batch.evidence_types,
+        payload["evidence_types"],
+    )
+
+
 def test_rrao_arrow_handoff_batch_matches_investment_fund_row_capital() -> None:
     position = _investment_fund_position()
     context = _sample_context()
@@ -180,6 +237,46 @@ def test_rrao_column_batch_high_volume_path_reports_zero_row_dataclasses() -> No
     assert calculation.accepted_row_dataclasses_materialized == 0
     assert len(calculation.result.lines) == row_count
     assert calculation.result.excluded_lines == ()
+
+
+def test_rrao_batch_decision_lookup_uses_profile_masks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import frtb_rrao.batch as batch_module
+
+    batch = build_rrao_batch_from_columns(**_minimal_column_payload(row_count=250))
+    calls: list[object] = []
+    original_evidence_rules = batch_module.evidence_rules_for_profile
+
+    def counting_evidence_rules(*args: object, **kwargs: object) -> object:
+        calls.append((args, kwargs))
+        return original_evidence_rules(*args, **kwargs)
+
+    monkeypatch.setattr(batch_module, "evidence_rules_for_profile", counting_evidence_rules)
+
+    calculation = calculate_rrao_capital_from_batch(batch, context=_sample_context())
+
+    assert calculation.accepted_row_dataclasses_materialized == 0
+    assert len(calls) == 1
+    assert len(calculation.result.lines) == 250
+
+
+def test_rrao_column_batch_copy_false_does_not_freeze_caller_numpy_arrays() -> None:
+    gross_notionals = np.array([100_000.0, 200_000.0], dtype=np.float64)
+    is_ctp_hedges = np.array([False, True], dtype=np.bool_)
+    columns = _minimal_column_payload(row_count=2) | {
+        "gross_effective_notionals": gross_notionals,
+        "is_ctp_hedges": is_ctp_hedges,
+    }
+
+    batch = build_rrao_batch_from_columns(**columns, copy_arrays=False)
+
+    assert gross_notionals.flags.writeable
+    assert is_ctp_hedges.flags.writeable
+    assert not batch.gross_effective_notionals.flags.writeable
+    assert not batch.is_ctp_hedges.flags.writeable
+    assert np.shares_memory(batch.gross_effective_notionals, gross_notionals)
+    assert np.shares_memory(batch.is_ctp_hedges, is_ctp_hedges)
 
 
 def test_rrao_handoff_preserves_diagnostics_for_rejected_rows() -> None:
@@ -641,6 +738,17 @@ def _arrow_table(positions: tuple[RraoPosition, ...]) -> pa.Table:
             "citations": [",".join(position.citations) for position in positions],
         }
     )
+
+
+def _dictionary_encoded_text_table(table: pa.Table) -> pa.Table:
+    columns: list[pa.ChunkedArray] = []
+    for column_name in table.column_names:
+        column = table.column(column_name)
+        if pa.types.is_string(column.type):
+            columns.append(pa.chunked_array([column.combine_chunks().dictionary_encode()]))
+            continue
+        columns.append(column)
+    return pa.table(columns, names=table.column_names)
 
 
 def _line_outputs(records: object) -> dict[str, object]:
