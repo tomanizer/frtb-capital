@@ -109,6 +109,18 @@ BASEL_MAR50_CITATIONS: dict[str, CvaCitation] = {
         url=BASEL_MAR50_URL,
         note="Full BA-CVA supervisory floor with beta=0.25.",
     ),
+    "basel_mar50_32_1": CvaCitation(
+        source_id="basel_mar50_cva_framework",
+        paragraph="MAR50.32(1)",
+        url=BASEL_MAR50_URL,
+        note="Positive regulatory CVA convention for SA-CVA sensitivity inputs.",
+    ),
+    "basel_mar50_52": CvaCitation(
+        source_id="basel_mar50_cva_framework",
+        paragraph="MAR50.52",
+        url=BASEL_MAR50_URL,
+        note="SA-CVA weighted sensitivity netting of CVA and eligible hedge sensitivities.",
+    ),
     "basel_mar50_54": CvaCitation(
         source_id="basel_mar50_cva_framework",
         paragraph="MAR50.54",

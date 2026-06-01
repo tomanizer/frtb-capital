@@ -1,18 +1,352 @@
 {
   "single_usd_5y": {
     "total_cva_capital": 7400.0,
-    "input_hash": "9afd22670f2a8b5f96a80e0909f4afdd315e0fa83817d1f9493275eef4ee35d7"
+    "input_hash": "9afd22670f2a8b5f96a80e0909f4afdd315e0fa83817d1f9493275eef4ee35d7",
+    "weighted_sensitivities": [
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "bucket_id": "USD",
+        "risk_factor_key": "5y",
+        "tenor": "5y",
+        "gross_cva_amount": 1000000.0,
+        "gross_hedge_amount": 0.0,
+        "net_amount": 1000000.0,
+        "risk_weight": 0.0074,
+        "weighted_cva": 7400.0,
+        "weighted_hedge": 0.0,
+        "weighted_net": 7400.0,
+        "source_sensitivity_ids": [
+          "sens-usd-5y"
+        ],
+        "citations": [
+          "basel_mar50_56",
+          "basel_mar50_52"
+        ]
+      }
+    ],
+    "sa_cva_risk_class_capitals": [
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "pre_multiplier_capital": 7400.0,
+        "post_multiplier_capital": 7400.0,
+        "m_cva": 1.0,
+        "citations": [
+          "basel_mar50_53"
+        ],
+        "bucket_capitals": [
+          {
+            "bucket_id": "USD",
+            "risk_class": "GIRR",
+            "risk_measure": "DELTA",
+            "k_b": 7400.0,
+            "s_b": 7400.0,
+            "sensitivity_ids": [
+              "sens-usd-5y"
+            ],
+            "citations": [
+              "basel_mar50_53",
+              "basel_mar50_56"
+            ],
+            "branch_metadata": [
+              [
+                "floor_applied",
+                "False"
+              ]
+            ]
+          }
+        ]
+      }
+    ]
   },
   "usd_eur_two_bucket": {
     "total_cva_capital": 9789.279850938985,
-    "input_hash": "59d53f6df64caf1307d2b291ff111b391e9bcca3357b082f34797e552fe3265c"
+    "input_hash": "59d53f6df64caf1307d2b291ff111b391e9bcca3357b082f34797e552fe3265c",
+    "weighted_sensitivities": [
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "bucket_id": "EUR",
+        "risk_factor_key": "5y",
+        "tenor": "5y",
+        "gross_cva_amount": 500000.0,
+        "gross_hedge_amount": 0.0,
+        "net_amount": 500000.0,
+        "risk_weight": 0.0074,
+        "weighted_cva": 3700.0,
+        "weighted_hedge": 0.0,
+        "weighted_net": 3700.0,
+        "source_sensitivity_ids": [
+          "sens-eur-5y"
+        ],
+        "citations": [
+          "basel_mar50_56",
+          "basel_mar50_52"
+        ]
+      },
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "bucket_id": "USD",
+        "risk_factor_key": "5y",
+        "tenor": "5y",
+        "gross_cva_amount": 1000000.0,
+        "gross_hedge_amount": 0.0,
+        "net_amount": 1000000.0,
+        "risk_weight": 0.0074,
+        "weighted_cva": 7400.0,
+        "weighted_hedge": 0.0,
+        "weighted_net": 7400.0,
+        "source_sensitivity_ids": [
+          "sens-usd-5y"
+        ],
+        "citations": [
+          "basel_mar50_56",
+          "basel_mar50_52"
+        ]
+      }
+    ],
+    "sa_cva_risk_class_capitals": [
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "pre_multiplier_capital": 9789.279850938985,
+        "post_multiplier_capital": 9789.279850938985,
+        "m_cva": 1.0,
+        "citations": [
+          "basel_mar50_55",
+          "basel_mar50_53"
+        ],
+        "bucket_capitals": [
+          {
+            "bucket_id": "EUR",
+            "risk_class": "GIRR",
+            "risk_measure": "DELTA",
+            "k_b": 3700.0,
+            "s_b": 3700.0,
+            "sensitivity_ids": [
+              "sens-eur-5y"
+            ],
+            "citations": [
+              "basel_mar50_53",
+              "basel_mar50_56"
+            ],
+            "branch_metadata": [
+              [
+                "floor_applied",
+                "False"
+              ]
+            ]
+          },
+          {
+            "bucket_id": "USD",
+            "risk_class": "GIRR",
+            "risk_measure": "DELTA",
+            "k_b": 7400.0,
+            "s_b": 7400.0,
+            "sensitivity_ids": [
+              "sens-usd-5y"
+            ],
+            "citations": [
+              "basel_mar50_53",
+              "basel_mar50_56"
+            ],
+            "branch_metadata": [
+              [
+                "floor_applied",
+                "False"
+              ]
+            ]
+          }
+        ]
+      }
+    ]
   },
   "offsetting_hedge": {
     "total_cva_capital": 740.0,
-    "input_hash": "7afd2e83774cd7abf2c20c33d4f5edc21f29d5c6b7fadae9cdb116aa0145ad8e"
+    "input_hash": "7afd2e83774cd7abf2c20c33d4f5edc21f29d5c6b7fadae9cdb116aa0145ad8e",
+    "weighted_sensitivities": [
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "bucket_id": "USD",
+        "risk_factor_key": "5y",
+        "tenor": "5y",
+        "gross_cva_amount": 1000000.0,
+        "gross_hedge_amount": 1000000.0,
+        "net_amount": 0.0,
+        "risk_weight": 0.0074,
+        "weighted_cva": 7400.0,
+        "weighted_hedge": 7400.0,
+        "weighted_net": 0.0,
+        "source_sensitivity_ids": [
+          "sens-hdg-usd-5y",
+          "sens-usd-5y"
+        ],
+        "citations": [
+          "basel_mar50_56",
+          "basel_mar50_52"
+        ]
+      }
+    ],
+    "sa_cva_risk_class_capitals": [
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "pre_multiplier_capital": 740.0,
+        "post_multiplier_capital": 740.0,
+        "m_cva": 1.0,
+        "citations": [
+          "basel_mar50_53"
+        ],
+        "bucket_capitals": [
+          {
+            "bucket_id": "USD",
+            "risk_class": "GIRR",
+            "risk_measure": "DELTA",
+            "k_b": 740.0,
+            "s_b": 0.0,
+            "sensitivity_ids": [
+              "sens-hdg-usd-5y",
+              "sens-usd-5y"
+            ],
+            "citations": [
+              "basel_mar50_53",
+              "basel_mar50_56"
+            ],
+            "branch_metadata": [
+              [
+                "floor_applied",
+                "False"
+              ]
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "ineligible_hedge_rejected": {
+    "total_cva_capital": 7400.0,
+    "input_hash": "9987aaa783a54a039d62d623adbb207ad6ba72261579a0c269fafb1113d7f4f3",
+    "weighted_sensitivities": [
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "bucket_id": "USD",
+        "risk_factor_key": "5y",
+        "tenor": "5y",
+        "gross_cva_amount": 1000000.0,
+        "gross_hedge_amount": 0.0,
+        "net_amount": 1000000.0,
+        "risk_weight": 0.0074,
+        "weighted_cva": 7400.0,
+        "weighted_hedge": 0.0,
+        "weighted_net": 7400.0,
+        "source_sensitivity_ids": [
+          "sens-usd-5y-ineligible-cva"
+        ],
+        "citations": [
+          "basel_mar50_56",
+          "basel_mar50_52"
+        ]
+      }
+    ],
+    "sa_cva_risk_class_capitals": [
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "pre_multiplier_capital": 7400.0,
+        "post_multiplier_capital": 7400.0,
+        "m_cva": 1.0,
+        "citations": [
+          "basel_mar50_53"
+        ],
+        "bucket_capitals": [
+          {
+            "bucket_id": "USD",
+            "risk_class": "GIRR",
+            "risk_measure": "DELTA",
+            "k_b": 7400.0,
+            "s_b": 7400.0,
+            "sensitivity_ids": [
+              "sens-usd-5y-ineligible-cva"
+            ],
+            "citations": [
+              "basel_mar50_53",
+              "basel_mar50_56"
+            ],
+            "branch_metadata": [
+              [
+                "floor_applied",
+                "False"
+              ]
+            ]
+          }
+        ]
+      }
+    ]
   },
   "chf_other_currency": {
     "total_cva_capital": 10360.0,
-    "input_hash": "d489bddfd17c6ad1ecc97bc95e45234f207f74cbe79ead815763e35f044cc849"
+    "input_hash": "d489bddfd17c6ad1ecc97bc95e45234f207f74cbe79ead815763e35f044cc849",
+    "weighted_sensitivities": [
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "bucket_id": "CHF",
+        "risk_factor_key": "5y",
+        "tenor": "5y",
+        "gross_cva_amount": 1000000.0,
+        "gross_hedge_amount": 0.0,
+        "net_amount": 1000000.0,
+        "risk_weight": 0.01036,
+        "weighted_cva": 10360.0,
+        "weighted_hedge": 0.0,
+        "weighted_net": 10360.0,
+        "source_sensitivity_ids": [
+          "sens-chf-5y"
+        ],
+        "citations": [
+          "basel_mar50_56",
+          "basel_mar50_57",
+          "basel_mar50_52"
+        ]
+      }
+    ],
+    "sa_cva_risk_class_capitals": [
+      {
+        "risk_class": "GIRR",
+        "risk_measure": "DELTA",
+        "pre_multiplier_capital": 10360.0,
+        "post_multiplier_capital": 10360.0,
+        "m_cva": 1.0,
+        "citations": [
+          "basel_mar50_53"
+        ],
+        "bucket_capitals": [
+          {
+            "bucket_id": "CHF",
+            "risk_class": "GIRR",
+            "risk_measure": "DELTA",
+            "k_b": 10360.0,
+            "s_b": 10360.0,
+            "sensitivity_ids": [
+              "sens-chf-5y"
+            ],
+            "citations": [
+              "basel_mar50_53",
+              "basel_mar50_56"
+            ],
+            "branch_metadata": [
+              [
+                "floor_applied",
+                "False"
+              ]
+            ]
+          }
+        ]
+      }
+    ]
   }
 }
