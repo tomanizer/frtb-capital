@@ -11,18 +11,21 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
+from typing import cast
 
 import numpy as np
 import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
     NormalizedTabularHandoff,
     NullPolicy,
     TabularLogicalType,
+    UnsupportedRegulatoryFeatureError,
     normalize_arrow_table,
     normalized_handoff_hash,
     validate_arrow_table,
@@ -62,14 +65,16 @@ from frtb_sbm.capital import (
     calculate_sbm_capital_from_girr_curvature_batch,
     calculate_sbm_capital_from_girr_delta_batch,
     calculate_sbm_capital_from_girr_vega_batch,
+    calculate_sbm_portfolio_capital_from_batches,
 )
 from frtb_sbm.data_models import (
+    SbmBatchPortfolioCalculation,
     SbmCalculationContext,
     SbmCapitalResult,
     SbmRiskClass,
     SbmRiskMeasure,
 )
-from frtb_sbm.validation import SbmInputError
+from frtb_sbm.validation import SbmInputError, coerce_risk_class, coerce_risk_measure
 
 GIRR_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec(
@@ -1611,6 +1616,148 @@ def calculate_sbm_capital_from_csr_sec_ctp_curvature_handoff(
     return calculate_sbm_capital_from_csr_sec_ctp_curvature_batch(batch, context=context)
 
 
+def calculate_sbm_portfolio_capital_from_handoffs(
+    handoffs: object | None = None,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmBatchPortfolioCalculation:
+    """
+    Calculate portfolio-level SBM capital from normalized Arrow handoffs.
+
+    Each handoff must be homogeneous by ``risk_class`` and ``risk_measure``.
+    The dispatcher infers the path from Arrow metadata, builds package-owned
+    batches, and delegates to the batch portfolio dispatcher without accepted
+    input-row dataclass materialization.
+    """
+
+    if handoffs is None:
+        raise SbmInputError("handoffs are required", field="handoffs")
+    batches = tuple(
+        _build_portfolio_dispatch_batch_from_handoff(handoff, index=index)
+        for index, handoff in enumerate(_coerce_handoff_sequence(handoffs), start=1)
+    )
+    return calculate_sbm_portfolio_capital_from_batches(batches, context=context)
+
+
+def _coerce_handoff_sequence(handoffs: object) -> tuple[NormalizedTabularHandoff, ...]:
+    if isinstance(handoffs, NormalizedTabularHandoff):
+        return (handoffs,)
+    try:
+        candidates: tuple[object, ...] = tuple(handoffs)  # type: ignore[arg-type]
+    except TypeError as exc:
+        raise SbmInputError(
+            "handoffs must be an iterable of NormalizedTabularHandoff objects"
+        ) from exc
+    if not candidates:
+        raise SbmInputError("handoffs must not be empty", field="handoffs")
+    for candidate in candidates:
+        if not isinstance(candidate, NormalizedTabularHandoff):
+            raise SbmInputError("handoffs must contain only NormalizedTabularHandoff objects")
+    return cast(tuple[NormalizedTabularHandoff, ...], candidates)
+
+
+def _build_portfolio_dispatch_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    index: int,
+) -> SbmSensitivityBatch:
+    path = _homogeneous_handoff_path(handoff, index=index)
+    builder = _HANDOFF_BATCH_BUILDERS.get(path)
+    if builder is None:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm Arrow portfolio dispatcher does not support "
+            f"risk_class={path[0].value}, risk_measure={path[1].value}"
+        )
+    return builder(handoff)
+
+
+def _homogeneous_handoff_path(
+    handoff: NormalizedTabularHandoff,
+    *,
+    index: int,
+) -> tuple[SbmRiskClass, SbmRiskMeasure]:
+    table = handoff.accepted
+    if table.num_rows == 0:
+        raise SbmInputError(
+            f"handoff {index} accepted table must not be empty",
+            field="handoff",
+        )
+    risk_class_values = _unique_handoff_text_values(table, "risk_class", index=index)
+    risk_measure_values = _unique_handoff_text_values(table, "risk_measure", index=index)
+    if len(risk_class_values) != 1 or len(risk_measure_values) != 1:
+        raise SbmInputError(
+            f"handoff {index} must be homogeneous by risk_class and risk_measure",
+            field="handoff",
+        )
+    return (
+        coerce_risk_class(risk_class_values[0]),
+        coerce_risk_measure(risk_measure_values[0]),
+    )
+
+
+def _unique_handoff_text_values(
+    table: pa.Table,
+    column_name: str,
+    *,
+    index: int,
+) -> tuple[str, ...]:
+    if column_name not in table.column_names:
+        raise SbmInputError(
+            f"handoff {index} required column {column_name!r} is missing",
+            field=column_name,
+        )
+    unique_values = pc.drop_null(pc.unique(table[column_name]))
+    text_values = tuple(
+        str(unique_values[item_index].as_py()) for item_index in range(len(unique_values))
+    )
+    if not text_values:
+        raise SbmInputError(
+            f"handoff {index} {column_name} must contain one non-null value",
+            field=column_name,
+        )
+    return text_values
+
+
+_HANDOFF_BATCH_BUILDERS: Mapping[
+    tuple[SbmRiskClass, SbmRiskMeasure],
+    Callable[[NormalizedTabularHandoff], SbmSensitivityBatch],
+] = {
+    (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA): build_girr_delta_batch_from_handoff,
+    (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA): build_girr_vega_batch_from_handoff,
+    (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE): build_girr_curvature_batch_from_handoff,
+    (SbmRiskClass.FX, SbmRiskMeasure.DELTA): build_fx_delta_batch_from_handoff,
+    (SbmRiskClass.FX, SbmRiskMeasure.VEGA): build_fx_vega_batch_from_handoff,
+    (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE): build_fx_curvature_batch_from_handoff,
+    (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA): build_equity_delta_batch_from_handoff,
+    (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA): build_equity_vega_batch_from_handoff,
+    (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE): (build_equity_curvature_batch_from_handoff),
+    (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA): build_commodity_delta_batch_from_handoff,
+    (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA): build_commodity_vega_batch_from_handoff,
+    (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE): (
+        build_commodity_curvature_batch_from_handoff
+    ),
+    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA): build_csr_nonsec_delta_batch_from_handoff,
+    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA): build_csr_nonsec_vega_batch_from_handoff,
+    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE): (
+        build_csr_nonsec_curvature_batch_from_handoff
+    ),
+    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA): (
+        build_csr_sec_nonctp_delta_batch_from_handoff
+    ),
+    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA): (
+        build_csr_sec_nonctp_vega_batch_from_handoff
+    ),
+    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE): (
+        build_csr_sec_nonctp_curvature_batch_from_handoff
+    ),
+    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA): (build_csr_sec_ctp_delta_batch_from_handoff),
+    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA): build_csr_sec_ctp_vega_batch_from_handoff,
+    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE): (
+        build_csr_sec_ctp_curvature_batch_from_handoff
+    ),
+}
+
+
 def _required_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np.object_]:
     return _object_column(table, column_name, required=True)  # type: ignore[return-value]
 
@@ -1728,6 +1875,7 @@ __all__ = [
     "calculate_sbm_capital_from_girr_curvature_handoff",
     "calculate_sbm_capital_from_girr_delta_handoff",
     "calculate_sbm_capital_from_girr_vega_handoff",
+    "calculate_sbm_portfolio_capital_from_handoffs",
     "normalize_commodity_curvature_arrow_table",
     "normalize_commodity_delta_arrow_table",
     "normalize_commodity_vega_arrow_table",
