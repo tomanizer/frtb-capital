@@ -19,7 +19,7 @@ uv run python benchmarks/sbm_adapter_harness.py \
 
 ## Baseline
 
-Baseline generated: 2026-06-01T03:54:16.475463+00:00.
+Baseline generated: 2026-06-01T06:54:12.206389+00:00.
 
 Environment: macOS-26.5 arm64, Python 3.11.15. The baseline uses the
 `BASEL_MAR21` profile, synthetic data only, and `SUMMARY` pairwise evidence mode.
@@ -28,19 +28,28 @@ and NumPy native buffers may not be fully counted.
 
 | Case | Rows | Factors | Row path total ms | Arrow/batch total ms | Row dataclasses | Arrow accepted-row dataclasses | Pairwise records total | Pairwise materialized |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| GIRR vega | 720 | 60 | 1421 | 1161 | 720 | 0 | 260280 | 0 |
-| FX delta | 720 | 6 | 107 | 102 | 720 | 0 | 130680 | 0 |
-| Equity delta | 720 | 720 | 371 | 334 | 720 | 0 | 125280 | 0 |
-| Commodity delta | 720 | 60 | 342 | 319 | 720 | 0 | 156600 | 0 |
-| CSR non-sec delta | 720 | 720 | 539 | 511 | 720 | 0 | 156600 | 0 |
-| CSR sec non-CTP delta | 720 | 720 | 324 | 344 | 720 | 0 | 125280 | 0 |
-| CSR sec CTP delta | 720 | 720 | 250 | 259 | 720 | 0 | 156600 | 0 |
-| GIRR curvature validation | 720 | 15 | 20 | 74 | 720 | 0 | 0 | 0 |
+| GIRR vega | 720 | 60 | 1485 | 1368 | 720 | 0 | 260280 | 0 |
+| FX delta | 720 | 6 | 109 | 96 | 720 | 0 | 130680 | 0 |
+| Equity delta | 720 | 720 | 395 | 357 | 720 | 0 | 125280 | 0 |
+| Commodity delta | 720 | 60 | 396 | 344 | 720 | 0 | 156600 | 0 |
+| CSR non-sec delta | 720 | 720 | 556 | 552 | 720 | 0 | 156600 | 0 |
+| CSR sec non-CTP delta | 720 | 720 | 339 | 377 | 720 | 0 | 125280 | 0 |
+| CSR sec CTP delta | 720 | 720 | 268 | 271 | 720 | 0 | 156600 | 0 |
+| GIRR curvature validation | 720 | 15 | 19 | 77 | 720 | 0 | 0 | 0 |
 
 The totals are useful for order-of-magnitude regression checks, not as an SLA.
 The JSON records the timing split for table construction, handoff normalization,
 batch construction, capital calculation, audit serialization, and curvature
 branch selection.
+
+The JSON also contains a `summary` block for budget checks and agent triage. It
+aggregates raw rows, netted factor counts, pairwise evidence counts, accepted-row
+dataclass materialization, peak traced memory, split timing groups, and stable
+result/audit hashes. The `wall_clock_proxy` sums measured Arrow/batch path
+timings only. The `phase_probes` block records the GIRR delta weighting-input
+construction, netting/factor-grid correlation matrix, and scenario-correlation
+adjustment timings as supplemental breakdowns because the full batch compute
+timer already includes that work.
 
 ## Conclusions
 
@@ -53,8 +62,8 @@ The capital-producing Arrow/batch paths reconcile against the row path within
 the harness before a report is emitted. This covers GIRR vega, FX delta, equity
 delta, commodity delta, CSR non-sec delta, CSR sec non-CTP delta, and CSR sec
 CTP delta. GIRR curvature is validation-only: the harness verifies row and
-batch branch selection, but public curvature capital remains fail-closed until
-the cited curvature aggregation path is implemented.
+batch branch selection. Public curvature capital is now available through the
+row API; high-volume curvature capital handoffs remain future work.
 
 Pairwise evidence is summarized, not materialized, in the benchmark controls.
 The baseline therefore exercises portfolios with more than 100,000 pairwise
@@ -75,6 +84,7 @@ handoffs are GIRR delta, GIRR vega, FX delta, equity delta, commodity delta, CSR
 non-sec delta, CSR sec non-CTP delta, and CSR sec CTP delta. The supported
 validation-only handoff is GIRR curvature.
 
-Unsupported paths remain explicit boundaries: curvature capital, FX/equity/
-commodity/CSR vega, non-GIRR curvature, unsupported regulatory profiles, and
-broader CRIF coverage outside the implemented GIRR delta CRIF mapping.
+Unsupported paths remain explicit boundaries: FX/equity/commodity/CSR vega,
+unsupported curvature sub-features, unsupported regulatory profiles, high-volume
+curvature capital handoffs, and broader CRIF coverage outside the implemented
+GIRR delta CRIF mapping.

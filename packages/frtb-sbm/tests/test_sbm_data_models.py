@@ -7,6 +7,7 @@ import pytest
 from frtb_sbm import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
+    CurvatureBucketBranchRecord,
     CurvatureInput,
     CurvatureResult,
     RiskClassCapital,
@@ -162,11 +163,32 @@ def test_curvature_records_are_frozen() -> None:
         citation_ids=("basel_mar21_curvature",),
         floor_applied=False,
     )
+    curvature_bucket_branch = CurvatureBucketBranchRecord(
+        bucket_id="1",
+        scenario=SbmScenarioLabel.MEDIUM,
+        selected_branch="up",
+        rejected_branch="down",
+        selected_bucket_capital=8_000.0,
+        rejected_bucket_capital=7_000.0,
+        up_bucket_capital=8_000.0,
+        down_bucket_capital=7_000.0,
+        selected_sum=10_000.0,
+        up_sum=10_000.0,
+        down_sum=-9_000.0,
+        selected_psi_zero_count=0,
+        up_psi_zero_count=0,
+        down_psi_zero_count=1,
+        floor_applied=False,
+        citation_ids=("basel_mar21_curvature",),
+    )
 
     assert curvature_input.up_shock_amount == 10_000.0
     assert curvature_result.selected_branch == "down"
+    assert curvature_bucket_branch.scenario is SbmScenarioLabel.MEDIUM
     with pytest.raises(FrozenInstanceError):
         curvature_result.bucket_capital = 0.0  # type: ignore[misc]
+    with pytest.raises(FrozenInstanceError):
+        curvature_bucket_branch.selected_branch = "down"  # type: ignore[misc]
 
 
 def test_calculation_context_carries_run_controls() -> None:

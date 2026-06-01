@@ -183,33 +183,25 @@ def test_calculate_sbm_capital_returns_fx_delta_result() -> None:
     assert result.risk_classes[0].risk_class is SbmRiskClass.FX
 
 
-def test_fx_vega_and_curvature_fail_closed() -> None:
-    for measure in (SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE):
-        sensitivity = SbmSensitivity(
-            sensitivity_id=f"fx-{measure.value.lower()}",
-            source_row_id="row-001",
-            desk_id="fx-desk",
-            legal_entity="LE-001",
-            risk_class=SbmRiskClass.FX,
-            risk_measure=measure,
-            bucket="EUR",
-            risk_factor="EUR",
-            amount=1_000_000.0,
-            amount_currency="USD",
-            sign_convention=SbmSignConvention.LONG,
-            lineage=sample_lineage("row-001"),
-            option_tenor="1y" if measure is SbmRiskMeasure.VEGA else None,
-            tenor="1y" if measure is SbmRiskMeasure.VEGA else None,
-            up_shock_amount=100.0 if measure is SbmRiskMeasure.CURVATURE else None,
-            down_shock_amount=-100.0 if measure is SbmRiskMeasure.CURVATURE else None,
-        )
-        error_match = (
-            "curvature capital is unsupported"
-            if measure is SbmRiskMeasure.CURVATURE
-            else "phase-1 capital"
-        )
-        with pytest.raises(UnsupportedRegulatoryFeatureError, match=error_match):
-            calculate_sbm_capital((sensitivity,), context=sample_context())
+def test_fx_vega_fails_closed() -> None:
+    sensitivity = SbmSensitivity(
+        sensitivity_id="fx-vega",
+        source_row_id="row-001",
+        desk_id="fx-desk",
+        legal_entity="LE-001",
+        risk_class=SbmRiskClass.FX,
+        risk_measure=SbmRiskMeasure.VEGA,
+        bucket="EUR",
+        risk_factor="EUR",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        sign_convention=SbmSignConvention.LONG,
+        lineage=sample_lineage("row-001"),
+        option_tenor="1y",
+        tenor="1y",
+    )
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital"):
+        calculate_sbm_capital((sensitivity,), context=sample_context())
 
 
 def test_fx_delta_v1_fixture_matches_expected_outputs() -> None:

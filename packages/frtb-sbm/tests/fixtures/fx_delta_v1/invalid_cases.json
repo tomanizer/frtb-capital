@@ -49,25 +49,6 @@
     }
   },
   {
-    "case_id": "unsupported_curvature",
-    "expected_error_match": "curvature capital is unsupported",
-    "sensitivity": {
-      "sensitivity_id": "fx-curvature-001",
-      "source_row_id": "row-fx-curvature",
-      "desk_id": "fx-desk",
-      "legal_entity": "LE-001",
-      "risk_class": "FX",
-      "risk_measure": "CURVATURE",
-      "bucket": "EUR",
-      "risk_factor": "EUR",
-      "amount": 1000000.0,
-      "amount_currency": "USD",
-      "sign_convention": "LONG",
-      "up_shock_amount": 100.0,
-      "down_shock_amount": -100.0
-    }
-  },
-  {
     "case_id": "missing_bucket_currency_mapping",
     "expected_error_match": "currency code must be a three-letter alphabetic code",
     "sensitivity": {

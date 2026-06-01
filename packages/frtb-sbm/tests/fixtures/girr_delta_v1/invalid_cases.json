@@ -50,8 +50,8 @@
     }
   },
   {
-    "case_id": "unsupported_measure",
-    "expected_error_match": "curvature capital is unsupported",
+    "case_id": "invalid_fx_curvature_bucket",
+    "expected_error_match": "currency must be a three-letter alphabetic code",
     "sensitivity": {
       "sensitivity_id": "fx-curvature-001",
       "source_row_id": "row-fx-curvature",

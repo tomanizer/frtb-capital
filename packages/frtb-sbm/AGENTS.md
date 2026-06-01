@@ -5,10 +5,10 @@
 ## Current status
 
 Phase 1 (#151) delivers cited GIRR delta/vega, FX delta, equity delta,
-commodity delta, and CSR delta slices under BASEL_MAR21. Curvature inputs can be
-validated row-wise via `validate_curvature_sensitivities` or through the GIRR
-curvature Arrow/batch validation handoff; curvature capital remains explicitly
-unsupported until #166.
+commodity delta, CSR delta, and MAR21.96-MAR21.101 curvature slices under
+BASEL_MAR21. Curvature capital is available through the row-wise public API; the
+GIRR curvature Arrow/batch handoff remains validation-only until the high-volume
+curvature batch path is implemented.
 
 `PACKAGE_METADATA.validation_status` is `PENDING`: fixture packs are synthetic
 and do not constitute independent model validation. Do not treat outputs as

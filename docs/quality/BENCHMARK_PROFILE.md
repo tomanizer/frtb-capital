@@ -7,6 +7,7 @@ budgets used by `scripts/ci/check_benchmark_budgets.py`.
 
 ```bash
 make benchmark              # IMA target-scale JSON -> dist/benchmarks/frtb-ima-target-scale.json
+make sbm-benchmark          # SBM Arrow/batch JSON -> dist/benchmarks/frtb-sbm-batch-arrow.json
 make rrao-benchmark         # RRAO target-scale JSON -> dist/benchmarks/frtb-rrao-target-scale.json
 make benchmark-budget-check # compare artifacts to docs/quality/benchmark_budgets.toml
 ```
@@ -21,7 +22,15 @@ changes or when investigating regressions.
 | Benchmark | Wall clock | Dominant phase | Notes |
 | --- | --- | --- | --- |
 | IMA target-scale | ~73.9 s | `imcc_decomposition` ~54.2 s | 10k scenarios, 100 desks |
+| SBM Arrow/batch | ~3.4 s wall-clock proxy | migrated batch capital calculations | 5,760 synthetic rows across migrated paths, zero accepted-row dataclasses, 1,111,320 pairwise relationships summarized |
 | RRAO target-scale | ~45.2 s | validation/classification/allocation | 100k positions, ~3,024 positions/s, ~402 MB peak traced memory |
+
+The SBM benchmark uses the checked-in
+[`frtb-sbm-batch-arrow-baseline.json`](../performance/frtb-sbm-batch-arrow-baseline.json)
+as the stable baseline for budget checks. The budget is deliberately tolerance
+based: the current generated artifact is compared to the baseline wall-clock
+proxy with a multiplier, while exact structural controls such as accepted-row
+dataclass materialization remain hard maximums.
 
 ## Next optimization targets
 
@@ -52,3 +61,9 @@ materially after the core capital sum. Opportunities:
 Thresholds live in [`benchmark_budgets.toml`](benchmark_budgets.toml). Update
 that file when a deliberate optimization lands and the new baseline is measured
 on representative hardware.
+
+When refreshing a baseline, run the benchmark command, inspect the split metrics
+for ingestion, validation, weighting, netting/factor-grid, correlation/scenario,
+and audit serialization, then update both the checked-in baseline and any
+tolerance in `benchmark_budgets.toml` in the same PR. Do not tighten or loosen a
+budget without preserving the generated artifact that justifies it.

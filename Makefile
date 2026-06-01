@@ -13,7 +13,7 @@ MUTATION_DIST := dist/mutation
 .PHONY: test test-no-cov test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording
 .PHONY: import-lint kernel-import-boundary import-smoke maturity-check quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
-.PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark rrao-benchmark benchmark-budget-check
+.PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark sbm-benchmark rrao-benchmark benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
 .PHONY: validation-pack agent-setup agent-sync-main agent-new agent-guard
 .PHONY: agent-worktrees agent-doctor ima sa sbm drc rrao cva orchestration clean
@@ -116,6 +116,9 @@ mutation-score-check:
 
 benchmark:
 	uv run python scripts/benchmark_target_scale.py --output dist/benchmarks/frtb-ima-target-scale.json
+
+sbm-benchmark:
+	uv run python benchmarks/sbm_adapter_harness.py --output dist/benchmarks/frtb-sbm-batch-arrow.json
 
 rrao-benchmark:
 	uv run python packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py --output dist/benchmarks/frtb-rrao-target-scale.json

@@ -76,6 +76,7 @@ from frtb_sbm.capital import (
 )
 from frtb_sbm.curvature import (
     CURVATURE_CAPITAL_REQUIREMENT_ID,
+    FX_CURVATURE_SCALAR_1_5_FLAG,
     calculate_curvature_risk_class_capital,
     calculate_girr_curvature_risk_class_capital,
     curvature_capital_unsupported_feature,
@@ -89,6 +90,7 @@ from frtb_sbm.curvature import (
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
+    CurvatureBucketBranchRecord,
     CurvatureInput,
     CurvatureResult,
     IntraBucketScenarioRecord,
@@ -132,6 +134,7 @@ from frtb_sbm.reference_data import (
     correlation_scenario_definition,
     correlation_scenarios_for_profile,
     curvature_citation_ids,
+    curvature_risk_weight,
     fx_bucket_definition,
     fx_buckets_for_profile,
     fx_delta_intra_bucket_correlation,
@@ -206,10 +209,12 @@ from frtb_sbm.weighted_sensitivity import (
 __all__ = [
     "CURVATURE_CAPITAL_REQUIREMENT_ID",
     "DEFAULT_PAIRWISE_EVIDENCE_LIMIT",
+    "FX_CURVATURE_SCALAR_1_5_FLAG",
     "FX_DELTA_RISK_WEIGHT",
     "FX_INTER_BUCKET_CORRELATION",
     "PACKAGE_METADATA",
     "BucketCapital",
+    "CurvatureBucketBranchRecord",
     "CurvatureInput",
     "CurvatureResult",
     "InterBucketScenarioResult",
@@ -299,6 +304,7 @@ __all__ = [
     "correlation_scenarios_for_profile",
     "curvature_capital_unsupported_feature",
     "curvature_citation_ids",
+    "curvature_risk_weight",
     "curvature_worst_branch",
     "ensure_profile_supports_risk_class_measure",
     "ensure_sbm_capital_paths_supported",

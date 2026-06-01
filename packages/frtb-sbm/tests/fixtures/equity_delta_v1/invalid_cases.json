@@ -52,8 +52,8 @@
     }
   },
   {
-    "case_id": "unsupported_curvature",
-    "expected_error_match": "curvature capital is unsupported",
+    "case_id": "unsupported_repo_curvature",
+    "expected_error_match": "repo rates",
     "sensitivity": {
       "sensitivity_id": "eq-curvature-001",
       "source_row_id": "row-eq-curvature",
@@ -62,7 +62,7 @@
       "risk_class": "EQUITY",
       "risk_measure": "CURVATURE",
       "bucket": "5",
-      "risk_factor": "SPOT",
+      "risk_factor": "REPO",
       "qualifier": "ISS-A",
       "amount": 1000000.0,
       "amount_currency": "USD",
