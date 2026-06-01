@@ -4,6 +4,7 @@ import frtb_rrao
 
 EXPECTED_PUBLIC_API = (
     "PACKAGE_METADATA",
+    "RRAO_HANDOFF_COLUMN_SPECS",
     "SUPPORTED_RRAO_ALLOCATION_DIMENSIONS",
     "RraoAdapterResult",
     "RraoAdapterWarning",
@@ -11,6 +12,7 @@ EXPECTED_PUBLIC_API = (
     "RraoAllocationDimension",
     "RraoAllocationReport",
     "RraoBackToBackMatch",
+    "RraoBatchCapitalCalculation",
     "RraoCalculationContext",
     "RraoCapitalLine",
     "RraoCapitalResult",
@@ -24,6 +26,7 @@ EXPECTED_PUBLIC_API = (
     "RraoInvestmentFundExposureType",
     "RraoInvestmentFundMethod",
     "RraoPosition",
+    "RraoPositionBatch",
     "RraoRegulatoryProfile",
     "RraoRejectedRow",
     "RraoRuleProfile",
@@ -35,11 +38,17 @@ EXPECTED_PUBLIC_API = (
     "adapt_rrao_records",
     "build_rrao_allocation_report",
     "build_rrao_allocation_reports",
+    "build_rrao_batch_from_columns",
+    "build_rrao_batch_from_handoff",
+    "build_rrao_batch_from_positions",
     "calculate_rrao_capital",
+    "calculate_rrao_capital_from_batch",
     "classify_rrao_position",
     "classify_rrao_positions",
     "get_rrao_rule_profile",
     "input_hash_for_positions",
+    "input_hash_for_rrao_batch",
+    "normalize_rrao_arrow_table",
     "resolve_rrao_allocation_dimension",
     "serialize_rrao_allocation_report",
     "serialize_rrao_result",
@@ -51,4 +60,4 @@ EXPECTED_PUBLIC_API = (
 
 def test_top_level_public_api_surface_is_explicit_and_narrow() -> None:
     assert frtb_rrao.__all__ == list(EXPECTED_PUBLIC_API)
-    assert len(frtb_rrao.__all__) < 50
+    assert len(frtb_rrao.__all__) < 60

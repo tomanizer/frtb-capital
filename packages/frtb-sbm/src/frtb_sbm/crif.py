@@ -3,16 +3,31 @@ Optional CRIF-to-canonical SBM adapter.
 
 Regulatory traceability:
     ISDA CRIF field conventions; SBM-CRIF-001, SBM-FUNC-023.
-    Adapters emit canonical ``SbmSensitivity`` records without dataframe runtime deps.
+    Row-dict compatibility emits canonical ``SbmSensitivity`` records. The
+    GIRR delta handoff path emits Arrow-backed batches without dataframe
+    runtime dependencies or accepted-row dataclass materialization.
 """
 
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import cast
 
+import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
+from frtb_common import (
+    CRIF_SOURCE_ROW_ID_COLUMN,
+    CrifColumnSpec,
+    CrifRiskTypeMapping,
+    NormalizedTabularHandoff,
+    TabularLogicalType,
+    normalize_crif_arrow_table,
+    normalize_crif_records,
+)
+
+from frtb_sbm.arrow_handoff import normalize_girr_delta_arrow_table
 from frtb_sbm.data_models import (
     SbmRiskClass,
     SbmRiskMeasure,
@@ -45,6 +60,33 @@ _UP_SHOCK_FIELDS = ("CvrUp", "UpShock", "up_shock_amount")
 _DOWN_SHOCK_FIELDS = ("CvrDown", "DownShock", "down_shock_amount")
 _DESK_FIELDS = ("DeskId", "DeskID", "desk_id", "Desk")
 _LEGAL_ENTITY_FIELDS = ("LegalEntity", "LegalEntityID", "legal_entity", "Entity")
+
+_GIRR_DELTA_CRIF_COLUMN_SPECS: tuple[CrifColumnSpec, ...] = (
+    CrifColumnSpec("sensitivity_id", aliases=_SENSITIVITY_ID_FIELDS),
+    CrifColumnSpec(CRIF_SOURCE_ROW_ID_COLUMN, aliases=_SOURCE_ROW_ID_FIELDS),
+    CrifColumnSpec("risk_type", aliases=_RISK_TYPE_FIELDS, required=True),
+    CrifColumnSpec("qualifier", aliases=_QUALIFIER_FIELDS),
+    CrifColumnSpec("bucket", aliases=_BUCKET_FIELDS),
+    CrifColumnSpec("label1", aliases=_LABEL1_FIELDS),
+    CrifColumnSpec(
+        "amount",
+        aliases=_AMOUNT_FIELDS,
+        logical_type=TabularLogicalType.FLOAT,
+        required=True,
+    ),
+    CrifColumnSpec("amount_currency", aliases=_AMOUNT_CCY_FIELDS),
+    CrifColumnSpec("desk_id", aliases=_DESK_FIELDS),
+    CrifColumnSpec("legal_entity", aliases=_LEGAL_ENTITY_FIELDS),
+)
+_GIRR_DELTA_CRIF_RISK_TYPE_MAPPINGS: tuple[CrifRiskTypeMapping, ...] = (
+    CrifRiskTypeMapping(
+        tuple(sorted(_CRIF_GIRR_DELTA)),
+        {
+            "risk_class": SbmRiskClass.GIRR.value,
+            "risk_measure": SbmRiskMeasure.DELTA.value,
+        },
+    ),
+)
 
 
 @dataclass(frozen=True)
@@ -128,6 +170,152 @@ def adapt_crif_records(
         warnings=tuple(warnings),
         rejected_rows=tuple(rejected),
     )
+
+
+def normalize_girr_delta_crif_records(
+    records: object,
+    *,
+    source_file: str = "crif.csv",
+    desk_id: str = "UNKNOWN",
+    legal_entity: str = "UNKNOWN",
+    sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize CRIF-like row dictionaries into the GIRR delta Arrow handoff."""
+
+    if not isinstance(records, Sequence) or isinstance(records, str | bytes):
+        raise SbmInputError("records must be a sequence of mapping rows", field="records")
+    rows: list[Mapping[str, object]] = []
+    for index, record in enumerate(records):
+        if not isinstance(record, Mapping):
+            raise SbmInputError(
+                "records must be a sequence of mapping rows",
+                field=f"records[{index}]",
+            )
+        rows.append(record)
+    crif_handoff = normalize_crif_records(
+        rows,
+        column_specs=_GIRR_DELTA_CRIF_COLUMN_SPECS,
+        risk_type_mappings=_GIRR_DELTA_CRIF_RISK_TYPE_MAPPINGS,
+        source_file=source_file,
+        source_hash=source_hash,
+    )
+    return _girr_delta_handoff_from_normalized_crif(
+        crif_handoff,
+        desk_id=desk_id,
+        legal_entity=legal_entity,
+        sign_convention=sign_convention,
+    )
+
+
+def normalize_girr_delta_crif_arrow_table(
+    table: pa.Table,
+    *,
+    source_file: str = "crif.csv",
+    desk_id: str = "UNKNOWN",
+    legal_entity: str = "UNKNOWN",
+    sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a CRIF-like Arrow table into the GIRR delta Arrow handoff."""
+
+    crif_handoff = normalize_crif_arrow_table(
+        table,
+        column_specs=_GIRR_DELTA_CRIF_COLUMN_SPECS,
+        risk_type_mappings=_GIRR_DELTA_CRIF_RISK_TYPE_MAPPINGS,
+        source_file=source_file,
+        source_hash=source_hash,
+    )
+    return _girr_delta_handoff_from_normalized_crif(
+        crif_handoff,
+        desk_id=desk_id,
+        legal_entity=legal_entity,
+        sign_convention=sign_convention,
+    )
+
+
+def _girr_delta_handoff_from_normalized_crif(
+    crif_handoff: NormalizedTabularHandoff,
+    *,
+    desk_id: str,
+    legal_entity: str,
+    sign_convention: SbmSignConvention,
+) -> NormalizedTabularHandoff:
+    table = crif_handoff.accepted
+    amount_currency = _text_column(table, "amount_currency", "USD")
+    source_row_ids = _text_column(table, CRIF_SOURCE_ROW_ID_COLUMN, "")
+    girr_table = pa.table(
+        {
+            "sensitivity_id": _coalesce_text_columns(
+                _text_column(table, "sensitivity_id", ""),
+                source_row_ids,
+            ),
+            "source_row_id": source_row_ids,
+            "desk_id": _text_column(table, "desk_id", desk_id),
+            "legal_entity": _text_column(table, "legal_entity", legal_entity),
+            "risk_class": _text_column(table, "risk_class", SbmRiskClass.GIRR.value),
+            "risk_measure": _text_column(table, "risk_measure", SbmRiskMeasure.DELTA.value),
+            "bucket": _text_column(table, "bucket", "1"),
+            "risk_factor": _coalesce_text_columns(
+                _text_column(table, "qualifier", ""),
+                amount_currency,
+            ),
+            "amount": _required_column(table, "amount"),
+            "amount_currency": amount_currency,
+            "sign_convention": _constant_text_column(sign_convention.value, table.num_rows),
+            "tenor": _text_column(table, "label1", ""),
+            "lineage_source_system": _constant_text_column(
+                crif_handoff.metadata.get("source_system", "crif"),
+                table.num_rows,
+            ),
+            "lineage_source_file": _constant_text_column(
+                crif_handoff.metadata.get("source_file", "crif.csv"),
+                table.num_rows,
+            ),
+        }
+    )
+    return normalize_girr_delta_arrow_table(
+        girr_table,
+        diagnostics=crif_handoff.diagnostics,
+        metadata=crif_handoff.metadata,
+        rejected=crif_handoff.rejected,
+        source_hash=crif_handoff.source_hash,
+    )
+
+
+def _required_column(table: pa.Table, column_name: str) -> pa.ChunkedArray:
+    if column_name not in table.column_names:
+        raise SbmInputError(f"required column {column_name!r} is missing", field=column_name)
+    return table.column(column_name)
+
+
+def _text_column(table: pa.Table, column_name: str, default: str) -> pa.Array:
+    if table.num_rows == 0:
+        return pa.array([], type=pa.string())
+    if column_name not in table.column_names:
+        return _constant_text_column(default, table.num_rows)
+    column = table.column(column_name).combine_chunks()
+    if not pa.types.is_string(column.type):
+        column = pc.cast(column, pa.string())
+    trimmed = pc.utf8_trim_whitespace(column)
+    filled = pc.fill_null(trimmed, "")
+    has_text = pc.not_equal(filled, "")
+    return pc.if_else(has_text, trimmed, _constant_text_column(default, table.num_rows))
+
+
+def _coalesce_text_columns(primary: pa.Array, fallback: pa.Array) -> pa.Array:
+    if len(primary) != len(fallback):
+        raise SbmInputError("coalesced CRIF columns must have matching lengths", field="crif")
+    if len(primary) == 0:
+        return pa.array([], type=pa.string())
+    trimmed = pc.utf8_trim_whitespace(primary)
+    filled = pc.fill_null(trimmed, "")
+    has_text = pc.not_equal(filled, "")
+    return pc.if_else(has_text, trimmed, fallback)
+
+
+def _constant_text_column(value: str, row_count: int) -> pa.Array:
+    return pa.repeat(pa.scalar(value, type=pa.string()), row_count)
 
 
 def _map_crif_row(
@@ -307,4 +495,6 @@ __all__ = [
     "SbmAdapterWarning",
     "SbmRejectedRow",
     "adapt_crif_records",
+    "normalize_girr_delta_crif_arrow_table",
+    "normalize_girr_delta_crif_records",
 ]

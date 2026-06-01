@@ -307,10 +307,12 @@ block it structurally.
 The package may provide CRIF-to-canonical mapping, but:
 
 - adapters must not be required by the capital kernel;
-- adapter output must be canonical `SbmSensitivity` records;
+- adapter output must be canonical `SbmSensitivity` records or package-owned
+  batch objects with equivalent regulatory meaning;
 - source column names, row ids, mapping warnings, and inferred-field decisions
   must be preserved;
-- adapters must not introduce dataframe runtime dependency into the core path.
+- adapters may use Arrow at the handoff boundary under ADR 0023, but must not
+  introduce dataframe execution or Arrow objects into the kernel path.
 
 ### SBM-FUNC-024: Explicit unsupported-feature reporting
 
@@ -338,8 +340,11 @@ BLAS limits.
 ### SBM-NFR-002: Runtime dependency policy
 
 Core runtime kernels must use Python standard library, frozen dataclasses,
-enums, and `numpy` where vectorisation matters. Additional runtime numerical
-dependencies require explicit design approval consistent with repository policy.
+enums, and package-owned `numpy` arrays where vectorisation matters. Arrow may
+be used only for tabular handoff, CRIF normalization, adapters, and handoff
+objects under ADR 0023; kernels must not import `pyarrow`, `pandas`, or
+`polars`. Additional runtime numerical dependencies require explicit design
+approval consistent with repository policy.
 
 ### SBM-NFR-003: Numeric representation
 

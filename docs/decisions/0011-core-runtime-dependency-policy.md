@@ -18,8 +18,9 @@ Future modules will ingest tabular sensitivities, default-risk exposures,
 residual-risk records, CVA exposures, rule profiles, and audit outputs. Tools
 such as `pandas`, `polars`, `scipy`, and `statsmodels` could make exploratory
 analysis, notebooks, validation, reconciliation, and adapter code easier to
-write and debug. They also introduce runtime surface area, data-alignment
-semantics, dependency churn, and security/SBOM obligations.
+write and debug. `pyarrow` is also useful for high-volume tabular handoff and
+IO. These libraries introduce runtime surface area, data-alignment semantics,
+dependency churn, and security/SBOM obligations.
 
 The decision is therefore not whether those libraries are useful. They are. The
 decision is which layer is allowed to depend on them.
@@ -28,8 +29,10 @@ decision is which layer is allowed to depend on them.
 
 Capital calculation kernels must remain `numpy`-native at runtime. Runtime
 capital packages may depend on `numpy` and on shared suite packages such as
-`frtb-common`. Adding `pandas`, `polars`, `scipy`, `statsmodels`, or another
-third-party runtime dependency to a capital package requires a new ADR.
+`frtb-common`. ADR 0023 approves `pyarrow` as the required tabular handoff and
+IO dependency, but not as a kernel representation. Adding `pandas`, `polars`,
+`scipy`, `statsmodels`, or another third-party runtime dependency to a capital
+package requires a new ADR.
 
 Richer libraries are allowed outside the core runtime path:
 
@@ -41,16 +44,20 @@ Richer libraries are allowed outside the core runtime path:
   analysis, and optional high-volume tabular adapters.
 - `statsmodels` may be used in validation, research, and notebook workflows
   where statistical diagnostics are useful.
+- `pyarrow` may be used in shared tabular handoff/IO helpers, package CRIF
+  normalization, package adapters, handoff objects, benchmark tooling, tests,
+  notebooks, and docs under the boundary in ADR 0023.
 
 These libraries must not be imported by capital calculation kernels unless a
-future ADR promotes the dependency into the runtime layer. Optional adapters
-must normalize external or dataframe-shaped data into canonical typed package
-inputs before calculation starts.
+future ADR promotes the dependency into the kernel layer. Optional adapters
+must normalize external, Arrow-shaped, or dataframe-shaped data into canonical
+typed package inputs or package-owned NumPy batches before calculation starts.
 
 The intended layering is:
 
 ```text
 notebooks / validation / optional adapters  ->  pandas, polars, scipy, statsmodels allowed
+tabular handoff / IO / CRIF normalization   ->  pyarrow allowed under ADR 0023
 canonical package inputs and audit records  ->  frozen dataclasses, enums, hashes
 capital calculation kernels                 ->  numpy arrays and pure functions
 shared suite primitives                     ->  frtb-common
@@ -83,9 +90,11 @@ shared suite primitives                     ->  frtb-common
 ## Guidance
 
 Use `numpy` arrays for hot numerical paths and attach meaning through typed
-containers, enums, axis labels, validation, and audit records. Use labelled
-dataframes where they improve human debugging or ingestion, but convert them at
-the package boundary.
+containers, enums, axis labels, validation, and audit records. Use Arrow-backed
+handoffs where they improve high-volume ingestion or IO, but convert them to
+package-owned arrays at the package boundary. Use labelled dataframes where
+they improve human debugging or ingestion, but keep them outside capital
+kernels.
 
 If a future module cannot reasonably implement a required calculation without a
 non-`numpy` runtime dependency, open a focused ADR that explains:
@@ -102,6 +111,8 @@ non-`numpy` runtime dependency, open a focused ADR that explains:
 - [ADR 0001](0001-record-architecture-decisions.md): record architecture
   decisions.
 - [ADR 0005](0005-material-change-policy.md): material change policy.
+- [ADR 0023](0023-arrow-tabular-handoff-boundary.md): Arrow tabular handoff
+  boundary.
 - Root `AGENTS.md` and `CLAUDE.md` workspace dependency guidance.
 - `packages/frtb-ima` test suite reference-vector checks using `scipy` as a
   development dependency.

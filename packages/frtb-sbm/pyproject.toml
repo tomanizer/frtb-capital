@@ -12,6 +12,7 @@ license = "MIT"
 dependencies = [
     "frtb-common",
     "numpy>=1.26,<2.5",
+    "pyarrow>=23.0.1,<24",
 ]
 
 [tool.setuptools.packages.find]

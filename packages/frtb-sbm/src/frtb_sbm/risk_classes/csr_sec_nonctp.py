@@ -20,22 +20,28 @@ from frtb_sbm.aggregation import (
     group_weighted_sensitivities_by_bucket,
     select_max_correlation_scenario,
 )
+from frtb_sbm.batch import (
+    SbmSensitivityBatch,
+    build_csr_sec_nonctp_delta_batch_from_sensitivities,
+)
 from frtb_sbm.csr_sec_nonctp_reference_data import (
     CSR_SEC_OTHER_SECTOR_BUCKET,
     csr_sec_nonctp_delta_intra_bucket_correlation,
     csr_sec_nonctp_inter_bucket_correlation,
 )
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
     RiskClassCapital,
     RiskClassScenarioDetail,
+    SbmPairwiseEvidenceMode,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmScenarioLabel,
     SbmSensitivity,
     WeightedSensitivity,
 )
-from frtb_sbm.weighted_sensitivity import weight_csr_sec_nonctp_delta_sensitivities
+from frtb_sbm.weighted_sensitivity import weight_csr_sec_nonctp_delta_sensitivity_batch
 
 _MAR21_CSR_SEC_INTRA_CITATION = ("basel_mar21_4_intra_bucket", "basel_mar21_67")
 _MAR21_CSR_SEC_OTHER_CITATION = ("basel_mar21_56", "basel_mar21_68")
@@ -50,19 +56,43 @@ def calculate_csr_sec_nonctp_delta_risk_class_capital(
     sensitivities: tuple[SbmSensitivity, ...],
     *,
     profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited CSR securitisation non-CTP delta risk-class capital."""
 
-    weighted = weight_csr_sec_nonctp_delta_sensitivities(
-        sensitivities,
+    batch = build_csr_sec_nonctp_delta_batch_from_sensitivities(sensitivities)
+    return calculate_csr_sec_nonctp_delta_risk_class_capital_from_batch(
+        batch,
+        profile_id=profile_id,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
+    )
+
+
+def calculate_csr_sec_nonctp_delta_risk_class_capital_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+) -> RiskClassCapital:
+    """Calculate cited CSR securitisation non-CTP delta capital from a batch."""
+
+    from frtb_sbm.batch import _batch_text_by_id
+
+    weighted = weight_csr_sec_nonctp_delta_sensitivity_batch(
+        batch,
         profile_id=profile_id,
     )
     return aggregate_csr_sec_nonctp_delta_measure_capital(
         weighted,
         profile_id=profile_id,
-        tranche_by_id={item.sensitivity_id: item.qualifier or "" for item in sensitivities},
-        tenor_by_id={item.sensitivity_id: item.tenor or "" for item in sensitivities},
-        risk_factor_by_id={item.sensitivity_id: item.risk_factor for item in sensitivities},
+        tranche_by_id=_batch_text_by_id(batch, batch.qualifiers, field="qualifier"),
+        tenor_by_id=_batch_text_by_id(batch, batch.tenors, field="tenor"),
+        risk_factor_by_id=_batch_text_by_id(batch, batch.risk_factors, field="risk_factor"),
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -73,6 +103,8 @@ def aggregate_csr_sec_nonctp_delta_measure_capital(
     tranche_by_id: Mapping[str, str],
     tenor_by_id: Mapping[str, str],
     risk_factor_by_id: Mapping[str, str],
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Aggregate weighted CSR securitisation non-CTP delta sensitivities."""
 
@@ -131,6 +163,8 @@ def aggregate_csr_sec_nonctp_delta_measure_capital(
                 apply_scenario_adjustment=True,
                 intra_bucket_citation_ids=_MAR21_CSR_SEC_INTRA_CITATION,
                 inter_bucket_citation_ids=_MAR21_CSR_SEC_INTER_CITATION,
+                pairwise_evidence_mode=pairwise_evidence_mode,
+                pairwise_evidence_limit=pairwise_evidence_limit,
             )
             core_capital = core_result.selected_capital
             core_buckets = core_result.buckets
@@ -148,6 +182,8 @@ def aggregate_csr_sec_nonctp_delta_measure_capital(
                 apply_scenario_adjustment=False,
                 intra_bucket_citation_ids=_MAR21_CSR_SEC_OTHER_CITATION,
                 inter_bucket_citation_ids=_MAR21_CSR_SEC_INTER_CITATION,
+                pairwise_evidence_mode=pairwise_evidence_mode,
+                pairwise_evidence_limit=pairwise_evidence_limit,
             )
             other_capital = other_result.selected_capital
             other_buckets = other_result.buckets
@@ -256,4 +292,5 @@ __all__ = [
     "build_csr_sec_nonctp_delta_intra_bucket_correlation_matrix",
     "build_csr_sec_nonctp_inter_bucket_correlation_map",
     "calculate_csr_sec_nonctp_delta_risk_class_capital",
+    "calculate_csr_sec_nonctp_delta_risk_class_capital_from_batch",
 ]

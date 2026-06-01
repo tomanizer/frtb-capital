@@ -20,20 +20,23 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
     IntraBucketScenarioRecord,
     PairwiseCorrelationRecord,
+    PairwiseCorrelationSummary,
     RiskClassCapital,
     RiskClassScenarioDetail,
     SbmBranchMetadata,
     SbmBranchType,
+    SbmPairwiseEvidenceMode,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmScenarioLabel,
     WeightedSensitivity,
 )
-from frtb_sbm.reference_data import apply_correlation_scenario
+from frtb_sbm.reference_data import apply_correlation_scenario, correlation_scenario_definition
 from frtb_sbm.validation import SbmInputError
 
 _MAR21_INTRA_BUCKET_CITATION = ("basel_mar21_4_intra_bucket",)
@@ -78,10 +81,11 @@ class PairwiseCorrelationEvidence:
 
 @dataclass(frozen=True)
 class IntraBucketAggregationResult:
-    """Intra-bucket capital with full audit evidence."""
+    """Intra-bucket capital with scale-aware audit evidence."""
 
     bucket_capital: BucketCapital
     pairwise_correlations: tuple[PairwiseCorrelationEvidence, ...]
+    pairwise_correlation_summary: PairwiseCorrelationSummary
     variance_before_floor: float
     zero_variance_floor_applied: bool
     sb_correlation_floor_applied: bool
@@ -136,18 +140,49 @@ def adjust_correlation_for_scenario(
 def adjust_correlation_matrix_for_scenario(
     base_matrix: npt.NDArray[np.float64],
     scenario: SbmScenarioLabel,
+    *,
+    profile_id: SbmRegulatoryProfile | str = SbmRegulatoryProfile.BASEL_MAR21,
 ) -> npt.NDArray[np.float64]:
     """Return a copy of ``base_matrix`` with off-diagonal entries scenario-adjusted."""
 
     matrix = np.array(base_matrix, dtype=np.float64, copy=True)
+    if not np.all(np.isfinite(matrix)):
+        raise SbmInputError("base_matrix must contain only finite values", field="base_matrix")
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise SbmInputError("base_matrix must be a square matrix", field="base_matrix")
+
     size = matrix.shape[0]
-    for row_index in range(size):
-        for col_index in range(row_index + 1, size):
-            base_rho = float(matrix[row_index, col_index])
-            adjusted = adjust_correlation_for_scenario(base_rho, scenario)
-            matrix[row_index, col_index] = adjusted
-            matrix[col_index, row_index] = adjusted
+    if size <= 1:
+        return matrix
+
+    row_indices, col_indices = np.triu_indices(size, k=1)
+    adjusted = _adjust_correlation_values_for_scenario(
+        matrix[row_indices, col_indices],
+        scenario,
+        profile_id=profile_id,
+    )
+    matrix[row_indices, col_indices] = adjusted
+    matrix[col_indices, row_indices] = adjusted
     return matrix
+
+
+def _adjust_correlation_values_for_scenario(
+    base_correlations: npt.NDArray[np.float64],
+    scenario: SbmScenarioLabel,
+    *,
+    profile_id: SbmRegulatoryProfile | str = SbmRegulatoryProfile.BASEL_MAR21,
+) -> npt.NDArray[np.float64]:
+    values = np.asarray(base_correlations, dtype=np.float64)
+    if not np.all(np.isfinite(values)):
+        raise SbmInputError("base_correlation must be finite", field="base_correlation")
+
+    definition = correlation_scenario_definition(profile_id, scenario)
+    if definition.scenario is SbmScenarioLabel.LOW:
+        return np.maximum(2.0 * values - 1.0, definition.multiplier * values)
+    if definition.scenario is SbmScenarioLabel.HIGH:
+        cap = definition.cap if definition.cap is not None else 1.0
+        return np.minimum(cap, definition.multiplier * values)
+    return definition.multiplier * values
 
 
 def aggregate_intra_bucket(
@@ -160,6 +195,8 @@ def aggregate_intra_bucket(
     sb_correlation_floor: float | None = None,
     curvature_absolute_floor: bool = False,
     citation_ids: tuple[str, ...] = _MAR21_INTRA_BUCKET_CITATION,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> IntraBucketAggregationResult:
     """
     Aggregate weighted sensitivities within one bucket (MAR21.4 step 4).
@@ -201,7 +238,13 @@ def aggregate_intra_bucket(
         if absolute_kb > kb:
             kb = absolute_kb
             absolute_sum_floor_applied = True
-    pairwise = _pairwise_correlation_evidence(ordered, matrix, citation_ids)
+    pairwise, pairwise_summary = _pairwise_correlation_audit(
+        ordered,
+        matrix,
+        citation_ids,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
+    )
 
     bucket_capital = BucketCapital(
         bucket_id=bucket_id,
@@ -216,6 +259,7 @@ def aggregate_intra_bucket(
     return IntraBucketAggregationResult(
         bucket_capital=bucket_capital,
         pairwise_correlations=pairwise,
+        pairwise_correlation_summary=pairwise_summary,
         variance_before_floor=variance,
         zero_variance_floor_applied=zero_floor_applied,
         sb_correlation_floor_applied=sb_floor_applied,
@@ -345,6 +389,7 @@ def _intra_bucket_to_scenario_record(
             for evidence in result.pairwise_correlations
         ),
         citation_ids=result.bucket_capital.citation_ids,
+        pairwise_correlation_summary=result.pairwise_correlation_summary,
     )
 
 
@@ -355,11 +400,20 @@ def _aggregate_intra_buckets_for_scenario(
     risk_class: SbmRiskClass,
     risk_measure: SbmRiskMeasure,
     intra_bucket_citation_ids: tuple[str, ...] = _MAR21_INTRA_BUCKET_CITATION,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> tuple[IntraBucketAggregationResult, ...]:
     results: list[IntraBucketAggregationResult] = []
     for spec in specs:
         if spec.absolute_weight_intra:
-            results.append(_aggregate_absolute_weight_intra_bucket(spec, risk_class, risk_measure))
+            results.append(
+                _aggregate_absolute_weight_intra_bucket(
+                    spec,
+                    risk_class,
+                    risk_measure,
+                    pairwise_evidence_mode=pairwise_evidence_mode,
+                )
+            )
             continue
         adjusted_matrix = adjust_correlation_matrix_for_scenario(
             spec.base_correlation_matrix,
@@ -375,6 +429,8 @@ def _aggregate_intra_buckets_for_scenario(
                 sb_correlation_floor=spec.sb_correlation_floor,
                 curvature_absolute_floor=spec.curvature_absolute_floor,
                 citation_ids=intra_bucket_citation_ids,
+                pairwise_evidence_mode=pairwise_evidence_mode,
+                pairwise_evidence_limit=pairwise_evidence_limit,
             )
         )
     return tuple(results)
@@ -384,6 +440,8 @@ def _aggregate_absolute_weight_intra_bucket(
     spec: IntraBucketScenarioSpec,
     risk_class: SbmRiskClass,
     risk_measure: SbmRiskMeasure,
+    *,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
 ) -> IntraBucketAggregationResult:
     """MAR21.79: other-sector equity bucket capital equals sum of absolute weighted WS."""
 
@@ -411,6 +469,12 @@ def _aggregate_absolute_weight_intra_bucket(
     return IntraBucketAggregationResult(
         bucket_capital=bucket_capital,
         pairwise_correlations=(),
+        pairwise_correlation_summary=_pairwise_correlation_summary(
+            ordered,
+            mode=_coerce_pairwise_evidence_mode(pairwise_evidence_mode),
+            materialized_count=0,
+            total_count=0,
+        ),
         variance_before_floor=float(np.dot(ws, ws)),
         zero_variance_floor_applied=False,
         sb_correlation_floor_applied=False,
@@ -428,6 +492,8 @@ def aggregate_risk_class_with_scenarios(
     citation_ids: tuple[str, ...] = _MAR21_SCENARIO_CITATION,
     intra_bucket_citation_ids: tuple[str, ...] = _MAR21_INTRA_BUCKET_CITATION,
     inter_bucket_citation_ids: tuple[str, ...] = _MAR21_INTER_BUCKET_CITATION,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """
     Evaluate low/medium/high scenarios with full intra- and inter-bucket recomputation.
@@ -465,6 +531,8 @@ def aggregate_risk_class_with_scenarios(
                 risk_class=risk_class,
                 risk_measure=risk_measure,
                 intra_bucket_citation_ids=intra_bucket_citation_ids,
+                pairwise_evidence_mode=pairwise_evidence_mode,
+                pairwise_evidence_limit=pairwise_evidence_limit,
             )
             intra_by_scenario[scenario] = intra_results
             inter_input: Sequence[IntraBucketAggregationResult | BucketCapital] = intra_results
@@ -618,11 +686,36 @@ def _inter_bucket_correlation_audit(
     return tuple(audit)
 
 
-def _pairwise_correlation_evidence(
+def _pairwise_correlation_audit(
     ordered: Sequence[WeightedSensitivity],
     matrix: npt.NDArray[np.float64],
     citation_ids: tuple[str, ...],
-) -> tuple[PairwiseCorrelationEvidence, ...]:
+    *,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str,
+    pairwise_evidence_limit: int,
+) -> tuple[tuple[PairwiseCorrelationEvidence, ...], PairwiseCorrelationSummary]:
+    mode = _coerce_pairwise_evidence_mode(pairwise_evidence_mode)
+    total_count = _upper_triangle_count(len(ordered))
+    if (
+        isinstance(pairwise_evidence_limit, bool)
+        or not isinstance(pairwise_evidence_limit, int)
+        or pairwise_evidence_limit < 0
+    ):
+        raise SbmInputError(
+            "pairwise_evidence_limit must be a non-negative integer",
+            field="pairwise_evidence_limit",
+        )
+    materialize = mode is SbmPairwiseEvidenceMode.FULL or (
+        mode is SbmPairwiseEvidenceMode.AUTO and total_count <= pairwise_evidence_limit
+    )
+    if not materialize:
+        return (), _pairwise_correlation_summary(
+            ordered,
+            mode=mode,
+            materialized_count=0,
+            total_count=total_count,
+        )
+
     records: list[PairwiseCorrelationEvidence] = []
     for row_index, sensitivity_a in enumerate(ordered):
         for col_index in range(row_index, len(ordered)):
@@ -635,7 +728,41 @@ def _pairwise_correlation_evidence(
                     citation_ids=citation_ids,
                 )
             )
-    return tuple(records)
+    pairwise = tuple(records)
+    return pairwise, _pairwise_correlation_summary(
+        ordered,
+        mode=mode,
+        materialized_count=len(pairwise),
+        total_count=total_count,
+    )
+
+
+def _pairwise_correlation_summary(
+    ordered: Sequence[WeightedSensitivity],
+    *,
+    mode: SbmPairwiseEvidenceMode,
+    materialized_count: int,
+    total_count: int,
+) -> PairwiseCorrelationSummary:
+    return PairwiseCorrelationSummary(
+        evidence_mode=mode,
+        total_count=total_count,
+        materialized_count=materialized_count,
+        omitted_count=total_count - materialized_count,
+        factor_ids=tuple(item.sensitivity_id for item in ordered),
+    )
+
+
+def _upper_triangle_count(size: int) -> int:
+    return size * (size + 1) // 2
+
+
+def _coerce_pairwise_evidence_mode(
+    mode: SbmPairwiseEvidenceMode | str,
+) -> SbmPairwiseEvidenceMode:
+    from frtb_sbm.validation import coerce_pairwise_evidence_mode
+
+    return coerce_pairwise_evidence_mode(mode)
 
 
 def _sort_weighted_sensitivities(
