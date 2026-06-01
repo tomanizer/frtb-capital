@@ -19,8 +19,10 @@ from frtb_sbm import (
     SbmSourceLineage,
     build_girr_delta_batch_from_columns,
     build_girr_delta_batch_from_sensitivities,
+    build_sbm_batch_from_columns,
     calculate_sbm_capital,
     calculate_sbm_capital_from_girr_delta_batch,
+    input_hash_for_sbm_batch,
     input_hash_for_sensitivities,
 )
 from frtb_sbm.arrow_handoff import (
@@ -137,11 +139,95 @@ def test_row_builder_produces_immutable_numpy_batch_and_row_equivalent_hash() ->
     assert isinstance(batch, SbmSensitivityBatch)
     assert batch.row_count == len(sensitivities)
     assert batch.input_hash == input_hash_for_sensitivities(sensitivities)
+    assert input_hash_for_sbm_batch(batch) == input_hash_for_sensitivities(sensitivities)
+    assert batch.risk_class is SbmRiskClass.GIRR
+    assert batch.risk_measure is SbmRiskMeasure.DELTA
     assert isinstance(batch.amounts, np.ndarray)
     assert isinstance(batch.sensitivity_ids, np.ndarray)
     assert not batch.amounts.flags.writeable
     assert not batch.sensitivity_ids.flags.writeable
     assert not any(isinstance(value, SbmSensitivity) for value in batch.__dict__.values())
+
+
+def test_generic_column_builder_accepts_girr_vega_metadata_without_row_dataclasses() -> None:
+    batch = build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        sensitivity_ids=["vega-001", "vega-002"],
+        source_row_ids=["row-vega-001", "row-vega-002"],
+        desk_ids=["rates", "rates"],
+        legal_entities=["LE-001", "LE-001"],
+        risk_classes=[SbmRiskClass.GIRR, SbmRiskClass.GIRR.value],
+        risk_measures=[SbmRiskMeasure.VEGA.value, SbmRiskMeasure.VEGA],
+        buckets=["2", "2"],
+        risk_factors=["USD", "USD"],
+        amounts=[100.0, -25.0],
+        amount_currencies=["USD", "USD"],
+        sign_conventions=[SbmSignConvention.RECEIVE, SbmSignConvention.RECEIVE.value],
+        tenors=["5y", "10y"],
+        option_tenors=["1y", "6m"],
+        liquidity_horizon_days=[60, 60],
+        lineage_source_systems=["unit-test", "unit-test"],
+        lineage_source_files=["girr-vega.csv", "girr-vega.csv"],
+    )
+
+    assert batch.risk_class is SbmRiskClass.GIRR
+    assert batch.risk_measure is SbmRiskMeasure.VEGA
+    assert batch.row_count == 2
+    assert batch.risk_classes.tolist() == [SbmRiskClass.GIRR.value, SbmRiskClass.GIRR.value]
+    assert batch.risk_measures.tolist() == [SbmRiskMeasure.VEGA.value, SbmRiskMeasure.VEGA.value]
+    assert batch.sign_conventions.tolist() == [
+        SbmSignConvention.RECEIVE.value,
+        SbmSignConvention.RECEIVE.value,
+    ]
+    assert batch.option_tenors is not None
+    assert batch.option_tenors.tolist() == ["1y", "6m"]
+    assert not any(isinstance(value, SbmSensitivity) for value in batch.__dict__.values())
+
+
+def test_generic_column_builder_accepts_fx_delta_without_tenor_axis() -> None:
+    batch = build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.FX,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        sensitivity_ids=["fx-eur", "fx-gbp"],
+        source_row_ids=["row-fx-001", "row-fx-002"],
+        desk_ids=["fx", "fx"],
+        legal_entities=["LE-001", "LE-001"],
+        risk_classes=[SbmRiskClass.FX.value, SbmRiskClass.FX.value],
+        risk_measures=[SbmRiskMeasure.DELTA.value, SbmRiskMeasure.DELTA.value],
+        buckets=["EUR", "GBP"],
+        risk_factors=["EUR", "GBP"],
+        amounts=[100.0, 200.0],
+        amount_currencies=["USD", "USD"],
+        sign_conventions=[SbmSignConvention.RECEIVE.value, SbmSignConvention.PAY.value],
+        tenors=[None, ""],
+        lineage_source_systems=["unit-test", "unit-test"],
+        lineage_source_files=["fx.csv", "fx.csv"],
+    )
+
+    assert batch.risk_class is SbmRiskClass.FX
+    assert batch.risk_measure is SbmRiskMeasure.DELTA
+    assert batch.tenors.tolist() == [None, ""]
+    assert batch.row_count == 2
+
+
+def test_generic_column_builder_rejects_mixed_homogeneous_path_columns() -> None:
+    columns = _batch_columns(_sensitivities()[:2])
+
+    with pytest.raises(SbmInputError, match="batch only accepts GIRR sensitivities"):
+        build_sbm_batch_from_columns(
+            **(columns | {"risk_classes": [SbmRiskClass.GIRR.value, SbmRiskClass.FX.value]}),
+            expected_risk_class=SbmRiskClass.GIRR,
+            expected_risk_measure=SbmRiskMeasure.DELTA,
+        )
+
+    with pytest.raises(SbmInputError, match="batch only accepts DELTA sensitivities"):
+        mixed_measures = [SbmRiskMeasure.DELTA.value, SbmRiskMeasure.VEGA.value]
+        build_sbm_batch_from_columns(
+            **(columns | {"risk_measures": mixed_measures}),
+            expected_risk_class=SbmRiskClass.GIRR,
+            expected_risk_measure=SbmRiskMeasure.DELTA,
+        )
 
 
 def test_arrow_handoff_batch_matches_row_batch_and_preserves_handoff_metadata() -> None:
