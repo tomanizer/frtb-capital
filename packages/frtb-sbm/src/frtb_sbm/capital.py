@@ -12,8 +12,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from typing import cast
+from collections.abc import Callable, Mapping, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -33,6 +32,7 @@ from frtb_sbm.batch import (
     SbmSensitivityBatch,
     build_girr_delta_batch_from_sensitivities,
     build_girr_vega_batch_from_sensitivities,
+    coerce_sbm_batch_sequence,
     concatenate_sbm_batches,
     input_hash_for_sbm_batches,
 )
@@ -320,7 +320,7 @@ def calculate_sbm_portfolio_capital_from_batches(
             field="context",
         )
 
-    validated_batches = _coerce_sbm_batches(batches)
+    validated_batches = coerce_sbm_batch_sequence(batches)
     validate_sbm_calculation_context(context)
     rule_profile = get_sbm_rule_profile(context.profile_id)
     grouped = _group_batches_by_capital_path(validated_batches, profile_id=context.profile_id)
@@ -914,6 +914,60 @@ def calculate_sbm_capital_from_csr_sec_ctp_curvature_batch(
         expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
         label="CSR securitisation CTP curvature",
     )
+
+
+_BATCH_PATH_CAPITAL_DISPATCHERS: Mapping[
+    tuple[SbmRiskClass, SbmRiskMeasure],
+    Callable[..., SbmCapitalResult],
+] = {
+    (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA): calculate_sbm_capital_from_girr_delta_batch,
+    (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA): calculate_sbm_capital_from_girr_vega_batch,
+    (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE): calculate_sbm_capital_from_girr_curvature_batch,
+    (SbmRiskClass.FX, SbmRiskMeasure.DELTA): calculate_sbm_capital_from_fx_delta_batch,
+    (SbmRiskClass.FX, SbmRiskMeasure.VEGA): calculate_sbm_capital_from_fx_vega_batch,
+    (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE): calculate_sbm_capital_from_fx_curvature_batch,
+    (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA): calculate_sbm_capital_from_equity_delta_batch,
+    (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA): calculate_sbm_capital_from_equity_vega_batch,
+    (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE): (
+        calculate_sbm_capital_from_equity_curvature_batch
+    ),
+    (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA): (
+        calculate_sbm_capital_from_commodity_delta_batch
+    ),
+    (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA): (
+        calculate_sbm_capital_from_commodity_vega_batch
+    ),
+    (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE): (
+        calculate_sbm_capital_from_commodity_curvature_batch
+    ),
+    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA): (
+        calculate_sbm_capital_from_csr_nonsec_delta_batch
+    ),
+    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA): (
+        calculate_sbm_capital_from_csr_nonsec_vega_batch
+    ),
+    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE): (
+        calculate_sbm_capital_from_csr_nonsec_curvature_batch
+    ),
+    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA): (
+        calculate_sbm_capital_from_csr_sec_nonctp_delta_batch
+    ),
+    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA): (
+        calculate_sbm_capital_from_csr_sec_nonctp_vega_batch
+    ),
+    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE): (
+        calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch
+    ),
+    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA): (
+        calculate_sbm_capital_from_csr_sec_ctp_delta_batch
+    ),
+    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA): (
+        calculate_sbm_capital_from_csr_sec_ctp_vega_batch
+    ),
+    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE): (
+        calculate_sbm_capital_from_csr_sec_ctp_curvature_batch
+    ),
+}
 
 
 def _calculate_sbm_capital_from_curvature_batch(
@@ -1605,21 +1659,6 @@ def _append_citation(citation_ids: list[str], seen: set[str], citation_id: str) 
         seen.add(citation_id)
 
 
-def _coerce_sbm_batches(batches: object) -> tuple[SbmSensitivityBatch, ...]:
-    if isinstance(batches, SbmSensitivityBatch):
-        return (batches,)
-    try:
-        candidates: tuple[object, ...] = tuple(batches)  # type: ignore[arg-type]
-    except TypeError as exc:
-        raise SbmInputError("batches must be an iterable of SbmSensitivityBatch objects") from exc
-    if not candidates:
-        raise SbmInputError("batches must not be empty", field="batches")
-    for candidate in candidates:
-        if not isinstance(candidate, SbmSensitivityBatch):
-            raise SbmInputError("batches must contain only SbmSensitivityBatch objects")
-    return cast(tuple[SbmSensitivityBatch, ...], candidates)
-
-
 def _group_batches_by_capital_path(
     batches: Sequence[SbmSensitivityBatch],
     *,
@@ -1654,88 +1693,9 @@ def _calculate_dispatch_batch_path(
     context: SbmCalculationContext,
 ) -> RiskClassCapital:
     path = (batch.risk_class, batch.risk_measure)
-    if path == (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA):
-        return calculate_sbm_capital_from_girr_delta_batch(batch, context=context).risk_classes[0]
-    if path == (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA):
-        return calculate_sbm_capital_from_girr_vega_batch(batch, context=context).risk_classes[0]
-    if path == (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE):
-        return calculate_sbm_capital_from_girr_curvature_batch(batch, context=context).risk_classes[
-            0
-        ]
-    if path == (SbmRiskClass.FX, SbmRiskMeasure.DELTA):
-        return calculate_sbm_capital_from_fx_delta_batch(batch, context=context).risk_classes[0]
-    if path == (SbmRiskClass.FX, SbmRiskMeasure.VEGA):
-        return calculate_sbm_capital_from_fx_vega_batch(batch, context=context).risk_classes[0]
-    if path == (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE):
-        return calculate_sbm_capital_from_fx_curvature_batch(batch, context=context).risk_classes[0]
-    if path == (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA):
-        return calculate_sbm_capital_from_equity_delta_batch(batch, context=context).risk_classes[0]
-    if path == (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA):
-        return calculate_sbm_capital_from_equity_vega_batch(batch, context=context).risk_classes[0]
-    if path == (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE):
-        return calculate_sbm_capital_from_equity_curvature_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA):
-        return calculate_sbm_capital_from_commodity_delta_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA):
-        return calculate_sbm_capital_from_commodity_vega_batch(batch, context=context).risk_classes[
-            0
-        ]
-    if path == (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE):
-        return calculate_sbm_capital_from_commodity_curvature_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA):
-        return calculate_sbm_capital_from_csr_nonsec_delta_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA):
-        return calculate_sbm_capital_from_csr_nonsec_vega_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE):
-        return calculate_sbm_capital_from_csr_nonsec_curvature_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA):
-        return calculate_sbm_capital_from_csr_sec_nonctp_delta_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA):
-        return calculate_sbm_capital_from_csr_sec_nonctp_vega_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE):
-        return calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA):
-        return calculate_sbm_capital_from_csr_sec_ctp_delta_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA):
-        return calculate_sbm_capital_from_csr_sec_ctp_vega_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
-    if path == (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE):
-        return calculate_sbm_capital_from_csr_sec_ctp_curvature_batch(
-            batch,
-            context=context,
-        ).risk_classes[0]
+    dispatcher = _BATCH_PATH_CAPITAL_DISPATCHERS.get(path)
+    if dispatcher is not None:
+        return dispatcher(batch, context=context).risk_classes[0]
 
     raise UnsupportedRegulatoryFeatureError(
         "frtb-sbm batch portfolio dispatcher does not support "

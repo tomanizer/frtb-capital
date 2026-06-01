@@ -1444,7 +1444,7 @@ def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
 def input_hash_for_sbm_batches(batches: object) -> str:
     """Return the row-equivalent deterministic input hash for batch portfolios."""
 
-    validated = _coerce_batch_sequence(batches)
+    validated = coerce_sbm_batch_sequence(batches)
     return _hash_payload(
         {
             "sensitivities": [
@@ -1459,7 +1459,7 @@ def input_hash_for_sbm_batches(batches: object) -> str:
 def concatenate_sbm_batches(batches: object) -> SbmSensitivityBatch:
     """Concatenate homogeneous SBM batches without materialising row dataclasses."""
 
-    validated = _coerce_batch_sequence(batches)
+    validated = coerce_sbm_batch_sequence(batches)
     if len(validated) == 1:
         return validated[0]
 
@@ -2134,7 +2134,9 @@ def _validate_mapping_citations(
                 )
 
 
-def _coerce_batch_sequence(batches: object) -> tuple[SbmSensitivityBatch, ...]:
+def coerce_sbm_batch_sequence(batches: object) -> tuple[SbmSensitivityBatch, ...]:
+    """Return a validated non-empty tuple of package-owned SBM batches."""
+
     if isinstance(batches, SbmSensitivityBatch):
         return (batches,)
     try:
@@ -2147,6 +2149,10 @@ def _coerce_batch_sequence(batches: object) -> tuple[SbmSensitivityBatch, ...]:
         if not isinstance(candidate, SbmSensitivityBatch):
             raise SbmInputError("batches must contain only SbmSensitivityBatch objects")
     return cast(tuple[SbmSensitivityBatch, ...], candidates)
+
+
+def _coerce_batch_sequence(batches: object) -> tuple[SbmSensitivityBatch, ...]:
+    return coerce_sbm_batch_sequence(batches)
 
 
 def _concat_required_arrays(
@@ -2464,6 +2470,7 @@ __all__ = [
     "build_girr_vega_batch_from_sensitivities",
     "build_sbm_batch_from_columns",
     "build_sbm_batch_from_sensitivities",
+    "coerce_sbm_batch_sequence",
     "concatenate_sbm_batches",
     "input_hash_for_commodity_delta_batch",
     "input_hash_for_csr_nonsec_delta_batch",

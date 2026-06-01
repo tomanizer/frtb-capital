@@ -18,6 +18,7 @@ from typing import cast
 import numpy as np
 import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
@@ -1705,8 +1706,10 @@ def _unique_handoff_text_values(
             f"handoff {index} required column {column_name!r} is missing",
             field=column_name,
         )
-    unique_values = table[column_name].combine_chunks().unique().to_pylist()
-    text_values = tuple(str(value) for value in unique_values if value is not None)
+    unique_values = pc.drop_null(pc.unique(table[column_name]))
+    text_values = tuple(
+        str(unique_values[item_index].as_py()) for item_index in range(len(unique_values))
+    )
     if not text_values:
         raise SbmInputError(
             f"handoff {index} {column_name} must contain one non-null value",
