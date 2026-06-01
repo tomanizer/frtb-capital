@@ -1006,12 +1006,14 @@ source = { editable = "packages/frtb-sbm" }
 dependencies = [
     { name = "frtb-common" },
     { name = "numpy" },
+    { name = "pyarrow" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "frtb-common", editable = "packages/frtb-common" },
     { name = "numpy", specifier = ">=1.26,<2.5" },
+    { name = "pyarrow", specifier = ">=23.0.1,<24" },
 ]
 
 [[package]]
