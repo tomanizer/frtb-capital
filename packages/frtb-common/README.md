@@ -21,6 +21,8 @@ Current contents:
 - CRIF-to-Arrow normalization helpers:
   - package-neutral CRIF column discovery, alias normalization, and primitive
     coercion;
+  - a vectorized Arrow compute path for package-supplied static RiskType mapping
+    tables, with the callback-capable row path retained for compatibility;
   - deterministic accepted/rejected row partitioning with `AdapterDiagnostic`
     records;
   - package-supplied RiskType mappings or callbacks, without encoding SBM,

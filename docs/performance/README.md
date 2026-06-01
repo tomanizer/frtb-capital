@@ -44,3 +44,20 @@ capital-producing paths, and keeps pairwise evidence in summary mode.
 `frtb-sbm-batch-arrow-report.md` contains the human-readable report.
 `frtb-sbm-batch-arrow-baseline.json` is the checked-in baseline for
 order-of-magnitude regression review.
+
+## Common CRIF Normalizer
+
+Run the CRIF normalizer benchmark from the workspace root:
+
+```bash
+uv run python benchmarks/crif_normalizer_harness.py
+```
+
+The benchmark compares the callback-compatible row path with the vectorized
+static RiskType mapping path in `frtb_common.crif`. It also verifies that the
+SBM GIRR delta CRIF consumer still builds an `SbmSensitivityBatch` without
+accepted-row `SbmSensitivity` dataclasses.
+
+`frtb-common-crif-normalizer-report.md` contains the human-readable report.
+`frtb-common-crif-normalizer-baseline.json` is the checked-in synthetic
+baseline for order-of-magnitude regression review.
