@@ -89,6 +89,7 @@ from frtb_sbm.curvature import (
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
+    CurvatureBucketBranchRecord,
     CurvatureInput,
     CurvatureResult,
     IntraBucketScenarioRecord,
@@ -210,6 +211,7 @@ __all__ = [
     "FX_INTER_BUCKET_CORRELATION",
     "PACKAGE_METADATA",
     "BucketCapital",
+    "CurvatureBucketBranchRecord",
     "CurvatureInput",
     "CurvatureResult",
     "InterBucketScenarioResult",

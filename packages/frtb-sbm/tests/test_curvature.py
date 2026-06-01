@@ -11,10 +11,12 @@ from frtb_common import TabularHandoffError, UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
     CURVATURE_CAPITAL_REQUIREMENT_ID,
     SbmCalculationContext,
+    SbmCapitalResult,
     SbmInputError,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
+    SbmScenarioLabel,
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
@@ -28,6 +30,7 @@ from frtb_sbm import (
     input_hash_for_sensitivities,
     parse_curvature_input,
     select_girr_curvature_branches_from_batch,
+    serialize_sbm_result,
     validate_curvature_sensitivities,
     validate_girr_curvature_batch,
     weight_girr_curvature_sensitivities,
@@ -333,13 +336,165 @@ def test_weight_girr_curvature_fails_closed() -> None:
         )
 
 
-def test_calculate_girr_curvature_risk_class_capital_fails_closed() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):
-        calculate_girr_curvature_risk_class_capital(
-            (sample_curvature_sensitivity(),),
+def test_girr_curvature_engine_selects_bucket_branch_by_correlation_scenario() -> None:
+    bucket_one = (
+        sample_curvature_sensitivity(
+            sensitivity_id="curv-branch-001",
+            source_row_id="row-curv-branch-001",
+            risk_factor="USD-OIS",
+            up_shock_amount=21.095478235914463,
+            down_shock_amount=152.57198303147396,
+            lineage=replace(sample_lineage(), source_row_id="row-curv-branch-001"),
+        ),
+        sample_curvature_sensitivity(
+            sensitivity_id="curv-branch-002",
+            source_row_id="row-curv-branch-002",
+            risk_factor="USD-LIBOR",
+            up_shock_amount=70.03228299171094,
+            down_shock_amount=-49.072555279946286,
+            lineage=replace(sample_lineage(), source_row_id="row-curv-branch-002"),
+        ),
+    )
+    bucket_two = (
+        sample_curvature_sensitivity(
+            sensitivity_id="curv-branch-003",
+            source_row_id="row-curv-branch-003",
+            bucket="2",
+            risk_factor="EUR-OIS",
+            up_shock_amount=60.0,
+            down_shock_amount=30.0,
+            lineage=replace(sample_lineage(), source_row_id="row-curv-branch-003"),
+        ),
+    )
+
+    result = calculate_girr_curvature_risk_class_capital(
+        (*bucket_one, *bucket_two),
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+        reporting_currency="USD",
+    )
+
+    by_bucket_scenario = {
+        (record.bucket_id, record.scenario): record for record in result.curvature_bucket_branches
+    }
+    assert by_bucket_scenario[("1", SbmScenarioLabel.LOW)].selected_branch == "down"
+    assert by_bucket_scenario[("1", SbmScenarioLabel.MEDIUM)].selected_branch == "down"
+    assert by_bucket_scenario[("1", SbmScenarioLabel.HIGH)].selected_branch == "up"
+    assert by_bucket_scenario[("2", SbmScenarioLabel.LOW)].selected_branch == "up"
+    assert by_bucket_scenario[("2", SbmScenarioLabel.HIGH)].selected_branch == "up"
+    assert by_bucket_scenario[("1", SbmScenarioLabel.LOW)].down_bucket_capital > (
+        by_bucket_scenario[("1", SbmScenarioLabel.LOW)].up_bucket_capital
+    )
+    assert by_bucket_scenario[("1", SbmScenarioLabel.HIGH)].up_bucket_capital > (
+        by_bucket_scenario[("1", SbmScenarioLabel.HIGH)].down_bucket_capital
+    )
+    assert result.selected_scenario in {
+        SbmScenarioLabel.LOW,
+        SbmScenarioLabel.MEDIUM,
+        SbmScenarioLabel.HIGH,
+    }
+    assert set(result.scenario_totals or {}) == {
+        SbmScenarioLabel.LOW,
+        SbmScenarioLabel.MEDIUM,
+        SbmScenarioLabel.HIGH,
+    }
+    assert all(detail.intra_buckets for detail in result.scenario_details)
+
+
+def test_girr_curvature_engine_applies_psi_and_mar21_5_tie_break() -> None:
+    result = calculate_girr_curvature_risk_class_capital(
+        (
+            sample_curvature_sensitivity(
+                sensitivity_id="curv-psi-001",
+                source_row_id="row-curv-psi-001",
+                risk_factor="USD-OIS",
+                up_shock_amount=-1.0,
+                down_shock_amount=-2.0,
+                lineage=replace(sample_lineage(), source_row_id="row-curv-psi-001"),
+            ),
+            sample_curvature_sensitivity(
+                sensitivity_id="curv-psi-002",
+                source_row_id="row-curv-psi-002",
+                risk_factor="USD-LIBOR",
+                up_shock_amount=-1.0,
+                down_shock_amount=-2.0,
+                lineage=replace(sample_lineage(), source_row_id="row-curv-psi-002"),
+            ),
+        ),
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+        reporting_currency="USD",
+    )
+
+    low_record = next(
+        record
+        for record in result.curvature_bucket_branches
+        if record.bucket_id == "1" and record.scenario is SbmScenarioLabel.LOW
+    )
+    assert low_record.up_bucket_capital == 0.0
+    assert low_record.down_bucket_capital == 0.0
+    assert low_record.selected_branch == "up"
+    assert low_record.selected_sum == -2.0
+    assert low_record.up_sum > low_record.down_sum
+    assert low_record.selected_psi_zero_count == 1
+    assert low_record.up_psi_zero_count == 1
+    assert low_record.down_psi_zero_count == 1
+
+
+def test_girr_curvature_audit_serializes_branches_and_numeric_drift_inputs() -> None:
+    risk_class = calculate_girr_curvature_risk_class_capital(
+        (
+            sample_curvature_sensitivity(
+                sensitivity_id="curv-audit-001",
+                source_row_id="row-curv-audit-001",
+                risk_factor="USD-OIS",
+                up_shock_amount=-1.0,
+                down_shock_amount=-2.0,
+                lineage=replace(sample_lineage(), source_row_id="row-curv-audit-001"),
+            ),
+            sample_curvature_sensitivity(
+                sensitivity_id="curv-audit-002",
+                source_row_id="row-curv-audit-002",
+                risk_factor="USD-LIBOR",
+                up_shock_amount=-1.0,
+                down_shock_amount=-2.0,
+                lineage=replace(sample_lineage(), source_row_id="row-curv-audit-002"),
+            ),
+        ),
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+        reporting_currency="USD",
+    )
+    payload = serialize_sbm_result(
+        SbmCapitalResult(
+            total_capital=risk_class.selected_capital,
+            risk_classes=(risk_class,),
             profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
-            reporting_currency="USD",
+            profile_hash="a" * 64,
+            input_hash="b" * 64,
         )
+    )
+    risk_payload = payload["risk_classes"][0]
+
+    assert risk_payload["curvature_branches"]
+    assert risk_payload["curvature_bucket_branches"][0]["selected_branch"] == "up"
+    assert risk_payload["curvature_bucket_branches"][0]["selected_psi_zero_count"] == 1
+    drifted_record = replace(
+        risk_class.curvature_bucket_branches[0],
+        selected_bucket_capital=risk_class.curvature_bucket_branches[0].selected_bucket_capital
+        + 0.01,
+    )
+    drifted_risk_class = replace(
+        risk_class,
+        curvature_bucket_branches=(drifted_record, *risk_class.curvature_bucket_branches[1:]),
+    )
+    drifted_payload = serialize_sbm_result(
+        SbmCapitalResult(
+            total_capital=drifted_risk_class.selected_capital,
+            risk_classes=(drifted_risk_class,),
+            profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+            profile_hash="a" * 64,
+            input_hash="b" * 64,
+        )
+    )
+    assert drifted_payload != payload
 
 
 def test_calculate_sbm_capital_rejects_girr_curvature() -> None:

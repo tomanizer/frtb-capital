@@ -278,6 +278,7 @@ class RiskClassCapital:
     scenario_details: tuple[RiskClassScenarioDetail, ...] = ()
     scenario_selection: SbmBranchMetadata | None = None
     curvature_branches: tuple[CurvatureBranchRecord, ...] = ()
+    curvature_bucket_branches: tuple[CurvatureBucketBranchRecord, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -312,6 +313,28 @@ class CurvatureBranchRecord:
     selected_branch: str
     up_shock_amount: float
     down_shock_amount: float
+    citation_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CurvatureBucketBranchRecord:
+    """Bucket-level curvature branch selection retained for MAR21.5 audit replay."""
+
+    bucket_id: str
+    scenario: SbmScenarioLabel
+    selected_branch: str
+    rejected_branch: str
+    selected_bucket_capital: float
+    rejected_bucket_capital: float
+    up_bucket_capital: float
+    down_bucket_capital: float
+    selected_sum: float
+    up_sum: float
+    down_sum: float
+    selected_psi_zero_count: int
+    up_psi_zero_count: int
+    down_psi_zero_count: int
+    floor_applied: bool
     citation_ids: tuple[str, ...]
 
 
@@ -399,6 +422,7 @@ __all__ = [
     "DEFAULT_PAIRWISE_EVIDENCE_LIMIT",
     "BucketCapital",
     "CurvatureBranchRecord",
+    "CurvatureBucketBranchRecord",
     "CurvatureInput",
     "CurvatureResult",
     "IntraBucketScenarioRecord",
