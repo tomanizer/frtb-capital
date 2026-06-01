@@ -321,6 +321,24 @@ def test_cva_column_builders_do_not_freeze_input_arrays_when_copy_false() -> Non
     assert np.shares_memory(batch.effective_maturities, effective_maturities)
 
 
+def test_cva_column_builders_reject_multidimensional_numpy_float_inputs() -> None:
+    with pytest.raises(CvaInputError, match="ead must be 1-dimensional"):
+        build_cva_netting_set_batch_from_columns(
+            netting_set_ids=np.array(["ns-1"], dtype=object),
+            counterparty_ids=np.array(["cp-1"], dtype=object),
+            eads=np.array([[100_000.0]], dtype=np.float64),
+            effective_maturities=np.array([1.5], dtype=np.float64),
+            discount_factors=np.array([1.0], dtype=np.float64),
+            currencies=np.array(["USD"], dtype=object),
+            sign_conventions=np.array(["non_negative"], dtype=object),
+            uses_imm_eads=np.array([False], dtype=np.bool_),
+            source_row_ids=np.array(["ns-row-1"], dtype=object),
+            lineage_source_systems=np.array(["synthetic"], dtype=object),
+            lineage_source_files=np.array(["netting-sets.csv"], dtype=object),
+            copy_arrays=False,
+        )
+
+
 def test_ba_cva_column_batch_high_volume_path_reports_zero_row_dataclasses(
     reduced_context,
 ) -> None:

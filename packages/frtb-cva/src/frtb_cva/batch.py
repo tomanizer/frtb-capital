@@ -1443,7 +1443,7 @@ def _group_sa_cva_indices_by_path(
         path_mask = (risk_classes == risk_class.value) & (risk_measures == risk_measure.value)
         if not bool(np.any(path_mask)):
             continue
-        grouped[(risk_class, risk_measure)] = [int(index) for index in np.nonzero(path_mask)[0]]
+        grouped[(risk_class, risk_measure)] = np.nonzero(path_mask)[0].tolist()
         supported_mask |= path_mask
 
     unsupported_mask = ~supported_mask
@@ -1586,11 +1586,11 @@ def _netting_indices_by_counterparty(
     grouped: dict[str, tuple[int, ...]] = {}
     start = 0
     while start < order.shape[0]:
-        counterparty_id = counterparty_keys[int(order[start])]
+        counterparty_id = str(counterparty_keys[order[start]])
         end = start + 1
-        while end < order.shape[0] and counterparty_keys[int(order[end])] == counterparty_id:
+        while end < order.shape[0] and counterparty_keys[order[end]] == counterparty_id:
             end += 1
-        grouped[counterparty_id] = tuple(int(index) for index in order[start:end])
+        grouped[counterparty_id] = tuple(order[start:end].tolist())
         start = end
     return grouped
 
@@ -2479,6 +2479,8 @@ def _float_array_from_numpy(
 ) -> FloatArray | None:
     if not isinstance(values, np.ndarray) or values.dtype.kind not in {"f", "i", "u"}:
         return None
+    if values.ndim != 1:
+        raise CvaInputError(f"{field} must be 1-dimensional", field=field)
     array = np.asarray(values, dtype=np.float64)
     if allow_nan:
         invalid = ~np.isnan(array) & ~np.isfinite(array)
