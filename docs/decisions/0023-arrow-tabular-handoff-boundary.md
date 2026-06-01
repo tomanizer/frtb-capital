@@ -104,7 +104,7 @@ CRIF, handoff, IO, or tabular modules.
   contract and concrete `pyarrow` dependency.
 - #268 introduces the first SBM package-owned batch for GIRR delta.
 - #269 adds shared CRIF-to-Arrow normalization while keeping package-specific
-  risk mappings outside common.
+  risk mappings outside common; SBM GIRR delta is the first package consumer.
 - #270 and #271 roll the pattern through the remaining SBM paths and other
   packages after hotspot triage.
 - #274 aligns IMA and orchestration handoff boundaries without moving IMA

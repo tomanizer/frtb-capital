@@ -18,5 +18,12 @@ Current contents:
     diagnostics, row id column naming, metadata, and source hashes;
   - deterministic source, Arrow table, and normalized handoff hashes;
   - dictionary-code extraction and deterministic Arrow table sorting helpers.
+- CRIF-to-Arrow normalization helpers:
+  - package-neutral CRIF column discovery, alias normalization, and primitive
+    coercion;
+  - deterministic accepted/rejected row partitioning with `AdapterDiagnostic`
+    records;
+  - package-supplied RiskType mappings or callbacks, without encoding SBM,
+    DRC, RRAO, CVA, or IMA regulatory semantics in `frtb-common`.
 
 The package performs no capital calculation.

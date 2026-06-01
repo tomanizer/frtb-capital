@@ -37,7 +37,10 @@ it must not look up global constants by regime name inside kernels.
 
 Each package owns a canonical input model at its public boundary. Importers,
 CRIF mappers, examples, and future vendor adapters must translate into that
-model before calculation starts. Public validation rejects missing identities,
+model before calculation starts. Shared CRIF-to-Arrow normalization may own
+column discovery, alias normalization, primitive coercion, rejected-row
+partitioning, and diagnostics, but package adapters still own RiskType mapping
+and regulatory validation. Public validation rejects missing identities,
 duplicate keys unless aggregation is explicit, unknown enum values, non-finite
 numbers, implicit sign conventions, and unsupported regulatory features.
 

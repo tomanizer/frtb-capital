@@ -1,6 +1,20 @@
 """Shared primitives for the frtb-capital suite."""
 
 from frtb_common._version import __version__
+from frtb_common.crif import (
+    CRIF_RISK_TYPE_COLUMN,
+    CRIF_SOURCE_ROW_ID_COLUMN,
+    CRIF_SOURCE_SYSTEM,
+    DEFAULT_CRIF_COLUMN_SPECS,
+    CrifColumnSpec,
+    CrifRiskTypeMapper,
+    CrifRiskTypeMapping,
+    crif_records_to_arrow_table,
+    normalise_crif_risk_type,
+    normalize_crif_arrow_table,
+    normalize_crif_records,
+    resolve_crif_column_name,
+)
 from frtb_common.handoff import (
     DEFAULT_ROW_ID_COLUMN,
     AdapterDiagnostic,
@@ -37,11 +51,18 @@ from frtb_common.status import (
 )
 
 __all__ = [
+    "CRIF_RISK_TYPE_COLUMN",
+    "CRIF_SOURCE_ROW_ID_COLUMN",
+    "CRIF_SOURCE_SYSTEM",
+    "DEFAULT_CRIF_COLUMN_SPECS",
     "DEFAULT_ROW_ID_COLUMN",
     "AdapterDiagnostic",
     "CapitalComponentMetadata",
     "ChunkPolicy",
     "ColumnSpec",
+    "CrifColumnSpec",
+    "CrifRiskTypeMapper",
+    "CrifRiskTypeMapping",
     "DiagnosticSeverity",
     "DictionaryPolicy",
     "ImplementationStatus",
@@ -56,12 +77,17 @@ __all__ = [
     "__version__",
     "arrow_table_content_hash",
     "assert_policy_has_regulatory_citations",
+    "crif_records_to_arrow_table",
     "dictionary_code_chunks",
     "dictionary_code_column",
     "jsonable",
+    "normalise_crif_risk_type",
     "normalize_arrow_table",
+    "normalize_crif_arrow_table",
+    "normalize_crif_records",
     "normalized_handoff_hash",
     "resolve_column_name",
+    "resolve_crif_column_name",
     "sort_table_by_columns",
     "source_content_hash",
     "validate_arrow_table",

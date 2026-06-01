@@ -9,6 +9,9 @@
 - Package-neutral Arrow tabular handoff primitives: accepted/rejected tables,
   column specs, adapter diagnostics, row ids, deterministic hashes, and
   explicit null/chunk/dictionary policies.
+- Package-neutral CRIF-to-Arrow normalization helpers: column discovery,
+  aliases, primitive coercion, accepted/rejected partitioning, diagnostics, and
+  package-supplied RiskType mapping hooks.
 - Future shared regulatory-policy, audit, calendar, sign-convention, and
   calculation-context primitives.
 
@@ -20,7 +23,7 @@
 - Do not move IMA-local abstractions here unless the extraction is explicitly
   scoped and tested.
 - Do not put SBM, DRC, RRAO, CVA, or IMA regulatory semantics in common
-  handoff primitives. Package-owned batches translate handoff tables into
-  calculation-specific axes and arrays.
+  handoff or CRIF primitives. Package-owned adapters supply RiskType mappings,
+  then translate handoff tables into calculation-specific axes and arrays.
 - Do not import from capital component packages.
 - Use frozen dataclasses and enums for public data containers.
