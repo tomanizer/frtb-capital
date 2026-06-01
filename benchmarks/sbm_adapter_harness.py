@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import platform
 import sys
 import time
@@ -64,6 +65,7 @@ DEFAULT_OUTPUT = Path("dist/benchmarks/frtb-sbm-batch-arrow.json")
 DEFAULT_ROW_COUNT = 720
 
 TimedValue = tuple[Any, float]
+TracedValue = tuple[Any, int]
 
 
 @dataclass(frozen=True)
@@ -146,29 +148,36 @@ def build_report(*, row_count: int) -> dict[str, object]:
 def _run_capital_case(spec: CapitalPathSpec, *, row_count: int) -> dict[str, object]:
     context = _context(f"bench-{spec.label}", desk_id=spec.desk_id)
 
-    tracemalloc.start()
-    rows, row_build_seconds = _timed(
-        lambda: tuple(spec.row_factory(index) for index in range(row_count))
+    (
+        (row_result, row_build_seconds, row_compute_seconds, row_audit_seconds),
+        row_peak,
+    ) = _traced_peak_bytes(
+        lambda: _measure_row_capital_path(spec=spec, row_count=row_count, context=context)
     )
-    row_result, row_compute_seconds = _timed(lambda: calculate_sbm_capital(rows, context=context))
-    _row_payload, row_audit_seconds = _timed(lambda: serialize_sbm_result(row_result))
-    _row_current, row_peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-
-    tracemalloc.start()
-    table, table_seconds = _timed(lambda: spec.table_factory(row_count))
-    handoff, normalize_seconds = _timed(lambda: spec.normalize(table))
-    batch, batch_seconds = _timed(lambda: spec.build_batch(handoff))
-    batch_result, batch_compute_seconds = _timed(
-        lambda: spec.calculate_batch(batch, context=context)
+    (
+        (
+            batch,
+            batch_result,
+            table_seconds,
+            normalize_seconds,
+            batch_seconds,
+            batch_compute_seconds,
+            batch_audit_seconds,
+        ),
+        batch_peak,
+    ) = _traced_peak_bytes(
+        lambda: _measure_arrow_batch_capital_path(
+            spec=spec,
+            row_count=row_count,
+            context=context,
+        )
     )
-    _batch_payload, batch_audit_seconds = _timed(lambda: serialize_sbm_result(batch_result))
-    _batch_current, batch_peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
 
-    capital_delta = abs(row_result.total_capital - batch_result.total_capital)
-    if capital_delta > 1e-9:
-        raise RuntimeError(f"{spec.label}: row and batch capital diverged by {capital_delta}")
+    capital_delta = _matching_capital_delta(
+        label=spec.label,
+        row_total=row_result.total_capital,
+        batch_total=batch_result.total_capital,
+    )
 
     return {
         "label": spec.label,
@@ -208,31 +217,31 @@ def _run_capital_case(spec: CapitalPathSpec, *, row_count: int) -> dict[str, obj
 def _run_curvature_validation_case(*, row_count: int) -> dict[str, object]:
     profile_id = SbmRegulatoryProfile.BASEL_MAR21.value
 
-    tracemalloc.start()
-    rows, row_build_seconds = _timed(
-        lambda: tuple(_girr_curvature_row(index) for index in range(row_count))
-    )
-    validated, row_validate_seconds = _timed(
-        lambda: validate_curvature_sensitivities(rows, profile_id=profile_id)
-    )
-    row_branches, row_branch_seconds = _timed(
-        lambda: tuple(
-            curvature_worst_branch(item.up_shock_amount, item.down_shock_amount)
-            for item in validated
+    (
+        (row_branches, row_build_seconds, row_validate_seconds, row_branch_seconds),
+        row_peak,
+    ) = _traced_peak_bytes(
+        lambda: _measure_row_curvature_validation_path(
+            row_count=row_count,
+            profile_id=profile_id,
         )
     )
-    _row_current, row_peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-
-    tracemalloc.start()
-    table, table_seconds = _timed(lambda: _girr_curvature_table(row_count))
-    handoff, normalize_seconds = _timed(lambda: normalize_girr_curvature_arrow_table(table))
-    batch, batch_seconds = _timed(lambda: build_girr_curvature_batch_from_handoff(handoff))
-    branch_records, batch_branch_seconds = _timed(
-        lambda: select_girr_curvature_branches_from_batch(batch, profile_id=profile_id)
+    (
+        (
+            batch,
+            branch_records,
+            table_seconds,
+            normalize_seconds,
+            batch_seconds,
+            batch_branch_seconds,
+        ),
+        batch_peak,
+    ) = _traced_peak_bytes(
+        lambda: _measure_arrow_batch_curvature_validation_path(
+            row_count=row_count,
+            profile_id=profile_id,
+        )
     )
-    _batch_current, batch_peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
 
     batch_branches = tuple(record.selected_branch for record in branch_records)
     if row_branches != batch_branches:
@@ -283,6 +292,107 @@ def _timed(callback: Callable[[], Any]) -> TimedValue:
     started = time.perf_counter()
     value = callback()
     return value, time.perf_counter() - started
+
+
+def _traced_peak_bytes(callback: Callable[[], Any]) -> TracedValue:
+    tracemalloc.start()
+    try:
+        value = callback()
+        _current, peak = tracemalloc.get_traced_memory()
+        return value, peak
+    finally:
+        tracemalloc.stop()
+
+
+def _measure_row_capital_path(
+    *,
+    spec: CapitalPathSpec,
+    row_count: int,
+    context: SbmCalculationContext,
+) -> tuple[SbmCapitalResult, float, float, float]:
+    rows, row_build_seconds = _timed(
+        lambda: tuple(spec.row_factory(index) for index in range(row_count))
+    )
+    row_result, row_compute_seconds = _timed(lambda: calculate_sbm_capital(rows, context=context))
+    _row_payload, row_audit_seconds = _timed(lambda: serialize_sbm_result(row_result))
+    return row_result, row_build_seconds, row_compute_seconds, row_audit_seconds
+
+
+def _measure_arrow_batch_capital_path(
+    *,
+    spec: CapitalPathSpec,
+    row_count: int,
+    context: SbmCalculationContext,
+) -> tuple[SbmSensitivityBatch, SbmCapitalResult, float, float, float, float, float]:
+    table, table_seconds = _timed(lambda: spec.table_factory(row_count))
+    handoff, normalize_seconds = _timed(lambda: spec.normalize(table))
+    batch, batch_seconds = _timed(lambda: spec.build_batch(handoff))
+    batch_result, batch_compute_seconds = _timed(
+        lambda: spec.calculate_batch(batch, context=context)
+    )
+    _batch_payload, batch_audit_seconds = _timed(lambda: serialize_sbm_result(batch_result))
+    return (
+        batch,
+        batch_result,
+        table_seconds,
+        normalize_seconds,
+        batch_seconds,
+        batch_compute_seconds,
+        batch_audit_seconds,
+    )
+
+
+def _measure_row_curvature_validation_path(
+    *,
+    row_count: int,
+    profile_id: str,
+) -> tuple[tuple[str, ...], float, float, float]:
+    rows, row_build_seconds = _timed(
+        lambda: tuple(_girr_curvature_row(index) for index in range(row_count))
+    )
+    validated, row_validate_seconds = _timed(
+        lambda: validate_curvature_sensitivities(rows, profile_id=profile_id)
+    )
+    row_branches, row_branch_seconds = _timed(
+        lambda: tuple(
+            curvature_worst_branch(item.up_shock_amount, item.down_shock_amount)
+            for item in validated
+        )
+    )
+    return row_branches, row_build_seconds, row_validate_seconds, row_branch_seconds
+
+
+def _measure_arrow_batch_curvature_validation_path(
+    *,
+    row_count: int,
+    profile_id: str,
+) -> tuple[SbmSensitivityBatch, tuple[Any, ...], float, float, float, float]:
+    table, table_seconds = _timed(lambda: _girr_curvature_table(row_count))
+    handoff, normalize_seconds = _timed(lambda: normalize_girr_curvature_arrow_table(table))
+    batch, batch_seconds = _timed(lambda: build_girr_curvature_batch_from_handoff(handoff))
+    branch_records, batch_branch_seconds = _timed(
+        lambda: select_girr_curvature_branches_from_batch(batch, profile_id=profile_id)
+    )
+    return (
+        batch,
+        branch_records,
+        table_seconds,
+        normalize_seconds,
+        batch_seconds,
+        batch_branch_seconds,
+    )
+
+
+def _matching_capital_delta(*, label: str, row_total: float, batch_total: float) -> float:
+    if not math.isfinite(row_total) or not math.isfinite(batch_total):
+        raise RuntimeError(
+            f"{label}: row and batch capital must be finite, "
+            f"got row={row_total!r}, batch={batch_total!r}"
+        )
+    capital_delta = abs(row_total - batch_total)
+    if capital_delta > 1e-9:
+        raise RuntimeError(f"{label}: row and batch capital diverged by {capital_delta}")
+    return capital_delta
 
 
 def _context(run_id: str, *, desk_id: str) -> SbmCalculationContext:
