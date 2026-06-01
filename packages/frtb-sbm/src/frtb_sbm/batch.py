@@ -28,7 +28,6 @@ from frtb_sbm.validation import (
     coerce_risk_measure,
     coerce_sign_convention,
     normalise_currency_code,
-    normalise_sensitivity_amount,
     validate_sbm_sensitivities,
 )
 
@@ -411,68 +410,30 @@ def _validate_girr_delta_batch_arrays(
     arrays: Mapping[str, ObjectArray],
     amount_array: FloatArray,
 ) -> None:
-    seen_ids: set[str] = set()
-    for row_index in range(int(amount_array.shape[0])):
-        sensitivity_id = _require_text_array_value(
-            arrays["sensitivity_ids"],
-            row_index,
-            "sensitivity_id",
-        )
-        if sensitivity_id in seen_ids:
-            raise SbmInputError(
-                "duplicate sensitivity id",
-                field="sensitivity_id",
-                sensitivity_id=sensitivity_id,
-            )
-        seen_ids.add(sensitivity_id)
-        _require_text_array_value(arrays["source_row_ids"], row_index, "source_row_id")
-        _require_text_array_value(arrays["desk_ids"], row_index, "desk_id", sensitivity_id)
-        _require_text_array_value(
-            arrays["legal_entities"],
-            row_index,
-            "legal_entity",
-            sensitivity_id,
-        )
-        _require_text_array_value(arrays["buckets"], row_index, "bucket", sensitivity_id)
-        _require_text_array_value(
-            arrays["risk_factors"],
-            row_index,
-            "risk_factor",
-            sensitivity_id,
-        )
-        _require_text_array_value(arrays["tenors"], row_index, "tenor", sensitivity_id)
-        _require_text_array_value(
-            arrays["lineage_source_systems"],
-            row_index,
-            "lineage.source_system",
-            sensitivity_id,
-        )
-        _require_text_array_value(
-            arrays["lineage_source_files"],
-            row_index,
-            "lineage.source_file",
-            sensitivity_id,
-        )
-        risk_class = coerce_risk_class(arrays["risk_classes"][row_index])
-        risk_measure = coerce_risk_measure(arrays["risk_measures"][row_index])
-        if risk_class is not SbmRiskClass.GIRR:
-            raise SbmInputError(
-                "GIRR delta batch only accepts GIRR sensitivities",
-                field="risk_class",
-                sensitivity_id=sensitivity_id,
-            )
-        if risk_measure is not SbmRiskMeasure.DELTA:
-            raise SbmInputError(
-                "GIRR delta batch only accepts delta sensitivities",
-                field="risk_measure",
-                sensitivity_id=sensitivity_id,
-            )
-        normalise_currency_code(
-            cast(str, arrays["amount_currencies"][row_index]),
-            sensitivity_id=sensitivity_id,
-        )
-        coerce_sign_convention(arrays["sign_conventions"][row_index])
-        normalise_sensitivity_amount(float(amount_array[row_index]), sensitivity_id=sensitivity_id)
+    sensitivity_ids = arrays["sensitivity_ids"]
+    for field_name, column in arrays.items():
+        _validate_required_text_column(column, field_name, sensitivity_ids=sensitivity_ids)
+    _validate_unique_sensitivity_ids(sensitivity_ids)
+    _validate_constant_column(
+        arrays["risk_classes"],
+        expected=SbmRiskClass.GIRR.value,
+        field="risk_class",
+        message="GIRR delta batch only accepts GIRR sensitivities",
+        sensitivity_ids=sensitivity_ids,
+    )
+    _validate_constant_column(
+        arrays["risk_measures"],
+        expected=SbmRiskMeasure.DELTA.value,
+        field="risk_measure",
+        message="GIRR delta batch only accepts delta sensitivities",
+        sensitivity_ids=sensitivity_ids,
+    )
+    for amount_currency in np.unique(arrays["amount_currencies"]):
+        normalise_currency_code(cast(str, amount_currency))
+    for sign_convention in np.unique(arrays["sign_conventions"]):
+        coerce_sign_convention(sign_convention)
+    if not np.all(np.isfinite(amount_array)):
+        raise SbmInputError("value must be finite", field="amount")
 
 
 def _validate_source_column_maps(
@@ -560,6 +521,8 @@ def _optional_object_array(
         raise SbmInputError(f"{field} length must match batch row count", field=field)
     if not any(value is not None for value in array):
         return None
+    if field in {"up_shock_amount", "down_shock_amount"}:
+        _validate_optional_float_column(array, field)
     return array
 
 
@@ -596,20 +559,78 @@ def _require_girr_delta_sensitivity(sensitivity: SbmSensitivity) -> None:
         )
 
 
-def _require_text_array_value(
+def _validate_required_text_column(
     values: ObjectArray,
-    row_index: int,
     field: str,
-    sensitivity_id: str = "",
-) -> str:
-    value = values[row_index]
-    if not isinstance(value, str) or not value.strip():
+    *,
+    sensitivity_ids: ObjectArray,
+) -> None:
+    invalid_mask = np.fromiter(
+        (not isinstance(value, str) or not value.strip() for value in values),
+        dtype=np.bool_,
+        count=int(values.shape[0]),
+    )
+    if np.any(invalid_mask):
+        row_index = int(np.flatnonzero(invalid_mask)[0])
         raise SbmInputError(
             "non-empty text is required",
             field=field,
-            sensitivity_id=sensitivity_id,
+            sensitivity_id=_sensitivity_id_for_index(sensitivity_ids, row_index),
         )
-    return value
+
+
+def _validate_unique_sensitivity_ids(sensitivity_ids: ObjectArray) -> None:
+    unique_ids, counts = np.unique(sensitivity_ids, return_counts=True)
+    duplicate_mask = counts > 1
+    if not np.any(duplicate_mask):
+        return
+    duplicate_id = cast(str, unique_ids[int(np.flatnonzero(duplicate_mask)[0])])
+    raise SbmInputError(
+        "duplicate sensitivity id",
+        field="sensitivity_id",
+        sensitivity_id=duplicate_id,
+    )
+
+
+def _validate_constant_column(
+    values: ObjectArray,
+    *,
+    expected: str,
+    field: str,
+    message: str,
+    sensitivity_ids: ObjectArray,
+) -> None:
+    invalid_mask = values != expected
+    if not np.any(invalid_mask):
+        return
+    row_index = int(np.flatnonzero(invalid_mask)[0])
+    if field == "risk_class":
+        coerce_risk_class(values[row_index])
+    if field == "risk_measure":
+        coerce_risk_measure(values[row_index])
+    raise SbmInputError(
+        message,
+        field=field,
+        sensitivity_id=_sensitivity_id_for_index(sensitivity_ids, row_index),
+    )
+
+
+def _validate_optional_float_column(values: ObjectArray, field: str) -> None:
+    for value in values:
+        if value is None:
+            continue
+        try:
+            float_value = float(value)
+        except (TypeError, ValueError) as exc:
+            raise SbmInputError("value must be numeric", field=field) from exc
+        if not np.isfinite(float_value):
+            raise SbmInputError("value must be finite", field=field)
+
+
+def _sensitivity_id_for_index(values: ObjectArray, row_index: int) -> str:
+    if row_index < int(values.shape[0]) and isinstance(values[row_index], str):
+        return cast(str, values[row_index])
+    return ""
 
 
 def _str_at(values: ObjectArray, row_index: int) -> str:

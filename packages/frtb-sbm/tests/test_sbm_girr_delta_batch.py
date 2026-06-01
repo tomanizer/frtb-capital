@@ -9,6 +9,7 @@ import pytest
 from frtb_common import AdapterDiagnostic, DiagnosticSeverity, source_content_hash
 from frtb_sbm import (
     SbmCalculationContext,
+    SbmInputError,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
@@ -148,6 +149,18 @@ def test_arrow_handoff_batch_matches_row_batch_and_preserves_handoff_metadata() 
     np.testing.assert_array_equal(arrow_batch.buckets, row_batch.buckets)
     np.testing.assert_array_equal(arrow_batch.risk_factors, row_batch.risk_factors)
     np.testing.assert_allclose(arrow_batch.amounts, row_batch.amounts)
+
+
+def test_arrow_handoff_rejects_non_finite_optional_float_columns() -> None:
+    sensitivities = _sensitivities()[:1]
+    table = _arrow_table(sensitivities).append_column(
+        "up_shock_amount",
+        pa.array([float("nan")], type=pa.float64()),
+    )
+    handoff = normalize_girr_delta_arrow_table(table)
+
+    with pytest.raises(SbmInputError, match="value must be finite"):
+        build_girr_delta_batch_from_handoff(handoff)
 
 
 def test_row_and_arrow_calculation_paths_produce_same_girr_delta_capital() -> None:

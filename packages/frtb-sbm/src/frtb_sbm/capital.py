@@ -311,18 +311,18 @@ def _ensure_girr_delta_batch_run_supported(
     if batch.row_count == 0:
         raise SbmInputError("GIRR delta batch must not be empty", field="batch")
     normalise_currency_code(context.reporting_currency, field="reporting_currency")
-    scoped_desk_id = context.desk_id.strip()
-    scoped_legal_entity = context.legal_entity.strip()
+    scoped_desk_id = (context.desk_id or "").strip()
+    scoped_legal_entity = (context.legal_entity or "").strip()
     for row_index in range(batch.row_count):
-        sensitivity_id = str(batch.sensitivity_ids[row_index])
-        if scoped_desk_id and str(batch.desk_ids[row_index]) != scoped_desk_id:
+        sensitivity_id = batch.sensitivity_ids[row_index]
+        if scoped_desk_id and batch.desk_ids[row_index] != scoped_desk_id:
             raise SbmInputError(
                 f"desk_id {batch.desk_ids[row_index]} does not match "
                 f"context desk_id {scoped_desk_id}",
                 field="desk_id",
                 sensitivity_id=sensitivity_id,
             )
-        if scoped_legal_entity and str(batch.legal_entities[row_index]) != scoped_legal_entity:
+        if scoped_legal_entity and batch.legal_entities[row_index] != scoped_legal_entity:
             raise SbmInputError(
                 f"legal_entity {batch.legal_entities[row_index]} does not match "
                 f"context legal_entity {scoped_legal_entity}",

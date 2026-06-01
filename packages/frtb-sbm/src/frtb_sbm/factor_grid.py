@@ -6,6 +6,7 @@ import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from types import MappingProxyType
+from typing import cast
 
 from frtb_sbm.batch import SbmSensitivityBatch, sorted_girr_delta_batch_indices
 from frtb_sbm.data_models import SbmRiskClass, SbmRiskMeasure, SbmSensitivity, WeightedSensitivity
@@ -112,15 +113,15 @@ def net_girr_delta_sensitivity_batch(
         SbmRiskClass.GIRR,
         SbmRiskMeasure.DELTA,
     )
-    original_ids = frozenset(str(item) for item in batch.sensitivity_ids)
+    original_ids = frozenset(cast(Iterable[str], batch.sensitivity_ids))
     groups: dict[GirrDeltaFactorKey, list[int]] = {}
     weights_by_key: dict[GirrDeltaFactorKey, tuple[float, tuple[str, ...]]] = {}
     for row_index in sorted_girr_delta_batch_indices(batch):
         index = int(row_index)
         key = GirrDeltaFactorKey(
-            bucket=str(batch.buckets[index]),
-            risk_factor=str(batch.risk_factors[index]),
-            tenor=str(batch.tenors[index]),
+            bucket=cast(str, batch.buckets[index]),
+            risk_factor=cast(str, batch.risk_factors[index]),
+            tenor=cast(str, batch.tenors[index]),
         )
         groups.setdefault(key, []).append(index)
         if key not in weights_by_key:
@@ -232,15 +233,15 @@ def _single_batch_weighted_sensitivity(
 ) -> WeightedSensitivity:
     amount = float(batch.amounts[row_index])
     return WeightedSensitivity(
-        sensitivity_id=str(batch.sensitivity_ids[row_index]),
+        sensitivity_id=cast(str, batch.sensitivity_ids[row_index]),
         risk_class=SbmRiskClass.GIRR,
         risk_measure=SbmRiskMeasure.DELTA,
-        bucket=str(batch.buckets[row_index]),
+        bucket=cast(str, batch.buckets[row_index]),
         raw_amount=amount,
         risk_weight=risk_weight,
         scaled_amount=amount * risk_weight,
         citation_ids=citation_ids,
-        qualifier=str(batch.tenors[row_index]),
+        qualifier=cast(str, batch.tenors[row_index]),
     )
 
 
@@ -267,10 +268,10 @@ def _net_batch_factor_group(
         qualifier=key.tenor,
         factor_key=key.as_tuple(),
         contributing_sensitivity_ids=tuple(
-            str(batch.sensitivity_ids[index]) for index in row_indices
+            cast(str, batch.sensitivity_ids[index]) for index in row_indices
         ),
         contributing_source_row_ids=tuple(
-            str(batch.source_row_ids[index]) for index in row_indices
+            cast(str, batch.source_row_ids[index]) for index in row_indices
         ),
     )
 
