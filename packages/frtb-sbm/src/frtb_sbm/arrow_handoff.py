@@ -4,7 +4,8 @@ Regulatory traceability:
     ADR 0023 Arrow handoff boundary; Basel MAR21.4-MAR21.7 and
     MAR21.39-MAR21.42 for the downstream GIRR delta capital path; MAR21.90-
     MAR21.95 for the downstream GIRR vega capital path; MAR21.71-MAR21.89 for
-    downstream equity, commodity, and FX delta paths.
+    downstream equity, commodity, and FX delta paths; MAR21.51-MAR21.70 for
+    downstream CSR delta paths.
 """
 
 from __future__ import annotations
@@ -29,6 +30,9 @@ from frtb_common import (
 from frtb_sbm.batch import (
     SbmSensitivityBatch,
     build_commodity_delta_batch_from_columns,
+    build_csr_nonsec_delta_batch_from_columns,
+    build_csr_sec_ctp_delta_batch_from_columns,
+    build_csr_sec_nonctp_delta_batch_from_columns,
     build_equity_delta_batch_from_columns,
     build_fx_delta_batch_from_columns,
     build_girr_delta_batch_from_columns,
@@ -36,6 +40,9 @@ from frtb_sbm.batch import (
 )
 from frtb_sbm.capital import (
     calculate_sbm_capital_from_commodity_delta_batch,
+    calculate_sbm_capital_from_csr_nonsec_delta_batch,
+    calculate_sbm_capital_from_csr_sec_ctp_delta_batch,
+    calculate_sbm_capital_from_csr_sec_nonctp_delta_batch,
     calculate_sbm_capital_from_equity_delta_batch,
     calculate_sbm_capital_from_fx_delta_batch,
     calculate_sbm_capital_from_girr_delta_batch,
@@ -183,6 +190,21 @@ COMMODITY_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _delta_column_spe
     qualifier_required=True,
 )
 
+CSR_NONSEC_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _delta_column_specs(
+    tenor_required=True,
+    qualifier_required=True,
+)
+
+CSR_SEC_NONCTP_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _delta_column_specs(
+    tenor_required=True,
+    qualifier_required=True,
+)
+
+CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _delta_column_specs(
+    tenor_required=True,
+    qualifier_required=True,
+)
+
 
 def normalize_girr_delta_arrow_table(
     table: pa.Table,
@@ -281,6 +303,69 @@ def normalize_commodity_delta_arrow_table(
     return normalize_arrow_table(
         table,
         column_specs=COMMODITY_DELTA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_csr_nonsec_delta_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM CSR non-securitisation delta contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=CSR_NONSEC_DELTA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_csr_sec_nonctp_delta_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM CSR securitisation non-CTP delta contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=CSR_SEC_NONCTP_DELTA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_csr_sec_ctp_delta_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM CSR securitisation CTP delta contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS,
         rejected=rejected,
         diagnostics=diagnostics,
         metadata={} if metadata is None else metadata,
@@ -483,6 +568,123 @@ def build_commodity_delta_batch_from_handoff(
     )
 
 
+def build_csr_nonsec_delta_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned CSR non-securitisation delta batch from an Arrow handoff."""
+
+    if not isinstance(handoff, NormalizedTabularHandoff):
+        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
+    table = handoff.accepted
+    validate_arrow_table(table, column_specs=CSR_NONSEC_DELTA_HANDOFF_COLUMN_SPECS)
+    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
+    return build_csr_nonsec_delta_batch_from_columns(
+        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
+        source_row_ids=_required_object_column(table, "source_row_id"),
+        desk_ids=_required_object_column(table, "desk_id"),
+        legal_entities=_required_object_column(table, "legal_entity"),
+        risk_classes=_required_object_column(table, "risk_class"),
+        risk_measures=_required_object_column(table, "risk_measure"),
+        buckets=_required_object_column(table, "bucket"),
+        risk_factors=_required_object_column(table, "risk_factor"),
+        amounts=_required_float_column(table, "amount"),
+        amount_currencies=_required_object_column(table, "amount_currency"),
+        sign_conventions=_required_object_column(table, "sign_convention"),
+        tenors=_required_object_column(table, "tenor"),
+        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
+        lineage_source_files=_required_object_column(table, "lineage_source_file"),
+        source_hash=handoff.source_hash,
+        handoff_hash=normalized_handoff_hash(handoff),
+        diagnostics=diagnostic_payloads,
+        position_ids=_optional_object_column(table, "position_id"),
+        qualifiers=_required_object_column(table, "qualifier"),
+        option_tenors=_optional_object_column(table, "option_tenor"),
+        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
+        maturities=_optional_object_column(table, "maturity"),
+        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
+        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
+        copy_arrays=False,
+    )
+
+
+def build_csr_sec_nonctp_delta_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned CSR securitisation non-CTP delta batch from an Arrow handoff."""
+
+    if not isinstance(handoff, NormalizedTabularHandoff):
+        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
+    table = handoff.accepted
+    validate_arrow_table(table, column_specs=CSR_SEC_NONCTP_DELTA_HANDOFF_COLUMN_SPECS)
+    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
+    return build_csr_sec_nonctp_delta_batch_from_columns(
+        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
+        source_row_ids=_required_object_column(table, "source_row_id"),
+        desk_ids=_required_object_column(table, "desk_id"),
+        legal_entities=_required_object_column(table, "legal_entity"),
+        risk_classes=_required_object_column(table, "risk_class"),
+        risk_measures=_required_object_column(table, "risk_measure"),
+        buckets=_required_object_column(table, "bucket"),
+        risk_factors=_required_object_column(table, "risk_factor"),
+        amounts=_required_float_column(table, "amount"),
+        amount_currencies=_required_object_column(table, "amount_currency"),
+        sign_conventions=_required_object_column(table, "sign_convention"),
+        tenors=_required_object_column(table, "tenor"),
+        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
+        lineage_source_files=_required_object_column(table, "lineage_source_file"),
+        source_hash=handoff.source_hash,
+        handoff_hash=normalized_handoff_hash(handoff),
+        diagnostics=diagnostic_payloads,
+        position_ids=_optional_object_column(table, "position_id"),
+        qualifiers=_required_object_column(table, "qualifier"),
+        option_tenors=_optional_object_column(table, "option_tenor"),
+        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
+        maturities=_optional_object_column(table, "maturity"),
+        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
+        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
+        copy_arrays=False,
+    )
+
+
+def build_csr_sec_ctp_delta_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned CSR securitisation CTP delta batch from an Arrow handoff."""
+
+    if not isinstance(handoff, NormalizedTabularHandoff):
+        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
+    table = handoff.accepted
+    validate_arrow_table(table, column_specs=CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS)
+    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
+    return build_csr_sec_ctp_delta_batch_from_columns(
+        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
+        source_row_ids=_required_object_column(table, "source_row_id"),
+        desk_ids=_required_object_column(table, "desk_id"),
+        legal_entities=_required_object_column(table, "legal_entity"),
+        risk_classes=_required_object_column(table, "risk_class"),
+        risk_measures=_required_object_column(table, "risk_measure"),
+        buckets=_required_object_column(table, "bucket"),
+        risk_factors=_required_object_column(table, "risk_factor"),
+        amounts=_required_float_column(table, "amount"),
+        amount_currencies=_required_object_column(table, "amount_currency"),
+        sign_conventions=_required_object_column(table, "sign_convention"),
+        tenors=_required_object_column(table, "tenor"),
+        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
+        lineage_source_files=_required_object_column(table, "lineage_source_file"),
+        source_hash=handoff.source_hash,
+        handoff_hash=normalized_handoff_hash(handoff),
+        diagnostics=diagnostic_payloads,
+        position_ids=_optional_object_column(table, "position_id"),
+        qualifiers=_required_object_column(table, "qualifier"),
+        option_tenors=_optional_object_column(table, "option_tenor"),
+        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
+        maturities=_optional_object_column(table, "maturity"),
+        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
+        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
+        copy_arrays=False,
+    )
+
+
 def calculate_sbm_capital_from_girr_delta_handoff(
     handoff: NormalizedTabularHandoff,
     *,
@@ -536,6 +738,39 @@ def calculate_sbm_capital_from_commodity_delta_handoff(
 
     batch = build_commodity_delta_batch_from_handoff(handoff)
     return calculate_sbm_capital_from_commodity_delta_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_csr_nonsec_delta_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized CSR non-sec delta Arrow handoff."""
+
+    batch = build_csr_nonsec_delta_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_csr_nonsec_delta_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_csr_sec_nonctp_delta_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized CSR sec non-CTP delta Arrow handoff."""
+
+    batch = build_csr_sec_nonctp_delta_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_csr_sec_nonctp_delta_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_csr_sec_ctp_delta_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized CSR sec CTP delta Arrow handoff."""
+
+    batch = build_csr_sec_ctp_delta_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_csr_sec_ctp_delta_batch(batch, context=context)
 
 
 def _required_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np.object_]:
@@ -593,21 +828,33 @@ def _required_float_column(table: pa.Table, column_name: str) -> npt.NDArray[np.
 
 __all__ = [
     "COMMODITY_DELTA_HANDOFF_COLUMN_SPECS",
+    "CSR_NONSEC_DELTA_HANDOFF_COLUMN_SPECS",
+    "CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS",
+    "CSR_SEC_NONCTP_DELTA_HANDOFF_COLUMN_SPECS",
     "EQUITY_DELTA_HANDOFF_COLUMN_SPECS",
     "FX_DELTA_HANDOFF_COLUMN_SPECS",
     "GIRR_DELTA_HANDOFF_COLUMN_SPECS",
     "GIRR_VEGA_HANDOFF_COLUMN_SPECS",
     "build_commodity_delta_batch_from_handoff",
+    "build_csr_nonsec_delta_batch_from_handoff",
+    "build_csr_sec_ctp_delta_batch_from_handoff",
+    "build_csr_sec_nonctp_delta_batch_from_handoff",
     "build_equity_delta_batch_from_handoff",
     "build_fx_delta_batch_from_handoff",
     "build_girr_delta_batch_from_handoff",
     "build_girr_vega_batch_from_handoff",
     "calculate_sbm_capital_from_commodity_delta_handoff",
+    "calculate_sbm_capital_from_csr_nonsec_delta_handoff",
+    "calculate_sbm_capital_from_csr_sec_ctp_delta_handoff",
+    "calculate_sbm_capital_from_csr_sec_nonctp_delta_handoff",
     "calculate_sbm_capital_from_equity_delta_handoff",
     "calculate_sbm_capital_from_fx_delta_handoff",
     "calculate_sbm_capital_from_girr_delta_handoff",
     "calculate_sbm_capital_from_girr_vega_handoff",
     "normalize_commodity_delta_arrow_table",
+    "normalize_csr_nonsec_delta_arrow_table",
+    "normalize_csr_sec_ctp_delta_arrow_table",
+    "normalize_csr_sec_nonctp_delta_arrow_table",
     "normalize_equity_delta_arrow_table",
     "normalize_fx_delta_arrow_table",
     "normalize_girr_delta_arrow_table",

@@ -19,6 +19,7 @@ from frtb_sbm.aggregation import (
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
+from frtb_sbm.batch import SbmSensitivityBatch, build_csr_sec_ctp_delta_batch_from_sensitivities
 from frtb_sbm.csr_sec_ctp_reference_data import csr_sec_ctp_delta_intra_bucket_correlation
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
@@ -30,7 +31,7 @@ from frtb_sbm.data_models import (
     WeightedSensitivity,
 )
 from frtb_sbm.risk_classes.csr_nonsec import build_csr_nonsec_inter_bucket_correlation_map
-from frtb_sbm.weighted_sensitivity import weight_csr_sec_ctp_delta_sensitivities
+from frtb_sbm.weighted_sensitivity import weight_csr_sec_ctp_delta_sensitivity_batch
 
 _MAR21_CSR_CTP_INTRA_CITATION = ("basel_mar21_4_intra_bucket", "basel_mar21_58")
 _MAR21_CSR_CTP_INTER_CITATION = ("basel_mar21_4_inter_bucket", "basel_mar21_57")
@@ -45,16 +46,36 @@ def calculate_csr_sec_ctp_delta_risk_class_capital(
 ) -> RiskClassCapital:
     """Calculate cited CSR securitisation CTP delta risk-class capital."""
 
-    weighted = weight_csr_sec_ctp_delta_sensitivities(
-        sensitivities,
+    batch = build_csr_sec_ctp_delta_batch_from_sensitivities(sensitivities)
+    return calculate_csr_sec_ctp_delta_risk_class_capital_from_batch(
+        batch,
+        profile_id=profile_id,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
+    )
+
+
+def calculate_csr_sec_ctp_delta_risk_class_capital_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+) -> RiskClassCapital:
+    """Calculate cited CSR securitisation CTP delta risk-class capital from a batch."""
+
+    from frtb_sbm.batch import _batch_text_by_id
+
+    weighted = weight_csr_sec_ctp_delta_sensitivity_batch(
+        batch,
         profile_id=profile_id,
     )
     return aggregate_csr_sec_ctp_delta_measure_capital(
         weighted,
         profile_id=profile_id,
-        name_by_id={item.sensitivity_id: item.qualifier or "" for item in sensitivities},
-        tenor_by_id={item.sensitivity_id: item.tenor or "" for item in sensitivities},
-        risk_factor_by_id={item.sensitivity_id: item.risk_factor for item in sensitivities},
+        name_by_id=_batch_text_by_id(batch, batch.qualifiers, field="qualifier"),
+        tenor_by_id=_batch_text_by_id(batch, batch.tenors, field="tenor"),
+        risk_factor_by_id=_batch_text_by_id(batch, batch.risk_factors, field="risk_factor"),
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
     )
@@ -143,4 +164,5 @@ __all__ = [
     "aggregate_csr_sec_ctp_delta_measure_capital",
     "build_csr_sec_ctp_delta_intra_bucket_correlation_matrix",
     "calculate_csr_sec_ctp_delta_risk_class_capital",
+    "calculate_csr_sec_ctp_delta_risk_class_capital_from_batch",
 ]
