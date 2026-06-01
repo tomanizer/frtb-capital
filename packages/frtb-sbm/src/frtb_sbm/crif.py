@@ -315,7 +315,7 @@ def _coalesce_text_columns(primary: pa.Array, fallback: pa.Array) -> pa.Array:
 
 
 def _constant_text_column(value: str, row_count: int) -> pa.Array:
-    return pa.array([value] * row_count, type=pa.string())
+    return pa.repeat(pa.scalar(value, type=pa.string()), row_count)
 
 
 def _map_crif_row(

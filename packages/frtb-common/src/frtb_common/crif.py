@@ -159,8 +159,13 @@ def crif_records_to_arrow_table(records: Sequence[Mapping[str, object]]) -> pa.T
     for index, record in enumerate(rows):
         if not isinstance(record, Mapping):
             raise TabularHandoffError(f"CRIF record at index {index} must be a mapping")
+        for key in record:
+            if not isinstance(key, str) or not key.strip():
+                raise TabularHandoffError(
+                    f"CRIF record at index {index} contains a non-string or blank field name"
+                )
 
-    column_names = sorted({str(key) for record in rows for key in record})
+    column_names = sorted({key for record in rows for key in record})
     columns: dict[str, pa.Array] = {}
     for column_name in column_names:
         values = [_stringify_record_value(record.get(column_name)) for record in rows]

@@ -102,6 +102,15 @@ def test_normalize_crif_records_synthesizes_source_row_ids_and_hashes_determinis
     assert handoff.rejected is None
 
 
+def test_records_with_non_string_keys_are_rejected_before_arrow_conversion() -> None:
+    with pytest.raises(TabularHandoffError, match="non-string or blank field name"):
+        normalize_crif_records(
+            ({1: "t-1", "RiskType": "RISK_IRCURVE", "Amount": "1.0"},),
+            column_specs=_column_specs(),
+            risk_type_mappings=(CrifRiskTypeMapping(("RISK_IRCURVE",), {}),),
+        )
+
+
 def test_column_discovery_is_case_spacing_and_underscore_insensitive() -> None:
     table = pa.table({"Sensitivity ID": ["s-1"], "risk_type": ["RISK_IRCURVE"]})
 
