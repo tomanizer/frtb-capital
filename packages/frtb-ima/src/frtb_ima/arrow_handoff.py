@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import cast
 
+import numpy as np
+import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
@@ -15,6 +18,7 @@ from frtb_common import (
     NullPolicy,
     TabularLogicalType,
     normalize_arrow_table,
+    normalized_handoff_hash,
     validate_arrow_table,
 )
 
@@ -23,6 +27,13 @@ from frtb_ima.input_manifest import (
     InputArtifactLineage,
     InputValidationStatus,
 )
+from frtb_ima.rfet_evidence import RFETObservationBatch
+from frtb_ima.scenario import ScenarioMetadataBatch, ScenarioSetType
+
+BooleanArray = npt.NDArray[np.bool_]
+DateArray = npt.NDArray[np.datetime64]
+DatetimeArray = npt.NDArray[np.datetime64]
+StringArray = npt.NDArray[np.str_]
 
 IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("artifact_name", aliases=("artifactName",), logical_type=TabularLogicalType.STRING),
@@ -82,6 +93,135 @@ IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ),
 )
 
+IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
+    ColumnSpec("scenario_id", aliases=("scenarioId",), logical_type=TabularLogicalType.STRING),
+    ColumnSpec(
+        "scenario_date",
+        aliases=("scenarioDate",),
+        logical_type=TabularLogicalType.DATE,
+    ),
+    ColumnSpec(
+        "scenario_set",
+        aliases=("scenarioSet", "set_type", "setType"),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "calibration_window",
+        aliases=("calibrationWindow",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "source",
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "provenance_json",
+        aliases=("provenanceJson",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "source_row_id",
+        aliases=("sourceRowId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+)
+
+IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
+    ColumnSpec(
+        "risk_factor_name",
+        aliases=("riskFactorName",),
+        logical_type=TabularLogicalType.STRING,
+    ),
+    ColumnSpec(
+        "observation_date",
+        aliases=("observationDate",),
+        logical_type=TabularLogicalType.DATE,
+    ),
+    ColumnSpec(
+        "source",
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "vendor_id",
+        aliases=("vendorId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "venue",
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "feed",
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "observation_timestamp",
+        aliases=("observationTimestamp",),
+        logical_type=TabularLogicalType.TIMESTAMP,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "date_normalization_evidence",
+        aliases=("dateNormalizationEvidence",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "verifiable",
+        logical_type=TabularLogicalType.BOOLEAN,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "verifiability_reason",
+        aliases=("verifiabilityReason",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "data_pool_id",
+        aliases=("dataPoolId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "vendor_audit_evidence_id",
+        aliases=("vendorAuditEvidenceId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "source_row_id",
+        aliases=("sourceRowId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+)
+
 
 def normalize_ima_input_manifest_arrow_table(
     table: pa.Table,
@@ -101,6 +241,110 @@ def normalize_ima_input_manifest_arrow_table(
         metadata={} if metadata is None else metadata,
         source_hash=source_hash,
         require_unique_row_ids=False,
+    )
+
+
+def normalize_ima_scenario_metadata_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize an Arrow scenario metadata table for IMA scenario-axis handoff."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_ima_rfet_observation_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize an Arrow real-price observation table for RFET handoff."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def build_scenario_metadata_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> ScenarioMetadataBatch:
+    """Build a columnar IMA scenario metadata batch from a normalized Arrow handoff."""
+
+    if not isinstance(handoff, NormalizedTabularHandoff):
+        raise ValueError("handoff must be NormalizedTabularHandoff")
+    table = handoff.accepted
+    validate_arrow_table(table, column_specs=IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS)
+    return ScenarioMetadataBatch(
+        scenario_ids=_string_column(table, "scenario_id"),
+        scenario_dates=_date_column(table, "scenario_date"),
+        scenario_sets=_string_column(
+            table,
+            "scenario_set",
+            default=ScenarioSetType.CURRENT.value,
+        ),
+        calibration_windows=_string_column(table, "calibration_window", default=""),
+        sources=_string_column(table, "source", default=""),
+        provenance_json=_string_column(table, "provenance_json", default=""),
+        source_row_ids=_string_column(table, "source_row_id", default=""),
+        source_hash=handoff.source_hash,
+        handoff_hash=normalized_handoff_hash(handoff),
+    )
+
+
+def build_rfet_observation_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> RFETObservationBatch:
+    """Build a columnar RFET observation batch from a normalized Arrow handoff."""
+
+    if not isinstance(handoff, NormalizedTabularHandoff):
+        raise ValueError("handoff must be NormalizedTabularHandoff")
+    table = handoff.accepted
+    validate_arrow_table(table, column_specs=IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS)
+    return RFETObservationBatch(
+        risk_factor_names=_string_column(table, "risk_factor_name"),
+        observation_dates=_date_column(table, "observation_date"),
+        sources=_string_column(table, "source", default=""),
+        vendor_ids=_string_column(table, "vendor_id", default=""),
+        venues=_string_column(table, "venue", default=""),
+        feeds=_string_column(table, "feed", default=""),
+        observation_timestamps=_timestamp_column(table, "observation_timestamp"),
+        date_normalization_evidence=_string_column(
+            table,
+            "date_normalization_evidence",
+            default="",
+        ),
+        verifiable=_bool_column(table, "verifiable", default=True),
+        verifiability_reasons=_string_column(table, "verifiability_reason", default=""),
+        data_pool_ids=_string_column(table, "data_pool_id", default=""),
+        vendor_audit_evidence_ids=_string_column(
+            table,
+            "vendor_audit_evidence_id",
+            default="",
+        ),
+        source_row_ids=_string_column(table, "source_row_id", default=""),
+        source_hash=handoff.source_hash,
+        handoff_hash=normalized_handoff_hash(handoff),
     )
 
 
@@ -312,8 +556,133 @@ def _metadata_json_at(values: list[object | None] | None, index: int) -> dict[st
     return metadata
 
 
+def _string_column(table: pa.Table, column_name: str, *, default: str | None = None) -> StringArray:
+    if column_name not in table.column_names:
+        if default is None:
+            raise ValueError(f"column is required: {column_name}")
+        return np.full(table.num_rows, default, dtype=f"<U{max(1, len(default))}")
+    values = _object_array_from_column(table.column(column_name), default=default)
+    return np.asarray(values, dtype=np.str_)
+
+
+def _date_column(table: pa.Table, column_name: str) -> DateArray:
+    if column_name not in table.column_names:
+        raise ValueError(f"column is required: {column_name}")
+    array = _single_array(table.column(column_name))
+    if pa.types.is_date(array.type) or pa.types.is_timestamp(array.type):
+        return np.asarray(array.to_numpy(zero_copy_only=False), dtype="datetime64[D]")
+    values = array.to_pylist()
+    return np.asarray([_parse_date(value, column_name) for value in values], dtype="datetime64[D]")
+
+
+def _timestamp_column(table: pa.Table, column_name: str) -> DatetimeArray:
+    if column_name not in table.column_names:
+        return np.full(table.num_rows, np.datetime64("NaT", "us"), dtype="datetime64[us]")
+    array = _single_array(table.column(column_name))
+    if pa.types.is_timestamp(array.type):
+        return np.asarray(array.to_numpy(zero_copy_only=False), dtype="datetime64[us]")
+    values = array.to_pylist()
+    timestamps: list[np.datetime64] = []
+    for value in values:
+        if value is None:
+            timestamps.append(np.datetime64("NaT", "us"))
+        elif isinstance(value, datetime):
+            timestamps.append(np.datetime64(_timestamp_to_utc_naive(value), "us"))
+        elif isinstance(value, str):
+            timestamps.append(
+                np.datetime64(
+                    _timestamp_to_utc_naive(datetime.fromisoformat(value.replace("Z", "+00:00"))),
+                    "us",
+                )
+            )
+        else:
+            raise ValueError(f"{column_name} must contain timestamps or ISO-8601 text")
+    return np.asarray(timestamps, dtype="datetime64[us]")
+
+
+def _bool_column(table: pa.Table, column_name: str, *, default: bool) -> BooleanArray:
+    if column_name not in table.column_names:
+        return np.full(table.num_rows, default, dtype=np.bool_)
+    array = _single_array(table.column(column_name))
+    if pa.types.is_boolean(array.type):
+        return np.asarray(
+            pc.fill_null(array, default).to_numpy(zero_copy_only=False), dtype=np.bool_
+        )
+    values = array.to_pylist()
+    return np.asarray(
+        [default if value is None else bool(value) for value in values], dtype=np.bool_
+    )
+
+
+def _timestamp_to_utc_naive(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(UTC).replace(tzinfo=None)
+
+
+def _single_array(column: pa.ChunkedArray) -> pa.Array:
+    return column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
+
+
+def _object_array_from_column(
+    column: pa.ChunkedArray,
+    *,
+    default: str | None,
+) -> npt.NDArray[np.object_]:
+    chunks = [_object_array_from_array(chunk, default=default) for chunk in column.chunks]
+    if not chunks:
+        return np.asarray([], dtype=object)
+    if len(chunks) == 1:
+        return chunks[0]
+    return np.concatenate(chunks).astype(object, copy=False)
+
+
+def _object_array_from_array(
+    array: pa.Array,
+    *,
+    default: str | None,
+) -> npt.NDArray[np.object_]:
+    if pa.types.is_dictionary(array.type):
+        return _dictionary_array_to_object_array(cast(pa.DictionaryArray, array), default=default)
+    values = np.asarray(array.to_numpy(zero_copy_only=False), dtype=object)
+    if array.null_count:
+        fill = "" if default is None else default
+        valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
+        values = values.copy()
+        values[~valid] = fill
+    return values
+
+
+def _dictionary_array_to_object_array(
+    array: pa.DictionaryArray,
+    *,
+    default: str | None,
+) -> npt.NDArray[np.object_]:
+    dictionary = np.asarray(array.dictionary.to_numpy(zero_copy_only=False), dtype=object)
+    if dictionary.size == 0:
+        return np.full(len(array), "" if default is None else default, dtype=object)
+    indices = np.asarray(
+        pc.fill_null(array.indices, pa.scalar(0, type=array.indices.type)).to_numpy(
+            zero_copy_only=False
+        ),
+        dtype=np.int64,
+    )
+    values = dictionary[indices]
+    if array.null_count:
+        fill = "" if default is None else default
+        valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
+        values[~valid] = fill
+    return values
+
+
 __all__ = [
     "IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS",
+    "IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS",
+    "IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS",
     "build_capital_run_input_manifest_from_handoff",
+    "build_rfet_observation_batch_from_handoff",
+    "build_scenario_metadata_batch_from_handoff",
     "normalize_ima_input_manifest_arrow_table",
+    "normalize_ima_rfet_observation_arrow_table",
+    "normalize_ima_scenario_metadata_arrow_table",
 ]
