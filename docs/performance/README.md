@@ -61,3 +61,11 @@ accepted-row `SbmSensitivity` dataclasses.
 `frtb-common-crif-normalizer-report.md` contains the human-readable report.
 `frtb-common-crif-normalizer-baseline.json` is the checked-in synthetic
 baseline for order-of-magnitude regression review.
+
+## FRTB-DRC Arrow Batch Triage
+
+`frtb-drc-arrow-batch-triage.md` documents the non-securitisation DRC
+data-shape and hotspot assessment for the package-owned Arrow handoff ->
+NumPy batch -> kernel path. It explains why DRC keeps issuer/seniority netting
+inside package NumPy code instead of moving regulatory calculations into a
+dataframe expression layer.
