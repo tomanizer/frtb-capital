@@ -643,8 +643,8 @@ def _batch_text_by_id(
     _field: str,
 ) -> Mapping[str, str]:
     return {
-        str(batch.sensitivity_ids[row_index]): str(values[row_index])
-        for row_index in range(batch.row_count)
+        str(sensitivity_id): str(value)
+        for sensitivity_id, value in zip(batch.sensitivity_ids, values)
     }
 
 
@@ -665,8 +665,8 @@ def _batch_optional_text_by_id(
     if values is None:
         return {}
     return {
-        str(batch.sensitivity_ids[row_index]): str(value)
-        for row_index, value in enumerate(values)
+        str(sensitivity_id): str(value)
+        for sensitivity_id, value in zip(batch.sensitivity_ids, values)
         if value is not None
     }
 

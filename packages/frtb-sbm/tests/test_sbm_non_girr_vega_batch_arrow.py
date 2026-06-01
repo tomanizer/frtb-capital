@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import date
+from typing import Protocol
 
 import numpy as np
 import pyarrow as pa
@@ -56,11 +57,35 @@ from frtb_sbm.arrow_handoff import (
 from frtb_sbm.csr_nonsec_reference_data import CSR_BOND_RISK_FACTOR
 from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
 
-NormalizeFn = Callable[[pa.Table], NormalizedTabularHandoff]
 BatchBuilder = Callable[[tuple[SbmSensitivity, ...]], SbmSensitivityBatch]
 HandoffBuilder = Callable[[NormalizedTabularHandoff], SbmSensitivityBatch]
-BatchCalculator = Callable[[SbmSensitivityBatch], SbmCapitalResult]
-HandoffCalculator = Callable[[NormalizedTabularHandoff], SbmCapitalResult]
+
+
+class NormalizeFn(Protocol):
+    def __call__(
+        self,
+        table: pa.Table,
+        *,
+        source_hash: str | None = None,
+    ) -> NormalizedTabularHandoff: ...
+
+
+class BatchCalculator(Protocol):
+    def __call__(
+        self,
+        batch: SbmSensitivityBatch,
+        *,
+        context: SbmCalculationContext | None = None,
+    ) -> SbmCapitalResult: ...
+
+
+class HandoffCalculator(Protocol):
+    def __call__(
+        self,
+        handoff: NormalizedTabularHandoff,
+        *,
+        context: SbmCalculationContext | None = None,
+    ) -> SbmCapitalResult: ...
 
 
 def sample_context(run_id: str) -> SbmCalculationContext:
