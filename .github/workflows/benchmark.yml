@@ -4,10 +4,32 @@ on:
   schedule:
     - cron: "17 3 * * 1"
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    # Only perf-sensitive surfaces. Structural budgets (accepted-row dataclass
+    # counts, row/batch capital deltas, hash equalities) are exact; wall-clock
+    # budgets carry 2x-4x tolerance, so a shared PR runner does not flake.
+    paths:
+      - "packages/**/src/**/batch.py"
+      - "packages/**/src/**/arrow_handoff.py"
+      - "packages/**/src/**/curvature.py"
+      - "packages/**/src/**/weighted_sensitivity.py"
+      - "packages/**/src/**/capital.py"
+      - "packages/**/src/**/crif.py"
+      - "packages/**/src/**/scenario.py"
+      - "packages/**/src/**/rfet_evidence.py"
+      - "benchmarks/**"
+      - "packages/**/scripts/benchmark_*.py"
+      - "scripts/benchmark_target_scale.py"
+      - "scripts/ci/check_benchmark_budgets.py"
+      - "docs/quality/benchmark_budgets.toml"
+      - ".github/workflows/benchmark.yml"
+      - "Makefile"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  # Cancel superseded PR runs; never cancel a scheduled regression sweep.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   suite-performance-gates:
