@@ -9,7 +9,9 @@ description = "Shared primitives for the frtb-capital package suite"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
-dependencies = []
+dependencies = [
+    "pyarrow>=23.0.1,<24",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
