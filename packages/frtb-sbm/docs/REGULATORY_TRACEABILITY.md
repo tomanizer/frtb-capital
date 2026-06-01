@@ -45,7 +45,7 @@ Parent issue: [#151](https://github.com/tomanizer/frtb-capital/issues/151).
 | Intra-bucket aggregation | Implemented | #156 |
 | Inter-bucket aggregation and scenario selection | Implemented | #157 |
 | Public GIRR delta capital API | Implemented | #158 |
-| GIRR delta Arrow/batch handoff | Implemented | #268 — Arrow input converts to `SbmSensitivityBatch`; kernels remain NumPy-native. |
+| GIRR delta Arrow/batch handoff | Implemented | #268 — Arrow input converts to `SbmSensitivityBatch`; kernels remain NumPy-native. #269 adds a CRIF-to-Arrow entry path for GIRR delta. |
 | Audit/replay and synthetic fixtures | Implemented | #159 — `girr_delta_v1` fixture pack |
 | Vega capital (GIRR) | Implemented | #161 — `girr_vega_v1` fixture pack |
 | FX delta capital | Implemented | #162 — `fx_delta_v1` fixture pack, MAR21.86-MAR21.89 |
@@ -55,7 +55,7 @@ Parent issue: [#151](https://github.com/tomanizer/frtb-capital/issues/151).
 | Commodity delta capital | Implemented | `commodity_delta_v1` fixture pack, MAR21.76–MAR21.80. |
 | CSR non-securitisation delta capital | Implemented | #164 — `csr_nonsec_delta_v1` fixture pack, MAR21.51–MAR21.57. |
 | CSR securitisation (CTP / non-CTP) | Unsupported | Explicit fail-closed until cited mappings and fixtures exist. |
-| CRIF/CSV adapters | Out of scope | Phase 1 uses synthetic canonical fixtures only. |
+| CRIF/CSV adapters | Partial | Row-dict compatibility remains available. #269 adds shared CRIF-to-Arrow normalization plus SBM-owned GIRR delta RiskType mapping; broader CRIF coverage remains pending. |
 | SA composition | Excluded | Belongs in `frtb-orchestration`. |
 | Analytical Euler attribution | Out of scope | Stable ids and branch metadata preserved for future work. |
 
@@ -105,7 +105,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `risk_classes/fx.py` | FX delta assembly onto shared aggregation primitives. | MAR21.14, MAR21.86-MAR21.89. | Section V.A.7.a FX delta context. | Implemented (#162). |
 | `risk_classes/csr_nonsec.py` | CSR non-securitisation delta assembly onto shared aggregation primitives. | MAR21.9, MAR21.51-MAR21.57. | Section V.A.7.a CSR non-sec context. | Implemented (#164). |
 | `audit.py` | Result serialization, input/profile hashes, scale-aware pairwise-correlation evidence summaries, and reconciliation checks. | MAR21 component traceability by formula. | Section V.A.7.a audit context. | Implemented (#159, #265). |
-| `crif.py` | Optional CRIF-to-canonical mapping with lineage and rejected rows. | MAR21 risk-type mapping context only. | Section V.A.7.a canonical field mapping context. | Out of scope for phase 1. |
+| `crif.py` | Optional CRIF-to-canonical mapping and GIRR delta CRIF-to-Arrow handoff with rejected rows. | MAR21 risk-type mapping context only. | Section V.A.7.a canonical field mapping context. | Partial — GIRR delta Arrow handoff added by #269; broader CRIF coverage pending. |
 
 ## Cross-links
 

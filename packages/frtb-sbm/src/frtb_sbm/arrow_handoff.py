@@ -118,6 +118,7 @@ def normalize_girr_delta_arrow_table(
     *,
     diagnostics: Sequence[AdapterDiagnostic] = (),
     metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedTabularHandoff:
     """Normalize a raw Arrow table to the SBM GIRR delta handoff contract."""
@@ -125,6 +126,7 @@ def normalize_girr_delta_arrow_table(
     return normalize_arrow_table(
         table,
         column_specs=GIRR_DELTA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
         diagnostics=diagnostics,
         metadata={} if metadata is None else metadata,
         source_hash=source_hash,
