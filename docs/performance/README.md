@@ -77,3 +77,11 @@ and hotspot assessment for the package-owned Arrow handoff -> NumPy batch ->
 line-kernel path. It covers flat evidence columns for exotic, other residual
 risk, supervisor-directed, exclusion, back-to-back, and investment-fund rows,
 and it defines opaque nested payloads as fail-closed inputs.
+
+## FRTB-CVA Arrow Batch Triage
+
+`frtb-cva-arrow-batch-triage.md` documents the CVA counterparty, netting-set,
+hedge, and SA-CVA sensitivity data-shape assessment for the package-owned Arrow
+handoff -> NumPy batch -> kernel path. It covers BA-CVA aggregation, hedge
+recognition, SA-CVA weighted-sensitivity grouping, qualified-index metadata, and
+why dataframe expression kernels are not the regulatory calculation boundary.
