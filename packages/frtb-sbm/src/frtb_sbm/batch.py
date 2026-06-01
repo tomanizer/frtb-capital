@@ -253,6 +253,75 @@ def build_girr_vega_batch_from_sensitivities(
     )
 
 
+def build_fx_delta_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build an FX delta batch from existing row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_fx_delta_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.FX,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_equity_delta_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build an equity delta batch from existing row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_equity_delta_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.EQUITY,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_commodity_delta_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a commodity delta batch from existing row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_commodity_delta_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.COMMODITY,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
 def build_sbm_batch_from_columns(
     *,
     expected_risk_class: SbmRiskClass | str,
@@ -533,6 +602,201 @@ def build_girr_vega_batch_from_columns(
     )
 
 
+def build_fx_delta_batch_from_columns(
+    *,
+    sensitivity_ids: Iterable[object],
+    source_row_ids: Iterable[object],
+    desk_ids: Iterable[object],
+    legal_entities: Iterable[object],
+    risk_classes: Iterable[object],
+    risk_measures: Iterable[object],
+    buckets: Iterable[object],
+    risk_factors: Iterable[object],
+    amounts: Iterable[object],
+    amount_currencies: Iterable[object],
+    sign_conventions: Iterable[object],
+    tenors: Iterable[object],
+    lineage_source_systems: Iterable[object],
+    lineage_source_files: Iterable[object],
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    position_ids: Iterable[object] | None = None,
+    qualifiers: Iterable[object] | None = None,
+    option_tenors: Iterable[object] | None = None,
+    liquidity_horizon_days: Iterable[object] | None = None,
+    maturities: Iterable[object] | None = None,
+    up_shock_amounts: Iterable[object] | None = None,
+    down_shock_amounts: Iterable[object] | None = None,
+    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
+    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    copy_arrays: bool = True,
+) -> SbmSensitivityBatch:
+    """Build an FX delta batch from columnar arrays owned by an adapter."""
+
+    return build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.FX,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        sensitivity_ids=sensitivity_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        risk_measures=risk_measures,
+        buckets=buckets,
+        risk_factors=risk_factors,
+        amounts=amounts,
+        amount_currencies=amount_currencies,
+        sign_conventions=sign_conventions,
+        tenors=tenors,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        position_ids=position_ids,
+        qualifiers=qualifiers,
+        option_tenors=option_tenors,
+        liquidity_horizon_days=liquidity_horizon_days,
+        maturities=maturities,
+        up_shock_amounts=up_shock_amounts,
+        down_shock_amounts=down_shock_amounts,
+        source_column_maps=source_column_maps,
+        mapping_citation_ids=mapping_citation_ids,
+        copy_arrays=copy_arrays,
+    )
+
+
+def build_equity_delta_batch_from_columns(
+    *,
+    sensitivity_ids: Iterable[object],
+    source_row_ids: Iterable[object],
+    desk_ids: Iterable[object],
+    legal_entities: Iterable[object],
+    risk_classes: Iterable[object],
+    risk_measures: Iterable[object],
+    buckets: Iterable[object],
+    risk_factors: Iterable[object],
+    amounts: Iterable[object],
+    amount_currencies: Iterable[object],
+    sign_conventions: Iterable[object],
+    tenors: Iterable[object],
+    lineage_source_systems: Iterable[object],
+    lineage_source_files: Iterable[object],
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    position_ids: Iterable[object] | None = None,
+    qualifiers: Iterable[object] | None = None,
+    option_tenors: Iterable[object] | None = None,
+    liquidity_horizon_days: Iterable[object] | None = None,
+    maturities: Iterable[object] | None = None,
+    up_shock_amounts: Iterable[object] | None = None,
+    down_shock_amounts: Iterable[object] | None = None,
+    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
+    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    copy_arrays: bool = True,
+) -> SbmSensitivityBatch:
+    """Build an equity delta batch from columnar arrays owned by an adapter."""
+
+    return build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.EQUITY,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        sensitivity_ids=sensitivity_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        risk_measures=risk_measures,
+        buckets=buckets,
+        risk_factors=risk_factors,
+        amounts=amounts,
+        amount_currencies=amount_currencies,
+        sign_conventions=sign_conventions,
+        tenors=tenors,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        position_ids=position_ids,
+        qualifiers=qualifiers,
+        option_tenors=option_tenors,
+        liquidity_horizon_days=liquidity_horizon_days,
+        maturities=maturities,
+        up_shock_amounts=up_shock_amounts,
+        down_shock_amounts=down_shock_amounts,
+        source_column_maps=source_column_maps,
+        mapping_citation_ids=mapping_citation_ids,
+        copy_arrays=copy_arrays,
+    )
+
+
+def build_commodity_delta_batch_from_columns(
+    *,
+    sensitivity_ids: Iterable[object],
+    source_row_ids: Iterable[object],
+    desk_ids: Iterable[object],
+    legal_entities: Iterable[object],
+    risk_classes: Iterable[object],
+    risk_measures: Iterable[object],
+    buckets: Iterable[object],
+    risk_factors: Iterable[object],
+    amounts: Iterable[object],
+    amount_currencies: Iterable[object],
+    sign_conventions: Iterable[object],
+    tenors: Iterable[object],
+    lineage_source_systems: Iterable[object],
+    lineage_source_files: Iterable[object],
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    position_ids: Iterable[object] | None = None,
+    qualifiers: Iterable[object] | None = None,
+    option_tenors: Iterable[object] | None = None,
+    liquidity_horizon_days: Iterable[object] | None = None,
+    maturities: Iterable[object] | None = None,
+    up_shock_amounts: Iterable[object] | None = None,
+    down_shock_amounts: Iterable[object] | None = None,
+    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
+    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    copy_arrays: bool = True,
+) -> SbmSensitivityBatch:
+    """Build a commodity delta batch from columnar arrays owned by an adapter."""
+
+    return build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.COMMODITY,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        sensitivity_ids=sensitivity_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        risk_measures=risk_measures,
+        buckets=buckets,
+        risk_factors=risk_factors,
+        amounts=amounts,
+        amount_currencies=amount_currencies,
+        sign_conventions=sign_conventions,
+        tenors=tenors,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        position_ids=position_ids,
+        qualifiers=qualifiers,
+        option_tenors=option_tenors,
+        liquidity_horizon_days=liquidity_horizon_days,
+        maturities=maturities,
+        up_shock_amounts=up_shock_amounts,
+        down_shock_amounts=down_shock_amounts,
+        source_column_maps=source_column_maps,
+        mapping_citation_ids=mapping_citation_ids,
+        copy_arrays=copy_arrays,
+    )
+
+
 def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
     """Return the row-equivalent deterministic input hash for a homogeneous batch."""
 
@@ -559,6 +823,42 @@ def input_hash_for_girr_vega_batch(batch: SbmSensitivityBatch) -> str:
         expected_risk_class=SbmRiskClass.GIRR,
         expected_risk_measure=SbmRiskMeasure.VEGA,
         label="GIRR vega",
+    )
+    return input_hash_for_sbm_batch(batch)
+
+
+def input_hash_for_fx_delta_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the row-equivalent deterministic input hash for an FX delta batch."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.FX,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="FX delta",
+    )
+    return input_hash_for_sbm_batch(batch)
+
+
+def input_hash_for_equity_delta_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the row-equivalent deterministic input hash for an equity delta batch."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.EQUITY,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="equity delta",
+    )
+    return input_hash_for_sbm_batch(batch)
+
+
+def input_hash_for_commodity_delta_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the row-equivalent deterministic input hash for a commodity delta batch."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.COMMODITY,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="commodity delta",
     )
     return input_hash_for_sbm_batch(batch)
 
@@ -599,6 +899,56 @@ def sorted_girr_vega_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np
         label="GIRR vega",
     )
     return sorted_sbm_batch_indices(batch)
+
+
+def sorted_fx_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in the same stable order used by row-wise FX delta weighting."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.FX,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="FX delta",
+    )
+    return sorted_sbm_batch_indices(batch)
+
+
+def sorted_equity_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in the same stable order used by row-wise equity delta weighting."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.EQUITY,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="equity delta",
+    )
+    return sorted_sbm_batch_indices(batch)
+
+
+def sorted_commodity_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in the same stable order used by row-wise commodity delta weighting."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.COMMODITY,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="commodity delta",
+    )
+    return sorted_sbm_batch_indices(batch)
+
+
+def _batch_text_by_id(
+    batch: SbmSensitivityBatch,
+    values: npt.NDArray[np.object_] | None,
+    *,
+    field: str,
+) -> Mapping[str, str]:
+    if values is None:
+        raise SbmInputError(f"{field} is required", field=field)
+    return {
+        str(batch.sensitivity_ids[row_index]): str(values[row_index])
+        for row_index in range(batch.row_count)
+    }
 
 
 def _optional_arrays_from_sensitivities(
@@ -1123,15 +1473,27 @@ def _freeze_array(array: npt.NDArray[Any]) -> None:
 
 __all__ = [
     "SbmSensitivityBatch",
+    "build_commodity_delta_batch_from_columns",
+    "build_commodity_delta_batch_from_sensitivities",
+    "build_equity_delta_batch_from_columns",
+    "build_equity_delta_batch_from_sensitivities",
+    "build_fx_delta_batch_from_columns",
+    "build_fx_delta_batch_from_sensitivities",
     "build_girr_delta_batch_from_columns",
     "build_girr_delta_batch_from_sensitivities",
     "build_girr_vega_batch_from_columns",
     "build_girr_vega_batch_from_sensitivities",
     "build_sbm_batch_from_columns",
     "build_sbm_batch_from_sensitivities",
+    "input_hash_for_commodity_delta_batch",
+    "input_hash_for_equity_delta_batch",
+    "input_hash_for_fx_delta_batch",
     "input_hash_for_girr_delta_batch",
     "input_hash_for_girr_vega_batch",
     "input_hash_for_sbm_batch",
+    "sorted_commodity_delta_batch_indices",
+    "sorted_equity_delta_batch_indices",
+    "sorted_fx_delta_batch_indices",
     "sorted_girr_delta_batch_indices",
     "sorted_girr_vega_batch_indices",
     "sorted_sbm_batch_indices",
