@@ -1,8 +1,9 @@
-schema_version = 1
+schema_version = 2
 
-# Regression budgets for local/CI benchmark checks. Thresholds are intentionally
-# generous relative to the 2026-05-31 audit snapshot to catch large regressions
-# without blocking normal CI on developer hardware variance.
+# Regression budgets for local/CI benchmark checks. Wall-clock thresholds are
+# deliberately generous because developer hardware and hosted runners vary.
+# Structural controls such as accepted-row dataclass materialization and
+# capital/hash equivalence are hard gates.
 
 [[benchmarks]]
 name = "frtb-ima-target-scale"
@@ -11,8 +12,75 @@ baseline_artifact = "docs/performance/frtb-ima-target-scale-baseline.json"
 wall_clock_path = ["totals", "wall_clock_seconds"]
 wall_clock_seconds_max = 120.0
 wall_clock_tolerance_multiplier = 2.0
-metric_path = ["phase_timings", "imcc_decomposition", "seconds"]
-metric_max = 90.0
+
+[[benchmarks.required_paths]]
+name = "synthetic input phase"
+path = ["phase_timings", "synthetic_input_generation", "seconds"]
+
+[[benchmarks.required_paths]]
+name = "IMCC calculation phase"
+path = ["phase_timings", "imcc_decomposition", "seconds"]
+
+[[benchmarks.required_paths]]
+name = "audit serialization phase"
+path = ["phase_timings", "audit_ndjson_serialization", "seconds"]
+
+[[benchmarks.metrics]]
+name = "IMCC decomposition seconds"
+path = ["phase_timings", "imcc_decomposition", "seconds"]
+max = 90.0
+
+[[benchmarks]]
+name = "frtb-ima-arrow-handoff"
+artifact = "dist/benchmarks/frtb-ima-arrow-handoff.json"
+wall_clock_path = ["summary", "timings_seconds", "wall_clock"]
+wall_clock_seconds_max = 45.0
+
+[[benchmarks.required_paths]]
+name = "parse phase"
+path = ["summary", "timings_seconds", "parse"]
+
+[[benchmarks.required_paths]]
+name = "adapt phase"
+path = ["summary", "timings_seconds", "adapt"]
+
+[[benchmarks.required_paths]]
+name = "build phase"
+path = ["summary", "timings_seconds", "build"]
+
+[[benchmarks.required_paths]]
+name = "calculate phase"
+path = ["summary", "timings_seconds", "calculate"]
+
+[[benchmarks.metrics]]
+name = "accepted-row dataclasses on Arrow path"
+path = ["summary", "accepted_row_dataclasses_materialized"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "scenario metadata Arrow dataclasses"
+path = ["summary", "materialized_dataclass_count", "scenario_metadata_arrow_batch_path"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "RFET observation Arrow dataclasses"
+path = ["summary", "materialized_dataclass_count", "rfet_observation_arrow_batch_path"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "RFET row/batch assessment hash delta"
+path = ["summary", "rfet_assessment_hash_delta"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "peak traced memory bytes"
+path = ["summary", "tracemalloc_peak_bytes"]
+max = 1000000000.0
+
+[[benchmarks.path_equalities]]
+name = "RFET batch assessment hash matches row path"
+left_path = ["summary", "result_hashes", "rfet_batch_assessment"]
+right_path = ["summary", "result_hashes", "rfet_row_assessment"]
 
 [[benchmarks]]
 name = "frtb-sbm-batch-arrow"
@@ -20,13 +88,186 @@ artifact = "dist/benchmarks/frtb-sbm-batch-arrow.json"
 baseline_artifact = "docs/performance/frtb-sbm-batch-arrow-baseline.json"
 wall_clock_path = ["summary", "timings_seconds", "wall_clock_proxy"]
 wall_clock_tolerance_multiplier = 4.0
-metric_path = ["summary", "materialized_dataclass_count", "arrow_batch_path"]
-metric_max = 0.0
+
+[[benchmarks.required_paths]]
+name = "ingestion phase"
+path = ["summary", "timings_seconds", "ingestion"]
+
+[[benchmarks.required_paths]]
+name = "validation phase"
+path = ["summary", "timings_seconds", "validation"]
+
+[[benchmarks.required_paths]]
+name = "weighting phase"
+path = ["summary", "timings_seconds", "weighting"]
+
+[[benchmarks.required_paths]]
+name = "audit serialization phase"
+path = ["summary", "timings_seconds", "audit_serialization"]
+
+[[benchmarks.metrics]]
+name = "Arrow accepted-row dataclasses"
+path = ["summary", "materialized_dataclass_count", "arrow_batch_path"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "accepted-row dataclasses"
+path = ["summary", "accepted_row_dataclasses_materialized"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "pairwise evidence materialized count"
+path = ["summary", "pairwise_evidence_materialized_count"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "row/batch capital delta"
+path = ["summary", "capital_delta_abs_max"]
+max = 0.000000001
+
+[[benchmarks.metrics]]
+name = "Arrow peak traced memory bytes"
+path = ["summary", "peak_tracemalloc_bytes", "arrow_batch_path"]
+max = 2000000000.0
+
+[[benchmarks]]
+name = "frtb-drc-batch-arrow"
+artifact = "dist/benchmarks/frtb-drc-batch-arrow.json"
+wall_clock_path = ["summary", "timings_seconds", "wall_clock"]
+wall_clock_seconds_max = 60.0
+
+[[benchmarks.required_paths]]
+name = "parse phase"
+path = ["summary", "timings_seconds", "arrow_table_construction"]
+
+[[benchmarks.required_paths]]
+name = "adapt phase"
+path = ["summary", "timings_seconds", "handoff_normalization"]
+
+[[benchmarks.required_paths]]
+name = "build phase"
+path = ["summary", "timings_seconds", "batch_construction"]
+
+[[benchmarks.required_paths]]
+name = "calculate phase"
+path = ["summary", "timings_seconds", "batch_calculation"]
+
+[[benchmarks.metrics]]
+name = "Arrow accepted-row dataclasses"
+path = ["summary", "materialized_dataclass_count", "arrow_batch_path"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "row/batch capital delta"
+path = ["summary", "capital", "absolute_delta"]
+max = 0.000000001
+
+[[benchmarks.metrics]]
+name = "peak traced memory bytes"
+path = ["summary", "tracemalloc_peak_bytes"]
+max = 2000000000.0
 
 [[benchmarks]]
 name = "frtb-rrao-target-scale"
 artifact = "dist/benchmarks/frtb-rrao-target-scale.json"
 wall_clock_path = ["timings", "wall_seconds"]
 wall_clock_seconds_max = 75.0
-metric_path = ["timings", "positions_per_second"]
-metric_min = 1500.0
+
+[[benchmarks.required_paths]]
+name = "parse phase"
+path = ["timings", "arrow_table_seconds"]
+
+[[benchmarks.required_paths]]
+name = "adapt/build phase"
+path = ["timings", "arrow_handoff_seconds"]
+
+[[benchmarks.required_paths]]
+name = "calculate phase"
+path = ["timings", "arrow_calculate_seconds"]
+
+[[benchmarks.metrics]]
+name = "row path positions per second"
+path = ["timings", "positions_per_second"]
+min = 1500.0
+
+[[benchmarks.metrics]]
+name = "batch path positions per second"
+path = ["timings", "batch_positions_per_second"]
+min = 1500.0
+
+[[benchmarks.metrics]]
+name = "Arrow path positions per second"
+path = ["timings", "arrow_positions_per_second"]
+min = 1500.0
+
+[[benchmarks.metrics]]
+name = "batch accepted-row dataclasses"
+path = ["result", "batch_accepted_row_dataclasses_materialized"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "Arrow accepted-row dataclasses"
+path = ["result", "arrow_accepted_row_dataclasses_materialized"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "batch capital delta"
+path = ["result", "batch_absolute_delta"]
+max = 0.000000001
+
+[[benchmarks.metrics]]
+name = "Arrow capital delta"
+path = ["result", "arrow_absolute_delta"]
+max = 0.000000001
+
+[[benchmarks.metrics]]
+name = "peak traced memory bytes"
+path = ["memory", "peak_traced_bytes"]
+max = 1500000000.0
+
+[[benchmarks]]
+name = "frtb-cva-target-scale"
+artifact = "dist/benchmarks/frtb-cva-target-scale.json"
+wall_clock_path = ["summary", "timings_seconds", "wall_clock"]
+wall_clock_seconds_max = 240.0
+
+[[benchmarks.required_paths]]
+name = "parse phase"
+path = ["summary", "timings_seconds", "parse"]
+
+[[benchmarks.required_paths]]
+name = "adapt phase"
+path = ["summary", "timings_seconds", "adapt"]
+
+[[benchmarks.required_paths]]
+name = "build phase"
+path = ["summary", "timings_seconds", "build"]
+
+[[benchmarks.required_paths]]
+name = "calculate phase"
+path = ["summary", "timings_seconds", "calculate"]
+
+[[benchmarks.metrics]]
+name = "Arrow accepted-row dataclasses"
+path = ["summary", "materialized_dataclass_count", "arrow_batch_path"]
+max = 0.0
+
+[[benchmarks.metrics]]
+name = "capital delta"
+path = ["summary", "capital_delta_abs_max"]
+max = 0.000000001
+
+[[benchmarks.metrics]]
+name = "peak traced memory bytes"
+path = ["summary", "tracemalloc_peak_bytes"]
+max = 2000000000.0
+
+[[benchmarks.path_equalities]]
+name = "BA-CVA Arrow payload hash matches row path"
+left_path = ["result", "ba_arrow_payload_hash"]
+right_path = ["result", "ba_row_payload_hash"]
+
+[[benchmarks.path_equalities]]
+name = "SA-CVA Arrow payload hash matches row path"
+left_path = ["result", "sa_arrow_payload_hash"]
+right_path = ["result", "sa_row_payload_hash"]

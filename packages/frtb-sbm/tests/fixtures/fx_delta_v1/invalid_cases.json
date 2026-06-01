@@ -30,8 +30,8 @@
     }
   },
   {
-    "case_id": "unsupported_measure",
-    "expected_error_match": "phase-1 capital",
+    "case_id": "vega_missing_option_tenor",
+    "expected_error_match": "option_tenor",
     "sensitivity": {
       "sensitivity_id": "fx-vega-001",
       "source_row_id": "row-fx-vega",
@@ -43,8 +43,6 @@
       "risk_factor": "EUR",
       "amount": 1000000.0,
       "amount_currency": "USD",
-      "option_tenor": "1y",
-      "tenor": "1y",
       "sign_convention": "LONG"
     }
   },

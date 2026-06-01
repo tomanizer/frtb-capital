@@ -26,6 +26,20 @@ report as an artifact; it is not a pull-request gate.
 SLA. Use it to spot order-of-magnitude regressions and refresh it when hardware,
 Python, NumPy, or benchmark dimensions change.
 
+## FRTB-IMA Arrow Handoffs
+
+Run the IMA Arrow handoff benchmark from the workspace root:
+
+```bash
+make ima-arrow-handoff-benchmark
+```
+
+The benchmark covers the Arrow -> normalized handoff -> immutable batch path for
+scenario metadata and RFET real-price observations. It records parse, adapt,
+build, and RFET assessment timings, compares RFET row and batch assessment
+hashes, and hard-gates accepted-row dataclass materialization at zero on the
+Arrow fast path.
+
 ## FRTB-SBM Batch and Arrow Handoffs
 
 Run the SBM handoff benchmark from the workspace root:
@@ -85,6 +99,16 @@ NumPy batch -> kernel path. It explains why DRC keeps issuer/seniority netting
 inside package NumPy code instead of moving regulatory calculations into a
 dataframe expression layer.
 
+Run the DRC row-vs-Arrow benchmark from the workspace root:
+
+```bash
+make drc-benchmark
+```
+
+The command writes `dist/benchmarks/frtb-drc-batch-arrow.json` and compares
+row-compatible `DrcPosition` processing with the Arrow handoff ->
+`DrcPositionBatch` path for deterministic synthetic non-securitisation inputs.
+
 ## FRTB-RRAO Arrow Batch Triage
 
 `frtb-rrao-arrow-batch-triage.md` documents the RRAO residual-risk data-shape
@@ -100,3 +124,14 @@ hedge, and SA-CVA sensitivity data-shape assessment for the package-owned Arrow
 handoff -> NumPy batch -> kernel path. It covers BA-CVA aggregation, hedge
 recognition, SA-CVA weighted-sensitivity grouping, qualified-index metadata, and
 why dataframe expression kernels are not the regulatory calculation boundary.
+
+Run the CVA target-scale benchmark from the workspace root:
+
+```bash
+make cva-benchmark
+```
+
+The command writes `dist/benchmarks/frtb-cva-target-scale.json` and covers BA-CVA
+counterparty/netting-set Arrow handoffs plus SA-CVA sensitivity Arrow handoffs.
+It exposes parse, adapt, build, calculate, memory, accepted-row dataclass, and
+row-vs-Arrow payload-hash equivalence metrics for budget checks.

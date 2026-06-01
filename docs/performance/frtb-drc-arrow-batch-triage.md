@@ -62,3 +62,39 @@ The implemented high-volume path is:
 
 The row API remains the compatibility path for callers that already hold
 canonical dataclasses.
+
+## Issue #316 Conversion and Batch Check
+
+The issue #316 changes reduce Arrow handoff conversion overhead for DRC numeric,
+boolean, dictionary-encoded text, and chunked columns. Required `float64`
+columns now use Arrow-to-NumPy views where the Arrow buffer permits it; nullable
+optional floats use an explicit null-to-`NaN` policy; and optional booleans use
+an explicit null-to-`False` policy. Gross JTD LGD lookup is now performed by
+seniority/defaulted masks rather than one reference-data call per row. The
+same-obligor netting loop remains explicit Python because it carries regulatory
+seniority-offset audit records and deterministic source-id ordering.
+
+The benchmark harness is `benchmarks/drc_adapter_harness.py` and can be run
+with:
+
+```bash
+make drc-benchmark
+```
+
+On macOS-26.5 arm64 / Python 3.11.15, a 5,000-row synthetic non-securitisation
+run recorded:
+
+- row-compatible dataclass construction: 0.421s
+- row-compatible calculation: 4.802s
+- row-compatible audit serialization: 14.132s
+- Arrow table construction: 0.253s
+- handoff normalization: 0.004s
+- batch construction: 1.422s
+- batch calculation: 0.549s
+- batch audit serialization: 1.457s
+- accepted-row dataclasses on the Arrow path: 0
+- row and batch total DRC absolute delta: 0.0
+
+The result confirms that the high-volume DRC path avoids accepted-row
+`DrcPosition`, `GrossJtd`, and `MaturityScaledJtd` materialization while
+preserving the public capital number and net-JTD audit result.

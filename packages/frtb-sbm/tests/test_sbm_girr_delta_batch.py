@@ -257,6 +257,35 @@ def test_arrow_handoff_batch_matches_row_batch_and_preserves_handoff_metadata() 
     np.testing.assert_allclose(arrow_batch.amounts, row_batch.amounts)
 
 
+def test_arrow_handoff_uses_zero_copy_float64_amount_column_when_possible() -> None:
+    sensitivities = _sensitivities()
+    handoff = normalize_girr_delta_arrow_table(_arrow_table(sensitivities))
+
+    arrow_batch = build_girr_delta_batch_from_handoff(handoff)
+
+    amount_view = handoff.accepted.column("amount").chunk(0).to_numpy(zero_copy_only=True)
+    assert np.shares_memory(arrow_batch.amounts, amount_view)
+    np.testing.assert_allclose(arrow_batch.amounts, [item.amount for item in sensitivities])
+
+
+def test_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
+    sensitivities = _sensitivities()
+    table = pa.concat_tables(
+        [
+            _arrow_table(sensitivities[:2]),
+            _arrow_table(sensitivities[2:]),
+        ]
+    )
+    row_batch = build_girr_delta_batch_from_sensitivities(sensitivities)
+
+    arrow_batch = build_girr_delta_batch_from_handoff(normalize_girr_delta_arrow_table(table))
+
+    assert table.column("risk_class").num_chunks == 2
+    assert arrow_batch.input_hash == row_batch.input_hash
+    np.testing.assert_array_equal(arrow_batch.buckets, row_batch.buckets)
+    np.testing.assert_array_equal(arrow_batch.risk_factors, row_batch.risk_factors)
+
+
 def test_arrow_handoff_rejects_non_finite_optional_float_columns() -> None:
     sensitivities = _sensitivities()[:1]
     table = _arrow_table(sensitivities).append_column(

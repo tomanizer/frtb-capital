@@ -5,9 +5,9 @@ For a bidirectional code/regulation map, see
 [`REGULATORY_TRACEABILITY.md`](REGULATORY_TRACEABILITY.md). For link-only source
 metadata, see [`regulatory_sources.yml`](regulatory_sources.yml).
 
-`frtb-sbm` delivers a partial runtime slice for GIRR delta/vega, FX delta,
-equity delta, commodity delta, CSR delta, and curvature capital under cited
-Basel MAR21 mechanics.
+`frtb-sbm` delivers a partial runtime slice for GIRR delta/vega, FX delta/vega,
+equity delta/vega, commodity delta/vega, CSR delta/vega, and curvature capital
+under cited Basel MAR21 mechanics.
 No document or test in this package should describe outputs as final regulatory
 capital.
 
@@ -20,14 +20,17 @@ The first capital-producing slices target canonical inputs for:
    correlation scenarios.
 2. Basel MAR21 FX, equity, commodity, and CSR delta mechanics on the shared
    aggregation engine.
-3. Basel MAR21.96-MAR21.101 curvature mechanics through the row-wise public API,
-   with CVR+/CVR- branch selection and squared curvature correlations.
+3. Basel MAR21.90-MAR21.95 FX, equity, commodity, and CSR vega mechanics,
+   including Table 13 liquidity horizons and MAR21.94 non-GIRR vega
+   correlations.
+4. Basel MAR21.96-MAR21.101 curvature mechanics, with CVR+/CVR- branch
+   selection and squared curvature correlations.
    FX curvature rows that require the MAR21.98 1.5 scalar identify that treatment
    explicitly through `FX_CURVATURE_SCALAR_1_5_FLAG` and a two-currency
    `qualifier`.
-4. U.S. NPR 2.0 proposed standardized non-default capital requirement, section
+5. U.S. NPR 2.0 proposed standardized non-default capital requirement, section
    V.A.7.a, as a comparison profile where explicitly supported.
-5. Explicit fail-closed behavior for unsupported risk-class, risk-measure, or
+6. Explicit fail-closed behavior for unsupported risk-class, risk-measure, or
    curvature sub-feature combinations until their own cited issues land.
 
 The package treats the U.S. NPR 2.0 profile as proposed-rule material. Any
@@ -67,10 +70,10 @@ risk classes (SBM-DEC-004). GIRR delta phase 1 exercises:
 - low, medium, and high correlation scenario totals;
 - profile-prescribed scenario selection for the final risk-class capital.
 
-GIRR vega liquidity-horizon scaling and curvature up/down branch logic are
-implemented for the supported Basel paths. High-volume curvature batch capital
-remains outside the current runtime path; the GIRR Arrow/batch curvature handoff
-is validation-only.
+GIRR and non-GIRR vega liquidity-horizon scaling and curvature up/down branch
+logic are implemented for the supported Basel paths. High-volume callers should
+use Arrow handoff normalizers and package-owned batches; kernels remain
+NumPy-native and do not import Arrow, pandas, or polars.
 
 ## Fail-closed unsupported scope
 
@@ -109,10 +112,9 @@ MAR21 consolidated text on 2026-05-31 and confirmed correct:
 
 **Note for future audits:** the `×1.25` / `×1.75` multipliers in
 `csr_sec_nonctp_reference_data.py` are prescribed by MAR21.71 itself. They are
-not a modelling shortcut and do not need re-derivation. Delta and row-wise
-curvature aggregation/capital assembly are implemented for these risk classes;
-remaining work is high-volume curvature handoff coverage and broader regulatory
-profile coverage.
+not a modelling shortcut and do not need re-derivation. Delta and curvature
+aggregation/capital assembly are implemented for these risk classes. Remaining
+profile work is broader regulatory profile coverage outside `BASEL_MAR21`.
 
 ## Audit and orchestration boundary
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import cast
 
+import numpy as np
 import pyarrow as pa
 import pytest
 from frtb_common import source_content_hash
@@ -77,6 +78,79 @@ def test_drc_arrow_handoff_batch_matches_nonsec_v2_row_capital() -> None:
     assert batch_gross_by_id == pytest.approx(row_gross_by_id)
 
 
+def test_drc_arrow_handoff_uses_zero_copy_float64_columns_when_possible() -> None:
+    fixture = load_drc_nonsec_v2_fixture()
+    handoff = normalize_drc_nonsec_arrow_table(_arrow_table(fixture.positions))
+
+    batch = build_drc_nonsec_batch_from_handoff(handoff)
+
+    notional_view = handoff.accepted.column("notional").chunk(0).to_numpy(zero_copy_only=True)
+    maturity_view = handoff.accepted.column("maturity_years").chunk(0).to_numpy(zero_copy_only=True)
+    assert np.shares_memory(batch.notionals, notional_view)
+    assert np.shares_memory(batch.maturity_years, maturity_view)
+    np.testing.assert_allclose(
+        batch.notionals, [position.notional for position in fixture.positions]
+    )
+
+
+def test_drc_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
+    fixture = load_drc_nonsec_v2_fixture()
+    table = pa.concat_tables(
+        [
+            _dictionary_encoded_text_table(_arrow_table(fixture.positions[:3])),
+            _dictionary_encoded_text_table(_arrow_table(fixture.positions[3:])),
+        ]
+    )
+    row_batch = build_drc_nonsec_batch_from_positions(fixture.positions)
+
+    arrow_batch = build_drc_nonsec_batch_from_handoff(normalize_drc_nonsec_arrow_table(table))
+
+    assert table.column("risk_class").num_chunks == 2
+    assert pa.types.is_dictionary(table.column("risk_class").type)
+    assert arrow_batch.input_hash == row_batch.input_hash
+    np.testing.assert_array_equal(
+        arrow_batch.position_ids,
+        [position.position_id for position in fixture.positions],
+    )
+    np.testing.assert_array_equal(
+        arrow_batch.issuer_ids,
+        [position.issuer_id for position in fixture.positions],
+    )
+    np.testing.assert_array_equal(
+        arrow_batch.seniorities,
+        [
+            position.seniority.value if position.seniority is not None else None
+            for position in fixture.positions
+        ],
+    )
+
+
+def test_drc_batch_lgd_lookup_is_by_seniority_and_default_mask(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import frtb_drc.batch as batch_module
+
+    fixture = load_drc_nonsec_v2_fixture()
+    row_count = 120
+    columns = _minimal_column_payload(row_count=row_count) | {
+        "is_defaulted": [index % 10 == 0 for index in range(row_count)],
+    }
+    batch = build_drc_nonsec_batch_from_columns(**columns)
+    calls: list[object] = []
+    original_get_lgd_rule = batch_module.get_lgd_rule
+
+    def counting_get_lgd_rule(*args: object, **kwargs: object) -> object:
+        calls.append((args, kwargs))
+        return original_get_lgd_rule(*args, **kwargs)
+
+    monkeypatch.setattr(batch_module, "get_lgd_rule", counting_get_lgd_rule)
+
+    calculation = calculate_drc_capital_from_batch(batch, context=fixture.context)
+
+    assert calculation.accepted_row_dataclasses_materialized == 0
+    assert len(calls) == 1
+
+
 def test_drc_batch_calculation_is_deterministic_for_reversed_handoff() -> None:
     fixture = load_drc_nonsec_v2_fixture()
     table = _arrow_table(fixture.positions)
@@ -114,6 +188,24 @@ def test_drc_column_batch_high_volume_path_reports_zero_row_dataclasses() -> Non
     assert batch.row_count == row_count
     assert not any(isinstance(value, DrcPosition) for value in batch.__dict__.values())
     assert batch.input_hash
+
+
+def test_drc_column_batch_copy_false_does_not_freeze_caller_numpy_arrays() -> None:
+    notionals = np.array([100_000.0, 200_000.0], dtype=np.float64)
+    maturity_years = np.array([1.0, 0.5], dtype=np.float64)
+    columns = _minimal_column_payload(row_count=2) | {
+        "notionals": notionals,
+        "maturity_years": maturity_years,
+    }
+
+    batch = build_drc_nonsec_batch_from_columns(**columns, copy_arrays=False)
+
+    assert notionals.flags.writeable
+    assert maturity_years.flags.writeable
+    assert not batch.notionals.flags.writeable
+    assert not batch.maturity_years.flags.writeable
+    assert np.shares_memory(batch.notionals, notionals)
+    assert np.shares_memory(batch.maturity_years, maturity_years)
 
 
 def test_drc_batch_rejects_unsupported_citation_policy_like_row_api() -> None:
@@ -217,12 +309,20 @@ def _arrow_table(positions: tuple[DrcPosition, ...]) -> pa.Table:
                 None if position.credit_quality is None else position.credit_quality.value
                 for position in positions
             ],
-            "notional": [position.notional for position in positions],
-            "market_value": [position.market_value for position in positions],
-            "cumulative_pnl": [position.cumulative_pnl for position in positions],
-            "maturity_years": [position.maturity_years for position in positions],
+            "notional": pa.array([position.notional for position in positions], type=pa.float64()),
+            "market_value": pa.array(
+                [position.market_value for position in positions], type=pa.float64()
+            ),
+            "cumulative_pnl": pa.array(
+                [position.cumulative_pnl for position in positions], type=pa.float64()
+            ),
+            "maturity_years": pa.array(
+                [position.maturity_years for position in positions], type=pa.float64()
+            ),
             "currency": [position.currency for position in positions],
-            "lgd_override": [position.lgd_override for position in positions],
+            "lgd_override": pa.array(
+                [position.lgd_override for position in positions], type=pa.float64()
+            ),
             "is_defaulted": [position.is_defaulted for position in positions],
             "is_gse": [position.is_gse for position in positions],
             "is_pse": [position.is_pse for position in positions],
@@ -238,6 +338,37 @@ def _arrow_table(positions: tuple[DrcPosition, ...]) -> pa.Table:
             "citation_ids": [",".join(position.citation_ids) for position in positions],
         }
     )
+
+
+_DICTIONARY_TEXT_COLUMNS = {
+    "position_id",
+    "source_row_id",
+    "desk_id",
+    "legal_entity",
+    "risk_class",
+    "instrument_type",
+    "default_direction",
+    "issuer_id",
+    "tranche_id",
+    "index_series_id",
+    "bucket_key",
+    "seniority",
+    "credit_quality",
+    "currency",
+    "lineage_source_system",
+    "lineage_source_file",
+    "citation_ids",
+}
+
+
+def _dictionary_encoded_text_table(table: pa.Table) -> pa.Table:
+    columns = {}
+    for column_name in table.column_names:
+        column = table.column(column_name).combine_chunks()
+        columns[column_name] = (
+            column.dictionary_encode() if column_name in _DICTIONARY_TEXT_COLUMNS else column
+        )
+    return pa.table(columns)
 
 
 def _net_outputs(records: object) -> dict[str, object]:

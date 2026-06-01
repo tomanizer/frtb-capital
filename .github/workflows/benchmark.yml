@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  frtb-ima-target-scale:
+  suite-performance-gates:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -36,11 +36,15 @@ jobs:
       - name: Sync workspace
         run: uv sync --locked --python 3.11
 
-      - name: Run target-scale benchmark
-        run: make benchmark
+      - name: Run suite benchmarks
+        run: make benchmark-suite
+
+      - name: Check benchmark budgets
+        run: make benchmark-budget-check
 
       - name: Upload benchmark report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: frtb-ima-target-scale-benchmark
-          path: dist/benchmarks/frtb-ima-target-scale.json
+          name: frtb-capital-suite-benchmarks
+          path: dist/benchmarks/*.json

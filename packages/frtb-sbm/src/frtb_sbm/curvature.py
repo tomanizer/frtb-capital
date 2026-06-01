@@ -22,7 +22,11 @@ from frtb_sbm.aggregation import (
     adjust_correlation_matrix_for_scenario,
     select_max_correlation_scenario,
 )
-from frtb_sbm.batch import SbmSensitivityBatch, sorted_girr_curvature_batch_indices
+from frtb_sbm.batch import (
+    SbmSensitivityBatch,
+    sorted_curvature_batch_indices,
+    sorted_girr_curvature_batch_indices,
+)
 from frtb_sbm.commodity_reference_data import (
     _require_commodity_bucket_number,
     commodity_bucket_definition,
@@ -257,6 +261,24 @@ def validate_girr_curvature_batch(
     return batch
 
 
+def validate_curvature_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    reporting_currency: str,
+    expected_risk_class: SbmRiskClass | None = None,
+) -> SbmSensitivityBatch:
+    """Validate a curvature batch without materialising row dataclasses."""
+
+    _validate_curvature_batch_for_capital(
+        batch,
+        profile_id=profile_id,
+        reporting_currency=reporting_currency,
+        expected_risk_class=expected_risk_class,
+    )
+    return batch
+
+
 def select_girr_curvature_branches_from_batch(
     batch: SbmSensitivityBatch,
     *,
@@ -289,6 +311,25 @@ def select_girr_curvature_branches_from_batch(
             )
         )
     return tuple(records)
+
+
+def select_curvature_branches_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+) -> tuple[CurvatureBranchRecord, ...]:
+    """Return deterministic curvature branch records from batch columns."""
+
+    up_shocks, down_shocks = _validate_and_get_curvature_shocks(
+        batch,
+        profile_id=profile_id,
+    )
+    return _curvature_input_branch_records_from_batch(
+        batch,
+        up_shocks=up_shocks,
+        down_shocks=down_shocks,
+        profile_id=profile_id,
+    )
 
 
 def weight_girr_curvature_sensitivities(
@@ -358,6 +399,57 @@ def calculate_curvature_risk_class_capital(
         profile_id=profile_id,
         reporting_currency=reporting_currency,
         expected_risk_class=None,
+    )
+
+
+def calculate_girr_curvature_risk_class_capital_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    reporting_currency: str,
+) -> RiskClassCapital:
+    """Calculate cited GIRR curvature capital directly from a sensitivity batch."""
+
+    return calculate_curvature_risk_class_capital_from_batch(
+        batch,
+        profile_id=profile_id,
+        reporting_currency=reporting_currency,
+        expected_risk_class=SbmRiskClass.GIRR,
+    )
+
+
+def calculate_curvature_risk_class_capital_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    reporting_currency: str,
+    expected_risk_class: SbmRiskClass | None = None,
+) -> RiskClassCapital:
+    """Calculate cited curvature capital directly from package-owned batch arrays."""
+
+    risk_class, up_shocks, down_shocks = _validate_curvature_batch_for_capital(
+        batch,
+        profile_id=profile_id,
+        reporting_currency=reporting_currency,
+        expected_risk_class=expected_risk_class,
+    )
+    factors = _build_curvature_factors_from_batch(
+        batch,
+        up_shocks=up_shocks,
+        down_shocks=down_shocks,
+        profile_id=profile_id,
+    )
+    branches = _curvature_input_branch_records_from_batch(
+        batch,
+        up_shocks=up_shocks,
+        down_shocks=down_shocks,
+        profile_id=profile_id,
+    )
+    return _aggregate_curvature_factors(
+        factors,
+        profile_id=profile_id,
+        risk_class=risk_class,
+        curvature_branches=branches,
     )
 
 
@@ -527,6 +619,69 @@ def _build_curvature_factors(
     return tuple(factors)
 
 
+def _build_curvature_factors_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    up_shocks: npt.NDArray[np.float64],
+    down_shocks: npt.NDArray[np.float64],
+    profile_id: str,
+) -> tuple[_CurvatureFactor, ...]:
+    grouped: dict[tuple[str, ...], list[int]] = {}
+    risk_class = batch.risk_class
+    for row_index in sorted_curvature_batch_indices(batch):
+        key = _curvature_factor_key_from_batch(batch, int(row_index), risk_class=risk_class)
+        grouped.setdefault(key, []).append(int(row_index))
+
+    factors: list[_CurvatureFactor] = []
+    for key, row_indices in sorted(grouped.items()):
+        first_index = row_indices[0]
+        bucket_id = key[0]
+        risk_factor = _curvature_factor_risk_factor_from_key(
+            risk_class,
+            key,
+            _text_at(batch.risk_factors, first_index),
+        )
+        qualifier = _curvature_factor_qualifier_from_key(
+            risk_class,
+            key,
+            _optional_text_at(batch.qualifiers, first_index),
+        )
+        citations = _curvature_factor_citation_ids(
+            profile_id,
+            risk_class=risk_class,
+            bucket_id=bucket_id,
+            risk_factor=risk_factor,
+        )
+        up_cvr = sum(
+            _scaled_curvature_batch_shock(batch, row_index, up_shocks[row_index])
+            for row_index in row_indices
+        )
+        down_cvr = sum(
+            _scaled_curvature_batch_shock(batch, row_index, down_shocks[row_index])
+            for row_index in row_indices
+        )
+        factors.append(
+            _CurvatureFactor(
+                risk_class=risk_class,
+                bucket_id=bucket_id,
+                factor_id="|".join(key),
+                risk_factor=risk_factor,
+                qualifier=qualifier,
+                tenor=None,
+                up_cvr=up_cvr,
+                down_cvr=down_cvr,
+                sensitivity_ids=tuple(
+                    _text_at(batch.sensitivity_ids, index) for index in row_indices
+                ),
+                source_row_ids=tuple(
+                    _text_at(batch.source_row_ids, index) for index in row_indices
+                ),
+                citation_ids=citations,
+            )
+        )
+    return tuple(factors)
+
+
 def _validate_curvature_mapping(
     sensitivity: SbmSensitivity,
     *,
@@ -610,6 +765,33 @@ def _curvature_factor_key(sensitivity: SbmSensitivity) -> tuple[str, ...]:
     return (bucket, risk_factor, qualifier)
 
 
+def _curvature_factor_key_from_batch(
+    batch: SbmSensitivityBatch,
+    row_index: int,
+    *,
+    risk_class: SbmRiskClass,
+) -> tuple[str, ...]:
+    bucket = _text_at(batch.buckets, row_index)
+    risk_factor = _text_at(batch.risk_factors, row_index).strip()
+    qualifier = (_optional_text_at(batch.qualifiers, row_index) or "").strip()
+    if risk_class is SbmRiskClass.GIRR:
+        return (bucket, risk_factor)
+    if risk_class is SbmRiskClass.FX:
+        currency = normalise_fx_delta_currency_code(risk_factor)
+        return (currency, currency)
+    if risk_class is SbmRiskClass.EQUITY:
+        return (bucket, EQUITY_SPOT_RISK_FACTOR, qualifier)
+    if risk_class is SbmRiskClass.COMMODITY:
+        return (bucket, risk_factor, qualifier)
+    if risk_class in {
+        SbmRiskClass.CSR_NONSEC,
+        SbmRiskClass.CSR_SEC_CTP,
+        SbmRiskClass.CSR_SEC_NONCTP,
+    }:
+        return (bucket, qualifier)
+    return (bucket, risk_factor, qualifier)
+
+
 def _curvature_factor_risk_factor(
     risk_class: SbmRiskClass,
     key: tuple[str, ...],
@@ -633,6 +815,28 @@ def _curvature_factor_risk_factor(
     return sensitivity.risk_factor
 
 
+def _curvature_factor_risk_factor_from_key(
+    risk_class: SbmRiskClass,
+    key: tuple[str, ...],
+    fallback_risk_factor: str,
+) -> str:
+    if risk_class is SbmRiskClass.GIRR:
+        return key[1]
+    if risk_class is SbmRiskClass.FX:
+        return key[1]
+    if risk_class is SbmRiskClass.EQUITY:
+        return EQUITY_SPOT_RISK_FACTOR
+    if risk_class is SbmRiskClass.COMMODITY:
+        return key[1]
+    if risk_class in {
+        SbmRiskClass.CSR_NONSEC,
+        SbmRiskClass.CSR_SEC_CTP,
+        SbmRiskClass.CSR_SEC_NONCTP,
+    }:
+        return "CREDIT_SPREAD_CURVE"
+    return fallback_risk_factor
+
+
 def _curvature_factor_qualifier(
     risk_class: SbmRiskClass,
     key: tuple[str, ...],
@@ -649,6 +853,24 @@ def _curvature_factor_qualifier(
     }:
         return key[1]
     return sensitivity.qualifier
+
+
+def _curvature_factor_qualifier_from_key(
+    risk_class: SbmRiskClass,
+    key: tuple[str, ...],
+    fallback_qualifier: str | None,
+) -> str | None:
+    if risk_class is SbmRiskClass.EQUITY:
+        return key[2]
+    if risk_class is SbmRiskClass.COMMODITY:
+        return key[2]
+    if risk_class in {
+        SbmRiskClass.CSR_NONSEC,
+        SbmRiskClass.CSR_SEC_CTP,
+        SbmRiskClass.CSR_SEC_NONCTP,
+    }:
+        return key[1]
+    return fallback_qualifier
 
 
 def _curvature_factor_citation_ids(
@@ -1371,6 +1593,206 @@ def _merge_citation_ids(*groups: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(merged)
 
 
+def _validate_curvature_batch_for_capital(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    reporting_currency: str,
+    expected_risk_class: SbmRiskClass | None,
+) -> tuple[SbmRiskClass, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    ensure_sbm_profile_known(profile_id)
+    if not isinstance(batch, SbmSensitivityBatch):
+        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
+    if batch.row_count == 0:
+        raise SbmInputError("curvature batch must not be empty", field="batch")
+    risk_class = batch.risk_class
+    if expected_risk_class is not None and risk_class is not expected_risk_class:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm curvature capital expected "
+            f"risk_class={expected_risk_class.value}; received risk_class={risk_class.value}"
+        )
+    if risk_class not in _SUPPORTED_CURVATURE_RISK_CLASSES:
+        raise UnsupportedRegulatoryFeatureError(
+            f"frtb-sbm curvature capital is unsupported for risk_class={risk_class.value}"
+        )
+    if batch.risk_measure is not SbmRiskMeasure.CURVATURE:
+        raise UnsupportedRegulatoryFeatureError(
+            f"frtb-sbm curvature capital does not support risk_measure={batch.risk_measure.value}"
+        )
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        risk_class,
+        SbmRiskMeasure.CURVATURE,
+    )
+    up_shocks, down_shocks = _validate_and_get_curvature_shocks(
+        batch,
+        profile_id=profile_id,
+    )
+    reporting = normalise_fx_delta_currency_code(reporting_currency)
+    for row_index in sorted_curvature_batch_indices(batch):
+        _validate_curvature_mapping_from_batch(
+            batch,
+            int(row_index),
+            profile_id=profile_id,
+            reporting_currency=reporting,
+            risk_class=risk_class,
+        )
+    return risk_class, up_shocks, down_shocks
+
+
+def _validate_curvature_mapping_from_batch(
+    batch: SbmSensitivityBatch,
+    row_index: int,
+    *,
+    profile_id: str,
+    reporting_currency: str,
+    risk_class: SbmRiskClass,
+) -> None:
+    sensitivity_id = _text_at(batch.sensitivity_ids, row_index)
+    bucket = _text_at(batch.buckets, row_index)
+    risk_factor = _text_at(batch.risk_factors, row_index)
+    qualifier = _optional_text_at(batch.qualifiers, row_index)
+    if risk_class is SbmRiskClass.GIRR:
+        girr_bucket_definition(profile_id, bucket)
+        if risk_factor.strip().upper() in {"INFL", "XCCY"}:
+            raise UnsupportedRegulatoryFeatureError(
+                "GIRR curvature has no capital requirement for inflation or "
+                "cross-currency basis risk factors (MAR21.8(5)(b))"
+            )
+        return
+    if risk_class is SbmRiskClass.FX:
+        normalised_bucket = normalise_fx_delta_currency_code(bucket)
+        normalised_risk_factor = normalise_fx_delta_currency_code(risk_factor)
+        if normalised_bucket != normalised_risk_factor:
+            raise SbmInputError(
+                "FX curvature bucket must match risk_factor currency",
+                field="bucket",
+                sensitivity_id=sensitivity_id,
+            )
+        curvature_risk_weight(
+            profile_id,
+            risk_class=risk_class,
+            currency=normalised_risk_factor,
+            reporting_currency=reporting_currency,
+        )
+        _validate_fx_curvature_scalar_flag_from_values(
+            qualifier,
+            _mapping_citation_ids_from_batch(batch, row_index),
+            reporting_currency=reporting_currency,
+        )
+        return
+    if risk_class is SbmRiskClass.EQUITY:
+        equity_bucket_definition(profile_id, bucket)
+        if risk_factor.strip().upper() != EQUITY_SPOT_RISK_FACTOR:
+            raise UnsupportedRegulatoryFeatureError(
+                "equity curvature has no capital requirement for equity repo rates (MAR21.12(3))"
+            )
+        return
+    if risk_class is SbmRiskClass.COMMODITY:
+        commodity_bucket_definition(profile_id, bucket)
+        return
+    if risk_class is SbmRiskClass.CSR_NONSEC:
+        csr_nonsec_bucket_definition(profile_id, bucket)
+        _normalise_csr_basis(risk_factor)
+        return
+    if risk_class is SbmRiskClass.CSR_SEC_CTP:
+        csr_sec_ctp_bucket_definition(profile_id, bucket)
+        _normalise_csr_basis(risk_factor)
+        return
+    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
+        csr_sec_nonctp_bucket_definition(profile_id, bucket)
+        _normalise_csr_sec_basis(risk_factor)
+        return
+    raise UnsupportedRegulatoryFeatureError(
+        f"frtb-sbm curvature capital is unsupported for risk_class={risk_class.value}"
+    )
+
+
+def _curvature_input_branch_records_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    up_shocks: npt.NDArray[np.float64],
+    down_shocks: npt.NDArray[np.float64],
+    profile_id: str,
+) -> tuple[CurvatureBranchRecord, ...]:
+    citations = curvature_citation_ids(profile_id)
+    records: list[CurvatureBranchRecord] = []
+    for row_index in sorted_curvature_batch_indices(batch):
+        up_shock = float(up_shocks[row_index])
+        down_shock = float(down_shocks[row_index])
+        records.append(
+            CurvatureBranchRecord(
+                sensitivity_id=_text_at(batch.sensitivity_ids, int(row_index)),
+                selected_branch=curvature_worst_branch(up_shock, down_shock),
+                up_shock_amount=up_shock,
+                down_shock_amount=down_shock,
+                citation_ids=citations,
+            )
+        )
+    return tuple(records)
+
+
+def _scaled_curvature_batch_shock(
+    batch: SbmSensitivityBatch,
+    row_index: int,
+    shock: float,
+) -> float:
+    if (
+        batch.risk_class is SbmRiskClass.FX
+        and FX_CURVATURE_SCALAR_1_5_FLAG in _mapping_citation_ids_from_batch(batch, row_index)
+    ):
+        return float(shock) / 1.5
+    return float(shock)
+
+
+def _validate_fx_curvature_scalar_flag_from_values(
+    qualifier: str | None,
+    mapping_citation_ids: tuple[str, ...],
+    *,
+    reporting_currency: str,
+) -> None:
+    if FX_CURVATURE_SCALAR_1_5_FLAG not in mapping_citation_ids:
+        return
+    qualifier_text = qualifier.strip().upper() if qualifier else ""
+    if qualifier_text:
+        tokens = tuple(
+            token for token in qualifier_text.replace("/", " ").replace("-", " ").split() if token
+        )
+        if len(tokens) == 2 and all(len(token) == 3 and token.isalpha() for token in tokens):
+            if reporting_currency in tokens:
+                raise UnsupportedRegulatoryFeatureError(
+                    "FX curvature MAR21.98 scalar applies only when the option does not "
+                    "reference the reporting currency"
+                )
+            return
+    raise UnsupportedRegulatoryFeatureError(
+        "FX curvature MAR21.98 scalar requires a two-currency qualifier such as "
+        "'EUR/GBP' so audit evidence identifies the non-reporting-currency pair"
+    )
+
+
+def _text_at(values: npt.NDArray[np.object_], row_index: int) -> str:
+    return str(values[row_index])
+
+
+def _optional_text_at(values: npt.NDArray[np.object_] | None, row_index: int) -> str | None:
+    if values is None:
+        return None
+    value = values[row_index]
+    if value is None:
+        return None
+    return str(value)
+
+
+def _mapping_citation_ids_from_batch(
+    batch: SbmSensitivityBatch,
+    row_index: int,
+) -> tuple[str, ...]:
+    if batch.mapping_citation_ids is None:
+        return ()
+    return batch.mapping_citation_ids[row_index]
+
+
 def _require_girr_curvature_batch(batch: SbmSensitivityBatch) -> None:
     if not isinstance(batch, SbmSensitivityBatch):
         raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
@@ -1392,6 +1814,24 @@ def _validate_and_get_girr_curvature_shocks(
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     ensure_sbm_profile_known(profile_id)
     _require_girr_curvature_batch(batch)
+    return _validate_and_get_curvature_shocks(batch, profile_id=profile_id)
+
+
+def _validate_and_get_curvature_shocks(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    ensure_sbm_profile_known(profile_id)
+    if not isinstance(batch, SbmSensitivityBatch):
+        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
+    if batch.risk_measure is not SbmRiskMeasure.CURVATURE:
+        raise SbmInputError("curvature batch only accepts CURVATURE sensitivities")
+    if batch.up_shock_amounts is None or batch.down_shock_amounts is None:
+        raise SbmInputError(
+            "curvature inputs require up_shock_amount and down_shock_amount",
+            field="up_shock_amount",
+        )
     return (
         _curvature_shock_float_array(batch, batch.up_shock_amounts, field="up_shock_amount"),
         _curvature_shock_float_array(batch, batch.down_shock_amounts, field="down_shock_amount"),
@@ -1441,12 +1881,16 @@ __all__ = [
     "FX_CURVATURE_SCALAR_1_5_FLAG",
     "aggregate_girr_curvature_measure_capital",
     "calculate_curvature_risk_class_capital",
+    "calculate_curvature_risk_class_capital_from_batch",
     "calculate_girr_curvature_risk_class_capital",
+    "calculate_girr_curvature_risk_class_capital_from_batch",
     "curvature_capital_unsupported_feature",
     "curvature_worst_branch",
     "parse_curvature_input",
+    "select_curvature_branches_from_batch",
     "select_girr_curvature_branches_from_batch",
     "selected_curvature_shock_amount",
+    "validate_curvature_batch",
     "validate_curvature_sensitivities",
     "validate_girr_curvature_batch",
     "weight_girr_curvature_sensitivities",

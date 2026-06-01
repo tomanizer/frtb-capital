@@ -32,8 +32,8 @@
     }
   },
   {
-    "case_id": "unsupported_measure",
-    "expected_error_match": "phase-1 capital",
+    "case_id": "unsupported_repo_vega",
+    "expected_error_match": "repo rates",
     "sensitivity": {
       "sensitivity_id": "eq-vega-001",
       "source_row_id": "row-eq-vega",
@@ -42,12 +42,11 @@
       "risk_class": "EQUITY",
       "risk_measure": "VEGA",
       "bucket": "5",
-      "risk_factor": "SPOT",
+      "risk_factor": "REPO",
       "qualifier": "ISS-A",
       "amount": 1000000.0,
       "amount_currency": "USD",
       "option_tenor": "1y",
-      "tenor": "1y",
       "sign_convention": "LONG"
     }
   },

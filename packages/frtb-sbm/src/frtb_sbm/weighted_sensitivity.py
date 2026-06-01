@@ -27,6 +27,7 @@ from frtb_sbm.batch import (
     sorted_equity_delta_batch_indices,
     sorted_fx_delta_batch_indices,
     sorted_girr_vega_batch_indices,
+    sorted_sbm_batch_indices,
 )
 from frtb_sbm.data_models import (
     SbmRiskClass,
@@ -39,6 +40,7 @@ from frtb_sbm.reference_data import (
     commodity_delta_risk_weight,
     csr_nonsec_delta_risk_weight,
     csr_nonsec_validate_delta_inputs,
+    csr_nonsec_validate_vega_inputs,
     equity_bucket_definition,
     equity_delta_risk_weight,
     fx_bucket_definition,
@@ -46,6 +48,9 @@ from frtb_sbm.reference_data import (
     girr_bucket_definition,
     girr_delta_risk_weight,
     girr_vega_liquidity_horizon_days,
+    girr_vega_option_tenor_definition,
+    normalise_fx_delta_currency_code,
+    vega_liquidity_horizon_days,
     vega_risk_weight,
 )
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
@@ -97,6 +102,11 @@ def compute_weighted_sensitivities(
         )
     if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.VEGA:
         return weight_girr_vega_sensitivities(
+            sensitivities,
+            profile_id=profile_id,
+        )
+    if risk_measure is SbmRiskMeasure.VEGA:
+        return weight_non_girr_vega_sensitivities(
             sensitivities,
             profile_id=profile_id,
         )
@@ -288,6 +298,388 @@ def weight_girr_vega_sensitivity_batch(
             )
         )
     return tuple(weighted)
+
+
+def weight_non_girr_vega_sensitivities(
+    sensitivities: Sequence[SbmSensitivity],
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted non-GIRR vega sensitivities for a supported profile."""
+
+    if not sensitivities:
+        return ()
+    risk_classes = {item.risk_class for item in sensitivities}
+    if len(risk_classes) != 1:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm non-GIRR vega weighting requires homogeneous risk class"
+        )
+    risk_class = next(iter(risk_classes))
+    if risk_class is SbmRiskClass.GIRR:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm non-GIRR vega weighting does not support GIRR; "
+            "use weight_girr_vega_sensitivities"
+        )
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        risk_class,
+        SbmRiskMeasure.VEGA,
+    )
+    weighted: list[WeightedSensitivity] = []
+    for sensitivity in sort_sensitivities_deterministic(sensitivities):
+        if sensitivity.risk_class is not risk_class:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm non-GIRR vega weighting requires homogeneous risk class"
+            )
+        if sensitivity.risk_measure is not SbmRiskMeasure.VEGA:
+            raise UnsupportedRegulatoryFeatureError(
+                "frtb-sbm non-GIRR vega weighting does not support "
+                f"risk_measure={sensitivity.risk_measure.value}"
+            )
+        factor_key, risk_factor_citations = _validate_non_girr_vega_sensitivity(
+            sensitivity,
+            profile_id=profile_id,
+        )
+        horizon = (
+            sensitivity.liquidity_horizon_days
+            if sensitivity.liquidity_horizon_days is not None
+            else vega_liquidity_horizon_days(
+                profile_id,
+                risk_class=sensitivity.risk_class,
+                bucket_id=sensitivity.bucket,
+            )
+        )
+        risk_weight, weight_citations = vega_risk_weight(
+            profile_id,
+            liquidity_horizon_days=horizon,
+        )
+        citation_ids = _merge_citation_ids(
+            ("basel_mar21_90", "basel_mar21_91"),
+            risk_factor_citations,
+            weight_citations,
+        )
+        scaled_amount = sensitivity.amount * risk_weight
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=sensitivity.sensitivity_id,
+                risk_class=sensitivity.risk_class,
+                risk_measure=SbmRiskMeasure.VEGA,
+                bucket=sensitivity.bucket,
+                raw_amount=sensitivity.amount,
+                risk_weight=risk_weight,
+                scaled_amount=scaled_amount,
+                citation_ids=citation_ids,
+                qualifier=sensitivity.qualifier,
+                liquidity_horizon_days=horizon,
+                factor_key=factor_key,
+            )
+        )
+    return tuple(weighted)
+
+
+def weight_non_girr_vega_sensitivity_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted non-GIRR vega sensitivities from a package-owned batch."""
+
+    risk_class = batch.risk_class
+    if risk_class is SbmRiskClass.GIRR:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm non-GIRR vega weighting does not support GIRR; "
+            "use weight_girr_vega_sensitivity_batch"
+        )
+    if batch.risk_measure is not SbmRiskMeasure.VEGA:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm non-GIRR vega weighting does not support "
+            f"risk_measure={batch.risk_measure.value}"
+        )
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        risk_class,
+        SbmRiskMeasure.VEGA,
+    )
+    weighted: list[WeightedSensitivity] = []
+    for row_index in sorted_sbm_batch_indices(batch):
+        index = int(row_index)
+        factor_key, risk_factor_citations = _validate_non_girr_vega_batch_row(
+            batch,
+            index,
+            profile_id=profile_id,
+        )
+        bucket_id = cast(str, batch.buckets[index])
+        horizon = _liquidity_horizon_at(
+            batch,
+            index,
+            default_horizon=vega_liquidity_horizon_days(
+                profile_id,
+                risk_class=risk_class,
+                bucket_id=bucket_id,
+            ),
+        )
+        risk_weight, weight_citations = vega_risk_weight(
+            profile_id,
+            liquidity_horizon_days=horizon,
+        )
+        citation_ids = _merge_citation_ids(
+            ("basel_mar21_90", "basel_mar21_91"),
+            risk_factor_citations,
+            weight_citations,
+        )
+        amount = float(batch.amounts[index])
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=cast(str, batch.sensitivity_ids[index]),
+                risk_class=risk_class,
+                risk_measure=SbmRiskMeasure.VEGA,
+                bucket=bucket_id,
+                raw_amount=amount,
+                risk_weight=risk_weight,
+                scaled_amount=amount * risk_weight,
+                citation_ids=citation_ids,
+                qualifier=_optional_axis_value(batch.qualifiers, index),
+                liquidity_horizon_days=horizon,
+                factor_key=factor_key,
+            )
+        )
+    return tuple(weighted)
+
+
+def _validate_non_girr_vega_sensitivity(
+    sensitivity: SbmSensitivity,
+    *,
+    profile_id: str,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    option_tenor = girr_vega_option_tenor_definition(
+        profile_id,
+        sensitivity.option_tenor or "",
+    ).tenor
+    if sensitivity.risk_class is SbmRiskClass.FX:
+        bucket = fx_bucket_definition(profile_id, sensitivity.bucket)
+        risk_factor = normalise_fx_delta_currency_code(sensitivity.risk_factor)
+        if bucket.currency != risk_factor:
+            raise SbmInputError(
+                "FX vega bucket must match risk_factor currency",
+                field="bucket",
+                sensitivity_id=sensitivity.sensitivity_id,
+            )
+        return (bucket.currency, option_tenor), ("basel_mar21_14", "basel_mar21_86")
+    if sensitivity.risk_class is SbmRiskClass.EQUITY:
+        from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
+
+        equity_bucket_definition(profile_id, sensitivity.bucket)
+        if sensitivity.risk_factor.strip().upper() != EQUITY_SPOT_RISK_FACTOR:
+            raise UnsupportedRegulatoryFeatureError(
+                "equity vega has no capital requirement for equity repo rates (MAR21.12(2)(b))"
+            )
+        qualifier = _require_text(sensitivity.qualifier, "qualifier", sensitivity.sensitivity_id)
+        return (
+            sensitivity.bucket,
+            qualifier,
+            EQUITY_SPOT_RISK_FACTOR,
+            option_tenor,
+        ), ("basel_mar21_12", "basel_mar21_72")
+    if sensitivity.risk_class is SbmRiskClass.COMMODITY:
+        commodity_bucket_definition(profile_id, sensitivity.bucket)
+        commodity = _require_text(
+            sensitivity.risk_factor,
+            "risk_factor",
+            sensitivity.sensitivity_id,
+        )
+        return (sensitivity.bucket, commodity, option_tenor), ("basel_mar21_13", "basel_mar21_81")
+    if sensitivity.risk_class is SbmRiskClass.CSR_NONSEC:
+        qualifier = _require_text(sensitivity.qualifier, "qualifier", sensitivity.sensitivity_id)
+        csr_nonsec_validate_vega_inputs(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+            risk_factor=sensitivity.risk_factor,
+            qualifier=qualifier,
+        )
+        return (
+            sensitivity.bucket,
+            qualifier,
+            sensitivity.risk_factor.strip().upper(),
+            option_tenor,
+        ), ("basel_mar21_9", "basel_mar21_51")
+    if sensitivity.risk_class is SbmRiskClass.CSR_SEC_NONCTP:
+        from frtb_sbm.csr_sec_nonctp_reference_data import (
+            csr_sec_nonctp_validate_vega_inputs,
+        )
+
+        qualifier = _require_text(sensitivity.qualifier, "qualifier", sensitivity.sensitivity_id)
+        csr_sec_nonctp_validate_vega_inputs(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+            risk_factor=sensitivity.risk_factor,
+            qualifier=qualifier,
+        )
+        return (
+            sensitivity.bucket,
+            qualifier,
+            sensitivity.risk_factor.strip().upper(),
+            option_tenor,
+        ), ("basel_mar21_10", "basel_mar21_61")
+    if sensitivity.risk_class is SbmRiskClass.CSR_SEC_CTP:
+        from frtb_sbm.csr_sec_ctp_reference_data import (
+            csr_sec_ctp_validate_vega_inputs,
+            ensure_csr_sec_ctp_decomposition_evidence,
+        )
+
+        ensure_csr_sec_ctp_decomposition_evidence(sensitivity)
+        qualifier = _require_text(sensitivity.qualifier, "qualifier", sensitivity.sensitivity_id)
+        csr_sec_ctp_validate_vega_inputs(
+            profile_id,
+            bucket_id=sensitivity.bucket,
+            risk_factor=sensitivity.risk_factor,
+            qualifier=qualifier,
+        )
+        return (
+            sensitivity.bucket,
+            qualifier,
+            sensitivity.risk_factor.strip().upper(),
+            option_tenor,
+        ), ("basel_mar21_11", "basel_mar21_58")
+    raise UnsupportedRegulatoryFeatureError(
+        f"non-GIRR vega weighting is unsupported for risk_class={sensitivity.risk_class.value}"
+    )
+
+
+def _validate_non_girr_vega_batch_row(
+    batch: SbmSensitivityBatch,
+    row_index: int,
+    *,
+    profile_id: str,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    sensitivity_id = cast(str, batch.sensitivity_ids[row_index])
+    risk_class = batch.risk_class
+    bucket_id = cast(str, batch.buckets[row_index])
+    risk_factor = cast(str, batch.risk_factors[row_index])
+    option_tenor = girr_vega_option_tenor_definition(
+        profile_id,
+        _required_optional_axis_value(batch.option_tenors, row_index, "option_tenor"),
+    ).tenor
+
+    if risk_class is SbmRiskClass.FX:
+        bucket = fx_bucket_definition(profile_id, bucket_id)
+        normalized_risk_factor = normalise_fx_delta_currency_code(risk_factor)
+        if bucket.currency != normalized_risk_factor:
+            raise SbmInputError(
+                "FX vega bucket must match risk_factor currency",
+                field="bucket",
+                sensitivity_id=sensitivity_id,
+            )
+        return (bucket.currency, option_tenor), ("basel_mar21_14", "basel_mar21_86")
+    if risk_class is SbmRiskClass.EQUITY:
+        from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
+
+        equity_bucket_definition(profile_id, bucket_id)
+        if risk_factor.strip().upper() != EQUITY_SPOT_RISK_FACTOR:
+            raise UnsupportedRegulatoryFeatureError(
+                "equity vega has no capital requirement for equity repo rates (MAR21.12(2)(b))"
+            )
+        qualifier = _require_text(
+            _optional_axis_value(batch.qualifiers, row_index),
+            "qualifier",
+            sensitivity_id,
+        )
+        return (
+            bucket_id,
+            qualifier,
+            EQUITY_SPOT_RISK_FACTOR,
+            option_tenor,
+        ), ("basel_mar21_12", "basel_mar21_72")
+    if risk_class is SbmRiskClass.COMMODITY:
+        commodity_bucket_definition(profile_id, bucket_id)
+        commodity = _require_text(risk_factor, "risk_factor", sensitivity_id)
+        return (bucket_id, commodity, option_tenor), ("basel_mar21_13", "basel_mar21_81")
+    if risk_class is SbmRiskClass.CSR_NONSEC:
+        qualifier = _require_text(
+            _optional_axis_value(batch.qualifiers, row_index),
+            "qualifier",
+            sensitivity_id,
+        )
+        csr_nonsec_validate_vega_inputs(
+            profile_id,
+            bucket_id=bucket_id,
+            risk_factor=risk_factor,
+            qualifier=qualifier,
+        )
+        return (
+            bucket_id,
+            qualifier,
+            risk_factor.strip().upper(),
+            option_tenor,
+        ), ("basel_mar21_9", "basel_mar21_51")
+    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
+        from frtb_sbm.csr_sec_nonctp_reference_data import (
+            csr_sec_nonctp_validate_vega_inputs,
+        )
+
+        qualifier = _require_text(
+            _optional_axis_value(batch.qualifiers, row_index),
+            "qualifier",
+            sensitivity_id,
+        )
+        csr_sec_nonctp_validate_vega_inputs(
+            profile_id,
+            bucket_id=bucket_id,
+            risk_factor=risk_factor,
+            qualifier=qualifier,
+        )
+        return (
+            bucket_id,
+            qualifier,
+            risk_factor.strip().upper(),
+            option_tenor,
+        ), ("basel_mar21_10", "basel_mar21_61")
+    if risk_class is SbmRiskClass.CSR_SEC_CTP:
+        from frtb_sbm.csr_sec_ctp_reference_data import (
+            csr_sec_ctp_validate_vega_inputs,
+        )
+
+        _ensure_csr_sec_ctp_decomposition_evidence_for_batch(batch, row_index)
+        qualifier = _require_text(
+            _optional_axis_value(batch.qualifiers, row_index),
+            "qualifier",
+            sensitivity_id,
+        )
+        csr_sec_ctp_validate_vega_inputs(
+            profile_id,
+            bucket_id=bucket_id,
+            risk_factor=risk_factor,
+            qualifier=qualifier,
+        )
+        return (
+            bucket_id,
+            qualifier,
+            risk_factor.strip().upper(),
+            option_tenor,
+        ), ("basel_mar21_11", "basel_mar21_58")
+    raise UnsupportedRegulatoryFeatureError(
+        f"non-GIRR vega weighting is unsupported for risk_class={risk_class.value}"
+    )
+
+
+def _require_text(value: object, field: str, sensitivity_id: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise SbmInputError(
+            "non-empty text is required",
+            field=field,
+            sensitivity_id=sensitivity_id,
+        )
+    return value.strip()
+
+
+def _merge_citation_ids(*groups: tuple[str, ...]) -> tuple[str, ...]:
+    merged: list[str] = []
+    seen: set[str] = set()
+    for group in groups:
+        for citation_id in group:
+            if citation_id not in seen:
+                merged.append(citation_id)
+                seen.add(citation_id)
+    return tuple(merged)
 
 
 def weight_fx_delta_sensitivity_batch(
@@ -1031,5 +1423,7 @@ __all__ = [
     "weight_girr_delta_sensitivities",
     "weight_girr_vega_sensitivities",
     "weight_girr_vega_sensitivity_batch",
+    "weight_non_girr_vega_sensitivities",
+    "weight_non_girr_vega_sensitivity_batch",
     "weighted_sensitivity_sort_key",
 ]

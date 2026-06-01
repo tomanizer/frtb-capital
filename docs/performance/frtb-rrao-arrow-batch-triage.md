@@ -63,6 +63,14 @@ The batch path addresses these hotspots:
 - Classification and add-on construction use package reference-data lookups and
   produce the existing public `RraoCapitalLine` and `RraoSubtotal` audit
   records.
+- Decision selection now precomputes classification, risk-weight key, reason
+  code, and citation groups with profile-rule masks. The final row loop only
+  emits the public audit lines; it no longer performs a reference-data lookup
+  for each accepted position.
+- Arrow handoff numeric columns are passed as NumPy arrays where possible,
+  including zero-copy `float64` views for required gross effective notional
+  columns. Object and dictionary text columns are converted chunk-wise without
+  routing the whole column through `to_pylist()`.
 
 Output capital lines are still materialized because they are the public audit
 surface. The performance target is to remove accepted input-row dataclass churn,
@@ -97,3 +105,19 @@ The tests assert:
 - handoff diagnostics are preserved; and
 - opaque nested payloads fail closed instead of falling back to row
   materialization.
+
+Issue #317 added vectorization-specific evidence:
+
+- required Arrow `float64` gross effective notional handoff uses a zero-copy
+  NumPy view where Arrow permits it;
+- chunked dictionary-encoded text columns are accepted deterministically;
+- `copy_arrays=False` does not freeze caller-owned NumPy arrays;
+- profile evidence-rule lookup is mask-based rather than per-row; and
+- the benchmark reports row, column-batch, and Arrow-batch timings, exact total
+  deltas, ordering hashes, and accepted-row dataclass counts.
+
+The 2026-06-01 target-scale run on 100,000 synthetic rows reported row
+calculation at 10.731 seconds, column-batch calculation at 3.522 seconds, and
+Arrow-batch calculation at 3.820 seconds. Column-batch and Arrow-batch total
+capital deltas were both 0.0, and both high-performance paths materialized 0
+accepted input-row dataclasses.

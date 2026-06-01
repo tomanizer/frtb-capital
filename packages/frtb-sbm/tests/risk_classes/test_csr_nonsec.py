@@ -256,7 +256,7 @@ def test_calculate_sbm_capital_returns_csr_nonsec_delta_result() -> None:
     assert result.risk_classes[0].risk_class is SbmRiskClass.CSR_NONSEC
 
 
-def test_csr_nonsec_vega_fails_closed() -> None:
+def test_csr_nonsec_vega_is_supported() -> None:
     sensitivity = SbmSensitivity(
         sensitivity_id="csr-vega",
         source_row_id="row-001",
@@ -272,10 +272,11 @@ def test_csr_nonsec_vega_fails_closed() -> None:
         sign_convention=SbmSignConvention.LONG,
         lineage=sample_lineage("row-001"),
         option_tenor="1y",
-        tenor="1y",
     )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital"):
-        calculate_sbm_capital((sensitivity,), context=sample_context())
+    result = calculate_sbm_capital((sensitivity,), context=sample_context())
+
+    assert result.total_capital > 0.0
+    assert result.risk_classes[0].risk_measure is SbmRiskMeasure.VEGA
 
 
 def test_csr_nonsec_delta_v1_fixture_matches_expected_outputs() -> None:

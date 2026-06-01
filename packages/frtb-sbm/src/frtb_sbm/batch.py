@@ -64,7 +64,9 @@ _TENOR_REQUIRED_PATHS = frozenset(
     }
 )
 
-_OPTION_TENOR_REQUIRED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.VEGA)})
+_OPTION_TENOR_REQUIRED_PATHS = frozenset(
+    {(risk_class, SbmRiskMeasure.VEGA) for risk_class in SbmRiskClass}
+)
 
 _CURVATURE_REQUIRED_PATHS = frozenset(
     {(risk_class, SbmRiskMeasure.CURVATURE) for risk_class in SbmRiskClass}
@@ -117,6 +119,7 @@ class SbmSensitivityBatch:
     down_shock_amounts: ObjectArray | None = None
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None
+    accepted_row_dataclasses_materialized: int = 0
 
     @property
     def row_count(self) -> int:
@@ -180,7 +183,7 @@ def build_sbm_batch_from_sensitivities(
     optional_arrays = _optional_arrays_from_sensitivities(validated)
     source_column_maps = _source_column_maps_from_sensitivities(validated)
     mapping_citations = _mapping_citations_from_sensitivities(validated)
-    return build_sbm_batch_from_columns(
+    batch = build_sbm_batch_from_columns(
         expected_risk_class=risk_class,
         expected_risk_measure=risk_measure,
         sensitivity_ids=[item.sensitivity_id for item in validated],
@@ -205,6 +208,7 @@ def build_sbm_batch_from_sensitivities(
         copy_arrays=True,
         **optional_arrays,
     )
+    return replace(batch, accepted_row_dataclasses_materialized=len(validated))
 
 
 def build_girr_delta_batch_from_sensitivities(
@@ -257,6 +261,144 @@ def build_girr_vega_batch_from_sensitivities(
     )
 
 
+def build_fx_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build an FX vega batch from existing row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.FX,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_equity_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build an equity vega batch from existing row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.EQUITY,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_commodity_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a commodity vega batch from existing row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.COMMODITY,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_nonsec_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a CSR non-securitisation vega batch from row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_sec_nonctp_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a CSR securitisation non-CTP vega batch from row-wise sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_sec_ctp_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a CSR securitisation CTP vega batch from row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
 def build_girr_curvature_batch_from_sensitivities(
     sensitivities: object,
     *,
@@ -276,6 +418,132 @@ def build_girr_curvature_batch_from_sensitivities(
         sensitivities,
         expected_risk_class=SbmRiskClass.GIRR,
         expected_risk_measure=SbmRiskMeasure.CURVATURE,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def _build_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    expected_risk_class: SbmRiskClass,
+    source_hash: str | None,
+    handoff_hash: str | None,
+    diagnostics: Sequence[Mapping[str, object]],
+) -> SbmSensitivityBatch:
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=expected_risk_class,
+        expected_risk_measure=SbmRiskMeasure.CURVATURE,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_fx_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build an FX curvature batch from row-wise canonical sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.FX,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_equity_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build an equity curvature batch from row-wise canonical sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.EQUITY,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_commodity_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build a commodity curvature batch from row-wise canonical sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.COMMODITY,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_nonsec_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build a CSR non-securitisation curvature batch from row-wise sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_sec_nonctp_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build a CSR securitisation non-CTP curvature batch from row-wise sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_sec_ctp_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build a CSR securitisation CTP curvature batch from row-wise sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
@@ -564,9 +832,15 @@ def build_sbm_batch_from_columns(
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostic_payloads,
+        position_ids=optional["position_ids"],
+        qualifiers=optional["qualifiers"],
+        option_tenors=optional["option_tenors"],
+        liquidity_horizon_days=optional["liquidity_horizon_days"],
+        maturities=optional["maturities"],
+        up_shock_amounts=optional["up_shock_amounts"],
+        down_shock_amounts=optional["down_shock_amounts"],
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citation_ids,
-        **optional,
     )
     return replace(batch_without_hash, input_hash=input_hash_for_sbm_batch(batch_without_hash))
 
@@ -1167,6 +1441,81 @@ def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
     return _hash_payload({"sensitivities": list(_sensitivity_payloads_from_batch(batch))})
 
 
+def input_hash_for_sbm_batches(batches: object) -> str:
+    """Return the row-equivalent deterministic input hash for batch portfolios."""
+
+    validated = coerce_sbm_batch_sequence(batches)
+    return _hash_payload(
+        {
+            "sensitivities": [
+                payload
+                for batch in validated
+                for payload in _sensitivity_payloads_from_batch(batch)
+            ]
+        }
+    )
+
+
+def concatenate_sbm_batches(batches: object) -> SbmSensitivityBatch:
+    """Concatenate homogeneous SBM batches without materialising row dataclasses."""
+
+    validated = coerce_sbm_batch_sequence(batches)
+    if len(validated) == 1:
+        return validated[0]
+
+    expected_risk_class = validated[0].risk_class
+    expected_risk_measure = validated[0].risk_measure
+    for batch in validated[1:]:
+        if batch.risk_class is not expected_risk_class:
+            raise SbmInputError(
+                "cannot concatenate batches with different risk_class values",
+                field="risk_class",
+            )
+        if batch.risk_measure is not expected_risk_measure:
+            raise SbmInputError(
+                "cannot concatenate batches with different risk_measure values",
+                field="risk_measure",
+            )
+
+    combined = build_sbm_batch_from_columns(
+        expected_risk_class=expected_risk_class,
+        expected_risk_measure=expected_risk_measure,
+        sensitivity_ids=_concat_required_arrays(validated, "sensitivity_ids"),
+        source_row_ids=_concat_required_arrays(validated, "source_row_ids"),
+        desk_ids=_concat_required_arrays(validated, "desk_ids"),
+        legal_entities=_concat_required_arrays(validated, "legal_entities"),
+        risk_classes=_concat_required_arrays(validated, "risk_classes"),
+        risk_measures=_concat_required_arrays(validated, "risk_measures"),
+        buckets=_concat_required_arrays(validated, "buckets"),
+        risk_factors=_concat_required_arrays(validated, "risk_factors"),
+        amounts=_concat_float_arrays(validated, "amounts"),
+        amount_currencies=_concat_required_arrays(validated, "amount_currencies"),
+        sign_conventions=_concat_required_arrays(validated, "sign_conventions"),
+        tenors=_concat_required_arrays(validated, "tenors"),
+        lineage_source_systems=_concat_required_arrays(validated, "lineage_source_systems"),
+        lineage_source_files=_concat_required_arrays(validated, "lineage_source_files"),
+        source_hash=None,
+        handoff_hash=None,
+        diagnostics=tuple(diagnostic for batch in validated for diagnostic in batch.diagnostics),
+        position_ids=_concat_optional_arrays(validated, "position_ids"),
+        qualifiers=_concat_optional_arrays(validated, "qualifiers"),
+        option_tenors=_concat_optional_arrays(validated, "option_tenors"),
+        liquidity_horizon_days=_concat_optional_arrays(validated, "liquidity_horizon_days"),
+        maturities=_concat_optional_arrays(validated, "maturities"),
+        up_shock_amounts=_concat_optional_arrays(validated, "up_shock_amounts"),
+        down_shock_amounts=_concat_optional_arrays(validated, "down_shock_amounts"),
+        source_column_maps=_concat_source_column_maps(validated),
+        mapping_citation_ids=_concat_mapping_citation_ids(validated),
+        copy_arrays=False,
+    )
+    return replace(
+        combined,
+        accepted_row_dataclasses_materialized=sum(
+            batch.accepted_row_dataclasses_materialized for batch in validated
+        ),
+    )
+
+
 def input_hash_for_girr_delta_batch(batch: SbmSensitivityBatch) -> str:
     """Return the row-equivalent deterministic input hash for a GIRR delta batch."""
 
@@ -1322,6 +1671,16 @@ def sorted_girr_curvature_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArr
         expected_risk_measure=SbmRiskMeasure.CURVATURE,
         label="GIRR curvature",
     )
+    return sorted_sbm_batch_indices(batch)
+
+
+def sorted_curvature_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in the same stable order used by row-wise curvature helpers."""
+
+    if batch.row_count == 0:
+        raise SbmInputError("curvature batch must not be empty", field="batch")
+    if batch.risk_measure is not SbmRiskMeasure.CURVATURE:
+        raise SbmInputError("curvature batch only accepts CURVATURE sensitivities")
     return sorted_sbm_batch_indices(batch)
 
 
@@ -1606,7 +1965,7 @@ def _validate_homogeneous_batch_arrays(
         )
 
     qualifiers = optional_arrays["qualifiers"]
-    if expected_risk_class in _QUALIFIER_REQUIRED_RISK_CLASSES:
+    if _qualifier_required_for_path(expected_risk_class, expected_risk_measure):
         if qualifiers is None:
             raise SbmInputError("qualifier is required", field="qualifier")
         _validate_required_text_column(
@@ -1640,6 +1999,15 @@ def _validate_homogeneous_batch_arrays(
         coerce_sign_convention(sign_convention)
     if not np.all(np.isfinite(amount_array)):
         raise SbmInputError("value must be finite", field="amount")
+
+
+def _qualifier_required_for_path(
+    risk_class: SbmRiskClass,
+    risk_measure: SbmRiskMeasure,
+) -> bool:
+    if risk_class is SbmRiskClass.COMMODITY and risk_measure is SbmRiskMeasure.VEGA:
+        return False
+    return risk_class in _QUALIFIER_REQUIRED_RISK_CLASSES
 
 
 def _normalise_risk_class_array(
@@ -1764,6 +2132,101 @@ def _validate_mapping_citations(
                     "mapping citation ids must be non-empty strings",
                     field="mapping_citation_ids",
                 )
+
+
+def coerce_sbm_batch_sequence(batches: object) -> tuple[SbmSensitivityBatch, ...]:
+    """Return a validated non-empty tuple of package-owned SBM batches."""
+
+    if isinstance(batches, SbmSensitivityBatch):
+        return (batches,)
+    try:
+        candidates: tuple[object, ...] = tuple(batches)  # type: ignore[arg-type]
+    except TypeError as exc:
+        raise SbmInputError(
+            "batches must be an iterable of SbmSensitivityBatch objects",
+            field="batches",
+        ) from exc
+    if not candidates:
+        raise SbmInputError("batches must not be empty", field="batches")
+    for candidate in candidates:
+        if not isinstance(candidate, SbmSensitivityBatch):
+            raise SbmInputError(
+                "batches must contain only SbmSensitivityBatch objects",
+                field="batches",
+            )
+    return cast(tuple[SbmSensitivityBatch, ...], candidates)
+
+
+def _coerce_batch_sequence(batches: object) -> tuple[SbmSensitivityBatch, ...]:
+    return coerce_sbm_batch_sequence(batches)
+
+
+def _concat_required_arrays(
+    batches: Sequence[SbmSensitivityBatch],
+    field_name: str,
+) -> ObjectArray:
+    return cast(
+        ObjectArray,
+        np.concatenate([getattr(batch, field_name) for batch in batches]).astype(
+            object,
+            copy=False,
+        ),
+    )
+
+
+def _concat_float_arrays(
+    batches: Sequence[SbmSensitivityBatch],
+    field_name: str,
+) -> FloatArray:
+    return cast(
+        FloatArray,
+        np.concatenate([getattr(batch, field_name) for batch in batches]).astype(
+            np.float64,
+            copy=False,
+        ),
+    )
+
+
+def _concat_optional_arrays(
+    batches: Sequence[SbmSensitivityBatch],
+    field_name: str,
+) -> ObjectArray | None:
+    arrays = [cast(ObjectArray | None, getattr(batch, field_name)) for batch in batches]
+    if not any(array is not None for array in arrays):
+        return None
+    parts = [
+        array if array is not None else np.full(batch.row_count, None, dtype=object)
+        for batch, array in zip(batches, arrays, strict=True)
+    ]
+    return cast(ObjectArray, np.concatenate(parts).astype(object, copy=False))
+
+
+def _concat_source_column_maps(
+    batches: Sequence[SbmSensitivityBatch],
+) -> tuple[tuple[tuple[str, str], ...], ...] | None:
+    if not any(batch.source_column_maps is not None for batch in batches):
+        return None
+    rows: list[tuple[tuple[str, str], ...]] = []
+    for batch in batches:
+        if batch.source_column_maps is None:
+            rows.extend(() for _ in range(batch.row_count))
+        else:
+            rows.extend(batch.source_column_maps)
+    return tuple(rows)
+
+
+def _concat_mapping_citation_ids(
+    batches: Sequence[SbmSensitivityBatch],
+) -> tuple[tuple[str, ...], ...] | None:
+    if not any(batch.mapping_citation_ids is not None for batch in batches):
+        return None
+    rows: list[tuple[str, ...]] = []
+    for batch in batches:
+        if batch.mapping_citation_ids is None:
+            rows.extend(() for _ in range(batch.row_count))
+        else:
+            rows.extend(batch.mapping_citation_ids)
+    return tuple(rows)
 
 
 def _object_array(values: Iterable[object], field: str, *, copy: bool) -> ObjectArray:
@@ -1981,18 +2444,30 @@ def _freeze_array(array: npt.NDArray[Any]) -> None:
 
 __all__ = [
     "SbmSensitivityBatch",
+    "build_commodity_curvature_batch_from_sensitivities",
     "build_commodity_delta_batch_from_columns",
     "build_commodity_delta_batch_from_sensitivities",
+    "build_commodity_vega_batch_from_sensitivities",
+    "build_csr_nonsec_curvature_batch_from_sensitivities",
     "build_csr_nonsec_delta_batch_from_columns",
     "build_csr_nonsec_delta_batch_from_sensitivities",
+    "build_csr_nonsec_vega_batch_from_sensitivities",
+    "build_csr_sec_ctp_curvature_batch_from_sensitivities",
     "build_csr_sec_ctp_delta_batch_from_columns",
     "build_csr_sec_ctp_delta_batch_from_sensitivities",
+    "build_csr_sec_ctp_vega_batch_from_sensitivities",
+    "build_csr_sec_nonctp_curvature_batch_from_sensitivities",
     "build_csr_sec_nonctp_delta_batch_from_columns",
     "build_csr_sec_nonctp_delta_batch_from_sensitivities",
+    "build_csr_sec_nonctp_vega_batch_from_sensitivities",
+    "build_equity_curvature_batch_from_sensitivities",
     "build_equity_delta_batch_from_columns",
     "build_equity_delta_batch_from_sensitivities",
+    "build_equity_vega_batch_from_sensitivities",
+    "build_fx_curvature_batch_from_sensitivities",
     "build_fx_delta_batch_from_columns",
     "build_fx_delta_batch_from_sensitivities",
+    "build_fx_vega_batch_from_sensitivities",
     "build_girr_curvature_batch_from_columns",
     "build_girr_curvature_batch_from_sensitivities",
     "build_girr_delta_batch_from_columns",
@@ -2001,6 +2476,8 @@ __all__ = [
     "build_girr_vega_batch_from_sensitivities",
     "build_sbm_batch_from_columns",
     "build_sbm_batch_from_sensitivities",
+    "coerce_sbm_batch_sequence",
+    "concatenate_sbm_batches",
     "input_hash_for_commodity_delta_batch",
     "input_hash_for_csr_nonsec_delta_batch",
     "input_hash_for_csr_sec_ctp_delta_batch",
@@ -2011,10 +2488,12 @@ __all__ = [
     "input_hash_for_girr_delta_batch",
     "input_hash_for_girr_vega_batch",
     "input_hash_for_sbm_batch",
+    "input_hash_for_sbm_batches",
     "sorted_commodity_delta_batch_indices",
     "sorted_csr_nonsec_delta_batch_indices",
     "sorted_csr_sec_ctp_delta_batch_indices",
     "sorted_csr_sec_nonctp_delta_batch_indices",
+    "sorted_curvature_batch_indices",
     "sorted_equity_delta_batch_indices",
     "sorted_fx_delta_batch_indices",
     "sorted_girr_curvature_batch_indices",

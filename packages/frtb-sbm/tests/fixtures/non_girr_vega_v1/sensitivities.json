@@ -1,0 +1,99 @@
+{
+  "context": {
+    "run_id": "sbm-non-girr-vega-v1",
+    "calculation_date": "2026-05-30",
+    "base_currency": "USD",
+    "reporting_currency": "USD",
+    "profile_id": "BASEL_MAR21"
+  },
+  "sensitivities": [
+    {
+      "sensitivity_id": "fx-eur-vega-1y",
+      "source_row_id": "row-201",
+      "desk_id": "vega-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "FX",
+      "risk_measure": "VEGA",
+      "bucket": "EUR",
+      "risk_factor": "EUR",
+      "amount": 100000.0,
+      "amount_currency": "USD",
+      "option_tenor": "1y",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "equity-spot-vega-1y",
+      "source_row_id": "row-202",
+      "desk_id": "vega-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "VEGA",
+      "bucket": "5",
+      "risk_factor": "SPOT",
+      "qualifier": "EQ-ISSUER-A",
+      "amount": 90000.0,
+      "amount_currency": "USD",
+      "option_tenor": "1y",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "commodity-wti-vega-1y",
+      "source_row_id": "row-203",
+      "desk_id": "vega-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "VEGA",
+      "bucket": "2",
+      "risk_factor": "WTI",
+      "amount": 80000.0,
+      "amount_currency": "USD",
+      "option_tenor": "1y",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "csr-nonsec-bond-vega-1y",
+      "source_row_id": "row-204",
+      "desk_id": "vega-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "CSR_NONSEC",
+      "risk_measure": "VEGA",
+      "bucket": "4",
+      "risk_factor": "BOND",
+      "qualifier": "CSR-ISSUER-A",
+      "amount": 70000.0,
+      "amount_currency": "USD",
+      "option_tenor": "1y",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "csr-sec-nonctp-bond-vega-1y",
+      "source_row_id": "row-205",
+      "desk_id": "vega-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "CSR_SEC_NONCTP",
+      "risk_measure": "VEGA",
+      "bucket": "1",
+      "risk_factor": "BOND",
+      "qualifier": "TRANCHE-A",
+      "amount": 60000.0,
+      "amount_currency": "USD",
+      "option_tenor": "1y",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "csr-sec-ctp-bond-vega-1y",
+      "source_row_id": "row-206",
+      "desk_id": "vega-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "CSR_SEC_CTP",
+      "risk_measure": "VEGA",
+      "bucket": "4",
+      "risk_factor": "BOND",
+      "qualifier": "UNDERLYING-A",
+      "amount": 50000.0,
+      "amount_currency": "USD",
+      "option_tenor": "1y",
+      "sign_convention": "LONG"
+    }
+  ]
+}

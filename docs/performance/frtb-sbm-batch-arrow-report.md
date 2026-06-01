@@ -76,6 +76,27 @@ audit compatibility. If future larger runs show batch construction dominating,
 the next performance task should target vectorized hashing and canonical string
 normalization rather than reintroducing per-row dataclass materialization.
 
+## Issue #315 Conversion Check
+
+After the Arrow conversion-copy reduction in #315, the 720-row local SBM
+benchmark on macOS-26.5 arm64 / Python 3.11.15 recorded a `wall_clock_proxy` of
+3.417s against the checked-in 3.442s baseline, with the validation/batch-build
+summary dropping from 0.485s to 0.335s. Accepted-row dataclass materialization
+remained zero on the Arrow/batch path.
+
+Batch construction improved for each benchmarked handoff path:
+
+| Case | #315 batch build ms | Baseline batch build ms |
+| --- | ---: | ---: |
+| GIRR vega | 41 | 64 |
+| FX delta | 45 | 51 |
+| Equity delta | 38 | 52 |
+| Commodity delta | 38 | 67 |
+| CSR non-sec delta | 38 | 63 |
+| CSR sec non-CTP delta | 38 | 59 |
+| CSR sec CTP delta | 40 | 56 |
+| GIRR curvature validation | 49 | 64 |
+
 ## Supported High-Volume Entrypoints
 
 Use the public Arrow normalizers and handoff/batch entrypoints in
@@ -84,7 +105,8 @@ handoffs are GIRR delta, GIRR vega, FX delta, equity delta, commodity delta, CSR
 non-sec delta, CSR sec non-CTP delta, and CSR sec CTP delta. The supported
 validation-only handoff is GIRR curvature.
 
-Unsupported paths remain explicit boundaries: FX/equity/commodity/CSR vega,
-unsupported curvature sub-features, unsupported regulatory profiles, high-volume
-curvature capital handoffs, and broader CRIF coverage outside the implemented
-GIRR delta CRIF mapping.
+Unsupported or unmigrated paths remain explicit boundaries: high-volume
+FX/equity/commodity/CSR vega capital handoffs, unsupported curvature
+sub-features, unsupported regulatory profiles, high-volume curvature capital
+handoffs, and broader CRIF coverage outside the implemented GIRR delta CRIF
+mapping. Non-GIRR vega capital is supported through the row-wise public API.

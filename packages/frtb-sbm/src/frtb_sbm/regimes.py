@@ -54,12 +54,24 @@ PROFILE_SUPPORTED_MEASURES: dict[
         SbmRiskClass.GIRR: frozenset(
             {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
         ),
-        SbmRiskClass.FX: frozenset({SbmRiskMeasure.DELTA, SbmRiskMeasure.CURVATURE}),
-        SbmRiskClass.EQUITY: frozenset({SbmRiskMeasure.DELTA, SbmRiskMeasure.CURVATURE}),
-        SbmRiskClass.COMMODITY: frozenset({SbmRiskMeasure.DELTA, SbmRiskMeasure.CURVATURE}),
-        SbmRiskClass.CSR_NONSEC: frozenset({SbmRiskMeasure.DELTA, SbmRiskMeasure.CURVATURE}),
-        SbmRiskClass.CSR_SEC_NONCTP: frozenset({SbmRiskMeasure.DELTA, SbmRiskMeasure.CURVATURE}),
-        SbmRiskClass.CSR_SEC_CTP: frozenset({SbmRiskMeasure.DELTA, SbmRiskMeasure.CURVATURE}),
+        SbmRiskClass.FX: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.EQUITY: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.COMMODITY: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.CSR_NONSEC: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.CSR_SEC_NONCTP: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.CSR_SEC_CTP: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
     },
 }
 

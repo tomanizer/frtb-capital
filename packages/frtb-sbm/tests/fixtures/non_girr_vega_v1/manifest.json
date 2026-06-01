@@ -1,0 +1,18 @@
+{
+  "calculation_date": "2026-05-30",
+  "files": {
+    "expected_outputs.json": {
+      "sha256": "1aa63a00d7b88dc48e7eaba3c532ffe189d35d63f2a084cc2b09e9822af9f164"
+    },
+    "invalid_cases.json": {
+      "sha256": "467735ceb05583249212b43ded487725d4a9347684de8a93a7ef409220c35a06"
+    },
+    "sensitivities.json": {
+      "sha256": "58420b0f63944703ac619fe416f3a8b831925483abfbb1cb6cb70e25c09802dd"
+    }
+  },
+  "profile": "BASEL_MAR21",
+  "schema_version": "non_girr_vega_fixture_v1",
+  "sensitivity_count": 6,
+  "total_capital": 430003.5713374682
+}

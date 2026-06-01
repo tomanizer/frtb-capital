@@ -286,7 +286,7 @@ def test_calculate_sbm_capital_returns_equity_delta_result() -> None:
     assert result.risk_classes[0].risk_class is SbmRiskClass.EQUITY
 
 
-def test_equity_vega_fails_closed() -> None:
+def test_equity_vega_is_supported() -> None:
     sensitivity = SbmSensitivity(
         sensitivity_id="eq-vega",
         source_row_id="row-001",
@@ -302,10 +302,11 @@ def test_equity_vega_fails_closed() -> None:
         sign_convention=SbmSignConvention.LONG,
         lineage=sample_lineage("row-001"),
         option_tenor="1y",
-        tenor="1y",
     )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital"):
-        calculate_sbm_capital((sensitivity,), context=sample_context())
+    result = calculate_sbm_capital((sensitivity,), context=sample_context())
+
+    assert result.total_capital > 0.0
+    assert result.risk_classes[0].risk_measure is SbmRiskMeasure.VEGA
 
 
 def test_equity_delta_v1_fixture_matches_expected_outputs() -> None:

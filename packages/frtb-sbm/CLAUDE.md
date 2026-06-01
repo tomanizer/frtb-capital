@@ -6,12 +6,12 @@ Review `frtb-sbm` as the owner of SBM capital only.
 
 | Risk class | Delta | Vega | Curvature |
 | --- | --- | --- | --- |
-| GIRR | Implemented | Implemented | Implemented row-wise |
-| FX | Implemented | Unsupported | Implemented row-wise |
-| Equity | Implemented | Unsupported | Implemented row-wise for spot; repo curvature unsupported |
-| Commodity | Implemented | Unsupported | Implemented row-wise |
-| CSR non-securitisation | Implemented | Unsupported | Implemented row-wise |
-| CSR securitisation CTP / non-CTP | Implemented | Unsupported | Implemented row-wise |
+| GIRR | Implemented under audit | Implemented under audit | Implemented under audit |
+| FX | Implemented under audit | Implemented under audit | Implemented under audit |
+| Equity | Implemented under audit | Implemented under audit | Implemented under audit; repo sub-features fail closed |
+| Commodity | Implemented under audit | Implemented under audit | Implemented under audit |
+| CSR non-securitisation | Implemented under audit | Implemented under audit | Implemented under audit |
+| CSR securitisation non-CTP / CTP | Implemented under audit | Implemented under audit | Implemented under audit |
 
 Public entry point: `calculate_sbm_capital`. Supported paths return cited
 `SbmCapitalResult` records with audit hashes and scenario evidence. All other
@@ -21,8 +21,8 @@ zero-capital placeholders.
 
 Curvature up/down shock inputs may be validated with
 `validate_curvature_sensitivities`. Public curvature capital is available
-through the row API; the GIRR Arrow/batch curvature handoff remains
-validation-only until high-volume curvature batches are implemented.
+through row-wise, package-owned batch, and Arrow handoff entrypoints for all
+supported BASEL_MAR21 risk classes.
 
 ## Validation and deployment readiness
 

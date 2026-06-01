@@ -8,5 +8,5 @@ Synthetic Basel MAR21 commodity delta replay bundle exercising:
 - MAR21.85 20% inter-bucket correlation across energy-liquid and metals buckets;
 - low, medium, and high correlation scenario selection.
 
-Negative cases cover duplicate sensitivity ids, unsupported commodity vega,
-missing tenor or location qualifiers, and invalid bucket ids.
+Negative cases cover duplicate sensitivity ids, missing commodity vega option
+tenor, missing tenor or location qualifiers, and invalid bucket ids.

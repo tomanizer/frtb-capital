@@ -186,6 +186,20 @@ def csr_nonsec_validate_delta_inputs(
     _require_text(qualifier, "qualifier")
 
 
+def csr_nonsec_validate_vega_inputs(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    bucket_id: str,
+    risk_factor: str,
+    qualifier: str,
+) -> None:
+    """Validate cited CSR non-securitisation vega inputs."""
+
+    csr_nonsec_bucket_definition(profile, bucket_id)
+    _normalise_csr_risk_factor(risk_factor)
+    _require_text(qualifier, "qualifier")
+
+
 def csr_nonsec_delta_risk_weight(
     profile: SbmRegulatoryProfile | str,
     *,
@@ -426,4 +440,5 @@ __all__ = [
     "csr_nonsec_prescribed_tenors",
     "csr_nonsec_reference_payload",
     "csr_nonsec_validate_delta_inputs",
+    "csr_nonsec_validate_vega_inputs",
 ]
