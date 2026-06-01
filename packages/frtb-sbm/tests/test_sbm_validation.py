@@ -8,9 +8,11 @@ import pytest
 from frtb_sbm import (
     SbmCalculationContext,
     SbmInputError,
+    SbmPairwiseEvidenceMode,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
+    SbmRunControls,
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
@@ -213,6 +215,29 @@ def test_validate_sbm_calculation_context_rejects_unknown_profile() -> None:
     with pytest.raises(SbmInputError, match="profile_id must be one of") as exc_info:
         validate_sbm_calculation_context(sample_context(profile_id="UNKNOWN"))
     assert exc_info.value.field == "profile_id"
+
+
+def test_validate_sbm_calculation_context_rejects_invalid_pairwise_controls() -> None:
+    with pytest.raises(SbmInputError, match="pairwise_evidence_mode must be one of") as exc_info:
+        validate_sbm_calculation_context(
+            sample_context(
+                run_controls=SbmRunControls(
+                    pairwise_evidence_mode="verbose",  # type: ignore[arg-type]
+                )
+            )
+        )
+    assert exc_info.value.field == "pairwise_evidence_mode"
+
+    with pytest.raises(SbmInputError, match="pairwise_evidence_limit") as limit_exc_info:
+        validate_sbm_calculation_context(
+            sample_context(
+                run_controls=SbmRunControls(
+                    pairwise_evidence_mode=SbmPairwiseEvidenceMode.AUTO,
+                    pairwise_evidence_limit=-1,
+                )
+            )
+        )
+    assert limit_exc_info.value.field == "pairwise_evidence_limit"
 
 
 def test_normalisation_helpers_coerce_enums_and_currency() -> None:

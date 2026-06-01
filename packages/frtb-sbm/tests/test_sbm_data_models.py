@@ -12,6 +12,7 @@ from frtb_sbm import (
     SbmCalculationContext,
     SbmCapitalResult,
     SbmCitation,
+    SbmPairwiseEvidenceMode,
     SbmReconciliationMetadata,
     SbmRegulatoryProfile,
     SbmRiskClass,
@@ -179,6 +180,8 @@ def test_calculation_context_carries_run_controls() -> None:
 
     assert context.run_controls is not None
     assert context.run_controls.retain_scenario_detail is True
+    assert context.run_controls.pairwise_evidence_mode is SbmPairwiseEvidenceMode.AUTO
+    assert context.run_controls.pairwise_evidence_limit == 2500
 
 
 def test_unsupported_feature_metadata_is_structured() -> None:

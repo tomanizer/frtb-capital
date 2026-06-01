@@ -28,6 +28,7 @@ from frtb_sbm.commodity_reference_data import (
 )
 from frtb_sbm.data_models import (
     RiskClassCapital,
+    SbmPairwiseEvidenceMode,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
@@ -40,6 +41,8 @@ def calculate_commodity_delta_risk_class_capital(
     sensitivities: tuple[SbmSensitivity, ...],
     *,
     profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = 2500,
 ) -> RiskClassCapital:
     """Calculate cited commodity delta risk-class capital for a supported profile."""
 
@@ -53,6 +56,8 @@ def calculate_commodity_delta_risk_class_capital(
         commodity_by_id={item.sensitivity_id: item.risk_factor for item in sensitivities},
         tenor_by_id={item.sensitivity_id: item.tenor or "" for item in sensitivities},
         location_by_id={item.sensitivity_id: item.qualifier or "" for item in sensitivities},
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -63,6 +68,8 @@ def aggregate_commodity_delta_measure_capital(
     commodity_by_id: Mapping[str, str],
     tenor_by_id: Mapping[str, str],
     location_by_id: Mapping[str, str],
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = 2500,
 ) -> RiskClassCapital:
     """Aggregate weighted commodity delta sensitivities through shared bucket primitives."""
 
@@ -96,6 +103,8 @@ def aggregate_commodity_delta_measure_capital(
         inter_bucket_correlations,
         risk_class=SbmRiskClass.COMMODITY,
         risk_measure=SbmRiskMeasure.DELTA,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 

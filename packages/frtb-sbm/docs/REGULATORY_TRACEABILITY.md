@@ -101,7 +101,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `curvature.py` | Curvature input contracts, up/down shock validation, and fail-closed capital gates. | MAR21.5 curvature provisions. | Section V.A.7.a footnote 328. | Partial — contracts only (#165); capital path planned (#166). |
 | `risk_classes/fx.py` | FX delta assembly onto shared aggregation primitives. | MAR21.14, MAR21.86-MAR21.89. | Section V.A.7.a FX delta context. | Implemented (#162). |
 | `risk_classes/csr_nonsec.py` | CSR non-securitisation delta assembly onto shared aggregation primitives. | MAR21.9, MAR21.51-MAR21.57. | Section V.A.7.a CSR non-sec context. | Implemented (#164). |
-| `audit.py` | Result serialization, input/profile hashes, and reconciliation checks. | MAR21 component traceability by formula. | Section V.A.7.a audit context. | Implemented (#159). |
+| `audit.py` | Result serialization, input/profile hashes, scale-aware pairwise-correlation evidence summaries, and reconciliation checks. | MAR21 component traceability by formula. | Section V.A.7.a audit context. | Implemented (#159, #265). |
 | `crif.py` | Optional CRIF-to-canonical mapping with lineage and rejected rows. | MAR21 risk-type mapping context only. | Section V.A.7.a canonical field mapping context. | Out of scope for phase 1. |
 
 ## Cross-links

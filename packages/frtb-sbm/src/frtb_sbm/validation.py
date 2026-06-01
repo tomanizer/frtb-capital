@@ -16,9 +16,11 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm.data_models import (
     SbmCalculationContext,
+    SbmPairwiseEvidenceMode,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
+    SbmRunControls,
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
@@ -160,6 +162,7 @@ def validate_sbm_calculation_context(context: SbmCalculationContext) -> SbmCalcu
     normalise_currency_code(context.reporting_currency, field="reporting_currency")
     _validate_citation_policy(context.citation_policy)
     ensure_sbm_profile_known(context.profile_id)
+    _validate_run_controls(context.run_controls)
     if context.desk_id is not None and context.desk_id != context.desk_id.strip():
         raise SbmInputError(
             "desk_id must not contain leading or trailing whitespace",
@@ -171,6 +174,29 @@ def validate_sbm_calculation_context(context: SbmCalculationContext) -> SbmCalcu
             field="legal_entity",
         )
     return context
+
+
+def _validate_run_controls(controls: SbmRunControls | None) -> None:
+    if controls is None:
+        return
+    if not isinstance(controls, SbmRunControls):
+        raise SbmInputError("run_controls must be SbmRunControls", field="run_controls")
+    try:
+        SbmPairwiseEvidenceMode(controls.pairwise_evidence_mode)
+    except (TypeError, ValueError) as exc:
+        allowed = ", ".join(item.value for item in SbmPairwiseEvidenceMode)
+        raise SbmInputError(
+            f"pairwise_evidence_mode must be one of: {allowed}",
+            field="pairwise_evidence_mode",
+        ) from exc
+    if (
+        not isinstance(controls.pairwise_evidence_limit, int)
+        or controls.pairwise_evidence_limit < 0
+    ):
+        raise SbmInputError(
+            "pairwise_evidence_limit must be a non-negative integer",
+            field="pairwise_evidence_limit",
+        )
 
 
 def validate_sbm_sensitivities(sensitivities: object) -> tuple[SbmSensitivity, ...]:

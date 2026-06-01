@@ -21,6 +21,7 @@ from frtb_sbm.aggregation import (
 )
 from frtb_sbm.data_models import (
     RiskClassCapital,
+    SbmPairwiseEvidenceMode,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
@@ -38,6 +39,8 @@ def calculate_fx_delta_risk_class_capital(
     *,
     profile_id: str,
     reporting_currency: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = 2500,
 ) -> RiskClassCapital:
     """Calculate cited FX delta risk-class capital for a supported profile."""
 
@@ -49,6 +52,8 @@ def calculate_fx_delta_risk_class_capital(
     return aggregate_fx_delta_measure_capital(
         weighted,
         profile_id=profile_id,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -56,6 +61,8 @@ def aggregate_fx_delta_measure_capital(
     weighted: tuple[WeightedSensitivity, ...],
     *,
     profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = 2500,
 ) -> RiskClassCapital:
     """Aggregate weighted FX delta sensitivities through shared bucket primitives."""
 
@@ -88,6 +95,8 @@ def aggregate_fx_delta_measure_capital(
         risk_measure=SbmRiskMeasure.DELTA,
         intra_bucket_citation_ids=("basel_mar21_4_intra_bucket", "basel_mar21_86"),
         inter_bucket_citation_ids=("basel_mar21_4_inter_bucket", "basel_mar21_89"),
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
