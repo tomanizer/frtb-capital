@@ -62,6 +62,14 @@ accepted-row `SbmSensitivity` dataclasses.
 `frtb-common-crif-normalizer-baseline.json` is the checked-in synthetic
 baseline for order-of-magnitude regression review.
 
+## Arrow Package Batch Rollout
+
+`arrow-package-rollout.md` is the suite-level coordination note for the DRC,
+RRAO, and CVA rollout under issue #271. It links the child package issues and
+PRs, points to each triage artifact, identifies the public high-volume batch
+entrypoints, and records the closure checks that keep package kernels out of
+dataframe expression layers.
+
 ## FRTB-DRC Arrow Batch Triage
 
 `frtb-drc-arrow-batch-triage.md` documents the non-securitisation DRC
