@@ -4,6 +4,7 @@ import importlib.util
 from pathlib import Path
 from types import ModuleType
 
+import numpy as np
 import pyarrow as pa
 import pytest
 from frtb_common import AdapterDiagnostic, source_content_hash
@@ -16,6 +17,7 @@ from frtb_cva import (
     build_cva_counterparty_batch_from_columns,
     build_cva_counterparty_batch_from_counterparties,
     build_cva_counterparty_batch_from_handoff,
+    build_cva_hedge_batch_from_handoff,
     build_cva_hedge_batch_from_hedges,
     build_cva_netting_set_batch_from_columns,
     build_cva_netting_set_batch_from_handoff,
@@ -26,6 +28,7 @@ from frtb_cva import (
     input_hash,
     input_hash_for_cva_batches,
     normalize_cva_counterparty_arrow_table,
+    normalize_cva_hedge_arrow_table,
     normalize_cva_netting_set_arrow_table,
     validate_cva_result_reconciliation,
 )
@@ -155,6 +158,185 @@ def test_sa_cva_arrow_handoff_matches_row_fixture_case() -> None:
         check_input_hash=False,
     )
     assert sensitivity_batch.handoff_hash is not None
+
+
+def test_cva_arrow_handoff_reuses_float64_buffers_where_safe() -> None:
+    netting_set_table = pa.table(
+        {
+            "netting_set_id": ["ns-1"],
+            "counterparty_id": ["cp-1"],
+            "ead": [100_000.0],
+            "effective_maturity": [1.5],
+            "discount_factor": [0.98],
+            "currency": ["USD"],
+            "sign_convention": ["non_negative"],
+            "uses_imm_ead": [False],
+            "source_row_id": ["ns-row-1"],
+            "lineage_source_system": ["synthetic"],
+            "lineage_source_file": ["netting-sets.csv"],
+        }
+    )
+    netting_set_batch = build_cva_netting_set_batch_from_handoff(
+        normalize_cva_netting_set_arrow_table(netting_set_table)
+    )
+    maturity_buffer = (
+        netting_set_table.column("effective_maturity").chunk(0).to_numpy(zero_copy_only=True)
+    )
+    discount_buffer = (
+        netting_set_table.column("discount_factor").chunk(0).to_numpy(zero_copy_only=True)
+    )
+
+    assert np.shares_memory(netting_set_batch.effective_maturities, maturity_buffer)
+    assert np.shares_memory(netting_set_batch.discount_factors, discount_buffer)
+    assert not netting_set_batch.effective_maturities.flags.writeable
+    assert not netting_set_batch.discount_factors.flags.writeable
+
+    hedge_table = pa.table(
+        {
+            "hedge_id": ["h-1"],
+            "source_row_id": ["h-row-1"],
+            "counterparty_id": ["cp-1"],
+            "hedge_type": ["SINGLE_NAME_CDS"],
+            "notional": [50_000.0],
+            "remaining_maturity": [2.0],
+            "discount_factor": [0.99],
+            "reference_sector": ["SOVEREIGN"],
+            "reference_credit_quality": ["INVESTMENT_GRADE"],
+            "reference_region": ["EMEA"],
+            "reference_relation": ["DIRECT"],
+            "eligibility": ["ELIGIBLE"],
+            "is_internal": [False],
+            "eligibility_evidence_id": ["ev-1"],
+            "lineage_source_system": ["synthetic"],
+            "lineage_source_file": ["hedges.csv"],
+        }
+    )
+    hedge_batch = build_cva_hedge_batch_from_handoff(normalize_cva_hedge_arrow_table(hedge_table))
+    notional_buffer = hedge_table.column("notional").chunk(0).to_numpy(zero_copy_only=True)
+
+    assert np.shares_memory(hedge_batch.notionals, notional_buffer)
+    assert not hedge_batch.notionals.flags.writeable
+
+    sensitivity_table = pa.table(
+        {
+            "sensitivity_id": ["s-1"],
+            "risk_class": ["FX"],
+            "risk_measure": ["DELTA"],
+            "sensitivity_tag": ["CVA"],
+            "bucket_id": ["USD"],
+            "risk_factor_key": ["EURUSD"],
+            "amount": [1_000.0],
+            "amount_currency": ["USD"],
+            "sign_convention": ["positive_loss"],
+            "source_row_id": ["s-row-1"],
+            "lineage_source_system": ["synthetic"],
+            "lineage_source_file": ["sensitivities.csv"],
+        }
+    )
+    sensitivity_batch = build_sa_cva_sensitivity_batch_from_handoff(
+        normalize_sa_cva_sensitivity_arrow_table(sensitivity_table)
+    )
+    amount_buffer = sensitivity_table.column("amount").chunk(0).to_numpy(zero_copy_only=True)
+
+    assert np.shares_memory(sensitivity_batch.amounts, amount_buffer)
+    assert not sensitivity_batch.amounts.flags.writeable
+
+
+def test_cva_arrow_handoff_decodes_chunked_dictionary_text_columns() -> None:
+    sector = pa.chunked_array(
+        [
+            pa.DictionaryArray.from_arrays(
+                pa.array([0], type=pa.int8()),
+                pa.array(["SOVEREIGN"]),
+            ),
+            pa.DictionaryArray.from_arrays(
+                pa.array([0], type=pa.int8()),
+                pa.array(["FINANCIALS"]),
+            ),
+        ]
+    )
+    credit_quality = pa.chunked_array(
+        [
+            pa.DictionaryArray.from_arrays(
+                pa.array([0], type=pa.int8()),
+                pa.array(["INVESTMENT_GRADE"]),
+            ),
+            pa.DictionaryArray.from_arrays(
+                pa.array([0], type=pa.int8()),
+                pa.array(["HIGH_YIELD"]),
+            ),
+        ]
+    )
+    table = pa.table(
+        {
+            "counterparty_id": ["cp-1", "cp-2"],
+            "desk_id": ["desk-cva", "desk-cva"],
+            "legal_entity": ["LE-001", "LE-001"],
+            "sector": sector,
+            "credit_quality": credit_quality,
+            "region": ["EMEA", "AMER"],
+            "source_row_id": ["cp-row-1", "cp-row-2"],
+            "lineage_source_system": ["synthetic", "synthetic"],
+            "lineage_source_file": ["counterparties.csv", "counterparties.csv"],
+        }
+    )
+
+    batch = build_cva_counterparty_batch_from_handoff(normalize_cva_counterparty_arrow_table(table))
+
+    assert batch.sectors.tolist() == ["SOVEREIGN", "FINANCIALS"]
+    assert batch.credit_qualities.tolist() == ["INVESTMENT_GRADE", "HIGH_YIELD"]
+
+
+def test_cva_column_builders_do_not_freeze_input_arrays_when_copy_false() -> None:
+    netting_set_ids = np.array(["ns-1"], dtype=object)
+    counterparty_ids = np.array(["cp-1"], dtype=object)
+    eads = np.array([100_000.0], dtype=np.float64)
+    effective_maturities = np.array([1.5], dtype=np.float64)
+    discount_factors = np.array([1.0], dtype=np.float64)
+    uses_imm_eads = np.array([False], dtype=np.bool_)
+
+    batch = build_cva_netting_set_batch_from_columns(
+        netting_set_ids=netting_set_ids,
+        counterparty_ids=counterparty_ids,
+        eads=eads,
+        effective_maturities=effective_maturities,
+        discount_factors=discount_factors,
+        currencies=np.array(["USD"], dtype=object),
+        sign_conventions=np.array(["non_negative"], dtype=object),
+        uses_imm_eads=uses_imm_eads,
+        source_row_ids=np.array(["ns-row-1"], dtype=object),
+        lineage_source_systems=np.array(["synthetic"], dtype=object),
+        lineage_source_files=np.array(["netting-sets.csv"], dtype=object),
+        copy_arrays=False,
+    )
+
+    assert netting_set_ids.flags.writeable
+    assert counterparty_ids.flags.writeable
+    assert eads.flags.writeable
+    assert effective_maturities.flags.writeable
+    assert discount_factors.flags.writeable
+    assert uses_imm_eads.flags.writeable
+    assert not batch.netting_set_ids.flags.writeable
+    assert not batch.effective_maturities.flags.writeable
+    assert np.shares_memory(batch.effective_maturities, effective_maturities)
+
+
+def test_cva_column_builders_reject_multidimensional_numpy_float_inputs() -> None:
+    with pytest.raises(CvaInputError, match="ead must be 1-dimensional"):
+        build_cva_netting_set_batch_from_columns(
+            netting_set_ids=np.array(["ns-1"], dtype=object),
+            counterparty_ids=np.array(["cp-1"], dtype=object),
+            eads=np.array([[100_000.0]], dtype=np.float64),
+            effective_maturities=np.array([1.5], dtype=np.float64),
+            discount_factors=np.array([1.0], dtype=np.float64),
+            currencies=np.array(["USD"], dtype=object),
+            sign_conventions=np.array(["non_negative"], dtype=object),
+            uses_imm_eads=np.array([False], dtype=np.bool_),
+            source_row_ids=np.array(["ns-row-1"], dtype=object),
+            lineage_source_systems=np.array(["synthetic"], dtype=object),
+            lineage_source_files=np.array(["netting-sets.csv"], dtype=object),
+            copy_arrays=False,
+        )
 
 
 def test_ba_cva_column_batch_high_volume_path_reports_zero_row_dataclasses(

@@ -6,10 +6,10 @@ import hashlib
 import json
 import math
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence, Sized
 from dataclasses import dataclass, replace
 from enum import StrEnum
-from typing import TypeVar, cast
+from typing import Any, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -100,7 +100,11 @@ from frtb_cva.weighted_sensitivity import (
 ObjectArray = npt.NDArray[np.object_]
 FloatArray = npt.NDArray[np.float64]
 BoolArray = npt.NDArray[np.bool_]
+ArrayInput = npt.NDArray[Any]
+ColumnInput = Sequence[object] | ArrayInput
+NullableColumnInput = Sequence[object | None] | ArrayInput
 EnumT = TypeVar("EnumT", bound=StrEnum)
+ArrayScalarT = TypeVar("ArrayScalarT", bound=np.generic)
 
 
 @dataclass(frozen=True)
@@ -433,16 +437,16 @@ def build_sa_cva_sensitivity_batch_from_sensitivities(
 
 def build_cva_counterparty_batch_from_columns(
     *,
-    counterparty_ids: Sequence[object],
-    desk_ids: Sequence[object],
-    legal_entities: Sequence[object],
-    sectors: Sequence[object],
-    credit_qualities: Sequence[object],
-    regions: Sequence[object],
-    source_row_ids: Sequence[object],
-    lineage_source_systems: Sequence[object],
-    lineage_source_files: Sequence[object],
-    lineage_source_row_ids: Sequence[object] | None = None,
+    counterparty_ids: ColumnInput,
+    desk_ids: ColumnInput,
+    legal_entities: ColumnInput,
+    sectors: ColumnInput,
+    credit_qualities: ColumnInput,
+    regions: ColumnInput,
+    source_row_ids: ColumnInput,
+    lineage_source_systems: ColumnInput,
+    lineage_source_files: ColumnInput,
+    lineage_source_row_ids: ColumnInput | None = None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
     source_hash: str | None = None,
     handoff_hash: str | None = None,
@@ -509,20 +513,20 @@ def build_cva_counterparty_batch_from_columns(
 
 def build_cva_netting_set_batch_from_columns(
     *,
-    netting_set_ids: Sequence[object],
-    counterparty_ids: Sequence[object],
-    eads: Sequence[object],
-    effective_maturities: Sequence[object],
-    discount_factors: Sequence[object],
-    currencies: Sequence[object],
-    sign_conventions: Sequence[object],
-    uses_imm_eads: Sequence[object],
-    source_row_ids: Sequence[object],
-    carved_out_to_ba_cva: Sequence[object] | None = None,
-    discount_factor_explicit: Sequence[object] | None = None,
-    lineage_source_systems: Sequence[object] | None = None,
-    lineage_source_files: Sequence[object] | None = None,
-    lineage_source_row_ids: Sequence[object] | None = None,
+    netting_set_ids: ColumnInput,
+    counterparty_ids: ColumnInput,
+    eads: ColumnInput,
+    effective_maturities: ColumnInput,
+    discount_factors: ColumnInput,
+    currencies: ColumnInput,
+    sign_conventions: ColumnInput,
+    uses_imm_eads: ColumnInput,
+    source_row_ids: ColumnInput,
+    carved_out_to_ba_cva: ColumnInput | None = None,
+    discount_factor_explicit: ColumnInput | None = None,
+    lineage_source_systems: ColumnInput | None = None,
+    lineage_source_files: ColumnInput | None = None,
+    lineage_source_row_ids: ColumnInput | None = None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
     source_hash: str | None = None,
     handoff_hash: str | None = None,
@@ -617,27 +621,27 @@ def build_cva_netting_set_batch_from_columns(
 
 def build_cva_hedge_batch_from_columns(
     *,
-    hedge_ids: Sequence[object],
-    source_row_ids: Sequence[object],
-    counterparty_ids: Sequence[object],
-    hedge_types: Sequence[object],
-    notionals: Sequence[object],
-    remaining_maturities: Sequence[object],
-    discount_factors: Sequence[object],
-    reference_sectors: Sequence[object],
-    reference_credit_qualities: Sequence[object],
-    reference_regions: Sequence[object],
-    reference_relations: Sequence[object],
-    eligibilities: Sequence[object],
-    is_internal: Sequence[object],
-    discount_factor_explicit: Sequence[object] | None = None,
-    internal_desk_counterparty_ids: Sequence[object | None] | None = None,
-    sa_cva_risk_classes: Sequence[object | None] | None = None,
-    eligibility_evidence_ids: Sequence[object | None] | None = None,
-    rejection_reasons: Sequence[object | None] | None = None,
-    lineage_source_systems: Sequence[object] | None = None,
-    lineage_source_files: Sequence[object] | None = None,
-    lineage_source_row_ids: Sequence[object] | None = None,
+    hedge_ids: ColumnInput,
+    source_row_ids: ColumnInput,
+    counterparty_ids: ColumnInput,
+    hedge_types: ColumnInput,
+    notionals: ColumnInput,
+    remaining_maturities: ColumnInput,
+    discount_factors: ColumnInput,
+    reference_sectors: ColumnInput,
+    reference_credit_qualities: ColumnInput,
+    reference_regions: ColumnInput,
+    reference_relations: ColumnInput,
+    eligibilities: ColumnInput,
+    is_internal: ColumnInput,
+    discount_factor_explicit: ColumnInput | None = None,
+    internal_desk_counterparty_ids: NullableColumnInput | None = None,
+    sa_cva_risk_classes: NullableColumnInput | None = None,
+    eligibility_evidence_ids: NullableColumnInput | None = None,
+    rejection_reasons: NullableColumnInput | None = None,
+    lineage_source_systems: ColumnInput | None = None,
+    lineage_source_files: ColumnInput | None = None,
+    lineage_source_row_ids: ColumnInput | None = None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
     source_hash: str | None = None,
     handoff_hash: str | None = None,
@@ -759,27 +763,27 @@ def build_cva_hedge_batch_from_columns(
 
 def build_sa_cva_sensitivity_batch_from_columns(
     *,
-    sensitivity_ids: Sequence[object],
-    risk_classes: Sequence[object],
-    risk_measures: Sequence[object],
-    sensitivity_tags: Sequence[object],
-    bucket_ids: Sequence[object],
-    risk_factor_keys: Sequence[object],
-    amounts: Sequence[object],
-    amount_currencies: Sequence[object],
-    sign_conventions: Sequence[object],
-    source_row_ids: Sequence[object],
-    tenors: Sequence[object | None] | None = None,
-    volatility_inputs: Sequence[object | None] | None = None,
-    hedge_ids: Sequence[object | None] | None = None,
-    index_treatments: Sequence[object | None] | None = None,
-    index_max_sector_weights: Sequence[object | None] | None = None,
-    index_homogeneous_sector_quality: Sequence[object] | None = None,
-    index_dominant_sectors: Sequence[object | None] | None = None,
-    index_remap_bucket_ids: Sequence[object | None] | None = None,
-    lineage_source_systems: Sequence[object] | None = None,
-    lineage_source_files: Sequence[object] | None = None,
-    lineage_source_row_ids: Sequence[object] | None = None,
+    sensitivity_ids: ColumnInput,
+    risk_classes: ColumnInput,
+    risk_measures: ColumnInput,
+    sensitivity_tags: ColumnInput,
+    bucket_ids: ColumnInput,
+    risk_factor_keys: ColumnInput,
+    amounts: ColumnInput,
+    amount_currencies: ColumnInput,
+    sign_conventions: ColumnInput,
+    source_row_ids: ColumnInput,
+    tenors: NullableColumnInput | None = None,
+    volatility_inputs: NullableColumnInput | None = None,
+    hedge_ids: NullableColumnInput | None = None,
+    index_treatments: NullableColumnInput | None = None,
+    index_max_sector_weights: NullableColumnInput | None = None,
+    index_homogeneous_sector_quality: ColumnInput | None = None,
+    index_dominant_sectors: NullableColumnInput | None = None,
+    index_remap_bucket_ids: NullableColumnInput | None = None,
+    lineage_source_systems: ColumnInput | None = None,
+    lineage_source_files: ColumnInput | None = None,
+    lineage_source_row_ids: ColumnInput | None = None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
     source_hash: str | None = None,
     handoff_hash: str | None = None,
@@ -1064,26 +1068,31 @@ def calculate_reduced_portfolio_from_batches(
     if counterparties.row_count == 0:
         raise CvaInputError("at least one counterparty is required", field="counterparties")
 
-    netting_indices_by_counterparty: dict[str, list[int]] = defaultdict(list)
-    for index in range(netting_sets.row_count):
-        netting_indices_by_counterparty[cast(str, netting_sets.counterparty_ids[index])].append(
-            index
-        )
+    netting_indices_by_counterparty = _netting_indices_by_counterparty(netting_sets)
+    rho, rho_citation = ba_cva_rho(profile=profile)
+    discount_scalar, discount_citation = ba_cva_discount_scalar(profile=profile)
+    alpha, alpha_citation = ba_cva_alpha(profile=profile)
 
     capitals: list[BaCvaCounterpartyCapital] = []
     lines: list[BaCvaStandAloneLine] = []
     for counterparty_index in _sorted_indices(counterparties.counterparty_ids):
         counterparty_id = cast(str, counterparties.counterparty_ids[counterparty_index])
-        netting_indices = sorted(
-            netting_indices_by_counterparty[counterparty_id],
-            key=lambda item: cast(str, netting_sets.netting_set_ids[item]),
-        )
+        netting_indices = netting_indices_by_counterparty.get(counterparty_id, ())
         if not netting_indices:
             raise CvaInputError(
                 "counterparty has no netting sets",
                 field="netting_sets",
                 record_id=counterparty_id,
             )
+        sector = CvaSector(cast(str, counterparties.sectors[counterparty_index]))
+        credit_quality = CreditQuality(
+            cast(str, counterparties.credit_qualities[counterparty_index])
+        )
+        risk_weight, rw_citation = ba_cva_risk_weight(
+            sector,
+            credit_quality,
+            profile=profile,
+        )
         counterparty_lines = tuple(
             _netting_set_line_from_batch(
                 netting_sets,
@@ -1091,33 +1100,29 @@ def calculate_reduced_portfolio_from_batches(
                 counterparties,
                 counterparty_index,
                 profile=profile,
+                risk_weight=risk_weight,
+                risk_weight_citation=rw_citation,
+                alpha=alpha,
+                alpha_citation=alpha_citation,
+                sector=sector,
+                credit_quality=credit_quality,
             )
             for netting_index in netting_indices
         )
         lines.extend(counterparty_lines)
-        _, rw_citation = ba_cva_risk_weight(
-            CvaSector(cast(str, counterparties.sectors[counterparty_index])),
-            CreditQuality(cast(str, counterparties.credit_qualities[counterparty_index])),
-            profile=profile,
-        )
         standalone_total = sum(line.standalone_capital for line in counterparty_lines)
         capitals.append(
             BaCvaCounterpartyCapital(
                 counterparty_id=counterparty_id,
                 standalone_capital=standalone_total,
                 netting_set_ids=tuple(line.netting_set_id for line in counterparty_lines),
-                sector=CvaSector(cast(str, counterparties.sectors[counterparty_index])),
-                credit_quality=CreditQuality(
-                    cast(str, counterparties.credit_qualities[counterparty_index])
-                ),
+                sector=sector,
+                credit_quality=credit_quality,
                 region=cast(str, counterparties.regions[counterparty_index]),
                 citations=_unique_citations(rw_citation, "basel_mar50_15"),
             )
         )
 
-    rho, rho_citation = ba_cva_rho(profile=profile)
-    discount_scalar, discount_citation = ba_cva_discount_scalar(profile=profile)
-    alpha, alpha_citation = ba_cva_alpha(profile=profile)
     standalone_values = [capital.standalone_capital for capital in capitals]
     for counterparty_capital in capitals:
         if not math.isfinite(counterparty_capital.standalone_capital):
@@ -1329,26 +1334,7 @@ def calculate_sa_cva_capital_from_batch(
     validated_m_cva = validate_m_cva_multiplier(m_cva)
     if sensitivities.row_count == 0:
         raise CvaInputError("SA-CVA requires at least one sensitivity", field="sensitivities")
-    grouped: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], list[int]] = defaultdict(list)
-    for index in range(sensitivities.row_count):
-        risk_class = SaCvaRiskClass(cast(str, sensitivities.risk_classes[index]))
-        risk_measure = SaCvaRiskMeasure(cast(str, sensitivities.risk_measures[index]))
-        grouped[(risk_class, risk_measure)].append(index)
-    if (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA) in grouped:
-        raise CvaInputError(
-            "CCS vega capital is not permitted under MAR50.45 and MAR50.63",
-            field="sensitivities",
-        )
-    unsupported = {key for key in grouped if key not in _SUPPORTED_SA_CVA_PATHS}
-    if unsupported:
-        labels = ", ".join(
-            f"{risk_class.value}/{risk_measure.value}"
-            for risk_class, risk_measure in sorted(unsupported, key=str)
-        )
-        raise CvaInputError(
-            f"unsupported SA-CVA risk classes: {labels}",
-            field="sensitivities",
-        )
+    grouped = _group_sa_cva_indices_by_path(sensitivities)
     hedge_batch = hedges or _empty_hedge_batch()
     eligible_hedges = _eligible_sa_cva_hedge_ids(hedge_batch)
     results: list[SaCvaRiskClassCapital] = []
@@ -1435,6 +1421,49 @@ _SUPPORTED_SA_CVA_PATHS: frozenset[tuple[SaCvaRiskClass, SaCvaRiskMeasure]] = fr
         (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.VEGA),
     }
 )
+
+
+def _group_sa_cva_indices_by_path(
+    sensitivities: SaCvaSensitivityBatch,
+) -> dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], list[int]]:
+    risk_classes = sensitivities.risk_classes
+    risk_measures = sensitivities.risk_measures
+    ccs_vega = (risk_classes == SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD.value) & (
+        risk_measures == SaCvaRiskMeasure.VEGA.value
+    )
+    if bool(np.any(ccs_vega)):
+        raise CvaInputError(
+            "CCS vega capital is not permitted under MAR50.45 and MAR50.63",
+            field="sensitivities",
+        )
+
+    supported_mask = np.zeros(sensitivities.row_count, dtype=np.bool_)
+    grouped: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], list[int]] = {}
+    for risk_class, risk_measure in sorted(_SUPPORTED_SA_CVA_PATHS, key=str):
+        path_mask = (risk_classes == risk_class.value) & (risk_measures == risk_measure.value)
+        if not bool(np.any(path_mask)):
+            continue
+        grouped[(risk_class, risk_measure)] = np.nonzero(path_mask)[0].tolist()
+        supported_mask |= path_mask
+
+    unsupported_mask = ~supported_mask
+    if bool(np.any(unsupported_mask)):
+        unsupported = {
+            (
+                SaCvaRiskClass(cast(str, risk_classes[index])),
+                SaCvaRiskMeasure(cast(str, risk_measures[index])),
+            )
+            for index in np.nonzero(unsupported_mask)[0]
+        }
+        labels = ", ".join(
+            f"{risk_class.value}/{risk_measure.value}"
+            for risk_class, risk_measure in sorted(unsupported, key=str)
+        )
+        raise CvaInputError(
+            f"unsupported SA-CVA risk classes: {labels}",
+            field="sensitivities",
+        )
+    return grouped
 
 
 def _validate_netting_set_batch(batch: CvaNettingSetBatch) -> None:
@@ -1534,15 +1563,36 @@ def _validate_ba_relationships(
     counterparties: CvaCounterpartyBatch,
     netting_sets: CvaNettingSetBatch,
 ) -> None:
-    counterparty_ids = {cast(str, value) for value in counterparties.counterparty_ids.tolist()}
-    for index in range(netting_sets.row_count):
-        counterparty_id = cast(str, netting_sets.counterparty_ids[index])
-        if counterparty_id not in counterparty_ids:
-            raise CvaInputError(
-                "netting set references unknown counterparty",
-                field="counterparty_id",
-                record_id=cast(str, netting_sets.netting_set_ids[index]),
-            )
+    if netting_sets.row_count == 0:
+        return
+    missing_mask = ~np.isin(netting_sets.counterparty_ids, counterparties.counterparty_ids)
+    if bool(np.any(missing_mask)):
+        index = int(np.nonzero(missing_mask)[0][0])
+        raise CvaInputError(
+            "netting set references unknown counterparty",
+            field="counterparty_id",
+            record_id=cast(str, netting_sets.netting_set_ids[index]),
+        )
+
+
+def _netting_indices_by_counterparty(
+    netting_sets: CvaNettingSetBatch,
+) -> dict[str, tuple[int, ...]]:
+    if netting_sets.row_count == 0:
+        return {}
+    counterparty_keys = np.asarray(netting_sets.counterparty_ids, dtype=str)
+    netting_set_keys = np.asarray(netting_sets.netting_set_ids, dtype=str)
+    order = np.lexsort((netting_set_keys, counterparty_keys))
+    grouped: dict[str, tuple[int, ...]] = {}
+    start = 0
+    while start < order.shape[0]:
+        counterparty_id = str(counterparty_keys[order[start]])
+        end = start + 1
+        while end < order.shape[0] and counterparty_keys[order[end]] == counterparty_id:
+            end += 1
+        grouped[counterparty_id] = tuple(order[start:end].tolist())
+        start = end
+    return grouped
 
 
 def _resolve_scope_for_batches(
@@ -1682,13 +1732,25 @@ def _netting_set_line_from_batch(
     counterparty_index: int,
     *,
     profile: CvaRegulatoryProfile | str,
+    risk_weight: float | None = None,
+    risk_weight_citation: str | None = None,
+    alpha: float | None = None,
+    alpha_citation: str | None = None,
+    sector: CvaSector | None = None,
+    credit_quality: CreditQuality | None = None,
 ) -> BaCvaStandAloneLine:
-    risk_weight, rw_citation = ba_cva_risk_weight(
-        CvaSector(cast(str, counterparties.sectors[counterparty_index])),
-        CreditQuality(cast(str, counterparties.credit_qualities[counterparty_index])),
-        profile=profile,
+    resolved_sector = sector or CvaSector(cast(str, counterparties.sectors[counterparty_index]))
+    resolved_credit_quality = credit_quality or CreditQuality(
+        cast(str, counterparties.credit_qualities[counterparty_index])
     )
-    alpha, alpha_citation = ba_cva_alpha(profile=profile)
+    if risk_weight is None or risk_weight_citation is None:
+        risk_weight, risk_weight_citation = ba_cva_risk_weight(
+            resolved_sector,
+            resolved_credit_quality,
+            profile=profile,
+        )
+    if alpha is None or alpha_citation is None:
+        alpha, alpha_citation = ba_cva_alpha(profile=profile)
     discount_factor, df_citation, discount_factor_supplied = resolve_netting_set_discount_factor(
         uses_imm_ead=bool(netting_sets.uses_imm_eads[netting_index]),
         effective_maturity=float(netting_sets.effective_maturities[netting_index]),
@@ -1706,10 +1768,8 @@ def _netting_set_line_from_batch(
     return BaCvaStandAloneLine(
         netting_set_id=cast(str, netting_sets.netting_set_ids[netting_index]),
         counterparty_id=cast(str, counterparties.counterparty_ids[counterparty_index]),
-        sector=CvaSector(cast(str, counterparties.sectors[counterparty_index])),
-        credit_quality=CreditQuality(
-            cast(str, counterparties.credit_qualities[counterparty_index])
-        ),
+        sector=resolved_sector,
+        credit_quality=resolved_credit_quality,
         ead=float(netting_sets.eads[netting_index]),
         effective_maturity=float(netting_sets.effective_maturities[netting_index]),
         discount_factor=discount_factor,
@@ -1718,7 +1778,7 @@ def _netting_set_line_from_batch(
         standalone_capital=standalone,
         currency=cast(str, netting_sets.currencies[netting_index]),
         source_row_id=cast(str, netting_sets.source_row_ids[netting_index]),
-        citations=_unique_citations(rw_citation, alpha_citation, df_citation),
+        citations=_unique_citations(risk_weight_citation, alpha_citation, df_citation),
         uses_imm_ead=bool(netting_sets.uses_imm_eads[netting_index]),
         discount_factor_supplied=discount_factor_supplied,
     )
@@ -2288,24 +2348,24 @@ def _hash_payload(payload: dict[str, object]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _require_lengths(row_count: int, **columns: Sequence[object]) -> None:
+def _require_lengths(row_count: int, **columns: Sized) -> None:
     for name, values in columns.items():
         if len(values) != row_count:
             raise CvaInputError(f"{name} length does not match ids", field=name)
 
 
-def _require_optional_lengths(row_count: int, **columns: Sequence[object] | None) -> None:
+def _require_optional_lengths(row_count: int, **columns: Sized | None) -> None:
     for name, values in columns.items():
         if values is not None and len(values) != row_count:
             raise CvaInputError(f"{name} length does not match ids", field=name)
 
 
-def _required_text_array(values: Sequence[object], field: str, *, copy: bool) -> ObjectArray:
+def _required_text_array(values: ColumnInput, field: str, *, copy: bool) -> ObjectArray:
     return _object_array([_required_text(value, field) for value in values], copy=copy)
 
 
 def _optional_text_array(
-    values: Sequence[object | None] | None,
+    values: NullableColumnInput | None,
     row_count: int,
     *,
     copy: bool,
@@ -2316,7 +2376,7 @@ def _optional_text_array(
 
 
 def _enum_array(
-    values: Sequence[object],
+    values: ColumnInput,
     enum_type: type[EnumT],
     field: str,
     *,
@@ -2326,7 +2386,7 @@ def _enum_array(
 
 
 def _optional_enum_array(
-    values: Sequence[object | None] | None,
+    values: NullableColumnInput | None,
     row_count: int,
     enum_type: type[EnumT],
     field: str,
@@ -2340,12 +2400,12 @@ def _optional_enum_array(
     )
 
 
-def _float_array(values: Sequence[object], field: str, *, copy: bool) -> FloatArray:
+def _float_array(values: ColumnInput, field: str, *, copy: bool) -> FloatArray:
+    fast_array = _float_array_from_numpy(values, field=field, copy=copy, allow_nan=False)
+    if fast_array is not None:
+        return fast_array
     array = np.asarray([_finite_float(value, field) for value in values], dtype=np.float64)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
 
 
 def _normalised_ead_array(
@@ -2373,23 +2433,29 @@ def _normalised_ead_array(
 
 
 def _optional_float_array(
-    values: Sequence[object | None] | None,
+    values: NullableColumnInput | None,
     row_count: int,
     *,
     copy: bool,
 ) -> FloatArray:
     if values is None:
         array = np.full(row_count, np.nan, dtype=np.float64)
+    elif (
+        fast_array := _float_array_from_numpy(
+            values,
+            field="optional numeric field",
+            copy=copy,
+            allow_nan=True,
+        )
+    ) is not None:
+        return fast_array
     else:
         array = np.asarray([_optional_float(value) for value in values], dtype=np.float64)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
 
 
 def _bool_array(
-    values: Sequence[object] | None,
+    values: ColumnInput | None,
     row_count: int,
     *,
     default: bool,
@@ -2397,20 +2463,47 @@ def _bool_array(
 ) -> BoolArray:
     if values is None:
         array = np.full(row_count, default, dtype=np.bool_)
+    elif isinstance(values, np.ndarray) and values.dtype == np.bool_:
+        array = np.asarray(values, dtype=np.bool_)
     else:
         array = np.asarray([_bool_value(value) for value in values], dtype=np.bool_)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
 
 
-def _object_array(values: Sequence[object | None], *, copy: bool) -> ObjectArray:
+def _float_array_from_numpy(
+    values: ColumnInput | NullableColumnInput,
+    *,
+    field: str,
+    copy: bool,
+    allow_nan: bool,
+) -> FloatArray | None:
+    if not isinstance(values, np.ndarray) or values.dtype.kind not in {"f", "i", "u"}:
+        return None
+    if values.ndim != 1:
+        raise CvaInputError(f"{field} must be 1-dimensional", field=field)
+    array = np.asarray(values, dtype=np.float64)
+    if allow_nan:
+        invalid = ~np.isnan(array) & ~np.isfinite(array)
+    else:
+        invalid = ~np.isfinite(array)
+    if bool(np.any(invalid)):
+        raise CvaInputError("value must be finite", field=field)
+    return _readonly_array(array, copy=copy)
+
+
+def _object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
     array = np.asarray(values, dtype=object)
-    if copy:
-        array = array.copy()
-    array.setflags(write=False)
-    return array
+    return _readonly_array(array, copy=copy)
+
+
+def _readonly_array(
+    array: npt.NDArray[ArrayScalarT],
+    *,
+    copy: bool,
+) -> npt.NDArray[ArrayScalarT]:
+    frozen = array.copy() if copy else array.view()
+    frozen.setflags(write=False)
+    return frozen
 
 
 def _required_text(value: object, field: str, record_id: str = "") -> str:
@@ -2523,10 +2616,10 @@ def _freeze_source_column_maps(
 
 
 def _default_text_sequence(
-    values: Sequence[object] | None,
+    values: ColumnInput | None,
     row_count: int,
     default: str,
-) -> Sequence[object]:
+) -> ColumnInput:
     if values is not None:
         return values
     return [default] * row_count
