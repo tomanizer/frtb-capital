@@ -418,6 +418,26 @@ class SbmCapitalResult:
         return serialize_sbm_result(self)
 
 
+@dataclass(frozen=True)
+class SbmBatchPathDiagnostic:
+    """Batch dispatcher evidence for one homogeneous capital path."""
+
+    risk_class: SbmRiskClass
+    risk_measure: SbmRiskMeasure
+    input_count: int
+    batch_count: int
+    accepted_row_dataclasses_materialized: int = 0
+
+
+@dataclass(frozen=True)
+class SbmBatchPortfolioCalculation:
+    """Portfolio-level SBM batch calculation with fast-path diagnostics."""
+
+    result: SbmCapitalResult
+    path_diagnostics: tuple[SbmBatchPathDiagnostic, ...]
+    accepted_row_dataclasses_materialized: int = 0
+
+
 __all__ = [
     "DEFAULT_PAIRWISE_EVIDENCE_LIMIT",
     "BucketCapital",
@@ -430,6 +450,8 @@ __all__ = [
     "PairwiseCorrelationSummary",
     "RiskClassCapital",
     "RiskClassScenarioDetail",
+    "SbmBatchPathDiagnostic",
+    "SbmBatchPortfolioCalculation",
     "SbmBranchMetadata",
     "SbmBranchType",
     "SbmBucketType",
