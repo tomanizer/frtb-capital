@@ -40,3 +40,12 @@ tested separately, but they are not separate workspace packages:
 `frtb-orchestration` should consume the final IMA capital result and the desk
 eligibility signal. It should not orchestrate the internal IMA steps directly
 unless a future ADR promotes one of those components to a shared package.
+
+## Arrow Boundary
+
+IMA accepts Arrow at tabular lineage boundaries, currently the capital-run input
+manifest artifact table. The scenario cube and related scenario vectors remain
+NumPy-native because their shape and performance requirements are array/cube
+oriented rather than row-tabular. Arrow should be used to hand off manifests,
+audit/input tables, and similar high-volume tabular evidence; it should not be
+introduced into ES, LHA, IMCC, NMRF, PLA, or backtesting inner scenario kernels.

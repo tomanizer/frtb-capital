@@ -96,6 +96,23 @@ production-style inputs. The manifest validates missing lineage, checksum
 mismatches, sign-convention mismatches, and count mismatches before audit output
 is produced.
 
+### Arrow Manifest Handoff
+
+High-volume tabular lineage can enter the package through
+`normalize_ima_input_manifest_arrow_table(...)` and
+`build_capital_run_input_manifest_from_handoff(...)`. This Arrow handoff is for
+artifact-lineage rows only: it carries artifact identity, source system/version,
+extraction timestamp, as-of date, counts, checksum, sign convention, validation
+status, optional validation messages, optional row metadata, and optional source
+row identifiers.
+
+The Arrow manifest handoff does not replace the IMA scenario cube contract.
+Scenario P&L cubes, stress histories, NMRF artifact losses, PLA vectors, and
+backtesting vectors remain NumPy-native arrays loaded from committed fixture
+files or upstream risk-engine outputs. IMA calculation kernels consume those
+arrays directly; Arrow is a boundary format for tabular manifests and audit
+lineage, not an inner scenario-cube runtime.
+
 ## Sign Conventions
 
 The fixture manifest declares conventions per array group. The key conventions
