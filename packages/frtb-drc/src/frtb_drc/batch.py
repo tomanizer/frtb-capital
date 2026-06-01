@@ -16,6 +16,7 @@ import numpy.typing as npt
 from frtb_common import jsonable
 
 from frtb_drc._version import __version__
+from frtb_drc.audit import validate_reconciliation
 from frtb_drc.capital import CapitalInput, calculate_category_drc
 from frtb_drc.data_models import (
     BranchMetadata,
@@ -261,6 +262,11 @@ def build_drc_nonsec_batch_from_columns(
         if values is not None and len(values) != row_count:
             raise DrcInputError(f"{name} length does not match position_ids")
 
+    lineage_present_default = (
+        lineage_source_systems is not None
+        or lineage_source_files is not None
+        or source_column_maps is not None
+    )
     batch = DrcPositionBatch(
         position_ids=_required_text_array(position_ids, "position_id", copy=copy_arrays),
         source_row_ids=_required_text_array(source_row_ids, "source_row_id", copy=copy_arrays),
@@ -312,7 +318,12 @@ def build_drc_nonsec_batch_from_columns(
             default="",
             copy=copy_arrays,
         ),
-        lineage_present=_bool_array(lineage_present, row_count, default=True, copy=copy_arrays),
+        lineage_present=_bool_array(
+            lineage_present,
+            row_count,
+            default=lineage_present_default,
+            copy=copy_arrays,
+        ),
         source_column_maps=_freeze_source_column_maps(source_column_maps, row_count),
         citation_ids=_freeze_citation_ids(citation_ids, row_count),
         input_hash="",
@@ -397,6 +408,7 @@ def calculate_drc_capital_from_batch(
         maturity_scaled_jtds=(),
         net_jtds=net_jtds,
     )
+    validate_reconciliation(result)
     return DrcBatchCapitalCalculation(
         result=result,
         gross_jtd=_immutable_float_array(gross_jtd),
@@ -415,6 +427,8 @@ def _validate_context(context: DrcCalculationContext) -> None:
         raise DrcInputError("profile_id must be non-empty")
     if context.citation_policy.strip() == "":
         raise DrcInputError("citation_policy must be non-empty")
+    if context.citation_policy.strip().lower() != "strict":
+        raise DrcInputError(f"unsupported citation_policy: {context.citation_policy}")
 
 
 def _validate_supported_batch_run(
@@ -474,6 +488,20 @@ def _validate_batch(batch: DrcPositionBatch) -> None:
         mask = ~np.isnan(values)
         if bool(np.any(mask & ~np.isfinite(values))):
             raise DrcInputError(f"{field_name} values must be finite when present")
+    if bool(np.any(~batch.lineage_present)):
+        raise DrcInputError("lineage is required")
+    _raise_first_mismatch(
+        batch.lineage_source_systems,
+        "",
+        mismatch_when_equal=True,
+        message=lambda _index: "lineage.source_system must be non-empty",
+    )
+    _raise_first_mismatch(
+        batch.lineage_source_files,
+        "",
+        mismatch_when_equal=True,
+        message=lambda _index: "lineage.source_file must be non-empty",
+    )
 
 
 def _gross_jtd_array(
@@ -893,9 +921,10 @@ def _raise_first_mismatch(
     values: ObjectArray,
     expected: str,
     *,
+    mismatch_when_equal: bool = False,
     message: Callable[[int], str],
 ) -> None:
-    mismatch = values != expected
+    mismatch = values == expected if mismatch_when_equal else values != expected
     if bool(np.any(mismatch)):
         index = int(np.nonzero(mismatch)[0][0])
         raise DrcInputError(message(index))
@@ -1103,7 +1132,20 @@ def _freeze_citation_ids(
 ) -> tuple[tuple[str, ...], ...]:
     if values is None:
         return tuple(("US_NPR_210_SCOPE",) for _ in range(row_count))
-    return tuple(tuple(str(item) for item in row) for row in values)
+    frozen: list[tuple[str, ...]] = []
+    for row in values:
+        citations: list[str] = []
+        for item in row:
+            if not isinstance(item, str):
+                raise DrcInputError("citation_ids must contain non-empty citations")
+            citation_id = item.strip()
+            if citation_id == "":
+                raise DrcInputError("citation_ids must contain non-empty citations")
+            citations.append(citation_id)
+        if not citations:
+            raise DrcInputError("citation_ids must contain at least one citation")
+        frozen.append(tuple(citations))
+    return tuple(frozen)
 
 
 def _short_can_offset(*, long_seniority: DrcSeniority, short_seniority: DrcSeniority) -> bool:

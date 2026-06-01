@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import cast
 
 import pyarrow as pa
@@ -21,7 +22,7 @@ from frtb_drc.batch import (
     build_drc_nonsec_batch_from_columns,
     build_drc_nonsec_batch_from_positions,
 )
-from frtb_drc.data_models import DrcPosition
+from frtb_drc.data_models import DrcCapitalResult, DrcPosition
 from frtb_drc.demo_fixture import load_drc_nonsec_v2_fixture
 
 
@@ -113,6 +114,63 @@ def test_drc_column_batch_high_volume_path_reports_zero_row_dataclasses() -> Non
     assert batch.row_count == row_count
     assert not any(isinstance(value, DrcPosition) for value in batch.__dict__.values())
     assert batch.input_hash
+
+
+def test_drc_batch_rejects_unsupported_citation_policy_like_row_api() -> None:
+    fixture = load_drc_nonsec_v2_fixture()
+    batch = build_drc_nonsec_batch_from_handoff(
+        normalize_drc_nonsec_arrow_table(_arrow_table(fixture.positions))
+    )
+
+    with pytest.raises(DrcInputError, match="unsupported citation_policy: lenient"):
+        calculate_drc_capital_from_batch(
+            batch,
+            context=replace(fixture.context, citation_policy="lenient"),
+        )
+
+
+def test_drc_column_batch_requires_lineage() -> None:
+    columns = _minimal_column_payload(row_count=1)
+    columns.pop("lineage_source_systems")
+    columns.pop("lineage_source_files")
+
+    with pytest.raises(DrcInputError, match="lineage is required"):
+        build_drc_nonsec_batch_from_columns(**columns)
+
+
+def test_drc_column_batch_rejects_blank_lineage_fields() -> None:
+    columns = _minimal_column_payload(row_count=1) | {"lineage_source_systems": [" "]}
+
+    with pytest.raises(DrcInputError, match=r"lineage\.source_system must be non-empty"):
+        build_drc_nonsec_batch_from_columns(**columns)
+
+
+def test_drc_column_batch_rejects_blank_citation_ids() -> None:
+    columns = _minimal_column_payload(row_count=1) | {"citation_ids": [["US_NPR_210_SCOPE", " "]]}
+
+    with pytest.raises(DrcInputError, match="citation_ids must contain non-empty citations"):
+        build_drc_nonsec_batch_from_columns(**columns)
+
+
+def test_drc_batch_calculation_validates_result_reconciliation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import frtb_drc.batch as batch_module
+
+    fixture = load_drc_nonsec_v2_fixture()
+    batch = build_drc_nonsec_batch_from_handoff(
+        normalize_drc_nonsec_arrow_table(_arrow_table(fixture.positions))
+    )
+    calls: list[float] = []
+
+    def fake_validate_reconciliation(result: DrcCapitalResult) -> None:
+        calls.append(result.total_drc)
+
+    monkeypatch.setattr(batch_module, "validate_reconciliation", fake_validate_reconciliation)
+
+    calculation = batch_module.calculate_drc_capital_from_batch(batch, context=fixture.context)
+
+    assert calls == [calculation.result.total_drc]
 
 
 def _minimal_column_payload(*, row_count: int) -> dict[str, object]:
