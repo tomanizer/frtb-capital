@@ -187,8 +187,23 @@ def test_handoff_dispatcher_rejects_mixed_path_handoff() -> None:
     )
     handoff = normalize_girr_delta_arrow_table(arrow_table(mixed_rows))
 
-    with pytest.raises(SbmInputError, match="homogeneous by risk_class and risk_measure"):
+    with pytest.raises(
+        SbmInputError,
+        match="handoff 1 must be homogeneous by risk_class and risk_measure",
+    ):
         calculate_sbm_portfolio_capital_from_handoffs((handoff,), context=context)
+
+
+def test_batch_dispatcher_reports_batch_field_for_invalid_batch_inputs() -> None:
+    context = sample_context()
+
+    with pytest.raises(SbmInputError) as non_iterable_exc:
+        calculate_sbm_portfolio_capital_from_batches(object(), context=context)
+    assert non_iterable_exc.value.field == "batches"
+
+    with pytest.raises(SbmInputError) as wrong_member_exc:
+        calculate_sbm_portfolio_capital_from_batches((object(),), context=context)
+    assert wrong_member_exc.value.field == "batches"
 
 
 def test_batch_dispatcher_fails_closed_for_unsupported_profile() -> None:

@@ -2142,12 +2142,18 @@ def coerce_sbm_batch_sequence(batches: object) -> tuple[SbmSensitivityBatch, ...
     try:
         candidates: tuple[object, ...] = tuple(batches)  # type: ignore[arg-type]
     except TypeError as exc:
-        raise SbmInputError("batches must be an iterable of SbmSensitivityBatch objects") from exc
+        raise SbmInputError(
+            "batches must be an iterable of SbmSensitivityBatch objects",
+            field="batches",
+        ) from exc
     if not candidates:
         raise SbmInputError("batches must not be empty", field="batches")
     for candidate in candidates:
         if not isinstance(candidate, SbmSensitivityBatch):
-            raise SbmInputError("batches must contain only SbmSensitivityBatch objects")
+            raise SbmInputError(
+                "batches must contain only SbmSensitivityBatch objects",
+                field="batches",
+            )
     return cast(tuple[SbmSensitivityBatch, ...], candidates)
 
 

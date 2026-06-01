@@ -1634,7 +1634,7 @@ def calculate_sbm_portfolio_capital_from_handoffs(
         raise SbmInputError("handoffs are required", field="handoffs")
     batches = tuple(
         _build_portfolio_dispatch_batch_from_handoff(handoff, index=index)
-        for index, handoff in enumerate(_coerce_handoff_sequence(handoffs))
+        for index, handoff in enumerate(_coerce_handoff_sequence(handoffs), start=1)
     )
     return calculate_sbm_portfolio_capital_from_batches(batches, context=context)
 
@@ -1662,7 +1662,7 @@ def _build_portfolio_dispatch_batch_from_handoff(
     index: int,
 ) -> SbmSensitivityBatch:
     path = _homogeneous_handoff_path(handoff, index=index)
-    builder = _handoff_batch_builders().get(path)
+    builder = _HANDOFF_BATCH_BUILDERS.get(path)
     if builder is None:
         raise UnsupportedRegulatoryFeatureError(
             "frtb-sbm Arrow portfolio dispatcher does not support "
@@ -1718,53 +1718,44 @@ def _unique_handoff_text_values(
     return text_values
 
 
-def _handoff_batch_builders() -> Mapping[
+_HANDOFF_BATCH_BUILDERS: Mapping[
     tuple[SbmRiskClass, SbmRiskMeasure],
     Callable[[NormalizedTabularHandoff], SbmSensitivityBatch],
-]:
-    return {
-        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA): build_girr_delta_batch_from_handoff,
-        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA): build_girr_vega_batch_from_handoff,
-        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE): (build_girr_curvature_batch_from_handoff),
-        (SbmRiskClass.FX, SbmRiskMeasure.DELTA): build_fx_delta_batch_from_handoff,
-        (SbmRiskClass.FX, SbmRiskMeasure.VEGA): build_fx_vega_batch_from_handoff,
-        (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE): build_fx_curvature_batch_from_handoff,
-        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA): build_equity_delta_batch_from_handoff,
-        (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA): build_equity_vega_batch_from_handoff,
-        (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE): (
-            build_equity_curvature_batch_from_handoff
-        ),
-        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA): (build_commodity_delta_batch_from_handoff),
-        (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA): build_commodity_vega_batch_from_handoff,
-        (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE): (
-            build_commodity_curvature_batch_from_handoff
-        ),
-        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA): (
-            build_csr_nonsec_delta_batch_from_handoff
-        ),
-        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA): (build_csr_nonsec_vega_batch_from_handoff),
-        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE): (
-            build_csr_nonsec_curvature_batch_from_handoff
-        ),
-        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA): (
-            build_csr_sec_nonctp_delta_batch_from_handoff
-        ),
-        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA): (
-            build_csr_sec_nonctp_vega_batch_from_handoff
-        ),
-        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE): (
-            build_csr_sec_nonctp_curvature_batch_from_handoff
-        ),
-        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA): (
-            build_csr_sec_ctp_delta_batch_from_handoff
-        ),
-        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA): (
-            build_csr_sec_ctp_vega_batch_from_handoff
-        ),
-        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE): (
-            build_csr_sec_ctp_curvature_batch_from_handoff
-        ),
-    }
+] = {
+    (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA): build_girr_delta_batch_from_handoff,
+    (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA): build_girr_vega_batch_from_handoff,
+    (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE): build_girr_curvature_batch_from_handoff,
+    (SbmRiskClass.FX, SbmRiskMeasure.DELTA): build_fx_delta_batch_from_handoff,
+    (SbmRiskClass.FX, SbmRiskMeasure.VEGA): build_fx_vega_batch_from_handoff,
+    (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE): build_fx_curvature_batch_from_handoff,
+    (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA): build_equity_delta_batch_from_handoff,
+    (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA): build_equity_vega_batch_from_handoff,
+    (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE): (build_equity_curvature_batch_from_handoff),
+    (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA): build_commodity_delta_batch_from_handoff,
+    (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA): build_commodity_vega_batch_from_handoff,
+    (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE): (
+        build_commodity_curvature_batch_from_handoff
+    ),
+    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA): build_csr_nonsec_delta_batch_from_handoff,
+    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA): build_csr_nonsec_vega_batch_from_handoff,
+    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE): (
+        build_csr_nonsec_curvature_batch_from_handoff
+    ),
+    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA): (
+        build_csr_sec_nonctp_delta_batch_from_handoff
+    ),
+    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA): (
+        build_csr_sec_nonctp_vega_batch_from_handoff
+    ),
+    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE): (
+        build_csr_sec_nonctp_curvature_batch_from_handoff
+    ),
+    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA): (build_csr_sec_ctp_delta_batch_from_handoff),
+    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA): build_csr_sec_ctp_vega_batch_from_handoff,
+    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE): (
+        build_csr_sec_ctp_curvature_batch_from_handoff
+    ),
+}
 
 
 def _required_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np.object_]:
