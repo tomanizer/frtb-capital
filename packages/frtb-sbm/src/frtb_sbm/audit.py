@@ -13,6 +13,8 @@ import json
 
 from frtb_sbm.data_models import (
     BucketCapital,
+    CurvatureBranchRecord,
+    CurvatureBucketBranchRecord,
     IntraBucketScenarioRecord,
     PairwiseCorrelationSummary,
     RiskClassCapital,
@@ -170,6 +172,15 @@ def _risk_class_payload(risk_class: RiskClassCapital) -> dict[str, object]:
         ]
     if risk_class.scenario_selection is not None:
         payload["scenario_selection"] = _branch_metadata_payload(risk_class.scenario_selection)
+    if risk_class.curvature_branches:
+        payload["curvature_branches"] = [
+            _curvature_branch_payload(branch) for branch in risk_class.curvature_branches
+        ]
+    if risk_class.curvature_bucket_branches:
+        payload["curvature_bucket_branches"] = [
+            _curvature_bucket_branch_payload(branch)
+            for branch in risk_class.curvature_bucket_branches
+        ]
     return payload
 
 
@@ -233,6 +244,39 @@ def _branch_metadata_payload(branch: SbmBranchMetadata) -> dict[str, object]:
         "source_id": branch.source_id,
         "selected": branch.selected,
         "reason": branch.reason,
+        "citation_ids": list(branch.citation_ids),
+    }
+
+
+def _curvature_branch_payload(branch: CurvatureBranchRecord) -> dict[str, object]:
+    return {
+        "sensitivity_id": branch.sensitivity_id,
+        "selected_branch": branch.selected_branch,
+        "up_shock_amount": branch.up_shock_amount,
+        "down_shock_amount": branch.down_shock_amount,
+        "citation_ids": list(branch.citation_ids),
+    }
+
+
+def _curvature_bucket_branch_payload(
+    branch: CurvatureBucketBranchRecord,
+) -> dict[str, object]:
+    return {
+        "bucket_id": branch.bucket_id,
+        "scenario": branch.scenario.value,
+        "selected_branch": branch.selected_branch,
+        "rejected_branch": branch.rejected_branch,
+        "selected_bucket_capital": branch.selected_bucket_capital,
+        "rejected_bucket_capital": branch.rejected_bucket_capital,
+        "up_bucket_capital": branch.up_bucket_capital,
+        "down_bucket_capital": branch.down_bucket_capital,
+        "selected_sum": branch.selected_sum,
+        "up_sum": branch.up_sum,
+        "down_sum": branch.down_sum,
+        "selected_psi_zero_count": branch.selected_psi_zero_count,
+        "up_psi_zero_count": branch.up_psi_zero_count,
+        "down_psi_zero_count": branch.down_psi_zero_count,
+        "floor_applied": branch.floor_applied,
         "citation_ids": list(branch.citation_ids),
     }
 
