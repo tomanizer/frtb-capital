@@ -124,6 +124,9 @@ def _hedge_from_payload(payload: dict[str, Any]) -> CvaHedge:
         eligibility_evidence_id=str(payload["eligibility_evidence_id"])
         if payload.get("eligibility_evidence_id") is not None
         else None,
+        rejection_reason=str(payload["rejection_reason"])
+        if payload.get("rejection_reason") is not None
+        else None,
         lineage=_lineage(source_row_id),
     )
 

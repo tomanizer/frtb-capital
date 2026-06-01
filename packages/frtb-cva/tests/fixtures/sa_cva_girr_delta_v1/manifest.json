@@ -7,6 +7,12 @@
     "single_usd_5y",
     "usd_eur_two_bucket",
     "offsetting_hedge",
+    "ineligible_hedge_rejected",
     "chf_other_currency"
+  ],
+  "invalid_cases": [
+    "invalid_fx_reporting_currency",
+    "invalid_unknown_girr_tenor",
+    "invalid_missing_tenor"
   ]
 }
