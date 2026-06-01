@@ -69,3 +69,11 @@ data-shape and hotspot assessment for the package-owned Arrow handoff ->
 NumPy batch -> kernel path. It explains why DRC keeps issuer/seniority netting
 inside package NumPy code instead of moving regulatory calculations into a
 dataframe expression layer.
+
+## FRTB-RRAO Arrow Batch Triage
+
+`frtb-rrao-arrow-batch-triage.md` documents the RRAO residual-risk data-shape
+and hotspot assessment for the package-owned Arrow handoff -> NumPy batch ->
+line-kernel path. It covers flat evidence columns for exotic, other residual
+risk, supervisor-directed, exclusion, back-to-back, and investment-fund rows,
+and it defines opaque nested payloads as fail-closed inputs.
