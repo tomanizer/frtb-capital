@@ -80,6 +80,122 @@ def test_normalize_crif_arrow_table_partitions_rejections_and_diagnostics() -> N
     ]
 
 
+def test_vectorized_static_mapping_matches_row_compatibility_path() -> None:
+    table = pa.table(
+        {
+            "TradeId": ["t-1", "t-2", "t-3", "t-4"],
+            "RowId": ["r-1", "", None, "r-4"],
+            "RiskType": [" risk_ircurve ", "RISK_IRCURVE", "UNKNOWN", "RISK_IRCURVE"],
+            "Amount": ["100.25", "NaN", "12.0", ""],
+        }
+    )
+    kwargs = {
+        "column_specs": _column_specs(),
+        "risk_type_mappings": (
+            CrifRiskTypeMapping(
+                ("RISK_IRCURVE",),
+                {"risk_class": "GIRR", "risk_measure": "delta"},
+            ),
+        ),
+        "source_file": "rates.crif.csv",
+    }
+
+    row_handoff = normalize_crif_arrow_table(
+        table,
+        use_vectorized_static_mapping=False,
+        **kwargs,
+    )
+    vectorized_handoff = normalize_crif_arrow_table(table, **kwargs)
+
+    assert vectorized_handoff.accepted.to_pydict() == row_handoff.accepted.to_pydict()
+    assert vectorized_handoff.rejected is not None
+    assert row_handoff.rejected is not None
+    assert vectorized_handoff.rejected.to_pydict() == row_handoff.rejected.to_pydict()
+    assert [diagnostic.as_dict() for diagnostic in vectorized_handoff.diagnostics] == [
+        diagnostic.as_dict() for diagnostic in row_handoff.diagnostics
+    ]
+    assert vectorized_handoff.source_hash == row_handoff.source_hash
+    assert vectorized_handoff.metadata == row_handoff.metadata
+
+
+def test_vectorized_static_mapping_matches_optional_blank_risk_type_path() -> None:
+    specs = (
+        CrifColumnSpec("trade_id", aliases=("TradeId",), required=True),
+        CrifColumnSpec(CRIF_SOURCE_ROW_ID_COLUMN, aliases=("RowId",)),
+        CrifColumnSpec("risk_type", aliases=("RiskType",), required=False),
+        CrifColumnSpec("amount", aliases=("Amount",), logical_type=TabularLogicalType.FLOAT),
+    )
+    table = pa.table(
+        {
+            "TradeId": ["t-1", "t-2"],
+            "RowId": ["r-1", "r-2"],
+            "RiskType": ["", "RISK_IRCURVE"],
+            "Amount": ["100.25", "12.0"],
+        }
+    )
+    kwargs = {
+        "column_specs": specs,
+        "risk_type_mappings": (
+            CrifRiskTypeMapping(
+                ("RISK_IRCURVE",),
+                {"risk_class": "GIRR", "risk_measure": "delta"},
+            ),
+        ),
+    }
+
+    row_handoff = normalize_crif_arrow_table(
+        table,
+        use_vectorized_static_mapping=False,
+        **kwargs,
+    )
+    vectorized_handoff = normalize_crif_arrow_table(table, **kwargs)
+
+    assert vectorized_handoff.rejected is not None
+    assert row_handoff.rejected is not None
+    assert vectorized_handoff.rejected.to_pydict() == row_handoff.rejected.to_pydict()
+    assert [diagnostic.as_dict() for diagnostic in vectorized_handoff.diagnostics] == [
+        diagnostic.as_dict() for diagnostic in row_handoff.diagnostics
+    ]
+    assert vectorized_handoff.diagnostics[0].code == "crif.missing_risk_type"
+
+
+def test_vectorized_static_mapping_matches_all_null_required_column_path() -> None:
+    table = pa.table(
+        {
+            "TradeId": pa.array([None, None], type=pa.string()),
+            "RowId": ["r-1", "r-2"],
+            "RiskType": ["RISK_IRCURVE", "RISK_IRCURVE"],
+            "Amount": ["100.25", "12.0"],
+        }
+    )
+    kwargs = {
+        "column_specs": _column_specs(),
+        "risk_type_mappings": (
+            CrifRiskTypeMapping(
+                ("RISK_IRCURVE",),
+                {"risk_class": "GIRR", "risk_measure": "delta"},
+            ),
+        ),
+    }
+
+    row_handoff = normalize_crif_arrow_table(
+        table,
+        use_vectorized_static_mapping=False,
+        **kwargs,
+    )
+    vectorized_handoff = normalize_crif_arrow_table(table, **kwargs)
+
+    assert vectorized_handoff.rejected is not None
+    assert row_handoff.rejected is not None
+    assert vectorized_handoff.rejected.to_pydict() == row_handoff.rejected.to_pydict()
+    assert [diagnostic.as_dict() for diagnostic in vectorized_handoff.diagnostics] == [
+        diagnostic.as_dict() for diagnostic in row_handoff.diagnostics
+    ]
+    assert "required CRIF column 'trade_id' is missing" in (
+        vectorized_handoff.diagnostics[0].message
+    )
+
+
 def test_normalize_crif_records_synthesizes_source_row_ids_and_hashes_deterministically() -> None:
     records = (
         {"TradeId": "t-1", "RiskType": "risk_ircurve", "Amount": "10.0"},
