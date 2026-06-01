@@ -19,6 +19,7 @@ from frtb_sbm.aggregation import (
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
+from frtb_sbm.batch import SbmSensitivityBatch, build_commodity_delta_batch_from_sensitivities
 from frtb_sbm.commodity_reference_data import (
     _require_commodity_bucket_number,
     commodity_delta_intra_bucket_correlation,
@@ -35,7 +36,7 @@ from frtb_sbm.data_models import (
     SbmSensitivity,
     WeightedSensitivity,
 )
-from frtb_sbm.weighted_sensitivity import weight_commodity_delta_sensitivities
+from frtb_sbm.weighted_sensitivity import weight_commodity_delta_sensitivity_batch
 
 
 def calculate_commodity_delta_risk_class_capital(
@@ -47,16 +48,36 @@ def calculate_commodity_delta_risk_class_capital(
 ) -> RiskClassCapital:
     """Calculate cited commodity delta risk-class capital for a supported profile."""
 
-    weighted = weight_commodity_delta_sensitivities(
-        sensitivities,
+    batch = build_commodity_delta_batch_from_sensitivities(sensitivities)
+    return calculate_commodity_delta_risk_class_capital_from_batch(
+        batch,
+        profile_id=profile_id,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
+    )
+
+
+def calculate_commodity_delta_risk_class_capital_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+) -> RiskClassCapital:
+    """Calculate cited commodity delta risk-class capital from a package-owned batch."""
+
+    from frtb_sbm.batch import _batch_text_by_id
+
+    weighted = weight_commodity_delta_sensitivity_batch(
+        batch,
         profile_id=profile_id,
     )
     return aggregate_commodity_delta_measure_capital(
         weighted,
         profile_id=profile_id,
-        commodity_by_id={item.sensitivity_id: item.risk_factor for item in sensitivities},
-        tenor_by_id={item.sensitivity_id: item.tenor or "" for item in sensitivities},
-        location_by_id={item.sensitivity_id: item.qualifier or "" for item in sensitivities},
+        commodity_by_id=_batch_text_by_id(batch, batch.risk_factors, field="risk_factor"),
+        tenor_by_id=_batch_text_by_id(batch, batch.tenors, field="tenor"),
+        location_by_id=_batch_text_by_id(batch, batch.qualifiers, field="qualifier"),
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
     )
@@ -165,4 +186,5 @@ __all__ = [
     "build_commodity_delta_intra_bucket_correlation_matrix",
     "build_commodity_inter_bucket_correlation_map",
     "calculate_commodity_delta_risk_class_capital",
+    "calculate_commodity_delta_risk_class_capital_from_batch",
 ]

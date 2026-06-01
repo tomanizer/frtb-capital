@@ -19,7 +19,13 @@ from frtb_sbm import (
 )
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
 from frtb_sbm.arrow_handoff import (
+    calculate_sbm_capital_from_commodity_delta_handoff,
+    calculate_sbm_capital_from_equity_delta_handoff,
+    calculate_sbm_capital_from_fx_delta_handoff,
     calculate_sbm_capital_from_girr_vega_handoff,
+    normalize_commodity_delta_arrow_table,
+    normalize_equity_delta_arrow_table,
+    normalize_fx_delta_arrow_table,
     normalize_girr_vega_arrow_table,
 )
 from frtb_sbm.capital import _build_girr_delta_intra_bucket_correlation_matrix
@@ -141,6 +147,57 @@ def test_girr_vega_arrow_batch_phase_benchmark(
     assert compute_elapsed < 5.0
 
 
+def test_non_credit_delta_arrow_batch_phase_benchmark(
+    record_property: Callable[[str, object], None],
+) -> None:
+    """Report FX, equity, and commodity Arrow handoff timings without row dataclasses."""
+
+    cases = (
+        (
+            "fx",
+            _large_fx_delta_arrow_table(240),
+            normalize_fx_delta_arrow_table,
+            calculate_sbm_capital_from_fx_delta_handoff,
+        ),
+        (
+            "equity",
+            _large_equity_delta_arrow_table(240),
+            normalize_equity_delta_arrow_table,
+            calculate_sbm_capital_from_equity_delta_handoff,
+        ),
+        (
+            "commodity",
+            _large_commodity_delta_arrow_table(240),
+            normalize_commodity_delta_arrow_table,
+            calculate_sbm_capital_from_commodity_delta_handoff,
+        ),
+    )
+    for label, table, normalizer, calculator in cases:
+        context = SbmCalculationContext(
+            run_id=f"run-benchmark-{label}-delta-001",
+            calculation_date=date(2026, 5, 30),
+            base_currency="USD",
+            reporting_currency="USD",
+            profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+        )
+        ingestion_started = time.perf_counter()
+        handoff = normalizer(table)
+        ingestion_elapsed = time.perf_counter() - ingestion_started
+
+        compute_started = time.perf_counter()
+        result = calculator(handoff, context=context)
+        compute_elapsed = time.perf_counter() - compute_started
+
+        record_property(f"{label}_delta_raw_row_count", table.num_rows)
+        record_property(f"{label}_delta_ingestion_seconds", ingestion_elapsed)
+        record_property(f"{label}_delta_compute_seconds", compute_elapsed)
+        record_property(f"{label}_delta_materialized_dataclass_count", 0)
+        assert handoff.accepted.num_rows == table.num_rows
+        assert result.total_capital > 0.0
+        assert ingestion_elapsed < 1.0
+        assert compute_elapsed < 5.0
+
+
 def _large_girr_vega_arrow_table(size: int) -> pa.Table:
     option_tenors = ("1y", "2y", "5y", "10y")
     tenors = ("1y", "2y", "5y", "10y", "30y")
@@ -161,6 +218,76 @@ def _large_girr_vega_arrow_table(size: int) -> pa.Table:
             "option_tenor": [option_tenors[index % len(option_tenors)] for index in range(size)],
             "lineage_source_system": ["benchmark"] * size,
             "lineage_source_file": ["synthetic-vega.arrow"] * size,
+        }
+    )
+
+
+def _large_fx_delta_arrow_table(size: int) -> pa.Table:
+    currencies = ("EUR", "GBP", "JPY", "AUD", "CAD", "CHF")
+    return pa.table(
+        {
+            "sensitivity_id": [f"fx-{index:05d}" for index in range(size)],
+            "source_row_id": [f"row-fx-{index:05d}" for index in range(size)],
+            "desk_id": ["fx-desk"] * size,
+            "legal_entity": ["LE-001"] * size,
+            "risk_class": ["FX"] * size,
+            "risk_measure": ["DELTA"] * size,
+            "bucket": [currencies[index % len(currencies)] for index in range(size)],
+            "risk_factor": [currencies[index % len(currencies)] for index in range(size)],
+            "amount": pa.array([100_000.0 + index for index in range(size)], type=pa.float64()),
+            "amount_currency": ["USD"] * size,
+            "sign_convention": ["LONG"] * size,
+            "lineage_source_system": ["benchmark"] * size,
+            "lineage_source_file": ["synthetic-fx.arrow"] * size,
+        }
+    )
+
+
+def _large_equity_delta_arrow_table(size: int) -> pa.Table:
+    buckets = ("5", "6", "7", "8", "11")
+    factors = ("SPOT", "REPO")
+    return pa.table(
+        {
+            "sensitivity_id": [f"eq-{index:05d}" for index in range(size)],
+            "source_row_id": [f"row-eq-{index:05d}" for index in range(size)],
+            "desk_id": ["eq-desk"] * size,
+            "legal_entity": ["LE-001"] * size,
+            "risk_class": ["EQUITY"] * size,
+            "risk_measure": ["DELTA"] * size,
+            "bucket": [buckets[index % len(buckets)] for index in range(size)],
+            "risk_factor": [factors[index % len(factors)] for index in range(size)],
+            "qualifier": [f"ISS-{index % 37:02d}" for index in range(size)],
+            "amount": pa.array([100_000.0 + index for index in range(size)], type=pa.float64()),
+            "amount_currency": ["USD"] * size,
+            "sign_convention": ["LONG"] * size,
+            "lineage_source_system": ["benchmark"] * size,
+            "lineage_source_file": ["synthetic-equity.arrow"] * size,
+        }
+    )
+
+
+def _large_commodity_delta_arrow_table(size: int) -> pa.Table:
+    buckets = ("2", "3", "5", "6", "10")
+    commodities = ("WTI", "BRENT", "ALU", "GOLD", "POWER")
+    locations = ("NYMEX", "ICE", "LME")
+    tenors = ("3m", "6m", "1y", "2y")
+    return pa.table(
+        {
+            "sensitivity_id": [f"com-{index:05d}" for index in range(size)],
+            "source_row_id": [f"row-com-{index:05d}" for index in range(size)],
+            "desk_id": ["com-desk"] * size,
+            "legal_entity": ["LE-001"] * size,
+            "risk_class": ["COMMODITY"] * size,
+            "risk_measure": ["DELTA"] * size,
+            "bucket": [buckets[index % len(buckets)] for index in range(size)],
+            "risk_factor": [commodities[index % len(commodities)] for index in range(size)],
+            "qualifier": [locations[index % len(locations)] for index in range(size)],
+            "tenor": [tenors[index % len(tenors)] for index in range(size)],
+            "amount": pa.array([100_000.0 + index for index in range(size)], type=pa.float64()),
+            "amount_currency": ["USD"] * size,
+            "sign_convention": ["LONG"] * size,
+            "lineage_source_system": ["benchmark"] * size,
+            "lineage_source_file": ["synthetic-commodity.arrow"] * size,
         }
     )
 

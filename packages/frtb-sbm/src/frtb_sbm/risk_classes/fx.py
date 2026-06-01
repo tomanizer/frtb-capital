@@ -19,6 +19,7 @@ from frtb_sbm.aggregation import (
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
+from frtb_sbm.batch import SbmSensitivityBatch, build_fx_delta_batch_from_sensitivities
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
@@ -32,7 +33,7 @@ from frtb_sbm.reference_data import (
     fx_delta_intra_bucket_correlation,
     fx_inter_bucket_correlation,
 )
-from frtb_sbm.weighted_sensitivity import weight_fx_delta_sensitivities
+from frtb_sbm.weighted_sensitivity import weight_fx_delta_sensitivity_batch
 
 
 def calculate_fx_delta_risk_class_capital(
@@ -45,8 +46,28 @@ def calculate_fx_delta_risk_class_capital(
 ) -> RiskClassCapital:
     """Calculate cited FX delta risk-class capital for a supported profile."""
 
-    weighted = weight_fx_delta_sensitivities(
-        sensitivities,
+    batch = build_fx_delta_batch_from_sensitivities(sensitivities)
+    return calculate_fx_delta_risk_class_capital_from_batch(
+        batch,
+        profile_id=profile_id,
+        reporting_currency=reporting_currency,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
+    )
+
+
+def calculate_fx_delta_risk_class_capital_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    reporting_currency: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+) -> RiskClassCapital:
+    """Calculate cited FX delta risk-class capital from a package-owned batch."""
+
+    weighted = weight_fx_delta_sensitivity_batch(
+        batch,
         profile_id=profile_id,
         reporting_currency=reporting_currency,
     )
@@ -147,4 +168,5 @@ __all__ = [
     "build_fx_delta_intra_bucket_correlation_matrix",
     "build_fx_inter_bucket_correlation_map",
     "calculate_fx_delta_risk_class_capital",
+    "calculate_fx_delta_risk_class_capital_from_batch",
 ]
