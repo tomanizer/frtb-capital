@@ -26,7 +26,7 @@ capital or supervisory approval.
 | --- | --- | --- |
 | `frtb-drc` | 1 | Non-securitisation path is the most mature partial-runtime slice with fixtures and reconciliation tests |
 | `frtb-cva` | 2 | Reduced BA-CVA and SA-CVA GIRR delta paths are deterministic with fixture workflows |
-| `frtb-sbm` | 3 | Multiple delta/vega slices implemented; curvature aggregation still pending |
+| `frtb-sbm` | 3 | Multiple delta/vega slices and row-wise curvature are implemented; high-volume curvature handoffs and model documentation remain gaps |
 
 ## Current status
 
@@ -57,7 +57,7 @@ capital or supervisory approval.
 
 ## Gap checklist — SBM
 
-- [ ] Intended use for implemented delta/vega slices vs pending curvature
+- [ ] Intended use for implemented delta/vega/row-wise curvature slices vs pending high-volume curvature handoffs
 - [ ] Per risk-class scope matrix aligned with `package_maturity.toml`
 - [ ] Unsupported CSR securitisation fail-closed behaviour
 - [ ] Benchmark and fixture evidence for implemented slices

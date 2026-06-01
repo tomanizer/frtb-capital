@@ -1,5 +1,5 @@
 """
-Public SBM capital calculation for supported SBM phase-1 delta/vega inputs.
+Public SBM capital calculation for supported SBM phase-1 delta/vega/curvature inputs.
 
 Regulatory traceability:
     Basel MAR21.4-MAR21.7 — delta aggregation and scenario selection.
@@ -33,6 +33,7 @@ from frtb_sbm.batch import (
     build_girr_delta_batch_from_sensitivities,
     build_girr_vega_batch_from_sensitivities,
 )
+from frtb_sbm.curvature import calculate_curvature_risk_class_capital
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
@@ -126,7 +127,7 @@ def calculate_sbm_capital(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate supported SBM capital for GIRR, FX, equity, commodity, and CSR non-sec delta."""
+    """Calculate supported SBM capital for Basel MAR21 delta, GIRR vega, and curvature."""
 
     if sensitivities is None:
         raise SbmInputError("sensitivities are required", field="sensitivities")
@@ -154,7 +155,15 @@ def calculate_sbm_capital(
             for item in validated
             if item.risk_class is risk_class and item.risk_measure is risk_measure
         )
-        if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.DELTA:
+        if risk_measure is SbmRiskMeasure.CURVATURE:
+            risk_class_results.append(
+                calculate_curvature_risk_class_capital(
+                    measure_sensitivities,
+                    profile_id=rule_profile.profile_id,
+                    reporting_currency=context.reporting_currency,
+                )
+            )
+        elif risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.DELTA:
             risk_class_results.append(
                 _calculate_girr_delta_risk_class_capital(
                     measure_sensitivities,
@@ -1131,11 +1140,17 @@ def _ordered_supported_paths(
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE),
     )
     ordered = tuple(path for path in ordering if path in present)
     remaining = tuple(sorted(present - set(ordering), key=lambda p: (p[0].value, p[1].value)))

@@ -10,6 +10,7 @@ import pytest
 from frtb_common import TabularHandoffError, UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
     CURVATURE_CAPITAL_REQUIREMENT_ID,
+    FX_CURVATURE_SCALAR_1_5_FLAG,
     SbmCalculationContext,
     SbmCapitalResult,
     SbmInputError,
@@ -21,9 +22,11 @@ from frtb_sbm import (
     SbmSignConvention,
     SbmSourceLineage,
     build_girr_curvature_batch_from_sensitivities,
+    calculate_curvature_risk_class_capital,
     calculate_girr_curvature_risk_class_capital,
     calculate_sbm_capital,
     curvature_capital_unsupported_feature,
+    curvature_risk_weight,
     curvature_worst_branch,
     ensure_sbm_capital_paths_supported,
     ensure_sbm_risk_class_measure_supported,
@@ -38,6 +41,16 @@ from frtb_sbm import (
 from frtb_sbm.arrow_handoff import (
     build_girr_curvature_batch_from_handoff,
     normalize_girr_curvature_arrow_table,
+)
+
+CURVATURE_CITATIONS = (
+    "basel_mar21_curvature",
+    "basel_mar21_96",
+    "basel_mar21_97",
+    "basel_mar21_98",
+    "basel_mar21_99",
+    "basel_mar21_100",
+    "basel_mar21_101",
 )
 
 
@@ -136,7 +149,7 @@ def test_parse_curvature_input_builds_canonical_record() -> None:
     assert parsed.amount_currency == "USD"
     assert parsed.up_shock_amount == -12_000.0
     assert parsed.down_shock_amount == -18_000.0
-    assert parsed.citation_ids == ("basel_mar21_curvature",)
+    assert parsed.citation_ids == CURVATURE_CITATIONS
 
 
 def test_validate_curvature_sensitivities_orders_deterministically() -> None:
@@ -250,7 +263,7 @@ def test_girr_curvature_branch_selection_from_batch_matches_row_helper() -> None
     ]
     assert [record.up_shock_amount for record in records] == [-12_000.0, -22_000.0]
     assert [record.down_shock_amount for record in records] == [-18_000.0, -13_000.0]
-    assert all(record.citation_ids == ("basel_mar21_curvature",) for record in records)
+    assert all(record.citation_ids == CURVATURE_CITATIONS for record in records)
 
 
 def test_girr_curvature_handoff_rejects_missing_shock_column() -> None:
@@ -296,7 +309,7 @@ def test_girr_curvature_batch_build_rejects_bad_shock_values(
         build_girr_curvature_batch_from_handoff(handoff)
 
 
-def test_validate_girr_curvature_batch_does_not_enable_capital_support() -> None:
+def test_validate_girr_curvature_batch_and_support_gate_accept_curvature() -> None:
     batch = build_girr_curvature_batch_from_handoff(
         normalize_girr_curvature_arrow_table(
             sample_curvature_arrow_table((sample_curvature_sensitivity(),))
@@ -310,12 +323,11 @@ def test_validate_girr_curvature_batch_does_not_enable_capital_support() -> None
         )
         is batch
     )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):
-        ensure_sbm_risk_class_measure_supported(
-            SbmRegulatoryProfile.BASEL_MAR21.value,
-            SbmRiskClass.GIRR,
-            SbmRiskMeasure.CURVATURE,
-        )
+    ensure_sbm_risk_class_measure_supported(
+        SbmRegulatoryProfile.BASEL_MAR21.value,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.CURVATURE,
+    )
 
 
 def test_girr_curvature_arrow_handoff_path_does_not_materialize_sensitivity_rows() -> None:
@@ -328,7 +340,7 @@ def test_girr_curvature_arrow_handoff_path_does_not_materialize_sensitivity_rows
 
 
 def test_weight_girr_curvature_fails_closed() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="cannot be represented"):
         weight_girr_curvature_sensitivities(
             (sample_curvature_sensitivity(),),
             profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
@@ -497,12 +509,15 @@ def test_girr_curvature_audit_serializes_branches_and_numeric_drift_inputs() -> 
     assert drifted_payload != payload
 
 
-def test_calculate_sbm_capital_rejects_girr_curvature() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):
-        calculate_sbm_capital(
-            (sample_curvature_sensitivity(),),
-            context=sample_context(),
-        )
+def test_calculate_sbm_capital_routes_girr_curvature() -> None:
+    result = calculate_sbm_capital(
+        (sample_curvature_sensitivity(up_shock_amount=12_000.0, down_shock_amount=8_000.0),),
+        context=sample_context(),
+    )
+
+    assert result.risk_classes[0].risk_class is SbmRiskClass.GIRR
+    assert result.risk_classes[0].risk_measure is SbmRiskMeasure.CURVATURE
+    assert result.total_capital == pytest.approx(12_000.0)
 
 
 def test_curvature_capital_unsupported_feature_is_structured() -> None:
@@ -513,31 +528,187 @@ def test_curvature_capital_unsupported_feature_is_structured() -> None:
     assert feature.requirement_id == CURVATURE_CAPITAL_REQUIREMENT_ID
 
 
-@pytest.mark.parametrize(
-    "risk_class",
-    [item for item in SbmRiskClass if item is not SbmRiskClass.GIRR],
-)
-def test_non_girr_curvature_capital_paths_fail_closed(risk_class: SbmRiskClass) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):
-        ensure_sbm_risk_class_measure_supported(
+@pytest.mark.parametrize("risk_class", list(SbmRiskClass))
+def test_basel_curvature_support_matrix_includes_every_risk_class(
+    risk_class: SbmRiskClass,
+) -> None:
+    ensure_sbm_risk_class_measure_supported(
+        SbmRegulatoryProfile.BASEL_MAR21.value,
+        risk_class,
+        SbmRiskMeasure.CURVATURE,
+    )
+
+
+def test_ensure_sbm_capital_paths_supported_accepts_girr_curvature() -> None:
+    ensure_sbm_capital_paths_supported(
+        SbmRegulatoryProfile.BASEL_MAR21.value,
+        (sample_curvature_sensitivity(),),
+    )
+
+
+def test_curvature_risk_weights_are_cited_mar21_98_99_parameters() -> None:
+    girr_weight, girr_citations = curvature_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21.value,
+        risk_class=SbmRiskClass.GIRR,
+    )
+    commodity_weight, commodity_citations = curvature_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21.value,
+        risk_class=SbmRiskClass.COMMODITY,
+        bucket_id="4",
+    )
+    fx_weight, fx_citations = curvature_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21.value,
+        risk_class=SbmRiskClass.FX,
+        currency="EUR",
+        reporting_currency="USD",
+    )
+
+    assert girr_weight == pytest.approx(0.017)
+    assert "basel_mar21_99" in girr_citations
+    assert commodity_weight == pytest.approx(0.80)
+    assert "basel_mar21_99" in commodity_citations
+    assert fx_weight == pytest.approx(0.15 / np.sqrt(2.0))
+    assert "basel_mar21_98" in fx_citations
+    assert "basel_mar21_88" in fx_citations
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="repo rates"):
+        curvature_risk_weight(
             SbmRegulatoryProfile.BASEL_MAR21.value,
-            risk_class,
-            SbmRiskMeasure.CURVATURE,
+            risk_class=SbmRiskClass.EQUITY,
+            bucket_id="1",
+            risk_factor="REPO",
         )
 
 
-def test_girr_curvature_path_fails_closed() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):
-        ensure_sbm_risk_class_measure_supported(
-            SbmRegulatoryProfile.BASEL_MAR21.value,
-            SbmRiskClass.GIRR,
-            SbmRiskMeasure.CURVATURE,
+def test_fx_curvature_public_path_uses_squared_inter_bucket_gamma() -> None:
+    result = calculate_sbm_capital(
+        (
+            sample_curvature_sensitivity(
+                sensitivity_id="fx-curv-001",
+                source_row_id="row-fx-curv-001",
+                risk_class=SbmRiskClass.FX,
+                bucket="EUR",
+                risk_factor="EUR",
+                tenor=None,
+                amount_currency="USD",
+                up_shock_amount=100.0,
+                down_shock_amount=40.0,
+                lineage=replace(sample_lineage(), source_row_id="row-fx-curv-001"),
+            ),
+            sample_curvature_sensitivity(
+                sensitivity_id="fx-curv-002",
+                source_row_id="row-fx-curv-002",
+                risk_class=SbmRiskClass.FX,
+                bucket="GBP",
+                risk_factor="GBP",
+                tenor=None,
+                amount_currency="USD",
+                up_shock_amount=200.0,
+                down_shock_amount=80.0,
+                lineage=replace(sample_lineage(), source_row_id="row-fx-curv-002"),
+            ),
+        ),
+        context=sample_context(),
+    )
+
+    risk_class = result.risk_classes[0]
+    medium = next(
+        detail
+        for detail in risk_class.scenario_details
+        if detail.scenario is SbmScenarioLabel.MEDIUM
+    )
+    assert risk_class.risk_class is SbmRiskClass.FX
+    assert risk_class.risk_measure is SbmRiskMeasure.CURVATURE
+    assert medium.inter_bucket_correlations == (("EUR", "GBP", pytest.approx(0.36)),)
+
+
+def test_fx_curvature_cross_pair_scalar_marker_divides_cvr_charges() -> None:
+    result = calculate_curvature_risk_class_capital(
+        (
+            sample_curvature_sensitivity(
+                sensitivity_id="fx-cross-curv-001",
+                source_row_id="row-fx-cross-curv-001",
+                risk_class=SbmRiskClass.FX,
+                bucket="EUR",
+                risk_factor="EUR",
+                qualifier="EUR/GBP",
+                tenor=None,
+                up_shock_amount=150.0,
+                down_shock_amount=60.0,
+                mapping_citation_ids=(FX_CURVATURE_SCALAR_1_5_FLAG,),
+                lineage=replace(sample_lineage(), source_row_id="row-fx-cross-curv-001"),
+            ),
+        ),
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+        reporting_currency="USD",
+    )
+
+    assert result.risk_class is SbmRiskClass.FX
+    assert result.buckets[0].kb == pytest.approx(100.0)
+    assert result.buckets[0].weighted_sensitivities[0].scaled_amount == pytest.approx(100.0)
+
+
+def test_fx_curvature_cross_pair_scalar_rejects_uncited_pair_context() -> None:
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="two-currency qualifier"):
+        calculate_curvature_risk_class_capital(
+            (
+                sample_curvature_sensitivity(
+                    sensitivity_id="fx-cross-curv-001",
+                    source_row_id="row-fx-cross-curv-001",
+                    risk_class=SbmRiskClass.FX,
+                    bucket="EUR",
+                    risk_factor="EUR",
+                    qualifier=None,
+                    tenor=None,
+                    up_shock_amount=150.0,
+                    down_shock_amount=60.0,
+                    mapping_citation_ids=(FX_CURVATURE_SCALAR_1_5_FLAG,),
+                    lineage=replace(sample_lineage(), source_row_id="row-fx-cross-curv-001"),
+                ),
+            ),
+            profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+            reporting_currency="USD",
         )
 
 
-def test_ensure_sbm_capital_paths_supported_rejects_girr_curvature() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="curvature capital is unsupported"):
-        ensure_sbm_capital_paths_supported(
-            SbmRegulatoryProfile.BASEL_MAR21.value,
-            (sample_curvature_sensitivity(),),
-        )
+def test_csr_nonsec_curvature_uses_name_only_squared_correlation() -> None:
+    result = calculate_curvature_risk_class_capital(
+        (
+            sample_curvature_sensitivity(
+                sensitivity_id="csr-curv-001",
+                source_row_id="row-csr-curv-001",
+                risk_class=SbmRiskClass.CSR_NONSEC,
+                bucket="11",
+                risk_factor="BOND",
+                qualifier="issuer-a",
+                tenor=None,
+                up_shock_amount=10.0,
+                down_shock_amount=4.0,
+                lineage=replace(sample_lineage(), source_row_id="row-csr-curv-001"),
+            ),
+            sample_curvature_sensitivity(
+                sensitivity_id="csr-curv-002",
+                source_row_id="row-csr-curv-002",
+                risk_class=SbmRiskClass.CSR_NONSEC,
+                bucket="11",
+                risk_factor="CDS",
+                qualifier="issuer-b",
+                tenor=None,
+                up_shock_amount=20.0,
+                down_shock_amount=6.0,
+                lineage=replace(sample_lineage(), source_row_id="row-csr-curv-002"),
+            ),
+        ),
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+        reporting_currency="USD",
+    )
+
+    medium = next(
+        detail for detail in result.scenario_details if detail.scenario is SbmScenarioLabel.MEDIUM
+    )
+    pairwise = medium.intra_buckets[0].pairwise_correlations
+    off_diagonal = next(
+        record for record in pairwise if record.sensitivity_a != record.sensitivity_b
+    )
+
+    assert off_diagonal.correlation == pytest.approx(0.35**2)
+    assert "basel_mar21_100" in medium.intra_buckets[0].citation_ids

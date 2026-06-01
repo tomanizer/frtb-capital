@@ -69,12 +69,19 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
         {
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE),
         }
     ),
     SbmRegulatoryProfile.EU_CRR3.value: frozenset(),
@@ -272,8 +279,8 @@ def _raise_unsupported_capital_path(
         not in supported
     ):
         raise UnsupportedRegulatoryFeatureError(
-            "frtb-sbm curvature capital is unsupported until the cited curvature "
-            f"aggregation path is implemented ({_CURVATURE_CAPITAL_REQUIREMENT_ID}); "
+            "frtb-sbm curvature capital is unsupported for the requested profile "
+            f"or risk class ({_CURVATURE_CAPITAL_REQUIREMENT_ID}); "
             f"received risk_class={risk_class.value}; "
             "use validate_curvature_sensitivities to validate up/down shock inputs"
         )
@@ -283,9 +290,9 @@ def _raise_unsupported_capital_path(
             f"risk_class={risk_class.value}, profile={profile.value}"
         )
     raise UnsupportedRegulatoryFeatureError(
-        "frtb-sbm phase-1 capital supports GIRR delta/vega/curvature, FX delta, "
-        "equity delta, commodity delta, CSR non-securitisation delta, and "
-        "CSR securitisation delta inputs; "
+        "frtb-sbm phase-1 capital supports GIRR delta/vega/curvature and "
+        "FX, equity, commodity, CSR non-securitisation, and CSR securitisation "
+        "delta/curvature inputs; "
         f"received risk_class={risk_class.value}, "
         f"risk_measure={risk_measure.value}"
     )
