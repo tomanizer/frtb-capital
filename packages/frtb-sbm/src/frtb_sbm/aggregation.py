@@ -696,7 +696,11 @@ def _pairwise_correlation_audit(
 ) -> tuple[tuple[PairwiseCorrelationEvidence, ...], PairwiseCorrelationSummary]:
     mode = _coerce_pairwise_evidence_mode(pairwise_evidence_mode)
     total_count = _upper_triangle_count(len(ordered))
-    if pairwise_evidence_limit < 0:
+    if (
+        isinstance(pairwise_evidence_limit, bool)
+        or not isinstance(pairwise_evidence_limit, int)
+        or pairwise_evidence_limit < 0
+    ):
         raise SbmInputError(
             "pairwise_evidence_limit must be a non-negative integer",
             field="pairwise_evidence_limit",

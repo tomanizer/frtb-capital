@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from frtb_sbm import (
     SbmCalculationContext,
+    SbmInputError,
     SbmPairwiseEvidenceMode,
     SbmRegulatoryProfile,
     SbmRiskClass,
@@ -110,6 +111,24 @@ def test_summary_pairwise_evidence_mode_omits_materialized_records() -> None:
     assert result.pairwise_correlation_summary.materialized_count == 0
     assert result.pairwise_correlation_summary.omitted_count == 3
     assert result.pairwise_correlation_summary.factor_ids == ("a", "b")
+
+
+@pytest.mark.parametrize("limit", ["100", True])
+def test_pairwise_evidence_limit_rejects_non_integer_direct_aggregation(limit: object) -> None:
+    with pytest.raises(SbmInputError, match="pairwise_evidence_limit") as exc_info:
+        aggregate_intra_bucket(
+            "1",
+            (_weighted("a"), _weighted("b")),
+            correlation_matrix=np.array(
+                [[1.0, 0.4], [0.4, 1.0]],
+                dtype=float,
+            ),
+            risk_class=SbmRiskClass.GIRR,
+            risk_measure=SbmRiskMeasure.DELTA,
+            pairwise_evidence_limit=limit,  # type: ignore[arg-type]
+        )
+
+    assert exc_info.value.field == "pairwise_evidence_limit"
 
 
 def test_auto_pairwise_evidence_omits_large_buckets_without_changing_capital() -> None:
