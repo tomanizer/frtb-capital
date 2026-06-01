@@ -20,7 +20,9 @@ from frtb_sbm.aggregation import (
     group_weighted_sensitivities_by_bucket,
 )
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
+    SbmPairwiseEvidenceMode,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
@@ -41,6 +43,8 @@ def calculate_equity_delta_risk_class_capital(
     sensitivities: tuple[SbmSensitivity, ...],
     *,
     profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited equity delta risk-class capital for a supported profile."""
 
@@ -53,6 +57,8 @@ def calculate_equity_delta_risk_class_capital(
         profile_id=profile_id,
         issuer_by_id={item.sensitivity_id: item.qualifier or "" for item in sensitivities},
         risk_factor_by_id={item.sensitivity_id: item.risk_factor for item in sensitivities},
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -62,6 +68,8 @@ def aggregate_equity_delta_measure_capital(
     profile_id: str,
     issuer_by_id: Mapping[str, str],
     risk_factor_by_id: Mapping[str, str],
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Aggregate weighted equity delta sensitivities through shared bucket primitives."""
 
@@ -98,6 +106,8 @@ def aggregate_equity_delta_measure_capital(
         inter_bucket_correlations,
         risk_class=SbmRiskClass.EQUITY,
         risk_measure=SbmRiskMeasure.DELTA,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 

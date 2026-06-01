@@ -32,10 +32,12 @@ from frtb_sbm.curvature import (
     weight_girr_curvature_sensitivities,
 )
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
     CurvatureInput,
     CurvatureResult,
     IntraBucketScenarioRecord,
+    PairwiseCorrelationSummary,
     RiskClassCapital,
     RiskClassScenarioDetail,
     SbmBranchMetadata,
@@ -44,6 +46,7 @@ from frtb_sbm.data_models import (
     SbmCalculationContext,
     SbmCapitalResult,
     SbmCitation,
+    SbmPairwiseEvidenceMode,
     SbmReconciliationMetadata,
     SbmRegulatoryProfile,
     SbmRiskClass,
@@ -108,6 +111,7 @@ from frtb_sbm.regimes import (
 from frtb_sbm.scaffold import PACKAGE_METADATA
 from frtb_sbm.validation import (
     SbmInputError,
+    coerce_pairwise_evidence_mode,
     coerce_risk_class,
     coerce_risk_measure,
     coerce_sign_convention,
@@ -134,6 +138,7 @@ from frtb_sbm.weighted_sensitivity import (
 
 __all__ = [
     "CURVATURE_CAPITAL_REQUIREMENT_ID",
+    "DEFAULT_PAIRWISE_EVIDENCE_LIMIT",
     "FX_DELTA_RISK_WEIGHT",
     "FX_INTER_BUCKET_CORRELATION",
     "PACKAGE_METADATA",
@@ -145,6 +150,7 @@ __all__ = [
     "IntraBucketScenarioRecord",
     "IntraBucketScenarioSpec",
     "PairwiseCorrelationEvidence",
+    "PairwiseCorrelationSummary",
     "RiskClassCapital",
     "RiskClassScenarioDetail",
     "SbmBranchMetadata",
@@ -160,6 +166,7 @@ __all__ = [
     "SbmGirrSpecialRiskFactorRule",
     "SbmGirrTenorDefinition",
     "SbmInputError",
+    "SbmPairwiseEvidenceMode",
     "SbmReconciliationMetadata",
     "SbmRegulatoryProfile",
     "SbmRiskClass",
@@ -187,6 +194,7 @@ __all__ = [
     "calculate_girr_curvature_risk_class_capital",
     "calculate_sbm_capital",
     "citations_for_profile",
+    "coerce_pairwise_evidence_mode",
     "coerce_risk_class",
     "coerce_risk_measure",
     "coerce_sign_convention",

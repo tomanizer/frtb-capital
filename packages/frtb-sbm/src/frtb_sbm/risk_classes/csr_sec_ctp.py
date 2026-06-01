@@ -21,7 +21,9 @@ from frtb_sbm.aggregation import (
 )
 from frtb_sbm.csr_sec_ctp_reference_data import csr_sec_ctp_delta_intra_bucket_correlation
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
+    SbmPairwiseEvidenceMode,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
@@ -38,6 +40,8 @@ def calculate_csr_sec_ctp_delta_risk_class_capital(
     sensitivities: tuple[SbmSensitivity, ...],
     *,
     profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited CSR securitisation CTP delta risk-class capital."""
 
@@ -51,6 +55,8 @@ def calculate_csr_sec_ctp_delta_risk_class_capital(
         name_by_id={item.sensitivity_id: item.qualifier or "" for item in sensitivities},
         tenor_by_id={item.sensitivity_id: item.tenor or "" for item in sensitivities},
         risk_factor_by_id={item.sensitivity_id: item.risk_factor for item in sensitivities},
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -61,6 +67,8 @@ def aggregate_csr_sec_ctp_delta_measure_capital(
     name_by_id: Mapping[str, str],
     tenor_by_id: Mapping[str, str],
     risk_factor_by_id: Mapping[str, str],
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Aggregate weighted CSR securitisation CTP delta sensitivities."""
 
@@ -95,6 +103,8 @@ def aggregate_csr_sec_ctp_delta_measure_capital(
         risk_measure=SbmRiskMeasure.DELTA,
         intra_bucket_citation_ids=_MAR21_CSR_CTP_INTRA_CITATION,
         inter_bucket_citation_ids=_MAR21_CSR_CTP_INTER_CITATION,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 

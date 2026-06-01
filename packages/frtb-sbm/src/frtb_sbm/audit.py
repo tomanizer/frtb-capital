@@ -13,6 +13,8 @@ import json
 
 from frtb_sbm.data_models import (
     BucketCapital,
+    IntraBucketScenarioRecord,
+    PairwiseCorrelationSummary,
     RiskClassCapital,
     RiskClassScenarioDetail,
     SbmBranchMetadata,
@@ -181,24 +183,46 @@ def _scenario_detail_payload(detail: RiskClassScenarioDetail) -> dict[str, objec
             for bucket_a, bucket_b, correlation in detail.inter_bucket_correlations
         ],
         "intra_buckets": [
-            {
-                "bucket_id": bucket.bucket_id,
-                "kb": bucket.kb,
-                "sb": bucket.sb,
-                "floor_applied": bucket.floor_applied,
-                "citation_ids": list(bucket.citation_ids),
-                "pairwise_correlations": [
-                    {
-                        "sensitivity_a": pair.sensitivity_a,
-                        "sensitivity_b": pair.sensitivity_b,
-                        "correlation": pair.correlation,
-                    }
-                    for pair in bucket.pairwise_correlations
-                ],
-            }
-            for bucket in detail.intra_buckets
+            _intra_bucket_scenario_payload(bucket) for bucket in detail.intra_buckets
         ],
         "citation_ids": list(detail.citation_ids),
+    }
+
+
+def _intra_bucket_scenario_payload(bucket: IntraBucketScenarioRecord) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "bucket_id": bucket.bucket_id,
+        "kb": bucket.kb,
+        "sb": bucket.sb,
+        "floor_applied": bucket.floor_applied,
+        "citation_ids": list(bucket.citation_ids),
+        "pairwise_correlations": [
+            {
+                "sensitivity_a": pair.sensitivity_a,
+                "sensitivity_b": pair.sensitivity_b,
+                "correlation": pair.correlation,
+            }
+            for pair in bucket.pairwise_correlations
+        ],
+    }
+    if bucket.pairwise_correlation_summary is not None:
+        payload["pairwise_correlation_summary"] = _pairwise_correlation_summary_payload(
+            bucket.pairwise_correlation_summary
+        )
+    return payload
+
+
+def _pairwise_correlation_summary_payload(
+    summary: PairwiseCorrelationSummary | None,
+) -> dict[str, object] | None:
+    if summary is None:
+        return None
+    return {
+        "evidence_mode": summary.evidence_mode.value,
+        "total_count": summary.total_count,
+        "materialized_count": summary.materialized_count,
+        "omitted_count": summary.omitted_count,
+        "factor_ids": list(summary.factor_ids),
     }
 
 

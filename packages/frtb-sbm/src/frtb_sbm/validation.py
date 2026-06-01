@@ -16,15 +16,23 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm.data_models import (
     SbmCalculationContext,
+    SbmPairwiseEvidenceMode,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
+    SbmRunControls,
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
 )
 
-EnumT = TypeVar("EnumT", SbmRiskClass, SbmRiskMeasure, SbmSignConvention)
+EnumT = TypeVar(
+    "EnumT",
+    SbmPairwiseEvidenceMode,
+    SbmRiskClass,
+    SbmRiskMeasure,
+    SbmSignConvention,
+)
 
 _STRICT_CITATION_POLICY = "strict"
 
@@ -131,6 +139,14 @@ def coerce_sign_convention(value: SbmSignConvention | str) -> SbmSignConvention:
     return _coerce_enum(value, SbmSignConvention, "sign_convention")
 
 
+def coerce_pairwise_evidence_mode(
+    value: SbmPairwiseEvidenceMode | str,
+) -> SbmPairwiseEvidenceMode:
+    """Normalise a pairwise evidence mode to the canonical enum."""
+
+    return _coerce_enum(value, SbmPairwiseEvidenceMode, "pairwise_evidence_mode")
+
+
 def sensitivity_sort_key(sensitivity: SbmSensitivity) -> tuple[str, str, str, str, str]:
     """Return a deterministic ordering key for one sensitivity."""
 
@@ -160,6 +176,7 @@ def validate_sbm_calculation_context(context: SbmCalculationContext) -> SbmCalcu
     normalise_currency_code(context.reporting_currency, field="reporting_currency")
     _validate_citation_policy(context.citation_policy)
     ensure_sbm_profile_known(context.profile_id)
+    _validate_run_controls(context.run_controls)
     if context.desk_id is not None and context.desk_id != context.desk_id.strip():
         raise SbmInputError(
             "desk_id must not contain leading or trailing whitespace",
@@ -171,6 +188,23 @@ def validate_sbm_calculation_context(context: SbmCalculationContext) -> SbmCalcu
             field="legal_entity",
         )
     return context
+
+
+def _validate_run_controls(controls: SbmRunControls | None) -> None:
+    if controls is None:
+        return
+    if not isinstance(controls, SbmRunControls):
+        raise SbmInputError("run_controls must be SbmRunControls", field="run_controls")
+    coerce_pairwise_evidence_mode(controls.pairwise_evidence_mode)
+    if (
+        isinstance(controls.pairwise_evidence_limit, bool)
+        or not isinstance(controls.pairwise_evidence_limit, int)
+        or controls.pairwise_evidence_limit < 0
+    ):
+        raise SbmInputError(
+            "pairwise_evidence_limit must be a non-negative integer",
+            field="pairwise_evidence_limit",
+        )
 
 
 def validate_sbm_sensitivities(sensitivities: object) -> tuple[SbmSensitivity, ...]:

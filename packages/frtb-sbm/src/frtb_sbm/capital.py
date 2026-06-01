@@ -28,14 +28,17 @@ from frtb_sbm.audit import (
     validate_sbm_result_reconciliation,
 )
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
     SbmBranchMetadata,
     SbmCalculationContext,
     SbmCapitalResult,
+    SbmPairwiseEvidenceMode,
     SbmReconciliationMetadata,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmRunContextSummary,
+    SbmRunControls,
     SbmSensitivity,
     WeightedSensitivity,
 )
@@ -112,6 +115,7 @@ def calculate_sbm_capital(
     rule_profile = get_sbm_rule_profile(context.profile_id)
     ensure_sbm_run_supported(context, validated)
     ensure_sbm_capital_paths_supported(context.profile_id, validated)
+    run_controls = context.run_controls or SbmRunControls()
 
     risk_class_results: list[RiskClassCapital] = []
     for risk_class, risk_measure in _ordered_supported_paths(
@@ -129,6 +133,8 @@ def calculate_sbm_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
                     reporting_currency=context.reporting_currency,
+                    pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+                    pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
                 )
             )
         elif risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.VEGA:
@@ -136,6 +142,8 @@ def calculate_sbm_capital(
                 _calculate_girr_vega_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
+                    pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+                    pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
                 )
             )
         elif risk_class is SbmRiskClass.FX and risk_measure is SbmRiskMeasure.DELTA:
@@ -144,6 +152,8 @@ def calculate_sbm_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
                     reporting_currency=context.reporting_currency,
+                    pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+                    pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
                 )
             )
         elif risk_class is SbmRiskClass.EQUITY and risk_measure is SbmRiskMeasure.DELTA:
@@ -151,6 +161,8 @@ def calculate_sbm_capital(
                 calculate_equity_delta_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
+                    pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+                    pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
                 )
             )
         elif risk_class is SbmRiskClass.COMMODITY and risk_measure is SbmRiskMeasure.DELTA:
@@ -158,6 +170,8 @@ def calculate_sbm_capital(
                 calculate_commodity_delta_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
+                    pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+                    pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
                 )
             )
         elif risk_class is SbmRiskClass.CSR_NONSEC and risk_measure is SbmRiskMeasure.DELTA:
@@ -165,6 +179,8 @@ def calculate_sbm_capital(
                 calculate_csr_nonsec_delta_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
+                    pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+                    pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
                 )
             )
         elif risk_class is SbmRiskClass.CSR_SEC_NONCTP and risk_measure is SbmRiskMeasure.DELTA:
@@ -172,6 +188,8 @@ def calculate_sbm_capital(
                 calculate_csr_sec_nonctp_delta_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
+                    pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+                    pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
                 )
             )
         elif risk_class is SbmRiskClass.CSR_SEC_CTP and risk_measure is SbmRiskMeasure.DELTA:
@@ -179,6 +197,8 @@ def calculate_sbm_capital(
                 calculate_csr_sec_ctp_delta_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
+                    pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+                    pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
                 )
             )
         else:
@@ -230,6 +250,8 @@ def _calculate_girr_delta_risk_class_capital(
     *,
     profile_id: str,
     reporting_currency: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     weighted = weight_girr_delta_sensitivities(
         sensitivities,
@@ -243,6 +265,8 @@ def _calculate_girr_delta_risk_class_capital(
         risk_measure=SbmRiskMeasure.DELTA,
         tenor_by_id=factor_grid.tenor_by_id,
         risk_factor_by_id=factor_grid.risk_factor_by_id,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -250,6 +274,8 @@ def _calculate_girr_vega_risk_class_capital(
     sensitivities: tuple[SbmSensitivity, ...],
     *,
     profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     weighted = weight_girr_vega_sensitivities(
         sensitivities,
@@ -263,6 +289,8 @@ def _calculate_girr_vega_risk_class_capital(
         risk_measure=SbmRiskMeasure.VEGA,
         tenor_by_id=tenor_by_id,
         option_tenor_by_id=option_tenor_by_id,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -274,6 +302,8 @@ def _aggregate_girr_measure_capital(
     tenor_by_id: Mapping[str, str],
     risk_factor_by_id: Mapping[str, str] | None = None,
     option_tenor_by_id: Mapping[str, str] | None = None,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     grouped = group_weighted_sensitivities_by_bucket(weighted)
 
@@ -324,6 +354,8 @@ def _aggregate_girr_measure_capital(
             if risk_measure is SbmRiskMeasure.DELTA
             else _GIRR_VEGA_INTER_CITATIONS
         ),
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
