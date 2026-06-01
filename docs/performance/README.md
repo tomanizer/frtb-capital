@@ -25,3 +25,22 @@ report as an artifact; it is not a pull-request gate.
 `frtb-ima-target-scale-baseline.json` is a point-in-time baseline. It is not an
 SLA. Use it to spot order-of-magnitude regressions and refresh it when hardware,
 Python, NumPy, or benchmark dimensions change.
+
+## FRTB-SBM Batch and Arrow Handoffs
+
+Run the SBM handoff benchmark from the workspace root:
+
+```bash
+uv run python benchmarks/sbm_adapter_harness.py
+```
+
+The benchmark compares row-compatibility paths with migrated Arrow/batch paths
+for GIRR vega, FX delta, equity delta, commodity delta, CSR non-sec delta, CSR
+sec non-CTP delta, CSR sec CTP delta, and GIRR curvature validation. It records
+whether accepted-row `SbmSensitivity` dataclasses were materialized, splits
+handoff/batch/calculation timings, checks row/batch capital reconciliation for
+capital-producing paths, and keeps pairwise evidence in summary mode.
+
+`frtb-sbm-batch-arrow-report.md` contains the human-readable report.
+`frtb-sbm-batch-arrow-baseline.json` is the checked-in baseline for
+order-of-magnitude regression review.

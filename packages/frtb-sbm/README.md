@@ -28,6 +28,7 @@ Outputs from this prototype package are not final regulatory capital.
 | [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md) | Code-to-regulation map and phase-1 support status |
 | [REGULATORY_ASSUMPTIONS.md](docs/REGULATORY_ASSUMPTIONS.md) | Source-cited implementation boundaries |
 | [regulatory_sources.yml](docs/regulatory_sources.yml) | Link-only regulatory source manifest |
+| [SBM batch/Arrow performance report](../../docs/performance/frtb-sbm-batch-arrow-report.md) | High-volume handoff benchmark evidence and remaining performance boundaries |
 | [Module planning pack](../../docs/modules/frtb-sbm/README.md) | PRD, architecture, requirements registry |
 | [Requirements registry](../../docs/modules/frtb-sbm/requirements/BASEL_FRTB_SBM.yml) | Requirement ids and implementation status |
 
@@ -72,6 +73,11 @@ and CSR delta have public capital-from-Arrow handoffs. GIRR curvature has a
 validation-only Arrow handoff that keeps `up_shock_amount` and
 `down_shock_amount` as separate arrays and leaves capital fail-closed until the
 cited curvature aggregation issue is implemented.
+
+The migrated Arrow handoff paths avoid accepted-row `SbmSensitivity` dataclass
+materialization. The row API remains available for compatibility and tests, but
+high-volume callers should hand off Arrow tables to the public normalizers and
+capital-from-handoff helpers.
 
 CRIF-shaped GIRR delta inputs can first use the package-owned CRIF mapping,
 which delegates package-neutral column discovery and rejected-row partitioning
