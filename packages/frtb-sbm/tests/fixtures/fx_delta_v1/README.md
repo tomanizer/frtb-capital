@@ -8,5 +8,5 @@ Synthetic Basel MAR21 FX delta replay bundle exercising:
 - MAR21.89 60% inter-bucket correlation across EUR, GBP, and MYR buckets;
 - low, medium, and high correlation scenario selection.
 
-Negative cases cover duplicate sensitivity ids, unsupported FX vega/curvature,
-invalid bucket currency codes, and bucket/risk_factor mismatches.
+Negative cases cover duplicate sensitivity ids, unsupported FX vega, invalid
+bucket currency codes, and bucket/risk_factor mismatches.

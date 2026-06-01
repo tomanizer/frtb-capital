@@ -488,8 +488,8 @@ def build_girr_curvature_batch_from_handoff(
     """
     Build an SBM-owned GIRR curvature validation batch from a normalized handoff.
 
-    This preserves separate up/down shock arrays and does not calculate or
-    enable curvature capital.
+    This preserves separate up/down shock arrays. Public curvature capital is
+    available through the row API; this path does not calculate batch capital.
     """
 
     if not isinstance(handoff, NormalizedTabularHandoff):

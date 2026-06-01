@@ -31,6 +31,7 @@ from frtb_sbm.csr_nonsec_reference_data import (
 from frtb_sbm.data_models import (
     SbmCitation,
     SbmRegulatoryProfile,
+    SbmRiskClass,
     SbmScenarioLabel,
 )
 from frtb_sbm.equity_reference_data import (
@@ -183,6 +184,45 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         url=BASEL_MAR21_URL,
         note="Select maximum scenario capital for GIRR delta.",
     ),
+    "basel_mar21_96": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.96",
+        url=BASEL_MAR21_URL,
+        note="Curvature buckets, risk weights, and correlation parameters scope.",
+    ),
+    "basel_mar21_97": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.97",
+        url=BASEL_MAR21_URL,
+        note="Delta buckets are replicated for curvature unless otherwise specified.",
+    ),
+    "basel_mar21_98": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.98",
+        url=BASEL_MAR21_URL,
+        note="FX and equity curvature shock sizes equal the respective delta risk weights.",
+    ),
+    "basel_mar21_99": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.99",
+        url=BASEL_MAR21_URL,
+        note=(
+            "GIRR, CSR, and commodity curvature shock sizes are parallel shifts based "
+            "on the highest prescribed delta risk weight for the relevant bucket."
+        ),
+    ),
+    "basel_mar21_100": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.100",
+        url=BASEL_MAR21_URL,
+        note="Curvature intra-bucket correlations square the corresponding delta parameters.",
+    ),
+    "basel_mar21_101": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.101",
+        url=BASEL_MAR21_URL,
+        note="Curvature inter-bucket correlations square the corresponding delta parameters.",
+    ),
     "basel_mar21_41": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.41",
@@ -321,6 +361,18 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         url=BASEL_MAR21_URL,
         note="CSR non-securitisation delta risk factors (bond and CDS credit spreads).",
     ),
+    "basel_mar21_10": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.10",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation non-CTP tranche credit-spread risk factors.",
+    ),
+    "basel_mar21_11": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.11",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation CTP underlying-name credit-spread risk factors.",
+    ),
     "basel_mar21_51": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.51",
@@ -356,6 +408,60 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         location="MAR21.57",
         url=BASEL_MAR21_URL,
         note="CSR non-securitisation delta inter-bucket gamma (Table 5).",
+    ),
+    "basel_mar21_58": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.58",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation CTP bucket assignment and intra-bucket correlation rule.",
+    ),
+    "basel_mar21_59": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.59",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation CTP delta risk weights.",
+    ),
+    "basel_mar21_60": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.60",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation CTP other-bucket treatment.",
+    ),
+    "basel_mar21_61": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.61",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation non-CTP bucket assignment.",
+    ),
+    "basel_mar21_65": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.65",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation non-CTP delta risk weights.",
+    ),
+    "basel_mar21_66": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.66",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation non-CTP other-sector risk weight.",
+    ),
+    "basel_mar21_67": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.67",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation non-CTP intra-bucket correlation rule.",
+    ),
+    "basel_mar21_68": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.68",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation non-CTP other-sector aggregation rule.",
+    ),
+    "basel_mar21_70": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.70",
+        url=BASEL_MAR21_URL,
+        note="CSR securitisation non-CTP inter-bucket gamma.",
     ),
 }
 
@@ -530,11 +636,82 @@ def curvature_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ..
     """Return ordered citation ids for curvature contract validation."""
 
     citations = citations_for_profile(profile)
-    if "basel_mar21_curvature" not in citations:
+    required = (
+        "basel_mar21_curvature",
+        "basel_mar21_96",
+        "basel_mar21_97",
+        "basel_mar21_98",
+        "basel_mar21_99",
+        "basel_mar21_100",
+        "basel_mar21_101",
+    )
+    missing = [citation_id for citation_id in required if citation_id not in citations]
+    if missing:
         raise UnsupportedRegulatoryFeatureError(
             f"curvature citations are unavailable for profile={profile!r}"
         )
-    return ("basel_mar21_curvature",)
+    return required
+
+
+def curvature_risk_weight(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    risk_class: SbmRiskClass | str,
+    bucket_id: str = "",
+    risk_factor: str = "",
+    currency: str = "",
+    reporting_currency: str = "",
+) -> tuple[float, tuple[str, ...]]:
+    """Return the cited MAR21.98/MAR21.99 curvature shock size for one factor."""
+
+    resolved_class = _coerce_risk_class(risk_class)
+    if resolved_class is SbmRiskClass.GIRR:
+        _ensure_girr_delta_supported(profile)
+        rule = max(
+            PROFILE_GIRR_DELTA_RISK_WEIGHTS[_resolve_supported_profile(profile)],
+            key=lambda item: item.risk_weight,
+        )
+        return rule.risk_weight, ("basel_mar21_99", rule.citation_id)
+    if resolved_class is SbmRiskClass.FX:
+        weight, citations = fx_delta_risk_weight(
+            profile,
+            currency=currency or risk_factor or bucket_id,
+            reporting_currency=reporting_currency,
+        )
+        return weight, _merge_citation_ids(("basel_mar21_98",), citations)
+    if resolved_class is SbmRiskClass.EQUITY:
+        from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
+
+        factor = risk_factor or EQUITY_SPOT_RISK_FACTOR
+        if factor.strip().upper() != EQUITY_SPOT_RISK_FACTOR:
+            raise UnsupportedRegulatoryFeatureError(
+                "equity curvature has no capital requirement for equity repo rates (MAR21.12(3))"
+            )
+        weight, citations = equity_delta_risk_weight(
+            profile,
+            bucket_id=bucket_id,
+            risk_factor=EQUITY_SPOT_RISK_FACTOR,
+        )
+        return weight, _merge_citation_ids(("basel_mar21_98",), citations)
+    if resolved_class is SbmRiskClass.COMMODITY:
+        weight, citations = commodity_delta_risk_weight(profile, bucket_id=bucket_id)
+        return weight, _merge_citation_ids(("basel_mar21_99",), citations)
+    if resolved_class is SbmRiskClass.CSR_NONSEC:
+        weight, citations = csr_nonsec_delta_risk_weight(profile, bucket_id=bucket_id)
+        return weight, _merge_citation_ids(("basel_mar21_99",), citations)
+    if resolved_class is SbmRiskClass.CSR_SEC_CTP:
+        from frtb_sbm.csr_sec_ctp_reference_data import csr_sec_ctp_delta_risk_weight
+
+        weight, citations = csr_sec_ctp_delta_risk_weight(profile, bucket_id=bucket_id)
+        return weight, _merge_citation_ids(("basel_mar21_99",), citations)
+    if resolved_class is SbmRiskClass.CSR_SEC_NONCTP:
+        from frtb_sbm.csr_sec_nonctp_reference_data import csr_sec_nonctp_delta_risk_weight
+
+        weight, citations = csr_sec_nonctp_delta_risk_weight(profile, bucket_id=bucket_id)
+        return weight, _merge_citation_ids(("basel_mar21_99",), citations)
+    raise UnsupportedRegulatoryFeatureError(
+        f"curvature risk weights are unsupported for risk_class={resolved_class.value}"
+    )
 
 
 def girr_buckets_for_profile(
@@ -1054,6 +1231,16 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
         "fx_specified_currencies": sorted(
             fx_specified_currencies_for_profile(resolved),
         ),
+        "curvature_parameters": {
+            "citation_ids": list(curvature_citation_ids(resolved)),
+            "girr_parallel_shift_risk_weight": max(
+                rule.risk_weight for rule in PROFILE_GIRR_DELTA_RISK_WEIGHTS[resolved]
+            ),
+            "fx_equity_rule_citation_id": "basel_mar21_98",
+            "parallel_shift_rule_citation_id": "basel_mar21_99",
+            "intra_bucket_correlation_citation_id": "basel_mar21_100",
+            "inter_bucket_correlation_citation_id": "basel_mar21_101",
+        },
     }
     from frtb_sbm.commodity_reference_data import commodity_reference_payload
     from frtb_sbm.csr_nonsec_reference_data import csr_nonsec_reference_payload
@@ -1119,6 +1306,30 @@ def _resolve_supported_profile(profile: SbmRegulatoryProfile | str) -> SbmRegula
             f"SBM profile {resolved.value} is unsupported until mapped and fixture-tested."
         )
     return resolved
+
+
+def _coerce_risk_class(value: SbmRiskClass | str) -> SbmRiskClass:
+    if isinstance(value, SbmRiskClass):
+        return value
+    try:
+        return SbmRiskClass(value)
+    except ValueError as exc:
+        allowed = ", ".join(item.value for item in SbmRiskClass)
+        raise SbmInputError(
+            f"risk_class must be one of: {allowed}",
+            field="risk_class",
+        ) from exc
+
+
+def _merge_citation_ids(*groups: tuple[str, ...]) -> tuple[str, ...]:
+    merged: list[str] = []
+    seen: set[str] = set()
+    for group in groups:
+        for citation_id in group:
+            if citation_id not in seen:
+                merged.append(citation_id)
+                seen.add(citation_id)
+    return tuple(merged)
 
 
 def _apply_sqrt2_adjustment(*, tenor: str, currency: str, reporting_currency: str) -> bool:
@@ -1214,6 +1425,7 @@ __all__ = [
     "csr_nonsec_inter_bucket_correlation",
     "csr_nonsec_validate_delta_inputs",
     "curvature_citation_ids",
+    "curvature_risk_weight",
     "equity_bucket_definition",
     "equity_buckets_for_profile",
     "equity_delta_intra_bucket_correlation",

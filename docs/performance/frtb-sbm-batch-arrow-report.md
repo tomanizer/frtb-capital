@@ -62,8 +62,8 @@ The capital-producing Arrow/batch paths reconcile against the row path within
 the harness before a report is emitted. This covers GIRR vega, FX delta, equity
 delta, commodity delta, CSR non-sec delta, CSR sec non-CTP delta, and CSR sec
 CTP delta. GIRR curvature is validation-only: the harness verifies row and
-batch branch selection, but public curvature capital remains fail-closed until
-the cited curvature aggregation path is implemented.
+batch branch selection. Public curvature capital is now available through the
+row API; high-volume curvature capital handoffs remain future work.
 
 Pairwise evidence is summarized, not materialized, in the benchmark controls.
 The baseline therefore exercises portfolios with more than 100,000 pairwise
@@ -84,6 +84,7 @@ handoffs are GIRR delta, GIRR vega, FX delta, equity delta, commodity delta, CSR
 non-sec delta, CSR sec non-CTP delta, and CSR sec CTP delta. The supported
 validation-only handoff is GIRR curvature.
 
-Unsupported paths remain explicit boundaries: curvature capital, FX/equity/
-commodity/CSR vega, non-GIRR curvature, unsupported regulatory profiles, and
-broader CRIF coverage outside the implemented GIRR delta CRIF mapping.
+Unsupported paths remain explicit boundaries: FX/equity/commodity/CSR vega,
+unsupported curvature sub-features, unsupported regulatory profiles, high-volume
+curvature capital handoffs, and broader CRIF coverage outside the implemented
+GIRR delta CRIF mapping.

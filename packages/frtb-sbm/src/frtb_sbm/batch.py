@@ -268,7 +268,8 @@ def build_girr_curvature_batch_from_sensitivities(
     Build a GIRR curvature batch from existing row-wise canonical sensitivities.
 
     This validates and preserves the separate up/down shock arrays used by the
-    curvature contract. It does not enable public curvature capital.
+    curvature contract. Public curvature capital is available through the row
+    API; this compatibility builder does not provide a batch capital entrypoint.
     """
 
     return build_sbm_batch_from_sensitivities(

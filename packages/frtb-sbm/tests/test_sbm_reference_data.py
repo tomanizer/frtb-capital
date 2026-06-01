@@ -24,6 +24,7 @@ from frtb_sbm.reference_data import (
     commodity_inter_bucket_correlation,
     correlation_scenario_definition,
     correlation_scenarios_for_profile,
+    curvature_risk_weight,
     equity_bucket_definition,
     equity_buckets_for_profile,
     equity_delta_intra_bucket_correlation,
@@ -485,7 +486,6 @@ def test_missing_lookup_keys_raise_input_errors() -> None:
     ("risk_class", "risk_measure"),
     [
         (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
-        (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
     ],
@@ -505,6 +505,24 @@ def test_unsupported_risk_class_measure_paths_fail_closed(
             risk_class,
             risk_measure,
         )
+
+
+def test_curvature_reference_weights_include_paragraph_citations() -> None:
+    girr_weight, girr_citations = curvature_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        risk_class=SbmRiskClass.GIRR,
+    )
+    equity_weight, equity_citations = curvature_risk_weight(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        risk_class=SbmRiskClass.EQUITY,
+        bucket_id="1",
+        risk_factor="SPOT",
+    )
+
+    assert girr_weight == pytest.approx(0.017)
+    assert "basel_mar21_99" in girr_citations
+    assert equity_weight == pytest.approx(0.55)
+    assert "basel_mar21_98" in equity_citations
 
 
 @pytest.mark.parametrize(

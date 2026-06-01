@@ -286,34 +286,26 @@ def test_calculate_sbm_capital_returns_equity_delta_result() -> None:
     assert result.risk_classes[0].risk_class is SbmRiskClass.EQUITY
 
 
-def test_equity_vega_and_curvature_fail_closed() -> None:
-    for measure in (SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE):
-        sensitivity = SbmSensitivity(
-            sensitivity_id=f"eq-{measure.value.lower()}",
-            source_row_id="row-001",
-            desk_id="eq-desk",
-            legal_entity="LE-001",
-            risk_class=SbmRiskClass.EQUITY,
-            risk_measure=measure,
-            bucket="5",
-            risk_factor=EQUITY_SPOT_RISK_FACTOR,
-            qualifier="ISS-A",
-            amount=1_000_000.0,
-            amount_currency="USD",
-            sign_convention=SbmSignConvention.LONG,
-            lineage=sample_lineage("row-001"),
-            option_tenor="1y" if measure is SbmRiskMeasure.VEGA else None,
-            tenor="1y" if measure is SbmRiskMeasure.VEGA else None,
-            up_shock_amount=100.0 if measure is SbmRiskMeasure.CURVATURE else None,
-            down_shock_amount=-100.0 if measure is SbmRiskMeasure.CURVATURE else None,
-        )
-        error_match = (
-            "curvature capital is unsupported"
-            if measure is SbmRiskMeasure.CURVATURE
-            else "phase-1 capital"
-        )
-        with pytest.raises(UnsupportedRegulatoryFeatureError, match=error_match):
-            calculate_sbm_capital((sensitivity,), context=sample_context())
+def test_equity_vega_fails_closed() -> None:
+    sensitivity = SbmSensitivity(
+        sensitivity_id="eq-vega",
+        source_row_id="row-001",
+        desk_id="eq-desk",
+        legal_entity="LE-001",
+        risk_class=SbmRiskClass.EQUITY,
+        risk_measure=SbmRiskMeasure.VEGA,
+        bucket="5",
+        risk_factor=EQUITY_SPOT_RISK_FACTOR,
+        qualifier="ISS-A",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        sign_convention=SbmSignConvention.LONG,
+        lineage=sample_lineage("row-001"),
+        option_tenor="1y",
+        tenor="1y",
+    )
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital"):
+        calculate_sbm_capital((sensitivity,), context=sample_context())
 
 
 def test_equity_delta_v1_fixture_matches_expected_outputs() -> None:
