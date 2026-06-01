@@ -38,8 +38,8 @@ requirements:
     source: Basel MAR21 risk-weight provisions; U.S. NPR 2.0 section V.A.7.a step three
     status: implemented
     modules: [src/frtb_sbm/weighted_sensitivity.py]
-    tests: [tests/test_sbm_weighted_sensitivity.py, tests/test_sbm_girr_vega.py, tests/risk_classes/test_sbm_fx.py]
-    notes: GIRR delta/vega and FX delta cited weighting for BASEL_MAR21.
+    tests: [tests/test_sbm_weighted_sensitivity.py, tests/test_sbm_girr_vega.py, tests/test_sbm_non_girr_vega.py, tests/risk_classes/test_sbm_fx.py]
+    notes: GIRR delta/vega, non-GIRR vega, and supported delta cited weighting for BASEL_MAR21.
   - id: SBM-AGG-001
     title: Intra-bucket aggregation
     source: Basel MAR21 aggregation formulas; U.S. NPR 2.0 section V.A.7.a step four

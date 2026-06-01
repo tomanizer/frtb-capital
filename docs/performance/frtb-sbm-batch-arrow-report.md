@@ -84,7 +84,8 @@ handoffs are GIRR delta, GIRR vega, FX delta, equity delta, commodity delta, CSR
 non-sec delta, CSR sec non-CTP delta, and CSR sec CTP delta. The supported
 validation-only handoff is GIRR curvature.
 
-Unsupported paths remain explicit boundaries: FX/equity/commodity/CSR vega,
-unsupported curvature sub-features, unsupported regulatory profiles, high-volume
-curvature capital handoffs, and broader CRIF coverage outside the implemented
-GIRR delta CRIF mapping.
+Unsupported or unmigrated paths remain explicit boundaries: high-volume
+FX/equity/commodity/CSR vega capital handoffs, unsupported curvature
+sub-features, unsupported regulatory profiles, high-volume curvature capital
+handoffs, and broader CRIF coverage outside the implemented GIRR delta CRIF
+mapping. Non-GIRR vega capital is supported through the row-wise public API.

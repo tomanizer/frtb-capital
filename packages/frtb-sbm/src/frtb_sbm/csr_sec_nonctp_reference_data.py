@@ -183,6 +183,22 @@ def csr_sec_nonctp_validate_delta_inputs(
         raise SbmInputError("qualifier must not be empty", field="qualifier")
 
 
+def csr_sec_nonctp_validate_vega_inputs(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    bucket_id: str,
+    risk_factor: str,
+    qualifier: str,
+) -> None:
+    """Validate CSR securitisation non-CTP vega lookup inputs."""
+
+    _ensure_csr_sec_nonctp_delta_supported(profile)
+    csr_sec_nonctp_bucket_definition(profile, bucket_id)
+    _normalise_csr_sec_risk_factor(risk_factor)
+    if not _require_text(qualifier, "qualifier"):
+        raise SbmInputError("qualifier must not be empty", field="qualifier")
+
+
 def csr_sec_nonctp_delta_risk_weight(
     profile: SbmRegulatoryProfile | str,
     *,
@@ -327,4 +343,5 @@ __all__ = [
     "csr_sec_nonctp_prescribed_tenors",
     "csr_sec_nonctp_reference_payload",
     "csr_sec_nonctp_validate_delta_inputs",
+    "csr_sec_nonctp_validate_vega_inputs",
 ]

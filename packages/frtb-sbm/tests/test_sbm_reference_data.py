@@ -45,6 +45,8 @@ from frtb_sbm.reference_data import (
     girr_vega_intra_bucket_correlation,
     girr_vega_liquidity_horizon_days,
     girr_vega_option_tenors,
+    vega_liquidity_horizon_days,
+    vega_option_tenor_correlation,
     vega_risk_weight,
 )
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
@@ -255,6 +257,27 @@ def test_girr_vega_intra_bucket_correlation() -> None:
     rho_opt = 1.0
     rho_ul = math.exp(-0.01 * abs(1.0 - 5.0) / 1.0)
     assert correlation == pytest.approx(min(1.0, rho_opt * rho_ul))
+    assert citation_ids == ("basel_mar21_93",)
+
+
+def test_non_girr_vega_liquidity_horizons_use_mar21_table_13() -> None:
+    profile = SbmRegulatoryProfile.BASEL_MAR21
+
+    assert vega_liquidity_horizon_days(profile, risk_class=SbmRiskClass.FX) == 40
+    assert vega_liquidity_horizon_days(profile, risk_class=SbmRiskClass.COMMODITY) == 120
+    assert vega_liquidity_horizon_days(profile, risk_class=SbmRiskClass.CSR_NONSEC) == 120
+    assert vega_liquidity_horizon_days(profile, risk_class=SbmRiskClass.EQUITY, bucket_id="5") == 20
+    assert vega_liquidity_horizon_days(profile, risk_class=SbmRiskClass.EQUITY, bucket_id="9") == 60
+
+
+def test_vega_option_tenor_correlation_matches_mar21_exponential_term() -> None:
+    correlation, citation_ids = vega_option_tenor_correlation(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        option_tenor1="1y",
+        option_tenor2="5y",
+    )
+
+    assert correlation == pytest.approx(math.exp(-0.01 * abs(1.0 - 5.0) / 1.0))
     assert citation_ids == ("basel_mar21_93",)
 
 
@@ -483,28 +506,22 @@ def test_missing_lookup_keys_raise_input_errors() -> None:
 
 
 @pytest.mark.parametrize(
-    ("risk_class", "risk_measure"),
+    "risk_class",
     [
-        (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
-        (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
-        (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
+        SbmRiskClass.FX,
+        SbmRiskClass.EQUITY,
+        SbmRiskClass.COMMODITY,
+        SbmRiskClass.CSR_NONSEC,
+        SbmRiskClass.CSR_SEC_NONCTP,
+        SbmRiskClass.CSR_SEC_CTP,
     ],
 )
-def test_unsupported_risk_class_measure_paths_fail_closed(
-    risk_class: SbmRiskClass,
-    risk_measure: SbmRiskMeasure,
-) -> None:
-    error_match = (
-        "curvature capital is unsupported"
-        if risk_measure is SbmRiskMeasure.CURVATURE
-        else "phase-1 capital"
+def test_non_girr_vega_paths_are_supported(risk_class: SbmRiskClass) -> None:
+    ensure_profile_supports_risk_class_measure(
+        SbmRegulatoryProfile.BASEL_MAR21,
+        risk_class,
+        SbmRiskMeasure.VEGA,
     )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=error_match):
-        ensure_profile_supports_risk_class_measure(
-            SbmRegulatoryProfile.BASEL_MAR21,
-            risk_class,
-            risk_measure,
-        )
 
 
 def test_curvature_reference_weights_include_paragraph_citations() -> None:

@@ -156,6 +156,8 @@ from frtb_sbm.reference_data import (
     girr_vega_option_tenors,
     normalise_fx_delta_currency_code,
     profile_reference_payload,
+    vega_liquidity_horizon_days,
+    vega_option_tenor_correlation,
     vega_risk_weight,
 )
 from frtb_sbm.regimes import (
@@ -165,6 +167,13 @@ from frtb_sbm.regimes import (
     profile_supports_risk_class_measure,
     resolve_sbm_profile,
     supported_risk_class_measures,
+)
+from frtb_sbm.risk_classes.vega import (
+    aggregate_non_girr_vega_measure_capital,
+    build_non_girr_vega_inter_bucket_correlation_map,
+    build_non_girr_vega_intra_bucket_correlation_matrix,
+    calculate_non_girr_vega_risk_class_capital,
+    non_girr_vega_intra_bucket_correlation,
 )
 from frtb_sbm.scaffold import PACKAGE_METADATA
 from frtb_sbm.validation import (
@@ -203,6 +212,7 @@ from frtb_sbm.weighted_sensitivity import (
     weight_girr_delta_sensitivities,
     weight_girr_vega_sensitivities,
     weight_girr_vega_sensitivity_batch,
+    weight_non_girr_vega_sensitivities,
     weighted_sensitivity_sort_key,
 )
 
@@ -260,6 +270,7 @@ __all__ = [
     "adjust_correlation_matrix_for_scenario",
     "aggregate_inter_bucket",
     "aggregate_intra_bucket",
+    "aggregate_non_girr_vega_measure_capital",
     "aggregate_risk_class_with_scenarios",
     "apply_correlation_scenario",
     "apply_correlation_scenario_definition",
@@ -281,10 +292,13 @@ __all__ = [
     "build_girr_delta_batch_from_sensitivities",
     "build_girr_vega_batch_from_columns",
     "build_girr_vega_batch_from_sensitivities",
+    "build_non_girr_vega_inter_bucket_correlation_map",
+    "build_non_girr_vega_intra_bucket_correlation_matrix",
     "build_sbm_batch_from_columns",
     "build_sbm_batch_from_sensitivities",
     "calculate_curvature_risk_class_capital",
     "calculate_girr_curvature_risk_class_capital",
+    "calculate_non_girr_vega_risk_class_capital",
     "calculate_sbm_capital",
     "calculate_sbm_capital_from_commodity_delta_batch",
     "calculate_sbm_capital_from_csr_nonsec_delta_batch",
@@ -343,6 +357,7 @@ __all__ = [
     "input_hash_for_girr_vega_batch",
     "input_hash_for_sbm_batch",
     "input_hash_for_sensitivities",
+    "non_girr_vega_intra_bucket_correlation",
     "normalise_currency_code",
     "normalise_fx_delta_currency_code",
     "normalise_sensitivity_amount",
@@ -374,6 +389,8 @@ __all__ = [
     "validate_sbm_calculation_context",
     "validate_sbm_result_reconciliation",
     "validate_sbm_sensitivities",
+    "vega_liquidity_horizon_days",
+    "vega_option_tenor_correlation",
     "vega_risk_weight",
     "weight_commodity_delta_sensitivities",
     "weight_commodity_delta_sensitivity_batch",
@@ -391,5 +408,6 @@ __all__ = [
     "weight_girr_delta_sensitivities",
     "weight_girr_vega_sensitivities",
     "weight_girr_vega_sensitivity_batch",
+    "weight_non_girr_vega_sensitivities",
     "weighted_sensitivity_sort_key",
 ]

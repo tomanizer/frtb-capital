@@ -39,13 +39,13 @@ def test_get_sbm_rule_profile_returns_supported_basel_profile() -> None:
         }
     )
     assert profile.supported_measures[SbmRiskClass.CSR_NONSEC] == frozenset(
-        {SbmRiskMeasure.DELTA, SbmRiskMeasure.CURVATURE}
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
     )
     assert profile.supported_measures[SbmRiskClass.GIRR] == frozenset(
         {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
     )
     assert profile.supported_measures[SbmRiskClass.FX] == frozenset(
-        {SbmRiskMeasure.DELTA, SbmRiskMeasure.CURVATURE}
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
     )
     assert "basel_mar21_39" in profile.citations
     assert "basel_mar21_87" in profile.citations
@@ -88,11 +88,17 @@ def test_unknown_profile_fails_as_input_error() -> None:
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, True),
         (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, True),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.FX, SbmRiskMeasure.VEGA, True),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA, True),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA, True),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA, True),
         (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA, True),
         (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA, True),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA, True),
         (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE, True),
         (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE, True),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE, True),
@@ -143,16 +149,22 @@ def test_supported_risk_class_measures_lists_delta_vega_and_curvature_paths() ->
             (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
             (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
             (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
             (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA),
             (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA),
             (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE),
             (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA),
             (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE),
         }
     )

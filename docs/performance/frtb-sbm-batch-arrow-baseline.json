@@ -398,7 +398,7 @@
   "remaining_boundaries": {
     "curvature_capital": "unsupported and fail-closed until #166",
     "parent_issue": "#270",
-    "unmigrated_sbm_measures": "FX/equity/commodity/CSR vega and non-GIRR curvature remain unsupported or out of the current phase; do not infer capital support from the GIRR curvature validation handoff"
+    "unmigrated_sbm_measures": "FX/equity/commodity/CSR vega are supported only through the row-wise API, while high-volume vega handoffs and non-GIRR curvature handoffs remain unmigrated; do not infer capital support from the GIRR curvature validation handoff"
   },
   "schema_version": "frtb_sbm_batch_arrow_benchmark_v1",
   "summary": {

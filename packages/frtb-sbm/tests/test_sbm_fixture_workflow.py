@@ -29,6 +29,19 @@ def load_fixture_module() -> ModuleType:
     return module
 
 
+def load_non_girr_vega_fixture_module() -> ModuleType:
+    fixture_dir = Path(__file__).parent / "fixtures" / "non_girr_vega_v1"
+    spec = importlib.util.spec_from_file_location(
+        "non_girr_vega_v1_loader",
+        fixture_dir / "loader.py",
+    )
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_girr_delta_v1_fixture_matches_expected_outputs() -> None:
     loader = load_fixture_module()
     context = loader.load_fixture_context()
@@ -163,6 +176,63 @@ def test_commodity_delta_v1_fixture_matches_expected_outputs() -> None:
 
     assert payload["profile_hash"] == expected["profile_hash"]
     assert payload["total_capital"] == expected["total_capital"]
+
+
+def test_non_girr_vega_v1_fixture_matches_expected_outputs() -> None:
+    module = load_non_girr_vega_fixture_module()
+    context = module.load_fixture_context()
+    sensitivities = module.load_fixture_sensitivities()
+    expected = module.load_expected_outputs()
+
+    result = calculate_sbm_capital(sensitivities, context=context)
+    validate_sbm_result_reconciliation(result)
+    payload = serialize_sbm_result(result)
+
+    assert payload["profile_id"] == expected["profile_id"]
+    assert payload["profile_hash"] == expected["profile_hash"]
+    assert payload["input_hash"] == expected["input_hash"]
+    assert payload["total_capital"] == expected["total_capital"]
+    assert payload["warnings"] == expected["warnings"]
+    assert payload["selected_portfolio_scenario"] == expected["selected_portfolio_scenario"]
+    assert payload["portfolio_scenario_totals"] == expected["portfolio_scenario_totals"]
+    assert [
+        _select(risk_class, _RISK_CLASS_KEYS) for risk_class in payload["risk_classes"]
+    ] == expected["risk_classes"]
+    assert [risk_class["scenario_totals"] for risk_class in payload["risk_classes"]] == expected[
+        "risk_class_scenario_totals"
+    ]
+    assert [
+        [_select(bucket, _BUCKET_KEYS) for bucket in risk_class["buckets"]]
+        for risk_class in payload["risk_classes"]
+    ] == expected["buckets"]
+    assert [
+        [
+            [_select(item, _WEIGHTED_KEYS) for item in bucket["weighted_sensitivities"]]
+            for bucket in risk_class["buckets"]
+        ]
+        for risk_class in payload["risk_classes"]
+    ] == expected["weighted_sensitivities"]
+
+
+@pytest.mark.parametrize(
+    ("case_id", "expected_error_match", "sensitivities"),
+    load_non_girr_vega_fixture_module().load_invalid_cases(),
+    ids=lambda item: item if isinstance(item, str) else None,
+)
+def test_non_girr_vega_v1_invalid_fixture_cases_fail(
+    case_id: str,
+    expected_error_match: str,
+    sensitivities: tuple[object, ...],
+) -> None:
+    loader = load_non_girr_vega_fixture_module()
+    context = loader.load_fixture_context()
+
+    with pytest.raises(
+        (SbmInputError, UnsupportedRegulatoryFeatureError),
+        match=expected_error_match,
+    ):
+        calculate_sbm_capital(sensitivities, context=context)
+    assert case_id
 
 
 @pytest.mark.parametrize(

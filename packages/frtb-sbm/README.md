@@ -5,18 +5,18 @@ Standardised Approach sensitivities-based method component for the
 
 ## Status
 
-The package exposes `calculate_sbm_capital` for the phase-1 cited GIRR delta,
-GIRR vega, FX delta, equity delta, commodity delta, CSR delta, and curvature
-slices under the Basel MAR21 profile. FX/equity/commodity/CSR vega and
-unsupported profiles fail closed with explicit errors.
+The package exposes `calculate_sbm_capital` for the phase-1 cited delta, vega,
+and row-wise curvature slices under the Basel MAR21 profile. Unsupported
+profiles and unsupported sub-features fail closed with explicit errors.
 
 | Area | Status |
 | --- | --- |
 | GIRR delta and vega capital paths | Implemented (phase 1) |
 | FX, equity, and commodity delta capital paths | Implemented (phase 1) |
 | CSR delta capital paths | Implemented (phase 1) |
+| FX, equity, commodity, and CSR vega capital paths | Implemented (phase 1 row-wise API) |
 | Curvature capital | Implemented for BASEL_MAR21 row-wise inputs; unsupported sub-features fail closed |
-| FX/equity/commodity/CSR vega and unsupported profiles | Unsupported capital (fail-closed) |
+| Unsupported profiles and unmapped sub-features | Unsupported capital (fail-closed) |
 | Arrow handoff | GIRR delta/vega, non-credit delta, and CSR delta capital paths implemented; GIRR curvature validation handoff implemented |
 | CRIF/CSV adapters | Partial: row-dict compatibility plus GIRR delta CRIF-to-Arrow handoff |
 
@@ -41,10 +41,10 @@ from frtb_sbm import PACKAGE_METADATA, calculate_sbm_capital
 
 High-volume GIRR delta/vega, supported non-credit delta, and CSR delta inputs can
 be converted to the package-owned `SbmSensitivityBatch` without creating one
-accepted `SbmSensitivity` per row. Curvature capital is currently exposed
-through the row-wise public API. GIRR curvature inputs can use the Arrow handoff
-boundary for validation and branch-selection preparation, but not yet for
-capital calculation.
+accepted `SbmSensitivity` per row. Non-GIRR vega and curvature capital are
+currently exposed through the row-wise public API. GIRR curvature inputs can use
+the Arrow handoff boundary for validation and branch-selection preparation, but
+not yet for capital calculation.
 
 ```python
 from frtb_sbm.arrow_handoff import (
@@ -71,8 +71,9 @@ from frtb_sbm.arrow_handoff import (
 
 The package-owned batch type now represents one homogeneous SBM
 `(risk_class, risk_measure)` path. GIRR delta/vega, FX, equity, commodity,
-and CSR delta have public capital-from-Arrow handoffs. GIRR curvature has a
-validation-only Arrow handoff that keeps `up_shock_amount` and
+and CSR delta have public capital-from-Arrow handoffs. Non-GIRR vega and row-wise
+curvature do not yet have public capital-from-Arrow handoffs. GIRR curvature has
+a validation-only Arrow handoff that keeps `up_shock_amount` and
 `down_shock_amount` as separate arrays; curvature capital still uses the row API
 until the high-volume curvature batch path is implemented.
 

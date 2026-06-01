@@ -9,6 +9,6 @@ Synthetic Basel MAR21 equity delta replay bundle exercising:
 - MAR21.80 inter-bucket correlations across buckets 5, 6, and 11;
 - low, medium, and high correlation scenario selection.
 
-Negative cases cover duplicate sensitivity ids, unsupported equity vega,
+Negative cases cover duplicate sensitivity ids, unsupported equity repo vega,
 unsupported repo curvature, invalid bucket ids, invalid risk factors, and
 missing issuer qualifiers.

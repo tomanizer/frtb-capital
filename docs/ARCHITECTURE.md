@@ -8,8 +8,8 @@ a suite-level aggregator, with a shared foundation package. Today,
 `packages/frtb-ima` contains the migrated IMA implementation, `frtb-rrao`
 contains an implemented canonical-input RRAO path, `frtb-drc` contains a
 partial non-securitisation DRC runtime path, `frtb-sbm` has GIRR delta/vega,
-FX/equity/commodity/CSR delta, and row-wise curvature capital implemented under
-BASEL_MAR21, and `frtb-cva` has Reduced BA-CVA and SA-CVA GIRR delta
+FX/equity/commodity/CSR delta/vega, and row-wise curvature capital implemented
+under BASEL_MAR21, and `frtb-cva` has Reduced BA-CVA and SA-CVA GIRR delta
 implemented. Suite aggregation still fails explicitly until all required
 component result contracts are available.
 
@@ -80,11 +80,12 @@ Inputs: canonical or CRIF-mapped sensitivities by risk class, bucket, tenor, and
 risk measure. Outputs: SBM capital, risk-class totals, correlation-scenario
 selection, and audit breakdowns.
 
-Status: partial runtime. GIRR delta/vega, FX/equity/commodity/CSR delta, and
-row-wise curvature capital are implemented under BASEL_MAR21. Public high-volume
-Arrow/batch capital entrypoints cover delta and GIRR vega; GIRR curvature has a
-validation-only Arrow handoff. Public entry point: `calculate_sbm_capital`.
-Unsupported paths fail closed; no silent zero-capital placeholders.
+Status: partial runtime. GIRR delta/vega, FX/equity/commodity/CSR delta/vega,
+and row-wise curvature capital are implemented under BASEL_MAR21. Public
+high-volume Arrow/batch capital entrypoints cover delta and GIRR vega; non-GIRR
+vega and curvature capital remain row-wise. GIRR curvature has a validation-only
+Arrow handoff. Public entry point: `calculate_sbm_capital`. Unsupported paths
+fail closed; no silent zero-capital placeholders.
 
 ### `frtb-drc` — Default Risk Charge
 
