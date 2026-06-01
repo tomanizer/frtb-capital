@@ -18,6 +18,7 @@ from frtb_sbm.aggregation import (
     group_weighted_sensitivities_by_bucket,
     select_max_correlation_scenario,
 )
+from frtb_sbm.batch import SbmSensitivityBatch
 from frtb_sbm.commodity_reference_data import (
     commodity_delta_intra_bucket_correlation,
 )
@@ -59,7 +60,10 @@ from frtb_sbm.risk_classes.csr_sec_nonctp import (
 from frtb_sbm.risk_classes.equity import build_equity_inter_bucket_correlation_map
 from frtb_sbm.risk_classes.fx import build_fx_inter_bucket_correlation_map
 from frtb_sbm.validation import SbmInputError
-from frtb_sbm.weighted_sensitivity import weight_non_girr_vega_sensitivities
+from frtb_sbm.weighted_sensitivity import (
+    weight_non_girr_vega_sensitivities,
+    weight_non_girr_vega_sensitivity_batch,
+)
 
 _NON_GIRR_VEGA_RISK_CLASSES = frozenset(
     {
@@ -112,6 +116,42 @@ def calculate_non_girr_vega_risk_class_capital(
         risk_factor_by_id=_text_by_id(sensitivities, "risk_factor"),
         qualifier_by_id=_optional_text_by_id(sensitivities, "qualifier"),
         option_tenor_by_id=_optional_text_by_id(sensitivities, "option_tenor"),
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
+    )
+
+
+def calculate_non_girr_vega_risk_class_capital_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+) -> RiskClassCapital:
+    """Calculate cited non-GIRR vega risk-class capital from a package-owned batch."""
+
+    if batch.row_count == 0:
+        raise SbmInputError("batch must not be empty", field="batch")
+    risk_class = batch.risk_class
+    if risk_class not in _NON_GIRR_VEGA_RISK_CLASSES:
+        raise UnsupportedNonGirrVegaPathError(
+            f"non-GIRR vega does not support risk_class={risk_class.value}"
+        )
+    if batch.risk_measure is not SbmRiskMeasure.VEGA:
+        raise UnsupportedNonGirrVegaPathError(
+            f"non-GIRR vega does not support risk_measure={batch.risk_measure.value}"
+        )
+    weighted = weight_non_girr_vega_sensitivity_batch(
+        batch,
+        profile_id=profile_id,
+    )
+    return aggregate_non_girr_vega_measure_capital(
+        weighted,
+        profile_id=profile_id,
+        risk_class=risk_class,
+        risk_factor_by_id=_batch_text_by_id(batch, batch.risk_factors, "risk_factor"),
+        qualifier_by_id=_batch_optional_text_by_id(batch, batch.qualifiers),
+        option_tenor_by_id=_batch_required_text_by_id(batch, batch.option_tenors, "option_tenor"),
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
     )
@@ -597,6 +637,40 @@ def _optional_text_by_id(sensitivities: Sequence[SbmSensitivity], field: str) ->
     return values
 
 
+def _batch_text_by_id(
+    batch: SbmSensitivityBatch,
+    values: npt.NDArray[np.object_],
+    _field: str,
+) -> Mapping[str, str]:
+    return {
+        str(batch.sensitivity_ids[row_index]): str(values[row_index])
+        for row_index in range(batch.row_count)
+    }
+
+
+def _batch_required_text_by_id(
+    batch: SbmSensitivityBatch,
+    values: npt.NDArray[np.object_] | None,
+    field: str,
+) -> Mapping[str, str]:
+    if values is None:
+        raise SbmInputError(f"{field} is required", field=field)
+    return _batch_text_by_id(batch, values, field)
+
+
+def _batch_optional_text_by_id(
+    batch: SbmSensitivityBatch,
+    values: npt.NDArray[np.object_] | None,
+) -> Mapping[str, str]:
+    if values is None:
+        return {}
+    return {
+        str(batch.sensitivity_ids[row_index]): str(value)
+        for row_index, value in enumerate(values)
+        if value is not None
+    }
+
+
 def _lookup_axis(values: Mapping[str, str], sensitivity_id: str, field: str) -> str:
     try:
         value = values[sensitivity_id]
@@ -635,5 +709,6 @@ __all__ = [
     "build_non_girr_vega_inter_bucket_correlation_map",
     "build_non_girr_vega_intra_bucket_correlation_matrix",
     "calculate_non_girr_vega_risk_class_capital",
+    "calculate_non_girr_vega_risk_class_capital_from_batch",
     "non_girr_vega_intra_bucket_correlation",
 ]

@@ -87,7 +87,10 @@ from frtb_sbm.risk_classes.fx import (
     calculate_fx_delta_risk_class_capital,
     calculate_fx_delta_risk_class_capital_from_batch,
 )
-from frtb_sbm.risk_classes.vega import calculate_non_girr_vega_risk_class_capital
+from frtb_sbm.risk_classes.vega import (
+    calculate_non_girr_vega_risk_class_capital,
+    calculate_non_girr_vega_risk_class_capital_from_batch,
+)
 from frtb_sbm.validation import (
     SbmInputError,
     ensure_sbm_capital_paths_supported,
@@ -622,6 +625,142 @@ def calculate_sbm_capital_from_csr_sec_ctp_delta_batch(
     )
 
 
+def calculate_sbm_capital_from_fx_vega_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital for a pre-built FX vega sensitivity batch."""
+
+    return _calculate_sbm_capital_from_non_girr_vega_batch(
+        batch,
+        context=context,
+        expected_risk_class=SbmRiskClass.FX,
+        label="FX vega",
+    )
+
+
+def calculate_sbm_capital_from_equity_vega_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital for a pre-built equity vega sensitivity batch."""
+
+    return _calculate_sbm_capital_from_non_girr_vega_batch(
+        batch,
+        context=context,
+        expected_risk_class=SbmRiskClass.EQUITY,
+        label="equity vega",
+    )
+
+
+def calculate_sbm_capital_from_commodity_vega_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital for a pre-built commodity vega sensitivity batch."""
+
+    return _calculate_sbm_capital_from_non_girr_vega_batch(
+        batch,
+        context=context,
+        expected_risk_class=SbmRiskClass.COMMODITY,
+        label="commodity vega",
+    )
+
+
+def calculate_sbm_capital_from_csr_nonsec_vega_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital for a pre-built CSR non-securitisation vega batch."""
+
+    return _calculate_sbm_capital_from_non_girr_vega_batch(
+        batch,
+        context=context,
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+        label="CSR non-securitisation vega",
+    )
+
+
+def calculate_sbm_capital_from_csr_sec_nonctp_vega_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital for a pre-built CSR securitisation non-CTP vega batch."""
+
+    return _calculate_sbm_capital_from_non_girr_vega_batch(
+        batch,
+        context=context,
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        label="CSR securitisation non-CTP vega",
+    )
+
+
+def calculate_sbm_capital_from_csr_sec_ctp_vega_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital for a pre-built CSR securitisation CTP vega batch."""
+
+    return _calculate_sbm_capital_from_non_girr_vega_batch(
+        batch,
+        context=context,
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
+        label="CSR securitisation CTP vega",
+    )
+
+
+def _calculate_sbm_capital_from_non_girr_vega_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    context: SbmCalculationContext | None,
+    expected_risk_class: SbmRiskClass,
+    label: str,
+) -> SbmCapitalResult:
+    if context is None:
+        raise SbmInputError("calculation context is required", field="context")
+    if not isinstance(context, SbmCalculationContext):
+        raise SbmInputError(
+            "calculation context must be SbmCalculationContext",
+            field="context",
+        )
+    if not isinstance(batch, SbmSensitivityBatch):
+        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
+
+    validate_sbm_calculation_context(context)
+    ensure_sbm_risk_class_measure_supported(
+        context.profile_id,
+        expected_risk_class,
+        SbmRiskMeasure.VEGA,
+    )
+    _ensure_vega_batch_run_supported(
+        context,
+        batch,
+        expected_risk_class=expected_risk_class,
+        label=label,
+    )
+    rule_profile = get_sbm_rule_profile(context.profile_id)
+    run_controls = context.run_controls or SbmRunControls()
+    risk_class = calculate_non_girr_vega_risk_class_capital_from_batch(
+        batch,
+        profile_id=rule_profile.profile_id,
+        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
+    )
+    return _build_sbm_capital_result(
+        (risk_class,),
+        rule_profile=rule_profile,
+        context=context,
+        input_hash=batch.input_hash,
+        input_count=batch.row_count,
+    )
+
+
 def _calculate_girr_delta_risk_class_capital(
     sensitivities: tuple[SbmSensitivity, ...],
     *,
@@ -748,6 +887,49 @@ def _ensure_delta_batch_run_supported(
     if batch.risk_measure is not SbmRiskMeasure.DELTA:
         raise SbmInputError(
             f"{label} batch only accepts delta sensitivities",
+            field="risk_measure",
+        )
+    scoped_desk_id = (context.desk_id or "").strip()
+    scoped_legal_entity = (context.legal_entity or "").strip()
+    if scoped_desk_id:
+        mismatches = batch.desk_ids != scoped_desk_id
+        if np.any(mismatches):
+            row_index = int(np.flatnonzero(mismatches)[0])
+            raise SbmInputError(
+                f"desk_id {batch.desk_ids[row_index]} does not match "
+                f"context desk_id {scoped_desk_id}",
+                field="desk_id",
+                sensitivity_id=batch.sensitivity_ids[row_index],
+            )
+    if scoped_legal_entity:
+        mismatches = batch.legal_entities != scoped_legal_entity
+        if np.any(mismatches):
+            row_index = int(np.flatnonzero(mismatches)[0])
+            raise SbmInputError(
+                f"legal_entity {batch.legal_entities[row_index]} does not match "
+                f"context legal_entity {scoped_legal_entity}",
+                field="legal_entity",
+                sensitivity_id=batch.sensitivity_ids[row_index],
+            )
+
+
+def _ensure_vega_batch_run_supported(
+    context: SbmCalculationContext,
+    batch: SbmSensitivityBatch,
+    *,
+    expected_risk_class: SbmRiskClass,
+    label: str,
+) -> None:
+    if batch.row_count == 0:
+        raise SbmInputError(f"{label} batch must not be empty", field="batch")
+    if batch.risk_class is not expected_risk_class:
+        raise SbmInputError(
+            f"{label} batch only accepts {expected_risk_class.value} sensitivities",
+            field="risk_class",
+        )
+    if batch.risk_measure is not SbmRiskMeasure.VEGA:
+        raise SbmInputError(
+            f"{label} batch only accepts vega sensitivities",
             field="risk_measure",
         )
     scoped_desk_id = (context.desk_id or "").strip()
@@ -1187,11 +1369,17 @@ def _profile_warnings(profile_id: str) -> tuple[str, ...]:
 __all__ = [
     "calculate_sbm_capital",
     "calculate_sbm_capital_from_commodity_delta_batch",
+    "calculate_sbm_capital_from_commodity_vega_batch",
     "calculate_sbm_capital_from_csr_nonsec_delta_batch",
+    "calculate_sbm_capital_from_csr_nonsec_vega_batch",
     "calculate_sbm_capital_from_csr_sec_ctp_delta_batch",
+    "calculate_sbm_capital_from_csr_sec_ctp_vega_batch",
     "calculate_sbm_capital_from_csr_sec_nonctp_delta_batch",
+    "calculate_sbm_capital_from_csr_sec_nonctp_vega_batch",
     "calculate_sbm_capital_from_equity_delta_batch",
+    "calculate_sbm_capital_from_equity_vega_batch",
     "calculate_sbm_capital_from_fx_delta_batch",
+    "calculate_sbm_capital_from_fx_vega_batch",
     "calculate_sbm_capital_from_girr_delta_batch",
     "calculate_sbm_capital_from_girr_vega_batch",
 ]
