@@ -398,10 +398,17 @@ def test_orchestration_runtime_does_not_import_private_batch_internals() -> None
         tree = ast.parse(source_file.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
-                imported = {alias.name for alias in node.names}
-                assert imported.isdisjoint(forbidden_modules), source_file
+                assert not any(
+                    alias.name == forbidden_module or alias.name.startswith(f"{forbidden_module}.")
+                    for alias in node.names
+                    for forbidden_module in forbidden_modules
+                ), source_file
             if isinstance(node, ast.ImportFrom):
-                assert node.module not in forbidden_modules, source_file
+                module = node.module
+                assert module is None or not any(
+                    module == forbidden_module or module.startswith(f"{forbidden_module}.")
+                    for forbidden_module in forbidden_modules
+                ), source_file
 
 
 def sample_rrao_result() -> RraoCapitalResult:

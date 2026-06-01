@@ -288,6 +288,22 @@ def test_arrow_handoff_accepts_plain_validation_message() -> None:
     assert artifact.validation_messages == ("single warning",)
 
 
+def test_arrow_handoff_treats_invalid_json_validation_message_as_plain_text() -> None:
+    table = _replace_handoff_column(
+        _artifact_handoff_table(("scenario_cube.npz",)),
+        "validationMessages",
+        ["[not-json"],
+    )
+    handoff = normalize_ima_input_manifest_arrow_table(
+        table,
+        metadata={"run_id": "ima-run-001"},
+    )
+
+    artifact = build_capital_run_input_manifest_from_handoff(handoff).artifact("scenario_cube.npz")
+
+    assert artifact.validation_messages == ("[not-json",)
+
+
 def test_arrow_handoff_requires_explicit_manifest_date_for_mixed_artifact_dates() -> None:
     table = _replace_handoff_column(
         _artifact_handoff_table(("scenario_cube.npz", "rfet_observations.csv")),
@@ -329,6 +345,21 @@ def test_arrow_handoff_rejects_invalid_artifact_values(
     )
 
     with pytest.raises(ValueError, match=match):
+        build_capital_run_input_manifest_from_handoff(handoff)
+
+
+def test_arrow_handoff_rejects_invalid_metadata_json() -> None:
+    table = _replace_handoff_column(
+        _artifact_handoff_table(("scenario_cube.npz",)),
+        "metadataJson",
+        ["{"],
+    )
+    handoff = normalize_ima_input_manifest_arrow_table(
+        table,
+        metadata={"run_id": "ima-run-001"},
+    )
+
+    with pytest.raises(ValueError, match="invalid JSON"):
         build_capital_run_input_manifest_from_handoff(handoff)
 
 

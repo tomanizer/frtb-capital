@@ -280,7 +280,10 @@ def _messages_at(values: list[object | None] | None, index: int) -> tuple[str, .
     text = _optional_text_at(values, index)
     if text is None:
         return ()
-    parsed = json.loads(text) if text.startswith("[") else text
+    try:
+        parsed = json.loads(text) if text.startswith("[") else text
+    except json.JSONDecodeError:
+        parsed = text
     if isinstance(parsed, list):
         return tuple(str(item) for item in parsed)
     return (str(parsed),)
@@ -290,7 +293,10 @@ def _metadata_json_at(values: list[object | None] | None, index: int) -> dict[st
     text = _optional_text_at(values, index)
     if text is None:
         return {}
-    parsed = json.loads(text)
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as err:
+        raise ValueError(f"metadata_json contains invalid JSON: {err}") from err
     if not isinstance(parsed, dict):
         raise ValueError("metadata_json must contain a JSON object")
     metadata: dict[str, str] = {}
