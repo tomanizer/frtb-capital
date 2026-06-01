@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
@@ -726,7 +727,12 @@ def _load_fixture_module(fixture_name: str) -> ModuleType:
     if spec is None or spec.loader is None:
         raise RuntimeError(f"unable to load fixture loader: {path}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    sys.modules[spec.name] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:
+        sys.modules.pop(spec.name, None)
+        raise
     return module
 
 
