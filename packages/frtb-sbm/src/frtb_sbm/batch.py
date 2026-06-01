@@ -64,7 +64,9 @@ _TENOR_REQUIRED_PATHS = frozenset(
     }
 )
 
-_OPTION_TENOR_REQUIRED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.VEGA)})
+_OPTION_TENOR_REQUIRED_PATHS = frozenset(
+    {(risk_class, SbmRiskMeasure.VEGA) for risk_class in SbmRiskClass}
+)
 
 _CURVATURE_REQUIRED_PATHS = frozenset(
     {(risk_class, SbmRiskMeasure.CURVATURE) for risk_class in SbmRiskClass}
@@ -250,6 +252,144 @@ def build_girr_vega_batch_from_sensitivities(
     return build_sbm_batch_from_sensitivities(
         sensitivities,
         expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_fx_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build an FX vega batch from existing row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.FX,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_equity_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build an equity vega batch from existing row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.EQUITY,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_commodity_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a commodity vega batch from existing row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.COMMODITY,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_nonsec_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a CSR non-securitisation vega batch from row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_sec_nonctp_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a CSR securitisation non-CTP vega batch from row-wise sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_sec_ctp_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a CSR securitisation CTP vega batch from row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
         expected_risk_measure=SbmRiskMeasure.VEGA,
         source_hash=source_hash,
         handoff_hash=handoff_hash,
@@ -1606,7 +1746,7 @@ def _validate_homogeneous_batch_arrays(
         )
 
     qualifiers = optional_arrays["qualifiers"]
-    if expected_risk_class in _QUALIFIER_REQUIRED_RISK_CLASSES:
+    if _qualifier_required_for_path(expected_risk_class, expected_risk_measure):
         if qualifiers is None:
             raise SbmInputError("qualifier is required", field="qualifier")
         _validate_required_text_column(
@@ -1640,6 +1780,15 @@ def _validate_homogeneous_batch_arrays(
         coerce_sign_convention(sign_convention)
     if not np.all(np.isfinite(amount_array)):
         raise SbmInputError("value must be finite", field="amount")
+
+
+def _qualifier_required_for_path(
+    risk_class: SbmRiskClass,
+    risk_measure: SbmRiskMeasure,
+) -> bool:
+    if risk_class is SbmRiskClass.COMMODITY and risk_measure is SbmRiskMeasure.VEGA:
+        return False
+    return risk_class in _QUALIFIER_REQUIRED_RISK_CLASSES
 
 
 def _normalise_risk_class_array(
@@ -1983,16 +2132,22 @@ __all__ = [
     "SbmSensitivityBatch",
     "build_commodity_delta_batch_from_columns",
     "build_commodity_delta_batch_from_sensitivities",
+    "build_commodity_vega_batch_from_sensitivities",
     "build_csr_nonsec_delta_batch_from_columns",
     "build_csr_nonsec_delta_batch_from_sensitivities",
+    "build_csr_nonsec_vega_batch_from_sensitivities",
     "build_csr_sec_ctp_delta_batch_from_columns",
     "build_csr_sec_ctp_delta_batch_from_sensitivities",
+    "build_csr_sec_ctp_vega_batch_from_sensitivities",
     "build_csr_sec_nonctp_delta_batch_from_columns",
     "build_csr_sec_nonctp_delta_batch_from_sensitivities",
+    "build_csr_sec_nonctp_vega_batch_from_sensitivities",
     "build_equity_delta_batch_from_columns",
     "build_equity_delta_batch_from_sensitivities",
+    "build_equity_vega_batch_from_sensitivities",
     "build_fx_delta_batch_from_columns",
     "build_fx_delta_batch_from_sensitivities",
+    "build_fx_vega_batch_from_sensitivities",
     "build_girr_curvature_batch_from_columns",
     "build_girr_curvature_batch_from_sensitivities",
     "build_girr_delta_batch_from_columns",

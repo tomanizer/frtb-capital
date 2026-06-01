@@ -39,18 +39,30 @@ from frtb_sbm.batch import (
     build_girr_curvature_batch_from_columns,
     build_girr_delta_batch_from_columns,
     build_girr_vega_batch_from_columns,
+    build_sbm_batch_from_columns,
 )
 from frtb_sbm.capital import (
     calculate_sbm_capital_from_commodity_delta_batch,
+    calculate_sbm_capital_from_commodity_vega_batch,
     calculate_sbm_capital_from_csr_nonsec_delta_batch,
+    calculate_sbm_capital_from_csr_nonsec_vega_batch,
     calculate_sbm_capital_from_csr_sec_ctp_delta_batch,
+    calculate_sbm_capital_from_csr_sec_ctp_vega_batch,
     calculate_sbm_capital_from_csr_sec_nonctp_delta_batch,
+    calculate_sbm_capital_from_csr_sec_nonctp_vega_batch,
     calculate_sbm_capital_from_equity_delta_batch,
+    calculate_sbm_capital_from_equity_vega_batch,
     calculate_sbm_capital_from_fx_delta_batch,
+    calculate_sbm_capital_from_fx_vega_batch,
     calculate_sbm_capital_from_girr_delta_batch,
     calculate_sbm_capital_from_girr_vega_batch,
 )
-from frtb_sbm.data_models import SbmCalculationContext, SbmCapitalResult
+from frtb_sbm.data_models import (
+    SbmCalculationContext,
+    SbmCapitalResult,
+    SbmRiskClass,
+    SbmRiskMeasure,
+)
 from frtb_sbm.validation import SbmInputError
 
 GIRR_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
@@ -185,6 +197,38 @@ def _delta_column_specs(
     return tuple(specs)
 
 
+def _vega_column_specs(*, qualifier_required: bool) -> tuple[ColumnSpec, ...]:
+    specs: list[ColumnSpec] = []
+    for spec in GIRR_DELTA_HANDOFF_COLUMN_SPECS:
+        if spec.name == "tenor":
+            specs.append(
+                replace(
+                    spec,
+                    required=False,
+                    null_policy=NullPolicy.ALLOW,
+                )
+            )
+        elif spec.name == "option_tenor":
+            specs.append(
+                replace(
+                    spec,
+                    required=True,
+                    null_policy=NullPolicy.FORBID,
+                )
+            )
+        elif spec.name == "qualifier":
+            specs.append(
+                replace(
+                    spec,
+                    required=qualifier_required,
+                    null_policy=NullPolicy.FORBID if qualifier_required else NullPolicy.ALLOW,
+                )
+            )
+        else:
+            specs.append(spec)
+    return tuple(specs)
+
+
 FX_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _delta_column_specs(
     tenor_required=False,
     qualifier_required=False,
@@ -212,6 +256,30 @@ CSR_SEC_NONCTP_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _delta_colum
 
 CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _delta_column_specs(
     tenor_required=True,
+    qualifier_required=True,
+)
+
+FX_VEGA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _vega_column_specs(
+    qualifier_required=False,
+)
+
+EQUITY_VEGA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _vega_column_specs(
+    qualifier_required=True,
+)
+
+COMMODITY_VEGA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _vega_column_specs(
+    qualifier_required=False,
+)
+
+CSR_NONSEC_VEGA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _vega_column_specs(
+    qualifier_required=True,
+)
+
+CSR_SEC_NONCTP_VEGA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _vega_column_specs(
+    qualifier_required=True,
+)
+
+CSR_SEC_CTP_VEGA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _vega_column_specs(
     qualifier_required=True,
 )
 
@@ -397,6 +465,132 @@ def normalize_csr_sec_ctp_delta_arrow_table(
     return normalize_arrow_table(
         table,
         column_specs=CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_fx_vega_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM FX vega handoff contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=FX_VEGA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_equity_vega_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM equity vega handoff contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=EQUITY_VEGA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_commodity_vega_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM commodity vega handoff contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=COMMODITY_VEGA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_csr_nonsec_vega_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM CSR non-securitisation vega contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=CSR_NONSEC_VEGA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_csr_sec_nonctp_vega_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM CSR securitisation non-CTP vega contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=CSR_SEC_NONCTP_VEGA_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_csr_sec_ctp_vega_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM CSR securitisation CTP vega contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=CSR_SEC_CTP_VEGA_HANDOFF_COLUMN_SPECS,
         rejected=rejected,
         diagnostics=diagnostics,
         metadata={} if metadata is None else metadata,
@@ -760,6 +954,120 @@ def build_csr_sec_ctp_delta_batch_from_handoff(
     )
 
 
+def build_fx_vega_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned FX vega batch from a normalized Arrow handoff."""
+
+    return _build_non_girr_vega_batch_from_handoff(
+        handoff,
+        column_specs=FX_VEGA_HANDOFF_COLUMN_SPECS,
+        expected_risk_class=SbmRiskClass.FX,
+    )
+
+
+def build_equity_vega_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned equity vega batch from a normalized Arrow handoff."""
+
+    return _build_non_girr_vega_batch_from_handoff(
+        handoff,
+        column_specs=EQUITY_VEGA_HANDOFF_COLUMN_SPECS,
+        expected_risk_class=SbmRiskClass.EQUITY,
+    )
+
+
+def build_commodity_vega_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned commodity vega batch from a normalized Arrow handoff."""
+
+    return _build_non_girr_vega_batch_from_handoff(
+        handoff,
+        column_specs=COMMODITY_VEGA_HANDOFF_COLUMN_SPECS,
+        expected_risk_class=SbmRiskClass.COMMODITY,
+    )
+
+
+def build_csr_nonsec_vega_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned CSR non-securitisation vega batch from an Arrow handoff."""
+
+    return _build_non_girr_vega_batch_from_handoff(
+        handoff,
+        column_specs=CSR_NONSEC_VEGA_HANDOFF_COLUMN_SPECS,
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+    )
+
+
+def build_csr_sec_nonctp_vega_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned CSR securitisation non-CTP vega batch from an Arrow handoff."""
+
+    return _build_non_girr_vega_batch_from_handoff(
+        handoff,
+        column_specs=CSR_SEC_NONCTP_VEGA_HANDOFF_COLUMN_SPECS,
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+    )
+
+
+def build_csr_sec_ctp_vega_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned CSR securitisation CTP vega batch from an Arrow handoff."""
+
+    return _build_non_girr_vega_batch_from_handoff(
+        handoff,
+        column_specs=CSR_SEC_CTP_VEGA_HANDOFF_COLUMN_SPECS,
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
+    )
+
+
+def _build_non_girr_vega_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    column_specs: tuple[ColumnSpec, ...],
+    expected_risk_class: SbmRiskClass,
+) -> SbmSensitivityBatch:
+    if not isinstance(handoff, NormalizedTabularHandoff):
+        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
+    table = handoff.accepted
+    validate_arrow_table(table, column_specs=column_specs)
+    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
+    return build_sbm_batch_from_columns(
+        expected_risk_class=expected_risk_class,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
+        source_row_ids=_required_object_column(table, "source_row_id"),
+        desk_ids=_required_object_column(table, "desk_id"),
+        legal_entities=_required_object_column(table, "legal_entity"),
+        risk_classes=_required_object_column(table, "risk_class"),
+        risk_measures=_required_object_column(table, "risk_measure"),
+        buckets=_required_object_column(table, "bucket"),
+        risk_factors=_required_object_column(table, "risk_factor"),
+        amounts=_required_float_column(table, "amount"),
+        amount_currencies=_required_object_column(table, "amount_currency"),
+        sign_conventions=_required_object_column(table, "sign_convention"),
+        tenors=_optional_or_null_object_column(table, "tenor"),
+        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
+        lineage_source_files=_required_object_column(table, "lineage_source_file"),
+        source_hash=handoff.source_hash,
+        handoff_hash=normalized_handoff_hash(handoff),
+        diagnostics=diagnostic_payloads,
+        position_ids=_optional_object_column(table, "position_id"),
+        qualifiers=_optional_object_column(table, "qualifier"),
+        option_tenors=_required_object_column(table, "option_tenor"),
+        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
+        maturities=_optional_object_column(table, "maturity"),
+        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
+        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
+        copy_arrays=False,
+    )
+
+
 def calculate_sbm_capital_from_girr_delta_handoff(
     handoff: NormalizedTabularHandoff,
     *,
@@ -848,6 +1156,72 @@ def calculate_sbm_capital_from_csr_sec_ctp_delta_handoff(
     return calculate_sbm_capital_from_csr_sec_ctp_delta_batch(batch, context=context)
 
 
+def calculate_sbm_capital_from_fx_vega_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized FX vega Arrow handoff."""
+
+    batch = build_fx_vega_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_fx_vega_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_equity_vega_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized equity vega Arrow handoff."""
+
+    batch = build_equity_vega_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_equity_vega_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_commodity_vega_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized commodity vega Arrow handoff."""
+
+    batch = build_commodity_vega_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_commodity_vega_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_csr_nonsec_vega_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized CSR non-sec vega Arrow handoff."""
+
+    batch = build_csr_nonsec_vega_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_csr_nonsec_vega_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_csr_sec_nonctp_vega_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized CSR sec non-CTP vega Arrow handoff."""
+
+    batch = build_csr_sec_nonctp_vega_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_csr_sec_nonctp_vega_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_csr_sec_ctp_vega_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized CSR sec CTP vega Arrow handoff."""
+
+    batch = build_csr_sec_ctp_vega_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_csr_sec_ctp_vega_batch(batch, context=context)
+
+
 def _required_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np.object_]:
     return _object_column(table, column_name, required=True)  # type: ignore[return-value]
 
@@ -903,37 +1277,61 @@ def _required_float_column(table: pa.Table, column_name: str) -> npt.NDArray[np.
 
 __all__ = [
     "COMMODITY_DELTA_HANDOFF_COLUMN_SPECS",
+    "COMMODITY_VEGA_HANDOFF_COLUMN_SPECS",
     "CSR_NONSEC_DELTA_HANDOFF_COLUMN_SPECS",
+    "CSR_NONSEC_VEGA_HANDOFF_COLUMN_SPECS",
     "CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS",
+    "CSR_SEC_CTP_VEGA_HANDOFF_COLUMN_SPECS",
     "CSR_SEC_NONCTP_DELTA_HANDOFF_COLUMN_SPECS",
+    "CSR_SEC_NONCTP_VEGA_HANDOFF_COLUMN_SPECS",
     "EQUITY_DELTA_HANDOFF_COLUMN_SPECS",
+    "EQUITY_VEGA_HANDOFF_COLUMN_SPECS",
     "FX_DELTA_HANDOFF_COLUMN_SPECS",
+    "FX_VEGA_HANDOFF_COLUMN_SPECS",
     "GIRR_CURVATURE_HANDOFF_COLUMN_SPECS",
     "GIRR_DELTA_HANDOFF_COLUMN_SPECS",
     "GIRR_VEGA_HANDOFF_COLUMN_SPECS",
     "build_commodity_delta_batch_from_handoff",
+    "build_commodity_vega_batch_from_handoff",
     "build_csr_nonsec_delta_batch_from_handoff",
+    "build_csr_nonsec_vega_batch_from_handoff",
     "build_csr_sec_ctp_delta_batch_from_handoff",
+    "build_csr_sec_ctp_vega_batch_from_handoff",
     "build_csr_sec_nonctp_delta_batch_from_handoff",
+    "build_csr_sec_nonctp_vega_batch_from_handoff",
     "build_equity_delta_batch_from_handoff",
+    "build_equity_vega_batch_from_handoff",
     "build_fx_delta_batch_from_handoff",
+    "build_fx_vega_batch_from_handoff",
     "build_girr_curvature_batch_from_handoff",
     "build_girr_delta_batch_from_handoff",
     "build_girr_vega_batch_from_handoff",
     "calculate_sbm_capital_from_commodity_delta_handoff",
+    "calculate_sbm_capital_from_commodity_vega_handoff",
     "calculate_sbm_capital_from_csr_nonsec_delta_handoff",
+    "calculate_sbm_capital_from_csr_nonsec_vega_handoff",
     "calculate_sbm_capital_from_csr_sec_ctp_delta_handoff",
+    "calculate_sbm_capital_from_csr_sec_ctp_vega_handoff",
     "calculate_sbm_capital_from_csr_sec_nonctp_delta_handoff",
+    "calculate_sbm_capital_from_csr_sec_nonctp_vega_handoff",
     "calculate_sbm_capital_from_equity_delta_handoff",
+    "calculate_sbm_capital_from_equity_vega_handoff",
     "calculate_sbm_capital_from_fx_delta_handoff",
+    "calculate_sbm_capital_from_fx_vega_handoff",
     "calculate_sbm_capital_from_girr_delta_handoff",
     "calculate_sbm_capital_from_girr_vega_handoff",
     "normalize_commodity_delta_arrow_table",
+    "normalize_commodity_vega_arrow_table",
     "normalize_csr_nonsec_delta_arrow_table",
+    "normalize_csr_nonsec_vega_arrow_table",
     "normalize_csr_sec_ctp_delta_arrow_table",
+    "normalize_csr_sec_ctp_vega_arrow_table",
     "normalize_csr_sec_nonctp_delta_arrow_table",
+    "normalize_csr_sec_nonctp_vega_arrow_table",
     "normalize_equity_delta_arrow_table",
+    "normalize_equity_vega_arrow_table",
     "normalize_fx_delta_arrow_table",
+    "normalize_fx_vega_arrow_table",
     "normalize_girr_curvature_arrow_table",
     "normalize_girr_delta_arrow_table",
     "normalize_girr_vega_arrow_table",
