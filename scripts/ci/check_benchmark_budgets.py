@@ -20,7 +20,11 @@ class BenchmarkBudget:
     name: str
     artifact: Path
     wall_clock_path: tuple[str, ...]
-    wall_clock_seconds_max: float
+    wall_clock_seconds_max: float | None = None
+    baseline_artifact: Path | None = None
+    baseline_wall_clock_path: tuple[str, ...] = ()
+    wall_clock_tolerance_multiplier: float | None = None
+    wall_clock_tolerance_seconds: float = 0.0
     metric_path: tuple[str, ...] = ()
     metric_max: float | None = None
     metric_min: float | None = None
@@ -39,12 +43,34 @@ def load_budgets(
         wall_clock_path = tuple(
             str(part) for part in raw.get("wall_clock_path", ("totals", "wall_clock_seconds"))
         )
+        baseline_artifact = (
+            Path(str(raw["baseline_artifact"])) if "baseline_artifact" in raw else None
+        )
+        baseline_wall_clock_path = tuple(
+            str(part) for part in raw.get("baseline_wall_clock_path", wall_clock_path)
+        )
         budgets.append(
             BenchmarkBudget(
                 name=str(raw["name"]),
                 artifact=Path(str(raw["artifact"])),
                 wall_clock_path=wall_clock_path,
-                wall_clock_seconds_max=float(raw["wall_clock_seconds_max"]),
+                wall_clock_seconds_max=(
+                    float(raw["wall_clock_seconds_max"])
+                    if "wall_clock_seconds_max" in raw
+                    else None
+                ),
+                baseline_artifact=baseline_artifact,
+                baseline_wall_clock_path=baseline_wall_clock_path,
+                wall_clock_tolerance_multiplier=(
+                    float(raw["wall_clock_tolerance_multiplier"])
+                    if "wall_clock_tolerance_multiplier" in raw
+                    else None
+                ),
+                wall_clock_tolerance_seconds=(
+                    float(raw["wall_clock_tolerance_seconds"])
+                    if "wall_clock_tolerance_seconds" in raw
+                    else 0.0
+                ),
                 metric_path=metric_path,
                 metric_max=float(raw["metric_max"]) if "metric_max" in raw else None,
                 metric_min=float(raw["metric_min"]) if "metric_min" in raw else None,
@@ -86,11 +112,13 @@ def check_budget(budget: BenchmarkBudget, *, root: Path | None = None) -> list[s
     except ValueError as exc:
         return [f"{budget.name}: {exc}"]
 
-    if wall_clock > budget.wall_clock_seconds_max:
+    wall_clock_limit_errors, wall_clock_limit = _wall_clock_limit(budget, root=root)
+    if wall_clock_limit_errors:
+        return wall_clock_limit_errors
+    if wall_clock_limit is not None and wall_clock > wall_clock_limit:
         joined = ".".join(budget.wall_clock_path)
         errors.append(
-            f"{budget.name}: {joined} {wall_clock:.2f}s exceeds budget "
-            f"{budget.wall_clock_seconds_max:.2f}s"
+            f"{budget.name}: {joined} {wall_clock:.2f}s exceeds budget {wall_clock_limit:.2f}s"
         )
 
     if budget.metric_path:
@@ -109,6 +137,46 @@ def check_budget(budget: BenchmarkBudget, *, root: Path | None = None) -> list[s
             )
 
     return errors
+
+
+def _wall_clock_limit(
+    budget: BenchmarkBudget,
+    *,
+    root: Path,
+) -> tuple[list[str], float | None]:
+    limits: list[float] = []
+    if budget.wall_clock_seconds_max is not None:
+        limits.append(budget.wall_clock_seconds_max)
+
+    if budget.baseline_artifact is not None:
+        if budget.wall_clock_tolerance_multiplier is None:
+            return [
+                f"{budget.name}: baseline_artifact requires wall_clock_tolerance_multiplier"
+            ], None
+        baseline_path = root / budget.baseline_artifact
+        if not baseline_path.exists():
+            return [f"{budget.name}: missing baseline artifact {budget.baseline_artifact}"], None
+        try:
+            baseline_report = json.loads(baseline_path.read_text(encoding="utf-8"))
+        except ValueError as exc:
+            return [f"{budget.name}: invalid baseline JSON artifact: {exc}"], None
+        if not isinstance(baseline_report, dict):
+            return [f"{budget.name}: baseline artifact must be a JSON object"], None
+        try:
+            baseline_wall_clock = _read_metric(
+                baseline_report,
+                budget.baseline_wall_clock_path or budget.wall_clock_path,
+            )
+        except ValueError as exc:
+            return [f"{budget.name}: baseline {exc}"], None
+        limits.append(
+            baseline_wall_clock * budget.wall_clock_tolerance_multiplier
+            + budget.wall_clock_tolerance_seconds
+        )
+
+    if not limits:
+        return [f"{budget.name}: no wall-clock budget configured"], None
+    return [], min(limits)
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import platform
 import sys
 import time
 import tracemalloc
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -25,10 +26,12 @@ from frtb_sbm import (
     SbmRiskClass,
     SbmRiskMeasure,
     SbmRunControls,
+    SbmScenarioLabel,
     SbmSensitivity,
     SbmSensitivityBatch,
     SbmSignConvention,
     SbmSourceLineage,
+    WeightedSensitivity,
     calculate_sbm_capital,
     calculate_sbm_capital_from_commodity_delta_batch,
     calculate_sbm_capital_from_csr_nonsec_delta_batch,
@@ -42,6 +45,7 @@ from frtb_sbm import (
     serialize_sbm_result,
     validate_curvature_sensitivities,
 )
+from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
 from frtb_sbm.arrow_handoff import (
     build_commodity_delta_batch_from_handoff,
     build_csr_nonsec_delta_batch_from_handoff,
@@ -60,6 +64,7 @@ from frtb_sbm.arrow_handoff import (
     normalize_girr_curvature_arrow_table,
     normalize_girr_vega_arrow_table,
 )
+from frtb_sbm.capital import _build_girr_delta_intra_bucket_correlation_matrix
 
 DEFAULT_OUTPUT = Path("dist/benchmarks/frtb-sbm-batch-arrow.json")
 DEFAULT_ROW_COUNT = 720
@@ -118,6 +123,7 @@ def build_report(*, row_count: int) -> dict[str, object]:
         )
     ]
     cases.append(_run_curvature_validation_case(row_count=row_count))
+    phase_probes = (_run_girr_delta_phase_probe(factor_count=min(row_count, 240)),)
     return {
         "schema_version": "frtb_sbm_batch_arrow_benchmark_v1",
         "generated_at": datetime.now(UTC).isoformat(),
@@ -132,7 +138,9 @@ def build_report(*, row_count: int) -> dict[str, object]:
             ),
             "synthetic_data_only": True,
         },
+        "summary": _summary(cases, phase_probes),
         "cases": cases,
+        "phase_probes": phase_probes,
         "remaining_boundaries": {
             "curvature_capital": "unsupported and fail-closed until #166",
             "unmigrated_sbm_measures": (
@@ -149,7 +157,14 @@ def _run_capital_case(spec: CapitalPathSpec, *, row_count: int) -> dict[str, obj
     context = _context(f"bench-{spec.label}", desk_id=spec.desk_id)
 
     (
-        (row_result, row_build_seconds, row_compute_seconds, row_audit_seconds),
+        (
+            row_result,
+            row_build_seconds,
+            row_compute_seconds,
+            row_audit_seconds,
+            row_result_hash,
+            row_audit_hash,
+        ),
         row_peak,
     ) = _traced_peak_bytes(
         lambda: _measure_row_capital_path(spec=spec, row_count=row_count, context=context)
@@ -163,6 +178,8 @@ def _run_capital_case(spec: CapitalPathSpec, *, row_count: int) -> dict[str, obj
             batch_seconds,
             batch_compute_seconds,
             batch_audit_seconds,
+            batch_result_hash,
+            batch_audit_hash,
         ),
         batch_peak,
     ) = _traced_peak_bytes(
@@ -194,6 +211,8 @@ def _run_capital_case(spec: CapitalPathSpec, *, row_count: int) -> dict[str, obj
                 "capital_calculation": row_compute_seconds,
                 "audit_result_materialization": row_audit_seconds,
             },
+            "result_hash": row_result_hash,
+            "audit_hash": row_audit_hash,
             "pairwise_evidence": _pairwise_evidence_counts(row_result),
             "tracemalloc_peak_bytes": row_peak,
         },
@@ -207,6 +226,8 @@ def _run_capital_case(spec: CapitalPathSpec, *, row_count: int) -> dict[str, obj
                 "weighting_factor_grid_aggregation_and_result": batch_compute_seconds,
                 "audit_result_materialization": batch_audit_seconds,
             },
+            "result_hash": batch_result_hash,
+            "audit_hash": batch_audit_hash,
             "handoff_hash_present": bool(batch.handoff_hash),
             "pairwise_evidence": _pairwise_evidence_counts(batch_result),
             "tracemalloc_peak_bytes": batch_peak,
@@ -246,6 +267,7 @@ def _run_curvature_validation_case(*, row_count: int) -> dict[str, object]:
     batch_branches = tuple(record.selected_branch for record in branch_records)
     if row_branches != batch_branches:
         raise RuntimeError("GIRR curvature row and batch branch selection diverged")
+    branch_selection_hash = _hash_json({"selected_branches": batch_branches})
 
     return {
         "label": "girr_curvature_validation",
@@ -254,6 +276,7 @@ def _run_curvature_validation_case(*, row_count: int) -> dict[str, object]:
         "status": "validation_only_capital_unsupported",
         "raw_row_count": row_count,
         "regulatory_factor_count": _factor_count(batch, ("buckets", "risk_factors", "tenors")),
+        "branch_selection_hash": branch_selection_hash,
         "row_compatibility_path": {
             "materialized_dataclass_count": row_count,
             "timings_seconds": {
@@ -261,6 +284,8 @@ def _run_curvature_validation_case(*, row_count: int) -> dict[str, object]:
                 "curvature_contract_validation": row_validate_seconds,
                 "branch_selection": row_branch_seconds,
             },
+            "result_hash": branch_selection_hash,
+            "audit_hash": branch_selection_hash,
             "pairwise_evidence": {
                 "total_count": 0,
                 "materialized_count": 0,
@@ -277,6 +302,8 @@ def _run_curvature_validation_case(*, row_count: int) -> dict[str, object]:
                 "batch_construction": batch_seconds,
                 "curvature_branch_selection": batch_branch_seconds,
             },
+            "result_hash": branch_selection_hash,
+            "audit_hash": branch_selection_hash,
             "handoff_hash_present": bool(batch.handoff_hash),
             "pairwise_evidence": {
                 "total_count": 0,
@@ -309,13 +336,20 @@ def _measure_row_capital_path(
     spec: CapitalPathSpec,
     row_count: int,
     context: SbmCalculationContext,
-) -> tuple[SbmCapitalResult, float, float, float]:
+) -> tuple[SbmCapitalResult, float, float, float, str, str]:
     rows, row_build_seconds = _timed(
         lambda: tuple(spec.row_factory(index) for index in range(row_count))
     )
     row_result, row_compute_seconds = _timed(lambda: calculate_sbm_capital(rows, context=context))
-    _row_payload, row_audit_seconds = _timed(lambda: serialize_sbm_result(row_result))
-    return row_result, row_build_seconds, row_compute_seconds, row_audit_seconds
+    row_payload, row_audit_seconds = _timed(lambda: serialize_sbm_result(row_result))
+    return (
+        row_result,
+        row_build_seconds,
+        row_compute_seconds,
+        row_audit_seconds,
+        _result_hash(row_payload),
+        _hash_json(row_payload),
+    )
 
 
 def _measure_arrow_batch_capital_path(
@@ -323,14 +357,14 @@ def _measure_arrow_batch_capital_path(
     spec: CapitalPathSpec,
     row_count: int,
     context: SbmCalculationContext,
-) -> tuple[SbmSensitivityBatch, SbmCapitalResult, float, float, float, float, float]:
+) -> tuple[SbmSensitivityBatch, SbmCapitalResult, float, float, float, float, float, str, str]:
     table, table_seconds = _timed(lambda: spec.table_factory(row_count))
     handoff, normalize_seconds = _timed(lambda: spec.normalize(table))
     batch, batch_seconds = _timed(lambda: spec.build_batch(handoff))
     batch_result, batch_compute_seconds = _timed(
         lambda: spec.calculate_batch(batch, context=context)
     )
-    _batch_payload, batch_audit_seconds = _timed(lambda: serialize_sbm_result(batch_result))
+    batch_payload, batch_audit_seconds = _timed(lambda: serialize_sbm_result(batch_result))
     return (
         batch,
         batch_result,
@@ -339,7 +373,64 @@ def _measure_arrow_batch_capital_path(
         batch_seconds,
         batch_compute_seconds,
         batch_audit_seconds,
+        _result_hash(batch_payload),
+        _hash_json(batch_payload),
     )
+
+
+def _run_girr_delta_phase_probe(*, factor_count: int) -> dict[str, object]:
+    (payload, peak_bytes) = _traced_peak_bytes(
+        lambda: _measure_girr_delta_phase_probe(factor_count=factor_count)
+    )
+    payload["tracemalloc_peak_bytes"] = peak_bytes
+    payload["result_hash"] = _hash_json(
+        {
+            "factor_count": payload["factor_count"],
+            "matrix_shape": payload["matrix_shape"],
+            "scenario_count": payload["scenario_count"],
+        }
+    )
+    return payload
+
+
+def _measure_girr_delta_phase_probe(*, factor_count: int) -> dict[str, object]:
+    (weighted, tenor_by_id, risk_factor_by_id), weighting_seconds = _timed(
+        lambda: _girr_delta_factor_grid(factor_count)
+    )
+    matrix, factor_grid_seconds = _timed(
+        lambda: _build_girr_delta_intra_bucket_correlation_matrix(
+            weighted,
+            profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+            tenor_by_id=tenor_by_id,
+            risk_factor_by_id=risk_factor_by_id,
+        )
+    )
+    adjusted, scenario_seconds = _timed(
+        lambda: tuple(
+            adjust_correlation_matrix_for_scenario(matrix, scenario)
+            for scenario in (
+                SbmScenarioLabel.LOW,
+                SbmScenarioLabel.MEDIUM,
+                SbmScenarioLabel.HIGH,
+            )
+        )
+    )
+    if len(adjusted) != 3:
+        raise RuntimeError("GIRR delta phase probe did not produce three scenario matrices")
+    return {
+        "label": "girr_delta_matrix_scenario_probe",
+        "risk_class": SbmRiskClass.GIRR.value,
+        "risk_measure": SbmRiskMeasure.DELTA.value,
+        "status": "phase_probe",
+        "factor_count": factor_count,
+        "matrix_shape": list(matrix.shape),
+        "scenario_count": len(adjusted),
+        "timings_seconds": {
+            "weighting_input_construction": weighting_seconds,
+            "netting_factor_grid_and_correlation_matrix": factor_grid_seconds,
+            "correlation_scenario_aggregation": scenario_seconds,
+        },
+    }
 
 
 def _measure_row_curvature_validation_path(
@@ -440,6 +531,154 @@ def _pairwise_evidence_counts(result: SbmCapitalResult) -> dict[str, int]:
     }
 
 
+def _summary(
+    cases: Sequence[dict[str, object]],
+    phase_probes: Sequence[dict[str, object]],
+) -> dict[str, object]:
+    row_dataclasses = 0
+    arrow_dataclasses = 0
+    raw_rows = 0
+    netted_factors = 0
+    pairwise_total = 0
+    pairwise_materialized = 0
+    row_peak = 0
+    arrow_peak = 0
+    ingestion_seconds = 0.0
+    validation_seconds = 0.0
+    capital_compute_seconds = 0.0
+    audit_seconds = 0.0
+    result_hash_inputs: list[dict[str, object]] = []
+    audit_hash_inputs: list[dict[str, object]] = []
+
+    for case in cases:
+        row_path = _required_mapping(case, "row_compatibility_path")
+        arrow_path = _required_mapping(case, "arrow_batch_path")
+        arrow_timings = _required_mapping(arrow_path, "timings_seconds")
+        pairwise = _required_mapping(arrow_path, "pairwise_evidence")
+
+        raw_rows += int(case["raw_row_count"])
+        netted_factors += int(case["regulatory_factor_count"])
+        row_dataclasses += int(row_path["materialized_dataclass_count"])
+        arrow_dataclasses += int(arrow_path["accepted_row_dataclasses_materialized"])
+        pairwise_total += int(pairwise["total_count"])
+        pairwise_materialized += int(pairwise["materialized_count"])
+        row_peak = max(row_peak, int(row_path["tracemalloc_peak_bytes"]))
+        arrow_peak = max(arrow_peak, int(arrow_path["tracemalloc_peak_bytes"]))
+        ingestion_seconds += _sum_timing(arrow_timings, ("synthetic_arrow_table_construction",))
+        validation_seconds += _sum_timing(
+            arrow_timings,
+            ("handoff_normalization", "batch_construction"),
+        )
+        capital_compute_seconds += _sum_timing(
+            arrow_timings,
+            (
+                "weighting_factor_grid_aggregation_and_result",
+                "curvature_branch_selection",
+            ),
+        )
+        audit_seconds += float(arrow_timings.get("audit_result_materialization", 0.0))
+        result_hash_inputs.append(
+            {
+                "label": case["label"],
+                "hash": arrow_path["result_hash"],
+            }
+        )
+        audit_hash_inputs.append(
+            {
+                "label": case["label"],
+                "hash": arrow_path["audit_hash"],
+            }
+        )
+
+    probe_timings = _phase_probe_timings(phase_probes)
+    return {
+        "raw_row_count": raw_rows,
+        "netted_factor_count": netted_factors,
+        "pairwise_evidence_count": pairwise_total,
+        "pairwise_evidence_materialized_count": pairwise_materialized,
+        "materialized_dataclass_count": {
+            "row_compatibility_path": row_dataclasses,
+            "arrow_batch_path": arrow_dataclasses,
+        },
+        "accepted_row_dataclasses_materialized": arrow_dataclasses,
+        "accepted_row_dataclasses_avoided": arrow_dataclasses == 0,
+        "peak_tracemalloc_bytes": {
+            "row_compatibility_path": row_peak,
+            "arrow_batch_path": arrow_peak,
+        },
+        "timings_seconds": {
+            "ingestion": ingestion_seconds,
+            "validation": validation_seconds,
+            "weighting": capital_compute_seconds,
+            "netting_factor_grid": probe_timings["netting_factor_grid"],
+            "correlation_scenario_aggregation": probe_timings["correlation_scenario_aggregation"],
+            "audit_serialization": audit_seconds,
+            "wall_clock_proxy": (
+                ingestion_seconds + validation_seconds + capital_compute_seconds + audit_seconds
+            ),
+        },
+        "result_hash": _hash_json(result_hash_inputs),
+        "audit_hash": _hash_json(audit_hash_inputs),
+    }
+
+
+def _required_mapping(payload: Mapping[str, object], key: str) -> Mapping[str, object]:
+    if key not in payload:
+        raise ValueError(f"missing required benchmark key: {key}")
+    value = payload[key]
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{key} must be a mapping in benchmark case")
+    return value
+
+
+def _sum_timing(payload: Mapping[str, object], keys: Sequence[str]) -> float:
+    return sum(float(payload[key]) for key in keys if key in payload)
+
+
+def _phase_probe_timings(phase_probes: Sequence[dict[str, object]]) -> dict[str, float]:
+    netting_factor_grid = 0.0
+    correlation_scenario = 0.0
+    for probe in phase_probes:
+        timings = _required_mapping(probe, "timings_seconds")
+        for key in (
+            "netting_factor_grid_and_correlation_matrix",
+            "correlation_scenario_aggregation",
+        ):
+            if key not in timings:
+                raise ValueError(f"missing required phase-probe timing key: {key}")
+        netting_factor_grid += float(timings["netting_factor_grid_and_correlation_matrix"])
+        correlation_scenario += float(timings["correlation_scenario_aggregation"])
+    return {
+        "netting_factor_grid": netting_factor_grid,
+        "correlation_scenario_aggregation": correlation_scenario,
+    }
+
+
+def _result_hash(payload: Mapping[str, object]) -> str:
+    for key in ("total_capital", "profile_hash", "input_hash", "risk_classes"):
+        if key not in payload:
+            raise ValueError(f"missing required result-hash key: {key}")
+    return _hash_json(
+        {
+            "total_capital": payload["total_capital"],
+            "profile_hash": payload["profile_hash"],
+            "input_hash": payload["input_hash"],
+            "risk_classes": payload["risk_classes"],
+        }
+    )
+
+
+def _hash_json(payload: object) -> str:
+    """Hash bit-identical JSON output to detect deterministic benchmark drift.
+
+    Floating-point payloads may still differ across Python, NumPy, BLAS, or
+    architecture baselines; benchmark baselines should be refreshed deliberately
+    when that drift is expected.
+    """
+    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _environment_payload() -> dict[str, str]:
     return {
         "machine": platform.machine(),
@@ -455,6 +694,45 @@ def _lineage(row_id: str, source_file: str) -> SbmSourceLineage:
         source_file=source_file,
         source_row_id=row_id,
     )
+
+
+def _girr_delta_factor_grid(
+    factor_count: int,
+) -> tuple[tuple[WeightedSensitivity, ...], dict[str, str], dict[str, str]]:
+    tenors = (
+        "3m",
+        "6m",
+        "1y",
+        "2y",
+        "3y",
+        "5y",
+        "10y",
+        "15y",
+        "20y",
+        "30y",
+        "INFL",
+        "XCCY",
+    )
+    weighted: list[WeightedSensitivity] = []
+    tenor_by_id: dict[str, str] = {}
+    risk_factor_by_id: dict[str, str] = {}
+    for index in range(factor_count):
+        sensitivity_id = f"factor-{index:05d}"
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=sensitivity_id,
+                risk_class=SbmRiskClass.GIRR,
+                risk_measure=SbmRiskMeasure.DELTA,
+                bucket="1",
+                raw_amount=100.0 + index,
+                risk_weight=1.0,
+                scaled_amount=100.0 + index,
+                citation_ids=("basel_mar21_41",),
+            )
+        )
+        tenor_by_id[sensitivity_id] = tenors[index % len(tenors)]
+        risk_factor_by_id[sensitivity_id] = f"curve-{index % 37:02d}"
+    return tuple(weighted), tenor_by_id, risk_factor_by_id
 
 
 def _base_columns(size: int, *, prefix: str, desk_id: str, source_file: str) -> dict[str, object]:

@@ -7,10 +7,21 @@ schema_version = 1
 [[benchmarks]]
 name = "frtb-ima-target-scale"
 artifact = "dist/benchmarks/frtb-ima-target-scale.json"
+baseline_artifact = "docs/performance/frtb-ima-target-scale-baseline.json"
 wall_clock_path = ["totals", "wall_clock_seconds"]
 wall_clock_seconds_max = 120.0
+wall_clock_tolerance_multiplier = 2.0
 metric_path = ["phase_timings", "imcc_decomposition", "seconds"]
 metric_max = 90.0
+
+[[benchmarks]]
+name = "frtb-sbm-batch-arrow"
+artifact = "dist/benchmarks/frtb-sbm-batch-arrow.json"
+baseline_artifact = "docs/performance/frtb-sbm-batch-arrow-baseline.json"
+wall_clock_path = ["summary", "timings_seconds", "wall_clock_proxy"]
+wall_clock_tolerance_multiplier = 4.0
+metric_path = ["summary", "materialized_dataclass_count", "arrow_batch_path"]
+metric_max = 0.0
 
 [[benchmarks]]
 name = "frtb-rrao-target-scale"
