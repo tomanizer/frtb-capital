@@ -906,7 +906,10 @@ def _first_float_with_source(
         if field not in record or record[field] is None:
             continue
         try:
-            value = float(cast(str | float | int, record[field]))
+            raw_value = record[field]
+            if isinstance(raw_value, bool):
+                raise ValueError("boolean values are not numeric CRIF amounts")
+            value = float(cast(str | float | int, raw_value))
             if not math.isfinite(value):
                 raise ValueError("value must be finite")
             return value, field

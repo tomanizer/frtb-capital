@@ -284,6 +284,25 @@ def test_crif_adapter_rejects_non_finite_amount() -> None:
     assert result.rejected_rows[0].field == "Amount"
 
 
+def test_crif_adapter_rejects_boolean_numeric_amount() -> None:
+    result = adapt_crif_records(
+        [
+            {
+                "SensitivityId": "crif-bool-001",
+                "RiskType": "RISK_IRCURVE",
+                "Qualifier": "USD",
+                "Bucket": "1",
+                "Label1": "5y",
+                "Amount": True,
+                "AmountCurrency": "USD",
+            }
+        ]
+    )
+    assert result.rejected_rows
+    assert "numeric and finite" in result.rejected_rows[0].reason
+    assert result.rejected_rows[0].field == "Amount"
+
+
 def test_crif_adapter_rejects_unsupported_risk_type() -> None:
     result = adapt_crif_records([{"RiskType": "UNKNOWN_RISK", "Amount": 1.0}])
     assert result.rejected_rows
