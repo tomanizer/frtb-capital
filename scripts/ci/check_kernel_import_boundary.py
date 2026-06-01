@@ -117,6 +117,8 @@ def _banned_imports_in_file(path: Path) -> tuple[ImportViolation, ...]:
 def _imported_roots(node: ast.Import | ast.ImportFrom) -> frozenset[str]:
     if isinstance(node, ast.Import):
         return frozenset(alias.name.split(".", maxsplit=1)[0] for alias in node.names)
+    if node.level > 0:
+        return frozenset()
     if node.module:
         return frozenset({node.module.split(".", maxsplit=1)[0]})
     return frozenset()

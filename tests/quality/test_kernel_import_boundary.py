@@ -42,6 +42,11 @@ def test_kernel_import_boundary_allows_handoff_and_adapter_imports(tmp_path: Pat
         "packages/frtb-sbm/src/frtb_sbm/crif.py",
         "import pandas as pd\n",
     )
+    _write_module(
+        tmp_path,
+        "packages/frtb-sbm/src/frtb_sbm/aggregation.py",
+        "from .pandas import local_helper\n",
+    )
 
     assert check_repo(tmp_path) == ()
 
