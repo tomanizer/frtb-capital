@@ -14,8 +14,9 @@ closed with explicit errors.
 | --- | --- |
 | GIRR delta and vega capital paths | Implemented (phase 1) |
 | FX, equity, and commodity delta capital paths | Implemented (phase 1) |
+| CSR delta capital paths | Implemented (phase 1) |
 | Curvature, FX vega, unsupported risk classes | Unsupported (fail-closed) |
-| Arrow handoff | GIRR delta/vega plus FX, equity, and commodity delta batch paths implemented; CSR and curvature pending |
+| Arrow handoff | GIRR delta/vega, non-credit delta, and CSR delta batch paths implemented; curvature pending |
 | CRIF/CSV adapters | Partial: row-dict compatibility plus GIRR delta CRIF-to-Arrow handoff |
 
 Outputs from this prototype package are not final regulatory capital.
@@ -36,18 +37,24 @@ Outputs from this prototype package are not final regulatory capital.
 from frtb_sbm import PACKAGE_METADATA, calculate_sbm_capital
 ```
 
-High-volume GIRR delta/vega and supported non-credit delta inputs can be
+High-volume GIRR delta/vega, supported non-credit delta, and CSR delta inputs can be
 converted to the package-owned `SbmSensitivityBatch` without creating one
 accepted `SbmSensitivity` per row:
 
 ```python
 from frtb_sbm.arrow_handoff import (
     calculate_sbm_capital_from_commodity_delta_handoff,
+    calculate_sbm_capital_from_csr_nonsec_delta_handoff,
+    calculate_sbm_capital_from_csr_sec_ctp_delta_handoff,
+    calculate_sbm_capital_from_csr_sec_nonctp_delta_handoff,
     calculate_sbm_capital_from_equity_delta_handoff,
     calculate_sbm_capital_from_fx_delta_handoff,
     calculate_sbm_capital_from_girr_delta_handoff,
     calculate_sbm_capital_from_girr_vega_handoff,
     normalize_commodity_delta_arrow_table,
+    normalize_csr_nonsec_delta_arrow_table,
+    normalize_csr_sec_ctp_delta_arrow_table,
+    normalize_csr_sec_nonctp_delta_arrow_table,
     normalize_equity_delta_arrow_table,
     normalize_fx_delta_arrow_table,
     normalize_girr_delta_arrow_table,
@@ -56,9 +63,9 @@ from frtb_sbm.arrow_handoff import (
 ```
 
 The package-owned batch type now represents one homogeneous SBM
-`(risk_class, risk_measure)` path. GIRR delta/vega and FX, equity, and
-commodity delta have public capital-from-Arrow handoffs; CSR and curvature
-batch migration remains tracked under #270.
+`(risk_class, risk_measure)` path. GIRR delta/vega, FX, equity, commodity,
+and CSR delta have public capital-from-Arrow handoffs; curvature batch
+migration remains tracked under #270.
 
 CRIF-shaped GIRR delta inputs can first use the package-owned CRIF mapping,
 which delegates package-neutral column discovery and rejected-row partitioning

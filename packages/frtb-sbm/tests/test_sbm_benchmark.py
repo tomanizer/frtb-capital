@@ -20,10 +20,12 @@ from frtb_sbm import (
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
 from frtb_sbm.arrow_handoff import (
     calculate_sbm_capital_from_commodity_delta_handoff,
+    calculate_sbm_capital_from_csr_nonsec_delta_handoff,
     calculate_sbm_capital_from_equity_delta_handoff,
     calculate_sbm_capital_from_fx_delta_handoff,
     calculate_sbm_capital_from_girr_vega_handoff,
     normalize_commodity_delta_arrow_table,
+    normalize_csr_nonsec_delta_arrow_table,
     normalize_equity_delta_arrow_table,
     normalize_fx_delta_arrow_table,
     normalize_girr_vega_arrow_table,
@@ -198,6 +200,39 @@ def test_non_credit_delta_arrow_batch_phase_benchmark(
         assert compute_elapsed < 5.0
 
 
+def test_csr_delta_arrow_batch_phase_benchmark(
+    record_property: Callable[[str, object], None],
+) -> None:
+    """Report CSR Arrow handoff timing without accepted-row dataclasses."""
+
+    context = SbmCalculationContext(
+        run_id="run-benchmark-csr-nonsec-delta-001",
+        calculation_date=date(2026, 5, 30),
+        base_currency="USD",
+        reporting_currency="USD",
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+    )
+    row_count = 240
+    table = _large_csr_nonsec_delta_arrow_table(row_count)
+
+    ingestion_started = time.perf_counter()
+    handoff = normalize_csr_nonsec_delta_arrow_table(table)
+    ingestion_elapsed = time.perf_counter() - ingestion_started
+
+    compute_started = time.perf_counter()
+    result = calculate_sbm_capital_from_csr_nonsec_delta_handoff(handoff, context=context)
+    compute_elapsed = time.perf_counter() - compute_started
+
+    record_property("csr_nonsec_delta_raw_row_count", row_count)
+    record_property("csr_nonsec_delta_ingestion_seconds", ingestion_elapsed)
+    record_property("csr_nonsec_delta_compute_seconds", compute_elapsed)
+    record_property("csr_nonsec_delta_materialized_dataclass_count", 0)
+    assert handoff.accepted.num_rows == row_count
+    assert result.total_capital > 0.0
+    assert ingestion_elapsed < 1.0
+    assert compute_elapsed < 5.0
+
+
 def _large_girr_vega_arrow_table(size: int) -> pa.Table:
     option_tenors = ("1y", "2y", "5y", "10y")
     tenors = ("1y", "2y", "5y", "10y", "30y")
@@ -288,6 +323,31 @@ def _large_commodity_delta_arrow_table(size: int) -> pa.Table:
             "sign_convention": ["LONG"] * size,
             "lineage_source_system": ["benchmark"] * size,
             "lineage_source_file": ["synthetic-commodity.arrow"] * size,
+        }
+    )
+
+
+def _large_csr_nonsec_delta_arrow_table(size: int) -> pa.Table:
+    buckets = ("4", "5", "6", "12", "17")
+    risk_factors = ("BOND", "CDS")
+    tenors = ("6m", "1y", "3y", "5y", "10y")
+    return pa.table(
+        {
+            "sensitivity_id": [f"csr-ns-{index:05d}" for index in range(size)],
+            "source_row_id": [f"row-csr-ns-{index:05d}" for index in range(size)],
+            "desk_id": ["credit-desk"] * size,
+            "legal_entity": ["LE-001"] * size,
+            "risk_class": ["CSR_NONSEC"] * size,
+            "risk_measure": ["DELTA"] * size,
+            "bucket": [buckets[index % len(buckets)] for index in range(size)],
+            "risk_factor": [risk_factors[index % len(risk_factors)] for index in range(size)],
+            "qualifier": [f"ISS-{index % 43:02d}" for index in range(size)],
+            "tenor": [tenors[index % len(tenors)] for index in range(size)],
+            "amount": pa.array([100_000.0 + index for index in range(size)], type=pa.float64()),
+            "amount_currency": ["USD"] * size,
+            "sign_convention": ["LONG"] * size,
+            "lineage_source_system": ["benchmark"] * size,
+            "lineage_source_file": ["synthetic-csr-nonsec.arrow"] * size,
         }
     )
 

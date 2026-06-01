@@ -322,6 +322,76 @@ def build_commodity_delta_batch_from_sensitivities(
     )
 
 
+def build_csr_nonsec_delta_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a CSR non-securitisation delta batch from row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_csr_nonsec_delta_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_sec_nonctp_delta_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a CSR securitisation non-CTP delta batch from row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use
+    ``build_csr_sec_nonctp_delta_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_sec_ctp_delta_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a CSR securitisation CTP delta batch from row-wise canonical sensitivities.
+
+    High-volume Arrow adapters should use ``build_csr_sec_ctp_delta_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
 def build_sbm_batch_from_columns(
     *,
     expected_risk_class: SbmRiskClass | str,
@@ -797,6 +867,201 @@ def build_commodity_delta_batch_from_columns(
     )
 
 
+def build_csr_nonsec_delta_batch_from_columns(
+    *,
+    sensitivity_ids: Iterable[object],
+    source_row_ids: Iterable[object],
+    desk_ids: Iterable[object],
+    legal_entities: Iterable[object],
+    risk_classes: Iterable[object],
+    risk_measures: Iterable[object],
+    buckets: Iterable[object],
+    risk_factors: Iterable[object],
+    amounts: Iterable[object],
+    amount_currencies: Iterable[object],
+    sign_conventions: Iterable[object],
+    tenors: Iterable[object],
+    lineage_source_systems: Iterable[object],
+    lineage_source_files: Iterable[object],
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    position_ids: Iterable[object] | None = None,
+    qualifiers: Iterable[object] | None = None,
+    option_tenors: Iterable[object] | None = None,
+    liquidity_horizon_days: Iterable[object] | None = None,
+    maturities: Iterable[object] | None = None,
+    up_shock_amounts: Iterable[object] | None = None,
+    down_shock_amounts: Iterable[object] | None = None,
+    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
+    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    copy_arrays: bool = True,
+) -> SbmSensitivityBatch:
+    """Build a CSR non-securitisation delta batch from columnar adapter arrays."""
+
+    return build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        sensitivity_ids=sensitivity_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        risk_measures=risk_measures,
+        buckets=buckets,
+        risk_factors=risk_factors,
+        amounts=amounts,
+        amount_currencies=amount_currencies,
+        sign_conventions=sign_conventions,
+        tenors=tenors,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        position_ids=position_ids,
+        qualifiers=qualifiers,
+        option_tenors=option_tenors,
+        liquidity_horizon_days=liquidity_horizon_days,
+        maturities=maturities,
+        up_shock_amounts=up_shock_amounts,
+        down_shock_amounts=down_shock_amounts,
+        source_column_maps=source_column_maps,
+        mapping_citation_ids=mapping_citation_ids,
+        copy_arrays=copy_arrays,
+    )
+
+
+def build_csr_sec_nonctp_delta_batch_from_columns(
+    *,
+    sensitivity_ids: Iterable[object],
+    source_row_ids: Iterable[object],
+    desk_ids: Iterable[object],
+    legal_entities: Iterable[object],
+    risk_classes: Iterable[object],
+    risk_measures: Iterable[object],
+    buckets: Iterable[object],
+    risk_factors: Iterable[object],
+    amounts: Iterable[object],
+    amount_currencies: Iterable[object],
+    sign_conventions: Iterable[object],
+    tenors: Iterable[object],
+    lineage_source_systems: Iterable[object],
+    lineage_source_files: Iterable[object],
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    position_ids: Iterable[object] | None = None,
+    qualifiers: Iterable[object] | None = None,
+    option_tenors: Iterable[object] | None = None,
+    liquidity_horizon_days: Iterable[object] | None = None,
+    maturities: Iterable[object] | None = None,
+    up_shock_amounts: Iterable[object] | None = None,
+    down_shock_amounts: Iterable[object] | None = None,
+    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
+    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    copy_arrays: bool = True,
+) -> SbmSensitivityBatch:
+    """Build a CSR securitisation non-CTP delta batch from columnar adapter arrays."""
+
+    return build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        sensitivity_ids=sensitivity_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        risk_measures=risk_measures,
+        buckets=buckets,
+        risk_factors=risk_factors,
+        amounts=amounts,
+        amount_currencies=amount_currencies,
+        sign_conventions=sign_conventions,
+        tenors=tenors,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        position_ids=position_ids,
+        qualifiers=qualifiers,
+        option_tenors=option_tenors,
+        liquidity_horizon_days=liquidity_horizon_days,
+        maturities=maturities,
+        up_shock_amounts=up_shock_amounts,
+        down_shock_amounts=down_shock_amounts,
+        source_column_maps=source_column_maps,
+        mapping_citation_ids=mapping_citation_ids,
+        copy_arrays=copy_arrays,
+    )
+
+
+def build_csr_sec_ctp_delta_batch_from_columns(
+    *,
+    sensitivity_ids: Iterable[object],
+    source_row_ids: Iterable[object],
+    desk_ids: Iterable[object],
+    legal_entities: Iterable[object],
+    risk_classes: Iterable[object],
+    risk_measures: Iterable[object],
+    buckets: Iterable[object],
+    risk_factors: Iterable[object],
+    amounts: Iterable[object],
+    amount_currencies: Iterable[object],
+    sign_conventions: Iterable[object],
+    tenors: Iterable[object],
+    lineage_source_systems: Iterable[object],
+    lineage_source_files: Iterable[object],
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    position_ids: Iterable[object] | None = None,
+    qualifiers: Iterable[object] | None = None,
+    option_tenors: Iterable[object] | None = None,
+    liquidity_horizon_days: Iterable[object] | None = None,
+    maturities: Iterable[object] | None = None,
+    up_shock_amounts: Iterable[object] | None = None,
+    down_shock_amounts: Iterable[object] | None = None,
+    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
+    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    copy_arrays: bool = True,
+) -> SbmSensitivityBatch:
+    """Build a CSR securitisation CTP delta batch from columnar adapter arrays."""
+
+    return build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        sensitivity_ids=sensitivity_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        risk_measures=risk_measures,
+        buckets=buckets,
+        risk_factors=risk_factors,
+        amounts=amounts,
+        amount_currencies=amount_currencies,
+        sign_conventions=sign_conventions,
+        tenors=tenors,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        position_ids=position_ids,
+        qualifiers=qualifiers,
+        option_tenors=option_tenors,
+        liquidity_horizon_days=liquidity_horizon_days,
+        maturities=maturities,
+        up_shock_amounts=up_shock_amounts,
+        down_shock_amounts=down_shock_amounts,
+        source_column_maps=source_column_maps,
+        mapping_citation_ids=mapping_citation_ids,
+        copy_arrays=copy_arrays,
+    )
+
+
 def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
     """Return the row-equivalent deterministic input hash for a homogeneous batch."""
 
@@ -859,6 +1124,42 @@ def input_hash_for_commodity_delta_batch(batch: SbmSensitivityBatch) -> str:
         expected_risk_class=SbmRiskClass.COMMODITY,
         expected_risk_measure=SbmRiskMeasure.DELTA,
         label="commodity delta",
+    )
+    return input_hash_for_sbm_batch(batch)
+
+
+def input_hash_for_csr_nonsec_delta_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the row-equivalent deterministic input hash for a CSR non-sec delta batch."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="CSR non-securitisation delta",
+    )
+    return input_hash_for_sbm_batch(batch)
+
+
+def input_hash_for_csr_sec_nonctp_delta_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the row-equivalent deterministic input hash for a CSR sec non-CTP batch."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="CSR securitisation non-CTP delta",
+    )
+    return input_hash_for_sbm_batch(batch)
+
+
+def input_hash_for_csr_sec_ctp_delta_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the row-equivalent deterministic input hash for a CSR sec CTP batch."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="CSR securitisation CTP delta",
     )
     return input_hash_for_sbm_batch(batch)
 
@@ -933,6 +1234,44 @@ def sorted_commodity_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDAr
         expected_risk_class=SbmRiskClass.COMMODITY,
         expected_risk_measure=SbmRiskMeasure.DELTA,
         label="commodity delta",
+    )
+    return sorted_sbm_batch_indices(batch)
+
+
+def sorted_csr_nonsec_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in the same stable order used by row-wise CSR non-sec weighting."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="CSR non-securitisation delta",
+    )
+    return sorted_sbm_batch_indices(batch)
+
+
+def sorted_csr_sec_nonctp_delta_batch_indices(
+    batch: SbmSensitivityBatch,
+) -> npt.NDArray[np.int64]:
+    """Return indices in the stable order used by row-wise CSR sec non-CTP weighting."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="CSR securitisation non-CTP delta",
+    )
+    return sorted_sbm_batch_indices(batch)
+
+
+def sorted_csr_sec_ctp_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in the same stable order used by row-wise CSR sec CTP weighting."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        label="CSR securitisation CTP delta",
     )
     return sorted_sbm_batch_indices(batch)
 
@@ -1475,6 +1814,12 @@ __all__ = [
     "SbmSensitivityBatch",
     "build_commodity_delta_batch_from_columns",
     "build_commodity_delta_batch_from_sensitivities",
+    "build_csr_nonsec_delta_batch_from_columns",
+    "build_csr_nonsec_delta_batch_from_sensitivities",
+    "build_csr_sec_ctp_delta_batch_from_columns",
+    "build_csr_sec_ctp_delta_batch_from_sensitivities",
+    "build_csr_sec_nonctp_delta_batch_from_columns",
+    "build_csr_sec_nonctp_delta_batch_from_sensitivities",
     "build_equity_delta_batch_from_columns",
     "build_equity_delta_batch_from_sensitivities",
     "build_fx_delta_batch_from_columns",
@@ -1486,12 +1831,18 @@ __all__ = [
     "build_sbm_batch_from_columns",
     "build_sbm_batch_from_sensitivities",
     "input_hash_for_commodity_delta_batch",
+    "input_hash_for_csr_nonsec_delta_batch",
+    "input_hash_for_csr_sec_ctp_delta_batch",
+    "input_hash_for_csr_sec_nonctp_delta_batch",
     "input_hash_for_equity_delta_batch",
     "input_hash_for_fx_delta_batch",
     "input_hash_for_girr_delta_batch",
     "input_hash_for_girr_vega_batch",
     "input_hash_for_sbm_batch",
     "sorted_commodity_delta_batch_indices",
+    "sorted_csr_nonsec_delta_batch_indices",
+    "sorted_csr_sec_ctp_delta_batch_indices",
+    "sorted_csr_sec_nonctp_delta_batch_indices",
     "sorted_equity_delta_batch_indices",
     "sorted_fx_delta_batch_indices",
     "sorted_girr_delta_batch_indices",

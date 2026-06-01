@@ -21,6 +21,9 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm.batch import (
     SbmSensitivityBatch,
     sorted_commodity_delta_batch_indices,
+    sorted_csr_nonsec_delta_batch_indices,
+    sorted_csr_sec_ctp_delta_batch_indices,
+    sorted_csr_sec_nonctp_delta_batch_indices,
     sorted_equity_delta_batch_indices,
     sorted_fx_delta_batch_indices,
     sorted_girr_vega_batch_indices,
@@ -438,6 +441,211 @@ def weight_commodity_delta_sensitivity_batch(
     return tuple(weighted)
 
 
+def weight_csr_nonsec_delta_sensitivity_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted CSR non-securitisation delta sensitivities from a batch."""
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.CSR_NONSEC,
+        SbmRiskMeasure.DELTA,
+    )
+    if batch.risk_class is not SbmRiskClass.CSR_NONSEC:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm CSR non-securitisation delta weighting does not support "
+            f"risk_class={batch.risk_class.value}"
+        )
+    if batch.risk_measure is not SbmRiskMeasure.DELTA:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm CSR non-securitisation delta weighting does not support "
+            f"risk_measure={batch.risk_measure.value}"
+        )
+    weighted: list[WeightedSensitivity] = []
+    for row_index in sorted_csr_nonsec_delta_batch_indices(batch):
+        index = int(row_index)
+        bucket_id = cast(str, batch.buckets[index])
+        risk_factor = cast(str, batch.risk_factors[index])
+        tenor = cast(str, batch.tenors[index])
+        qualifier = _required_optional_axis_value(batch.qualifiers, index, "qualifier")
+        csr_nonsec_validate_delta_inputs(
+            profile_id,
+            bucket_id=bucket_id,
+            risk_factor=risk_factor,
+            tenor=tenor,
+            qualifier=qualifier,
+        )
+        risk_weight, citation_ids = csr_nonsec_delta_risk_weight(
+            profile_id,
+            bucket_id=bucket_id,
+        )
+        amount = float(batch.amounts[index])
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=cast(str, batch.sensitivity_ids[index]),
+                risk_class=SbmRiskClass.CSR_NONSEC,
+                risk_measure=SbmRiskMeasure.DELTA,
+                bucket=bucket_id,
+                raw_amount=amount,
+                risk_weight=risk_weight,
+                scaled_amount=amount * risk_weight,
+                citation_ids=citation_ids,
+                qualifier=qualifier,
+            )
+        )
+    return tuple(weighted)
+
+
+def weight_csr_sec_nonctp_delta_sensitivity_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted CSR securitisation non-CTP delta sensitivities from a batch."""
+
+    from frtb_sbm.csr_sec_nonctp_reference_data import (
+        csr_sec_nonctp_delta_risk_weight,
+        csr_sec_nonctp_validate_delta_inputs,
+    )
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.CSR_SEC_NONCTP,
+        SbmRiskMeasure.DELTA,
+    )
+    if batch.risk_class is not SbmRiskClass.CSR_SEC_NONCTP:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm CSR securitisation non-CTP delta weighting does not support "
+            f"risk_class={batch.risk_class.value}"
+        )
+    if batch.risk_measure is not SbmRiskMeasure.DELTA:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm CSR securitisation non-CTP delta weighting does not support "
+            f"risk_measure={batch.risk_measure.value}"
+        )
+    weighted: list[WeightedSensitivity] = []
+    for row_index in sorted_csr_sec_nonctp_delta_batch_indices(batch):
+        index = int(row_index)
+        bucket_id = cast(str, batch.buckets[index])
+        risk_factor = cast(str, batch.risk_factors[index])
+        tenor = cast(str, batch.tenors[index])
+        qualifier = _required_optional_axis_value(batch.qualifiers, index, "qualifier")
+        csr_sec_nonctp_validate_delta_inputs(
+            profile_id,
+            bucket_id=bucket_id,
+            risk_factor=risk_factor,
+            tenor=tenor,
+            qualifier=qualifier,
+        )
+        risk_weight, citation_ids = csr_sec_nonctp_delta_risk_weight(
+            profile_id,
+            bucket_id=bucket_id,
+        )
+        amount = float(batch.amounts[index])
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=cast(str, batch.sensitivity_ids[index]),
+                risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+                risk_measure=SbmRiskMeasure.DELTA,
+                bucket=bucket_id,
+                raw_amount=amount,
+                risk_weight=risk_weight,
+                scaled_amount=amount * risk_weight,
+                citation_ids=citation_ids,
+                qualifier=qualifier,
+            )
+        )
+    return tuple(weighted)
+
+
+def weight_csr_sec_ctp_delta_sensitivity_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted CSR securitisation CTP delta sensitivities from a batch."""
+
+    from frtb_sbm.csr_sec_ctp_reference_data import (
+        csr_sec_ctp_delta_risk_weight,
+        csr_sec_ctp_validate_delta_inputs,
+    )
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.CSR_SEC_CTP,
+        SbmRiskMeasure.DELTA,
+    )
+    if batch.risk_class is not SbmRiskClass.CSR_SEC_CTP:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm CSR securitisation CTP delta weighting does not support "
+            f"risk_class={batch.risk_class.value}"
+        )
+    if batch.risk_measure is not SbmRiskMeasure.DELTA:
+        raise UnsupportedRegulatoryFeatureError(
+            "frtb-sbm CSR securitisation CTP delta weighting does not support "
+            f"risk_measure={batch.risk_measure.value}"
+        )
+    weighted: list[WeightedSensitivity] = []
+    for row_index in sorted_csr_sec_ctp_delta_batch_indices(batch):
+        index = int(row_index)
+        _ensure_csr_sec_ctp_decomposition_evidence_for_batch(batch, index)
+        bucket_id = cast(str, batch.buckets[index])
+        risk_factor = cast(str, batch.risk_factors[index])
+        tenor = cast(str, batch.tenors[index])
+        qualifier = _required_optional_axis_value(batch.qualifiers, index, "qualifier")
+        csr_sec_ctp_validate_delta_inputs(
+            profile_id,
+            bucket_id=bucket_id,
+            risk_factor=risk_factor,
+            tenor=tenor,
+            qualifier=qualifier,
+        )
+        risk_weight, citation_ids = csr_sec_ctp_delta_risk_weight(
+            profile_id,
+            bucket_id=bucket_id,
+        )
+        amount = float(batch.amounts[index])
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=cast(str, batch.sensitivity_ids[index]),
+                risk_class=SbmRiskClass.CSR_SEC_CTP,
+                risk_measure=SbmRiskMeasure.DELTA,
+                bucket=bucket_id,
+                raw_amount=amount,
+                risk_weight=risk_weight,
+                scaled_amount=amount * risk_weight,
+                citation_ids=citation_ids,
+                qualifier=qualifier,
+            )
+        )
+    return tuple(weighted)
+
+
+def _ensure_csr_sec_ctp_decomposition_evidence_for_batch(
+    batch: SbmSensitivityBatch,
+    row_index: int,
+) -> None:
+    from frtb_sbm.csr_sec_ctp_reference_data import (
+        CSR_SEC_CTP_DECOMPOSITION_EVIDENCE_FLAG,
+        CSR_SEC_CTP_DECOMPOSITION_REQUIRED_FLAG,
+    )
+
+    if batch.mapping_citation_ids is None:
+        return
+    flags = set(batch.mapping_citation_ids[row_index])
+    if CSR_SEC_CTP_DECOMPOSITION_REQUIRED_FLAG not in flags:
+        return
+    if CSR_SEC_CTP_DECOMPOSITION_EVIDENCE_FLAG in flags:
+        return
+    raise UnsupportedRegulatoryFeatureError(
+        "frtb-sbm CSR securitisation CTP requires decomposition evidence when "
+        "index constituent decomposition is requested; "
+        f"sensitivity_id={cast(str, batch.sensitivity_ids[row_index])!r}"
+    )
+
+
 def _liquidity_horizon_at(
     batch: SbmSensitivityBatch,
     row_index: int,
@@ -811,8 +1019,11 @@ __all__ = [
     "weight_commodity_delta_sensitivities",
     "weight_commodity_delta_sensitivity_batch",
     "weight_csr_nonsec_delta_sensitivities",
+    "weight_csr_nonsec_delta_sensitivity_batch",
     "weight_csr_sec_ctp_delta_sensitivities",
+    "weight_csr_sec_ctp_delta_sensitivity_batch",
     "weight_csr_sec_nonctp_delta_sensitivities",
+    "weight_csr_sec_nonctp_delta_sensitivity_batch",
     "weight_equity_delta_sensitivities",
     "weight_equity_delta_sensitivity_batch",
     "weight_fx_delta_sensitivities",
