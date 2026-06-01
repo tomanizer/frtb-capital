@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from itertools import count
@@ -423,29 +423,36 @@ def _validate_supported_batch_run(
     context: DrcCalculationContext,
     profile: DrcRuleProfile,
 ) -> None:
+    ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
     scoped_desk_id = context.desk_id.strip()
     scoped_legal_entity = context.legal_entity.strip()
-    for index in range(batch.row_count):
-        risk_class = DrcRiskClass(cast(str, batch.risk_classes[index]))
-        ensure_risk_class_supported(profile, risk_class)
-        if risk_class is not DrcRiskClass.NON_SECURITISATION:
-            raise DrcInputError(f"DRC risk class is not implemented: {risk_class.value}")
-        if cast(str, batch.currencies[index]) != context.base_currency:
-            raise DrcInputError(
-                f"position currency {batch.currencies[index]} does not match base currency "
-                f"{context.base_currency}"
-            )
-        if scoped_desk_id and cast(str, batch.desk_ids[index]) != scoped_desk_id:
-            raise DrcInputError(
+    _raise_first_mismatch(
+        batch.currencies,
+        context.base_currency,
+        message=lambda index: (
+            f"position currency {batch.currencies[index]} does not match base currency "
+            f"{context.base_currency}"
+        ),
+    )
+    if scoped_desk_id:
+        _raise_first_mismatch(
+            batch.desk_ids,
+            scoped_desk_id,
+            message=lambda index: (
                 f"position {batch.position_ids[index]} desk_id {batch.desk_ids[index]} "
                 f"does not match context desk_id {scoped_desk_id}"
-            )
-        if scoped_legal_entity and cast(str, batch.legal_entities[index]) != scoped_legal_entity:
-            raise DrcInputError(
+            ),
+        )
+    if scoped_legal_entity:
+        _raise_first_mismatch(
+            batch.legal_entities,
+            scoped_legal_entity,
+            message=lambda index: (
                 f"position {batch.position_ids[index]} legal_entity "
                 f"{batch.legal_entities[index]} does not match context legal_entity "
                 f"{scoped_legal_entity}"
-            )
+            ),
+        )
 
 
 def _validate_batch(batch: DrcPositionBatch) -> None:
@@ -878,8 +885,20 @@ def _optional_float_payload(value: float) -> float | None:
 
 
 def _hash_payload(payload: object) -> str:
-    encoded = json.dumps(jsonable(payload), sort_keys=True, separators=(",", ":")).encode("utf-8")
+    encoded = bytes(json.dumps(jsonable(payload), sort_keys=True, separators=(",", ":")), "utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _raise_first_mismatch(
+    values: ObjectArray,
+    expected: str,
+    *,
+    message: Callable[[int], str],
+) -> None:
+    mismatch = values != expected
+    if bool(np.any(mismatch)):
+        index = int(np.nonzero(mismatch)[0][0])
+        raise DrcInputError(message(index))
 
 
 def _sorted_positions(positions: tuple[DrcPosition, ...]) -> tuple[DrcPosition, ...]:
