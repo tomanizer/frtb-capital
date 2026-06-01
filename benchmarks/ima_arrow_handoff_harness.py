@@ -306,7 +306,7 @@ def _risk_factor() -> RiskFactorDefinition:
 
 
 def _hash_json(payload: dict[str, object]) -> str:
-    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
 
