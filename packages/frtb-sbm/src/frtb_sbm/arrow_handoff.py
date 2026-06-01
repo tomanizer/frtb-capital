@@ -1,12 +1,12 @@
-"""Arrow handoff adapter for SBM delta and GIRR vega batches.
+"""Arrow handoff adapter for SBM delta, vega, and curvature batches.
 
 Regulatory traceability:
     ADR 0023 Arrow handoff boundary; Basel MAR21.4-MAR21.7 and
     MAR21.39-MAR21.42 for the downstream GIRR delta capital path; MAR21.90-
-    MAR21.95 for the downstream GIRR vega capital path; MAR21.71-MAR21.89 for
-    downstream equity, commodity, and FX delta paths; MAR21.51-MAR21.70 for
-    downstream CSR delta paths; MAR21.5 for the GIRR curvature validation
-    handoff.
+    MAR21.95 for downstream GIRR and non-GIRR vega capital paths; MAR21.71-
+    MAR21.89 for downstream equity, commodity, and FX delta paths; MAR21.51-
+    MAR21.70 for downstream CSR delta paths; MAR21.5 for downstream curvature
+    validation handoffs.
 """
 
 from __future__ import annotations
@@ -36,24 +36,30 @@ from frtb_sbm.batch import (
     build_csr_sec_nonctp_delta_batch_from_columns,
     build_equity_delta_batch_from_columns,
     build_fx_delta_batch_from_columns,
-    build_girr_curvature_batch_from_columns,
     build_girr_delta_batch_from_columns,
     build_girr_vega_batch_from_columns,
     build_sbm_batch_from_columns,
 )
 from frtb_sbm.capital import (
+    calculate_sbm_capital_from_commodity_curvature_batch,
     calculate_sbm_capital_from_commodity_delta_batch,
     calculate_sbm_capital_from_commodity_vega_batch,
+    calculate_sbm_capital_from_csr_nonsec_curvature_batch,
     calculate_sbm_capital_from_csr_nonsec_delta_batch,
     calculate_sbm_capital_from_csr_nonsec_vega_batch,
+    calculate_sbm_capital_from_csr_sec_ctp_curvature_batch,
     calculate_sbm_capital_from_csr_sec_ctp_delta_batch,
     calculate_sbm_capital_from_csr_sec_ctp_vega_batch,
+    calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch,
     calculate_sbm_capital_from_csr_sec_nonctp_delta_batch,
     calculate_sbm_capital_from_csr_sec_nonctp_vega_batch,
+    calculate_sbm_capital_from_equity_curvature_batch,
     calculate_sbm_capital_from_equity_delta_batch,
     calculate_sbm_capital_from_equity_vega_batch,
+    calculate_sbm_capital_from_fx_curvature_batch,
     calculate_sbm_capital_from_fx_delta_batch,
     calculate_sbm_capital_from_fx_vega_batch,
+    calculate_sbm_capital_from_girr_curvature_batch,
     calculate_sbm_capital_from_girr_delta_batch,
     calculate_sbm_capital_from_girr_vega_batch,
 )
@@ -229,6 +235,36 @@ def _vega_column_specs(*, qualifier_required: bool) -> tuple[ColumnSpec, ...]:
     return tuple(specs)
 
 
+def _curvature_column_specs(
+    *,
+    tenor_required: bool,
+    qualifier_required: bool,
+) -> tuple[ColumnSpec, ...]:
+    specs: list[ColumnSpec] = []
+    for spec in GIRR_DELTA_HANDOFF_COLUMN_SPECS:
+        if spec.name == "tenor":
+            specs.append(
+                replace(
+                    spec,
+                    required=tenor_required,
+                    null_policy=NullPolicy.FORBID if tenor_required else NullPolicy.ALLOW,
+                )
+            )
+        elif spec.name == "qualifier":
+            specs.append(
+                replace(
+                    spec,
+                    required=qualifier_required,
+                    null_policy=NullPolicy.FORBID if qualifier_required else NullPolicy.ALLOW,
+                )
+            )
+        elif spec.name in {"up_shock_amount", "down_shock_amount"}:
+            specs.append(replace(spec, required=True, null_policy=NullPolicy.FORBID))
+        else:
+            specs.append(spec)
+    return tuple(specs)
+
+
 FX_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _delta_column_specs(
     tenor_required=False,
     qualifier_required=False,
@@ -280,6 +316,36 @@ CSR_SEC_NONCTP_VEGA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _vega_column_
 )
 
 CSR_SEC_CTP_VEGA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _vega_column_specs(
+    qualifier_required=True,
+)
+
+FX_CURVATURE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _curvature_column_specs(
+    tenor_required=False,
+    qualifier_required=False,
+)
+
+EQUITY_CURVATURE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _curvature_column_specs(
+    tenor_required=False,
+    qualifier_required=True,
+)
+
+COMMODITY_CURVATURE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _curvature_column_specs(
+    tenor_required=False,
+    qualifier_required=True,
+)
+
+CSR_NONSEC_CURVATURE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _curvature_column_specs(
+    tenor_required=False,
+    qualifier_required=True,
+)
+
+CSR_SEC_NONCTP_CURVATURE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _curvature_column_specs(
+    tenor_required=False,
+    qualifier_required=True,
+)
+
+CSR_SEC_CTP_CURVATURE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _curvature_column_specs(
+    tenor_required=False,
     qualifier_required=True,
 )
 
@@ -339,6 +405,146 @@ def normalize_girr_curvature_arrow_table(
     return normalize_arrow_table(
         table,
         column_specs=GIRR_CURVATURE_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_fx_curvature_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM FX curvature handoff contract."""
+
+    return _normalize_curvature_arrow_table(
+        table,
+        column_specs=FX_CURVATURE_HANDOFF_COLUMN_SPECS,
+        diagnostics=diagnostics,
+        metadata=metadata,
+        rejected=rejected,
+        source_hash=source_hash,
+    )
+
+
+def normalize_equity_curvature_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM equity curvature handoff contract."""
+
+    return _normalize_curvature_arrow_table(
+        table,
+        column_specs=EQUITY_CURVATURE_HANDOFF_COLUMN_SPECS,
+        diagnostics=diagnostics,
+        metadata=metadata,
+        rejected=rejected,
+        source_hash=source_hash,
+    )
+
+
+def normalize_commodity_curvature_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM commodity curvature contract."""
+
+    return _normalize_curvature_arrow_table(
+        table,
+        column_specs=COMMODITY_CURVATURE_HANDOFF_COLUMN_SPECS,
+        diagnostics=diagnostics,
+        metadata=metadata,
+        rejected=rejected,
+        source_hash=source_hash,
+    )
+
+
+def normalize_csr_nonsec_curvature_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM CSR non-sec curvature contract."""
+
+    return _normalize_curvature_arrow_table(
+        table,
+        column_specs=CSR_NONSEC_CURVATURE_HANDOFF_COLUMN_SPECS,
+        diagnostics=diagnostics,
+        metadata=metadata,
+        rejected=rejected,
+        source_hash=source_hash,
+    )
+
+
+def normalize_csr_sec_nonctp_curvature_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM CSR sec non-CTP curvature contract."""
+
+    return _normalize_curvature_arrow_table(
+        table,
+        column_specs=CSR_SEC_NONCTP_CURVATURE_HANDOFF_COLUMN_SPECS,
+        diagnostics=diagnostics,
+        metadata=metadata,
+        rejected=rejected,
+        source_hash=source_hash,
+    )
+
+
+def normalize_csr_sec_ctp_curvature_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the SBM CSR sec CTP curvature contract."""
+
+    return _normalize_curvature_arrow_table(
+        table,
+        column_specs=CSR_SEC_CTP_CURVATURE_HANDOFF_COLUMN_SPECS,
+        diagnostics=diagnostics,
+        metadata=metadata,
+        rejected=rejected,
+        source_hash=source_hash,
+    )
+
+
+def _normalize_curvature_arrow_table(
+    table: pa.Table,
+    *,
+    column_specs: tuple[ColumnSpec, ...],
+    diagnostics: Sequence[AdapterDiagnostic],
+    metadata: Mapping[str, str] | None,
+    rejected: pa.Table | None,
+    source_hash: str | None,
+) -> NormalizedTabularHandoff:
+    return normalize_arrow_table(
+        table,
+        column_specs=column_specs,
         rejected=rejected,
         diagnostics=diagnostics,
         metadata={} if metadata is None else metadata,
@@ -679,19 +885,117 @@ def build_girr_vega_batch_from_handoff(
 def build_girr_curvature_batch_from_handoff(
     handoff: NormalizedTabularHandoff,
 ) -> SbmSensitivityBatch:
-    """
-    Build an SBM-owned GIRR curvature validation batch from a normalized handoff.
+    """Build an SBM-owned GIRR curvature batch from a normalized handoff."""
 
-    This preserves separate up/down shock arrays. Public curvature capital is
-    available through the row API; this path does not calculate batch capital.
-    """
+    return _build_curvature_batch_from_handoff(
+        handoff,
+        expected_risk_class=SbmRiskClass.GIRR,
+        column_specs=GIRR_CURVATURE_HANDOFF_COLUMN_SPECS,
+        tenor_required=True,
+        qualifier_required=False,
+    )
 
+
+def build_fx_curvature_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned FX curvature batch from a normalized Arrow handoff."""
+
+    return _build_curvature_batch_from_handoff(
+        handoff,
+        expected_risk_class=SbmRiskClass.FX,
+        column_specs=FX_CURVATURE_HANDOFF_COLUMN_SPECS,
+        tenor_required=False,
+        qualifier_required=False,
+    )
+
+
+def build_equity_curvature_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned equity curvature batch from a normalized Arrow handoff."""
+
+    return _build_curvature_batch_from_handoff(
+        handoff,
+        expected_risk_class=SbmRiskClass.EQUITY,
+        column_specs=EQUITY_CURVATURE_HANDOFF_COLUMN_SPECS,
+        tenor_required=False,
+        qualifier_required=True,
+    )
+
+
+def build_commodity_curvature_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned commodity curvature batch from a normalized Arrow handoff."""
+
+    return _build_curvature_batch_from_handoff(
+        handoff,
+        expected_risk_class=SbmRiskClass.COMMODITY,
+        column_specs=COMMODITY_CURVATURE_HANDOFF_COLUMN_SPECS,
+        tenor_required=False,
+        qualifier_required=True,
+    )
+
+
+def build_csr_nonsec_curvature_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned CSR non-sec curvature batch from a normalized Arrow handoff."""
+
+    return _build_curvature_batch_from_handoff(
+        handoff,
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+        column_specs=CSR_NONSEC_CURVATURE_HANDOFF_COLUMN_SPECS,
+        tenor_required=False,
+        qualifier_required=True,
+    )
+
+
+def build_csr_sec_nonctp_curvature_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned CSR sec non-CTP curvature batch from a normalized Arrow handoff."""
+
+    return _build_curvature_batch_from_handoff(
+        handoff,
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        column_specs=CSR_SEC_NONCTP_CURVATURE_HANDOFF_COLUMN_SPECS,
+        tenor_required=False,
+        qualifier_required=True,
+    )
+
+
+def build_csr_sec_ctp_curvature_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> SbmSensitivityBatch:
+    """Build an SBM-owned CSR sec CTP curvature batch from a normalized Arrow handoff."""
+
+    return _build_curvature_batch_from_handoff(
+        handoff,
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
+        column_specs=CSR_SEC_CTP_CURVATURE_HANDOFF_COLUMN_SPECS,
+        tenor_required=False,
+        qualifier_required=True,
+    )
+
+
+def _build_curvature_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    expected_risk_class: SbmRiskClass,
+    column_specs: tuple[ColumnSpec, ...],
+    tenor_required: bool,
+    qualifier_required: bool,
+) -> SbmSensitivityBatch:
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=GIRR_CURVATURE_HANDOFF_COLUMN_SPECS)
+    validate_arrow_table(table, column_specs=column_specs)
     diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_girr_curvature_batch_from_columns(
+    return build_sbm_batch_from_columns(
+        expected_risk_class=expected_risk_class,
+        expected_risk_measure=SbmRiskMeasure.CURVATURE,
         sensitivity_ids=_required_object_column(table, "sensitivity_id"),
         source_row_ids=_required_object_column(table, "source_row_id"),
         desk_ids=_required_object_column(table, "desk_id"),
@@ -703,19 +1007,27 @@ def build_girr_curvature_batch_from_handoff(
         amounts=_required_float_column(table, "amount"),
         amount_currencies=_required_object_column(table, "amount_currency"),
         sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=_required_object_column(table, "tenor"),
-        up_shock_amounts=_required_float_column(table, "up_shock_amount"),
-        down_shock_amounts=_required_float_column(table, "down_shock_amount"),
+        tenors=(
+            _required_object_column(table, "tenor")
+            if tenor_required
+            else _optional_or_null_object_column(table, "tenor")
+        ),
         lineage_source_systems=_required_object_column(table, "lineage_source_system"),
         lineage_source_files=_required_object_column(table, "lineage_source_file"),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
         diagnostics=diagnostic_payloads,
         position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=_optional_object_column(table, "qualifier"),
+        qualifiers=(
+            _required_object_column(table, "qualifier")
+            if qualifier_required
+            else _optional_object_column(table, "qualifier")
+        ),
         option_tenors=_optional_object_column(table, "option_tenor"),
         liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
         maturities=_optional_object_column(table, "maturity"),
+        up_shock_amounts=_required_float_column(table, "up_shock_amount"),
+        down_shock_amounts=_required_float_column(table, "down_shock_amount"),
         copy_arrays=False,
     )
 
@@ -1090,6 +1402,17 @@ def calculate_sbm_capital_from_girr_vega_handoff(
     return calculate_sbm_capital_from_girr_vega_batch(batch, context=context)
 
 
+def calculate_sbm_capital_from_girr_curvature_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized GIRR curvature Arrow handoff."""
+
+    batch = build_girr_curvature_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_girr_curvature_batch(batch, context=context)
+
+
 def calculate_sbm_capital_from_fx_delta_handoff(
     handoff: NormalizedTabularHandoff,
     *,
@@ -1222,6 +1545,72 @@ def calculate_sbm_capital_from_csr_sec_ctp_vega_handoff(
     return calculate_sbm_capital_from_csr_sec_ctp_vega_batch(batch, context=context)
 
 
+def calculate_sbm_capital_from_fx_curvature_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized FX curvature Arrow handoff."""
+
+    batch = build_fx_curvature_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_fx_curvature_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_equity_curvature_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized equity curvature Arrow handoff."""
+
+    batch = build_equity_curvature_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_equity_curvature_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_commodity_curvature_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized commodity curvature Arrow handoff."""
+
+    batch = build_commodity_curvature_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_commodity_curvature_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_csr_nonsec_curvature_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized CSR non-sec curvature Arrow handoff."""
+
+    batch = build_csr_nonsec_curvature_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_csr_nonsec_curvature_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_csr_sec_nonctp_curvature_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized CSR sec non-CTP curvature Arrow handoff."""
+
+    batch = build_csr_sec_nonctp_curvature_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch(batch, context=context)
+
+
+def calculate_sbm_capital_from_csr_sec_ctp_curvature_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital from a normalized CSR sec CTP curvature Arrow handoff."""
+
+    batch = build_csr_sec_ctp_curvature_batch_from_handoff(handoff)
+    return calculate_sbm_capital_from_csr_sec_ctp_curvature_batch(batch, context=context)
+
+
 def _required_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np.object_]:
     return _object_column(table, column_name, required=True)  # type: ignore[return-value]
 
@@ -1276,60 +1665,85 @@ def _required_float_column(table: pa.Table, column_name: str) -> npt.NDArray[np.
 
 
 __all__ = [
+    "COMMODITY_CURVATURE_HANDOFF_COLUMN_SPECS",
     "COMMODITY_DELTA_HANDOFF_COLUMN_SPECS",
     "COMMODITY_VEGA_HANDOFF_COLUMN_SPECS",
+    "CSR_NONSEC_CURVATURE_HANDOFF_COLUMN_SPECS",
     "CSR_NONSEC_DELTA_HANDOFF_COLUMN_SPECS",
     "CSR_NONSEC_VEGA_HANDOFF_COLUMN_SPECS",
+    "CSR_SEC_CTP_CURVATURE_HANDOFF_COLUMN_SPECS",
     "CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS",
     "CSR_SEC_CTP_VEGA_HANDOFF_COLUMN_SPECS",
+    "CSR_SEC_NONCTP_CURVATURE_HANDOFF_COLUMN_SPECS",
     "CSR_SEC_NONCTP_DELTA_HANDOFF_COLUMN_SPECS",
     "CSR_SEC_NONCTP_VEGA_HANDOFF_COLUMN_SPECS",
+    "EQUITY_CURVATURE_HANDOFF_COLUMN_SPECS",
     "EQUITY_DELTA_HANDOFF_COLUMN_SPECS",
     "EQUITY_VEGA_HANDOFF_COLUMN_SPECS",
+    "FX_CURVATURE_HANDOFF_COLUMN_SPECS",
     "FX_DELTA_HANDOFF_COLUMN_SPECS",
     "FX_VEGA_HANDOFF_COLUMN_SPECS",
     "GIRR_CURVATURE_HANDOFF_COLUMN_SPECS",
     "GIRR_DELTA_HANDOFF_COLUMN_SPECS",
     "GIRR_VEGA_HANDOFF_COLUMN_SPECS",
+    "build_commodity_curvature_batch_from_handoff",
     "build_commodity_delta_batch_from_handoff",
     "build_commodity_vega_batch_from_handoff",
+    "build_csr_nonsec_curvature_batch_from_handoff",
     "build_csr_nonsec_delta_batch_from_handoff",
     "build_csr_nonsec_vega_batch_from_handoff",
+    "build_csr_sec_ctp_curvature_batch_from_handoff",
     "build_csr_sec_ctp_delta_batch_from_handoff",
     "build_csr_sec_ctp_vega_batch_from_handoff",
+    "build_csr_sec_nonctp_curvature_batch_from_handoff",
     "build_csr_sec_nonctp_delta_batch_from_handoff",
     "build_csr_sec_nonctp_vega_batch_from_handoff",
+    "build_equity_curvature_batch_from_handoff",
     "build_equity_delta_batch_from_handoff",
     "build_equity_vega_batch_from_handoff",
+    "build_fx_curvature_batch_from_handoff",
     "build_fx_delta_batch_from_handoff",
     "build_fx_vega_batch_from_handoff",
     "build_girr_curvature_batch_from_handoff",
     "build_girr_delta_batch_from_handoff",
     "build_girr_vega_batch_from_handoff",
+    "calculate_sbm_capital_from_commodity_curvature_handoff",
     "calculate_sbm_capital_from_commodity_delta_handoff",
     "calculate_sbm_capital_from_commodity_vega_handoff",
+    "calculate_sbm_capital_from_csr_nonsec_curvature_handoff",
     "calculate_sbm_capital_from_csr_nonsec_delta_handoff",
     "calculate_sbm_capital_from_csr_nonsec_vega_handoff",
+    "calculate_sbm_capital_from_csr_sec_ctp_curvature_handoff",
     "calculate_sbm_capital_from_csr_sec_ctp_delta_handoff",
     "calculate_sbm_capital_from_csr_sec_ctp_vega_handoff",
+    "calculate_sbm_capital_from_csr_sec_nonctp_curvature_handoff",
     "calculate_sbm_capital_from_csr_sec_nonctp_delta_handoff",
     "calculate_sbm_capital_from_csr_sec_nonctp_vega_handoff",
+    "calculate_sbm_capital_from_equity_curvature_handoff",
     "calculate_sbm_capital_from_equity_delta_handoff",
     "calculate_sbm_capital_from_equity_vega_handoff",
+    "calculate_sbm_capital_from_fx_curvature_handoff",
     "calculate_sbm_capital_from_fx_delta_handoff",
     "calculate_sbm_capital_from_fx_vega_handoff",
+    "calculate_sbm_capital_from_girr_curvature_handoff",
     "calculate_sbm_capital_from_girr_delta_handoff",
     "calculate_sbm_capital_from_girr_vega_handoff",
+    "normalize_commodity_curvature_arrow_table",
     "normalize_commodity_delta_arrow_table",
     "normalize_commodity_vega_arrow_table",
+    "normalize_csr_nonsec_curvature_arrow_table",
     "normalize_csr_nonsec_delta_arrow_table",
     "normalize_csr_nonsec_vega_arrow_table",
+    "normalize_csr_sec_ctp_curvature_arrow_table",
     "normalize_csr_sec_ctp_delta_arrow_table",
     "normalize_csr_sec_ctp_vega_arrow_table",
+    "normalize_csr_sec_nonctp_curvature_arrow_table",
     "normalize_csr_sec_nonctp_delta_arrow_table",
     "normalize_csr_sec_nonctp_vega_arrow_table",
+    "normalize_equity_curvature_arrow_table",
     "normalize_equity_delta_arrow_table",
     "normalize_equity_vega_arrow_table",
+    "normalize_fx_curvature_arrow_table",
     "normalize_fx_delta_arrow_table",
     "normalize_fx_vega_arrow_table",
     "normalize_girr_curvature_arrow_table",
