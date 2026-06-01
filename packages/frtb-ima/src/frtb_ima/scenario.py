@@ -27,7 +27,11 @@ from types import MappingProxyType
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.data_models import LiquidityHorizon, RiskClass
+
+DateArray = npt.NDArray[np.datetime64]
+StringArray = npt.NDArray[np.str_]
 
 
 class ScenarioSetType(StrEnum):
@@ -62,6 +66,116 @@ class ScenarioMetadata:
         if not isinstance(self.scenario_date, date):
             raise TypeError("scenario_date must be a datetime.date")
         object.__setattr__(self, "provenance", MappingProxyType(dict(self.provenance)))
+
+
+@dataclass(frozen=True)
+class ScenarioMetadataBatch:
+    """
+    Columnar scenario-axis metadata for high-volume IMA handoffs.
+
+    Dense scenario P&L vectors remain NumPy arrays owned by ``ScenarioVector`` or
+    ``ScenarioCube``. This batch carries the tabular scenario axis separately so
+    Arrow ingestion paths can validate ordering, lineage, and hashes without
+    constructing one ``ScenarioMetadata`` dataclass per accepted source row.
+    """
+
+    scenario_ids: StringArray
+    scenario_dates: DateArray
+    scenario_sets: StringArray
+    calibration_windows: StringArray
+    sources: StringArray
+    provenance_json: StringArray
+    source_row_ids: StringArray
+    source_hash: str | None = None
+    handoff_hash: str | None = None
+    input_hash: str = ""
+
+    def __post_init__(self) -> None:
+        scenario_ids = _readonly_string_array(self.scenario_ids, "scenario_ids")
+        scenario_dates = _readonly_date_array(self.scenario_dates, "scenario_dates")
+        scenario_sets = _readonly_string_array(self.scenario_sets, "scenario_sets")
+        calibration_windows = _readonly_string_array(
+            self.calibration_windows,
+            "calibration_windows",
+        )
+        sources = _readonly_string_array(self.sources, "sources")
+        provenance_json = _readonly_string_array(self.provenance_json, "provenance_json")
+        source_row_ids = _readonly_string_array(self.source_row_ids, "source_row_ids")
+        _validate_equal_lengths(
+            "scenario metadata batch",
+            scenario_ids,
+            scenario_dates,
+            scenario_sets,
+            calibration_windows,
+            sources,
+            provenance_json,
+            source_row_ids,
+        )
+        if scenario_ids.size == 0:
+            raise ValueError("scenario metadata batch must be non-empty")
+        if bool(np.any(scenario_ids == "")):
+            raise ValueError("scenario_ids cannot contain empty values")
+        if np.unique(scenario_ids).size != scenario_ids.size:
+            raise ValueError("scenario metadata contains duplicate scenario_id values")
+        if np.unique(scenario_dates).size != scenario_dates.size:
+            raise ValueError("scenario metadata contains duplicate scenario_date values")
+        for scenario_set in scenario_sets:
+            ScenarioSetType(str(scenario_set))
+        for raw_json in provenance_json:
+            _parse_provenance_json(str(raw_json))
+
+        object.__setattr__(self, "scenario_ids", scenario_ids)
+        object.__setattr__(self, "scenario_dates", scenario_dates)
+        object.__setattr__(self, "scenario_sets", scenario_sets)
+        object.__setattr__(self, "calibration_windows", calibration_windows)
+        object.__setattr__(self, "sources", sources)
+        object.__setattr__(self, "provenance_json", provenance_json)
+        object.__setattr__(self, "source_row_ids", source_row_ids)
+        if not self.input_hash:
+            object.__setattr__(self, "input_hash", input_hash_for_scenario_metadata_batch(self))
+
+    @property
+    def scenario_count(self) -> int:
+        """Number of scenario metadata rows carried by the batch."""
+
+        return int(self.scenario_ids.size)
+
+    def to_metadata(self) -> tuple[ScenarioMetadata, ...]:
+        """
+        Materialize compatibility dataclasses in batch order.
+
+        High-volume adapters should pass the batch itself through ingestion and
+        audit checks. This method is for legacy APIs that still require
+        ``ScenarioMetadata`` objects.
+        """
+
+        return tuple(
+            ScenarioMetadata(
+                scenario_id=str(self.scenario_ids[index]),
+                scenario_date=_date_from_datetime64(self.scenario_dates[index]),
+                scenario_set=ScenarioSetType(str(self.scenario_sets[index])),
+                calibration_window=str(self.calibration_windows[index]),
+                source=str(self.sources[index]),
+                provenance=_parse_provenance_json(str(self.provenance_json[index])),
+            )
+            for index in range(self.scenario_count)
+        )
+
+
+def input_hash_for_scenario_metadata_batch(batch: ScenarioMetadataBatch) -> str:
+    """Return a stable audit hash for a columnar scenario metadata batch."""
+
+    return compute_inputs_hash(
+        scenario_ids=batch.scenario_ids,
+        scenario_dates=batch.scenario_dates,
+        scenario_sets=batch.scenario_sets,
+        calibration_windows=batch.calibration_windows,
+        sources=batch.sources,
+        provenance_json=batch.provenance_json,
+        source_row_ids=batch.source_row_ids,
+        source_hash=batch.source_hash,
+        handoff_hash=batch.handoff_hash,
+    )
 
 
 @dataclass(frozen=True)
@@ -169,3 +283,53 @@ def validate_aligned_metadata(vectors: Mapping[str, ScenarioVector]) -> None:
             raise ValueError(
                 f"scenario metadata for vector '{name}' is not aligned with '{reference_name}'"
             )
+
+
+def _readonly_string_array(values: object, field_name: str) -> StringArray:
+    array = np.array(values, dtype=np.str_, copy=True)
+    if array.ndim != 1:
+        raise ValueError(f"{field_name} must be one-dimensional")
+    array.flags.writeable = False
+    return array
+
+
+def _readonly_date_array(values: object, field_name: str) -> DateArray:
+    array = np.array(values, dtype="datetime64[D]", copy=True)
+    if array.ndim != 1:
+        raise ValueError(f"{field_name} must be one-dimensional")
+    if bool(np.any(np.isnat(array))):
+        raise ValueError(f"{field_name} cannot contain null dates")
+    array.flags.writeable = False
+    return array
+
+
+def _validate_equal_lengths(label: str, first: np.ndarray, *others: np.ndarray) -> None:
+    expected = first.shape[0]
+    for array in others:
+        if array.shape[0] != expected:
+            raise ValueError(f"{label} columns must have equal lengths")
+
+
+def _date_from_datetime64(value: np.datetime64) -> date:
+    return date.fromisoformat(str(value.astype("datetime64[D]")))
+
+
+def _parse_provenance_json(raw_json: str) -> Mapping[str, str]:
+    if not raw_json:
+        return {}
+    import json
+
+    try:
+        parsed = json.loads(raw_json)
+    except json.JSONDecodeError as err:
+        raise ValueError(f"provenance_json contains invalid JSON: {err}") from err
+    if not isinstance(parsed, dict):
+        raise ValueError("provenance_json must contain a JSON object")
+    provenance: dict[str, str] = {}
+    for key, value in parsed.items():
+        if not isinstance(key, str) or not key:
+            raise ValueError("provenance_json keys must be non-empty strings")
+        if not isinstance(value, str):
+            raise ValueError("provenance_json values must be strings")
+        provenance[key] = value
+    return provenance
