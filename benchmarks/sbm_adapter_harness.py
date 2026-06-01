@@ -543,6 +543,7 @@ def _summary(
     pairwise_materialized = 0
     row_peak = 0
     arrow_peak = 0
+    max_capital_delta_abs = 0.0
     ingestion_seconds = 0.0
     validation_seconds = 0.0
     capital_compute_seconds = 0.0
@@ -564,6 +565,10 @@ def _summary(
         pairwise_materialized += int(pairwise["materialized_count"])
         row_peak = max(row_peak, int(row_path["tracemalloc_peak_bytes"]))
         arrow_peak = max(arrow_peak, int(arrow_path["tracemalloc_peak_bytes"]))
+        max_capital_delta_abs = max(
+            max_capital_delta_abs,
+            float(case.get("capital_delta_abs", 0.0)),
+        )
         ingestion_seconds += _sum_timing(arrow_timings, ("synthetic_arrow_table_construction",))
         validation_seconds += _sum_timing(
             arrow_timings,
@@ -596,6 +601,7 @@ def _summary(
         "netted_factor_count": netted_factors,
         "pairwise_evidence_count": pairwise_total,
         "pairwise_evidence_materialized_count": pairwise_materialized,
+        "capital_delta_abs_max": max_capital_delta_abs,
         "materialized_dataclass_count": {
             "row_compatibility_path": row_dataclasses,
             "arrow_batch_path": arrow_dataclasses,

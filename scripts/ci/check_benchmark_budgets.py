@@ -8,9 +8,37 @@ import sys
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BUDGETS = Path("docs/quality/benchmark_budgets.toml")
+
+
+@dataclass(frozen=True)
+class MetricBudget:
+    """One numeric benchmark metric threshold."""
+
+    name: str
+    path: tuple[str, ...]
+    metric_max: float | None = None
+    metric_min: float | None = None
+
+
+@dataclass(frozen=True)
+class RequiredPath:
+    """One benchmark report path that must exist."""
+
+    name: str
+    path: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class PathEquality:
+    """Two benchmark report paths that must carry identical values."""
+
+    name: str
+    left_path: tuple[str, ...]
+    right_path: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -25,9 +53,9 @@ class BenchmarkBudget:
     baseline_wall_clock_path: tuple[str, ...] = ()
     wall_clock_tolerance_multiplier: float | None = None
     wall_clock_tolerance_seconds: float = 0.0
-    metric_path: tuple[str, ...] = ()
-    metric_max: float | None = None
-    metric_min: float | None = None
+    metrics: tuple[MetricBudget, ...] = ()
+    required_paths: tuple[RequiredPath, ...] = ()
+    path_equalities: tuple[PathEquality, ...] = ()
 
 
 def load_budgets(
@@ -37,9 +65,11 @@ def load_budgets(
 ) -> tuple[BenchmarkBudget, ...]:
     root = root or ROOT
     data = tomllib.loads((root / path).read_text(encoding="utf-8"))
+    schema_version = int(data.get("schema_version", 1))
+    if schema_version not in {1, 2}:
+        raise ValueError(f"unsupported benchmark budget schema_version: {schema_version}")
     budgets: list[BenchmarkBudget] = []
     for raw in data.get("benchmarks", []):
-        metric_path = tuple(str(part) for part in raw.get("metric_path", ()))
         wall_clock_path = tuple(
             str(part) for part in raw.get("wall_clock_path", ("totals", "wall_clock_seconds"))
         )
@@ -71,20 +101,93 @@ def load_budgets(
                     if "wall_clock_tolerance_seconds" in raw
                     else 0.0
                 ),
-                metric_path=metric_path,
-                metric_max=float(raw["metric_max"]) if "metric_max" in raw else None,
-                metric_min=float(raw["metric_min"]) if "metric_min" in raw else None,
+                metrics=_load_metric_budgets(raw),
+                required_paths=_load_required_paths(raw),
+                path_equalities=_load_path_equalities(raw),
             )
         )
     return tuple(budgets)
 
 
-def _read_metric(report: dict[str, object], path: tuple[str, ...]) -> float:
+def _load_metric_budgets(raw: dict[str, Any]) -> tuple[MetricBudget, ...]:
+    metrics: list[MetricBudget] = []
+    legacy_path = tuple(str(part) for part in raw.get("metric_path", ()))
+    if legacy_path:
+        metrics.append(
+            MetricBudget(
+                name=".".join(legacy_path),
+                path=legacy_path,
+                metric_max=float(raw["metric_max"]) if "metric_max" in raw else None,
+                metric_min=float(raw["metric_min"]) if "metric_min" in raw else None,
+            )
+        )
+    raw_metrics = cast("list[dict[str, Any]]", raw.get("metrics", ()))
+    for index, metric in enumerate(raw_metrics):
+        if not isinstance(metric, dict):
+            raise ValueError("benchmark metrics entries must be tables")
+        path = tuple(str(part) for part in metric.get("path", ()))
+        if not path:
+            raise ValueError("benchmark metric is missing path")
+        metrics.append(
+            MetricBudget(
+                name=str(metric.get("name", ".".join(path) or f"metric-{index}")),
+                path=path,
+                metric_max=float(metric["max"]) if "max" in metric else None,
+                metric_min=float(metric["min"]) if "min" in metric else None,
+            )
+        )
+    return tuple(metrics)
+
+
+def _load_required_paths(raw: dict[str, Any]) -> tuple[RequiredPath, ...]:
+    required_paths: list[RequiredPath] = []
+    for index, required_path in enumerate(
+        cast("list[dict[str, Any]]", raw.get("required_paths", ()))
+    ):
+        if not isinstance(required_path, dict):
+            raise ValueError("benchmark required_paths entries must be tables")
+        path = tuple(str(part) for part in required_path.get("path", ()))
+        if not path:
+            raise ValueError("benchmark required_path is missing path")
+        required_paths.append(
+            RequiredPath(
+                name=str(required_path.get("name", ".".join(path) or f"path-{index}")),
+                path=path,
+            )
+        )
+    return tuple(required_paths)
+
+
+def _load_path_equalities(raw: dict[str, Any]) -> tuple[PathEquality, ...]:
+    equalities: list[PathEquality] = []
+    for index, equality in enumerate(cast("list[dict[str, Any]]", raw.get("path_equalities", ()))):
+        if not isinstance(equality, dict):
+            raise ValueError("benchmark path_equalities entries must be tables")
+        left_path = tuple(str(part) for part in equality.get("left_path", ()))
+        right_path = tuple(str(part) for part in equality.get("right_path", ()))
+        if not left_path or not right_path:
+            raise ValueError("benchmark path_equality is missing left_path or right_path")
+        equalities.append(
+            PathEquality(
+                name=str(equality.get("name", f"path-equality-{index}")),
+                left_path=left_path,
+                right_path=right_path,
+            )
+        )
+    return tuple(equalities)
+
+
+def _read_path(report: dict[str, object], path: tuple[str, ...]) -> object:
     current: object = report
     for key in path:
         if not isinstance(current, dict) or key not in current:
-            raise ValueError(f"metric path {path!r} is not present")
+            raise ValueError(f"path {path!r} is not present")
         current = current[key]
+    return current
+
+
+def _read_metric(report: dict[str, object], path: tuple[str, ...]) -> float:
+    current = _read_path(report, path)
     if not isinstance(current, (int, float)):
         raise ValueError(f"metric at {path!r} is not numeric")
     return float(current)
@@ -121,19 +224,37 @@ def check_budget(budget: BenchmarkBudget, *, root: Path | None = None) -> list[s
             f"{budget.name}: {joined} {wall_clock:.2f}s exceeds budget {wall_clock_limit:.2f}s"
         )
 
-    if budget.metric_path:
+    for required_path in budget.required_paths:
         try:
-            metric_value = _read_metric(report, budget.metric_path)
+            _read_path(report, required_path.path)
+        except ValueError as exc:
+            return [f"{budget.name}: required path {required_path.name}: {exc}"]
+
+    for metric in budget.metrics:
+        try:
+            metric_value = _read_metric(report, metric.path)
         except ValueError as exc:
             return [f"{budget.name}: {exc}"]
-        joined = ".".join(budget.metric_path)
-        if budget.metric_max is not None and metric_value > budget.metric_max:
+        joined = ".".join(metric.path)
+        if metric.metric_max is not None and metric_value > metric.metric_max:
             errors.append(
-                f"{budget.name}: {joined} {metric_value:.2f} exceeds budget {budget.metric_max:.2f}"
+                f"{budget.name}: {joined} {metric_value:.2f} exceeds budget {metric.metric_max:.2f}"
             )
-        if budget.metric_min is not None and metric_value < budget.metric_min:
+        if metric.metric_min is not None and metric_value < metric.metric_min:
             errors.append(
-                f"{budget.name}: {joined} {metric_value:.2f} below budget {budget.metric_min:.2f}"
+                f"{budget.name}: {joined} {metric_value:.2f} below budget {metric.metric_min:.2f}"
+            )
+
+    for equality in budget.path_equalities:
+        try:
+            left = _read_path(report, equality.left_path)
+            right = _read_path(report, equality.right_path)
+        except ValueError as exc:
+            return [f"{budget.name}: path equality {equality.name}: {exc}"]
+        if left != right:
+            errors.append(
+                f"{budget.name}: path equality {equality.name} failed: "
+                f"{'.'.join(equality.left_path)} != {'.'.join(equality.right_path)}"
             )
 
     return errors
