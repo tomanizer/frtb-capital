@@ -53,6 +53,9 @@ class SbmPairwiseEvidenceMode(StrEnum):
     SUMMARY = "SUMMARY"
 
 
+DEFAULT_PAIRWISE_EVIDENCE_LIMIT = 2500
+
+
 class SbmSignConvention(StrEnum):
     """Explicit sign conventions for sensitivity amounts."""
 
@@ -134,7 +137,7 @@ class SbmRunControls:
     unsupported_feature_behavior: str = "fail_closed"
     retain_scenario_detail: bool = True
     pairwise_evidence_mode: SbmPairwiseEvidenceMode = SbmPairwiseEvidenceMode.AUTO
-    pairwise_evidence_limit: int = 2500
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT
 
 
 @dataclass(frozen=True)
@@ -393,6 +396,7 @@ class SbmCapitalResult:
 
 
 __all__ = [
+    "DEFAULT_PAIRWISE_EVIDENCE_LIMIT",
     "BucketCapital",
     "CurvatureBranchRecord",
     "CurvatureInput",

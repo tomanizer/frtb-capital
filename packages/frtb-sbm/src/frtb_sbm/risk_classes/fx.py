@@ -20,6 +20,7 @@ from frtb_sbm.aggregation import (
     group_weighted_sensitivities_by_bucket,
 )
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
     SbmPairwiseEvidenceMode,
     SbmRiskClass,
@@ -40,7 +41,7 @@ def calculate_fx_delta_risk_class_capital(
     profile_id: str,
     reporting_currency: str,
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = 2500,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited FX delta risk-class capital for a supported profile."""
 
@@ -62,7 +63,7 @@ def aggregate_fx_delta_measure_capital(
     *,
     profile_id: str,
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = 2500,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Aggregate weighted FX delta sensitivities through shared bucket primitives."""
 

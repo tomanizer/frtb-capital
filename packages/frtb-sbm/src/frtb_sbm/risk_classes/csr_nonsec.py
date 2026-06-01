@@ -25,6 +25,7 @@ from frtb_sbm.csr_nonsec_reference_data import (
     csr_nonsec_inter_bucket_correlation,
 )
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
     SbmPairwiseEvidenceMode,
     SbmRiskClass,
@@ -45,7 +46,7 @@ def calculate_csr_nonsec_delta_risk_class_capital(
     *,
     profile_id: str,
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = 2500,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited CSR non-securitisation delta risk-class capital."""
 
@@ -72,7 +73,7 @@ def aggregate_csr_nonsec_delta_measure_capital(
     tenor_by_id: Mapping[str, str],
     risk_factor_by_id: Mapping[str, str],
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = 2500,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Aggregate weighted CSR non-securitisation delta sensitivities."""
 

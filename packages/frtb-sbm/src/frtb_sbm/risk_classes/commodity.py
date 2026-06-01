@@ -27,6 +27,7 @@ from frtb_sbm.commodity_reference_data import (
     commodity_inter_bucket_correlation as commodity_inter_bucket_gamma,
 )
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
     SbmPairwiseEvidenceMode,
     SbmRiskClass,
@@ -42,7 +43,7 @@ def calculate_commodity_delta_risk_class_capital(
     *,
     profile_id: str,
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = 2500,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited commodity delta risk-class capital for a supported profile."""
 
@@ -69,7 +70,7 @@ def aggregate_commodity_delta_measure_capital(
     tenor_by_id: Mapping[str, str],
     location_by_id: Mapping[str, str],
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = 2500,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Aggregate weighted commodity delta sensitivities through shared bucket primitives."""
 

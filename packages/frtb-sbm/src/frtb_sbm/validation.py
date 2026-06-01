@@ -26,7 +26,13 @@ from frtb_sbm.data_models import (
     SbmSourceLineage,
 )
 
-EnumT = TypeVar("EnumT", SbmRiskClass, SbmRiskMeasure, SbmSignConvention)
+EnumT = TypeVar(
+    "EnumT",
+    SbmPairwiseEvidenceMode,
+    SbmRiskClass,
+    SbmRiskMeasure,
+    SbmSignConvention,
+)
 
 _STRICT_CITATION_POLICY = "strict"
 
@@ -133,6 +139,14 @@ def coerce_sign_convention(value: SbmSignConvention | str) -> SbmSignConvention:
     return _coerce_enum(value, SbmSignConvention, "sign_convention")
 
 
+def coerce_pairwise_evidence_mode(
+    value: SbmPairwiseEvidenceMode | str,
+) -> SbmPairwiseEvidenceMode:
+    """Normalise a pairwise evidence mode to the canonical enum."""
+
+    return _coerce_enum(value, SbmPairwiseEvidenceMode, "pairwise_evidence_mode")
+
+
 def sensitivity_sort_key(sensitivity: SbmSensitivity) -> tuple[str, str, str, str, str]:
     """Return a deterministic ordering key for one sensitivity."""
 
@@ -181,16 +195,10 @@ def _validate_run_controls(controls: SbmRunControls | None) -> None:
         return
     if not isinstance(controls, SbmRunControls):
         raise SbmInputError("run_controls must be SbmRunControls", field="run_controls")
-    try:
-        SbmPairwiseEvidenceMode(controls.pairwise_evidence_mode)
-    except (TypeError, ValueError) as exc:
-        allowed = ", ".join(item.value for item in SbmPairwiseEvidenceMode)
-        raise SbmInputError(
-            f"pairwise_evidence_mode must be one of: {allowed}",
-            field="pairwise_evidence_mode",
-        ) from exc
+    coerce_pairwise_evidence_mode(controls.pairwise_evidence_mode)
     if (
-        not isinstance(controls.pairwise_evidence_limit, int)
+        isinstance(controls.pairwise_evidence_limit, bool)
+        or not isinstance(controls.pairwise_evidence_limit, int)
         or controls.pairwise_evidence_limit < 0
     ):
         raise SbmInputError(

@@ -20,6 +20,7 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
     IntraBucketScenarioRecord,
     PairwiseCorrelationRecord,
@@ -66,8 +67,6 @@ _DEFAULT_SCENARIOS: tuple[SbmScenarioLabel, ...] = (
     SbmScenarioLabel.MEDIUM,
     SbmScenarioLabel.HIGH,
 )
-
-_DEFAULT_PAIRWISE_EVIDENCE_LIMIT = 2500
 
 
 @dataclass(frozen=True)
@@ -197,7 +196,7 @@ def aggregate_intra_bucket(
     curvature_absolute_floor: bool = False,
     citation_ids: tuple[str, ...] = _MAR21_INTRA_BUCKET_CITATION,
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = _DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> IntraBucketAggregationResult:
     """
     Aggregate weighted sensitivities within one bucket (MAR21.4 step 4).
@@ -402,7 +401,7 @@ def _aggregate_intra_buckets_for_scenario(
     risk_measure: SbmRiskMeasure,
     intra_bucket_citation_ids: tuple[str, ...] = _MAR21_INTRA_BUCKET_CITATION,
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = _DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> tuple[IntraBucketAggregationResult, ...]:
     results: list[IntraBucketAggregationResult] = []
     for spec in specs:
@@ -494,7 +493,7 @@ def aggregate_risk_class_with_scenarios(
     intra_bucket_citation_ids: tuple[str, ...] = _MAR21_INTRA_BUCKET_CITATION,
     inter_bucket_citation_ids: tuple[str, ...] = _MAR21_INTER_BUCKET_CITATION,
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = _DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """
     Evaluate low/medium/high scenarios with full intra- and inter-bucket recomputation.
@@ -757,16 +756,9 @@ def _upper_triangle_count(size: int) -> int:
 def _coerce_pairwise_evidence_mode(
     mode: SbmPairwiseEvidenceMode | str,
 ) -> SbmPairwiseEvidenceMode:
-    if isinstance(mode, SbmPairwiseEvidenceMode):
-        return mode
-    try:
-        return SbmPairwiseEvidenceMode(mode)
-    except (TypeError, ValueError) as exc:
-        allowed = ", ".join(item.value for item in SbmPairwiseEvidenceMode)
-        raise SbmInputError(
-            f"pairwise_evidence_mode must be one of: {allowed}",
-            field="pairwise_evidence_mode",
-        ) from exc
+    from frtb_sbm.validation import coerce_pairwise_evidence_mode
+
+    return coerce_pairwise_evidence_mode(mode)
 
 
 def _sort_weighted_sensitivities(

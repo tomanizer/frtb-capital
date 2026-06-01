@@ -239,6 +239,17 @@ def test_validate_sbm_calculation_context_rejects_invalid_pairwise_controls() ->
         )
     assert limit_exc_info.value.field == "pairwise_evidence_limit"
 
+    with pytest.raises(SbmInputError, match="pairwise_evidence_limit") as bool_exc_info:
+        validate_sbm_calculation_context(
+            sample_context(
+                run_controls=SbmRunControls(
+                    pairwise_evidence_mode=SbmPairwiseEvidenceMode.AUTO,
+                    pairwise_evidence_limit=True,  # type: ignore[arg-type]
+                )
+            )
+        )
+    assert bool_exc_info.value.field == "pairwise_evidence_limit"
+
 
 def test_normalisation_helpers_coerce_enums_and_currency() -> None:
     assert normalise_sensitivity_amount(-1_000.0) == -1_000.0

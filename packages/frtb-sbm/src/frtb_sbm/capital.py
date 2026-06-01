@@ -28,6 +28,7 @@ from frtb_sbm.audit import (
     validate_sbm_result_reconciliation,
 )
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
     SbmBranchMetadata,
     SbmCalculationContext,
@@ -250,7 +251,7 @@ def _calculate_girr_delta_risk_class_capital(
     profile_id: str,
     reporting_currency: str,
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = 2500,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     weighted = weight_girr_delta_sensitivities(
         sensitivities,
@@ -274,7 +275,7 @@ def _calculate_girr_vega_risk_class_capital(
     *,
     profile_id: str,
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = 2500,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     weighted = weight_girr_vega_sensitivities(
         sensitivities,
@@ -302,7 +303,7 @@ def _aggregate_girr_measure_capital(
     risk_factor_by_id: Mapping[str, str] | None = None,
     option_tenor_by_id: Mapping[str, str] | None = None,
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = 2500,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     grouped = group_weighted_sensitivities_by_bucket(weighted)
 
