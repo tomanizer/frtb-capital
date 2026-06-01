@@ -422,6 +422,132 @@ def build_girr_curvature_batch_from_sensitivities(
     )
 
 
+def _build_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    expected_risk_class: SbmRiskClass,
+    source_hash: str | None,
+    handoff_hash: str | None,
+    diagnostics: Sequence[Mapping[str, object]],
+) -> SbmSensitivityBatch:
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=expected_risk_class,
+        expected_risk_measure=SbmRiskMeasure.CURVATURE,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_fx_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build an FX curvature batch from row-wise canonical sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.FX,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_equity_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build an equity curvature batch from row-wise canonical sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.EQUITY,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_commodity_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build a commodity curvature batch from row-wise canonical sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.COMMODITY,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_nonsec_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build a CSR non-securitisation curvature batch from row-wise sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_NONSEC,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_sec_nonctp_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build a CSR securitisation non-CTP curvature batch from row-wise sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_csr_sec_ctp_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build a CSR securitisation CTP curvature batch from row-wise sensitivities."""
+
+    return _build_curvature_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
 def build_fx_delta_batch_from_sensitivities(
     sensitivities: object,
     *,
@@ -1465,6 +1591,16 @@ def sorted_girr_curvature_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArr
     return sorted_sbm_batch_indices(batch)
 
 
+def sorted_curvature_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in the same stable order used by row-wise curvature helpers."""
+
+    if batch.row_count == 0:
+        raise SbmInputError("curvature batch must not be empty", field="batch")
+    if batch.risk_measure is not SbmRiskMeasure.CURVATURE:
+        raise SbmInputError("curvature batch only accepts CURVATURE sensitivities")
+    return sorted_sbm_batch_indices(batch)
+
+
 def sorted_fx_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
     """Return indices in the same stable order used by row-wise FX delta weighting."""
 
@@ -2130,21 +2266,27 @@ def _freeze_array(array: npt.NDArray[Any]) -> None:
 
 __all__ = [
     "SbmSensitivityBatch",
+    "build_commodity_curvature_batch_from_sensitivities",
     "build_commodity_delta_batch_from_columns",
     "build_commodity_delta_batch_from_sensitivities",
     "build_commodity_vega_batch_from_sensitivities",
+    "build_csr_nonsec_curvature_batch_from_sensitivities",
     "build_csr_nonsec_delta_batch_from_columns",
     "build_csr_nonsec_delta_batch_from_sensitivities",
     "build_csr_nonsec_vega_batch_from_sensitivities",
+    "build_csr_sec_ctp_curvature_batch_from_sensitivities",
     "build_csr_sec_ctp_delta_batch_from_columns",
     "build_csr_sec_ctp_delta_batch_from_sensitivities",
     "build_csr_sec_ctp_vega_batch_from_sensitivities",
+    "build_csr_sec_nonctp_curvature_batch_from_sensitivities",
     "build_csr_sec_nonctp_delta_batch_from_columns",
     "build_csr_sec_nonctp_delta_batch_from_sensitivities",
     "build_csr_sec_nonctp_vega_batch_from_sensitivities",
+    "build_equity_curvature_batch_from_sensitivities",
     "build_equity_delta_batch_from_columns",
     "build_equity_delta_batch_from_sensitivities",
     "build_equity_vega_batch_from_sensitivities",
+    "build_fx_curvature_batch_from_sensitivities",
     "build_fx_delta_batch_from_columns",
     "build_fx_delta_batch_from_sensitivities",
     "build_fx_vega_batch_from_sensitivities",
@@ -2170,6 +2312,7 @@ __all__ = [
     "sorted_csr_nonsec_delta_batch_indices",
     "sorted_csr_sec_ctp_delta_batch_indices",
     "sorted_csr_sec_nonctp_delta_batch_indices",
+    "sorted_curvature_batch_indices",
     "sorted_equity_delta_batch_indices",
     "sorted_fx_delta_batch_indices",
     "sorted_girr_curvature_batch_indices",
