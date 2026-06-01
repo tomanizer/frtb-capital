@@ -124,7 +124,7 @@ drc-benchmark:
 	uv run python benchmarks/drc_adapter_harness.py --output dist/benchmarks/frtb-drc-batch-arrow.json
 
 rrao-benchmark:
-	uv run python packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py --output dist/benchmarks/frtb-rrao-target-scale.json
+	PYTHONPATH=packages/frtb-common/src:packages/frtb-rrao/src uv run python packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py --output dist/benchmarks/frtb-rrao-target-scale.json
 
 benchmark-budget-check:
 	uv run python scripts/ci/check_benchmark_budgets.py

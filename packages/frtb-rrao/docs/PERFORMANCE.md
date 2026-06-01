@@ -27,6 +27,46 @@ line-ordering hash.
 
 ## Observed runs
 
+Local benchmark observations from this worktree on 2026-06-01 after the RRAO
+batch decision-vectorization work:
+
+| Field | Value |
+| --- | ---: |
+| Benchmark id | `frtb-rrao-target-scale-v2` |
+| Python | 3.11.15 |
+| Platform | macOS-26.5-arm64-arm-64bit |
+| Positions | 100,000 |
+| Row build positions | 3.464 seconds |
+| Row calculate | 10.731 seconds |
+| Row serialize | 0.497 seconds |
+| Row calculate throughput | 9,319 positions/second |
+| Batch build columns | 0.940 seconds |
+| Batch build/validate/hash | 25.061 seconds |
+| Batch calculate | 3.522 seconds |
+| Batch serialize | 0.662 seconds |
+| Batch calculate throughput | 28,393 positions/second |
+| Arrow table build | 0.052 seconds |
+| Arrow handoff build/validate/hash | 30.787 seconds |
+| Arrow calculate | 3.820 seconds |
+| Arrow calculate throughput | 26,177 positions/second |
+| Peak traced memory | 847,075,379 bytes |
+| Total RRAO | 155,470,000.0 |
+| Batch total delta | 0.0 |
+| Arrow total delta | 0.0 |
+| Batch accepted row dataclasses | 0 |
+| Arrow accepted row dataclasses | 0 |
+| Payload hash | `c60490c0e675561c878aea716e20ce78add011737dc32986ae3d9bfec0053add` |
+| Batch payload hash | `c60490c0e675561c878aea716e20ce78add011737dc32986ae3d9bfec0053add` |
+| Arrow payload hash | `21afd04a1351c99a2adc19d0df115ce54c21b978978cc8872d0ded0ad59de427` |
+| Ordering hash | `1e6b188a7d2a6fee31654e9d5b1e929268ab3ec78c9e99aedc6401b6710df3ee` |
+| Input hash | `fb63ed0fb27d0134c3ad9812da579b375bfc10c63520a91a550bf101943d8dbf` |
+
+The column-batch payload hash matches the row path because the benchmark
+provides the same lineage source-column map. The Arrow handoff has a distinct
+payload hash because the flat handoff does not carry that tuple-valued lineage
+map, but it preserves capital, line ordering, and zero accepted-row dataclass
+materialization.
+
 Local benchmark observations from this worktree on 2026-05-29:
 
 | Field | Value |
