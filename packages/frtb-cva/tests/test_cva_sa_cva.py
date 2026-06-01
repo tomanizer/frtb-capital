@@ -255,14 +255,27 @@ def test_sa_cva_unsupported_path_fails() -> None:
     with pytest.raises(CvaInputError, match="CCS vega capital is not permitted"):
         calculate_sa_cva_capital((sens_ccs_vega,))
 
-    from unittest.mock import MagicMock
+    class UnsupportedRiskMeasure:
+        value = "invalid_measure"
 
-    mock_sens = MagicMock(spec=SaCvaSensitivity)
-    mock_sens.risk_class = SaCvaRiskClass.GIRR
-    mock_sens.risk_measure = MagicMock()
-    mock_sens.risk_measure.value = "invalid_measure"
-    # To satisfy sorted() key sorting
-    mock_sens.risk_measure.__str__ = lambda x: "invalid_measure"
+        def __repr__(self) -> str:
+            return self.value
+
+        def __str__(self) -> str:
+            return self.value
+
+    mock_sens = SaCvaSensitivity(
+        sensitivity_id="sens-unsupported-measure",
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=UnsupportedRiskMeasure(),
+        sensitivity_tag=SensitivityTag.CVA,
+        bucket_id="USD",
+        risk_factor_key="5y",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="row-unsupported-measure",
+    )
 
     with pytest.raises(CvaInputError, match="unsupported SA-CVA risk classes"):
         calculate_sa_cva_capital((mock_sens,))
