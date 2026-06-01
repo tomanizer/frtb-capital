@@ -288,7 +288,23 @@ def test_arrow_handoff_accepts_plain_validation_message() -> None:
     assert artifact.validation_messages == ("single warning",)
 
 
-def test_arrow_handoff_treats_invalid_json_validation_message_as_plain_text() -> None:
+def test_arrow_handoff_accepts_json_validation_message_with_leading_whitespace() -> None:
+    table = _replace_handoff_column(
+        _artifact_handoff_table(("scenario_cube.npz",)),
+        "validationMessages",
+        ['  ["first warning", "second warning"]'],
+    )
+    handoff = normalize_ima_input_manifest_arrow_table(
+        table,
+        metadata={"run_id": "ima-run-001"},
+    )
+
+    artifact = build_capital_run_input_manifest_from_handoff(handoff).artifact("scenario_cube.npz")
+
+    assert artifact.validation_messages == ("first warning", "second warning")
+
+
+def test_arrow_handoff_rejects_invalid_json_validation_message() -> None:
     table = _replace_handoff_column(
         _artifact_handoff_table(("scenario_cube.npz",)),
         "validationMessages",
@@ -299,9 +315,8 @@ def test_arrow_handoff_treats_invalid_json_validation_message_as_plain_text() ->
         metadata={"run_id": "ima-run-001"},
     )
 
-    artifact = build_capital_run_input_manifest_from_handoff(handoff).artifact("scenario_cube.npz")
-
-    assert artifact.validation_messages == ("[not-json",)
+    with pytest.raises(ValueError, match="validation_messages contains invalid JSON"):
+        build_capital_run_input_manifest_from_handoff(handoff)
 
 
 def test_arrow_handoff_requires_explicit_manifest_date_for_mixed_artifact_dates() -> None:
@@ -326,6 +341,7 @@ def test_arrow_handoff_requires_explicit_manifest_date_for_mixed_artifact_dates(
         ("extractionTimestamp", [AS_OF], "extraction_timestamp"),
         ("asOfDate", [42], "as_of_date"),
         ("recordCount", [True], "record_count must contain integers"),
+        ("recordCount", ["10"], "record_count must contain integers"),
         ("recordCount", [-1], "record_count must be non-negative"),
         ("recordCount", [1.5], "record_count must contain whole-number values"),
     ),

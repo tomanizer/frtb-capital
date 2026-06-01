@@ -266,9 +266,9 @@ def _parse_date(value: object, field: str) -> date:
 
 def _non_negative_int_at(table: pa.Table, column_name: str, index: int) -> int:
     value = _required_column(table, column_name)[index]
-    if isinstance(value, bool):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{column_name} must contain integers")
-    integer = int(cast(int | float, value))
+    integer = int(value)
     if integer < 0:
         raise ValueError(f"{column_name} must be non-negative")
     if isinstance(value, float) and value != integer:
@@ -280,10 +280,13 @@ def _messages_at(values: list[object | None] | None, index: int) -> tuple[str, .
     text = _optional_text_at(values, index)
     if text is None:
         return ()
+    stripped = text.lstrip()
+    if not stripped.startswith("["):
+        return (text,)
     try:
-        parsed = json.loads(text) if text.startswith("[") else text
-    except json.JSONDecodeError:
-        parsed = text
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError as err:
+        raise ValueError(f"validation_messages contains invalid JSON: {err}") from err
     if isinstance(parsed, list):
         return tuple(str(item) for item in parsed)
     return (str(parsed),)
