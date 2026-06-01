@@ -23,6 +23,10 @@ Repository settings should also enable automatic deletion of merged pull-request
 head branches. That setting deletes feature branches after merge without
 weakening protection on `main`.
 
+`quality-control` includes package layering checks, the kernel import-boundary
+check for dataframe and Arrow runtimes, import smoke tests, and package maturity
+evidence checks.
+
 ## Signing and attestation policy
 
 Release integrity is established through:
