@@ -387,6 +387,30 @@ def test_orchestration_runtime_does_not_import_sibling_packages() -> None:
                 assert node.module is None or not node.module.startswith("frtb_sbm"), source_file
 
 
+def test_orchestration_runtime_does_not_import_private_batch_internals() -> None:
+    forbidden_modules = {
+        "frtb_cva.batch",
+        "frtb_drc.batch",
+        "frtb_rrao.batch",
+        "frtb_sbm.batch",
+    }
+    for source_file in SOURCE_ROOT.rglob("*.py"):
+        tree = ast.parse(source_file.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                assert not any(
+                    alias.name == forbidden_module or alias.name.startswith(f"{forbidden_module}.")
+                    for alias in node.names
+                    for forbidden_module in forbidden_modules
+                ), source_file
+            if isinstance(node, ast.ImportFrom):
+                module = node.module
+                assert module is None or not any(
+                    module == forbidden_module or module.startswith(f"{forbidden_module}.")
+                    for forbidden_module in forbidden_modules
+                ), source_file
+
+
 def sample_rrao_result() -> RraoCapitalResult:
     return calculate_rrao_capital(
         (

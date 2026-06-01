@@ -10,6 +10,11 @@ and production governance remain outside this package.
 from frtb_common import CapitalComponentMetadata, ImplementationStatus, ValidationStatus
 
 from frtb_ima._version import __version__
+from frtb_ima.arrow_handoff import (
+    IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS,
+    build_capital_run_input_manifest_from_handoff,
+    normalize_ima_input_manifest_arrow_table,
+)
 from frtb_ima.audit import (
     CapitalRunAuditLog,
     DeskAuditRecord,
@@ -216,6 +221,7 @@ PACKAGE_METADATA = CapitalComponentMetadata(
 __all__ = [
     "DEFAULT_MODEL_VERSION",
     "FED_NPR_SPECIFIED_FX_CURRENCY_CODES",
+    "IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS",
     "PACKAGE_METADATA",
     "BusinessCalendar",
     "CalculationContext",
@@ -313,6 +319,7 @@ __all__ = [
     "assess_direct_loss_robustness",
     "assess_rfet_evidence",
     "audit_records_to_ndjson",
+    "build_capital_run_input_manifest_from_handoff",
     "build_nmrf_valuation_run_request",
     "build_nmrf_valuation_spec",
     "build_nmrf_valuation_specs",
@@ -343,6 +350,7 @@ __all__ = [
     "models_based_capital_for_policy",
     "nested_lh_vectors_from_cube",
     "nmrf_effective_liquidity_horizon",
+    "normalize_ima_input_manifest_arrow_table",
     "per_risk_class_nested_lh_vectors_from_cube",
     "pla_addon",
     "reconcile_nmrf_valuation_artifacts",
