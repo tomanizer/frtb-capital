@@ -37,7 +37,10 @@ it must not look up global constants by regime name inside kernels.
 
 Each package owns a canonical input model at its public boundary. Importers,
 CRIF mappers, examples, and future vendor adapters must translate into that
-model before calculation starts. Public validation rejects missing identities,
+model before calculation starts. Shared CRIF-to-Arrow normalization may own
+column discovery, alias normalization, primitive coercion, rejected-row
+partitioning, and diagnostics, but package adapters still own RiskType mapping
+and regulatory validation. Public validation rejects missing identities,
 duplicate keys unless aggregation is explicit, unknown enum values, non-finite
 numbers, implicit sign conventions, and unsupported regulatory features.
 
@@ -53,14 +56,19 @@ explain the number: run id, package id, model version, code version, rule
 profile id and hash, input snapshot hash, calculation node, source citation
 ids, validation status, and fallback status with reason code where applicable.
 
-Default numerical kernels should use `numpy` arrays and deterministic output
-ordering. Avoid row-wise dataframe execution, hidden table shims, mutable model
-classes that load/calculate/save/report in one object, and duplicated
-risk-class classes where profile data can drive shared aggregation logic. Any
-new runtime dependency requires an ADR. Dataframe and statistical libraries may
-be used in notebooks, validation, tests, research, and optional adapters when
-they do not leak into the capital calculation runtime path; see
-[`ADR 0011`](../decisions/0011-core-runtime-dependency-policy.md).
+Default numerical kernels should use package-owned `numpy` arrays and
+deterministic output ordering. Arrow-backed tabular handoffs are allowed at
+common IO, CRIF normalization, adapter, and handoff boundaries only; package
+kernels must receive typed axes and arrays, not Arrow or dataframe objects.
+Avoid row-wise dataframe execution, hidden table shims, mutable model classes
+that load/calculate/save/report in one object, and duplicated risk-class
+classes where profile data can drive shared aggregation logic. Any new runtime
+dependency beyond the approved Arrow handoff boundary requires an ADR.
+Dataframe and statistical libraries may be used in notebooks, validation, tests,
+research, and optional adapters when they do not leak into the capital
+calculation runtime path; see
+[`ADR 0011`](../decisions/0011-core-runtime-dependency-policy.md) and
+[`ADR 0023`](../decisions/0023-arrow-tabular-handoff-boundary.md).
 
 Every calculation feature needs deterministic unit tests, invalid-input tests,
 cited golden fixtures, explicit unsupported-feature tests, audit-metadata

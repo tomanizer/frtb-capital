@@ -6,15 +6,18 @@ Standardised Approach sensitivities-based method component for the
 ## Status
 
 The package exposes `calculate_sbm_capital` for the phase-1 cited GIRR delta,
-GIRR vega, and FX delta slices under the Basel MAR21 profile. Curvature, FX
-vega, and remaining non-GIRR risk classes fail closed with explicit errors.
+GIRR vega, FX delta, equity delta, commodity delta, and CSR delta slices under
+the Basel MAR21 profile. Curvature, FX vega, and unsupported profiles fail
+closed with explicit errors.
 
 | Area | Status |
 | --- | --- |
 | GIRR delta and vega capital paths | Implemented (phase 1) |
-| FX delta capital path | Implemented (phase 1) |
-| Curvature, FX vega, remaining risk classes | Unsupported (fail-closed) |
-| CRIF/CSV adapters | Out of scope (phase 1) |
+| FX, equity, and commodity delta capital paths | Implemented (phase 1) |
+| CSR delta capital paths | Implemented (phase 1) |
+| Curvature, FX vega, unsupported risk classes | Unsupported capital (fail-closed) |
+| Arrow handoff | GIRR delta/vega, non-credit delta, and CSR delta capital paths implemented; GIRR curvature validation handoff implemented |
+| CRIF/CSV adapters | Partial: row-dict compatibility plus GIRR delta CRIF-to-Arrow handoff |
 
 Outputs from this prototype package are not final regulatory capital.
 
@@ -25,6 +28,7 @@ Outputs from this prototype package are not final regulatory capital.
 | [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md) | Code-to-regulation map and phase-1 support status |
 | [REGULATORY_ASSUMPTIONS.md](docs/REGULATORY_ASSUMPTIONS.md) | Source-cited implementation boundaries |
 | [regulatory_sources.yml](docs/regulatory_sources.yml) | Link-only regulatory source manifest |
+| [SBM batch/Arrow performance report](../../docs/performance/frtb-sbm-batch-arrow-report.md) | High-volume handoff benchmark evidence and remaining performance boundaries |
 | [Module planning pack](../../docs/modules/frtb-sbm/README.md) | PRD, architecture, requirements registry |
 | [Requirements registry](../../docs/modules/frtb-sbm/requirements/BASEL_FRTB_SBM.yml) | Requirement ids and implementation status |
 
@@ -32,6 +36,55 @@ Outputs from this prototype package are not final regulatory capital.
 
 ```python
 from frtb_sbm import PACKAGE_METADATA, calculate_sbm_capital
+```
+
+High-volume GIRR delta/vega, supported non-credit delta, and CSR delta inputs can
+be converted to the package-owned `SbmSensitivityBatch` without creating one
+accepted `SbmSensitivity` per row. GIRR curvature inputs can use the same Arrow
+handoff boundary for validation and branch-selection preparation, but there is
+no public curvature capital entrypoint.
+
+```python
+from frtb_sbm.arrow_handoff import (
+    calculate_sbm_capital_from_commodity_delta_handoff,
+    calculate_sbm_capital_from_csr_nonsec_delta_handoff,
+    calculate_sbm_capital_from_csr_sec_ctp_delta_handoff,
+    calculate_sbm_capital_from_csr_sec_nonctp_delta_handoff,
+    calculate_sbm_capital_from_equity_delta_handoff,
+    calculate_sbm_capital_from_fx_delta_handoff,
+    calculate_sbm_capital_from_girr_delta_handoff,
+    calculate_sbm_capital_from_girr_vega_handoff,
+    build_girr_curvature_batch_from_handoff,
+    normalize_commodity_delta_arrow_table,
+    normalize_csr_nonsec_delta_arrow_table,
+    normalize_csr_sec_ctp_delta_arrow_table,
+    normalize_csr_sec_nonctp_delta_arrow_table,
+    normalize_equity_delta_arrow_table,
+    normalize_fx_delta_arrow_table,
+    normalize_girr_curvature_arrow_table,
+    normalize_girr_delta_arrow_table,
+    normalize_girr_vega_arrow_table,
+)
+```
+
+The package-owned batch type now represents one homogeneous SBM
+`(risk_class, risk_measure)` path. GIRR delta/vega, FX, equity, commodity,
+and CSR delta have public capital-from-Arrow handoffs. GIRR curvature has a
+validation-only Arrow handoff that keeps `up_shock_amount` and
+`down_shock_amount` as separate arrays and leaves capital fail-closed until the
+cited curvature aggregation issue is implemented.
+
+The migrated Arrow handoff paths avoid accepted-row `SbmSensitivity` dataclass
+materialization. The row API remains available for compatibility and tests, but
+high-volume callers should hand off Arrow tables to the public normalizers and
+capital-from-handoff helpers.
+
+CRIF-shaped GIRR delta inputs can first use the package-owned CRIF mapping,
+which delegates package-neutral column discovery and rejected-row partitioning
+to `frtb_common.crif` while retaining SBM RiskType semantics in `frtb_sbm`:
+
+```python
+from frtb_sbm.crif import normalize_girr_delta_crif_arrow_table
 ```
 
 See `AGENTS.md` for package boundary rules.

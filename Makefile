@@ -11,7 +11,7 @@ MUTATION_DIST := dist/mutation
 
 .PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
 .PHONY: test test-no-cov test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording
-.PHONY: import-lint import-smoke maturity-check quality-control build
+.PHONY: import-lint kernel-import-boundary import-smoke maturity-check quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
 .PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark rrao-benchmark benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
@@ -70,6 +70,9 @@ package-status-dashboard-regenerate:
 import-lint:
 	uv run lint-imports
 
+kernel-import-boundary:
+	uv run python scripts/ci/check_kernel_import_boundary.py
+
 import-smoke:
 	uv run python scripts/ci/import_smoke.py
 
@@ -77,7 +80,7 @@ maturity-check:
 	mkdir -p dist/quality
 	uv run python scripts/ci/check_package_maturity.py --json-output dist/quality/package-maturity.json
 
-quality-control: import-lint import-smoke maturity-check
+quality-control: import-lint kernel-import-boundary import-smoke maturity-check
 
 regulatory-corpus:
 	python3 tools/regulatory/lint_regulatory_corpus.py

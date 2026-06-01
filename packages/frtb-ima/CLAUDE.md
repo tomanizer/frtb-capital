@@ -139,15 +139,19 @@ Use `packages/frtb-ima/docs/regulatory_sources.yml` for official source URLs and
 Do not add abstractions, base classes, helper layers, or "convenience" wrappers that are not demanded by a specific calculation requirement. Three similar lines is preferable to a premature abstraction. If you see drift toward deep nesting or unnecessary class hierarchies, reject it.
 
 ### Dependencies
-`numpy` is the only runtime dependency for capital calculation kernels. Do not
-add `pandas`, `scipy`, `polars`, `statsmodels`, or any other runtime library
-without an explicit architectural decision. These libraries may be used outside
-the runtime kernel path for tests, notebooks, validation, research, or optional
-adapters under suite
+`numpy` is the runtime dependency for capital calculation kernels. Arrow is
+approved only for tabular handoff, manifests, IO, adapters, and handoff modules
+under suite
+[`ADR 0023`](../../docs/decisions/0023-arrow-tabular-handoff-boundary.md); IMA
+scenario cubes and capital kernels remain NumPy-native. Do not add `pandas`,
+`scipy`, `polars`, `statsmodels`, or any other runtime library without an
+explicit architectural decision. These libraries may be used outside the runtime
+kernel path for tests, notebooks, validation, research, or optional adapters
+under suite
 [`ADR 0011`](../../docs/decisions/0011-core-runtime-dependency-policy.md).
-Optional orchestration integrations (DuckDB, Arrow, object stores, telemetry
-clients) are future scope — document them as such, do not import them in the
-main calculation path.
+Optional orchestration integrations beyond the approved Arrow handoff boundary
+(DuckDB, object stores, telemetry clients) are future scope — document them as
+such, do not import them in the main calculation path.
 
 ---
 
