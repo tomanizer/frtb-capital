@@ -4,12 +4,11 @@
 
 ## Current status
 
-Phase 1 (#151) delivers cited GIRR delta/vega, FX delta/vega,
-equity delta/vega, commodity delta/vega, CSR delta/vega, and
-MAR21.96-MAR21.101 curvature slices under BASEL_MAR21. Non-GIRR vega and
-curvature capital are available through the row-wise public API; the GIRR
-curvature Arrow/batch handoff remains validation-only until the high-volume
-curvature batch path is implemented.
+Phase 1 (#151) and follow-on vectorisation work deliver cited BASEL_MAR21
+delta, vega, and curvature capital slices for GIRR, FX, equity, commodity, CSR
+non-securitisation, CSR securitisation non-CTP, and CSR securitisation CTP.
+Row-wise, package-owned batch, and Arrow handoff entrypoints exist for these
+supported paths; unsupported sub-features still fail closed.
 
 `PACKAGE_METADATA.validation_status` is `PENDING`: fixture packs are synthetic
 and do not constitute independent model validation. Do not treat outputs as

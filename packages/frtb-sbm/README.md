@@ -5,22 +5,24 @@ Standardised Approach sensitivities-based method component for the
 
 ## Status
 
-The package exposes `calculate_sbm_capital` for the phase-1 cited delta, vega,
-and row-wise curvature slices under the Basel MAR21 profile. Unsupported
-profiles and unsupported sub-features fail closed with explicit errors.
+The package exposes `calculate_sbm_capital` for the phase-1 cited
+`BASEL_MAR21` delta, vega, and curvature slices across all seven SBM risk
+classes. Unsupported profiles and unsupported sub-features fail closed with
+explicit errors.
 
 | Area | Status |
 | --- | --- |
-| GIRR delta and vega capital paths | Implemented (phase 1) |
-| FX, equity, and commodity delta capital paths | Implemented (phase 1) |
-| CSR delta capital paths | Implemented (phase 1) |
-| FX, equity, commodity, and CSR vega capital paths | Implemented (phase 1 row and Arrow/batch API) |
-| Curvature capital | Implemented for BASEL_MAR21 row and Arrow/batch inputs; unsupported sub-features fail closed |
+| BASEL_MAR21 delta capital paths | Implemented under audit for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP |
+| BASEL_MAR21 vega capital paths | Implemented under audit for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP |
+| BASEL_MAR21 curvature capital paths | Implemented under audit for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP |
 | Unsupported profiles and unmapped sub-features | Unsupported capital (fail-closed) |
 | Arrow handoff | Supported BASEL_MAR21 delta, vega, and curvature capital paths implemented; portfolio dispatcher available |
 | CRIF/CSV adapters | Implemented row-dict canonical mapping for supported BASEL_MAR21 delta/vega/curvature paths; GIRR delta CRIF-to-Arrow handoff |
 
 Outputs from this prototype package are not final regulatory capital.
+`PACKAGE_METADATA.validation_status` remains `PENDING`; current evidence is
+synthetic and internal. The single source of package support status is the
+matrix in [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md).
 
 ## Documentation
 

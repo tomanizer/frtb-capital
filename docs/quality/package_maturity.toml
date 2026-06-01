@@ -122,3 +122,7 @@ path = "packages/frtb-sbm/tests/test_sbm_public_api.py"
 [[packages.required_tests]]
 id = "unsupported-runtime-paths"
 path = "packages/frtb-sbm/tests/test_sbm_unsupported_features.py"
+
+[[packages.required_tests]]
+id = "support-matrix"
+path = "packages/frtb-sbm/tests/test_sbm_support_matrix.py"
