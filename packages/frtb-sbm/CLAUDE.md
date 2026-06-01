@@ -36,7 +36,10 @@ vectors. Do not clear `PENDING` without a genuine model-validation exercise.
   `frtb-common`.
 - Reject regulatory thresholds without precise paragraph citations.
 - Do not emit successful placeholder capital for unsupported paths.
-- `numpy` is the only runtime numerical dependency for calculation kernels.
+- `numpy` is the runtime numerical dependency for calculation kernels. Arrow is
+  allowed only in package adapters, CRIF normalization, and handoff modules
+  under suite ADR 0023; kernels must not import `pyarrow`, `pandas`, or
+  `polars`.
 - Package-local traceability: `packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`.
 
 ## Profile boundaries

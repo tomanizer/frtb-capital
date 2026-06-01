@@ -407,6 +407,9 @@ Add these targets to the root `Makefile`:
 import-lint:
 	uv run lint-imports
 
+kernel-import-boundary:
+	uv run python scripts/ci/check_kernel_import_boundary.py
+
 import-smoke:
 	uv run python scripts/ci/import_smoke.py
 
@@ -414,7 +417,7 @@ maturity-check:
 	mkdir -p dist/quality
 	uv run python scripts/ci/check_package_maturity.py --json-output dist/quality/package-maturity.json
 
-quality-control: import-lint import-smoke maturity-check
+quality-control: import-lint kernel-import-boundary import-smoke maturity-check
 ```
 
 `quality-control` must be fast enough to run on every PR. It must not run the

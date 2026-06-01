@@ -36,11 +36,15 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
 
 - Python 3.11+ across all packages.
 - Prefer dataclasses, enums, pure functions.
-- `numpy` is the default runtime numerical dependency for capital calculation
-  kernels. Adding any other runtime dependency requires an ADR. `pandas`,
-  `polars`, `scipy`, and `statsmodels` may be used in notebooks, validation,
-  tests, research, or optional adapters when they do not leak into the core
-  runtime path; see [`ADR 0011`](docs/decisions/0011-core-runtime-dependency-policy.md).
+- `numpy` is the runtime numerical dependency for capital calculation kernels.
+  `pyarrow` is approved only for tabular handoff, IO, CRIF normalization,
+  adapters, and handoff objects under
+  [`ADR 0023`](docs/decisions/0023-arrow-tabular-handoff-boundary.md).
+  Kernels must not import `pyarrow`, `pandas`, or `polars`; the
+  `quality-control` target enforces this. `pandas`, `polars`, `scipy`, and
+  `statsmodels` may be used in notebooks, validation, tests, research, or
+  optional adapters when they do not leak into the core runtime path; see
+  [`ADR 0011`](docs/decisions/0011-core-runtime-dependency-policy.md).
 - Add unit tests for every calculation.
 - Synthetic data only; no proprietary market data.
 - Favour clarity over cleverness.

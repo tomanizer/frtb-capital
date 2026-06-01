@@ -549,7 +549,8 @@ The package may provide CRIF/vendor-to-canonical mapping, but:
 - adapter output must be canonical package records;
 - source column names, row ids, mapping warnings, and inferred-field decisions
   must be preserved;
-- adapters must not introduce dataframe runtime dependency into the core path.
+- adapters may use Arrow at the handoff boundary under ADR 0023, but must not
+  introduce dataframe execution or Arrow objects into the kernel path.
 
 External reference implementations may inform column naming; they are not
 regulatory sources.
@@ -581,8 +582,13 @@ limits where relevant.
 ### CVA-NFR-002: Runtime dependency policy
 
 Core runtime kernels must use Python standard library, frozen dataclasses,
-enums, and `numpy` where vectorisation matters. Additional runtime numerical
-dependencies require explicit design approval consistent with
+enums, and package-owned `numpy` arrays where vectorisation matters. Arrow may
+be used only for tabular handoff, CRIF normalization, adapters, and handoff
+objects under
+[ADR 0023](../../decisions/0023-arrow-tabular-handoff-boundary.md). Kernels
+must not import `pyarrow`, `pandas`, or `polars`. Additional runtime numerical
+dependencies beyond the approved Arrow handoff boundary require explicit design
+approval consistent with
 [ADR 0011](../../decisions/0011-core-runtime-dependency-policy.md).
 
 ### CVA-NFR-003: Numeric representation
