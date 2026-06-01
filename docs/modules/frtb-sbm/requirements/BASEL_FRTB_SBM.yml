@@ -64,10 +64,10 @@ requirements:
   - id: SBM-CRIF-001
     title: CRIF-to-canonical mapping
     source: ISDA CRIF field convention; implementation support requirement
-    status: planned
+    status: implemented
     modules: [src/frtb_sbm/crif.py]
-    tests: [tests/test_crif.py]
-    notes: Calculation kernel must not depend on CSV or pandas.
+    tests: [tests/test_sbm_crif.py]
+    notes: Row-dict CRIF-to-canonical mapping covers supported BASEL_MAR21 delta, vega, and curvature paths with auditable rejects. GIRR delta also has a CRIF-to-Arrow handoff. Calculation kernels do not depend on CSV or dataframe libraries.
   - id: SBM-AUDIT-001
     title: Audit and Euler-compatible reports
     source: Basel MAR21 component traceability by formula

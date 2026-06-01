@@ -18,7 +18,7 @@ profiles and unsupported sub-features fail closed with explicit errors.
 | Curvature capital | Implemented for BASEL_MAR21 row-wise inputs; unsupported sub-features fail closed |
 | Unsupported profiles and unmapped sub-features | Unsupported capital (fail-closed) |
 | Arrow handoff | GIRR delta/vega, non-credit delta, and CSR delta capital paths implemented; GIRR curvature validation handoff implemented |
-| CRIF/CSV adapters | Partial: row-dict compatibility plus GIRR delta CRIF-to-Arrow handoff |
+| CRIF/CSV adapters | Implemented row-dict canonical mapping for supported BASEL_MAR21 delta/vega/curvature paths; GIRR delta CRIF-to-Arrow handoff |
 
 Outputs from this prototype package are not final regulatory capital.
 
@@ -86,12 +86,15 @@ materialization. The row API remains available for compatibility and tests, but
 high-volume callers should hand off Arrow tables to the public normalizers and
 capital-from-handoff helpers.
 
-CRIF-shaped GIRR delta inputs can first use the package-owned CRIF mapping,
-which delegates package-neutral column discovery and rejected-row partitioning
-to `frtb_common.crif` while retaining SBM RiskType semantics in `frtb_sbm`:
+CRIF-shaped row dictionaries can use `adapt_crif_records` to map supported
+BASEL_MAR21 delta, vega, and curvature risk types into canonical
+`SbmSensitivity` rows with auditable rejected rows. GIRR delta inputs can also
+use the package-owned CRIF-to-Arrow handoff, which delegates package-neutral
+column discovery and rejected-row partitioning to `frtb_common.crif` while
+retaining SBM RiskType semantics in `frtb_sbm`:
 
 ```python
-from frtb_sbm.crif import normalize_girr_delta_crif_arrow_table
+from frtb_sbm.crif import adapt_crif_records, normalize_girr_delta_crif_arrow_table
 ```
 
 See `AGENTS.md` for package boundary rules.
