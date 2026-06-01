@@ -27,6 +27,7 @@ from frtb_sbm.audit import (
     _input_hash_for_validated_sensitivities,
     validate_sbm_result_reconciliation,
 )
+from frtb_sbm.batch import SbmSensitivityBatch, build_girr_delta_batch_from_sensitivities
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
@@ -37,12 +38,13 @@ from frtb_sbm.data_models import (
     SbmReconciliationMetadata,
     SbmRiskClass,
     SbmRiskMeasure,
+    SbmRuleProfile,
     SbmRunContextSummary,
     SbmRunControls,
     SbmSensitivity,
     WeightedSensitivity,
 )
-from frtb_sbm.factor_grid import net_girr_delta_weighted_sensitivities
+from frtb_sbm.factor_grid import net_girr_delta_sensitivity_batch
 from frtb_sbm.reference_data import (
     GIRR_DELTA_INTRA_BUCKET_CONSTANT,
     GIRR_DIFFERENT_CURVE_CORRELATION,
@@ -64,11 +66,13 @@ from frtb_sbm.risk_classes.fx import calculate_fx_delta_risk_class_capital
 from frtb_sbm.validation import (
     SbmInputError,
     ensure_sbm_capital_paths_supported,
+    ensure_sbm_risk_class_measure_supported,
     ensure_sbm_run_supported,
+    normalise_currency_code,
     phase1_capital_supported_paths,
+    validate_sbm_calculation_context,
 )
 from frtb_sbm.weighted_sensitivity import (
-    weight_girr_delta_sensitivities,
     weight_girr_vega_sensitivities,
 )
 
@@ -207,6 +211,134 @@ def calculate_sbm_capital(
                 f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
             )
 
+    return _build_sbm_capital_result(
+        risk_class_results,
+        rule_profile=rule_profile,
+        context=context,
+        input_hash=_input_hash_for_validated_sensitivities(validated),
+        input_count=len(validated),
+    )
+
+
+def calculate_sbm_capital_from_girr_delta_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital for a pre-built GIRR delta sensitivity batch."""
+
+    if context is None:
+        raise SbmInputError("calculation context is required", field="context")
+    if not isinstance(context, SbmCalculationContext):
+        raise SbmInputError(
+            "calculation context must be SbmCalculationContext",
+            field="context",
+        )
+    if not isinstance(batch, SbmSensitivityBatch):
+        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
+
+    validate_sbm_calculation_context(context)
+    ensure_sbm_risk_class_measure_supported(
+        context.profile_id,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.DELTA,
+    )
+    _ensure_girr_delta_batch_run_supported(context, batch)
+    rule_profile = get_sbm_rule_profile(context.profile_id)
+    run_controls = context.run_controls or SbmRunControls()
+    risk_class = _calculate_girr_delta_risk_class_capital_from_batch(
+        batch,
+        profile_id=rule_profile.profile_id,
+        reporting_currency=context.reporting_currency,
+        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
+    )
+    return _build_sbm_capital_result(
+        (risk_class,),
+        rule_profile=rule_profile,
+        context=context,
+        input_hash=batch.input_hash,
+        input_count=batch.row_count,
+    )
+
+
+def _calculate_girr_delta_risk_class_capital(
+    sensitivities: tuple[SbmSensitivity, ...],
+    *,
+    profile_id: str,
+    reporting_currency: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+) -> RiskClassCapital:
+    batch = build_girr_delta_batch_from_sensitivities(sensitivities)
+    return _calculate_girr_delta_risk_class_capital_from_batch(
+        batch,
+        profile_id=profile_id,
+        reporting_currency=reporting_currency,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
+    )
+
+
+def _calculate_girr_delta_risk_class_capital_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    reporting_currency: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+) -> RiskClassCapital:
+    factor_grid = net_girr_delta_sensitivity_batch(
+        batch,
+        profile_id=profile_id,
+        reporting_currency=reporting_currency,
+    )
+    return _aggregate_girr_measure_capital(
+        factor_grid.weighted_sensitivities,
+        profile_id=profile_id,
+        risk_measure=SbmRiskMeasure.DELTA,
+        tenor_by_id=factor_grid.tenor_by_id,
+        risk_factor_by_id=factor_grid.risk_factor_by_id,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
+    )
+
+
+def _ensure_girr_delta_batch_run_supported(
+    context: SbmCalculationContext,
+    batch: SbmSensitivityBatch,
+) -> None:
+    if batch.row_count == 0:
+        raise SbmInputError("GIRR delta batch must not be empty", field="batch")
+    normalise_currency_code(context.reporting_currency, field="reporting_currency")
+    scoped_desk_id = (context.desk_id or "").strip()
+    scoped_legal_entity = (context.legal_entity or "").strip()
+    for row_index in range(batch.row_count):
+        sensitivity_id = batch.sensitivity_ids[row_index]
+        if scoped_desk_id and batch.desk_ids[row_index] != scoped_desk_id:
+            raise SbmInputError(
+                f"desk_id {batch.desk_ids[row_index]} does not match "
+                f"context desk_id {scoped_desk_id}",
+                field="desk_id",
+                sensitivity_id=sensitivity_id,
+            )
+        if scoped_legal_entity and batch.legal_entities[row_index] != scoped_legal_entity:
+            raise SbmInputError(
+                f"legal_entity {batch.legal_entities[row_index]} does not match "
+                f"context legal_entity {scoped_legal_entity}",
+                field="legal_entity",
+                sensitivity_id=sensitivity_id,
+            )
+
+
+def _build_sbm_capital_result(
+    risk_class_results: Sequence[RiskClassCapital],
+    *,
+    rule_profile: SbmRuleProfile,
+    context: SbmCalculationContext,
+    input_hash: str,
+    input_count: int,
+) -> SbmCapitalResult:
     (
         aligned_risk_classes,
         total_capital,
@@ -223,10 +355,10 @@ def calculate_sbm_capital(
         risk_classes=aligned_risk_classes,
         profile_id=rule_profile.profile_id,
         profile_hash=rule_profile.content_hash,
-        input_hash=_input_hash_for_validated_sensitivities(validated),
+        input_hash=input_hash,
         warnings=_profile_warnings(rule_profile.profile_id),
         reconciliation=SbmReconciliationMetadata(
-            input_count=len(validated),
+            input_count=input_count,
             rejected_input_count=0,
             requirement_ids=_SBM_REQUIREMENT_IDS,
             citation_ids=citation_ids,
@@ -243,31 +375,6 @@ def calculate_sbm_capital(
     )
     validate_sbm_result_reconciliation(result)
     return result
-
-
-def _calculate_girr_delta_risk_class_capital(
-    sensitivities: tuple[SbmSensitivity, ...],
-    *,
-    profile_id: str,
-    reporting_currency: str,
-    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
-) -> RiskClassCapital:
-    weighted = weight_girr_delta_sensitivities(
-        sensitivities,
-        profile_id=profile_id,
-        reporting_currency=reporting_currency,
-    )
-    factor_grid = net_girr_delta_weighted_sensitivities(sensitivities, weighted)
-    return _aggregate_girr_measure_capital(
-        factor_grid.weighted_sensitivities,
-        profile_id=profile_id,
-        risk_measure=SbmRiskMeasure.DELTA,
-        tenor_by_id=factor_grid.tenor_by_id,
-        risk_factor_by_id=factor_grid.risk_factor_by_id,
-        pairwise_evidence_mode=pairwise_evidence_mode,
-        pairwise_evidence_limit=pairwise_evidence_limit,
-    )
 
 
 def _calculate_girr_vega_risk_class_capital(
@@ -585,4 +692,4 @@ def _profile_warnings(profile_id: str) -> tuple[str, ...]:
     return ()
 
 
-__all__ = ["calculate_sbm_capital"]
+__all__ = ["calculate_sbm_capital", "calculate_sbm_capital_from_girr_delta_batch"]

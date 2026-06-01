@@ -14,6 +14,7 @@ vega, and remaining non-GIRR risk classes fail closed with explicit errors.
 | GIRR delta and vega capital paths | Implemented (phase 1) |
 | FX delta capital path | Implemented (phase 1) |
 | Curvature, FX vega, remaining risk classes | Unsupported (fail-closed) |
+| Arrow handoff | GIRR delta batch path implemented; broader adapters pending |
 | CRIF/CSV adapters | Out of scope (phase 1) |
 
 Outputs from this prototype package are not final regulatory capital.
@@ -32,6 +33,16 @@ Outputs from this prototype package are not final regulatory capital.
 
 ```python
 from frtb_sbm import PACKAGE_METADATA, calculate_sbm_capital
+```
+
+High-volume GIRR delta inputs can be converted to the package-owned
+`SbmSensitivityBatch` without creating one accepted `SbmSensitivity` per row:
+
+```python
+from frtb_sbm.arrow_handoff import (
+    calculate_sbm_capital_from_girr_delta_handoff,
+    normalize_girr_delta_arrow_table,
+)
 ```
 
 See `AGENTS.md` for package boundary rules.

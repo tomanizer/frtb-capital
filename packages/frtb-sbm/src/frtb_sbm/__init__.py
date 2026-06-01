@@ -20,7 +20,13 @@ from frtb_sbm.audit import (
     serialize_sbm_result,
     validate_sbm_result_reconciliation,
 )
-from frtb_sbm.capital import calculate_sbm_capital
+from frtb_sbm.batch import (
+    SbmSensitivityBatch,
+    build_girr_delta_batch_from_columns,
+    build_girr_delta_batch_from_sensitivities,
+    input_hash_for_girr_delta_batch,
+)
+from frtb_sbm.capital import calculate_sbm_capital, calculate_sbm_capital_from_girr_delta_batch
 from frtb_sbm.curvature import (
     CURVATURE_CAPITAL_REQUIREMENT_ID,
     calculate_curvature_risk_class_capital,
@@ -176,6 +182,7 @@ __all__ = [
     "SbmRunControls",
     "SbmScenarioLabel",
     "SbmSensitivity",
+    "SbmSensitivityBatch",
     "SbmSignConvention",
     "SbmSourceLineage",
     "SbmUnsupportedFeature",
@@ -190,9 +197,12 @@ __all__ = [
     "aggregate_risk_class_with_scenarios",
     "apply_correlation_scenario",
     "apply_correlation_scenario_definition",
+    "build_girr_delta_batch_from_columns",
+    "build_girr_delta_batch_from_sensitivities",
     "calculate_curvature_risk_class_capital",
     "calculate_girr_curvature_risk_class_capital",
     "calculate_sbm_capital",
+    "calculate_sbm_capital_from_girr_delta_batch",
     "citations_for_profile",
     "coerce_pairwise_evidence_mode",
     "coerce_risk_class",
@@ -230,6 +240,7 @@ __all__ = [
     "girr_vega_option_tenor_definition",
     "girr_vega_option_tenors",
     "group_weighted_sensitivities_by_bucket",
+    "input_hash_for_girr_delta_batch",
     "input_hash_for_sensitivities",
     "normalise_currency_code",
     "normalise_fx_delta_currency_code",

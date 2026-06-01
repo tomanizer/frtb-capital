@@ -45,6 +45,7 @@ Parent issue: [#151](https://github.com/tomanizer/frtb-capital/issues/151).
 | Intra-bucket aggregation | Implemented | #156 |
 | Inter-bucket aggregation and scenario selection | Implemented | #157 |
 | Public GIRR delta capital API | Implemented | #158 |
+| GIRR delta Arrow/batch handoff | Implemented | #268 — Arrow input converts to `SbmSensitivityBatch`; kernels remain NumPy-native. |
 | Audit/replay and synthetic fixtures | Implemented | #159 — `girr_delta_v1` fixture pack |
 | Vega capital (GIRR) | Implemented | #161 — `girr_vega_v1` fixture pack |
 | FX delta capital | Implemented | #162 — `fx_delta_v1` fixture pack, MAR21.86-MAR21.89 |
@@ -91,6 +92,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `_version.py` | Package code-version identity for audit records. | MAR21 calculation traceability context. | Section V.A.7.a step traceability context. | Implemented for package identity only. |
 | `__init__.py` | Stable package export boundary. | MAR20.4 SA component context. | Section V.A.7.a package-scope context. | Implemented public surface for phase-1 slice. |
 | `data_models.py` | Frozen sensitivity, context, weighted sensitivity, bucket, risk-class, and result dataclasses. | MAR21.1-MAR21.8. | Section V.A.7.a steps one through three. | Implemented (#153). |
+| `batch.py` | Package-owned NumPy-backed GIRR delta sensitivity batch and row-equivalent input hashing. | MAR21.4-MAR21.7, MAR21.39-MAR21.42. | Section V.A.7.a steps three through six. | Implemented for GIRR delta (#268). |
 | `validation.py` | Input invariants, duplicate identity checks, lineage checks, and explicit package input errors. | MAR21 risk-factor assignment context. | Section V.A.7.a steps one and two. | Implemented (#153). |
 | `regimes.py` | Rule-profile identity, support declarations, unsupported-profile guardrails, and deterministic profile hash. | MAR21 profile for Basel SBM mechanics. | Section V.A.7.a U.S. profile. | Implemented for BASEL_MAR21 supported delta/vega slices. |
 | `reference_data.py` | Risk-class bucket definitions, tenor sets, risk weights, correlations, scenario labels, and citation ids. | MAR21 risk-class tables. | Section V.A.7.a risk-weight and correlation steps. | Implemented for GIRR, FX, equity, commodity, CSR non-sec delta. |
@@ -98,6 +100,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `weighted_sensitivity.py` | Cited risk-weight lookup and weighted sensitivity records for supported measures. | MAR21 risk-weight provisions by class. | Section V.A.7.a step three. | Implemented for supported delta/vega slices. |
 | `aggregation.py` | Shared intra-bucket and inter-bucket aggregation, scenario evaluation, and floors. | MAR21 aggregation formulas. | Section V.A.7.a steps four through six. | Implemented (#156, #157). |
 | `capital.py` | Public calculation entry point wiring validation, profiles, weighting, aggregation, and result assembly. | MAR21 end-to-end SBM mechanics. | Section V.A.7.a full process. | Implemented for supported delta/vega slices including CSR non-sec (#164). |
+| `arrow_handoff.py` | Adapter boundary from normalized Arrow handoff to package-owned GIRR delta batch. | MAR21 risk-factor assignment and weighting context. | Section V.A.7.a tabular input context. | Implemented for GIRR delta (#268); no Arrow in kernels. |
 | `curvature.py` | Curvature input contracts, up/down shock validation, and fail-closed capital gates. | MAR21.5 curvature provisions. | Section V.A.7.a footnote 328. | Partial — contracts only (#165); capital path planned (#166). |
 | `risk_classes/fx.py` | FX delta assembly onto shared aggregation primitives. | MAR21.14, MAR21.86-MAR21.89. | Section V.A.7.a FX delta context. | Implemented (#162). |
 | `risk_classes/csr_nonsec.py` | CSR non-securitisation delta assembly onto shared aggregation primitives. | MAR21.9, MAR21.51-MAR21.57. | Section V.A.7.a CSR non-sec context. | Implemented (#164). |
