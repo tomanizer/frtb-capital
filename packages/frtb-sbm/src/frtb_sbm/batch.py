@@ -228,6 +228,31 @@ def build_girr_delta_batch_from_sensitivities(
     )
 
 
+def build_girr_vega_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a GIRR vega batch from existing row-wise canonical sensitivities.
+
+    This compatibility builder starts from already-materialised
+    ``SbmSensitivity`` rows. High-volume Arrow adapters should use
+    ``build_girr_vega_batch_from_columns``.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
 def build_sbm_batch_from_columns(
     *,
     expected_risk_class: SbmRiskClass | str,
@@ -443,6 +468,71 @@ def build_girr_delta_batch_from_columns(
     )
 
 
+def build_girr_vega_batch_from_columns(
+    *,
+    sensitivity_ids: Iterable[object],
+    source_row_ids: Iterable[object],
+    desk_ids: Iterable[object],
+    legal_entities: Iterable[object],
+    risk_classes: Iterable[object],
+    risk_measures: Iterable[object],
+    buckets: Iterable[object],
+    risk_factors: Iterable[object],
+    amounts: Iterable[object],
+    amount_currencies: Iterable[object],
+    sign_conventions: Iterable[object],
+    tenors: Iterable[object],
+    option_tenors: Iterable[object],
+    lineage_source_systems: Iterable[object],
+    lineage_source_files: Iterable[object],
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    position_ids: Iterable[object] | None = None,
+    qualifiers: Iterable[object] | None = None,
+    liquidity_horizon_days: Iterable[object] | None = None,
+    maturities: Iterable[object] | None = None,
+    up_shock_amounts: Iterable[object] | None = None,
+    down_shock_amounts: Iterable[object] | None = None,
+    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
+    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    copy_arrays: bool = True,
+) -> SbmSensitivityBatch:
+    """Build a GIRR vega batch from columnar arrays owned by an adapter."""
+
+    return build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        sensitivity_ids=sensitivity_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        risk_measures=risk_measures,
+        buckets=buckets,
+        risk_factors=risk_factors,
+        amounts=amounts,
+        amount_currencies=amount_currencies,
+        sign_conventions=sign_conventions,
+        tenors=tenors,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        position_ids=position_ids,
+        qualifiers=qualifiers,
+        option_tenors=option_tenors,
+        liquidity_horizon_days=liquidity_horizon_days,
+        maturities=maturities,
+        up_shock_amounts=up_shock_amounts,
+        down_shock_amounts=down_shock_amounts,
+        source_column_maps=source_column_maps,
+        mapping_citation_ids=mapping_citation_ids,
+        copy_arrays=copy_arrays,
+    )
+
+
 def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
     """Return the row-equivalent deterministic input hash for a homogeneous batch."""
 
@@ -457,6 +547,18 @@ def input_hash_for_girr_delta_batch(batch: SbmSensitivityBatch) -> str:
         expected_risk_class=SbmRiskClass.GIRR,
         expected_risk_measure=SbmRiskMeasure.DELTA,
         label="GIRR delta",
+    )
+    return input_hash_for_sbm_batch(batch)
+
+
+def input_hash_for_girr_vega_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the row-equivalent deterministic input hash for a GIRR vega batch."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        label="GIRR vega",
     )
     return input_hash_for_sbm_batch(batch)
 
@@ -483,6 +585,18 @@ def sorted_girr_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[n
         expected_risk_class=SbmRiskClass.GIRR,
         expected_risk_measure=SbmRiskMeasure.DELTA,
         label="GIRR delta",
+    )
+    return sorted_sbm_batch_indices(batch)
+
+
+def sorted_girr_vega_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in the same stable order used by row-wise GIRR vega weighting."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.VEGA,
+        label="GIRR vega",
     )
     return sorted_sbm_batch_indices(batch)
 
@@ -1011,10 +1125,14 @@ __all__ = [
     "SbmSensitivityBatch",
     "build_girr_delta_batch_from_columns",
     "build_girr_delta_batch_from_sensitivities",
+    "build_girr_vega_batch_from_columns",
+    "build_girr_vega_batch_from_sensitivities",
     "build_sbm_batch_from_columns",
     "build_sbm_batch_from_sensitivities",
     "input_hash_for_girr_delta_batch",
+    "input_hash_for_girr_vega_batch",
     "input_hash_for_sbm_batch",
     "sorted_girr_delta_batch_indices",
+    "sorted_girr_vega_batch_indices",
     "sorted_sbm_batch_indices",
 ]

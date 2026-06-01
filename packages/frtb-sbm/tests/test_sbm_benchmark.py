@@ -4,6 +4,7 @@ import time
 from collections.abc import Callable
 from datetime import date
 
+import pyarrow as pa
 from frtb_sbm import (
     SbmCalculationContext,
     SbmRegulatoryProfile,
@@ -17,6 +18,10 @@ from frtb_sbm import (
     calculate_sbm_capital,
 )
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
+from frtb_sbm.arrow_handoff import (
+    calculate_sbm_capital_from_girr_vega_handoff,
+    normalize_girr_vega_arrow_table,
+)
 from frtb_sbm.capital import _build_girr_delta_intra_bucket_correlation_matrix
 
 
@@ -101,6 +106,63 @@ def test_girr_delta_matrix_and_scenario_phase_benchmark(
     assert len(adjusted) == 3
     assert matrix_elapsed < 1.0
     assert scenario_elapsed < 1.0
+
+
+def test_girr_vega_arrow_batch_phase_benchmark(
+    record_property: Callable[[str, object], None],
+) -> None:
+    """Report GIRR vega Arrow handoff timing without accepted-row dataclasses."""
+
+    context = SbmCalculationContext(
+        run_id="run-benchmark-vega-001",
+        calculation_date=date(2026, 5, 30),
+        base_currency="USD",
+        reporting_currency="USD",
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+    )
+    row_count = 300
+    table = _large_girr_vega_arrow_table(row_count)
+
+    ingestion_started = time.perf_counter()
+    handoff = normalize_girr_vega_arrow_table(table)
+    ingestion_elapsed = time.perf_counter() - ingestion_started
+
+    compute_started = time.perf_counter()
+    result = calculate_sbm_capital_from_girr_vega_handoff(handoff, context=context)
+    compute_elapsed = time.perf_counter() - compute_started
+
+    record_property("girr_vega_raw_row_count", row_count)
+    record_property("girr_vega_ingestion_seconds", ingestion_elapsed)
+    record_property("girr_vega_compute_seconds", compute_elapsed)
+    record_property("girr_vega_materialized_dataclass_count", 0)
+    assert handoff.accepted.num_rows == row_count
+    assert result.total_capital > 0.0
+    assert ingestion_elapsed < 1.0
+    assert compute_elapsed < 5.0
+
+
+def _large_girr_vega_arrow_table(size: int) -> pa.Table:
+    option_tenors = ("1y", "2y", "5y", "10y")
+    tenors = ("1y", "2y", "5y", "10y", "30y")
+    return pa.table(
+        {
+            "sensitivity_id": [f"vega-{index:05d}" for index in range(size)],
+            "source_row_id": [f"row-vega-{index:05d}" for index in range(size)],
+            "desk_id": ["rates-desk"] * size,
+            "legal_entity": ["LE-001"] * size,
+            "risk_class": ["GIRR"] * size,
+            "risk_measure": ["VEGA"] * size,
+            "bucket": [str((index % 3) + 1) for index in range(size)],
+            "risk_factor": ["USD"] * size,
+            "amount": pa.array([100_000.0 + index for index in range(size)], type=pa.float64()),
+            "amount_currency": ["USD"] * size,
+            "sign_convention": ["RECEIVE"] * size,
+            "tenor": [tenors[index % len(tenors)] for index in range(size)],
+            "option_tenor": [option_tenors[index % len(option_tenors)] for index in range(size)],
+            "lineage_source_system": ["benchmark"] * size,
+            "lineage_source_file": ["synthetic-vega.arrow"] * size,
+        }
+    )
 
 
 def _girr_delta_factor_grid(
