@@ -11,9 +11,14 @@ Regulatory traceability:
 from __future__ import annotations
 
 from collections.abc import Sequence
+from numbers import Integral
+from typing import cast
 
+import numpy as np
+import numpy.typing as npt
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_sbm.batch import SbmSensitivityBatch, sorted_girr_vega_batch_indices
 from frtb_sbm.data_models import (
     SbmRiskClass,
     SbmRiskMeasure,
@@ -223,6 +228,97 @@ def weight_girr_vega_sensitivities(
             )
         )
     return tuple(weighted)
+
+
+def weight_girr_vega_sensitivity_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+) -> tuple[WeightedSensitivity, ...]:
+    """Return cited weighted GIRR vega sensitivities from a package-owned batch."""
+
+    ensure_profile_supports_risk_class_measure(
+        profile_id,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.VEGA,
+    )
+    if batch.risk_class is not SbmRiskClass.GIRR:
+        raise UnsupportedRegulatoryFeatureError(
+            f"frtb-sbm GIRR vega weighting does not support risk_class={batch.risk_class.value}"
+        )
+    if batch.risk_measure is not SbmRiskMeasure.VEGA:
+        raise UnsupportedRegulatoryFeatureError(
+            f"frtb-sbm GIRR vega weighting does not support risk_measure={batch.risk_measure.value}"
+        )
+    default_horizon = girr_vega_liquidity_horizon_days(profile_id)
+    weighted: list[WeightedSensitivity] = []
+    for row_index in sorted_girr_vega_batch_indices(batch):
+        index = int(row_index)
+        horizon = _liquidity_horizon_at(
+            batch,
+            index,
+            default_horizon=default_horizon,
+        )
+        risk_weight, citation_ids = vega_risk_weight(
+            profile_id,
+            liquidity_horizon_days=horizon,
+        )
+        amount = float(batch.amounts[index])
+        weighted.append(
+            WeightedSensitivity(
+                sensitivity_id=cast(str, batch.sensitivity_ids[index]),
+                risk_class=SbmRiskClass.GIRR,
+                risk_measure=SbmRiskMeasure.VEGA,
+                bucket=cast(str, batch.buckets[index]),
+                raw_amount=amount,
+                risk_weight=risk_weight,
+                scaled_amount=amount * risk_weight,
+                citation_ids=citation_ids,
+                qualifier=_required_optional_axis_value(batch.option_tenors, index, "option_tenor"),
+                liquidity_horizon_days=horizon,
+            )
+        )
+    return tuple(weighted)
+
+
+def _liquidity_horizon_at(
+    batch: SbmSensitivityBatch,
+    row_index: int,
+    *,
+    default_horizon: int,
+) -> int:
+    if batch.liquidity_horizon_days is None:
+        return default_horizon
+    value = batch.liquidity_horizon_days[row_index]
+    if value is None:
+        return default_horizon
+    if isinstance(value, bool) or not isinstance(value, Integral):
+        raise SbmInputError(
+            "value must be a positive integer",
+            field="liquidity_horizon_days",
+            sensitivity_id=cast(str, batch.sensitivity_ids[row_index]),
+        )
+    horizon = int(value)
+    if horizon <= 0:
+        raise SbmInputError(
+            "value must be a positive integer",
+            field="liquidity_horizon_days",
+            sensitivity_id=cast(str, batch.sensitivity_ids[row_index]),
+        )
+    return horizon
+
+
+def _required_optional_axis_value(
+    values: npt.NDArray[np.object_] | None,
+    row_index: int,
+    field: str,
+) -> str:
+    if values is None:
+        raise SbmInputError(f"{field} is required", field=field)
+    value = values[row_index]
+    if not isinstance(value, str) or not value.strip():
+        raise SbmInputError("non-empty text is required", field=field)
+    return value
 
 
 def weight_fx_delta_sensitivities(
@@ -551,5 +647,6 @@ __all__ = [
     "weight_fx_delta_sensitivities",
     "weight_girr_delta_sensitivities",
     "weight_girr_vega_sensitivities",
+    "weight_girr_vega_sensitivity_batch",
     "weighted_sensitivity_sort_key",
 ]

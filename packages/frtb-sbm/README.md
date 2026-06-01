@@ -14,7 +14,7 @@ vega, and remaining non-GIRR risk classes fail closed with explicit errors.
 | GIRR delta and vega capital paths | Implemented (phase 1) |
 | FX delta capital path | Implemented (phase 1) |
 | Curvature, FX vega, remaining risk classes | Unsupported (fail-closed) |
-| Arrow handoff | GIRR delta batch path implemented; homogeneous batch foundation generalized; broader adapters pending |
+| Arrow handoff | GIRR delta and vega batch paths implemented; broader adapters pending |
 | CRIF/CSV adapters | Partial: row-dict compatibility plus GIRR delta CRIF-to-Arrow handoff |
 
 Outputs from this prototype package are not final regulatory capital.
@@ -35,19 +35,21 @@ Outputs from this prototype package are not final regulatory capital.
 from frtb_sbm import PACKAGE_METADATA, calculate_sbm_capital
 ```
 
-High-volume GIRR delta inputs can be converted to the package-owned
+High-volume GIRR delta and vega inputs can be converted to the package-owned
 `SbmSensitivityBatch` without creating one accepted `SbmSensitivity` per row:
 
 ```python
 from frtb_sbm.arrow_handoff import (
     calculate_sbm_capital_from_girr_delta_handoff,
+    calculate_sbm_capital_from_girr_vega_handoff,
     normalize_girr_delta_arrow_table,
+    normalize_girr_vega_arrow_table,
 )
 ```
 
 The package-owned batch type now represents one homogeneous SBM
-`(risk_class, risk_measure)` path. GIRR delta remains the only public
-capital-from-Arrow handoff; broader path-specific Arrow entrypoints are tracked
+`(risk_class, risk_measure)` path. GIRR delta and GIRR vega have public
+capital-from-Arrow handoffs; broader path-specific Arrow entrypoints are tracked
 under #270.
 
 CRIF-shaped GIRR delta inputs can first use the package-owned CRIF mapping,

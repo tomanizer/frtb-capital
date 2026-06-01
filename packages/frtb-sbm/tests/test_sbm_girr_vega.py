@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import importlib.util
+import inspect
 import json
 import math
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from types import ModuleType
 
+import numpy as np
+import pyarrow as pa
 import pytest
+from frtb_common import source_content_hash
 from frtb_sbm import (
     SbmCalculationContext,
     SbmRegulatoryProfile,
@@ -16,12 +21,21 @@ from frtb_sbm import (
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
+    build_girr_vega_batch_from_sensitivities,
     calculate_sbm_capital,
+    calculate_sbm_capital_from_girr_vega_batch,
     girr_vega_intra_bucket_correlation,
     girr_vega_liquidity_horizon_days,
+    input_hash_for_sensitivities,
     serialize_sbm_result,
     vega_risk_weight,
     weight_girr_vega_sensitivities,
+    weight_girr_vega_sensitivity_batch,
+)
+from frtb_sbm.arrow_handoff import (
+    build_girr_vega_batch_from_handoff,
+    calculate_sbm_capital_from_girr_vega_handoff,
+    normalize_girr_vega_arrow_table,
 )
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "girr_vega_v1"
@@ -57,6 +71,64 @@ def sample_vega_sensitivity(**overrides: object) -> SbmSensitivity:
     }
     fields.update(overrides)
     return SbmSensitivity(**fields)  # type: ignore[arg-type]
+
+
+def sample_context() -> SbmCalculationContext:
+    return SbmCalculationContext(
+        run_id="vega-run",
+        calculation_date=date(2026, 5, 30),
+        base_currency="USD",
+        reporting_currency="USD",
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+    )
+
+
+def sample_vega_sensitivities() -> tuple[SbmSensitivity, ...]:
+    return (
+        sample_vega_sensitivity(),
+        sample_vega_sensitivity(
+            sensitivity_id="vega-002",
+            source_row_id="row-002",
+            amount=50_000.0,
+            tenor="10y",
+            option_tenor="1y",
+            lineage=sample_lineage("row-002"),
+        ),
+        sample_vega_sensitivity(
+            sensitivity_id="vega-003",
+            source_row_id="row-003",
+            amount=-25_000.0,
+            tenor="5y",
+            option_tenor="1y",
+            lineage=sample_lineage("row-003"),
+        ),
+    )
+
+
+def sample_vega_arrow_table(sensitivities: tuple[SbmSensitivity, ...]) -> pa.Table:
+    return pa.table(
+        {
+            "sensitivity_id": [item.sensitivity_id for item in sensitivities],
+            "source_row_id": [item.source_row_id for item in sensitivities],
+            "desk_id": [item.desk_id for item in sensitivities],
+            "legal_entity": [item.legal_entity for item in sensitivities],
+            "risk_class": _dictionary([item.risk_class.value for item in sensitivities]),
+            "risk_measure": _dictionary([item.risk_measure.value for item in sensitivities]),
+            "bucket": _dictionary([item.bucket for item in sensitivities]),
+            "risk_factor": _dictionary([item.risk_factor for item in sensitivities]),
+            "amount": pa.array([item.amount for item in sensitivities], type=pa.float64()),
+            "amount_currency": _dictionary([item.amount_currency for item in sensitivities]),
+            "sign_convention": _dictionary([item.sign_convention.value for item in sensitivities]),
+            "tenor": _dictionary([item.tenor for item in sensitivities]),
+            "option_tenor": [item.option_tenor for item in sensitivities],
+            "lineage_source_system": [item.lineage.source_system for item in sensitivities],
+            "lineage_source_file": [item.lineage.source_file for item in sensitivities],
+        }
+    )
+
+
+def _dictionary(values: list[str | None]) -> pa.Array:
+    return pa.array(values).dictionary_encode()
 
 
 def load_fixture_module() -> ModuleType:
@@ -112,19 +184,85 @@ def test_weight_girr_vega_applies_cited_risk_weight() -> None:
 
 
 def test_calculate_sbm_capital_supports_girr_vega_only_inputs() -> None:
-    context = SbmCalculationContext(
-        run_id="vega-run",
-        calculation_date=date(2026, 5, 30),
-        base_currency="USD",
-        reporting_currency="USD",
-        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
-    )
+    context = sample_context()
     result = calculate_sbm_capital((sample_vega_sensitivity(),), context=context)
 
     assert len(result.risk_classes) == 1
     girr = result.risk_classes[0]
     assert girr.risk_measure is SbmRiskMeasure.VEGA
     assert result.total_capital == girr.selected_capital
+
+
+def test_girr_vega_batch_and_handoff_match_row_capital() -> None:
+    context = sample_context()
+    sensitivities = sample_vega_sensitivities()
+    source_hash = source_content_hash("synthetic GIRR vega source")
+    handoff = normalize_girr_vega_arrow_table(
+        sample_vega_arrow_table(sensitivities),
+        source_hash=source_hash,
+    )
+
+    row_result = calculate_sbm_capital(sensitivities, context=context)
+    row_batch = build_girr_vega_batch_from_sensitivities(sensitivities)
+    arrow_batch = build_girr_vega_batch_from_handoff(handoff)
+    batch_result = calculate_sbm_capital_from_girr_vega_batch(arrow_batch, context=context)
+    handoff_result = calculate_sbm_capital_from_girr_vega_handoff(handoff, context=context)
+
+    assert row_batch.input_hash == input_hash_for_sensitivities(sensitivities)
+    assert arrow_batch.input_hash == row_batch.input_hash
+    assert arrow_batch.source_hash == source_hash
+    assert arrow_batch.handoff_hash is not None
+    np.testing.assert_array_equal(arrow_batch.sensitivity_ids, row_batch.sensitivity_ids)
+    np.testing.assert_array_equal(arrow_batch.option_tenors, row_batch.option_tenors)
+    assert batch_result.input_hash == row_result.input_hash
+    assert handoff_result.input_hash == row_result.input_hash
+    assert batch_result.total_capital == pytest.approx(row_result.total_capital)
+    assert handoff_result.total_capital == pytest.approx(row_result.total_capital)
+    assert batch_result.risk_classes[0].buckets == row_result.risk_classes[0].buckets
+    assert "basel_mar21_93" in batch_result.risk_classes[0].citation_ids
+
+
+def test_girr_vega_batch_keeps_option_and_underlying_tenor_axes() -> None:
+    sensitivities = sample_vega_sensitivities()
+    batch = build_girr_vega_batch_from_sensitivities(sensitivities)
+
+    weighted = weight_girr_vega_sensitivity_batch(
+        batch,
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+    )
+
+    assert len(weighted) == len(sensitivities)
+    assert [item.sensitivity_id for item in weighted] == [
+        "vega-001",
+        "vega-002",
+        "vega-003",
+    ]
+    assert [item.qualifier for item in weighted] == ["5y", "1y", "1y"]
+    assert all(item.factor_key == () for item in weighted)
+
+
+def test_girr_vega_batch_rejects_context_scope_mismatch() -> None:
+    batch = build_girr_vega_batch_from_sensitivities(sample_vega_sensitivities())
+    context = replace(sample_context(), desk_id="different-desk")
+
+    with pytest.raises(ValueError, match="desk_id"):
+        calculate_sbm_capital_from_girr_vega_batch(batch, context=context)
+
+
+def test_girr_vega_arrow_handoff_rejects_missing_option_tenor() -> None:
+    table = sample_vega_arrow_table(sample_vega_sensitivities()).drop(["option_tenor"])
+
+    with pytest.raises(ValueError, match="option_tenor"):
+        normalize_girr_vega_arrow_table(table)
+
+
+def test_girr_vega_handoff_builder_does_not_construct_row_dataclasses() -> None:
+    import frtb_sbm.arrow_handoff as arrow_handoff
+
+    source = inspect.getsource(arrow_handoff)
+
+    assert "SbmSensitivity(" not in source
+    assert "from frtb_sbm.data_models import SbmSensitivity" not in source
 
 
 def test_girr_vega_v1_fixture_matches_expected_outputs() -> None:

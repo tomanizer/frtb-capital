@@ -27,7 +27,11 @@ from frtb_sbm.audit import (
     _input_hash_for_validated_sensitivities,
     validate_sbm_result_reconciliation,
 )
-from frtb_sbm.batch import SbmSensitivityBatch, build_girr_delta_batch_from_sensitivities
+from frtb_sbm.batch import (
+    SbmSensitivityBatch,
+    build_girr_delta_batch_from_sensitivities,
+    build_girr_vega_batch_from_sensitivities,
+)
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
@@ -73,7 +77,7 @@ from frtb_sbm.validation import (
     validate_sbm_calculation_context,
 )
 from frtb_sbm.weighted_sensitivity import (
-    weight_girr_vega_sensitivities,
+    weight_girr_vega_sensitivity_batch,
 )
 
 _SBM_REQUIREMENT_IDS = (
@@ -262,6 +266,47 @@ def calculate_sbm_capital_from_girr_delta_batch(
     )
 
 
+def calculate_sbm_capital_from_girr_vega_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    context: SbmCalculationContext | None = None,
+) -> SbmCapitalResult:
+    """Calculate SBM capital for a pre-built GIRR vega sensitivity batch."""
+
+    if context is None:
+        raise SbmInputError("calculation context is required", field="context")
+    if not isinstance(context, SbmCalculationContext):
+        raise SbmInputError(
+            "calculation context must be SbmCalculationContext",
+            field="context",
+        )
+    if not isinstance(batch, SbmSensitivityBatch):
+        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
+
+    validate_sbm_calculation_context(context)
+    ensure_sbm_risk_class_measure_supported(
+        context.profile_id,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.VEGA,
+    )
+    _ensure_girr_vega_batch_run_supported(context, batch)
+    rule_profile = get_sbm_rule_profile(context.profile_id)
+    run_controls = context.run_controls or SbmRunControls()
+    risk_class = _calculate_girr_vega_risk_class_capital_from_batch(
+        batch,
+        profile_id=rule_profile.profile_id,
+        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
+    )
+    return _build_sbm_capital_result(
+        (risk_class,),
+        rule_profile=rule_profile,
+        context=context,
+        input_hash=batch.input_hash,
+        input_count=batch.row_count,
+    )
+
+
 def _calculate_girr_delta_risk_class_capital(
     sensitivities: tuple[SbmSensitivity, ...],
     *,
@@ -331,6 +376,46 @@ def _ensure_girr_delta_batch_run_supported(
             )
 
 
+def _ensure_girr_vega_batch_run_supported(
+    context: SbmCalculationContext,
+    batch: SbmSensitivityBatch,
+) -> None:
+    if batch.row_count == 0:
+        raise SbmInputError("GIRR vega batch must not be empty", field="batch")
+    if batch.risk_class is not SbmRiskClass.GIRR:
+        raise SbmInputError(
+            "GIRR vega batch only accepts GIRR sensitivities",
+            field="risk_class",
+        )
+    if batch.risk_measure is not SbmRiskMeasure.VEGA:
+        raise SbmInputError(
+            "GIRR vega batch only accepts vega sensitivities",
+            field="risk_measure",
+        )
+    scoped_desk_id = (context.desk_id or "").strip()
+    scoped_legal_entity = (context.legal_entity or "").strip()
+    if scoped_desk_id:
+        mismatches = batch.desk_ids != scoped_desk_id
+        if np.any(mismatches):
+            row_index = int(np.flatnonzero(mismatches)[0])
+            raise SbmInputError(
+                f"desk_id {batch.desk_ids[row_index]} does not match "
+                f"context desk_id {scoped_desk_id}",
+                field="desk_id",
+                sensitivity_id=batch.sensitivity_ids[row_index],
+            )
+    if scoped_legal_entity:
+        mismatches = batch.legal_entities != scoped_legal_entity
+        if np.any(mismatches):
+            row_index = int(np.flatnonzero(mismatches)[0])
+            raise SbmInputError(
+                f"legal_entity {batch.legal_entities[row_index]} does not match "
+                f"context legal_entity {scoped_legal_entity}",
+                field="legal_entity",
+                sensitivity_id=batch.sensitivity_ids[row_index],
+            )
+
+
 def _build_sbm_capital_result(
     risk_class_results: Sequence[RiskClassCapital],
     *,
@@ -384,12 +469,28 @@ def _calculate_girr_vega_risk_class_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    weighted = weight_girr_vega_sensitivities(
-        sensitivities,
+    batch = build_girr_vega_batch_from_sensitivities(sensitivities)
+    return _calculate_girr_vega_risk_class_capital_from_batch(
+        batch,
+        profile_id=profile_id,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
+    )
+
+
+def _calculate_girr_vega_risk_class_capital_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
+) -> RiskClassCapital:
+    weighted = weight_girr_vega_sensitivity_batch(
+        batch,
         profile_id=profile_id,
     )
-    option_tenor_by_id = {item.sensitivity_id: item.option_tenor or "" for item in sensitivities}
-    tenor_by_id = {item.sensitivity_id: item.tenor or "" for item in sensitivities}
+    option_tenor_by_id = _batch_optional_text_by_id(batch, batch.option_tenors, "option_tenor")
+    tenor_by_id = _batch_text_by_id(batch, batch.tenors, "tenor")
     return _aggregate_girr_measure_capital(
         weighted,
         profile_id=profile_id,
@@ -399,6 +500,27 @@ def _calculate_girr_vega_risk_class_capital(
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
     )
+
+
+def _batch_text_by_id(
+    batch: SbmSensitivityBatch,
+    values: npt.NDArray[np.object_],
+    _field: str,
+) -> Mapping[str, str]:
+    return {
+        str(batch.sensitivity_ids[row_index]): str(values[row_index])
+        for row_index in range(batch.row_count)
+    }
+
+
+def _batch_optional_text_by_id(
+    batch: SbmSensitivityBatch,
+    values: npt.NDArray[np.object_] | None,
+    field: str,
+) -> Mapping[str, str]:
+    if values is None:
+        raise SbmInputError(f"{field} is required", field=field)
+    return _batch_text_by_id(batch, values, field)
 
 
 def _aggregate_girr_measure_capital(
