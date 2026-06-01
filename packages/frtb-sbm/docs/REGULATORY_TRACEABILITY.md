@@ -56,7 +56,7 @@ Parent issue: [#151](https://github.com/tomanizer/frtb-capital/issues/151).
 | Commodity delta capital | Implemented | `commodity_delta_v1` fixture pack, MAR21.76–MAR21.80. |
 | CSR non-securitisation delta capital | Implemented | #164 — `csr_nonsec_delta_v1` fixture pack, MAR21.51–MAR21.57. |
 | CSR securitisation (CTP / non-CTP) | Implemented | MAR21.58-MAR21.70 supported under BASEL_MAR21, including CTP decomposition-evidence fail-closed checks. |
-| CRIF/CSV adapters | Partial | Row-dict compatibility remains available. #269 adds shared CRIF-to-Arrow normalization plus SBM-owned GIRR delta RiskType mapping; broader CRIF coverage remains pending. |
+| CRIF/CSV adapters | Implemented | Row-dict compatibility maps supported BASEL_MAR21 delta, vega, and curvature CRIF risk types to canonical `SbmSensitivity` rows with auditable rejects. #269 adds shared CRIF-to-Arrow normalization plus SBM-owned GIRR delta RiskType mapping. |
 | SA composition | Excluded | Belongs in `frtb-orchestration`. |
 | Analytical Euler attribution | Out of scope | Stable ids and branch metadata preserved for future work. |
 
@@ -111,7 +111,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `risk_classes/csr_sec_nonctp.py` | CSR securitisation non-CTP delta assembly onto shared aggregation primitives. | MAR21.10, MAR21.61-MAR21.70. | Section V.A.7.a CSR securitisation context. | Implemented with batch entrypoint (#288). |
 | `risk_classes/csr_sec_ctp.py` | CSR securitisation CTP delta assembly and decomposition-evidence fail-closed checks. | MAR21.11, MAR21.58-MAR21.60. | Section V.A.7.a CSR securitisation context. | Implemented with batch entrypoint (#288). |
 | `audit.py` | Result serialization, input/profile hashes, scale-aware pairwise-correlation evidence summaries, and reconciliation checks. | MAR21 component traceability by formula. | Section V.A.7.a audit context. | Implemented (#159, #265). |
-| `crif.py` | Optional CRIF-to-canonical mapping and GIRR delta CRIF-to-Arrow handoff with rejected rows. | MAR21 risk-type mapping context only. | Section V.A.7.a canonical field mapping context. | Partial — GIRR delta Arrow handoff added by #269; broader CRIF coverage pending. |
+| `crif.py` | Optional CRIF-to-canonical mapping and GIRR delta CRIF-to-Arrow handoff with rejected rows. | MAR21 risk-type mapping context only. | Section V.A.7.a canonical field mapping context. | Implemented for supported BASEL_MAR21 row-dict delta, vega, and curvature mappings; GIRR delta Arrow handoff added by #269 remains the high-volume CRIF path. |
 
 ## Cross-links
 
