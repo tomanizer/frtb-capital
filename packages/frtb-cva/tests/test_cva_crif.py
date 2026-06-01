@@ -71,3 +71,130 @@ def test_missing_counterparty_id_is_rejected() -> None:
     assert result.counterparties == ()
     assert result.rejected_rows
     assert "counterparty_id" in result.rejected_rows[0].reason
+
+
+def test_adapt_netting_set_records() -> None:
+    with pytest.raises(CvaInputError, match="references unknown counterparty"):
+        adapt_cva_records(
+            (
+                {
+                    "netting_set_id": "ns-1",
+                    "counterparty_id": "ctp-1",
+                    "ead": 100_000.0,
+                    "effective_maturity": 2.5,
+                    "discount_factor": 0.95,
+                    "currency": "USD",
+                    "sign_convention": "non_negative",
+                    "uses_imm_ead": False,
+                    "carved_out_to_ba_cva": True,
+                    "source_row_id": "row-1",
+                },
+            ),
+            record_kind="netting_set",
+        )
+
+
+def test_adapt_hedge_records() -> None:
+    result = adapt_cva_records(
+        (
+            {
+                "hedge_id": "h-1",
+                "counterparty_id": "ctp-1",
+                "hedge_type": "SINGLE_NAME_CDS",
+                "notional": 200_000.0,
+                "remaining_maturity": 1.5,
+                "discount_factor": 0.98,
+                "discount_factor_explicit": True,
+                "reference_sector": "SOVEREIGN",
+                "reference_credit_quality": "INVESTMENT_GRADE",
+                "reference_region": "EMEA",
+                "reference_relation": "DIRECT",
+                "eligibility": "ELIGIBLE",
+                "is_internal": True,
+                "eligibility_evidence_id": "evidence-1",
+                "source_row_id": "row-1",
+            },
+        ),
+        record_kind="hedge",
+    )
+    assert len(result.hedges) == 1
+    assert result.hedges[0].hedge_id == "h-1"
+    assert result.hedges[0].is_internal is True
+
+
+def test_non_mapping_row_rejected() -> None:
+    result = adapt_cva_records(
+        [None, 123],
+        record_kind="counterparty",
+    )
+    assert len(result.rejected_rows) == 2
+    assert "record must be a mapping" in result.rejected_rows[0].reason
+    assert "record must be a mapping" in result.rejected_rows[1].reason
+
+
+def test_optional_float_with_invalid_type() -> None:
+    result = adapt_cva_records(
+        (
+            {
+                "netting_set_id": "ns-1",
+                "counterparty_id": "ctp-1",
+                "ead": True,  # booleans are not allowed as numeric values
+                "source_row_id": "row-1",
+            },
+        ),
+        record_kind="netting_set",
+    )
+    assert result.netting_sets == ()
+    assert result.rejected_rows
+    assert "value must be numeric" in result.rejected_rows[0].reason
+
+
+def test_sensitivity_normalisation_and_conventions() -> None:
+    result = adapt_cva_records(
+        (
+            {
+                "sensitivity_id": "sens-1",
+                "risk_class": "GIRR",
+                "risk_measure": "DELTA",
+                "sensitivity_tag": "CVA",
+                "bucket_id": "USD",
+                "risk_factor_key": "5y",
+                "tenor": "5y",
+                "amount": -1000.0,
+                "amount_currency": "USD",
+                "sign_convention": "signed_absolute",
+                "source_row_id": "row-1",
+            },
+        ),
+        record_kind="sensitivity",
+        amount_sign_convention="signed_absolute",
+    )
+    assert len(result.sensitivities) == 1
+    assert result.sensitivities[0].amount == -1000.0
+
+
+def test_optional_float_fallback_to_default() -> None:
+    # Test remaining_maturity is omitted in hedge and defaults to 1.0
+    result = adapt_cva_records(
+        (
+            {
+                "hedge_id": "h-1",
+                "counterparty_id": "ctp-1",
+                "hedge_type": "SINGLE_NAME_CDS",
+                "notional": 200_000.0,
+                # remaining_maturity and discount_factor are omitted
+                "reference_sector": "SOVEREIGN",
+                "reference_credit_quality": "INVESTMENT_GRADE",
+                "reference_region": "EMEA",
+                "reference_relation": "DIRECT",
+                "eligibility": "ELIGIBLE",
+                "eligibility_evidence_id": "evidence-1",
+                "is_internal": False,
+                "source_row_id": "row-1",
+            },
+        ),
+        record_kind="hedge",
+    )
+    assert len(result.hedges) == 1
+    assert result.hedges[0].remaining_maturity == 1.0
+    assert result.hedges[0].discount_factor == 1.0
