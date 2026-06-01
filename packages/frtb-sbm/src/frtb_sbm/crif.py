@@ -247,8 +247,8 @@ def adapt_crif_records(
 ) -> SbmAdapterResult:
     """Map CRIF-like row dictionaries into canonical ``SbmSensitivity`` records."""
 
-    if not isinstance(records, list):
-        raise SbmInputError("records must be a list of mapping rows", field="records")
+    if not isinstance(records, Sequence) or isinstance(records, str | bytes):
+        raise SbmInputError("records must be a sequence of mapping rows", field="records")
     sensitivities: list[SbmSensitivity] = []
     warnings: list[SbmAdapterWarning] = []
     rejected: list[SbmRejectedRow] = []
@@ -582,6 +582,15 @@ def _map_crif_row(
         option_tenor_hint=option_tenor_hint,
         option_tenor_hint_source=option_tenor_hint_source,
     )
+    _append_inference_warnings(
+        warnings,
+        source_row_id=source_row_id,
+        risk_class=risk_class,
+        bucket_hint=bucket_hint,
+        risk_factor_hint=risk_factor_hint,
+        risk_factor_source=risk_factor_source,
+        label2_source=label2_source,
+    )
 
     _append_column_map(column_map, bucket_source, "bucket")
     _append_column_map(column_map, risk_factor_source, "risk_factor")
@@ -648,9 +657,10 @@ def _canonical_risk_factor(
         source = risk_factor_hint_source or crif_qualifier_source or amount_currency_source
         normalised = value.strip().upper()
         if risk_measure is SbmRiskMeasure.CURVATURE and normalised in {"INFL", "XCCY"}:
-            raise UnsupportedRegulatoryFeatureError(
+            raise SbmInputError(
                 "GIRR curvature has no capital requirement for inflation or "
-                "cross-currency basis risk factors (MAR21.8(5)(b))"
+                "cross-currency basis risk factors (MAR21.8(5)(b))",
+                field=source or "RiskFactor",
             )
         return normalised, source
     if risk_class is SbmRiskClass.FX:
@@ -672,9 +682,10 @@ def _canonical_risk_factor(
                 field=risk_factor_hint_source or "RiskFactor",
             )
         if risk_measure is not SbmRiskMeasure.DELTA and normalised == EQUITY_REPO_RISK_FACTOR:
-            raise UnsupportedRegulatoryFeatureError(
+            raise SbmInputError(
                 "equity vega and curvature have no capital requirement for "
-                "equity repo rates (MAR21.12(2)(b), MAR21.12(3))"
+                "equity repo rates (MAR21.12(2)(b), MAR21.12(3))",
+                field=risk_factor_hint_source or "RiskFactor",
             )
         return normalised, source
     if risk_class is SbmRiskClass.COMMODITY:
@@ -808,6 +819,46 @@ def _is_csr_basis(risk_class: SbmRiskClass, value: str) -> bool:
     if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
         return normalised in {CSR_SEC_BOND_RISK_FACTOR, CSR_SEC_CDS_RISK_FACTOR}
     return False
+
+
+def _append_inference_warnings(
+    warnings: list[SbmAdapterWarning],
+    *,
+    source_row_id: str,
+    risk_class: SbmRiskClass,
+    bucket_hint: str | None,
+    risk_factor_hint: str | None,
+    risk_factor_source: str | None,
+    label2_source: str | None,
+) -> None:
+    if risk_class is SbmRiskClass.FX and bucket_hint is None:
+        warnings.append(
+            SbmAdapterWarning(
+                source_row_id=source_row_id,
+                field="Bucket",
+                message="FX bucket inferred from mapped currency",
+            )
+        )
+    if risk_class is SbmRiskClass.EQUITY and risk_factor_hint is None:
+        warnings.append(
+            SbmAdapterWarning(
+                source_row_id=source_row_id,
+                field="RiskFactor",
+                message="equity risk_factor defaulted to SPOT from CRIF risk type",
+            )
+        )
+    if (
+        risk_class in _CSR_RISK_CLASSES
+        and risk_factor_hint is None
+        and risk_factor_source == label2_source
+    ):
+        warnings.append(
+            SbmAdapterWarning(
+                source_row_id=source_row_id,
+                field="RiskFactor",
+                message="CSR basis risk_factor inferred from Label2",
+            )
+        )
 
 
 def _map_risk_type(risk_type: str) -> tuple[SbmRiskClass, SbmRiskMeasure]:

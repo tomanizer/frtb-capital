@@ -61,6 +61,24 @@ def test_crif_adapter_maps_girr_curvature_row() -> None:
     assert sensitivity.tenor == "5y"
 
 
+def test_crif_adapter_accepts_non_string_sequences() -> None:
+    result = adapt_crif_records(
+        (
+            {
+                "SensitivityId": "crif-girr-001",
+                "RiskType": "RISK_IRCURVE",
+                "Qualifier": "USD",
+                "Bucket": "1",
+                "Label1": "5y",
+                "Amount": 1_000_000.0,
+                "AmountCurrency": "USD",
+            },
+        )
+    )
+
+    assert len(result.sensitivities) == 1
+
+
 @pytest.mark.parametrize(
     ("row", "risk_class", "risk_factor", "qualifier"),
     [
@@ -303,6 +321,35 @@ def test_crif_adapter_rejects_boolean_numeric_amount() -> None:
     assert result.rejected_rows[0].field == "Amount"
 
 
+def test_crif_adapter_warns_when_mapping_axes_are_inferred() -> None:
+    result = adapt_crif_records(
+        [
+            {
+                "SensitivityId": "fx-vega-inferred-bucket",
+                "RiskType": "FX_VEGA",
+                "Qualifier": "EUR",
+                "Label1": "1y",
+                "Amount": 1.0,
+            },
+            {
+                "SensitivityId": "csr-vega-label2-basis",
+                "RiskType": "CSR_NONSEC_VEGA",
+                "Qualifier": "ISS-A",
+                "Bucket": "4",
+                "Label1": "1y",
+                "Label2": "BOND",
+                "Amount": 1.0,
+            },
+        ]
+    )
+
+    assert len(result.sensitivities) == 2
+    assert [(item.source_row_id, item.field) for item in result.warnings] == [
+        ("0", "Bucket"),
+        ("1", "RiskFactor"),
+    ]
+
+
 def test_crif_adapter_rejects_unsupported_risk_type() -> None:
     result = adapt_crif_records([{"RiskType": "UNKNOWN_RISK", "Amount": 1.0}])
     assert result.rejected_rows
@@ -355,6 +402,7 @@ def test_crif_adapter_rejects_unsupported_equity_repo_vega() -> None:
     assert result.sensitivities == ()
     assert len(result.rejected_rows) == 1
     assert "repo rates" in result.rejected_rows[0].reason
+    assert result.rejected_rows[0].field == "RiskFactor"
 
 
 def test_crif_adapter_rejects_duplicate_sensitivity_ids_without_aborting() -> None:
