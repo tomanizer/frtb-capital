@@ -614,12 +614,7 @@ def _summary(
             "correlation_scenario_aggregation": probe_timings["correlation_scenario_aggregation"],
             "audit_serialization": audit_seconds,
             "wall_clock_proxy": (
-                ingestion_seconds
-                + validation_seconds
-                + capital_compute_seconds
-                + audit_seconds
-                + probe_timings["netting_factor_grid"]
-                + probe_timings["correlation_scenario_aggregation"]
+                ingestion_seconds + validation_seconds + capital_compute_seconds + audit_seconds
             ),
         },
         "result_hash": _hash_json(result_hash_inputs),

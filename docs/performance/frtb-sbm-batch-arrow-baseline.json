@@ -13,13 +13,13 @@
         },
         "result_hash": "c80dd9eabdd828c8f7b0672954911155bb8b1d2185640239bc84dd511e88fd08",
         "timings_seconds": {
-          "audit_result_materialization": 0.0010661249980330467,
-          "batch_construction": 0.05952620800235309,
-          "handoff_normalization": 0.0013277499820105731,
-          "synthetic_arrow_table_construction": 0.019728582992684096,
-          "weighting_factor_grid_aggregation_and_result": 1.159134332992835
+          "audit_result_materialization": 0.0011868749861605465,
+          "batch_construction": 0.06436483401921578,
+          "handoff_normalization": 0.0015581670159008354,
+          "synthetic_arrow_table_construction": 0.018966542003909126,
+          "weighting_factor_grid_aggregation_and_result": 1.2815544589830097
         },
-        "tracemalloc_peak_bytes": 5571251
+        "tracemalloc_peak_bytes": 5571371
       },
       "capital_delta_abs": 0.0,
       "label": "girr_vega",
@@ -37,11 +37,11 @@
         },
         "result_hash": "c80dd9eabdd828c8f7b0672954911155bb8b1d2185640239bc84dd511e88fd08",
         "timings_seconds": {
-          "audit_result_materialization": 0.0009839580161496997,
-          "capital_calculation": 1.3579962079820689,
-          "row_dataclass_construction": 0.006853208993561566
+          "audit_result_materialization": 0.0013465830124914646,
+          "capital_calculation": 1.475339750002604,
+          "row_dataclass_construction": 0.007857374992454425
         },
-        "tracemalloc_peak_bytes": 5504937
+        "tracemalloc_peak_bytes": 5504663
       },
       "status": "capital_supported"
     },
@@ -58,13 +58,13 @@
         },
         "result_hash": "d69be2305d1966eac6982706163583a81677f9a878995092c550efba7e3ec804",
         "timings_seconds": {
-          "audit_result_materialization": 0.001143416011473164,
-          "batch_construction": 0.06387824998819269,
-          "handoff_normalization": 0.0009946670033968985,
-          "synthetic_arrow_table_construction": 0.0029879590147174895,
-          "weighting_factor_grid_aggregation_and_result": 0.035003375000087544
+          "audit_result_materialization": 0.001052541978424415,
+          "batch_construction": 0.050683332985499874,
+          "handoff_normalization": 0.0009985409851651639,
+          "synthetic_arrow_table_construction": 0.0028864589985460043,
+          "weighting_factor_grid_aggregation_and_result": 0.04079854200244881
         },
-        "tracemalloc_peak_bytes": 3230037
+        "tracemalloc_peak_bytes": 3229019
       },
       "capital_delta_abs": 0.0,
       "label": "fx_delta",
@@ -82,11 +82,11 @@
         },
         "result_hash": "d69be2305d1966eac6982706163583a81677f9a878995092c550efba7e3ec804",
         "timings_seconds": {
-          "audit_result_materialization": 0.0010887919925153255,
-          "capital_calculation": 0.11569308300386183,
-          "row_dataclass_construction": 0.0066498749947641045
+          "audit_result_materialization": 0.001004457997623831,
+          "capital_calculation": 0.10066812500008382,
+          "row_dataclass_construction": 0.006948291003936902
         },
-        "tracemalloc_peak_bytes": 3257195
+        "tracemalloc_peak_bytes": 3256779
       },
       "status": "capital_supported"
     },
@@ -103,13 +103,13 @@
         },
         "result_hash": "844569dc036722cf680fe4c5c9c722d2c6209caf06da968abc9297d2797e6f15",
         "timings_seconds": {
-          "audit_result_materialization": 0.0011007080029230565,
-          "batch_construction": 0.0533983749919571,
-          "handoff_normalization": 0.0010497079929336905,
-          "synthetic_arrow_table_construction": 0.004038792016217485,
-          "weighting_factor_grid_aggregation_and_result": 0.29774741700384766
+          "audit_result_materialization": 0.001128916017478332,
+          "batch_construction": 0.05200325002078898,
+          "handoff_normalization": 0.0009955840068869293,
+          "synthetic_arrow_table_construction": 0.004098624980542809,
+          "weighting_factor_grid_aggregation_and_result": 0.2990737910149619
         },
-        "tracemalloc_peak_bytes": 3394933
+        "tracemalloc_peak_bytes": 3394865
       },
       "capital_delta_abs": 0.0,
       "label": "equity_delta",
@@ -127,11 +127,11 @@
         },
         "result_hash": "844569dc036722cf680fe4c5c9c722d2c6209caf06da968abc9297d2797e6f15",
         "timings_seconds": {
-          "audit_result_materialization": 0.0010519589995965362,
-          "capital_calculation": 0.37836724999942817,
-          "row_dataclass_construction": 0.008294917002785951
+          "audit_result_materialization": 0.0009858330013230443,
+          "capital_calculation": 0.38568516698433086,
+          "row_dataclass_construction": 0.008810166997136548
         },
-        "tracemalloc_peak_bytes": 3448555
+        "tracemalloc_peak_bytes": 3448243
       },
       "status": "capital_supported"
     },
@@ -148,13 +148,13 @@
         },
         "result_hash": "3663744cf75fa2826ff25260fa5bf8cba46b7962a4939bd324c9323bd2cfd2d7",
         "timings_seconds": {
-          "audit_result_materialization": 0.0011081249976996332,
-          "batch_construction": 0.052655542007414624,
-          "handoff_normalization": 0.0010577499924693257,
-          "synthetic_arrow_table_construction": 0.0031313750077970326,
-          "weighting_factor_grid_aggregation_and_result": 0.26654891701764427
+          "audit_result_materialization": 0.0010339579894207418,
+          "batch_construction": 0.06730083402362652,
+          "handoff_normalization": 0.0010776669951155782,
+          "synthetic_arrow_table_construction": 0.0034143330121878535,
+          "weighting_factor_grid_aggregation_and_result": 0.2710762080096174
         },
-        "tracemalloc_peak_bytes": 3604875
+        "tracemalloc_peak_bytes": 3604763
       },
       "capital_delta_abs": 0.0,
       "label": "commodity_delta",
@@ -172,11 +172,11 @@
         },
         "result_hash": "3663744cf75fa2826ff25260fa5bf8cba46b7962a4939bd324c9323bd2cfd2d7",
         "timings_seconds": {
-          "audit_result_materialization": 0.0009890000219456851,
-          "capital_calculation": 0.33837070799199864,
-          "row_dataclass_construction": 0.006844874995294958
+          "audit_result_materialization": 0.0012359159882180393,
+          "capital_calculation": 0.38764166698092595,
+          "row_dataclass_construction": 0.006748042011167854
         },
-        "tracemalloc_peak_bytes": 3542370
+        "tracemalloc_peak_bytes": 3541954
       },
       "status": "capital_supported"
     },
@@ -193,13 +193,13 @@
         },
         "result_hash": "23685709e53c63c0ebe330369155525ba67f52e69c95be62cac38f732d71d687",
         "timings_seconds": {
-          "audit_result_materialization": 0.0010670420015230775,
-          "batch_construction": 0.056726082984823734,
-          "handoff_normalization": 0.0010585419950075448,
-          "synthetic_arrow_table_construction": 0.004146332998061553,
-          "weighting_factor_grid_aggregation_and_result": 0.467061500006821
+          "audit_result_materialization": 0.001063500007148832,
+          "batch_construction": 0.06307766601094045,
+          "handoff_normalization": 0.001101750007364899,
+          "synthetic_arrow_table_construction": 0.004365958011476323,
+          "weighting_factor_grid_aggregation_and_result": 0.48226204101229087
         },
-        "tracemalloc_peak_bytes": 3622541
+        "tracemalloc_peak_bytes": 3622603
       },
       "capital_delta_abs": 0.0,
       "label": "csr_nonsec_delta",
@@ -217,11 +217,11 @@
         },
         "result_hash": "23685709e53c63c0ebe330369155525ba67f52e69c95be62cac38f732d71d687",
         "timings_seconds": {
-          "audit_result_materialization": 0.0011321250058244914,
-          "capital_calculation": 0.5608798330067657,
-          "row_dataclass_construction": 0.00835287498193793
+          "audit_result_materialization": 0.001109792006900534,
+          "capital_calculation": 0.5473540420061909,
+          "row_dataclass_construction": 0.008016084000701085
         },
-        "tracemalloc_peak_bytes": 3591376
+        "tracemalloc_peak_bytes": 3591636
       },
       "status": "capital_supported"
     },
@@ -238,11 +238,11 @@
         },
         "result_hash": "093e9191e05098a61e47604991b36af9a080d5ab22adac106c0c543624c1f524",
         "timings_seconds": {
-          "audit_result_materialization": 0.0010147500142920762,
-          "batch_construction": 0.052010250015882775,
-          "handoff_normalization": 0.0010088749986607581,
-          "synthetic_arrow_table_construction": 0.0038898330240044743,
-          "weighting_factor_grid_aggregation_and_result": 0.2892130420077592
+          "audit_result_materialization": 0.0010393749980721623,
+          "batch_construction": 0.059024250018410385,
+          "handoff_normalization": 0.0010824580094777048,
+          "synthetic_arrow_table_construction": 0.004452583001693711,
+          "weighting_factor_grid_aggregation_and_result": 0.3111643749871291
         },
         "tracemalloc_peak_bytes": 3693219
       },
@@ -262,9 +262,9 @@
         },
         "result_hash": "093e9191e05098a61e47604991b36af9a080d5ab22adac106c0c543624c1f524",
         "timings_seconds": {
-          "audit_result_materialization": 0.0009809579933062196,
-          "capital_calculation": 0.32042858298518695,
-          "row_dataclass_construction": 0.007986584008904174
+          "audit_result_materialization": 0.00116804099525325,
+          "capital_calculation": 0.33028133399784565,
+          "row_dataclass_construction": 0.007956957997521386
         },
         "tracemalloc_peak_bytes": 3644063
       },
@@ -283,13 +283,13 @@
         },
         "result_hash": "58bcc2d3bd7049c4208660003e490745fac6c62572f4c9e4128ee257734fe2f4",
         "timings_seconds": {
-          "audit_result_materialization": 0.0010354170226491988,
-          "batch_construction": 0.05643116601277143,
-          "handoff_normalization": 0.0010135419724974781,
-          "synthetic_arrow_table_construction": 0.004046208981890231,
-          "weighting_factor_grid_aggregation_and_result": 0.20539054198889062
+          "audit_result_materialization": 0.001068457990186289,
+          "batch_construction": 0.055596541991690174,
+          "handoff_normalization": 0.001126332994317636,
+          "synthetic_arrow_table_construction": 0.004217665991745889,
+          "weighting_factor_grid_aggregation_and_result": 0.20869312499416992
         },
-        "tracemalloc_peak_bytes": 3641205
+        "tracemalloc_peak_bytes": 3641379
       },
       "capital_delta_abs": 0.0,
       "label": "csr_sec_ctp_delta",
@@ -307,11 +307,11 @@
         },
         "result_hash": "58bcc2d3bd7049c4208660003e490745fac6c62572f4c9e4128ee257734fe2f4",
         "timings_seconds": {
-          "audit_result_materialization": 0.0009909580112434924,
-          "capital_calculation": 0.2502119999844581,
-          "row_dataclass_construction": 0.00808654198772274
+          "audit_result_materialization": 0.0009868330089375377,
+          "capital_calculation": 0.25826808300917037,
+          "row_dataclass_construction": 0.008287417003884912
         },
-        "tracemalloc_peak_bytes": 3605453
+        "tracemalloc_peak_bytes": 3605401
       },
       "status": "capital_supported"
     },
@@ -328,12 +328,12 @@
         },
         "result_hash": "2575537d3b3d5d15be11c7872e0d6d4759335ac7c2f4b8377208c4c6956da7e0",
         "timings_seconds": {
-          "batch_construction": 0.060323000012431294,
-          "curvature_branch_selection": 0.008509249979397282,
-          "handoff_normalization": 0.001114165992476046,
-          "synthetic_arrow_table_construction": 0.0035372499842196703
+          "batch_construction": 0.06360324998968281,
+          "curvature_branch_selection": 0.00854675000300631,
+          "handoff_normalization": 0.001170167000964284,
+          "synthetic_arrow_table_construction": 0.00373408300220035
         },
-        "tracemalloc_peak_bytes": 3713625
+        "tracemalloc_peak_bytes": 3713681
       },
       "branch_selection_hash": "2575537d3b3d5d15be11c7872e0d6d4759335ac7c2f4b8377208c4c6956da7e0",
       "label": "girr_curvature_validation",
@@ -351,9 +351,9 @@
         },
         "result_hash": "2575537d3b3d5d15be11c7872e0d6d4759335ac7c2f4b8377208c4c6956da7e0",
         "timings_seconds": {
-          "branch_selection": 0.0005860829842276871,
-          "curvature_contract_validation": 0.010511333006434143,
-          "row_dataclass_construction": 0.007545874977950007
+          "branch_selection": 0.0006067919894121587,
+          "curvature_contract_validation": 0.010819209011970088,
+          "row_dataclass_construction": 0.007701916998485103
         },
         "tracemalloc_peak_bytes": 604256
       },
@@ -373,7 +373,7 @@
     "processor": "arm",
     "python": "3.11.15"
   },
-  "generated_at": "2026-06-01T06:45:21.509726+00:00",
+  "generated_at": "2026-06-01T06:54:12.206389+00:00",
   "phase_probes": [
     {
       "factor_count": 240,
@@ -388,9 +388,9 @@
       "scenario_count": 3,
       "status": "phase_probe",
       "timings_seconds": {
-        "correlation_scenario_aggregation": 0.00178416701965034,
-        "netting_factor_grid_and_correlation_matrix": 0.0021067500056233257,
-        "weighting_input_construction": 0.0018515830161049962
+        "correlation_scenario_aggregation": 0.0016018750029616058,
+        "netting_factor_grid_and_correlation_matrix": 0.002363540988881141,
+        "weighting_input_construction": 0.0019822910253424197
       },
       "tracemalloc_peak_bytes": 3678776
     }
@@ -413,19 +413,19 @@
     "pairwise_evidence_count": 1111320,
     "pairwise_evidence_materialized_count": 0,
     "peak_tracemalloc_bytes": {
-      "arrow_batch_path": 5571251,
-      "row_compatibility_path": 5504937
+      "arrow_batch_path": 5571371,
+      "row_compatibility_path": 5504663
     },
     "raw_row_count": 5760,
     "result_hash": "8a11f61a6cf6dd5da2976e340cbae6ed82a57d4387c4984a385f4e9e692acb95",
     "timings_seconds": {
-      "audit_serialization": 0.007535583048593253,
-      "correlation_scenario_aggregation": 0.00178416701965034,
-      "ingestion": 0.04550633401959203,
-      "netting_factor_grid": 0.0021067500056233257,
-      "validation": 0.46357387394527905,
-      "wall_clock_proxy": 3.2491150840360206,
-      "weighting": 2.7286083759972826
+      "audit_serialization": 0.0075736239668913186,
+      "correlation_scenario_aggregation": 0.0016018750029616058,
+      "ingestion": 0.046136249002302065,
+      "netting_factor_grid": 0.002363540988881141,
+      "validation": 0.484764626075048,
+      "wall_clock_proxy": 3.4416437900508754,
+      "weighting": 2.903169291006634
     }
   }
 }

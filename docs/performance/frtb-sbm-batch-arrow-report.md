@@ -19,7 +19,7 @@ uv run python benchmarks/sbm_adapter_harness.py \
 
 ## Baseline
 
-Baseline generated: 2026-06-01T06:45:21.509726+00:00.
+Baseline generated: 2026-06-01T06:54:12.206389+00:00.
 
 Environment: macOS-26.5 arm64, Python 3.11.15. The baseline uses the
 `BASEL_MAR21` profile, synthetic data only, and `SUMMARY` pairwise evidence mode.
@@ -28,14 +28,14 @@ and NumPy native buffers may not be fully counted.
 
 | Case | Rows | Factors | Row path total ms | Arrow/batch total ms | Row dataclasses | Arrow accepted-row dataclasses | Pairwise records total | Pairwise materialized |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| GIRR vega | 720 | 60 | 1366 | 1241 | 720 | 0 | 260280 | 0 |
-| FX delta | 720 | 6 | 123 | 104 | 720 | 0 | 130680 | 0 |
-| Equity delta | 720 | 720 | 388 | 357 | 720 | 0 | 125280 | 0 |
-| Commodity delta | 720 | 60 | 346 | 325 | 720 | 0 | 156600 | 0 |
-| CSR non-sec delta | 720 | 720 | 570 | 530 | 720 | 0 | 156600 | 0 |
-| CSR sec non-CTP delta | 720 | 720 | 329 | 347 | 720 | 0 | 125280 | 0 |
-| CSR sec CTP delta | 720 | 720 | 259 | 268 | 720 | 0 | 156600 | 0 |
-| GIRR curvature validation | 720 | 15 | 19 | 73 | 720 | 0 | 0 | 0 |
+| GIRR vega | 720 | 60 | 1485 | 1368 | 720 | 0 | 260280 | 0 |
+| FX delta | 720 | 6 | 109 | 96 | 720 | 0 | 130680 | 0 |
+| Equity delta | 720 | 720 | 395 | 357 | 720 | 0 | 125280 | 0 |
+| Commodity delta | 720 | 60 | 396 | 344 | 720 | 0 | 156600 | 0 |
+| CSR non-sec delta | 720 | 720 | 556 | 552 | 720 | 0 | 156600 | 0 |
+| CSR sec non-CTP delta | 720 | 720 | 339 | 377 | 720 | 0 | 125280 | 0 |
+| CSR sec CTP delta | 720 | 720 | 268 | 271 | 720 | 0 | 156600 | 0 |
+| GIRR curvature validation | 720 | 15 | 19 | 77 | 720 | 0 | 0 | 0 |
 
 The totals are useful for order-of-magnitude regression checks, not as an SLA.
 The JSON records the timing split for table construction, handoff normalization,
@@ -44,11 +44,12 @@ branch selection.
 
 The JSON also contains a `summary` block for budget checks and agent triage. It
 aggregates raw rows, netted factor counts, pairwise evidence counts, accepted-row
-dataclass materialization, peak traced memory, non-overlapping split timing groups, and stable
-result/audit hashes. The `phase_probes` block records the GIRR delta
-weighting-input construction, netting/factor-grid correlation matrix, and
-scenario-correlation adjustment timings separately from ingestion and audit
-serialization.
+dataclass materialization, peak traced memory, split timing groups, and stable
+result/audit hashes. The `wall_clock_proxy` sums measured Arrow/batch path
+timings only. The `phase_probes` block records the GIRR delta weighting-input
+construction, netting/factor-grid correlation matrix, and scenario-correlation
+adjustment timings as supplemental breakdowns because the full batch compute
+timer already includes that work.
 
 ## Conclusions
 

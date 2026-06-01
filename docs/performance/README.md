@@ -40,10 +40,13 @@ sec non-CTP delta, CSR sec CTP delta, and GIRR curvature validation. It records
 whether accepted-row `SbmSensitivity` dataclasses were materialized, splits
 handoff/batch/calculation timings, checks row/batch capital reconciliation for
 capital-producing paths, and keeps pairwise evidence in summary mode. Its
-machine-readable `summary` block aggregates non-overlapping ingestion,
-validation, weighting, netting/factor-grid, correlation/scenario, and
-audit-serialization timing groups, plus raw rows, netted factors, pairwise
-counts, dataclass counts, peak traced memory, and stable result/audit hashes.
+machine-readable `summary` block aggregates ingestion, validation, weighting,
+audit serialization, supplemental netting/factor-grid and correlation/scenario
+phase probes, plus raw rows, netted factors, pairwise counts, dataclass counts,
+peak traced memory, and stable result/audit hashes. The `wall_clock_proxy`
+sums the measured Arrow/batch path timings only; phase-probe timings are
+reported separately because the full batch compute timer already includes that
+work.
 
 `frtb-sbm-batch-arrow-report.md` contains the human-readable report.
 `frtb-sbm-batch-arrow-baseline.json` is the checked-in baseline for

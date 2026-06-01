@@ -22,7 +22,7 @@ changes or when investigating regressions.
 | Benchmark | Wall clock | Dominant phase | Notes |
 | --- | --- | --- | --- |
 | IMA target-scale | ~73.9 s | `imcc_decomposition` ~54.2 s | 10k scenarios, 100 desks |
-| SBM Arrow/batch | ~3.3 s wall-clock proxy | migrated batch capital calculations | 5,760 synthetic rows across migrated paths, zero accepted-row dataclasses, 1,111,320 pairwise relationships summarized |
+| SBM Arrow/batch | ~3.4 s wall-clock proxy | migrated batch capital calculations | 5,760 synthetic rows across migrated paths, zero accepted-row dataclasses, 1,111,320 pairwise relationships summarized |
 | RRAO target-scale | ~45.2 s | validation/classification/allocation | 100k positions, ~3,024 positions/s, ~402 MB peak traced memory |
 
 The SBM benchmark uses the checked-in

@@ -133,7 +133,7 @@ def test_summary_exposes_budgetable_split_metrics_and_hashes() -> None:
     assert summary["timings_seconds"]["netting_factor_grid"] == pytest.approx(0.6)
     assert summary["timings_seconds"]["correlation_scenario_aggregation"] == pytest.approx(0.7)
     assert summary["timings_seconds"]["audit_serialization"] == pytest.approx(0.5)
-    assert summary["timings_seconds"]["wall_clock_proxy"] == pytest.approx(2.8)
+    assert summary["timings_seconds"]["wall_clock_proxy"] == pytest.approx(1.5)
     assert len(summary["result_hash"]) == 64
     assert len(summary["audit_hash"]) == 64
 
