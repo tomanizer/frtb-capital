@@ -1791,10 +1791,8 @@ def _object_column(
         if required:
             raise SbmInputError(f"required column {column_name!r} is missing", field=column_name)
         return None
-    column = table.column(column_name).combine_chunks()
-    if pa.types.is_dictionary(column.type):
-        column = column.dictionary_decode()
-    values = np.asarray(column.to_pylist(), dtype=object)
+    column = table.column(column_name)
+    values = _object_array_from_arrow_column(column)
     values.setflags(write=False)
     return values
 
@@ -1802,13 +1800,66 @@ def _object_column(
 def _required_float_column(table: pa.Table, column_name: str) -> npt.NDArray[np.float64]:
     if column_name not in table.column_names:
         raise SbmInputError(f"required column {column_name!r} is missing", field=column_name)
-    column = table.column(column_name).combine_chunks()
-    try:
-        values = np.asarray(column.to_numpy(zero_copy_only=False), dtype=np.float64)
-    except (TypeError, ValueError) as exc:
-        raise SbmInputError("value must be numeric", field=column_name) from exc
+    column = table.column(column_name)
+    if column.null_count:
+        raise SbmInputError(
+            "required numeric column must not contain nulls",
+            field=column_name,
+        )
+    values = _float64_array_from_arrow_column(column, field=column_name)
     values.setflags(write=False)
     return values
+
+
+def _object_array_from_arrow_column(column: pa.ChunkedArray) -> npt.NDArray[np.object_]:
+    arrays = tuple(_object_array_from_arrow_array(chunk) for chunk in column.chunks)
+    if not arrays:
+        return np.empty(0, dtype=object)
+    if len(arrays) == 1:
+        return arrays[0]
+    return np.concatenate(arrays).astype(object, copy=False)
+
+
+def _object_array_from_arrow_array(array: pa.Array) -> npt.NDArray[np.object_]:
+    if pa.types.is_dictionary(array.type):
+        return _dictionary_array_to_object_array(cast(pa.DictionaryArray, array))
+    return np.asarray(array.to_numpy(zero_copy_only=False), dtype=object)
+
+
+def _dictionary_array_to_object_array(array: pa.DictionaryArray) -> npt.NDArray[np.object_]:
+    if len(array) == 0:
+        return np.empty(0, dtype=object)
+    dictionary = np.asarray(array.dictionary.to_numpy(zero_copy_only=False), dtype=object)
+    indices = np.asarray(
+        pc.fill_null(array.indices, pa.scalar(0, type=array.indices.type)).to_numpy(
+            zero_copy_only=False
+        ),
+        dtype=np.int64,
+    )
+    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
+    values = np.empty(len(array), dtype=object)
+    values[valid] = dictionary[indices[valid]]
+    values[~valid] = None
+    return values
+
+
+def _float64_array_from_arrow_column(
+    column: pa.ChunkedArray,
+    *,
+    field: str,
+) -> npt.NDArray[np.float64]:
+    if len(column) == 0:
+        return np.empty(0, dtype=np.float64)
+    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
+    if not pa.types.is_float64(array.type):
+        try:
+            array = cast(pa.Array, pc.cast(array, pa.float64()))
+        except (pa.ArrowInvalid, TypeError, ValueError) as exc:
+            raise SbmInputError("value must be numeric", field=field) from exc
+    try:
+        return cast(npt.NDArray[np.float64], array.to_numpy(zero_copy_only=True))
+    except (pa.ArrowInvalid, TypeError, ValueError):
+        return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
 
 
 __all__ = [

@@ -118,6 +118,55 @@ def test_vectorized_static_mapping_matches_row_compatibility_path() -> None:
     assert vectorized_handoff.metadata == row_handoff.metadata
 
 
+def test_vectorized_static_mapping_handles_chunked_input_without_changing_output() -> None:
+    table = pa.concat_tables(
+        [
+            pa.table(
+                {
+                    "TradeId": ["t-1"],
+                    "RowId": ["r-1"],
+                    "RiskType": ["RISK_IRCURVE"],
+                    "Amount": ["100.25"],
+                }
+            ),
+            pa.table(
+                {
+                    "TradeId": ["t-2", "t-3"],
+                    "RowId": ["r-2", "r-3"],
+                    "RiskType": ["UNKNOWN", "RISK_IRCURVE"],
+                    "Amount": ["12.0", "99.5"],
+                }
+            ),
+        ]
+    )
+    kwargs = {
+        "column_specs": _column_specs(),
+        "risk_type_mappings": (
+            CrifRiskTypeMapping(
+                ("RISK_IRCURVE",),
+                {"risk_class": "GIRR", "risk_measure": "delta"},
+            ),
+        ),
+        "source_file": "chunked.crif.csv",
+    }
+
+    row_handoff = normalize_crif_arrow_table(
+        table,
+        use_vectorized_static_mapping=False,
+        **kwargs,
+    )
+    vectorized_handoff = normalize_crif_arrow_table(table, **kwargs)
+
+    assert table.column("RiskType").num_chunks == 2
+    assert vectorized_handoff.accepted.to_pydict() == row_handoff.accepted.to_pydict()
+    assert vectorized_handoff.rejected is not None
+    assert row_handoff.rejected is not None
+    assert vectorized_handoff.rejected.to_pydict() == row_handoff.rejected.to_pydict()
+    assert [diagnostic.as_dict() for diagnostic in vectorized_handoff.diagnostics] == [
+        diagnostic.as_dict() for diagnostic in row_handoff.diagnostics
+    ]
+
+
 def test_vectorized_static_mapping_matches_optional_blank_risk_type_path() -> None:
     specs = (
         CrifColumnSpec("trade_id", aliases=("TradeId",), required=True),
