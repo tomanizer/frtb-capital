@@ -136,3 +136,24 @@ def test_summary_exposes_budgetable_split_metrics_and_hashes() -> None:
     assert summary["timings_seconds"]["wall_clock_proxy"] == pytest.approx(2.8)
     assert len(summary["result_hash"]) == 64
     assert len(summary["audit_hash"]) == 64
+
+
+def test_summary_validation_reports_missing_mapping_key() -> None:
+    harness = _load_harness()
+
+    with pytest.raises(ValueError, match="missing required benchmark key"):
+        harness._required_mapping({}, "timings_seconds")
+
+
+def test_phase_probe_timings_reports_missing_timing_key() -> None:
+    harness = _load_harness()
+
+    with pytest.raises(ValueError, match="missing required phase-probe timing key"):
+        harness._phase_probe_timings(({"timings_seconds": {}},))
+
+
+def test_result_hash_reports_missing_required_key() -> None:
+    harness = _load_harness()
+
+    with pytest.raises(ValueError, match="missing required result-hash key"):
+        harness._result_hash({"total_capital": 1.0})

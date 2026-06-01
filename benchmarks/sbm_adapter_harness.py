@@ -628,9 +628,11 @@ def _summary(
 
 
 def _required_mapping(payload: Mapping[str, object], key: str) -> Mapping[str, object]:
+    if key not in payload:
+        raise ValueError(f"missing required benchmark key: {key}")
     value = payload[key]
     if not isinstance(value, Mapping):
-        raise RuntimeError(f"{key} must be a mapping in benchmark case")
+        raise ValueError(f"{key} must be a mapping in benchmark case")
     return value
 
 
@@ -643,6 +645,12 @@ def _phase_probe_timings(phase_probes: Sequence[dict[str, object]]) -> dict[str,
     correlation_scenario = 0.0
     for probe in phase_probes:
         timings = _required_mapping(probe, "timings_seconds")
+        for key in (
+            "netting_factor_grid_and_correlation_matrix",
+            "correlation_scenario_aggregation",
+        ):
+            if key not in timings:
+                raise ValueError(f"missing required phase-probe timing key: {key}")
         netting_factor_grid += float(timings["netting_factor_grid_and_correlation_matrix"])
         correlation_scenario += float(timings["correlation_scenario_aggregation"])
     return {
@@ -652,6 +660,9 @@ def _phase_probe_timings(phase_probes: Sequence[dict[str, object]]) -> dict[str,
 
 
 def _result_hash(payload: Mapping[str, object]) -> str:
+    for key in ("total_capital", "profile_hash", "input_hash", "risk_classes"):
+        if key not in payload:
+            raise ValueError(f"missing required result-hash key: {key}")
     return _hash_json(
         {
             "total_capital": payload["total_capital"],
@@ -663,7 +674,13 @@ def _result_hash(payload: Mapping[str, object]) -> str:
 
 
 def _hash_json(payload: object) -> str:
-    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    """Hash bit-identical JSON output to detect deterministic benchmark drift.
+
+    Floating-point payloads may still differ across Python, NumPy, BLAS, or
+    architecture baselines; benchmark baselines should be refreshed deliberately
+    when that drift is expected.
+    """
+    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
 
