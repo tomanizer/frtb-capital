@@ -560,7 +560,7 @@ def _string_column(table: pa.Table, column_name: str, *, default: str | None = N
     if column_name not in table.column_names:
         if default is None:
             raise ValueError(f"column is required: {column_name}")
-        return np.asarray([default] * table.num_rows, dtype=np.str_)
+        return np.full(table.num_rows, default, dtype=f"<U{max(1, len(default))}")
     values = _object_array_from_column(table.column(column_name), default=default)
     return np.asarray(values, dtype=np.str_)
 
@@ -671,7 +671,6 @@ def _dictionary_array_to_object_array(
     if array.null_count:
         fill = "" if default is None else default
         valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-        values = values.astype(object, copy=True)
         values[~valid] = fill
     return values
 

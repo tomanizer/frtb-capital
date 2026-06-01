@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from enum import StrEnum
 from types import MappingProxyType
 
@@ -311,7 +311,10 @@ def _validate_equal_lengths(label: str, first: np.ndarray, *others: np.ndarray) 
 
 
 def _date_from_datetime64(value: np.datetime64) -> date:
-    return date.fromisoformat(str(value.astype("datetime64[D]")))
+    parsed = value.astype("datetime64[D]").item()
+    if not isinstance(parsed, date) or isinstance(parsed, datetime):
+        raise TypeError("scenario date did not convert to date")
+    return parsed
 
 
 def _parse_provenance_json(raw_json: str) -> Mapping[str, str]:

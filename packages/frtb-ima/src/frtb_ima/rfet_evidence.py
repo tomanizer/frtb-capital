@@ -883,13 +883,16 @@ def _date64_set(values: Sequence[date]) -> set[np.datetime64]:
 
 
 def _date_from_datetime64(value: np.datetime64) -> date:
-    return date.fromisoformat(str(value.astype("datetime64[D]")))
+    parsed = value.astype("datetime64[D]").item()
+    if not isinstance(parsed, date) or isinstance(parsed, datetime):
+        raise TypeError("observation date did not convert to date")
+    return parsed
 
 
 def _datetime_from_datetime64(value: np.datetime64) -> datetime | None:
     if np.isnat(value):
         return None
-    raw = value.astype("datetime64[us]").astype(datetime)
+    raw = value.astype("datetime64[us]").item()
     if not isinstance(raw, datetime):
         raise TypeError("observation timestamp did not convert to datetime")
     if raw.tzinfo is None:
