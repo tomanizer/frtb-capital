@@ -20,6 +20,7 @@ from frtb_sbm.aggregation import (
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
+from frtb_sbm.batch import SbmSensitivityBatch, sorted_girr_curvature_batch_indices
 from frtb_sbm.data_models import (
     CurvatureBranchRecord,
     CurvatureInput,
@@ -143,6 +144,58 @@ def selected_curvature_shock_amount(up_shock_amount: float, down_shock_amount: f
     down = normalise_sensitivity_amount(down_shock_amount)
     branch = curvature_worst_branch(up, down)
     return down if branch == "down" else up
+
+
+def validate_girr_curvature_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+) -> SbmSensitivityBatch:
+    """
+    Validate a GIRR curvature batch without enabling curvature capital.
+
+    This helper checks the package-owned batch contract and the separate
+    up/down shock arrays needed by MAR21.5. It intentionally does not call the
+    public capital support gate because GIRR curvature capital remains
+    fail-closed until the cited aggregation path is implemented.
+    """
+
+    _validate_and_get_girr_curvature_shocks(batch, profile_id=profile_id)
+    return batch
+
+
+def select_girr_curvature_branches_from_batch(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+) -> tuple[CurvatureBranchRecord, ...]:
+    """
+    Return deterministic GIRR curvature branch records from batch columns.
+
+    The returned records match the row-wise branch-selection rule while reading
+    directly from the package-owned batch arrays.
+    """
+
+    up_shocks, down_shocks = _validate_and_get_girr_curvature_shocks(
+        batch,
+        profile_id=profile_id,
+    )
+    citations = curvature_citation_ids(profile_id)
+    records: list[CurvatureBranchRecord] = []
+    for row_index in sorted_girr_curvature_batch_indices(batch):
+        up_shock = float(up_shocks[row_index])
+        down_shock = float(down_shocks[row_index])
+        branch = curvature_worst_branch(up_shock, down_shock)
+        records.append(
+            CurvatureBranchRecord(
+                sensitivity_id=str(batch.sensitivity_ids[row_index]),
+                selected_branch=branch,
+                up_shock_amount=up_shock,
+                down_shock_amount=down_shock,
+                citation_ids=citations,
+            )
+        )
+    return tuple(records)
 
 
 def weight_girr_curvature_sensitivities(
@@ -420,6 +473,71 @@ def _build_girr_curvature_inter_bucket_correlation_map(
     return correlations
 
 
+def _require_girr_curvature_batch(batch: SbmSensitivityBatch) -> None:
+    if not isinstance(batch, SbmSensitivityBatch):
+        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
+    if batch.risk_class is not SbmRiskClass.GIRR:
+        raise SbmInputError("GIRR curvature batch only accepts GIRR sensitivities")
+    if batch.risk_measure is not SbmRiskMeasure.CURVATURE:
+        raise SbmInputError("GIRR curvature batch only accepts CURVATURE sensitivities")
+    if batch.up_shock_amounts is None or batch.down_shock_amounts is None:
+        raise SbmInputError(
+            "curvature inputs require up_shock_amount and down_shock_amount",
+            field="up_shock_amount",
+        )
+
+
+def _validate_and_get_girr_curvature_shocks(
+    batch: SbmSensitivityBatch,
+    *,
+    profile_id: str,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    ensure_sbm_profile_known(profile_id)
+    _require_girr_curvature_batch(batch)
+    return (
+        _curvature_shock_float_array(batch, batch.up_shock_amounts, field="up_shock_amount"),
+        _curvature_shock_float_array(batch, batch.down_shock_amounts, field="down_shock_amount"),
+    )
+
+
+def _curvature_shock_float_array(
+    batch: SbmSensitivityBatch,
+    values: npt.NDArray[np.object_] | None,
+    *,
+    field: str,
+) -> npt.NDArray[np.float64]:
+    if values is None:
+        raise SbmInputError(
+            "curvature inputs require up_shock_amount and down_shock_amount",
+            field=field,
+        )
+    shocks = np.empty(batch.row_count, dtype=np.float64)
+    for row_index, value in enumerate(values):
+        sensitivity_id = str(batch.sensitivity_ids[row_index])
+        if value is None:
+            raise SbmInputError(
+                "curvature inputs require up_shock_amount and down_shock_amount",
+                field=field,
+                sensitivity_id=sensitivity_id,
+            )
+        try:
+            shocks[row_index] = float(value)
+        except (TypeError, ValueError) as exc:
+            raise SbmInputError(
+                "value must be numeric",
+                field=field,
+                sensitivity_id=sensitivity_id,
+            ) from exc
+        if not np.isfinite(shocks[row_index]):
+            raise SbmInputError(
+                "value must be finite",
+                field=field,
+                sensitivity_id=sensitivity_id,
+            )
+    shocks.setflags(write=False)
+    return shocks
+
+
 __all__ = [
     "CURVATURE_CAPITAL_REQUIREMENT_ID",
     "aggregate_girr_curvature_measure_capital",
@@ -428,7 +546,9 @@ __all__ = [
     "curvature_capital_unsupported_feature",
     "curvature_worst_branch",
     "parse_curvature_input",
+    "select_girr_curvature_branches_from_batch",
     "selected_curvature_shock_amount",
     "validate_curvature_sensitivities",
+    "validate_girr_curvature_batch",
     "weight_girr_curvature_sensitivities",
 ]

@@ -66,6 +66,10 @@ _TENOR_REQUIRED_PATHS = frozenset(
 
 _OPTION_TENOR_REQUIRED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.VEGA)})
 
+_CURVATURE_REQUIRED_PATHS = frozenset(
+    {(risk_class, SbmRiskMeasure.CURVATURE) for risk_class in SbmRiskClass}
+)
+
 _QUALIFIER_REQUIRED_RISK_CLASSES = frozenset(
     {
         SbmRiskClass.CSR_NONSEC,
@@ -247,6 +251,30 @@ def build_girr_vega_batch_from_sensitivities(
         sensitivities,
         expected_risk_class=SbmRiskClass.GIRR,
         expected_risk_measure=SbmRiskMeasure.VEGA,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def build_girr_curvature_batch_from_sensitivities(
+    sensitivities: object,
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """
+    Build a GIRR curvature batch from existing row-wise canonical sensitivities.
+
+    This validates and preserves the separate up/down shock arrays used by the
+    curvature contract. It does not enable public curvature capital.
+    """
+
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.CURVATURE,
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
@@ -642,6 +670,76 @@ def build_girr_vega_batch_from_columns(
     return build_sbm_batch_from_columns(
         expected_risk_class=SbmRiskClass.GIRR,
         expected_risk_measure=SbmRiskMeasure.VEGA,
+        sensitivity_ids=sensitivity_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        risk_measures=risk_measures,
+        buckets=buckets,
+        risk_factors=risk_factors,
+        amounts=amounts,
+        amount_currencies=amount_currencies,
+        sign_conventions=sign_conventions,
+        tenors=tenors,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        position_ids=position_ids,
+        qualifiers=qualifiers,
+        option_tenors=option_tenors,
+        liquidity_horizon_days=liquidity_horizon_days,
+        maturities=maturities,
+        up_shock_amounts=up_shock_amounts,
+        down_shock_amounts=down_shock_amounts,
+        source_column_maps=source_column_maps,
+        mapping_citation_ids=mapping_citation_ids,
+        copy_arrays=copy_arrays,
+    )
+
+
+def build_girr_curvature_batch_from_columns(
+    *,
+    sensitivity_ids: Iterable[object],
+    source_row_ids: Iterable[object],
+    desk_ids: Iterable[object],
+    legal_entities: Iterable[object],
+    risk_classes: Iterable[object],
+    risk_measures: Iterable[object],
+    buckets: Iterable[object],
+    risk_factors: Iterable[object],
+    amounts: Iterable[object],
+    amount_currencies: Iterable[object],
+    sign_conventions: Iterable[object],
+    tenors: Iterable[object],
+    up_shock_amounts: Iterable[object],
+    down_shock_amounts: Iterable[object],
+    lineage_source_systems: Iterable[object],
+    lineage_source_files: Iterable[object],
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    position_ids: Iterable[object] | None = None,
+    qualifiers: Iterable[object] | None = None,
+    option_tenors: Iterable[object] | None = None,
+    liquidity_horizon_days: Iterable[object] | None = None,
+    maturities: Iterable[object] | None = None,
+    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
+    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    copy_arrays: bool = True,
+) -> SbmSensitivityBatch:
+    """
+    Build a GIRR curvature batch from columnar arrays owned by an adapter.
+
+    The curvature contract intentionally keeps ``up_shock_amounts`` and
+    ``down_shock_amounts`` as separate arrays at the batch boundary.
+    """
+
+    return build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.CURVATURE,
         sensitivity_ids=sensitivity_ids,
         source_row_ids=source_row_ids,
         desk_ids=desk_ids,
@@ -1092,6 +1190,18 @@ def input_hash_for_girr_vega_batch(batch: SbmSensitivityBatch) -> str:
     return input_hash_for_sbm_batch(batch)
 
 
+def input_hash_for_girr_curvature_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the row-equivalent deterministic input hash for a GIRR curvature batch."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.CURVATURE,
+        label="GIRR curvature",
+    )
+    return input_hash_for_sbm_batch(batch)
+
+
 def input_hash_for_fx_delta_batch(batch: SbmSensitivityBatch) -> str:
     """Return the row-equivalent deterministic input hash for an FX delta batch."""
 
@@ -1198,6 +1308,18 @@ def sorted_girr_vega_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np
         expected_risk_class=SbmRiskClass.GIRR,
         expected_risk_measure=SbmRiskMeasure.VEGA,
         label="GIRR vega",
+    )
+    return sorted_sbm_batch_indices(batch)
+
+
+def sorted_girr_curvature_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
+    """Return indices in the same stable order used by row-wise GIRR curvature helpers."""
+
+    _require_batch_path(
+        batch,
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.CURVATURE,
+        label="GIRR curvature",
     )
     return sorted_sbm_batch_indices(batch)
 
@@ -1493,6 +1615,23 @@ def _validate_homogeneous_batch_arrays(
         )
     elif qualifiers is not None:
         _validate_optional_text_column(qualifiers, "qualifier", sensitivity_ids=sensitivity_ids)
+
+    if path in _CURVATURE_REQUIRED_PATHS:
+        for optional_field, field_name in (
+            ("up_shock_amounts", "up_shock_amount"),
+            ("down_shock_amounts", "down_shock_amount"),
+        ):
+            shock_values = optional_arrays[optional_field]
+            if shock_values is None:
+                raise SbmInputError(
+                    "curvature inputs require up_shock_amount and down_shock_amount",
+                    field=field_name,
+                )
+            _validate_required_float_column(
+                shock_values,
+                field_name,
+                sensitivity_ids=sensitivity_ids,
+            )
 
     for amount_currency in np.unique(arrays["amount_currencies"]):
         normalise_currency_code(cast(str, amount_currency))
@@ -1796,6 +1935,35 @@ def _validate_optional_float_column(values: ObjectArray, field: str) -> None:
             raise SbmInputError("value must be finite", field=field)
 
 
+def _validate_required_float_column(
+    values: ObjectArray,
+    field: str,
+    *,
+    sensitivity_ids: ObjectArray,
+) -> None:
+    for row_index, value in enumerate(values):
+        if value is None:
+            raise SbmInputError(
+                "curvature inputs require up_shock_amount and down_shock_amount",
+                field=field,
+                sensitivity_id=_sensitivity_id_for_index(sensitivity_ids, row_index),
+            )
+        try:
+            float_value = float(value)
+        except (TypeError, ValueError) as exc:
+            raise SbmInputError(
+                "value must be numeric",
+                field=field,
+                sensitivity_id=_sensitivity_id_for_index(sensitivity_ids, row_index),
+            ) from exc
+        if not np.isfinite(float_value):
+            raise SbmInputError(
+                "value must be finite",
+                field=field,
+                sensitivity_id=_sensitivity_id_for_index(sensitivity_ids, row_index),
+            )
+
+
 def _sensitivity_id_for_index(values: ObjectArray, row_index: int) -> str:
     if row_index < int(values.shape[0]) and isinstance(values[row_index], str):
         return cast(str, values[row_index])
@@ -1824,6 +1992,8 @@ __all__ = [
     "build_equity_delta_batch_from_sensitivities",
     "build_fx_delta_batch_from_columns",
     "build_fx_delta_batch_from_sensitivities",
+    "build_girr_curvature_batch_from_columns",
+    "build_girr_curvature_batch_from_sensitivities",
     "build_girr_delta_batch_from_columns",
     "build_girr_delta_batch_from_sensitivities",
     "build_girr_vega_batch_from_columns",
@@ -1836,6 +2006,7 @@ __all__ = [
     "input_hash_for_csr_sec_nonctp_delta_batch",
     "input_hash_for_equity_delta_batch",
     "input_hash_for_fx_delta_batch",
+    "input_hash_for_girr_curvature_batch",
     "input_hash_for_girr_delta_batch",
     "input_hash_for_girr_vega_batch",
     "input_hash_for_sbm_batch",
@@ -1845,6 +2016,7 @@ __all__ = [
     "sorted_csr_sec_nonctp_delta_batch_indices",
     "sorted_equity_delta_batch_indices",
     "sorted_fx_delta_batch_indices",
+    "sorted_girr_curvature_batch_indices",
     "sorted_girr_delta_batch_indices",
     "sorted_girr_vega_batch_indices",
     "sorted_sbm_batch_indices",
