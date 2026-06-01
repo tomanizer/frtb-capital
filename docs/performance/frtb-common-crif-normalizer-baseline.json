@@ -1,0 +1,49 @@
+{
+  "common_static_mapping": {
+    "equivalence": {
+      "accepted_rows_match": true,
+      "diagnostics_match": true,
+      "rejected_rows_match": true,
+      "source_hash_match": true
+    },
+    "python_peak_allocation_ratio": 6.786233760076457,
+    "row_compatibility_path": {
+      "accepted_rows": 19642,
+      "diagnostic_count": 358,
+      "rejected_rows": 358,
+      "seconds": 3.803331834002165,
+      "tracemalloc_peak_bytes": 16317438
+    },
+    "speedup_ratio": 85.38738151542789,
+    "vectorized_static_mapping_path": {
+      "accepted_row_dataclasses_materialized": 0,
+      "accepted_rows": 19642,
+      "diagnostic_count": 358,
+      "rejected_rows": 358,
+      "seconds": 0.04454208299284801,
+      "tracemalloc_peak_bytes": 2404491
+    }
+  },
+  "controls": {
+    "memory_proxy": "tracemalloc peak bytes for Python allocations; Arrow and NumPy native buffers may not be fully counted",
+    "row_count": 20000,
+    "source_shape": "GIRR delta CRIF-like Arrow table",
+    "synthetic_data_only": true
+  },
+  "environment": {
+    "machine": "arm64",
+    "platform": "macOS-26.5-arm64-arm-64bit",
+    "processor": "arm",
+    "python": "3.11.15"
+  },
+  "generated_at": "2026-06-01T04:19:18.604426+00:00",
+  "sbm_girr_delta_consumer": {
+    "accepted_row_dataclasses_materialized": 0,
+    "batch_rows": 19642,
+    "handoff_hash_present": true,
+    "seconds": 1.4824996250099503,
+    "source_hash_present": true,
+    "tracemalloc_peak_bytes": 49764128
+  },
+  "schema_version": "frtb_common_crif_normalizer_benchmark_v1"
+}

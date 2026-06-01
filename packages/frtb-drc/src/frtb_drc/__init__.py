@@ -1,12 +1,25 @@
 """Standardised Approach default risk charge scaffold."""
 
 from frtb_drc._version import __version__
+from frtb_drc.arrow_handoff import (
+    DRC_NONSEC_HANDOFF_COLUMN_SPECS,
+    build_drc_nonsec_batch_from_handoff,
+    normalize_drc_nonsec_arrow_table,
+)
 from frtb_drc.audit import (
     input_snapshot_hash,
     result_json,
     rule_profile_hash,
     serialize_result,
     validate_reconciliation,
+)
+from frtb_drc.batch import (
+    DrcBatchCapitalCalculation,
+    DrcPositionBatch,
+    build_drc_nonsec_batch_from_columns,
+    build_drc_nonsec_batch_from_positions,
+    calculate_drc_capital_from_batch,
+    input_hash_for_drc_batch,
 )
 from frtb_drc.capital import (
     CapitalInput,
@@ -63,6 +76,7 @@ from frtb_drc.scaffold import PACKAGE_METADATA, calculate_drc_capital
 from frtb_drc.validation import DrcInputError, validate_position, validate_positions
 
 __all__ = [
+    "DRC_NONSEC_HANDOFF_COLUMN_SPECS",
     "PACKAGE_METADATA",
     "US_NPR_2_0_PROFILE_ID",
     "BranchMetadata",
@@ -73,6 +87,7 @@ __all__ = [
     "CategoryDrc",
     "CreditQuality",
     "DefaultDirection",
+    "DrcBatchCapitalCalculation",
     "DrcBucketType",
     "DrcCalculationContext",
     "DrcCapitalResult",
@@ -80,6 +95,7 @@ __all__ = [
     "DrcInputError",
     "DrcInstrumentType",
     "DrcPosition",
+    "DrcPositionBatch",
     "DrcRiskClass",
     "DrcRuleProfile",
     "DrcSeniority",
@@ -94,9 +110,13 @@ __all__ = [
     "RejectedOffset",
     "RiskWeightRule",
     "__version__",
+    "build_drc_nonsec_batch_from_columns",
+    "build_drc_nonsec_batch_from_handoff",
+    "build_drc_nonsec_batch_from_positions",
     "calculate_bucket_drc",
     "calculate_category_drc",
     "calculate_drc_capital",
+    "calculate_drc_capital_from_batch",
     "calculate_gross_jtd",
     "calculate_gross_jtds",
     "calculate_hedge_benefit_ratio",
@@ -108,10 +128,12 @@ __all__ = [
     "get_maturity_policy",
     "get_risk_weight_rule",
     "get_rule_profile",
+    "input_hash_for_drc_batch",
     "input_snapshot_hash",
     "iter_bucket_definitions",
     "iter_lgd_rules",
     "iter_risk_weight_rules",
+    "normalize_drc_nonsec_arrow_table",
     "profile_content_hash",
     "result_json",
     "rule_profile_hash",

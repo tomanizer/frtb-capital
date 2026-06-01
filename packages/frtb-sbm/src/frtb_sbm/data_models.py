@@ -45,6 +45,17 @@ class SbmScenarioLabel(StrEnum):
     HIGH = "HIGH"
 
 
+class SbmPairwiseEvidenceMode(StrEnum):
+    """Controls pairwise intra-bucket correlation evidence materialisation."""
+
+    AUTO = "AUTO"
+    FULL = "FULL"
+    SUMMARY = "SUMMARY"
+
+
+DEFAULT_PAIRWISE_EVIDENCE_LIMIT = 2500
+
+
 class SbmSignConvention(StrEnum):
     """Explicit sign conventions for sensitivity amounts."""
 
@@ -125,6 +136,8 @@ class SbmRunControls:
     audit_verbosity: str = "standard"
     unsupported_feature_behavior: str = "fail_closed"
     retain_scenario_detail: bool = True
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode = SbmPairwiseEvidenceMode.AUTO
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT
 
 
 @dataclass(frozen=True)
@@ -185,6 +198,10 @@ class WeightedSensitivity:
     # Carries issuer/currency qualifier, or the cited tenor key copied for GIRR rows.
     qualifier: str | None = None
     liquidity_horizon_days: int | None = None
+    # Populated when multiple input rows are netted to one regulatory factor.
+    factor_key: tuple[str, ...] = ()
+    contributing_sensitivity_ids: tuple[str, ...] = ()
+    contributing_source_row_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -212,6 +229,17 @@ class PairwiseCorrelationRecord:
 
 
 @dataclass(frozen=True)
+class PairwiseCorrelationSummary:
+    """Scale-aware summary for pairwise correlation evidence."""
+
+    evidence_mode: SbmPairwiseEvidenceMode
+    total_count: int
+    materialized_count: int
+    omitted_count: int
+    factor_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class IntraBucketScenarioRecord:
     """Intra-bucket capital and correlation evidence for one scenario."""
 
@@ -221,6 +249,7 @@ class IntraBucketScenarioRecord:
     floor_applied: bool
     pairwise_correlations: tuple[PairwiseCorrelationRecord, ...]
     citation_ids: tuple[str, ...]
+    pairwise_correlation_summary: PairwiseCorrelationSummary | None = None
 
 
 @dataclass(frozen=True)
@@ -367,12 +396,14 @@ class SbmCapitalResult:
 
 
 __all__ = [
+    "DEFAULT_PAIRWISE_EVIDENCE_LIMIT",
     "BucketCapital",
     "CurvatureBranchRecord",
     "CurvatureInput",
     "CurvatureResult",
     "IntraBucketScenarioRecord",
     "PairwiseCorrelationRecord",
+    "PairwiseCorrelationSummary",
     "RiskClassCapital",
     "RiskClassScenarioDetail",
     "SbmBranchMetadata",
@@ -381,6 +412,7 @@ __all__ = [
     "SbmCalculationContext",
     "SbmCapitalResult",
     "SbmCitation",
+    "SbmPairwiseEvidenceMode",
     "SbmReconciliationMetadata",
     "SbmRegulatoryProfile",
     "SbmRiskClass",

@@ -75,11 +75,16 @@ Enforced by `import-linter` via the root `[tool.importlinter]` layers contract
 ### Consistent style across packages
 
 - Python 3.11+ across all packages.
-- `numpy` is the default numerical runtime for capital calculation kernels.
-  Adding any other runtime dependency (`pandas`, `scipy`, `polars`,
-  `statsmodels`, `pydantic`, etc.) requires an ADR. These libraries may be used
-  in notebooks, validation, tests, research, or optional adapters when they do
-  not leak into the core runtime path; see
+- `numpy` is the numerical runtime for capital calculation kernels. `pyarrow`
+  is approved only for tabular handoff, IO, CRIF normalization, adapters, and
+  handoff objects under
+  [`ADR 0023`](docs/decisions/0023-arrow-tabular-handoff-boundary.md).
+  Kernels must not import `pyarrow`, `pandas`, or `polars`; the
+  `quality-control` target enforces this. Other runtime dependencies (`pandas`,
+  `scipy`, `polars`, `statsmodels`, `pydantic`, etc.) require an ADR before
+  entering the runtime path. These libraries may be used in notebooks,
+  validation, tests, research, or optional adapters when they do not leak into
+  the core runtime path; see
   [`ADR 0011`](docs/decisions/0011-core-runtime-dependency-policy.md).
 - Frozen dataclasses for data containers; pure functions for business logic.
 - No mutable global state, no implicit I/O in calculation paths.

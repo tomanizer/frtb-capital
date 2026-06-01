@@ -1,0 +1,350 @@
+{
+  "cases": [
+    {
+      "arrow_batch_path": {
+        "accepted_row_dataclasses_avoided": true,
+        "accepted_row_dataclasses_materialized": 0,
+        "handoff_hash_present": true,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 260280,
+          "total_count": 260280
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0009382080170325935,
+          "batch_construction": 0.06216179201146588,
+          "handoff_normalization": 0.0026543329877313226,
+          "synthetic_arrow_table_construction": 0.019037207996007055,
+          "weighting_factor_grid_aggregation_and_result": 1.076501208008267
+        },
+        "tracemalloc_peak_bytes": 4611823
+      },
+      "capital_delta_abs": 0.0,
+      "label": "girr_vega",
+      "raw_row_count": 720,
+      "regulatory_factor_count": 60,
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "row_compatibility_path": {
+        "materialized_dataclass_count": 720,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 260280,
+          "total_count": 260280
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.001317458983976394,
+          "capital_calculation": 1.4120714589953423,
+          "row_dataclass_construction": 0.007223458000225946
+        },
+        "tracemalloc_peak_bytes": 5504540
+      },
+      "status": "capital_supported"
+    },
+    {
+      "arrow_batch_path": {
+        "accepted_row_dataclasses_avoided": true,
+        "accepted_row_dataclasses_materialized": 0,
+        "handoff_hash_present": true,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 130680,
+          "total_count": 130680
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0011216670100111514,
+          "batch_construction": 0.06419962499057874,
+          "handoff_normalization": 0.000909583002794534,
+          "synthetic_arrow_table_construction": 0.002736166992690414,
+          "weighting_factor_grid_aggregation_and_result": 0.03280083302524872
+        },
+        "tracemalloc_peak_bytes": 3244759
+      },
+      "capital_delta_abs": 0.0,
+      "label": "fx_delta",
+      "raw_row_count": 720,
+      "regulatory_factor_count": 6,
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "row_compatibility_path": {
+        "materialized_dataclass_count": 720,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 130680,
+          "total_count": 130680
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0009814170189201832,
+          "capital_calculation": 0.09969808399910107,
+          "row_dataclass_construction": 0.006186749989865348
+        },
+        "tracemalloc_peak_bytes": 3257131
+      },
+      "status": "capital_supported"
+    },
+    {
+      "arrow_batch_path": {
+        "accepted_row_dataclasses_avoided": true,
+        "accepted_row_dataclasses_materialized": 0,
+        "handoff_hash_present": true,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 125280,
+          "total_count": 125280
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0009761250112205744,
+          "batch_construction": 0.04944245799561031,
+          "handoff_normalization": 0.0009107909863814712,
+          "synthetic_arrow_table_construction": 0.003541625017533079,
+          "weighting_factor_grid_aggregation_and_result": 0.27866387501126155
+        },
+        "tracemalloc_peak_bytes": 3407363
+      },
+      "capital_delta_abs": 0.0,
+      "label": "equity_delta",
+      "raw_row_count": 720,
+      "regulatory_factor_count": 720,
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "row_compatibility_path": {
+        "materialized_dataclass_count": 720,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 125280,
+          "total_count": 125280
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0009792919736355543,
+          "capital_calculation": 0.3623847920098342,
+          "row_dataclass_construction": 0.0076756670023314655
+        },
+        "tracemalloc_peak_bytes": 3448291
+      },
+      "status": "capital_supported"
+    },
+    {
+      "arrow_batch_path": {
+        "accepted_row_dataclasses_avoided": true,
+        "accepted_row_dataclasses_materialized": 0,
+        "handoff_hash_present": true,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 156600,
+          "total_count": 156600
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0012522910255938768,
+          "batch_construction": 0.054398665990447626,
+          "handoff_normalization": 0.0009666670230217278,
+          "synthetic_arrow_table_construction": 0.002893541008234024,
+          "weighting_factor_grid_aggregation_and_result": 0.25921429198933765
+        },
+        "tracemalloc_peak_bytes": 3617051
+      },
+      "capital_delta_abs": 0.0,
+      "label": "commodity_delta",
+      "raw_row_count": 720,
+      "regulatory_factor_count": 60,
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "row_compatibility_path": {
+        "materialized_dataclass_count": 720,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 156600,
+          "total_count": 156600
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0009763749840203673,
+          "capital_calculation": 0.33405412497813813,
+          "row_dataclass_construction": 0.00669175002258271
+        },
+        "tracemalloc_peak_bytes": 3542690
+      },
+      "status": "capital_supported"
+    },
+    {
+      "arrow_batch_path": {
+        "accepted_row_dataclasses_avoided": true,
+        "accepted_row_dataclasses_materialized": 0,
+        "handoff_hash_present": true,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 156600,
+          "total_count": 156600
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0010842079936992377,
+          "batch_construction": 0.05408387500210665,
+          "handoff_normalization": 0.000997625000309199,
+          "synthetic_arrow_table_construction": 0.0036895829834975302,
+          "weighting_factor_grid_aggregation_and_result": 0.4508884999959264
+        },
+        "tracemalloc_peak_bytes": 3634201
+      },
+      "capital_delta_abs": 0.0,
+      "label": "csr_nonsec_delta",
+      "raw_row_count": 720,
+      "regulatory_factor_count": 720,
+      "risk_class": "CSR_NONSEC",
+      "risk_measure": "DELTA",
+      "row_compatibility_path": {
+        "materialized_dataclass_count": 720,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 156600,
+          "total_count": 156600
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0011192919919267297,
+          "capital_calculation": 0.5296782500226982,
+          "row_dataclass_construction": 0.007949332997668535
+        },
+        "tracemalloc_peak_bytes": 3591436
+      },
+      "status": "capital_supported"
+    },
+    {
+      "arrow_batch_path": {
+        "accepted_row_dataclasses_avoided": true,
+        "accepted_row_dataclasses_materialized": 0,
+        "handoff_hash_present": true,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 125280,
+          "total_count": 125280
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0010606669820845127,
+          "batch_construction": 0.05288849998032674,
+          "handoff_normalization": 0.001076415996067226,
+          "synthetic_arrow_table_construction": 0.003945125004975125,
+          "weighting_factor_grid_aggregation_and_result": 0.28472608301672153
+        },
+        "tracemalloc_peak_bytes": 3703669
+      },
+      "capital_delta_abs": 0.0,
+      "label": "csr_sec_nonctp_delta",
+      "raw_row_count": 720,
+      "regulatory_factor_count": 720,
+      "risk_class": "CSR_SEC_NONCTP",
+      "risk_measure": "DELTA",
+      "row_compatibility_path": {
+        "materialized_dataclass_count": 720,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 125280,
+          "total_count": 125280
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0011556250101421028,
+          "capital_calculation": 0.31492370800697245,
+          "row_dataclass_construction": 0.007763208996038884
+        },
+        "tracemalloc_peak_bytes": 3644175
+      },
+      "status": "capital_supported"
+    },
+    {
+      "arrow_batch_path": {
+        "accepted_row_dataclasses_avoided": true,
+        "accepted_row_dataclasses_materialized": 0,
+        "handoff_hash_present": true,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 156600,
+          "total_count": 156600
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0012140839826315641,
+          "batch_construction": 0.05397337500471622,
+          "handoff_normalization": 0.0010306250187568367,
+          "synthetic_arrow_table_construction": 0.003861125005641952,
+          "weighting_factor_grid_aggregation_and_result": 0.19925583401345648
+        },
+        "tracemalloc_peak_bytes": 3653145
+      },
+      "capital_delta_abs": 0.0,
+      "label": "csr_sec_ctp_delta",
+      "raw_row_count": 720,
+      "regulatory_factor_count": 720,
+      "risk_class": "CSR_SEC_CTP",
+      "risk_measure": "DELTA",
+      "row_compatibility_path": {
+        "materialized_dataclass_count": 720,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 156600,
+          "total_count": 156600
+        },
+        "timings_seconds": {
+          "audit_result_materialization": 0.0009686249832157046,
+          "capital_calculation": 0.24147112501668744,
+          "row_dataclass_construction": 0.007742999994661659
+        },
+        "tracemalloc_peak_bytes": 3605721
+      },
+      "status": "capital_supported"
+    },
+    {
+      "arrow_batch_path": {
+        "accepted_row_dataclasses_avoided": true,
+        "accepted_row_dataclasses_materialized": 0,
+        "handoff_hash_present": true,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 0,
+          "total_count": 0
+        },
+        "timings_seconds": {
+          "batch_construction": 0.05946299998322502,
+          "curvature_branch_selection": 0.008594042010372505,
+          "handoff_normalization": 0.0010957499907817692,
+          "synthetic_arrow_table_construction": 0.00451391699607484
+        },
+        "tracemalloc_peak_bytes": 3713125
+      },
+      "label": "girr_curvature_validation",
+      "raw_row_count": 720,
+      "regulatory_factor_count": 15,
+      "risk_class": "GIRR",
+      "risk_measure": "CURVATURE",
+      "row_compatibility_path": {
+        "materialized_dataclass_count": 720,
+        "pairwise_evidence": {
+          "materialized_count": 0,
+          "omitted_count": 0,
+          "total_count": 0
+        },
+        "timings_seconds": {
+          "branch_selection": 0.0006083750049583614,
+          "curvature_contract_validation": 0.011220749991480261,
+          "row_dataclass_construction": 0.007774333993438631
+        },
+        "tracemalloc_peak_bytes": 603904
+      },
+      "status": "validation_only_capital_unsupported"
+    }
+  ],
+  "controls": {
+    "memory_proxy": "tracemalloc peak bytes for Python allocations; Arrow and NumPy native buffers may not be fully counted",
+    "pairwise_evidence_mode": "SUMMARY",
+    "profile_id": "BASEL_MAR21",
+    "row_count_per_path": 720,
+    "synthetic_data_only": true
+  },
+  "environment": {
+    "machine": "arm64",
+    "platform": "macOS-26.5-arm64-arm-64bit",
+    "processor": "arm",
+    "python": "3.11.15"
+  },
+  "generated_at": "2026-06-01T03:54:16.475463+00:00",
+  "remaining_boundaries": {
+    "curvature_capital": "unsupported and fail-closed until #166",
+    "parent_issue": "#270",
+    "unmigrated_sbm_measures": "FX/equity/commodity/CSR vega and non-GIRR curvature remain unsupported or out of the current phase; do not infer capital support from the GIRR curvature validation handoff"
+  },
+  "schema_version": "frtb_sbm_batch_arrow_benchmark_v1"
+}
