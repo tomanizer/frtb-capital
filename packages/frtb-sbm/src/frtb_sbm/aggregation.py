@@ -142,6 +142,8 @@ def adjust_correlation_matrix_for_scenario(
     """Return a copy of ``base_matrix`` with off-diagonal entries scenario-adjusted."""
 
     matrix = np.array(base_matrix, dtype=np.float64, copy=True)
+    if not np.all(np.isfinite(matrix)):
+        raise SbmInputError("base_matrix must contain only finite values", field="base_matrix")
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
         raise SbmInputError("base_matrix must be a square matrix", field="base_matrix")
 

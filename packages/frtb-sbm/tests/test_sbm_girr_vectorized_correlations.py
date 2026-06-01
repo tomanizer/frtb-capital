@@ -12,6 +12,7 @@ from frtb_sbm import (
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
 from frtb_sbm.capital import _build_girr_delta_intra_bucket_correlation_matrix
 from frtb_sbm.reference_data import apply_correlation_scenario, girr_delta_intra_bucket_correlation
+from frtb_sbm.validation import SbmInputError
 
 
 def _weighted(sensitivity_id: str) -> WeightedSensitivity:
@@ -101,6 +102,13 @@ def test_vectorized_scenario_matrix_adjustment_matches_scalar_reference(
 
     assert np.allclose(vectorized, scalar)
     assert np.diag(vectorized).tolist() == pytest.approx(np.diag(base).tolist())
+
+
+def test_vectorized_scenario_matrix_adjustment_rejects_non_finite_diagonal() -> None:
+    base = np.array([[float("nan"), 0.50], [0.50, 1.0]], dtype=np.float64)
+
+    with pytest.raises(SbmInputError, match="base_matrix must contain only finite values"):
+        adjust_correlation_matrix_for_scenario(base, SbmScenarioLabel.MEDIUM)
 
 
 def _scalar_girr_delta_matrix(
