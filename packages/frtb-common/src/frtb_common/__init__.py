@@ -1,6 +1,13 @@
 """Shared primitives for the frtb-capital suite."""
 
 from frtb_common._version import __version__
+from frtb_common.arrow_conversion import (
+    arrow_bool_array,
+    arrow_bool_or_object_array,
+    arrow_float64_array,
+    arrow_float64_array_with_nulls,
+    arrow_object_array,
+)
 from frtb_common.component_handoff import (
     ComponentHandoffError,
     ComponentResultHandoff,
@@ -89,6 +96,11 @@ __all__ = [
     "UnsupportedRegulatoryFeatureError",
     "ValidationStatus",
     "__version__",
+    "arrow_bool_array",
+    "arrow_bool_or_object_array",
+    "arrow_float64_array",
+    "arrow_float64_array_with_nulls",
+    "arrow_object_array",
     "arrow_table_content_hash",
     "assert_policy_has_regulatory_citations",
     "crif_records_to_arrow_table",
