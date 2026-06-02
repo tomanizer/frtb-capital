@@ -189,6 +189,16 @@ def test_drc_column_batch_rejects_unrated_credit_quality_without_row_fallback() 
         build_drc_nonsec_batch_from_columns(**columns)
 
 
+def test_drc_column_batch_rejects_non_chargeable_bucket_without_row_fallback() -> None:
+    columns = _minimal_column_payload(row_count=1) | {"bucket_keys": ["US_SOVEREIGN"]}
+
+    with pytest.raises(
+        DrcInputError,
+        match=r"US_SOVEREIGN.*not a chargeable.*US_NPR_210_B_3_I",
+    ):
+        build_drc_nonsec_batch_from_columns(**columns)
+
+
 def test_drc_column_batch_high_volume_path_reports_zero_row_dataclasses() -> None:
     row_count = 1_000
     columns = _minimal_column_payload(row_count=row_count)

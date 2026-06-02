@@ -19,6 +19,20 @@ _CHARGEABLE_NONSEC_CREDIT_QUALITIES = (
     CreditQuality.SUB_SPECULATIVE_GRADE,
     CreditQuality.DEFAULTED,
 )
+_CHARGEABLE_NONSEC_BUCKET_KEYS = (
+    "NON_US_SOVEREIGN",
+    "PSE_GSE",
+    "CORPORATE",
+    "DEFAULTED",
+)
+_NON_CHARGEABLE_US_NPR_NONSEC_BUCKET_REASONS = {
+    "US_SOVEREIGN": "U.S. sovereign is not one of the four chargeable buckets",
+    "SPECIFIED_SUPRANATIONAL": "specified supranational is not one of the four chargeable buckets",
+    "MULTILATERAL_DEVELOPMENT_BANK": "MDB is not one of the four chargeable buckets",
+    "MDB": "MDB is not one of the four chargeable buckets",
+    "MUNICIPAL": "municipal is not a separate bucket; map cited PSE debt to PSE_GSE",
+    "LOCAL_GOVERNMENT": "local-government is not a separate bucket; map cited PSE debt to PSE_GSE",
+}
 
 
 def validate_position(
@@ -107,9 +121,45 @@ def ensure_chargeable_credit_quality(
     )
 
 
+def chargeable_non_securitisation_bucket_keys() -> tuple[str, ...]:
+    """Return U.S. NPR 2.0 non-securitisation bucket keys with DRC weights."""
+
+    return _CHARGEABLE_NONSEC_BUCKET_KEYS
+
+
+def ensure_chargeable_non_securitisation_bucket(
+    bucket_key: str,
+    *,
+    position_id: str | None = None,
+) -> None:
+    """Reject invented or excluded non-securitisation bucket keys early."""
+
+    if bucket_key in _CHARGEABLE_NONSEC_BUCKET_KEYS:
+        return
+
+    allowed = ", ".join(_CHARGEABLE_NONSEC_BUCKET_KEYS)
+    position_label = "" if position_id is None else f" for position {position_id}"
+    reason = _NON_CHARGEABLE_US_NPR_NONSEC_BUCKET_REASONS.get(
+        bucket_key,
+        "not a supported U.S. NPR 2.0 DRC non-securitisation bucket",
+    )
+    raise DrcInputError(
+        f"bucket_key {bucket_key}{position_label} is not a chargeable U.S. NPR 2.0 "
+        f"DRC non-securitisation bucket: {reason}. Use one of {allowed}; do not "
+        "create a zero-risk-weight bucket outside proposed section __.210(b)(3)(i) "
+        "(US_NPR_210_B_3_I)"
+    )
+
+
 def _validate_non_securitisation_identity(position: DrcPosition) -> None:
     _require_non_empty(position.issuer_id, "issuer_id")
     _require_non_empty(position.bucket_key, "bucket_key")
+    bucket_key = position.bucket_key
+    assert bucket_key is not None
+    ensure_chargeable_non_securitisation_bucket(
+        bucket_key,
+        position_id=position.position_id,
+    )
     if position.seniority is None:
         raise DrcInputError("seniority is required for non-securitisation positions")
     if position.credit_quality is None:

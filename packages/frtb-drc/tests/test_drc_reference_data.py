@@ -55,6 +55,8 @@ def test_us_npr_nonsec_bucket_definitions_are_cited() -> None:
     buckets = {bucket.bucket_key: bucket for bucket in iter_bucket_definitions()}
 
     assert set(buckets) == {"NON_US_SOVEREIGN", "PSE_GSE", "CORPORATE", "DEFAULTED"}
+    assert "US_SOVEREIGN" not in buckets
+    assert "MUNICIPAL" not in buckets
     assert buckets["NON_US_SOVEREIGN"].bucket_type is DrcBucketType.NON_US_SOVEREIGN
     assert buckets["CORPORATE"].risk_class is DrcRiskClass.NON_SECURITISATION
     assert all(bucket.citation_id == "US_NPR_210_B_3_I" for bucket in buckets.values())
