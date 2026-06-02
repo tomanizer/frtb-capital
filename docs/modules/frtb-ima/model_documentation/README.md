@@ -20,7 +20,7 @@ review.
 | [`01_conceptual_soundness.md`](01_conceptual_soundness.md) | Rationale for the IMA component design and its regulatory anchors. |
 | [`02_derivation.md`](02_derivation.md) | Formula derivations for ES, LHA ES, IMCC, SES, PLA, backtesting, and capital assembly. |
 | [`03_assumptions_and_limitations.md`](03_assumptions_and_limitations.md) | Modelling choices, package boundaries, limitations, and open validation gaps. |
-| [`04_sensitivity_analysis.md`](04_sensitivity_analysis.md) | Planned validation sensitivity analyses and parameter perturbations. |
+| [`04_sensitivity_analysis.md`](04_sensitivity_analysis.md) | Completed fixture/synthetic sensitivity sweeps plus deferred validation tasks. |
 | [`05_monitoring_plan.md`](05_monitoring_plan.md) | Operational monitoring, breach response, and evidence cadence. |
 | [`06_change_history.md`](06_change_history.md) | Material model-change log and links to ADR, release, and audit history. |
 

@@ -7,7 +7,8 @@ governance components.
 The implemented package lives under
 [`packages/frtb-ima`](../../../packages/frtb-ima/). Suite-level model
 documentation lives here so IMA is navigated consistently with the planned
-`frtb-sbm`, `frtb-drc`, `frtb-rrao`, and `frtb-cva` modules.
+and implemented sibling component modules: `frtb-sbm`, `frtb-drc`,
+`frtb-rrao`, and `frtb-cva`.
 
 ## Documentation
 

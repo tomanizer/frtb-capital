@@ -3,9 +3,11 @@
 This suite-level page points to the authoritative regulatory requirement
 evidence for the implemented `frtb-ima` package.
 
-Unlike the planned SBM, DRC, RRAO, and CVA modules, IMA already has executable
-code, tests, notebooks, and a package-local requirement registry. The
-package-local files remain authoritative because tests validate them directly.
+IMA has executable code, tests, notebooks, and a package-local requirement
+registry. The package-local files remain authoritative because tests validate
+them directly. SBM, DRC, RRAO, and CVA are sibling packages with their own
+requirement evidence; IMA docs should reference them only for package-boundary
+and orchestration context.
 
 ## Authoritative Evidence
 
