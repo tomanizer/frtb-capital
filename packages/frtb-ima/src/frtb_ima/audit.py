@@ -18,10 +18,11 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from types import MappingProxyType
 
 from frtb_common.serialization import jsonable
 
+from frtb_ima._mapping_utils import empty_mapping as _empty_mapping
+from frtb_ima._mapping_utils import freeze_mapping as _freeze_mapping
 from frtb_ima._version import __version__
 from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.input_manifest import CapitalRunInputManifest
@@ -32,10 +33,6 @@ from frtb_ima.regimes import (
     RegulatoryRegime,
     get_policy,
 )
-
-
-def _empty_mapping() -> Mapping[str, object]:
-    return MappingProxyType({})
 
 
 @dataclass(frozen=True)
@@ -407,10 +404,6 @@ def write_audit_records_ndjson(
     mode = "a" if append else "w"
     with Path(path).open(mode, encoding="utf-8") as handle:
         handle.write(audit_records_to_ndjson(records))
-
-
-def _freeze_mapping(values: Mapping[str, object]) -> Mapping[str, object]:
-    return MappingProxyType(dict(values))
 
 
 def _coerce_model_version(value: ModelVersion | Mapping[str, object]) -> ModelVersion:

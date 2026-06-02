@@ -22,6 +22,7 @@ from enum import StrEnum
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima._array_utils import finite_1d_float_array as _finite_1d_float_array
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus
 from frtb_ima.nmrf import NMRFStressMethod, nmrf_effective_liquidity_horizon
 from frtb_ima.regimes import RegulatoryPolicy
@@ -221,14 +222,11 @@ def _as_finite_1d_array(
     values: Sequence[float] | npt.NDArray[np.float64],
     name: str,
 ) -> npt.NDArray[np.float64]:
-    arr = np.asarray(values, dtype=float)
-    if arr.ndim != 1:
-        raise ValueError(f"{name} must be one-dimensional")
-    if arr.size == 0:
-        raise ValueError(f"{name} must be non-empty")
-    if not np.all(np.isfinite(arr)):
-        raise ValueError(f"{name} must contain only finite values")
-    return arr.astype(np.float64, copy=False)
+    return _finite_1d_float_array(
+        values,
+        name,
+        empty_message=f"{name} must be non-empty",
+    )
 
 
 def assess_direct_loss_robustness(

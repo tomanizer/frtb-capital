@@ -17,12 +17,12 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date
-from types import MappingProxyType
 from typing import cast
 
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima._mapping_utils import freeze_mapping as _freeze_mapping
 from frtb_ima.data_models import (
     DeskCapitalResult,
     LiquidityHorizon,
@@ -34,10 +34,6 @@ from frtb_ima.regimes import CalculationContext, RegulatoryRegime
 from frtb_ima.scenario import ScenarioMetadata
 
 FloatArray = npt.NDArray[np.float64]
-
-
-def _freeze_mapping(values: Mapping[str, str]) -> Mapping[str, str]:
-    return MappingProxyType(dict(values))
 
 
 def _validate_non_empty_unique(values: Sequence[str], name: str) -> tuple[str, ...]:
@@ -371,7 +367,7 @@ class CapitalRunResult:
             raise ValueError("input_manifest is required for production-style capital runs")
         if self.input_manifest is not None and self.input_manifest.as_of_date != self.as_of_date:
             raise ValueError("input_manifest as_of_date must match CapitalRunResult as_of_date")
-        object.__setattr__(self, "desk_results", MappingProxyType(dict(self.desk_results)))
+        object.__setattr__(self, "desk_results", _freeze_mapping(self.desk_results))
         object.__setattr__(self, "notes", tuple(self.notes))
 
     def as_dict(self) -> dict[str, object]:

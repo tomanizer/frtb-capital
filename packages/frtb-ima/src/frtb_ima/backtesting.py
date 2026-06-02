@@ -35,6 +35,10 @@ from datetime import date
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima._array_utils import finite_1d_float_array as _as_finite_1d_array
+from frtb_ima._observation_utils import (
+    validate_observation_dates as _validate_observation_dates,
+)
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import DEFAULT_BACKTESTING_EXCEPTION_LIMITS, RegulatoryPolicy
@@ -230,17 +234,6 @@ class TradingDeskBacktestTraceResult:
         }
 
 
-def _as_finite_1d_array(values: FloatVector, name: str) -> npt.NDArray[np.float64]:
-    arr = np.asarray(values, dtype=float)
-    if arr.ndim != 1:
-        raise ValueError(f"{name} must be one-dimensional")
-    if arr.size == 0:
-        raise ValueError(f"{name} is empty")
-    if not np.all(np.isfinite(arr)):
-        raise ValueError(f"{name} must contain only finite values")
-    return arr.astype(np.float64, copy=False)
-
-
 def _as_1d_array_allowing_missing(
     values: FloatVector,
     name: str,
@@ -251,20 +244,6 @@ def _as_1d_array_allowing_missing(
     if arr.size == 0:
         raise ValueError(f"{name} is empty")
     return arr.astype(np.float64, copy=False)
-
-
-def _validate_observation_dates(
-    observation_dates: Sequence[date] | None,
-    expected_length: int,
-) -> tuple[date, ...] | None:
-    if observation_dates is None:
-        return None
-    dates = tuple(observation_dates)
-    if len(dates) != expected_length:
-        raise ValueError("observation_dates length must match APL/HPL")
-    if not all(isinstance(item, date) for item in dates):
-        raise TypeError("observation_dates must contain datetime.date values")
-    return dates
 
 
 def _float_or_none(value: float) -> float | None:
@@ -494,7 +473,11 @@ def trading_desk_backtest_trace(
 
     if len(apl_arr) != len(hpl_arr):
         raise ValueError("APL and HPL series must have equal length")
-    dates = _validate_observation_dates(observation_dates, len(apl_arr))
+    dates = _validate_observation_dates(
+        observation_dates,
+        len(apl_arr),
+        length_label="APL/HPL",
+    )
 
     holiday_arr: npt.NDArray[np.bool_] | None = None
     if official_holiday_mask is not None:
