@@ -2,24 +2,19 @@
 
 from __future__ import annotations
 
-import math
 from collections.abc import Mapping, Sequence
-from typing import cast
+from typing import Any
 
-import numpy as np
-import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
-import pyarrow.compute as pc  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
     NormalizedTabularHandoff,
     NullPolicy,
     TabularLogicalType,
-    arrow_object_array,
     normalize_arrow_table,
     normalized_handoff_hash,
-    validate_arrow_table,
+    read_handoff_columns,
 )
 
 from frtb_cva.batch import (
@@ -34,34 +29,58 @@ from frtb_cva.batch import (
 )
 from frtb_cva.validation import CvaInputError
 
-ObjectArray = npt.NDArray[np.object_]
-FloatArray = npt.NDArray[np.float64]
-BoolArray = npt.NDArray[np.bool_]
-_ARROW_CONVERSION_ERRORS = (pa.ArrowException, TypeError, ValueError)
-
 CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
-    ColumnSpec("counterparty_id", aliases=("counterpartyId", "CounterpartyID")),
-    ColumnSpec("desk_id", aliases=("deskId", "DeskID")),
-    ColumnSpec("legal_entity", aliases=("legalEntity", "LegalEntity")),
+    ColumnSpec(
+        "counterparty_id",
+        aliases=("counterpartyId", "CounterpartyID"),
+        logical_type=TabularLogicalType.STRING,
+    ),
+    ColumnSpec("desk_id", aliases=("deskId", "DeskID"), logical_type=TabularLogicalType.STRING),
+    ColumnSpec(
+        "legal_entity",
+        aliases=("legalEntity", "LegalEntity"),
+        logical_type=TabularLogicalType.STRING,
+    ),
     ColumnSpec("sector", logical_type=TabularLogicalType.STRING),
     ColumnSpec(
         "credit_quality", aliases=("creditQuality",), logical_type=TabularLogicalType.STRING
     ),
     ColumnSpec("region", logical_type=TabularLogicalType.STRING),
-    ColumnSpec("source_row_id", aliases=("sourceRowId", "RowID")),
-    ColumnSpec("lineage_source_system", aliases=("source_system", "sourceSystem")),
-    ColumnSpec("lineage_source_file", aliases=("source_file", "sourceFile")),
+    ColumnSpec(
+        "source_row_id",
+        aliases=("sourceRowId", "RowID"),
+        logical_type=TabularLogicalType.STRING,
+    ),
+    ColumnSpec(
+        "lineage_source_system",
+        aliases=("source_system", "sourceSystem"),
+        logical_type=TabularLogicalType.STRING,
+    ),
+    ColumnSpec(
+        "lineage_source_file",
+        aliases=("source_file", "sourceFile"),
+        logical_type=TabularLogicalType.STRING,
+    ),
     ColumnSpec(
         "lineage_source_row_id",
         aliases=("lineageSourceRowId",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
 )
 
 CVA_NETTING_SET_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
-    ColumnSpec("netting_set_id", aliases=("nettingSetId", "NettingSetID")),
-    ColumnSpec("counterparty_id", aliases=("counterpartyId", "CounterpartyID")),
+    ColumnSpec(
+        "netting_set_id",
+        aliases=("nettingSetId", "NettingSetID"),
+        logical_type=TabularLogicalType.STRING,
+    ),
+    ColumnSpec(
+        "counterparty_id",
+        aliases=("counterpartyId", "CounterpartyID"),
+        logical_type=TabularLogicalType.STRING,
+    ),
     ColumnSpec("ead", aliases=("EAD", "exposure"), logical_type=TabularLogicalType.FLOAT),
     ColumnSpec(
         "effective_maturity",
@@ -76,7 +95,11 @@ CVA_NETTING_SET_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         "sign_convention", aliases=("signConvention",), logical_type=TabularLogicalType.STRING
     ),
     ColumnSpec("uses_imm_ead", aliases=("usesImmEad",), logical_type=TabularLogicalType.BOOLEAN),
-    ColumnSpec("source_row_id", aliases=("sourceRowId", "RowID")),
+    ColumnSpec(
+        "source_row_id",
+        aliases=("sourceRowId", "RowID"),
+        logical_type=TabularLogicalType.STRING,
+    ),
     ColumnSpec(
         "carved_out_to_ba_cva",
         aliases=("carvedOutToBaCva",),
@@ -91,20 +114,37 @@ CVA_NETTING_SET_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
-    ColumnSpec("lineage_source_system", aliases=("source_system", "sourceSystem")),
-    ColumnSpec("lineage_source_file", aliases=("source_file", "sourceFile")),
+    ColumnSpec(
+        "lineage_source_system",
+        aliases=("source_system", "sourceSystem"),
+        logical_type=TabularLogicalType.STRING,
+    ),
+    ColumnSpec(
+        "lineage_source_file",
+        aliases=("source_file", "sourceFile"),
+        logical_type=TabularLogicalType.STRING,
+    ),
     ColumnSpec(
         "lineage_source_row_id",
         aliases=("lineageSourceRowId",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
 )
 
 CVA_HEDGE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
-    ColumnSpec("hedge_id", aliases=("hedgeId", "HedgeID")),
-    ColumnSpec("source_row_id", aliases=("sourceRowId", "RowID")),
-    ColumnSpec("counterparty_id", aliases=("counterpartyId", "CounterpartyID")),
+    ColumnSpec("hedge_id", aliases=("hedgeId", "HedgeID"), logical_type=TabularLogicalType.STRING),
+    ColumnSpec(
+        "source_row_id",
+        aliases=("sourceRowId", "RowID"),
+        logical_type=TabularLogicalType.STRING,
+    ),
+    ColumnSpec(
+        "counterparty_id",
+        aliases=("counterpartyId", "CounterpartyID"),
+        logical_type=TabularLogicalType.STRING,
+    ),
     ColumnSpec("hedge_type", aliases=("hedgeType",), logical_type=TabularLogicalType.STRING),
     ColumnSpec("notional", logical_type=TabularLogicalType.FLOAT),
     ColumnSpec(
@@ -139,39 +179,56 @@ CVA_HEDGE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec(
         "internal_desk_counterparty_id",
         aliases=("internalDeskCounterpartyId",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
     ColumnSpec(
         "sa_cva_risk_class",
         aliases=("saCvaRiskClass",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
     ColumnSpec(
         "eligibility_evidence_id",
         aliases=("eligibilityEvidenceId",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
     ColumnSpec(
         "rejection_reason",
         aliases=("rejectionReason",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
-    ColumnSpec("lineage_source_system", aliases=("source_system", "sourceSystem")),
-    ColumnSpec("lineage_source_file", aliases=("source_file", "sourceFile")),
+    ColumnSpec(
+        "lineage_source_system",
+        aliases=("source_system", "sourceSystem"),
+        logical_type=TabularLogicalType.STRING,
+    ),
+    ColumnSpec(
+        "lineage_source_file",
+        aliases=("source_file", "sourceFile"),
+        logical_type=TabularLogicalType.STRING,
+    ),
     ColumnSpec(
         "lineage_source_row_id",
         aliases=("lineageSourceRowId",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
 )
 
 SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
-    ColumnSpec("sensitivity_id", aliases=("sensitivityId", "SensitivityID", "RiskFactorID")),
+    ColumnSpec(
+        "sensitivity_id",
+        aliases=("sensitivityId", "SensitivityID", "RiskFactorID"),
+        logical_type=TabularLogicalType.STRING,
+    ),
     ColumnSpec("risk_class", aliases=("riskClass",), logical_type=TabularLogicalType.STRING),
     ColumnSpec("risk_measure", aliases=("riskMeasure",), logical_type=TabularLogicalType.STRING),
     ColumnSpec(
@@ -192,8 +249,17 @@ SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec(
         "sign_convention", aliases=("signConvention",), logical_type=TabularLogicalType.STRING
     ),
-    ColumnSpec("source_row_id", aliases=("sourceRowId", "RowID")),
-    ColumnSpec("tenor", required=False, null_policy=NullPolicy.ALLOW),
+    ColumnSpec(
+        "source_row_id",
+        aliases=("sourceRowId", "RowID"),
+        logical_type=TabularLogicalType.STRING,
+    ),
+    ColumnSpec(
+        "tenor",
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
     ColumnSpec(
         "volatility_input",
         aliases=("volatilityInput",),
@@ -201,10 +267,17 @@ SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
-    ColumnSpec("hedge_id", aliases=("hedgeId",), required=False, null_policy=NullPolicy.ALLOW),
+    ColumnSpec(
+        "hedge_id",
+        aliases=("hedgeId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
     ColumnSpec(
         "index_treatment",
         aliases=("indexTreatment",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
@@ -225,23 +298,132 @@ SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec(
         "index_dominant_sector",
         aliases=("indexDominantSector",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
     ColumnSpec(
         "index_remap_bucket_id",
         aliases=("indexRemapBucketId",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
-    ColumnSpec("lineage_source_system", aliases=("source_system", "sourceSystem")),
-    ColumnSpec("lineage_source_file", aliases=("source_file", "sourceFile")),
+    ColumnSpec(
+        "lineage_source_system",
+        aliases=("source_system", "sourceSystem"),
+        logical_type=TabularLogicalType.STRING,
+    ),
+    ColumnSpec(
+        "lineage_source_file",
+        aliases=("source_file", "sourceFile"),
+        logical_type=TabularLogicalType.STRING,
+    ),
     ColumnSpec(
         "lineage_source_row_id",
         aliases=("lineageSourceRowId",),
+        logical_type=TabularLogicalType.STRING,
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
+)
+
+
+_CVA_COUNTERPARTY_BATCH_COLUMN_ARGS: Mapping[str, str] = {
+    "counterparty_id": "counterparty_ids",
+    "desk_id": "desk_ids",
+    "legal_entity": "legal_entities",
+    "sector": "sectors",
+    "credit_quality": "credit_qualities",
+    "region": "regions",
+    "source_row_id": "source_row_ids",
+    "lineage_source_system": "lineage_source_systems",
+    "lineage_source_file": "lineage_source_files",
+    "lineage_source_row_id": "lineage_source_row_ids",
+}
+
+_CVA_NETTING_SET_BATCH_COLUMN_ARGS: Mapping[str, str] = {
+    "netting_set_id": "netting_set_ids",
+    "counterparty_id": "counterparty_ids",
+    "ead": "eads",
+    "effective_maturity": "effective_maturities",
+    "discount_factor": "discount_factors",
+    "currency": "currencies",
+    "sign_convention": "sign_conventions",
+    "uses_imm_ead": "uses_imm_eads",
+    "source_row_id": "source_row_ids",
+    "carved_out_to_ba_cva": "carved_out_to_ba_cva",
+    "discount_factor_explicit": "discount_factor_explicit",
+    "lineage_source_system": "lineage_source_systems",
+    "lineage_source_file": "lineage_source_files",
+    "lineage_source_row_id": "lineage_source_row_ids",
+}
+
+_CVA_HEDGE_BATCH_COLUMN_ARGS: Mapping[str, str] = {
+    "hedge_id": "hedge_ids",
+    "source_row_id": "source_row_ids",
+    "counterparty_id": "counterparty_ids",
+    "hedge_type": "hedge_types",
+    "notional": "notionals",
+    "remaining_maturity": "remaining_maturities",
+    "discount_factor": "discount_factors",
+    "reference_sector": "reference_sectors",
+    "reference_credit_quality": "reference_credit_qualities",
+    "reference_region": "reference_regions",
+    "reference_relation": "reference_relations",
+    "eligibility": "eligibilities",
+    "is_internal": "is_internal",
+    "discount_factor_explicit": "discount_factor_explicit",
+    "internal_desk_counterparty_id": "internal_desk_counterparty_ids",
+    "sa_cva_risk_class": "sa_cva_risk_classes",
+    "eligibility_evidence_id": "eligibility_evidence_ids",
+    "rejection_reason": "rejection_reasons",
+    "lineage_source_system": "lineage_source_systems",
+    "lineage_source_file": "lineage_source_files",
+    "lineage_source_row_id": "lineage_source_row_ids",
+}
+
+_SA_CVA_SENSITIVITY_BATCH_COLUMN_ARGS: Mapping[str, str] = {
+    "sensitivity_id": "sensitivity_ids",
+    "risk_class": "risk_classes",
+    "risk_measure": "risk_measures",
+    "sensitivity_tag": "sensitivity_tags",
+    "bucket_id": "bucket_ids",
+    "risk_factor_key": "risk_factor_keys",
+    "amount": "amounts",
+    "amount_currency": "amount_currencies",
+    "sign_convention": "sign_conventions",
+    "source_row_id": "source_row_ids",
+    "tenor": "tenors",
+    "volatility_input": "volatility_inputs",
+    "hedge_id": "hedge_ids",
+    "index_treatment": "index_treatments",
+    "index_max_sector_weight": "index_max_sector_weights",
+    "index_homogeneous_sector_quality": "index_homogeneous_sector_quality",
+    "index_dominant_sector": "index_dominant_sectors",
+    "index_remap_bucket_id": "index_remap_bucket_ids",
+    "lineage_source_system": "lineage_source_systems",
+    "lineage_source_file": "lineage_source_files",
+    "lineage_source_row_id": "lineage_source_row_ids",
+}
+
+
+def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
+    unknown = tuple(
+        spec.name
+        for spec_group in spec_groups
+        for spec in spec_group
+        if spec.logical_type is TabularLogicalType.UNKNOWN
+    )
+    if unknown:
+        raise RuntimeError("CVA handoff specs must declare logical_type: " + ", ".join(unknown))
+
+
+_ensure_explicit_logical_types(
+    CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS,
+    CVA_NETTING_SET_HANDOFF_COLUMN_SPECS,
+    CVA_HEDGE_HANDOFF_COLUMN_SPECS,
+    SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS,
 )
 
 
@@ -303,18 +485,9 @@ def build_cva_counterparty_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise CvaInputError("handoff must be NormalizedTabularHandoff", field="handoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS)
+    columns = read_handoff_columns(table, CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS, error=_cva_error)
     return build_cva_counterparty_batch_from_columns(
-        counterparty_ids=_required_object_column(table, "counterparty_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        sectors=_required_object_column(table, "sector"),
-        credit_qualities=_required_object_column(table, "credit_quality"),
-        regions=_required_object_column(table, "region"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        lineage_source_row_ids=_optional_object_column(table, "lineage_source_row_id"),
+        **_cva_batch_column_kwargs(columns, _CVA_COUNTERPARTY_BATCH_COLUMN_ARGS),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
         diagnostics=_diagnostics(handoff),
@@ -328,22 +501,9 @@ def build_cva_netting_set_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise CvaInputError("handoff must be NormalizedTabularHandoff", field="handoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=CVA_NETTING_SET_HANDOFF_COLUMN_SPECS)
+    columns = read_handoff_columns(table, CVA_NETTING_SET_HANDOFF_COLUMN_SPECS, error=_cva_error)
     return build_cva_netting_set_batch_from_columns(
-        netting_set_ids=_required_object_column(table, "netting_set_id"),
-        counterparty_ids=_required_object_column(table, "counterparty_id"),
-        eads=_required_float_column(table, "ead"),
-        effective_maturities=_required_float_column(table, "effective_maturity"),
-        discount_factors=_required_float_column(table, "discount_factor"),
-        currencies=_required_object_column(table, "currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        uses_imm_eads=_required_bool_column(table, "uses_imm_ead"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        carved_out_to_ba_cva=_optional_bool_column(table, "carved_out_to_ba_cva"),
-        discount_factor_explicit=_optional_bool_column(table, "discount_factor_explicit"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        lineage_source_row_ids=_optional_object_column(table, "lineage_source_row_id"),
+        **_cva_batch_column_kwargs(columns, _CVA_NETTING_SET_BATCH_COLUMN_ARGS),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
         diagnostics=_diagnostics(handoff),
@@ -355,31 +515,9 @@ def build_cva_hedge_batch_from_handoff(handoff: NormalizedTabularHandoff) -> Cva
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise CvaInputError("handoff must be NormalizedTabularHandoff", field="handoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=CVA_HEDGE_HANDOFF_COLUMN_SPECS)
+    columns = read_handoff_columns(table, CVA_HEDGE_HANDOFF_COLUMN_SPECS, error=_cva_error)
     return build_cva_hedge_batch_from_columns(
-        hedge_ids=_required_object_column(table, "hedge_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        counterparty_ids=_required_object_column(table, "counterparty_id"),
-        hedge_types=_required_object_column(table, "hedge_type"),
-        notionals=_required_float_column(table, "notional"),
-        remaining_maturities=_required_float_column(table, "remaining_maturity"),
-        discount_factors=_required_float_column(table, "discount_factor"),
-        reference_sectors=_required_object_column(table, "reference_sector"),
-        reference_credit_qualities=_required_object_column(table, "reference_credit_quality"),
-        reference_regions=_required_object_column(table, "reference_region"),
-        reference_relations=_required_object_column(table, "reference_relation"),
-        eligibilities=_required_object_column(table, "eligibility"),
-        is_internal=_required_bool_column(table, "is_internal"),
-        discount_factor_explicit=_optional_bool_column(table, "discount_factor_explicit"),
-        internal_desk_counterparty_ids=_optional_object_column(
-            table, "internal_desk_counterparty_id"
-        ),
-        sa_cva_risk_classes=_optional_object_column(table, "sa_cva_risk_class"),
-        eligibility_evidence_ids=_optional_object_column(table, "eligibility_evidence_id"),
-        rejection_reasons=_optional_object_column(table, "rejection_reason"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        lineage_source_row_ids=_optional_object_column(table, "lineage_source_row_id"),
+        **_cva_batch_column_kwargs(columns, _CVA_HEDGE_BATCH_COLUMN_ARGS),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
         diagnostics=_diagnostics(handoff),
@@ -393,32 +531,13 @@ def build_sa_cva_sensitivity_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise CvaInputError("handoff must be NormalizedTabularHandoff", field="handoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS)
+    columns = read_handoff_columns(
+        table,
+        SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS,
+        error=_cva_error,
+    )
     return build_sa_cva_sensitivity_batch_from_columns(
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        sensitivity_tags=_required_object_column(table, "sensitivity_tag"),
-        bucket_ids=_required_object_column(table, "bucket_id"),
-        risk_factor_keys=_required_object_column(table, "risk_factor_key"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        tenors=_optional_object_column(table, "tenor"),
-        volatility_inputs=_optional_float_column(table, "volatility_input"),
-        hedge_ids=_optional_object_column(table, "hedge_id"),
-        index_treatments=_optional_object_column(table, "index_treatment"),
-        index_max_sector_weights=_optional_float_column(table, "index_max_sector_weight"),
-        index_homogeneous_sector_quality=_optional_bool_column(
-            table,
-            "index_homogeneous_sector_quality",
-        ),
-        index_dominant_sectors=_optional_object_column(table, "index_dominant_sector"),
-        index_remap_bucket_ids=_optional_object_column(table, "index_remap_bucket_id"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        lineage_source_row_ids=_optional_object_column(table, "lineage_source_row_id"),
+        **_cva_batch_column_kwargs(columns, _SA_CVA_SENSITIVITY_BATCH_COLUMN_ARGS),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
         diagnostics=_diagnostics(handoff),
@@ -445,134 +564,18 @@ def _normalize(
     )
 
 
-def _required_object_column(table: pa.Table, column_name: str) -> ObjectArray:
-    if column_name not in table.column_names:
-        raise CvaInputError(f"column is required: {column_name}", field=column_name)
-    values = _object_array_from_arrow_column(table.column(column_name), field=column_name)
-    values.setflags(write=False)
-    return values
+def _cva_batch_column_kwargs(
+    columns: Mapping[str, object],
+    column_args: Mapping[str, str],
+) -> dict[str, Any]:
+    return {
+        argument_name: columns.get(column_name)
+        for column_name, argument_name in column_args.items()
+    }
 
 
-def _optional_object_column(table: pa.Table, column_name: str) -> ObjectArray | None:
-    if column_name not in table.column_names:
-        return None
-    values = _object_array_from_arrow_column(table.column(column_name), field=column_name)
-    values.setflags(write=False)
-    return values
-
-
-def _required_float_column(table: pa.Table, column_name: str) -> FloatArray:
-    if column_name not in table.column_names:
-        raise CvaInputError(f"column is required: {column_name}", field=column_name)
-    column = table.column(column_name)
-    if column.null_count:
-        raise CvaInputError(f"{column_name} must be provided", field=column_name)
-    values = _float64_array_from_arrow_column(column, field=column_name)
-    values.setflags(write=False)
-    return values
-
-
-def _optional_float_column(table: pa.Table, column_name: str) -> FloatArray | None:
-    if column_name not in table.column_names:
-        return None
-    column = table.column(column_name)
-    if not column.null_count:
-        values = _float64_array_from_arrow_column(column, field=column_name)
-        values.setflags(write=False)
-        return values
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    if not pa.types.is_float64(array.type):
-        try:
-            array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except _ARROW_CONVERSION_ERRORS as exc:
-            raise CvaInputError(f"{column_name} must be numeric", field=column_name) from exc
-    try:
-        values = np.asarray(
-            pc.fill_null(array, pa.scalar(math.nan, type=pa.float64())).to_numpy(
-                zero_copy_only=False
-            ),
-            dtype=np.float64,
-        )
-    except _ARROW_CONVERSION_ERRORS as exc:
-        raise CvaInputError(f"{column_name} must be numeric", field=column_name) from exc
-    values.setflags(write=False)
-    return values
-
-
-def _required_bool_column(table: pa.Table, column_name: str) -> ObjectArray | BoolArray:
-    if column_name not in table.column_names:
-        raise CvaInputError(f"column is required: {column_name}", field=column_name)
-    column = table.column(column_name)
-    if column.null_count:
-        raise CvaInputError(f"{column_name} must be provided", field=column_name)
-    values = _bool_array_from_arrow_column(column, field=column_name, default=False)
-    values.setflags(write=False)
-    return values
-
-
-def _optional_bool_column(table: pa.Table, column_name: str) -> ObjectArray | BoolArray | None:
-    if column_name not in table.column_names:
-        return None
-    values = _bool_array_from_arrow_column(
-        table.column(column_name),
-        field=column_name,
-        default=False,
-    )
-    values.setflags(write=False)
-    return values
-
-
-def _bool_array_from_arrow_column(
-    column: pa.ChunkedArray,
-    *,
-    field: str,
-    default: bool,
-) -> ObjectArray | BoolArray:
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    if not pa.types.is_boolean(array.type):
-        values = _object_array_from_arrow_column(column, field=field)
-        if column.null_count:
-            values = values.copy()
-            values[values == None] = default  # noqa: E711
-        return values
-    try:
-        return np.asarray(
-            pc.fill_null(array, default).to_numpy(zero_copy_only=False),
-            dtype=np.bool_,
-        )
-    except _ARROW_CONVERSION_ERRORS as exc:
-        raise CvaInputError("Arrow column conversion failed", field=field) from exc
-
-
-def _object_array_from_arrow_column(column: pa.ChunkedArray, *, field: str) -> ObjectArray:
-    try:
-        return arrow_object_array(column)
-    except _ARROW_CONVERSION_ERRORS as exc:
-        raise CvaInputError("Arrow column conversion failed", field=field) from exc
-
-
-def _float64_array_from_arrow_column(
-    column: pa.ChunkedArray,
-    *,
-    field: str,
-) -> FloatArray:
-    if len(column) == 0:
-        return np.empty(0, dtype=np.float64)
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    if not pa.types.is_float64(array.type):
-        try:
-            array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except _ARROW_CONVERSION_ERRORS as exc:
-            raise CvaInputError(f"{field} must be numeric", field=field) from exc
-    try:
-        return cast(FloatArray, array.to_numpy(zero_copy_only=True))
-    except _ARROW_CONVERSION_ERRORS:
-        pass
-
-    try:
-        return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
-    except _ARROW_CONVERSION_ERRORS as exc:
-        raise CvaInputError(f"{field} must be numeric", field=field) from exc
+def _cva_error(message: str, field: str | None) -> CvaInputError:
+    return CvaInputError(message, field="" if field is None else field)
 
 
 def _diagnostics(handoff: NormalizedTabularHandoff) -> tuple[Mapping[str, object], ...]:
