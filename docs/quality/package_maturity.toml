@@ -33,7 +33,7 @@ path = "packages/frtb-cva/tests/test_cva_unsupported_features.py"
 
 [[packages.required_tests]]
 id = "sa-cva-fixture-workflow"
-path = "packages/frtb-cva/tests/test_sa_cva_fixture_workflow.py"
+path = "packages/frtb-cva/tests/test_cva_sa_cva_fixture_workflow.py"
 
 [[packages.required_tests]]
 id = "properties"
