@@ -3,9 +3,8 @@
 This is an audit-only simplification run. It records repeatable evidence and
 follow-up recommendations; it does not change runtime code.
 
-Guard result: `python3 scripts/agent_worktree.py guard` passed in
-`/Users/thomas/Documents/Projects/frtb-capital-worktrees/codex/simplification-audit`
-on branch `codex/simplification-audit`.
+Guard result: `python3 scripts/agent_worktree.py guard` passed in a compliant
+agent worktree on branch `codex/simplification-audit`.
 
 ## Reports
 
@@ -59,4 +58,3 @@ on branch `codex/simplification-audit`.
 The audit used line-count scans, targeted `rg` searches for duplicated helper
 patterns, placeholder searches, package-boundary import searches, and an
 AST-based exact duplicate private-function scan.
-

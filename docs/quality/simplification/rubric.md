@@ -24,7 +24,7 @@ Run from a compliant agent worktree:
 
 ```bash
 python3 scripts/agent_worktree.py guard
-find packages/frtb-common packages/frtb-ima packages/frtb-sbm packages/frtb-drc packages/frtb-rrao packages/frtb-cva packages/frtb-orchestration -path '*/src/*' -name '*.py' -print | xargs wc -l | sort -nr
+find packages -path '*/src/*' -name '*.py' -print | xargs wc -l | sort -nr
 rg "def _hash_payload|def .*input_hash|def .*policy_hash|sha256|json\\.dumps|is_reconciled|def _object_array_from_arrow|def _object_array_from_column|def _required_text_array|def _readonly_array|def _required_text\\(" packages/*/src -n
 rg "TODO|FIXME|placeholder|storage-only|unused|working[[:space:]]+assumption|NotImplemented|not implemented|accepted_row_dataclasses_materialized" packages/*/src packages/*/tests -n
 rg "from frtb_(ima|sbm|drc|rrao|cva)|import frtb_(ima|sbm|drc|rrao|cva)" packages/*/src -n
