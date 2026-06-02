@@ -7,7 +7,6 @@ their regulatory meanings, package-specific batches, and NumPy kernel inputs.
 from __future__ import annotations
 
 import hashlib
-import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -17,6 +16,8 @@ from typing import Literal, cast
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.compute as pc  # type: ignore[import-untyped]
 import pyarrow.ipc as pa_ipc  # type: ignore[import-untyped]
+
+from frtb_common.hashing import stable_json_hash
 
 DEFAULT_ROW_ID_COLUMN = "row_id"
 SortDirection = Literal["ascending", "descending"]
@@ -325,8 +326,7 @@ def normalized_handoff_hash(handoff: NormalizedTabularHandoff) -> str:
         "row_id_column": handoff.row_id_column,
         "source_hash": handoff.source_hash,
     }
-    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return stable_json_hash(payload)
 
 
 def _validate_arrow_table(

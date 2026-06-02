@@ -42,6 +42,12 @@ from frtb_common.handoff import (
     validate_arrow_table,
     validate_column_specs,
 )
+from frtb_common.hashing import (
+    is_sha256_hex,
+    require_sha256_hex,
+    stable_json_dumps,
+    stable_json_hash,
+)
 from frtb_common.regulatory import (
     MissingRegulatoryCitationsError,
     assert_policy_has_regulatory_citations,
@@ -88,16 +94,20 @@ __all__ = [
     "crif_records_to_arrow_table",
     "dictionary_code_chunks",
     "dictionary_code_column",
+    "is_sha256_hex",
     "jsonable",
     "normalise_crif_risk_type",
     "normalize_arrow_table",
     "normalize_crif_arrow_table",
     "normalize_crif_records",
     "normalized_handoff_hash",
+    "require_sha256_hex",
     "resolve_column_name",
     "resolve_crif_column_name",
     "sort_table_by_columns",
     "source_content_hash",
+    "stable_json_dumps",
+    "stable_json_hash",
     "validate_arrow_table",
     "validate_column_specs",
 ]
