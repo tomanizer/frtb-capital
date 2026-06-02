@@ -168,17 +168,20 @@ def test_validate_position_rejects_securitisation_without_tranche() -> None:
         validate_position(position)
 
 
-def test_validate_position_rejects_ctp_without_tranche_or_index_series() -> None:
+def test_validate_position_rejects_ctp_without_tranche_index_series_or_issuer() -> None:
     position = _position(
         risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         instrument_type=DrcInstrumentType.INDEX_TRANCHE,
-        issuer_id="issuer-a",
+        issuer_id=None,
         tranche_id=None,
         index_series_id=None,
         seniority=None,
     )
 
-    with pytest.raises(DrcInputError, match="CTP positions require tranche_id or index_series_id"):
+    with pytest.raises(
+        DrcInputError,
+        match="CTP positions require tranche_id, index_series_id, or issuer_id",
+    ):
         validate_position(position)
 
 

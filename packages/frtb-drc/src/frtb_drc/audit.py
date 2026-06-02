@@ -9,7 +9,13 @@ from typing import Any
 
 from frtb_common import jsonable
 
-from frtb_drc.data_models import DefaultDirection, DrcCapitalResult, DrcPosition
+from frtb_drc.data_models import (
+    CategoryDrc,
+    DefaultDirection,
+    DrcCapitalResult,
+    DrcPosition,
+    DrcRiskClass,
+)
 from frtb_drc.regimes import get_rule_profile
 from frtb_drc.validation import DrcInputError
 
@@ -50,7 +56,7 @@ def validate_reconciliation(result: DrcCapitalResult, *, tolerance: float = 1e-1
 
     category_total = 0.0
     for category in result.categories:
-        bucket_total = sum(bucket.capital for bucket in category.bucket_results)
+        bucket_total = _expected_category_capital(category)
         if abs(bucket_total - category.capital) > tolerance:
             raise DrcInputError(f"category capital does not reconcile: {category.category_id}")
         category_total += category.capital
@@ -70,6 +76,17 @@ def validate_reconciliation(result: DrcCapitalResult, *, tolerance: float = 1e-1
         raise DrcInputError("total DRC does not reconcile to category capital")
 
     _validate_net_records(result)
+
+
+def _expected_category_capital(category: CategoryDrc) -> float:
+    risk_class = DrcRiskClass(category.risk_class)
+    bucket_results = category.bucket_results
+    if risk_class == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
+        aggregated = sum(
+            max(bucket.capital, 0.0) + 0.5 * min(bucket.capital, 0.0) for bucket in bucket_results
+        )
+        return max(aggregated, 0.0)
+    return sum(bucket.capital for bucket in bucket_results)
 
 
 def _validate_net_records(result: DrcCapitalResult) -> None:
