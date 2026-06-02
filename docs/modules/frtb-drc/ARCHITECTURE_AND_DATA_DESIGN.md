@@ -251,12 +251,15 @@ class SecuritisationTranche:
     asset_class: str
     region: str
     is_cash_position: bool
-    fair_value_cap: float | None = None
 ```
 
 This can be embedded in `DrcPosition` later or held in a separate keyed mapping.
 The first implementation should keep non-securitisation independent and require
 explicit tranche metadata only when securitisation paths are enabled.
+Optional fair-value cap treatment is not embedded in tranche metadata. It is a
+run-scoped `DrcFairValueCapEvidence` map keyed by position id so the source
+profile, eligibility, cap amount, lineage, citations, and stale/validation
+flags remain auditable and profile-controlled.
 
 ### Gross JTD
 

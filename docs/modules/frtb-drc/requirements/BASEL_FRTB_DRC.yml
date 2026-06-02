@@ -25,7 +25,7 @@ requirements:
     status: partial
     modules: [src/frtb_drc/reference_data.py, src/frtb_drc/regimes.py]
     tests: [tests/test_drc_reference_data.py]
-    notes: U.S. NPR 2.0 non-securitisation LGD, maturity, bucket, and risk-weight reference data are implemented with citations. Basel MAR22 non-securitisation LGD, MAR22.15-MAR22.18 maturity scaling, MAR22.22 bucket definitions, and MAR22.24 letter-grade risk weights are implemented for row and batch paths. U.S. NPR 2.0 securitisation non-CTP and CTP consume typed upstream DrcRiskWeightEvidence; Basel MAR22 securitisation non-CTP and CTP fail closed pending MAR22.34/MAR22.42 banking-book securitisation mappings, fair-value-cap, and decomposition contracts. EU CRR3 and PRA UK CRR profiles are known but fail closed pending Article 325w / PRA PS1/26 rulebook mappings.
+    notes: U.S. NPR 2.0 non-securitisation LGD, maturity, bucket, and risk-weight reference data are implemented with citations. Basel MAR22 non-securitisation LGD, MAR22.15-MAR22.18 maturity scaling, MAR22.22 bucket definitions, and MAR22.24 letter-grade risk weights are implemented for row and batch paths. U.S. NPR 2.0 securitisation non-CTP and CTP consume typed upstream DrcRiskWeightEvidence; U.S. NPR 2.0 securitisation non-CTP also consumes typed DrcFairValueCapEvidence where the profile control permits optional cap treatment. Basel MAR22 securitisation non-CTP and CTP fail closed pending MAR22.34/MAR22.42 banking-book securitisation mappings and decomposition contracts. EU CRR3 and PRA UK CRR profiles are known but fail closed pending Article 325w / PRA PS1/26 rulebook mappings.
   - id: DRC-JTD-001
     title: Gross JTD and default long-short direction
     source: Basel MAR22.9-MAR22.12; U.S. NPR 2.0 section V.A.9.a.i
@@ -51,9 +51,9 @@ requirements:
     title: Securitisation non-CTP DRC
     source: Basel MAR22.27-MAR22.35; U.S. NPR 2.0 proposed section __.210(c)
     status: partial
-    modules: [src/frtb_drc/securitisation.py, src/frtb_drc/risk_weight_evidence.py]
-    tests: [tests/test_drc_securitisation.py]
-    notes: Supported row and batch paths cover market-value gross default exposure, maturity scaling, same-pool/same-tranche netting, explicit replication-group evidence, securitisation bucket taxonomy, HBR, bucket floors, and category summation. Banking-book securitisation risk weights are supplied as cited DrcRiskWeightEvidence or legacy low-level run-scoped maps rather than derived internally; duplicate, missing, stale, uncited, wrong-risk-class, non-finite, negative, or future-dated evidence fails closed. Fair-value cap handling is not implemented.
+    modules: [src/frtb_drc/securitisation.py, src/frtb_drc/risk_weight_evidence.py, src/frtb_drc/fair_value_cap.py]
+    tests: [tests/test_drc_securitisation.py, tests/test_drc_arrow_batch.py]
+    notes: Supported row and batch paths cover market-value gross default exposure, profile-controlled optional fair-value cap evidence, maturity scaling, same-pool/same-tranche netting, explicit replication-group evidence, securitisation bucket taxonomy, HBR, bucket floors, and category summation. Banking-book securitisation risk weights are supplied as cited DrcRiskWeightEvidence or legacy low-level run-scoped maps rather than derived internally; duplicate, missing, stale, uncited, wrong-risk-class, non-finite, negative, or future-dated evidence fails closed. Fair-value cap evidence is supplied as cited DrcFairValueCapEvidence; duplicate, unused, stale, uncited, future-dated, profile-mismatched, negative, non-finite, or incomplete evidence fails closed.
   - id: DRC-CTP-001
     title: Correlation trading portfolio DRC
     source: Basel MAR22.36-MAR22.45; U.S. NPR 2.0 proposed section __.210(d)
@@ -65,6 +65,6 @@ requirements:
     title: Audit and attribution-compatible decomposition
     source: Basel MAR22 traceability requirement by calculation component
     status: partial
-    modules: [src/frtb_drc/audit.py, src/frtb_drc/risk_weight_evidence.py]
+    modules: [src/frtb_drc/audit.py, src/frtb_drc/risk_weight_evidence.py, src/frtb_drc/fair_value_cap.py]
     tests: [tests/test_drc_audit.py, tests/test_drc_securitisation.py, tests/test_drc_ctp.py]
-    notes: The audit graph preserves position, gross JTD, scaled JTD, netting group, bucket, category, citations, stable ids, branch metadata, FX conversions, and securitisation/CTP risk-weight evidence for later analytical Euler or impact methods; attribution math is not implemented in the capital kernel.
+    notes: The audit graph preserves position, gross JTD, scaled JTD, netting group, bucket, category, citations, stable ids, branch metadata, FX conversions, securitisation/CTP risk-weight evidence, and securitisation fair-value cap evidence for later analytical Euler or impact methods; attribution math is not implemented in the capital kernel.

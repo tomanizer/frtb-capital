@@ -24,6 +24,7 @@ from frtb_drc.data_models import (
     MaturityScaledJtd,
     NetJtd,
 )
+from frtb_drc.fair_value_cap import used_fair_value_cap_evidence
 from frtb_drc.fx import (
     convert_positions_to_base_currency,
     fx_branch_metadata,
@@ -183,6 +184,10 @@ def calculate_drc_capital(
                 context,
                 risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
             ),
+        ),
+        fair_value_cap_evidence=used_fair_value_cap_evidence(
+            securitisation_non_ctp_positions,
+            context,
         ),
     )
     validate_reconciliation(result)
