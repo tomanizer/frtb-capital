@@ -8,7 +8,11 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from frtb_rrao._payloads import hash_payload, lineage_payload, position_payload
+from frtb_rrao._payloads import (
+    hash_position_payloads,
+    lineage_payload,
+    position_payload,
+)
 from frtb_rrao.capital import build_rrao_subtotals, included_rrao_total
 from frtb_rrao.data_models import (
     RraoCapitalLine,
@@ -33,7 +37,7 @@ def input_hash_for_positions(positions: object) -> str:
 def _input_hash_for_validated_positions(positions: tuple[RraoPosition, ...]) -> str:
     """Return an input hash for an already validated position tuple."""
 
-    return hash_payload({"positions": [position_payload(position) for position in positions]})
+    return hash_position_payloads(position_payload(position) for position in positions)
 
 
 def _lineage_payload(lineage: RraoSourceLineage | None) -> dict[str, object] | None:

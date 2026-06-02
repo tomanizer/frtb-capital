@@ -24,6 +24,7 @@ from frtb_rrao import (
     validate_rrao_result_reconciliation,
 )
 from frtb_rrao import audit as audit_module
+from frtb_rrao._payloads import hash_payload, position_payload
 
 
 def sample_lineage(row_id: str) -> RraoSourceLineage:
@@ -92,6 +93,18 @@ def test_input_hash_is_deterministic_and_input_sensitive() -> None:
     assert re.fullmatch(r"[0-9a-f]{64}", digest)
     assert digest == input_hash_for_positions(same_positions)
     assert digest != input_hash_for_positions(reordered_positions)
+
+
+def test_input_hash_matches_legacy_full_payload_encoding() -> None:
+    positions = (
+        sample_position("pos-001", "row-001"),
+        sample_excluded_position("pos-002", "row-002"),
+    )
+    legacy_digest = hash_payload(
+        {"positions": [position_payload(position) for position in positions]}
+    )
+
+    assert input_hash_for_positions(positions) == legacy_digest
 
 
 def test_input_hash_includes_back_to_back_match_payload() -> None:
