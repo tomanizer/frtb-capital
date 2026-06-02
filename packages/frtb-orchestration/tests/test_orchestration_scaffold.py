@@ -1,4 +1,5 @@
 import ast
+import math
 from datetime import date
 from pathlib import Path
 
@@ -299,6 +300,28 @@ def test_standardised_result_validates_reconciliation_invariants() -> None:
         )
 
 
+def test_standardised_result_reconciliation_tolerates_large_capital_roundoff() -> None:
+    subtotals = (
+        component_subtotal(StandardisedComponent.SBM, 1_000_000_000_000_000.0),
+        component_subtotal(StandardisedComponent.DRC, 2_000_000_000_000_000.0),
+        component_subtotal(StandardisedComponent.RRAO, 3_000_000_000_000_000.0),
+    )
+    expected = math.fsum(subtotal.total_capital for subtotal in subtotals)
+
+    result = StandardisedApproachCapitalResult(
+        run_id="sa-large-run",
+        calculation_date=date(2026, 3, 31),
+        base_currency="USD",
+        jurisdiction_family="US_NPR",
+        total_capital=expected + 1_000.0,
+        component_subtotals=subtotals,
+        fallback_routes=(),
+        citations=("component-citation",),
+    )
+
+    assert result.total_capital == expected + 1_000.0
+
+
 def test_standardised_component_subtotal_validates_audit_fields() -> None:
     with pytest.raises(OrchestrationInputError, match="total_capital"):
         StandardisedComponentSubtotal(
@@ -447,6 +470,24 @@ def component_handoff(
         subtotal_count=1,
         citations=citations,
         warnings=(),
+    )
+
+
+def component_subtotal(
+    component: StandardisedComponent,
+    total_capital: float,
+) -> StandardisedComponentSubtotal:
+    return StandardisedComponentSubtotal(
+        component=component,
+        package_name=f"frtb-{component.value.lower()}",
+        run_id=f"run-{component.value.lower()}",
+        profile_id="US_NPR_2_0",
+        profile_hash="profile-hash",
+        input_hash="input-hash",
+        total_capital=total_capital,
+        line_count=1,
+        excluded_line_count=0,
+        subtotal_count=1,
     )
 
 

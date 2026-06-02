@@ -189,7 +189,10 @@ class StandardisedApproachCapitalResult:
         )
         _require_component_subtotal_set(self.component_subtotals)
         expected_total = math.fsum(subtotal.total_capital for subtotal in self.component_subtotals)
-        if not math.isclose(self.total_capital, expected_total, rel_tol=0.0, abs_tol=1e-12):
+        # This is a capital-total reconciliation guard, not a bit-identical drift check.
+        # Use both absolute and relative tolerances so large-but-equivalent totals do not
+        # fail only because of IEEE-754 representation limits.
+        if not math.isclose(self.total_capital, expected_total, rel_tol=1e-12, abs_tol=1e-12):
             raise OrchestrationInputError(
                 "total_capital must reconcile to component_subtotals",
                 field="total_capital",
