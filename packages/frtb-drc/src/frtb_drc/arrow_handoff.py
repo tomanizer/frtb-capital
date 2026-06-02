@@ -3,24 +3,20 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from typing import Any
 
 import numpy as np
-import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
-import pyarrow.compute as pc  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
     NormalizedTabularHandoff,
     NullPolicy,
-    TabularHandoffError,
     TabularLogicalType,
-    arrow_float64_array,
-    arrow_float64_array_with_nulls,
     arrow_object_array,
     normalize_arrow_table,
     normalized_handoff_hash,
-    validate_arrow_table,
+    read_handoff_columns,
 )
 
 from frtb_drc.batch import (
@@ -186,6 +182,52 @@ DRC_CTP_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = tuple(
     for spec in DRC_NONSEC_HANDOFF_COLUMN_SPECS
 )
 
+_DRC_BATCH_COLUMN_ARGS: Mapping[str, str] = {
+    "position_id": "position_ids",
+    "source_row_id": "source_row_ids",
+    "desk_id": "desk_ids",
+    "legal_entity": "legal_entities",
+    "risk_class": "risk_classes",
+    "instrument_type": "instrument_types",
+    "default_direction": "default_directions",
+    "issuer_id": "issuer_ids",
+    "tranche_id": "tranche_ids",
+    "index_series_id": "index_series_ids",
+    "bucket_key": "bucket_keys",
+    "seniority": "seniorities",
+    "credit_quality": "credit_qualities",
+    "notional": "notionals",
+    "market_value": "market_values",
+    "cumulative_pnl": "cumulative_pnls",
+    "maturity_years": "maturity_years",
+    "currency": "currencies",
+    "lgd_override": "lgd_overrides",
+    "is_defaulted": "is_defaulted",
+    "is_gse": "is_gse",
+    "is_pse": "is_pse",
+    "is_covered_bond": "is_covered_bond",
+    "lineage_source_system": "lineage_source_systems",
+    "lineage_source_file": "lineage_source_files",
+}
+
+
+def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
+    unknown = tuple(
+        spec.name
+        for spec_group in spec_groups
+        for spec in spec_group
+        if spec.logical_type is TabularLogicalType.UNKNOWN
+    )
+    if unknown:
+        raise RuntimeError("DRC handoff specs must declare logical_type: " + ", ".join(unknown))
+
+
+_ensure_explicit_logical_types(
+    DRC_NONSEC_HANDOFF_COLUMN_SPECS,
+    DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS,
+    DRC_CTP_HANDOFF_COLUMN_SPECS,
+)
+
 
 def normalize_drc_nonsec_arrow_table(
     table: pa.Table,
@@ -258,34 +300,10 @@ def build_drc_nonsec_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise DrcInputError("handoff must be NormalizedTabularHandoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=DRC_NONSEC_HANDOFF_COLUMN_SPECS)
+    columns = read_handoff_columns(table, DRC_NONSEC_HANDOFF_COLUMN_SPECS, error=_drc_error)
     diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
     return build_drc_nonsec_batch_from_columns(
-        position_ids=_required_object_column(table, "position_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        instrument_types=_required_object_column(table, "instrument_type"),
-        default_directions=_required_object_column(table, "default_direction"),
-        issuer_ids=_required_object_column(table, "issuer_id"),
-        tranche_ids=_optional_object_column(table, "tranche_id"),
-        index_series_ids=_optional_object_column(table, "index_series_id"),
-        bucket_keys=_required_object_column(table, "bucket_key"),
-        seniorities=_required_object_column(table, "seniority"),
-        credit_qualities=_required_object_column(table, "credit_quality"),
-        notionals=_required_float_column(table, "notional"),
-        market_values=_optional_float_column(table, "market_value"),
-        cumulative_pnls=_optional_float_column(table, "cumulative_pnl"),
-        maturity_years=_required_float_column(table, "maturity_years"),
-        currencies=_required_object_column(table, "currency"),
-        lgd_overrides=_optional_float_column(table, "lgd_override"),
-        is_defaulted=_optional_bool_column(table, "is_defaulted"),
-        is_gse=_optional_bool_column(table, "is_gse"),
-        is_pse=_optional_bool_column(table, "is_pse"),
-        is_covered_bond=_optional_bool_column(table, "is_covered_bond"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
+        **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
         citation_ids=_citation_ids_column(table),
         source_hash=handoff.source_hash,
@@ -303,34 +321,14 @@ def build_drc_securitisation_non_ctp_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise DrcInputError("handoff must be NormalizedTabularHandoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS)
+    columns = read_handoff_columns(
+        table,
+        DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS,
+        error=_drc_error,
+    )
     diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
     return build_drc_securitisation_non_ctp_batch_from_columns(
-        position_ids=_required_object_column(table, "position_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        instrument_types=_required_object_column(table, "instrument_type"),
-        default_directions=_required_object_column(table, "default_direction"),
-        issuer_ids=_required_object_column(table, "issuer_id"),
-        tranche_ids=_optional_object_column(table, "tranche_id"),
-        index_series_ids=_optional_object_column(table, "index_series_id"),
-        bucket_keys=_required_object_column(table, "bucket_key"),
-        seniorities=_optional_object_column(table, "seniority"),
-        credit_qualities=_optional_object_column(table, "credit_quality"),
-        notionals=_required_float_column(table, "notional"),
-        market_values=_optional_float_column(table, "market_value"),
-        cumulative_pnls=_optional_float_column(table, "cumulative_pnl"),
-        maturity_years=_required_float_column(table, "maturity_years"),
-        currencies=_required_object_column(table, "currency"),
-        lgd_overrides=_optional_float_column(table, "lgd_override"),
-        is_defaulted=_optional_bool_column(table, "is_defaulted"),
-        is_gse=_optional_bool_column(table, "is_gse"),
-        is_pse=_optional_bool_column(table, "is_pse"),
-        is_covered_bond=_optional_bool_column(table, "is_covered_bond"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
+        **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
         citation_ids=_citation_ids_column(table),
         source_hash=handoff.source_hash,
@@ -348,34 +346,10 @@ def build_drc_ctp_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise DrcInputError("handoff must be NormalizedTabularHandoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=DRC_CTP_HANDOFF_COLUMN_SPECS)
+    columns = read_handoff_columns(table, DRC_CTP_HANDOFF_COLUMN_SPECS, error=_drc_error)
     diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
     return build_drc_ctp_batch_from_columns(
-        position_ids=_required_object_column(table, "position_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        instrument_types=_required_object_column(table, "instrument_type"),
-        default_directions=_required_object_column(table, "default_direction"),
-        issuer_ids=_optional_object_column(table, "issuer_id"),
-        tranche_ids=_optional_object_column(table, "tranche_id"),
-        index_series_ids=_optional_object_column(table, "index_series_id"),
-        bucket_keys=_required_object_column(table, "bucket_key"),
-        seniorities=_optional_object_column(table, "seniority"),
-        credit_qualities=_optional_object_column(table, "credit_quality"),
-        notionals=_required_float_column(table, "notional"),
-        market_values=_optional_float_column(table, "market_value"),
-        cumulative_pnls=_optional_float_column(table, "cumulative_pnl"),
-        maturity_years=_required_float_column(table, "maturity_years"),
-        currencies=_required_object_column(table, "currency"),
-        lgd_overrides=_optional_float_column(table, "lgd_override"),
-        is_defaulted=_optional_bool_column(table, "is_defaulted"),
-        is_gse=_optional_bool_column(table, "is_gse"),
-        is_pse=_optional_bool_column(table, "is_pse"),
-        is_covered_bond=_optional_bool_column(table, "is_covered_bond"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
+        **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
         citation_ids=_citation_ids_column(table),
         source_hash=handoff.source_hash,
@@ -385,60 +359,15 @@ def build_drc_ctp_batch_from_handoff(
     )
 
 
-def _required_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np.object_]:
-    if column_name not in table.column_names:
-        raise DrcInputError(f"column is required: {column_name}")
-    values = arrow_object_array(table.column(column_name))
-    values.setflags(write=False)
-    return values
+def _drc_batch_column_kwargs(columns: Mapping[str, object]) -> dict[str, Any]:
+    return {
+        argument_name: columns.get(column_name)
+        for column_name, argument_name in _DRC_BATCH_COLUMN_ARGS.items()
+    }
 
 
-def _optional_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np.object_] | None:
-    if column_name not in table.column_names:
-        return None
-    values = arrow_object_array(table.column(column_name))
-    values.setflags(write=False)
-    return values
-
-
-def _required_float_column(table: pa.Table, column_name: str) -> npt.NDArray[np.float64]:
-    if column_name not in table.column_names:
-        raise DrcInputError(f"column is required: {column_name}")
-    column = table.column(column_name)
-    if column.null_count:
-        raise DrcInputError(f"{column_name} must be provided")
-    try:
-        values = arrow_float64_array(column, field=column_name)
-    except TabularHandoffError as exc:
-        raise DrcInputError(str(exc)) from exc
-    values.setflags(write=False)
-    return values
-
-
-def _optional_float_column(table: pa.Table, column_name: str) -> npt.NDArray[np.float64] | None:
-    if column_name not in table.column_names:
-        return None
-    column = table.column(column_name)
-    try:
-        values = (
-            arrow_float64_array_with_nulls(column, field=column_name)
-            if column.null_count
-            else arrow_float64_array(column, field=column_name)
-        )
-    except TabularHandoffError as exc:
-        raise DrcInputError(str(exc)) from exc
-    values.setflags(write=False)
-    return values
-
-
-def _optional_bool_column(table: pa.Table, column_name: str) -> npt.NDArray[np.bool_] | None:
-    if column_name not in table.column_names:
-        return None
-    column = table.column(column_name)
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    values = np.asarray(pc.fill_null(array, False).to_numpy(zero_copy_only=False), dtype=np.bool_)
-    values.setflags(write=False)
-    return values
+def _drc_error(message: str, _field: str | None) -> DrcInputError:
+    return DrcInputError(message)
 
 
 def _citation_ids_column(table: pa.Table) -> tuple[tuple[str, ...], ...] | None:
