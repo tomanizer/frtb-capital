@@ -11,12 +11,10 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import replace
-from typing import cast
+from typing import Any, cast
 
-import numpy as np
-import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.compute as pc  # type: ignore[import-untyped]
 from frtb_common import (
@@ -26,10 +24,9 @@ from frtb_common import (
     NullPolicy,
     TabularLogicalType,
     UnsupportedRegulatoryFeatureError,
-    arrow_object_array,
     normalize_arrow_table,
     normalized_handoff_hash,
-    validate_arrow_table,
+    read_handoff_columns,
 )
 
 from frtb_sbm.batch import (
@@ -40,6 +37,7 @@ from frtb_sbm.batch import (
     build_csr_sec_nonctp_delta_batch_from_columns,
     build_equity_delta_batch_from_columns,
     build_fx_delta_batch_from_columns,
+    build_girr_curvature_batch_from_columns,
     build_girr_delta_batch_from_columns,
     build_girr_vega_batch_from_columns,
     build_sbm_batch_from_columns,
@@ -76,8 +74,6 @@ from frtb_sbm.data_models import (
     SbmRiskMeasure,
 )
 from frtb_sbm.validation import SbmInputError, coerce_risk_class, coerce_risk_measure
-
-_ARROW_CONVERSION_ERRORS = (pa.ArrowException, TypeError, ValueError)
 
 GIRR_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec(
@@ -356,6 +352,71 @@ CSR_SEC_CTP_CURVATURE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = _curvature_
     tenor_required=False,
     qualifier_required=True,
 )
+
+
+_SBM_BATCH_COLUMN_ARGS: Mapping[str, str] = {
+    "sensitivity_id": "sensitivity_ids",
+    "source_row_id": "source_row_ids",
+    "desk_id": "desk_ids",
+    "legal_entity": "legal_entities",
+    "risk_class": "risk_classes",
+    "risk_measure": "risk_measures",
+    "bucket": "buckets",
+    "risk_factor": "risk_factors",
+    "amount": "amounts",
+    "amount_currency": "amount_currencies",
+    "sign_convention": "sign_conventions",
+    "tenor": "tenors",
+    "lineage_source_system": "lineage_source_systems",
+    "lineage_source_file": "lineage_source_files",
+    "position_id": "position_ids",
+    "qualifier": "qualifiers",
+    "option_tenor": "option_tenors",
+    "liquidity_horizon_days": "liquidity_horizon_days",
+    "maturity": "maturities",
+    "up_shock_amount": "up_shock_amounts",
+    "down_shock_amount": "down_shock_amounts",
+}
+
+_OPTIONAL_FLOAT_COLUMN_NAMES = frozenset({"up_shock_amount", "down_shock_amount"})
+
+_SBM_HANDOFF_SPEC_GROUPS: tuple[tuple[ColumnSpec, ...], ...] = (
+    GIRR_DELTA_HANDOFF_COLUMN_SPECS,
+    GIRR_VEGA_HANDOFF_COLUMN_SPECS,
+    GIRR_CURVATURE_HANDOFF_COLUMN_SPECS,
+    FX_DELTA_HANDOFF_COLUMN_SPECS,
+    EQUITY_DELTA_HANDOFF_COLUMN_SPECS,
+    COMMODITY_DELTA_HANDOFF_COLUMN_SPECS,
+    CSR_NONSEC_DELTA_HANDOFF_COLUMN_SPECS,
+    CSR_SEC_NONCTP_DELTA_HANDOFF_COLUMN_SPECS,
+    CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS,
+    FX_VEGA_HANDOFF_COLUMN_SPECS,
+    EQUITY_VEGA_HANDOFF_COLUMN_SPECS,
+    COMMODITY_VEGA_HANDOFF_COLUMN_SPECS,
+    CSR_NONSEC_VEGA_HANDOFF_COLUMN_SPECS,
+    CSR_SEC_NONCTP_VEGA_HANDOFF_COLUMN_SPECS,
+    CSR_SEC_CTP_VEGA_HANDOFF_COLUMN_SPECS,
+    FX_CURVATURE_HANDOFF_COLUMN_SPECS,
+    EQUITY_CURVATURE_HANDOFF_COLUMN_SPECS,
+    COMMODITY_CURVATURE_HANDOFF_COLUMN_SPECS,
+    CSR_NONSEC_CURVATURE_HANDOFF_COLUMN_SPECS,
+    CSR_SEC_NONCTP_CURVATURE_HANDOFF_COLUMN_SPECS,
+    CSR_SEC_CTP_CURVATURE_HANDOFF_COLUMN_SPECS,
+)
+
+
+def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
+    unknown = tuple(
+        spec.name
+        for spec_group in spec_groups
+        for spec in spec_group
+        if spec.logical_type is TabularLogicalType.UNKNOWN
+    )
+    if unknown:
+        raise RuntimeError("SBM handoff specs must declare logical_type: " + ", ".join(unknown))
+
+
+_ensure_explicit_logical_types(*_SBM_HANDOFF_SPEC_GROUPS)
 
 
 def normalize_girr_delta_arrow_table(
@@ -818,36 +879,10 @@ def build_girr_delta_batch_from_handoff(
 ) -> SbmSensitivityBatch:
     """Build an SBM-owned GIRR delta batch from a normalized Arrow handoff."""
 
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
-    table = handoff.accepted
-    validate_arrow_table(table, column_specs=GIRR_DELTA_HANDOFF_COLUMN_SPECS)
-    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_girr_delta_batch_from_columns(
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        buckets=_required_object_column(table, "bucket"),
-        risk_factors=_required_object_column(table, "risk_factor"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=_required_object_column(table, "tenor"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
-        diagnostics=diagnostic_payloads,
-        position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=_optional_object_column(table, "qualifier"),
-        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
-        maturities=_optional_object_column(table, "maturity"),
-        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
-        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
-        copy_arrays=False,
+    return _build_sbm_batch_from_handoff(
+        handoff,
+        column_specs=GIRR_DELTA_HANDOFF_COLUMN_SPECS,
+        build_batch=build_girr_delta_batch_from_columns,
     )
 
 
@@ -856,37 +891,10 @@ def build_girr_vega_batch_from_handoff(
 ) -> SbmSensitivityBatch:
     """Build an SBM-owned GIRR vega batch from a normalized Arrow handoff."""
 
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
-    table = handoff.accepted
-    validate_arrow_table(table, column_specs=GIRR_VEGA_HANDOFF_COLUMN_SPECS)
-    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_girr_vega_batch_from_columns(
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        buckets=_required_object_column(table, "bucket"),
-        risk_factors=_required_object_column(table, "risk_factor"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=_required_object_column(table, "tenor"),
-        option_tenors=_required_object_column(table, "option_tenor"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
-        diagnostics=diagnostic_payloads,
-        position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=_optional_object_column(table, "qualifier"),
-        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
-        maturities=_optional_object_column(table, "maturity"),
-        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
-        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
-        copy_arrays=False,
+    return _build_sbm_batch_from_handoff(
+        handoff,
+        column_specs=GIRR_VEGA_HANDOFF_COLUMN_SPECS,
+        build_batch=build_girr_vega_batch_from_columns,
     )
 
 
@@ -899,8 +907,7 @@ def build_girr_curvature_batch_from_handoff(
         handoff,
         expected_risk_class=SbmRiskClass.GIRR,
         column_specs=GIRR_CURVATURE_HANDOFF_COLUMN_SPECS,
-        tenor_required=True,
-        qualifier_required=False,
+        build_batch=build_girr_curvature_batch_from_columns,
     )
 
 
@@ -913,8 +920,6 @@ def build_fx_curvature_batch_from_handoff(
         handoff,
         expected_risk_class=SbmRiskClass.FX,
         column_specs=FX_CURVATURE_HANDOFF_COLUMN_SPECS,
-        tenor_required=False,
-        qualifier_required=False,
     )
 
 
@@ -927,8 +932,6 @@ def build_equity_curvature_batch_from_handoff(
         handoff,
         expected_risk_class=SbmRiskClass.EQUITY,
         column_specs=EQUITY_CURVATURE_HANDOFF_COLUMN_SPECS,
-        tenor_required=False,
-        qualifier_required=True,
     )
 
 
@@ -941,8 +944,6 @@ def build_commodity_curvature_batch_from_handoff(
         handoff,
         expected_risk_class=SbmRiskClass.COMMODITY,
         column_specs=COMMODITY_CURVATURE_HANDOFF_COLUMN_SPECS,
-        tenor_required=False,
-        qualifier_required=True,
     )
 
 
@@ -955,8 +956,6 @@ def build_csr_nonsec_curvature_batch_from_handoff(
         handoff,
         expected_risk_class=SbmRiskClass.CSR_NONSEC,
         column_specs=CSR_NONSEC_CURVATURE_HANDOFF_COLUMN_SPECS,
-        tenor_required=False,
-        qualifier_required=True,
     )
 
 
@@ -969,8 +968,6 @@ def build_csr_sec_nonctp_curvature_batch_from_handoff(
         handoff,
         expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
         column_specs=CSR_SEC_NONCTP_CURVATURE_HANDOFF_COLUMN_SPECS,
-        tenor_required=False,
-        qualifier_required=True,
     )
 
 
@@ -983,8 +980,6 @@ def build_csr_sec_ctp_curvature_batch_from_handoff(
         handoff,
         expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
         column_specs=CSR_SEC_CTP_CURVATURE_HANDOFF_COLUMN_SPECS,
-        tenor_required=False,
-        qualifier_required=True,
     )
 
 
@@ -993,50 +988,19 @@ def _build_curvature_batch_from_handoff(
     *,
     expected_risk_class: SbmRiskClass,
     column_specs: tuple[ColumnSpec, ...],
-    tenor_required: bool,
-    qualifier_required: bool,
+    build_batch: Callable[..., SbmSensitivityBatch] = build_sbm_batch_from_columns,
 ) -> SbmSensitivityBatch:
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
-    table = handoff.accepted
-    validate_arrow_table(table, column_specs=column_specs)
-    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_sbm_batch_from_columns(
-        expected_risk_class=expected_risk_class,
-        expected_risk_measure=SbmRiskMeasure.CURVATURE,
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        buckets=_required_object_column(table, "bucket"),
-        risk_factors=_required_object_column(table, "risk_factor"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=(
-            _required_object_column(table, "tenor")
-            if tenor_required
-            else _optional_or_null_object_column(table, "tenor")
-        ),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
-        diagnostics=diagnostic_payloads,
-        position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=(
-            _required_object_column(table, "qualifier")
-            if qualifier_required
-            else _optional_object_column(table, "qualifier")
-        ),
-        option_tenors=_optional_object_column(table, "option_tenor"),
-        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
-        maturities=_optional_object_column(table, "maturity"),
-        up_shock_amounts=_required_float_column(table, "up_shock_amount"),
-        down_shock_amounts=_required_float_column(table, "down_shock_amount"),
-        copy_arrays=False,
+    builder_kwargs: dict[str, object] = {}
+    if build_batch is build_sbm_batch_from_columns:
+        builder_kwargs = {
+            "expected_risk_class": expected_risk_class,
+            "expected_risk_measure": SbmRiskMeasure.CURVATURE,
+        }
+    return _build_sbm_batch_from_handoff(
+        handoff,
+        column_specs=column_specs,
+        build_batch=build_batch,
+        builder_kwargs=builder_kwargs,
     )
 
 
@@ -1045,37 +1009,10 @@ def build_fx_delta_batch_from_handoff(
 ) -> SbmSensitivityBatch:
     """Build an SBM-owned FX delta batch from a normalized Arrow handoff."""
 
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
-    table = handoff.accepted
-    validate_arrow_table(table, column_specs=FX_DELTA_HANDOFF_COLUMN_SPECS)
-    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_fx_delta_batch_from_columns(
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        buckets=_required_object_column(table, "bucket"),
-        risk_factors=_required_object_column(table, "risk_factor"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=_optional_or_null_object_column(table, "tenor"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
-        diagnostics=diagnostic_payloads,
-        position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=_optional_object_column(table, "qualifier"),
-        option_tenors=_optional_object_column(table, "option_tenor"),
-        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
-        maturities=_optional_object_column(table, "maturity"),
-        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
-        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
-        copy_arrays=False,
+    return _build_sbm_batch_from_handoff(
+        handoff,
+        column_specs=FX_DELTA_HANDOFF_COLUMN_SPECS,
+        build_batch=build_fx_delta_batch_from_columns,
     )
 
 
@@ -1084,37 +1021,10 @@ def build_equity_delta_batch_from_handoff(
 ) -> SbmSensitivityBatch:
     """Build an SBM-owned equity delta batch from a normalized Arrow handoff."""
 
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
-    table = handoff.accepted
-    validate_arrow_table(table, column_specs=EQUITY_DELTA_HANDOFF_COLUMN_SPECS)
-    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_equity_delta_batch_from_columns(
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        buckets=_required_object_column(table, "bucket"),
-        risk_factors=_required_object_column(table, "risk_factor"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=_optional_or_null_object_column(table, "tenor"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
-        diagnostics=diagnostic_payloads,
-        position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=_required_object_column(table, "qualifier"),
-        option_tenors=_optional_object_column(table, "option_tenor"),
-        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
-        maturities=_optional_object_column(table, "maturity"),
-        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
-        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
-        copy_arrays=False,
+    return _build_sbm_batch_from_handoff(
+        handoff,
+        column_specs=EQUITY_DELTA_HANDOFF_COLUMN_SPECS,
+        build_batch=build_equity_delta_batch_from_columns,
     )
 
 
@@ -1123,37 +1033,10 @@ def build_commodity_delta_batch_from_handoff(
 ) -> SbmSensitivityBatch:
     """Build an SBM-owned commodity delta batch from a normalized Arrow handoff."""
 
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
-    table = handoff.accepted
-    validate_arrow_table(table, column_specs=COMMODITY_DELTA_HANDOFF_COLUMN_SPECS)
-    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_commodity_delta_batch_from_columns(
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        buckets=_required_object_column(table, "bucket"),
-        risk_factors=_required_object_column(table, "risk_factor"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=_required_object_column(table, "tenor"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
-        diagnostics=diagnostic_payloads,
-        position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=_required_object_column(table, "qualifier"),
-        option_tenors=_optional_object_column(table, "option_tenor"),
-        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
-        maturities=_optional_object_column(table, "maturity"),
-        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
-        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
-        copy_arrays=False,
+    return _build_sbm_batch_from_handoff(
+        handoff,
+        column_specs=COMMODITY_DELTA_HANDOFF_COLUMN_SPECS,
+        build_batch=build_commodity_delta_batch_from_columns,
     )
 
 
@@ -1162,37 +1045,10 @@ def build_csr_nonsec_delta_batch_from_handoff(
 ) -> SbmSensitivityBatch:
     """Build an SBM-owned CSR non-securitisation delta batch from an Arrow handoff."""
 
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
-    table = handoff.accepted
-    validate_arrow_table(table, column_specs=CSR_NONSEC_DELTA_HANDOFF_COLUMN_SPECS)
-    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_csr_nonsec_delta_batch_from_columns(
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        buckets=_required_object_column(table, "bucket"),
-        risk_factors=_required_object_column(table, "risk_factor"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=_required_object_column(table, "tenor"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
-        diagnostics=diagnostic_payloads,
-        position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=_required_object_column(table, "qualifier"),
-        option_tenors=_optional_object_column(table, "option_tenor"),
-        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
-        maturities=_optional_object_column(table, "maturity"),
-        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
-        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
-        copy_arrays=False,
+    return _build_sbm_batch_from_handoff(
+        handoff,
+        column_specs=CSR_NONSEC_DELTA_HANDOFF_COLUMN_SPECS,
+        build_batch=build_csr_nonsec_delta_batch_from_columns,
     )
 
 
@@ -1201,37 +1057,10 @@ def build_csr_sec_nonctp_delta_batch_from_handoff(
 ) -> SbmSensitivityBatch:
     """Build an SBM-owned CSR securitisation non-CTP delta batch from an Arrow handoff."""
 
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
-    table = handoff.accepted
-    validate_arrow_table(table, column_specs=CSR_SEC_NONCTP_DELTA_HANDOFF_COLUMN_SPECS)
-    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_csr_sec_nonctp_delta_batch_from_columns(
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        buckets=_required_object_column(table, "bucket"),
-        risk_factors=_required_object_column(table, "risk_factor"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=_required_object_column(table, "tenor"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
-        diagnostics=diagnostic_payloads,
-        position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=_required_object_column(table, "qualifier"),
-        option_tenors=_optional_object_column(table, "option_tenor"),
-        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
-        maturities=_optional_object_column(table, "maturity"),
-        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
-        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
-        copy_arrays=False,
+    return _build_sbm_batch_from_handoff(
+        handoff,
+        column_specs=CSR_SEC_NONCTP_DELTA_HANDOFF_COLUMN_SPECS,
+        build_batch=build_csr_sec_nonctp_delta_batch_from_columns,
     )
 
 
@@ -1240,37 +1069,10 @@ def build_csr_sec_ctp_delta_batch_from_handoff(
 ) -> SbmSensitivityBatch:
     """Build an SBM-owned CSR securitisation CTP delta batch from an Arrow handoff."""
 
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
-    table = handoff.accepted
-    validate_arrow_table(table, column_specs=CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS)
-    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_csr_sec_ctp_delta_batch_from_columns(
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        buckets=_required_object_column(table, "bucket"),
-        risk_factors=_required_object_column(table, "risk_factor"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=_required_object_column(table, "tenor"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
-        diagnostics=diagnostic_payloads,
-        position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=_required_object_column(table, "qualifier"),
-        option_tenors=_optional_object_column(table, "option_tenor"),
-        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
-        maturities=_optional_object_column(table, "maturity"),
-        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
-        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
-        copy_arrays=False,
+    return _build_sbm_batch_from_handoff(
+        handoff,
+        column_specs=CSR_SEC_CTP_DELTA_HANDOFF_COLUMN_SPECS,
+        build_batch=build_csr_sec_ctp_delta_batch_from_columns,
     )
 
 
@@ -1352,40 +1154,40 @@ def _build_non_girr_vega_batch_from_handoff(
     column_specs: tuple[ColumnSpec, ...],
     expected_risk_class: SbmRiskClass,
 ) -> SbmSensitivityBatch:
+    return _build_sbm_batch_from_handoff(
+        handoff,
+        column_specs=column_specs,
+        build_batch=build_sbm_batch_from_columns,
+        builder_kwargs={
+            "expected_risk_class": expected_risk_class,
+            "expected_risk_measure": SbmRiskMeasure.VEGA,
+        },
+    )
+
+
+def _build_sbm_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+    *,
+    column_specs: tuple[ColumnSpec, ...],
+    build_batch: Callable[..., SbmSensitivityBatch],
+    builder_kwargs: Mapping[str, object] | None = None,
+) -> SbmSensitivityBatch:
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=column_specs)
-    diagnostic_payloads = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_sbm_batch_from_columns(
-        expected_risk_class=expected_risk_class,
-        expected_risk_measure=SbmRiskMeasure.VEGA,
-        sensitivity_ids=_required_object_column(table, "sensitivity_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        risk_classes=_required_object_column(table, "risk_class"),
-        risk_measures=_required_object_column(table, "risk_measure"),
-        buckets=_required_object_column(table, "bucket"),
-        risk_factors=_required_object_column(table, "risk_factor"),
-        amounts=_required_float_column(table, "amount"),
-        amount_currencies=_required_object_column(table, "amount_currency"),
-        sign_conventions=_required_object_column(table, "sign_convention"),
-        tenors=_optional_or_null_object_column(table, "tenor"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
-        diagnostics=diagnostic_payloads,
-        position_ids=_optional_object_column(table, "position_id"),
-        qualifiers=_optional_object_column(table, "qualifier"),
-        option_tenors=_required_object_column(table, "option_tenor"),
-        liquidity_horizon_days=_optional_object_column(table, "liquidity_horizon_days"),
-        maturities=_optional_object_column(table, "maturity"),
-        up_shock_amounts=_optional_object_column(table, "up_shock_amount"),
-        down_shock_amounts=_optional_object_column(table, "down_shock_amount"),
-        copy_arrays=False,
+    columns: Mapping[str, object] = read_handoff_columns(table, column_specs, error=_sbm_error)
+    columns = _sbm_columns_with_package_defaults(table, column_specs, columns)
+    kwargs: dict[str, Any] = dict(builder_kwargs or {})
+    kwargs.update(_sbm_batch_column_kwargs(columns, row_count=table.num_rows))
+    kwargs.update(
+        {
+            "source_hash": handoff.source_hash,
+            "handoff_hash": normalized_handoff_hash(handoff),
+            "diagnostics": _diagnostics(handoff),
+            "copy_arrays": False,
+        }
     )
+    return build_batch(**kwargs)
 
 
 def calculate_sbm_capital_from_girr_delta_handoff(
@@ -1761,92 +1563,68 @@ _HANDOFF_BATCH_BUILDERS: Mapping[
 }
 
 
-def _required_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np.object_]:
-    return _object_column(table, column_name, required=True)  # type: ignore[return-value]
+def _sbm_batch_column_kwargs(columns: Mapping[str, object], *, row_count: int) -> dict[str, Any]:
+    kwargs = {
+        argument_name: columns.get(column_name)
+        for column_name, argument_name in _SBM_BATCH_COLUMN_ARGS.items()
+    }
+    if kwargs["tenors"] is None:
+        kwargs["tenors"] = (None,) * row_count
+    return kwargs
 
 
-def _optional_object_column(
+def _sbm_columns_with_package_defaults(
     table: pa.Table,
-    column_name: str,
-) -> npt.NDArray[np.object_] | None:
-    return _object_column(table, column_name, required=False)
+    column_specs: Sequence[ColumnSpec],
+    columns: Mapping[str, object],
+) -> dict[str, object]:
+    updated = dict(columns)
+    for spec in column_specs:
+        if spec.name not in _OPTIONAL_FLOAT_COLUMN_NAMES:
+            continue
+        if spec.null_policy is not NullPolicy.ALLOW or spec.name not in updated:
+            continue
+        column_name = _physical_column_name(table, spec)
+        if column_name is None:
+            continue
+        column = table.column(column_name)
+        if not column.null_count:
+            continue
+        updated[spec.name] = _restore_arrow_nulls_as_none(column, updated[spec.name], spec.name)
+    return updated
 
 
-def _optional_or_null_object_column(
-    table: pa.Table,
-    column_name: str,
-) -> npt.NDArray[np.object_]:
-    values = _optional_object_column(table, column_name)
-    if values is not None:
-        return values
-    null_values = np.full(table.num_rows, None, dtype=object)
-    null_values.setflags(write=False)
-    return null_values
+def _physical_column_name(table: pa.Table, spec: ColumnSpec) -> str | None:
+    for candidate in (spec.name, *spec.aliases):
+        if candidate in table.column_names:
+            return candidate
+    return None
 
 
-def _object_column(
-    table: pa.Table,
-    column_name: str,
-    *,
-    required: bool,
-) -> npt.NDArray[np.object_] | None:
-    if column_name not in table.column_names:
-        if required:
-            raise SbmInputError(f"required column {column_name!r} is missing", field=column_name)
-        return None
-    column = table.column(column_name)
-    values = _object_array_from_arrow_column(column, field=column_name)
-    values.setflags(write=False)
-    return values
-
-
-def _required_float_column(table: pa.Table, column_name: str) -> npt.NDArray[np.float64]:
-    if column_name not in table.column_names:
-        raise SbmInputError(f"required column {column_name!r} is missing", field=column_name)
-    column = table.column(column_name)
-    if column.null_count:
-        raise SbmInputError(
-            "required numeric column must not contain nulls",
-            field=column_name,
-        )
-    values = _float64_array_from_arrow_column(column, field=column_name)
-    values.setflags(write=False)
-    return values
-
-
-def _object_array_from_arrow_column(
+def _restore_arrow_nulls_as_none(
     column: pa.ChunkedArray,
-    *,
+    values: object,
     field: str,
-) -> npt.NDArray[np.object_]:
+) -> tuple[object, ...]:
     try:
-        return arrow_object_array(column)
-    except _ARROW_CONVERSION_ERRORS as exc:
-        raise SbmInputError("Arrow column conversion failed", field=field) from exc
+        array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
+        valid = tuple(bool(item) for item in array.is_valid().to_pylist())
+    except (pa.ArrowException, TypeError, ValueError) as exc:
+        raise _sbm_error(str(exc), field) from exc
+    converted = tuple(cast(Iterable[object], values))
+    if len(converted) != len(valid):
+        raise _sbm_error("column length mismatch", field)
+    return tuple(value if is_valid else None for value, is_valid in zip(converted, valid))
 
 
-def _float64_array_from_arrow_column(
-    column: pa.ChunkedArray,
-    *,
-    field: str,
-) -> npt.NDArray[np.float64]:
-    if len(column) == 0:
-        return np.empty(0, dtype=np.float64)
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    if not pa.types.is_float64(array.type):
-        try:
-            array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except _ARROW_CONVERSION_ERRORS as exc:
-            raise SbmInputError("value must be numeric", field=field) from exc
-    try:
-        return cast(npt.NDArray[np.float64], array.to_numpy(zero_copy_only=True))
-    except _ARROW_CONVERSION_ERRORS:
-        pass
+def _sbm_error(message: str, field: str | None) -> SbmInputError:
+    if field is not None and message == f"{field} must be numeric":
+        message = "value must be numeric"
+    return SbmInputError(message, field="" if field is None else field)
 
-    try:
-        return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
-    except _ARROW_CONVERSION_ERRORS as exc:
-        raise SbmInputError("value must be numeric", field=field) from exc
+
+def _diagnostics(handoff: NormalizedTabularHandoff) -> tuple[Mapping[str, object], ...]:
+    return tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
 
 
 __all__ = [
