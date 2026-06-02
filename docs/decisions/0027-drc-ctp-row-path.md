@@ -59,6 +59,10 @@ recognising diversification across categories. The model remains conservative
 where upstream systems have not supplied CTP risk weights or replication
 evidence.
 
+ADR 0029 supersedes the raw-map-only wording here by adding typed
+`DrcRiskWeightEvidence` records as the production audit contract while
+preserving the raw map as a low-level compatibility input.
+
 This is still not a complete securitisation engine. A future PR may add
 banking-book securitisation risk-weight derivation and richer decomposition
 lineage. Until then, callers must provide cited, upstream-derived CTP risk

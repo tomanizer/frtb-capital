@@ -28,6 +28,10 @@ from frtb_drc.data_models import (
 )
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.risk_weight_evidence import (
+    effective_risk_weights,
+    risk_weight_evidence_hash_payload,
+)
 from frtb_drc.validation import DrcInputError, validate_position
 
 _GROSS_CITATIONS = ("US_NPR_210_D_1", "BASEL_MAR22_36", "BASEL_MAR22_37")
@@ -122,7 +126,13 @@ def calculate_ctp_drc(
         profile_id=profile_id,
     )
     category = calculate_ctp_category_drc(
-        _ctp_capital_inputs(net_jtds, risk_weights=context.ctp_risk_weights),
+        _ctp_capital_inputs(
+            net_jtds,
+            risk_weights=effective_risk_weights(
+                context,
+                risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ),
+        ),
         profile_id=profile_id,
     )
     return CtpCalculation(
@@ -271,11 +281,18 @@ def ctp_context_input_hash(
     if not records:
         return input_hash
     position_ids = tuple(sorted(position.position_id for position in records))
+    weights = effective_risk_weights(
+        context,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+    )
     payload = {
         "input_hash": input_hash,
-        "ctp_risk_weights": {
-            position_id: context.ctp_risk_weights[position_id] for position_id in position_ids
-        },
+        "ctp_risk_weights": {position_id: weights[position_id] for position_id in position_ids},
+        "ctp_risk_weight_evidence": risk_weight_evidence_hash_payload(
+            position_ids,
+            context,
+            risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        ),
         "ctp_offset_groups": {
             position_id: context.ctp_offset_groups[position_id]
             for position_id in position_ids
@@ -292,9 +309,7 @@ def ctp_context_input_hash(
 def validate_ctp_context(context: DrcCalculationContext) -> None:
     """Validate CTP context maps without requiring that CTP positions are present."""
 
-    for position_id, risk_weight in context.ctp_risk_weights.items():
-        _require_text(position_id, "ctp_risk_weights position_id")
-        _require_finite_non_negative(risk_weight, f"ctp_risk_weights[{position_id!r}]")
+    effective_risk_weights(context, risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
     for position_id, offset_group in context.ctp_offset_groups.items():
         _require_text(position_id, "ctp_offset_groups position_id")
         _require_text(offset_group, f"ctp_offset_groups[{position_id!r}]")
@@ -306,14 +321,18 @@ def _validate_ctp_context(
     context: DrcCalculationContext,
 ) -> None:
     validate_ctp_context(context)
+    risk_weights = effective_risk_weights(
+        context,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+    )
     position_ids = {position.position_id for position in positions}
-    missing_risk_weights = sorted(position_ids - set(context.ctp_risk_weights))
+    missing_risk_weights = sorted(position_ids - set(risk_weights))
     if missing_risk_weights:
         raise DrcInputError(
             "context.ctp_risk_weights is required for CTP positions: "
             + ", ".join(missing_risk_weights)
         )
-    unused_risk_weights = sorted(set(context.ctp_risk_weights) - position_ids)
+    unused_risk_weights = sorted(set(risk_weights) - position_ids)
     if unused_risk_weights:
         raise DrcInputError(
             "context.ctp_risk_weights contains unused CTP position ids: "

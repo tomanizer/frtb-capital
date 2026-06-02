@@ -183,6 +183,36 @@ class DrcFxConversion:
 
 
 @dataclass(frozen=True)
+class DrcRiskWeightEvidence:
+    """Typed upstream securitisation or CTP risk-weight derivation evidence."""
+
+    position_id: str
+    risk_class: DrcRiskClass | str
+    source_profile_id: str
+    source_table: str
+    source_method: str
+    effective_risk_weight: float
+    as_of_date: date
+    source_id: str
+    lineage: DrcSourceLineage
+    citation_ids: tuple[str, ...]
+    is_stale: bool = False
+    validation_flags: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "risk_class",
+            _coerce_enum(self.risk_class, DrcRiskClass, "risk_class"),
+        )
+        object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
+        object.__setattr__(self, "validation_flags", tuple(self.validation_flags))
+
+    def as_dict(self) -> dict[str, object]:
+        return _as_dict(self)
+
+
+@dataclass(frozen=True)
 class DrcCalculationContext:
     """Run-scoped calculation metadata supplied to the public API."""
 
@@ -195,8 +225,12 @@ class DrcCalculationContext:
     citation_policy: str = "strict"
     fx_rates: Mapping[str, DrcFxRate] = field(default_factory=dict)
     securitisation_non_ctp_risk_weights: Mapping[str, float] = field(default_factory=dict)
+    securitisation_non_ctp_risk_weight_evidence: Mapping[str, DrcRiskWeightEvidence] = field(
+        default_factory=dict
+    )
     securitisation_non_ctp_offset_groups: Mapping[str, str] = field(default_factory=dict)
     ctp_risk_weights: Mapping[str, float] = field(default_factory=dict)
+    ctp_risk_weight_evidence: Mapping[str, DrcRiskWeightEvidence] = field(default_factory=dict)
     ctp_offset_groups: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -208,6 +242,11 @@ class DrcCalculationContext:
         )
         object.__setattr__(
             self,
+            "securitisation_non_ctp_risk_weight_evidence",
+            MappingProxyType(dict(self.securitisation_non_ctp_risk_weight_evidence)),
+        )
+        object.__setattr__(
+            self,
             "securitisation_non_ctp_offset_groups",
             MappingProxyType(dict(self.securitisation_non_ctp_offset_groups)),
         )
@@ -215,6 +254,11 @@ class DrcCalculationContext:
             self,
             "ctp_risk_weights",
             MappingProxyType(dict(self.ctp_risk_weights)),
+        )
+        object.__setattr__(
+            self,
+            "ctp_risk_weight_evidence",
+            MappingProxyType(dict(self.ctp_risk_weight_evidence)),
         )
         object.__setattr__(
             self,
@@ -531,6 +575,7 @@ class DrcCapitalResult:
     maturity_scaled_jtds: tuple[MaturityScaledJtd, ...] = ()
     net_jtds: tuple[NetJtd, ...] = ()
     fx_conversions: tuple[DrcFxConversion, ...] = ()
+    risk_weight_evidence: tuple[DrcRiskWeightEvidence, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "categories", tuple(self.categories))
@@ -542,6 +587,7 @@ class DrcCapitalResult:
         object.__setattr__(self, "maturity_scaled_jtds", tuple(self.maturity_scaled_jtds))
         object.__setattr__(self, "net_jtds", tuple(self.net_jtds))
         object.__setattr__(self, "fx_conversions", tuple(self.fx_conversions))
+        object.__setattr__(self, "risk_weight_evidence", tuple(self.risk_weight_evidence))
 
     def as_dict(self) -> dict[str, object]:
         return _as_dict(self)
