@@ -32,7 +32,12 @@ def _coerce_enum(value: EnumT | str, enum_type: type[EnumT], field_name: str) ->
 
 @dataclass(frozen=True)
 class CapitalContribution:
-    """Stable, package-neutral view of one capital source attribution record."""
+    """Stable, package-neutral view of one capital source attribution record.
+
+    Sign convention: ``base_amount`` and ``contribution`` are non-negative for
+    positive capital charges, or signed according to the default-risk direction
+    specified in the underlying component.
+    """
 
     contribution_id: str
     source_id: str
