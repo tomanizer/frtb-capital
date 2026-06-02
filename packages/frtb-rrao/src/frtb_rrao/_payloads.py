@@ -35,7 +35,7 @@ def hash_position_payloads(payloads: Iterable[dict[str, object]]) -> str:
             first = False
         else:
             digest.update(b",")
-        digest.update(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+        digest.update(bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8"))
     digest.update(b"]}")
     return digest.hexdigest()
 
