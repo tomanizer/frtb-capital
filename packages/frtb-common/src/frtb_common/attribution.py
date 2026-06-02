@@ -47,11 +47,19 @@ class CapitalContribution:
     reason: str = ""
 
     def __post_init__(self) -> None:
+        coerced_method = _coerce_enum(self.method, AttributionMethod, "method")
         object.__setattr__(
             self,
             "method",
-            _coerce_enum(self.method, AttributionMethod, "method"),
+            coerced_method,
         )
+        if coerced_method == AttributionMethod.ANALYTICAL_EULER:
+            if self.marginal_multiplier is None:
+                raise ValueError(
+                    "marginal_multiplier must not be None when method is ANALYTICAL_EULER"
+                )
+            if self.contribution is None:
+                raise ValueError("contribution must not be None when method is ANALYTICAL_EULER")
 
     def as_dict(self) -> dict[str, object]:
         """Return a JSON-serialisable dictionary representation."""
