@@ -15,6 +15,9 @@ inputs. The current runtime covers gross JTD, maturity scaling,
 seniority-aware non-securitisation netting, securitisation same-tranche and
 replication-group netting, CTP replication-group netting, hedge benefit ratio,
 bucket/category capital, reconciliation, and attribution-ready audit lineage.
+The Arrow/batch API now has class-specific fast paths for non-securitisation,
+securitisation non-CTP, and CTP inputs, with accepted rows kept columnar and
+without row-dataclass fallback.
 Securitisation non-CTP and CTP sub-scope without supplied risk weights or
 explicit replication evidence fail closed.
 

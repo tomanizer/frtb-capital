@@ -1,11 +1,11 @@
-"""Package-owned DRC batches for high-volume non-securitisation kernels."""
+"""Package-owned DRC batches for high-volume DRC kernels."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 import math
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from itertools import count
@@ -18,6 +18,7 @@ from frtb_common import jsonable
 from frtb_drc._version import __version__
 from frtb_drc.audit import validate_reconciliation
 from frtb_drc.capital import CapitalInput, calculate_category_drc
+from frtb_drc.ctp import CtpCapitalInput, calculate_ctp_category_drc
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -45,11 +46,17 @@ from frtb_drc.fx import (
 )
 from frtb_drc.reference_data import get_lgd_rule, get_maturity_policy, iter_lgd_rules
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.securitisation import (
+    SecuritisationNonCtpCapitalInput,
+    calculate_securitisation_non_ctp_category_drc,
+)
 from frtb_drc.validation import (
     DrcInputError,
     chargeable_non_securitisation_bucket_keys,
+    chargeable_securitisation_non_ctp_bucket_keys,
     ensure_chargeable_credit_quality,
     ensure_chargeable_non_securitisation_bucket,
+    ensure_chargeable_securitisation_non_ctp_bucket,
     validate_positions,
 )
 
@@ -65,6 +72,39 @@ ArrayScalarT = TypeVar("ArrayScalarT", bound=np.generic)
 _FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
 _NETTING_CITATION = "US_NPR_210_B_2"
 _ZERO_CATEGORY_CITATION = "US_NPR_210_B_3_III"
+_SEC_NON_CTP_GROSS_CITATIONS = ("US_NPR_210_C_1", "BASEL_MAR22_27")
+_SEC_NON_CTP_NETTING_CITATIONS = (
+    "US_NPR_210_C_2",
+    "BASEL_MAR22_28",
+    "BASEL_MAR22_29",
+    "BASEL_MAR22_30",
+)
+_SEC_NON_CTP_BATCH_CITATIONS = (
+    *_SEC_NON_CTP_GROSS_CITATIONS,
+    *_SEC_NON_CTP_NETTING_CITATIONS,
+    "US_NPR_210_C_3_I_II",
+    "US_NPR_210_C_3_III",
+    "US_NPR_210_C_3_IV",
+    "BASEL_MAR22_31",
+    "BASEL_MAR22_32",
+    "BASEL_MAR22_33",
+    "BASEL_MAR22_34",
+    "BASEL_MAR22_35",
+)
+_CTP_GROSS_CITATIONS = ("US_NPR_210_D_1", "BASEL_MAR22_36", "BASEL_MAR22_37")
+_CTP_NETTING_CITATIONS = ("US_NPR_210_D_2", "BASEL_MAR22_39")
+_CTP_BATCH_CITATIONS = (
+    *_CTP_GROSS_CITATIONS,
+    *_CTP_NETTING_CITATIONS,
+    "US_NPR_210_D_3_I_III",
+    "US_NPR_210_D_3_IV",
+    "US_NPR_210_D_3_IV_D",
+    "US_NPR_210_D_3_V",
+    "BASEL_MAR22_40",
+    "BASEL_MAR22_41",
+    "BASEL_MAR22_44",
+    "BASEL_MAR22_45",
+)
 
 _SENIORITY_RANK: dict[DrcSeniority, int] = {
     DrcSeniority.COVERED_BOND: 0,
@@ -215,12 +255,12 @@ def build_drc_nonsec_batch_from_columns(
     risk_classes: ColumnInput,
     instrument_types: ColumnInput,
     default_directions: ColumnInput,
-    issuer_ids: NullableColumnInput,
+    issuer_ids: NullableColumnInput | None,
     tranche_ids: NullableColumnInput | None = None,
     index_series_ids: NullableColumnInput | None = None,
     bucket_keys: NullableColumnInput,
-    seniorities: NullableColumnInput,
-    credit_qualities: NullableColumnInput,
+    seniorities: NullableColumnInput | None,
+    credit_qualities: NullableColumnInput | None,
     notionals: ColumnInput,
     market_values: NullableColumnInput | None = None,
     cumulative_pnls: NullableColumnInput | None = None,
@@ -240,6 +280,7 @@ def build_drc_nonsec_batch_from_columns(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
+    _expected_risk_class: DrcRiskClass = DrcRiskClass.NON_SECURITISATION,
 ) -> DrcPositionBatch:
     """Build a validated non-securitisation DRC batch from columnar inputs."""
 
@@ -254,10 +295,7 @@ def build_drc_nonsec_batch_from_columns(
         risk_classes=risk_classes,
         instrument_types=instrument_types,
         default_directions=default_directions,
-        issuer_ids=issuer_ids,
         bucket_keys=bucket_keys,
-        seniorities=seniorities,
-        credit_qualities=credit_qualities,
         notionals=notionals,
         maturity_years=maturity_years,
         currencies=currencies,
@@ -265,9 +303,12 @@ def build_drc_nonsec_batch_from_columns(
     optional_lengths = {
         "tranche_ids": tranche_ids,
         "index_series_ids": index_series_ids,
+        "issuer_ids": issuer_ids,
         "market_values": market_values,
         "cumulative_pnls": cumulative_pnls,
         "lgd_overrides": lgd_overrides,
+        "seniorities": seniorities,
+        "credit_qualities": credit_qualities,
         "is_defaulted": is_defaulted,
         "is_gse": is_gse,
         "is_pse": is_pse,
@@ -309,11 +350,18 @@ def build_drc_nonsec_batch_from_columns(
         tranche_ids=_optional_text_array(tranche_ids, row_count, copy=copy_arrays),
         index_series_ids=_optional_text_array(index_series_ids, row_count, copy=copy_arrays),
         bucket_keys=_required_text_array(bucket_keys, "bucket_key", copy=copy_arrays),
-        seniorities=_enum_array(seniorities, DrcSeniority, "seniority", copy=copy_arrays),
-        credit_qualities=_enum_array(
+        seniorities=_nullable_enum_array(
+            seniorities,
+            DrcSeniority,
+            "seniority",
+            row_count,
+            copy=copy_arrays,
+        ),
+        credit_qualities=_nullable_enum_array(
             credit_qualities,
             CreditQuality,
             "credit_quality",
+            row_count,
             copy=copy_arrays,
         ),
         notionals=_required_float_array(notionals, "notional", copy=copy_arrays),
@@ -351,8 +399,156 @@ def build_drc_nonsec_batch_from_columns(
         handoff_hash=handoff_hash,
         diagnostics=tuple(dict(item) for item in diagnostics),
     )
-    _validate_batch(batch)
+    _validate_batch(batch, expected_risk_class=_expected_risk_class)
     return replace(batch, input_hash=input_hash_for_drc_batch(batch))
+
+
+def build_drc_securitisation_non_ctp_batch_from_columns(
+    *,
+    position_ids: ColumnInput,
+    source_row_ids: ColumnInput,
+    desk_ids: ColumnInput,
+    legal_entities: ColumnInput,
+    risk_classes: ColumnInput,
+    instrument_types: ColumnInput,
+    default_directions: ColumnInput,
+    issuer_ids: NullableColumnInput | None,
+    tranche_ids: NullableColumnInput | None = None,
+    index_series_ids: NullableColumnInput | None = None,
+    bucket_keys: NullableColumnInput,
+    seniorities: NullableColumnInput | None = None,
+    credit_qualities: NullableColumnInput | None = None,
+    notionals: ColumnInput,
+    market_values: NullableColumnInput | None = None,
+    cumulative_pnls: NullableColumnInput | None = None,
+    maturity_years: ColumnInput,
+    currencies: ColumnInput,
+    lgd_overrides: NullableColumnInput | None = None,
+    is_defaulted: ColumnInput | None = None,
+    is_gse: ColumnInput | None = None,
+    is_pse: ColumnInput | None = None,
+    is_covered_bond: ColumnInput | None = None,
+    lineage_source_systems: ColumnInput | None = None,
+    lineage_source_files: ColumnInput | None = None,
+    lineage_present: ColumnInput | None = None,
+    source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
+    citation_ids: Sequence[Sequence[str]] | None = None,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    copy_arrays: bool = True,
+) -> DrcPositionBatch:
+    """Build a validated securitisation non-CTP DRC batch from columnar inputs."""
+
+    return build_drc_nonsec_batch_from_columns(
+        position_ids=position_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        instrument_types=instrument_types,
+        default_directions=default_directions,
+        issuer_ids=issuer_ids,
+        tranche_ids=tranche_ids,
+        index_series_ids=index_series_ids,
+        bucket_keys=bucket_keys,
+        seniorities=seniorities,
+        credit_qualities=credit_qualities,
+        notionals=notionals,
+        market_values=market_values,
+        cumulative_pnls=cumulative_pnls,
+        maturity_years=maturity_years,
+        currencies=currencies,
+        lgd_overrides=lgd_overrides,
+        is_defaulted=is_defaulted,
+        is_gse=is_gse,
+        is_pse=is_pse,
+        is_covered_bond=is_covered_bond,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        lineage_present=lineage_present,
+        source_column_maps=source_column_maps,
+        citation_ids=citation_ids,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        copy_arrays=copy_arrays,
+        _expected_risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+    )
+
+
+def build_drc_ctp_batch_from_columns(
+    *,
+    position_ids: ColumnInput,
+    source_row_ids: ColumnInput,
+    desk_ids: ColumnInput,
+    legal_entities: ColumnInput,
+    risk_classes: ColumnInput,
+    instrument_types: ColumnInput,
+    default_directions: ColumnInput,
+    issuer_ids: NullableColumnInput | None,
+    tranche_ids: NullableColumnInput | None = None,
+    index_series_ids: NullableColumnInput | None = None,
+    bucket_keys: NullableColumnInput,
+    seniorities: NullableColumnInput | None = None,
+    credit_qualities: NullableColumnInput | None = None,
+    notionals: ColumnInput,
+    market_values: NullableColumnInput | None = None,
+    cumulative_pnls: NullableColumnInput | None = None,
+    maturity_years: ColumnInput,
+    currencies: ColumnInput,
+    lgd_overrides: NullableColumnInput | None = None,
+    is_defaulted: ColumnInput | None = None,
+    is_gse: ColumnInput | None = None,
+    is_pse: ColumnInput | None = None,
+    is_covered_bond: ColumnInput | None = None,
+    lineage_source_systems: ColumnInput | None = None,
+    lineage_source_files: ColumnInput | None = None,
+    lineage_present: ColumnInput | None = None,
+    source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
+    citation_ids: Sequence[Sequence[str]] | None = None,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+    copy_arrays: bool = True,
+) -> DrcPositionBatch:
+    """Build a validated CTP DRC batch from columnar inputs."""
+
+    return build_drc_nonsec_batch_from_columns(
+        position_ids=position_ids,
+        source_row_ids=source_row_ids,
+        desk_ids=desk_ids,
+        legal_entities=legal_entities,
+        risk_classes=risk_classes,
+        instrument_types=instrument_types,
+        default_directions=default_directions,
+        issuer_ids=issuer_ids,
+        tranche_ids=tranche_ids,
+        index_series_ids=index_series_ids,
+        bucket_keys=bucket_keys,
+        seniorities=seniorities,
+        credit_qualities=credit_qualities,
+        notionals=notionals,
+        market_values=market_values,
+        cumulative_pnls=cumulative_pnls,
+        maturity_years=maturity_years,
+        currencies=currencies,
+        lgd_overrides=lgd_overrides,
+        is_defaulted=is_defaulted,
+        is_gse=is_gse,
+        is_pse=is_pse,
+        is_covered_bond=is_covered_bond,
+        lineage_source_systems=lineage_source_systems,
+        lineage_source_files=lineage_source_files,
+        lineage_present=lineage_present,
+        source_column_maps=source_column_maps,
+        citation_ids=citation_ids,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+        copy_arrays=copy_arrays,
+        _expected_risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+    )
 
 
 def input_hash_for_drc_batch(batch: DrcPositionBatch) -> str:
@@ -367,61 +563,118 @@ def calculate_drc_capital_from_batch(
     *,
     context: DrcCalculationContext,
 ) -> DrcBatchCapitalCalculation:
-    """Calculate supported non-securitisation DRC capital from a columnar batch."""
+    """Calculate supported DRC capital from a columnar batch."""
 
     if not isinstance(batch, DrcPositionBatch):
         raise DrcInputError("batch must be DrcPositionBatch")
     _validate_context(context)
     profile = get_rule_profile(context.profile_id)
+    risk_class = _batch_risk_class(batch)
     _validate_supported_batch_run(batch, context=context, profile=profile)
     calculation_batch, fx_conversions = _convert_batch_to_base_currency(
         batch,
         context=context,
     )
 
-    gross_jtd, lgd_citations = _gross_jtd_array(
+    if risk_class is DrcRiskClass.NON_SECURITISATION:
+        gross_jtd, lgd_citations = _gross_jtd_array(
+            calculation_batch,
+            profile_id=profile.profile_id,
+        )
+        maturity_weights, scaled_jtd, maturity_citation = _scaled_jtd_array(
+            calculation_batch,
+            gross_jtd,
+            profile_id=profile.profile_id,
+        )
+        net_jtds = _calculate_net_jtds_from_arrays(calculation_batch, gross_jtd, scaled_jtd)
+        capital_inputs = _capital_inputs(calculation_batch, net_jtds)
+        category = (
+            calculate_category_drc(capital_inputs, profile_id=profile.profile_id)
+            if capital_inputs
+            else _zero_nonsec_category()
+        )
+        formula_citations = (
+            *_FORMULA_CITATIONS,
+            maturity_citation,
+            *lgd_citations,
+            *((_NETTING_CITATION,) if net_jtds else ()),
+        )
+    elif risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
+        gross_jtd = _market_value_gross_jtd_array(calculation_batch)
+        maturity_weights, scaled_jtd, maturity_citation = _scaled_jtd_array(
+            calculation_batch,
+            gross_jtd,
+            profile_id=profile.profile_id,
+        )
+        net_jtds = _calculate_securitisation_non_ctp_net_jtds_from_arrays(
+            calculation_batch,
+            gross_jtd,
+            scaled_jtd,
+            context=context,
+        )
+        sec_capital_inputs = _securitisation_non_ctp_capital_inputs_from_batch(
+            net_jtds,
+            risk_weights=context.securitisation_non_ctp_risk_weights,
+        )
+        category = calculate_securitisation_non_ctp_category_drc(
+            sec_capital_inputs,
+            profile_id=profile.profile_id,
+        )
+        formula_citations = (*_SEC_NON_CTP_BATCH_CITATIONS, maturity_citation)
+    elif risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
+        gross_jtd = _market_value_gross_jtd_array(calculation_batch)
+        maturity_weights, scaled_jtd, maturity_citation = _scaled_jtd_array(
+            calculation_batch,
+            gross_jtd,
+            profile_id=profile.profile_id,
+        )
+        net_jtds = _calculate_ctp_net_jtds_from_arrays(
+            calculation_batch,
+            gross_jtd,
+            scaled_jtd,
+            context=context,
+        )
+        ctp_capital_inputs = _ctp_capital_inputs_from_batch(
+            net_jtds,
+            risk_weights=context.ctp_risk_weights,
+        )
+        category = calculate_ctp_category_drc(ctp_capital_inputs, profile_id=profile.profile_id)
+        formula_citations = (*_CTP_BATCH_CITATIONS, maturity_citation)
+    else:  # pragma: no cover - _batch_risk_class only returns known enum values.
+        raise DrcInputError(f"unsupported DRC batch risk_class: {risk_class.value}")
+
+    input_hash = _context_input_hash_for_batch(
+        calculation_batch.input_hash,
         calculation_batch,
-        profile_id=profile.profile_id,
-    )
-    maturity_weights, scaled_jtd, maturity_citation = _scaled_jtd_array(
-        calculation_batch,
-        gross_jtd,
-        profile_id=profile.profile_id,
-    )
-    net_jtds = _calculate_net_jtds_from_arrays(calculation_batch, gross_jtd, scaled_jtd)
-    capital_inputs = _capital_inputs(calculation_batch, net_jtds)
-    category = (
-        calculate_category_drc(capital_inputs, profile_id=profile.profile_id)
-        if capital_inputs
-        else _zero_nonsec_category()
+        context=context,
+        risk_class=risk_class,
     )
     result = DrcCapitalResult(
-        result_id=f"drc-{_slug(context.run_id)}-{calculation_batch.input_hash[:12]}",
+        result_id=f"drc-{_slug(context.run_id)}-{input_hash[:12]}",
         run_id=context.run_id,
         calculation_date=context.calculation_date,
         base_currency=context.base_currency,
         profile_id=profile.profile_id,
         profile_hash=profile.content_hash,
-        input_hash=calculation_batch.input_hash,
+        input_hash=input_hash,
         categories=(category,),
         total_drc=category.capital,
         citations=_collect_batch_citations(
             calculation_batch,
             category=category,
             net_jtds=net_jtds,
-            lgd_citations=lgd_citations,
-            maturity_citation=maturity_citation,
+            formula_citations=formula_citations,
             fx_citations=fx_citation_ids(fx_conversions),
         ),
         warnings=(),
         branch_metadata=(
             BranchMetadata(
-                branch_id="drc-non-securitisation-batch-api",
+                branch_id=f"drc-{_slug(risk_class.value)}-batch-api",
                 branch_type=BranchType.NORMAL,
                 source_id=profile.profile_id,
                 selected=True,
                 reason=(
-                    "batch API executed supported non-securitisation path; "
+                    f"batch API executed supported {risk_class.value} path; "
                     "Euler attribution is not calculated"
                 ),
                 citations=("US_NPR_210_SCOPE",),
@@ -460,6 +713,34 @@ def _validate_context(context: DrcCalculationContext) -> None:
     if context.citation_policy.strip().lower() != "strict":
         raise DrcInputError(f"unsupported citation_policy: {context.citation_policy}")
     validate_fx_rates(context)
+    _validate_context_risk_weight_map(
+        context.securitisation_non_ctp_risk_weights,
+        field_name="context.securitisation_non_ctp_risk_weights",
+    )
+    _validate_context_text_map(
+        context.securitisation_non_ctp_offset_groups,
+        field_name="context.securitisation_non_ctp_offset_groups",
+    )
+    _validate_context_risk_weight_map(
+        context.ctp_risk_weights,
+        field_name="context.ctp_risk_weights",
+    )
+    _validate_context_text_map(context.ctp_offset_groups, field_name="context.ctp_offset_groups")
+
+
+def _validate_context_risk_weight_map(values: Mapping[str, float], *, field_name: str) -> None:
+    for position_id, risk_weight in values.items():
+        _required_text(position_id, f"{field_name} position_id")
+        _coerce_finite_non_negative_float(
+            risk_weight,
+            field_name=f"{field_name}[{position_id!r}]",
+        )
+
+
+def _validate_context_text_map(values: Mapping[str, str], *, field_name: str) -> None:
+    for position_id, value in values.items():
+        _required_text(position_id, f"{field_name} position_id")
+        _required_text(value, f"{field_name}[{position_id!r}]")
 
 
 def _validate_supported_batch_run(
@@ -468,7 +749,8 @@ def _validate_supported_batch_run(
     context: DrcCalculationContext,
     profile: DrcRuleProfile,
 ) -> None:
-    ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
+    risk_class = _batch_risk_class(batch)
+    ensure_risk_class_supported(profile, risk_class)
     scoped_desk_id = context.desk_id.strip()
     scoped_legal_entity = context.legal_entity.strip()
     if scoped_desk_id:
@@ -490,6 +772,58 @@ def _validate_supported_batch_run(
                 f"{scoped_legal_entity}"
             ),
         )
+    if risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
+        _validate_context_position_map(
+            batch,
+            context.securitisation_non_ctp_risk_weights,
+            field_name="context.securitisation_non_ctp_risk_weights",
+        )
+        _validate_context_position_map(
+            batch,
+            context.securitisation_non_ctp_offset_groups,
+            field_name="context.securitisation_non_ctp_offset_groups",
+            require_all=False,
+        )
+    elif risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
+        _validate_context_position_map(
+            batch,
+            context.ctp_risk_weights,
+            field_name="context.ctp_risk_weights",
+        )
+        _validate_context_position_map(
+            batch,
+            context.ctp_offset_groups,
+            field_name="context.ctp_offset_groups",
+            require_all=False,
+        )
+
+
+def _batch_risk_class(batch: DrcPositionBatch) -> DrcRiskClass:
+    unique = tuple(sorted(np.unique(batch.risk_classes)))
+    if len(unique) != 1:
+        raise DrcInputError(
+            "DRC batch calculation requires one risk_class; mixed risk classes must "
+            "be split into class-specific batches"
+        )
+    return DrcRiskClass(cast(str, unique[0]))
+
+
+def _validate_context_position_map(
+    batch: DrcPositionBatch,
+    values: Mapping[str, object],
+    *,
+    field_name: str,
+    require_all: bool = True,
+) -> None:
+    position_ids = {cast(str, position_id) for position_id in batch.position_ids.tolist()}
+    keys = {str(position_id) for position_id in values}
+    if require_all:
+        missing = sorted(position_ids - keys)
+        if missing:
+            raise DrcInputError(f"{field_name} is required for positions: " + ", ".join(missing))
+    unused = sorted(keys - position_ids)
+    if unused:
+        raise DrcInputError(f"{field_name} contains unused position ids: " + ", ".join(unused))
 
 
 def _convert_batch_to_base_currency(
@@ -530,25 +864,25 @@ def _convert_batch_to_base_currency(
     return converted, conversions
 
 
-def _validate_batch(batch: DrcPositionBatch) -> None:
-    if not np.all(batch.risk_classes == DrcRiskClass.NON_SECURITISATION.value):
-        raise DrcInputError("DRC batch only supports non-securitisation risk class")
-    if np.any(batch.issuer_ids == None):  # noqa: E711
-        raise DrcInputError("issuer_id is required for non-securitisation DRC batch")
-    bucket_mask = np.isin(batch.bucket_keys, chargeable_non_securitisation_bucket_keys())
-    if not bool(np.all(bucket_mask)):
-        first = int(np.argmax(~bucket_mask))
-        ensure_chargeable_non_securitisation_bucket(
-            cast(str, batch.bucket_keys[first]),
-            position_id=cast(str, batch.position_ids[first]),
+def _validate_batch(batch: DrcPositionBatch, *, expected_risk_class: DrcRiskClass) -> None:
+    if not np.all(batch.risk_classes == expected_risk_class.value):
+        unique = ", ".join(str(value) for value in sorted(np.unique(batch.risk_classes)))
+        raise DrcInputError(
+            "DRC batch builder requires a single supported risk_class "
+            f"{expected_risk_class.value}; received {unique}"
         )
-    unrated_mask = batch.credit_qualities == CreditQuality.UNRATED.value
-    if bool(np.any(unrated_mask)):
-        first = int(np.argmax(unrated_mask))
-        ensure_chargeable_credit_quality(
-            CreditQuality.UNRATED,
-            position_id=cast(str, batch.position_ids[first]),
-        )
+    _validate_common_batch_fields(batch)
+    if expected_risk_class is DrcRiskClass.NON_SECURITISATION:
+        _validate_nonsec_batch(batch)
+    elif expected_risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
+        _validate_securitisation_non_ctp_batch(batch)
+    elif expected_risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
+        _validate_ctp_batch(batch)
+    else:  # pragma: no cover - all enum values are handled above.
+        raise DrcInputError(f"unsupported DRC batch risk_class: {expected_risk_class.value}")
+
+
+def _validate_common_batch_fields(batch: DrcPositionBatch) -> None:
     if not np.all(np.isfinite(batch.notionals)):
         raise DrcInputError("notional values must be finite")
     if not np.all(np.isfinite(batch.maturity_years)):
@@ -577,6 +911,80 @@ def _validate_batch(batch: DrcPositionBatch) -> None:
         mismatch_when_equal=True,
         message=lambda _index: "lineage.source_file must be non-empty",
     )
+
+
+def _validate_nonsec_batch(batch: DrcPositionBatch) -> None:
+    if np.any(batch.issuer_ids == None):  # noqa: E711
+        raise DrcInputError("issuer_id is required for non-securitisation DRC batch")
+    if np.any(batch.seniorities == None):  # noqa: E711
+        raise DrcInputError("seniority is required for non-securitisation DRC batch")
+    if np.any(batch.credit_qualities == None):  # noqa: E711
+        raise DrcInputError("credit_quality is required for non-securitisation DRC batch")
+    bucket_mask = np.isin(batch.bucket_keys, chargeable_non_securitisation_bucket_keys())
+    if not bool(np.all(bucket_mask)):
+        first = int(np.argmax(~bucket_mask))
+        ensure_chargeable_non_securitisation_bucket(
+            cast(str, batch.bucket_keys[first]),
+            position_id=cast(str, batch.position_ids[first]),
+        )
+    unrated_mask = batch.credit_qualities == CreditQuality.UNRATED.value
+    if bool(np.any(unrated_mask)):
+        first = int(np.argmax(unrated_mask))
+        ensure_chargeable_credit_quality(
+            CreditQuality.UNRATED,
+            position_id=cast(str, batch.position_ids[first]),
+        )
+
+
+def _validate_securitisation_non_ctp_batch(batch: DrcPositionBatch) -> None:
+    if np.any(batch.tranche_ids == None):  # noqa: E711
+        raise DrcInputError("tranche_id is required for securitisation non-CTP DRC batch")
+    bucket_mask = np.isin(
+        batch.bucket_keys,
+        chargeable_securitisation_non_ctp_bucket_keys(),
+    )
+    if not bool(np.all(bucket_mask)):
+        first = int(np.argmax(~bucket_mask))
+        ensure_chargeable_securitisation_non_ctp_bucket(
+            cast(str, batch.bucket_keys[first]),
+            position_id=cast(str, batch.position_ids[first]),
+        )
+    _validate_market_value_default_exposure_batch(
+        batch,
+        risk_class_label="securitisation non-CTP",
+    )
+
+
+def _validate_ctp_batch(batch: DrcPositionBatch) -> None:
+    missing_identity = (
+        (batch.tranche_ids == None)  # noqa: E711
+        & (batch.index_series_ids == None)  # noqa: E711
+        & (batch.issuer_ids == None)  # noqa: E711
+    )
+    if bool(np.any(missing_identity)):
+        first = int(np.nonzero(missing_identity)[0][0])
+        raise DrcInputError(
+            "CTP positions require tranche_id, index_series_id, or issuer_id: "
+            f"{batch.position_ids[first]}"
+        )
+    _validate_market_value_default_exposure_batch(batch, risk_class_label="CTP")
+
+
+def _validate_market_value_default_exposure_batch(
+    batch: DrcPositionBatch,
+    *,
+    risk_class_label: str,
+) -> None:
+    missing_market_value = np.isnan(batch.market_values)
+    if bool(np.any(missing_market_value)):
+        first = int(np.nonzero(missing_market_value)[0][0])
+        raise DrcInputError(
+            f"{risk_class_label} position {batch.position_ids[first]} requires market_value"
+        )
+    if bool(np.any(~np.isnan(batch.lgd_overrides))):
+        raise DrcInputError(
+            f"{risk_class_label} gross JTD uses market value; lgd_override is not supported"
+        )
 
 
 def _gross_jtd_array(
@@ -666,6 +1074,10 @@ def _scaled_jtd_array(
     return weights.astype(np.float64), (gross_jtd * weights).astype(np.float64), policy.citation_id
 
 
+def _market_value_gross_jtd_array(batch: DrcPositionBatch) -> FloatArray:
+    return np.abs(batch.market_values).astype(np.float64)
+
+
 def _calculate_net_jtds_from_arrays(
     batch: DrcPositionBatch,
     gross_jtd: FloatArray,
@@ -683,6 +1095,297 @@ def _calculate_net_jtds_from_arrays(
     for key in sorted(grouped):
         net_records.extend(_net_group(batch, grouped[key], gross_jtd, scaled_jtd, key=key))
     return tuple(net_records)
+
+
+def _calculate_securitisation_non_ctp_net_jtds_from_arrays(
+    batch: DrcPositionBatch,
+    gross_jtd: FloatArray,
+    scaled_jtd: FloatArray,
+    *,
+    context: DrcCalculationContext,
+) -> tuple[NetJtd, ...]:
+    offset_groups = _securitisation_non_ctp_offset_groups(batch, context=context)
+    return _calculate_exact_group_net_jtds_from_arrays(
+        batch,
+        gross_jtd,
+        scaled_jtd,
+        offset_groups=offset_groups,
+        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+        seniority_layer="SECURITISATION_TRANCHE",
+        net_prefix="sec-non-ctp",
+        normal_reason=(
+            "securitisation non-CTP netting used same-pool/same-tranche identity "
+            "or explicit replication-group evidence"
+        ),
+        rejected_reason_code="SEC_NON_CTP_OFFSET_REQUIRES_SAME_POOL_TRANCHE_OR_REPLICATION",
+        netting_citations=_SEC_NON_CTP_NETTING_CITATIONS,
+    )
+
+
+def _calculate_ctp_net_jtds_from_arrays(
+    batch: DrcPositionBatch,
+    gross_jtd: FloatArray,
+    scaled_jtd: FloatArray,
+    *,
+    context: DrcCalculationContext,
+) -> tuple[NetJtd, ...]:
+    offset_groups = _ctp_offset_groups(batch, context=context)
+    return _calculate_exact_group_net_jtds_from_arrays(
+        batch,
+        gross_jtd,
+        scaled_jtd,
+        offset_groups=offset_groups,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        seniority_layer="CTP",
+        net_prefix="ctp",
+        normal_reason=(
+            "CTP netting used exact exposure identity or explicit replication group evidence"
+        ),
+        rejected_reason_code="CTP_OFFSET_REQUIRES_EXACT_MATCH_OR_EXPLICIT_REPLICATION",
+        netting_citations=_CTP_NETTING_CITATIONS,
+    )
+
+
+def _calculate_exact_group_net_jtds_from_arrays(
+    batch: DrcPositionBatch,
+    gross_jtd: FloatArray,
+    scaled_jtd: FloatArray,
+    *,
+    offset_groups: ObjectArray,
+    risk_class: DrcRiskClass,
+    seniority_layer: str,
+    net_prefix: str,
+    normal_reason: str,
+    rejected_reason_code: str,
+    netting_citations: tuple[str, ...],
+) -> tuple[NetJtd, ...]:
+    grouped: dict[tuple[str, str], list[int]] = {}
+    for index in _sorted_indices(batch):
+        key = (cast(str, batch.bucket_keys[index]), cast(str, offset_groups[index]))
+        grouped.setdefault(key, []).append(index)
+
+    rejected_by_bucket = _rejected_exact_group_offsets(
+        batch,
+        offset_groups=offset_groups,
+        net_prefix=net_prefix,
+        rejected_reason_code=rejected_reason_code,
+        netting_citations=netting_citations,
+    )
+    records: list[NetJtd] = []
+    for key in sorted(grouped):
+        bucket_key, group_key = key
+        indices = grouped[key]
+        long_indices = [
+            index
+            for index in indices
+            if batch.default_directions[index] == DefaultDirection.LONG.value
+        ]
+        short_indices = [
+            index
+            for index in indices
+            if batch.default_directions[index] == DefaultDirection.SHORT.value
+        ]
+        gross_long = math.fsum(float(gross_jtd[index]) for index in long_indices)
+        gross_short = math.fsum(float(gross_jtd[index]) for index in short_indices)
+        scaled_long = math.fsum(float(scaled_jtd[index]) for index in long_indices)
+        scaled_short = math.fsum(float(scaled_jtd[index]) for index in short_indices)
+        signed_net = scaled_long - scaled_short
+        if signed_net == 0.0:
+            continue
+        direction = DefaultDirection.LONG if signed_net > 0.0 else DefaultDirection.SHORT
+        records.append(
+            NetJtd(
+                net_jtd_id=(
+                    f"net-{net_prefix}-{_slug(bucket_key)}-{_slug(group_key)}-"
+                    f"{direction.value.lower()}"
+                ),
+                netting_group_id=f"ng-{net_prefix}-{_slug(bucket_key)}-{_slug(group_key)}",
+                risk_class=risk_class,
+                bucket_key=bucket_key,
+                obligor_or_tranche_key=group_key,
+                seniority_layer=seniority_layer,
+                gross_long=gross_long,
+                gross_short=gross_short,
+                scaled_long=scaled_long,
+                scaled_short=scaled_short,
+                net_amount=abs(signed_net),
+                net_direction=direction,
+                position_ids=tuple(cast(str, batch.position_ids[index]) for index in indices),
+                scaled_jtd_ids=tuple(f"scaled-{batch.position_ids[index]}" for index in indices),
+                rejected_offsets=rejected_by_bucket.get(bucket_key, ()),
+                branch_metadata=(
+                    BranchMetadata(
+                        branch_id=f"net-{net_prefix}-{_slug(bucket_key)}-{_slug(group_key)}",
+                        branch_type=BranchType.NORMAL,
+                        source_id=group_key,
+                        selected=True,
+                        reason=normal_reason,
+                        citations=netting_citations,
+                    ),
+                ),
+            )
+        )
+    return tuple(records)
+
+
+def _rejected_exact_group_offsets(
+    batch: DrcPositionBatch,
+    *,
+    offset_groups: ObjectArray,
+    net_prefix: str,
+    rejected_reason_code: str,
+    netting_citations: tuple[str, ...],
+) -> dict[str, tuple[RejectedOffset, ...]]:
+    grouped: dict[str, list[int]] = {}
+    for index in _sorted_indices(batch):
+        grouped.setdefault(cast(str, batch.bucket_keys[index]), []).append(index)
+
+    rejected_by_bucket: dict[str, tuple[RejectedOffset, ...]] = {}
+    sequence = count(1)
+    for bucket_key in sorted(grouped):
+        indices = grouped[bucket_key]
+        long_groups = _direction_groups(batch, indices, offset_groups, DefaultDirection.LONG)
+        short_groups = _direction_groups(batch, indices, offset_groups, DefaultDirection.SHORT)
+        rejected = _bounded_rejected_group_offsets(
+            bucket_key=bucket_key,
+            long_groups=long_groups,
+            short_groups=short_groups,
+            net_prefix=net_prefix,
+            sequence=sequence,
+            representative=lambda item: _representative_scaled_id(batch, item),
+            rejected_reason_code=rejected_reason_code,
+            netting_citations=netting_citations,
+        )
+        if rejected:
+            rejected_by_bucket[bucket_key] = tuple(rejected)
+    return rejected_by_bucket
+
+
+def _bounded_rejected_group_offsets(
+    *,
+    bucket_key: str,
+    long_groups: Mapping[str, Sequence[int]],
+    short_groups: Mapping[str, Sequence[int]],
+    net_prefix: str,
+    sequence: Iterator[int],
+    representative: Callable[[Sequence[int]], str],
+    rejected_reason_code: str,
+    netting_citations: tuple[str, ...],
+) -> tuple[RejectedOffset, ...]:
+    rejected: list[RejectedOffset] = []
+    sorted_short_groups = sorted(short_groups)
+    for long_group, long_indices in sorted(long_groups.items()):
+        candidate_short_group = next(
+            (item for item in sorted_short_groups if item != long_group), None
+        )
+        if candidate_short_group is None:
+            continue
+        rejected.append(
+            RejectedOffset(
+                rejection_id=f"rej-{net_prefix}-{_slug(bucket_key)}-{next(sequence)}",
+                long_source_id=representative(long_indices),
+                short_source_id=representative(short_groups[candidate_short_group]),
+                reason_code=rejected_reason_code,
+                citations=netting_citations,
+            )
+        )
+    covered_short_source_ids = {record.short_source_id for record in rejected}
+    sorted_long_groups = sorted(long_groups)
+    for short_group, short_indices in sorted(short_groups.items()):
+        short_source_id = representative(short_indices)
+        if short_source_id in covered_short_source_ids:
+            continue
+        candidate_long_group = next(
+            (item for item in sorted_long_groups if item != short_group), None
+        )
+        if candidate_long_group is None:
+            continue
+        rejected.append(
+            RejectedOffset(
+                rejection_id=f"rej-{net_prefix}-{_slug(bucket_key)}-{next(sequence)}",
+                long_source_id=representative(long_groups[candidate_long_group]),
+                short_source_id=short_source_id,
+                reason_code=rejected_reason_code,
+                citations=netting_citations,
+            )
+        )
+    return tuple(rejected)
+
+
+def _direction_groups(
+    batch: DrcPositionBatch,
+    indices: Sequence[int],
+    offset_groups: ObjectArray,
+    direction: DefaultDirection,
+) -> dict[str, list[int]]:
+    grouped: dict[str, list[int]] = {}
+    for index in indices:
+        if batch.default_directions[index] == direction.value:
+            grouped.setdefault(cast(str, offset_groups[index]), []).append(index)
+    return grouped
+
+
+def _representative_scaled_id(batch: DrcPositionBatch, indices: Sequence[int]) -> str:
+    return sorted(f"scaled-{batch.position_ids[index]}" for index in indices)[0]
+
+
+def _securitisation_non_ctp_offset_groups(
+    batch: DrcPositionBatch,
+    *,
+    context: DrcCalculationContext,
+) -> ObjectArray:
+    groups: list[str] = []
+    for index in range(batch.row_count):
+        position_id = cast(str, batch.position_ids[index])
+        explicit = context.securitisation_non_ctp_offset_groups.get(position_id)
+        if explicit is not None:
+            groups.append(
+                _required_text(
+                    explicit,
+                    f"securitisation_non_ctp_offset_groups[{position_id!r}]",
+                )
+            )
+            continue
+        pool_id = _optional_text(batch.issuer_ids[index])
+        tranche_id = _optional_text(batch.tranche_ids[index])
+        if pool_id is None:
+            raise DrcInputError(
+                "securitisation non-CTP offsetting requires issuer_id to carry the "
+                f"underlying pool id for position {position_id}, unless an explicit "
+                "securitisation_non_ctp_offset_group is supplied"
+            )
+        if tranche_id is None:
+            raise DrcInputError(f"securitisation non-CTP position {position_id} has no tranche_id")
+        groups.append(f"exact:pool:{pool_id}:tranche:{tranche_id}")
+    return _object_array(groups, copy=True)
+
+
+def _ctp_offset_groups(
+    batch: DrcPositionBatch,
+    *,
+    context: DrcCalculationContext,
+) -> ObjectArray:
+    groups: list[str] = []
+    for index in range(batch.row_count):
+        position_id = cast(str, batch.position_ids[index])
+        explicit = context.ctp_offset_groups.get(position_id)
+        if explicit is not None:
+            groups.append(_required_text(explicit, f"ctp_offset_groups[{position_id!r}]"))
+            continue
+        index_series_id = _optional_text(batch.index_series_ids[index])
+        tranche_id = _optional_text(batch.tranche_ids[index])
+        issuer_id = _optional_text(batch.issuer_ids[index])
+        if index_series_id is not None and tranche_id is not None:
+            groups.append(f"exact:index:{index_series_id}:tranche:{tranche_id}")
+        elif index_series_id is not None:
+            groups.append(f"exact:index:{index_series_id}:non-tranched")
+        elif issuer_id is not None:
+            groups.append(f"exact:single-name:{issuer_id}")
+        elif tranche_id is not None:
+            groups.append(f"exact:tranche:{tranche_id}")
+        else:
+            raise DrcInputError(f"CTP position {position_id} has no offset identity")
+    return _object_array(groups, copy=True)
 
 
 def _net_group(
@@ -907,6 +1610,87 @@ def _capital_inputs(
     )
 
 
+def _securitisation_non_ctp_capital_inputs_from_batch(
+    net_jtds: tuple[NetJtd, ...],
+    *,
+    risk_weights: Mapping[str, float],
+) -> tuple[SecuritisationNonCtpCapitalInput, ...]:
+    inputs: list[SecuritisationNonCtpCapitalInput] = []
+    for net_jtd in net_jtds:
+        weights = tuple(
+            sorted(
+                _risk_weights_for_net_jtd(
+                    net_jtd,
+                    risk_weights=risk_weights,
+                    field_name="context.securitisation_non_ctp_risk_weights",
+                )
+            )
+        )
+        if len(weights) != 1:
+            raise DrcInputError(
+                "securitisation non-CTP net JTD must map to exactly one risk weight: "
+                f"{net_jtd.net_jtd_id}"
+            )
+        inputs.append(SecuritisationNonCtpCapitalInput(net_jtd=net_jtd, risk_weight=weights[0]))
+    return tuple(inputs)
+
+
+def _ctp_capital_inputs_from_batch(
+    net_jtds: tuple[NetJtd, ...],
+    *,
+    risk_weights: Mapping[str, float],
+) -> tuple[CtpCapitalInput, ...]:
+    inputs: list[CtpCapitalInput] = []
+    for net_jtd in net_jtds:
+        weights = tuple(
+            sorted(
+                _risk_weights_for_net_jtd(
+                    net_jtd,
+                    risk_weights=risk_weights,
+                    field_name="context.ctp_risk_weights",
+                )
+            )
+        )
+        if len(weights) != 1:
+            raise DrcInputError(
+                f"CTP net JTD must map to exactly one risk weight: {net_jtd.net_jtd_id}"
+            )
+        inputs.append(CtpCapitalInput(net_jtd=net_jtd, risk_weight=weights[0]))
+    return tuple(inputs)
+
+
+def _risk_weights_for_net_jtd(
+    net_jtd: NetJtd,
+    *,
+    risk_weights: Mapping[str, float],
+    field_name: str,
+) -> set[float]:
+    weights: set[float] = set()
+    for position_id in net_jtd.position_ids:
+        try:
+            risk_weight = float(risk_weights[position_id])
+        except KeyError as exc:
+            raise DrcInputError(f"{field_name} is required for position {position_id}") from exc
+        except (ValueError, TypeError) as exc:
+            raise DrcInputError(
+                f"{field_name}[{position_id!r}] must be a valid finite number"
+            ) from exc
+        if not math.isfinite(risk_weight) or risk_weight < 0.0:
+            raise DrcInputError(f"{field_name}[{position_id!r}] must be finite and non-negative")
+        weights.add(risk_weight)
+    return weights
+
+
+def _coerce_finite_non_negative_float(value: object, *, field_name: str) -> float:
+    try:
+        result = float(cast(Any, value))
+    except (ValueError, TypeError) as exc:
+        raise DrcInputError(f"{field_name} must be a valid finite number") from exc
+    if not math.isfinite(result) or result < 0.0:
+        raise DrcInputError(f"{field_name} must be finite and non-negative")
+    return result
+
+
 def _credit_quality_for_net_jtd(
     net_jtd: NetJtd,
     credit_quality_by_position: Mapping[str, CreditQuality],
@@ -943,19 +1727,14 @@ def _collect_batch_citations(
     *,
     category: CategoryDrc,
     net_jtds: tuple[NetJtd, ...],
-    lgd_citations: tuple[str, ...],
-    maturity_citation: str,
+    formula_citations: tuple[str, ...],
     fx_citations: tuple[str, ...] = (),
 ) -> tuple[str, ...]:
     citation_ids = {
         "US_NPR_210_SCOPE",
-        *_FORMULA_CITATIONS,
-        maturity_citation,
-        *lgd_citations,
+        *formula_citations,
         *fx_citations,
     }
-    if net_jtds:
-        citation_ids.add(_NETTING_CITATION)
     for group in batch.citation_ids:
         citation_ids.update(group)
     citation_ids.update(_branch_citations(category.branch_metadata))
@@ -969,6 +1748,56 @@ def _collect_batch_citations(
         for rejected_offset in net_jtd.rejected_offsets:
             citation_ids.update(rejected_offset.citations)
     return tuple(sorted(citation_ids))
+
+
+def _context_input_hash_for_batch(
+    input_hash: str,
+    batch: DrcPositionBatch,
+    *,
+    context: DrcCalculationContext,
+    risk_class: DrcRiskClass,
+) -> str:
+    if risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
+        return _hash_context_position_maps(
+            input_hash,
+            batch,
+            risk_weights=context.securitisation_non_ctp_risk_weights,
+            offset_groups=context.securitisation_non_ctp_offset_groups,
+            risk_weight_key="securitisation_non_ctp_risk_weights",
+            offset_group_key="securitisation_non_ctp_offset_groups",
+        )
+    if risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
+        return _hash_context_position_maps(
+            input_hash,
+            batch,
+            risk_weights=context.ctp_risk_weights,
+            offset_groups=context.ctp_offset_groups,
+            risk_weight_key="ctp_risk_weights",
+            offset_group_key="ctp_offset_groups",
+        )
+    return input_hash
+
+
+def _hash_context_position_maps(
+    input_hash: str,
+    batch: DrcPositionBatch,
+    *,
+    risk_weights: Mapping[str, float],
+    offset_groups: Mapping[str, str],
+    risk_weight_key: str,
+    offset_group_key: str,
+) -> str:
+    position_ids = tuple(sorted(cast(str, position_id) for position_id in batch.position_ids))
+    payload = {
+        "input_hash": input_hash,
+        risk_weight_key: {position_id: risk_weights[position_id] for position_id in position_ids},
+        offset_group_key: {
+            position_id: offset_groups[position_id]
+            for position_id in position_ids
+            if position_id in offset_groups
+        },
+    }
+    return _hash_payload(payload)
 
 
 def _branch_citations(branches: tuple[BranchMetadata, ...]) -> set[str]:
@@ -1101,6 +1930,27 @@ def _enum_array(
 ) -> ObjectArray:
     return _object_array(
         [_coerce_enum_value(value, enum_type, field_name) for value in values],
+        copy=copy,
+    )
+
+
+def _nullable_enum_array(
+    values: NullableColumnInput | None,
+    enum_type: type[EnumT],
+    field_name: str,
+    row_count: int,
+    *,
+    copy: bool,
+) -> ObjectArray:
+    if values is None:
+        return _object_array([None] * row_count, copy=copy)
+    return _object_array(
+        [
+            None
+            if _optional_text(value) is None
+            else _coerce_enum_value(value, enum_type, field_name)
+            for value in values
+        ],
         copy=copy,
     )
 
@@ -1284,14 +2134,16 @@ def _seniority_rank(seniority: DrcSeniority) -> int:
 
 
 def _slug(value: str) -> str:
-    return value.lower().replace(" ", "-").replace("_", "-")
+    return value.lower().replace(" ", "-").replace("_", "-").replace(":", "-").replace("/", "-")
 
 
 __all__ = [
     "DrcBatchCapitalCalculation",
     "DrcPositionBatch",
+    "build_drc_ctp_batch_from_columns",
     "build_drc_nonsec_batch_from_columns",
     "build_drc_nonsec_batch_from_positions",
+    "build_drc_securitisation_non_ctp_batch_from_columns",
     "calculate_drc_capital_from_batch",
     "input_hash_for_drc_batch",
 ]

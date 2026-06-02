@@ -20,7 +20,7 @@ Polars, or Arrow dataframe expressions.
 
 | Package | Issue | PR | Triage Evidence | Batch Entrypoints | Validation Evidence |
 | --- | --- | --- | --- | --- | --- |
-| DRC | [#299](https://github.com/tomanizer/frtb-capital/issues/299) | [#303](https://github.com/tomanizer/frtb-capital/pull/303) | `frtb-drc-arrow-batch-triage.md` | `build_drc_nonsec_batch_from_handoff`, `build_drc_nonsec_batch_from_columns`, `calculate_drc_capital_from_batch`, `input_hash_for_drc_batch` | PR #303 CI passed; local `packages/frtb-drc/tests` reported 106 tests; broad `make check` reported 1336 tests. |
+| DRC | [#299](https://github.com/tomanizer/frtb-capital/issues/299), [#351](https://github.com/tomanizer/frtb-capital/issues/351) | [#303](https://github.com/tomanizer/frtb-capital/pull/303), #351 delivery PR | `frtb-drc-arrow-batch-triage.md` | `build_drc_nonsec_batch_from_handoff`, `build_drc_securitisation_non_ctp_batch_from_handoff`, `build_drc_ctp_batch_from_handoff`, `build_drc_nonsec_batch_from_columns`, `build_drc_securitisation_non_ctp_batch_from_columns`, `build_drc_ctp_batch_from_columns`, `calculate_drc_capital_from_batch`, `input_hash_for_drc_batch` | PR #303 CI passed for the original non-securitisation path; issue #351 adds local row/batch parity, zero accepted-row materialization, docs, quality-control, docs-check, and DRC test evidence for securitisation non-CTP and CTP. |
 | RRAO | [#300](https://github.com/tomanizer/frtb-capital/issues/300) | [#304](https://github.com/tomanizer/frtb-capital/pull/304) | `frtb-rrao-arrow-batch-triage.md` | `build_rrao_batch_from_handoff`, `build_rrao_batch_from_columns`, `calculate_rrao_capital_from_batch`, `input_hash_for_rrao_batch` | PR #304 CI passed; local `packages/frtb-rrao/tests` reported 256 tests; broad `make check` reported 1385 tests. |
 | CVA | [#301](https://github.com/tomanizer/frtb-capital/issues/301) | [#305](https://github.com/tomanizer/frtb-capital/pull/305) | `frtb-cva-arrow-batch-triage.md` | `build_cva_counterparty_batch_from_handoff`, `build_cva_netting_set_batch_from_handoff`, `build_cva_hedge_batch_from_handoff`, `build_sa_cva_sensitivity_batch_from_handoff`, `calculate_cva_capital_from_batches`, `input_hash_for_cva_batches` | PR #305 CI passed; local `packages/frtb-cva/tests` reported 151 tests after review fixes; broad `make check` reported 1398 tests before review fixes and the final PR CI test job passed. |
 | IMA | [#319](https://github.com/tomanizer/frtb-capital/issues/319) | [#328](https://github.com/tomanizer/frtb-capital/pull/328) | `frtb-ima-arrow-handoff-triage.md` | `build_scenario_metadata_batch_from_handoff`, `build_rfet_observation_batch_from_handoff`, `assess_rfet_observation_batch`, `input_hash_for_scenario_metadata_batch`, `input_hash_for_rfet_observation_batch` | Local `make quality-control` and `make check` passed; PR CI pending. Dense scenario P&L kernels remain NumPy-backed. |
@@ -30,8 +30,8 @@ Polars, or Arrow dataframe expressions.
 The delivered package APIs keep accepted-row dataclass materialization off the
 high-volume calculation path:
 
-- DRC reports zero accepted `DrcPosition` dataclass materialization for batch
-  calculations.
+- DRC reports zero accepted `DrcPosition` dataclass materialization for
+  non-securitisation, securitisation non-CTP, and CTP batch calculations.
 - RRAO reports zero accepted `RraoPosition` dataclass materialization for batch
   calculations.
 - CVA reports zero accepted `CvaCounterparty`, `CvaNettingSet`, `CvaHedge`, and
@@ -50,6 +50,7 @@ expressions.
 The child issues were closed directly by their package PR bodies:
 
 - PR #303 includes `Closes #299`.
+- The issue #351 delivery PR includes `Closes #351`.
 - PR #304 includes `Closes #300`.
 - PR #305 includes `Closes #301`.
 

@@ -93,11 +93,11 @@ dataframe expression layers.
 
 ## FRTB-DRC Arrow Batch Triage
 
-`frtb-drc-arrow-batch-triage.md` documents the non-securitisation DRC
-data-shape and hotspot assessment for the package-owned Arrow handoff ->
-NumPy batch -> kernel path. It explains why DRC keeps issuer/seniority netting
-inside package NumPy code instead of moving regulatory calculations into a
-dataframe expression layer.
+`frtb-drc-arrow-batch-triage.md` documents the DRC data-shape and hotspot
+assessment for the package-owned Arrow handoff -> NumPy batch -> kernel path.
+It now covers non-securitisation, securitisation non-CTP, and CTP fast paths,
+and explains why DRC keeps regulatory netting inside package NumPy code instead
+of moving regulatory calculations into a dataframe expression layer.
 
 Run the DRC row-vs-Arrow benchmark from the workspace root:
 
@@ -106,8 +106,12 @@ make drc-benchmark
 ```
 
 The command writes `dist/benchmarks/frtb-drc-batch-arrow.json` and compares
-row-compatible `DrcPosition` processing with the Arrow handoff ->
-`DrcPositionBatch` path for deterministic synthetic non-securitisation inputs.
+row-compatible `DrcPosition` processing with class-specific Arrow handoff ->
+`DrcPositionBatch` paths for deterministic synthetic non-securitisation,
+securitisation non-CTP, and CTP inputs.
+The default PR-scale benchmark uses 500 rows and 100 issuer/group identities;
+larger exploratory runs can pass `--row-count` and `--issuer-count` directly to
+`benchmarks/drc_adapter_harness.py`.
 
 ## FRTB-RRAO Arrow Batch Triage
 

@@ -27,15 +27,20 @@ from frtb_drc import (
     DrcRiskClass,
     DrcSeniority,
     DrcSourceLineage,
+    build_drc_ctp_batch_from_handoff,
     build_drc_nonsec_batch_from_handoff,
+    build_drc_securitisation_non_ctp_batch_from_handoff,
     calculate_drc_capital,
     calculate_drc_capital_from_batch,
+    normalize_drc_ctp_arrow_table,
     normalize_drc_nonsec_arrow_table,
+    normalize_drc_securitisation_non_ctp_arrow_table,
     serialize_result,
 )
 
 DEFAULT_OUTPUT = Path("dist/benchmarks/frtb-drc-batch-arrow.json")
-DEFAULT_ROW_COUNT = 5_000
+DEFAULT_ROW_COUNT = 500
+DEFAULT_ISSUER_COUNT = 100
 T = TypeVar("T")
 
 
@@ -48,7 +53,7 @@ class TimedResult(Generic[T]):
 @dataclass(frozen=True)
 class DrcBenchmarkConfig:
     row_count: int = DEFAULT_ROW_COUNT
-    issuer_count: int = 1_000
+    issuer_count: int = DEFAULT_ISSUER_COUNT
     run_id: str = "frtb-drc-batch-arrow-benchmark"
     calculation_date: date = date(2026, 3, 31)
     base_currency: str = "USD"
@@ -58,7 +63,7 @@ class DrcBenchmarkConfig:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--row-count", type=int, default=DEFAULT_ROW_COUNT)
-    parser.add_argument("--issuer-count", type=int, default=1_000)
+    parser.add_argument("--issuer-count", type=int, default=DEFAULT_ISSUER_COUNT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     return parser.parse_args()
 
@@ -90,6 +95,8 @@ def run_benchmark(config: DrcBenchmarkConfig) -> dict[str, object]:
         lambda: calculate_drc_capital_from_batch(batch.value, context=_context(config))
     )
     batch_payload = _timed(lambda: serialize_result(batch_result.value.result))
+    sec_case = _timed(lambda: _run_securitisation_non_ctp_case(config))
+    ctp_case = _timed(lambda: _run_ctp_case(config))
 
     _current_bytes, peak_bytes = tracemalloc.get_traced_memory()
     tracemalloc.stop()
@@ -123,6 +130,13 @@ def run_benchmark(config: DrcBenchmarkConfig) -> dict[str, object]:
             "materialized_dataclass_count": {
                 "row_compatibility_path": config.row_count,
                 "arrow_batch_path": batch_result.value.accepted_row_dataclasses_materialized,
+                "non_securitisation_arrow_batch_path": (
+                    batch_result.value.accepted_row_dataclasses_materialized
+                ),
+                "securitisation_non_ctp_arrow_batch_path": (
+                    sec_case.value["accepted_row_dataclasses_materialized"]
+                ),
+                "ctp_arrow_batch_path": ctp_case.value["accepted_row_dataclasses_materialized"],
             },
             "accepted_row_dataclasses_avoided": (
                 batch_result.value.accepted_row_dataclasses_materialized == 0
@@ -134,6 +148,13 @@ def run_benchmark(config: DrcBenchmarkConfig) -> dict[str, object]:
                 "absolute_delta": abs(
                     row_result.value.total_drc - batch_result.value.result.total_drc
                 ),
+                "absolute_delta_by_risk_class": {
+                    "NON_SECURITISATION": abs(
+                        row_result.value.total_drc - batch_result.value.result.total_drc
+                    ),
+                    "SECURITISATION_NON_CTP": sec_case.value["absolute_delta"],
+                    "CORRELATION_TRADING_PORTFOLIO": ctp_case.value["absolute_delta"],
+                },
             },
             "result_hashes": {
                 "row_payload": _hash_json(row_payload.value),
@@ -143,6 +164,10 @@ def run_benchmark(config: DrcBenchmarkConfig) -> dict[str, object]:
             },
             "net_jtd_count": len(batch_result.value.result.net_jtds),
             "bucket_count": len(batch_result.value.result.categories[0].bucket_results),
+            "risk_class_cases": {
+                "SECURITISATION_NON_CTP": sec_case.value,
+                "CORRELATION_TRADING_PORTFOLIO": ctp_case.value,
+            },
         },
     }
 
@@ -215,6 +240,141 @@ def build_arrow_table(config: DrcBenchmarkConfig) -> pa.Table:
     )
 
 
+def _run_securitisation_non_ctp_case(config: DrcBenchmarkConfig) -> dict[str, object]:
+    positions = _securitisation_positions(config)
+    context = DrcCalculationContext(
+        run_id=f"{config.run_id}-sec-non-ctp",
+        calculation_date=config.calculation_date,
+        base_currency=config.base_currency,
+        profile_id=config.profile_id,
+        securitisation_non_ctp_risk_weights={position.position_id: 0.2 for position in positions},
+    )
+    row_result = calculate_drc_capital(positions, context=context)
+    batch = build_drc_securitisation_non_ctp_batch_from_handoff(
+        normalize_drc_securitisation_non_ctp_arrow_table(
+            _arrow_table_from_positions(positions),
+            source_hash=source_content_hash("synthetic drc sec non-ctp benchmark"),
+        )
+    )
+    batch_result = calculate_drc_capital_from_batch(batch, context=context)
+    _require_matching_capital(row_result, batch_result.result)
+    return {
+        "row_count": len(positions),
+        "accepted_row_dataclasses_materialized": (
+            batch_result.accepted_row_dataclasses_materialized
+        ),
+        "absolute_delta": abs(row_result.total_drc - batch_result.result.total_drc),
+        "net_jtd_count": len(batch_result.result.net_jtds),
+        "bucket_count": len(batch_result.result.categories[0].bucket_results),
+    }
+
+
+def _run_ctp_case(config: DrcBenchmarkConfig) -> dict[str, object]:
+    positions = _ctp_positions(config)
+    context = DrcCalculationContext(
+        run_id=f"{config.run_id}-ctp",
+        calculation_date=config.calculation_date,
+        base_currency=config.base_currency,
+        profile_id=config.profile_id,
+        ctp_risk_weights={position.position_id: 0.2 for position in positions},
+    )
+    row_result = calculate_drc_capital(positions, context=context)
+    batch = build_drc_ctp_batch_from_handoff(
+        normalize_drc_ctp_arrow_table(
+            _arrow_table_from_positions(positions),
+            source_hash=source_content_hash("synthetic drc ctp benchmark"),
+        )
+    )
+    batch_result = calculate_drc_capital_from_batch(batch, context=context)
+    _require_matching_capital(row_result, batch_result.result)
+    return {
+        "row_count": len(positions),
+        "accepted_row_dataclasses_materialized": (
+            batch_result.accepted_row_dataclasses_materialized
+        ),
+        "absolute_delta": abs(row_result.total_drc - batch_result.result.total_drc),
+        "net_jtd_count": len(batch_result.result.net_jtds),
+        "bucket_count": len(batch_result.result.categories[0].bucket_results),
+    }
+
+
+def _securitisation_positions(config: DrcBenchmarkConfig) -> tuple[DrcPosition, ...]:
+    return tuple(
+        _securitisation_position_for_index(index, config) for index in range(config.row_count)
+    )
+
+
+def _ctp_positions(config: DrcBenchmarkConfig) -> tuple[DrcPosition, ...]:
+    return tuple(_ctp_position_for_index(index, config) for index in range(config.row_count))
+
+
+def _arrow_table_from_positions(positions: tuple[DrcPosition, ...]) -> pa.Table:
+    return pa.table(
+        {
+            "position_id": [position.position_id for position in positions],
+            "source_row_id": [position.source_row_id for position in positions],
+            "desk_id": [position.desk_id for position in positions],
+            "legal_entity": [position.legal_entity for position in positions],
+            "risk_class": _dictionary([position.risk_class.value for position in positions]),
+            "instrument_type": _dictionary(
+                [position.instrument_type.value for position in positions]
+            ),
+            "default_direction": _dictionary(
+                [position.default_direction.value for position in positions]
+            ),
+            "issuer_id": [position.issuer_id for position in positions],
+            "tranche_id": [position.tranche_id for position in positions],
+            "index_series_id": [position.index_series_id for position in positions],
+            "bucket_key": _dictionary([position.bucket_key for position in positions]),
+            "seniority": [
+                None if position.seniority is None else position.seniority.value
+                for position in positions
+            ],
+            "credit_quality": [
+                None if position.credit_quality is None else position.credit_quality.value
+                for position in positions
+            ],
+            "notional": pa.array([position.notional for position in positions], type=pa.float64()),
+            "market_value": pa.array(
+                [position.market_value for position in positions],
+                type=pa.float64(),
+            ),
+            "cumulative_pnl": pa.array(
+                [position.cumulative_pnl for position in positions],
+                type=pa.float64(),
+            ),
+            "maturity_years": pa.array(
+                [position.maturity_years for position in positions],
+                type=pa.float64(),
+            ),
+            "currency": _dictionary([position.currency for position in positions]),
+            "lgd_override": pa.array(
+                [position.lgd_override for position in positions],
+                type=pa.float64(),
+            ),
+            "is_defaulted": pa.array(
+                [position.is_defaulted for position in positions],
+                type=pa.bool_(),
+            ),
+            "is_gse": pa.array([position.is_gse for position in positions], type=pa.bool_()),
+            "is_pse": pa.array([position.is_pse for position in positions], type=pa.bool_()),
+            "is_covered_bond": pa.array(
+                [position.is_covered_bond for position in positions],
+                type=pa.bool_(),
+            ),
+            "lineage_source_system": [
+                "" if position.lineage is None else position.lineage.source_system
+                for position in positions
+            ],
+            "lineage_source_file": [
+                "" if position.lineage is None else position.lineage.source_file
+                for position in positions
+            ],
+            "citation_ids": [",".join(position.citation_ids) for position in positions],
+        }
+    )
+
+
 def _position_for_index(index: int, config: DrcBenchmarkConfig) -> DrcPosition:
     row = _row_values(index, config)
     return DrcPosition(
@@ -248,6 +408,71 @@ def _position_for_index(index: int, config: DrcBenchmarkConfig) -> DrcPosition:
             },
         ),
         citation_ids=("US_NPR_210_SCOPE",),
+    )
+
+
+def _securitisation_position_for_index(index: int, config: DrcBenchmarkConfig) -> DrcPosition:
+    pool_index = index % config.issuer_count
+    market_value = 100_000.0 + float(index % 1_000) * 25.0
+    return DrcPosition(
+        position_id=f"drc-sec-pos-{index:07d}",
+        source_row_id=f"sec-row-{index:07d}",
+        desk_id=f"sec-desk-{index % 25:03d}",
+        legal_entity=f"LE-{index % 8:03d}",
+        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+        instrument_type=DrcInstrumentType.SECURITISATION_TRANCHE,
+        default_direction=(DefaultDirection.LONG if index % 3 else DefaultDirection.SHORT),
+        issuer_id=f"pool-{pool_index:06d}",
+        tranche_id=f"tranche-{pool_index % 4}",
+        index_series_id=None,
+        bucket_key="SEC_CLO_NORTH_AMERICA" if pool_index % 2 else "SEC_RMBS_EUROPE",
+        seniority=None,
+        credit_quality=None,
+        notional=market_value,
+        market_value=market_value,
+        cumulative_pnl=None,
+        maturity_years=0.25 + float(index % 12) / 12.0,
+        currency=config.base_currency,
+        lineage=DrcSourceLineage(
+            source_system="synthetic-drc-benchmark",
+            source_file="generated-sec-non-ctp",
+            source_row_id=f"sec-row-{index:07d}",
+            source_column_map={"market_value": "market_value", "maturity_years": "maturity_years"},
+        ),
+        citation_ids=("US_NPR_210_C_1",),
+    )
+
+
+def _ctp_position_for_index(index: int, config: DrcBenchmarkConfig) -> DrcPosition:
+    series_index = index % config.issuer_count
+    market_value = 80_000.0 + float(index % 1_000) * 20.0
+    index_series = f"CDX.NA.IG.S{series_index % 40:02d}"
+    return DrcPosition(
+        position_id=f"drc-ctp-pos-{index:07d}",
+        source_row_id=f"ctp-row-{index:07d}",
+        desk_id=f"ctp-desk-{index % 25:03d}",
+        legal_entity=f"LE-{index % 8:03d}",
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        instrument_type=DrcInstrumentType.INDEX_TRANCHE,
+        default_direction=(DefaultDirection.LONG if index % 3 else DefaultDirection.SHORT),
+        issuer_id=None,
+        tranche_id=f"{series_index % 10}-{(series_index % 10) + 3}",
+        index_series_id=index_series,
+        bucket_key="CDX_NA_IG" if series_index % 2 else "CDX_HY",
+        seniority=None,
+        credit_quality=None,
+        notional=market_value,
+        market_value=market_value,
+        cumulative_pnl=None,
+        maturity_years=0.25 + float(index % 12) / 12.0,
+        currency=config.base_currency,
+        lineage=DrcSourceLineage(
+            source_system="synthetic-drc-benchmark",
+            source_file="generated-ctp",
+            source_row_id=f"ctp-row-{index:07d}",
+            source_column_map={"market_value": "market_value", "maturity_years": "maturity_years"},
+        ),
+        citation_ids=("US_NPR_210_D_1",),
     )
 
 

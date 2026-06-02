@@ -2,9 +2,15 @@
 
 from frtb_drc._version import __version__
 from frtb_drc.arrow_handoff import (
+    DRC_CTP_HANDOFF_COLUMN_SPECS,
     DRC_NONSEC_HANDOFF_COLUMN_SPECS,
+    DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS,
+    build_drc_ctp_batch_from_handoff,
     build_drc_nonsec_batch_from_handoff,
+    build_drc_securitisation_non_ctp_batch_from_handoff,
+    normalize_drc_ctp_arrow_table,
     normalize_drc_nonsec_arrow_table,
+    normalize_drc_securitisation_non_ctp_arrow_table,
 )
 from frtb_drc.audit import (
     input_snapshot_hash,
@@ -16,8 +22,10 @@ from frtb_drc.audit import (
 from frtb_drc.batch import (
     DrcBatchCapitalCalculation,
     DrcPositionBatch,
+    build_drc_ctp_batch_from_columns,
     build_drc_nonsec_batch_from_columns,
     build_drc_nonsec_batch_from_positions,
+    build_drc_securitisation_non_ctp_batch_from_columns,
     calculate_drc_capital_from_batch,
     input_hash_for_drc_batch,
 )
@@ -98,7 +106,9 @@ from frtb_drc.securitisation import (
 from frtb_drc.validation import DrcInputError, validate_position, validate_positions
 
 __all__ = [
+    "DRC_CTP_HANDOFF_COLUMN_SPECS",
     "DRC_NONSEC_HANDOFF_COLUMN_SPECS",
+    "DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS",
     "PACKAGE_METADATA",
     "US_NPR_2_0_PROFILE_ID",
     "BranchMetadata",
@@ -140,9 +150,13 @@ __all__ = [
     "SecuritisationNonCtpCapitalInput",
     "SecuritisationNonCtpNettingInput",
     "__version__",
+    "build_drc_ctp_batch_from_columns",
+    "build_drc_ctp_batch_from_handoff",
     "build_drc_nonsec_batch_from_columns",
     "build_drc_nonsec_batch_from_handoff",
     "build_drc_nonsec_batch_from_positions",
+    "build_drc_securitisation_non_ctp_batch_from_columns",
+    "build_drc_securitisation_non_ctp_batch_from_handoff",
     "calculate_bucket_drc",
     "calculate_category_drc",
     "calculate_ctp_category_drc",
@@ -171,7 +185,9 @@ __all__ = [
     "iter_bucket_definitions",
     "iter_lgd_rules",
     "iter_risk_weight_rules",
+    "normalize_drc_ctp_arrow_table",
     "normalize_drc_nonsec_arrow_table",
+    "normalize_drc_securitisation_non_ctp_arrow_table",
     "profile_content_hash",
     "result_json",
     "rule_profile_hash",
