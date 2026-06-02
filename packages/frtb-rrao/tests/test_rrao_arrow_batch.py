@@ -7,12 +7,12 @@ from pathlib import Path
 from types import ModuleType
 from typing import NoReturn, cast
 
+import frtb_common.arrow_conversion as arrow_conversion_module
 import numpy as np
 import pyarrow as pa
 import pytest
-from frtb_common import AdapterDiagnostic, source_content_hash
+from frtb_common import AdapterDiagnostic, NormalizedTabularHandoff, source_content_hash
 
-import frtb_rrao.arrow_handoff as rrao_arrow_handoff
 from frtb_rrao import (
     RraoCalculationContext,
     RraoCapitalLine,
@@ -123,84 +123,104 @@ def test_rrao_handoff_wraps_arrow_object_conversion_errors(
     def fail_arrow_object_array(_column: pa.ChunkedArray) -> NoReturn:
         raise pa.ArrowInvalid("forced conversion failure")
 
-    monkeypatch.setattr(rrao_arrow_handoff, "arrow_object_array", fail_arrow_object_array)
+    monkeypatch.setattr(arrow_conversion_module, "arrow_object_array", fail_arrow_object_array)
 
-    with pytest.raises(
-        RraoInputError, match=r"Arrow column conversion failed .*position_id"
-    ) as exc:
+    with pytest.raises(RraoInputError, match=r"forced conversion failure .*position_id") as exc:
         build_rrao_batch_from_handoff(handoff)
 
     assert exc.value.field == "position_id"
     assert isinstance(exc.value.__cause__, pa.ArrowInvalid)
 
 
-def test_rrao_arrow_required_column_helpers_report_package_errors() -> None:
-    empty_table = pa.table({})
+def test_rrao_handoff_reader_reports_package_errors_for_required_columns() -> None:
+    missing_position = NormalizedTabularHandoff(accepted=pa.table({}))
 
-    with pytest.raises(RraoInputError, match=r"column is required: position_id .*position_id"):
-        rrao_arrow_handoff._required_object_column(empty_table, "position_id")
+    with pytest.raises(RraoInputError, match=r"position_id") as missing_exc:
+        build_rrao_batch_from_handoff(missing_position)
 
-    with pytest.raises(
-        RraoInputError,
-        match=r"column is required: gross_effective_notional .*gross_effective_notional",
-    ):
-        rrao_arrow_handoff._required_float_column(empty_table, "gross_effective_notional")
+    assert missing_exc.value.field == "position_id"
 
-    null_numeric_table = pa.table({"gross_effective_notional": pa.array([None], type=pa.float64())})
-
-    with pytest.raises(
-        RraoInputError,
-        match=r"gross_effective_notional must be provided .*gross_effective_notional",
-    ):
-        rrao_arrow_handoff._required_float_column(
-            null_numeric_table,
-            "gross_effective_notional",
-        )
-
-
-def test_rrao_optional_float_column_wraps_arrow_cast_errors() -> None:
-    table = pa.table({"fund_notional": pa.array(["bad", None], type=pa.utf8())})
-
-    with pytest.raises(RraoInputError, match=r"fund_notional must be numeric .*fund_notional"):
-        rrao_arrow_handoff._optional_float_column(table, "fund_notional")
-
-
-def test_rrao_optional_float_column_wraps_arrow_fill_errors(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    table = pa.table({"fund_notional": pa.array([1.0, None], type=pa.float64())})
-
-    def fail_fill_null(*_args: object, **_kwargs: object) -> NoReturn:
-        raise pa.ArrowInvalid("forced fill failure")
-
-    monkeypatch.setattr(rrao_arrow_handoff.pc, "fill_null", fail_fill_null)
-
-    with pytest.raises(RraoInputError, match=r"fund_notional must be numeric .*fund_notional"):
-        rrao_arrow_handoff._optional_float_column(table, "fund_notional")
-
-
-def test_rrao_optional_bool_column_wraps_arrow_fill_errors(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    table = pa.table({"flag": pa.array([True], type=pa.bool_())})
-
-    def fail_fill_null(*_args: object, **_kwargs: object) -> NoReturn:
-        raise pa.ArrowInvalid("forced fill failure")
-
-    monkeypatch.setattr(rrao_arrow_handoff.pc, "fill_null", fail_fill_null)
-
-    with pytest.raises(RraoInputError, match=r"Arrow column conversion failed .*flag"):
-        rrao_arrow_handoff._optional_bool_column(table, "flag")
-
-
-def test_rrao_float64_arrow_column_handles_empty_column() -> None:
-    values = rrao_arrow_handoff._float64_array_from_arrow_column(
-        pa.chunked_array([pa.array([], type=pa.float64())]),
-        field="empty_numeric",
+    missing_notional = NormalizedTabularHandoff(
+        accepted=_arrow_table((_investment_fund_position(),)).drop(["gross_effective_notional"])
     )
 
-    assert values.dtype == np.dtype(np.float64)
-    assert values.tolist() == []
+    with pytest.raises(RraoInputError, match=r"gross_effective_notional") as notional_exc:
+        build_rrao_batch_from_handoff(missing_notional)
+
+    assert notional_exc.value.field == "gross_effective_notional"
+
+    null_notional_table = _arrow_table((_investment_fund_position(),))
+    null_notional_table = null_notional_table.set_column(
+        null_notional_table.column_names.index("gross_effective_notional"),
+        "gross_effective_notional",
+        pa.array([None], type=pa.float64()),
+    )
+    null_notional = NormalizedTabularHandoff(accepted=null_notional_table)
+
+    with pytest.raises(RraoInputError, match=r"gross_effective_notional") as null_exc:
+        build_rrao_batch_from_handoff(null_notional)
+
+    assert null_exc.value.field == "gross_effective_notional"
+
+
+def test_rrao_handoff_reader_wraps_optional_float_cast_errors() -> None:
+    table = _arrow_table((_investment_fund_position(),))
+    table = table.set_column(
+        table.column_names.index("investment_fund_gross_effective_notional"),
+        "investment_fund_gross_effective_notional",
+        pa.array(["bad"], type=pa.utf8()),
+    )
+
+    with pytest.raises(
+        RraoInputError,
+        match=r"investment_fund_gross_effective_notional",
+    ) as exc:
+        build_rrao_batch_from_handoff(NormalizedTabularHandoff(accepted=table))
+
+    assert exc.value.field == "investment_fund_gross_effective_notional"
+
+
+def test_rrao_handoff_reader_wraps_optional_float_fill_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = _minimal_column_payload(row_count=2)
+    table = _minimal_arrow_table(payload).append_column(
+        "investment_fund_gross_effective_notional",
+        pa.array([1.0, None], type=pa.float64()),
+    )
+
+    def fail_fill_null(*_args: object, **_kwargs: object) -> NoReturn:
+        raise pa.ArrowInvalid("forced fill failure")
+
+    monkeypatch.setattr(arrow_conversion_module.pc, "fill_null", fail_fill_null)
+
+    with pytest.raises(
+        RraoInputError,
+        match=r"investment_fund_gross_effective_notional",
+    ) as exc:
+        build_rrao_batch_from_handoff(NormalizedTabularHandoff(accepted=table))
+
+    assert exc.value.field == "investment_fund_gross_effective_notional"
+
+
+def test_rrao_handoff_reader_wraps_optional_bool_fill_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = _minimal_column_payload(row_count=1)
+    table = _minimal_arrow_table(payload).append_column(
+        "is_ctp_hedge",
+        pa.array([True], type=pa.bool_()),
+    )
+
+    def fail_fill_null(*_args: object, **_kwargs: object) -> NoReturn:
+        raise pa.ArrowInvalid("forced fill failure")
+
+    monkeypatch.setattr(arrow_conversion_module.pc, "fill_null", fail_fill_null)
+
+    with pytest.raises(RraoInputError, match=r"is_ctp_hedge") as exc:
+        build_rrao_batch_from_handoff(normalize_rrao_arrow_table(table))
+
+    assert exc.value.field == "is_ctp_hedge"
 
 
 def test_rrao_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
@@ -675,6 +695,23 @@ def _minimal_column_payload(*, row_count: int) -> dict[str, object]:
         "lineage_source_systems": ["unit-test"] * row_count,
         "lineage_source_files": ["synthetic-rrao.csv"] * row_count,
     }
+
+
+def _minimal_arrow_table(payload: dict[str, object]) -> pa.Table:
+    return pa.table(
+        {
+            "position_id": payload["position_ids"],
+            "source_row_id": payload["source_row_ids"],
+            "desk_id": payload["desk_ids"],
+            "legal_entity": payload["legal_entities"],
+            "gross_effective_notional": payload["gross_effective_notionals"],
+            "currency": payload["currencies"],
+            "evidence_type": payload["evidence_types"],
+            "evidence_label": payload["evidence_labels"],
+            "lineage_source_system": payload["lineage_source_systems"],
+            "lineage_source_file": payload["lineage_source_files"],
+        }
+    )
 
 
 def _investment_fund_column_payload() -> dict[str, object]:
