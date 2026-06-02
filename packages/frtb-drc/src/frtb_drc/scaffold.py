@@ -34,6 +34,7 @@ from frtb_drc.gross_jtd import calculate_gross_jtds
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.risk_weight_evidence import used_risk_weight_evidence
 from frtb_drc.securitisation import (
     calculate_securitisation_non_ctp_drc,
     securitisation_non_ctp_context_input_hash,
@@ -171,6 +172,18 @@ def calculate_drc_capital(
         maturity_scaled_jtds=scaled_jtds,
         net_jtds=net_jtds,
         fx_conversions=fx_conversions,
+        risk_weight_evidence=(
+            *used_risk_weight_evidence(
+                calculation_positions,
+                context,
+                risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+            ),
+            *used_risk_weight_evidence(
+                calculation_positions,
+                context,
+                risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ),
+        ),
     )
     validate_reconciliation(result)
     return result

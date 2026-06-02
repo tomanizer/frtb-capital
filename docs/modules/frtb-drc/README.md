@@ -21,12 +21,20 @@ securitisation non-CTP, and CTP inputs, with accepted rows kept columnar and
 without row-dataclass fallback.
 Known profiles are `US_NPR_2_0`, `BASEL_MAR22`, `EU_CRR3`, and
 `PRA_UK_CRR`. Basel MAR22 securitisation non-CTP and CTP paths fail closed
-until MAR22.34/MAR22.42 banking-book securitisation risk-weight lineage and
-fair-value-cap/decomposition contracts are implemented. EU CRR3 and UK PRA
-profiles are known identities but fail closed for all DRC risk classes until
-Article 325w / PRA PS1/26 rulebook mappings are implemented. Securitisation
-non-CTP and CTP sub-scope without supplied risk weights or explicit
-replication evidence also fails closed.
+until MAR22.34/MAR22.42 banking-book securitisation mappings are implemented.
+EU CRR3 and UK PRA profiles are known identities but fail closed for all DRC
+risk classes until Article 325w / PRA PS1/26 rulebook mappings are implemented.
+Securitisation non-CTP and CTP sub-scope without supplied risk weights or
+explicit replication evidence also fails closed.
+
+Securitisation non-CTP and CTP risk weights can be supplied through typed
+`DrcRiskWeightEvidence` records on `DrcCalculationContext`. Those records carry
+position id, source profile, source table, source method, effective risk
+weight, as-of date, source lineage, citation ids, and stale/validation flags.
+The legacy raw float maps remain available as low-level compatibility inputs,
+but typed evidence is the audit-ready production contract. Used evidence is
+included in `DrcCapitalResult.risk_weight_evidence` and the deterministic input
+hash.
 
 ## Planning Documents
 
@@ -45,3 +53,4 @@ replication evidence also fails closed.
 - [ADR 0012: Capital impact and attribution readiness](../../decisions/0012-capital-impact-attribution.md)
 - [ADR 0027: DRC CTP row path](../../decisions/0027-drc-ctp-row-path.md)
 - [ADR 0028: DRC securitisation non-CTP row path](../../decisions/0028-drc-securitisation-non-ctp-row-path.md)
+- [ADR 0029: DRC securitisation and CTP risk-weight evidence contract](../../decisions/0029-drc-securitisation-risk-weight-evidence.md)

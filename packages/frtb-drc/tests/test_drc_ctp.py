@@ -15,8 +15,10 @@ from frtb_drc import (
     DrcInstrumentType,
     DrcPosition,
     DrcRiskClass,
+    DrcRiskWeightEvidence,
     DrcSourceLineage,
     calculate_drc_capital,
+    risk_weight_evidence_by_position,
     validate_reconciliation,
 )
 
@@ -44,6 +46,48 @@ def test_ctp_unhedged_book_uses_market_value_and_context_risk_weight() -> None:
     assert "US_NPR_210_D_1" in result.citations
     assert "US_NPR_210_D_3_IV_D" in result.citations
     validate_reconciliation(result)
+
+
+def test_ctp_consumes_cited_risk_weight_evidence() -> None:
+    position = _ctp_position(
+        "long-evidence",
+        DefaultDirection.LONG,
+        market_value=125.0,
+        bucket_key="CDX_NA_IG",
+        index_series_id="CDX.NA.IG.S18",
+        tranche_id="10-15",
+    )
+    evidence = _risk_weight_evidence(position, risk_weight=0.2)
+
+    result = calculate_drc_capital(
+        (position,),
+        context=_context(
+            ctp_risk_weight_evidence=risk_weight_evidence_by_position((evidence,)),
+        ),
+    )
+
+    assert result.total_drc == pytest.approx(25.0)
+    assert result.risk_weight_evidence == (evidence,)
+    assert result.risk_weight_evidence[0].source_method == "upstream-ctp-securitisation"
+
+
+def test_ctp_stale_evidence_fails_closed() -> None:
+    position = _ctp_position(
+        "stale-evidence",
+        DefaultDirection.LONG,
+        market_value=125.0,
+        bucket_key="CDX_NA_IG",
+        index_series_id="CDX.NA.IG.S18",
+    )
+    evidence = _risk_weight_evidence(position, risk_weight=0.2, is_stale=True)
+
+    with pytest.raises(DrcInputError, match="is stale"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                ctp_risk_weight_evidence=risk_weight_evidence_by_position((evidence,)),
+            ),
+        )
 
 
 def test_ctp_fixture_cross_tranche_replication_matches_hand_checked_expected() -> None:
@@ -204,6 +248,7 @@ def test_ctp_net_group_rejects_mixed_risk_weights() -> None:
 def _context(
     *,
     ctp_risk_weights: dict[str, float] | None = None,
+    ctp_risk_weight_evidence: dict[str, DrcRiskWeightEvidence] | None = None,
     ctp_offset_groups: dict[str, str] | None = None,
 ) -> DrcCalculationContext:
     return DrcCalculationContext(
@@ -212,6 +257,9 @@ def _context(
         base_currency="USD",
         profile_id=US_NPR_2_0_PROFILE_ID,
         ctp_risk_weights={} if ctp_risk_weights is None else ctp_risk_weights,
+        ctp_risk_weight_evidence={}
+        if ctp_risk_weight_evidence is None
+        else ctp_risk_weight_evidence,
         ctp_offset_groups={} if ctp_offset_groups is None else ctp_offset_groups,
     )
 
@@ -255,6 +303,32 @@ def _ctp_position(
             source_column_map={"position_id": "position_id"},
         ),
         citation_ids=("US_NPR_210_D_1",),
+    )
+
+
+def _risk_weight_evidence(
+    position: DrcPosition,
+    *,
+    risk_weight: float,
+    is_stale: bool = False,
+) -> DrcRiskWeightEvidence:
+    return DrcRiskWeightEvidence(
+        position_id=position.position_id,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        source_profile_id=US_NPR_2_0_PROFILE_ID,
+        source_table="US_NPR_CTP_RW",
+        source_method="upstream-ctp-securitisation",
+        effective_risk_weight=risk_weight,
+        as_of_date=date(2026, 5, 29),
+        source_id="ctp-rw-source",
+        lineage=DrcSourceLineage(
+            source_system="synthetic-risk-weight-engine",
+            source_file="ctp-risk-weights.csv",
+            source_row_id=f"rw-{position.position_id}",
+            source_column_map={"effective_risk_weight": "risk_weight"},
+        ),
+        citation_ids=("US_NPR_210_D_3_IV_D",),
+        is_stale=is_stale,
     )
 
 

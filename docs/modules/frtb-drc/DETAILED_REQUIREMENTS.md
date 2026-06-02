@@ -270,24 +270,35 @@ The securitisation non-CTP row path supports:
 - long/short offsetting for same-pool/same-tranche rows, with broader
   replication or decomposition recognised only through explicit run-scoped
   offset-group evidence;
-- cited banking-book securitisation risk weights supplied as run-scoped inputs;
+- cited banking-book securitisation risk weights supplied as run-scoped typed
+  `DrcRiskWeightEvidence` inputs or low-level compatibility maps;
 - HBR, bucket floor, and category summation.
 
 The package still does not internally derive banking-book securitisation risk
-weights or apply the optional fair-value cap. Those sub-scope items must remain
-explicit future work rather than silent approximations.
+weights or apply the optional fair-value cap. Typed risk-weight evidence must
+identify the position, risk class, source profile, source table, source method,
+effective risk weight, as-of date, source lineage, and citation ids. Duplicate,
+missing, stale, uncited, wrong-risk-class, non-finite, negative, or
+future-dated evidence fails closed before capital is calculated. Internal
+derivation and fair-value-cap sub-scope items must remain explicit future work
+rather than silent approximations.
 
 Proposed U.S. section `__.210(c)` and Basel MAR22.27-MAR22.35 are the anchors.
 
 ### DRC-FUNC-014: CTP path
 
-The CTP path must fail closed until it supports:
+The CTP path supports:
 
 - CTP portfolio membership evidence;
 - index, series, tranche, and residual component identity;
 - decomposition or replication rules for long/short tranche combinations;
 - CTP-specific HBR;
 - CTP-specific bucket and final category aggregation.
+
+CTP risk weights use the same `DrcRiskWeightEvidence` contract as
+securitisation non-CTP. The package consumes cited upstream effective risk
+weights and preserves the used evidence in the input hash and result snapshot;
+it does not internally derive banking-book securitisation or CTP risk weights.
 
 Proposed U.S. section `__.210(d)` and Basel MAR22.39-MAR22.47 are the first
 anchors.

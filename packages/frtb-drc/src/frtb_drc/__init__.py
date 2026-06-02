@@ -61,6 +61,7 @@ from frtb_drc.data_models import (
     DrcInstrumentType,
     DrcPosition,
     DrcRiskClass,
+    DrcRiskWeightEvidence,
     DrcSeniority,
     DrcSourceLineage,
     GrossJtd,
@@ -95,6 +96,7 @@ from frtb_drc.regimes import (
     get_rule_profile,
     profile_content_hash,
 )
+from frtb_drc.risk_weight_evidence import risk_weight_evidence_by_position
 from frtb_drc.scaffold import PACKAGE_METADATA, calculate_drc_capital
 from frtb_drc.securitisation import (
     SecuritisationNonCtpCalculation,
@@ -140,6 +142,7 @@ __all__ = [
     "DrcPosition",
     "DrcPositionBatch",
     "DrcRiskClass",
+    "DrcRiskWeightEvidence",
     "DrcRuleProfile",
     "DrcSeniority",
     "DrcSourceLineage",
@@ -196,6 +199,7 @@ __all__ = [
     "normalize_drc_securitisation_non_ctp_arrow_table",
     "profile_content_hash",
     "result_json",
+    "risk_weight_evidence_by_position",
     "rule_profile_hash",
     "scale_gross_jtd",
     "scale_gross_jtds",

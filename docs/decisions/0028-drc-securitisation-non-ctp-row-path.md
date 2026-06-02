@@ -68,6 +68,10 @@ metadata. The path is transparent because upstream banking-book securitisation
 risk weights are visible in the context, included in the deterministic input
 hash, and rejected when missing.
 
+ADR 0029 supersedes the raw-map-only wording here by adding typed
+`DrcRiskWeightEvidence` records as the production audit contract while
+preserving the raw map as a low-level compatibility input.
+
 This is not an internal banking-book securitisation risk-weight engine. A future
 PR may derive risk weights from SEC-SA/SEC-ERBA/SEC-IRBA or jurisdictional
 equivalents and add a controlled fair-value cap option. Until then, callers must

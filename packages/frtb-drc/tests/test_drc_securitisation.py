@@ -15,9 +15,11 @@ from frtb_drc import (
     DrcInstrumentType,
     DrcPosition,
     DrcRiskClass,
+    DrcRiskWeightEvidence,
     DrcSourceLineage,
     calculate_drc_capital,
     get_rule_profile,
+    risk_weight_evidence_by_position,
     validate_reconciliation,
 )
 
@@ -47,6 +49,88 @@ def test_securitisation_non_ctp_unhedged_book_uses_market_value_and_context_weig
     assert "US_NPR_210_C_1" in result.citations
     assert "US_NPR_210_C_3_III" in result.citations
     validate_reconciliation(result)
+
+
+def test_securitisation_non_ctp_consumes_cited_risk_weight_evidence() -> None:
+    position = _sec_position("long-evidence", DefaultDirection.LONG, market_value=125.0)
+    evidence = _risk_weight_evidence(position, risk_weight=0.16)
+
+    result = calculate_drc_capital(
+        (position,),
+        context=_context(
+            securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                (evidence,)
+            ),
+        ),
+    )
+
+    assert result.total_drc == pytest.approx(20.0)
+    assert result.risk_weight_evidence == (evidence,)
+    assert result.risk_weight_evidence[0].source_table == "US_NPR_SECURITISATION_RW"
+    assert "US_NPR_210_C_3_III" in result.citations
+
+
+def test_securitisation_non_ctp_evidence_changes_input_hash() -> None:
+    position = _sec_position("hash-evidence", DefaultDirection.LONG, market_value=125.0)
+    first = _risk_weight_evidence(position, risk_weight=0.16, source_id="rw-source-a")
+    second = _risk_weight_evidence(position, risk_weight=0.16, source_id="rw-source-b")
+
+    first_result = calculate_drc_capital(
+        (position,),
+        context=_context(
+            securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position((first,)),
+        ),
+    )
+    second_result = calculate_drc_capital(
+        (position,),
+        context=_context(
+            securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position((second,)),
+        ),
+    )
+
+    assert first_result.input_hash != second_result.input_hash
+
+
+def test_securitisation_non_ctp_duplicate_evidence_fails_closed() -> None:
+    position = _sec_position("duplicate-evidence", DefaultDirection.LONG, market_value=100.0)
+
+    with pytest.raises(DrcInputError, match="duplicate risk-weight evidence"):
+        risk_weight_evidence_by_position(
+            (
+                _risk_weight_evidence(position, risk_weight=0.2, source_id="rw-a"),
+                _risk_weight_evidence(position, risk_weight=0.2, source_id="rw-b"),
+            )
+        )
+
+
+def test_securitisation_non_ctp_stale_evidence_fails_closed() -> None:
+    position = _sec_position("stale-evidence", DefaultDirection.LONG, market_value=100.0)
+    evidence = _risk_weight_evidence(position, risk_weight=0.2, is_stale=True)
+
+    with pytest.raises(DrcInputError, match="is stale"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                    (evidence,)
+                ),
+            ),
+        )
+
+
+def test_securitisation_non_ctp_uncited_evidence_fails_closed() -> None:
+    position = _sec_position("uncited-evidence", DefaultDirection.LONG, market_value=100.0)
+    evidence = _risk_weight_evidence(position, risk_weight=0.2, citation_ids=())
+
+    with pytest.raises(DrcInputError, match="citation_ids must be non-empty"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                    (evidence,)
+                ),
+            ),
+        )
 
 
 def test_securitisation_non_ctp_fixture_matches_hand_checked_expected() -> None:
@@ -284,6 +368,7 @@ def test_profile_supports_securitisation_non_ctp() -> None:
 def _context(
     *,
     securitisation_non_ctp_risk_weights: dict[str, float] | None = None,
+    securitisation_non_ctp_risk_weight_evidence: (dict[str, DrcRiskWeightEvidence] | None) = None,
     securitisation_non_ctp_offset_groups: dict[str, str] | None = None,
 ) -> DrcCalculationContext:
     return DrcCalculationContext(
@@ -294,6 +379,9 @@ def _context(
         securitisation_non_ctp_risk_weights={}
         if securitisation_non_ctp_risk_weights is None
         else securitisation_non_ctp_risk_weights,
+        securitisation_non_ctp_risk_weight_evidence={}
+        if securitisation_non_ctp_risk_weight_evidence is None
+        else securitisation_non_ctp_risk_weight_evidence,
         securitisation_non_ctp_offset_groups={}
         if securitisation_non_ctp_offset_groups is None
         else securitisation_non_ctp_offset_groups,
@@ -336,6 +424,34 @@ def _sec_position(
             source_column_map={"position_id": "position_id"},
         ),
         citation_ids=("US_NPR_210_C_1",),
+    )
+
+
+def _risk_weight_evidence(
+    position: DrcPosition,
+    *,
+    risk_weight: float,
+    source_id: str = "rw-source",
+    is_stale: bool = False,
+    citation_ids: tuple[str, ...] = ("US_NPR_210_C_3_III",),
+) -> DrcRiskWeightEvidence:
+    return DrcRiskWeightEvidence(
+        position_id=position.position_id,
+        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+        source_profile_id=US_NPR_2_0_PROFILE_ID,
+        source_table="US_NPR_SECURITISATION_RW",
+        source_method="upstream-banking-book-securitisation",
+        effective_risk_weight=risk_weight,
+        as_of_date=date(2026, 5, 29),
+        source_id=source_id,
+        lineage=DrcSourceLineage(
+            source_system="synthetic-risk-weight-engine",
+            source_file="securitisation-risk-weights.csv",
+            source_row_id=f"rw-{position.position_id}",
+            source_column_map={"effective_risk_weight": "risk_weight"},
+        ),
+        citation_ids=citation_ids,
+        is_stale=is_stale,
     )
 
 

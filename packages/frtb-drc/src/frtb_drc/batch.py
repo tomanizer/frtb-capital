@@ -46,6 +46,12 @@ from frtb_drc.fx import (
 )
 from frtb_drc.reference_data import get_lgd_rule, get_maturity_policy, iter_lgd_rules
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.risk_weight_evidence import (
+    effective_risk_weights,
+    risk_weight_evidence_hash_payload,
+    used_risk_weight_evidence_for_position_ids,
+    validate_risk_weight_evidence,
+)
 from frtb_drc.securitisation import (
     SecuritisationNonCtpCapitalInput,
     calculate_securitisation_non_ctp_category_drc,
@@ -619,7 +625,10 @@ def calculate_drc_capital_from_batch(
         )
         sec_capital_inputs = _securitisation_non_ctp_capital_inputs_from_batch(
             net_jtds,
-            risk_weights=context.securitisation_non_ctp_risk_weights,
+            risk_weights=effective_risk_weights(
+                context,
+                risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+            ),
         )
         category = calculate_securitisation_non_ctp_category_drc(
             sec_capital_inputs,
@@ -641,7 +650,10 @@ def calculate_drc_capital_from_batch(
         )
         ctp_capital_inputs = _ctp_capital_inputs_from_batch(
             net_jtds,
-            risk_weights=context.ctp_risk_weights,
+            risk_weights=effective_risk_weights(
+                context,
+                risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ),
         )
         category = calculate_ctp_category_drc(ctp_capital_inputs, profile_id=profile.profile_id)
         formula_citations = (*_CTP_BATCH_CITATIONS, maturity_citation)
@@ -695,6 +707,17 @@ def calculate_drc_capital_from_batch(
         maturity_scaled_jtds=(),
         net_jtds=net_jtds,
         fx_conversions=fx_conversions,
+        risk_weight_evidence=used_risk_weight_evidence_for_position_ids(
+            (cast(str, position_id) for position_id in calculation_batch.position_ids),
+            context,
+            risk_class=risk_class,
+        )
+        if risk_class
+        in {
+            DrcRiskClass.SECURITISATION_NON_CTP,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        }
+        else (),
     )
     validate_reconciliation(result)
     return DrcBatchCapitalCalculation(
@@ -718,17 +741,16 @@ def _validate_context(context: DrcCalculationContext) -> None:
     if context.citation_policy.strip().lower() != "strict":
         raise DrcInputError(f"unsupported citation_policy: {context.citation_policy}")
     validate_fx_rates(context)
-    _validate_context_risk_weight_map(
-        context.securitisation_non_ctp_risk_weights,
-        field_name="context.securitisation_non_ctp_risk_weights",
-    )
+    effective_risk_weights(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
+    validate_risk_weight_evidence(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
     _validate_context_text_map(
         context.securitisation_non_ctp_offset_groups,
         field_name="context.securitisation_non_ctp_offset_groups",
     )
-    _validate_context_risk_weight_map(
-        context.ctp_risk_weights,
-        field_name="context.ctp_risk_weights",
+    effective_risk_weights(context, risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
+    validate_risk_weight_evidence(
+        context,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
     )
     _validate_context_text_map(context.ctp_offset_groups, field_name="context.ctp_offset_groups")
 
@@ -778,9 +800,13 @@ def _validate_supported_batch_run(
             ),
         )
     if risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
+        risk_weights = effective_risk_weights(
+            context,
+            risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+        )
         _validate_context_position_map(
             batch,
-            context.securitisation_non_ctp_risk_weights,
+            risk_weights,
             field_name="context.securitisation_non_ctp_risk_weights",
         )
         _validate_context_position_map(
@@ -790,9 +816,13 @@ def _validate_supported_batch_run(
             require_all=False,
         )
     elif risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
+        risk_weights = effective_risk_weights(
+            context,
+            risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        )
         _validate_context_position_map(
             batch,
-            context.ctp_risk_weights,
+            risk_weights,
             field_name="context.ctp_risk_weights",
         )
         _validate_context_position_map(
@@ -1775,19 +1805,31 @@ def _context_input_hash_for_batch(
         return _hash_context_position_maps(
             input_hash,
             batch,
-            risk_weights=context.securitisation_non_ctp_risk_weights,
+            risk_weights=effective_risk_weights(
+                context,
+                risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+            ),
             offset_groups=context.securitisation_non_ctp_offset_groups,
             risk_weight_key="securitisation_non_ctp_risk_weights",
+            risk_weight_evidence_key="securitisation_non_ctp_risk_weight_evidence",
             offset_group_key="securitisation_non_ctp_offset_groups",
+            context=context,
+            risk_class=risk_class,
         )
     if risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
         return _hash_context_position_maps(
             input_hash,
             batch,
-            risk_weights=context.ctp_risk_weights,
+            risk_weights=effective_risk_weights(
+                context,
+                risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ),
             offset_groups=context.ctp_offset_groups,
             risk_weight_key="ctp_risk_weights",
+            risk_weight_evidence_key="ctp_risk_weight_evidence",
             offset_group_key="ctp_offset_groups",
+            context=context,
+            risk_class=risk_class,
         )
     return input_hash
 
@@ -1799,12 +1841,20 @@ def _hash_context_position_maps(
     risk_weights: Mapping[str, float],
     offset_groups: Mapping[str, str],
     risk_weight_key: str,
+    risk_weight_evidence_key: str,
     offset_group_key: str,
+    context: DrcCalculationContext,
+    risk_class: DrcRiskClass,
 ) -> str:
     position_ids = tuple(sorted(cast(str, position_id) for position_id in batch.position_ids))
     payload = {
         "input_hash": input_hash,
         risk_weight_key: {position_id: risk_weights[position_id] for position_id in position_ids},
+        risk_weight_evidence_key: risk_weight_evidence_hash_payload(
+            position_ids,
+            context,
+            risk_class=risk_class,
+        ),
         offset_group_key: {
             position_id: offset_groups[position_id]
             for position_id in position_ids
