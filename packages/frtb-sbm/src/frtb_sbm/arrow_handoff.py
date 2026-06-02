@@ -1841,10 +1841,12 @@ def _float64_array_from_arrow_column(
     try:
         return cast(npt.NDArray[np.float64], array.to_numpy(zero_copy_only=True))
     except _ARROW_CONVERSION_ERRORS:
-        try:
-            return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
-        except _ARROW_CONVERSION_ERRORS as exc:
-            raise SbmInputError("value must be numeric", field=field) from exc
+        pass
+
+    try:
+        return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise SbmInputError("value must be numeric", field=field) from exc
 
 
 __all__ = [

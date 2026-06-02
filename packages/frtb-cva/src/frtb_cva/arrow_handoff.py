@@ -567,10 +567,12 @@ def _float64_array_from_arrow_column(
     try:
         return cast(FloatArray, array.to_numpy(zero_copy_only=True))
     except _ARROW_CONVERSION_ERRORS:
-        try:
-            return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
-        except _ARROW_CONVERSION_ERRORS as exc:
-            raise CvaInputError(f"{field} must be numeric", field=field) from exc
+        pass
+
+    try:
+        return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise CvaInputError(f"{field} must be numeric", field=field) from exc
 
 
 def _diagnostics(handoff: NormalizedTabularHandoff) -> tuple[Mapping[str, object], ...]:
