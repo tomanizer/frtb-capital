@@ -31,7 +31,6 @@ from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported,
 from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
     risk_weight_evidence_hash_payload,
-    validate_risk_weight_evidence,
 )
 from frtb_drc.validation import DrcInputError, validate_position
 
@@ -282,15 +281,13 @@ def ctp_context_input_hash(
     if not records:
         return input_hash
     position_ids = tuple(sorted(position.position_id for position in records))
+    weights = effective_risk_weights(
+        context,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+    )
     payload = {
         "input_hash": input_hash,
-        "ctp_risk_weights": {
-            position_id: effective_risk_weights(
-                context,
-                risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
-            )[position_id]
-            for position_id in position_ids
-        },
+        "ctp_risk_weights": {position_id: weights[position_id] for position_id in position_ids},
         "ctp_risk_weight_evidence": risk_weight_evidence_hash_payload(
             position_ids,
             context,
@@ -313,10 +310,6 @@ def validate_ctp_context(context: DrcCalculationContext) -> None:
     """Validate CTP context maps without requiring that CTP positions are present."""
 
     effective_risk_weights(context, risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
-    validate_risk_weight_evidence(
-        context,
-        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
-    )
     for position_id, offset_group in context.ctp_offset_groups.items():
         _require_text(position_id, "ctp_offset_groups position_id")
         _require_text(offset_group, f"ctp_offset_groups[{position_id!r}]")

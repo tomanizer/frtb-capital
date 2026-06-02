@@ -32,7 +32,6 @@ from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported,
 from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
     risk_weight_evidence_hash_payload,
-    validate_risk_weight_evidence,
 )
 from frtb_drc.validation import DrcInputError, validate_position
 
@@ -282,14 +281,14 @@ def securitisation_non_ctp_context_input_hash(
     if not records:
         return input_hash
     position_ids = tuple(sorted(position.position_id for position in records))
+    weights = effective_risk_weights(
+        context,
+        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+    )
     payload = {
         "input_hash": input_hash,
         "securitisation_non_ctp_risk_weights": {
-            position_id: effective_risk_weights(
-                context,
-                risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
-            )[position_id]
-            for position_id in position_ids
+            position_id: weights[position_id] for position_id in position_ids
         },
         "securitisation_non_ctp_risk_weight_evidence": risk_weight_evidence_hash_payload(
             position_ids,
@@ -313,7 +312,6 @@ def validate_securitisation_non_ctp_context(context: DrcCalculationContext) -> N
     """Validate securitisation non-CTP context maps without requiring positions."""
 
     effective_risk_weights(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
-    validate_risk_weight_evidence(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
     for position_id, offset_group in context.securitisation_non_ctp_offset_groups.items():
         _require_text(position_id, "securitisation_non_ctp_offset_groups position_id")
         _require_text(

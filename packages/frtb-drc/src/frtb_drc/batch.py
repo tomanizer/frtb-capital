@@ -50,7 +50,6 @@ from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
     risk_weight_evidence_hash_payload,
     used_risk_weight_evidence_for_position_ids,
-    validate_risk_weight_evidence,
 )
 from frtb_drc.securitisation import (
     SecuritisationNonCtpCapitalInput,
@@ -742,16 +741,11 @@ def _validate_context(context: DrcCalculationContext) -> None:
         raise DrcInputError(f"unsupported citation_policy: {context.citation_policy}")
     validate_fx_rates(context)
     effective_risk_weights(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
-    validate_risk_weight_evidence(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
     _validate_context_text_map(
         context.securitisation_non_ctp_offset_groups,
         field_name="context.securitisation_non_ctp_offset_groups",
     )
     effective_risk_weights(context, risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
-    validate_risk_weight_evidence(
-        context,
-        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
-    )
     _validate_context_text_map(context.ctp_offset_groups, field_name="context.ctp_offset_groups")
 
 

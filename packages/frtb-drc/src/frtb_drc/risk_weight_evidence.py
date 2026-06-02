@@ -8,6 +8,7 @@ from typing import Any, cast
 
 from frtb_drc.data_models import (
     DrcCalculationContext,
+    DrcPosition,
     DrcRiskClass,
     DrcRiskWeightEvidence,
 )
@@ -76,12 +77,7 @@ def effective_risk_weights(
             context=context,
         )
         evidence_weight = record.effective_risk_weight
-        if key in result and not math.isclose(
-            result[key],
-            evidence_weight,
-            rel_tol=0.0,
-            abs_tol=0.0,
-        ):
+        if key in result and result[key] != evidence_weight:
             raise DrcInputError(
                 f"{raw_field_name}[{key!r}] conflicts with {evidence_field_name}[{key!r}]"
             )
@@ -90,7 +86,7 @@ def effective_risk_weights(
 
 
 def used_risk_weight_evidence(
-    positions: Iterable[object],
+    positions: Iterable[DrcPosition],
     context: DrcCalculationContext,
     *,
     risk_class: DrcRiskClass,
@@ -100,10 +96,9 @@ def used_risk_weight_evidence(
     _field_name, evidence = _context_evidence(context, risk_class=risk_class)
     position_ids = tuple(
         sorted(
-            str(getattr(position, "position_id"))
+            position.position_id
             for position in positions
-            if DrcRiskClass(getattr(position, "risk_class")) == risk_class
-            and str(getattr(position, "position_id")) in evidence
+            if DrcRiskClass(position.risk_class) == risk_class and position.position_id in evidence
         )
     )
     return tuple(evidence[position_id] for position_id in position_ids)
@@ -178,6 +173,8 @@ def _validate_evidence_record(
 
 def _validate_lineage(record: DrcRiskWeightEvidence, *, field_name: str) -> None:
     lineage = record.lineage
+    if lineage is None:
+        raise DrcInputError(f"{field_name} must be provided")
     _require_text(lineage.source_system, f"{field_name}.source_system")
     _require_text(lineage.source_file, f"{field_name}.source_file")
     _require_text(lineage.source_row_id, f"{field_name}.source_row_id")
