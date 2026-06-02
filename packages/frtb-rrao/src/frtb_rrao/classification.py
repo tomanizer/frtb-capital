@@ -9,6 +9,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+from frtb_rrao._citations import merged_citation_ids
 from frtb_rrao.data_models import (
     RraoClassification,
     RraoClassificationDecision,
@@ -76,7 +77,7 @@ def _classify_validated_position(
         evidence_type=position.evidence_type,
         reason_code=rule.reason_code,
         risk_weight_key=rule.risk_weight_key,
-        citations=_merged_citation_ids((rule.citation_id,), position.citations),
+        citations=merged_citation_ids((rule.citation_id,), position.citations),
         supervisor_directive_id=position.supervisor_directive_id,
     )
 
@@ -98,7 +99,7 @@ def _excluded_decision(
         evidence_type=position.evidence_type,
         reason_code=rule.reason_code,
         risk_weight_key=rule.risk_weight_key,
-        citations=_merged_citation_ids((rule.citation_id,), position.citations),
+        citations=merged_citation_ids((rule.citation_id,), position.citations),
         exclusion_reason=position.exclusion_reason,
         exclusion_evidence_id=position.exclusion_evidence_id,
     )
@@ -125,7 +126,7 @@ def _investment_fund_decision(
         evidence_type=position.evidence_type,
         reason_code=rule.reason_code,
         risk_weight_key=rule.risk_weight_key,
-        citations=_merged_citation_ids(rule.citation_ids, position.citations),
+        citations=merged_citation_ids(rule.citation_ids, position.citations),
     )
 
 
@@ -153,17 +154,6 @@ def _is_exclusion_path(position: RraoPosition) -> bool:
         or position.exclusion_reason is not None
         or position.evidence_type is RraoEvidenceType.EXPLICIT_EXCLUSION
     )
-
-
-def _merged_citation_ids(*citation_groups: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for group in citation_groups:
-        for citation_id in group:
-            if citation_id not in seen:
-                merged.append(citation_id)
-                seen.add(citation_id)
-    return tuple(merged)
 
 
 __all__ = [
