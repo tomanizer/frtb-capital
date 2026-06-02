@@ -4,7 +4,7 @@ import inspect
 from datetime import date
 from typing import NoReturn
 
-import frtb_sbm.arrow_handoff as sbm_arrow_handoff
+import frtb_common.arrow_conversion as arrow_conversion_module
 import numpy as np
 import pyarrow as pa
 import pytest
@@ -278,11 +278,9 @@ def test_sbm_handoff_wraps_arrow_object_conversion_errors(
     def fail_arrow_object_array(_column: pa.ChunkedArray) -> NoReturn:
         raise pa.ArrowInvalid("forced conversion failure")
 
-    monkeypatch.setattr(sbm_arrow_handoff, "arrow_object_array", fail_arrow_object_array)
+    monkeypatch.setattr(arrow_conversion_module, "arrow_object_array", fail_arrow_object_array)
 
-    with pytest.raises(
-        SbmInputError, match=r"Arrow column conversion failed .*sensitivity_id"
-    ) as exc:
+    with pytest.raises(SbmInputError, match=r"forced conversion failure .*sensitivity_id") as exc:
         build_girr_delta_batch_from_handoff(handoff)
 
     assert exc.value.field == "sensitivity_id"
