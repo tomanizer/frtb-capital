@@ -17,54 +17,54 @@ requirements:
     source: Basel MAR22.1-MAR22.8; U.S. NPR 2.0 section V.A.9
     status: implemented
     modules: [src/frtb_drc/data_models.py]
-    tests: [tests/test_data_models.py]
+    tests: [tests/test_drc_data_models.py]
     notes: Frozen position, lineage, GrossJtd, MaturityScaledJtd, NetJtd, BucketDrc, CategoryDrc, and DrcCapitalResult records are implemented with stable ids and branch metadata.
   - id: DRC-REF-001
     title: Regime-specific LGD and risk-weight reference data
     source: Basel MAR22.12, MAR22.19-MAR22.26; 91 FR 15068
     status: partial
     modules: [src/frtb_drc/reference_data.py, src/frtb_drc/regimes.py]
-    tests: [tests/test_reference_data.py]
+    tests: [tests/test_drc_reference_data.py]
     notes: U.S. NPR 2.0 non-securitisation LGD, maturity, bucket, and risk-weight reference data are implemented with citations; broader Basel, CRR3, and PRA profile coverage remains future work.
   - id: DRC-JTD-001
     title: Gross JTD and default long-short direction
     source: Basel MAR22.9-MAR22.12; U.S. NPR 2.0 section V.A.9.a.i
     status: partial
     modules: [src/frtb_drc/gross_jtd.py]
-    tests: [tests/test_gross_jtd.py]
+    tests: [tests/test_drc_gross_jtd.py]
     notes: Supported for non-securitisation positions with source values, LGD source, gross JTD ids, and citation metadata preserved in audit output.
   - id: DRC-NET-001
     title: Net JTD by obligor, seniority, tranche, and maturity
     source: Basel MAR22.13-MAR22.18; U.S. NPR 2.0 section V.A.9 steps two and three
     status: partial
     modules: [src/frtb_drc/netting.py, src/frtb_drc/securitisation.py, src/frtb_drc/ctp.py]
-    tests: [tests/test_netting.py, tests/test_securitisation.py, tests/test_ctp.py]
+    tests: [tests/test_drc_netting.py, tests/test_drc_securitisation.py, tests/test_drc_ctp.py]
     notes: Supported for non-securitisation obligor and seniority grouping, securitisation non-CTP same-pool/same-tranche and explicit replication-group netting, and CTP explicit replication-group netting, including rejected-offset audit records.
   - id: DRC-CAP-001
     title: Hedge benefit ratio and bucket capital
     source: Basel MAR22.21-MAR22.26; U.S. NPR 2.0 section V.A.9 step four
     status: partial
     modules: [src/frtb_drc/capital.py]
-    tests: [tests/test_capital.py]
+    tests: [tests/test_drc_capital.py]
     notes: Supported for non-securitisation bucket capital, hedge benefit ratio, floors, weighted long/short components, and category reconciliation.
   - id: DRC-SEC-001
     title: Securitisation non-CTP DRC
     source: Basel MAR22.27-MAR22.35; U.S. NPR 2.0 proposed section __.210(c)
     status: partial
     modules: [src/frtb_drc/securitisation.py]
-    tests: [tests/test_securitisation.py]
+    tests: [tests/test_drc_securitisation.py]
     notes: Supported row path covers market-value gross default exposure, maturity scaling, same-pool/same-tranche netting, explicit replication-group evidence, securitisation bucket taxonomy, HBR, bucket floors, and category summation. Banking-book securitisation risk weights are supplied as cited run-scoped inputs rather than derived internally; fair-value cap handling is not implemented.
   - id: DRC-CTP-001
     title: Correlation trading portfolio DRC
     source: Basel MAR22.36-MAR22.45; U.S. NPR 2.0 proposed section __.210(d)
     status: partial
     modules: [src/frtb_drc/ctp.py]
-    tests: [tests/test_ctp.py]
+    tests: [tests/test_drc_ctp.py]
     notes: Supported row path covers market-value gross default exposure, explicit replication-group netting, CTP-wide HBR, unfloored buckets, and CTP category aggregation. Banking-book securitisation risk weights and decomposition evidence are supplied as cited run-scoped inputs rather than derived internally.
   - id: DRC-AUDIT-001
     title: Audit and attribution-compatible decomposition
     source: Basel MAR22 traceability requirement by calculation component
     status: partial
     modules: [src/frtb_drc/audit.py]
-    tests: [tests/test_audit.py]
+    tests: [tests/test_drc_audit.py]
     notes: Non-securitisation audit graph preserves position, gross JTD, scaled JTD, netting group, bucket, category, citations, stable ids, and branch metadata for later analytical Euler or impact methods; attribution math is not implemented in the capital kernel.

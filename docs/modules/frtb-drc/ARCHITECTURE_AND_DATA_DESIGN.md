@@ -454,25 +454,25 @@ presented as successful.
 
 The test suite should mirror calculation layers:
 
-- `test_data_models.py`: frozen behavior, enum normalisation, serialization.
-- `test_validation.py`: missing fields, duplicate ids, sign convention, numeric
+- `test_drc_data_models.py`: frozen behavior, enum normalisation, serialization.
+- `test_drc_validation.py`: missing fields, duplicate ids, sign convention, numeric
   finiteness.
-- `test_reference_data.py`: cited LGD, maturity, bucket, and risk-weight tables.
-- `test_gross_jtd.py`: long, short, defaulted, zero-LGD, credit derivative, call
+- `test_drc_reference_data.py`: cited LGD, maturity, bucket, and risk-weight tables.
+- `test_drc_gross_jtd.py`: long, short, defaulted, zero-LGD, credit derivative, call
   option, and invalid LGD paths.
-- `test_maturity.py`: below three months, below one year, one year or greater,
+- `test_drc_maturity.py`: below three months, below one year, one year or greater,
   derivative hedge maturity alignment.
-- `test_netting.py`: same obligor, rejected seniority, rejected cross-obligor,
+- `test_drc_netting.py`: same obligor, rejected seniority, rejected cross-obligor,
   weighted long/short maturity cases.
-- `test_capital.py`: HBR, risk weighting, bucket floor, category total, total
+- `test_drc_capital.py`: HBR, risk weighting, bucket floor, category total, total
   reconciliation.
-- `test_attribution.py`: future analytical Euler and fallback attribution,
+- `test_drc_attribution.py`: future analytical Euler and fallback attribution,
   including branch residuals and unsupported-method reporting.
-- `test_impact.py`: future baseline-vs-candidate deltas using stable ids and
+- `test_drc_impact.py`: future baseline-vs-candidate deltas using stable ids and
   explicit method labels.
-- `test_audit.py`: profile hash, input hash, deterministic ordering,
+- `test_drc_audit.py`: profile hash, input hash, deterministic ordering,
   serialization.
-- `test_unsupported.py`: securitisation and CTP fail closed until implemented.
+- `test_drc_unsupported.py`: securitisation and CTP fail closed until implemented.
 
 ## Example and validation artifacts
 
