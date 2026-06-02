@@ -569,8 +569,9 @@ def _cva_batch_column_kwargs(
     column_args: Mapping[str, str],
 ) -> dict[str, Any]:
     return {
-        argument_name: columns.get(column_name)
+        argument_name: columns[column_name]
         for column_name, argument_name in column_args.items()
+        if column_name in columns
     }
 
 
