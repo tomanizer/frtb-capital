@@ -7,6 +7,7 @@ from frtb_common.arrow_conversion import (
     arrow_float64_array,
     arrow_float64_array_with_nulls,
     arrow_object_array,
+    read_handoff_columns,
 )
 from frtb_common.batch_arrays import (
     BatchArrayCoercionError,
@@ -132,6 +133,7 @@ __all__ = [
     "normalized_handoff_hash",
     "object_array",
     "optional_bool_object_array",
+    "read_handoff_columns",
     "readonly_array",
     "require_sha256_hex",
     "resolve_column_name",
