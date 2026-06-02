@@ -3,14 +3,26 @@
 from __future__ import annotations
 
 import math
-from typing import cast
+from collections.abc import Callable, Sequence
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.compute as pc  # type: ignore[import-untyped]
 
-from frtb_common.handoff import TabularHandoffError
+import frtb_common.handoff as _handoff
+from frtb_common.handoff import (
+    ColumnSpec,
+    NullPolicy,
+    TabularHandoffError,
+    TabularLogicalType,
+    resolve_column_name,
+    validate_column_specs,
+)
+
+ErrorFactory = Callable[[str, str | None], Exception]
+HandoffColumnArray = npt.NDArray[Any]
 
 
 def arrow_object_array(column: pa.ChunkedArray) -> npt.NDArray[np.object_]:
@@ -100,6 +112,82 @@ def arrow_bool_or_object_array(
     return _object_array_from_arrow_array(array, null_value=null_value)
 
 
+def read_handoff_columns(
+    table: pa.Table,
+    specs: Sequence[ColumnSpec],
+    *,
+    error: ErrorFactory,
+) -> dict[str, HandoffColumnArray]:
+    """Read declared Arrow handoff columns into read-only NumPy arrays."""
+
+    if not isinstance(table, pa.Table):
+        raise error("table must be a pyarrow.Table", None)
+    try:
+        column_specs = validate_column_specs(specs)
+        _handoff._validate_unique_column_names(table)
+    except TabularHandoffError as exc:
+        raise error(str(exc), None) from exc
+
+    columns: dict[str, HandoffColumnArray] = {}
+    for spec in column_specs:
+        columns.update(_read_handoff_column(table, spec, error=error))
+    return columns
+
+
+def _read_handoff_column(
+    table: pa.Table,
+    spec: ColumnSpec,
+    *,
+    error: ErrorFactory,
+) -> dict[str, HandoffColumnArray]:
+    if spec.logical_type is TabularLogicalType.UNKNOWN:
+        raise error(f"Column {spec.name!r} has unknown logical_type", spec.name)
+
+    try:
+        column_name = resolve_column_name(table, spec)
+    except TabularHandoffError as exc:
+        raise error(str(exc), spec.name) from exc
+
+    if column_name is None:
+        if spec.required:
+            raise error(f"Required column {spec.name!r} is missing", spec.name)
+        return {}
+
+    column = table.column(column_name)
+    try:
+        _handoff._validate_column_policy(spec, column)
+        values = _read_typed_handoff_column(column, spec)
+    except (TabularHandoffError, pa.ArrowException) as exc:
+        raise error(str(exc), spec.name) from exc
+
+    values.setflags(write=False)
+    return {spec.name: values}
+
+
+def _read_typed_handoff_column(
+    column: pa.ChunkedArray,
+    spec: ColumnSpec,
+) -> HandoffColumnArray:
+    match spec.logical_type:
+        case (
+            TabularLogicalType.STRING
+            | TabularLogicalType.DICTIONARY
+            | TabularLogicalType.DICTIONARY_CODE
+            | TabularLogicalType.INTEGER
+        ):
+            return arrow_object_array(column)
+        case TabularLogicalType.FLOAT | TabularLogicalType.DECIMAL:
+            if spec.null_policy is NullPolicy.ALLOW and column.null_count:
+                return arrow_float64_array_with_nulls(column, field=spec.name)
+            return arrow_float64_array(column, field=spec.name)
+        case TabularLogicalType.BOOLEAN:
+            return arrow_bool_array(column, field=spec.name)
+        case _:
+            raise TabularHandoffError(
+                f"Column {spec.name!r} has unsupported logical_type {spec.logical_type.value!r}"
+            )
+
+
 def _single_arrow_array(column: pa.ChunkedArray) -> pa.Array:
     return column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
 
@@ -181,4 +269,5 @@ __all__ = [
     "arrow_float64_array",
     "arrow_float64_array_with_nulls",
     "arrow_object_array",
+    "read_handoff_columns",
 ]
