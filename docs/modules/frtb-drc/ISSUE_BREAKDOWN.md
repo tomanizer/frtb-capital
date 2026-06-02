@@ -91,7 +91,7 @@ non-securitisation slice.
 - Credit derivative examples use the reference exposure LGD.
 
 **Tests/checks:** `tests/test_drc_gross_jtd.py`,
-`tests/test_drc_unsupported_features.py`.
+`tests/test_drc_regimes.py`.
 
 ## Issue 5: Implement maturity scaling
 
@@ -236,8 +236,8 @@ without adding dataframe runtime dependencies.
 - Capital calculation remains unsupported until risk weights and formulas land.
 - Errors are specific enough for follow-up implementation.
 
-**Tests/checks:** `tests/test_drc_securitisation_data.py`,
-`tests/test_drc_unsupported_features.py`.
+**Tests/checks:** `tests/test_drc_securitisation.py`,
+`tests/test_drc_regimes.py`.
 
 ## Issue 12: Implement securitisation non-CTP capital
 
@@ -275,8 +275,8 @@ without adding dataframe runtime dependencies.
 - Missing decomposition evidence produces deterministic errors.
 - No placeholder CTP capital can be emitted.
 
-**Tests/checks:** `tests/test_drc_ctp_data.py`,
-`tests/test_drc_unsupported_features.py`.
+**Tests/checks:** `tests/test_drc_ctp.py`,
+`tests/test_drc_regimes.py`.
 
 ## Issue 14: Implement CTP capital
 
@@ -361,4 +361,5 @@ core DRC is stable.
   explicit method/residual metadata.
 - Capital totals do not change when attribution or impact is requested.
 
-**Tests/checks:** `tests/test_drc_attribution.py`, `tests/test_drc_impact.py`.
+**Tests/checks to add with this issue:** `tests/test_drc_attribution.py`,
+`tests/test_drc_impact.py`.

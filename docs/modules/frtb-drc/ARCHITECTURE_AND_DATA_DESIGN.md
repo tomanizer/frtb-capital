@@ -466,13 +466,21 @@ The test suite should mirror calculation layers:
   weighted long/short maturity cases.
 - `test_drc_capital.py`: HBR, risk weighting, bucket floor, category total, total
   reconciliation.
-- `test_drc_attribution.py`: future analytical Euler and fallback attribution,
-  including branch residuals and unsupported-method reporting.
-- `test_drc_impact.py`: future baseline-vs-candidate deltas using stable ids and
-  explicit method labels.
+- `test_drc_securitisation.py`: securitisation non-CTP gross JTD, exact-group
+  netting, bucket capital, and fail-closed validation paths.
+- `test_drc_ctp.py`: CTP gross JTD, replication-group netting, CTP category
+  aggregation, and fail-closed validation paths.
+- `test_drc_arrow_batch.py`: Arrow handoff normalization and batch parity for
+  non-securitisation, securitisation non-CTP, and CTP inputs.
 - `test_drc_audit.py`: profile hash, input hash, deterministic ordering,
   serialization.
-- `test_drc_unsupported.py`: securitisation and CTP fail closed until implemented.
+- `test_drc_public_api.py` and `test_drc_replay.py`: public entrypoint behavior
+  and deterministic audit replay.
+- `test_drc_nonsec_fixture.py`, `test_drc_nonsec_v2_fixture.py`, and fixture
+  packs under `tests/fixtures/`: committed synthetic validation fixtures.
+
+Future analytical attribution and impact tests should be added with the
+attribution implementation rather than listed as current package coverage.
 
 ## Example and validation artifacts
 
