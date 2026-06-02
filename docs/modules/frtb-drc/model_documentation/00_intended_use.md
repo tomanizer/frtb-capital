@@ -26,6 +26,8 @@ non-CTP DRC**, and **CTP DRC** row paths with:
 - issuer, tranche, explicit replication-group netting, and bucket/category
   aggregation;
 - deterministic reconciliation and audit metadata;
+- analytical, residual, or unsupported attribution records that reconcile to
+  total DRC without changing the capital number;
 - explicit fail-closed behaviour when required upstream risk weights,
   same-pool/same-tranche identity, or replication/decomposition evidence is
   missing.
@@ -58,6 +60,7 @@ Regulatory anchors for the supported path are recorded in
 - internal derivation of banking-book securitisation risk weights;
 - inferred securitisation fair-value caps without typed evidence and profile
   permission;
+- baseline-vs-candidate impact analysis;
 - silent fallback when required inputs or regulatory features are unsupported.
 
 ## Prototype Caution

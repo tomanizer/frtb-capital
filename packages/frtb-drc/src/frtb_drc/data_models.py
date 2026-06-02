@@ -93,6 +93,14 @@ class BranchType(StrEnum):
     NORMAL = "NORMAL"
 
 
+class AttributionMethod(StrEnum):
+    """Supported DRC attribution method labels."""
+
+    ANALYTICAL_EULER = "ANALYTICAL_EULER"
+    RESIDUAL = "RESIDUAL"
+    UNSUPPORTED = "UNSUPPORTED"
+
+
 EnumT = TypeVar("EnumT", bound=StrEnum)
 
 
@@ -178,6 +186,38 @@ class DrcFxConversion:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
+
+    def as_dict(self) -> dict[str, object]:
+        return _as_dict(self)
+
+
+@dataclass(frozen=True)
+class DrcCapitalContribution:
+    """Attribution or residual record for one DRC capital source."""
+
+    contribution_id: str
+    source_id: str
+    source_level: str
+    bucket_key: str | None
+    category: DrcRiskClass | str
+    base_amount: float
+    marginal_multiplier: float | None
+    contribution: float | None
+    method: AttributionMethod | str
+    residual: float = 0.0
+    reason: str = ""
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "category",
+            _coerce_enum(self.category, DrcRiskClass, "category"),
+        )
+        object.__setattr__(
+            self,
+            "method",
+            _coerce_enum(self.method, AttributionMethod, "method"),
+        )
 
     def as_dict(self) -> dict[str, object]:
         return _as_dict(self)
@@ -610,6 +650,7 @@ class DrcCapitalResult:
     fx_conversions: tuple[DrcFxConversion, ...] = ()
     risk_weight_evidence: tuple[DrcRiskWeightEvidence, ...] = ()
     fair_value_cap_evidence: tuple[DrcFairValueCapEvidence, ...] = ()
+    attribution_records: tuple[DrcCapitalContribution, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "categories", tuple(self.categories))
@@ -627,6 +668,7 @@ class DrcCapitalResult:
             "fair_value_cap_evidence",
             tuple(self.fair_value_cap_evidence),
         )
+        object.__setattr__(self, "attribution_records", tuple(self.attribution_records))
 
     def as_dict(self) -> dict[str, object]:
         return _as_dict(self)

@@ -12,8 +12,8 @@ Upstream risk / trade systems
     -> optional CRIF or vendor adapter
     -> canonical DrcPosition records
     -> frtb-drc validation, rule-profile lookup, and capital kernels
-    -> DrcCapitalResult + DrcAuditRecord
-    -> optional attribution and impact records
+    -> DrcCapitalResult with attribution records
+    -> optional impact records
     -> frtb-orchestration SA composition and suite aggregation
 ```
 
@@ -32,8 +32,8 @@ SA composition, or top-of-house aggregation.
 | `maturity.py` | Maturity weighting, floors, and hedge maturity alignment helpers. |
 | `netting.py` | Same-obligor, seniority-aware, maturity-weighted net JTD aggregation. |
 | `capital.py` | HBR, bucket capital, category totals, and public calculation entry point. |
-| `attribution.py` | Future analytical Euler and fallback attribution over the audited capital graph. Not part of the first capital slice. |
-| `impact.py` | Future baseline-vs-candidate capital deltas for change assessment. Not part of the first capital slice. |
+| `attribution.py` | Analytical Euler, residual, and unsupported attribution over the audited capital graph. |
+| `impact.py` | Future baseline-vs-candidate capital deltas for change assessment. Not part of the current runtime. |
 | `securitisation.py` | Securitisation non-CTP tranche data, bucket assignment, and capital path. Initially fail closed. |
 | `ctp.py` | CTP membership, tranche/index decomposition, HBR, and capital path. Initially fail closed. |
 | `crif.py` | Optional CRIF-to-canonical mapping. Not imported by kernels. |
@@ -98,18 +98,20 @@ and tranche mechanics package-local.
 5. Serialize deterministic audit records.
 6. Return a frozen result.
 
-### Stage 7: Future attribution and impact
+### Stage 7: Attribution and future impact
 
-This stage is reserved by [ADR 0012](../../decisions/0012-capital-impact-attribution.md)
-and is not required in the first capital-producing slice.
+Attribution is implemented under
+[ADR 0012](../../decisions/0012-capital-impact-attribution.md) and
+[ADR 0031](../../decisions/0031-drc-attribution-method-contract.md). Impact
+analysis remains future work.
 
 1. Consume the capital result and audit graph.
 2. Calculate analytical Euler contributions where the DRC formula is
    differentiable on the active branch.
-3. Label branch-specific fallbacks, such as finite-difference impact or
-   unsupported attribution.
-4. Reconcile contribution totals to bucket, category, and total DRC where the
-   selected method permits exact reconciliation.
+3. Label branch-specific fallbacks, such as residual or unsupported
+   attribution.
+4. Reconcile contribution totals to total DRC without changing the capital
+   number.
 5. Report residuals explicitly when floors, caps, branch changes, or bucket
    moves prevent exact Euler reconciliation.
 
@@ -363,22 +365,22 @@ class DrcCapitalResult:
     total_drc: float
     citations: tuple[str, ...]
     warnings: tuple[str, ...] = ()
+    attribution_records: tuple[DrcCapitalContribution, ...] = ()
 ```
 
 The public result should expose `as_dict()` for audit/reporting, following the
 IMA package style.
 
-### Future attribution and impact records
+### Attribution and future impact records
 
-The first DRC implementation does not need to emit these records, but the
-result graph must make them addable without changing the capital calculation
-API.
+DRC results emit `DrcCapitalContribution` records now. Impact records remain
+future baseline-vs-candidate artifacts.
 
 ```python
 class AttributionMethod(StrEnum):
-    ANALYTICAL_EULER = "analytical_euler"
-    FINITE_DIFFERENCE = "finite_difference"
-    UNSUPPORTED = "unsupported"
+    ANALYTICAL_EULER = "ANALYTICAL_EULER"
+    RESIDUAL = "RESIDUAL"
+    UNSUPPORTED = "UNSUPPORTED"
 
 @dataclass(frozen=True)
 class DrcCapitalContribution:
@@ -417,6 +419,11 @@ implementation must still handle branch cases explicitly: zero denominators,
 bucket-level floors, offset rejection, maturity-scaling floors, and any change
 that moves an exposure to a different bucket or category.
 
+For CTP, attribution uses the CTP-wide HBR carried on each bucket and applies
+the active positive/negative bucket recognition factor before reconciling to
+category capital. For securitisation non-CTP, attribution uses the
+bucket-local HBR and run-supplied risk-weight lineage.
+
 ## Data invariants
 
 - All result dataclasses are frozen.
@@ -435,8 +442,7 @@ that moves an exposure to a different bucket or category.
 - HBR uses netted exposures, not raw position-level gross JTD.
 - Category totals reconcile exactly to bucket totals within numeric tolerance.
 - Total DRC reconciles exactly to category totals within numeric tolerance.
-- Any future attribution record must state its method and reconciliation
-  residual.
+- Every attribution record must state its method and reconciliation residual.
 
 ## Unsupported feature strategy
 
@@ -473,6 +479,8 @@ The test suite should mirror calculation layers:
   netting, bucket capital, and fail-closed validation paths.
 - `test_drc_ctp.py`: CTP gross JTD, replication-group netting, CTP category
   aggregation, and fail-closed validation paths.
+- `test_drc_attribution.py`: analytical, residual, unsupported, row, batch,
+  securitisation non-CTP, CTP, and reconciliation-failure attribution paths.
 - `test_drc_arrow_batch.py`: Arrow handoff normalization and batch parity for
   non-securitisation, securitisation non-CTP, and CTP inputs.
 - `test_drc_audit.py`: profile hash, input hash, deterministic ordering,
@@ -482,8 +490,8 @@ The test suite should mirror calculation layers:
 - `test_drc_nonsec_fixture.py`, `test_drc_nonsec_v2_fixture.py`, and fixture
   packs under `tests/fixtures/`: committed synthetic validation fixtures.
 
-Future analytical attribution and impact tests should be added with the
-attribution implementation rather than listed as current package coverage.
+Future impact tests should be added with the impact implementation rather than
+listed as current package coverage.
 
 ## Example and validation artifacts
 

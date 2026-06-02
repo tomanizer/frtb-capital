@@ -12,6 +12,7 @@ from frtb_drc.arrow_handoff import (
     normalize_drc_nonsec_arrow_table,
     normalize_drc_securitisation_non_ctp_arrow_table,
 )
+from frtb_drc.attribution import calculate_drc_attribution, validate_attribution_reconciliation
 from frtb_drc.audit import (
     input_snapshot_hash,
     result_json,
@@ -46,6 +47,7 @@ from frtb_drc.ctp import (
     validate_ctp_context,
 )
 from frtb_drc.data_models import (
+    AttributionMethod,
     BranchMetadata,
     BranchType,
     BucketDrc,
@@ -54,6 +56,7 @@ from frtb_drc.data_models import (
     DefaultDirection,
     DrcBucketType,
     DrcCalculationContext,
+    DrcCapitalContribution,
     DrcCapitalResult,
     DrcCitation,
     DrcFairValueCapEvidence,
@@ -121,6 +124,7 @@ __all__ = [
     "PACKAGE_METADATA",
     "PRA_UK_CRR_PROFILE_ID",
     "US_NPR_2_0_PROFILE_ID",
+    "AttributionMethod",
     "BranchMetadata",
     "BranchType",
     "BucketDefinition",
@@ -135,6 +139,7 @@ __all__ = [
     "DrcBatchCapitalCalculation",
     "DrcBucketType",
     "DrcCalculationContext",
+    "DrcCapitalContribution",
     "DrcCapitalResult",
     "DrcCitation",
     "DrcFairValueCapEvidence",
@@ -175,6 +180,7 @@ __all__ = [
     "calculate_ctp_drc",
     "calculate_ctp_gross_jtd",
     "calculate_ctp_net_jtds",
+    "calculate_drc_attribution",
     "calculate_drc_capital",
     "calculate_drc_capital_from_batch",
     "calculate_gross_jtd",
@@ -208,6 +214,7 @@ __all__ = [
     "scale_gross_jtd",
     "scale_gross_jtds",
     "serialize_result",
+    "validate_attribution_reconciliation",
     "validate_ctp_context",
     "validate_position",
     "validate_positions",

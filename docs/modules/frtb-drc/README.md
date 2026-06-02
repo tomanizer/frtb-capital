@@ -15,7 +15,8 @@ inputs, plus Basel MAR22 non-securitisation canonical inputs. The current
 runtime covers gross JTD, maturity scaling,
 seniority-aware non-securitisation netting, securitisation same-tranche and
 replication-group netting, CTP replication-group netting, hedge benefit ratio,
-bucket/category capital, reconciliation, and attribution-ready audit lineage.
+bucket/category capital, reconciliation, attribution records, and audit
+lineage.
 The Arrow/batch API now has class-specific fast paths for non-securitisation,
 securitisation non-CTP, and CTP inputs, with accepted rows kept columnar and
 without row-dataclass fallback.
@@ -44,6 +45,14 @@ records the reason without changing gross default exposure. Used cap evidence is
 included in `DrcCapitalResult.fair_value_cap_evidence` and the deterministic
 input hash.
 
+`DrcCapitalResult.attribution_records` carries deterministic
+`DrcCapitalContribution` records for row and batch runs. Stable non-floor
+branches use `ANALYTICAL_EULER`; floors, zero HBR denominators, missing or
+non-unique risk-weight lineage, and unsupported branch shapes emit
+`UNSUPPORTED` or `RESIDUAL` records that reconcile to total DRC without changing
+the capital number. Baseline-vs-candidate impact analysis remains a separate
+future artifact.
+
 ## Planning Documents
 
 - [Product requirements](PRD.md)
@@ -63,3 +72,4 @@ input hash.
 - [ADR 0028: DRC securitisation non-CTP row path](../../decisions/0028-drc-securitisation-non-ctp-row-path.md)
 - [ADR 0029: DRC securitisation and CTP risk-weight evidence contract](../../decisions/0029-drc-securitisation-risk-weight-evidence.md)
 - [ADR 0030: DRC securitisation fair-value cap evidence](../../decisions/0030-drc-securitisation-fair-value-cap-evidence.md)
+- [ADR 0031: DRC attribution method contract](../../decisions/0031-drc-attribution-method-contract.md)
