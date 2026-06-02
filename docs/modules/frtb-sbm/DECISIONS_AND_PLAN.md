@@ -1,5 +1,11 @@
 # frtb-sbm decisions and implementation plan
 
+This document records the original implementation sequencing decisions for
+SBM. Some early-slice implications below are intentionally historical. The
+current supported BASEL_MAR21 delta, vega, and curvature matrix is maintained
+in
+[`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).
+
 ## Decision log
 
 ### SBM-DEC-001: Start with a thin delta vertical slice

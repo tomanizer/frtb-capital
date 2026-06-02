@@ -59,11 +59,14 @@ materializes row dataclasses; the Arrow/batch path records zero accepted-row
 dataclasses for every migrated case.
 
 The capital-producing Arrow/batch paths reconcile against the row path within
-the harness before a report is emitted. This covers GIRR vega, FX delta, equity
-delta, commodity delta, CSR non-sec delta, CSR sec non-CTP delta, and CSR sec
-CTP delta. GIRR curvature is validation-only: the harness verifies row and
-batch branch selection. Public curvature capital is now available through the
-row API; high-volume curvature capital handoffs remain future work.
+the harness before a report is emitted. The original #270 baseline covered GIRR
+vega, FX delta, equity delta, commodity delta, CSR non-sec delta, CSR sec
+non-CTP delta, CSR sec CTP delta, and a GIRR curvature validation probe. Later
+SBM vectorisation work extended the supported high-volume matrix to delta,
+vega, and curvature across all seven BASEL_MAR21 SBM risk classes; use the
+support matrix in
+[`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md)
+as the current source of truth.
 
 Pairwise evidence is summarized, not materialized, in the benchmark controls.
 The baseline therefore exercises portfolios with more than 100,000 pairwise
@@ -100,13 +103,13 @@ Batch construction improved for each benchmarked handoff path:
 ## Supported High-Volume Entrypoints
 
 Use the public Arrow normalizers and handoff/batch entrypoints in
-`frtb_sbm.arrow_handoff` for migrated high-volume inputs. The supported capital
-handoffs are GIRR delta, GIRR vega, FX delta, equity delta, commodity delta, CSR
-non-sec delta, CSR sec non-CTP delta, and CSR sec CTP delta. The supported
-validation-only handoff is GIRR curvature.
+`frtb_sbm.arrow_handoff` for migrated high-volume inputs. The supported
+BASEL_MAR21 capital handoffs cover delta, vega, and curvature for GIRR, FX,
+equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP. The portfolio
+dispatcher accepts multiple normalized handoffs and groups them by
+`(risk_class, risk_measure)` before aggregation.
 
-Unsupported or unmigrated paths remain explicit boundaries: high-volume
-FX/equity/commodity/CSR vega capital handoffs, unsupported curvature
-sub-features, unsupported regulatory profiles, high-volume curvature capital
-handoffs, and broader CRIF coverage outside the implemented GIRR delta CRIF
-mapping. Non-GIRR vega capital is supported through the row-wise public API.
+Unsupported paths remain explicit boundaries: unsupported regulatory profiles,
+equity repo vega/curvature sub-features, missing CTP decomposition evidence,
+and broader CRIF-to-Arrow coverage outside the implemented GIRR delta CRIF
+mapping.

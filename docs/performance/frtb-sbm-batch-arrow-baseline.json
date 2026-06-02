@@ -396,9 +396,9 @@
     }
   ],
   "remaining_boundaries": {
-    "curvature_capital": "unsupported and fail-closed until #166",
+    "curvature_capital": "supported for BASEL_MAR21 row, batch, and Arrow handoff paths across the current SBM risk-class matrix; unsupported profiles and sub-features still fail closed",
     "parent_issue": "#270",
-    "unmigrated_sbm_measures": "FX/equity/commodity/CSR vega are supported only through the row-wise API, while high-volume vega handoffs and non-GIRR curvature handoffs remain unmigrated; do not infer capital support from the GIRR curvature validation handoff"
+    "current_support_matrix_note": "the original #270 baseline predates the completed supported-path vectorisation sprint; use packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md for the current supported BASEL_MAR21 delta/vega/curvature matrix"
   },
   "schema_version": "frtb_sbm_batch_arrow_benchmark_v1",
   "summary": {

@@ -22,7 +22,7 @@ Upstream risk / sensitivity systems
 The package must not contain pricing, market-data sourcing, trade mastering,
 SA composition, or regulatory submission packaging.
 
-## Proposed module layout
+## Current module layout
 
 | Module | Responsibility |
 | --- | --- |
@@ -34,8 +34,8 @@ SA composition, or regulatory submission packaging.
 | `aggregation.py` | Shared intra-bucket and inter-bucket aggregation primitives, scenario evaluation, floors, and reconciliation helpers. |
 | `risk_classes/girr.py` | GIRR-specific canonical fields, lookups, and assembly onto shared aggregation primitives. |
 | `risk_classes/csr_nonsec.py` | CSR non-securitisation-specific assembly and validation. |
-| `risk_classes/csr_sec_nonctp.py` | CSR securitisation non-CTP assembly and fail-closed gates until cited mappings are complete. |
-| `risk_classes/csr_sec_ctp.py` | CSR securitisation CTP assembly and fail-closed gates until cited mappings are complete. |
+| `risk_classes/csr_sec_nonctp.py` | CSR securitisation non-CTP assembly and cited BASEL_MAR21 validation gates. |
+| `risk_classes/csr_sec_ctp.py` | CSR securitisation CTP assembly and cited decomposition-evidence fail-closed gates. |
 | `risk_classes/equity.py` | Equity-specific bucket, qualifier, and measure handling. |
 | `risk_classes/commodity.py` | Commodity-specific bucket, location/tenor, and measure handling. |
 | `risk_classes/fx.py` | FX-specific currency-bucket and base/reporting currency handling. |
@@ -337,7 +337,7 @@ The package must never return placeholder bucket, scenario, or total capital.
 
 ## Testing architecture
 
-The first implementation should separate tests by layer:
+Tests are separated by layer:
 
 - `tests/test_data_models.py` and `tests/test_validation.py` for canonical
   contracts and invariant checks;
@@ -346,22 +346,17 @@ The first implementation should separate tests by layer:
 - `tests/test_weighted_sensitivity.py` for risk weights and vega scaling;
 - `tests/test_aggregation.py` for shared intra/inter-bucket mechanics and
   scenario selection;
-- risk-class-specific tests such as `tests/risk_classes/test_girr.py`;
+- risk-class-specific tests under `tests/risk_classes/`;
 - `tests/test_curvature.py` for curvature-specific branches and floors;
 - `tests/test_audit.py` and `tests/test_replay.py` for hashes and
   serialization;
-- `tests/test_unsupported_features.py` for explicit fail-closed behavior.
+- `tests/test_sbm_unsupported_features.py` for explicit fail-closed behavior.
 
 ## Example and validation artifacts
 
-The first fixture pack should be synthetic and narrow:
-
-- one GIRR delta scenario with multiple tenors and at least one floor case;
-- one FX delta scenario to prove the shared engine handles a second risk class;
-- negative-path fixtures for missing bucket mapping, unsupported risk measure,
-  duplicate sensitivity id, and missing curvature inputs;
-- a deterministic audit bundle capturing input hash, profile hash, bucket
-  results, scenario totals, and total SBM.
-
-Later fixture packs can expand to equity, commodity, CSR non-securitisation,
-and curvature once their rule tables are cited and stable.
+Synthetic fixture packs now cover the supported BASEL_MAR21 delta and vega
+paths used by the package tests, with curvature parity covered by dedicated
+row/batch/Arrow tests. Negative cases cover missing mappings, unsupported
+sub-features, duplicate sensitivity ids, and incomplete curvature inputs. Audit
+and replay tests assert deterministic input hashes, profile hashes, bucket
+results, scenario totals, and total SBM reconciliation.
