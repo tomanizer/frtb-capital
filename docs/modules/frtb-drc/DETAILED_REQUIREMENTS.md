@@ -261,19 +261,23 @@ different profile explicitly requires and cites another treatment.
 
 ### DRC-FUNC-013: Securitisation non-CTP path
 
-The securitisation non-CTP path must fail closed until the package implements:
+The securitisation non-CTP row path supports:
 
-- tranche identity, attachment point, detachment point, maturity, fair value,
-  and underlying pool descriptors;
-- bucket assignment by asset class and region where required;
-- "other" bucket fallback with explicit citation;
-- long/short offsetting only where the cited replication and decomposition
-  rules permit it;
-- securitisation risk weights mapped to the relevant banking-book treatment;
-- fair-value cap where the selected profile permits it.
+- market-value gross default exposure with no separate LGD;
+- tranche identity, maturity, fair value, and underlying pool identity carried
+  in canonical row fields;
+- bucket assignment by the cited corporate or asset-class/region taxonomy;
+- long/short offsetting for same-pool/same-tranche rows, with broader
+  replication or decomposition recognised only through explicit run-scoped
+  offset-group evidence;
+- cited banking-book securitisation risk weights supplied as run-scoped inputs;
+- HBR, bucket floor, and category summation.
 
-Proposed U.S. section `__.210(c)` and Basel MAR22.27-MAR22.38 are the first
-anchors.
+The package still does not internally derive banking-book securitisation risk
+weights or apply the optional fair-value cap. Those sub-scope items must remain
+explicit future work rather than silent approximations.
+
+Proposed U.S. section `__.210(c)` and Basel MAR22.27-MAR22.35 are the anchors.
 
 ### DRC-FUNC-014: CTP path
 

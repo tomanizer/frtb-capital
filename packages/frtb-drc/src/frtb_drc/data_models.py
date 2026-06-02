@@ -185,11 +185,23 @@ class DrcCalculationContext:
     legal_entity: str = ""
     citation_policy: str = "strict"
     fx_rates: Mapping[str, DrcFxRate] = field(default_factory=dict)
+    securitisation_non_ctp_risk_weights: Mapping[str, float] = field(default_factory=dict)
+    securitisation_non_ctp_offset_groups: Mapping[str, str] = field(default_factory=dict)
     ctp_risk_weights: Mapping[str, float] = field(default_factory=dict)
     ctp_offset_groups: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "fx_rates", MappingProxyType(dict(self.fx_rates)))
+        object.__setattr__(
+            self,
+            "securitisation_non_ctp_risk_weights",
+            MappingProxyType(dict(self.securitisation_non_ctp_risk_weights)),
+        )
+        object.__setattr__(
+            self,
+            "securitisation_non_ctp_offset_groups",
+            MappingProxyType(dict(self.securitisation_non_ctp_offset_groups)),
+        )
         object.__setattr__(
             self,
             "ctp_risk_weights",

@@ -51,15 +51,32 @@ def test_us_npr_maturity_policy_is_cited() -> None:
     assert policy.citation_id == "US_NPR_210_A_2_III"
 
 
-def test_us_npr_nonsec_bucket_definitions_are_cited() -> None:
+def test_us_npr_bucket_definitions_are_cited() -> None:
     buckets = {bucket.bucket_key: bucket for bucket in iter_bucket_definitions()}
+    nonsec_buckets = {
+        key
+        for key, bucket in buckets.items()
+        if bucket.risk_class is DrcRiskClass.NON_SECURITISATION
+    }
+    securitisation_buckets = {
+        key
+        for key, bucket in buckets.items()
+        if bucket.risk_class is DrcRiskClass.SECURITISATION_NON_CTP
+    }
 
-    assert set(buckets) == {"NON_US_SOVEREIGN", "PSE_GSE", "CORPORATE", "DEFAULTED"}
+    assert nonsec_buckets == {"NON_US_SOVEREIGN", "PSE_GSE", "CORPORATE", "DEFAULTED"}
+    assert "SEC_CORPORATE" in securitisation_buckets
+    assert "SEC_CLO_NORTH_AMERICA" in securitisation_buckets
+    assert "SEC_OTHER_WHOLESALE_OTHER" in securitisation_buckets
+    assert len(securitisation_buckets) == 45
     assert "US_SOVEREIGN" not in buckets
     assert "MUNICIPAL" not in buckets
     assert buckets["NON_US_SOVEREIGN"].bucket_type is DrcBucketType.NON_US_SOVEREIGN
     assert buckets["CORPORATE"].risk_class is DrcRiskClass.NON_SECURITISATION
-    assert all(bucket.citation_id == "US_NPR_210_B_3_I" for bucket in buckets.values())
+    assert buckets["SEC_CLO_NORTH_AMERICA"].bucket_type is DrcBucketType.SECURITISATION_ASSET_REGION
+    assert buckets["SEC_CLO_NORTH_AMERICA"].risk_class is DrcRiskClass.SECURITISATION_NON_CTP
+    assert all(buckets[key].citation_id == "US_NPR_210_B_3_I" for key in nonsec_buckets)
+    assert all(buckets[key].citation_id == "US_NPR_210_C_3_I_II" for key in securitisation_buckets)
 
 
 def test_us_npr_risk_weight_table_uses_strict_lookup_keys() -> None:

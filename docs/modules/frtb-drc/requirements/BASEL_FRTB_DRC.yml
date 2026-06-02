@@ -37,9 +37,9 @@ requirements:
     title: Net JTD by obligor, seniority, tranche, and maturity
     source: Basel MAR22.13-MAR22.18; U.S. NPR 2.0 section V.A.9 steps two and three
     status: partial
-    modules: [src/frtb_drc/netting.py]
-    tests: [tests/test_netting.py]
-    notes: Supported for non-securitisation obligor and seniority grouping, including rejected-offset audit records; securitisation tranche netting remains unsupported.
+    modules: [src/frtb_drc/netting.py, src/frtb_drc/securitisation.py, src/frtb_drc/ctp.py]
+    tests: [tests/test_netting.py, tests/test_securitisation.py, tests/test_ctp.py]
+    notes: Supported for non-securitisation obligor and seniority grouping, securitisation non-CTP same-pool/same-tranche and explicit replication-group netting, and CTP explicit replication-group netting, including rejected-offset audit records.
   - id: DRC-CAP-001
     title: Hedge benefit ratio and bucket capital
     source: Basel MAR22.21-MAR22.26; U.S. NPR 2.0 section V.A.9 step four
@@ -49,18 +49,18 @@ requirements:
     notes: Supported for non-securitisation bucket capital, hedge benefit ratio, floors, weighted long/short components, and category reconciliation.
   - id: DRC-SEC-001
     title: Securitisation non-CTP DRC
-    source: Basel MAR22.27-MAR22.38; U.S. NPR 2.0 section V.A.9.b
-    status: unsupported
+    source: Basel MAR22.27-MAR22.35; U.S. NPR 2.0 proposed section __.210(c)
+    status: partial
     modules: [src/frtb_drc/securitisation.py]
     tests: [tests/test_securitisation.py]
-    notes: Explicitly unsupported in the current runtime; public APIs fail closed rather than emitting placeholder capital.
+    notes: Supported row path covers market-value gross default exposure, maturity scaling, same-pool/same-tranche netting, explicit replication-group evidence, securitisation bucket taxonomy, HBR, bucket floors, and category summation. Banking-book securitisation risk weights are supplied as cited run-scoped inputs rather than derived internally; fair-value cap handling is not implemented.
   - id: DRC-CTP-001
     title: Correlation trading portfolio DRC
-    source: Basel MAR22.39-MAR22.47; U.S. NPR 2.0 section V.A.9.c
-    status: unsupported
+    source: Basel MAR22.36-MAR22.45; U.S. NPR 2.0 proposed section __.210(d)
+    status: partial
     modules: [src/frtb_drc/ctp.py]
     tests: [tests/test_ctp.py]
-    notes: Explicitly unsupported in the current runtime; public APIs fail closed rather than emitting placeholder capital.
+    notes: Supported row path covers market-value gross default exposure, explicit replication-group netting, CTP-wide HBR, unfloored buckets, and CTP category aggregation. Banking-book securitisation risk weights and decomposition evidence are supplied as cited run-scoped inputs rather than derived internally.
   - id: DRC-AUDIT-001
     title: Audit and attribution-compatible decomposition
     source: Basel MAR22 traceability requirement by calculation component

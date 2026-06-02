@@ -1,0 +1,154 @@
+{
+  "context": {
+    "base_currency": "USD",
+    "calculation_date": "2026-05-29",
+    "profile_id": "US_NPR_2_0",
+    "run_id": "run-drc-sec-nonctp-v1",
+    "securitisation_non_ctp_risk_weights": {
+      "long-clo-mezz": 0.2,
+      "long-rmbs-a": 0.05,
+      "short-clo-mezz": 0.2,
+      "short-rmbs-a": 0.05
+    }
+  },
+  "fixture_id": "drc_sec_nonctp_v1",
+  "positions": [
+    {
+      "bucket_key": "SEC_CLO_NORTH_AMERICA",
+      "citation_ids": [
+        "US_NPR_210_C_1",
+        "US_NPR_210_C_2",
+        "US_NPR_210_C_3_III"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "LONG",
+      "desk_id": "sec-desk",
+      "index_series_id": null,
+      "instrument_type": "SECURITISATION_TRANCHE",
+      "issuer_id": "clo-2026-1",
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_sec_nonctp_v1.csv",
+        "source_row_id": "row-long-clo-mezz",
+        "source_system": "synthetic"
+      },
+      "market_value": 100.0,
+      "maturity_years": 1.0,
+      "notional": 100.0,
+      "position_id": "long-clo-mezz",
+      "risk_class": "SECURITISATION_NON_CTP",
+      "seniority": null,
+      "source_row_id": "row-long-clo-mezz",
+      "tranche_id": "mezz"
+    },
+    {
+      "bucket_key": "SEC_CLO_NORTH_AMERICA",
+      "citation_ids": [
+        "US_NPR_210_C_1",
+        "US_NPR_210_C_2",
+        "US_NPR_210_C_3_III"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "SHORT",
+      "desk_id": "sec-desk",
+      "index_series_id": null,
+      "instrument_type": "SECURITISATION_TRANCHE",
+      "issuer_id": "clo-2026-1",
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_sec_nonctp_v1.csv",
+        "source_row_id": "row-short-clo-mezz",
+        "source_system": "synthetic"
+      },
+      "market_value": 40.0,
+      "maturity_years": 0.5,
+      "notional": 40.0,
+      "position_id": "short-clo-mezz",
+      "risk_class": "SECURITISATION_NON_CTP",
+      "seniority": null,
+      "source_row_id": "row-short-clo-mezz",
+      "tranche_id": "mezz"
+    },
+    {
+      "bucket_key": "SEC_RMBS_EUROPE",
+      "citation_ids": [
+        "US_NPR_210_C_1",
+        "US_NPR_210_C_2",
+        "US_NPR_210_C_3_III"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "LONG",
+      "desk_id": "sec-desk",
+      "index_series_id": null,
+      "instrument_type": "SECURITISATION_TRANCHE",
+      "issuer_id": "rmbs-2026-1",
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_sec_nonctp_v1.csv",
+        "source_row_id": "row-long-rmbs-a",
+        "source_system": "synthetic"
+      },
+      "market_value": 100.0,
+      "maturity_years": 1.0,
+      "notional": 100.0,
+      "position_id": "long-rmbs-a",
+      "risk_class": "SECURITISATION_NON_CTP",
+      "seniority": null,
+      "source_row_id": "row-long-rmbs-a",
+      "tranche_id": "a"
+    },
+    {
+      "bucket_key": "SEC_RMBS_EUROPE",
+      "citation_ids": [
+        "US_NPR_210_C_1",
+        "US_NPR_210_C_2",
+        "US_NPR_210_C_3_III"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "SHORT",
+      "desk_id": "sec-desk",
+      "index_series_id": null,
+      "instrument_type": "SECURITISATION_TRANCHE",
+      "issuer_id": "rmbs-2026-2",
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_sec_nonctp_v1.csv",
+        "source_row_id": "row-short-rmbs-a",
+        "source_system": "synthetic"
+      },
+      "market_value": 60.0,
+      "maturity_years": 1.0,
+      "notional": 60.0,
+      "position_id": "short-rmbs-a",
+      "risk_class": "SECURITISATION_NON_CTP",
+      "seniority": null,
+      "source_row_id": "row-short-rmbs-a",
+      "tranche_id": "a"
+    }
+  ],
+  "schema_version": "drc_sec_nonctp_fixture_v1"
+}

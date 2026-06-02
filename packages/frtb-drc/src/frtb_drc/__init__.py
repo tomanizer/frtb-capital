@@ -85,6 +85,16 @@ from frtb_drc.regimes import (
     profile_content_hash,
 )
 from frtb_drc.scaffold import PACKAGE_METADATA, calculate_drc_capital
+from frtb_drc.securitisation import (
+    SecuritisationNonCtpCalculation,
+    SecuritisationNonCtpCapitalInput,
+    SecuritisationNonCtpNettingInput,
+    calculate_securitisation_non_ctp_category_drc,
+    calculate_securitisation_non_ctp_drc,
+    calculate_securitisation_non_ctp_gross_jtd,
+    calculate_securitisation_non_ctp_net_jtds,
+    validate_securitisation_non_ctp_context,
+)
 from frtb_drc.validation import DrcInputError, validate_position, validate_positions
 
 __all__ = [
@@ -126,6 +136,9 @@ __all__ = [
     "NettingInput",
     "RejectedOffset",
     "RiskWeightRule",
+    "SecuritisationNonCtpCalculation",
+    "SecuritisationNonCtpCapitalInput",
+    "SecuritisationNonCtpNettingInput",
     "__version__",
     "build_drc_nonsec_batch_from_columns",
     "build_drc_nonsec_batch_from_handoff",
@@ -143,6 +156,10 @@ __all__ = [
     "calculate_hedge_benefit_ratio",
     "calculate_maturity_weight",
     "calculate_net_jtds",
+    "calculate_securitisation_non_ctp_category_drc",
+    "calculate_securitisation_non_ctp_drc",
+    "calculate_securitisation_non_ctp_gross_jtd",
+    "calculate_securitisation_non_ctp_net_jtds",
     "ensure_risk_class_supported",
     "get_bucket_definition",
     "get_lgd_rule",
@@ -165,4 +182,5 @@ __all__ = [
     "validate_position",
     "validate_positions",
     "validate_reconciliation",
+    "validate_securitisation_non_ctp_context",
 ]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import date
 from typing import cast
 
 import pytest
@@ -10,6 +11,7 @@ from frtb_drc import (
     US_NPR_2_0_PROFILE_ID,
     DrcInputError,
     DrcRiskClass,
+    DrcRuleProfile,
     ensure_risk_class_supported,
     get_rule_profile,
     profile_content_hash,
@@ -17,18 +19,30 @@ from frtb_drc import (
 )
 
 
-def test_us_npr_profile_supports_nonsec_and_ctp() -> None:
+def test_us_npr_profile_supports_row_drc_risk_classes() -> None:
     profile = get_rule_profile(US_NPR_2_0_PROFILE_ID)
 
     assert DrcRiskClass.NON_SECURITISATION in profile.supported_risk_classes
+    assert DrcRiskClass.SECURITISATION_NON_CTP in profile.supported_risk_classes
     assert DrcRiskClass.CORRELATION_TRADING_PORTFOLIO in profile.supported_risk_classes
-    assert DrcRiskClass.SECURITISATION_NON_CTP not in profile.supported_risk_classes
 
 
 def test_unsupported_risk_classes_fail_closed() -> None:
-    profile = get_rule_profile(US_NPR_2_0_PROFILE_ID)
+    profile = DrcRuleProfile(
+        profile_id="TEST",
+        regulator="Test",
+        version="test",
+        publication_date=date(2026, 1, 1),
+        effective_date=None,
+        status="test",
+        supported_risk_classes=frozenset({DrcRiskClass.NON_SECURITISATION}),
+        unsupported_features={
+            DrcRiskClass.SECURITISATION_NON_CTP: "test securitisation non-CTP gap"
+        },
+        content_hash="test",
+    )
 
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="securitisation non-CTP"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="test securitisation non-CTP gap"):
         ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
 
 
@@ -36,6 +50,7 @@ def test_supported_risk_class_passes_gate() -> None:
     profile = get_rule_profile(US_NPR_2_0_PROFILE_ID)
 
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
+    ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
