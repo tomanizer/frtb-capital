@@ -2,33 +2,28 @@
 
 from __future__ import annotations
 
-import math
 from collections.abc import Mapping, Sequence
-from typing import cast
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
-import pyarrow.compute as pc  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
     NormalizedTabularHandoff,
     NullPolicy,
     TabularLogicalType,
-    arrow_object_array,
     normalize_arrow_table,
     normalized_handoff_hash,
-    validate_arrow_table,
+    read_handoff_columns,
+    resolve_column_name,
 )
 
 from frtb_rrao.batch import RraoPositionBatch, build_rrao_batch_from_columns
 from frtb_rrao.validation import RraoInputError
 
-ObjectArray = npt.NDArray[np.object_]
-FloatArray = npt.NDArray[np.float64]
-BoolArray = npt.NDArray[np.bool_]
-_ARROW_CONVERSION_ERRORS = (pa.ArrowException, TypeError, ValueError)
+HandoffColumnArray = npt.NDArray[Any]
 
 RRAO_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("position_id", aliases=("positionId",), logical_type=TabularLogicalType.STRING),
@@ -245,6 +240,72 @@ RRAO_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
 )
 
 
+_RRAO_BATCH_COLUMN_ARGS: Mapping[str, str] = {
+    "position_id": "position_ids",
+    "source_row_id": "source_row_ids",
+    "desk_id": "desk_ids",
+    "legal_entity": "legal_entities",
+    "gross_effective_notional": "gross_effective_notionals",
+    "currency": "currencies",
+    "evidence_type": "evidence_types",
+    "evidence_label": "evidence_labels",
+    "classification_hint": "classification_hints",
+    "exclusion_reason": "exclusion_reasons",
+    "exclusion_evidence_id": "exclusion_evidence_ids",
+    "back_to_back_match_group_id": "back_to_back_match_group_ids",
+    "back_to_back_matched_position_id": "back_to_back_matched_position_ids",
+    "supervisor_directive_id": "supervisor_directive_ids",
+    "underlying_count": "underlying_counts",
+    "is_path_dependent": "is_path_dependents",
+    "has_maturity": "has_maturities",
+    "has_strike_or_barrier": "has_strike_or_barriers",
+    "has_multiple_strikes_or_barriers": "has_multiple_strikes_or_barriers",
+    "is_ctp_hedge": "is_ctp_hedges",
+    "is_investment_fund_exposure": "is_investment_fund_exposures",
+    "investment_fund_id": "investment_fund_ids",
+    "investment_fund_section_205_method": "investment_fund_section_205_methods",
+    "investment_fund_included_exposure_type": "investment_fund_included_exposure_types",
+    "investment_fund_mandate_evidence_id": "investment_fund_mandate_evidence_ids",
+    "investment_fund_section_205_evidence_id": "investment_fund_section_205_evidence_ids",
+    "investment_fund_gross_effective_notional": "investment_fund_gross_effective_notionals",
+    "investment_fund_included_exposure_ratio": "investment_fund_included_exposure_ratios",
+    "investment_fund_look_through_available": "investment_fund_look_through_availables",
+    "investment_fund_mandate_allows_rrao_exposures": (
+        "investment_fund_mandate_allows_rrao_exposures"
+    ),
+    "notional_source": "notional_sources",
+    "lineage_source_system": "lineage_source_systems",
+    "lineage_source_file": "lineage_source_files",
+    "lineage_source_row_id": "lineage_source_row_ids",
+}
+_RRAO_COLUMN_SPECS_BY_NAME: Mapping[str, ColumnSpec] = {
+    spec.name: spec for spec in RRAO_HANDOFF_COLUMN_SPECS
+}
+
+_OPTIONAL_BOOL_OBJECT_COLUMNS = frozenset(
+    {
+        "is_path_dependent",
+        "has_maturity",
+        "has_strike_or_barrier",
+        "has_multiple_strikes_or_barriers",
+    }
+)
+
+
+def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
+    unknown = tuple(
+        spec.name
+        for spec_group in spec_groups
+        for spec in spec_group
+        if spec.logical_type is TabularLogicalType.UNKNOWN
+    )
+    if unknown:
+        raise RuntimeError("RRAO handoff specs must declare logical_type: " + ", ".join(unknown))
+
+
+_ensure_explicit_logical_types(RRAO_HANDOFF_COLUMN_SPECS)
+
+
 def normalize_rrao_arrow_table(
     table: pa.Table,
     *,
@@ -274,83 +335,14 @@ def build_rrao_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise RraoInputError("handoff must be NormalizedTabularHandoff", field="handoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=RRAO_HANDOFF_COLUMN_SPECS)
-    _reject_unsupported_nested_payload(table)
+    columns = read_handoff_columns(table, RRAO_HANDOFF_COLUMN_SPECS, error=_rrao_error)
+    columns = _rrao_columns_with_package_defaults(table, columns)
+    _reject_unsupported_nested_payload(columns.get("unsupported_nested_payload"))
     diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
     return build_rrao_batch_from_columns(
-        position_ids=_required_object_column(table, "position_id"),
-        source_row_ids=_required_object_column(table, "source_row_id"),
-        desk_ids=_required_object_column(table, "desk_id"),
-        legal_entities=_required_object_column(table, "legal_entity"),
-        gross_effective_notionals=_required_float_column(table, "gross_effective_notional"),
-        currencies=_required_object_column(table, "currency"),
-        evidence_types=_required_object_column(table, "evidence_type"),
-        evidence_labels=_required_object_column(table, "evidence_label"),
-        classification_hints=_optional_object_column(table, "classification_hint"),
-        exclusion_reasons=_optional_object_column(table, "exclusion_reason"),
-        exclusion_evidence_ids=_optional_object_column(table, "exclusion_evidence_id"),
-        back_to_back_match_group_ids=_optional_object_column(
-            table,
-            "back_to_back_match_group_id",
-        ),
-        back_to_back_matched_position_ids=_optional_object_column(
-            table,
-            "back_to_back_matched_position_id",
-        ),
-        supervisor_directive_ids=_optional_object_column(table, "supervisor_directive_id"),
-        underlying_counts=_optional_object_column(table, "underlying_count"),
-        is_path_dependents=_optional_object_column(table, "is_path_dependent"),
-        has_maturities=_optional_object_column(table, "has_maturity"),
-        has_strike_or_barriers=_optional_object_column(table, "has_strike_or_barrier"),
-        has_multiple_strikes_or_barriers=_optional_object_column(
-            table,
-            "has_multiple_strikes_or_barriers",
-        ),
-        is_ctp_hedges=_optional_bool_column(table, "is_ctp_hedge"),
-        is_investment_fund_exposures=_optional_bool_column(
-            table,
-            "is_investment_fund_exposure",
-        ),
-        investment_fund_ids=_optional_object_column(table, "investment_fund_id"),
-        investment_fund_section_205_methods=_optional_object_column(
-            table,
-            "investment_fund_section_205_method",
-        ),
-        investment_fund_included_exposure_types=_optional_object_column(
-            table,
-            "investment_fund_included_exposure_type",
-        ),
-        investment_fund_mandate_evidence_ids=_optional_object_column(
-            table,
-            "investment_fund_mandate_evidence_id",
-        ),
-        investment_fund_section_205_evidence_ids=_optional_object_column(
-            table,
-            "investment_fund_section_205_evidence_id",
-        ),
-        investment_fund_gross_effective_notionals=_optional_float_column(
-            table,
-            "investment_fund_gross_effective_notional",
-        ),
-        investment_fund_included_exposure_ratios=_optional_float_column(
-            table,
-            "investment_fund_included_exposure_ratio",
-        ),
-        investment_fund_look_through_availables=_optional_bool_column(
-            table,
-            "investment_fund_look_through_available",
-        ),
-        investment_fund_mandate_allows_rrao_exposures=_optional_bool_column(
-            table,
-            "investment_fund_mandate_allows_rrao_exposures",
-            default=True,
-        ),
-        notional_sources=_optional_object_column(table, "notional_source"),
-        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
-        lineage_source_files=_required_object_column(table, "lineage_source_file"),
-        lineage_source_row_ids=_optional_object_column(table, "lineage_source_row_id"),
+        **_rrao_batch_column_kwargs(columns),
         lineage_present=[True] * table.num_rows,
-        citations=_citations_column(table),
+        citations=_citations_column(columns.get("citations")),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
         diagnostics=diagnostics,
@@ -358,13 +350,59 @@ def build_rrao_batch_from_handoff(
     )
 
 
-def _reject_unsupported_nested_payload(table: pa.Table) -> None:
-    if "unsupported_nested_payload" not in table.column_names:
-        return
-    values = _object_array_from_arrow_column(
-        table.column("unsupported_nested_payload"),
-        field="unsupported_nested_payload",
+def _rrao_batch_column_kwargs(columns: Mapping[str, object]) -> dict[str, Any]:
+    return {
+        argument_name: columns.get(column_name)
+        for column_name, argument_name in _RRAO_BATCH_COLUMN_ARGS.items()
+    }
+
+
+def _rrao_error(message: str, field: str | None) -> RraoInputError:
+    return RraoInputError(message, field="" if field is None else field)
+
+
+def _rrao_columns_with_package_defaults(
+    table: pa.Table,
+    columns: dict[str, HandoffColumnArray],
+) -> dict[str, HandoffColumnArray]:
+    updated = columns
+    for column_name in _OPTIONAL_BOOL_OBJECT_COLUMNS:
+        updated = _restore_null_values(table, updated, column_name, null_value=None)
+    return _restore_null_values(
+        table,
+        updated,
+        "investment_fund_mandate_allows_rrao_exposures",
+        null_value=True,
     )
+
+
+def _restore_null_values(
+    table: pa.Table,
+    columns: dict[str, HandoffColumnArray],
+    column_name: str,
+    *,
+    null_value: object,
+) -> dict[str, HandoffColumnArray]:
+    values = columns.get(column_name)
+    physical_column_name = resolve_column_name(table, _RRAO_COLUMN_SPECS_BY_NAME[column_name])
+    if values is None or physical_column_name is None:
+        return columns
+
+    column = table.column(physical_column_name)
+    if not column.null_count:
+        return columns
+
+    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
+    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
+    restored = np.asarray(values, dtype=object).copy()
+    restored[~valid] = null_value
+    restored.setflags(write=False)
+    return columns | {column_name: restored}
+
+
+def _reject_unsupported_nested_payload(values: HandoffColumnArray | None) -> None:
+    if values is None:
+        return
     for value in values:
         if value is not None and str(value).strip():
             raise RraoInputError(
@@ -373,129 +411,16 @@ def _reject_unsupported_nested_payload(table: pa.Table) -> None:
             )
 
 
-def _required_object_column(table: pa.Table, column_name: str) -> ObjectArray:
-    if column_name not in table.column_names:
-        raise RraoInputError(f"column is required: {column_name}", field=column_name)
-    values = _object_array_from_arrow_column(table.column(column_name), field=column_name)
-    values.setflags(write=False)
-    return values
-
-
-def _optional_object_column(table: pa.Table, column_name: str) -> ObjectArray | None:
-    if column_name not in table.column_names:
-        return None
-    values = _object_array_from_arrow_column(table.column(column_name), field=column_name)
-    values.setflags(write=False)
-    return values
-
-
-def _required_float_column(table: pa.Table, column_name: str) -> FloatArray:
-    if column_name not in table.column_names:
-        raise RraoInputError(f"column is required: {column_name}", field=column_name)
-    column = table.column(column_name)
-    if column.null_count:
-        raise RraoInputError(f"{column_name} must be provided", field=column_name)
-    values = _float64_array_from_arrow_column(column, field=column_name)
-    values.setflags(write=False)
-    return values
-
-
-def _optional_float_column(table: pa.Table, column_name: str) -> FloatArray | None:
-    if column_name not in table.column_names:
-        return None
-    column = table.column(column_name)
-    if not column.null_count:
-        values = _float64_array_from_arrow_column(column, field=column_name)
-        values.setflags(write=False)
-        return values
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    if not pa.types.is_float64(array.type):
-        try:
-            array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except _ARROW_CONVERSION_ERRORS as exc:
-            raise RraoInputError(f"{column_name} must be numeric", field=column_name) from exc
-    try:
-        values = np.asarray(
-            pc.fill_null(array, pa.scalar(math.nan, type=pa.float64())).to_numpy(
-                zero_copy_only=False
-            ),
-            dtype=np.float64,
-        )
-    except _ARROW_CONVERSION_ERRORS as exc:
-        raise RraoInputError(f"{column_name} must be numeric", field=column_name) from exc
-    values.setflags(write=False)
-    return values
-
-
-def _optional_bool_column(
-    table: pa.Table,
-    column_name: str,
-    *,
-    default: bool = False,
-) -> ObjectArray | BoolArray | None:
-    if column_name not in table.column_names:
-        return None
-    column = table.column(column_name)
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    if not pa.types.is_boolean(array.type):
-        values = _object_array_from_arrow_column(column, field=column_name)
-        if column.null_count:
-            values = values.copy()
-            values[values == None] = default  # noqa: E711
-        values.setflags(write=False)
-        return values
-    try:
-        values = np.asarray(
-            pc.fill_null(array, default).to_numpy(zero_copy_only=False),
-            dtype=np.bool_,
-        )
-    except _ARROW_CONVERSION_ERRORS as exc:
-        raise RraoInputError("Arrow column conversion failed", field=column_name) from exc
-    values.setflags(write=False)
-    return values
-
-
-def _citations_column(table: pa.Table) -> tuple[tuple[str, ...], ...] | None:
-    if "citations" not in table.column_names:
+def _citations_column(values: HandoffColumnArray | None) -> tuple[tuple[str, ...], ...] | None:
+    if values is None:
         return None
     groups: list[tuple[str, ...]] = []
-    for value in _object_array_from_arrow_column(table.column("citations"), field="citations"):
+    for value in values:
         if value is None or not str(value).strip():
             groups.append(())
             continue
         groups.append(tuple(item.strip() for item in str(value).split(",") if item.strip()))
     return tuple(groups)
-
-
-def _object_array_from_arrow_column(column: pa.ChunkedArray, *, field: str) -> ObjectArray:
-    try:
-        return arrow_object_array(column)
-    except _ARROW_CONVERSION_ERRORS as exc:
-        raise RraoInputError("Arrow column conversion failed", field=field) from exc
-
-
-def _float64_array_from_arrow_column(
-    column: pa.ChunkedArray,
-    *,
-    field: str,
-) -> FloatArray:
-    if len(column) == 0:
-        return np.empty(0, dtype=np.float64)
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    if not pa.types.is_float64(array.type):
-        try:
-            array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except _ARROW_CONVERSION_ERRORS as exc:
-            raise RraoInputError(f"{field} must be numeric", field=field) from exc
-    try:
-        return cast(FloatArray, array.to_numpy(zero_copy_only=True))
-    except _ARROW_CONVERSION_ERRORS:
-        pass
-
-    try:
-        return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
-    except _ARROW_CONVERSION_ERRORS as exc:
-        raise RraoInputError(f"{field} must be numeric", field=field) from exc
 
 
 __all__ = [
