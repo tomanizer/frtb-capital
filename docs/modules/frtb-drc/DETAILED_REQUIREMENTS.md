@@ -332,21 +332,21 @@ Every capital-producing result must carry:
 - requirement ids and citation ids;
 - gross JTD, scaled JTD, net JTD, HBR, risk-weight, bucket, category, and total
   records sufficient to reproduce the capital number.
-- lineage and branch metadata sufficient to add analytical Euler or
-  finite-difference impact in a later slice without changing the capital
-  calculation API.
+- lineage, branch metadata, and attribution records sufficient to explain
+  stable analytical Euler contributions now and finite-difference impact in a
+  later slice without changing the capital calculation API.
 
 Audit serialization must be JSON/Markdown ready and deterministic.
 
 ### DRC-FUNC-017: Explain and contribution output
 
-The package must expose explain records at bucket and netting-group level in
-the first non-securitisation slice. The first capital-producing slice does not
-need to calculate analytical Euler contribution, but it must preserve the audit
-lineage and branch metadata required by
-[ADR 0012](../../decisions/0012-capital-impact-attribution.md).
+The package must expose explain records at bucket and netting-group level and
+emit deterministic `DrcCapitalContribution` records in
+`DrcCapitalResult.attribution_records`. The attribution contract follows
+[ADR 0012](../../decisions/0012-capital-impact-attribution.md) and
+[ADR 0031](../../decisions/0031-drc-attribution-method-contract.md).
 
-Future attribution output must:
+Attribution output must:
 
 - distinguish analytical Euler contribution from baseline-vs-candidate impact;
 - identify source level, source id, bucket, category, method, contribution,
@@ -357,9 +357,13 @@ Future attribution output must:
   denominators, bucket moves, category moves, or unsupported features prevent
   exact Euler decomposition.
 
-For non-securitisation DRC, analytical Euler is the preferred method for stable
-bucket-capital branches after netting. Finite-difference impact is acceptable
-only when labelled as an impact method rather than a marginal contribution.
+For non-securitisation and securitisation non-CTP DRC, analytical Euler is the
+preferred method for stable bucket-capital branches after netting. For CTP,
+analytical Euler uses the active CTP-wide HBR and the positive/negative bucket
+recognition factors. Bucket or category floors, zero HBR denominators, and
+missing or non-unique net risk-weight lineage must emit explicit `UNSUPPORTED`
+or `RESIDUAL` records. Finite-difference impact is acceptable only when
+labelled as an impact method rather than a marginal contribution.
 
 ### DRC-FUNC-018: Change impact assessment
 

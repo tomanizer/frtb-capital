@@ -16,6 +16,7 @@ import numpy.typing as npt
 from frtb_common import jsonable
 
 from frtb_drc._version import __version__
+from frtb_drc.attribution import calculate_drc_attribution
 from frtb_drc.audit import validate_reconciliation
 from frtb_drc.capital import CapitalInput, calculate_category_drc
 from frtb_drc.ctp import CtpCapitalInput, calculate_ctp_category_drc
@@ -49,7 +50,12 @@ from frtb_drc.fx import (
     require_fx_rate,
     validate_fx_rates,
 )
-from frtb_drc.reference_data import get_lgd_rule, get_maturity_policy, iter_lgd_rules
+from frtb_drc.reference_data import (
+    get_lgd_rule,
+    get_maturity_policy,
+    get_risk_weight_rule,
+    iter_lgd_rules,
+)
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
 from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
@@ -701,7 +707,7 @@ def calculate_drc_capital_from_batch(
                 selected=True,
                 reason=(
                     f"batch API executed supported {risk_class.value} path; "
-                    "Euler attribution is not calculated"
+                    "attribution records are calculated on API-compatible net JTDs"
                 ),
                 citations=("US_NPR_210_SCOPE",),
             ),
@@ -738,6 +744,17 @@ def calculate_drc_capital_from_batch(
         )
         if risk_class is DrcRiskClass.SECURITISATION_NON_CTP
         else (),
+    )
+    result = replace(
+        result,
+        attribution_records=calculate_drc_attribution(
+            result,
+            risk_weights_by_position=_batch_risk_weights_by_position(
+                calculation_batch,
+                context=context,
+                risk_class=risk_class,
+            ),
+        ),
     )
     validate_reconciliation(result)
     return DrcBatchCapitalCalculation(
@@ -1882,6 +1899,39 @@ def _context_input_hash_for_batch(
             risk_class=risk_class,
         )
     return input_hash
+
+
+def _batch_risk_weights_by_position(
+    batch: DrcPositionBatch,
+    *,
+    context: DrcCalculationContext,
+    risk_class: DrcRiskClass,
+) -> dict[str, float]:
+    if risk_class == DrcRiskClass.NON_SECURITISATION:
+        weights: dict[str, float] = {}
+        for index in _sorted_indices(batch):
+            position_id = cast(str, batch.position_ids[index])
+            weights[position_id] = get_risk_weight_rule(
+                cast(str, batch.bucket_keys[index]),
+                CreditQuality(cast(str, batch.credit_qualities[index])),
+                profile_id=context.profile_id,
+            ).risk_weight
+        return weights
+    if risk_class == DrcRiskClass.SECURITISATION_NON_CTP:
+        return dict(
+            effective_risk_weights(
+                context,
+                risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+            )
+        )
+    if risk_class == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
+        return dict(
+            effective_risk_weights(
+                context,
+                risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            )
+        )
+    return {}
 
 
 def _hash_context_position_maps(

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import replace
 
 from frtb_common import CapitalComponentMetadata, ImplementationStatus, ValidationStatus
 
 from frtb_drc._version import __version__
+from frtb_drc.attribution import calculate_drc_attribution
 from frtb_drc.audit import input_snapshot_hash, rule_profile_hash, validate_reconciliation
 from frtb_drc.capital import CapitalInput, calculate_category_drc
 from frtb_drc.ctp import calculate_ctp_drc, ctp_context_input_hash, validate_ctp_context
@@ -34,8 +36,9 @@ from frtb_drc.fx import (
 from frtb_drc.gross_jtd import calculate_gross_jtds
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
+from frtb_drc.reference_data import get_risk_weight_rule
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
-from frtb_drc.risk_weight_evidence import used_risk_weight_evidence
+from frtb_drc.risk_weight_evidence import effective_risk_weights, used_risk_weight_evidence
 from frtb_drc.securitisation import (
     calculate_securitisation_non_ctp_drc,
     securitisation_non_ctp_context_input_hash,
@@ -188,6 +191,17 @@ def calculate_drc_capital(
         fair_value_cap_evidence=used_fair_value_cap_evidence(
             securitisation_non_ctp_positions,
             context,
+        ),
+    )
+    result = replace(
+        result,
+        attribution_records=calculate_drc_attribution(
+            result,
+            risk_weights_by_position=_risk_weights_by_position(
+                calculation_positions,
+                context=context,
+                profile=profile,
+            ),
         ),
     )
     validate_reconciliation(result)
@@ -373,6 +387,40 @@ def _branch_citations(branches: tuple[BranchMetadata, ...]) -> set[str]:
     for branch in branches:
         citation_ids.update(branch.citations)
     return citation_ids
+
+
+def _risk_weights_by_position(
+    positions: tuple[DrcPosition, ...],
+    *,
+    context: DrcCalculationContext,
+    profile: DrcRuleProfile,
+) -> dict[str, float]:
+    weights: dict[str, float] = {}
+    sec_weights = effective_risk_weights(
+        context,
+        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+    )
+    ctp_weights = effective_risk_weights(
+        context,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+    )
+    for position in positions:
+        risk_class = DrcRiskClass(position.risk_class)
+        if risk_class == DrcRiskClass.NON_SECURITISATION:
+            if position.credit_quality is None or position.bucket_key is None:
+                continue
+            weights[position.position_id] = get_risk_weight_rule(
+                position.bucket_key,
+                CreditQuality(position.credit_quality),
+                profile_id=profile.profile_id,
+            ).risk_weight
+        elif risk_class == DrcRiskClass.SECURITISATION_NON_CTP:
+            if position.position_id in sec_weights:
+                weights[position.position_id] = sec_weights[position.position_id]
+        elif risk_class == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
+            if position.position_id in ctp_weights:
+                weights[position.position_id] = ctp_weights[position.position_id]
+    return weights
 
 
 def _sorted_positions(positions: tuple[DrcPosition, ...]) -> tuple[DrcPosition, ...]:

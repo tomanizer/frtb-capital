@@ -77,12 +77,15 @@ sub-frameworks.
 **Implication:** Any future profile with a different aggregation treatment must
 cite the rule and add tests before changing this behavior.
 
-### DRC-DEC-007: Audit graph before attribution
+### DRC-DEC-007: Audit graph and attribution
 
-**Decision:** The first implementation will provide deterministic bucket and
-netting-group explain records with attribution-ready lineage. Analytical Euler
-allocation and baseline-vs-candidate impact are later enhancements implemented
-outside the capital kernel.
+**Decision:** The implementation provides deterministic bucket and
+netting-group explain records with attribution-ready lineage and emits
+attribution records outside the capital kernel. Analytical Euler is used where
+the active branch is stable; explicit residual or unsupported records are used
+where floors, zero HBR denominators, missing risk-weight lineage, or unsupported
+branch shapes prevent exact Euler decomposition. Baseline-vs-candidate impact
+remains a later enhancement.
 
 **Reason:** The package first needs a stable capital chain. Euler allocation is
 useful for explainability and change control but should not delay the cited
@@ -91,8 +94,10 @@ bucket moves, and unsupported paths must be labelled before a contribution
 method can be trusted.
 
 **Implication:** The first slice must retain stable ids and branch metadata from
-position through total result. A later issue can add `attribution.py` and
-`impact.py` in line with [ADR 0012](../../decisions/0012-capital-impact-attribution.md).
+position through total result. `attribution.py` follows
+[ADR 0012](../../decisions/0012-capital-impact-attribution.md) and
+[ADR 0031](../../decisions/0031-drc-attribution-method-contract.md);
+`impact.py` remains future work.
 
 ### DRC-DEC-008: Securitisation and CTP fail closed
 

@@ -18,7 +18,7 @@ requirements:
     status: implemented
     modules: [src/frtb_drc/data_models.py]
     tests: [tests/test_drc_data_models.py]
-    notes: Frozen position, lineage, risk-weight evidence, GrossJtd, MaturityScaledJtd, NetJtd, BucketDrc, CategoryDrc, and DrcCapitalResult records are implemented with stable ids and branch metadata.
+    notes: Frozen position, lineage, risk-weight evidence, GrossJtd, MaturityScaledJtd, NetJtd, BucketDrc, CategoryDrc, DrcCapitalContribution, and DrcCapitalResult records are implemented with stable ids and branch metadata.
   - id: DRC-REF-001
     title: Regime-specific LGD and risk-weight reference data
     source: Basel MAR22.12, MAR22.19-MAR22.26; 91 FR 15068
@@ -65,6 +65,6 @@ requirements:
     title: Audit and attribution-compatible decomposition
     source: Basel MAR22 traceability requirement by calculation component
     status: partial
-    modules: [src/frtb_drc/audit.py, src/frtb_drc/risk_weight_evidence.py, src/frtb_drc/fair_value_cap.py]
-    tests: [tests/test_drc_audit.py, tests/test_drc_securitisation.py, tests/test_drc_ctp.py]
-    notes: The audit graph preserves position, gross JTD, scaled JTD, netting group, bucket, category, citations, stable ids, branch metadata, FX conversions, securitisation/CTP risk-weight evidence, and securitisation fair-value cap evidence for later analytical Euler or impact methods; attribution math is not implemented in the capital kernel.
+    modules: [src/frtb_drc/audit.py, src/frtb_drc/attribution.py, src/frtb_drc/risk_weight_evidence.py, src/frtb_drc/fair_value_cap.py]
+    tests: [tests/test_drc_audit.py, tests/test_drc_attribution.py, tests/test_drc_securitisation.py, tests/test_drc_ctp.py]
+    notes: The audit graph preserves position, gross JTD, scaled JTD, netting group, bucket, category, citations, stable ids, branch metadata, FX conversions, securitisation/CTP risk-weight evidence, and securitisation fair-value cap evidence. Row and batch results emit DrcCapitalContribution records with analytical Euler where the active branch is stable and explicit residual or unsupported records for floors, zero HBR denominators, missing or non-unique risk-weight lineage, and unsupported branch shapes. Baseline-vs-candidate impact methods are not implemented.
