@@ -9,6 +9,10 @@ from frtb_common.arrow_conversion import (
     arrow_object_array,
     read_handoff_columns,
 )
+from frtb_common.attribution import (
+    AttributionMethod,
+    CapitalContribution,
+)
 from frtb_common.batch_arrays import (
     BatchArrayCoercionError,
     bool_array,
@@ -87,8 +91,10 @@ __all__ = [
     "DEFAULT_CRIF_COLUMN_SPECS",
     "DEFAULT_ROW_ID_COLUMN",
     "AdapterDiagnostic",
+    "AttributionMethod",
     "BatchArrayCoercionError",
     "CapitalComponentMetadata",
+    "CapitalContribution",
     "ChunkPolicy",
     "ColumnSpec",
     "ComponentHandoffError",
