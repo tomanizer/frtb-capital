@@ -274,6 +274,74 @@ def test_drc_securitisation_batch_missing_weight_fails_closed() -> None:
         )
 
 
+def test_drc_securitisation_batch_invalid_weight_fails_closed() -> None:
+    fixture = _load_fixture("drc_sec_nonctp_v1")
+    position_ids = [position.position_id for position in fixture["positions"]]
+    risk_weights = dict(fixture["context"].securitisation_non_ctp_risk_weights)
+    risk_weights[position_ids[0]] = "not-a-number"
+    batch = build_drc_securitisation_non_ctp_batch_from_handoff(
+        normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(fixture["positions"]))
+    )
+
+    with pytest.raises(DrcInputError, match="valid finite number"):
+        calculate_drc_capital_from_batch(
+            batch,
+            context=replace(fixture["context"], securitisation_non_ctp_risk_weights=risk_weights),
+        )
+
+
+def test_drc_securitisation_batch_rejected_offsets_are_bounded_by_groups() -> None:
+    fixture = _load_fixture("drc_sec_nonctp_v1")
+    base = fixture["positions"][0]
+    positions: list[DrcPosition] = []
+    risk_weights: dict[str, float] = {}
+    for index in range(4):
+        position_id = f"long-sec-group-{index}"
+        positions.append(
+            replace(
+                base,
+                position_id=position_id,
+                source_row_id=f"row-{position_id}",
+                default_direction="LONG",
+                issuer_id=f"long-pool-{index}",
+                tranche_id=f"long-tranche-{index}",
+                market_value=100.0 + index,
+            )
+        )
+        risk_weights[position_id] = 0.2
+    for index in range(4):
+        position_id = f"short-sec-group-{index}"
+        positions.append(
+            replace(
+                base,
+                position_id=position_id,
+                source_row_id=f"row-{position_id}",
+                default_direction="SHORT",
+                issuer_id=f"short-pool-{index}",
+                tranche_id=f"short-tranche-{index}",
+                market_value=40.0 + index,
+            )
+        )
+        risk_weights[position_id] = 0.2
+    batch = build_drc_securitisation_non_ctp_batch_from_handoff(
+        normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(tuple(positions)))
+    )
+
+    calculation = calculate_drc_capital_from_batch(
+        batch,
+        context=replace(
+            fixture["context"],
+            securitisation_non_ctp_risk_weights=risk_weights,
+            securitisation_non_ctp_offset_groups={},
+        ),
+    )
+
+    rejected_counts = [len(record.rejected_offsets) for record in calculation.result.net_jtds]
+    assert rejected_counts
+    assert max(rejected_counts) <= 8
+    assert max(rejected_counts) < 16
+
+
 def test_drc_ctp_batch_missing_weight_fails_closed() -> None:
     fixture = _load_fixture("drc_ctp_v1")
     batch = build_drc_ctp_batch_from_handoff(
@@ -283,6 +351,22 @@ def test_drc_ctp_batch_missing_weight_fails_closed() -> None:
     with pytest.raises(DrcInputError, match="ctp_risk_weights"):
         calculate_drc_capital_from_batch(
             batch, context=replace(fixture["context"], ctp_risk_weights={})
+        )
+
+
+def test_drc_ctp_batch_invalid_weight_fails_closed() -> None:
+    fixture = _load_fixture("drc_ctp_v1")
+    position_ids = [position.position_id for position in fixture["positions"]]
+    risk_weights = dict(fixture["context"].ctp_risk_weights)
+    risk_weights[position_ids[0]] = None
+    batch = build_drc_ctp_batch_from_handoff(
+        normalize_drc_ctp_arrow_table(_arrow_table(fixture["positions"]))
+    )
+
+    with pytest.raises(DrcInputError, match="valid finite number"):
+        calculate_drc_capital_from_batch(
+            batch,
+            context=replace(fixture["context"], ctp_risk_weights=risk_weights),
         )
 
 

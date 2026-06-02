@@ -109,3 +109,7 @@ preserving the public capital number and net-JTD audit result.
 Issue #351 extends the benchmark artifact with securitisation non-CTP and CTP
 cases. The budget now requires zero accepted-row dataclass materialization and
 zero row/batch capital delta for all three DRC risk classes.
+Exact-group securitisation and CTP netting also use bounded representative
+rejected-offset audit records rather than pairwise records across every
+unrelated long/short group; this keeps the audit evidence deterministic without
+quadratic object materialization on large books.

@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from itertools import count
@@ -731,8 +731,10 @@ def _validate_context(context: DrcCalculationContext) -> None:
 def _validate_context_risk_weight_map(values: Mapping[str, float], *, field_name: str) -> None:
     for position_id, risk_weight in values.items():
         _required_text(position_id, f"{field_name} position_id")
-        if not math.isfinite(float(risk_weight)) or float(risk_weight) < 0.0:
-            raise DrcInputError(f"{field_name}[{position_id!r}] must be finite and non-negative")
+        _coerce_finite_non_negative_float(
+            risk_weight,
+            field_name=f"{field_name}[{position_id!r}]",
+        )
 
 
 def _validate_context_text_map(values: Mapping[str, str], *, field_name: str) -> None:
@@ -1244,23 +1246,70 @@ def _rejected_exact_group_offsets(
         indices = grouped[bucket_key]
         long_groups = _direction_groups(batch, indices, offset_groups, DefaultDirection.LONG)
         short_groups = _direction_groups(batch, indices, offset_groups, DefaultDirection.SHORT)
-        rejected: list[RejectedOffset] = []
-        for long_group, long_indices in sorted(long_groups.items()):
-            for short_group, short_indices in sorted(short_groups.items()):
-                if long_group == short_group:
-                    continue
-                rejected.append(
-                    RejectedOffset(
-                        rejection_id=f"rej-{net_prefix}-{_slug(bucket_key)}-{next(sequence)}",
-                        long_source_id=_representative_scaled_id(batch, long_indices),
-                        short_source_id=_representative_scaled_id(batch, short_indices),
-                        reason_code=rejected_reason_code,
-                        citations=netting_citations,
-                    )
-                )
+        rejected = _bounded_rejected_group_offsets(
+            bucket_key=bucket_key,
+            long_groups=long_groups,
+            short_groups=short_groups,
+            net_prefix=net_prefix,
+            sequence=sequence,
+            representative=lambda item: _representative_scaled_id(batch, item),
+            rejected_reason_code=rejected_reason_code,
+            netting_citations=netting_citations,
+        )
         if rejected:
             rejected_by_bucket[bucket_key] = tuple(rejected)
     return rejected_by_bucket
+
+
+def _bounded_rejected_group_offsets(
+    *,
+    bucket_key: str,
+    long_groups: Mapping[str, Sequence[int]],
+    short_groups: Mapping[str, Sequence[int]],
+    net_prefix: str,
+    sequence: Iterator[int],
+    representative: Callable[[Sequence[int]], str],
+    rejected_reason_code: str,
+    netting_citations: tuple[str, ...],
+) -> tuple[RejectedOffset, ...]:
+    rejected: list[RejectedOffset] = []
+    sorted_short_groups = sorted(short_groups)
+    for long_group, long_indices in sorted(long_groups.items()):
+        candidate_short_group = next(
+            (item for item in sorted_short_groups if item != long_group), None
+        )
+        if candidate_short_group is None:
+            continue
+        rejected.append(
+            RejectedOffset(
+                rejection_id=f"rej-{net_prefix}-{_slug(bucket_key)}-{next(sequence)}",
+                long_source_id=representative(long_indices),
+                short_source_id=representative(short_groups[candidate_short_group]),
+                reason_code=rejected_reason_code,
+                citations=netting_citations,
+            )
+        )
+    covered_short_source_ids = {record.short_source_id for record in rejected}
+    sorted_long_groups = sorted(long_groups)
+    for short_group, short_indices in sorted(short_groups.items()):
+        short_source_id = representative(short_indices)
+        if short_source_id in covered_short_source_ids:
+            continue
+        candidate_long_group = next(
+            (item for item in sorted_long_groups if item != short_group), None
+        )
+        if candidate_long_group is None:
+            continue
+        rejected.append(
+            RejectedOffset(
+                rejection_id=f"rej-{net_prefix}-{_slug(bucket_key)}-{next(sequence)}",
+                long_source_id=representative(long_groups[candidate_long_group]),
+                short_source_id=short_source_id,
+                reason_code=rejected_reason_code,
+                citations=netting_citations,
+            )
+        )
+    return tuple(rejected)
 
 
 def _direction_groups(
@@ -1622,10 +1671,24 @@ def _risk_weights_for_net_jtd(
             risk_weight = float(risk_weights[position_id])
         except KeyError as exc:
             raise DrcInputError(f"{field_name} is required for position {position_id}") from exc
+        except (ValueError, TypeError) as exc:
+            raise DrcInputError(
+                f"{field_name}[{position_id!r}] must be a valid finite number"
+            ) from exc
         if not math.isfinite(risk_weight) or risk_weight < 0.0:
             raise DrcInputError(f"{field_name}[{position_id!r}] must be finite and non-negative")
         weights.add(risk_weight)
     return weights
+
+
+def _coerce_finite_non_negative_float(value: object, *, field_name: str) -> float:
+    try:
+        result = float(cast(Any, value))
+    except (ValueError, TypeError) as exc:
+        raise DrcInputError(f"{field_name} must be a valid finite number") from exc
+    if not math.isfinite(result) or result < 0.0:
+        raise DrcInputError(f"{field_name} must be finite and non-negative")
+    return result
 
 
 def _credit_quality_for_net_jtd(
