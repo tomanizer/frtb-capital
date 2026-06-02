@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+from collections.abc import Iterable
 from enum import StrEnum
 from typing import Any, cast
 
@@ -19,6 +22,22 @@ def hash_payload(payload: object) -> str:
     """Return the package-standard deterministic payload hash."""
 
     return stable_json_hash(payload)
+
+
+def hash_position_payloads(payloads: Iterable[dict[str, object]]) -> str:
+    """Return the package-standard hash for already-normalized position payloads."""
+
+    digest = hashlib.sha256()
+    digest.update(b'{"positions":[')
+    first = True
+    for payload in payloads:
+        if first:
+            first = False
+        else:
+            digest.update(b",")
+        digest.update(bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8"))
+    digest.update(b"]}")
+    return digest.hexdigest()
 
 
 def position_payload(position: RraoPosition) -> dict[str, object]:
@@ -321,5 +340,6 @@ def _float_value(value: object) -> float:
 __all__ = [
     "batch_position_payload",
     "hash_payload",
+    "hash_position_payloads",
     "position_payload",
 ]
