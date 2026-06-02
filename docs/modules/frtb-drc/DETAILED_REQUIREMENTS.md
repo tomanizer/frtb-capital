@@ -170,6 +170,13 @@ profile must support the proposed section `__.210(b)(3)(i)` buckets:
 - corporate positions;
 - defaulted positions.
 
+The U.S. NPR profile must not add a separate U.S. sovereign, specified
+supranational, MDB, municipal, or local-government default-risk bucket unless a
+future cited rule profile defines one. Inputs carrying those labels as
+`bucket_key` values must be rejected before capital calculation. Municipal or
+local-government debt may enter this profile only through a cited upstream
+classification to the PSE/GSE debt bucket when that treatment is valid.
+
 Securitisation non-CTP and CTP bucket assignment must be implemented only after
 their cited bucket dimensions, "other" bucket handling, and fixture coverage are
 complete.

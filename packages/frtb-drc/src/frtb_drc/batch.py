@@ -37,7 +37,9 @@ from frtb_drc.reference_data import get_lgd_rule, get_maturity_policy, iter_lgd_
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
 from frtb_drc.validation import (
     DrcInputError,
+    chargeable_non_securitisation_bucket_keys,
     ensure_chargeable_credit_quality,
+    ensure_chargeable_non_securitisation_bucket,
     validate_positions,
 )
 
@@ -482,6 +484,13 @@ def _validate_batch(batch: DrcPositionBatch) -> None:
         raise DrcInputError("DRC batch only supports non-securitisation risk class")
     if np.any(batch.issuer_ids == None):  # noqa: E711
         raise DrcInputError("issuer_id is required for non-securitisation DRC batch")
+    bucket_mask = np.isin(batch.bucket_keys, chargeable_non_securitisation_bucket_keys())
+    if not bool(np.all(bucket_mask)):
+        first = int(np.argmax(~bucket_mask))
+        ensure_chargeable_non_securitisation_bucket(
+            cast(str, batch.bucket_keys[first]),
+            position_id=cast(str, batch.position_ids[first]),
+        )
     unrated_mask = batch.credit_qualities == CreditQuality.UNRATED.value
     if bool(np.any(unrated_mask)):
         first = int(np.argmax(unrated_mask))

@@ -143,6 +143,18 @@ def test_validate_position_rejects_unrated_non_securitisation_credit_quality() -
         validate_position(_position(credit_quality=CreditQuality.UNRATED))
 
 
+@pytest.mark.parametrize(
+    "bucket_key",
+    ["US_SOVEREIGN", "SPECIFIED_SUPRANATIONAL", "MDB", "MUNICIPAL", " CORPORATE "],
+)
+def test_validate_position_rejects_non_chargeable_nonsec_bucket_keys(bucket_key: str) -> None:
+    with pytest.raises(
+        DrcInputError,
+        match=r"not a chargeable.*US_NPR_210_B_3_I",
+    ):
+        validate_position(_position(bucket_key=bucket_key))
+
+
 def test_validate_position_rejects_securitisation_without_tranche() -> None:
     position = _position(
         risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
