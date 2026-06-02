@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
-from datetime import date
-
 from frtb_common import (
     CapitalComponentMetadata,
     ImplementationStatus,
     ValidationStatus,
 )
 
+from frtb_rrao._result_assembly import (
+    collect_line_citations,
+    partition_lines,
+    profile_warnings,
+    validate_context,
+)
 from frtb_rrao.audit import _input_hash_for_validated_positions, validate_rrao_result_reconciliation
 from frtb_rrao.capital import (
     _build_rrao_capital_lines_from_validated,
@@ -18,9 +22,7 @@ from frtb_rrao.capital import (
 )
 from frtb_rrao.data_models import (
     RraoCalculationContext,
-    RraoCapitalLine,
     RraoCapitalResult,
-    RraoRegulatoryProfile,
 )
 from frtb_rrao.regimes import get_rrao_rule_profile
 from frtb_rrao.validation import RraoInputError, validate_rrao_positions
@@ -46,14 +48,14 @@ def calculate_rrao_capital(
     if context is None:
         raise RraoInputError("calculation context is required", field="context")
 
-    _validate_context(context)
+    validate_context(context)
     rule_profile = get_rrao_rule_profile(context.profile)
     validated_positions = validate_rrao_positions(positions)
     all_lines = _build_rrao_capital_lines_from_validated(
         validated_positions,
         profile=rule_profile.profile,
     )
-    included_lines, excluded_lines = _partition_lines(all_lines)
+    included_lines, excluded_lines = partition_lines(all_lines)
     result_lines = included_lines + excluded_lines
     result = RraoCapitalResult(
         run_id=context.run_id,
@@ -66,60 +68,8 @@ def calculate_rrao_capital(
         excluded_lines=excluded_lines,
         subtotals=build_rrao_subtotals(result_lines),
         total_rrao=included_rrao_total(result_lines),
-        citations=_collect_line_citations(result_lines),
-        warnings=_profile_warnings(rule_profile.profile),
+        citations=collect_line_citations(result_lines),
+        warnings=profile_warnings(rule_profile.profile),
     )
     validate_rrao_result_reconciliation(result)
     return result
-
-
-def _validate_context(context: RraoCalculationContext) -> None:
-    if not isinstance(context, RraoCalculationContext):
-        raise RraoInputError("calculation context must be RraoCalculationContext", field="context")
-    _require_text(context.run_id, "run_id")
-    _require_text(context.base_currency, "base_currency")
-    if not isinstance(context.calculation_date, date):
-        raise RraoInputError("calculation date must be a date", field="calculation_date")
-    try:
-        RraoRegulatoryProfile(context.profile)
-    except ValueError as exc:
-        raise RraoInputError("invalid regulatory profile", field="profile") from exc
-    if context.desk_id:
-        _require_text(context.desk_id, "desk_id")
-    if context.legal_entity:
-        _require_text(context.legal_entity, "legal_entity")
-    _require_text(context.citation_policy, "citation_policy")
-
-
-def _partition_lines(
-    lines: tuple[RraoCapitalLine, ...],
-) -> tuple[tuple[RraoCapitalLine, ...], tuple[RraoCapitalLine, ...]]:
-    included = tuple(line for line in lines if not line.is_excluded)
-    excluded = tuple(line for line in lines if line.is_excluded)
-    return included, excluded
-
-
-def _collect_line_citations(lines: tuple[RraoCapitalLine, ...]) -> tuple[str, ...]:
-    citation_ids: list[str] = []
-    seen: set[str] = set()
-    for line in lines:
-        for citation_id in line.citations:
-            if citation_id not in seen:
-                citation_ids.append(citation_id)
-                seen.add(citation_id)
-    return tuple(citation_ids)
-
-
-def _profile_warnings(profile: RraoRegulatoryProfile) -> tuple[str, ...]:
-    if profile is RraoRegulatoryProfile.US_NPR_2_0:
-        return (
-            "US_NPR_2_0 is proposed-rule material; do not present outputs as final "
-            "regulatory capital.",
-        )
-    return ()
-
-
-def _require_text(value: object, field: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise RraoInputError("non-empty text is required", field=field)
-    return value

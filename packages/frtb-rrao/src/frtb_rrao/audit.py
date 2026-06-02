@@ -8,15 +8,11 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-import hashlib
-import json
-
+from frtb_rrao._payloads import hash_payload, lineage_payload, position_payload
 from frtb_rrao.capital import build_rrao_subtotals, included_rrao_total
 from frtb_rrao.data_models import (
-    RraoBackToBackMatch,
     RraoCapitalLine,
     RraoCapitalResult,
-    RraoInvestmentFundDescriptor,
     RraoPosition,
     RraoSourceLineage,
     RraoSubtotal,
@@ -37,7 +33,13 @@ def input_hash_for_positions(positions: object) -> str:
 def _input_hash_for_validated_positions(positions: tuple[RraoPosition, ...]) -> str:
     """Return an input hash for an already validated position tuple."""
 
-    return _hash_payload({"positions": [_position_payload(position) for position in positions]})
+    return hash_payload({"positions": [position_payload(position) for position in positions]})
+
+
+def _lineage_payload(lineage: RraoSourceLineage | None) -> dict[str, object] | None:
+    """Compatibility wrapper for tests covering audit JSON normalization."""
+
+    return lineage_payload(lineage)
 
 
 def serialize_rrao_result(result: RraoCapitalResult) -> dict[str, object]:
@@ -186,84 +188,6 @@ def _subtotal_payload(subtotal: RraoSubtotal) -> dict[str, object]:
         "gross_effective_notional": subtotal.gross_effective_notional,
         "add_on": subtotal.add_on,
         "position_ids": list(subtotal.position_ids),
-    }
-
-
-def _hash_payload(payload: dict[str, object]) -> str:
-    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
-    return hashlib.sha256(encoded).hexdigest()
-
-
-def _position_payload(position: RraoPosition) -> dict[str, object]:
-    payload: dict[str, object] = {
-        "position_id": position.position_id,
-        "source_row_id": position.source_row_id,
-        "desk_id": position.desk_id,
-        "legal_entity": position.legal_entity,
-        "gross_effective_notional": position.gross_effective_notional,
-        "currency": position.currency,
-        "evidence_type": position.evidence_type.value,
-        "evidence_label": position.evidence_label,
-        "lineage": _lineage_payload(position.lineage),
-        "classification_hint": position.classification_hint.value
-        if position.classification_hint is not None
-        else None,
-        "exclusion_reason": position.exclusion_reason.value
-        if position.exclusion_reason is not None
-        else None,
-        "exclusion_evidence_id": position.exclusion_evidence_id,
-        "supervisor_directive_id": position.supervisor_directive_id,
-        "underlying_count": position.underlying_count,
-        "is_path_dependent": position.is_path_dependent,
-        "has_maturity": position.has_maturity,
-        "has_strike_or_barrier": position.has_strike_or_barrier,
-        "has_multiple_strikes_or_barriers": position.has_multiple_strikes_or_barriers,
-        "is_ctp_hedge": position.is_ctp_hedge,
-        "is_investment_fund_exposure": position.is_investment_fund_exposure,
-        "investment_fund_descriptor": _investment_fund_descriptor_payload(
-            position.investment_fund_descriptor
-        ),
-        "notional_source": position.notional_source,
-        "citations": list(position.citations),
-    }
-    if position.back_to_back_match is not None:
-        payload["back_to_back_match"] = _back_to_back_match_payload(position.back_to_back_match)
-    return payload
-
-
-def _lineage_payload(lineage: RraoSourceLineage | None) -> dict[str, object] | None:
-    if lineage is None:
-        return None
-    return {
-        "source_system": lineage.source_system,
-        "source_file": lineage.source_file,
-        "source_row_id": lineage.source_row_id,
-        "source_column_map": [list(pair) for pair in lineage.source_column_map],
-    }
-
-
-def _investment_fund_descriptor_payload(
-    descriptor: RraoInvestmentFundDescriptor | None,
-) -> dict[str, object] | None:
-    if descriptor is None:
-        return None
-    return {
-        "fund_id": descriptor.fund_id,
-        "section_205_method": descriptor.section_205_method.value,
-        "included_exposure_type": descriptor.included_exposure_type.value,
-        "mandate_evidence_id": descriptor.mandate_evidence_id,
-        "section_205_evidence_id": descriptor.section_205_evidence_id,
-        "fund_gross_effective_notional": descriptor.fund_gross_effective_notional,
-        "included_exposure_ratio": descriptor.included_exposure_ratio,
-        "look_through_available": descriptor.look_through_available,
-        "mandate_allows_rrao_exposures": descriptor.mandate_allows_rrao_exposures,
-    }
-
-
-def _back_to_back_match_payload(match: RraoBackToBackMatch) -> dict[str, object]:
-    return {
-        "match_group_id": match.match_group_id,
-        "matched_position_id": match.matched_position_id,
     }
 
 

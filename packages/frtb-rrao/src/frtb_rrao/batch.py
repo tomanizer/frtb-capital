@@ -2,19 +2,23 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
-from datetime import date
 from enum import StrEnum
 from typing import Any, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
-from frtb_common import jsonable
 
+from frtb_rrao._citations import merged_citation_ids
+from frtb_rrao._payloads import batch_position_payload, hash_payload
+from frtb_rrao._result_assembly import (
+    collect_line_citations,
+    partition_lines,
+    profile_warnings,
+    validate_context,
+)
 from frtb_rrao.audit import validate_rrao_result_reconciliation
 from frtb_rrao.capital import build_rrao_subtotals, included_rrao_total
 from frtb_rrao.data_models import (
@@ -35,7 +39,7 @@ from frtb_rrao.reference_data import (
     investment_fund_rules_for_profile,
     risk_weight_rules_for_profile,
 )
-from frtb_rrao.regimes import RraoRuleProfile, get_rrao_rule_profile
+from frtb_rrao.regimes import get_rrao_rule_profile
 from frtb_rrao.validation import RraoInputError, validate_rrao_positions
 
 ObjectArray = npt.NDArray[np.object_]
@@ -537,8 +541,12 @@ def build_rrao_batch_from_columns(
 def input_hash_for_rrao_batch(batch: RraoPositionBatch) -> str:
     """Hash canonical RRAO batch inputs in deterministic input order."""
 
-    return _hash_payload(
-        {"positions": [_position_payload(batch, index) for index in range(batch.row_count)]}
+    return hash_payload(
+        {
+            "positions": [
+                _position_payload_for_hash(batch, index) for index in range(batch.row_count)
+            ]
+        }
     )
 
 
@@ -551,14 +559,14 @@ def calculate_rrao_capital_from_batch(
 
     if not isinstance(batch, RraoPositionBatch):
         raise RraoInputError("batch must be RraoPositionBatch", field="batch")
-    _validate_context(context)
+    validate_context(context)
     rule_profile = get_rrao_rule_profile(context.profile)
 
     lines, classifications, risk_weights, add_ons = _capital_lines_from_batch(
         batch,
         profile=rule_profile.profile,
     )
-    included_lines, excluded_lines = _partition_lines(lines)
+    included_lines, excluded_lines = partition_lines(lines)
     result_lines = included_lines + excluded_lines
     result = RraoCapitalResult(
         run_id=context.run_id,
@@ -571,8 +579,8 @@ def calculate_rrao_capital_from_batch(
         excluded_lines=excluded_lines,
         subtotals=build_rrao_subtotals(result_lines),
         total_rrao=included_rrao_total(result_lines),
-        citations=_collect_line_citations(result_lines),
-        warnings=_profile_warnings(rule_profile),
+        citations=collect_line_citations(result_lines),
+        warnings=profile_warnings(rule_profile.profile),
     )
     validate_rrao_result_reconciliation(result)
     return RraoBatchCapitalCalculation(
@@ -582,24 +590,6 @@ def calculate_rrao_capital_from_batch(
         add_ons=_immutable_float_array(add_ons),
         accepted_row_dataclasses_materialized=0,
     )
-
-
-def _validate_context(context: RraoCalculationContext) -> None:
-    if not isinstance(context, RraoCalculationContext):
-        raise RraoInputError("calculation context must be RraoCalculationContext", field="context")
-    _required_text(context.run_id, "run_id")
-    _required_text(context.base_currency, "base_currency")
-    if not isinstance(context.calculation_date, date):
-        raise RraoInputError("calculation date must be a date", field="calculation_date")
-    try:
-        RraoRegulatoryProfile(context.profile)
-    except ValueError as exc:
-        raise RraoInputError("invalid regulatory profile", field="profile") from exc
-    if context.desk_id:
-        _required_text(context.desk_id, "desk_id")
-    if context.legal_entity:
-        _required_text(context.legal_entity, "legal_entity")
-    _required_text(context.citation_policy, "citation_policy")
 
 
 def _validate_batch(batch: RraoPositionBatch) -> None:
@@ -1205,7 +1195,7 @@ def _capital_line_from_decision(
         currency=cast(str, batch.currencies[index]),
         is_excluded=classification is RraoClassification.EXCLUDED,
         reason_code=cast(str, decisions.reason_codes[index]),
-        citations=_merged_citation_ids(
+        citations=merged_citation_ids(
             decisions.decision_citations[index],
             batch.citations[index],
             (risk_weight_citations[index],),
@@ -1231,110 +1221,55 @@ def _exclusion_path_mask(batch: RraoPositionBatch) -> npt.NDArray[np.bool_]:
     )
 
 
-def _partition_lines(
-    lines: tuple[RraoCapitalLine, ...],
-) -> tuple[tuple[RraoCapitalLine, ...], tuple[RraoCapitalLine, ...]]:
-    included = tuple(line for line in lines if not line.is_excluded)
-    excluded = tuple(line for line in lines if line.is_excluded)
-    return included, excluded
-
-
-def _collect_line_citations(lines: tuple[RraoCapitalLine, ...]) -> tuple[str, ...]:
-    citation_ids: list[str] = []
-    seen: set[str] = set()
-    for line in lines:
-        for citation_id in line.citations:
-            if citation_id not in seen:
-                citation_ids.append(citation_id)
-                seen.add(citation_id)
-    return tuple(citation_ids)
-
-
-def _profile_warnings(rule_profile: RraoRuleProfile) -> tuple[str, ...]:
-    if rule_profile.profile is RraoRegulatoryProfile.US_NPR_2_0:
-        return (
-            "US_NPR_2_0 is proposed-rule material; do not present outputs as final "
-            "regulatory capital.",
-        )
-    return ()
-
-
-def _position_payload(batch: RraoPositionBatch, index: int) -> dict[str, object]:
-    payload: dict[str, object] = {
-        "position_id": batch.position_ids[index],
-        "source_row_id": batch.source_row_ids[index],
-        "desk_id": batch.desk_ids[index],
-        "legal_entity": batch.legal_entities[index],
-        "gross_effective_notional": float(batch.gross_effective_notionals[index]),
-        "currency": batch.currencies[index],
-        "evidence_type": batch.evidence_types[index],
-        "evidence_label": batch.evidence_labels[index],
-        "lineage": {
-            "source_system": batch.lineage_source_systems[index],
-            "source_file": batch.lineage_source_files[index],
-            "source_row_id": batch.lineage_source_row_ids[index],
-            "source_column_map": [list(pair) for pair in batch.source_column_maps[index]],
-        },
-        "classification_hint": batch.classification_hints[index],
-        "exclusion_reason": batch.exclusion_reasons[index],
-        "exclusion_evidence_id": batch.exclusion_evidence_ids[index],
-        "supervisor_directive_id": batch.supervisor_directive_ids[index],
-        "underlying_count": batch.underlying_counts[index],
-        "is_path_dependent": batch.is_path_dependents[index],
-        "has_maturity": batch.has_maturities[index],
-        "has_strike_or_barrier": batch.has_strike_or_barriers[index],
-        "has_multiple_strikes_or_barriers": batch.has_multiple_strikes_or_barriers[index],
-        "is_ctp_hedge": bool(batch.is_ctp_hedges[index]),
-        "is_investment_fund_exposure": bool(batch.is_investment_fund_exposures[index]),
-        "investment_fund_descriptor": _investment_fund_descriptor_payload(batch, index),
-        "notional_source": batch.notional_sources[index],
-        "citations": list(batch.citations[index]),
-    }
-    if batch.back_to_back_match_group_ids[index] is not None:
-        payload["back_to_back_match"] = {
-            "match_group_id": batch.back_to_back_match_group_ids[index],
-            "matched_position_id": batch.back_to_back_matched_position_ids[index],
-        }
-    return payload
-
-
-def _investment_fund_descriptor_payload(
-    batch: RraoPositionBatch,
-    index: int,
-) -> dict[str, object] | None:
-    if not bool(batch.is_investment_fund_exposures[index]):
-        return None
-    return {
-        "fund_id": batch.investment_fund_ids[index],
-        "section_205_method": batch.investment_fund_section_205_methods[index],
-        "included_exposure_type": batch.investment_fund_included_exposure_types[index],
-        "mandate_evidence_id": batch.investment_fund_mandate_evidence_ids[index],
-        "section_205_evidence_id": batch.investment_fund_section_205_evidence_ids[index],
-        "fund_gross_effective_notional": float(
+def _position_payload_for_hash(batch: RraoPositionBatch, index: int) -> dict[str, object]:
+    return batch_position_payload(
+        position_id=batch.position_ids[index],
+        source_row_id=batch.source_row_ids[index],
+        desk_id=batch.desk_ids[index],
+        legal_entity=batch.legal_entities[index],
+        gross_effective_notional=batch.gross_effective_notionals[index],
+        currency=batch.currencies[index],
+        evidence_type=batch.evidence_types[index],
+        evidence_label=batch.evidence_labels[index],
+        lineage_source_system=batch.lineage_source_systems[index],
+        lineage_source_file=batch.lineage_source_files[index],
+        lineage_source_row_id=batch.lineage_source_row_ids[index],
+        source_column_map=batch.source_column_maps[index],
+        classification_hint=batch.classification_hints[index],
+        exclusion_reason=batch.exclusion_reasons[index],
+        exclusion_evidence_id=batch.exclusion_evidence_ids[index],
+        supervisor_directive_id=batch.supervisor_directive_ids[index],
+        underlying_count=batch.underlying_counts[index],
+        is_path_dependent=batch.is_path_dependents[index],
+        has_maturity=batch.has_maturities[index],
+        has_strike_or_barrier=batch.has_strike_or_barriers[index],
+        has_multiple_strikes_or_barrier=batch.has_multiple_strikes_or_barriers[index],
+        is_ctp_hedge=batch.is_ctp_hedges[index],
+        is_investment_fund_exposure=batch.is_investment_fund_exposures[index],
+        investment_fund_id=batch.investment_fund_ids[index],
+        investment_fund_section_205_method=batch.investment_fund_section_205_methods[index],
+        investment_fund_included_exposure_type=batch.investment_fund_included_exposure_types[index],
+        investment_fund_mandate_evidence_id=batch.investment_fund_mandate_evidence_ids[index],
+        investment_fund_section_205_evidence_id=(
+            batch.investment_fund_section_205_evidence_ids[index]
+        ),
+        investment_fund_gross_effective_notional=(
             batch.investment_fund_gross_effective_notionals[index]
         ),
-        "included_exposure_ratio": float(batch.investment_fund_included_exposure_ratios[index]),
-        "look_through_available": bool(batch.investment_fund_look_through_availables[index]),
-        "mandate_allows_rrao_exposures": bool(
+        investment_fund_included_exposure_ratio=(
+            batch.investment_fund_included_exposure_ratios[index]
+        ),
+        investment_fund_look_through_available=(
+            batch.investment_fund_look_through_availables[index]
+        ),
+        investment_fund_mandate_allows_rrao_exposures=(
             batch.investment_fund_mandate_allows_rrao_exposures[index]
         ),
-    }
-
-
-def _hash_payload(payload: object) -> str:
-    encoded = bytes(json.dumps(jsonable(payload), sort_keys=True, separators=(",", ":")), "utf-8")
-    return hashlib.sha256(encoded).hexdigest()
-
-
-def _merged_citation_ids(*citation_groups: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for group in citation_groups:
-        for citation_id in group:
-            if citation_id not in seen:
-                merged.append(citation_id)
-                seen.add(citation_id)
-    return tuple(merged)
+        notional_source=batch.notional_sources[index],
+        citations=batch.citations[index],
+        back_to_back_match_group_id=batch.back_to_back_match_group_ids[index],
+        back_to_back_matched_position_id=batch.back_to_back_matched_position_ids[index],
+    )
 
 
 def _require_lengths(row_count: int, **columns: ColumnInput) -> None:

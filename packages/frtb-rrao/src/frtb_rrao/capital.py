@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
+from frtb_rrao._citations import merged_citation_ids
 from frtb_rrao.classification import _classify_validated_rrao_positions
 from frtb_rrao.data_models import (
     RraoCapitalLine,
@@ -125,7 +126,7 @@ def _capital_line_for_position(
         currency=position.currency,
         is_excluded=is_excluded,
         reason_code=decision.reason_code,
-        citations=_merged_citation_ids(decision.citations, (risk_weight_rule.citation_id,)),
+        citations=merged_citation_ids(decision.citations, (risk_weight_rule.citation_id,)),
         desk_id=position.desk_id,
         legal_entity=position.legal_entity,
         source_row_id=position.source_row_id,
@@ -143,17 +144,6 @@ def _append_subtotal_line(
     accumulator.gross_effective_notional += line.gross_effective_notional
     accumulator.add_on += line.add_on
     accumulator.position_ids.append(line.position_id)
-
-
-def _merged_citation_ids(*citation_groups: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for group in citation_groups:
-        for citation_id in group:
-            if citation_id not in seen:
-                merged.append(citation_id)
-                seen.add(citation_id)
-    return tuple(merged)
 
 
 __all__ = [

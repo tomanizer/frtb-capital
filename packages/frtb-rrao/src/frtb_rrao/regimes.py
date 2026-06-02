@@ -9,14 +9,12 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-import hashlib
-import json
-from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_rrao._payloads import hash_payload
 from frtb_rrao.data_models import (
     RraoClassification,
     RraoEvidenceType,
@@ -108,7 +106,7 @@ def get_rrao_rule_profile(profile: RraoRegulatoryProfile | str) -> RraoRuleProfi
         supported_evidence_types=frozenset(rule.evidence_type for rule in evidence_rules),
         supported_exclusions=frozenset(rule.exclusion_reason for rule in exclusion_rules),
         citation_ids=citation_ids,
-        content_hash=_hash_payload(payload),
+        content_hash=hash_payload(payload),
     )
 
 
@@ -135,11 +133,6 @@ def profile_content_hash(profile: RraoRegulatoryProfile | str) -> str:
     """Return the deterministic content hash for a supported profile."""
 
     return get_rrao_rule_profile(profile).content_hash
-
-
-def _hash_payload(payload: Mapping[str, object]) -> str:
-    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
 
 
 def _metadata_date(value: object, field: str) -> date:
