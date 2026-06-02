@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_drc import (
     US_NPR_2_0_PROFILE_ID,
     DefaultDirection,
@@ -18,7 +17,6 @@ from frtb_drc import (
     DrcRiskClass,
     DrcSourceLineage,
     calculate_drc_capital,
-    get_rule_profile,
     validate_reconciliation,
 )
 
@@ -200,27 +198,6 @@ def test_ctp_net_group_rejects_mixed_risk_weights() -> None:
                     "short-rep": "replicated-10-15",
                 },
             ),
-        )
-
-
-def test_securitisation_non_ctp_remains_unsupported() -> None:
-    profile = get_rule_profile(US_NPR_2_0_PROFILE_ID)
-
-    assert DrcRiskClass.SECURITISATION_NON_CTP not in profile.supported_risk_classes
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="securitisation non-CTP"):
-        calculate_drc_capital(
-            (
-                _ctp_position(
-                    "sec-non-ctp",
-                    DefaultDirection.LONG,
-                    market_value=100.0,
-                    bucket_key="CLO_NA",
-                    risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
-                    index_series_id=None,
-                    tranche_id="0-3",
-                ),
-            ),
-            context=_context(),
         )
 
 

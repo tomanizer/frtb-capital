@@ -95,10 +95,11 @@ positions. Inputs: issuer/tranche exposures, credit quality, seniority,
 maturity, and JTD inputs. Outputs: DRC capital and issuer/tranche audit
 breakdowns.
 
-Status: partial runtime. The public API supports cited non-securitisation DRC
-with gross JTD, maturity scaling, netting, bucket capital, reconciliation, and
-audit lineage. Securitisation non-CTP and CTP paths fail closed until
-implemented.
+Status: partial runtime. The public API supports cited non-securitisation,
+securitisation non-CTP, and CTP row paths with gross JTD, maturity scaling,
+netting, bucket capital, reconciliation, and audit lineage. Securitisation
+non-CTP and CTP risk weights and replication/decomposition evidence are
+run-scoped inputs; missing evidence fails closed.
 
 ### `frtb-rrao` — Residual Risk Add-On
 

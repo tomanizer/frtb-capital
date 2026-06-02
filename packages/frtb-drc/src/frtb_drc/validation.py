@@ -25,6 +25,28 @@ _CHARGEABLE_NONSEC_BUCKET_KEYS = (
     "CORPORATE",
     "DEFAULTED",
 )
+_SEC_NON_CTP_ASSET_CLASSES = (
+    "ABCP",
+    "AUTO_LOANS_LEASES",
+    "RMBS",
+    "CREDIT_CARDS",
+    "CMBS",
+    "CLO",
+    "CDO_SQUARED",
+    "SME",
+    "STUDENT_LOANS",
+    "OTHER_RETAIL",
+    "OTHER_WHOLESALE",
+)
+_SEC_NON_CTP_REGIONS = ("ASIA", "EUROPE", "NORTH_AMERICA", "OTHER")
+_CHARGEABLE_SEC_NONCTP_BUCKET_KEYS = (
+    "SEC_CORPORATE",
+    *(
+        f"SEC_{asset_class}_{region}"
+        for asset_class in _SEC_NON_CTP_ASSET_CLASSES
+        for region in _SEC_NON_CTP_REGIONS
+    ),
+)
 _NON_CHARGEABLE_US_NPR_NONSEC_BUCKET_REASONS = {
     "US_SOVEREIGN": "U.S. sovereign is not one of the four chargeable buckets",
     "SPECIFIED_SUPRANATIONAL": "specified supranational is not one of the four chargeable buckets",
@@ -127,6 +149,12 @@ def chargeable_non_securitisation_bucket_keys() -> tuple[str, ...]:
     return _CHARGEABLE_NONSEC_BUCKET_KEYS
 
 
+def chargeable_securitisation_non_ctp_bucket_keys() -> tuple[str, ...]:
+    """Return U.S. NPR 2.0 securitisation non-CTP bucket keys."""
+
+    return _CHARGEABLE_SEC_NONCTP_BUCKET_KEYS
+
+
 def ensure_chargeable_non_securitisation_bucket(
     bucket_key: str,
     *,
@@ -151,6 +179,27 @@ def ensure_chargeable_non_securitisation_bucket(
     )
 
 
+def ensure_chargeable_securitisation_non_ctp_bucket(
+    bucket_key: str,
+    *,
+    position_id: str | None = None,
+) -> None:
+    """Reject invented securitisation non-CTP bucket keys early."""
+
+    if bucket_key in _CHARGEABLE_SEC_NONCTP_BUCKET_KEYS:
+        return
+
+    allowed = ", ".join(_CHARGEABLE_SEC_NONCTP_BUCKET_KEYS)
+    position_label = "" if position_id is None else f" for position {position_id}"
+    raise DrcInputError(
+        f"bucket_key {bucket_key}{position_label} is not a chargeable U.S. NPR 2.0 "
+        "DRC securitisation non-CTP bucket. Use SEC_CORPORATE or one SEC_<asset>_<region> "
+        "bucket for the eleven asset classes and four regions in proposed section "
+        "__.210(c)(3)(i)-(ii) (US_NPR_210_C_3_I_II); do not create a zero-risk-weight "
+        f"bucket outside the cited taxonomy. Allowed values: {allowed}"
+    )
+
+
 def _validate_non_securitisation_identity(position: DrcPosition) -> None:
     _require_non_empty(position.issuer_id, "issuer_id")
     _require_non_empty(position.bucket_key, "bucket_key")
@@ -169,6 +218,13 @@ def _validate_non_securitisation_identity(position: DrcPosition) -> None:
 
 def _validate_securitisation_identity(position: DrcPosition) -> None:
     _require_non_empty(position.tranche_id, "tranche_id")
+    _require_non_empty(position.bucket_key, "bucket_key")
+    bucket_key = position.bucket_key
+    assert bucket_key is not None
+    ensure_chargeable_securitisation_non_ctp_bucket(
+        bucket_key,
+        position_id=position.position_id,
+    )
 
 
 def _validate_ctp_identity(position: DrcPosition) -> None:

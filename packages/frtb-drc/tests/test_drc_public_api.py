@@ -4,7 +4,6 @@ from datetime import date
 from importlib.metadata import version as package_version
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_drc import (
     US_NPR_2_0_PROFILE_ID,
     CreditQuality,
@@ -57,22 +56,31 @@ def test_calculate_drc_capital_wires_nonsec_chain_and_audit_lineage() -> None:
     validate_reconciliation(result)
 
 
-def test_public_api_rejects_unsupported_securitisation_path() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="securitisation non-CTP"):
-        calculate_drc_capital(
-            (
-                _position(
-                    "sec",
-                    DefaultDirection.LONG,
-                    100.0,
-                    risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
-                    instrument_type=DrcInstrumentType.SECURITISATION_TRANCHE,
-                    issuer=None,
-                    tranche="tranche-a",
-                ),
+def test_public_api_wires_securitisation_non_ctp_category() -> None:
+    result = calculate_drc_capital(
+        (
+            _position(
+                "sec",
+                DefaultDirection.LONG,
+                100.0,
+                risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+                instrument_type=DrcInstrumentType.SECURITISATION_TRANCHE,
+                issuer="clo-2026-1",
+                tranche="tranche-a",
+                bucket_key="SEC_CLO_NORTH_AMERICA",
+                seniority=None,
+                credit_quality=None,
+                citation_ids=("US_NPR_210_C_1",),
             ),
-            context=_context(),
-        )
+        ),
+        context=_context(securitisation_non_ctp_risk_weights={"sec": 0.2}),
+    )
+
+    assert result.total_drc == pytest.approx(20.0)
+    assert result.categories[0].risk_class is DrcRiskClass.SECURITISATION_NON_CTP
+    assert "US_NPR_210_C_1" in result.citations
+    assert "US_NPR_210_C_3_IV" in result.citations
+    validate_reconciliation(result)
 
 
 def test_public_api_rejects_ambiguous_net_credit_quality() -> None:
@@ -280,6 +288,8 @@ def _context(
     legal_entity: str = "",
     citation_policy: str = "strict",
     fx_rates: dict[str, DrcFxRate] | None = None,
+    securitisation_non_ctp_risk_weights: dict[str, float] | None = None,
+    securitisation_non_ctp_offset_groups: dict[str, str] | None = None,
 ) -> DrcCalculationContext:
     return DrcCalculationContext(
         run_id=run_id,
@@ -290,6 +300,12 @@ def _context(
         legal_entity=legal_entity,
         citation_policy=citation_policy,
         fx_rates={} if fx_rates is None else fx_rates,
+        securitisation_non_ctp_risk_weights={}
+        if securitisation_non_ctp_risk_weights is None
+        else securitisation_non_ctp_risk_weights,
+        securitisation_non_ctp_offset_groups={}
+        if securitisation_non_ctp_offset_groups is None
+        else securitisation_non_ctp_offset_groups,
     )
 
 
@@ -302,8 +318,9 @@ def _position(
     tranche: str | None = None,
     risk_class: DrcRiskClass = DrcRiskClass.NON_SECURITISATION,
     instrument_type: DrcInstrumentType = DrcInstrumentType.BOND,
-    seniority: DrcSeniority = DrcSeniority.SENIOR_DEBT,
-    credit_quality: CreditQuality = CreditQuality.INVESTMENT_GRADE,
+    seniority: DrcSeniority | None = DrcSeniority.SENIOR_DEBT,
+    credit_quality: CreditQuality | None = CreditQuality.INVESTMENT_GRADE,
+    bucket_key: str = "CORPORATE",
     desk_id: str = "desk-a",
     legal_entity: str = "bank-na",
     currency: str = "USD",
@@ -320,7 +337,7 @@ def _position(
         issuer_id=issuer,
         tranche_id=tranche,
         index_series_id=None,
-        bucket_key="CORPORATE",
+        bucket_key=bucket_key,
         seniority=seniority,
         credit_quality=credit_quality,
         notional=notional,

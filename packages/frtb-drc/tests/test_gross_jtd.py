@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_drc import (
     CreditQuality,
     DefaultDirection,
@@ -92,16 +91,17 @@ def test_gross_jtd_rejects_missing_pnl_inputs() -> None:
         calculate_gross_jtd(_position(market_value=None, cumulative_pnl=None))
 
 
-def test_gross_jtd_rejects_unsupported_securitisation_path() -> None:
+def test_gross_jtd_helper_rejects_securitisation_risk_class() -> None:
     position = _position(
         risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
         instrument_type=DrcInstrumentType.SECURITISATION_TRANCHE,
         issuer_id="issuer-a",
         tranche_id="tranche-a",
+        bucket_key="SEC_CLO_NORTH_AMERICA",
         seniority=None,
     )
 
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="securitisation non-CTP"):
+    with pytest.raises(DrcInputError, match="gross JTD is not implemented"):
         calculate_gross_jtd(position)
 
 

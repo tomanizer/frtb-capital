@@ -18,7 +18,10 @@ from dataclasses import dataclass
 from types import MappingProxyType
 
 from frtb_drc.data_models import CreditQuality, DrcBucketType, DrcRiskClass, DrcSeniority
-from frtb_drc.validation import DrcInputError
+from frtb_drc.validation import (
+    DrcInputError,
+    chargeable_securitisation_non_ctp_bucket_keys,
+)
 
 US_NPR_2_0_PROFILE_ID = "US_NPR_2_0"
 
@@ -326,36 +329,60 @@ _MATURITY_POLICIES: Mapping[str, MaturityPolicy] = MappingProxyType(
     }
 )
 
+
+def _securitisation_bucket_description(bucket_key: str) -> str:
+    if bucket_key == "SEC_CORPORATE":
+        return "Securitisation non-CTP corporate bucket across all regions."
+    suffix = bucket_key.removeprefix("SEC_").lower().replace("_", " ")
+    return f"Securitisation non-CTP {suffix} bucket."
+
+
+_NONSEC_BUCKET_DEFINITIONS: dict[tuple[str, str], BucketDefinition] = {
+    (US_NPR_2_0_PROFILE_ID, "NON_US_SOVEREIGN"): BucketDefinition(
+        bucket_key="NON_US_SOVEREIGN",
+        bucket_type=DrcBucketType.NON_US_SOVEREIGN,
+        risk_class=DrcRiskClass.NON_SECURITISATION,
+        citation_id="US_NPR_210_B_3_I",
+        description="Non-U.S. sovereign exposures.",
+    ),
+    (US_NPR_2_0_PROFILE_ID, "PSE_GSE"): BucketDefinition(
+        bucket_key="PSE_GSE",
+        bucket_type=DrcBucketType.PSE_GSE,
+        risk_class=DrcRiskClass.NON_SECURITISATION,
+        citation_id="US_NPR_210_B_3_I",
+        description="PSE and GSE debt positions.",
+    ),
+    (US_NPR_2_0_PROFILE_ID, "CORPORATE"): BucketDefinition(
+        bucket_key="CORPORATE",
+        bucket_type=DrcBucketType.CORPORATE,
+        risk_class=DrcRiskClass.NON_SECURITISATION,
+        citation_id="US_NPR_210_B_3_I",
+        description="Corporate positions.",
+    ),
+    (US_NPR_2_0_PROFILE_ID, "DEFAULTED"): BucketDefinition(
+        bucket_key="DEFAULTED",
+        bucket_type=DrcBucketType.DEFAULTED,
+        risk_class=DrcRiskClass.NON_SECURITISATION,
+        citation_id="US_NPR_210_B_3_I",
+        description="Defaulted positions.",
+    ),
+}
+
+_SECURITISATION_BUCKET_DEFINITIONS: dict[tuple[str, str], BucketDefinition] = {
+    (US_NPR_2_0_PROFILE_ID, bucket_key): BucketDefinition(
+        bucket_key=bucket_key,
+        bucket_type=DrcBucketType.SECURITISATION_ASSET_REGION,
+        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+        citation_id="US_NPR_210_C_3_I_II",
+        description=_securitisation_bucket_description(bucket_key),
+    )
+    for bucket_key in chargeable_securitisation_non_ctp_bucket_keys()
+}
+
 _BUCKET_DEFINITIONS: Mapping[tuple[str, str], BucketDefinition] = MappingProxyType(
     {
-        (US_NPR_2_0_PROFILE_ID, "NON_US_SOVEREIGN"): BucketDefinition(
-            bucket_key="NON_US_SOVEREIGN",
-            bucket_type=DrcBucketType.NON_US_SOVEREIGN,
-            risk_class=DrcRiskClass.NON_SECURITISATION,
-            citation_id="US_NPR_210_B_3_I",
-            description="Non-U.S. sovereign exposures.",
-        ),
-        (US_NPR_2_0_PROFILE_ID, "PSE_GSE"): BucketDefinition(
-            bucket_key="PSE_GSE",
-            bucket_type=DrcBucketType.PSE_GSE,
-            risk_class=DrcRiskClass.NON_SECURITISATION,
-            citation_id="US_NPR_210_B_3_I",
-            description="PSE and GSE debt positions.",
-        ),
-        (US_NPR_2_0_PROFILE_ID, "CORPORATE"): BucketDefinition(
-            bucket_key="CORPORATE",
-            bucket_type=DrcBucketType.CORPORATE,
-            risk_class=DrcRiskClass.NON_SECURITISATION,
-            citation_id="US_NPR_210_B_3_I",
-            description="Corporate positions.",
-        ),
-        (US_NPR_2_0_PROFILE_ID, "DEFAULTED"): BucketDefinition(
-            bucket_key="DEFAULTED",
-            bucket_type=DrcBucketType.DEFAULTED,
-            risk_class=DrcRiskClass.NON_SECURITISATION,
-            citation_id="US_NPR_210_B_3_I",
-            description="Defaulted positions.",
-        ),
+        **_NONSEC_BUCKET_DEFINITIONS,
+        **_SECURITISATION_BUCKET_DEFINITIONS,
     }
 )
 

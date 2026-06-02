@@ -49,7 +49,8 @@ Implement a CTP row path in `frtb-drc` with explicit run-scoped evidence:
 - CTP category reconciliation uses the MAR22.45 / proposed section
   `__.210(d)(3)(v)` aggregation formula rather than simple bucket summation.
 
-Securitisation non-CTP remains unsupported.
+At the time of this ADR, securitisation non-CTP remained unsupported. It is now
+covered separately by ADR 0028.
 
 ## Consequences
 
@@ -68,7 +69,6 @@ index/single-name offsetting recognition.
 
 - Unit tests cover unhedged CTP capital, explicit cross-tranche replication,
   rejected offsets, category floor behavior, missing risk weights, missing
-  market value, mixed risk weights in a net group, and continued fail-closed
-  securitisation non-CTP behavior.
+  market value, and mixed risk weights in a net group.
 - `tests/fixtures/drc_ctp_v1` provides a hand-checked CTP fixture with one
   replicated CDX.NA.IG tranche package and one CDX_HY short bucket.

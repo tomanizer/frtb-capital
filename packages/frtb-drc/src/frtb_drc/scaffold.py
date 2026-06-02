@@ -34,6 +34,11 @@ from frtb_drc.gross_jtd import calculate_gross_jtds
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.securitisation import (
+    calculate_securitisation_non_ctp_drc,
+    securitisation_non_ctp_context_input_hash,
+    validate_securitisation_non_ctp_context,
+)
 from frtb_drc.validation import DrcInputError, validate_positions
 
 PACKAGE_METADATA = CapitalComponentMetadata(
@@ -71,6 +76,10 @@ def calculate_drc_capital(
         calculation_positions,
         DrcRiskClass.NON_SECURITISATION,
     )
+    securitisation_non_ctp_positions = _positions_for_risk_class(
+        calculation_positions,
+        DrcRiskClass.SECURITISATION_NON_CTP,
+    )
     ctp_positions = _positions_for_risk_class(
         calculation_positions,
         DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
@@ -91,6 +100,17 @@ def calculate_drc_capital(
         scaled_jtd_records.extend(scaled_jtds)
         net_jtd_records.extend(net_jtds)
 
+    if securitisation_non_ctp_positions:
+        securitisation_calculation = calculate_securitisation_non_ctp_drc(
+            securitisation_non_ctp_positions,
+            context=context,
+            profile_id=profile.profile_id,
+        )
+        categories.append(securitisation_calculation.category)
+        gross_jtd_records.extend(securitisation_calculation.gross_jtds)
+        scaled_jtd_records.extend(securitisation_calculation.maturity_scaled_jtds)
+        net_jtd_records.extend(securitisation_calculation.net_jtds)
+
     if ctp_positions:
         ctp_calculation = calculate_ctp_drc(
             ctp_positions,
@@ -107,8 +127,13 @@ def calculate_drc_capital(
     net_jtds = tuple(net_jtd_records)
     category_results = tuple(categories)
     total_drc = sum(category.capital for category in category_results)
-    input_hash = ctp_context_input_hash(
+    input_hash = securitisation_non_ctp_context_input_hash(
         input_hash_with_fx(input_snapshot_hash(validated), fx_conversions),
+        positions=calculation_positions,
+        context=context,
+    )
+    input_hash = ctp_context_input_hash(
+        input_hash,
         positions=calculation_positions,
         context=context,
     )
@@ -157,6 +182,7 @@ def _validate_context(context: DrcCalculationContext) -> None:
     if context.citation_policy.strip() == "":
         raise DrcInputError("citation_policy must be non-empty")
     validate_fx_rates(context)
+    validate_securitisation_non_ctp_context(context)
     validate_ctp_context(context)
 
 
@@ -291,6 +317,11 @@ def _collect_citations(
     ):
         citation_ids.add("US_NPR_210_B_2")
     if any(
+        DrcRiskClass(record.risk_class) == DrcRiskClass.SECURITISATION_NON_CTP
+        for record in net_jtds
+    ):
+        citation_ids.add("US_NPR_210_C_2")
+    if any(
         DrcRiskClass(record.risk_class) == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
         for record in net_jtds
     ):
@@ -359,6 +390,21 @@ def _run_branch_metadata(
                     "Euler attribution is not calculated"
                 ),
                 citations=("US_NPR_210_SCOPE", "US_NPR_210_B_3_III"),
+            )
+        )
+    if DrcRiskClass.SECURITISATION_NON_CTP in risk_classes:
+        branches.append(
+            BranchMetadata(
+                branch_id="drc-securitisation-non-ctp-public-api",
+                branch_type=BranchType.NORMAL,
+                source_id=profile_id,
+                selected=True,
+                reason=(
+                    "public API executed supported securitisation non-CTP path "
+                    "using run-scoped banking-book securitisation risk-weight "
+                    "evidence; Euler attribution is not calculated"
+                ),
+                citations=("US_NPR_210_C_1", "US_NPR_210_C_2", "US_NPR_210_C_3_IV"),
             )
         )
     if DrcRiskClass.CORRELATION_TRADING_PORTFOLIO in risk_classes:

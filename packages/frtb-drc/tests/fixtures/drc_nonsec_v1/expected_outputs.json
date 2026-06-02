@@ -130,8 +130,8 @@
       "rejected_offsets": []
     }
   },
-  "profile_hash": "2b50292ba1b7aa33b8755e4a665661525bfe5cb5b30867043804fc60f27cc5cc",
-  "result_json_sha256": "2210cfd9a62eb9196580ad4c42e3185f0714b6f3872c35a75804a4a7bac82b9f",
+  "profile_hash": "2bebdd3d777d46068ec10d6e2d2360e3d05ca090bc39a6d613ae749c180b59bc",
+  "result_json_sha256": "890b8182d0cfc5d40352a917629b8994f785de08b8eeb308aabefd8acda31dcb",
   "scaled": {
     "pos-001-long-corp": 75.0,
     "pos-002-short-corp": 37.5,
