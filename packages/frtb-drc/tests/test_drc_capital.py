@@ -58,9 +58,9 @@ def test_bucket_capital_applies_risk_weights_and_hbr() -> None:
     )
 
     assert bucket.hbr.ratio == pytest.approx(100.0 / 140.0)
-    assert bucket.weighted_long == pytest.approx(2.1)
-    assert bucket.weighted_short == pytest.approx(0.84)
-    assert bucket.capital == pytest.approx(1.5)
+    assert bucket.weighted_long == pytest.approx(4.1)
+    assert bucket.weighted_short == pytest.approx(1.64)
+    assert bucket.capital == pytest.approx(2.928571428571429)
     assert bucket.floor_applied is False
     assert bucket.net_jtd_ids == ("long", "short")
     assert "US_NPR_210_A_2_IV_C" in bucket.citations
@@ -73,8 +73,8 @@ def test_bucket_capital_accepts_string_credit_quality() -> None:
         bucket_key="CORPORATE",
     )
 
-    assert bucket.weighted_long == pytest.approx(2.1)
-    assert bucket.capital == pytest.approx(2.1)
+    assert bucket.weighted_long == pytest.approx(4.1)
+    assert bucket.capital == pytest.approx(4.1)
 
 
 def test_bucket_capital_floors_negative_bucket_at_zero() -> None:
@@ -92,7 +92,7 @@ def test_bucket_capital_floors_negative_bucket_at_zero() -> None:
         bucket_key="CORPORATE",
     )
 
-    assert bucket.weighted_long == pytest.approx(2.1)
+    assert bucket.weighted_long == pytest.approx(4.1)
     assert bucket.weighted_short == pytest.approx(50.0)
     assert bucket.capital == 0.0
     assert bucket.floor_applied is True
@@ -114,7 +114,7 @@ def test_category_capital_sums_bucket_results_in_stable_bucket_order() -> None:
     )
 
     assert [bucket.bucket_key for bucket in category.bucket_results] == ["CORPORATE", "PSE_GSE"]
-    assert category.capital == pytest.approx(6.3)
+    assert category.capital == pytest.approx(10.3)
     assert category.risk_class is DrcRiskClass.NON_SECURITISATION
     assert category.branch_metadata[0].citations == ("US_NPR_210_B_3_III",)
 

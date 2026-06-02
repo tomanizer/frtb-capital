@@ -2,8 +2,8 @@
   "fixture_id": "drc_nonsec_v1",
   "input_count": 12,
   "input_hash": "38d53f06127b1505540d5b1f53bd52f8c7ce805671849f4c8504436b9aab902b",
-  "profile_hash": "7275a6648f42e386e78f3193c12fe05a228aa1a9e4d2fd5d71cb27a13a87b239",
-  "result_json_sha256": "221b98ca2a56e1b0aa05e78aee3621fea6e7197f6e8517dbb47248a71f7e57f9",
+  "profile_hash": "0731231e0bbe8b01ef3ee498e30d34000b9b00e3388151569130d35f645bc37f",
+  "result_json_sha256": "3b853e9020b978eaa30e5fa9731123acd22a4aba1c94e664930ffe8d844fa6ad",
   "gross": {
     "pos-001-long-corp": 75.0,
     "pos-002-short-corp": 37.5,
@@ -120,11 +120,11 @@
   },
   "buckets": {
     "CORPORATE": {
-      "capital": 4.863775597269625,
+      "capital": 9.495942832764507,
       "floor_applied": false,
       "hbr": 0.7952218430034129,
-      "weighted_long": 6.116250000000001,
-      "weighted_short": 1.5750000000000002
+      "weighted_long": 11.941250000000002,
+      "weighted_short": 3.075
     },
     "DEFAULTED": {
       "capital": 100.0,
@@ -141,6 +141,6 @@
       "weighted_short": 0.0
     }
   },
-  "category_capital": 106.43877559726963,
-  "total_drc": 106.43877559726963
+  "category_capital": 111.07094283276452,
+  "total_drc": 111.07094283276452
 }

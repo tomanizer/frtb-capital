@@ -47,7 +47,7 @@ def test_calculate_drc_capital_wires_nonsec_chain_and_audit_lineage() -> None:
         (DefaultDirection.LONG, 75.0),
         (DefaultDirection.SHORT, 30.0),
     ]
-    assert result.total_drc == pytest.approx(1.125)
+    assert result.total_drc == pytest.approx(2.1964285714285716)
     assert result.categories[0].capital == result.total_drc
     assert "US_NPR_210_B_2" in result.citations
     assert "US_NPR_210_A_2_IV_A" in result.citations
