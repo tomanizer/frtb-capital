@@ -1608,13 +1608,16 @@ def _restore_arrow_nulls_as_none(
 ) -> tuple[object, ...]:
     try:
         array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-        valid = tuple(bool(item) for item in array.is_valid().to_pylist())
+        valid = array.is_valid()
     except (pa.ArrowException, TypeError, ValueError) as exc:
         raise _sbm_error(str(exc), field) from exc
     converted = tuple(cast(Iterable[object], values))
     if len(converted) != len(valid):
         raise _sbm_error("column length mismatch", field)
-    return tuple(value if is_valid else None for value, is_valid in zip(converted, valid))
+    return tuple(
+        value if bool(valid[index].as_py()) else None
+        for index, value in enumerate(converted)
+    )
 
 
 def _sbm_error(message: str, field: str | None) -> SbmInputError:
