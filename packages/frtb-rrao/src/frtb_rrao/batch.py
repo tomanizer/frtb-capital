@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Any, TypeVar, cast
 
+import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
 import numpy.typing as npt
 
@@ -1438,13 +1439,10 @@ def _bool_array(
     default: bool,
     copy: bool,
 ) -> BoolArray:
-    if values is None:
-        array = np.full(row_count, default, dtype=np.bool_)
-    elif isinstance(values, np.ndarray) and values.dtype == np.bool_:
-        array = np.asarray(values, dtype=np.bool_)
-    else:
-        array = np.asarray([_bool_value(value) for value in values], dtype=np.bool_)
-    return _readonly_array(array, copy=copy)
+    try:
+        return _batch_arrays.bool_array(values, row_count, default=default, copy=copy)
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise RraoInputError(str(exc)) from exc
 
 
 def _optional_bool_object_array(
@@ -1453,9 +1451,10 @@ def _optional_bool_object_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    if values is None:
-        return _object_array([None] * row_count, copy=copy)
-    return _object_array([_optional_bool_value(value) for value in values], copy=copy)
+    try:
+        return _batch_arrays.optional_bool_object_array(values, row_count, copy=copy)
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise RraoInputError(str(exc)) from exc
 
 
 def _float_array_from_numpy(
@@ -1463,15 +1462,21 @@ def _float_array_from_numpy(
     *,
     copy: bool,
 ) -> FloatArray | None:
-    if not isinstance(values, np.ndarray) or values.dtype.kind not in {"f", "i", "u"}:
-        return None
-    array = np.asarray(values, dtype=np.float64)
-    return _readonly_array(array, copy=copy)
+    try:
+        return _batch_arrays.float_array_from_numpy(
+            values,
+            field="numeric field",
+            copy=copy,
+            allow_nan=True,
+            require_1d=False,
+            require_finite=False,
+        )
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise RraoInputError(str(exc)) from exc
 
 
 def _object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
-    array = np.asarray(values, dtype=object)
-    return _readonly_array(array, copy=copy)
+    return _batch_arrays.object_array(values, copy=copy)
 
 
 def _readonly_array(
@@ -1479,21 +1484,15 @@ def _readonly_array(
     *,
     copy: bool,
 ) -> npt.NDArray[ArrayScalarT]:
-    frozen = array.copy() if copy else array.view()
-    frozen.setflags(write=False)
-    return frozen
+    return _batch_arrays.readonly_array(array, copy=copy)
 
 
 def _immutable_object_array(values: ObjectArray) -> ObjectArray:
-    array = np.asarray(values, dtype=object).copy()
-    array.setflags(write=False)
-    return array
+    return _batch_arrays.immutable_object_array(values)
 
 
 def _immutable_float_array(values: FloatArray) -> FloatArray:
-    array = np.asarray(values, dtype=np.float64).copy()
-    array.setflags(write=False)
-    return array
+    return _batch_arrays.immutable_float_array(values)
 
 
 def _required_text(value: object | None, field_name: str) -> str:
@@ -1550,14 +1549,10 @@ def _optional_int(value: object | None) -> int | None:
 
 
 def _bool_value(value: object) -> bool:
-    if isinstance(value, (bool, np.bool_)):
-        return bool(value)
-    text = str(value).strip().lower()
-    if text in {"1", "true", "yes", "y"}:
-        return True
-    if text in {"0", "false", "no", "n", ""}:
-        return False
-    raise RraoInputError(f"boolean field contains unsupported value: {value!r}")
+    try:
+        return _batch_arrays.coerce_bool_value(value)
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise RraoInputError(str(exc)) from exc
 
 
 def _optional_bool_value(value: object | None) -> bool | None:
