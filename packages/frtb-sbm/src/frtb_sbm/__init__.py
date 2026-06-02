@@ -154,6 +154,7 @@ from frtb_sbm.data_models import (
     SbmWarning,
     WeightedSensitivity,
 )
+from frtb_sbm.handoff import to_orchestration_handoff
 from frtb_sbm.reference_data import (
     FX_DELTA_RISK_WEIGHT,
     FX_INTER_BUCKET_CORRELATION,
@@ -456,6 +457,7 @@ __all__ = [
     "sorted_girr_vega_batch_indices",
     "sorted_sbm_batch_indices",
     "supported_risk_class_measures",
+    "to_orchestration_handoff",
     "validate_curvature_batch",
     "validate_curvature_sensitivities",
     "validate_girr_curvature_batch",

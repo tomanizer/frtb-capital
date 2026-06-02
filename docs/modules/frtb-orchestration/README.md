@@ -8,7 +8,7 @@
 - Import name: `frtb_orchestration`
 - Implementation status: partial; suite aggregation arithmetic not implemented
 - Validation status: import smoke, explicit failure paths, and SA component
-  handoff recognition tests
+  handoff composition tests
 
 This is the only package allowed to depend on multiple capital component
 packages. It owns the cross-component boundary and will own:
@@ -18,12 +18,16 @@ packages. It owns the cross-component boundary and will own:
 - top-of-the-house aggregation and cross-component reconciliation.
 
 `calculate_suite_capital` raises an explicit unimplemented-component error until
-top-of-the-house aggregation is implemented. The current Standardised Approach
-handoff slice recognizes RRAO, DRC, and planned SBM result shapes structurally,
-validates their audited result metadata, and still fails closed before SA
-aggregation arithmetic. Runtime code must not import sibling capital packages;
-package-local tests use concrete DRC/RRAO fixtures only to verify the structural
-contracts remain compatible with public component outputs.
+top-of-the-house aggregation is implemented. SA composition consumes the shared
+`frtb_common.ComponentResultHandoff` contract: each SA component (`frtb-sbm`,
+`frtb-drc`, `frtb-rrao`) projects its result via its own
+`to_orchestration_handoff` adapter, and `compose_standardised_approach_capital`
+validates the component slot and jurisdiction family before failing closed ahead
+of SA aggregation arithmetic. Orchestration consumes only the typed handoff —
+there are no duck-typing `recognise_*` helpers and no reach into raw component
+result internals. Runtime code must not import sibling capital packages;
+package-local tests use concrete DRC/RRAO fixtures only to verify the adapters
+remain compatible with public component outputs. See ADR 0029.
 
 ## Arrow Boundary
 

@@ -52,9 +52,15 @@ Shared primitives used by every capital component:
 - `SignConvention` enum (loss-positive, profit-positive, magnitude).
 - `ScenarioMetadata`, `ScenarioVector` containers.
 - `RegulatoryPolicy` base class and `CalculationContext`.
-- `DeskAuditRecord`, `CapitalRunAuditLog` framework.
+- `ComponentResultHandoff` — the shared standardised-component orchestration
+  handoff contract (with `StandardisedComponent` and `ComponentHandoffError`).
+  See [`decisions/0029-unified-standardised-component-handoff-contract.md`](decisions/0029-unified-standardised-component-handoff-contract.md).
 - `BusinessCalendar` (when implemented).
 - Logging configuration (`JSONFormatter`, `calculation_log_extra`).
+
+The `DeskAuditRecord` / `CapitalRunAuditLog` audit framework currently lives in
+`frtb-ima` (`frtb_ima.audit`), not `frtb-common`. Promoting a suite-level audit
+record home is part of the orchestration aggregation workstream.
 
 Status: shared library. It provides shared status metadata, explicit
 unsupported/unimplemented exception types, JSON-ready serialization, and

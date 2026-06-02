@@ -76,6 +76,7 @@ from frtb_drc.data_models import (
 )
 from frtb_drc.fair_value_cap import fair_value_cap_evidence_by_position
 from frtb_drc.gross_jtd import calculate_gross_jtd, calculate_gross_jtds
+from frtb_drc.handoff import to_orchestration_handoff
 from frtb_drc.maturity import calculate_maturity_weight, scale_gross_jtd, scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.reference_data import (
@@ -214,6 +215,7 @@ __all__ = [
     "scale_gross_jtd",
     "scale_gross_jtds",
     "serialize_result",
+    "to_orchestration_handoff",
     "validate_attribution_reconciliation",
     "validate_ctp_context",
     "validate_position",
