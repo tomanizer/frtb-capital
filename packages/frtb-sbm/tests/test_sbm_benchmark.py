@@ -383,7 +383,7 @@ def _girr_delta_factor_grid(
                 raw_amount=100.0 + index,
                 risk_weight=1.0,
                 scaled_amount=100.0 + index,
-                citation_ids=("basel_mar21_41",),
+                citation_ids=("basel_mar21_45_49",),
             )
         )
         tenor_by_id[sensitivity_id] = tenors[index % len(tenors)]

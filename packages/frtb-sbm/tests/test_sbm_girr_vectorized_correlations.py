@@ -24,7 +24,7 @@ def _weighted(sensitivity_id: str) -> WeightedSensitivity:
         raw_amount=1.0,
         risk_weight=1.0,
         scaled_amount=1.0,
-        citation_ids=("basel_mar21_41",),
+        citation_ids=("basel_mar21_45_49",),
     )
 
 
