@@ -4,9 +4,10 @@ Standardised Approach default risk charge component.
 
 The package is importable and exposes a partial public runtime for supported
 U.S. NPR 2.0 non-securitisation, securitisation non-CTP, and correlation
-trading portfolio (CTP) canonical inputs. `calculate_drc_capital` calculates
-gross JTD, maturity scaling, net JTD, bucket/category capital, and run-level
-reconciliation with stable ids, citations, and branch metadata.
+trading portfolio (CTP) canonical inputs, plus Basel MAR22
+non-securitisation inputs. `calculate_drc_capital` calculates gross JTD,
+maturity scaling, net JTD, bucket/category capital, attribution records, and
+run-level reconciliation with stable ids, citations, and branch metadata.
 
 The high-volume Arrow/batch API supports the same three DRC row classes through
 class-specific handoff builders. Accepted rows stay columnar on the fast path;
