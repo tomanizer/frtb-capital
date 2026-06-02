@@ -167,7 +167,18 @@ def _bucket_contributions(
     denominator_sq = bucket.hbr.denominator * bucket.hbr.denominator
     records: list[DrcCapitalContribution] = []
     for net_jtd_id in bucket.net_jtd_ids:
-        net_jtd = net_by_id[net_jtd_id]
+        net_jtd = net_by_id.get(net_jtd_id)
+        if net_jtd is None:
+            return (
+                _unsupported_record(
+                    source_id=bucket.bucket_id,
+                    source_level="bucket",
+                    bucket_key=bucket.bucket_key,
+                    category=category,
+                    residual=category_factor * bucket.capital,
+                    reason="net JTD record is missing; exact Euler attribution is unsupported",
+                ),
+            )
         risk_weight = _net_risk_weight(net_jtd, risk_weights_by_position)
         if risk_weight is None:
             return (

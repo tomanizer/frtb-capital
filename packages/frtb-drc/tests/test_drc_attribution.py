@@ -193,6 +193,33 @@ def test_missing_net_risk_weight_lineage_returns_unsupported_record() -> None:
     _assert_reconciles(records, result.total_drc)
 
 
+def test_missing_net_jtd_record_returns_unsupported_record() -> None:
+    result = calculate_drc_capital(
+        (
+            _nonsec_position(
+                "missing-net-jtd",
+                DefaultDirection.LONG,
+                100.0,
+                issuer_id="issuer-missing-net-jtd",
+            ),
+        ),
+        context=_context(),
+    )
+
+    broken_audit_graph = replace(result, net_jtds=())
+    records = calculate_drc_attribution(
+        broken_audit_graph,
+        risk_weights_by_position={"missing-net-jtd": 0.03},
+    )
+
+    assert len(records) == 1
+    assert records[0].method is AttributionMethod.UNSUPPORTED
+    assert records[0].source_level == "bucket"
+    assert records[0].residual == pytest.approx(result.total_drc)
+    assert "net JTD record is missing" in records[0].reason
+    _assert_reconciles(records, result.total_drc)
+
+
 def test_batch_result_exposes_api_compatible_attribution_records() -> None:
     positions = (
         _nonsec_position("batch-long", DefaultDirection.LONG, 100.0, issuer_id="issuer-a"),
