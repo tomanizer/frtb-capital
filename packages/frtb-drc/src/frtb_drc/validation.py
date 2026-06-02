@@ -12,19 +12,52 @@ class DrcInputError(ValueError):
     """Raised when canonical DRC inputs fail deterministic validation."""
 
 
+US_NPR_2_0_PROFILE_ID = "US_NPR_2_0"
+BASEL_MAR22_PROFILE_ID = "BASEL_MAR22"
+EU_CRR3_PROFILE_ID = "EU_CRR3"
+PRA_UK_CRR_PROFILE_ID = "PRA_UK_CRR"
+
 _STRICT_CITATION_POLICY = "strict"
-_CHARGEABLE_NONSEC_CREDIT_QUALITIES = (
+_US_NPR_NONSEC_CREDIT_QUALITIES = (
     CreditQuality.INVESTMENT_GRADE,
     CreditQuality.SPECULATIVE_GRADE,
     CreditQuality.SUB_SPECULATIVE_GRADE,
     CreditQuality.DEFAULTED,
 )
-_CHARGEABLE_NONSEC_BUCKET_KEYS = (
+_BASEL_MAR22_NONSEC_CREDIT_QUALITIES = (
+    CreditQuality.AAA,
+    CreditQuality.AA,
+    CreditQuality.A,
+    CreditQuality.BBB,
+    CreditQuality.BB,
+    CreditQuality.B,
+    CreditQuality.CCC,
+    CreditQuality.UNRATED,
+    CreditQuality.DEFAULTED,
+)
+_NONSEC_CREDIT_QUALITIES_BY_PROFILE = {
+    US_NPR_2_0_PROFILE_ID: _US_NPR_NONSEC_CREDIT_QUALITIES,
+    BASEL_MAR22_PROFILE_ID: _BASEL_MAR22_NONSEC_CREDIT_QUALITIES,
+    EU_CRR3_PROFILE_ID: _BASEL_MAR22_NONSEC_CREDIT_QUALITIES,
+    PRA_UK_CRR_PROFILE_ID: _BASEL_MAR22_NONSEC_CREDIT_QUALITIES,
+}
+_US_NPR_NONSEC_BUCKET_KEYS = (
     "NON_US_SOVEREIGN",
     "PSE_GSE",
     "CORPORATE",
     "DEFAULTED",
 )
+_BASEL_MAR22_NONSEC_BUCKET_KEYS = (
+    "CORPORATE",
+    "SOVEREIGN",
+    "LOCAL_GOVERNMENT_MUNICIPAL",
+)
+_NONSEC_BUCKET_KEYS_BY_PROFILE = {
+    US_NPR_2_0_PROFILE_ID: _US_NPR_NONSEC_BUCKET_KEYS,
+    BASEL_MAR22_PROFILE_ID: _BASEL_MAR22_NONSEC_BUCKET_KEYS,
+    EU_CRR3_PROFILE_ID: _BASEL_MAR22_NONSEC_BUCKET_KEYS,
+    PRA_UK_CRR_PROFILE_ID: _BASEL_MAR22_NONSEC_BUCKET_KEYS,
+}
 _SEC_NON_CTP_ASSET_CLASSES = (
     "ABCP",
     "AUTO_LOANS_LEASES",
@@ -61,6 +94,7 @@ def validate_position(
     position: DrcPosition,
     *,
     citation_policy: str = _STRICT_CITATION_POLICY,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> DrcPosition:
     """Validate one canonical DRC position and return it unchanged."""
 
@@ -94,7 +128,7 @@ def validate_position(
             raise DrcInputError("lgd_override must be between 0 and 1")
 
     if position.risk_class == DrcRiskClass.NON_SECURITISATION:
-        _validate_non_securitisation_identity(position)
+        _validate_non_securitisation_identity(position, profile_id=profile_id)
     elif position.risk_class == DrcRiskClass.SECURITISATION_NON_CTP:
         _validate_securitisation_identity(position)
     elif position.risk_class == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
@@ -109,6 +143,7 @@ def validate_positions(
     positions: Iterable[DrcPosition],
     *,
     citation_policy: str = _STRICT_CITATION_POLICY,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> tuple[DrcPosition, ...]:
     """Validate a deterministic collection of canonical DRC positions."""
 
@@ -116,7 +151,7 @@ def validate_positions(
     validated: list[DrcPosition] = []
     seen: set[str] = set()
     for position in positions:
-        validate_position(position, citation_policy=citation_policy)
+        validate_position(position, citation_policy=citation_policy, profile_id=profile_id)
         if position.position_id in seen:
             raise DrcInputError(f"duplicate position_id: {position.position_id}")
         seen.add(position.position_id)
@@ -128,25 +163,30 @@ def ensure_chargeable_credit_quality(
     credit_quality: CreditQuality | str,
     *,
     position_id: str | None = None,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> None:
-    """Reject input-only credit-quality sentinels before risk-weight lookup."""
+    """Reject credit-quality values outside a profile's non-securitisation table."""
 
     quality = CreditQuality(credit_quality)
-    if quality is not CreditQuality.UNRATED:
+    allowed_qualities = _chargeable_non_securitisation_credit_qualities(profile_id)
+    if quality in allowed_qualities:
         return
-    allowed = ", ".join(item.value for item in _CHARGEABLE_NONSEC_CREDIT_QUALITIES)
+    allowed = ", ".join(item.value for item in allowed_qualities)
     position_label = "" if position_id is None else f" for position {position_id}"
+    citation_hint = _nonsec_credit_quality_citation(profile_id)
     raise DrcInputError(
-        f"credit_quality UNRATED{position_label} is not a chargeable U.S. NPR 2.0 "
+        f"credit_quality {quality.value}{position_label} is not a chargeable {profile_id} "
         f"DRC non-securitisation credit-quality category; map it to one of {allowed} "
-        "before capital calculation (US_NPR_210_B_3_II)"
+        f"before capital calculation ({citation_hint})"
     )
 
 
-def chargeable_non_securitisation_bucket_keys() -> tuple[str, ...]:
-    """Return U.S. NPR 2.0 non-securitisation bucket keys with DRC weights."""
+def chargeable_non_securitisation_bucket_keys(
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
+) -> tuple[str, ...]:
+    """Return non-securitisation bucket keys with DRC weights for a profile."""
 
-    return _CHARGEABLE_NONSEC_BUCKET_KEYS
+    return _chargeable_non_securitisation_bucket_keys(profile_id)
 
 
 def chargeable_securitisation_non_ctp_bucket_keys() -> tuple[str, ...]:
@@ -159,23 +199,25 @@ def ensure_chargeable_non_securitisation_bucket(
     bucket_key: str,
     *,
     position_id: str | None = None,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> None:
     """Reject invented or excluded non-securitisation bucket keys early."""
 
-    if bucket_key in _CHARGEABLE_NONSEC_BUCKET_KEYS:
+    allowed_bucket_keys = _chargeable_non_securitisation_bucket_keys(profile_id)
+    if bucket_key in allowed_bucket_keys:
         return
 
-    allowed = ", ".join(_CHARGEABLE_NONSEC_BUCKET_KEYS)
+    allowed = ", ".join(allowed_bucket_keys)
     position_label = "" if position_id is None else f" for position {position_id}"
+    citation_hint = _nonsec_bucket_citation(profile_id)
     reason = _NON_CHARGEABLE_US_NPR_NONSEC_BUCKET_REASONS.get(
         bucket_key,
-        "not a supported U.S. NPR 2.0 DRC non-securitisation bucket",
+        f"not a supported {profile_id} DRC non-securitisation bucket",
     )
     raise DrcInputError(
-        f"bucket_key {bucket_key}{position_label} is not a chargeable U.S. NPR 2.0 "
+        f"bucket_key {bucket_key}{position_label} is not a chargeable {profile_id} "
         f"DRC non-securitisation bucket: {reason}. Use one of {allowed}; do not "
-        "create a zero-risk-weight bucket outside proposed section __.210(b)(3)(i) "
-        "(US_NPR_210_B_3_I)"
+        f"create a zero-risk-weight bucket outside the selected rule profile ({citation_hint})"
     )
 
 
@@ -200,7 +242,11 @@ def ensure_chargeable_securitisation_non_ctp_bucket(
     )
 
 
-def _validate_non_securitisation_identity(position: DrcPosition) -> None:
+def _validate_non_securitisation_identity(
+    position: DrcPosition,
+    *,
+    profile_id: str,
+) -> None:
     _require_non_empty(position.issuer_id, "issuer_id")
     _require_non_empty(position.bucket_key, "bucket_key")
     bucket_key = position.bucket_key
@@ -208,12 +254,55 @@ def _validate_non_securitisation_identity(position: DrcPosition) -> None:
     ensure_chargeable_non_securitisation_bucket(
         bucket_key,
         position_id=position.position_id,
+        profile_id=profile_id,
     )
     if position.seniority is None:
         raise DrcInputError("seniority is required for non-securitisation positions")
     if position.credit_quality is None:
         raise DrcInputError("credit_quality is required for non-securitisation positions")
-    ensure_chargeable_credit_quality(position.credit_quality, position_id=position.position_id)
+    ensure_chargeable_credit_quality(
+        position.credit_quality,
+        position_id=position.position_id,
+        profile_id=profile_id,
+    )
+
+
+def _chargeable_non_securitisation_bucket_keys(profile_id: str) -> tuple[str, ...]:
+    try:
+        return _NONSEC_BUCKET_KEYS_BY_PROFILE[profile_id]
+    except KeyError as exc:
+        raise DrcInputError(
+            f"profile {profile_id} does not define chargeable non-securitisation buckets"
+        ) from exc
+
+
+def _chargeable_non_securitisation_credit_qualities(
+    profile_id: str,
+) -> tuple[CreditQuality, ...]:
+    try:
+        return _NONSEC_CREDIT_QUALITIES_BY_PROFILE[profile_id]
+    except KeyError as exc:
+        raise DrcInputError(
+            f"profile {profile_id} does not define chargeable non-securitisation credit qualities"
+        ) from exc
+
+
+def _nonsec_bucket_citation(profile_id: str) -> str:
+    return {
+        US_NPR_2_0_PROFILE_ID: "US_NPR_210_B_3_I",
+        BASEL_MAR22_PROFILE_ID: "BASEL_MAR22_22",
+        EU_CRR3_PROFILE_ID: "EU_CRR3_ARTICLE_325W",
+        PRA_UK_CRR_PROFILE_ID: "PRA_PS1_26_MARKET_RISK",
+    }.get(profile_id, profile_id)
+
+
+def _nonsec_credit_quality_citation(profile_id: str) -> str:
+    return {
+        US_NPR_2_0_PROFILE_ID: "US_NPR_210_B_3_II",
+        BASEL_MAR22_PROFILE_ID: "BASEL_MAR22_24",
+        EU_CRR3_PROFILE_ID: "EU_CRR3_ARTICLE_325W",
+        PRA_UK_CRR_PROFILE_ID: "PRA_PS1_26_MARKET_RISK",
+    }.get(profile_id, profile_id)
 
 
 def _validate_securitisation_identity(position: DrcPosition) -> None:

@@ -30,6 +30,25 @@ non-CTP DRC**, and **CTP DRC** row paths with:
   same-pool/same-tranche identity, or replication/decomposition evidence is
   missing.
 
+Supported profile coverage is:
+
+- `US_NPR_2_0`: non-securitisation, securitisation non-CTP, and CTP row and
+  batch paths, with securitisation/CTP risk weights supplied as cited run-scoped
+  inputs.
+- `BASEL_MAR22`: non-securitisation row and batch paths using MAR22.12 LGD,
+  MAR22.15-MAR22.18 maturity weighting, MAR22.22 buckets, and MAR22.24
+  letter-grade risk weights.
+
+Known fail-closed profile paths are:
+
+- `BASEL_MAR22` securitisation non-CTP and CTP, pending MAR22.34/MAR22.42
+  banking-book securitisation risk-weight lineage plus fair-value-cap and
+  decomposition contracts.
+- `EU_CRR3` for all DRC risk classes, pending Article 325w and related CQS/RTS
+  mappings.
+- `PRA_UK_CRR` for all DRC risk classes, pending PRA PS1/26 Chapter 3 and
+  Appendix 1 rulebook paragraph mappings.
+
 Regulatory anchors for the supported path are recorded in
 [`REGULATORY_REQUIREMENTS.md`](../REGULATORY_REQUIREMENTS.md) and
 [`requirements/BASEL_FRTB_DRC.yml`](../requirements/BASEL_FRTB_DRC.yml).

@@ -62,7 +62,11 @@ def calculate_drc_capital(
     _validate_context(context)
     profile = get_rule_profile(context.profile_id)
     validated = _sorted_positions(
-        validate_positions(positions, citation_policy=context.citation_policy)
+        validate_positions(
+            positions,
+            citation_policy=context.citation_policy,
+            profile_id=profile.profile_id,
+        )
     )
     if not validated:
         raise DrcInputError("DRC capital requires at least one position")

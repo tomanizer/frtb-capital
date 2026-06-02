@@ -25,7 +25,7 @@ requirements:
     status: partial
     modules: [src/frtb_drc/reference_data.py, src/frtb_drc/regimes.py]
     tests: [tests/test_drc_reference_data.py]
-    notes: U.S. NPR 2.0 non-securitisation LGD, maturity, bucket, and risk-weight reference data are implemented with citations; broader Basel, CRR3, and PRA profile coverage remains future work.
+    notes: U.S. NPR 2.0 non-securitisation LGD, maturity, bucket, and risk-weight reference data are implemented with citations. Basel MAR22 non-securitisation LGD, MAR22.15-MAR22.18 maturity scaling, MAR22.22 bucket definitions, and MAR22.24 letter-grade risk weights are implemented for row and batch paths. Basel MAR22 securitisation non-CTP and CTP fail closed pending MAR22.34/MAR22.42 banking-book securitisation risk-weight lineage, fair-value-cap, and decomposition contracts. EU CRR3 and PRA UK CRR profiles are known but fail closed pending Article 325w / PRA PS1/26 rulebook mappings.
   - id: DRC-JTD-001
     title: Gross JTD and default long-short direction
     source: Basel MAR22.9-MAR22.12; U.S. NPR 2.0 section V.A.9.a.i

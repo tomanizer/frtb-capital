@@ -124,7 +124,7 @@ Basel source: MAR22.15-MAR22.18. U.S. source: section V.A.9.a.
 
 Provide regime-specific risk-weight tables:
 
-- Basel/PRA letter-rating table including unrated and defaulted treatment;
+- Basel MAR22.24 letter-rating table including unrated and defaulted treatment;
 - CRR CQS mapping table for EU comparison;
 - U.S. NPR IG/SG/SSG and bucket mapping for non-U.S. sovereigns, PSE/GSE debt,
   corporates, and defaulted exposures;
@@ -134,6 +134,15 @@ Provide regime-specific risk-weight tables:
 
 Basel source: MAR22.19-MAR22.26 and MAR22.32-MAR22.47. U.S. source: section
 V.A.9 and proposed rule tables referenced there.
+
+Implementation status: U.S. NPR 2.0 non-securitisation, securitisation
+non-CTP, and CTP paths are implemented for row and batch APIs. Basel MAR22
+non-securitisation reference data and row/batch calculation are implemented
+for MAR22.12, MAR22.15-MAR22.18, MAR22.22, and MAR22.24. Basel MAR22
+securitisation non-CTP and CTP fail closed pending MAR22.34/MAR22.42
+banking-book securitisation risk-weight lineage and fair-value-cap /
+decomposition contracts. EU CRR3 and UK PRA profiles are known but fail closed
+pending Article 325w / PRA PS1/26 rulebook mappings.
 
 ### DRC-REQ-007: Hedge Benefit Ratio and Bucket Capital
 

@@ -86,6 +86,9 @@ from frtb_drc.reference_data import (
     iter_risk_weight_rules,
 )
 from frtb_drc.regimes import (
+    BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     DrcRuleProfile,
     ensure_risk_class_supported,
@@ -106,10 +109,13 @@ from frtb_drc.securitisation import (
 from frtb_drc.validation import DrcInputError, validate_position, validate_positions
 
 __all__ = [
+    "BASEL_MAR22_PROFILE_ID",
     "DRC_CTP_HANDOFF_COLUMN_SPECS",
     "DRC_NONSEC_HANDOFF_COLUMN_SPECS",
     "DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS",
+    "EU_CRR3_PROFILE_ID",
     "PACKAGE_METADATA",
+    "PRA_UK_CRR_PROFILE_ID",
     "US_NPR_2_0_PROFILE_ID",
     "BranchMetadata",
     "BranchType",

@@ -4,6 +4,7 @@ import math
 
 import pytest
 from frtb_drc import (
+    BASEL_MAR22_PROFILE_ID,
     CreditQuality,
     DefaultDirection,
     DrcInputError,
@@ -138,9 +139,19 @@ def test_validate_position_rejects_non_securitisation_without_seniority() -> Non
 def test_validate_position_rejects_unrated_non_securitisation_credit_quality() -> None:
     with pytest.raises(
         DrcInputError,
-        match=r"UNRATED.*not a chargeable.*US_NPR_210_B_3_II",
+        match=r"UNRATED.*not a chargeable.*US_NPR_2_0",
     ):
         validate_position(_position(credit_quality=CreditQuality.UNRATED))
+
+
+def test_validate_position_accepts_basel_unrated_credit_quality() -> None:
+    position = _position(
+        bucket_key="SOVEREIGN",
+        credit_quality=CreditQuality.UNRATED,
+        citation_ids=("BASEL_MAR22_24",),
+    )
+
+    assert validate_position(position, profile_id=BASEL_MAR22_PROFILE_ID) is position
 
 
 @pytest.mark.parametrize(
@@ -150,9 +161,21 @@ def test_validate_position_rejects_unrated_non_securitisation_credit_quality() -
 def test_validate_position_rejects_non_chargeable_nonsec_bucket_keys(bucket_key: str) -> None:
     with pytest.raises(
         DrcInputError,
-        match=r"not a chargeable.*US_NPR_210_B_3_I",
+        match=r"not a chargeable.*US_NPR_2_0",
     ):
         validate_position(_position(bucket_key=bucket_key))
+
+
+def test_validate_position_rejects_us_bucket_under_basel_profile() -> None:
+    with pytest.raises(DrcInputError, match="NON_US_SOVEREIGN"):
+        validate_position(
+            _position(
+                bucket_key="NON_US_SOVEREIGN",
+                credit_quality=CreditQuality.AA,
+                citation_ids=("BASEL_MAR22_22",),
+            ),
+            profile_id=BASEL_MAR22_PROFILE_ID,
+        )
 
 
 def test_validate_position_rejects_securitisation_without_tranche() -> None:
