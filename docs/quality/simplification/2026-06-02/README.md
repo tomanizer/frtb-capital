@@ -15,6 +15,9 @@ agent worktree on branch `codex/simplification-audit`.
 - [`frtb-rrao`](frtb-rrao.md)
 - [`frtb-cva`](frtb-cva.md)
 - [`frtb-orchestration`](frtb-orchestration.md)
+- [`batch-array-coercion-assessment`](batch-array-coercion-assessment.md)
+- [`arrow-conversion-migration`](arrow-conversion-migration.md)
+- [`hash-migration-plan`](hash-migration-plan.md)
 
 ## Suite-level findings
 
