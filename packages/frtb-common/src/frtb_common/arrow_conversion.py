@@ -11,10 +11,9 @@ import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.compute as pc  # type: ignore[import-untyped]
 
+import frtb_common.handoff as _handoff
 from frtb_common.handoff import (
-    ChunkPolicy,
     ColumnSpec,
-    DictionaryPolicy,
     NullPolicy,
     TabularHandoffError,
     TabularLogicalType,
@@ -125,7 +124,7 @@ def read_handoff_columns(
         raise error("table must be a pyarrow.Table", None)
     try:
         column_specs = validate_column_specs(specs)
-        _validate_unique_column_names(table)
+        _handoff._validate_unique_column_names(table)
     except TabularHandoffError as exc:
         raise error(str(exc), None) from exc
 
@@ -156,7 +155,7 @@ def _read_handoff_column(
 
     column = table.column(column_name)
     try:
-        _validate_reader_column_policy(spec, column)
+        _handoff._validate_column_policy(spec, column)
         values = _read_typed_handoff_column(column, spec)
     except (TabularHandoffError, pa.ArrowException) as exc:
         raise error(str(exc), spec.name) from exc
@@ -178,7 +177,7 @@ def _read_typed_handoff_column(
         ):
             return arrow_object_array(column)
         case TabularLogicalType.FLOAT | TabularLogicalType.DECIMAL:
-            if spec.null_policy is NullPolicy.ALLOW:
+            if spec.null_policy is NullPolicy.ALLOW and column.null_count:
                 return arrow_float64_array_with_nulls(column, field=spec.name)
             return arrow_float64_array(column, field=spec.name)
         case TabularLogicalType.BOOLEAN:
@@ -187,24 +186,6 @@ def _read_typed_handoff_column(
             raise TabularHandoffError(
                 f"Column {spec.name!r} has unsupported logical_type {spec.logical_type.value!r}"
             )
-
-
-def _validate_reader_column_policy(spec: ColumnSpec, column: pa.ChunkedArray) -> None:
-    if spec.null_policy is NullPolicy.FORBID and column.null_count:
-        raise TabularHandoffError(f"Column {spec.name!r} contains nulls")
-    if spec.chunk_policy is ChunkPolicy.FORBID and column.num_chunks > 1:
-        raise TabularHandoffError(f"Column {spec.name!r} contains multiple chunks")
-
-    is_dictionary = pa.types.is_dictionary(column.type)
-    if spec.dictionary_policy is DictionaryPolicy.FORBID and is_dictionary:
-        raise TabularHandoffError(f"Column {spec.name!r} is dictionary encoded")
-    if spec.dictionary_policy is DictionaryPolicy.REQUIRE and not is_dictionary:
-        raise TabularHandoffError(f"Column {spec.name!r} is not dictionary encoded")
-
-
-def _validate_unique_column_names(table: pa.Table) -> None:
-    if len(set(table.column_names)) != len(table.column_names):
-        raise TabularHandoffError("Arrow table contains duplicate column names")
 
 
 def _single_arrow_array(column: pa.ChunkedArray) -> pa.Array:

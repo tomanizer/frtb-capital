@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
@@ -13,7 +14,6 @@ from frtb_common import (
     NormalizedTabularHandoff,
     NullPolicy,
     TabularLogicalType,
-    arrow_object_array,
     normalize_arrow_table,
     normalized_handoff_hash,
     read_handoff_columns,
@@ -305,7 +305,7 @@ def build_drc_nonsec_batch_from_handoff(
     return build_drc_nonsec_batch_from_columns(
         **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
-        citation_ids=_citation_ids_column(table),
+        citation_ids=_citation_ids_column(columns.get("citation_ids")),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
         diagnostics=diagnostics,
@@ -330,7 +330,7 @@ def build_drc_securitisation_non_ctp_batch_from_handoff(
     return build_drc_securitisation_non_ctp_batch_from_columns(
         **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
-        citation_ids=_citation_ids_column(table),
+        citation_ids=_citation_ids_column(columns.get("citation_ids")),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
         diagnostics=diagnostics,
@@ -351,7 +351,7 @@ def build_drc_ctp_batch_from_handoff(
     return build_drc_ctp_batch_from_columns(
         **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
-        citation_ids=_citation_ids_column(table),
+        citation_ids=_citation_ids_column(columns.get("citation_ids")),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
         diagnostics=diagnostics,
@@ -370,11 +370,11 @@ def _drc_error(message: str, _field: str | None) -> DrcInputError:
     return DrcInputError(message)
 
 
-def _citation_ids_column(table: pa.Table) -> tuple[tuple[str, ...], ...] | None:
-    if "citation_ids" not in table.column_names:
+def _citation_ids_column(values: npt.NDArray[Any] | None) -> tuple[tuple[str, ...], ...] | None:
+    if values is None:
         return None
     groups: list[tuple[str, ...]] = []
-    for value in arrow_object_array(table.column("citation_ids")):
+    for value in values:
         if value is None or not str(value).strip():
             groups.append(("US_NPR_210_SCOPE",))
             continue

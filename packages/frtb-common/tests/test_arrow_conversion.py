@@ -217,6 +217,27 @@ def test_read_handoff_columns_fills_allowed_float_nulls() -> None:
     assert not columns["amount"].flags.writeable
 
 
+def test_read_handoff_columns_uses_float_zero_copy_when_nulls_are_allowed_but_absent() -> None:
+    table = pa.table({"amount": pa.array([1.0, 2.0], type=pa.float64())})
+
+    columns = read_handoff_columns(
+        table,
+        (
+            ColumnSpec(
+                "amount",
+                logical_type=TabularLogicalType.FLOAT,
+                required=False,
+                null_policy=NullPolicy.ALLOW,
+            ),
+        ),
+        error=_reader_error,
+    )
+
+    arrow_view = table.column("amount").chunk(0).to_numpy(zero_copy_only=True)
+    assert np.shares_memory(columns["amount"], arrow_view)
+    assert not columns["amount"].flags.writeable
+
+
 def test_read_handoff_columns_rejects_required_missing_column() -> None:
     with pytest.raises(ReaderError) as exc_info:
         read_handoff_columns(
