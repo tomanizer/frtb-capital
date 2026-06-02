@@ -3,7 +3,9 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 from types import ModuleType
+from typing import NoReturn
 
+import frtb_cva.arrow_handoff as cva_arrow_handoff
 import numpy as np
 import pyarrow as pa
 import pytest
@@ -99,6 +101,38 @@ def test_ba_cva_arrow_handoff_matches_row_fixture_case() -> None:
         case_id=case_id,
         check_input_hash=False,
     )
+
+
+def test_cva_handoff_wraps_arrow_object_conversion_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    table = pa.table(
+        {
+            "counterparty_id": ["cp-0001"],
+            "desk_id": ["desk-cva"],
+            "legal_entity": ["LE-001"],
+            "sector": ["SOVEREIGN"],
+            "credit_quality": ["INVESTMENT_GRADE"],
+            "region": ["EMEA"],
+            "source_row_id": ["cp-row-0001"],
+            "lineage_source_system": ["synthetic"],
+            "lineage_source_file": ["counterparties.csv"],
+        }
+    )
+    handoff = normalize_cva_counterparty_arrow_table(table)
+
+    def fail_arrow_object_array(_column: pa.ChunkedArray) -> NoReturn:
+        raise pa.ArrowInvalid("forced conversion failure")
+
+    monkeypatch.setattr(cva_arrow_handoff, "arrow_object_array", fail_arrow_object_array)
+
+    with pytest.raises(
+        CvaInputError, match=r"Arrow column conversion failed .*counterparty_id"
+    ) as exc:
+        build_cva_counterparty_batch_from_handoff(handoff)
+
+    assert exc.value.field == "counterparty_id"
+    assert isinstance(exc.value.__cause__, pa.ArrowInvalid)
 
 
 def test_sa_cva_batch_matches_row_fixture_cases() -> None:

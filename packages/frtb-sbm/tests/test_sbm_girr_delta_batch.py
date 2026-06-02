@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import inspect
 from datetime import date
+from typing import NoReturn
 
+import frtb_sbm.arrow_handoff as sbm_arrow_handoff
 import numpy as np
 import pyarrow as pa
 import pytest
@@ -266,6 +268,25 @@ def test_arrow_handoff_uses_zero_copy_float64_amount_column_when_possible() -> N
     amount_view = handoff.accepted.column("amount").chunk(0).to_numpy(zero_copy_only=True)
     assert np.shares_memory(arrow_batch.amounts, amount_view)
     np.testing.assert_allclose(arrow_batch.amounts, [item.amount for item in sensitivities])
+
+
+def test_sbm_handoff_wraps_arrow_object_conversion_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    handoff = normalize_girr_delta_arrow_table(_arrow_table(_sensitivities()))
+
+    def fail_arrow_object_array(_column: pa.ChunkedArray) -> NoReturn:
+        raise pa.ArrowInvalid("forced conversion failure")
+
+    monkeypatch.setattr(sbm_arrow_handoff, "arrow_object_array", fail_arrow_object_array)
+
+    with pytest.raises(
+        SbmInputError, match=r"Arrow column conversion failed .*sensitivity_id"
+    ) as exc:
+        build_girr_delta_batch_from_handoff(handoff)
+
+    assert exc.value.field == "sensitivity_id"
+    assert isinstance(exc.value.__cause__, pa.ArrowInvalid)
 
 
 def test_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:

@@ -16,6 +16,7 @@ from frtb_common import (
     NormalizedTabularHandoff,
     NullPolicy,
     TabularLogicalType,
+    arrow_object_array,
     normalize_arrow_table,
     normalized_handoff_hash,
     validate_arrow_table,
@@ -27,6 +28,7 @@ from frtb_rrao.validation import RraoInputError
 ObjectArray = npt.NDArray[np.object_]
 FloatArray = npt.NDArray[np.float64]
 BoolArray = npt.NDArray[np.bool_]
+_ARROW_CONVERSION_ERRORS = (pa.ArrowException, TypeError, ValueError)
 
 RRAO_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("position_id", aliases=("positionId",), logical_type=TabularLogicalType.STRING),
@@ -359,7 +361,11 @@ def build_rrao_batch_from_handoff(
 def _reject_unsupported_nested_payload(table: pa.Table) -> None:
     if "unsupported_nested_payload" not in table.column_names:
         return
-    for value in _object_array_from_arrow_column(table.column("unsupported_nested_payload")):
+    values = _object_array_from_arrow_column(
+        table.column("unsupported_nested_payload"),
+        field="unsupported_nested_payload",
+    )
+    for value in values:
         if value is not None and str(value).strip():
             raise RraoInputError(
                 "unsupported nested payload requires flattened RRAO handoff columns",
@@ -370,7 +376,7 @@ def _reject_unsupported_nested_payload(table: pa.Table) -> None:
 def _required_object_column(table: pa.Table, column_name: str) -> ObjectArray:
     if column_name not in table.column_names:
         raise RraoInputError(f"column is required: {column_name}", field=column_name)
-    values = _object_array_from_arrow_column(table.column(column_name))
+    values = _object_array_from_arrow_column(table.column(column_name), field=column_name)
     values.setflags(write=False)
     return values
 
@@ -378,7 +384,7 @@ def _required_object_column(table: pa.Table, column_name: str) -> ObjectArray:
 def _optional_object_column(table: pa.Table, column_name: str) -> ObjectArray | None:
     if column_name not in table.column_names:
         return None
-    values = _object_array_from_arrow_column(table.column(column_name))
+    values = _object_array_from_arrow_column(table.column(column_name), field=column_name)
     values.setflags(write=False)
     return values
 
@@ -406,12 +412,17 @@ def _optional_float_column(table: pa.Table, column_name: str) -> FloatArray | No
     if not pa.types.is_float64(array.type):
         try:
             array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except (pa.ArrowInvalid, TypeError, ValueError) as exc:
+        except _ARROW_CONVERSION_ERRORS as exc:
             raise RraoInputError(f"{column_name} must be numeric", field=column_name) from exc
-    values = np.asarray(
-        pc.fill_null(array, pa.scalar(math.nan, type=pa.float64())).to_numpy(zero_copy_only=False),
-        dtype=np.float64,
-    )
+    try:
+        values = np.asarray(
+            pc.fill_null(array, pa.scalar(math.nan, type=pa.float64())).to_numpy(
+                zero_copy_only=False
+            ),
+            dtype=np.float64,
+        )
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise RraoInputError(f"{column_name} must be numeric", field=column_name) from exc
     values.setflags(write=False)
     return values
 
@@ -427,13 +438,19 @@ def _optional_bool_column(
     column = table.column(column_name)
     array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
     if not pa.types.is_boolean(array.type):
-        values = _object_array_from_arrow_column(column)
+        values = _object_array_from_arrow_column(column, field=column_name)
         if column.null_count:
             values = values.copy()
             values[values == None] = default  # noqa: E711
         values.setflags(write=False)
         return values
-    values = np.asarray(pc.fill_null(array, default).to_numpy(zero_copy_only=False), dtype=np.bool_)
+    try:
+        values = np.asarray(
+            pc.fill_null(array, default).to_numpy(zero_copy_only=False),
+            dtype=np.bool_,
+        )
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise RraoInputError("Arrow column conversion failed", field=column_name) from exc
     values.setflags(write=False)
     return values
 
@@ -442,7 +459,7 @@ def _citations_column(table: pa.Table) -> tuple[tuple[str, ...], ...] | None:
     if "citations" not in table.column_names:
         return None
     groups: list[tuple[str, ...]] = []
-    for value in _object_array_from_arrow_column(table.column("citations")):
+    for value in _object_array_from_arrow_column(table.column("citations"), field="citations"):
         if value is None or not str(value).strip():
             groups.append(())
             continue
@@ -450,50 +467,11 @@ def _citations_column(table: pa.Table) -> tuple[tuple[str, ...], ...] | None:
     return tuple(groups)
 
 
-def _object_array_from_arrow_column(column: pa.ChunkedArray) -> ObjectArray:
-    arrays = tuple(_object_array_from_arrow_array(chunk) for chunk in column.chunks)
-    if not arrays:
-        return np.empty(0, dtype=object)
-    if len(arrays) == 1:
-        return arrays[0]
-    return np.concatenate(arrays).astype(object, copy=False)
-
-
-def _object_array_from_arrow_array(array: pa.Array) -> ObjectArray:
-    if pa.types.is_dictionary(array.type):
-        return _dictionary_array_to_object_array(cast(pa.DictionaryArray, array))
-    if pa.types.is_integer(array.type):
-        return _integer_array_to_object_array(array)
-    values = np.asarray(array.to_numpy(zero_copy_only=False), dtype=object)
-    if array.null_count:
-        valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-        values[~valid] = None
-    return values
-
-
-def _integer_array_to_object_array(array: pa.Array) -> ObjectArray:
-    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-    filled = pc.fill_null(array, pa.scalar(0, type=array.type))
-    values = np.asarray(filled.to_numpy(zero_copy_only=False), dtype=object)
-    values[~valid] = None
-    return values
-
-
-def _dictionary_array_to_object_array(array: pa.DictionaryArray) -> ObjectArray:
-    if len(array) == 0:
-        return np.empty(0, dtype=object)
-    dictionary = np.asarray(array.dictionary.to_numpy(zero_copy_only=False), dtype=object)
-    indices = np.asarray(
-        pc.fill_null(array.indices, pa.scalar(0, type=array.indices.type)).to_numpy(
-            zero_copy_only=False
-        ),
-        dtype=np.int64,
-    )
-    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-    values = np.empty(len(array), dtype=object)
-    values[valid] = dictionary[indices[valid]]
-    values[~valid] = None
-    return values
+def _object_array_from_arrow_column(column: pa.ChunkedArray, *, field: str) -> ObjectArray:
+    try:
+        return arrow_object_array(column)
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise RraoInputError("Arrow column conversion failed", field=field) from exc
 
 
 def _float64_array_from_arrow_column(
@@ -507,12 +485,17 @@ def _float64_array_from_arrow_column(
     if not pa.types.is_float64(array.type):
         try:
             array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except (pa.ArrowInvalid, TypeError, ValueError) as exc:
+        except _ARROW_CONVERSION_ERRORS as exc:
             raise RraoInputError(f"{field} must be numeric", field=field) from exc
     try:
         return cast(FloatArray, array.to_numpy(zero_copy_only=True))
-    except (pa.ArrowInvalid, TypeError, ValueError):
+    except _ARROW_CONVERSION_ERRORS:
+        pass
+
+    try:
         return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise RraoInputError(f"{field} must be numeric", field=field) from exc
 
 
 __all__ = [

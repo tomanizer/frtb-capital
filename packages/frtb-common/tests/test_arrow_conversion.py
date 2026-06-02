@@ -38,6 +38,27 @@ def test_arrow_object_array_preserves_integer_nulls_across_chunks() -> None:
 
     assert values.dtype == np.dtype(object)
     assert values.tolist() == [1, None, 3]
+    assert isinstance(values[0], (int, np.integer))
+
+
+@pytest.mark.parametrize(
+    "array",
+    [
+        pa.array(["rates", None], type=pa.utf8()),
+        pa.array([1.0, None], type=pa.float64()),
+        pa.array([True, None], type=pa.bool_()),
+        pa.array(["rates", None, "credit"], type=pa.dictionary(pa.int8(), pa.utf8())),
+    ],
+)
+def test_supported_handoff_dtypes_do_not_need_pylist_fallback(array: pa.Array) -> None:
+    column = pa.chunked_array([array])
+
+    for chunk in column.chunks:
+        values = chunk.to_numpy(zero_copy_only=False)
+        assert len(values) == len(chunk)
+        if pa.types.is_dictionary(chunk.type):
+            dictionary = chunk.dictionary.to_numpy(zero_copy_only=False)
+            assert len(dictionary) == len(chunk.dictionary)
 
 
 def test_arrow_float64_array_casts_numeric_chunks() -> None:
