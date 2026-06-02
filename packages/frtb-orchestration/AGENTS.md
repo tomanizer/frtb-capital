@@ -4,11 +4,14 @@
 
 ## Current status
 
-The package has partial handoff and guard contracts:
+The package has partial orchestration contracts:
 
 - SA composition consumes `frtb_common.ComponentResultHandoff` from package-owned
   SBM, DRC, and RRAO adapters, validates component slots and jurisdiction
-  families, then fails closed before aggregation arithmetic.
+  families plus run-context consistency, and returns the additive
+  `SBM + DRC + RRAO` result.
+- IMA fallback route recording accepts structural desk eligibility signals and
+  records `SA_FALLBACK` desks as routed to the Standardised Approach stack.
 - CVA has a structural `CvaResultHandoff` projection for future top-of-house
   aggregation.
 - `calculate_suite_capital` still fails explicitly until full suite aggregation

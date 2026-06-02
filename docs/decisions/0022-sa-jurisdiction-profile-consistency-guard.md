@@ -6,6 +6,11 @@ Date: 2026-05-31
 
 Accepted
 
+The final consequence note about the guard firing before SA arithmetic is
+historical. SA arithmetic and fallback route recording are implemented by
+[ADR 0032](0032-orchestration-sa-arithmetic-and-fallback-routing.md); the
+jurisdiction-family guard remains in force.
+
 ## Context
 
 The Standardised Approach capital charge is composed as `SA = SBM + DRC + RRAO`.

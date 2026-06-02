@@ -10,9 +10,9 @@ contains an implemented canonical-input RRAO path, `frtb-drc` contains a
 partial non-securitisation DRC runtime path, `frtb-sbm` has GIRR delta/vega,
 FX/equity/commodity/CSR delta/vega, and row-wise curvature capital implemented
 under BASEL_MAR21, and `frtb-cva` has reduced/full BA-CVA plus supported
-SA-CVA delta/vega and mixed carve-out paths implemented. Suite aggregation and
-SA arithmetic still fail explicitly even though shared SA handoff guards and CVA
-summary handoff preparation are available.
+SA-CVA delta/vega and mixed carve-out paths implemented. Orchestration composes
+SA arithmetic from shared component handoffs and prepares CVA summaries; full
+top-of-house suite aggregation still fails explicitly.
 
 The Standardised Approach is a composed regulatory approach, not a standalone
 package. In this suite, `frtb-sbm`, `frtb-drc`, and `frtb-rrao` together produce
@@ -146,11 +146,13 @@ For SA, it owns the composed `SBM + DRC + RRAO` total. For IMA fallback, it
 routes non-IMA-eligible desks to the SA component stack. It also applies
 cross-component floors and add-ons and produces consolidated audit records.
 
-Status: partial. Public aggregation still raises explicit
+Status: partial. Top-of-house suite aggregation still raises explicit
 unimplemented-component errors. `compose_standardised_approach_capital`
 validates shared `frtb_common.ComponentResultHandoff` inputs for SBM, DRC, and
-RRAO, enforces ADR 0022 jurisdiction-family consistency, then fails closed
-before SA arithmetic. `recognise_cva_result` prepares a CVA result summary for
+RRAO, enforces ADR 0022 jurisdiction-family consistency plus calculation-date
+and base-currency consistency, then returns the additive SA result. It can also
+record non-IMA-eligible desks as routed to the SA fallback stack from structural
+eligibility signals. `recognise_cva_result` prepares a CVA result summary for
 future top-of-house aggregation. Runtime source does not import sibling capital
 packages or private batch internals.
 

@@ -7,17 +7,20 @@ component packages. It owns the suite boundary that will compose IMA, SBM, DRC,
 RRAO, and CVA outputs, including the SA total from
 `frtb-sbm + frtb-drc + frtb-rrao`.
 
-The package does not calculate suite capital yet. Public aggregation entry
-points raise `NotImplementedCapitalComponentError` from `frtb-common`; they must
-not emit zero or placeholder capital.
+The package does not calculate suite capital yet. Top-of-house aggregation
+raises `NotImplementedCapitalComponentError` from `frtb-common`; it must not
+emit zero or placeholder capital.
 
 Current runtime support is deliberately narrow:
 
 - `compose_standardised_approach_capital` accepts the shared
   `frtb_common.ComponentResultHandoff` shape for SBM, DRC, and RRAO, validates
   that each handoff is in the expected component slot, applies the ADR 0022
-  jurisdiction-family guard, then fails closed before SA aggregation
-  arithmetic;
+  jurisdiction-family guard, checks calculation date and base currency
+  consistency, and returns the additive SA result `SBM + DRC + RRAO`;
+- non-IMA-eligible desks can be passed through the structural
+  `ima_desk_eligibility` mapping and are recorded as routed to the Standardised
+  Approach fallback stack;
 - each SA component owns its own `to_orchestration_handoff` projection into
   that shared contract;
 - `recognise_cva_result` summarizes the public CVA result shape into

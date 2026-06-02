@@ -24,11 +24,10 @@ SA capital = SBM capital + DRC capital + RRAO capital
 ```
 
 Current orchestration validates supplied SBM, DRC, and RRAO
-`frtb_common.ComponentResultHandoff` records for component slot and
-jurisdiction-family consistency, then raises an explicit
-`NotImplementedCapitalComponentError` before aggregation arithmetic. The docs
-therefore describe the target composition and the current fail-closed runtime
-separately.
+`frtb_common.ComponentResultHandoff` records for component slot,
+jurisdiction-family, calculation-date, and base-currency consistency, then
+returns the composed additive SA result with component subtotals, citations,
+warnings, and any IMA fallback desk routes.
 
 The same component stack is also the fallback route when a desk is not
 IMA-eligible. The component packages own their own calculations and audit
