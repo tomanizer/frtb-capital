@@ -338,7 +338,7 @@ Every calculation feature must have:
 
 ### RRAO-NFR-006: Performance target
 
-The first implemented path should include a benchmark target for at least
+The implemented path includes a benchmark target for at least
 100,000 synthetic residual-risk positions across multiple desks, legal
 entities, classifications, and exclusion reasons. The target is an engineering
 control for suite usability, not a regulatory requirement.
@@ -357,8 +357,11 @@ The first capital-producing vertical slice is complete only when:
   and gross effective notional mappings needed by fixtures;
 - Basel profile contains cited MAR23 risk weights and can calculate the same
   canonical included/excluded fixture where classification evidence is supplied;
-- PRA profile gaps raise explicit unsupported-feature errors, and EU-specific
-  gaps such as investment-fund treatment still fail closed unless mapped;
+- EU CRR3 comparison profile contains cited Article 325u and Delegated
+  Regulation (EU) 2022/2328 mappings for supported canonical inputs;
+- PRA profile gaps raise explicit unsupported-feature errors, and unmapped
+  jurisdiction-specific features such as non-U.S. investment-fund treatment
+  still fail closed unless mapped;
 - line add-ons, subtotals, and total RRAO run through one public API;
 - results are frozen, serialisable, and carry rule-profile/input hashes;
 - tests cover exotic, other residual risk, supervisor-directed inclusion,

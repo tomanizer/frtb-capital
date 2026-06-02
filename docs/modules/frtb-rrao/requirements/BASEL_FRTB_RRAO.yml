@@ -138,5 +138,5 @@ requirements:
     source: Engineering compatibility control; not a regulatory source
     status: implemented
     modules: [src/frtb_rrao/__init__.py, ../../docs/modules/frtb-rrao/PUBLIC_API.md]
-    tests: [tests/test_public_api_surface.py]
+    tests: [tests/test_rrao_public_api_surface.py]
     notes: Keeps low-level reference-data and implementation helpers importable from their submodules but outside the v1 top-level compatibility contract.
