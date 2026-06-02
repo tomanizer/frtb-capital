@@ -16,6 +16,9 @@ from frtb_drc.reference_data import profile_reference_data_payload
 from frtb_drc.validation import DrcInputError
 
 US_NPR_2_0_PROFILE_ID = "US_NPR_2_0"
+BASEL_MAR22_PROFILE_ID = "BASEL_MAR22"
+EU_CRR3_PROFILE_ID = "EU_CRR3"
+PRA_UK_CRR_PROFILE_ID = "PRA_UK_CRR"
 
 
 @dataclass(frozen=True)
@@ -383,6 +386,113 @@ US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
     ),
 }
 
+BASEL_MAR22_CITATIONS: dict[str, DrcCitation] = {
+    "BASEL_MAR22_11": US_NPR_2_0_CITATIONS["BASEL_MAR22_11"],
+    "BASEL_MAR22_12": DrcCitation(
+        citation_id="BASEL_MAR22_12",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.12",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note=(
+            "Non-securitisation LGD ladder for equity, non-senior debt, senior debt, "
+            "covered bonds, and recovery-unlinked instruments."
+        ),
+    ),
+    "BASEL_MAR22_13": US_NPR_2_0_CITATIONS["BASEL_MAR22_13"],
+    "BASEL_MAR22_15_18": DrcCitation(
+        citation_id="BASEL_MAR22_15_18",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.15-MAR22.18",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="One-year maturity scaling with a three-month floor for exposures below three months.",
+    ),
+    "BASEL_MAR22_19": DrcCitation(
+        citation_id="BASEL_MAR22_19",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.19",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="Same-obligor non-securitisation offsetting and seniority rule.",
+    ),
+    "BASEL_MAR22_22": DrcCitation(
+        citation_id="BASEL_MAR22_22",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.22",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note=(
+            "Basel non-securitisation buckets: corporates, sovereigns, and local "
+            "governments and municipalities."
+        ),
+    ),
+    "BASEL_MAR22_23": DrcCitation(
+        citation_id="BASEL_MAR22_23",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.23",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="Hedge benefit ratio for long and short net default exposures within a bucket.",
+    ),
+    "BASEL_MAR22_24": DrcCitation(
+        citation_id="BASEL_MAR22_24",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.24",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note=(
+            "Basel non-securitisation risk weights by letter-grade credit quality, "
+            "unrated, and defaulted categories."
+        ),
+    ),
+    "BASEL_MAR22_25": DrcCitation(
+        citation_id="BASEL_MAR22_25",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.25",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="Bucket-level default-risk capital aggregation.",
+    ),
+    "BASEL_MAR22_26": DrcCitation(
+        citation_id="BASEL_MAR22_26",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.26",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="Non-securitisation default-risk capital equals the sum of bucket-level requirements.",
+    ),
+    "BASEL_MAR22_34": US_NPR_2_0_CITATIONS["BASEL_MAR22_34"],
+    "BASEL_MAR22_42": DrcCitation(
+        citation_id="BASEL_MAR22_42",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.42",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note=(
+            "CTP securitisation risk weights use the banking-book securitisation "
+            "hierarchy with one-year maturity."
+        ),
+    ),
+}
+
+EU_CRR3_CITATIONS: dict[str, DrcCitation] = {
+    "EU_CRR3_ARTICLE_325W": DrcCitation(
+        citation_id="EU_CRR3_ARTICLE_325W",
+        source_id="EU_CRR3_2024_1623",
+        paragraph="Article 325w",
+        url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
+        note=(
+            "EU default-risk charge gross JTD anchor; runtime profile remains "
+            "fail-closed until EU CQS and RTS mappings are implemented."
+        ),
+    ),
+}
+
+PRA_UK_CRR_CITATIONS: dict[str, DrcCitation] = {
+    "PRA_PS1_26_MARKET_RISK": DrcCitation(
+        citation_id="PRA_PS1_26_MARKET_RISK",
+        source_id="UK_PRA_PS1_26_BASEL_3_1_FINAL_RULES",
+        paragraph="Chapter 3 and Appendix 1",
+        url="https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement",
+        note=(
+            "UK Basel 3.1 market-risk profile anchor; runtime DRC profile remains "
+            "fail-closed until PRA rulebook paragraph mapping is implemented."
+        ),
+    ),
+}
+
 
 def get_rule_profile(profile_id: str = US_NPR_2_0_PROFILE_ID) -> DrcRuleProfile:
     """Return a DRC rule profile by id."""
@@ -457,6 +567,83 @@ _US_NPR_2_0_PROFILE = DrcRuleProfile(
     unsupported_features={},
 )
 
+_BASEL_MAR22_PROFILE = DrcRuleProfile(
+    profile_id=BASEL_MAR22_PROFILE_ID,
+    regulator="Basel Committee on Banking Supervision",
+    version="MAR22 current",
+    publication_date=date(2020, 3, 27),
+    effective_date=date(2023, 1, 1),
+    status="standard",
+    supported_risk_classes=frozenset({DrcRiskClass.NON_SECURITISATION}),
+    citations=BASEL_MAR22_CITATIONS,
+    unsupported_features={
+        DrcRiskClass.SECURITISATION_NON_CTP: (
+            "BASEL_MAR22 securitisation non-CTP because MAR22.34 banking-book "
+            "securitisation risk-weight derivation and fair-value cap evidence are "
+            "not implemented"
+        ),
+        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
+            "BASEL_MAR22 CTP because MAR22.42 banking-book securitisation risk-weight "
+            "lineage and CTP decomposition evidence are not implemented"
+        ),
+    },
+)
+
+_EU_CRR3_PROFILE = DrcRuleProfile(
+    profile_id=EU_CRR3_PROFILE_ID,
+    regulator="European Union",
+    version="Regulation (EU) 2024/1623",
+    publication_date=date(2024, 5, 31),
+    effective_date=None,
+    status="final_rule_mapping_pending",
+    supported_risk_classes=frozenset(),
+    citations=EU_CRR3_CITATIONS,
+    unsupported_features={
+        DrcRiskClass.NON_SECURITISATION: (
+            "EU_CRR3 non-securitisation DRC because Article 325w and related CQS/RTS "
+            "mapping have not been implemented"
+        ),
+        DrcRiskClass.SECURITISATION_NON_CTP: (
+            "EU_CRR3 securitisation non-CTP DRC because Article 325w and related "
+            "banking-book securitisation mappings have not been implemented"
+        ),
+        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
+            "EU_CRR3 CTP DRC because Article 325w and related CTP mappings have not "
+            "been implemented"
+        ),
+    },
+)
+
+_PRA_UK_CRR_PROFILE = DrcRuleProfile(
+    profile_id=PRA_UK_CRR_PROFILE_ID,
+    regulator="Prudential Regulation Authority",
+    version="Basel 3.1 PS1/26",
+    publication_date=date(2026, 1, 20),
+    effective_date=date(2027, 1, 1),
+    status="final_rule_mapping_pending",
+    supported_risk_classes=frozenset(),
+    citations=PRA_UK_CRR_CITATIONS,
+    unsupported_features={
+        DrcRiskClass.NON_SECURITISATION: (
+            "PRA_UK_CRR non-securitisation DRC because PS1/26 Chapter 3 and "
+            "Appendix 1 rulebook paragraph mappings have not been implemented"
+        ),
+        DrcRiskClass.SECURITISATION_NON_CTP: (
+            "PRA_UK_CRR securitisation non-CTP DRC because PS1/26 Chapter 3 and "
+            "Appendix 1 securitisation mappings have not been implemented"
+        ),
+        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
+            "PRA_UK_CRR CTP DRC because PS1/26 Chapter 3 and Appendix 1 CTP mappings "
+            "have not been implemented"
+        ),
+    },
+)
+
 _PROFILES: Mapping[str, DrcRuleProfile] = MappingProxyType(
-    {_US_NPR_2_0_PROFILE.profile_id: _US_NPR_2_0_PROFILE}
+    {
+        _BASEL_MAR22_PROFILE.profile_id: _BASEL_MAR22_PROFILE,
+        _EU_CRR3_PROFILE.profile_id: _EU_CRR3_PROFILE,
+        _PRA_UK_CRR_PROFILE.profile_id: _PRA_UK_CRR_PROFILE,
+        _US_NPR_2_0_PROFILE.profile_id: _US_NPR_2_0_PROFILE,
+    }
 )

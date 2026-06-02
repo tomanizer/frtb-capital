@@ -51,6 +51,7 @@ from frtb_drc.securitisation import (
     calculate_securitisation_non_ctp_category_drc,
 )
 from frtb_drc.validation import (
+    US_NPR_2_0_PROFILE_ID,
     DrcInputError,
     chargeable_non_securitisation_bucket_keys,
     chargeable_securitisation_non_ctp_bucket_keys,
@@ -177,6 +178,7 @@ def build_drc_nonsec_batch_from_positions(
     source_hash: str | None = None,
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> DrcPositionBatch:
     """
     Build a DRC batch from existing canonical position rows.
@@ -185,7 +187,7 @@ def build_drc_nonsec_batch_from_positions(
     High-volume adapters should build from handoffs or columns.
     """
 
-    validated = _sorted_positions(validate_positions(positions))
+    validated = _sorted_positions(validate_positions(positions, profile_id=profile_id))
     if not validated:
         raise DrcInputError("DRC batch requires at least one position")
     return build_drc_nonsec_batch_from_columns(
@@ -243,6 +245,7 @@ def build_drc_nonsec_batch_from_positions(
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
+        profile_id=profile_id,
     )
 
 
@@ -281,6 +284,7 @@ def build_drc_nonsec_batch_from_columns(
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
     _expected_risk_class: DrcRiskClass = DrcRiskClass.NON_SECURITISATION,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> DrcPositionBatch:
     """Build a validated non-securitisation DRC batch from columnar inputs."""
 
@@ -399,7 +403,7 @@ def build_drc_nonsec_batch_from_columns(
         handoff_hash=handoff_hash,
         diagnostics=tuple(dict(item) for item in diagnostics),
     )
-    _validate_batch(batch, expected_risk_class=_expected_risk_class)
+    _validate_batch(batch, expected_risk_class=_expected_risk_class, profile_id=profile_id)
     return replace(batch, input_hash=input_hash_for_drc_batch(batch))
 
 
@@ -474,6 +478,7 @@ def build_drc_securitisation_non_ctp_batch_from_columns(
         diagnostics=diagnostics,
         copy_arrays=copy_arrays,
         _expected_risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+        profile_id=US_NPR_2_0_PROFILE_ID,
     )
 
 
@@ -864,7 +869,12 @@ def _convert_batch_to_base_currency(
     return converted, conversions
 
 
-def _validate_batch(batch: DrcPositionBatch, *, expected_risk_class: DrcRiskClass) -> None:
+def _validate_batch(
+    batch: DrcPositionBatch,
+    *,
+    expected_risk_class: DrcRiskClass,
+    profile_id: str,
+) -> None:
     if not np.all(batch.risk_classes == expected_risk_class.value):
         unique = ", ".join(str(value) for value in sorted(np.unique(batch.risk_classes)))
         raise DrcInputError(
@@ -873,7 +883,7 @@ def _validate_batch(batch: DrcPositionBatch, *, expected_risk_class: DrcRiskClas
         )
     _validate_common_batch_fields(batch)
     if expected_risk_class is DrcRiskClass.NON_SECURITISATION:
-        _validate_nonsec_batch(batch)
+        _validate_nonsec_batch(batch, profile_id=profile_id)
     elif expected_risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
         _validate_securitisation_non_ctp_batch(batch)
     elif expected_risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
@@ -913,26 +923,30 @@ def _validate_common_batch_fields(batch: DrcPositionBatch) -> None:
     )
 
 
-def _validate_nonsec_batch(batch: DrcPositionBatch) -> None:
+def _validate_nonsec_batch(batch: DrcPositionBatch, *, profile_id: str) -> None:
     if np.any(batch.issuer_ids == None):  # noqa: E711
         raise DrcInputError("issuer_id is required for non-securitisation DRC batch")
     if np.any(batch.seniorities == None):  # noqa: E711
         raise DrcInputError("seniority is required for non-securitisation DRC batch")
     if np.any(batch.credit_qualities == None):  # noqa: E711
         raise DrcInputError("credit_quality is required for non-securitisation DRC batch")
-    bucket_mask = np.isin(batch.bucket_keys, chargeable_non_securitisation_bucket_keys())
+    bucket_mask = np.isin(
+        batch.bucket_keys,
+        chargeable_non_securitisation_bucket_keys(profile_id=profile_id),
+    )
     if not bool(np.all(bucket_mask)):
         first = int(np.argmax(~bucket_mask))
         ensure_chargeable_non_securitisation_bucket(
             cast(str, batch.bucket_keys[first]),
             position_id=cast(str, batch.position_ids[first]),
+            profile_id=profile_id,
         )
-    unrated_mask = batch.credit_qualities == CreditQuality.UNRATED.value
-    if bool(np.any(unrated_mask)):
-        first = int(np.argmax(unrated_mask))
+    for quality in sorted(set(cast(str, item) for item in batch.credit_qualities.tolist())):
+        first = int(np.argmax(batch.credit_qualities == quality))
         ensure_chargeable_credit_quality(
-            CreditQuality.UNRATED,
+            quality,
             position_id=cast(str, batch.position_ids[first]),
+            profile_id=profile_id,
         )
 
 

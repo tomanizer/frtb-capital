@@ -4,7 +4,10 @@ from datetime import date
 from importlib.metadata import version as package_version
 
 import pytest
+from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_drc import (
+    BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     CreditQuality,
     DefaultDirection,
@@ -54,6 +57,44 @@ def test_calculate_drc_capital_wires_nonsec_chain_and_audit_lineage() -> None:
     assert "US_NPR_210_A_2_IV_A" in result.citations
     assert "US_NPR_210_B_3_II" in result.citations
     validate_reconciliation(result)
+
+
+def test_calculate_drc_capital_supports_basel_nonsec_profile() -> None:
+    result = calculate_drc_capital(
+        (
+            _position(
+                "basel-long",
+                DefaultDirection.LONG,
+                100.0,
+                bucket_key="SOVEREIGN",
+                credit_quality=CreditQuality.AA,
+                citation_ids=("BASEL_MAR22_12", "BASEL_MAR22_24"),
+            ),
+        ),
+        context=_context(profile_id=BASEL_MAR22_PROFILE_ID),
+    )
+
+    assert result.profile_id == BASEL_MAR22_PROFILE_ID
+    assert result.total_drc == pytest.approx(1.5)
+    assert "BASEL_MAR22_24" in result.citations
+    validate_reconciliation(result)
+
+
+def test_calculate_drc_capital_fails_known_unsupported_eu_profile_before_capital() -> None:
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match=EU_CRR3_PROFILE_ID):
+        calculate_drc_capital(
+            (
+                _position(
+                    "eu-long",
+                    DefaultDirection.LONG,
+                    100.0,
+                    bucket_key="SOVEREIGN",
+                    credit_quality=CreditQuality.AA,
+                    citation_ids=("EU_CRR3_ARTICLE_325W",),
+                ),
+            ),
+            context=_context(profile_id=EU_CRR3_PROFILE_ID),
+        )
 
 
 def test_public_api_wires_securitisation_non_ctp_category() -> None:

@@ -55,6 +55,13 @@ class DrcSeniority(StrEnum):
 class CreditQuality(StrEnum):
     """Credit-quality buckets used by rule-profile risk-weight lookup."""
 
+    AAA = "AAA"
+    AA = "AA"
+    A = "A"
+    BBB = "BBB"
+    BB = "BB"
+    B = "B"
+    CCC = "CCC"
     INVESTMENT_GRADE = "INVESTMENT_GRADE"
     SPECULATIVE_GRADE = "SPECULATIVE_GRADE"
     SUB_SPECULATIVE_GRADE = "SUB_SPECULATIVE_GRADE"
@@ -65,6 +72,8 @@ class CreditQuality(StrEnum):
 class DrcBucketType(StrEnum):
     """Initial public bucket labels for supported DRC profiles."""
 
+    SOVEREIGN = "SOVEREIGN"
+    LOCAL_GOVERNMENT_MUNICIPAL = "LOCAL_GOVERNMENT_MUNICIPAL"
     NON_US_SOVEREIGN = "NON_US_SOVEREIGN"
     PSE_GSE = "PSE_GSE"
     CORPORATE = "CORPORATE"

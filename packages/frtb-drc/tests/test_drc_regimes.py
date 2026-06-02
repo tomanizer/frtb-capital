@@ -8,6 +8,9 @@ from typing import cast
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_drc import (
+    BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     DrcInputError,
     DrcRiskClass,
@@ -25,6 +28,27 @@ def test_us_npr_profile_supports_row_drc_risk_classes() -> None:
     assert DrcRiskClass.NON_SECURITISATION in profile.supported_risk_classes
     assert DrcRiskClass.SECURITISATION_NON_CTP in profile.supported_risk_classes
     assert DrcRiskClass.CORRELATION_TRADING_PORTFOLIO in profile.supported_risk_classes
+
+
+def test_basel_profile_supports_nonsec_and_fails_other_risk_classes() -> None:
+    profile = get_rule_profile(BASEL_MAR22_PROFILE_ID)
+
+    assert profile.supported_risk_classes == frozenset({DrcRiskClass.NON_SECURITISATION})
+    assert "BASEL_MAR22_24" in profile.citations
+    ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match=r"MAR22\.34"):
+        ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match=r"MAR22\.42"):
+        ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
+
+
+@pytest.mark.parametrize("profile_id", [EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID])
+def test_comparison_profiles_are_known_and_fail_closed(profile_id: str) -> None:
+    profile = get_rule_profile(profile_id)
+
+    assert profile.supported_risk_classes == frozenset()
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match=profile_id):
+        ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
 
 
 def test_unsupported_risk_classes_fail_closed() -> None:

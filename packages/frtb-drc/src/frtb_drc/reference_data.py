@@ -24,6 +24,7 @@ from frtb_drc.validation import (
 )
 
 US_NPR_2_0_PROFILE_ID = "US_NPR_2_0"
+BASEL_MAR22_PROFILE_ID = "BASEL_MAR22"
 
 
 @dataclass(frozen=True)
@@ -76,7 +77,7 @@ def get_lgd_rule(
     """Return the cited LGD rule for seniority/defaulted status."""
 
     _ensure_profile_exists(profile_id)
-    if is_defaulted:
+    if is_defaulted and profile_id == US_NPR_2_0_PROFILE_ID:
         return _require_lgd_rule(profile_id, DrcSeniority.EQUITY, defaulted=True)
     return _require_lgd_rule(profile_id, seniority, defaulted=False)
 
@@ -318,6 +319,62 @@ _LGD_RULES: Mapping[tuple[str, DrcSeniority, bool], LgdRule] = MappingProxyType(
     }
 )
 
+_LGD_RULES = MappingProxyType(
+    {
+        **dict(_LGD_RULES),
+        (
+            BASEL_MAR22_PROFILE_ID,
+            DrcSeniority.EQUITY,
+            False,
+        ): LgdRule(
+            seniority=DrcSeniority.EQUITY,
+            lgd_rate=1.00,
+            citation_id="BASEL_MAR22_12",
+            description="Equity instruments.",
+        ),
+        (
+            BASEL_MAR22_PROFILE_ID,
+            DrcSeniority.NON_SENIOR_DEBT,
+            False,
+        ): LgdRule(
+            seniority=DrcSeniority.NON_SENIOR_DEBT,
+            lgd_rate=1.00,
+            citation_id="BASEL_MAR22_12",
+            description="Non-senior debt instruments.",
+        ),
+        (
+            BASEL_MAR22_PROFILE_ID,
+            DrcSeniority.SENIOR_DEBT,
+            False,
+        ): LgdRule(
+            seniority=DrcSeniority.SENIOR_DEBT,
+            lgd_rate=0.75,
+            citation_id="BASEL_MAR22_12",
+            description="Senior debt instruments.",
+        ),
+        (
+            BASEL_MAR22_PROFILE_ID,
+            DrcSeniority.COVERED_BOND,
+            False,
+        ): LgdRule(
+            seniority=DrcSeniority.COVERED_BOND,
+            lgd_rate=0.25,
+            citation_id="BASEL_MAR22_12",
+            description="Covered bonds as defined by the selected Basel profile.",
+        ),
+        (
+            BASEL_MAR22_PROFILE_ID,
+            DrcSeniority.NOT_RECOVERY_LINKED,
+            False,
+        ): LgdRule(
+            seniority=DrcSeniority.NOT_RECOVERY_LINKED,
+            lgd_rate=0.00,
+            citation_id="BASEL_MAR22_12",
+            description="Instrument value is not linked to issuer recovery.",
+        ),
+    }
+)
+
 _MATURITY_POLICIES: Mapping[str, MaturityPolicy] = MappingProxyType(
     {
         US_NPR_2_0_PROFILE_ID: MaturityPolicy(
@@ -325,7 +382,13 @@ _MATURITY_POLICIES: Mapping[str, MaturityPolicy] = MappingProxyType(
             floor_years=0.25,
             full_weight_years=1.0,
             citation_id="US_NPR_210_A_2_III",
-        )
+        ),
+        BASEL_MAR22_PROFILE_ID: MaturityPolicy(
+            profile_id=BASEL_MAR22_PROFILE_ID,
+            floor_years=0.25,
+            full_weight_years=1.0,
+            citation_id="BASEL_MAR22_15_18",
+        ),
     }
 )
 
@@ -365,6 +428,27 @@ _NONSEC_BUCKET_DEFINITIONS: dict[tuple[str, str], BucketDefinition] = {
         risk_class=DrcRiskClass.NON_SECURITISATION,
         citation_id="US_NPR_210_B_3_I",
         description="Defaulted positions.",
+    ),
+    (BASEL_MAR22_PROFILE_ID, "CORPORATE"): BucketDefinition(
+        bucket_key="CORPORATE",
+        bucket_type=DrcBucketType.CORPORATE,
+        risk_class=DrcRiskClass.NON_SECURITISATION,
+        citation_id="BASEL_MAR22_22",
+        description="Corporate exposures.",
+    ),
+    (BASEL_MAR22_PROFILE_ID, "SOVEREIGN"): BucketDefinition(
+        bucket_key="SOVEREIGN",
+        bucket_type=DrcBucketType.SOVEREIGN,
+        risk_class=DrcRiskClass.NON_SECURITISATION,
+        citation_id="BASEL_MAR22_22",
+        description="Sovereign exposures.",
+    ),
+    (BASEL_MAR22_PROFILE_ID, "LOCAL_GOVERNMENT_MUNICIPAL"): BucketDefinition(
+        bucket_key="LOCAL_GOVERNMENT_MUNICIPAL",
+        bucket_type=DrcBucketType.LOCAL_GOVERNMENT_MUNICIPAL,
+        risk_class=DrcRiskClass.NON_SECURITISATION,
+        citation_id="BASEL_MAR22_22",
+        description="Local government and municipal exposures.",
     ),
 }
 
@@ -488,5 +572,36 @@ _RISK_WEIGHT_RULES: Mapping[tuple[str, str, CreditQuality], RiskWeightRule] = Ma
             risk_weight=1.00,
             citation_id="US_NPR_210_B_3_II",
         ),
+    }
+)
+
+_BASEL_MAR22_RISK_WEIGHT_VALUES = {
+    CreditQuality.AAA: 0.005,
+    CreditQuality.AA: 0.02,
+    CreditQuality.A: 0.03,
+    CreditQuality.BBB: 0.06,
+    CreditQuality.BB: 0.15,
+    CreditQuality.B: 0.30,
+    CreditQuality.CCC: 0.50,
+    CreditQuality.UNRATED: 0.15,
+    CreditQuality.DEFAULTED: 1.00,
+}
+_RISK_WEIGHT_RULES = MappingProxyType(
+    {
+        **dict(_RISK_WEIGHT_RULES),
+        **{
+            (BASEL_MAR22_PROFILE_ID, bucket_key, credit_quality): RiskWeightRule(
+                bucket_key=bucket_key,
+                credit_quality=credit_quality,
+                risk_weight=risk_weight,
+                citation_id="BASEL_MAR22_24",
+            )
+            for bucket_key in (
+                "CORPORATE",
+                "SOVEREIGN",
+                "LOCAL_GOVERNMENT_MUNICIPAL",
+            )
+            for credit_quality, risk_weight in _BASEL_MAR22_RISK_WEIGHT_VALUES.items()
+        },
     }
 )

@@ -25,7 +25,7 @@ def calculate_gross_jtd(
 ) -> GrossJtd:
     """Calculate cited gross JTD for one supported non-securitisation position."""
 
-    validate_position(position)
+    validate_position(position, profile_id=profile_id)
     profile = get_rule_profile(profile_id)
     risk_class = DrcRiskClass(position.risk_class)
     ensure_risk_class_supported(profile, risk_class)
@@ -74,7 +74,7 @@ def calculate_gross_jtds(
 ) -> tuple[GrossJtd, ...]:
     """Calculate gross JTD records in input order."""
 
-    validated_positions = validate_positions(positions)
+    validated_positions = validate_positions(positions, profile_id=profile_id)
     return tuple(
         calculate_gross_jtd(position, profile_id=profile_id) for position in validated_positions
     )

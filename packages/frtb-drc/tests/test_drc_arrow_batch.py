@@ -11,6 +11,7 @@ import pyarrow as pa
 import pytest
 from frtb_common import source_content_hash
 from frtb_drc import (
+    BASEL_MAR22_PROFILE_ID,
     DrcFxRate,
     DrcInputError,
     DrcSourceLineage,
@@ -50,6 +51,44 @@ def test_drc_position_batch_from_rows_matches_row_input_hash() -> None:
     assert batch.input_hash != input_snapshot_hash(fixture.positions)
     assert not batch.position_ids.flags.writeable
     assert not batch.notionals.flags.writeable
+
+
+def test_drc_batch_supports_basel_nonsec_profile() -> None:
+    batch = build_drc_nonsec_batch_from_columns(
+        position_ids=["basel-long"],
+        source_row_ids=["row-basel-long"],
+        desk_ids=["desk-a"],
+        legal_entities=["bank-na"],
+        risk_classes=["NON_SECURITISATION"],
+        instrument_types=["BOND"],
+        default_directions=["LONG"],
+        issuer_ids=["issuer-a"],
+        bucket_keys=["SOVEREIGN"],
+        seniorities=["SENIOR_DEBT"],
+        credit_qualities=["AA"],
+        notionals=[100.0],
+        market_values=[100.0],
+        cumulative_pnls=[0.0],
+        maturity_years=[1.0],
+        currencies=["USD"],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["basel-batch.csv"],
+        citation_ids=[("BASEL_MAR22_12", "BASEL_MAR22_24")],
+        profile_id=BASEL_MAR22_PROFILE_ID,
+    )
+    context = DrcCalculationContext(
+        run_id="run-basel-batch",
+        calculation_date=date(2026, 5, 29),
+        base_currency="USD",
+        profile_id=BASEL_MAR22_PROFILE_ID,
+    )
+
+    calculation = calculate_drc_capital_from_batch(batch, context=context)
+
+    assert calculation.result.profile_id == BASEL_MAR22_PROFILE_ID
+    assert calculation.result.total_drc == pytest.approx(1.5)
+    assert "BASEL_MAR22_24" in calculation.result.citations
+    validate_reconciliation(calculation.result)
 
 
 def test_drc_arrow_handoff_batch_matches_nonsec_v2_row_capital() -> None:
