@@ -30,7 +30,7 @@ def _weighted(sensitivity_id: str, scaled_amount: float = 100.0) -> WeightedSens
         raw_amount=scaled_amount,
         risk_weight=1.0,
         scaled_amount=scaled_amount,
-        citation_ids=("basel_mar21_41",),
+        citation_ids=("basel_mar21_45_49",),
     )
 
 
@@ -166,7 +166,7 @@ def test_serialized_summary_preserves_reconstruction_metadata() -> None:
 
     assert detail["scenario"] in {"LOW", "MEDIUM", "HIGH"}
     assert bucket["bucket_id"] == "1"
-    assert "basel_mar21_41" in bucket["citation_ids"]
+    assert "basel_mar21_45_49" in bucket["citation_ids"]
     assert bucket["pairwise_correlations"] == []
     assert summary == {
         "evidence_mode": "SUMMARY",

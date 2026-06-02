@@ -98,6 +98,19 @@ def test_basel_reference_data_keeps_us_specific_paths_unsupported() -> None:
         )
 
 
+def test_basel_risk_weight_citations_keep_verified_mar23_8_subparagraph_numbering() -> None:
+    citations = citations_for_profile(RraoRegulatoryProfile.BASEL_MAR23)
+    exotic_rule = risk_weight_rule_for(RraoRegulatoryProfile.BASEL_MAR23, "EXOTIC_1_PERCENT")
+    other_rule = risk_weight_rule_for(RraoRegulatoryProfile.BASEL_MAR23, "OTHER_0_1_PERCENT")
+
+    assert exotic_rule.risk_weight == 0.01
+    assert exotic_rule.citation_id == "basel_mar23_8_2_a"
+    assert citations[exotic_rule.citation_id].paragraph == "MAR23.8(2)(a)"
+    assert other_rule.risk_weight == 0.001
+    assert other_rule.citation_id == "basel_mar23_8_2_b"
+    assert citations[other_rule.citation_id].paragraph == "MAR23.8(2)(b)"
+
+
 def test_eu_reference_data_contains_rts_annex_and_article_3_mappings() -> None:
     annex_rule = evidence_rule_for(
         RraoRegulatoryProfile.EU_CRR3,

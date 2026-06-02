@@ -55,8 +55,8 @@ def test_weight_girr_delta_applies_cited_risk_weight() -> None:
     expected_weight = 0.011 / math.sqrt(2.0)
     assert item.risk_weight == pytest.approx(expected_weight)
     assert item.scaled_amount == pytest.approx(1_000_000.0 * expected_weight)
-    assert "basel_mar21_39" in item.citation_ids
-    assert "basel_mar21_40" in item.citation_ids
+    assert "basel_mar21_42" in item.citation_ids
+    assert "basel_mar21_44" in item.citation_ids
 
 
 def sample_vega_sensitivity(

@@ -147,13 +147,13 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.39",
         url=BASEL_MAR21_URL,
-        note="GIRR delta risk weights by prescribed tenor.",
+        note="Delta buckets, risk weights, and correlation-parameter section lead-in.",
     ),
     "basel_mar21_40": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.40",
         url=BASEL_MAR21_URL,
-        note="Liquid-currency and reporting-currency sqrt(2) risk-weight adjustment.",
+        note="Liquidity-adjusted calibration scope for prescribed delta weights and correlations.",
     ),
     "basel_mar21_4_intra_bucket": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
@@ -228,19 +228,37 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.41",
         url=BASEL_MAR21_URL,
-        note="GIRR delta intra-bucket correlation structure.",
+        note="Each currency is a separate GIRR delta bucket.",
     ),
     "basel_mar21_42": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.42",
         url=BASEL_MAR21_URL,
-        note="GIRR inter-bucket correlation parameter.",
+        note="GIRR delta risk weights by prescribed tenor.",
     ),
     "basel_mar21_43": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
         location="MAR21.43",
         url=BASEL_MAR21_URL,
-        note="Low, medium, and high correlation scenario adjustments.",
+        note="GIRR inflation and cross-currency basis risk weights.",
+    ),
+    "basel_mar21_44": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.44",
+        url=BASEL_MAR21_URL,
+        note="Specified-currency sqrt(2) GIRR risk-weight adjustment.",
+    ),
+    "basel_mar21_45_49": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.45-MAR21.49",
+        url=BASEL_MAR21_URL,
+        note="GIRR intra-bucket correlation parameters, including inflation and XCCY.",
+    ),
+    "basel_mar21_50": SbmCitation(
+        source_id="basel_mar21_sensitivities_based_method",
+        location="MAR21.50",
+        url=BASEL_MAR21_URL,
+        note="GIRR inter-bucket correlation parameter.",
     ),
     "basel_mar21_91": SbmCitation(
         source_id="basel_mar21_sensitivities_based_method",
@@ -542,34 +560,34 @@ BASEL_GIRR_BUCKETS: tuple[SbmGirrBucketDefinition, ...] = (
 )
 
 BASEL_GIRR_TENORS: tuple[SbmGirrTenorDefinition, ...] = (
-    SbmGirrTenorDefinition("3m", 0.25, "basel_mar21_39"),
-    SbmGirrTenorDefinition("6m", 0.5, "basel_mar21_39"),
-    SbmGirrTenorDefinition("1y", 1.0, "basel_mar21_39"),
-    SbmGirrTenorDefinition("2y", 2.0, "basel_mar21_39"),
-    SbmGirrTenorDefinition("3y", 3.0, "basel_mar21_39"),
-    SbmGirrTenorDefinition("5y", 5.0, "basel_mar21_39"),
-    SbmGirrTenorDefinition("10y", 10.0, "basel_mar21_39"),
-    SbmGirrTenorDefinition("15y", 15.0, "basel_mar21_39"),
-    SbmGirrTenorDefinition("20y", 20.0, "basel_mar21_39"),
-    SbmGirrTenorDefinition("30y", 30.0, "basel_mar21_39"),
+    SbmGirrTenorDefinition("3m", 0.25, "basel_mar21_42"),
+    SbmGirrTenorDefinition("6m", 0.5, "basel_mar21_42"),
+    SbmGirrTenorDefinition("1y", 1.0, "basel_mar21_42"),
+    SbmGirrTenorDefinition("2y", 2.0, "basel_mar21_42"),
+    SbmGirrTenorDefinition("3y", 3.0, "basel_mar21_42"),
+    SbmGirrTenorDefinition("5y", 5.0, "basel_mar21_42"),
+    SbmGirrTenorDefinition("10y", 10.0, "basel_mar21_42"),
+    SbmGirrTenorDefinition("15y", 15.0, "basel_mar21_42"),
+    SbmGirrTenorDefinition("20y", 20.0, "basel_mar21_42"),
+    SbmGirrTenorDefinition("30y", 30.0, "basel_mar21_42"),
 )
 
 BASEL_GIRR_DELTA_RISK_WEIGHTS: tuple[SbmGirrRiskWeightRule, ...] = (
-    SbmGirrRiskWeightRule("3m", 0.017, "basel_mar21_39"),
-    SbmGirrRiskWeightRule("6m", 0.017, "basel_mar21_39"),
-    SbmGirrRiskWeightRule("1y", 0.016, "basel_mar21_39"),
-    SbmGirrRiskWeightRule("2y", 0.013, "basel_mar21_39"),
-    SbmGirrRiskWeightRule("3y", 0.012, "basel_mar21_39"),
-    SbmGirrRiskWeightRule("5y", 0.011, "basel_mar21_39"),
-    SbmGirrRiskWeightRule("10y", 0.011, "basel_mar21_39"),
-    SbmGirrRiskWeightRule("15y", 0.011, "basel_mar21_39"),
-    SbmGirrRiskWeightRule("20y", 0.011, "basel_mar21_39"),
-    SbmGirrRiskWeightRule("30y", 0.011, "basel_mar21_39"),
+    SbmGirrRiskWeightRule("3m", 0.017, "basel_mar21_42"),
+    SbmGirrRiskWeightRule("6m", 0.017, "basel_mar21_42"),
+    SbmGirrRiskWeightRule("1y", 0.016, "basel_mar21_42"),
+    SbmGirrRiskWeightRule("2y", 0.013, "basel_mar21_42"),
+    SbmGirrRiskWeightRule("3y", 0.012, "basel_mar21_42"),
+    SbmGirrRiskWeightRule("5y", 0.011, "basel_mar21_42"),
+    SbmGirrRiskWeightRule("10y", 0.011, "basel_mar21_42"),
+    SbmGirrRiskWeightRule("15y", 0.011, "basel_mar21_42"),
+    SbmGirrRiskWeightRule("20y", 0.011, "basel_mar21_42"),
+    SbmGirrRiskWeightRule("30y", 0.011, "basel_mar21_42"),
 )
 
 BASEL_GIRR_SPECIAL_RISK_FACTORS: tuple[SbmGirrSpecialRiskFactorRule, ...] = (
-    SbmGirrSpecialRiskFactorRule("INFL", 0.016, "basel_mar21_39"),
-    SbmGirrSpecialRiskFactorRule("XCCY", 0.016, "basel_mar21_39"),
+    SbmGirrSpecialRiskFactorRule("INFL", 0.016, "basel_mar21_43"),
+    SbmGirrSpecialRiskFactorRule("XCCY", 0.016, "basel_mar21_43"),
 )
 
 BASEL_CORRELATION_SCENARIOS: tuple[SbmCorrelationScenarioDefinition, ...] = (
@@ -578,21 +596,21 @@ BASEL_CORRELATION_SCENARIOS: tuple[SbmCorrelationScenarioDefinition, ...] = (
         multiplier=0.75,
         floor_factor=0.75,
         cap=None,
-        citation_id="basel_mar21_43",
+        citation_id="basel_mar21_6_correlation_scenarios",
     ),
     SbmCorrelationScenarioDefinition(
         SbmScenarioLabel.MEDIUM,
         multiplier=1.0,
         floor_factor=None,
         cap=None,
-        citation_id="basel_mar21_43",
+        citation_id="basel_mar21_6_correlation_scenarios",
     ),
     SbmCorrelationScenarioDefinition(
         SbmScenarioLabel.HIGH,
         multiplier=1.25,
         floor_factor=None,
         cap=1.0,
-        citation_id="basel_mar21_43",
+        citation_id="basel_mar21_6_correlation_scenarios",
     ),
 )
 
@@ -867,7 +885,7 @@ def girr_delta_risk_weight(
         reporting_currency=normalised_reporting,
     ):
         risk_weight /= SQRT2
-        citation_ids.append("basel_mar21_40")
+        citation_ids.append("basel_mar21_44")
     return risk_weight, tuple(citation_ids)
 
 
@@ -883,7 +901,7 @@ def girr_delta_intra_bucket_correlation(
     _ensure_girr_delta_supported(profile)
     normalised_tenor1 = _require_text(tenor1, "tenor1")
     normalised_tenor2 = _require_text(tenor2, "tenor2")
-    citation_ids = ("basel_mar21_41",)
+    citation_ids = ("basel_mar21_45_49",)
 
     if normalised_tenor1 == "XCCY" or normalised_tenor2 == "XCCY":
         if normalised_tenor1 == normalised_tenor2:
@@ -1052,8 +1070,8 @@ def girr_inter_bucket_correlation(
     girr_bucket_definition(profile, normalised_bucket1)
     girr_bucket_definition(profile, normalised_bucket2)
     if normalised_bucket1 == normalised_bucket2:
-        return GIRR_SAME_CURVE_CORRELATION, ("basel_mar21_42",)
-    return GIRR_INTER_BUCKET_CORRELATION, ("basel_mar21_42",)
+        return GIRR_SAME_CURVE_CORRELATION, ("basel_mar21_50",)
+    return GIRR_INTER_BUCKET_CORRELATION, ("basel_mar21_50",)
 
 
 def fx_buckets_for_profile(
@@ -1285,8 +1303,8 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
             "intra_bucket_constant": GIRR_DELTA_INTRA_BUCKET_CONSTANT,
             "intra_bucket_floor": GIRR_INTRA_BUCKET_CORRELATION_FLOOR,
             "inter_bucket_correlation": GIRR_INTER_BUCKET_CORRELATION,
-            "intra_bucket_citation_id": "basel_mar21_41",
-            "inter_bucket_citation_id": "basel_mar21_42",
+            "intra_bucket_citation_id": "basel_mar21_45_49",
+            "inter_bucket_citation_id": "basel_mar21_50",
         },
         "girr_vega_parameters": {
             "liquidity_horizon_days": PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS[resolved],

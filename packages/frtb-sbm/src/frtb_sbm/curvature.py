@@ -1501,7 +1501,7 @@ def _curvature_inter_bucket_correlation(
 
 def _curvature_intra_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.GIRR:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_41")
+        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_45_49")
     if risk_class is SbmRiskClass.FX:
         return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_86")
     if risk_class is SbmRiskClass.EQUITY:
@@ -1519,7 +1519,7 @@ def _curvature_intra_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
 
 def _curvature_inter_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.GIRR:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_42")
+        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_50")
     if risk_class is SbmRiskClass.FX:
         return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_89")
     if risk_class is SbmRiskClass.EQUITY:

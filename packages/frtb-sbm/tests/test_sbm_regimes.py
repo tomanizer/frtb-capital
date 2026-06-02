@@ -47,10 +47,11 @@ def test_get_sbm_rule_profile_returns_supported_basel_profile() -> None:
     assert profile.supported_measures[SbmRiskClass.FX] == frozenset(
         {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
     )
-    assert "basel_mar21_39" in profile.citations
+    assert "basel_mar21_42" in profile.citations
     assert "basel_mar21_87" in profile.citations
     assert "basel_mar21_92" in profile.citations
     assert "basel_mar21_43" in profile.citations
+    assert "basel_mar21_6_correlation_scenarios" in profile.citations
 
 
 def test_profile_content_hash_is_deterministic_and_profile_specific() -> None:

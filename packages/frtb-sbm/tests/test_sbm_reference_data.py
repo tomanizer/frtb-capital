@@ -157,8 +157,17 @@ def test_girr_delta_risk_weights(tenor: str, maturity_years: float, risk_weight:
     rule = girr_delta_risk_weight_rule(SbmRegulatoryProfile.BASEL_MAR21, tenor)
 
     assert tenor_definition.maturity_years == maturity_years
+    assert tenor_definition.citation_id == "basel_mar21_42"
     assert rule.risk_weight == risk_weight
-    assert rule.citation_id == "basel_mar21_39"
+    assert rule.citation_id == "basel_mar21_42"
+
+
+@pytest.mark.parametrize("tenor", ["INFL", "XCCY"])
+def test_girr_special_risk_factors_use_special_factor_citation(tenor: str) -> None:
+    rule = girr_delta_risk_weight_rule(SbmRegulatoryProfile.BASEL_MAR21, tenor)
+
+    assert rule.risk_weight == 0.016
+    assert rule.citation_id == "basel_mar21_43"
 
 
 def test_girr_delta_risk_weight_applies_liquid_currency_sqrt2_adjustment() -> None:
@@ -170,7 +179,7 @@ def test_girr_delta_risk_weight_applies_liquid_currency_sqrt2_adjustment() -> No
     )
 
     assert adjusted == pytest.approx(0.011 / math.sqrt(2.0))
-    assert citation_ids == ("basel_mar21_39", "basel_mar21_40")
+    assert citation_ids == ("basel_mar21_42", "basel_mar21_44")
 
 
 def test_girr_delta_risk_weight_skips_sqrt2_for_special_factors() -> None:
@@ -182,7 +191,7 @@ def test_girr_delta_risk_weight_skips_sqrt2_for_special_factors() -> None:
     )
 
     assert adjusted == 0.016
-    assert citation_ids == ("basel_mar21_39",)
+    assert citation_ids == ("basel_mar21_43",)
 
 
 def test_girr_delta_intra_bucket_correlation_uses_exponential_tenor_formula() -> None:
@@ -195,7 +204,7 @@ def test_girr_delta_intra_bucket_correlation_uses_exponential_tenor_formula() ->
 
     expected = math.exp(-0.03 * abs(1.0 - 5.0) / 1.0)
     assert correlation == pytest.approx(expected)
-    assert citation_ids == ("basel_mar21_41",)
+    assert citation_ids == ("basel_mar21_45_49",)
 
 
 def test_girr_delta_intra_bucket_correlation_handles_inflation_and_xccy() -> None:
@@ -295,7 +304,7 @@ def test_girr_inter_bucket_correlation() -> None:
 
     assert same_bucket == 1.0
     assert different_buckets == 0.50
-    assert citation_ids == ("basel_mar21_42",)
+    assert citation_ids == ("basel_mar21_50",)
 
 
 @pytest.mark.parametrize(
@@ -318,7 +327,7 @@ def test_correlation_scenario_adjustments(
     )
 
     assert adjusted == pytest.approx(expected)
-    assert citation_ids == ("basel_mar21_43",)
+    assert citation_ids == ("basel_mar21_6_correlation_scenarios",)
 
 
 def test_apply_correlation_scenario_definition_rejects_non_finite_base() -> None:
