@@ -18,6 +18,7 @@ agent worktree on branch `codex/simplification-audit`.
 - [`batch-array-coercion-assessment`](batch-array-coercion-assessment.md)
 - [`arrow-conversion-migration`](arrow-conversion-migration.md)
 - [`hash-migration-plan`](hash-migration-plan.md)
+- [`rrao-structural-fields-decision`](rrao-structural-fields-decision.md)
 
 ## Suite-level findings
 
