@@ -13,7 +13,7 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_rrao._citations import merged_citation_ids
-from frtb_rrao._payloads import batch_position_payload, hash_payload
+from frtb_rrao._payloads import batch_position_payload, hash_position_payloads
 from frtb_rrao._result_assembly import (
     collect_line_citations,
     partition_lines,
@@ -542,12 +542,8 @@ def build_rrao_batch_from_columns(
 def input_hash_for_rrao_batch(batch: RraoPositionBatch) -> str:
     """Hash canonical RRAO batch inputs in deterministic input order."""
 
-    return hash_payload(
-        {
-            "positions": [
-                _position_payload_for_hash(batch, index) for index in range(batch.row_count)
-            ]
-        }
+    return hash_position_payloads(
+        _position_payload_for_hash(batch, index) for index in range(batch.row_count)
     )
 
 
