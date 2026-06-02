@@ -16,6 +16,7 @@ from frtb_common import (
     NormalizedTabularHandoff,
     NullPolicy,
     TabularLogicalType,
+    arrow_object_array,
     normalize_arrow_table,
     normalized_handoff_hash,
     validate_arrow_table,
@@ -36,6 +37,7 @@ from frtb_cva.validation import CvaInputError
 ObjectArray = npt.NDArray[np.object_]
 FloatArray = npt.NDArray[np.float64]
 BoolArray = npt.NDArray[np.bool_]
+_ARROW_CONVERSION_ERRORS = (pa.ArrowException, TypeError, ValueError)
 
 CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("counterparty_id", aliases=("counterpartyId", "CounterpartyID")),
@@ -446,7 +448,7 @@ def _normalize(
 def _required_object_column(table: pa.Table, column_name: str) -> ObjectArray:
     if column_name not in table.column_names:
         raise CvaInputError(f"column is required: {column_name}", field=column_name)
-    values = _object_array_from_arrow_column(table.column(column_name))
+    values = _object_array_from_arrow_column(table.column(column_name), field=column_name)
     values.setflags(write=False)
     return values
 
@@ -454,7 +456,7 @@ def _required_object_column(table: pa.Table, column_name: str) -> ObjectArray:
 def _optional_object_column(table: pa.Table, column_name: str) -> ObjectArray | None:
     if column_name not in table.column_names:
         return None
-    values = _object_array_from_arrow_column(table.column(column_name))
+    values = _object_array_from_arrow_column(table.column(column_name), field=column_name)
     values.setflags(write=False)
     return values
 
@@ -482,12 +484,17 @@ def _optional_float_column(table: pa.Table, column_name: str) -> FloatArray | No
     if not pa.types.is_float64(array.type):
         try:
             array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except (pa.ArrowInvalid, TypeError, ValueError) as exc:
+        except _ARROW_CONVERSION_ERRORS as exc:
             raise CvaInputError(f"{column_name} must be numeric", field=column_name) from exc
-    values = np.asarray(
-        pc.fill_null(array, pa.scalar(math.nan, type=pa.float64())).to_numpy(zero_copy_only=False),
-        dtype=np.float64,
-    )
+    try:
+        values = np.asarray(
+            pc.fill_null(array, pa.scalar(math.nan, type=pa.float64())).to_numpy(
+                zero_copy_only=False
+            ),
+            dtype=np.float64,
+        )
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise CvaInputError(f"{column_name} must be numeric", field=column_name) from exc
     values.setflags(write=False)
     return values
 
@@ -498,7 +505,7 @@ def _required_bool_column(table: pa.Table, column_name: str) -> ObjectArray | Bo
     column = table.column(column_name)
     if column.null_count:
         raise CvaInputError(f"{column_name} must be provided", field=column_name)
-    values = _bool_array_from_arrow_column(column, default=False)
+    values = _bool_array_from_arrow_column(column, field=column_name, default=False)
     values.setflags(write=False)
     return values
 
@@ -506,7 +513,11 @@ def _required_bool_column(table: pa.Table, column_name: str) -> ObjectArray | Bo
 def _optional_bool_column(table: pa.Table, column_name: str) -> ObjectArray | BoolArray | None:
     if column_name not in table.column_names:
         return None
-    values = _bool_array_from_arrow_column(table.column(column_name), default=False)
+    values = _bool_array_from_arrow_column(
+        table.column(column_name),
+        field=column_name,
+        default=False,
+    )
     values.setflags(write=False)
     return values
 
@@ -514,63 +525,30 @@ def _optional_bool_column(table: pa.Table, column_name: str) -> ObjectArray | Bo
 def _bool_array_from_arrow_column(
     column: pa.ChunkedArray,
     *,
+    field: str,
     default: bool,
 ) -> ObjectArray | BoolArray:
     array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
     if not pa.types.is_boolean(array.type):
-        values = _object_array_from_arrow_column(column)
+        values = _object_array_from_arrow_column(column, field=field)
         if column.null_count:
             values = values.copy()
             values[values == None] = default  # noqa: E711
         return values
-    return np.asarray(pc.fill_null(array, default).to_numpy(zero_copy_only=False), dtype=np.bool_)
+    try:
+        return np.asarray(
+            pc.fill_null(array, default).to_numpy(zero_copy_only=False),
+            dtype=np.bool_,
+        )
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise CvaInputError("Arrow column conversion failed", field=field) from exc
 
 
-def _object_array_from_arrow_column(column: pa.ChunkedArray) -> ObjectArray:
-    arrays = tuple(_object_array_from_arrow_array(chunk) for chunk in column.chunks)
-    if not arrays:
-        return np.empty(0, dtype=object)
-    if len(arrays) == 1:
-        return arrays[0]
-    return np.concatenate(arrays).astype(object, copy=False)
-
-
-def _object_array_from_arrow_array(array: pa.Array) -> ObjectArray:
-    if pa.types.is_dictionary(array.type):
-        return _dictionary_array_to_object_array(cast(pa.DictionaryArray, array))
-    if pa.types.is_integer(array.type):
-        return _integer_array_to_object_array(array)
-    values = np.asarray(array.to_numpy(zero_copy_only=False), dtype=object)
-    if array.null_count:
-        values = values.copy()
-        valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-        values[~valid] = None
-    return values
-
-
-def _integer_array_to_object_array(array: pa.Array) -> ObjectArray:
-    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-    filled = pc.fill_null(array, pa.scalar(0, type=array.type))
-    values = np.asarray(filled.to_numpy(zero_copy_only=False), dtype=object)
-    values[~valid] = None
-    return values
-
-
-def _dictionary_array_to_object_array(array: pa.DictionaryArray) -> ObjectArray:
-    if len(array) == 0:
-        return np.empty(0, dtype=object)
-    dictionary = np.asarray(array.dictionary.to_numpy(zero_copy_only=False), dtype=object)
-    indices = np.asarray(
-        pc.fill_null(array.indices, pa.scalar(0, type=array.indices.type)).to_numpy(
-            zero_copy_only=False
-        ),
-        dtype=np.int64,
-    )
-    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-    values = np.empty(len(array), dtype=object)
-    values[valid] = dictionary[indices[valid]]
-    values[~valid] = None
-    return values
+def _object_array_from_arrow_column(column: pa.ChunkedArray, *, field: str) -> ObjectArray:
+    try:
+        return arrow_object_array(column)
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise CvaInputError("Arrow column conversion failed", field=field) from exc
 
 
 def _float64_array_from_arrow_column(
@@ -584,12 +562,17 @@ def _float64_array_from_arrow_column(
     if not pa.types.is_float64(array.type):
         try:
             array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except (pa.ArrowInvalid, TypeError, ValueError) as exc:
+        except _ARROW_CONVERSION_ERRORS as exc:
             raise CvaInputError(f"{field} must be numeric", field=field) from exc
     try:
         return cast(FloatArray, array.to_numpy(zero_copy_only=True))
-    except (pa.ArrowInvalid, TypeError, ValueError):
+    except _ARROW_CONVERSION_ERRORS:
+        pass
+
+    try:
         return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise CvaInputError(f"{field} must be numeric", field=field) from exc
 
 
 def _diagnostics(handoff: NormalizedTabularHandoff) -> tuple[Mapping[str, object], ...]:

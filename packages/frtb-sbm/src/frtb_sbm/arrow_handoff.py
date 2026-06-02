@@ -26,6 +26,7 @@ from frtb_common import (
     NullPolicy,
     TabularLogicalType,
     UnsupportedRegulatoryFeatureError,
+    arrow_object_array,
     normalize_arrow_table,
     normalized_handoff_hash,
     validate_arrow_table,
@@ -75,6 +76,8 @@ from frtb_sbm.data_models import (
     SbmRiskMeasure,
 )
 from frtb_sbm.validation import SbmInputError, coerce_risk_class, coerce_risk_measure
+
+_ARROW_CONVERSION_ERRORS = (pa.ArrowException, TypeError, ValueError)
 
 GIRR_DELTA_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec(
@@ -1792,7 +1795,7 @@ def _object_column(
             raise SbmInputError(f"required column {column_name!r} is missing", field=column_name)
         return None
     column = table.column(column_name)
-    values = _object_array_from_arrow_column(column)
+    values = _object_array_from_arrow_column(column, field=column_name)
     values.setflags(write=False)
     return values
 
@@ -1811,36 +1814,15 @@ def _required_float_column(table: pa.Table, column_name: str) -> npt.NDArray[np.
     return values
 
 
-def _object_array_from_arrow_column(column: pa.ChunkedArray) -> npt.NDArray[np.object_]:
-    arrays = tuple(_object_array_from_arrow_array(chunk) for chunk in column.chunks)
-    if not arrays:
-        return np.empty(0, dtype=object)
-    if len(arrays) == 1:
-        return arrays[0]
-    return np.concatenate(arrays).astype(object, copy=False)
-
-
-def _object_array_from_arrow_array(array: pa.Array) -> npt.NDArray[np.object_]:
-    if pa.types.is_dictionary(array.type):
-        return _dictionary_array_to_object_array(cast(pa.DictionaryArray, array))
-    return np.asarray(array.to_numpy(zero_copy_only=False), dtype=object)
-
-
-def _dictionary_array_to_object_array(array: pa.DictionaryArray) -> npt.NDArray[np.object_]:
-    if len(array) == 0:
-        return np.empty(0, dtype=object)
-    dictionary = np.asarray(array.dictionary.to_numpy(zero_copy_only=False), dtype=object)
-    indices = np.asarray(
-        pc.fill_null(array.indices, pa.scalar(0, type=array.indices.type)).to_numpy(
-            zero_copy_only=False
-        ),
-        dtype=np.int64,
-    )
-    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-    values = np.empty(len(array), dtype=object)
-    values[valid] = dictionary[indices[valid]]
-    values[~valid] = None
-    return values
+def _object_array_from_arrow_column(
+    column: pa.ChunkedArray,
+    *,
+    field: str,
+) -> npt.NDArray[np.object_]:
+    try:
+        return arrow_object_array(column)
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise SbmInputError("Arrow column conversion failed", field=field) from exc
 
 
 def _float64_array_from_arrow_column(
@@ -1854,12 +1836,17 @@ def _float64_array_from_arrow_column(
     if not pa.types.is_float64(array.type):
         try:
             array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except (pa.ArrowInvalid, TypeError, ValueError) as exc:
+        except _ARROW_CONVERSION_ERRORS as exc:
             raise SbmInputError("value must be numeric", field=field) from exc
     try:
         return cast(npt.NDArray[np.float64], array.to_numpy(zero_copy_only=True))
-    except (pa.ArrowInvalid, TypeError, ValueError):
+    except _ARROW_CONVERSION_ERRORS:
+        pass
+
+    try:
         return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
+    except _ARROW_CONVERSION_ERRORS as exc:
+        raise SbmInputError("value must be numeric", field=field) from exc
 
 
 __all__ = [

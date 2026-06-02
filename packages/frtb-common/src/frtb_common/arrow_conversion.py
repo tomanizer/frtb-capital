@@ -130,11 +130,23 @@ def _object_array_from_arrow_array(
             cast(pa.DictionaryArray, array),
             null_value=null_value,
         )
+    if pa.types.is_integer(array.type):
+        return _integer_array_to_object_array(array, null_value=null_value)
 
-    try:
-        values = np.asarray(array.to_numpy(zero_copy_only=False), dtype=object)
-    except (pa.ArrowInvalid, TypeError, ValueError):
-        values = np.array(array.to_pylist(), dtype=object)
+    values = np.asarray(array.to_numpy(zero_copy_only=False), dtype=object)
+    if array.null_count:
+        valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
+        values[~valid] = null_value
+    return values
+
+
+def _integer_array_to_object_array(
+    array: pa.Array,
+    *,
+    null_value: object = None,
+) -> npt.NDArray[np.object_]:
+    filled = pc.fill_null(array, pa.scalar(0, type=array.type))
+    values = np.asarray(filled.to_numpy(zero_copy_only=False), dtype=object)
     if array.null_count:
         valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
         values[~valid] = null_value
@@ -149,10 +161,7 @@ def _dictionary_array_to_object_array(
     if len(array) == 0:
         return np.empty(0, dtype=object)
 
-    try:
-        dictionary = np.asarray(array.dictionary.to_numpy(zero_copy_only=False), dtype=object)
-    except (pa.ArrowInvalid, TypeError, ValueError):
-        dictionary = np.array(array.dictionary.to_pylist(), dtype=object)
+    dictionary = np.asarray(array.dictionary.to_numpy(zero_copy_only=False), dtype=object)
     indices = np.asarray(
         pc.fill_null(array.indices, pa.scalar(0, type=array.indices.type)).to_numpy(
             zero_copy_only=False
