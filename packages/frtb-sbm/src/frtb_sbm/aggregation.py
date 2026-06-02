@@ -19,6 +19,7 @@ from typing import cast
 import numpy as np
 import numpy.typing as npt
 
+from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
@@ -860,17 +861,6 @@ def _scenario_rank(label: SbmScenarioLabel) -> int:
         SbmScenarioLabel.HIGH: 2,
     }
     return order[label]
-
-
-def _merge_citation_ids(*groups: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for group in groups:
-        for citation_id in group:
-            if citation_id not in seen:
-                merged.append(citation_id)
-                seen.add(citation_id)
-    return tuple(merged)
 
 
 def compute_portfolio_scenario_totals(

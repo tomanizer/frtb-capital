@@ -18,6 +18,7 @@ import numpy as np
 import numpy.typing as npt
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_sbm._batch_lookup import batch_text_by_id as _batch_text_by_id
 from frtb_sbm.aggregation import (
     IntraBucketScenarioSpec,
     aggregate_risk_class_with_scenarios,
@@ -1372,7 +1373,7 @@ def _calculate_girr_vega_risk_class_capital_from_batch(
         batch,
         profile_id=profile_id,
     )
-    option_tenor_by_id = _batch_optional_text_by_id(batch, batch.option_tenors, "option_tenor")
+    option_tenor_by_id = _batch_text_by_id(batch, batch.option_tenors, "option_tenor")
     tenor_by_id = _batch_text_by_id(batch, batch.tenors, "tenor")
     return _aggregate_girr_measure_capital(
         weighted,
@@ -1383,27 +1384,6 @@ def _calculate_girr_vega_risk_class_capital_from_batch(
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
     )
-
-
-def _batch_text_by_id(
-    batch: SbmSensitivityBatch,
-    values: npt.NDArray[np.object_],
-    _field: str,
-) -> Mapping[str, str]:
-    return {
-        str(batch.sensitivity_ids[row_index]): str(values[row_index])
-        for row_index in range(batch.row_count)
-    }
-
-
-def _batch_optional_text_by_id(
-    batch: SbmSensitivityBatch,
-    values: npt.NDArray[np.object_] | None,
-    field: str,
-) -> Mapping[str, str]:
-    if values is None:
-        raise SbmInputError(f"{field} is required", field=field)
-    return _batch_text_by_id(batch, values, field)
 
 
 def _aggregate_girr_measure_capital(

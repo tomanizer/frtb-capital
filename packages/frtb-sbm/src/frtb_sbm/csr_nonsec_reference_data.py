@@ -13,6 +13,7 @@ from dataclasses import dataclass
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import SbmRegulatoryProfile
 from frtb_sbm.validation import SbmInputError, ensure_sbm_profile_known
 
@@ -351,12 +352,6 @@ def _ensure_csr_nonsec_delta_supported(profile: SbmRegulatoryProfile | str) -> N
             f"CSR non-securitisation delta reference data is unsupported for profile "
             f"{resolved.value}"
         )
-
-
-def _require_text(value: object, field: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise SbmInputError("non-empty text is required", field=field)
-    return value.strip()
 
 
 def _require_csr_bucket_number(bucket_id: str) -> int:

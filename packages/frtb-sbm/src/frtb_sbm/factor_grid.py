@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import cast
 
+from frtb_sbm._citations import merge_citation_groups as _merge_citation_ids
 from frtb_sbm.batch import SbmSensitivityBatch, sorted_girr_delta_batch_indices
 from frtb_sbm.data_models import SbmRiskClass, SbmRiskMeasure, SbmSensitivity, WeightedSensitivity
 from frtb_sbm.reference_data import girr_bucket_definition, girr_delta_risk_weight
@@ -302,17 +303,6 @@ def _netted_factor_id(key: GirrDeltaFactorKey, original_ids: frozenset[str]) -> 
             field="sensitivity_id",
         )
     return factor_id
-
-
-def _merge_citation_ids(citation_groups: Iterable[tuple[str, ...]]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for citation_ids in citation_groups:
-        for citation_id in citation_ids:
-            if citation_id not in seen:
-                merged.append(citation_id)
-                seen.add(citation_id)
-    return tuple(merged)
 
 
 __all__ = [

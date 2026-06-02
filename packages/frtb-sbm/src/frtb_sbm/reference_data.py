@@ -13,6 +13,8 @@ from dataclasses import dataclass
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
+from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.commodity_reference_data import (
     commodity_bucket_definition,
     commodity_buckets_for_profile,
@@ -1461,17 +1463,6 @@ def _coerce_risk_class(value: SbmRiskClass | str) -> SbmRiskClass:
         ) from exc
 
 
-def _merge_citation_ids(*groups: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for group in groups:
-        for citation_id in group:
-            if citation_id not in seen:
-                merged.append(citation_id)
-                seen.add(citation_id)
-    return tuple(merged)
-
-
 def _apply_sqrt2_adjustment(*, tenor: str, currency: str, reporting_currency: str) -> bool:
     if tenor in {"INFL", "XCCY"}:
         return False
@@ -1506,12 +1497,6 @@ def _coerce_scenario(value: SbmScenarioLabel | str) -> SbmScenarioLabel:
             f"scenario must be one of: {allowed}",
             field="scenario",
         ) from exc
-
-
-def _require_text(value: object, field: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise SbmInputError("non-empty text is required", field=field)
-    return value.strip()
 
 
 def _require_currency(value: str) -> str:

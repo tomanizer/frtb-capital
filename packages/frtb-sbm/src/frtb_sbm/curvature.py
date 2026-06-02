@@ -17,6 +17,7 @@ import numpy as np
 import numpy.typing as npt
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
 from frtb_sbm.aggregation import (
     adjust_correlation_for_scenario,
     adjust_correlation_matrix_for_scenario,
@@ -1580,17 +1581,6 @@ def _normalise_csr_sec_basis(risk_factor: str) -> str:
             f"received risk_factor={normalised!r}"
         )
     return normalised
-
-
-def _merge_citation_ids(*groups: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for group in groups:
-        for citation_id in group:
-            if citation_id not in seen:
-                merged.append(citation_id)
-                seen.add(citation_id)
-    return tuple(merged)
 
 
 def _validate_curvature_batch_for_capital(

@@ -18,6 +18,8 @@ import numpy as np
 import numpy.typing as npt
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
+from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.batch import (
     SbmSensitivityBatch,
     sorted_commodity_delta_batch_indices,
@@ -659,27 +661,6 @@ def _validate_non_girr_vega_batch_row(
     raise UnsupportedRegulatoryFeatureError(
         f"non-GIRR vega weighting is unsupported for risk_class={risk_class.value}"
     )
-
-
-def _require_text(value: object, field: str, sensitivity_id: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise SbmInputError(
-            "non-empty text is required",
-            field=field,
-            sensitivity_id=sensitivity_id,
-        )
-    return value.strip()
-
-
-def _merge_citation_ids(*groups: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for group in groups:
-        for citation_id in group:
-            if citation_id not in seen:
-                merged.append(citation_id)
-                seen.add(citation_id)
-    return tuple(merged)
 
 
 def weight_fx_delta_sensitivity_batch(
