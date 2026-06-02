@@ -632,12 +632,13 @@ Validation fixtures, examples, and tests must use synthetic data only.
 
 ### CVA-NFR-007: Performance target
 
-The first production-quality SA-CVA aggregation slice should include a benchmark
-target sufficient to show the package remains usable for large synthetic
-sensitivity sets. This is an engineering control, not a regulatory requirement.
+The implemented SA-CVA aggregation path includes a benchmark target sufficient
+to show the package remains usable for large synthetic sensitivity sets. This is
+an engineering control, not a regulatory requirement.
 
-The first BA-CVA slice should benchmark at least 10,000 netting sets across 1,000
-counterparties with mixed sectors and credit qualities.
+The implemented BA-CVA and SA-CVA row-vs-batch/Arrow benchmark evidence is
+documented in
+[`docs/performance/frtb-cva-arrow-batch-triage.md`](../../performance/frtb-cva-arrow-batch-triage.md).
 
 ### CVA-NFR-008: Regulatory caution
 
@@ -645,24 +646,28 @@ No document, API, or output should present results as final regulatory capital.
 Outputs remain model/engineering artifacts unless independently validated and
 approved.
 
-## Initial implementation acceptance criteria
+## Current implementation acceptance criteria
 
-The first capital-producing vertical slice is complete only when:
+The current Basel MAR50 partial-runtime slice is complete only when:
 
 - canonical counterparty and netting-set records validate and normalise;
-- reduced BA-CVA runs through one public API using cited Table 1 risk weights,
-  MAR50.14–MAR50.15 mechanics, and `D_BA-CVA = 0.65`;
+- reduced and full BA-CVA run through one public API using cited Table 1 risk
+  weights, MAR50.14-MAR50.26 mechanics, and `D_BA-CVA = 0.65`;
 - EAD, maturity, and discount-factor inputs are validated and traceable;
+- SA-CVA runs for supported MAR50.42-MAR50.77 delta/vega paths when
+  `sa_cva_approved=True`, with CCS vega explicitly rejected;
+- mixed carve-out runs combine SA-CVA with BA-CVA netting-set carve-outs under
+  MAR50.8;
+- qualified-index routing follows MAR50.50 where metadata is supplied;
 - results are frozen, serialisable, and carry rule-profile and input hashes;
-- SA-CVA, full BA-CVA, carve-out mixed runs, and materiality-threshold
-  alternative requests fail explicitly;
-- tests cover at least one sovereign IG, one financial HY, multi-netting-set
-  counterparty, invalid EAD, missing risk weight, missing maturity, and audit-hash
-  stability.
+- U.S., EU, and UK comparison profiles and the MAR50.9 materiality-threshold
+  alternative fail explicitly;
+- tests cover BA-CVA fixtures, SA-CVA fixtures and risk classes, invalid EAD,
+  missing risk weights, missing maturity, unsupported paths, audit-hash
+  stability, properties, comparator checks, and Arrow/batch parity.
 
-The second vertical slice adds SA-CVA common aggregation plus one risk class
-(GIRR delta is the recommended first SA-CVA class because of simpler bucket
-structure and broad fixture reuse patterns from SBM documentation).
+Historical delivery sequencing is retained below for review context only; it is
+not the active runtime status.
 
 ## Recommended delivery slicing constraints
 
@@ -695,11 +700,11 @@ constraints:
   convention, portfolio-level SA-CVA inputs, implementation sequence.
 - [ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md) — PR-sized implementation issues.
 
-## Gaps this document closes vs the current CVA docs
+## Historical documentation gap closed by this document
 
-The current CVA PRD and regulatory requirements define scope and architecture
+Earlier CVA PRD and regulatory requirements defined scope and architecture
 intent but lacked the issue-ready detail present in DRC, RRAO, and SBM. This
-document adds:
+document added:
 
 - explicit package boundary and upstream/downstream split for exposure and
   sensitivity generation;

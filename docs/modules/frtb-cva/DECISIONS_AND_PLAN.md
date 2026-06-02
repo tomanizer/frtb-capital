@@ -1,5 +1,12 @@
 # frtb-cva decisions and implementation plan
 
+This document records the historical v1 implementation plan and current
+remaining boundaries. The Basel MAR50 partial-runtime path now includes reduced
+and full BA-CVA, supported SA-CVA delta/vega paths, mixed carve-out,
+qualified-index routing, adapters, attribution, impact, performance controls,
+and audit/replay evidence. U.S., EU, and UK comparison profiles and the MAR50.9
+materiality-threshold alternative remain fail-closed.
+
 ## Decision log
 
 ### CVA-DEC-001: Implement reduced BA-CVA first
@@ -14,6 +21,10 @@ and public API patterns before SA-CVA sensitivities and hedge mechanics.
 **Implication:** SA-CVA, full BA-CVA, mixed carve-out, and materiality-threshold
 alternative requests must raise explicit unsupported-feature errors until their
 slices land.
+
+**Current status:** Reduced BA-CVA, full BA-CVA, SA-CVA, and mixed carve-out
+slices have landed for supported Basel MAR50 inputs. MAR50.9 still fails
+closed.
 
 Basel anchor: MAR50.13(2), MAR50.14–MAR50.16.
 
@@ -95,17 +106,19 @@ records; they are never silently dropped.
 
 ### CVA-DEC-008: Audit graph before attribution
 
-**Decision:** The first implementation provides deterministic counterparty,
+**Decision:** The implementation provides deterministic counterparty,
 netting-set, bucket, and risk-class explain records with attribution-ready
-lineage. Analytical Euler allocation and baseline-vs-candidate impact are later
-enhancements outside the capital kernel.
+lineage. Analytical Euler allocation remains explicit about nonlinear residuals;
+baseline-vs-candidate impact is outside the capital kernel.
 
 **Reason:** SA-CVA nonlinearities (square roots, `S_b` floor/cap, hedge
 disallowance, BA-CVA hedge floor) require stable branch metadata before
 attribution can be trusted.
 
-**Implication:** The first slice must retain stable ids from input through total
-result. See [ADR 0012](../../decisions/0012-capital-impact-attribution.md).
+**Implication:** Runtime paths must retain stable ids from input through total
+result. Attribution reports unsupported nonlinear branches rather than silently
+reallocating them. See
+[ADR 0012](../../decisions/0012-capital-impact-attribution.md).
 
 ### CVA-DEC-009: Non-IMM discount factor is profile-computable
 
@@ -141,7 +154,7 @@ contracts are still required before SA-CVA and full BA-CVA capital paths.
 
 **Implication:** Update planning docs together when issue order changes.
 
-## Implementation sequence
+## Implemented sequence
 
 1. Complete traceability skeleton, architecture docs, and requirements registry
    alignment.
@@ -157,15 +170,15 @@ contracts are still required before SA-CVA and full BA-CVA capital paths.
 10. Add remaining SA-CVA risk classes incrementally, including deferred vega
     paths where issues specify delta-first delivery.
 11. Implement full BA-CVA, qualified-index option, and mixed carve-out assembly.
-12. Add CRIF adapter, orchestration handoff, performance controls, and later
+12. Add CRIF adapter, orchestration handoff, performance controls, and
     attribution/impact.
 
 ## Profile roadmap
 
 | Profile id | Status in v1 | Notes |
 | --- | --- | --- |
-| `BASEL_MAR50_2020` | First implementation target | July 2020 calibration: `m_CVA = 1.0`, `D_BA-CVA = 0.65` |
-| `US_NPR20_VB` | Planned comparison | Requires proposed section map before implementation |
+| `BASEL_MAR50_2020` | Capital-producing partial runtime | July 2020 calibration: `m_CVA = 1.0`, `D_BA-CVA = 0.65`; MAR50.9 remains unsupported. |
+| `US_NPR20_VB` | Fail closed | Requires proposed section map before implementation |
 | `EU_CRR3_CVA` | Fail closed | Articles 382–386 mapping deferred |
 | `UK_PRA_CVA` | Fail closed | Crosswalk placeholder only today |
 

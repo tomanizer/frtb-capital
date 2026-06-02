@@ -17,7 +17,7 @@ Upstream CVA / exposure / sensitivity systems
          -> ba_cva path (reduced / full)
          -> sa_cva path (weight -> aggregate -> risk classes)
     -> CvaCapitalResult + audit / replay records
-    -> optional attribution and impact records later
+    -> optional attribution and impact records
     -> frtb-orchestration top-of-house aggregation (separate from SA stack)
 ```
 
@@ -41,7 +41,7 @@ must supply `s_k^CVA` and `s_k^Hdg` for the aggregate CVA portfolio and eligible
 hedges. The capital package may sum multiple adapter rows that share the same
 risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN.md)).
 
-## Proposed module layout
+## Implemented module layout
 
 | Module | Responsibility |
 | --- | --- |
@@ -62,11 +62,13 @@ risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN
 | `risk_classes/equity.py` | Equity bucket, size/region/sector, qualified-index hooks. |
 | `risk_classes/commodity.py` | Commodity bucket delta and vega handling. |
 | `capital.py` | Public calculation entry point wiring validation, scope, profiles, BA/SA paths, mixed-method assembly. |
-| `numeric.py` | Vectorised aggregation helpers where useful. Not required in first slice. |
+| `numeric.py` | Reconciliation helpers for supported capital and attribution paths. |
 | `crif.py` | Optional CRIF/vendor-to-canonical mapping. No kernel imports. |
-| `audit.py` | Deterministic result serialisation, input hash, profile hash, reconciliation, JSON/Markdown helpers. |
-| `attribution.py` | Future analytical Euler contribution support. Not required in first slice. |
-| `impact.py` | Future baseline-vs-candidate capital deltas. Not required in first slice. |
+| `batch.py` | Package-owned NumPy batches for BA-CVA, SA-CVA, and hedge inputs. |
+| `arrow_handoff.py` | Arrow tabular handoff normalisation under ADR 0023. |
+| `audit.py` | Deterministic result serialisation, input hash, profile hash, and reconciliation. |
+| `attribution.py` | Additive attribution for supported branches with explicit unsupported nonlinear residuals. |
+| `impact.py` | Baseline-vs-candidate finite-difference capital deltas. |
 | `fixtures.py` | Synthetic fixture builders for tests and examples. |
 
 ## Calculation flow
@@ -126,12 +128,15 @@ risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN
    and unsupported paths.
 5. Serialize deterministic audit records and return a frozen result.
 
-### Stage 7: Future attribution and impact
+### Stage 7: Attribution and impact
 
-Reserved by [ADR 0012](../../decisions/0012-capital-impact-attribution.md) and
-not required in the first capital-producing slice.
+Attribution and impact helpers preserve the public capital number. Where an
+exact analytical decomposition is not available for nonlinear branches such as
+SA-CVA risk-class square roots or BA-CVA hedged capital, attribution reports an
+explicit unsupported branch or residual rather than silently reallocating it.
+This follows [ADR 0012](../../decisions/0012-capital-impact-attribution.md).
 
-## Proposed enums
+## Implemented enums
 
 ```python
 class CvaMethod(StrEnum):
@@ -187,10 +192,11 @@ class HedgeReferenceRelation(StrEnum):
     SAME_SECTOR_AND_REGION = "SAME_SECTOR_AND_REGION"
 ```
 
-Exact enum sets may expand as Basel, U.S., CRR3, and PRA profiles are mapped.
-Enums should be stable public API once capital calculation is released.
+The enum set is part of the public API. Future expansions for U.S., CRR3, or PRA
+comparison profiles must update package tests, traceability docs, and the
+requirements registry in the same PR.
 
-## Proposed dataclasses
+## Implemented dataclasses
 
 ### Citation and lineage
 

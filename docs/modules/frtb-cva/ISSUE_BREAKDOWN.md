@@ -1,19 +1,24 @@
 # frtb-cva workable issue breakdown
 
-These are implementation-ready issue drafts derived from
-[DETAILED_REQUIREMENTS.md](DETAILED_REQUIREMENTS.md). Each issue is scoped for a
-reviewable PR. Cross-cutting changes to `frtb-common` or orchestration should
-reference an ADR when they change shared contracts.
+These were implementation-ready issue drafts derived from
+[DETAILED_REQUIREMENTS.md](DETAILED_REQUIREMENTS.md). They are retained as
+historical planning evidence for the v1 delivery sequence. Current runtime
+status is tracked in
+[requirements/BASEL_FRTB_CVA.yml](requirements/BASEL_FRTB_CVA.yml) and
+[packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md](../../../packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md).
+Cross-cutting changes to `frtb-common` or orchestration should still reference
+an ADR when they change shared contracts.
 
-The issue sequence supersedes PRD delivery-slice ordering where they differ. See
+The historical issue sequence superseded PRD delivery-slice ordering where they
+differed. See
 [CVA-DEC-011](DECISIONS_AND_PLAN.md#cva-dec-011-issue-sequence-supersedes-prd-delivery-slice-ordering).
 
 Requirement IDs in parentheses map to the detailed requirements document.
 
 ## Issue 1: Add CVA model documentation and traceability skeleton
 
-**Goal:** Create the documentation pack that future CVA implementation PRs keep
-current.
+**Goal:** Create the documentation pack that CVA implementation PRs kept
+current during the v1 delivery sequence.
 
 **Scope:**
 
@@ -315,7 +320,7 @@ benefit yet.
 
 - Add `sa_cva.py` orchestration and `risk_classes/girr.py`.
 - Wire validation, eligibility, weighting, aggregation, and total SA-CVA result
-  for **GIRR delta only** in this issue.
+  for **GIRR delta scope** in this historical issue.
 - Sum delta risk classes per MAR50.43; total SA-CVA equals GIRR delta for this
   slice.
 - Extend public API to accept method = SA-CVA with GIRR delta sensitivities.

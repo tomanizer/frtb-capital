@@ -2,8 +2,10 @@
 
 ## Scope
 
-These assumptions apply to the delivered reduced BA-CVA and SA-CVA GIRR delta
-slice. They do not represent final regulatory capital or model approval status.
+These assumptions apply to the delivered Basel MAR50 reduced BA-CVA, full
+BA-CVA, SA-CVA, mixed carve-out, qualified-index, adapter, attribution, impact,
+and audit slices. They do not represent final regulatory capital or model
+approval status.
 
 ## Calibration
 
@@ -14,6 +16,8 @@ slice. They do not represent final regulatory capital or model approval status.
 - GIRR inter-bucket correlation `γ_bc = 0.5` for specified currencies (MAR50.57).
 - GIRR specified-currency set: `{USD, EUR, GBP, AUD, CAD, SEK, JPY}` (MAR50.54).
 - Other-currency GIRR delta risk-weight scalar `1.4×` (MAR50.57).
+- CCS vega is not capital-producing because MAR50.45 and MAR50.63 define CCS
+  delta but no CCS vega capital path.
 
 ## Discount factor policy
 
@@ -29,6 +33,8 @@ slice. They do not represent final regulatory capital or model approval status.
   finite and non-negative after normalisation.
 - SA-CVA sensitivity sign convention: `positive_loss` or `signed_absolute`.
 - SA-CVA GIRR delta sensitivities require a cited tenor label.
+- Supported SA-CVA vega paths require an explicit `volatility_input`; kernels do
+  not infer market volatilities from trade metadata.
 - SA-CVA capital calculation rejects counterparty and netting-set inputs; pass
   sensitivities (and optional hedges) only.
 
@@ -37,3 +43,5 @@ slice. They do not represent final regulatory capital or model approval status.
 - No CRIF/vendor adapters in the core runtime path.
 - No sibling capital-package imports.
 - No placeholder successful capital for unsupported methods.
+- No U.S., EU, or UK comparison-profile capital until those profiles are mapped
+  and fixture-tested.

@@ -7,7 +7,7 @@ sources:
     title: Basel Framework MAR50 — CVA framework
     url: https://www.bis.org/basel_framework/chapter/MAR/50.htm
     status: implemented
-    notes: Primary source for the delivered reduced BA-CVA and GIRR delta slice.
+    notes: Primary source for the delivered Basel MAR50 BA-CVA, SA-CVA, mixed carve-out, qualified-index, and audit slices.
   - id: bcbs_d507_cva_revisions_2020
     title: BCBS d507 July 2020 CVA revisions
     url: https://www.bis.org/bcbs/publ/d507.pdf
