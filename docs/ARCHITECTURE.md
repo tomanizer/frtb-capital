@@ -9,9 +9,10 @@ a suite-level aggregator, with a shared foundation package. Today,
 contains an implemented canonical-input RRAO path, `frtb-drc` contains a
 partial non-securitisation DRC runtime path, `frtb-sbm` has GIRR delta/vega,
 FX/equity/commodity/CSR delta/vega, and row-wise curvature capital implemented
-under BASEL_MAR21, and `frtb-cva` has Reduced BA-CVA and SA-CVA GIRR delta
-implemented. Suite aggregation still fails explicitly until all required
-component result contracts are available.
+under BASEL_MAR21, and `frtb-cva` has reduced/full BA-CVA plus supported
+SA-CVA delta/vega and mixed carve-out paths implemented. Suite aggregation and
+SA arithmetic still fail explicitly even though shared SA handoff guards and CVA
+summary handoff preparation are available.
 
 The Standardised Approach is a composed regulatory approach, not a standalone
 package. In this suite, `frtb-sbm`, `frtb-drc`, and `frtb-rrao` together produce
@@ -41,7 +42,7 @@ desks to that SA component stack for fallback capital.
                               └───────────┘
 ```
 
-**Allowed imports:** `frtb-*` capital components may import from `frtb-common`. `frtb-orchestration` may import from any sibling. **No other cross-package imports are allowed.** The root `import-linter` layers contract (`make import-lint`, part of `make quality-control`) enforces this graph in CI.
+**Allowed imports:** `frtb-*` capital components may import from `frtb-common`. `frtb-orchestration` is the only package allowed to depend on multiple capital components, but current runtime modules consume shared handoffs or structural summaries and must not import sibling package internals. **No other cross-package imports are allowed.** The root `import-linter` layers contract (`make import-lint`, part of `make quality-control`) enforces this graph in CI, and orchestration tests add a stricter runtime import guard.
 
 ## Package responsibilities
 
@@ -132,10 +133,11 @@ closed.
 
 CVA capital under the Basic Approach or Standardized Approach. Inputs: counterparty exposures, credit spreads, hedge positions.
 
-Status: partial runtime. Reduced BA-CVA stand-alone and portfolio capital
-implemented. SA-CVA GIRR delta weighting and aggregation implemented. Full
-BA-CVA hedge recognition (MAR50.17–26) and SA-CVA risk classes other than
-GIRR delta are unsupported and fail closed.
+Status: partial runtime. Reduced and full BA-CVA run through the public API with
+cited counterparty/netting-set inputs and eligible hedge treatment. Supported
+SA-CVA delta and vega risk-class paths, qualified-index metadata, and mixed
+SA-CVA plus BA-CVA carve-out assembly are implemented; unsupported SA-CVA paths
+fail closed.
 
 ### `frtb-orchestration` — Suite aggregation
 
@@ -145,9 +147,12 @@ routes non-IMA-eligible desks to the SA component stack. It also applies
 cross-component floors and add-ons and produces consolidated audit records.
 
 Status: partial. Public aggregation still raises explicit
-unimplemented-component errors, but orchestration owns structural handoff
-contracts for component outputs so SA composition can be added without sibling
-capital packages importing each other.
+unimplemented-component errors. `compose_standardised_approach_capital`
+validates shared `frtb_common.ComponentResultHandoff` inputs for SBM, DRC, and
+RRAO, enforces ADR 0022 jurisdiction-family consistency, then fails closed
+before SA arithmetic. `recognise_cva_result` prepares a CVA result summary for
+future top-of-house aggregation. Runtime source does not import sibling capital
+packages or private batch internals.
 
 ## Why a monorepo
 
