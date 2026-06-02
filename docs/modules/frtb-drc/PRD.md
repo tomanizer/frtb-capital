@@ -22,7 +22,8 @@ capital breakdowns.
 - No pricing or P&L generation.
 - No proprietary issuer data.
 - No final regulatory filing output.
-- No silent approximation for unsupported securitisation or CTP cases.
+- No silent approximation for unsupported profile, securitisation, or CTP
+  cases.
 
 ## Functional Scope
 
@@ -73,8 +74,11 @@ Results must expose gross JTD, net JTD, hedge-benefit ratio, bucket/category
 capital, total DRC, rule profile id and hash, input snapshot hash, source
 citation ids, attribution-ready lineage, branch metadata, and
 unsupported-feature or fallback status where applicable.
-Securitisation and CTP paths should fail closed until their source mapping and
-fixtures are complete.
+Implemented U.S. NPR 2.0 securitisation non-CTP and CTP paths consume cited
+upstream risk-weight evidence rather than deriving banking-book securitisation
+weights internally. Basel MAR22 securitisation non-CTP and CTP, EU CRR3, and
+PRA UK CRR paths fail closed until their cited rule mappings and fixtures are
+complete.
 
 ## Delivery Slices
 
@@ -86,9 +90,10 @@ fixtures are complete.
    scaling, seniority-aware netting, synthetic tests.
 4. **Non-securitisation bucket capital**: hedge benefit ratio, risk weighting,
    category total, audit breakdown.
-5. **Securitisation non-CTP**: tranche data, attachment/detachment handling,
-   non-CTP buckets, tests.
-6. **CTP DRC**: CTP-specific aggregation and hedge recognition, tests.
+5. **Securitisation non-CTP**: tranche data, fair-value cap evidence,
+   replication evidence, non-CTP buckets, row/batch parity, and tests.
+6. **CTP DRC**: CTP-specific gross exposure, replication evidence, aggregation,
+   hedge recognition, row/batch parity, and tests.
 7. **Run-level result and suite integration**: public API, examples, audit
    report, orchestration contract.
 8. **Attribution and impact**: analytical Euler contribution where supported,
@@ -110,8 +115,10 @@ fixtures are complete.
 
 ## Risks
 
-- Securitisation treatment is more complex than core non-sec DRC. Split it into
-  separate delivery slices and fail closed until source mapping is complete.
+- Securitisation and CTP treatment remains profile-sensitive. U.S. NPR 2.0
+  paths rely on cited upstream risk-weight and decomposition evidence; Basel
+  sec/CTP, EU, and PRA mappings must continue to fail closed until implemented
+  with profile-specific citations and tests.
 - U.S. NPR 2.0 is proposed-rule material. Label all U.S. outputs as proposed
   and keep Basel defaults separately selectable.
 - The reference implementation is reconstructed from video and has placeholder

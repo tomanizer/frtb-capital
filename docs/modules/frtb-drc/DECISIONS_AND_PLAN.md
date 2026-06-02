@@ -4,7 +4,7 @@
 
 ### DRC-DEC-001: Implement non-securitisation first
 
-**Decision:** The first capital-producing implementation slice will support
+**Decision:** The first capital-producing implementation slice supported
 non-securitisation debt and equity positions only.
 
 **Reason:** Non-securitisation DRC provides the core JTD, maturity, netting,
@@ -12,8 +12,11 @@ HBR, bucket, and category mechanics. Securitisation non-CTP and CTP require
 separate tranche, replication, and banking-book risk-weight mappings that would
 make the first slice too broad.
 
-**Implication:** Securitisation non-CTP and CTP inputs must raise explicit
-unsupported-feature errors until their slices are implemented.
+**Current status:** That first slice is delivered. U.S. NPR 2.0
+securitisation non-CTP and CTP row/batch slices are now implemented with cited
+upstream evidence contracts. Basel MAR22 securitisation non-CTP and CTP, EU
+CRR3, and PRA UK CRR remain fail-closed until profile-specific mappings and
+tests are implemented.
 
 ### DRC-DEC-002: Keep data contracts package-local initially
 
@@ -99,18 +102,22 @@ position through total result. `attribution.py` follows
 [ADR 0031](../../decisions/0031-drc-attribution-method-contract.md);
 `impact.py` remains future work.
 
-### DRC-DEC-008: Securitisation and CTP fail closed
+### DRC-DEC-008: Securitisation and CTP fail closed until cited evidence exists
 
-**Decision:** Securitisation non-CTP and CTP modules should exist only as
-explicit unsupported-feature gates until their cited data and fixture packs are
-complete.
+**Decision:** Securitisation non-CTP and CTP modules should produce capital
+only where cited data contracts and fixture packs are complete; otherwise they
+must be explicit unsupported-feature gates.
 
 **Reason:** Both paths require additional profile data and product structures.
 Returning partial values would violate the package's no-placeholder-capital
 rule.
 
-**Implication:** Tests must assert unsupported errors for these categories
-during the non-securitisation phase.
+**Current status:** U.S. NPR 2.0 securitisation non-CTP and CTP paths are
+implemented for row and batch APIs using typed risk-weight evidence, explicit
+replication evidence, and deterministic tests. U.S. NPR 2.0 securitisation
+non-CTP also supports profile-controlled fair-value cap evidence. Basel MAR22
+securitisation non-CTP and CTP, EU CRR3, and PRA UK CRR paths still fail
+closed.
 
 ## Implementation sequence
 
@@ -124,14 +131,14 @@ during the non-securitisation phase.
 6. Implement maturity scaling and netting.
 7. Implement HBR, bucket capital, category total, and run result.
 8. Add audit/replay artifacts and synthetic validation pack.
-9. Add explicit attribution and impact placeholders to the public docs and
-   result graph, without calculating contributions yet.
+9. Add explicit attribution readiness to the public docs and result graph.
 10. Integrate DRC package output contract into orchestration, without composing
    SA until SBM and RRAO outputs exist.
 11. Implement securitisation non-CTP.
 12. Implement CTP.
-13. Add optional CRIF adapter, validation notebooks, performance checks,
-    analytical Euler attribution, and finite-difference impact assessment.
+13. Add optional CRIF adapter, validation notebooks, performance checks, and
+    analytical Euler attribution.
+14. Add finite-difference impact assessment in a later issue.
 
 ## Documentation deliverables
 
@@ -144,10 +151,10 @@ Each implementation slice must update:
 - package-local regulatory traceability once calculation modules exist;
 - validation fixtures and audit reports when result formats change.
 
-## First vertical slice target
+## Delivered vertical slices and remaining gaps
 
-The first useful release of `frtb-drc` is a U.S. NPR 2.0 non-securitisation
-slice:
+The first useful release of `frtb-drc` was a U.S. NPR 2.0
+non-securitisation slice:
 
 - canonical positions;
 - cited LGD mapping;
@@ -162,6 +169,13 @@ slice:
 
 This is narrow enough to implement and review, but broad enough to exercise the
 core DRC mechanics.
+
+The current partial runtime also includes U.S. NPR 2.0 securitisation non-CTP
+and CTP row/batch paths, Basel MAR22 non-securitisation row/batch paths,
+Arrow/batch fast paths, and attribution records. Remaining gaps are deliberate:
+Basel MAR22 securitisation non-CTP and CTP, EU CRR3, PRA UK CRR, internal
+banking-book securitisation risk-weight derivation, and baseline-vs-candidate
+impact analysis remain outside the current implemented scope.
 
 ## Open design questions
 

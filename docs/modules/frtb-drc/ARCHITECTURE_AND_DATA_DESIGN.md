@@ -34,8 +34,8 @@ SA composition, or top-of-house aggregation.
 | `capital.py` | HBR, bucket capital, category totals, and public calculation entry point. |
 | `attribution.py` | Analytical Euler, residual, and unsupported attribution over the audited capital graph. |
 | `impact.py` | Future baseline-vs-candidate capital deltas for change assessment. Not part of the current runtime. |
-| `securitisation.py` | Securitisation non-CTP tranche data, bucket assignment, and capital path. Initially fail closed. |
-| `ctp.py` | CTP membership, tranche/index decomposition, HBR, and capital path. Initially fail closed. |
+| `securitisation.py` | U.S. NPR 2.0 securitisation non-CTP market-value gross default exposure, optional fair-value cap evidence, offsetting, HBR, bucket, and category capital path. Unsupported profiles fail closed. |
+| `ctp.py` | U.S. NPR 2.0 CTP market-value gross default exposure, replication-group netting, CTP-wide HBR, bucket recognition, and category capital path. Unsupported profiles fail closed. |
 | `crif.py` | Optional CRIF-to-canonical mapping. Not imported by kernels. |
 | `audit.py` | Serialisable audit records, profile/input hashes, result reconciliation, Markdown/JSON helpers. |
 | `fixtures.py` | Synthetic fixture builders used by tests and examples. |
@@ -447,11 +447,12 @@ bucket-local HBR and run-supplied risk-weight lineage.
 ## Unsupported feature strategy
 
 Unsupported features should be declared at profile level and checked before
-calculation. Examples:
+calculation. Current fail-closed examples:
 
 - Basel securitisation non-CTP risk weights not mapped;
-- U.S. CTP decomposition not implemented;
+- Basel CTP decomposition not mapped;
 - CRR3 Article 325w inputs missing;
+- PRA UK CRR rulebook mappings missing;
 - explicit LGD override not allowed by selected profile;
 - unsupported product type or bucket assignment.
 
@@ -495,7 +496,8 @@ listed as current package coverage.
 
 ## Example and validation artifacts
 
-The first vertical slice should include a synthetic fixture pack:
+The original non-securitisation vertical slice introduced a synthetic fixture
+pack:
 
 ```text
 tests/fixtures/drc_nonsec_v1/
@@ -507,6 +509,7 @@ tests/fixtures/drc_nonsec_v1/
     expected_result.json
 ```
 
-Future validation notebooks can inspect this fixture with `pandas`, but the
-runtime package must load fixture JSON into canonical dataclasses before
-calculation.
+Validation notebooks can inspect these fixtures with `pandas`, but the runtime
+package must load fixture JSON into canonical dataclasses before calculation.
+Current fixture coverage also includes securitisation non-CTP and CTP packs
+under `packages/frtb-drc/tests/fixtures/`.

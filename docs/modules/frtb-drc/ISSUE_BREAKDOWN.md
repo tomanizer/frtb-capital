@@ -4,6 +4,11 @@ These are implementation-ready issue drafts. They are scoped so each can be a
 reviewable PR. Cross-cutting changes to `frtb-common` or orchestration should
 reference an ADR when they change shared contracts.
 
+This file is historical planning material. Delivered issues remain useful for
+audit traceability, but current implementation status is authoritative in
+`README.md`, `DETAILED_REQUIREMENTS.md`, `REGULATORY_REQUIREMENTS.md`, and
+`requirements/BASEL_FRTB_DRC.yml`.
+
 ## Issue 1: Add DRC model documentation and traceability skeleton
 
 **Goal:** Create the documentation pack that future DRC implementation PRs keep
@@ -60,7 +65,11 @@ non-securitisation slice.
   policy, non-securitisation bucket definitions, and risk-weight entries needed
   by fixtures.
 - Add profile hash generation.
-- Explicitly mark securitisation non-CTP and CTP unsupported.
+- Explicitly mark securitisation non-CTP and CTP unsupported for the initial
+  non-securitisation slice. This historical gate has since been narrowed:
+  U.S. NPR 2.0 securitisation non-CTP and CTP row/batch paths are implemented,
+  while Basel MAR22 securitisation non-CTP and CTP, EU CRR3, and PRA UK CRR
+  remain fail-closed.
 
 **Acceptance criteria:**
 
@@ -221,6 +230,10 @@ without adding dataframe runtime dependencies.
 
 ## Issue 11: Implement securitisation non-CTP data model and fail-closed profile
 
+**Status note:** Delivered as a preparatory slice; later issues added U.S. NPR
+2.0 securitisation non-CTP capital. Current unsupported scope is profile
+specific, not all securitisation non-CTP.
+
 **Goal:** Prepare securitisation non-CTP contracts without calculating capital.
 
 **Scope:**
@@ -233,7 +246,9 @@ without adding dataframe runtime dependencies.
 **Acceptance criteria:**
 
 - Securitisation positions validate identity and tranche metadata.
-- Capital calculation remains unsupported until risk weights and formulas land.
+- Historical gate: capital calculation remained unsupported until risk weights
+  and formulas landed in the later U.S. NPR 2.0 securitisation non-CTP capital
+  slice.
 - Errors are specific enough for follow-up implementation.
 
 **Tests/checks:** `tests/test_drc_securitisation.py`,
@@ -261,13 +276,17 @@ without adding dataframe runtime dependencies.
 
 ## Issue 13: Implement CTP data model and unsupported gates
 
+**Status note:** Delivered as a preparatory slice; later issues added U.S. NPR
+2.0 CTP capital. Current unsupported scope is profile specific, not all CTP.
+
 **Goal:** Prepare CTP contracts and explicit unsupported behavior.
 
 **Scope:**
 
 - Add CTP portfolio membership, index/series, and tranche component metadata.
 - Add validation for required decomposition inputs.
-- Keep capital unsupported until CTP aggregation is implemented.
+- Historical gate: CTP capital remained unsupported until the later U.S. NPR
+  2.0 CTP aggregation slice landed.
 
 **Acceptance criteria:**
 
