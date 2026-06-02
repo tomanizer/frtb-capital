@@ -37,7 +37,7 @@ def to_orchestration_handoff(result: SbmCapitalResult) -> ComponentResultHandoff
         excluded_line_count=reconciliation.rejected_input_count if reconciliation else 0,
         subtotal_count=len(result.risk_classes),
         citations=citations,
-        warnings=result.warnings,
+        warnings=tuple(result.warnings),
     )
 
 

@@ -89,8 +89,8 @@ class ComponentResultHandoff:
         _require_non_negative_int(self.line_count, "line_count")
         _require_non_negative_int(self.excluded_line_count, "excluded_line_count")
         _require_non_negative_int(self.subtotal_count, "subtotal_count")
-        object.__setattr__(self, "citations", _require_text_tuple(self.citations, "citations"))
-        object.__setattr__(self, "warnings", _require_text_tuple(self.warnings, "warnings"))
+        _require_text_tuple(self.citations, "citations")
+        _require_text_tuple(self.warnings, "warnings")
 
 
 def _require_non_empty_text(value: object, field: str) -> None:
