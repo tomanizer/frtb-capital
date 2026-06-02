@@ -701,14 +701,7 @@ def _optional_text(value: str | None) -> str | None:
 
 
 def _merge_citations(citations: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for citation_id in citations:
-        if citation_id in seen:
-            continue
-        seen.add(citation_id)
-        merged.append(citation_id)
-    return tuple(merged)
+    return tuple(dict.fromkeys(citations))
 
 
 def _slug(value: str) -> str:
