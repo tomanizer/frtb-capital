@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
-from typing import cast
+from datetime import date
+from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pyarrow as pa
@@ -18,14 +21,20 @@ from frtb_drc import (
     validate_reconciliation,
 )
 from frtb_drc.arrow_handoff import (
+    build_drc_ctp_batch_from_handoff,
     build_drc_nonsec_batch_from_handoff,
+    build_drc_securitisation_non_ctp_batch_from_handoff,
+    normalize_drc_ctp_arrow_table,
     normalize_drc_nonsec_arrow_table,
+    normalize_drc_securitisation_non_ctp_arrow_table,
 )
 from frtb_drc.batch import (
+    build_drc_ctp_batch_from_columns,
     build_drc_nonsec_batch_from_columns,
     build_drc_nonsec_batch_from_positions,
+    build_drc_securitisation_non_ctp_batch_from_columns,
 )
-from frtb_drc.data_models import DrcCapitalResult, DrcPosition
+from frtb_drc.data_models import DrcCalculationContext, DrcCapitalResult, DrcPosition
 from frtb_drc.demo_fixture import load_drc_nonsec_v2_fixture
 
 
@@ -78,6 +87,56 @@ def test_drc_arrow_handoff_batch_matches_nonsec_v2_row_capital() -> None:
         )
     }
     assert batch_gross_by_id == pytest.approx(row_gross_by_id)
+
+
+def test_drc_arrow_handoff_batch_matches_securitisation_non_ctp_row_capital() -> None:
+    fixture = _load_fixture("drc_sec_nonctp_v1")
+    row_result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
+    handoff = normalize_drc_securitisation_non_ctp_arrow_table(
+        _arrow_table(fixture["positions"]),
+        source_hash=source_content_hash("synthetic drc sec non-ctp source"),
+    )
+
+    batch = build_drc_securitisation_non_ctp_batch_from_handoff(handoff)
+    calculation = calculate_drc_capital_from_batch(batch, context=fixture["context"])
+
+    validate_reconciliation(calculation.result)
+    assert calculation.accepted_row_dataclasses_materialized == 0
+    assert calculation.result.input_positions == ()
+    assert calculation.result.gross_jtds == ()
+    assert calculation.result.maturity_scaled_jtds == ()
+    assert calculation.result.input_hash != batch.input_hash
+    assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
+    assert _net_outputs(calculation.result.net_jtds) == _net_outputs(row_result.net_jtds)
+    assert _bucket_outputs(calculation.result.categories[0].bucket_results) == _bucket_outputs(
+        row_result.categories[0].bucket_results
+    )
+    assert "US_NPR_210_C_3_III" in calculation.result.citations
+
+
+def test_drc_arrow_handoff_batch_matches_ctp_row_capital() -> None:
+    fixture = _load_fixture("drc_ctp_v1")
+    row_result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
+    handoff = normalize_drc_ctp_arrow_table(
+        _arrow_table(fixture["positions"]),
+        source_hash=source_content_hash("synthetic drc ctp source"),
+    )
+
+    batch = build_drc_ctp_batch_from_handoff(handoff)
+    calculation = calculate_drc_capital_from_batch(batch, context=fixture["context"])
+
+    validate_reconciliation(calculation.result)
+    assert calculation.accepted_row_dataclasses_materialized == 0
+    assert calculation.result.input_positions == ()
+    assert calculation.result.gross_jtds == ()
+    assert calculation.result.maturity_scaled_jtds == ()
+    assert calculation.result.input_hash != batch.input_hash
+    assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
+    assert _net_outputs(calculation.result.net_jtds) == _net_outputs(row_result.net_jtds)
+    assert _bucket_outputs(calculation.result.categories[0].bucket_results) == _bucket_outputs(
+        row_result.categories[0].bucket_results
+    )
+    assert "US_NPR_210_D_3_IV_D" in calculation.result.citations
 
 
 def test_drc_arrow_handoff_uses_zero_copy_float64_columns_when_possible() -> None:
@@ -174,11 +233,141 @@ def test_drc_batch_calculation_is_deterministic_for_reversed_handoff() -> None:
     )
 
 
-def test_drc_column_batch_rejects_unsupported_risk_class_without_row_fallback() -> None:
+def test_drc_column_batch_rejects_wrong_risk_class_without_row_fallback() -> None:
     columns = _minimal_column_payload(row_count=1) | {"risk_classes": ["SECURITISATION_NON_CTP"]}
 
-    with pytest.raises(DrcInputError, match="only supports non-securitisation"):
+    with pytest.raises(DrcInputError, match="requires a single supported risk_class"):
         build_drc_nonsec_batch_from_columns(**columns)
+
+
+def test_drc_column_batch_rejects_mixed_risk_classes_without_row_fallback() -> None:
+    columns = _minimal_column_payload(row_count=2) | {
+        "risk_classes": ["SECURITISATION_NON_CTP", "CORRELATION_TRADING_PORTFOLIO"],
+        "instrument_types": ["SECURITISATION_TRANCHE", "INDEX_TRANCHE"],
+        "default_directions": ["LONG", "SHORT"],
+        "issuer_ids": ["pool-1", None],
+        "tranche_ids": ["mezz", "10-15"],
+        "index_series_ids": [None, "CDX.NA.IG.S18"],
+        "bucket_keys": ["SEC_CLO_NORTH_AMERICA", "CDX_NA_IG"],
+        "seniorities": [None, None],
+        "credit_qualities": [None, None],
+        "market_values": [100.0, 40.0],
+    }
+
+    with pytest.raises(DrcInputError, match="requires a single supported risk_class"):
+        build_drc_securitisation_non_ctp_batch_from_columns(**columns)
+
+    with pytest.raises(DrcInputError, match="requires a single supported risk_class"):
+        build_drc_ctp_batch_from_columns(**columns)
+
+
+def test_drc_securitisation_batch_missing_weight_fails_closed() -> None:
+    fixture = _load_fixture("drc_sec_nonctp_v1")
+    batch = build_drc_securitisation_non_ctp_batch_from_handoff(
+        normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(fixture["positions"]))
+    )
+
+    with pytest.raises(DrcInputError, match="securitisation_non_ctp_risk_weights"):
+        calculate_drc_capital_from_batch(
+            batch,
+            context=replace(fixture["context"], securitisation_non_ctp_risk_weights={}),
+        )
+
+
+def test_drc_securitisation_batch_invalid_weight_fails_closed() -> None:
+    fixture = _load_fixture("drc_sec_nonctp_v1")
+    position_ids = [position.position_id for position in fixture["positions"]]
+    risk_weights = dict(fixture["context"].securitisation_non_ctp_risk_weights)
+    risk_weights[position_ids[0]] = "not-a-number"
+    batch = build_drc_securitisation_non_ctp_batch_from_handoff(
+        normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(fixture["positions"]))
+    )
+
+    with pytest.raises(DrcInputError, match="valid finite number"):
+        calculate_drc_capital_from_batch(
+            batch,
+            context=replace(fixture["context"], securitisation_non_ctp_risk_weights=risk_weights),
+        )
+
+
+def test_drc_securitisation_batch_rejected_offsets_are_bounded_by_groups() -> None:
+    fixture = _load_fixture("drc_sec_nonctp_v1")
+    base = fixture["positions"][0]
+    positions: list[DrcPosition] = []
+    risk_weights: dict[str, float] = {}
+    for index in range(4):
+        position_id = f"long-sec-group-{index}"
+        positions.append(
+            replace(
+                base,
+                position_id=position_id,
+                source_row_id=f"row-{position_id}",
+                default_direction="LONG",
+                issuer_id=f"long-pool-{index}",
+                tranche_id=f"long-tranche-{index}",
+                market_value=100.0 + index,
+            )
+        )
+        risk_weights[position_id] = 0.2
+    for index in range(4):
+        position_id = f"short-sec-group-{index}"
+        positions.append(
+            replace(
+                base,
+                position_id=position_id,
+                source_row_id=f"row-{position_id}",
+                default_direction="SHORT",
+                issuer_id=f"short-pool-{index}",
+                tranche_id=f"short-tranche-{index}",
+                market_value=40.0 + index,
+            )
+        )
+        risk_weights[position_id] = 0.2
+    batch = build_drc_securitisation_non_ctp_batch_from_handoff(
+        normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(tuple(positions)))
+    )
+
+    calculation = calculate_drc_capital_from_batch(
+        batch,
+        context=replace(
+            fixture["context"],
+            securitisation_non_ctp_risk_weights=risk_weights,
+            securitisation_non_ctp_offset_groups={},
+        ),
+    )
+
+    rejected_counts = [len(record.rejected_offsets) for record in calculation.result.net_jtds]
+    assert rejected_counts
+    assert max(rejected_counts) <= 8
+    assert max(rejected_counts) < 16
+
+
+def test_drc_ctp_batch_missing_weight_fails_closed() -> None:
+    fixture = _load_fixture("drc_ctp_v1")
+    batch = build_drc_ctp_batch_from_handoff(
+        normalize_drc_ctp_arrow_table(_arrow_table(fixture["positions"]))
+    )
+
+    with pytest.raises(DrcInputError, match="ctp_risk_weights"):
+        calculate_drc_capital_from_batch(
+            batch, context=replace(fixture["context"], ctp_risk_weights={})
+        )
+
+
+def test_drc_ctp_batch_invalid_weight_fails_closed() -> None:
+    fixture = _load_fixture("drc_ctp_v1")
+    position_ids = [position.position_id for position in fixture["positions"]]
+    risk_weights = dict(fixture["context"].ctp_risk_weights)
+    risk_weights[position_ids[0]] = None
+    batch = build_drc_ctp_batch_from_handoff(
+        normalize_drc_ctp_arrow_table(_arrow_table(fixture["positions"]))
+    )
+
+    with pytest.raises(DrcInputError, match="valid finite number"):
+        calculate_drc_capital_from_batch(
+            batch,
+            context=replace(fixture["context"], ctp_risk_weights=risk_weights),
+        )
 
 
 def test_drc_column_batch_rejects_unrated_credit_quality_without_row_fallback() -> None:
@@ -347,6 +536,63 @@ def _minimal_column_payload(*, row_count: int) -> dict[str, object]:
         "lineage_source_systems": ["unit-test"] * row_count,
         "lineage_source_files": ["synthetic-drc.csv"] * row_count,
     }
+
+
+def _load_fixture(fixture_name: str) -> dict[str, Any]:
+    fixture_dir = Path(__file__).resolve().parent / "fixtures" / fixture_name
+    payload = json.loads((fixture_dir / "positions.json").read_text(encoding="utf-8"))
+    context_raw = payload["context"]
+    positions = tuple(_position_from_dict(raw) for raw in payload["positions"])
+    return {
+        "positions": positions,
+        "context": DrcCalculationContext(
+            run_id=context_raw["run_id"],
+            calculation_date=date.fromisoformat(context_raw["calculation_date"]),
+            base_currency=context_raw["base_currency"],
+            profile_id=context_raw["profile_id"],
+            securitisation_non_ctp_risk_weights=context_raw.get(
+                "securitisation_non_ctp_risk_weights",
+                {},
+            ),
+            securitisation_non_ctp_offset_groups=context_raw.get(
+                "securitisation_non_ctp_offset_groups",
+                {},
+            ),
+            ctp_risk_weights=context_raw.get("ctp_risk_weights", {}),
+            ctp_offset_groups=context_raw.get("ctp_offset_groups", {}),
+        ),
+    }
+
+
+def _position_from_dict(raw: dict[str, Any]) -> DrcPosition:
+    lineage = raw["lineage"]
+    return DrcPosition(
+        position_id=raw["position_id"],
+        source_row_id=raw["source_row_id"],
+        desk_id=raw["desk_id"],
+        legal_entity=raw["legal_entity"],
+        risk_class=raw["risk_class"],
+        instrument_type=raw["instrument_type"],
+        default_direction=raw["default_direction"],
+        issuer_id=raw.get("issuer_id"),
+        tranche_id=raw.get("tranche_id"),
+        index_series_id=raw.get("index_series_id"),
+        bucket_key=raw["bucket_key"],
+        seniority=raw.get("seniority"),
+        credit_quality=raw.get("credit_quality"),
+        notional=float(raw["notional"]),
+        market_value=None if raw.get("market_value") is None else float(raw["market_value"]),
+        cumulative_pnl=raw.get("cumulative_pnl"),
+        maturity_years=float(raw["maturity_years"]),
+        currency=raw["currency"],
+        lineage=DrcSourceLineage(
+            source_system=lineage["source_system"],
+            source_file=lineage["source_file"],
+            source_row_id=lineage["source_row_id"],
+            source_column_map=dict(lineage.get("source_column_map") or {}),
+        ),
+        citation_ids=tuple(raw["citation_ids"]),
+    )
 
 
 def _arrow_table(positions: tuple[DrcPosition, ...]) -> pa.Table:

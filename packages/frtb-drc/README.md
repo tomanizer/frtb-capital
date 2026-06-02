@@ -8,6 +8,10 @@ trading portfolio (CTP) canonical inputs. `calculate_drc_capital` calculates
 gross JTD, maturity scaling, net JTD, bucket/category capital, and run-level
 reconciliation with stable ids, citations, and branch metadata.
 
+The high-volume Arrow/batch API supports the same three DRC row classes through
+class-specific handoff builders. Accepted rows stay columnar on the fast path;
+only compact net-JTD, bucket, category, and result records are materialized.
+
 Securitisation non-CTP and CTP risk weights and replication/decomposition offset
 evidence are supplied in `DrcCalculationContext` as run-scoped maps:
 `securitisation_non_ctp_risk_weights`,

@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from itertools import count
 
@@ -523,23 +523,64 @@ def _rejected_ctp_offsets(
         ]
         longs_by_group = _inputs_by_offset_group(longs)
         shorts_by_group = _inputs_by_offset_group(shorts)
-        rejected: list[RejectedOffset] = []
-        for long_group, long_items in sorted(longs_by_group.items()):
-            for short_group, short_items in sorted(shorts_by_group.items()):
-                if long_group == short_group:
-                    continue
-                rejected.append(
-                    RejectedOffset(
-                        rejection_id=f"rej-ctp-{_slug(bucket_key)}-{next(sequence)}",
-                        long_source_id=_representative_scaled_jtd_id(long_items),
-                        short_source_id=_representative_scaled_jtd_id(short_items),
-                        reason_code="CTP_OFFSET_REQUIRES_EXACT_MATCH_OR_EXPLICIT_REPLICATION",
-                        citations=_NETTING_CITATIONS,
-                    )
-                )
+        rejected = _bounded_rejected_group_offsets(
+            bucket_key=bucket_key,
+            long_groups=longs_by_group,
+            short_groups=shorts_by_group,
+            sequence=sequence,
+            representative=_representative_scaled_jtd_id,
+        )
         if rejected:
             rejected_by_bucket[bucket_key] = tuple(rejected)
     return rejected_by_bucket
+
+
+def _bounded_rejected_group_offsets(
+    *,
+    bucket_key: str,
+    long_groups: Mapping[str, list[CtpNettingInput]],
+    short_groups: Mapping[str, list[CtpNettingInput]],
+    sequence: Iterator[int],
+    representative: Callable[[list[CtpNettingInput]], str],
+) -> tuple[RejectedOffset, ...]:
+    rejected: list[RejectedOffset] = []
+    sorted_short_groups = sorted(short_groups)
+    for long_group, long_items in sorted(long_groups.items()):
+        candidate_short_group = next(
+            (item for item in sorted_short_groups if item != long_group), None
+        )
+        if candidate_short_group is None:
+            continue
+        rejected.append(
+            RejectedOffset(
+                rejection_id=f"rej-ctp-{_slug(bucket_key)}-{next(sequence)}",
+                long_source_id=representative(long_items),
+                short_source_id=representative(short_groups[candidate_short_group]),
+                reason_code="CTP_OFFSET_REQUIRES_EXACT_MATCH_OR_EXPLICIT_REPLICATION",
+                citations=_NETTING_CITATIONS,
+            )
+        )
+    covered_short_source_ids = {record.short_source_id for record in rejected}
+    sorted_long_groups = sorted(long_groups)
+    for short_group, short_items in sorted(short_groups.items()):
+        short_source_id = representative(short_items)
+        if short_source_id in covered_short_source_ids:
+            continue
+        candidate_long_group = next(
+            (item for item in sorted_long_groups if item != short_group), None
+        )
+        if candidate_long_group is None:
+            continue
+        rejected.append(
+            RejectedOffset(
+                rejection_id=f"rej-ctp-{_slug(bucket_key)}-{next(sequence)}",
+                long_source_id=representative(long_groups[candidate_long_group]),
+                short_source_id=short_source_id,
+                reason_code="CTP_OFFSET_REQUIRES_EXACT_MATCH_OR_EXPLICIT_REPLICATION",
+                citations=_NETTING_CITATIONS,
+            )
+        )
+    return tuple(rejected)
 
 
 def _validate_ctp_netting_input(exposure: CtpNettingInput) -> None:
