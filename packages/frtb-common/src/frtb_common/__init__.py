@@ -1,6 +1,10 @@
 """Shared primitives for the frtb-capital suite."""
 
 from frtb_common._version import __version__
+from frtb_common.attribution import (
+    AttributionMethod,
+    CapitalContribution,
+)
 from frtb_common.arrow_conversion import (
     arrow_bool_array,
     arrow_bool_or_object_array,
@@ -87,8 +91,10 @@ __all__ = [
     "DEFAULT_CRIF_COLUMN_SPECS",
     "DEFAULT_ROW_ID_COLUMN",
     "AdapterDiagnostic",
+    "AttributionMethod",
     "BatchArrayCoercionError",
     "CapitalComponentMetadata",
+    "CapitalContribution",
     "ChunkPolicy",
     "ColumnSpec",
     "ComponentHandoffError",
