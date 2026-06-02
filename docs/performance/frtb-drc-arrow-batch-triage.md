@@ -1,18 +1,20 @@
 # FRTB-DRC Arrow Batch Triage
 
-This is the point-in-time data-shape and hotspot assessment for issue #299.
-The scope is the implemented non-securitisation DRC path only; securitisation
-and CTP paths remain fail-closed.
+This started as the point-in-time data-shape and hotspot assessment for issue
+#299. Issue #351 extends the same Arrow/batch architecture to the implemented
+securitisation non-CTP and CTP row paths.
 
 ## Data Shape
 
 The high-volume DRC input surface is position-grained. The kernel needs stable
 position ids, source row ids, desk and legal entity, risk class, instrument
-type, long/short default direction, issuer or tranche key, bucket, seniority,
-credit quality, notional, market value or cumulative P&L, maturity, currency,
-default flags, and lineage metadata. For the supported non-securitisation path
-the batch requires issuer, bucket, seniority, credit quality, notional,
-maturity, and currency columns.
+type, long/short default direction, issuer/tranche/index identity, bucket,
+notional, market value or cumulative P&L, maturity, currency, optional
+non-securitisation seniority and credit quality, default flags, and lineage
+metadata. Non-securitisation requires issuer, bucket, seniority, and credit
+quality. Securitisation non-CTP requires tranche identity and either a pool
+identity or explicit run-scoped offset evidence. CTP requires tranche,
+index-series, or issuer identity.
 
 The package-owned batch stores those fields as immutable NumPy arrays plus
 typed metadata:
@@ -48,20 +50,25 @@ citations, and fail-closed unsupported scope. This keeps grouping and sort
 semantics explicit in DRC code while still avoiding row-wise dataclass churn for
 accepted high-volume input.
 
-## Implemented Path
+## Implemented Paths
 
-The implemented high-volume path is:
+The implemented high-volume paths are:
 
-1. `normalize_drc_nonsec_arrow_table` normalizes a canonical Arrow table to the
-   DRC non-securitisation handoff contract.
-2. `build_drc_nonsec_batch_from_handoff` builds `DrcPositionBatch` without
-   accepted-row `DrcPosition` materialization.
-3. `calculate_drc_capital_from_batch` computes gross JTD arrays, maturity
-   weight arrays, scaled JTD arrays, seniority netting, bucket DRC, category
-   DRC, and total DRC.
+1. `normalize_drc_nonsec_arrow_table` /
+   `build_drc_nonsec_batch_from_handoff` for non-securitisation.
+2. `normalize_drc_securitisation_non_ctp_arrow_table` /
+   `build_drc_securitisation_non_ctp_batch_from_handoff` for securitisation
+   non-CTP.
+3. `normalize_drc_ctp_arrow_table` / `build_drc_ctp_batch_from_handoff` for
+   CTP.
+4. `calculate_drc_capital_from_batch` computes class-specific gross JTD arrays,
+   maturity weight arrays, scaled JTD arrays, regulatory netting, bucket DRC,
+   category DRC, and total DRC.
 
 The row API remains the compatibility path for callers that already hold
-canonical dataclasses.
+canonical dataclasses. Mixed risk classes must be split into class-specific
+batches; the batch API fails closed rather than silently falling back to the row
+path.
 
 ## Issue #316 Conversion and Batch Check
 
@@ -81,8 +88,8 @@ with:
 make drc-benchmark
 ```
 
-On macOS-26.5 arm64 / Python 3.11.15, a 5,000-row synthetic non-securitisation
-run recorded:
+On macOS-26.5 arm64 / Python 3.11.15, the original 5,000-row synthetic
+non-securitisation run recorded:
 
 - row-compatible dataclass construction: 0.421s
 - row-compatible calculation: 4.802s
@@ -98,3 +105,7 @@ run recorded:
 The result confirms that the high-volume DRC path avoids accepted-row
 `DrcPosition`, `GrossJtd`, and `MaturityScaledJtd` materialization while
 preserving the public capital number and net-JTD audit result.
+
+Issue #351 extends the benchmark artifact with securitisation non-CTP and CTP
+cases. The budget now requires zero accepted-row dataclass materialization and
+zero row/batch capital delta for all three DRC risk classes.

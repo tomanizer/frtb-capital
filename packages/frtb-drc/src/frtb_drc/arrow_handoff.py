@@ -1,4 +1,4 @@
-"""Arrow handoff adapter for DRC non-securitisation batches."""
+"""Arrow handoff adapters for DRC batches."""
 
 from __future__ import annotations
 
@@ -21,8 +21,31 @@ from frtb_common import (
     validate_arrow_table,
 )
 
-from frtb_drc.batch import DrcPositionBatch, build_drc_nonsec_batch_from_columns
+from frtb_drc.batch import (
+    DrcPositionBatch,
+    build_drc_ctp_batch_from_columns,
+    build_drc_nonsec_batch_from_columns,
+    build_drc_securitisation_non_ctp_batch_from_columns,
+)
 from frtb_drc.validation import DrcInputError
+
+
+def _replace_column_spec(
+    spec: ColumnSpec,
+    *,
+    required: bool,
+    null_policy: NullPolicy,
+) -> ColumnSpec:
+    return ColumnSpec(
+        spec.name,
+        aliases=spec.aliases,
+        logical_type=spec.logical_type,
+        required=required,
+        null_policy=null_policy,
+        chunk_policy=spec.chunk_policy,
+        dictionary_policy=spec.dictionary_policy,
+    )
+
 
 DRC_NONSEC_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("position_id", aliases=("positionId",), logical_type=TabularLogicalType.STRING),
@@ -137,6 +160,30 @@ DRC_NONSEC_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ),
 )
 
+DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = tuple(
+    _replace_column_spec(
+        spec,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    )
+    if spec.name in {"seniority", "credit_quality"}
+    else _replace_column_spec(spec, required=True, null_policy=NullPolicy.ALLOW)
+    if spec.name == "issuer_id"
+    else spec
+    for spec in DRC_NONSEC_HANDOFF_COLUMN_SPECS
+)
+
+DRC_CTP_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = tuple(
+    _replace_column_spec(
+        spec,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    )
+    if spec.name in {"seniority", "credit_quality", "issuer_id"}
+    else spec
+    for spec in DRC_NONSEC_HANDOFF_COLUMN_SPECS
+)
+
 
 def normalize_drc_nonsec_arrow_table(
     table: pa.Table,
@@ -151,6 +198,48 @@ def normalize_drc_nonsec_arrow_table(
     return normalize_arrow_table(
         table,
         column_specs=DRC_NONSEC_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_drc_securitisation_non_ctp_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the DRC securitisation non-CTP handoff contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS,
+        rejected=rejected,
+        diagnostics=diagnostics,
+        metadata={} if metadata is None else metadata,
+        source_hash=source_hash,
+        require_unique_row_ids=False,
+    )
+
+
+def normalize_drc_ctp_arrow_table(
+    table: pa.Table,
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
+) -> NormalizedTabularHandoff:
+    """Normalize a raw Arrow table to the DRC CTP handoff contract."""
+
+    return normalize_arrow_table(
+        table,
+        column_specs=DRC_CTP_HANDOFF_COLUMN_SPECS,
         rejected=rejected,
         diagnostics=diagnostics,
         metadata={} if metadata is None else metadata,
@@ -183,6 +272,96 @@ def build_drc_nonsec_batch_from_handoff(
         bucket_keys=_required_object_column(table, "bucket_key"),
         seniorities=_required_object_column(table, "seniority"),
         credit_qualities=_required_object_column(table, "credit_quality"),
+        notionals=_required_float_column(table, "notional"),
+        market_values=_optional_float_column(table, "market_value"),
+        cumulative_pnls=_optional_float_column(table, "cumulative_pnl"),
+        maturity_years=_required_float_column(table, "maturity_years"),
+        currencies=_required_object_column(table, "currency"),
+        lgd_overrides=_optional_float_column(table, "lgd_override"),
+        is_defaulted=_optional_bool_column(table, "is_defaulted"),
+        is_gse=_optional_bool_column(table, "is_gse"),
+        is_pse=_optional_bool_column(table, "is_pse"),
+        is_covered_bond=_optional_bool_column(table, "is_covered_bond"),
+        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
+        lineage_source_files=_required_object_column(table, "lineage_source_file"),
+        lineage_present=np.ones(table.num_rows, dtype=np.bool_),
+        citation_ids=_citation_ids_column(table),
+        source_hash=handoff.source_hash,
+        handoff_hash=normalized_handoff_hash(handoff),
+        diagnostics=diagnostics,
+        copy_arrays=False,
+    )
+
+
+def build_drc_securitisation_non_ctp_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> DrcPositionBatch:
+    """Build a DRC-owned securitisation non-CTP batch from a normalized Arrow handoff."""
+
+    if not isinstance(handoff, NormalizedTabularHandoff):
+        raise DrcInputError("handoff must be NormalizedTabularHandoff")
+    table = handoff.accepted
+    validate_arrow_table(table, column_specs=DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS)
+    diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
+    return build_drc_securitisation_non_ctp_batch_from_columns(
+        position_ids=_required_object_column(table, "position_id"),
+        source_row_ids=_required_object_column(table, "source_row_id"),
+        desk_ids=_required_object_column(table, "desk_id"),
+        legal_entities=_required_object_column(table, "legal_entity"),
+        risk_classes=_required_object_column(table, "risk_class"),
+        instrument_types=_required_object_column(table, "instrument_type"),
+        default_directions=_required_object_column(table, "default_direction"),
+        issuer_ids=_required_object_column(table, "issuer_id"),
+        tranche_ids=_optional_object_column(table, "tranche_id"),
+        index_series_ids=_optional_object_column(table, "index_series_id"),
+        bucket_keys=_required_object_column(table, "bucket_key"),
+        seniorities=_optional_object_column(table, "seniority"),
+        credit_qualities=_optional_object_column(table, "credit_quality"),
+        notionals=_required_float_column(table, "notional"),
+        market_values=_optional_float_column(table, "market_value"),
+        cumulative_pnls=_optional_float_column(table, "cumulative_pnl"),
+        maturity_years=_required_float_column(table, "maturity_years"),
+        currencies=_required_object_column(table, "currency"),
+        lgd_overrides=_optional_float_column(table, "lgd_override"),
+        is_defaulted=_optional_bool_column(table, "is_defaulted"),
+        is_gse=_optional_bool_column(table, "is_gse"),
+        is_pse=_optional_bool_column(table, "is_pse"),
+        is_covered_bond=_optional_bool_column(table, "is_covered_bond"),
+        lineage_source_systems=_required_object_column(table, "lineage_source_system"),
+        lineage_source_files=_required_object_column(table, "lineage_source_file"),
+        lineage_present=np.ones(table.num_rows, dtype=np.bool_),
+        citation_ids=_citation_ids_column(table),
+        source_hash=handoff.source_hash,
+        handoff_hash=normalized_handoff_hash(handoff),
+        diagnostics=diagnostics,
+        copy_arrays=False,
+    )
+
+
+def build_drc_ctp_batch_from_handoff(
+    handoff: NormalizedTabularHandoff,
+) -> DrcPositionBatch:
+    """Build a DRC-owned CTP batch from a normalized Arrow handoff."""
+
+    if not isinstance(handoff, NormalizedTabularHandoff):
+        raise DrcInputError("handoff must be NormalizedTabularHandoff")
+    table = handoff.accepted
+    validate_arrow_table(table, column_specs=DRC_CTP_HANDOFF_COLUMN_SPECS)
+    diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
+    return build_drc_ctp_batch_from_columns(
+        position_ids=_required_object_column(table, "position_id"),
+        source_row_ids=_required_object_column(table, "source_row_id"),
+        desk_ids=_required_object_column(table, "desk_id"),
+        legal_entities=_required_object_column(table, "legal_entity"),
+        risk_classes=_required_object_column(table, "risk_class"),
+        instrument_types=_required_object_column(table, "instrument_type"),
+        default_directions=_required_object_column(table, "default_direction"),
+        issuer_ids=_optional_object_column(table, "issuer_id"),
+        tranche_ids=_optional_object_column(table, "tranche_id"),
+        index_series_ids=_optional_object_column(table, "index_series_id"),
+        bucket_keys=_required_object_column(table, "bucket_key"),
+        seniorities=_optional_object_column(table, "seniority"),
+        credit_qualities=_optional_object_column(table, "credit_quality"),
         notionals=_required_float_column(table, "notional"),
         market_values=_optional_float_column(table, "market_value"),
         cumulative_pnls=_optional_float_column(table, "cumulative_pnl"),
@@ -327,7 +506,13 @@ def _float64_array_from_arrow_column(
 
 
 __all__ = [
+    "DRC_CTP_HANDOFF_COLUMN_SPECS",
     "DRC_NONSEC_HANDOFF_COLUMN_SPECS",
+    "DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS",
+    "build_drc_ctp_batch_from_handoff",
     "build_drc_nonsec_batch_from_handoff",
+    "build_drc_securitisation_non_ctp_batch_from_handoff",
+    "normalize_drc_ctp_arrow_table",
     "normalize_drc_nonsec_arrow_table",
+    "normalize_drc_securitisation_non_ctp_arrow_table",
 ]

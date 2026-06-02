@@ -272,8 +272,20 @@ def _write_suite_artifacts(artifact_dir: Path) -> None:
                     "batch_construction": 0.5,
                     "batch_calculation": 1.0,
                 },
-                "materialized_dataclass_count": {"arrow_batch_path": 0},
-                "capital": {"absolute_delta": 0.0},
+                "materialized_dataclass_count": {
+                    "arrow_batch_path": 0,
+                    "non_securitisation_arrow_batch_path": 0,
+                    "securitisation_non_ctp_arrow_batch_path": 0,
+                    "ctp_arrow_batch_path": 0,
+                },
+                "capital": {
+                    "absolute_delta": 0.0,
+                    "absolute_delta_by_risk_class": {
+                        "NON_SECURITISATION": 0.0,
+                        "SECURITISATION_NON_CTP": 0.0,
+                        "CORRELATION_TRADING_PORTFOLIO": 0.0,
+                    },
+                },
                 "tracemalloc_peak_bytes": 100,
             },
         },
