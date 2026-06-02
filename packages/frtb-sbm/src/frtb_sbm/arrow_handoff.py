@@ -1615,8 +1615,7 @@ def _restore_arrow_nulls_as_none(
     if len(converted) != len(valid):
         raise _sbm_error("column length mismatch", field)
     return tuple(
-        value if bool(valid[index].as_py()) else None
-        for index, value in enumerate(converted)
+        value if bool(valid[index].as_py()) else None for index, value in enumerate(converted)
     )
 
 
