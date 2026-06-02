@@ -12,9 +12,11 @@ This audit checks whether repository documentation reflects the current
 
 - Root repository: `tomanizer/frtb-capital`
 - Implemented package: `packages/frtb-ima`
-- Scaffolded packages: `packages/frtb-common`, `packages/frtb-sbm`,
-  `packages/frtb-drc`, `packages/frtb-rrao`, `packages/frtb-cva`, and
-  `packages/frtb-orchestration`
+- Shared package: `packages/frtb-common`
+- Standardised Approach component packages: `packages/frtb-sbm`,
+  `packages/frtb-drc`, and `packages/frtb-rrao`
+- CVA package: `packages/frtb-cva`
+- Suite orchestration package: `packages/frtb-orchestration`
 - Root CI: `.github/workflows/ci.yml`
 - Package-local IMA docs: `packages/frtb-ima/docs/`
 - Suite-level ADRs: `docs/decisions/`
@@ -26,12 +28,13 @@ This audit checks whether repository documentation reflects the current
 
 - Replaced standalone IMA repository language with package-in-monorepo language.
 - Updated SBM, DRC, RRAO, and CVA references from separate repositories to
-  scaffolded sibling packages.
+  sibling workspace packages.
 - Pointed root documentation navigation at the current IMA regulatory docs
   instead of non-existent root regulatory docs.
 - Clarified that `frtb-common`, SBM, DRC, RRAO, CVA, and orchestration are
-  scaffolded packages with unimplemented calculations rather than missing
-  directories.
+  workspace packages rather than missing directories. Their implementation
+  status is now maintained in `docs/quality/package_maturity.toml` and
+  `docs/quality/PACKAGE_STATUS.md`.
 - Added the missing `packages/frtb-ima/CHANGELOG.md` placeholder required by
   package versioning guidance.
 - Added a suite-level `docs/modules/` home for module documentation and moved

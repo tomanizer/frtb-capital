@@ -22,18 +22,26 @@ component packages: `frtb-sbm`, `frtb-drc`, and `frtb-rrao`. See the
 
 ## Implementation Pattern
 
-The planned `frtb-sbm`, `frtb-drc`, `frtb-rrao`, and `frtb-cva` packages
-should follow one implementation pattern. `frtb-common` owns shared primitives:
-rule-profile loading, citation identifiers, sign conventions, calculation
-context, validation errors, audit-record base types, and generic numerical
-aggregation helpers. Capital packages may import from `frtb-common`; they must
-not import from each other.
+The `frtb-sbm`, `frtb-drc`, `frtb-rrao`, and `frtb-cva` packages follow one
+implementation pattern. `frtb-common` owns package-neutral mechanics: shared
+status metadata, explicit unsupported/unimplemented exception types,
+Arrow-backed tabular handoff primitives, package-neutral CRIF-to-Arrow
+normalization, JSON-ready serialization helpers, regulatory citation test
+helpers, and the `ComponentResultHandoff` contract for standardised-component
+orchestration. Capital packages may import from `frtb-common`; they must not
+import from each other.
 
-Regulatory parameters belong in versioned rule profiles, not scattered through
-calculation modules. A profile records its id, status, effective date, source
-publication date, parameter groups, source citations, and a hash of normalized
-profile content. Calculation code receives a profile or `CalculationContext`;
-it must not look up global constants by regime name inside kernels.
+Rule-profile semantics, sign conventions, capital audit-record structures,
+business calendars, and regulatory parameters stay in the owning component or
+orchestration package unless a focused cross-cutting ADR extracts a neutral
+contract into `frtb-common`.
+
+Regulatory parameters belong in cited package policy objects or versioned rule
+profiles, not scattered through calculation modules. A profile or policy object
+records its identity, source citations, and enough lineage to reproduce the
+calculation. Calculation code receives explicit typed inputs and policy
+configuration; it must not look up global constants by regime name inside
+kernels.
 
 Each package owns a canonical input model at its public boundary. Importers,
 CRIF mappers, examples, and future vendor adapters must translate into that

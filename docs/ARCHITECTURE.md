@@ -49,24 +49,34 @@ desks to that SA component stack for fallback capital.
 
 Shared primitives used by every capital component:
 
-- `SignConvention` enum (loss-positive, profit-positive, magnitude).
-- `ScenarioMetadata`, `ScenarioVector` containers.
-- `RegulatoryPolicy` base class and `CalculationContext`.
+- `CapitalComponentMetadata`, `ImplementationStatus`, and `ValidationStatus`
+  package-status primitives.
+- `UnsupportedRegulatoryFeatureError` and
+  `NotImplementedCapitalComponentError`.
+- Arrow-backed normalized tabular handoff primitives in `frtb_common.handoff`,
+  including column specs, adapter diagnostics, null/chunk/dictionary policies,
+  accepted/rejected tables, row id validation, sorting helpers, and stable
+  content/handoff hashes.
+- Package-neutral CRIF-to-Arrow normalization in `frtb_common.crif`, with
+  package-supplied RiskType mappings or callbacks.
 - `ComponentResultHandoff` — the shared standardised-component orchestration
   handoff contract (with `StandardisedComponent` and `ComponentHandoffError`).
   See [`decisions/0029-unified-standardised-component-handoff-contract.md`](decisions/0029-unified-standardised-component-handoff-contract.md).
-- `BusinessCalendar` (when implemented).
-- Logging configuration (`JSONFormatter`, `calculation_log_extra`).
+- `jsonable` serialization for common domain values.
+- `assert_policy_has_regulatory_citations` and
+  `MissingRegulatoryCitationsError` for package policy tests.
 
 The `DeskAuditRecord` / `CapitalRunAuditLog` audit framework currently lives in
 `frtb-ima` (`frtb_ima.audit`), not `frtb-common`. Promoting a suite-level audit
-record home is part of the orchestration aggregation workstream.
+record home, rule-profile semantics, sign conventions, business calendars, or
+calculation-context contracts requires a separate cross-cutting ADR.
 
 Status: shared library. It provides shared status metadata, explicit
 unsupported/unimplemented exception types, JSON-ready serialization, and
-regulatory citation helpers. The migrated IMA package still holds some
-calculation-specific abstractions inside `packages/frtb-ima`. Broader extraction
-is a separate workstream.
+regulatory citation helpers. It performs no capital calculation and carries no
+IMA, SBM, DRC, RRAO, or CVA regulatory semantics. The migrated IMA package still
+holds some calculation-specific abstractions inside `packages/frtb-ima`. Broader
+extraction is a separate ADR-backed workstream.
 
 ### `frtb-ima` — Internal Models Approach
 
