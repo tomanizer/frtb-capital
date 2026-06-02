@@ -1,11 +1,11 @@
 {
   "buckets": {
     "CORPORATE": {
-      "capital": 566429.8980806948,
+      "capital": 614458.3724432614,
       "floor_applied": false,
       "hbr": 0.9327542729055758,
-      "weighted_long": 572306.25,
-      "weighted_short": 6300.0
+      "weighted_long": 625931.25,
+      "weighted_short": 12300.0
     },
     "DEFAULTED": {
       "capital": 1970000.0,
@@ -29,7 +29,7 @@
       "weighted_short": 1575.0
     }
   },
-  "category_capital": 3487719.6241080924,
+  "category_capital": 3535748.098470659,
   "fixture_id": "drc_nonsec_v2",
   "gross": {
     "corp-acme-nsr-s-001": 300000.0,
@@ -327,8 +327,8 @@
       "rejected_offsets": []
     }
   },
-  "profile_hash": "7275a6648f42e386e78f3193c12fe05a228aa1a9e4d2fd5d71cb27a13a87b239",
-  "result_json_sha256": "cd23169282aedcb3e5776d6727cee2c716efc69267003bb7c81028f25de211dc",
+  "profile_hash": "0731231e0bbe8b01ef3ee498e30d34000b9b00e3388151569130d35f645bc37f",
+  "result_json_sha256": "bf00743b5d70648a81539bb376fb8b689ebb132f2dd96c469b7884894e909f23",
   "scaled": {
     "corp-acme-nsr-s-001": 300000.0,
     "corp-acme-sr-l-001": 750000.0,
@@ -371,5 +371,5 @@
     "sov-uk-sr-l-001": 1500000.0,
     "sov-uk-sr-s-001": 750000.0
   },
-  "total_drc": 3487719.6241080924
+  "total_drc": 3535748.098470659
 }

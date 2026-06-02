@@ -140,7 +140,7 @@ US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
     "US_NPR_210_B_3_II": DrcCitation(
         citation_id="US_NPR_210_B_3_II",
         source_id="US_NPR_2_0_91_FR_14952",
-        paragraph="proposed section __.210(b)(3)(ii)",
+        paragraph="proposed section __.210(b)(3)(ii), Table 1 to section __.210",
         url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
         note="Non-securitisation risk weights by bucket and credit quality.",
     ),

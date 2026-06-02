@@ -615,7 +615,8 @@ capital = max( Σ(RW * long_net) - HBR * Σ(RW * short_net), 0 )
 ```
 
 Risk weights: NON\_US\_SOVEREIGN IG=0.6 %, SG=22 %, sub-SG=50 %;
-CORPORATE/PSE\_GSE IG=2.1 %, SG=22 %, sub-SG=50 %; DEFAULTED=100 %.
+PSE\_GSE IG=2.1 %, SG=22 %, sub-SG=50 %; CORPORATE IG=4.1 %, SG=22 %,
+sub-SG=50 %; DEFAULTED=100 %.
 
 *Regulatory refs*: Basel MAR22.17-19; US NPR § 210(a)(2)(iv)\
 """),

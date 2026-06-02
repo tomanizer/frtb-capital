@@ -36,7 +36,10 @@ def test_us_npr_lgd_table_contains_cited_non_securitisation_values() -> None:
         assert rule.lgd_rate == expected_lgd
         assert rule.citation_id == "US_NPR_210_B_1_IV"
 
-    assert get_lgd_rule(DrcSeniority.SENIOR_DEBT, is_defaulted=True).lgd_rate == 1.00
+    for seniority in DrcSeniority:
+        defaulted_rule = get_lgd_rule(seniority, is_defaulted=True)
+        assert defaulted_rule.lgd_rate == 1.00
+        assert defaulted_rule.citation_id == "US_NPR_210_B_1_IV"
 
 
 def test_us_npr_maturity_policy_is_cited() -> None:
@@ -58,14 +61,23 @@ def test_us_npr_nonsec_bucket_definitions_are_cited() -> None:
 
 
 def test_us_npr_risk_weight_table_uses_strict_lookup_keys() -> None:
-    assert (
-        get_risk_weight_rule("NON_US_SOVEREIGN", CreditQuality.INVESTMENT_GRADE).risk_weight
-        == 0.006
-    )
-    assert get_risk_weight_rule("PSE_GSE", CreditQuality.SPECULATIVE_GRADE).risk_weight == 0.22
-    corporate_ssg = get_risk_weight_rule("CORPORATE", CreditQuality.SUB_SPECULATIVE_GRADE)
-    assert corporate_ssg.risk_weight == 0.50
-    assert get_risk_weight_rule("DEFAULTED", CreditQuality.DEFAULTED).risk_weight == 1.00
+    expected = {
+        ("NON_US_SOVEREIGN", CreditQuality.INVESTMENT_GRADE): 0.006,
+        ("NON_US_SOVEREIGN", CreditQuality.SPECULATIVE_GRADE): 0.22,
+        ("NON_US_SOVEREIGN", CreditQuality.SUB_SPECULATIVE_GRADE): 0.50,
+        ("PSE_GSE", CreditQuality.INVESTMENT_GRADE): 0.021,
+        ("PSE_GSE", CreditQuality.SPECULATIVE_GRADE): 0.22,
+        ("PSE_GSE", CreditQuality.SUB_SPECULATIVE_GRADE): 0.50,
+        ("CORPORATE", CreditQuality.INVESTMENT_GRADE): 0.041,
+        ("CORPORATE", CreditQuality.SPECULATIVE_GRADE): 0.22,
+        ("CORPORATE", CreditQuality.SUB_SPECULATIVE_GRADE): 0.50,
+        ("DEFAULTED", CreditQuality.DEFAULTED): 1.00,
+    }
+
+    for (bucket_key, credit_quality), expected_risk_weight in expected.items():
+        rule = get_risk_weight_rule(bucket_key, credit_quality)
+        assert rule.risk_weight == expected_risk_weight
+        assert rule.citation_id == "US_NPR_210_B_3_II"
 
     with pytest.raises(DrcInputError, match="missing DRC risk weight"):
         get_risk_weight_rule("CORPORATE", CreditQuality.UNRATED)

@@ -1,15 +1,14 @@
 """Cited reference data for DRC rule profiles.
 
-Verification status (audit 2026-05-31):
-    - LGD ladder (`_LGD_RULES`): equity/non-senior 100%, senior 75%, covered
-      bond 25% confirmed against Basel MAR22.18-22.20; PSE/GSE/not-recovery-
-      linked entries are US-NPR-specific additions.
+Verification status (audit 2026-06-02):
+    - LGD ladder (`_LGD_RULES`) and flat 100% defaulted-position LGD confirmed
+      against US NPR 2.0 proposed section __.210(b)(1)(iv), 91 FR 15236, and
+      Basel MAR22.18-MAR22.20 where Basel defines the same seniority ladder.
+      PSE/GSE/not-recovery-linked entries are US-NPR-specific additions.
     - Maturity policy (0.25y floor, 1.0y full weight) confirmed against
-      MAR22.22.
-    - Default risk weights (`_RISK_WEIGHT_RULES`, US NPR 2.0 §_.210(b)(3)(ii)):
-      NOT yet independently confirmed against the primary re-proposal text.
-      Tracked as an open verification item — see issue #242. Do not treat these
-      five percentages as audited until that issue is closed.
+      US NPR 2.0 proposed section __.210(a)(2)(iii), 91 FR 15235.
+    - Default risk weights (`_RISK_WEIGHT_RULES`) confirmed against Table 1 to
+      US NPR 2.0 proposed section __.210, 91 FR 15237.
 """
 
 from __future__ import annotations
@@ -429,7 +428,7 @@ _RISK_WEIGHT_RULES: Mapping[tuple[str, str, CreditQuality], RiskWeightRule] = Ma
         ): RiskWeightRule(
             bucket_key="CORPORATE",
             credit_quality=CreditQuality.INVESTMENT_GRADE,
-            risk_weight=0.021,
+            risk_weight=0.041,
             citation_id="US_NPR_210_B_3_II",
         ),
         (
