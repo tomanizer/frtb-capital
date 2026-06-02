@@ -26,6 +26,10 @@ from frtb_drc.data_models import (
     NetJtd,
     RejectedOffset,
 )
+from frtb_drc.fair_value_cap import (
+    fair_value_cap_hash_payload,
+    validate_fair_value_cap_evidence,
+)
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.reference_data import get_bucket_definition
 from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported, get_rule_profile
@@ -52,6 +56,7 @@ _BUCKET_CITATIONS = (
 )
 _HBR_CITATIONS = ("US_NPR_210_A_2_IV_A", "US_NPR_210_C_3_III", "BASEL_MAR22_33")
 _CATEGORY_CITATIONS = ("US_NPR_210_C_3_IV", "BASEL_MAR22_35")
+_FAIR_VALUE_CAP_CITATIONS = ("US_NPR_210_C_3_III", "BASEL_MAR22_34")
 
 
 @dataclass(frozen=True)
@@ -105,7 +110,11 @@ def calculate_securitisation_non_ctp_drc(
         )
     _validate_securitisation_non_ctp_context(records, context=context)
     gross_jtds = tuple(
-        calculate_securitisation_non_ctp_gross_jtd(position, profile_id=profile_id)
+        calculate_securitisation_non_ctp_gross_jtd(
+            position,
+            context=context,
+            profile_id=profile_id,
+        )
         for position in records
     )
     scaled_jtds = scale_gross_jtds(
@@ -153,6 +162,7 @@ def calculate_securitisation_non_ctp_drc(
 def calculate_securitisation_non_ctp_gross_jtd(
     position: DrcPosition,
     *,
+    context: DrcCalculationContext | None = None,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> GrossJtd:
     """Calculate securitisation non-CTP gross default exposure from market value."""
@@ -170,6 +180,12 @@ def calculate_securitisation_non_ctp_gross_jtd(
         raise DrcInputError(
             "securitisation non-CTP gross JTD uses market value; lgd_override is not supported"
         )
+    gross_jtd, branch_metadata, citations = _fair_value_capped_gross_jtd(
+        position,
+        market_value=abs(position.market_value),
+        context=context,
+        profile_id=profile_id,
+    )
 
     return GrossJtd(
         gross_jtd_id=f"gross-{position.position_id}",
@@ -185,8 +201,9 @@ def calculate_securitisation_non_ctp_gross_jtd(
         ),
         notional=abs(position.notional),
         pnl_component=0.0,
-        gross_jtd=abs(position.market_value),
-        citations=_merge_citations((*_GROSS_CITATIONS, *position.citation_ids)),
+        gross_jtd=gross_jtd,
+        citations=_merge_citations((*_GROSS_CITATIONS, *citations, *position.citation_ids)),
+        branch_metadata=branch_metadata,
     )
 
 
@@ -295,6 +312,10 @@ def securitisation_non_ctp_context_input_hash(
             context,
             risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
         ),
+        "securitisation_non_ctp_fair_value_cap_evidence": fair_value_cap_hash_payload(
+            position_ids,
+            context,
+        ),
         "securitisation_non_ctp_offset_groups": {
             position_id: context.securitisation_non_ctp_offset_groups[position_id]
             for position_id in position_ids
@@ -312,6 +333,10 @@ def validate_securitisation_non_ctp_context(context: DrcCalculationContext) -> N
     """Validate securitisation non-CTP context maps without requiring positions."""
 
     effective_risk_weights(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
+    validate_fair_value_cap_evidence(
+        context.securitisation_non_ctp_fair_value_cap_evidence,
+        context=context,
+    )
     for position_id, offset_group in context.securitisation_non_ctp_offset_groups.items():
         _require_text(position_id, "securitisation_non_ctp_offset_groups position_id")
         _require_text(
@@ -342,6 +367,14 @@ def _validate_securitisation_non_ctp_context(
         raise DrcInputError(
             "context.securitisation_non_ctp_risk_weights contains unused "
             "securitisation non-CTP position ids: " + ", ".join(unused_risk_weights)
+        )
+    unused_cap_evidence = sorted(
+        set(context.securitisation_non_ctp_fair_value_cap_evidence) - position_ids
+    )
+    if unused_cap_evidence:
+        raise DrcInputError(
+            "context.securitisation_non_ctp_fair_value_cap_evidence contains unused "
+            "securitisation non-CTP position ids: " + ", ".join(unused_cap_evidence)
         )
     unused_offset_groups = sorted(set(context.securitisation_non_ctp_offset_groups) - position_ids)
     if unused_offset_groups:
@@ -755,6 +788,102 @@ def _optional_text(value: str | None) -> str | None:
 
 def _merge_citations(citations: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(citations))
+
+
+def _fair_value_capped_gross_jtd(
+    position: DrcPosition,
+    *,
+    market_value: float,
+    context: DrcCalculationContext | None,
+    profile_id: str,
+) -> tuple[float, tuple[BranchMetadata, ...], tuple[str, ...]]:
+    evidence = (
+        None
+        if context is None
+        else context.securitisation_non_ctp_fair_value_cap_evidence.get(position.position_id)
+    )
+    if evidence is None:
+        return (
+            market_value,
+            (
+                BranchMetadata(
+                    branch_id=f"gross-sec-non-ctp-no-fair-value-cap-{_slug(position.position_id)}",
+                    branch_type=BranchType.NORMAL,
+                    source_id=position.position_id,
+                    selected=True,
+                    reason=(
+                        "securitisation non-CTP gross default exposure used market value; "
+                        "no fair-value cap evidence was supplied"
+                    ),
+                    citations=_GROSS_CITATIONS,
+                ),
+            ),
+            (),
+        )
+    if not get_rule_profile(profile_id).securitisation_non_ctp_fair_value_cap_allowed:
+        raise DrcInputError(
+            f"securitisation non-CTP fair-value cap is not supported for profile {profile_id}"
+        )
+    citations = _merge_citations((*_FAIR_VALUE_CAP_CITATIONS, *evidence.citation_ids))
+    if not evidence.eligible:
+        return (
+            market_value,
+            (
+                BranchMetadata(
+                    branch_id=f"gross-sec-non-ctp-fair-value-cap-ineligible-{_slug(position.position_id)}",
+                    branch_type=BranchType.NORMAL,
+                    source_id=evidence.source_id,
+                    selected=True,
+                    reason=(
+                        "fair-value cap evidence marked the position ineligible; "
+                        f"reason: {evidence.eligibility_reason}"
+                    ),
+                    citations=citations,
+                ),
+            ),
+            citations,
+        )
+    if evidence.fair_value_cap_amount is None:  # pragma: no cover - context validation enforces.
+        raise DrcInputError(
+            f"fair_value_cap_evidence[{position.position_id}].fair_value_cap_amount is required"
+        )
+    capped = min(market_value, evidence.fair_value_cap_amount)
+    if capped < market_value:
+        return (
+            capped,
+            (
+                BranchMetadata(
+                    branch_id=f"gross-sec-non-ctp-fair-value-cap-applied-{_slug(position.position_id)}",
+                    branch_type=BranchType.CAP,
+                    source_id=evidence.source_id,
+                    selected=True,
+                    reason=(
+                        "fair-value cap applied to securitisation non-CTP gross "
+                        f"default exposure: market_value={market_value}, "
+                        f"cap_amount={evidence.fair_value_cap_amount}"
+                    ),
+                    citations=citations,
+                ),
+            ),
+            citations,
+        )
+    return (
+        market_value,
+        (
+            BranchMetadata(
+                branch_id=f"gross-sec-non-ctp-fair-value-cap-not-binding-{_slug(position.position_id)}",
+                branch_type=BranchType.NORMAL,
+                source_id=evidence.source_id,
+                selected=True,
+                reason=(
+                    "fair-value cap evidence was eligible but not binding: "
+                    f"market_value={market_value}, cap_amount={evidence.fair_value_cap_amount}"
+                ),
+                citations=citations,
+            ),
+        ),
+        citations,
+    )
 
 
 def _slug(value: str) -> str:

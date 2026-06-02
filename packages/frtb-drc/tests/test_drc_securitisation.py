@@ -11,6 +11,7 @@ from frtb_drc import (
     US_NPR_2_0_PROFILE_ID,
     DefaultDirection,
     DrcCalculationContext,
+    DrcFairValueCapEvidence,
     DrcInputError,
     DrcInstrumentType,
     DrcPosition,
@@ -18,6 +19,7 @@ from frtb_drc import (
     DrcRiskWeightEvidence,
     DrcSourceLineage,
     calculate_drc_capital,
+    fair_value_cap_evidence_by_position,
     get_rule_profile,
     risk_weight_evidence_by_position,
     validate_reconciliation,
@@ -44,11 +46,161 @@ def test_securitisation_non_ctp_unhedged_book_uses_market_value_and_context_weig
     assert result.total_drc == pytest.approx(20.0)
     assert result.categories[0].risk_class is DrcRiskClass.SECURITISATION_NON_CTP
     assert result.gross_jtds[0].gross_jtd == pytest.approx(125.0)
+    assert result.gross_jtds[0].branch_metadata[0].branch_type.value == "NORMAL"
+    assert "no fair-value cap evidence" in result.gross_jtds[0].branch_metadata[0].reason
     assert "LGD is embedded" in result.gross_jtds[0].lgd_source
     assert result.categories[0].bucket_results[0].hbr.ratio == pytest.approx(1.0)
     assert "US_NPR_210_C_1" in result.citations
     assert "US_NPR_210_C_3_III" in result.citations
     validate_reconciliation(result)
+
+
+def test_securitisation_non_ctp_applies_eligible_fair_value_cap() -> None:
+    position = _sec_position("capped-sec", DefaultDirection.LONG, market_value=125.0)
+    cap_evidence = _fair_value_cap_evidence(position, fair_value_cap_amount=80.0)
+
+    result = calculate_drc_capital(
+        (position,),
+        context=_context(
+            securitisation_non_ctp_risk_weights={position.position_id: 0.2},
+            securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+                (cap_evidence,)
+            ),
+        ),
+    )
+
+    assert result.gross_jtds[0].gross_jtd == pytest.approx(80.0)
+    assert result.maturity_scaled_jtds[0].scaled_jtd == pytest.approx(80.0)
+    assert result.total_drc == pytest.approx(16.0)
+    assert result.fair_value_cap_evidence == (cap_evidence,)
+    branch = result.gross_jtds[0].branch_metadata[0]
+    assert branch.branch_type.value == "CAP"
+    assert "cap_amount=80.0" in branch.reason
+    assert "BASEL_MAR22_34" in result.citations
+    validate_reconciliation(result)
+
+
+def test_securitisation_non_ctp_eligible_fair_value_cap_can_be_non_binding() -> None:
+    position = _sec_position("not-binding-cap", DefaultDirection.LONG, market_value=75.0)
+    cap_evidence = _fair_value_cap_evidence(position, fair_value_cap_amount=80.0)
+
+    result = calculate_drc_capital(
+        (position,),
+        context=_context(
+            securitisation_non_ctp_risk_weights={position.position_id: 0.2},
+            securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+                (cap_evidence,)
+            ),
+        ),
+    )
+
+    assert result.gross_jtds[0].gross_jtd == pytest.approx(75.0)
+    assert result.total_drc == pytest.approx(15.0)
+    assert result.gross_jtds[0].branch_metadata[0].branch_type.value == "NORMAL"
+    assert "not binding" in result.gross_jtds[0].branch_metadata[0].reason
+
+
+def test_securitisation_non_ctp_ineligible_fair_value_cap_does_not_apply() -> None:
+    position = _sec_position("ineligible-cap", DefaultDirection.LONG, market_value=125.0)
+    cap_evidence = _fair_value_cap_evidence(
+        position,
+        fair_value_cap_amount=None,
+        eligible=False,
+        eligibility_reason="synthetic non-cash securitisation test case",
+    )
+
+    result = calculate_drc_capital(
+        (position,),
+        context=_context(
+            securitisation_non_ctp_risk_weights={position.position_id: 0.2},
+            securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+                (cap_evidence,)
+            ),
+        ),
+    )
+
+    assert result.gross_jtds[0].gross_jtd == pytest.approx(125.0)
+    assert result.total_drc == pytest.approx(25.0)
+    assert result.fair_value_cap_evidence == (cap_evidence,)
+    assert "ineligible" in result.gross_jtds[0].branch_metadata[0].reason
+
+
+def test_securitisation_non_ctp_missing_cap_amount_fails_closed() -> None:
+    position = _sec_position("missing-cap-amount", DefaultDirection.LONG, market_value=100.0)
+    cap_evidence = _fair_value_cap_evidence(position, fair_value_cap_amount=None)
+
+    with pytest.raises(DrcInputError, match="fair_value_cap_amount is required"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                securitisation_non_ctp_risk_weights={position.position_id: 0.2},
+                securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+                    (cap_evidence,)
+                ),
+            ),
+        )
+
+
+def test_securitisation_non_ctp_stale_cap_evidence_fails_closed() -> None:
+    position = _sec_position("stale-cap", DefaultDirection.LONG, market_value=100.0)
+    cap_evidence = _fair_value_cap_evidence(position, fair_value_cap_amount=80.0, is_stale=True)
+
+    with pytest.raises(DrcInputError, match="is stale"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                securitisation_non_ctp_risk_weights={position.position_id: 0.2},
+                securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+                    (cap_evidence,)
+                ),
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    ("field_name", "replacement", "message"),
+    [
+        ("as_of_date", None, "as_of_date is required"),
+        ("eligible", None, "eligible is required"),
+    ],
+)
+def test_securitisation_non_ctp_none_cap_evidence_fields_fail_closed(
+    field_name: str,
+    replacement: object,
+    message: str,
+) -> None:
+    position = _sec_position("none-cap-field", DefaultDirection.LONG, market_value=100.0)
+    cap_evidence = replace(
+        _fair_value_cap_evidence(position, fair_value_cap_amount=80.0),
+        **{field_name: replacement},
+    )
+
+    with pytest.raises(DrcInputError, match=message):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                securitisation_non_ctp_risk_weights={position.position_id: 0.2},
+                securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+                    (cap_evidence,)
+                ),
+            ),
+        )
+
+
+def test_securitisation_non_ctp_unused_cap_evidence_fails_closed() -> None:
+    position = _sec_position("used-cap-position", DefaultDirection.LONG, market_value=100.0)
+    unused = _sec_position("unused-cap-position", DefaultDirection.LONG, market_value=100.0)
+
+    with pytest.raises(DrcInputError, match="fair_value_cap_evidence contains unused"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                securitisation_non_ctp_risk_weights={position.position_id: 0.2},
+                securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+                    (_fair_value_cap_evidence(unused, fair_value_cap_amount=80.0),)
+                ),
+            ),
+        )
 
 
 def test_securitisation_non_ctp_consumes_cited_risk_weight_evidence() -> None:
@@ -369,6 +521,9 @@ def _context(
     *,
     securitisation_non_ctp_risk_weights: dict[str, float] | None = None,
     securitisation_non_ctp_risk_weight_evidence: (dict[str, DrcRiskWeightEvidence] | None) = None,
+    securitisation_non_ctp_fair_value_cap_evidence: (
+        dict[str, DrcFairValueCapEvidence] | None
+    ) = None,
     securitisation_non_ctp_offset_groups: dict[str, str] | None = None,
 ) -> DrcCalculationContext:
     return DrcCalculationContext(
@@ -382,6 +537,9 @@ def _context(
         securitisation_non_ctp_risk_weight_evidence={}
         if securitisation_non_ctp_risk_weight_evidence is None
         else securitisation_non_ctp_risk_weight_evidence,
+        securitisation_non_ctp_fair_value_cap_evidence={}
+        if securitisation_non_ctp_fair_value_cap_evidence is None
+        else securitisation_non_ctp_fair_value_cap_evidence,
         securitisation_non_ctp_offset_groups={}
         if securitisation_non_ctp_offset_groups is None
         else securitisation_non_ctp_offset_groups,
@@ -449,6 +607,35 @@ def _risk_weight_evidence(
             source_file="securitisation-risk-weights.csv",
             source_row_id=f"rw-{position.position_id}",
             source_column_map={"effective_risk_weight": "risk_weight"},
+        ),
+        citation_ids=citation_ids,
+        is_stale=is_stale,
+    )
+
+
+def _fair_value_cap_evidence(
+    position: DrcPosition,
+    *,
+    fair_value_cap_amount: float | None,
+    eligible: bool = True,
+    eligibility_reason: str = "synthetic cash securitisation cap eligible",
+    source_id: str = "fair-value-cap-source",
+    is_stale: bool = False,
+    citation_ids: tuple[str, ...] = ("US_NPR_210_C_3_III", "BASEL_MAR22_34"),
+) -> DrcFairValueCapEvidence:
+    return DrcFairValueCapEvidence(
+        position_id=position.position_id,
+        source_profile_id=US_NPR_2_0_PROFILE_ID,
+        eligible=eligible,
+        fair_value_cap_amount=fair_value_cap_amount,
+        eligibility_reason=eligibility_reason,
+        as_of_date=date(2026, 5, 29),
+        source_id=source_id,
+        lineage=DrcSourceLineage(
+            source_system="synthetic-risk-weight-engine",
+            source_file="securitisation-fair-value-cap.csv",
+            source_row_id=f"cap-{position.position_id}",
+            source_column_map={"fair_value_cap_amount": "fair_value_cap_amount"},
         ),
         citation_ids=citation_ids,
         is_stale=is_stale,

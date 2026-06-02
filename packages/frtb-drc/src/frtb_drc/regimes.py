@@ -34,6 +34,8 @@ class DrcRuleProfile:
     supported_risk_classes: frozenset[DrcRiskClass]
     citations: Mapping[str, DrcCitation] = field(default_factory=dict)
     unsupported_features: Mapping[DrcRiskClass, str] = field(default_factory=dict)
+    securitisation_non_ctp_fair_value_cap_allowed: bool = False
+    securitisation_non_ctp_fair_value_cap_citation_ids: tuple[str, ...] = ()
     content_hash: str = ""
 
     def __post_init__(self) -> None:
@@ -45,6 +47,11 @@ class DrcRuleProfile:
         object.__setattr__(self, "supported_risk_classes", supported)
         object.__setattr__(self, "citations", MappingProxyType(dict(self.citations)))
         object.__setattr__(self, "unsupported_features", MappingProxyType(unsupported))
+        object.__setattr__(
+            self,
+            "securitisation_non_ctp_fair_value_cap_citation_ids",
+            tuple(self.securitisation_non_ctp_fair_value_cap_citation_ids),
+        )
         if not self.content_hash:
             object.__setattr__(self, "content_hash", profile_content_hash(self))
 
@@ -72,6 +79,12 @@ class DrcRuleProfile:
                     key=lambda item: item[0].value,
                 )
             },
+            "securitisation_non_ctp_fair_value_cap_allowed": (
+                self.securitisation_non_ctp_fair_value_cap_allowed
+            ),
+            "securitisation_non_ctp_fair_value_cap_citation_ids": (
+                self.securitisation_non_ctp_fair_value_cap_citation_ids
+            ),
             "content_hash": self.content_hash,
         }
 
@@ -147,7 +160,8 @@ US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
         note=(
             "Securitisation non-CTP risk weights are defined by tranche using "
-            "banking-book treatment."
+            "banking-book treatment; individual cash securitisation position capital "
+            "may be capped at fair value."
         ),
     ),
     "BASEL_MAR22_35": DrcCitation(
@@ -544,6 +558,12 @@ def _profile_hash_payload(profile: DrcRuleProfile) -> dict[str, object]:
                 key=lambda item: item[0].value,
             )
         },
+        "securitisation_non_ctp_fair_value_cap_allowed": (
+            profile.securitisation_non_ctp_fair_value_cap_allowed
+        ),
+        "securitisation_non_ctp_fair_value_cap_citation_ids": (
+            profile.securitisation_non_ctp_fair_value_cap_citation_ids
+        ),
         "reference_data": profile_reference_data_payload(profile.profile_id),
         "content_hash": "",
     }
@@ -564,6 +584,11 @@ _US_NPR_2_0_PROFILE = DrcRuleProfile(
         }
     ),
     citations=US_NPR_2_0_CITATIONS,
+    securitisation_non_ctp_fair_value_cap_allowed=True,
+    securitisation_non_ctp_fair_value_cap_citation_ids=(
+        "US_NPR_210_C_3_III",
+        "BASEL_MAR22_34",
+    ),
     unsupported_features={},
 )
 

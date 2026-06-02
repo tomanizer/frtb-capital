@@ -28,6 +28,9 @@ def test_us_npr_profile_supports_row_drc_risk_classes() -> None:
     assert DrcRiskClass.NON_SECURITISATION in profile.supported_risk_classes
     assert DrcRiskClass.SECURITISATION_NON_CTP in profile.supported_risk_classes
     assert DrcRiskClass.CORRELATION_TRADING_PORTFOLIO in profile.supported_risk_classes
+    assert profile.securitisation_non_ctp_fair_value_cap_allowed is True
+    assert "US_NPR_210_C_3_III" in profile.securitisation_non_ctp_fair_value_cap_citation_ids
+    assert "BASEL_MAR22_34" in profile.securitisation_non_ctp_fair_value_cap_citation_ids
 
 
 def test_basel_profile_supports_nonsec_and_fails_other_risk_classes() -> None:

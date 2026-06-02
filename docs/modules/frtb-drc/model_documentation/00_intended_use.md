@@ -42,8 +42,7 @@ Supported profile coverage is:
 Known fail-closed profile paths are:
 
 - `BASEL_MAR22` securitisation non-CTP and CTP, pending MAR22.34/MAR22.42
-  banking-book securitisation mappings plus fair-value-cap and decomposition
-  contracts.
+  banking-book securitisation mappings and decomposition contracts.
 - `EU_CRR3` for all DRC risk classes, pending Article 325w and related CQS/RTS
   mappings.
 - `PRA_UK_CRR` for all DRC risk classes, pending PRA PS1/26 Chapter 3 and
@@ -57,8 +56,8 @@ Regulatory anchors for the supported path are recorded in
 
 - final regulatory capital or supervisory reporting;
 - internal derivation of banking-book securitisation risk weights;
-- optional securitisation fair-value caps until a cited control and input
-  contract are implemented;
+- inferred securitisation fair-value caps without typed evidence and profile
+  permission;
 - silent fallback when required inputs or regulatory features are unsupported.
 
 ## Prototype Caution

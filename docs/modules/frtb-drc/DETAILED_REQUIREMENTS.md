@@ -272,16 +272,25 @@ The securitisation non-CTP row path supports:
   offset-group evidence;
 - cited banking-book securitisation risk weights supplied as run-scoped typed
   `DrcRiskWeightEvidence` inputs or low-level compatibility maps;
+- optional fair-value cap treatment supplied as run-scoped typed
+  `DrcFairValueCapEvidence` where the selected profile permits it;
 - HBR, bucket floor, and category summation.
 
 The package still does not internally derive banking-book securitisation risk
-weights or apply the optional fair-value cap. Typed risk-weight evidence must
-identify the position, risk class, source profile, source table, source method,
-effective risk weight, as-of date, source lineage, and citation ids. Duplicate,
-missing, stale, uncited, wrong-risk-class, non-finite, negative, or
-future-dated evidence fails closed before capital is calculated. Internal
-derivation and fair-value-cap sub-scope items must remain explicit future work
-rather than silent approximations.
+weights. Typed risk-weight evidence must identify the position, risk class,
+source profile, source table, source method, effective risk weight, as-of date,
+source lineage, and citation ids. Duplicate, missing, stale, uncited,
+wrong-risk-class, non-finite, negative, or future-dated evidence fails closed
+before capital is calculated.
+
+Fair-value cap evidence must identify the position, source profile, eligibility,
+cap amount when eligible, eligibility reason, as-of date, source id, source
+lineage, and citation ids. The cap is never inferred from market value. Missing
+cap evidence records a no-cap branch, eligible evidence applies the cap before
+maturity scaling when the cap amount is below market value, and ineligible
+evidence records the reason while leaving market-value gross default exposure
+unchanged. Duplicate, unused, stale, uncited, future-dated, profile-mismatched,
+negative, non-finite, or incomplete cap evidence fails closed.
 
 Proposed U.S. section `__.210(c)` and Basel MAR22.27-MAR22.35 are the anchors.
 

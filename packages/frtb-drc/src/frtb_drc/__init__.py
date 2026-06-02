@@ -56,6 +56,7 @@ from frtb_drc.data_models import (
     DrcCalculationContext,
     DrcCapitalResult,
     DrcCitation,
+    DrcFairValueCapEvidence,
     DrcFxConversion,
     DrcFxRate,
     DrcInstrumentType,
@@ -70,6 +71,7 @@ from frtb_drc.data_models import (
     NetJtd,
     RejectedOffset,
 )
+from frtb_drc.fair_value_cap import fair_value_cap_evidence_by_position
 from frtb_drc.gross_jtd import calculate_gross_jtd, calculate_gross_jtds
 from frtb_drc.maturity import calculate_maturity_weight, scale_gross_jtd, scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
@@ -135,6 +137,7 @@ __all__ = [
     "DrcCalculationContext",
     "DrcCapitalResult",
     "DrcCitation",
+    "DrcFairValueCapEvidence",
     "DrcFxConversion",
     "DrcFxRate",
     "DrcInputError",
@@ -184,6 +187,7 @@ __all__ = [
     "calculate_securitisation_non_ctp_gross_jtd",
     "calculate_securitisation_non_ctp_net_jtds",
     "ensure_risk_class_supported",
+    "fair_value_cap_evidence_by_position",
     "get_bucket_definition",
     "get_lgd_rule",
     "get_maturity_policy",

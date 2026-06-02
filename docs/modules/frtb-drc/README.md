@@ -36,6 +36,14 @@ but typed evidence is the audit-ready production contract. Used evidence is
 included in `DrcCapitalResult.risk_weight_evidence` and the deterministic input
 hash.
 
+Securitisation non-CTP fair-value cap handling is profile-controlled and only
+uses typed `DrcFairValueCapEvidence` records. Missing cap evidence leaves market
+value as gross default exposure and records a no-cap branch. Eligible evidence
+applies the cap before maturity scaling when it is binding; ineligible evidence
+records the reason without changing gross default exposure. Used cap evidence is
+included in `DrcCapitalResult.fair_value_cap_evidence` and the deterministic
+input hash.
+
 ## Planning Documents
 
 - [Product requirements](PRD.md)
@@ -54,3 +62,4 @@ hash.
 - [ADR 0027: DRC CTP row path](../../decisions/0027-drc-ctp-row-path.md)
 - [ADR 0028: DRC securitisation non-CTP row path](../../decisions/0028-drc-securitisation-non-ctp-row-path.md)
 - [ADR 0029: DRC securitisation and CTP risk-weight evidence contract](../../decisions/0029-drc-securitisation-risk-weight-evidence.md)
+- [ADR 0030: DRC securitisation fair-value cap evidence](../../decisions/0030-drc-securitisation-fair-value-cap-evidence.md)

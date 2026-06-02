@@ -15,8 +15,11 @@ only compact net-JTD, bucket, category, and result records are materialized.
 Securitisation non-CTP and CTP risk weights and replication/decomposition offset
 evidence are supplied in `DrcCalculationContext` as run-scoped maps:
 `securitisation_non_ctp_risk_weights`,
-`securitisation_non_ctp_offset_groups`, `ctp_risk_weights`, and
-`ctp_offset_groups`. Missing risk weights, unsupported decomposition evidence,
-and unmapped profiles fail closed through explicit input or unsupported-feature
+`securitisation_non_ctp_risk_weight_evidence`,
+`securitisation_non_ctp_fair_value_cap_evidence`,
+`securitisation_non_ctp_offset_groups`, `ctp_risk_weights`,
+`ctp_risk_weight_evidence`, and `ctp_offset_groups`. Missing risk weights,
+incomplete fair-value cap evidence, unsupported decomposition evidence, and
+unmapped profiles fail closed through explicit input or unsupported-feature
 errors; the package must not emit zero or placeholder capital for unsupported
 scope.

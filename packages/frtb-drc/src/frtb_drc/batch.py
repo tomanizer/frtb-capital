@@ -36,6 +36,11 @@ from frtb_drc.data_models import (
     NetJtd,
     RejectedOffset,
 )
+from frtb_drc.fair_value_cap import (
+    fair_value_cap_hash_payload,
+    used_fair_value_cap_evidence_for_position_ids,
+    validate_fair_value_cap_evidence,
+)
 from frtb_drc.fx import (
     fx_branch_metadata,
     fx_citation_ids,
@@ -79,6 +84,7 @@ _FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
 _NETTING_CITATION = "US_NPR_210_B_2"
 _ZERO_CATEGORY_CITATION = "US_NPR_210_B_3_III"
 _SEC_NON_CTP_GROSS_CITATIONS = ("US_NPR_210_C_1", "BASEL_MAR22_27")
+_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS = ("US_NPR_210_C_3_III", "BASEL_MAR22_34")
 _SEC_NON_CTP_NETTING_CITATIONS = (
     "US_NPR_210_C_2",
     "BASEL_MAR22_28",
@@ -610,7 +616,7 @@ def calculate_drc_capital_from_batch(
             *((_NETTING_CITATION,) if net_jtds else ()),
         )
     elif risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
-        gross_jtd = _market_value_gross_jtd_array(calculation_batch)
+        gross_jtd = _securitisation_non_ctp_gross_jtd_array(calculation_batch, context=context)
         maturity_weights, scaled_jtd, maturity_citation = _scaled_jtd_array(
             calculation_batch,
             gross_jtd,
@@ -633,7 +639,11 @@ def calculate_drc_capital_from_batch(
             sec_capital_inputs,
             profile_id=profile.profile_id,
         )
-        formula_citations = (*_SEC_NON_CTP_BATCH_CITATIONS, maturity_citation)
+        formula_citations = (
+            *_SEC_NON_CTP_BATCH_CITATIONS,
+            *_batch_fair_value_cap_citations(calculation_batch, context=context),
+            maturity_citation,
+        )
     elif risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
         gross_jtd = _market_value_gross_jtd_array(calculation_batch)
         maturity_weights, scaled_jtd, maturity_citation = _scaled_jtd_array(
@@ -695,6 +705,11 @@ def calculate_drc_capital_from_batch(
                 ),
                 citations=("US_NPR_210_SCOPE",),
             ),
+            *_fair_value_cap_branch_metadata_for_batch(
+                calculation_batch,
+                context=context,
+                risk_class=risk_class,
+            ),
             *fx_branch_metadata(fx_conversions),
         ),
         package_name="frtb-drc",
@@ -716,6 +731,12 @@ def calculate_drc_capital_from_batch(
             DrcRiskClass.SECURITISATION_NON_CTP,
             DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         }
+        else (),
+        fair_value_cap_evidence=used_fair_value_cap_evidence_for_position_ids(
+            (cast(str, position_id) for position_id in calculation_batch.position_ids),
+            context,
+        )
+        if risk_class is DrcRiskClass.SECURITISATION_NON_CTP
         else (),
     )
     validate_reconciliation(result)
@@ -741,6 +762,10 @@ def _validate_context(context: DrcCalculationContext) -> None:
         raise DrcInputError(f"unsupported citation_policy: {context.citation_policy}")
     validate_fx_rates(context)
     effective_risk_weights(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
+    validate_fair_value_cap_evidence(
+        context.securitisation_non_ctp_fair_value_cap_evidence,
+        context=context,
+    )
     _validate_context_text_map(
         context.securitisation_non_ctp_offset_groups,
         field_name="context.securitisation_non_ctp_offset_groups",
@@ -807,6 +832,12 @@ def _validate_supported_batch_run(
             batch,
             context.securitisation_non_ctp_offset_groups,
             field_name="context.securitisation_non_ctp_offset_groups",
+            require_all=False,
+        )
+        _validate_context_position_map(
+            batch,
+            context.securitisation_non_ctp_fair_value_cap_evidence,
+            field_name="context.securitisation_non_ctp_fair_value_cap_evidence",
             require_all=False,
         )
     elif risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
@@ -1114,6 +1145,29 @@ def _scaled_jtd_array(
 
 def _market_value_gross_jtd_array(batch: DrcPositionBatch) -> FloatArray:
     return np.abs(batch.market_values).astype(np.float64)
+
+
+def _securitisation_non_ctp_gross_jtd_array(
+    batch: DrcPositionBatch,
+    *,
+    context: DrcCalculationContext,
+) -> FloatArray:
+    gross_jtd = _market_value_gross_jtd_array(batch)
+    evidence = context.securitisation_non_ctp_fair_value_cap_evidence
+    if not evidence:
+        return gross_jtd
+    capped = gross_jtd.copy()
+    for index in range(batch.row_count):
+        position_id = cast(str, batch.position_ids[index])
+        record = evidence.get(position_id)
+        if record is None or not record.eligible:
+            continue
+        if record.fair_value_cap_amount is None:  # pragma: no cover - context validation enforces.
+            raise DrcInputError(
+                f"fair_value_cap_evidence[{position_id}].fair_value_cap_amount is required"
+            )
+        capped[index] = min(float(capped[index]), record.fair_value_cap_amount)
+    return capped.astype(np.float64)
 
 
 def _calculate_net_jtds_from_arrays(
@@ -1806,6 +1860,7 @@ def _context_input_hash_for_batch(
             offset_groups=context.securitisation_non_ctp_offset_groups,
             risk_weight_key="securitisation_non_ctp_risk_weights",
             risk_weight_evidence_key="securitisation_non_ctp_risk_weight_evidence",
+            fair_value_cap_evidence_key="securitisation_non_ctp_fair_value_cap_evidence",
             offset_group_key="securitisation_non_ctp_offset_groups",
             context=context,
             risk_class=risk_class,
@@ -1821,6 +1876,7 @@ def _context_input_hash_for_batch(
             offset_groups=context.ctp_offset_groups,
             risk_weight_key="ctp_risk_weights",
             risk_weight_evidence_key="ctp_risk_weight_evidence",
+            fair_value_cap_evidence_key="",
             offset_group_key="ctp_offset_groups",
             context=context,
             risk_class=risk_class,
@@ -1836,6 +1892,7 @@ def _hash_context_position_maps(
     offset_groups: Mapping[str, str],
     risk_weight_key: str,
     risk_weight_evidence_key: str,
+    fair_value_cap_evidence_key: str,
     offset_group_key: str,
     context: DrcCalculationContext,
     risk_class: DrcRiskClass,
@@ -1855,7 +1912,107 @@ def _hash_context_position_maps(
             if position_id in offset_groups
         },
     }
+    if fair_value_cap_evidence_key:
+        payload[fair_value_cap_evidence_key] = fair_value_cap_hash_payload(
+            position_ids,
+            context,
+        )
     return _hash_payload(payload)
+
+
+def _batch_fair_value_cap_citations(
+    batch: DrcPositionBatch,
+    *,
+    context: DrcCalculationContext,
+) -> tuple[str, ...]:
+    citation_ids: set[str] = set()
+    for position_id in batch.position_ids:
+        evidence = context.securitisation_non_ctp_fair_value_cap_evidence.get(
+            cast(str, position_id)
+        )
+        if evidence is not None:
+            citation_ids.update(_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS)
+            citation_ids.update(evidence.citation_ids)
+    return tuple(sorted(citation_ids))
+
+
+def _fair_value_cap_branch_metadata_for_batch(
+    batch: DrcPositionBatch,
+    *,
+    context: DrcCalculationContext,
+    risk_class: DrcRiskClass,
+) -> tuple[BranchMetadata, ...]:
+    if risk_class is not DrcRiskClass.SECURITISATION_NON_CTP:
+        return ()
+    gross_jtd = _market_value_gross_jtd_array(batch)
+    branches: list[BranchMetadata] = []
+    evidence = context.securitisation_non_ctp_fair_value_cap_evidence
+    if not evidence:
+        return (
+            BranchMetadata(
+                branch_id="drc-securitisation-non-ctp-batch-no-fair-value-cap",
+                branch_type=BranchType.NORMAL,
+                source_id=context.profile_id,
+                selected=True,
+                reason=(
+                    "batch securitisation non-CTP gross default exposure used market value; "
+                    "no fair-value cap evidence was supplied"
+                ),
+                citations=_SEC_NON_CTP_GROSS_CITATIONS,
+            ),
+        )
+    for index in _sorted_indices(batch):
+        position_id = cast(str, batch.position_ids[index])
+        record = evidence.get(position_id)
+        if record is None:
+            branches.append(
+                BranchMetadata(
+                    branch_id=f"batch-sec-non-ctp-no-fair-value-cap-{_slug(position_id)}",
+                    branch_type=BranchType.NORMAL,
+                    source_id=position_id,
+                    selected=True,
+                    reason=(
+                        "batch securitisation non-CTP position used market value; "
+                        "no fair-value cap evidence was supplied"
+                    ),
+                    citations=_SEC_NON_CTP_GROSS_CITATIONS,
+                )
+            )
+            continue
+        citations = tuple(sorted({*_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS, *record.citation_ids}))
+        if not record.eligible:
+            branch_type = BranchType.NORMAL
+            reason = (
+                "batch fair-value cap evidence marked the position ineligible; "
+                f"reason: {record.eligibility_reason}"
+            )
+        elif record.fair_value_cap_amount is not None and record.fair_value_cap_amount < float(
+            gross_jtd[index]
+        ):
+            branch_type = BranchType.CAP
+            reason = (
+                "batch fair-value cap applied to securitisation non-CTP gross default "
+                f"exposure: market_value={float(gross_jtd[index])}, "
+                f"cap_amount={record.fair_value_cap_amount}"
+            )
+        else:
+            branch_type = BranchType.NORMAL
+            reason = (
+                "batch fair-value cap evidence was eligible but not binding: "
+                f"market_value={float(gross_jtd[index])}, "
+                f"cap_amount={record.fair_value_cap_amount}"
+            )
+        branches.append(
+            BranchMetadata(
+                branch_id=f"batch-sec-non-ctp-fair-value-cap-{_slug(position_id)}",
+                branch_type=branch_type,
+                source_id=record.source_id,
+                selected=True,
+                reason=reason,
+                citations=citations,
+            )
+        )
+    return tuple(branches)
 
 
 def _branch_citations(branches: tuple[BranchMetadata, ...]) -> set[str]:

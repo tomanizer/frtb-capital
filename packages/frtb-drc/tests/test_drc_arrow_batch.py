@@ -12,11 +12,13 @@ import pytest
 from frtb_common import source_content_hash
 from frtb_drc import (
     BASEL_MAR22_PROFILE_ID,
+    DrcFairValueCapEvidence,
     DrcFxRate,
     DrcInputError,
     DrcSourceLineage,
     calculate_drc_capital,
     calculate_drc_capital_from_batch,
+    fair_value_cap_evidence_by_position,
     input_hash_for_drc_batch,
     input_snapshot_hash,
     validate_reconciliation,
@@ -151,6 +153,31 @@ def test_drc_arrow_handoff_batch_matches_securitisation_non_ctp_row_capital() ->
         row_result.categories[0].bucket_results
     )
     assert "US_NPR_210_C_3_III" in calculation.result.citations
+
+
+def test_drc_securitisation_non_ctp_batch_applies_fair_value_cap_evidence() -> None:
+    fixture = _load_fixture("drc_sec_nonctp_v1")
+    positions = fixture["positions"]
+    capped_position = positions[0]
+    cap_evidence = _fair_value_cap_evidence(capped_position, fair_value_cap_amount=50.0)
+    context = replace(
+        fixture["context"],
+        securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+            (cap_evidence,)
+        ),
+    )
+    row_result = calculate_drc_capital(positions, context=context)
+    handoff = normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(positions))
+    batch = build_drc_securitisation_non_ctp_batch_from_handoff(handoff)
+
+    calculation = calculate_drc_capital_from_batch(batch, context=context)
+
+    assert calculation.gross_jtd[0] == pytest.approx(50.0)
+    assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
+    assert calculation.result.fair_value_cap_evidence == (cap_evidence,)
+    assert "BASEL_MAR22_34" in calculation.result.citations
+    assert any(branch.branch_type.value == "CAP" for branch in calculation.result.branch_metadata)
+    validate_reconciliation(calculation.result)
 
 
 def test_drc_arrow_handoff_batch_matches_ctp_row_capital() -> None:
@@ -601,6 +628,29 @@ def _load_fixture(fixture_name: str) -> dict[str, Any]:
             ctp_offset_groups=context_raw.get("ctp_offset_groups", {}),
         ),
     }
+
+
+def _fair_value_cap_evidence(
+    position: DrcPosition,
+    *,
+    fair_value_cap_amount: float,
+) -> DrcFairValueCapEvidence:
+    return DrcFairValueCapEvidence(
+        position_id=position.position_id,
+        source_profile_id="US_NPR_2_0",
+        eligible=True,
+        fair_value_cap_amount=fair_value_cap_amount,
+        eligibility_reason="synthetic cash securitisation cap eligible",
+        as_of_date=date(2026, 5, 29),
+        source_id="fair-value-cap-source",
+        lineage=DrcSourceLineage(
+            source_system="synthetic-risk-weight-engine",
+            source_file="securitisation-fair-value-cap.csv",
+            source_row_id=f"cap-{position.position_id}",
+            source_column_map={"fair_value_cap_amount": "fair_value_cap_amount"},
+        ),
+        citation_ids=("US_NPR_210_C_3_III", "BASEL_MAR22_34"),
+    )
 
 
 def _position_from_dict(raw: dict[str, Any]) -> DrcPosition:
