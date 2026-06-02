@@ -2,19 +2,37 @@
 
 from __future__ import annotations
 
+import frtb_common
 import numpy as np
 import pytest
-from frtb_common import (
+from frtb_common.batch_arrays import (
     BatchArrayCoercionError,
     bool_array,
     coerce_bool_value,
     float_array_from_numpy,
-    immutable_float_array,
-    immutable_object_array,
     object_array,
     optional_bool_object_array,
     readonly_array,
 )
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "BatchArrayCoercionError",
+        "bool_array",
+        "coerce_bool_value",
+        "float_array_from_numpy",
+        "immutable_float_array",
+        "immutable_object_array",
+        "object_array",
+        "optional_bool_object_array",
+        "readonly_array",
+    ],
+)
+def test_batch_helpers_are_not_top_level_exports(name: str) -> None:
+    assert name not in frtb_common.__all__
+    assert not hasattr(frtb_common, name)
 
 
 def test_readonly_array_can_copy_or_view() -> None:
@@ -30,17 +48,11 @@ def test_readonly_array_can_copy_or_view() -> None:
     assert viewed.tolist() == [9.0, 2.0]
 
 
-def test_object_and_immutable_arrays_are_readonly() -> None:
+def test_object_array_is_readonly() -> None:
     objects = object_array(["desk-1", None], copy=True)
-    immutable_objects = immutable_object_array(objects)
-    floats = immutable_float_array(np.array([1, 2], dtype=np.int64))
 
     assert objects.dtype == np.dtype(object)
     assert objects.flags.writeable is False
-    assert immutable_objects.tolist() == ["desk-1", None]
-    assert immutable_objects.flags.writeable is False
-    assert floats.dtype == np.dtype(np.float64)
-    assert floats.flags.writeable is False
 
 
 def test_float_array_from_numpy_accepts_numeric_numpy_fast_path() -> None:

@@ -2224,7 +2224,8 @@ def _readonly_array(
 
 
 def _immutable_float_array(values: FloatArray) -> FloatArray:
-    return _batch_arrays.immutable_float_array(values)
+    array = np.asarray(values, dtype=np.float64).copy()
+    return _readonly_array(array, copy=False)
 
 
 def _required_float(value: object, field_name: str) -> float:

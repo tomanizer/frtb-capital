@@ -48,22 +48,6 @@ def object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
     return readonly_array(array, copy=copy and array is values)
 
 
-def immutable_object_array(values: ObjectArray) -> ObjectArray:
-    """Return a copied immutable object array."""
-
-    array = np.asarray(values, dtype=object).copy()
-    array.setflags(write=False)
-    return array
-
-
-def immutable_float_array(values: FloatArray) -> FloatArray:
-    """Return a copied immutable float64 array."""
-
-    array = np.asarray(values, dtype=np.float64).copy()
-    array.setflags(write=False)
-    return array
-
-
 def float_array_from_numpy(
     values: ColumnInput | NullableColumnInput,
     *,
