@@ -394,7 +394,7 @@ def _restore_null_values(
 
     array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
     valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-    restored = np.asarray(values, dtype=object).copy()
+    restored = values.astype(object)
     restored[~valid] = null_value
     restored.setflags(write=False)
     return columns | {column_name: restored}
