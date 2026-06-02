@@ -14,11 +14,11 @@ requirements:
       - packages/frtb-orchestration/src/frtb_orchestration/
     test_refs:
       - packages/frtb-orchestration/tests/
-    coverage_status: not_implemented
+    coverage_status: partially_implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
       - ultima_ib_ultima
-    notes: "Shared SA component handoff validation and jurisdiction-family guards are implemented; SA aggregation arithmetic and IMA fallback routing still fail closed."
+    notes: "Shared SA component handoff validation, jurisdiction-family guards, additive SA aggregation arithmetic, and structural IMA fallback route recording are implemented; top-of-house suite aggregation remains out of scope."
 
   - id: ORCH-REGIME-001
     topic: Jurisdictional profile selection and effective-date control

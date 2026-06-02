@@ -18,7 +18,7 @@ component packages: `frtb-sbm`, `frtb-drc`, and `frtb-rrao`. See the
 | DRC | Partial runtime; non-securitisation, securitisation non-CTP, and CTP row paths implemented | [frtb-drc/README.md](frtb-drc/README.md) | [frtb-drc/REGULATORY_REQUIREMENTS.md](frtb-drc/REGULATORY_REQUIREMENTS.md) | [frtb-drc/PRD.md](frtb-drc/PRD.md) | [frtb-drc/requirements/BASEL_FRTB_DRC.yml](frtb-drc/requirements/BASEL_FRTB_DRC.yml) |
 | RRAO | Implemented for supported canonical inputs | [frtb-rrao/README.md](frtb-rrao/README.md) | [frtb-rrao/REGULATORY_REQUIREMENTS.md](frtb-rrao/REGULATORY_REQUIREMENTS.md) | [frtb-rrao/PRD.md](frtb-rrao/PRD.md) | [frtb-rrao/requirements/BASEL_FRTB_RRAO.yml](frtb-rrao/requirements/BASEL_FRTB_RRAO.yml) |
 | CVA | Partial runtime; reduced/full BA-CVA, supported SA-CVA delta/vega, and mixed carve-out paths implemented | [frtb-cva/README.md](frtb-cva/README.md) | [frtb-cva/REGULATORY_REQUIREMENTS.md](frtb-cva/REGULATORY_REQUIREMENTS.md) | [frtb-cva/PRD.md](frtb-cva/PRD.md) | [frtb-cva/requirements/BASEL_FRTB_CVA.yml](frtb-cva/requirements/BASEL_FRTB_CVA.yml) |
-| Orchestration | Partial; SA handoff/profile guards and CVA handoff preparation implemented; suite and SA arithmetic fail closed | [frtb-orchestration/README.md](frtb-orchestration/README.md) | N/A | N/A | N/A |
+| Orchestration | Partial; SA handoff/profile guards, SA arithmetic, IMA fallback route recording, and CVA handoff preparation implemented; suite arithmetic fails closed | [frtb-orchestration/README.md](frtb-orchestration/README.md) | N/A | N/A | N/A |
 
 ## Implementation Pattern
 

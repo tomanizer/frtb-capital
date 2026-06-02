@@ -7,6 +7,9 @@ from frtb_orchestration.cva_handoff import CvaResultHandoff, recognise_cva_resul
 from frtb_orchestration.scaffold import PACKAGE_METADATA, calculate_suite_capital
 from frtb_orchestration.standardised import (
     OrchestrationInputError,
+    StandardisedApproachCapitalResult,
+    StandardisedComponentSubtotal,
+    StandardisedFallbackRoute,
     compose_standardised_approach_capital,
 )
 
@@ -15,7 +18,10 @@ __all__ = [
     "ComponentResultHandoff",
     "CvaResultHandoff",
     "OrchestrationInputError",
+    "StandardisedApproachCapitalResult",
     "StandardisedComponent",
+    "StandardisedComponentSubtotal",
+    "StandardisedFallbackRoute",
     "__version__",
     "calculate_suite_capital",
     "compose_standardised_approach_capital",
