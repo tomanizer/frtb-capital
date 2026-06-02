@@ -5,7 +5,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import NoReturn
 
-import frtb_cva.arrow_handoff as cva_arrow_handoff
+import frtb_common.arrow_conversion as arrow_conversion_module
 import numpy as np
 import pyarrow as pa
 import pytest
@@ -124,10 +124,11 @@ def test_cva_handoff_wraps_arrow_object_conversion_errors(
     def fail_arrow_object_array(_column: pa.ChunkedArray) -> NoReturn:
         raise pa.ArrowInvalid("forced conversion failure")
 
-    monkeypatch.setattr(cva_arrow_handoff, "arrow_object_array", fail_arrow_object_array)
+    monkeypatch.setattr(arrow_conversion_module, "arrow_object_array", fail_arrow_object_array)
 
     with pytest.raises(
-        CvaInputError, match=r"Arrow column conversion failed .*counterparty_id"
+        CvaInputError,
+        match=r"forced conversion failure .*counterparty_id",
     ) as exc:
         build_cva_counterparty_batch_from_handoff(handoff)
 
