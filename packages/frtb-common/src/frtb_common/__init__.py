@@ -1,10 +1,6 @@
 """Shared primitives for the frtb-capital suite."""
 
 from frtb_common._version import __version__
-from frtb_common.attribution import (
-    AttributionMethod,
-    CapitalContribution,
-)
 from frtb_common.arrow_conversion import (
     arrow_bool_array,
     arrow_bool_or_object_array,
@@ -12,6 +8,10 @@ from frtb_common.arrow_conversion import (
     arrow_float64_array_with_nulls,
     arrow_object_array,
     read_handoff_columns,
+)
+from frtb_common.attribution import (
+    AttributionMethod,
+    CapitalContribution,
 )
 from frtb_common.batch_arrays import (
     BatchArrayCoercionError,

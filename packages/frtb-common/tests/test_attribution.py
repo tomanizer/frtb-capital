@@ -3,6 +3,7 @@
 import pytest
 from frtb_common.attribution import AttributionMethod, CapitalContribution
 
+
 def test_capital_contribution_creation() -> None:
     contrib = CapitalContribution(
         contribution_id="contrib-1",
@@ -60,7 +61,9 @@ def test_capital_contribution_method_coercion() -> None:
     assert contrib.method == AttributionMethod.RESIDUAL
 
     # Invalid method string
-    with pytest.raises(ValueError, match="method must be one of: ANALYTICAL_EULER, RESIDUAL, UNSUPPORTED"):
+    with pytest.raises(
+        ValueError, match="method must be one of: ANALYTICAL_EULER, RESIDUAL, UNSUPPORTED"
+    ):
         CapitalContribution(
             contribution_id="contrib-1",
             source_id="pos-1",

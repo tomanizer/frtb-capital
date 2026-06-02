@@ -8,6 +8,7 @@ from typing import TypeVar
 
 from frtb_common.serialization import jsonable
 
+
 class AttributionMethod(StrEnum):
     """Supported attribution method labels."""
 
@@ -54,7 +55,4 @@ class CapitalContribution:
 
     def as_dict(self) -> dict[str, object]:
         """Return a JSON-serialisable dictionary representation."""
-        return {
-            field.name: jsonable(getattr(self, field.name))
-            for field in fields(self)
-        }
+        return {field.name: jsonable(getattr(self, field.name)) for field in fields(self)}
