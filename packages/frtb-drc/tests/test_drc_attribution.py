@@ -11,6 +11,7 @@ from frtb_drc import (
     DefaultDirection,
     DrcCalculationContext,
     DrcCapitalContribution,
+    DrcCapitalResult,
     DrcInputError,
     DrcInstrumentType,
     DrcPosition,
@@ -234,12 +235,49 @@ def test_attribution_reconciliation_rejects_tampered_contribution() -> None:
         validate_attribution_reconciliation(result, tampered)
 
 
+def test_attribution_reconciliation_uses_compensated_float_summation() -> None:
+    records = (
+        _contribution("large-positive", contribution=1e16),
+        _contribution("unit", contribution=1.0),
+        _contribution("large-negative", contribution=-1e16),
+    )
+    result = DrcCapitalResult(
+        result_id="drc-fsum",
+        run_id="run-attribution-fsum",
+        calculation_date=date(2026, 5, 29),
+        base_currency="USD",
+        profile_id=US_NPR_2_0_PROFILE_ID,
+        profile_hash="profile-hash",
+        input_hash="input-hash",
+        categories=(),
+        total_drc=1.0,
+        citations=(),
+        attribution_records=records,
+    )
+
+    validate_attribution_reconciliation(result)
+
+
 def _assert_reconciles(
     records: tuple[DrcCapitalContribution, ...],
     total_drc: float,
 ) -> None:
     total = sum((record.contribution or 0.0) + record.residual for record in records)
     assert total == pytest.approx(total_drc)
+
+
+def _contribution(source_id: str, *, contribution: float) -> DrcCapitalContribution:
+    return DrcCapitalContribution(
+        contribution_id=f"attr-{source_id}",
+        source_id=source_id,
+        source_level="net_jtd",
+        bucket_key="CORPORATE",
+        category=DrcRiskClass.NON_SECURITISATION,
+        base_amount=0.0,
+        marginal_multiplier=0.0,
+        contribution=contribution,
+        method=AttributionMethod.ANALYTICAL_EULER,
+    )
 
 
 def _context(

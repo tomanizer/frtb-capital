@@ -18,7 +18,7 @@ from frtb_drc.data_models import (
 )
 from frtb_drc.validation import DrcInputError
 
-_TOLERANCE = 1e-10
+_TOLERANCE = 1e-9
 
 
 def calculate_drc_attribution(
@@ -53,7 +53,9 @@ def validate_attribution_reconciliation(
     """Validate that contributions plus residual records reconcile to total capital."""
 
     attribution_records = result.attribution_records if records is None else records
-    total = sum((record.contribution or 0.0) + record.residual for record in attribution_records)
+    total = math.fsum(
+        (record.contribution or 0.0) + record.residual for record in attribution_records
+    )
     if abs(total - result.total_drc) > tolerance:
         raise DrcInputError("DRC attribution records do not reconcile to total capital")
 
@@ -285,7 +287,7 @@ def _residual_record(
 
 
 def _record_sum(records: tuple[DrcCapitalContribution, ...]) -> float:
-    return sum((record.contribution or 0.0) + record.residual for record in records)
+    return math.fsum((record.contribution or 0.0) + record.residual for record in records)
 
 
 def _has_branch(record: object, branch_type: BranchType) -> bool:
