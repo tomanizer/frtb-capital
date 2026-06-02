@@ -108,6 +108,31 @@ def test_scenario_metadata_arrow_handoff_defaults_optional_columns() -> None:
     assert metadata[0].provenance == {}
 
 
+def test_scenario_metadata_arrow_handoff_restores_null_optional_strings() -> None:
+    handoff = normalize_ima_scenario_metadata_arrow_table(
+        pa.table(
+            {
+                "scenarioId": ["scenario-00000", "scenario-00001"],
+                "scenarioDate": [AS_OF, AS_OF - timedelta(days=1)],
+                "scenarioSet": pa.array([None, ScenarioSetType.STRESS.value], type=pa.string()),
+                "calibrationWindow": pa.array([None, "2008-2009"], type=pa.string()),
+                "source": pa.array([None, "risk-engine"], type=pa.string()),
+                "provenanceJson": pa.array([None, '{"window":"gfc"}'], type=pa.string()),
+            }
+        )
+    )
+
+    batch = build_scenario_metadata_batch_from_handoff(handoff)
+
+    assert batch.scenario_sets.tolist() == [
+        ScenarioSetType.CURRENT.value,
+        ScenarioSetType.STRESS.value,
+    ]
+    assert batch.calibration_windows.tolist() == ["", "2008-2009"]
+    assert batch.sources.tolist() == ["", "risk-engine"]
+    assert batch.provenance_json.tolist() == ["", '{"window":"gfc"}']
+
+
 def test_scenario_metadata_arrow_handoff_rejects_invalid_provenance_json() -> None:
     handoff = normalize_ima_scenario_metadata_arrow_table(
         pa.table(
@@ -163,15 +188,23 @@ def test_rfet_observation_arrow_handoff_normalizes_nulls_and_scalar_fallbacks() 
     handoff = normalize_ima_rfet_observation_arrow_table(
         pa.table(
             {
-                "riskFactorName": ["USD_SWAP_5Y"],
-                "observationDate": [AS_OF.isoformat()],
-                "source": pa.array([None], type=pa.string()),
+                "riskFactorName": ["USD_SWAP_5Y", "USD_SWAP_5Y", "USD_SWAP_5Y"],
+                "observationDate": [
+                    AS_OF.isoformat(),
+                    (AS_OF - timedelta(days=1)).isoformat(),
+                    (AS_OF - timedelta(days=2)).isoformat(),
+                ],
+                "source": pa.array([None, "VENDOR_A", None], type=pa.string()),
                 "vendorId": pa.array(
-                    [None],
+                    [None, "VENDOR_A", "VENDOR_B"],
                     type=pa.dictionary(pa.int8(), pa.string()),
                 ),
-                "observationTimestamp": ["2025-06-30T09:30:00+00:00"],
-                "verifiable": pa.array([None], type=pa.int8()),
+                "observationTimestamp": [
+                    "2025-06-30T09:30:00+00:00",
+                    None,
+                    "2025-06-28T09:30:00+00:00",
+                ],
+                "verifiable": pa.array([None, False, True], type=pa.bool_()),
             }
         )
     )
@@ -179,9 +212,9 @@ def test_rfet_observation_arrow_handoff_normalizes_nulls_and_scalar_fallbacks() 
     batch = build_rfet_observation_batch_from_handoff(handoff)
     observation = batch.to_observations()[0]
 
-    assert batch.sources.tolist() == [""]
-    assert batch.vendor_ids.tolist() == [""]
-    assert batch.verifiable.tolist() == [True]
+    assert batch.sources.tolist() == ["", "VENDOR_A", ""]
+    assert batch.vendor_ids.tolist() == ["", "VENDOR_A", "VENDOR_B"]
+    assert batch.verifiable.tolist() == [True, False, True]
     assert observation.observation_timestamp == datetime(2025, 6, 30, 9, 30, tzinfo=UTC)
 
 

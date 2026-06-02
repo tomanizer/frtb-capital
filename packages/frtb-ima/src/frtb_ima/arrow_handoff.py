@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from datetime import UTC, date, datetime
 from typing import Any, cast
 
@@ -564,14 +564,11 @@ def _restore_bool_nulls_as_default(
     default: bool,
 ) -> BooleanArray:
     array = _single_array(column)
-    valid = tuple(bool(item) for item in array.is_valid().to_pylist())
-    converted = tuple(bool(value) for value in cast(Iterable[object], values))
-    if len(converted) != len(valid):
+    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
+    converted = np.asarray(values, dtype=np.bool_)
+    if converted.shape != valid.shape:
         raise ValueError("verifiable length must match accepted row count")
-    restored = np.asarray(
-        [value if is_valid else default for value, is_valid in zip(converted, valid)],
-        dtype=np.bool_,
-    )
+    restored = np.where(valid, converted, default)
     restored.setflags(write=False)
     return restored
 
@@ -616,11 +613,12 @@ def _string_column_from_columns(
             raise ValueError(f"column is required: {column_name}")
         return np.full(row_count, default, dtype=f"<U{max(1, len(default))}")
     fill = "" if default is None else default
-    array = np.asarray(
-        [fill if value is None else str(value) for value in cast(Iterable[object], values)],
-        dtype=np.str_,
-    )
-    return array
+    array = np.asarray(values, dtype=object)
+    mask = np.equal(array, np.array(None, dtype=object))
+    if bool(np.any(mask)):
+        array = array.copy()
+        array[mask] = fill
+    return cast(StringArray, array.astype(np.str_))
 
 
 def _bool_column_from_columns(
