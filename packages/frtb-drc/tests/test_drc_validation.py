@@ -4,6 +4,7 @@ import math
 
 import pytest
 from frtb_drc import (
+    CreditQuality,
     DefaultDirection,
     DrcInputError,
     DrcInstrumentType,
@@ -132,6 +133,14 @@ def test_validate_position_rejects_non_securitisation_without_issuer() -> None:
 def test_validate_position_rejects_non_securitisation_without_seniority() -> None:
     with pytest.raises(DrcInputError, match="seniority is required"):
         validate_position(_position(seniority=None))
+
+
+def test_validate_position_rejects_unrated_non_securitisation_credit_quality() -> None:
+    with pytest.raises(
+        DrcInputError,
+        match=r"UNRATED.*not a chargeable.*US_NPR_210_B_3_II",
+    ):
+        validate_position(_position(credit_quality=CreditQuality.UNRATED))
 
 
 def test_validate_position_rejects_securitisation_without_tranche() -> None:

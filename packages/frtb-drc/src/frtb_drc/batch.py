@@ -35,7 +35,11 @@ from frtb_drc.data_models import (
 )
 from frtb_drc.reference_data import get_lgd_rule, get_maturity_policy, iter_lgd_rules
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
-from frtb_drc.validation import DrcInputError, validate_positions
+from frtb_drc.validation import (
+    DrcInputError,
+    ensure_chargeable_credit_quality,
+    validate_positions,
+)
 
 ObjectArray = npt.NDArray[np.object_]
 FloatArray = npt.NDArray[np.float64]
@@ -478,6 +482,13 @@ def _validate_batch(batch: DrcPositionBatch) -> None:
         raise DrcInputError("DRC batch only supports non-securitisation risk class")
     if np.any(batch.issuer_ids == None):  # noqa: E711
         raise DrcInputError("issuer_id is required for non-securitisation DRC batch")
+    unrated_mask = batch.credit_qualities == CreditQuality.UNRATED.value
+    if bool(np.any(unrated_mask)):
+        first = int(np.argmax(unrated_mask))
+        ensure_chargeable_credit_quality(
+            CreditQuality.UNRATED,
+            position_id=cast(str, batch.position_ids[first]),
+        )
     if not np.all(np.isfinite(batch.notionals)):
         raise DrcInputError("notional values must be finite")
     if not np.all(np.isfinite(batch.maturity_years)):

@@ -96,6 +96,24 @@ def test_public_api_rejects_ambiguous_net_credit_quality() -> None:
         )
 
 
+def test_public_api_rejects_unrated_before_risk_weight_lookup() -> None:
+    with pytest.raises(
+        DrcInputError,
+        match=r"UNRATED.*map it to one of.*US_NPR_210_B_3_II",
+    ):
+        calculate_drc_capital(
+            (
+                _position(
+                    "unrated",
+                    DefaultDirection.LONG,
+                    100.0,
+                    credit_quality=CreditQuality.UNRATED,
+                ),
+            ),
+            context=_context(),
+        )
+
+
 def test_public_api_rejects_position_outside_context_desk_scope() -> None:
     with pytest.raises(DrcInputError, match="desk_id"):
         calculate_drc_capital(

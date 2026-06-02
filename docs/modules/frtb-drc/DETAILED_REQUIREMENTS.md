@@ -180,6 +180,14 @@ Risk weights must be looked up from the selected versioned rule profile. The
 lookup key must be explicit and auditable: category, bucket, credit quality or
 rating grade, defaulted status, securitisation treatment, and profile id.
 
+For the U.S. NPR 2.0 non-securitisation profile, `UNRATED` is an input
+classification sentinel only. Proposed Table 1 to section `__.210` assigns
+non-defaulted risk weights by investment grade, speculative grade, and
+sub-speculative grade credit-quality categories, plus a separate defaulted
+bucket. Inputs carrying `UNRATED` must be mapped upstream to a cited chargeable
+category or rejected before capital calculation; the package must not silently
+default unrated exposures to another tier.
+
 Missing risk weights must be input errors unless the profile explicitly marks
 the feature unsupported.
 

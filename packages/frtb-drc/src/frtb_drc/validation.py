@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 
-from frtb_drc.data_models import DrcPosition, DrcRiskClass
+from frtb_drc.data_models import CreditQuality, DrcPosition, DrcRiskClass
 
 
 class DrcInputError(ValueError):
@@ -13,6 +13,12 @@ class DrcInputError(ValueError):
 
 
 _STRICT_CITATION_POLICY = "strict"
+_CHARGEABLE_NONSEC_CREDIT_QUALITIES = (
+    CreditQuality.INVESTMENT_GRADE,
+    CreditQuality.SPECULATIVE_GRADE,
+    CreditQuality.SUB_SPECULATIVE_GRADE,
+    CreditQuality.DEFAULTED,
+)
 
 
 def validate_position(
@@ -82,6 +88,25 @@ def validate_positions(
     return tuple(validated)
 
 
+def ensure_chargeable_credit_quality(
+    credit_quality: CreditQuality | str,
+    *,
+    position_id: str | None = None,
+) -> None:
+    """Reject input-only credit-quality sentinels before risk-weight lookup."""
+
+    quality = CreditQuality(credit_quality)
+    if quality is not CreditQuality.UNRATED:
+        return
+    allowed = ", ".join(item.value for item in _CHARGEABLE_NONSEC_CREDIT_QUALITIES)
+    position_label = "" if position_id is None else f" for position {position_id}"
+    raise DrcInputError(
+        f"credit_quality UNRATED{position_label} is not a chargeable U.S. NPR 2.0 "
+        f"DRC non-securitisation credit-quality category; map it to one of {allowed} "
+        "before capital calculation (US_NPR_210_B_3_II)"
+    )
+
+
 def _validate_non_securitisation_identity(position: DrcPosition) -> None:
     _require_non_empty(position.issuer_id, "issuer_id")
     _require_non_empty(position.bucket_key, "bucket_key")
@@ -89,6 +114,7 @@ def _validate_non_securitisation_identity(position: DrcPosition) -> None:
         raise DrcInputError("seniority is required for non-securitisation positions")
     if position.credit_quality is None:
         raise DrcInputError("credit_quality is required for non-securitisation positions")
+    ensure_chargeable_credit_quality(position.credit_quality, position_id=position.position_id)
 
 
 def _validate_securitisation_identity(position: DrcPosition) -> None:
