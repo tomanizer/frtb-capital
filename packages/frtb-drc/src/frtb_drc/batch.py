@@ -26,12 +26,22 @@ from frtb_drc.data_models import (
     DefaultDirection,
     DrcCalculationContext,
     DrcCapitalResult,
+    DrcFxConversion,
+    DrcFxRate,
     DrcInstrumentType,
     DrcPosition,
     DrcRiskClass,
     DrcSeniority,
     NetJtd,
     RejectedOffset,
+)
+from frtb_drc.fx import (
+    fx_branch_metadata,
+    fx_citation_ids,
+    fx_conversion_records,
+    input_hash_with_fx,
+    require_fx_rate,
+    validate_fx_rates,
 )
 from frtb_drc.reference_data import get_lgd_rule, get_maturity_policy, iter_lgd_rules
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
@@ -364,36 +374,44 @@ def calculate_drc_capital_from_batch(
     _validate_context(context)
     profile = get_rule_profile(context.profile_id)
     _validate_supported_batch_run(batch, context=context, profile=profile)
-
-    gross_jtd, lgd_citations = _gross_jtd_array(batch, profile_id=profile.profile_id)
-    maturity_weights, scaled_jtd, maturity_citation = _scaled_jtd_array(
+    calculation_batch, fx_conversions = _convert_batch_to_base_currency(
         batch,
+        context=context,
+    )
+
+    gross_jtd, lgd_citations = _gross_jtd_array(
+        calculation_batch,
+        profile_id=profile.profile_id,
+    )
+    maturity_weights, scaled_jtd, maturity_citation = _scaled_jtd_array(
+        calculation_batch,
         gross_jtd,
         profile_id=profile.profile_id,
     )
-    net_jtds = _calculate_net_jtds_from_arrays(batch, gross_jtd, scaled_jtd)
-    capital_inputs = _capital_inputs(batch, net_jtds)
+    net_jtds = _calculate_net_jtds_from_arrays(calculation_batch, gross_jtd, scaled_jtd)
+    capital_inputs = _capital_inputs(calculation_batch, net_jtds)
     category = (
         calculate_category_drc(capital_inputs, profile_id=profile.profile_id)
         if capital_inputs
         else _zero_nonsec_category()
     )
     result = DrcCapitalResult(
-        result_id=f"drc-{_slug(context.run_id)}-{batch.input_hash[:12]}",
+        result_id=f"drc-{_slug(context.run_id)}-{calculation_batch.input_hash[:12]}",
         run_id=context.run_id,
         calculation_date=context.calculation_date,
         base_currency=context.base_currency,
         profile_id=profile.profile_id,
         profile_hash=profile.content_hash,
-        input_hash=batch.input_hash,
+        input_hash=calculation_batch.input_hash,
         categories=(category,),
         total_drc=category.capital,
         citations=_collect_batch_citations(
-            batch,
+            calculation_batch,
             category=category,
             net_jtds=net_jtds,
             lgd_citations=lgd_citations,
             maturity_citation=maturity_citation,
+            fx_citations=fx_citation_ids(fx_conversions),
         ),
         warnings=(),
         branch_metadata=(
@@ -408,15 +426,17 @@ def calculate_drc_capital_from_batch(
                 ),
                 citations=("US_NPR_210_SCOPE",),
             ),
+            *fx_branch_metadata(fx_conversions),
         ),
         package_name="frtb-drc",
         package_version=__version__,
-        input_count=batch.row_count,
-        rejected_input_count=len(batch.diagnostics),
+        input_count=calculation_batch.row_count,
+        rejected_input_count=len(calculation_batch.diagnostics),
         input_positions=(),
         gross_jtds=(),
         maturity_scaled_jtds=(),
         net_jtds=net_jtds,
+        fx_conversions=fx_conversions,
     )
     validate_reconciliation(result)
     return DrcBatchCapitalCalculation(
@@ -439,6 +459,7 @@ def _validate_context(context: DrcCalculationContext) -> None:
         raise DrcInputError("citation_policy must be non-empty")
     if context.citation_policy.strip().lower() != "strict":
         raise DrcInputError(f"unsupported citation_policy: {context.citation_policy}")
+    validate_fx_rates(context)
 
 
 def _validate_supported_batch_run(
@@ -450,14 +471,6 @@ def _validate_supported_batch_run(
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
     scoped_desk_id = context.desk_id.strip()
     scoped_legal_entity = context.legal_entity.strip()
-    _raise_first_mismatch(
-        batch.currencies,
-        context.base_currency,
-        message=lambda index: (
-            f"position currency {batch.currencies[index]} does not match base currency "
-            f"{context.base_currency}"
-        ),
-    )
     if scoped_desk_id:
         _raise_first_mismatch(
             batch.desk_ids,
@@ -477,6 +490,44 @@ def _validate_supported_batch_run(
                 f"{scoped_legal_entity}"
             ),
         )
+
+
+def _convert_batch_to_base_currency(
+    batch: DrcPositionBatch,
+    *,
+    context: DrcCalculationContext,
+) -> tuple[DrcPositionBatch, tuple[DrcFxConversion, ...]]:
+    conversion_mask = batch.currencies != context.base_currency
+    if not bool(np.any(conversion_mask)):
+        return batch, ()
+
+    rates = np.ones(batch.row_count, dtype=np.float64)
+    used_rates: dict[str, DrcFxRate] = {}
+    counts: dict[str, int] = {}
+    for raw_currency in sorted(np.unique(batch.currencies[conversion_mask])):
+        currency = cast(str, raw_currency)
+        first_index = int(np.nonzero(batch.currencies == currency)[0][0])
+        rate = require_fx_rate(
+            context,
+            source_currency=currency,
+            position_id=cast(str, batch.position_ids[first_index]),
+        )
+        mask = batch.currencies == currency
+        rates[mask] = rate.rate
+        used_rates[currency] = rate
+        counts[currency] = int(np.count_nonzero(mask))
+
+    conversions = fx_conversion_records(used_rates, counts)
+    converted_currencies = _object_array([context.base_currency] * batch.row_count, copy=True)
+    converted = replace(
+        batch,
+        notionals=_immutable_float_array(batch.notionals * rates),
+        market_values=_immutable_float_array(batch.market_values * rates),
+        cumulative_pnls=_immutable_float_array(batch.cumulative_pnls * rates),
+        currencies=converted_currencies,
+        input_hash=input_hash_with_fx(batch.input_hash, conversions),
+    )
+    return converted, conversions
 
 
 def _validate_batch(batch: DrcPositionBatch) -> None:
@@ -894,8 +945,15 @@ def _collect_batch_citations(
     net_jtds: tuple[NetJtd, ...],
     lgd_citations: tuple[str, ...],
     maturity_citation: str,
+    fx_citations: tuple[str, ...] = (),
 ) -> tuple[str, ...]:
-    citation_ids = {"US_NPR_210_SCOPE", *_FORMULA_CITATIONS, maturity_citation, *lgd_citations}
+    citation_ids = {
+        "US_NPR_210_SCOPE",
+        *_FORMULA_CITATIONS,
+        maturity_citation,
+        *lgd_citations,
+        *fx_citations,
+    }
     if net_jtds:
         citation_ids.add(_NETTING_CITATION)
     for group in batch.citation_ids:

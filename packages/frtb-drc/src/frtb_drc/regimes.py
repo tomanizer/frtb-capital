@@ -95,6 +95,27 @@ US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
         note="Default risk capital requirement scope and aggregation.",
     ),
+    "US_NPR_207_A_8": DrcCitation(
+        citation_id="US_NPR_207_A_8",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.207(a)(8)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note=(
+            "Market-risk standardized calculations use the banking organization's "
+            "reporting currency, except the approved FX base-currency case."
+        ),
+    ),
+    "US_NPR_208_H_1_II": DrcCitation(
+        citation_id="US_NPR_208_H_1_II",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.208(h)(1)(ii)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note=(
+            "FX risk factors use spot reporting/base exchange rates; the DRC package "
+            "uses explicitly supplied spot rates to translate native-currency DRC "
+            "amounts into the context base currency before aggregation."
+        ),
+    ),
     "US_NPR_210_B_1_IV": DrcCitation(
         citation_id="US_NPR_210_B_1_IV",
         source_id="US_NPR_2_0_91_FR_14952",

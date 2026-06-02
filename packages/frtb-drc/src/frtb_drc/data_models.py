@@ -135,6 +135,45 @@ class DrcSourceLineage:
 
 
 @dataclass(frozen=True)
+class DrcFxRate:
+    """Explicit FX rate supplied for translating DRC amounts into the base currency."""
+
+    source_currency: str
+    target_currency: str
+    rate: float
+    as_of_date: date
+    source_id: str
+    lineage: DrcSourceLineage
+    citation_ids: tuple[str, ...] = ("US_NPR_207_A_8", "US_NPR_208_H_1_II")
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
+
+    def as_dict(self) -> dict[str, object]:
+        return _as_dict(self)
+
+
+@dataclass(frozen=True)
+class DrcFxConversion:
+    """FX conversion lineage applied to one source currency in a calculation run."""
+
+    source_currency: str
+    target_currency: str
+    rate: float
+    as_of_date: date
+    source_id: str
+    position_count: int
+    lineage: DrcSourceLineage
+    citation_ids: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
+
+    def as_dict(self) -> dict[str, object]:
+        return _as_dict(self)
+
+
+@dataclass(frozen=True)
 class DrcCalculationContext:
     """Run-scoped calculation metadata supplied to the public API."""
 
@@ -145,6 +184,10 @@ class DrcCalculationContext:
     desk_id: str = ""
     legal_entity: str = ""
     citation_policy: str = "strict"
+    fx_rates: Mapping[str, DrcFxRate] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "fx_rates", MappingProxyType(dict(self.fx_rates)))
 
     def as_dict(self) -> dict[str, object]:
         return _as_dict(self)
@@ -454,6 +497,7 @@ class DrcCapitalResult:
     gross_jtds: tuple[GrossJtd, ...] = ()
     maturity_scaled_jtds: tuple[MaturityScaledJtd, ...] = ()
     net_jtds: tuple[NetJtd, ...] = ()
+    fx_conversions: tuple[DrcFxConversion, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "categories", tuple(self.categories))
@@ -464,6 +508,7 @@ class DrcCapitalResult:
         object.__setattr__(self, "gross_jtds", tuple(self.gross_jtds))
         object.__setattr__(self, "maturity_scaled_jtds", tuple(self.maturity_scaled_jtds))
         object.__setattr__(self, "net_jtds", tuple(self.net_jtds))
+        object.__setattr__(self, "fx_conversions", tuple(self.fx_conversions))
 
     def as_dict(self) -> dict[str, object]:
         return _as_dict(self)
