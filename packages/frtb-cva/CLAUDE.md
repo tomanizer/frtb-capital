@@ -4,10 +4,17 @@ Review `frtb-cva` as the owner of CVA capital only.
 
 ## Delivered slice
 
-- Reduced BA-CVA stand-alone and portfolio capital (`ba_cva.py`, `capital.py`).
-- SA-CVA GIRR delta weighting and aggregation (`sa_cva.py`, `weighted_sensitivity.py`,
-  `aggregation.py`, `risk_classes/girr.py`).
-- Deterministic input hashing, audit serialization, and reconciliation (`audit.py`).
+- Reduced and full BA-CVA stand-alone and portfolio capital
+  (`ba_cva.py`, `capital.py`) per MAR50.14-MAR50.26.
+- SA-CVA across all six delta risk classes and five vega risk-class paths per
+  MAR50.42-MAR50.77 when `sa_cva_approved=True`; CCS vega is explicitly
+  rejected because MAR50.45 and MAR50.63 do not define a CCS vega capital path.
+- Mixed SA-CVA with BA-CVA netting-set carve-outs (`MIXED_CARVE_OUT`) per
+  MAR50.8.
+- Qualified-index routing for CCS bucket 8, RCS, and equity where MAR50.50
+  metadata is supplied.
+- Optional CRIF adapter, Arrow/batch handoff, attribution, impact, deterministic
+  input hashing, audit serialization, and reconciliation.
 
 ## Reject
 
@@ -15,12 +22,11 @@ Review `frtb-cva` as the owner of CVA capital only.
 - Sibling capital-package imports.
 - Exposure-at-default or sensitivity shortcuts without cited calculation contracts.
 - SA-CVA calls that accept BA-CVA counterparty/netting-set inputs without error.
+- Documentation that presents outputs as final regulatory capital.
 
 ## Unsupported (fail closed)
 
-- Full BA-CVA hedge recognition (MAR50.17–26).
-- SA-CVA risk classes other than GIRR delta.
-- Mixed carve-out and materiality-threshold routing.
+- MAR50.9 materiality-threshold alternative.
 - U.S., EU, and UK comparison profiles.
 
 See [`docs/REGULATORY_TRACEABILITY.md`](docs/REGULATORY_TRACEABILITY.md).

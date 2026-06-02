@@ -12,10 +12,15 @@
 Supported public paths:
 
 - Reduced BA-CVA stand-alone and portfolio capital
-- SA-CVA GIRR delta weighting and aggregation
+- Full BA-CVA hedge recognition and beta-floor mechanics
+- SA-CVA across supported delta and vega risk-class paths
+- Mixed SA-CVA plus BA-CVA netting-set carve-out assembly
+- Qualified-index routing where MAR50.50 metadata is supplied
+- Optional CRIF adapter, Arrow/batch handoff, attribution, impact, audit, and
+  replay helpers
 
-Full BA-CVA hedge recognition (Basel MAR50.17–26) and SA-CVA risk classes other
-than GIRR delta are unsupported and fail closed via explicit errors.
+Comparison profiles and the MAR50.9 materiality-threshold alternative remain
+unsupported and fail closed via explicit errors.
 
 ## Planning Documents
 
@@ -28,6 +33,9 @@ than GIRR delta are unsupported and fail closed via explicit errors.
 - [Workable requirements](requirements/BASEL_FRTB_CVA.yml)
 - [Model documentation promotion plan](../MODEL_DOCUMENTATION_PROMOTION_PLAN.md)
 
-Implementation order is governed by [ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md).
+The historical implementation order is retained in
+[ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md); current runtime status is tracked in
+[requirements/BASEL_FRTB_CVA.yml](requirements/BASEL_FRTB_CVA.yml).
 
-Outputs are prototype model-validation evidence, not final regulatory capital.
+Outputs are synthetic engineering and validation evidence, not final regulatory
+capital.

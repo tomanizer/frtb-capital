@@ -24,7 +24,7 @@ Companion source manifest: [`regulatory_sources.yml`](regulatory_sources.yml).
 | --- | --- | --- | --- |
 | `data_models.py` | Frozen CVA inputs and result records | MAR50.1-MAR50.9 | Implemented |
 | `validation.py` | Input invariants and `CvaInputError` | MAR50.15 exposure inputs | Implemented |
-| `reference_data.py` | Table 1 RW, alpha, rho, D_BA-CVA, GIRR delta tables | MAR50.14-MAR50.16, MAR50.54-MAR50.57 | Implemented |
+| `reference_data.py` | BA-CVA Table 1 RW, alpha, rho, beta, D_BA-CVA, SA-CVA multipliers, risk weights, and correlation tables | MAR50.14-MAR50.26, MAR50.42-MAR50.77 | Implemented |
 | `regimes.py` | Profile lookup and deterministic profile hash | MAR50 profile context | Implemented |
 | `scope.py` | Method selection and carve-out policy | MAR50.8-MAR50.9 | Implemented |
 | `ba_cva.py` | Stand-alone and reduced portfolio BA-CVA | MAR50.14-MAR50.15 | Implemented |
@@ -36,15 +36,22 @@ Companion source manifest: [`regulatory_sources.yml`](regulatory_sources.yml).
 | `crif.py` | Vendor-to-canonical adapter | CVA-FUNC-026 | Implemented |
 | `attribution.py` | Analytical attribution (supported branches) | ADR 0012 | Partial |
 | `impact.py` | Baseline-vs-candidate impact | ADR 0012 | Implemented |
-| `risk_classes/girr.py` | GIRR delta bucket routing | MAR50.54-MAR50.57 | Implemented |
-| `sa_cva.py` | SA-CVA GIRR delta orchestration | MAR50.53-MAR50.57 | Implemented |
-| `capital.py` | Public `calculate_cva_capital` | MAR50.14 reduced, MAR50.53 SA-CVA | Implemented |
+| `risk_classes/girr.py` | GIRR delta and vega bucket routing | MAR50.54-MAR50.58 | Implemented |
+| `risk_classes/fx.py` | FX delta and vega bucket routing | MAR50.59-MAR50.62 | Implemented |
+| `risk_classes/ccs.py` | Counterparty credit spread delta and qualified-index bucket routing | MAR50.45, MAR50.50, MAR50.63-MAR50.65 | Implemented; CCS vega fail-closed |
+| `risk_classes/rcs.py` | Reference credit spread delta and vega bucket routing | MAR50.50, MAR50.66-MAR50.69 | Implemented |
+| `risk_classes/equity.py` | Equity delta and vega bucket routing with qualified-index handling | MAR50.50, MAR50.70-MAR50.73 | Implemented |
+| `risk_classes/commodity.py` | Commodity delta and vega bucket routing | MAR50.74-MAR50.77 | Implemented |
+| `sa_cva.py` | SA-CVA risk-class orchestration across supported delta and vega paths | MAR50.42-MAR50.77 | Implemented |
+| `batch.py`, `arrow_handoff.py` | Package-owned columnar batches and Arrow handoff normalisation | ADR 0023; MAR50 calculation boundary | Implemented |
+| `capital.py` | Public `calculate_cva_capital` | MAR50.8, MAR50.14-MAR50.26, MAR50.42-MAR50.77 | Implemented |
 | `audit.py` | Input hash, serialization, reconciliation | Audit traceability | Implemented |
 
 July 2020 calibration revision notes: `m_CVA = 1.0`, `D_BA-CVA = 0.65`.
 
 ## Unsupported in the delivered slice
 
-- U.S./EU/UK comparison CVA profiles
+- U.S., EU, and UK comparison CVA profiles
 - Materiality-threshold alternative (MAR50.9)
-- U.S., EU, and UK comparison profiles
+- CCS vega capital, because MAR50.45 and MAR50.63 define CCS delta but no CCS
+  vega path

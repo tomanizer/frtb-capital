@@ -10,7 +10,7 @@ detail, module layout, and implementation decisions live in:
 - [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN.md)
 - [ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md)
 
-The package should support the Basel CVA framework with profile hooks for U.S.
+The package supports a partial Basel MAR50 runtime with profile hooks for U.S.
 NPR 2.0, CRR3, and PRA comparison. CVA is distinct from market-risk SA SBM even
 when SA-CVA reuses SBM-style delta and vega aggregation mechanics.
 
@@ -156,5 +156,5 @@ The local extraction suggests:
 - risk-class-specific common modules for risk weights and correlations;
 - capital report and benchmark output packages.
 
-Some BA-CVA files are placeholders; use them only to infer intended package
-boundaries, not formulas.
+External BA-CVA references are implementation-shape aids only. Use the package
+reference data, traceability docs, and tests for formula authority.
