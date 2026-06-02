@@ -520,57 +520,24 @@ def _read_ima_handoff_columns(
         table,
         _ima_reader_specs(column_specs),
         error=_ima_error,
+        null_defaults=_ima_null_defaults(column_specs),
     )
-    return _ima_columns_with_package_defaults(table, column_specs, columns)
+    return columns
 
 
 def _ima_reader_specs(column_specs: tuple[ColumnSpec, ...]) -> tuple[ColumnSpec, ...]:
     return tuple(spec for spec in column_specs if spec.logical_type not in _IMA_LOCAL_LOGICAL_TYPES)
 
 
-def _ima_columns_with_package_defaults(
-    table: pa.Table,
-    column_specs: Sequence[ColumnSpec],
-    columns: Mapping[str, object],
-) -> dict[str, object]:
-    updated = dict(columns)
-    for spec in column_specs:
-        if spec.name != "verifiable" or spec.name not in updated:
-            continue
-        column_name = _physical_column_name(table, spec)
-        if column_name is None:
-            continue
-        column = table.column(column_name)
-        if column.null_count:
-            updated[spec.name] = _restore_bool_nulls_as_default(
-                column,
-                updated[spec.name],
-                default=True,
-            )
-    return updated
-
-
-def _physical_column_name(table: pa.Table, spec: ColumnSpec) -> str | None:
-    for candidate in (spec.name, *spec.aliases):
-        if candidate in table.column_names:
-            return candidate
-    return None
-
-
-def _restore_bool_nulls_as_default(
-    column: pa.ChunkedArray,
-    values: object,
-    *,
-    default: bool,
-) -> BooleanArray:
-    array = _single_array(column)
-    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-    converted = np.asarray(values, dtype=np.bool_)
-    if converted.shape != valid.shape:
-        raise ValueError("verifiable length must match accepted row count")
-    restored = np.where(valid, converted, default)
-    restored.setflags(write=False)
-    return restored
+def _ima_null_defaults(column_specs: Sequence[ColumnSpec]) -> Mapping[str, object]:
+    spec_names = {spec.name for spec in column_specs}
+    if "risk_factor_name" in spec_names:
+        defaults = _IMA_RFET_OBSERVATION_DEFAULTS
+    elif "scenario_id" in spec_names:
+        defaults = _IMA_SCENARIO_METADATA_DEFAULTS
+    else:
+        defaults = {}
+    return {name: default for name, default in defaults.items() if name in spec_names}
 
 
 def _ima_batch_column_kwargs(

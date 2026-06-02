@@ -11,7 +11,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
 from typing import Any, cast
 
@@ -379,6 +379,10 @@ _SBM_BATCH_COLUMN_ARGS: Mapping[str, str] = {
 }
 
 _OPTIONAL_FLOAT_COLUMN_NAMES = frozenset({"up_shock_amount", "down_shock_amount"})
+
+_SBM_NULL_DEFAULTS: Mapping[str, object] = {
+    column_name: None for column_name in _OPTIONAL_FLOAT_COLUMN_NAMES
+}
 
 _SBM_HANDOFF_SPEC_GROUPS: tuple[tuple[ColumnSpec, ...], ...] = (
     GIRR_DELTA_HANDOFF_COLUMN_SPECS,
@@ -1175,8 +1179,12 @@ def _build_sbm_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise SbmInputError("handoff must be NormalizedTabularHandoff", field="handoff")
     table = handoff.accepted
-    columns: Mapping[str, object] = read_handoff_columns(table, column_specs, error=_sbm_error)
-    columns = _sbm_columns_with_package_defaults(table, column_specs, columns)
+    columns: Mapping[str, object] = read_handoff_columns(
+        table,
+        column_specs,
+        error=_sbm_error,
+        null_defaults=_SBM_NULL_DEFAULTS,
+    )
     kwargs: dict[str, Any] = dict(builder_kwargs or {})
     kwargs.update(_sbm_batch_column_kwargs(columns, row_count=table.num_rows))
     kwargs.update(
@@ -1571,52 +1579,6 @@ def _sbm_batch_column_kwargs(columns: Mapping[str, object], *, row_count: int) -
     if kwargs["tenors"] is None:
         kwargs["tenors"] = (None,) * row_count
     return kwargs
-
-
-def _sbm_columns_with_package_defaults(
-    table: pa.Table,
-    column_specs: Sequence[ColumnSpec],
-    columns: Mapping[str, object],
-) -> dict[str, object]:
-    updated = dict(columns)
-    for spec in column_specs:
-        if spec.name not in _OPTIONAL_FLOAT_COLUMN_NAMES:
-            continue
-        if spec.null_policy is not NullPolicy.ALLOW or spec.name not in updated:
-            continue
-        column_name = _physical_column_name(table, spec)
-        if column_name is None:
-            continue
-        column = table.column(column_name)
-        if not column.null_count:
-            continue
-        updated[spec.name] = _restore_arrow_nulls_as_none(column, updated[spec.name], spec.name)
-    return updated
-
-
-def _physical_column_name(table: pa.Table, spec: ColumnSpec) -> str | None:
-    for candidate in (spec.name, *spec.aliases):
-        if candidate in table.column_names:
-            return candidate
-    return None
-
-
-def _restore_arrow_nulls_as_none(
-    column: pa.ChunkedArray,
-    values: object,
-    field: str,
-) -> tuple[object, ...]:
-    try:
-        array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-        valid = array.is_valid()
-    except (pa.ArrowException, TypeError, ValueError) as exc:
-        raise _sbm_error(str(exc), field) from exc
-    converted = tuple(cast(Iterable[object], values))
-    if len(converted) != len(valid):
-        raise _sbm_error("column length mismatch", field)
-    return tuple(
-        value if bool(valid[index].as_py()) else None for index, value in enumerate(converted)
-    )
 
 
 def _sbm_error(message: str, field: str | None) -> SbmInputError:

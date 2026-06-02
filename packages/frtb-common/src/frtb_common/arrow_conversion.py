@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any, cast
 
 import numpy as np
@@ -117,8 +117,12 @@ def read_handoff_columns(
     specs: Sequence[ColumnSpec],
     *,
     error: ErrorFactory,
+    null_defaults: Mapping[str, object] | None = None,
 ) -> dict[str, HandoffColumnArray]:
-    """Read declared Arrow handoff columns into read-only NumPy arrays."""
+    """Read declared Arrow handoff columns into read-only NumPy arrays.
+
+    ``null_defaults`` restores originally-null Arrow positions to package-specific values.
+    """
 
     if not isinstance(table, pa.Table):
         raise error("table must be a pyarrow.Table", None)
@@ -131,6 +135,14 @@ def read_handoff_columns(
     columns: dict[str, HandoffColumnArray] = {}
     for spec in column_specs:
         columns.update(_read_handoff_column(table, spec, error=error))
+    if null_defaults:
+        columns = _restore_null_defaults(
+            table,
+            column_specs,
+            columns,
+            null_defaults,
+            error=error,
+        )
     return columns
 
 
@@ -186,6 +198,53 @@ def _read_typed_handoff_column(
             raise TabularHandoffError(
                 f"Column {spec.name!r} has unsupported logical_type {spec.logical_type.value!r}"
             )
+
+
+def _restore_null_defaults(
+    table: pa.Table,
+    specs: Sequence[ColumnSpec],
+    columns: dict[str, HandoffColumnArray],
+    null_defaults: Mapping[str, object],
+    *,
+    error: ErrorFactory,
+) -> dict[str, HandoffColumnArray]:
+    specs_by_name = {spec.name: spec for spec in specs}
+    restored = dict(columns)
+    for field, default in null_defaults.items():
+        values = restored.get(field)
+        if values is None:
+            continue
+        spec = specs_by_name.get(field)
+        if spec is None:
+            raise error(f"null default references unknown column {field!r}", field)
+        try:
+            column_name = resolve_column_name(table, spec)
+            if column_name is None:
+                continue
+            column = table.column(column_name)
+            if not column.null_count:
+                continue
+            restored[field] = _restore_column_null_default(column, values, default, field=field)
+        except (TabularHandoffError, pa.ArrowException, TypeError, ValueError) as exc:
+            raise error(str(exc), field) from exc
+    return restored
+
+
+def _restore_column_null_default(
+    column: pa.ChunkedArray,
+    values: HandoffColumnArray,
+    default: object,
+    *,
+    field: str,
+) -> HandoffColumnArray:
+    array = _single_arrow_array(column)
+    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
+    restored = np.asarray(values, dtype=object).copy()
+    if restored.shape != valid.shape:
+        raise TabularHandoffError(f"{field} length must match accepted row count")
+    restored[~valid] = default
+    restored.setflags(write=False)
+    return restored
 
 
 def _single_arrow_array(column: pa.ChunkedArray) -> pa.Array:
