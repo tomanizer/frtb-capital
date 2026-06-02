@@ -13,6 +13,7 @@ from dataclasses import dataclass
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.csr_nonsec_reference_data import (
     CSR_BOND_RISK_FACTOR,
     CSR_CDS_RISK_FACTOR,
@@ -273,12 +274,6 @@ def _require_csr_sec_ctp_tenor(profile: SbmRegulatoryProfile | str, tenor: str) 
             field="tenor",
         )
     return normalised
-
-
-def _require_text(value: object, field: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise SbmInputError("non-empty text is required", field=field)
-    return value.strip()
 
 
 __all__ = [

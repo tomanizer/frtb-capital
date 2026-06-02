@@ -14,6 +14,7 @@ from collections.abc import Mapping, Sequence
 import numpy as np
 import numpy.typing as npt
 
+from frtb_sbm._batch_lookup import batch_text_by_id as _batch_text_by_id
 from frtb_sbm.aggregation import (
     IntraBucketScenarioSpec,
     aggregate_risk_class_with_scenarios,
@@ -78,8 +79,6 @@ def calculate_csr_sec_nonctp_delta_risk_class_capital_from_batch(
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited CSR securitisation non-CTP delta capital from a batch."""
-
-    from frtb_sbm.batch import _batch_text_by_id
 
     weighted = weight_csr_sec_nonctp_delta_sensitivity_batch(
         batch,

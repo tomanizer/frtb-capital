@@ -1758,20 +1758,6 @@ def sorted_csr_sec_ctp_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.ND
     return sorted_sbm_batch_indices(batch)
 
 
-def _batch_text_by_id(
-    batch: SbmSensitivityBatch,
-    values: npt.NDArray[np.object_] | None,
-    *,
-    field: str,
-) -> Mapping[str, str]:
-    if values is None:
-        raise SbmInputError(f"{field} is required", field=field)
-    return {
-        str(batch.sensitivity_ids[row_index]): str(values[row_index])
-        for row_index in range(batch.row_count)
-    }
-
-
 def _optional_arrays_from_sensitivities(
     sensitivities: tuple[SbmSensitivity, ...],
 ) -> dict[str, Iterable[object] | None]:

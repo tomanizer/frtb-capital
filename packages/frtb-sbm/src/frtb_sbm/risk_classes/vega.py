@@ -12,6 +12,14 @@ from collections.abc import Mapping, Sequence
 import numpy as np
 import numpy.typing as npt
 
+from frtb_sbm._batch_lookup import (
+    batch_optional_text_by_id as _batch_optional_text_by_id,
+)
+from frtb_sbm._batch_lookup import (
+    batch_text_by_id as _batch_required_text_by_id,
+)
+from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
+from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.aggregation import (
     IntraBucketScenarioSpec,
     aggregate_risk_class_with_scenarios,
@@ -149,7 +157,7 @@ def calculate_non_girr_vega_risk_class_capital_from_batch(
         weighted,
         profile_id=profile_id,
         risk_class=risk_class,
-        risk_factor_by_id=_batch_text_by_id(batch, batch.risk_factors, "risk_factor"),
+        risk_factor_by_id=_batch_required_text_by_id(batch, batch.risk_factors, "risk_factor"),
         qualifier_by_id=_batch_optional_text_by_id(batch, batch.qualifiers),
         option_tenor_by_id=_batch_required_text_by_id(batch, batch.option_tenors, "option_tenor"),
         pairwise_evidence_mode=pairwise_evidence_mode,
@@ -637,40 +645,6 @@ def _optional_text_by_id(sensitivities: Sequence[SbmSensitivity], field: str) ->
     return values
 
 
-def _batch_text_by_id(
-    batch: SbmSensitivityBatch,
-    values: npt.NDArray[np.object_],
-    _field: str,
-) -> Mapping[str, str]:
-    return {
-        str(sensitivity_id): str(value)
-        for sensitivity_id, value in zip(batch.sensitivity_ids, values)
-    }
-
-
-def _batch_required_text_by_id(
-    batch: SbmSensitivityBatch,
-    values: npt.NDArray[np.object_] | None,
-    field: str,
-) -> Mapping[str, str]:
-    if values is None:
-        raise SbmInputError(f"{field} is required", field=field)
-    return _batch_text_by_id(batch, values, field)
-
-
-def _batch_optional_text_by_id(
-    batch: SbmSensitivityBatch,
-    values: npt.NDArray[np.object_] | None,
-) -> Mapping[str, str]:
-    if values is None:
-        return {}
-    return {
-        str(sensitivity_id): str(value)
-        for sensitivity_id, value in zip(batch.sensitivity_ids, values)
-        if value is not None
-    }
-
-
 def _lookup_axis(values: Mapping[str, str], sensitivity_id: str, field: str) -> str:
     try:
         value = values[sensitivity_id]
@@ -681,27 +655,6 @@ def _lookup_axis(values: Mapping[str, str], sensitivity_id: str, field: str) -> 
             sensitivity_id=sensitivity_id,
         ) from exc
     return _require_text(value, field, sensitivity_id)
-
-
-def _require_text(value: object, field: str, sensitivity_id: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise SbmInputError(
-            "non-empty text is required",
-            field=field,
-            sensitivity_id=sensitivity_id,
-        )
-    return value.strip()
-
-
-def _merge_citation_ids(*groups: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for group in groups:
-        for citation_id in group:
-            if citation_id not in seen:
-                merged.append(citation_id)
-                seen.add(citation_id)
-    return tuple(merged)
 
 
 __all__ = [
