@@ -860,11 +860,15 @@ name = "frtb-common"
 version = "0.1.1"
 source = { editable = "packages/frtb-common" }
 dependencies = [
+    { name = "numpy" },
     { name = "pyarrow" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pyarrow", specifier = ">=23.0.1,<24" }]
+requires-dist = [
+    { name = "numpy", specifier = ">=1.26,<2.5" },
+    { name = "pyarrow", specifier = ">=23.0.1,<24" },
+]
 
 [[package]]
 name = "frtb-cva"

@@ -15,6 +15,7 @@ ALLOWED_RUNTIME_FILENAMES = frozenset(
         "adapter.py",
         "adapters.py",
         "arrow.py",
+        "arrow_conversion.py",
         "arrow_handoff.py",
         "crif.py",
         "handoff.py",

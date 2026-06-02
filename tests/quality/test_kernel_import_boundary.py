@@ -34,6 +34,11 @@ def test_kernel_import_boundary_allows_handoff_and_adapter_imports(tmp_path: Pat
     )
     _write_module(
         tmp_path,
+        "packages/frtb-common/src/frtb_common/arrow_conversion.py",
+        "import pyarrow as pa\n",
+    )
+    _write_module(
+        tmp_path,
         "packages/frtb-sbm/src/frtb_sbm/adapters/crif_arrow.py",
         "from pyarrow import Table\n",
     )

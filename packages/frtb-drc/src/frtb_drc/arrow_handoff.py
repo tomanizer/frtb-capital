@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import math
 from collections.abc import Mapping, Sequence
-from typing import cast
 
 import numpy as np
 import numpy.typing as npt
@@ -15,7 +13,11 @@ from frtb_common import (
     ColumnSpec,
     NormalizedTabularHandoff,
     NullPolicy,
+    TabularHandoffError,
     TabularLogicalType,
+    arrow_float64_array,
+    arrow_float64_array_with_nulls,
+    arrow_object_array,
     normalize_arrow_table,
     normalized_handoff_hash,
     validate_arrow_table,
@@ -386,7 +388,7 @@ def build_drc_ctp_batch_from_handoff(
 def _required_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np.object_]:
     if column_name not in table.column_names:
         raise DrcInputError(f"column is required: {column_name}")
-    values = _object_array_from_arrow_column(table.column(column_name))
+    values = arrow_object_array(table.column(column_name))
     values.setflags(write=False)
     return values
 
@@ -394,7 +396,7 @@ def _required_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np
 def _optional_object_column(table: pa.Table, column_name: str) -> npt.NDArray[np.object_] | None:
     if column_name not in table.column_names:
         return None
-    values = _object_array_from_arrow_column(table.column(column_name))
+    values = arrow_object_array(table.column(column_name))
     values.setflags(write=False)
     return values
 
@@ -405,7 +407,10 @@ def _required_float_column(table: pa.Table, column_name: str) -> npt.NDArray[np.
     column = table.column(column_name)
     if column.null_count:
         raise DrcInputError(f"{column_name} must be provided")
-    values = _float64_array_from_arrow_column(column, field=column_name)
+    try:
+        values = arrow_float64_array(column, field=column_name)
+    except TabularHandoffError as exc:
+        raise DrcInputError(str(exc)) from exc
     values.setflags(write=False)
     return values
 
@@ -414,20 +419,14 @@ def _optional_float_column(table: pa.Table, column_name: str) -> npt.NDArray[np.
     if column_name not in table.column_names:
         return None
     column = table.column(column_name)
-    if not column.null_count:
-        values = _float64_array_from_arrow_column(column, field=column_name)
-        values.setflags(write=False)
-        return values
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    if not pa.types.is_float64(array.type):
-        try:
-            array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except (pa.ArrowInvalid, TypeError, ValueError) as exc:
-            raise DrcInputError(f"{column_name} must be numeric") from exc
-    values = np.asarray(
-        pc.fill_null(array, pa.scalar(math.nan, type=pa.float64())).to_numpy(zero_copy_only=False),
-        dtype=np.float64,
-    )
+    try:
+        values = (
+            arrow_float64_array_with_nulls(column, field=column_name)
+            if column.null_count
+            else arrow_float64_array(column, field=column_name)
+        )
+    except TabularHandoffError as exc:
+        raise DrcInputError(str(exc)) from exc
     values.setflags(write=False)
     return values
 
@@ -446,63 +445,12 @@ def _citation_ids_column(table: pa.Table) -> tuple[tuple[str, ...], ...] | None:
     if "citation_ids" not in table.column_names:
         return None
     groups: list[tuple[str, ...]] = []
-    for value in _object_array_from_arrow_column(table.column("citation_ids")):
+    for value in arrow_object_array(table.column("citation_ids")):
         if value is None or not str(value).strip():
             groups.append(("US_NPR_210_SCOPE",))
             continue
         groups.append(tuple(item.strip() for item in str(value).split(",") if item.strip()))
     return tuple(groups)
-
-
-def _object_array_from_arrow_column(column: pa.ChunkedArray) -> npt.NDArray[np.object_]:
-    arrays = tuple(_object_array_from_arrow_array(chunk) for chunk in column.chunks)
-    if not arrays:
-        return np.empty(0, dtype=object)
-    if len(arrays) == 1:
-        return arrays[0]
-    return np.concatenate(arrays).astype(object, copy=False)
-
-
-def _object_array_from_arrow_array(array: pa.Array) -> npt.NDArray[np.object_]:
-    if pa.types.is_dictionary(array.type):
-        return _dictionary_array_to_object_array(cast(pa.DictionaryArray, array))
-    return np.asarray(array.to_numpy(zero_copy_only=False), dtype=object)
-
-
-def _dictionary_array_to_object_array(array: pa.DictionaryArray) -> npt.NDArray[np.object_]:
-    if len(array) == 0:
-        return np.empty(0, dtype=object)
-    dictionary = np.asarray(array.dictionary.to_numpy(zero_copy_only=False), dtype=object)
-    indices = np.asarray(
-        pc.fill_null(array.indices, pa.scalar(0, type=array.indices.type)).to_numpy(
-            zero_copy_only=False
-        ),
-        dtype=np.int64,
-    )
-    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-    values = np.empty(len(array), dtype=object)
-    values[valid] = dictionary[indices[valid]]
-    values[~valid] = None
-    return values
-
-
-def _float64_array_from_arrow_column(
-    column: pa.ChunkedArray,
-    *,
-    field: str,
-) -> npt.NDArray[np.float64]:
-    if len(column) == 0:
-        return np.empty(0, dtype=np.float64)
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    if not pa.types.is_float64(array.type):
-        try:
-            array = cast(pa.Array, pc.cast(array, pa.float64()))
-        except (pa.ArrowInvalid, TypeError, ValueError) as exc:
-            raise DrcInputError(f"{field} must be numeric") from exc
-    try:
-        return cast(npt.NDArray[np.float64], array.to_numpy(zero_copy_only=True))
-    except (pa.ArrowInvalid, TypeError, ValueError):
-        return np.asarray(array.to_numpy(zero_copy_only=False), dtype=np.float64)
 
 
 __all__ = [
