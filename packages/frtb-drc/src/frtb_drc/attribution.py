@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 
+from frtb_drc._identifiers import slug_path as _slug
 from frtb_drc.data_models import (
     AttributionMethod,
     BranchType,
@@ -304,10 +305,6 @@ def _record_sum(records: tuple[DrcCapitalContribution, ...]) -> float:
 def _has_branch(record: object, branch_type: BranchType) -> bool:
     branches = getattr(record, "branch_metadata", ())
     return any(BranchType(branch.branch_type) == branch_type for branch in branches)
-
-
-def _slug(value: str) -> str:
-    return value.lower().replace(" ", "-").replace("_", "-").replace(":", "-").replace("/", "-")
 
 
 __all__ = [

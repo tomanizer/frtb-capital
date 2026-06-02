@@ -10,6 +10,9 @@ from dataclasses import replace
 
 from frtb_common import jsonable
 
+from frtb_drc._citations import merge_citations as _merge_citations
+from frtb_drc._identifiers import slug as _slug
+from frtb_drc._validation_utils import require_text as _require_text
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -214,30 +217,6 @@ def _validate_lineage(lineage: DrcSourceLineage) -> None:
     _require_text(lineage.source_system, "fx_rate.lineage.source_system")
     _require_text(lineage.source_file, "fx_rate.lineage.source_file")
     _require_text(lineage.source_row_id, "fx_rate.lineage.source_row_id")
-
-
-def _require_text(value: object, field_name: str) -> str:
-    if value is None:
-        raise DrcInputError(f"{field_name} must be non-empty")
-    text = str(value).strip()
-    if text == "":
-        raise DrcInputError(f"{field_name} must be non-empty")
-    return text
-
-
-def _merge_citations(existing: tuple[str, ...], extra: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for citation_id in (*existing, *extra):
-        if citation_id in seen:
-            continue
-        seen.add(citation_id)
-        merged.append(citation_id)
-    return tuple(merged)
-
-
-def _slug(value: str) -> str:
-    return value.lower().replace(" ", "-").replace("_", "-")
 
 
 __all__ = [

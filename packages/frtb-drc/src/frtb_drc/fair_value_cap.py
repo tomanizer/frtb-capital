@@ -8,6 +8,7 @@ from typing import cast
 
 from frtb_common import UnsupportedRegulatoryFeatureError, jsonable
 
+from frtb_drc._validation_utils import require_text as _require_text
 from frtb_drc.data_models import (
     DrcCalculationContext,
     DrcFairValueCapEvidence,
@@ -133,15 +134,6 @@ def _validate_record(
             )
     elif record.fair_value_cap_amount is not None:
         raise DrcInputError(f"{field_prefix} is ineligible but supplies fair_value_cap_amount")
-
-
-def _require_text(value: str | None, field_name: str) -> str:
-    if value is None:
-        raise DrcInputError(f"{field_name} must be non-empty")
-    text = str(value).strip()
-    if not text:
-        raise DrcInputError(f"{field_name} must be non-empty")
-    return text
 
 
 __all__ = [

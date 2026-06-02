@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-import math
 from collections.abc import Iterable, Mapping
-from typing import Any, cast
 
+from frtb_drc._validation_utils import (
+    require_finite_non_negative as _require_finite_non_negative,
+)
+from frtb_drc._validation_utils import (
+    require_text as _require_text,
+)
 from frtb_drc.data_models import (
     DrcCalculationContext,
     DrcPosition,
@@ -208,19 +212,3 @@ def _context_evidence(
     if risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
         return "context.ctp_risk_weight_evidence", context.ctp_risk_weight_evidence
     raise DrcInputError(f"risk-weight evidence is not supported for {risk_class.value}")
-
-
-def _require_finite_non_negative(value: object, field_name: str) -> float:
-    try:
-        result = float(cast(Any, value))
-    except (ValueError, TypeError) as exc:
-        raise DrcInputError(f"{field_name} must be a valid finite number") from exc
-    if not math.isfinite(result) or result < 0.0:
-        raise DrcInputError(f"{field_name} must be finite and non-negative")
-    return result
-
-
-def _require_text(value: str | None, field_name: str) -> str:
-    if value is None or value.strip() == "":
-        raise DrcInputError(f"{field_name} must be non-empty")
-    return value

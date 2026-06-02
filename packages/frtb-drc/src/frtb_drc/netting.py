@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from itertools import count
 
+from frtb_drc._identifiers import slug as _slug
 from frtb_drc.data_models import (
     DefaultDirection,
     DrcRiskClass,
@@ -272,7 +273,3 @@ def _seniority_rank(seniority: DrcSeniority) -> int:
         return _SENIORITY_RANK[seniority]
     except KeyError as exc:  # pragma: no cover - all enum values are mapped.
         raise DrcInputError(f"missing DRC seniority rank: {seniority.value}") from exc
-
-
-def _slug(value: str) -> str:
-    return value.lower().replace(" ", "-").replace("_", "-")

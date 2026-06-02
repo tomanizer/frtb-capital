@@ -4,13 +4,19 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
-from collections.abc import Callable, Iterable, Iterator, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import count
 
 from frtb_common import jsonable
 
+from frtb_drc._citations import merge_citations
+from frtb_drc._identifiers import slug_path
+from frtb_drc._netting_helpers import (
+    bounded_rejected_group_offsets,
+    risk_weights_for_net_jtd,
+)
+from frtb_drc._validation_utils import optional_text, require_finite_non_negative, require_text
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -87,7 +93,7 @@ class SecuritisationNonCtpCapitalInput:
     risk_weight: float
 
     def __post_init__(self) -> None:
-        _require_finite_non_negative(self.risk_weight, "risk_weight")
+        require_finite_non_negative(self.risk_weight, "risk_weight")
 
 
 def calculate_securitisation_non_ctp_drc(
@@ -192,7 +198,7 @@ def calculate_securitisation_non_ctp_gross_jtd(
         position_id=position.position_id,
         risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
         issuer_or_tranche_key=_exposure_key(position),
-        bucket_key=_require_text(position.bucket_key, "bucket_key"),
+        bucket_key=require_text(position.bucket_key, "bucket_key"),
         default_direction=DefaultDirection(position.default_direction),
         lgd_rate=1.0,
         lgd_source=(
@@ -202,7 +208,7 @@ def calculate_securitisation_non_ctp_gross_jtd(
         notional=abs(position.notional),
         pnl_component=0.0,
         gross_jtd=gross_jtd,
-        citations=_merge_citations((*_GROSS_CITATIONS, *citations, *position.citation_ids)),
+        citations=merge_citations((*_GROSS_CITATIONS, *citations, *position.citation_ids)),
         branch_metadata=branch_metadata,
     )
 
@@ -338,8 +344,8 @@ def validate_securitisation_non_ctp_context(context: DrcCalculationContext) -> N
         context=context,
     )
     for position_id, offset_group in context.securitisation_non_ctp_offset_groups.items():
-        _require_text(position_id, "securitisation_non_ctp_offset_groups position_id")
-        _require_text(
+        require_text(position_id, "securitisation_non_ctp_offset_groups position_id")
+        require_text(
             offset_group,
             f"securitisation_non_ctp_offset_groups[{position_id!r}]",
         )
@@ -391,7 +397,16 @@ def _securitisation_non_ctp_capital_inputs(
 ) -> tuple[SecuritisationNonCtpCapitalInput, ...]:
     inputs: list[SecuritisationNonCtpCapitalInput] = []
     for net_jtd in net_jtds:
-        weights = tuple(sorted(_risk_weights_for_net_jtd(net_jtd, risk_weights=risk_weights)))
+        weights = tuple(
+            sorted(
+                risk_weights_for_net_jtd(
+                    net_jtd,
+                    risk_weights=risk_weights,
+                    field_name="context.securitisation_non_ctp_risk_weights",
+                    position_label="securitisation non-CTP",
+                )
+            )
+        )
         if len(weights) != 1:
             raise DrcInputError(
                 "securitisation non-CTP net JTD must map to exactly one risk weight: "
@@ -423,7 +438,7 @@ def _securitisation_non_ctp_hbr(
         ratio = 0.0
         branch_metadata = (
             BranchMetadata(
-                branch_id=f"hbr-sec-non-ctp-zero-denominator-{_slug(bucket_key)}",
+                branch_id=f"hbr-sec-non-ctp-zero-denominator-{slug_path(bucket_key)}",
                 branch_type=BranchType.ZERO_DENOMINATOR,
                 source_id=bucket_key,
                 selected=True,
@@ -437,7 +452,7 @@ def _securitisation_non_ctp_hbr(
     else:
         ratio = aggregate_long / denominator
     return HedgeBenefitRatio(
-        hbr_id=f"hbr-sec-non-ctp-{_slug(bucket_key)}",
+        hbr_id=f"hbr-sec-non-ctp-{slug_path(bucket_key)}",
         bucket_key=bucket_key,
         aggregate_net_long=aggregate_long,
         aggregate_net_short=aggregate_short,
@@ -481,7 +496,7 @@ def _securitisation_non_ctp_bucket_drc(
     if floor_applied:
         branch_metadata = (
             BranchMetadata(
-                branch_id=f"bucket-sec-non-ctp-floor-{_slug(bucket_key)}",
+                branch_id=f"bucket-sec-non-ctp-floor-{slug_path(bucket_key)}",
                 branch_type=BranchType.FLOOR,
                 source_id=bucket_key,
                 selected=True,
@@ -491,7 +506,7 @@ def _securitisation_non_ctp_bucket_drc(
         )
 
     return BucketDrc(
-        bucket_id=f"bucket-drc-sec-non-ctp-{_slug(bucket_key)}",
+        bucket_id=f"bucket-drc-sec-non-ctp-{slug_path(bucket_key)}",
         bucket_key=bucket_key,
         risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
         hbr=hbr,
@@ -500,7 +515,7 @@ def _securitisation_non_ctp_bucket_drc(
         capital=capital,
         floor_applied=floor_applied,
         net_jtd_ids=tuple(net_jtd_ids),
-        citations=_merge_citations((*_BUCKET_CITATIONS, bucket_definition.citation_id)),
+        citations=merge_citations((*_BUCKET_CITATIONS, bucket_definition.citation_id)),
         branch_metadata=branch_metadata,
     )
 
@@ -538,8 +553,11 @@ def _net_securitisation_non_ctp_group(
     direction = DefaultDirection.LONG if signed_net > 0.0 else DefaultDirection.SHORT
     net_amount = abs(signed_net)
     return NetJtd(
-        net_jtd_id=f"net-sec-non-ctp-{_slug(bucket_key)}-{_slug(group_key)}-{direction.value.lower()}",
-        netting_group_id=f"ng-sec-non-ctp-{_slug(bucket_key)}-{_slug(group_key)}",
+        net_jtd_id=(
+            "net-sec-non-ctp-"
+            f"{slug_path(bucket_key)}-{slug_path(group_key)}-{direction.value.lower()}"
+        ),
+        netting_group_id=f"ng-sec-non-ctp-{slug_path(bucket_key)}-{slug_path(group_key)}",
         risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
         bucket_key=bucket_key,
         obligor_or_tranche_key=group_key,
@@ -555,7 +573,7 @@ def _net_securitisation_non_ctp_group(
         rejected_offsets=rejected_offsets,
         branch_metadata=(
             BranchMetadata(
-                branch_id=f"net-sec-non-ctp-{_slug(bucket_key)}-{_slug(group_key)}",
+                branch_id=f"net-sec-non-ctp-{slug_path(bucket_key)}-{slug_path(group_key)}",
                 branch_type=BranchType.NORMAL,
                 source_id=group_key,
                 selected=True,
@@ -592,64 +610,19 @@ def _rejected_securitisation_non_ctp_offsets(
         ]
         longs_by_group = _inputs_by_offset_group(longs)
         shorts_by_group = _inputs_by_offset_group(shorts)
-        rejected = _bounded_rejected_group_offsets(
+        rejected = bounded_rejected_group_offsets(
             bucket_key=bucket_key,
             long_groups=longs_by_group,
             short_groups=shorts_by_group,
+            rejection_id_prefix="rej-sec-non-ctp",
             sequence=sequence,
             representative=_representative_scaled_jtd_id,
+            reason_code="SEC_NON_CTP_OFFSET_REQUIRES_SAME_POOL_TRANCHE_OR_REPLICATION",
+            citations=_NETTING_CITATIONS,
         )
         if rejected:
             rejected_by_bucket[bucket_key] = tuple(rejected)
     return rejected_by_bucket
-
-
-def _bounded_rejected_group_offsets(
-    *,
-    bucket_key: str,
-    long_groups: Mapping[str, list[SecuritisationNonCtpNettingInput]],
-    short_groups: Mapping[str, list[SecuritisationNonCtpNettingInput]],
-    sequence: Iterator[int],
-    representative: Callable[[list[SecuritisationNonCtpNettingInput]], str],
-) -> tuple[RejectedOffset, ...]:
-    rejected: list[RejectedOffset] = []
-    sorted_short_groups = sorted(short_groups)
-    for long_group, long_items in sorted(long_groups.items()):
-        candidate_short_group = next(
-            (item for item in sorted_short_groups if item != long_group), None
-        )
-        if candidate_short_group is None:
-            continue
-        rejected.append(
-            RejectedOffset(
-                rejection_id=f"rej-sec-non-ctp-{_slug(bucket_key)}-{next(sequence)}",
-                long_source_id=representative(long_items),
-                short_source_id=representative(short_groups[candidate_short_group]),
-                reason_code="SEC_NON_CTP_OFFSET_REQUIRES_SAME_POOL_TRANCHE_OR_REPLICATION",
-                citations=_NETTING_CITATIONS,
-            )
-        )
-    covered_short_source_ids = {record.short_source_id for record in rejected}
-    sorted_long_groups = sorted(long_groups)
-    for short_group, short_items in sorted(short_groups.items()):
-        short_source_id = representative(short_items)
-        if short_source_id in covered_short_source_ids:
-            continue
-        candidate_long_group = next(
-            (item for item in sorted_long_groups if item != short_group), None
-        )
-        if candidate_long_group is None:
-            continue
-        rejected.append(
-            RejectedOffset(
-                rejection_id=f"rej-sec-non-ctp-{_slug(bucket_key)}-{next(sequence)}",
-                long_source_id=representative(long_groups[candidate_long_group]),
-                short_source_id=short_source_id,
-                reason_code="SEC_NON_CTP_OFFSET_REQUIRES_SAME_POOL_TRANCHE_OR_REPLICATION",
-                citations=_NETTING_CITATIONS,
-            )
-        )
-    return tuple(rejected)
 
 
 def _validate_securitisation_non_ctp_netting_input(
@@ -665,7 +638,7 @@ def _validate_securitisation_non_ctp_netting_input(
         raise DrcInputError("position_id mismatch between gross and scaled JTD")
     if gross.gross_jtd != scaled.gross_jtd:
         raise DrcInputError("gross_jtd amount mismatch between gross and scaled JTD")
-    _require_text(exposure.offset_group, "securitisation_non_ctp_offset_group")
+    require_text(exposure.offset_group, "securitisation_non_ctp_offset_group")
 
 
 def _validate_securitisation_non_ctp_net_jtd(net_jtd: NetJtd, *, bucket_key: str) -> None:
@@ -676,7 +649,7 @@ def _validate_securitisation_non_ctp_net_jtd(net_jtd: NetJtd, *, bucket_key: str
             "securitisation non-CTP bucket DRC input bucket mismatch: "
             f"expected {bucket_key}, got {net_jtd.bucket_key}"
         )
-    _require_finite_non_negative(net_jtd.net_amount, f"net JTD amount {net_jtd.net_jtd_id}")
+    require_finite_non_negative(net_jtd.net_amount, f"net JTD amount {net_jtd.net_jtd_id}")
 
 
 def _zero_securitisation_non_ctp_category() -> CategoryDrc:
@@ -701,12 +674,12 @@ def _zero_securitisation_non_ctp_category() -> CategoryDrc:
 def _offset_group(position: DrcPosition, *, context: DrcCalculationContext) -> str:
     explicit = context.securitisation_non_ctp_offset_groups.get(position.position_id)
     if explicit is not None:
-        return _require_text(
+        return require_text(
             explicit,
             f"securitisation_non_ctp_offset_groups[{position.position_id!r}]",
         )
-    pool_id = _optional_text(position.issuer_id)
-    tranche_id = _optional_text(position.tranche_id)
+    pool_id = optional_text(position.issuer_id)
+    tranche_id = optional_text(position.tranche_id)
     if pool_id is None:
         raise DrcInputError(
             "securitisation non-CTP offsetting requires issuer_id to carry the "
@@ -721,35 +694,13 @@ def _offset_group(position: DrcPosition, *, context: DrcCalculationContext) -> s
 
 
 def _exposure_key(position: DrcPosition) -> str:
-    pool_id = _optional_text(position.issuer_id)
-    tranche_id = _optional_text(position.tranche_id)
+    pool_id = optional_text(position.issuer_id)
+    tranche_id = optional_text(position.tranche_id)
     if pool_id is not None and tranche_id is not None:
         return f"{pool_id}/{tranche_id}"
     if tranche_id is not None:
         return tranche_id
     raise DrcInputError(f"securitisation non-CTP position {position.position_id} has no tranche_id")
-
-
-def _risk_weights_for_net_jtd(
-    net_jtd: NetJtd,
-    *,
-    risk_weights: Mapping[str, float],
-) -> set[float]:
-    weights: set[float] = set()
-    for position_id in net_jtd.position_ids:
-        try:
-            risk_weight = risk_weights[position_id]
-        except KeyError as exc:
-            raise DrcInputError(
-                "context.securitisation_non_ctp_risk_weights is required for "
-                f"securitisation non-CTP position {position_id}"
-            ) from exc
-        _require_finite_non_negative(
-            risk_weight,
-            f"securitisation_non_ctp_risk_weights[{position_id!r}]",
-        )
-        weights.add(risk_weight)
-    return weights
 
 
 def _inputs_by_offset_group(
@@ -761,33 +712,8 @@ def _inputs_by_offset_group(
     return grouped
 
 
-def _representative_scaled_jtd_id(items: list[SecuritisationNonCtpNettingInput]) -> str:
+def _representative_scaled_jtd_id(items: Sequence[SecuritisationNonCtpNettingInput]) -> str:
     return sorted(item.scaled_jtd.scaled_jtd_id for item in items)[0]
-
-
-def _require_finite_non_negative(value: float, field_name: str) -> None:
-    if not math.isfinite(value) or value < 0.0:
-        raise DrcInputError(f"{field_name} must be finite and non-negative")
-
-
-def _require_text(value: str | None, field_name: str) -> str:
-    if value is None:
-        raise DrcInputError(f"{field_name} must be non-empty")
-    text = str(value).strip()
-    if not text:
-        raise DrcInputError(f"{field_name} must be non-empty")
-    return text
-
-
-def _optional_text(value: str | None) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    return None if text == "" else text
-
-
-def _merge_citations(citations: tuple[str, ...]) -> tuple[str, ...]:
-    return tuple(dict.fromkeys(citations))
 
 
 def _fair_value_capped_gross_jtd(
@@ -807,7 +733,9 @@ def _fair_value_capped_gross_jtd(
             market_value,
             (
                 BranchMetadata(
-                    branch_id=f"gross-sec-non-ctp-no-fair-value-cap-{_slug(position.position_id)}",
+                    branch_id=(
+                        f"gross-sec-non-ctp-no-fair-value-cap-{slug_path(position.position_id)}"
+                    ),
                     branch_type=BranchType.NORMAL,
                     source_id=position.position_id,
                     selected=True,
@@ -824,13 +752,16 @@ def _fair_value_capped_gross_jtd(
         raise DrcInputError(
             f"securitisation non-CTP fair-value cap is not supported for profile {profile_id}"
         )
-    citations = _merge_citations((*_FAIR_VALUE_CAP_CITATIONS, *evidence.citation_ids))
+    citations = merge_citations((*_FAIR_VALUE_CAP_CITATIONS, *evidence.citation_ids))
     if not evidence.eligible:
         return (
             market_value,
             (
                 BranchMetadata(
-                    branch_id=f"gross-sec-non-ctp-fair-value-cap-ineligible-{_slug(position.position_id)}",
+                    branch_id=(
+                        "gross-sec-non-ctp-fair-value-cap-ineligible-"
+                        f"{slug_path(position.position_id)}"
+                    ),
                     branch_type=BranchType.NORMAL,
                     source_id=evidence.source_id,
                     selected=True,
@@ -853,7 +784,10 @@ def _fair_value_capped_gross_jtd(
             capped,
             (
                 BranchMetadata(
-                    branch_id=f"gross-sec-non-ctp-fair-value-cap-applied-{_slug(position.position_id)}",
+                    branch_id=(
+                        "gross-sec-non-ctp-fair-value-cap-applied-"
+                        f"{slug_path(position.position_id)}"
+                    ),
                     branch_type=BranchType.CAP,
                     source_id=evidence.source_id,
                     selected=True,
@@ -871,7 +805,10 @@ def _fair_value_capped_gross_jtd(
         market_value,
         (
             BranchMetadata(
-                branch_id=f"gross-sec-non-ctp-fair-value-cap-not-binding-{_slug(position.position_id)}",
+                branch_id=(
+                    "gross-sec-non-ctp-fair-value-cap-not-binding-"
+                    f"{slug_path(position.position_id)}"
+                ),
                 branch_type=BranchType.NORMAL,
                 source_id=evidence.source_id,
                 selected=True,
@@ -884,10 +821,6 @@ def _fair_value_capped_gross_jtd(
         ),
         citations,
     )
-
-
-def _slug(value: str) -> str:
-    return value.lower().replace(" ", "-").replace("_", "-").replace(":", "-").replace("/", "-")
 
 
 __all__ = [

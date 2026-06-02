@@ -7,6 +7,7 @@ from dataclasses import replace
 
 from frtb_common import CapitalComponentMetadata, ImplementationStatus, ValidationStatus
 
+from frtb_drc._identifiers import slug as _slug
 from frtb_drc._version import __version__
 from frtb_drc.attribution import calculate_drc_attribution
 from frtb_drc.audit import input_snapshot_hash, rule_profile_hash, validate_reconciliation
@@ -493,7 +494,3 @@ def _run_branch_metadata(
             )
         )
     return tuple(branches)
-
-
-def _slug(value: str) -> str:
-    return value.lower().replace(" ", "-").replace("_", "-")
