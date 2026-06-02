@@ -118,8 +118,12 @@ def _validate_record(
         raise DrcInputError(f"{field_prefix}.citation_ids must be non-empty")
     if record.is_stale or "STALE" in {flag.strip().upper() for flag in record.validation_flags}:
         raise DrcInputError(f"{field_prefix} is stale")
+    if record.as_of_date is None:
+        raise DrcInputError(f"{field_prefix}.as_of_date is required")
     if record.as_of_date > context.calculation_date:
         raise DrcInputError(f"{field_prefix}.as_of_date is after calculation_date")
+    if record.eligible is None:
+        raise DrcInputError(f"{field_prefix}.eligible is required")
     if record.eligible:
         if record.fair_value_cap_amount is None:
             raise DrcInputError(f"{field_prefix}.fair_value_cap_amount is required")

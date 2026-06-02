@@ -157,6 +157,36 @@ def test_securitisation_non_ctp_stale_cap_evidence_fails_closed() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    ("field_name", "replacement", "message"),
+    [
+        ("as_of_date", None, "as_of_date is required"),
+        ("eligible", None, "eligible is required"),
+    ],
+)
+def test_securitisation_non_ctp_none_cap_evidence_fields_fail_closed(
+    field_name: str,
+    replacement: object,
+    message: str,
+) -> None:
+    position = _sec_position("none-cap-field", DefaultDirection.LONG, market_value=100.0)
+    cap_evidence = replace(
+        _fair_value_cap_evidence(position, fair_value_cap_amount=80.0),
+        **{field_name: replacement},
+    )
+
+    with pytest.raises(DrcInputError, match=message):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                securitisation_non_ctp_risk_weights={position.position_id: 0.2},
+                securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+                    (cap_evidence,)
+                ),
+            ),
+        )
+
+
 def test_securitisation_non_ctp_unused_cap_evidence_fails_closed() -> None:
     position = _sec_position("used-cap-position", DefaultDirection.LONG, market_value=100.0)
     unused = _sec_position("unused-cap-position", DefaultDirection.LONG, market_value=100.0)
