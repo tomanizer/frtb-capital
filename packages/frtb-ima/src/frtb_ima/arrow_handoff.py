@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import UTC, date, datetime
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
-import pyarrow.compute as pc  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
@@ -19,6 +18,7 @@ from frtb_common import (
     TabularLogicalType,
     normalize_arrow_table,
     normalized_handoff_hash,
+    read_handoff_columns,
     validate_arrow_table,
 )
 
@@ -223,6 +223,76 @@ IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
 )
 
 
+_IMA_SCENARIO_METADATA_BATCH_COLUMN_ARGS: Mapping[str, str] = {
+    "scenario_id": "scenario_ids",
+    "scenario_set": "scenario_sets",
+    "calibration_window": "calibration_windows",
+    "source": "sources",
+    "provenance_json": "provenance_json",
+    "source_row_id": "source_row_ids",
+}
+
+_IMA_RFET_OBSERVATION_BATCH_COLUMN_ARGS: Mapping[str, str] = {
+    "risk_factor_name": "risk_factor_names",
+    "source": "sources",
+    "vendor_id": "vendor_ids",
+    "venue": "venues",
+    "feed": "feeds",
+    "date_normalization_evidence": "date_normalization_evidence",
+    "verifiable": "verifiable",
+    "verifiability_reason": "verifiability_reasons",
+    "data_pool_id": "data_pool_ids",
+    "vendor_audit_evidence_id": "vendor_audit_evidence_ids",
+    "source_row_id": "source_row_ids",
+}
+
+_IMA_SCENARIO_METADATA_DEFAULTS: Mapping[str, object] = {
+    "scenario_set": ScenarioSetType.CURRENT.value,
+    "calibration_window": "",
+    "source": "",
+    "provenance_json": "",
+    "source_row_id": "",
+}
+
+_IMA_RFET_OBSERVATION_DEFAULTS: Mapping[str, object] = {
+    "source": "",
+    "vendor_id": "",
+    "venue": "",
+    "feed": "",
+    "date_normalization_evidence": "",
+    "verifiable": True,
+    "verifiability_reason": "",
+    "data_pool_id": "",
+    "vendor_audit_evidence_id": "",
+    "source_row_id": "",
+}
+
+_IMA_LOCAL_LOGICAL_TYPES = frozenset(
+    {
+        TabularLogicalType.DATE,
+        TabularLogicalType.TIMESTAMP,
+    }
+)
+
+
+def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
+    unknown = tuple(
+        spec.name
+        for spec_group in spec_groups
+        for spec in spec_group
+        if spec.logical_type is TabularLogicalType.UNKNOWN
+    )
+    if unknown:
+        raise RuntimeError("IMA handoff specs must declare logical_type: " + ", ".join(unknown))
+
+
+_ensure_explicit_logical_types(
+    IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS,
+    IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS,
+    IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS,
+)
+
+
 def normalize_ima_input_manifest_arrow_table(
     table: pa.Table,
     *,
@@ -294,19 +364,15 @@ def build_scenario_metadata_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise ValueError("handoff must be NormalizedTabularHandoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS)
+    columns = _read_ima_handoff_columns(table, IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS)
     return ScenarioMetadataBatch(
-        scenario_ids=_string_column(table, "scenario_id"),
         scenario_dates=_date_column(table, "scenario_date"),
-        scenario_sets=_string_column(
-            table,
-            "scenario_set",
-            default=ScenarioSetType.CURRENT.value,
+        **_ima_batch_column_kwargs(
+            columns,
+            _IMA_SCENARIO_METADATA_BATCH_COLUMN_ARGS,
+            row_count=table.num_rows,
+            defaults=_IMA_SCENARIO_METADATA_DEFAULTS,
         ),
-        calibration_windows=_string_column(table, "calibration_window", default=""),
-        sources=_string_column(table, "source", default=""),
-        provenance_json=_string_column(table, "provenance_json", default=""),
-        source_row_ids=_string_column(table, "source_row_id", default=""),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
     )
@@ -320,29 +386,16 @@ def build_rfet_observation_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise ValueError("handoff must be NormalizedTabularHandoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS)
+    columns = _read_ima_handoff_columns(table, IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS)
     return RFETObservationBatch(
-        risk_factor_names=_string_column(table, "risk_factor_name"),
         observation_dates=_date_column(table, "observation_date"),
-        sources=_string_column(table, "source", default=""),
-        vendor_ids=_string_column(table, "vendor_id", default=""),
-        venues=_string_column(table, "venue", default=""),
-        feeds=_string_column(table, "feed", default=""),
         observation_timestamps=_timestamp_column(table, "observation_timestamp"),
-        date_normalization_evidence=_string_column(
-            table,
-            "date_normalization_evidence",
-            default="",
+        **_ima_batch_column_kwargs(
+            columns,
+            _IMA_RFET_OBSERVATION_BATCH_COLUMN_ARGS,
+            row_count=table.num_rows,
+            defaults=_IMA_RFET_OBSERVATION_DEFAULTS,
         ),
-        verifiable=_bool_column(table, "verifiable", default=True),
-        verifiability_reasons=_string_column(table, "verifiability_reason", default=""),
-        data_pool_ids=_string_column(table, "data_pool_id", default=""),
-        vendor_audit_evidence_ids=_string_column(
-            table,
-            "vendor_audit_evidence_id",
-            default="",
-        ),
-        source_row_ids=_string_column(table, "source_row_id", default=""),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_handoff_hash(handoff),
     )
@@ -361,9 +414,9 @@ def build_capital_run_input_manifest_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise ValueError("handoff must be NormalizedTabularHandoff")
     table = handoff.accepted
-    validate_arrow_table(table, column_specs=IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS)
+    columns = _read_ima_handoff_columns(table, IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS)
 
-    artifacts = _artifact_lineages_from_table(table)
+    artifacts = _artifact_lineages_from_table(table, columns)
     manifest_as_of = _manifest_as_of_date(
         as_of_date,
         metadata_value=handoff.metadata.get("as_of_date"),
@@ -397,11 +450,14 @@ def build_capital_run_input_manifest_from_handoff(
     )
 
 
-def _artifact_lineages_from_table(table: pa.Table) -> tuple[InputArtifactLineage, ...]:
-    optional_statuses = _optional_column(table, "validation_status")
-    optional_messages = _optional_column(table, "validation_messages")
-    optional_metadata = _optional_column(table, "metadata_json")
-    optional_source_rows = _optional_column(table, "source_row_id")
+def _artifact_lineages_from_table(
+    table: pa.Table,
+    columns: Mapping[str, object],
+) -> tuple[InputArtifactLineage, ...]:
+    optional_statuses = _optional_column_values(columns, "validation_status")
+    optional_messages = _optional_column_values(columns, "validation_messages")
+    optional_metadata = _optional_column_values(columns, "metadata_json")
+    optional_source_rows = _optional_column_values(columns, "source_row_id")
     artifacts: list[InputArtifactLineage] = []
     for index in range(table.num_rows):
         row_metadata = _metadata_json_at(optional_metadata, index)
@@ -410,17 +466,17 @@ def _artifact_lineages_from_table(table: pa.Table) -> tuple[InputArtifactLineage
             row_metadata["source_row_id"] = source_row_id
         artifacts.append(
             InputArtifactLineage(
-                artifact_name=_required_text_at(table, "artifact_name", index),
-                artifact_type=_required_text_at(table, "artifact_type", index),
-                schema_version=_required_text_at(table, "schema_version", index),
-                source_system=_required_text_at(table, "source_system", index),
-                source_version=_required_text_at(table, "source_version", index),
+                artifact_name=_required_text_at(columns, "artifact_name", index),
+                artifact_type=_required_text_at(columns, "artifact_type", index),
+                schema_version=_required_text_at(columns, "schema_version", index),
+                source_system=_required_text_at(columns, "source_system", index),
+                source_version=_required_text_at(columns, "source_version", index),
                 extraction_timestamp=_datetime_at(table, "extraction_timestamp", index),
                 as_of_date=_date_at(table, "as_of_date", index),
-                record_count=_non_negative_int_at(table, "record_count", index),
-                vector_count=_non_negative_int_at(table, "vector_count", index),
-                checksum=_required_text_at(table, "checksum", index),
-                sign_convention=_required_text_at(table, "sign_convention", index),
+                record_count=_non_negative_int_at(columns, "record_count", index),
+                vector_count=_non_negative_int_at(columns, "vector_count", index),
+                checksum=_required_text_at(columns, "checksum", index),
+                sign_convention=_required_text_at(columns, "sign_convention", index),
                 validation_status=InputValidationStatus(
                     _optional_text_at(optional_statuses, index)
                     or InputValidationStatus.PASSED.value
@@ -455,26 +511,156 @@ def _manifest_as_of_date(
     raise ValueError("as_of_date must be supplied when artifact rows have multiple dates")
 
 
-def _required_column(table: pa.Table, column_name: str) -> list[object]:
-    if column_name not in table.column_names:
+def _read_ima_handoff_columns(
+    table: pa.Table,
+    column_specs: tuple[ColumnSpec, ...],
+) -> Mapping[str, object]:
+    validate_arrow_table(table, column_specs=column_specs)
+    columns: Mapping[str, object] = read_handoff_columns(
+        table,
+        _ima_reader_specs(column_specs),
+        error=_ima_error,
+    )
+    return _ima_columns_with_package_defaults(table, column_specs, columns)
+
+
+def _ima_reader_specs(column_specs: tuple[ColumnSpec, ...]) -> tuple[ColumnSpec, ...]:
+    return tuple(spec for spec in column_specs if spec.logical_type not in _IMA_LOCAL_LOGICAL_TYPES)
+
+
+def _ima_columns_with_package_defaults(
+    table: pa.Table,
+    column_specs: Sequence[ColumnSpec],
+    columns: Mapping[str, object],
+) -> dict[str, object]:
+    updated = dict(columns)
+    for spec in column_specs:
+        if spec.name != "verifiable" or spec.name not in updated:
+            continue
+        column_name = _physical_column_name(table, spec)
+        if column_name is None:
+            continue
+        column = table.column(column_name)
+        if column.null_count:
+            updated[spec.name] = _restore_bool_nulls_as_default(
+                column,
+                updated[spec.name],
+                default=True,
+            )
+    return updated
+
+
+def _physical_column_name(table: pa.Table, spec: ColumnSpec) -> str | None:
+    for candidate in (spec.name, *spec.aliases):
+        if candidate in table.column_names:
+            return candidate
+    return None
+
+
+def _restore_bool_nulls_as_default(
+    column: pa.ChunkedArray,
+    values: object,
+    *,
+    default: bool,
+) -> BooleanArray:
+    array = _single_array(column)
+    valid = tuple(bool(item) for item in array.is_valid().to_pylist())
+    converted = tuple(bool(value) for value in cast(Iterable[object], values))
+    if len(converted) != len(valid):
+        raise ValueError("verifiable length must match accepted row count")
+    restored = np.asarray(
+        [value if is_valid else default for value, is_valid in zip(converted, valid)],
+        dtype=np.bool_,
+    )
+    restored.setflags(write=False)
+    return restored
+
+
+def _ima_batch_column_kwargs(
+    columns: Mapping[str, object],
+    column_args: Mapping[str, str],
+    *,
+    row_count: int,
+    defaults: Mapping[str, object],
+) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {}
+    for column_name, argument_name in column_args.items():
+        default = defaults.get(column_name)
+        if isinstance(default, bool):
+            kwargs[argument_name] = _bool_column_from_columns(
+                columns,
+                column_name,
+                row_count=row_count,
+                default=default,
+            )
+        else:
+            kwargs[argument_name] = _string_column_from_columns(
+                columns,
+                column_name,
+                row_count=row_count,
+                default=cast(str | None, default),
+            )
+    return kwargs
+
+
+def _string_column_from_columns(
+    columns: Mapping[str, object],
+    column_name: str,
+    *,
+    row_count: int,
+    default: str | None = None,
+) -> StringArray:
+    values = columns.get(column_name)
+    if values is None:
+        if default is None:
+            raise ValueError(f"column is required: {column_name}")
+        return np.full(row_count, default, dtype=f"<U{max(1, len(default))}")
+    fill = "" if default is None else default
+    array = np.asarray(
+        [fill if value is None else str(value) for value in cast(Iterable[object], values)],
+        dtype=np.str_,
+    )
+    return array
+
+
+def _bool_column_from_columns(
+    columns: Mapping[str, object],
+    column_name: str,
+    *,
+    row_count: int,
+    default: bool,
+) -> BooleanArray:
+    values = columns.get(column_name)
+    if values is None:
+        return np.full(row_count, default, dtype=np.bool_)
+    return cast(BooleanArray, np.asarray(values, dtype=np.bool_))
+
+
+def _required_column_value(columns: Mapping[str, object], column_name: str, index: int) -> object:
+    values = columns.get(column_name)
+    if values is None:
         raise ValueError(f"column is required: {column_name}")
-    return cast(list[object], table.column(column_name).to_pylist())
+    return cast(Sequence[object], values)[index]
 
 
-def _optional_column(table: pa.Table, column_name: str) -> list[object | None] | None:
-    if column_name not in table.column_names:
+def _optional_column_values(
+    columns: Mapping[str, object],
+    column_name: str,
+) -> Sequence[object | None] | None:
+    values = columns.get(column_name)
+    if values is None:
         return None
-    return cast(list[object | None], table.column(column_name).to_pylist())
+    return cast(Sequence[object | None], values)
 
 
-def _required_text_at(table: pa.Table, column_name: str, index: int) -> str:
-    value = _required_column(table, column_name)[index]
+def _required_text_at(columns: Mapping[str, object], column_name: str, index: int) -> str:
+    value = _required_column_value(columns, column_name, index)
     if not isinstance(value, str) or not value:
         raise ValueError(f"{column_name} must contain non-empty text")
     return value
 
 
-def _optional_text_at(values: list[object | None] | None, index: int) -> str | None:
+def _optional_text_at(values: Sequence[object | None] | None, index: int) -> str | None:
     if values is None:
         return None
     value = values[index]
@@ -485,7 +671,7 @@ def _optional_text_at(values: list[object | None] | None, index: int) -> str | N
 
 
 def _datetime_at(table: pa.Table, column_name: str, index: int) -> datetime:
-    value = _required_column(table, column_name)[index]
+    value = _required_table_column(table, column_name)[index]
     if isinstance(value, datetime):
         return value
     if isinstance(value, str):
@@ -494,7 +680,7 @@ def _datetime_at(table: pa.Table, column_name: str, index: int) -> datetime:
 
 
 def _date_at(table: pa.Table, column_name: str, index: int) -> date:
-    value = _required_column(table, column_name)[index]
+    value = _required_table_column(table, column_name)[index]
     return _parse_date(value, column_name)
 
 
@@ -508,8 +694,8 @@ def _parse_date(value: object, field: str) -> date:
     raise ValueError(f"{field} must contain dates or ISO-8601 date text")
 
 
-def _non_negative_int_at(table: pa.Table, column_name: str, index: int) -> int:
-    value = _required_column(table, column_name)[index]
+def _non_negative_int_at(columns: Mapping[str, object], column_name: str, index: int) -> int:
+    value = _required_column_value(columns, column_name, index)
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{column_name} must contain integers")
     integer = int(value)
@@ -520,7 +706,7 @@ def _non_negative_int_at(table: pa.Table, column_name: str, index: int) -> int:
     return integer
 
 
-def _messages_at(values: list[object | None] | None, index: int) -> tuple[str, ...]:
+def _messages_at(values: Sequence[object | None] | None, index: int) -> tuple[str, ...]:
     text = _optional_text_at(values, index)
     if text is None:
         return ()
@@ -536,7 +722,7 @@ def _messages_at(values: list[object | None] | None, index: int) -> tuple[str, .
     return (str(parsed),)
 
 
-def _metadata_json_at(values: list[object | None] | None, index: int) -> dict[str, str]:
+def _metadata_json_at(values: Sequence[object | None] | None, index: int) -> dict[str, str]:
     text = _optional_text_at(values, index)
     if text is None:
         return {}
@@ -556,13 +742,10 @@ def _metadata_json_at(values: list[object | None] | None, index: int) -> dict[st
     return metadata
 
 
-def _string_column(table: pa.Table, column_name: str, *, default: str | None = None) -> StringArray:
+def _required_table_column(table: pa.Table, column_name: str) -> list[object]:
     if column_name not in table.column_names:
-        if default is None:
-            raise ValueError(f"column is required: {column_name}")
-        return np.full(table.num_rows, default, dtype=f"<U{max(1, len(default))}")
-    values = _object_array_from_column(table.column(column_name), default=default)
-    return np.asarray(values, dtype=np.str_)
+        raise ValueError(f"column is required: {column_name}")
+    return cast(list[object], table.column(column_name).to_pylist())
 
 
 def _date_column(table: pa.Table, column_name: str) -> DateArray:
@@ -600,20 +783,6 @@ def _timestamp_column(table: pa.Table, column_name: str) -> DatetimeArray:
     return np.asarray(timestamps, dtype="datetime64[us]")
 
 
-def _bool_column(table: pa.Table, column_name: str, *, default: bool) -> BooleanArray:
-    if column_name not in table.column_names:
-        return np.full(table.num_rows, default, dtype=np.bool_)
-    array = _single_array(table.column(column_name))
-    if pa.types.is_boolean(array.type):
-        return np.asarray(
-            pc.fill_null(array, default).to_numpy(zero_copy_only=False), dtype=np.bool_
-        )
-    values = array.to_pylist()
-    return np.asarray(
-        [default if value is None else bool(value) for value in values], dtype=np.bool_
-    )
-
-
 def _timestamp_to_utc_naive(value: datetime) -> datetime:
     if value.tzinfo is None:
         return value
@@ -624,55 +793,8 @@ def _single_array(column: pa.ChunkedArray) -> pa.Array:
     return column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
 
 
-def _object_array_from_column(
-    column: pa.ChunkedArray,
-    *,
-    default: str | None,
-) -> npt.NDArray[np.object_]:
-    chunks = [_object_array_from_array(chunk, default=default) for chunk in column.chunks]
-    if not chunks:
-        return np.asarray([], dtype=object)
-    if len(chunks) == 1:
-        return chunks[0]
-    return np.concatenate(chunks).astype(object, copy=False)
-
-
-def _object_array_from_array(
-    array: pa.Array,
-    *,
-    default: str | None,
-) -> npt.NDArray[np.object_]:
-    if pa.types.is_dictionary(array.type):
-        return _dictionary_array_to_object_array(cast(pa.DictionaryArray, array), default=default)
-    values = np.asarray(array.to_numpy(zero_copy_only=False), dtype=object)
-    if array.null_count:
-        fill = "" if default is None else default
-        valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-        values = values.copy()
-        values[~valid] = fill
-    return values
-
-
-def _dictionary_array_to_object_array(
-    array: pa.DictionaryArray,
-    *,
-    default: str | None,
-) -> npt.NDArray[np.object_]:
-    dictionary = np.asarray(array.dictionary.to_numpy(zero_copy_only=False), dtype=object)
-    if dictionary.size == 0:
-        return np.full(len(array), "" if default is None else default, dtype=object)
-    indices = np.asarray(
-        pc.fill_null(array.indices, pa.scalar(0, type=array.indices.type)).to_numpy(
-            zero_copy_only=False
-        ),
-        dtype=np.int64,
-    )
-    values = dictionary[indices]
-    if array.null_count:
-        fill = "" if default is None else default
-        valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-        values[~valid] = fill
-    return values
+def _ima_error(message: str, _field: str | None) -> ValueError:
+    return ValueError(message)
 
 
 __all__ = [
