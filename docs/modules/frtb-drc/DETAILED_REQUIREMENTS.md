@@ -64,6 +64,8 @@ The public API must accept:
 - canonical `DrcPosition` records;
 - a `DrcCalculationContext` containing run identity, desk/legal-entity scope,
   calculation date, base currency, selected rule profile, and citation policy;
+- explicit FX rates, with source lineage and as-of date, for each input
+  currency that differs from the base currency;
 - optional run controls for audit verbosity and unsupported-feature behavior.
 
 The API must return a frozen `DrcCapitalResult` only when all requested features
@@ -90,6 +92,33 @@ calculation. A record must carry:
 
 Inputs may accept raw strings at adapter boundaries, but calculation kernels
 must receive normalised enums and finite numeric values.
+
+### DRC-FUNC-002A: Base-currency translation
+
+For a multi-currency DRC book, the package must translate monetary DRC inputs
+to `DrcCalculationContext.base_currency` before gross default exposure,
+maturity scaling, permitted netting, HBR, bucket capital, and category
+aggregation.
+
+The package must not source rates implicitly. `DrcCalculationContext.fx_rates`
+must provide a finite positive spot/base-currency rate for every non-base input
+currency present in the run, plus source id, source lineage, and rate as-of
+date. The rate as-of date must match `calculation_date`. A missing, stale,
+non-finite, non-positive, or wrong-target rate must raise `DrcInputError`.
+
+The U.S. NPR DRC section `__.210` defines gross default exposure from LGD,
+notional amount or face value, and cumulative P&L in proposed section
+`__.210(b)(1)(iii)`. The package applies the market-risk reporting-currency
+convention in proposed section `__.207(a)(8)` and the spot reporting/base
+exchange-rate concept in proposed section `__.208(h)(1)(ii)` to translate
+native-currency notional, market value, and cumulative P&L into the base
+currency before applying the cited DRC formulas.
+
+Applied FX rates must be preserved in `DrcCapitalResult.fx_conversions` and in
+run-level branch metadata. When conversion is applied, the result `input_hash`
+must include both the canonical position input hash and the FX conversion
+lineage so that rerunning the same positions with different rates cannot
+produce the same result id.
 
 ### DRC-FUNC-003: Sign convention
 

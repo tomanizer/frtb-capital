@@ -16,11 +16,13 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 from frtb_drc.data_models import (
     DrcCalculationContext,
+    DrcFxRate,
     DrcPosition,
     DrcSourceLineage,
 )
@@ -53,7 +55,6 @@ def load_drc_nonsec_fixture(root: Path) -> DrcNonSecFixture:
     raw = _read_json(root / "positions.json")
     positions = tuple(_position_from_dict(item) for item in raw["positions"])
     context_raw = raw["context"]
-    from datetime import date
 
     context = DrcCalculationContext(
         run_id=str(context_raw["run_id"]),
@@ -63,6 +64,7 @@ def load_drc_nonsec_fixture(root: Path) -> DrcNonSecFixture:
         desk_id=str(context_raw.get("desk_id", "")),
         legal_entity=str(context_raw.get("legal_entity", "")),
         citation_policy=str(context_raw.get("citation_policy", "strict")),
+        fx_rates=_fx_rates_from_dict(context_raw),
     )
     expected_outputs = _read_json(root / "expected_outputs.json")
     return DrcNonSecFixture(
@@ -133,6 +135,38 @@ def _position_from_dict(raw: dict[str, Any]) -> DrcPosition:
         is_covered_bond=bool(raw.get("is_covered_bond", False)),
         lineage=lineage,
         citation_ids=tuple(str(c) for c in (raw.get("citation_ids") or [])),
+    )
+
+
+def _fx_rates_from_dict(raw: dict[str, Any]) -> dict[str, DrcFxRate]:
+    rates_raw = raw.get("fx_rates") or {}
+    if not isinstance(rates_raw, dict):
+        raise AssertionError("context.fx_rates must be a JSON object")
+    return {str(currency): _fx_rate_from_dict(rate) for currency, rate in rates_raw.items()}
+
+
+def _fx_rate_from_dict(raw: Any) -> DrcFxRate:
+    if not isinstance(raw, dict):
+        raise AssertionError("context.fx_rates values must be JSON objects")
+    lineage_raw = raw.get("lineage")
+    if not isinstance(lineage_raw, dict):
+        raise AssertionError("context.fx_rates values require lineage")
+    return DrcFxRate(
+        source_currency=str(raw["source_currency"]),
+        target_currency=str(raw["target_currency"]),
+        rate=float(raw["rate"]),
+        as_of_date=date.fromisoformat(str(raw["as_of_date"])),
+        source_id=str(raw["source_id"]),
+        lineage=DrcSourceLineage(
+            source_system=str(lineage_raw["source_system"]),
+            source_file=str(lineage_raw["source_file"]),
+            source_row_id=str(lineage_raw["source_row_id"]),
+            source_column_map=dict(lineage_raw.get("source_column_map") or {}),
+        ),
+        citation_ids=tuple(
+            str(citation_id)
+            for citation_id in (raw.get("citation_ids") or ("US_NPR_207_A_8", "US_NPR_208_H_1_II"))
+        ),
     )
 
 

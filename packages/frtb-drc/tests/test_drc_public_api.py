@@ -10,6 +10,8 @@ from frtb_drc import (
     CreditQuality,
     DefaultDirection,
     DrcCalculationContext,
+    DrcFxConversion,
+    DrcFxRate,
     DrcInputError,
     DrcInstrumentType,
     DrcPosition,
@@ -147,6 +149,99 @@ def test_public_api_accepts_populated_position_scope_when_context_is_unscoped() 
     assert result.input_count == 1
 
 
+def test_public_api_translates_multi_currency_book_before_gross_jtd() -> None:
+    result = calculate_drc_capital(
+        (
+            _position("usd", DefaultDirection.LONG, 100.0, issuer="issuer-usd"),
+            _position(
+                "eur",
+                DefaultDirection.LONG,
+                100.0,
+                issuer="issuer-eur",
+                currency="EUR",
+            ),
+        ),
+        context=_context(fx_rates={"EUR": _fx_rate("EUR", 1.2)}),
+    )
+
+    gross_by_position = {record.position_id: record for record in result.gross_jtds}
+    input_currency_by_position = {
+        position.position_id: position.currency for position in result.input_positions
+    }
+    assert input_currency_by_position["eur"] == "EUR"
+    assert gross_by_position["usd"].gross_jtd == pytest.approx(75.0)
+    assert gross_by_position["eur"].notional == pytest.approx(120.0)
+    assert gross_by_position["eur"].gross_jtd == pytest.approx(90.0)
+    assert result.total_drc == pytest.approx((75.0 + 90.0) * 0.041)
+    assert result.fx_conversions == (
+        DrcFxConversion(
+            source_currency="EUR",
+            target_currency="USD",
+            rate=1.2,
+            as_of_date=date(2026, 5, 29),
+            source_id="unit-fx-source",
+            position_count=1,
+            lineage=_fx_lineage(),
+            citation_ids=("US_NPR_207_A_8", "US_NPR_208_H_1_II"),
+        ),
+    )
+    assert "US_NPR_207_A_8" in result.citations
+    assert "US_NPR_208_H_1_II" in result.citations
+    assert result.branch_metadata[-1].source_id == "unit-fx-source"
+
+
+def test_public_api_missing_fx_rate_fails_closed() -> None:
+    with pytest.raises(DrcInputError, match=r"missing FX rate EUR->USD.*position eur"):
+        calculate_drc_capital(
+            (_position("eur", DefaultDirection.LONG, 100.0, currency="EUR"),),
+            context=_context(),
+        )
+
+
+def test_public_api_rejects_non_finite_fx_rate_at_context_boundary() -> None:
+    with pytest.raises(DrcInputError, match=r"FX rate EUR->USD must be finite and positive"):
+        calculate_drc_capital(
+            (_position("usd", DefaultDirection.LONG, 100.0),),
+            context=_context(fx_rates={"EUR": _fx_rate("EUR", float("inf"))}),
+        )
+
+
+def test_public_api_rejects_none_fx_rate_text_fields() -> None:
+    bad_rate = DrcFxRate(
+        source_currency="EUR",
+        target_currency="USD",
+        rate=1.2,
+        as_of_date=date(2026, 5, 29),
+        source_id=None,  # type: ignore[arg-type]
+        lineage=_fx_lineage(),
+    )
+
+    with pytest.raises(DrcInputError, match=r"fx_rate\.source_id must be non-empty"):
+        calculate_drc_capital(
+            (_position("usd", DefaultDirection.LONG, 100.0),),
+            context=_context(fx_rates={"EUR": bad_rate}),
+        )
+
+
+def test_public_api_rejects_fx_rate_for_wrong_as_of_date() -> None:
+    with pytest.raises(DrcInputError, match=r"as_of_date 2026-05-28.*calculation_date 2026-05-29"):
+        calculate_drc_capital(
+            (_position("eur", DefaultDirection.LONG, 100.0, currency="EUR"),),
+            context=_context(fx_rates={"EUR": _fx_rate("EUR", 1.2, as_of_date=date(2026, 5, 28))}),
+        )
+
+
+def test_public_api_single_currency_output_is_unchanged_without_fx() -> None:
+    positions = (_position("usd", DefaultDirection.LONG, 100.0),)
+
+    first = calculate_drc_capital(positions, context=_context())
+    second = calculate_drc_capital(positions, context=_context(fx_rates={}))
+
+    assert second.fx_conversions == ()
+    assert second.input_hash == first.input_hash
+    assert second.total_drc == first.total_drc
+
+
 def test_public_api_rejects_uncited_position_under_strict_policy() -> None:
     with pytest.raises(DrcInputError, match="citation_ids"):
         calculate_drc_capital(
@@ -184,6 +279,7 @@ def _context(
     desk_id: str = "",
     legal_entity: str = "",
     citation_policy: str = "strict",
+    fx_rates: dict[str, DrcFxRate] | None = None,
 ) -> DrcCalculationContext:
     return DrcCalculationContext(
         run_id=run_id,
@@ -193,6 +289,7 @@ def _context(
         desk_id=desk_id,
         legal_entity=legal_entity,
         citation_policy=citation_policy,
+        fx_rates={} if fx_rates is None else fx_rates,
     )
 
 
@@ -209,6 +306,7 @@ def _position(
     credit_quality: CreditQuality = CreditQuality.INVESTMENT_GRADE,
     desk_id: str = "desk-a",
     legal_entity: str = "bank-na",
+    currency: str = "USD",
     citation_ids: tuple[str, ...] = ("US_NPR_210_SCOPE",),
 ) -> DrcPosition:
     return DrcPosition(
@@ -229,7 +327,7 @@ def _position(
         market_value=notional,
         cumulative_pnl=0.0,
         maturity_years=1.0,
-        currency="USD",
+        currency=currency,
         lineage=DrcSourceLineage(
             source_system="synthetic",
             source_file="public-api.csv",
@@ -237,4 +335,29 @@ def _position(
             source_column_map={"position_id": "position_id", "issuer_id": "issuer_id"},
         ),
         citation_ids=citation_ids,
+    )
+
+
+def _fx_rate(
+    source_currency: str,
+    rate: float,
+    *,
+    as_of_date: date = date(2026, 5, 29),
+) -> DrcFxRate:
+    return DrcFxRate(
+        source_currency=source_currency,
+        target_currency="USD",
+        rate=rate,
+        as_of_date=as_of_date,
+        source_id="unit-fx-source",
+        lineage=_fx_lineage(),
+    )
+
+
+def _fx_lineage() -> DrcSourceLineage:
+    return DrcSourceLineage(
+        source_system="unit-test",
+        source_file="fx-rates.csv",
+        source_row_id="EUR-USD-2026-05-29",
+        source_column_map={"rate": "rate"},
     )

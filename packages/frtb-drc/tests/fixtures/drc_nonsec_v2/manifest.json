@@ -1,10 +1,10 @@
 {
   "files": {
     "expected_outputs.json": {
-      "sha256": "a78d4eec04a5d85b4afb762832cf8eec069d4816d9c2051e60f2a97e7935e21b"
+      "sha256": "29d4d4f7fbe14a39213537942b5b883c06c5ef14a8aa122bcd5c18d7b26005c2"
     },
     "positions.json": {
-      "sha256": "60b8287c559c438735fcd261efb737ed5d86c1491e9c98105edc574f429889db"
+      "sha256": "92ae03378def76b6200a7867fdf8ec263d19ef03de0b16f62aee251d725404ee"
     }
   },
   "fixture_id": "drc_nonsec_v2",

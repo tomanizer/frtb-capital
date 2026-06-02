@@ -8,7 +8,9 @@ import pyarrow as pa
 import pytest
 from frtb_common import source_content_hash
 from frtb_drc import (
+    DrcFxRate,
     DrcInputError,
+    DrcSourceLineage,
     calculate_drc_capital,
     calculate_drc_capital_from_batch,
     input_hash_for_drc_batch,
@@ -241,6 +243,46 @@ def test_drc_batch_rejects_unsupported_citation_policy_like_row_api() -> None:
         )
 
 
+def test_drc_batch_translates_multi_currency_book_without_row_materialization() -> None:
+    fixture = load_drc_nonsec_v2_fixture()
+    columns = _minimal_column_payload(row_count=2) | {
+        "position_ids": ["usd", "eur"],
+        "source_row_ids": ["row-usd", "row-eur"],
+        "issuer_ids": ["issuer-usd", "issuer-eur"],
+        "notionals": [100.0, 100.0],
+        "currencies": ["USD", "EUR"],
+    }
+    batch = build_drc_nonsec_batch_from_columns(**columns)
+
+    calculation = calculate_drc_capital_from_batch(
+        batch,
+        context=replace(fixture.context, fx_rates={"EUR": _fx_rate("EUR", 1.2)}),
+    )
+
+    gross_by_position = {
+        position_id: gross
+        for position_id, gross in zip(
+            batch.position_ids.tolist(), calculation.gross_jtd, strict=True
+        )
+    }
+    assert calculation.accepted_row_dataclasses_materialized == 0
+    assert gross_by_position == pytest.approx({"usd": 75.0, "eur": 90.0})
+    assert calculation.result.total_drc == pytest.approx((75.0 + 90.0) * 0.041)
+    assert calculation.result.fx_conversions[0].source_currency == "EUR"
+    assert calculation.result.fx_conversions[0].position_count == 1
+    assert "US_NPR_208_H_1_II" in calculation.result.citations
+    assert calculation.result.input_hash != batch.input_hash
+
+
+def test_drc_batch_missing_fx_rate_fails_closed() -> None:
+    fixture = load_drc_nonsec_v2_fixture()
+    columns = _minimal_column_payload(row_count=1) | {"currencies": ["EUR"]}
+    batch = build_drc_nonsec_batch_from_columns(**columns)
+
+    with pytest.raises(DrcInputError, match=r"missing FX rate EUR->USD.*p-000000"):
+        calculate_drc_capital_from_batch(batch, context=fixture.context)
+
+
 def test_drc_column_batch_requires_lineage() -> None:
     columns = _minimal_column_payload(row_count=1)
     columns.pop("lineage_source_systems")
@@ -357,6 +399,22 @@ def _arrow_table(positions: tuple[DrcPosition, ...]) -> pa.Table:
             ],
             "citation_ids": [",".join(position.citation_ids) for position in positions],
         }
+    )
+
+
+def _fx_rate(source_currency: str, rate: float) -> DrcFxRate:
+    return DrcFxRate(
+        source_currency=source_currency,
+        target_currency="USD",
+        rate=rate,
+        as_of_date=load_drc_nonsec_v2_fixture().context.calculation_date,
+        source_id="unit-fx-source",
+        lineage=DrcSourceLineage(
+            source_system="unit-test",
+            source_file="fx-rates.csv",
+            source_row_id="EUR-USD",
+            source_column_map={"rate": "rate"},
+        ),
     )
 
 

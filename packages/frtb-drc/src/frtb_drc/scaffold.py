@@ -23,6 +23,12 @@ from frtb_drc.data_models import (
     MaturityScaledJtd,
     NetJtd,
 )
+from frtb_drc.fx import (
+    convert_positions_to_base_currency,
+    fx_branch_metadata,
+    input_hash_with_fx,
+    validate_fx_rates,
+)
 from frtb_drc.gross_jtd import calculate_gross_jtds
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
@@ -56,28 +62,32 @@ def calculate_drc_capital(
         raise DrcInputError("DRC capital requires at least one position")
     _validate_supported_run(validated, context=context, profile=profile)
 
-    gross_jtds = calculate_gross_jtds(validated, profile_id=profile.profile_id)
+    calculation_positions, fx_conversions = convert_positions_to_base_currency(
+        validated,
+        context=context,
+    )
+    gross_jtds = calculate_gross_jtds(calculation_positions, profile_id=profile.profile_id)
     scaled_jtds = scale_gross_jtds(
         (
             (gross_jtd, position.maturity_years)
-            for gross_jtd, position in zip(gross_jtds, validated, strict=True)
+            for gross_jtd, position in zip(gross_jtds, calculation_positions, strict=True)
         ),
         profile_id=profile.profile_id,
     )
     gross_by_position = {gross.position_id: gross for gross in gross_jtds}
     scaled_by_position = {scaled.position_id: scaled for scaled in scaled_jtds}
     net_jtds = calculate_net_jtds(
-        _netting_inputs(validated, gross_by_position, scaled_by_position),
+        _netting_inputs(calculation_positions, gross_by_position, scaled_by_position),
         profile_id=profile.profile_id,
     )
-    capital_inputs = _capital_inputs(net_jtds, validated)
+    capital_inputs = _capital_inputs(net_jtds, calculation_positions)
     category = (
         calculate_category_drc(capital_inputs, profile_id=profile.profile_id)
         if capital_inputs
         else _zero_nonsec_category()
     )
     total_drc = category.capital
-    input_hash = input_snapshot_hash(validated)
+    input_hash = input_hash_with_fx(input_snapshot_hash(validated), fx_conversions)
     result = DrcCapitalResult(
         result_id=f"drc-{_slug(context.run_id)}-{input_hash[:12]}",
         run_id=context.run_id,
@@ -107,6 +117,7 @@ def calculate_drc_capital(
                 ),
                 citations=("US_NPR_210_SCOPE",),
             ),
+            *fx_branch_metadata(fx_conversions),
         ),
         package_name=PACKAGE_METADATA.package_name,
         package_version=__version__,
@@ -116,6 +127,7 @@ def calculate_drc_capital(
         gross_jtds=gross_jtds,
         maturity_scaled_jtds=scaled_jtds,
         net_jtds=net_jtds,
+        fx_conversions=fx_conversions,
     )
     validate_reconciliation(result)
     return result
@@ -130,6 +142,7 @@ def _validate_context(context: DrcCalculationContext) -> None:
         raise DrcInputError("profile_id must be non-empty")
     if context.citation_policy.strip() == "":
         raise DrcInputError("citation_policy must be non-empty")
+    validate_fx_rates(context)
 
 
 def _validate_supported_run(
@@ -145,11 +158,6 @@ def _validate_supported_run(
         ensure_risk_class_supported(profile, risk_class)
         if risk_class != DrcRiskClass.NON_SECURITISATION:
             raise DrcInputError(f"DRC risk class is not implemented: {risk_class.value}")
-        if position.currency != context.base_currency:
-            raise DrcInputError(
-                f"position currency {position.currency} does not match base currency "
-                f"{context.base_currency}"
-            )
         if scoped_desk_id and position.desk_id != scoped_desk_id:
             raise DrcInputError(
                 f"position {position.position_id} desk_id {position.desk_id} does not match "

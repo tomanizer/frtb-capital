@@ -13,8 +13,10 @@ from frtb_drc import (
     CategoryDrc,
     CreditQuality,
     DefaultDirection,
+    DrcCalculationContext,
     DrcCapitalResult,
     DrcCitation,
+    DrcFxRate,
     DrcInstrumentType,
     DrcPosition,
     DrcRiskClass,
@@ -55,6 +57,31 @@ def test_source_lineage_freezes_column_map() -> None:
 
     with pytest.raises(TypeError):
         cast(Any, lineage.source_column_map)["Qualifier"] = "changed"
+
+
+def test_context_freezes_fx_rate_mapping() -> None:
+    rate = DrcFxRate(
+        source_currency="EUR",
+        target_currency="USD",
+        rate=1.2,
+        as_of_date=date(2026, 5, 29),
+        source_id="unit-fx-source",
+        lineage=DrcSourceLineage(
+            source_system="test",
+            source_file="fx.csv",
+            source_row_id="EUR-USD",
+        ),
+    )
+    context = DrcCalculationContext(
+        run_id="run-1",
+        calculation_date=date(2026, 5, 29),
+        base_currency="USD",
+        profile_id="us-npr-2.0",
+        fx_rates={"EUR": rate},
+    )
+
+    with pytest.raises(TypeError):
+        cast(Any, context.fx_rates)["GBP"] = rate
 
 
 def test_result_records_are_json_serialisable() -> None:
