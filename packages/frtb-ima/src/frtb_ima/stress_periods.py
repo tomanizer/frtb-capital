@@ -29,13 +29,14 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from enum import StrEnum
-from types import MappingProxyType
 
 import numpy as np
 import numpy.typing as npt
 from frtb_common.serialization import jsonable
 from numpy.lib.stride_tricks import sliding_window_view
 
+from frtb_ima._mapping_utils import empty_mapping as _empty_mapping
+from frtb_ima._mapping_utils import freeze_mapping as _freeze_mapping
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.data_models import RiskClass
 from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall_from_sorted_losses_desc
@@ -211,10 +212,6 @@ class StressPeriodCandidate:
         )
 
 
-def _empty_mapping() -> Mapping[str, object]:
-    return MappingProxyType({})
-
-
 @dataclass(frozen=True)
 class StressPeriodSelectionResult:
     """Selected stress periods for a run-level calibration pass."""
@@ -264,12 +261,12 @@ class StressPeriodSelectionResult:
             count = counts[risk_class]
             if count <= 0:
                 raise ValueError("candidate_counts values must be positive")
-        object.__setattr__(self, "selected_by_risk_class", MappingProxyType(selected))
-        object.__setattr__(self, "candidate_counts", MappingProxyType(counts))
+        object.__setattr__(self, "selected_by_risk_class", _freeze_mapping(selected))
+        object.__setattr__(self, "candidate_counts", _freeze_mapping(counts))
         object.__setattr__(self, "es_estimator", es_estimator)
         object.__setattr__(self, "window_basis", str(self.window_basis))
         object.__setattr__(self, "missing_business_dates", tuple(self.missing_business_dates))
-        object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
+        object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 
     @property
     def risk_class_count(self) -> int:

@@ -21,10 +21,11 @@ import logging
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date
-from types import MappingProxyType
 
 from frtb_common.serialization import jsonable
 
+from frtb_ima._mapping_utils import empty_mapping as _empty_mapping
+from frtb_ima._mapping_utils import freeze_mapping as _freeze_mapping
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.nmrf import (
@@ -45,14 +46,6 @@ logger = logging.getLogger(__name__)
 
 class NMRFValuationRunError(ValueError):
     """Raised when an NMRF valuation run cannot be accepted for capital use."""
-
-
-def _empty_mapping() -> Mapping[str, object]:
-    return MappingProxyType({})
-
-
-def _freeze_mapping(values: Mapping[str, object]) -> Mapping[str, object]:
-    return MappingProxyType(dict(values))
 
 
 @dataclass(frozen=True)

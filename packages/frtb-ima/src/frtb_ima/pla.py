@@ -36,6 +36,10 @@ from datetime import date
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima._array_utils import finite_1d_float_array
+from frtb_ima._observation_utils import (
+    validate_observation_dates as _validate_observation_dates,
+)
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import (
@@ -150,22 +154,12 @@ FloatVector = Sequence[float] | npt.NDArray[np.float64]
 
 
 def _as_finite_1d_array(values: FloatVector, name: str) -> npt.NDArray[np.float64]:
-    _validate_float_vector_input(values, name)
-    arr = np.asarray(values, dtype=float)
-    if arr.ndim != 1:
-        raise ValueError(f"{name} vector must be one-dimensional")
-    if arr.size == 0:
-        raise ValueError(f"{name} vector is empty")
-    if not np.all(np.isfinite(arr)):
-        raise ValueError(f"{name} vector must contain only finite values")
-    return arr.astype(np.float64, copy=False)
-
-
-def _validate_float_vector_input(values: object, name: str) -> None:
-    if values is None or isinstance(values, (str, bytes)):
-        raise ValueError(f"{name} must be a sequence or numpy array of floats")
-    if not isinstance(values, (Sequence, np.ndarray)):
-        raise ValueError(f"{name} must be a sequence or numpy array of floats")
+    return finite_1d_float_array(
+        values,
+        name,
+        descriptor=" vector",
+        require_float_sequence=True,
+    )
 
 
 def _validate_unit_threshold(value: float, name: str) -> float:
@@ -188,20 +182,6 @@ def _validate_zone_labels(zone_labels: Sequence[str]) -> tuple[str, str, str]:
     if len(set(labels)) != len(labels):
         raise ValueError("zone_labels must contain distinct labels")
     return labels[0], labels[1], labels[2]
-
-
-def _validate_observation_dates(
-    observation_dates: Sequence[date] | None,
-    expected_length: int,
-) -> tuple[date, ...] | None:
-    if observation_dates is None:
-        return None
-    dates = tuple(observation_dates)
-    if len(dates) != expected_length:
-        raise ValueError("observation_dates length must match HPL/RTPL")
-    if not all(isinstance(item, date) for item in dates):
-        raise TypeError("observation_dates must contain datetime.date values")
-    return dates
 
 
 def ks_statistic(hpl: FloatVector, rtpl: FloatVector) -> float:
@@ -449,7 +429,11 @@ def pla_assessment_for_policy_with_diagnostics(
     rtpl_arr = _as_finite_1d_array(rtpl, "rtpl")
     if len(hpl_arr) != len(rtpl_arr):
         raise ValueError("HPL and RTPL must have equal length for policy PLA")
-    dates = _validate_observation_dates(observation_dates, len(hpl_arr))
+    dates = _validate_observation_dates(
+        observation_dates,
+        len(hpl_arr),
+        length_label="HPL/RTPL",
+    )
 
     available_observations = len(hpl_arr)
     if available_observations < policy.pla_minimum_history_days:

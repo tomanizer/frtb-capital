@@ -22,6 +22,10 @@ from enum import StrEnum
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima._array_utils import date_from_datetime64 as _date_from_datetime64
+from frtb_ima._array_utils import readonly_date_array as _readonly_date_array
+from frtb_ima._array_utils import readonly_string_array as _readonly_string_array
+from frtb_ima._array_utils import validate_equal_lengths as _validate_equal_lengths
 from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.data_contracts import (
@@ -436,7 +440,7 @@ def assess_rfet_observation_batch(
 
         seen_lineage_keys.add(lineage_key)
         seen_dates.add(observation_date)
-        eligible_dates.append(_date_from_datetime64(observation_date))
+        eligible_dates.append(_date_from_datetime64(observation_date, "observation date"))
         source = str(observations.sources[index])
         if source:
             eligible_sources.add(source)
@@ -837,28 +841,10 @@ def assess_rfet_evidence(
     )
 
 
-def _readonly_string_array(values: object, field_name: str) -> StringArray:
-    array = np.array(values, dtype=np.str_, copy=True)
-    if array.ndim != 1:
-        raise ValueError(f"{field_name} must be one-dimensional")
-    array.flags.writeable = False
-    return array
-
-
 def _readonly_bool_array(values: object, field_name: str) -> BooleanArray:
     array = np.array(values, dtype=np.bool_, copy=True)
     if array.ndim != 1:
         raise ValueError(f"{field_name} must be one-dimensional")
-    array.flags.writeable = False
-    return array
-
-
-def _readonly_date_array(values: object, field_name: str) -> DateArray:
-    array = np.array(values, dtype="datetime64[D]", copy=True)
-    if array.ndim != 1:
-        raise ValueError(f"{field_name} must be one-dimensional")
-    if bool(np.any(np.isnat(array))):
-        raise ValueError(f"{field_name} cannot contain null dates")
     array.flags.writeable = False
     return array
 
@@ -871,22 +857,8 @@ def _readonly_datetime_array(values: object, field_name: str) -> DatetimeArray:
     return array
 
 
-def _validate_equal_lengths(label: str, first: np.ndarray, *others: np.ndarray) -> None:
-    expected = first.shape[0]
-    for array in others:
-        if array.shape[0] != expected:
-            raise ValueError(f"{label} columns must have equal lengths")
-
-
 def _date64_set(values: Sequence[date]) -> set[np.datetime64]:
     return {np.datetime64(item, "D") for item in values}
-
-
-def _date_from_datetime64(value: np.datetime64) -> date:
-    parsed = value.astype("datetime64[D]").item()
-    if not isinstance(parsed, date) or isinstance(parsed, datetime):
-        raise TypeError("observation date did not convert to date")
-    return parsed
 
 
 def _datetime_from_datetime64(value: np.datetime64) -> datetime | None:
@@ -903,7 +875,10 @@ def _datetime_from_datetime64(value: np.datetime64) -> datetime | None:
 def _observation_at(batch: RFETObservationBatch, index: int) -> RealPriceObservation:
     return RealPriceObservation(
         risk_factor_name=str(batch.risk_factor_names[index]),
-        observation_date=_date_from_datetime64(batch.observation_dates[index]),
+        observation_date=_date_from_datetime64(
+            batch.observation_dates[index],
+            "observation date",
+        ),
         source=str(batch.sources[index]),
         vendor_id=str(batch.vendor_ids[index]),
         venue=str(batch.venues[index]),

@@ -20,13 +20,17 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date
 from enum import StrEnum
 from types import MappingProxyType
 
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima._array_utils import date_from_datetime64 as _date_from_datetime64
+from frtb_ima._array_utils import readonly_date_array as _readonly_date_array
+from frtb_ima._array_utils import readonly_string_array as _readonly_string_array
+from frtb_ima._array_utils import validate_equal_lengths as _validate_equal_lengths
 from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.data_models import LiquidityHorizon, RiskClass
 
@@ -152,7 +156,10 @@ class ScenarioMetadataBatch:
         return tuple(
             ScenarioMetadata(
                 scenario_id=str(self.scenario_ids[index]),
-                scenario_date=_date_from_datetime64(self.scenario_dates[index]),
+                scenario_date=_date_from_datetime64(
+                    self.scenario_dates[index],
+                    "scenario date",
+                ),
                 scenario_set=ScenarioSetType(str(self.scenario_sets[index])),
                 calibration_window=str(self.calibration_windows[index]),
                 source=str(self.sources[index]),
@@ -283,38 +290,6 @@ def validate_aligned_metadata(vectors: Mapping[str, ScenarioVector]) -> None:
             raise ValueError(
                 f"scenario metadata for vector '{name}' is not aligned with '{reference_name}'"
             )
-
-
-def _readonly_string_array(values: object, field_name: str) -> StringArray:
-    array = np.array(values, dtype=np.str_, copy=True)
-    if array.ndim != 1:
-        raise ValueError(f"{field_name} must be one-dimensional")
-    array.flags.writeable = False
-    return array
-
-
-def _readonly_date_array(values: object, field_name: str) -> DateArray:
-    array = np.array(values, dtype="datetime64[D]", copy=True)
-    if array.ndim != 1:
-        raise ValueError(f"{field_name} must be one-dimensional")
-    if bool(np.any(np.isnat(array))):
-        raise ValueError(f"{field_name} cannot contain null dates")
-    array.flags.writeable = False
-    return array
-
-
-def _validate_equal_lengths(label: str, first: np.ndarray, *others: np.ndarray) -> None:
-    expected = first.shape[0]
-    for array in others:
-        if array.shape[0] != expected:
-            raise ValueError(f"{label} columns must have equal lengths")
-
-
-def _date_from_datetime64(value: np.datetime64) -> date:
-    parsed = value.astype("datetime64[D]").item()
-    if not isinstance(parsed, date) or isinstance(parsed, datetime):
-        raise TypeError("scenario date did not convert to date")
-    return parsed
 
 
 def _parse_provenance_json(raw_json: str) -> Mapping[str, str]:
