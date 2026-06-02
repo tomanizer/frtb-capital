@@ -52,6 +52,7 @@ EXPECTED_PUBLIC_API = (
     "resolve_rrao_allocation_dimension",
     "serialize_rrao_allocation_report",
     "serialize_rrao_result",
+    "to_orchestration_handoff",
     "validate_rrao_allocation_report",
     "validate_rrao_positions",
     "validate_rrao_result_reconciliation",

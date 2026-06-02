@@ -57,6 +57,7 @@ from frtb_rrao.data_models import (
     RraoSourceLineage,
     RraoSubtotal,
 )
+from frtb_rrao.handoff import to_orchestration_handoff
 from frtb_rrao.regimes import (
     RraoRuleProfile,
     get_rrao_rule_profile,
@@ -117,6 +118,7 @@ __all__ = [
     "resolve_rrao_allocation_dimension",
     "serialize_rrao_allocation_report",
     "serialize_rrao_result",
+    "to_orchestration_handoff",
     "validate_rrao_allocation_report",
     "validate_rrao_positions",
     "validate_rrao_result_reconciliation",

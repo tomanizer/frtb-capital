@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
-from frtb_orchestration import recognise_sbm_result
+from frtb_common import StandardisedComponent, UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
     SbmCalculationContext,
+    SbmInputError,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
@@ -155,13 +156,26 @@ def test_csr_sec_ctp_accepts_decomposition_evidence_flag() -> None:
     assert result.total_capital > 0.0
 
 
-def test_orchestration_recognises_sbm_handoff_view() -> None:
+def test_orchestration_handoff_view_exposes_shared_contract() -> None:
     result = calculate_sbm_capital(
         (sample_nonctp_sensitivity(),),
         context=sample_context(),
     )
     handoff = to_orchestration_handoff(result)
-    recognised = recognise_sbm_result(handoff)
 
-    assert recognised.total_capital == result.total_capital
-    assert recognised.run_id == "run-csr-sec-001"
+    assert handoff.component is StandardisedComponent.SBM
+    assert handoff.package_name == "frtb-sbm"
+    assert handoff.total_capital == result.total_capital
+    assert handoff.run_id == "run-csr-sec-001"
+    assert handoff.subtotal_count == len(result.risk_classes)
+
+
+def test_orchestration_handoff_requires_run_context() -> None:
+    result = calculate_sbm_capital(
+        (sample_nonctp_sensitivity(),),
+        context=sample_context(),
+    )
+    without_context = replace(result, run_context=None)
+
+    with pytest.raises(SbmInputError, match="run_context is required"):
+        to_orchestration_handoff(without_context)

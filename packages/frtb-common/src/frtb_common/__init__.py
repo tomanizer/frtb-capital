@@ -1,6 +1,11 @@
 """Shared primitives for the frtb-capital suite."""
 
 from frtb_common._version import __version__
+from frtb_common.component_handoff import (
+    ComponentHandoffError,
+    ComponentResultHandoff,
+    StandardisedComponent,
+)
 from frtb_common.crif import (
     CRIF_RISK_TYPE_COLUMN,
     CRIF_SOURCE_ROW_ID_COLUMN,
@@ -60,6 +65,8 @@ __all__ = [
     "CapitalComponentMetadata",
     "ChunkPolicy",
     "ColumnSpec",
+    "ComponentHandoffError",
+    "ComponentResultHandoff",
     "CrifColumnSpec",
     "CrifRiskTypeMapper",
     "CrifRiskTypeMapping",
@@ -70,6 +77,7 @@ __all__ = [
     "NormalizedTabularHandoff",
     "NotImplementedCapitalComponentError",
     "NullPolicy",
+    "StandardisedComponent",
     "TabularHandoffError",
     "TabularLogicalType",
     "UnsupportedRegulatoryFeatureError",
