@@ -17,12 +17,12 @@ from frtb_drc import (
 )
 
 
-def test_us_npr_profile_supports_only_non_securitisation_initially() -> None:
+def test_us_npr_profile_supports_nonsec_and_ctp() -> None:
     profile = get_rule_profile(US_NPR_2_0_PROFILE_ID)
 
     assert DrcRiskClass.NON_SECURITISATION in profile.supported_risk_classes
+    assert DrcRiskClass.CORRELATION_TRADING_PORTFOLIO in profile.supported_risk_classes
     assert DrcRiskClass.SECURITISATION_NON_CTP not in profile.supported_risk_classes
-    assert DrcRiskClass.CORRELATION_TRADING_PORTFOLIO not in profile.supported_risk_classes
 
 
 def test_unsupported_risk_classes_fail_closed() -> None:
@@ -31,14 +31,12 @@ def test_unsupported_risk_classes_fail_closed() -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="securitisation non-CTP"):
         ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
 
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="CTP DRC"):
-        ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
-
 
 def test_supported_risk_class_passes_gate() -> None:
     profile = get_rule_profile(US_NPR_2_0_PROFILE_ID)
 
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
+    ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
 def test_unknown_profile_is_input_error() -> None:

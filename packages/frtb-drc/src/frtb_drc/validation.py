@@ -172,8 +172,12 @@ def _validate_securitisation_identity(position: DrcPosition) -> None:
 
 
 def _validate_ctp_identity(position: DrcPosition) -> None:
-    if _is_blank(position.tranche_id) and _is_blank(position.index_series_id):
-        raise DrcInputError("CTP positions require tranche_id or index_series_id")
+    if (
+        _is_blank(position.tranche_id)
+        and _is_blank(position.index_series_id)
+        and _is_blank(position.issuer_id)
+    ):
+        raise DrcInputError("CTP positions require tranche_id, index_series_id, or issuer_id")
 
 
 def _validate_citation_policy(citation_policy: str) -> None:

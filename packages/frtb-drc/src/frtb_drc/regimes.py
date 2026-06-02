@@ -88,6 +88,58 @@ US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
         note="Notional and P&L signs for long and short JTD.",
     ),
+    "BASEL_MAR22_36": DrcCitation(
+        citation_id="BASEL_MAR22_36",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.36",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="CTP securitisation gross JTD follows the securitisation gross JTD approach.",
+    ),
+    "BASEL_MAR22_37": DrcCitation(
+        citation_id="BASEL_MAR22_37",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.37",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="CTP non-securitisation hedge gross JTD is market value.",
+    ),
+    "BASEL_MAR22_39": DrcCitation(
+        citation_id="BASEL_MAR22_39",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.39",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="CTP offsetting, replication, decomposition, and residual-exposure constraints.",
+    ),
+    "BASEL_MAR22_40": DrcCitation(
+        citation_id="BASEL_MAR22_40",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.40",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="Each CTP index is a bucket of its own.",
+    ),
+    "BASEL_MAR22_41": DrcCitation(
+        citation_id="BASEL_MAR22_41",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.41",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="Bespoke CTP securitisations are allocated to the corresponding index bucket.",
+    ),
+    "BASEL_MAR22_44": DrcCitation(
+        citation_id="BASEL_MAR22_44",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.44",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note="CTP bucket capital uses CTP-wide HBR and has no bucket-level zero floor.",
+    ),
+    "BASEL_MAR22_45": DrcCitation(
+        citation_id="BASEL_MAR22_45",
+        source_id="BASEL_MAR22",
+        paragraph="MAR22.45",
+        url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
+        note=(
+            "CTP category aggregation recognises negative bucket capital at 50% "
+            "and floors total at zero."
+        ),
+    ),
     "US_NPR_210_SCOPE": DrcCitation(
         citation_id="US_NPR_210_SCOPE",
         source_id="US_NPR_2_0_91_FR_14952",
@@ -172,6 +224,57 @@ US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
         note="Non-securitisation default-risk capital equals the sum of bucket-level requirements.",
     ),
+    "US_NPR_210_D_1": DrcCitation(
+        citation_id="US_NPR_210_D_1",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(d)(1)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note="CTP gross default exposure and Nth-to-default treatment.",
+    ),
+    "US_NPR_210_D_2": DrcCitation(
+        citation_id="US_NPR_210_D_2",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(d)(2)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note=(
+            "CTP offsetting through exact maturity differences, replication, "
+            "decomposition, and residual treatment."
+        ),
+    ),
+    "US_NPR_210_D_3_I_III": DrcCitation(
+        citation_id="US_NPR_210_D_3_I_III",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(d)(3)(i)-(iii)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note="CTP index, bespoke, and hedge bucket assignment.",
+    ),
+    "US_NPR_210_D_3_IV": DrcCitation(
+        citation_id="US_NPR_210_D_3_IV",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(d)(3)(iv)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note=(
+            "CTP bucket-level capital uses CTP-wide HBR and spans all exposures "
+            "relating to the index."
+        ),
+    ),
+    "US_NPR_210_D_3_IV_D": DrcCitation(
+        citation_id="US_NPR_210_D_3_IV_D",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(d)(3)(iv)(D)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note=(
+            "CTP risk-weight sources for tranched positions, non-tranched hedges, "
+            "and decomposed single-name exposures."
+        ),
+    ),
+    "US_NPR_210_D_3_V": DrcCitation(
+        citation_id="US_NPR_210_D_3_V",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(d)(3)(v)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note="CTP category-level aggregation of bucket-level capital requirements.",
+    ),
 }
 
 
@@ -237,13 +340,17 @@ _US_NPR_2_0_PROFILE = DrcRuleProfile(
     publication_date=date(2026, 3, 27),
     effective_date=None,
     status="proposed",
-    supported_risk_classes=frozenset({DrcRiskClass.NON_SECURITISATION}),
+    supported_risk_classes=frozenset(
+        {
+            DrcRiskClass.NON_SECURITISATION,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        }
+    ),
     citations=US_NPR_2_0_CITATIONS,
     unsupported_features={
         DrcRiskClass.SECURITISATION_NON_CTP: (
             "U.S. NPR 2.0 securitisation non-CTP DRC is not implemented"
         ),
-        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: ("U.S. NPR 2.0 CTP DRC is not implemented"),
     },
 )
 

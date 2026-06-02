@@ -1,0 +1,159 @@
+{
+  "context": {
+    "base_currency": "USD",
+    "calculation_date": "2026-05-29",
+    "ctp_offset_groups": {
+      "long-cdx-na-ig-10-15": "cdx-na-ig-s18-10-15-replication",
+      "short-cdx-na-ig-10-12": "cdx-na-ig-s18-10-15-replication",
+      "short-cdx-na-ig-12-15": "cdx-na-ig-s18-10-15-replication"
+    },
+    "ctp_risk_weights": {
+      "long-cdx-na-ig-10-15": 0.2,
+      "short-cdx-hy-index": 0.3,
+      "short-cdx-na-ig-10-12": 0.2,
+      "short-cdx-na-ig-12-15": 0.2
+    },
+    "profile_id": "US_NPR_2_0",
+    "run_id": "run-drc-ctp-v1"
+  },
+  "fixture_id": "drc_ctp_v1",
+  "positions": [
+    {
+      "bucket_key": "CDX_NA_IG",
+      "citation_ids": [
+        "US_NPR_210_D_1",
+        "US_NPR_210_D_2",
+        "US_NPR_210_D_3_IV_D"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "LONG",
+      "desk_id": "ctp-desk",
+      "index_series_id": "CDX.NA.IG.S18",
+      "instrument_type": "INDEX_TRANCHE",
+      "issuer_id": null,
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_ctp_v1.csv",
+        "source_row_id": "row-long-cdx-na-ig-10-15",
+        "source_system": "synthetic"
+      },
+      "market_value": 100.0,
+      "maturity_years": 1.0,
+      "notional": 100.0,
+      "position_id": "long-cdx-na-ig-10-15",
+      "risk_class": "CORRELATION_TRADING_PORTFOLIO",
+      "seniority": null,
+      "source_row_id": "row-long-cdx-na-ig-10-15",
+      "tranche_id": "10-15"
+    },
+    {
+      "bucket_key": "CDX_NA_IG",
+      "citation_ids": [
+        "US_NPR_210_D_1",
+        "US_NPR_210_D_2",
+        "US_NPR_210_D_3_IV_D"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "SHORT",
+      "desk_id": "ctp-desk",
+      "index_series_id": "CDX.NA.IG.S18",
+      "instrument_type": "INDEX_TRANCHE",
+      "issuer_id": null,
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_ctp_v1.csv",
+        "source_row_id": "row-short-cdx-na-ig-10-12",
+        "source_system": "synthetic"
+      },
+      "market_value": 40.0,
+      "maturity_years": 1.0,
+      "notional": 40.0,
+      "position_id": "short-cdx-na-ig-10-12",
+      "risk_class": "CORRELATION_TRADING_PORTFOLIO",
+      "seniority": null,
+      "source_row_id": "row-short-cdx-na-ig-10-12",
+      "tranche_id": "10-12"
+    },
+    {
+      "bucket_key": "CDX_NA_IG",
+      "citation_ids": [
+        "US_NPR_210_D_1",
+        "US_NPR_210_D_2",
+        "US_NPR_210_D_3_IV_D"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "SHORT",
+      "desk_id": "ctp-desk",
+      "index_series_id": "CDX.NA.IG.S18",
+      "instrument_type": "INDEX_TRANCHE",
+      "issuer_id": null,
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_ctp_v1.csv",
+        "source_row_id": "row-short-cdx-na-ig-12-15",
+        "source_system": "synthetic"
+      },
+      "market_value": 25.0,
+      "maturity_years": 1.0,
+      "notional": 25.0,
+      "position_id": "short-cdx-na-ig-12-15",
+      "risk_class": "CORRELATION_TRADING_PORTFOLIO",
+      "seniority": null,
+      "source_row_id": "row-short-cdx-na-ig-12-15",
+      "tranche_id": "12-15"
+    },
+    {
+      "bucket_key": "CDX_HY",
+      "citation_ids": [
+        "US_NPR_210_D_1",
+        "US_NPR_210_D_3_I_III",
+        "US_NPR_210_D_3_IV_D"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "SHORT",
+      "desk_id": "ctp-desk",
+      "index_series_id": "CDX.HY.S40",
+      "instrument_type": "CREDIT_DERIVATIVE",
+      "issuer_id": null,
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_ctp_v1.csv",
+        "source_row_id": "row-short-cdx-hy-index",
+        "source_system": "synthetic"
+      },
+      "market_value": 80.0,
+      "maturity_years": 1.0,
+      "notional": 80.0,
+      "position_id": "short-cdx-hy-index",
+      "risk_class": "CORRELATION_TRADING_PORTFOLIO",
+      "seniority": null,
+      "source_row_id": "row-short-cdx-hy-index",
+      "tranche_id": null
+    }
+  ],
+  "schema_version": "drc_ctp_fixture_v1"
+}

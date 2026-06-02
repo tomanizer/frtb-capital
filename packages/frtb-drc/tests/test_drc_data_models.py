@@ -78,10 +78,16 @@ def test_context_freezes_fx_rate_mapping() -> None:
         base_currency="USD",
         profile_id="us-npr-2.0",
         fx_rates={"EUR": rate},
+        ctp_risk_weights={"ctp-1": 0.2},
+        ctp_offset_groups={"ctp-1": "replication-group"},
     )
 
     with pytest.raises(TypeError):
         cast(Any, context.fx_rates)["GBP"] = rate
+    with pytest.raises(TypeError):
+        cast(Any, context.ctp_risk_weights)["ctp-2"] = 0.3
+    with pytest.raises(TypeError):
+        cast(Any, context.ctp_offset_groups)["ctp-2"] = "other-group"
 
 
 def test_result_records_are_json_serialisable() -> None:
