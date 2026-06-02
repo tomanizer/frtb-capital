@@ -206,9 +206,12 @@ future cited rule profile defines one. Inputs carrying those labels as
 local-government debt may enter this profile only through a cited upstream
 classification to the PSE/GSE debt bucket when that treatment is valid.
 
-Securitisation non-CTP and CTP bucket assignment must be implemented only after
-their cited bucket dimensions, "other" bucket handling, and fixture coverage are
-complete.
+For U.S. NPR 2.0, securitisation non-CTP bucket assignment must use the cited
+corporate or asset-class/region taxonomy and CTP bucket assignment must use the
+profile's CTP bucket keys. Basel MAR22 securitisation non-CTP and CTP, EU CRR3,
+and PRA UK CRR bucket mappings remain fail-closed until their cited bucket,
+risk-weight, and decomposition mappings are implemented with deterministic
+tests.
 
 ### DRC-FUNC-009: Risk weights
 
@@ -435,17 +438,30 @@ multiple desks, and long/short offsetting. The target is not a regulatory
 requirement; it is an engineering control to keep the package usable for suite
 examples and future validation notebooks.
 
-## Initial implementation acceptance criteria
+## Current implementation acceptance criteria
 
-The first capital-producing vertical slice is complete only when:
+The current capital-producing DRC scope is acceptable only while these
+conditions remain true:
 
-- non-securitisation canonical positions validate and normalise;
-- U.S. NPR 2.0 profile contains cited LGD, bucket, maturity, HBR, and risk
-  weight mappings needed by the fixtures;
-- gross JTD, maturity scaling, same-obligor/seniority netting, HBR, bucket
-  capital, category aggregation, and total DRC all run through one public API;
-- results are frozen, serialisable, and carry rule-profile/input hashes;
-- securitisation non-CTP and CTP requests fail explicitly;
-- tests cover long-only, short-only, offsetting, maturity under one year,
-  maturity under three months, seniority rejection, defaulted exposures, LGD
-  categories, bucket floors, missing risk weights, and audit hash stability.
+- U.S. NPR 2.0 non-securitisation canonical positions validate and normalise,
+  and the profile contains cited LGD, bucket, maturity, HBR, and risk-weight
+  mappings needed by the fixtures.
+- U.S. NPR 2.0 securitisation non-CTP row and batch paths cover market-value
+  gross default exposure, optional profile-controlled fair-value cap evidence,
+  maturity scaling, same-pool/same-tranche and explicit replication-group
+  netting, cited upstream risk-weight evidence, HBR, bucket floors, and
+  category summation.
+- U.S. NPR 2.0 CTP row and batch paths cover market-value gross default
+  exposure, explicit replication-group netting, cited upstream risk-weight
+  evidence, CTP-wide HBR, bucket recognition, and category aggregation.
+- Basel MAR22 non-securitisation row and batch paths use cited MAR22.12 LGD,
+  MAR22.15-MAR22.18 maturity scaling, MAR22.22 buckets, and MAR22.24 risk
+  weights.
+- Basel MAR22 securitisation non-CTP and CTP, EU CRR3, and PRA UK CRR paths
+  fail explicitly until cited rule mappings and tests are added.
+- Results are frozen, serialisable, carry rule-profile/input hashes, and emit
+  attribution records that reconcile to total capital through analytical,
+  residual, or unsupported methods.
+- Tests cover supported row and batch paths, missing or invalid upstream
+  evidence, fair-value cap evidence, unsupported profiles, bucket floors,
+  attribution reconciliation, and audit hash stability.

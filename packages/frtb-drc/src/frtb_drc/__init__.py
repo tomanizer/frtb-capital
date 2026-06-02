@@ -1,4 +1,4 @@
-"""Standardised Approach default risk charge scaffold."""
+"""Standardised Approach default risk charge component."""
 
 from frtb_drc._version import __version__
 from frtb_drc.arrow_handoff import (

@@ -62,7 +62,7 @@ def calculate_drc_capital(
     *,
     context: DrcCalculationContext,
 ) -> DrcCapitalResult:
-    """Calculate supported non-securitisation DRC capital."""
+    """Calculate DRC capital for supported profile and risk-class paths."""
 
     _validate_context(context)
     profile = get_rule_profile(context.profile_id)
