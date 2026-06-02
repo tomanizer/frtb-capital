@@ -183,7 +183,7 @@ class RraoPosition:
 
 @dataclass(frozen=True)
 class RraoCalculationContext:
-    """Run-level context for a future RRAO calculation."""
+    """Run-level context for an RRAO calculation."""
 
     run_id: str
     calculation_date: date

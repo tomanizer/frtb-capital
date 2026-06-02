@@ -1,6 +1,6 @@
 schema_version: 1
 component: frtb-rrao
-status: scaffolded
+status: implemented
 source_register: ../sources.yml
 
 requirements:
@@ -14,11 +14,11 @@ requirements:
       - packages/frtb-rrao/src/frtb_rrao/
     test_refs:
       - packages/frtb-rrao/tests/
-    coverage_status: not_implemented
+    coverage_status: implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
       - ankitjha67_baselkit
-    notes: "UK RRAO permissions regime is not generic Basel behaviour."
+    notes: "Basel MAR23, U.S. NPR 2.0 proposed section __.211, and EU CRR3 Article 325u comparison canonical inputs are capital-producing with cited classification evidence. PRA UK CRR remains fail-closed until UK-specific source mapping and fixtures exist."
 
   - id: RRAO-HEDGE-EXEMPTION-001
     topic: Hedge exemption treatment for residual-risk instruments
@@ -29,5 +29,5 @@ requirements:
       - packages/frtb-rrao/src/frtb_rrao/
     test_refs:
       - packages/frtb-rrao/tests/
-    coverage_status: not_implemented
-    notes: "Model as explicit jurisdictional policy; do not silently net."
+    coverage_status: implemented_under_audit
+    notes: "Supported Basel, U.S. NPR, and EU comparison exclusions are emitted as cited zero-capital audit lines, including exact third-party back-to-back evidence. EU hedge-exemption or PRA permission paths outside those mapped exclusions remain fail-closed; do not silently net."

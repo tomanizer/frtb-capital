@@ -14,7 +14,7 @@ Upstream risk / trade / reporting systems
     -> canonical RraoPosition records
     -> frtb-rrao validation, rule-profile lookup, classification, exclusions,
        capital kernels, and audit reconciliation
-    -> RraoCapitalResult + RraoAuditRecord
+    -> RraoCapitalResult + deterministic serialized audit payload
     -> frtb-orchestration SA composition and suite aggregation
 ```
 
@@ -22,7 +22,7 @@ The package must not contain pricing, legal contract interpretation,
 sensitivities calculation, SBM/DRC composition, market-data retrieval, or
 top-of-house aggregation.
 
-## Proposed module layout
+## Implemented module layout
 
 | Module | Responsibility |
 | --- | --- |
@@ -31,8 +31,12 @@ top-of-house aggregation.
 | `regimes.py` | Rule-profile identity, supported-feature declarations, profile selection, and profile hashes. |
 | `reference_data.py` | Classification labels, exclusion rules, risk weights, evidence categories, and citation tables. |
 | `classification.py` | Pure classification and exclusion decision functions. |
-| `capital.py` | Weighted notional line add-ons, subtotals, total RRAO, and public calculation entry point. |
-| `audit.py` | Serialisable audit records, profile/input hashes, reconciliation, Markdown/JSON helpers. |
+| `capital.py` | Weighted notional line add-ons, subtotals, and total RRAO helpers. |
+| `scaffold.py` | Public `calculate_rrao_capital` entry point, package metadata, supported-profile result assembly, and proposed-rule warnings. |
+| `batch.py` | NumPy-backed batch validation, hashing, and calculation for high-volume canonical columns. |
+| `arrow_handoff.py` | Arrow tabular handoff normalisation under ADR 0023; kernels remain outside the Arrow expression layer. |
+| `audit.py` | Deterministic JSON-compatible serialization, profile/input hashes, and reconciliation. |
+| `allocation.py` | Additive line, desk, legal-entity, and evidence-type allocation reports. |
 | `crif.py` | Optional CRIF/FNet-to-canonical mapping. Not imported by kernels. |
 | `fixtures.py` | Synthetic fixture builders used by tests and examples. |
 
@@ -86,7 +90,7 @@ classification and exclusion mechanics package-local.
 3. Serialize deterministic audit records.
 4. Return a frozen result.
 
-## Proposed enums
+## Implemented enums
 
 ```python
 class RraoClassification(StrEnum):
@@ -138,10 +142,11 @@ class RraoExclusionReason(StrEnum):
     EU_ARTICLE_3_DIVIDEND_RISK = "EU_ARTICLE_3_DIVIDEND_RISK"
 ```
 
-The exact enum set can expand as Basel, U.S., CRR3, and PRA profiles are
-mapped. Enums should be stable public API once capital calculation is released.
+The enum set is now part of the v1 public API. Any future expansion for
+additional Basel, U.S., CRR3, or PRA paths must update `PUBLIC_API.md`,
+package-local tests, and the requirements registry in the same PR.
 
-## Proposed dataclasses
+## Implemented dataclasses
 
 ### Citation and lineage
 
@@ -288,8 +293,8 @@ class RraoCapitalResult:
     warnings: tuple[str, ...] = ()
 ```
 
-The public audit serializer should produce deterministic JSON-compatible
-payloads for hashing, replay, and downstream reporting.
+The public audit serializer produces deterministic JSON-compatible payloads for
+hashing, replay, and downstream reporting.
 
 ## Data invariants
 
