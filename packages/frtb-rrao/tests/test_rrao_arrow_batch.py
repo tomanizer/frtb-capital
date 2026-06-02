@@ -5,13 +5,14 @@ from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from types import ModuleType
-from typing import cast
+from typing import NoReturn, cast
 
 import numpy as np
 import pyarrow as pa
 import pytest
 from frtb_common import AdapterDiagnostic, source_content_hash
 
+import frtb_rrao.arrow_handoff as rrao_arrow_handoff
 from frtb_rrao import (
     RraoCalculationContext,
     RraoCapitalLine,
@@ -112,6 +113,94 @@ def test_rrao_arrow_handoff_uses_zero_copy_float64_columns_when_possible() -> No
         batch.gross_effective_notionals,
         [position.gross_effective_notional for position in positions],
     )
+
+
+def test_rrao_handoff_wraps_arrow_object_conversion_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    handoff = normalize_rrao_arrow_table(_arrow_table((_investment_fund_position(),)))
+
+    def fail_arrow_object_array(_column: pa.ChunkedArray) -> NoReturn:
+        raise pa.ArrowInvalid("forced conversion failure")
+
+    monkeypatch.setattr(rrao_arrow_handoff, "arrow_object_array", fail_arrow_object_array)
+
+    with pytest.raises(
+        RraoInputError, match=r"Arrow column conversion failed .*position_id"
+    ) as exc:
+        build_rrao_batch_from_handoff(handoff)
+
+    assert exc.value.field == "position_id"
+    assert isinstance(exc.value.__cause__, pa.ArrowInvalid)
+
+
+def test_rrao_arrow_required_column_helpers_report_package_errors() -> None:
+    empty_table = pa.table({})
+
+    with pytest.raises(RraoInputError, match=r"column is required: position_id .*position_id"):
+        rrao_arrow_handoff._required_object_column(empty_table, "position_id")
+
+    with pytest.raises(
+        RraoInputError,
+        match=r"column is required: gross_effective_notional .*gross_effective_notional",
+    ):
+        rrao_arrow_handoff._required_float_column(empty_table, "gross_effective_notional")
+
+    null_numeric_table = pa.table({"gross_effective_notional": pa.array([None], type=pa.float64())})
+
+    with pytest.raises(
+        RraoInputError,
+        match=r"gross_effective_notional must be provided .*gross_effective_notional",
+    ):
+        rrao_arrow_handoff._required_float_column(
+            null_numeric_table,
+            "gross_effective_notional",
+        )
+
+
+def test_rrao_optional_float_column_wraps_arrow_cast_errors() -> None:
+    table = pa.table({"fund_notional": pa.array(["bad", None], type=pa.utf8())})
+
+    with pytest.raises(RraoInputError, match=r"fund_notional must be numeric .*fund_notional"):
+        rrao_arrow_handoff._optional_float_column(table, "fund_notional")
+
+
+def test_rrao_optional_float_column_wraps_arrow_fill_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    table = pa.table({"fund_notional": pa.array([1.0, None], type=pa.float64())})
+
+    def fail_fill_null(*_args: object, **_kwargs: object) -> NoReturn:
+        raise pa.ArrowInvalid("forced fill failure")
+
+    monkeypatch.setattr(rrao_arrow_handoff.pc, "fill_null", fail_fill_null)
+
+    with pytest.raises(RraoInputError, match=r"fund_notional must be numeric .*fund_notional"):
+        rrao_arrow_handoff._optional_float_column(table, "fund_notional")
+
+
+def test_rrao_optional_bool_column_wraps_arrow_fill_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    table = pa.table({"flag": pa.array([True], type=pa.bool_())})
+
+    def fail_fill_null(*_args: object, **_kwargs: object) -> NoReturn:
+        raise pa.ArrowInvalid("forced fill failure")
+
+    monkeypatch.setattr(rrao_arrow_handoff.pc, "fill_null", fail_fill_null)
+
+    with pytest.raises(RraoInputError, match=r"Arrow column conversion failed .*flag"):
+        rrao_arrow_handoff._optional_bool_column(table, "flag")
+
+
+def test_rrao_float64_arrow_column_handles_empty_column() -> None:
+    values = rrao_arrow_handoff._float64_array_from_arrow_column(
+        pa.chunked_array([pa.array([], type=pa.float64())]),
+        field="empty_numeric",
+    )
+
+    assert values.dtype == np.dtype(np.float64)
+    assert values.tolist() == []
 
 
 def test_rrao_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
