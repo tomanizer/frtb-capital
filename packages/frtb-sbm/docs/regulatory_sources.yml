@@ -70,7 +70,7 @@ sources:
     url: "https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng"
     section_hint: "Articles 325e-325az and related market-risk provisions for EU comparison profile work."
     status: comparison_reference
-    reuse_note: "EU profile support is planned after the Basel MAR21 phase-1 GIRR delta slice."
+    reuse_note: "EU profile support is planned after the supported BASEL_MAR21 delta/vega/curvature matrix; current EU runtime requests fail closed."
     module_paths: []
     requirement_ids:
       - SBM-REF-001
@@ -82,7 +82,7 @@ sources:
     url: "https://www.isda.org/a/oNTE6/Tech-ISDA-Standard-Initial-Margin-Model.pdf"
     section_hint: "Adapter mapping inspiration only; not a regulatory source."
     status: adapter_reference
-    reuse_note: "Future CRIF adapter work only; calculation kernels must not depend on CRIF."
+    reuse_note: "Adapter reference for row-dict CRIF-to-canonical mapping and the GIRR delta CRIF-to-Arrow handoff; calculation kernels must not depend on CRIF."
     module_paths:
       - src/frtb_sbm/crif.py
     requirement_ids:

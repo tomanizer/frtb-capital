@@ -4,6 +4,10 @@ These are implementation-ready issue drafts. They are scoped so each can be a
 reviewable PR. Cross-cutting changes to `frtb-common` or orchestration should
 reference an ADR when they change shared contracts.
 
+This breakdown is historical planning material. Current support status after
+the later implementation and vectorisation sprints lives in
+[`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).
+
 ## Issue 1: Add SBM model documentation and traceability skeleton
 
 **Goal:** Create the documentation pack that future SBM implementation PRs keep

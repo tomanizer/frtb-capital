@@ -109,7 +109,7 @@ outputs are not final regulatory capital.
 | --- | --- | --- |
 | Basel Standardised Approach | Basel Framework MAR20 and MAR21. MAR20.4 places SBM in the SA stack. MAR21.1-MAR21.101 define risk classes, measures, weights, buckets, and aggregation. | Implemented for supported phase-1 Basel slices. |
 | U.S. NPR 2.0 | Federal Register 91 FR 14952, March 27, 2026. Section V.A.7.a and pages around 91 FR 15037 define the six-step standardized non-default process. | Planned comparison profile for phase 1; proposed-rule material only. |
-| EU CRR3 | Regulation (EU) 2024/1623 Articles 325e-325az. | Planned comparison profile; not in phase-1 GIRR delta slice. |
+| EU CRR3 | Regulation (EU) 2024/1623 Articles 325e-325az. | Planned comparison profile; current runtime support remains BASEL_MAR21 only. |
 | ISDA CRIF | CRIF field convention. | Adapter inspiration only; not a regulatory source. |
 
 Use `docs/regulatory_sources.yml` for topic-level links and review notes.
