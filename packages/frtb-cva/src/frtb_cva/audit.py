@@ -4,10 +4,10 @@ Deterministic CVA audit serialization and reconciliation.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Iterable
 
+from frtb_cva._payloads import hash_payload as _hash_payload
+from frtb_cva._payloads import input_payload as _input_payload
 from frtb_cva.aggregation import aggregate_inter_bucket
 from frtb_cva.data_models import (
     BaCvaCounterpartyCapital,
@@ -20,8 +20,6 @@ from frtb_cva.data_models import (
     CvaHedge,
     CvaMethod,
     CvaNettingSet,
-    CvaRunControls,
-    CvaSourceLineage,
     SaCvaBucketCapital,
     SaCvaRiskClassCapital,
     SaCvaSensitivity,
@@ -78,15 +76,13 @@ def _input_hash_from_validated(
     """Return hash from pre-validated inputs, avoiding double validation."""
 
     return _hash_payload(
-        {
-            "context": _context_payload(context),
-            "counterparties": [
-                _counterparty_payload(counterparty) for counterparty in counterparties
-            ],
-            "netting_sets": [_netting_set_payload(netting_set) for netting_set in netting_sets],
-            "hedges": [_hedge_payload(hedge) for hedge in hedges],
-            "sensitivities": [_sensitivity_payload(sensitivity) for sensitivity in sensitivities],
-        }
+        _input_payload(
+            context,
+            counterparties,
+            netting_sets,
+            hedges=hedges,
+            sensitivities=sensitivities,
+        )
     )
 
 
@@ -309,128 +305,6 @@ def _validate_hash(field: str, value: str) -> None:
         int(value, 16)
     except ValueError as exc:
         raise CvaInputError("hash must be a sha256 hex digest", field=field) from exc
-
-
-def _hash_payload(payload: dict[str, object]) -> str:
-    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
-    return hashlib.sha256(encoded).hexdigest()
-
-
-def _context_payload(context: CvaCalculationContext) -> dict[str, object]:
-    run_controls = context.run_controls or CvaRunControls()
-    return {
-        "run_id": context.run_id,
-        "calculation_date": context.calculation_date.isoformat(),
-        "base_currency": context.base_currency,
-        "profile": context.profile.value,
-        "method": context.method.value,
-        "sa_cva_approved": context.sa_cva_approved,
-        "materiality_threshold_elected": context.materiality_threshold_elected,
-        "carve_out_netting_set_ids": list(context.carve_out_netting_set_ids),
-        "desk_id": context.desk_id,
-        "legal_entity": context.legal_entity,
-        "citation_policy": context.citation_policy,
-        "run_controls": {
-            "audit_verbosity": run_controls.audit_verbosity,
-            "retain_intermediate_details": run_controls.retain_intermediate_details,
-            "unsupported_feature_behaviour": run_controls.unsupported_feature_behaviour,
-        },
-    }
-
-
-def _counterparty_payload(counterparty: CvaCounterparty) -> dict[str, object]:
-    return {
-        "counterparty_id": counterparty.counterparty_id,
-        "desk_id": counterparty.desk_id,
-        "legal_entity": counterparty.legal_entity,
-        "sector": counterparty.sector.value,
-        "credit_quality": counterparty.credit_quality.value,
-        "region": counterparty.region,
-        "source_row_id": counterparty.source_row_id,
-        "lineage": _lineage_payload(counterparty.lineage),
-    }
-
-
-def _netting_set_payload(netting_set: CvaNettingSet) -> dict[str, object]:
-    return {
-        "netting_set_id": netting_set.netting_set_id,
-        "counterparty_id": netting_set.counterparty_id,
-        "ead": netting_set.ead,
-        "effective_maturity": netting_set.effective_maturity,
-        "discount_factor": netting_set.discount_factor,
-        "discount_factor_explicit": netting_set.discount_factor_explicit,
-        "currency": netting_set.currency,
-        "sign_convention": netting_set.sign_convention,
-        "uses_imm_ead": netting_set.uses_imm_ead,
-        "carved_out_to_ba_cva": netting_set.carved_out_to_ba_cva,
-        "source_row_id": netting_set.source_row_id,
-        "lineage": _lineage_payload(netting_set.lineage),
-    }
-
-
-def _hedge_payload(hedge: CvaHedge) -> dict[str, object]:
-    return {
-        "hedge_id": hedge.hedge_id,
-        "source_row_id": hedge.source_row_id,
-        "hedge_type": hedge.hedge_type.value,
-        "eligibility": hedge.eligibility.value,
-        "counterparty_id": hedge.counterparty_id,
-        "reference_sector": hedge.reference_sector.value,
-        "reference_credit_quality": hedge.reference_credit_quality.value,
-        "reference_region": hedge.reference_region,
-        "reference_relation": hedge.reference_relation.value,
-        "notional": hedge.notional,
-        "remaining_maturity": hedge.remaining_maturity,
-        "discount_factor": hedge.discount_factor,
-        "discount_factor_explicit": hedge.discount_factor_explicit,
-        "is_internal": hedge.is_internal,
-        "internal_desk_counterparty_id": hedge.internal_desk_counterparty_id,
-        "eligibility_evidence_id": hedge.eligibility_evidence_id,
-        "rejection_reason": hedge.rejection_reason,
-        "sa_cva_risk_class": hedge.sa_cva_risk_class.value
-        if hedge.sa_cva_risk_class is not None
-        else None,
-        "lineage": _lineage_payload(hedge.lineage),
-    }
-
-
-def _sensitivity_payload(sensitivity: SaCvaSensitivity) -> dict[str, object]:
-    return {
-        "sensitivity_id": sensitivity.sensitivity_id,
-        "risk_class": sensitivity.risk_class.value,
-        "risk_measure": sensitivity.risk_measure.value,
-        "sensitivity_tag": sensitivity.sensitivity_tag.value,
-        "bucket_id": sensitivity.bucket_id,
-        "risk_factor_key": sensitivity.risk_factor_key,
-        "tenor": sensitivity.tenor,
-        "amount": sensitivity.amount,
-        "amount_currency": sensitivity.amount_currency,
-        "sign_convention": sensitivity.sign_convention,
-        "volatility_input": sensitivity.volatility_input,
-        "hedge_id": sensitivity.hedge_id,
-        "index_treatment": sensitivity.index_treatment.value
-        if sensitivity.index_treatment is not None
-        else None,
-        "index_max_sector_weight": sensitivity.index_max_sector_weight,
-        "index_homogeneous_sector_quality": sensitivity.index_homogeneous_sector_quality,
-        "index_dominant_sector": sensitivity.index_dominant_sector.value
-        if sensitivity.index_dominant_sector is not None
-        else None,
-        "index_remap_bucket_id": sensitivity.index_remap_bucket_id,
-        "source_row_id": sensitivity.source_row_id,
-        "lineage": _lineage_payload(sensitivity.lineage),
-    }
-
-
-def _lineage_payload(lineage: CvaSourceLineage | None) -> dict[str, object] | None:
-    if lineage is None:
-        return None
-    return {
-        "source_system": lineage.source_system,
-        "source_file": lineage.source_file,
-        "source_row_id": lineage.source_row_id,
-        "source_column_map": [list(pair) for pair in lineage.source_column_map],
-    }
 
 
 def _full_portfolio_payload(

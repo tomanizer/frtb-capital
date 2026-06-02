@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from frtb_cva._citations import merge_citations as _merge_citations
+from frtb_cva._profile_warnings import profile_warnings as _profile_warnings
 from frtb_cva.audit import _input_hash_from_validated, validate_cva_result_reconciliation
 from frtb_cva.ba_cva import calculate_full_portfolio, calculate_reduced_portfolio
 from frtb_cva.data_models import (
@@ -208,25 +210,6 @@ def _collect_citations(
         reduced_citations,
         tuple(citation for line in netting_set_lines for citation in line.citations),
     )
-
-
-def _merge_citations(*groups: tuple[str, ...]) -> tuple[str, ...]:
-    citation_ids: list[str] = []
-    seen: set[str] = set()
-    for group in groups:
-        for citation_id in group:
-            if citation_id not in seen:
-                citation_ids.append(citation_id)
-                seen.add(citation_id)
-    return tuple(citation_ids)
-
-
-def _profile_warnings(profile_id: str, method: CvaMethod) -> tuple[str, ...]:
-    if profile_id != "BASEL_MAR50_2020":
-        return ()
-    if method in {CvaMethod.SA_CVA, CvaMethod.MIXED_CARVE_OUT, CvaMethod.BA_CVA_FULL}:
-        return ()
-    return ()
 
 
 __all__ = ["calculate_cva_capital"]

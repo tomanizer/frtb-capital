@@ -4,14 +4,12 @@ CVA regulatory profile selection and hashing.
 
 from __future__ import annotations
 
-import hashlib
-import json
-from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_cva._payloads import hash_payload as _hash_payload
 from frtb_cva.data_models import CvaMethod, CvaRegulatoryProfile, SaCvaRiskClass
 from frtb_cva.reference_data import citations_for_profile, profile_reference_payload
 from frtb_cva.validation import CvaInputError
@@ -111,11 +109,6 @@ def profile_content_hash(profile: CvaRegulatoryProfile | str) -> str:
     """Return the deterministic content hash for a supported profile."""
 
     return get_cva_rule_profile(profile).content_hash
-
-
-def _hash_payload(payload: Mapping[str, object]) -> str:
-    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
-    return hashlib.sha256(encoded).hexdigest()
 
 
 def _metadata_date(value: object, field: str) -> date:
