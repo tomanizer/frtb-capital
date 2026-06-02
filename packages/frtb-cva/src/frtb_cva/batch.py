@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence, Sized
@@ -14,6 +12,10 @@ from typing import Any, TypeVar, cast
 import numpy as np
 import numpy.typing as npt
 
+from frtb_cva._citations import merge_citations as _merge_citations
+from frtb_cva._payloads import batch_input_payload as _batch_input_payload
+from frtb_cva._payloads import hash_payload as _hash_payload
+from frtb_cva._profile_warnings import profile_warnings as _profile_warnings
 from frtb_cva.aggregation import aggregate_weighted_sensitivities
 from frtb_cva.audit import validate_cva_result_reconciliation
 from frtb_cva.ba_cva import _unique_citations
@@ -33,7 +35,6 @@ from frtb_cva.data_models import (
     CvaMethodComponentTotal,
     CvaNettingSet,
     CvaRegulatoryProfile,
-    CvaRunControls,
     CvaSector,
     HedgeEligibility,
     HedgeReferenceRelation,
@@ -1370,39 +1371,14 @@ def input_hash_for_cva_batches(
 ) -> str:
     """Return the row-compatible deterministic input hash for CVA batches."""
 
-    counterparty_payloads = (
-        []
-        if counterparties is None
-        else [
-            _counterparty_payload(counterparties, index)
-            for index in range(counterparties.row_count)
-        ]
-    )
-    netting_set_payloads = (
-        []
-        if netting_sets is None
-        else [_netting_set_payload(netting_sets, index) for index in range(netting_sets.row_count)]
-    )
-    hedge_payloads = (
-        []
-        if hedges is None
-        else [_hedge_payload(hedges, index) for index in range(hedges.row_count)]
-    )
-    sensitivity_payloads = (
-        []
-        if sensitivities is None
-        else [
-            _sensitivity_payload(sensitivities, index) for index in range(sensitivities.row_count)
-        ]
-    )
     return _hash_payload(
-        {
-            "context": _context_payload(context),
-            "counterparties": counterparty_payloads,
-            "netting_sets": netting_set_payloads,
-            "hedges": hedge_payloads,
-            "sensitivities": sensitivity_payloads,
-        }
+        _batch_input_payload(
+            context,
+            counterparties,
+            netting_sets,
+            hedges=hedges,
+            sensitivities=sensitivities,
+        )
     )
 
 
@@ -2210,142 +2186,6 @@ def _collect_ba_citations(
         reduced_citations,
         tuple(citation for line in netting_set_lines for citation in line.citations),
     )
-
-
-def _merge_citations(*groups: tuple[str, ...]) -> tuple[str, ...]:
-    citation_ids: list[str] = []
-    seen: set[str] = set()
-    for group in groups:
-        for citation_id in group:
-            if citation_id not in seen:
-                citation_ids.append(citation_id)
-                seen.add(citation_id)
-    return tuple(citation_ids)
-
-
-def _profile_warnings(profile_id: str, method: CvaMethod) -> tuple[str, ...]:
-    if profile_id != "BASEL_MAR50_2020":
-        return ()
-    if method in {CvaMethod.SA_CVA, CvaMethod.MIXED_CARVE_OUT, CvaMethod.BA_CVA_FULL}:
-        return ()
-    return ()
-
-
-def _context_payload(context: CvaCalculationContext) -> dict[str, object]:
-    run_controls = context.run_controls or CvaRunControls()
-    return {
-        "run_id": context.run_id,
-        "calculation_date": context.calculation_date.isoformat(),
-        "base_currency": context.base_currency,
-        "profile": context.profile.value,
-        "method": context.method.value,
-        "sa_cva_approved": context.sa_cva_approved,
-        "materiality_threshold_elected": context.materiality_threshold_elected,
-        "carve_out_netting_set_ids": list(context.carve_out_netting_set_ids),
-        "desk_id": context.desk_id,
-        "legal_entity": context.legal_entity,
-        "citation_policy": context.citation_policy,
-        "run_controls": {
-            "audit_verbosity": run_controls.audit_verbosity,
-            "retain_intermediate_details": run_controls.retain_intermediate_details,
-            "unsupported_feature_behaviour": run_controls.unsupported_feature_behaviour,
-        },
-    }
-
-
-def _counterparty_payload(batch: CvaCounterpartyBatch, index: int) -> dict[str, object]:
-    return {
-        "counterparty_id": batch.counterparty_ids[index],
-        "desk_id": batch.desk_ids[index],
-        "legal_entity": batch.legal_entities[index],
-        "sector": batch.sectors[index],
-        "credit_quality": batch.credit_qualities[index],
-        "region": batch.regions[index],
-        "source_row_id": batch.source_row_ids[index],
-        "lineage": _lineage_payload(batch, index),
-    }
-
-
-def _netting_set_payload(batch: CvaNettingSetBatch, index: int) -> dict[str, object]:
-    return {
-        "netting_set_id": batch.netting_set_ids[index],
-        "counterparty_id": batch.counterparty_ids[index],
-        "ead": float(batch.eads[index]),
-        "effective_maturity": float(batch.effective_maturities[index]),
-        "discount_factor": float(batch.discount_factors[index]),
-        "discount_factor_explicit": bool(batch.discount_factor_explicit[index]),
-        "currency": batch.currencies[index],
-        "sign_convention": batch.sign_conventions[index],
-        "uses_imm_ead": bool(batch.uses_imm_eads[index]),
-        "carved_out_to_ba_cva": bool(batch.carved_out_to_ba_cva[index]),
-        "source_row_id": batch.source_row_ids[index],
-        "lineage": _lineage_payload(batch, index),
-    }
-
-
-def _hedge_payload(batch: CvaHedgeBatch, index: int) -> dict[str, object]:
-    return {
-        "hedge_id": batch.hedge_ids[index],
-        "source_row_id": batch.source_row_ids[index],
-        "hedge_type": batch.hedge_types[index],
-        "eligibility": batch.eligibilities[index],
-        "counterparty_id": batch.counterparty_ids[index],
-        "reference_sector": batch.reference_sectors[index],
-        "reference_credit_quality": batch.reference_credit_qualities[index],
-        "reference_region": batch.reference_regions[index],
-        "reference_relation": batch.reference_relations[index],
-        "notional": float(batch.notionals[index]),
-        "remaining_maturity": float(batch.remaining_maturities[index]),
-        "discount_factor": float(batch.discount_factors[index]),
-        "discount_factor_explicit": bool(batch.discount_factor_explicit[index]),
-        "is_internal": bool(batch.is_internal[index]),
-        "internal_desk_counterparty_id": batch.internal_desk_counterparty_ids[index],
-        "eligibility_evidence_id": batch.eligibility_evidence_ids[index],
-        "rejection_reason": batch.rejection_reasons[index],
-        "sa_cva_risk_class": batch.sa_cva_risk_classes[index],
-        "lineage": _lineage_payload(batch, index),
-    }
-
-
-def _sensitivity_payload(batch: SaCvaSensitivityBatch, index: int) -> dict[str, object]:
-    return {
-        "sensitivity_id": batch.sensitivity_ids[index],
-        "risk_class": batch.risk_classes[index],
-        "risk_measure": batch.risk_measures[index],
-        "sensitivity_tag": batch.sensitivity_tags[index],
-        "bucket_id": batch.bucket_ids[index],
-        "risk_factor_key": batch.risk_factor_keys[index],
-        "tenor": batch.tenors[index],
-        "amount": float(batch.amounts[index]),
-        "amount_currency": batch.amount_currencies[index],
-        "sign_convention": batch.sign_conventions[index],
-        "volatility_input": _optional_float_value(batch.volatility_inputs[index]),
-        "hedge_id": batch.hedge_ids[index],
-        "index_treatment": batch.index_treatments[index],
-        "index_max_sector_weight": _optional_float_value(batch.index_max_sector_weights[index]),
-        "index_homogeneous_sector_quality": bool(batch.index_homogeneous_sector_quality[index]),
-        "index_dominant_sector": batch.index_dominant_sectors[index],
-        "index_remap_bucket_id": batch.index_remap_bucket_ids[index],
-        "source_row_id": batch.source_row_ids[index],
-        "lineage": _lineage_payload(batch, index),
-    }
-
-
-def _lineage_payload(
-    batch: CvaCounterpartyBatch | CvaNettingSetBatch | CvaHedgeBatch | SaCvaSensitivityBatch,
-    index: int,
-) -> dict[str, object]:
-    return {
-        "source_system": batch.lineage_source_systems[index],
-        "source_file": batch.lineage_source_files[index],
-        "source_row_id": batch.lineage_source_row_ids[index],
-        "source_column_map": [list(pair) for pair in batch.source_column_maps[index]],
-    }
-
-
-def _hash_payload(payload: dict[str, object]) -> str:
-    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
-    return hashlib.sha256(encoded).hexdigest()
 
 
 def _require_lengths(row_count: int, **columns: Sized) -> None:
