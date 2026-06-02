@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from math import isfinite
 
+from frtb_drc._identifiers import slug as _slug
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -214,7 +215,3 @@ def _validate_net_jtd(net_jtd: NetJtd, *, bucket_key: str) -> None:
         raise DrcInputError(f"net JTD amount must be finite: {net_jtd.net_jtd_id}")
     if net_jtd.net_amount < 0.0:
         raise DrcInputError(f"net JTD amount must be non-negative: {net_jtd.net_jtd_id}")
-
-
-def _slug(value: str) -> str:
-    return value.lower().replace(" ", "-").replace("_", "-")

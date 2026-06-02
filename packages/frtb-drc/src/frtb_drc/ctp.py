@@ -4,13 +4,19 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
-from collections.abc import Callable, Iterable, Iterator, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import count
 
 from frtb_common import jsonable
 
+from frtb_drc._citations import merge_citations
+from frtb_drc._identifiers import slug_path
+from frtb_drc._netting_helpers import (
+    bounded_rejected_group_offsets,
+    risk_weights_for_net_jtd,
+)
+from frtb_drc._validation_utils import optional_text, require_finite_non_negative, require_text
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -76,7 +82,7 @@ class CtpCapitalInput:
     risk_weight: float
 
     def __post_init__(self) -> None:
-        _require_finite_non_negative(self.risk_weight, "risk_weight")
+        require_finite_non_negative(self.risk_weight, "risk_weight")
 
 
 def calculate_ctp_drc(
@@ -165,14 +171,14 @@ def calculate_ctp_gross_jtd(
         position_id=position.position_id,
         risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         issuer_or_tranche_key=_exposure_key(position),
-        bucket_key=_require_text(position.bucket_key, "bucket_key"),
+        bucket_key=require_text(position.bucket_key, "bucket_key"),
         default_direction=DefaultDirection(position.default_direction),
         lgd_rate=1.0,
         lgd_source="CTP gross default exposure equals market value; no separate LGD is applied",
         notional=abs(position.notional),
         pnl_component=0.0,
         gross_jtd=abs(position.market_value),
-        citations=_merge_citations((*_GROSS_CITATIONS, *position.citation_ids)),
+        citations=merge_citations((*_GROSS_CITATIONS, *position.citation_ids)),
     )
 
 
@@ -311,8 +317,8 @@ def validate_ctp_context(context: DrcCalculationContext) -> None:
 
     effective_risk_weights(context, risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
     for position_id, offset_group in context.ctp_offset_groups.items():
-        _require_text(position_id, "ctp_offset_groups position_id")
-        _require_text(offset_group, f"ctp_offset_groups[{position_id!r}]")
+        require_text(position_id, "ctp_offset_groups position_id")
+        require_text(offset_group, f"ctp_offset_groups[{position_id!r}]")
 
 
 def _validate_ctp_context(
@@ -353,7 +359,16 @@ def _ctp_capital_inputs(
 ) -> tuple[CtpCapitalInput, ...]:
     inputs: list[CtpCapitalInput] = []
     for net_jtd in net_jtds:
-        weights = tuple(sorted(_risk_weights_for_net_jtd(net_jtd, risk_weights=risk_weights)))
+        weights = tuple(
+            sorted(
+                risk_weights_for_net_jtd(
+                    net_jtd,
+                    risk_weights=risk_weights,
+                    field_name="context.ctp_risk_weights",
+                    position_label="CTP",
+                )
+            )
+        )
         if len(weights) != 1:
             raise DrcInputError(
                 f"CTP net JTD must map to exactly one risk weight: {net_jtd.net_jtd_id}"
@@ -423,11 +438,11 @@ def _ctp_bucket_drc(
 
     bucket_capital = weighted_long - hbr.ratio * weighted_short
     return BucketDrc(
-        bucket_id=f"bucket-drc-ctp-{_slug(bucket_key)}",
+        bucket_id=f"bucket-drc-ctp-{slug_path(bucket_key)}",
         bucket_key=bucket_key,
         risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         hbr=HedgeBenefitRatio(
-            hbr_id=f"hbr-ctp-{_slug(bucket_key)}",
+            hbr_id=f"hbr-ctp-{slug_path(bucket_key)}",
             bucket_key=bucket_key,
             aggregate_net_long=hbr.aggregate_net_long,
             aggregate_net_short=hbr.aggregate_net_short,
@@ -444,7 +459,7 @@ def _ctp_bucket_drc(
         citations=_BUCKET_CITATIONS,
         branch_metadata=(
             BranchMetadata(
-                branch_id=f"bucket-ctp-no-floor-{_slug(bucket_key)}",
+                branch_id=f"bucket-ctp-no-floor-{slug_path(bucket_key)}",
                 branch_type=BranchType.NORMAL,
                 source_id=bucket_key,
                 selected=True,
@@ -488,8 +503,10 @@ def _net_ctp_group(
     direction = DefaultDirection.LONG if signed_net > 0.0 else DefaultDirection.SHORT
     net_amount = abs(signed_net)
     return NetJtd(
-        net_jtd_id=f"net-ctp-{_slug(bucket_key)}-{_slug(group_key)}-{direction.value.lower()}",
-        netting_group_id=f"ng-ctp-{_slug(bucket_key)}-{_slug(group_key)}",
+        net_jtd_id=(
+            f"net-ctp-{slug_path(bucket_key)}-{slug_path(group_key)}-{direction.value.lower()}"
+        ),
+        netting_group_id=f"ng-ctp-{slug_path(bucket_key)}-{slug_path(group_key)}",
         risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         bucket_key=bucket_key,
         obligor_or_tranche_key=group_key,
@@ -505,7 +522,7 @@ def _net_ctp_group(
         rejected_offsets=rejected_offsets,
         branch_metadata=(
             BranchMetadata(
-                branch_id=f"net-ctp-{_slug(bucket_key)}-{_slug(group_key)}",
+                branch_id=f"net-ctp-{slug_path(bucket_key)}-{slug_path(group_key)}",
                 branch_type=BranchType.NORMAL,
                 source_id=group_key,
                 selected=True,
@@ -542,64 +559,19 @@ def _rejected_ctp_offsets(
         ]
         longs_by_group = _inputs_by_offset_group(longs)
         shorts_by_group = _inputs_by_offset_group(shorts)
-        rejected = _bounded_rejected_group_offsets(
+        rejected = bounded_rejected_group_offsets(
             bucket_key=bucket_key,
             long_groups=longs_by_group,
             short_groups=shorts_by_group,
+            rejection_id_prefix="rej-ctp",
             sequence=sequence,
             representative=_representative_scaled_jtd_id,
+            reason_code="CTP_OFFSET_REQUIRES_EXACT_MATCH_OR_EXPLICIT_REPLICATION",
+            citations=_NETTING_CITATIONS,
         )
         if rejected:
             rejected_by_bucket[bucket_key] = tuple(rejected)
     return rejected_by_bucket
-
-
-def _bounded_rejected_group_offsets(
-    *,
-    bucket_key: str,
-    long_groups: Mapping[str, list[CtpNettingInput]],
-    short_groups: Mapping[str, list[CtpNettingInput]],
-    sequence: Iterator[int],
-    representative: Callable[[list[CtpNettingInput]], str],
-) -> tuple[RejectedOffset, ...]:
-    rejected: list[RejectedOffset] = []
-    sorted_short_groups = sorted(short_groups)
-    for long_group, long_items in sorted(long_groups.items()):
-        candidate_short_group = next(
-            (item for item in sorted_short_groups if item != long_group), None
-        )
-        if candidate_short_group is None:
-            continue
-        rejected.append(
-            RejectedOffset(
-                rejection_id=f"rej-ctp-{_slug(bucket_key)}-{next(sequence)}",
-                long_source_id=representative(long_items),
-                short_source_id=representative(short_groups[candidate_short_group]),
-                reason_code="CTP_OFFSET_REQUIRES_EXACT_MATCH_OR_EXPLICIT_REPLICATION",
-                citations=_NETTING_CITATIONS,
-            )
-        )
-    covered_short_source_ids = {record.short_source_id for record in rejected}
-    sorted_long_groups = sorted(long_groups)
-    for short_group, short_items in sorted(short_groups.items()):
-        short_source_id = representative(short_items)
-        if short_source_id in covered_short_source_ids:
-            continue
-        candidate_long_group = next(
-            (item for item in sorted_long_groups if item != short_group), None
-        )
-        if candidate_long_group is None:
-            continue
-        rejected.append(
-            RejectedOffset(
-                rejection_id=f"rej-ctp-{_slug(bucket_key)}-{next(sequence)}",
-                long_source_id=representative(long_groups[candidate_long_group]),
-                short_source_id=short_source_id,
-                reason_code="CTP_OFFSET_REQUIRES_EXACT_MATCH_OR_EXPLICIT_REPLICATION",
-                citations=_NETTING_CITATIONS,
-            )
-        )
-    return tuple(rejected)
 
 
 def _validate_ctp_netting_input(exposure: CtpNettingInput) -> None:
@@ -613,7 +585,7 @@ def _validate_ctp_netting_input(exposure: CtpNettingInput) -> None:
         raise DrcInputError("position_id mismatch between gross and scaled JTD")
     if gross.gross_jtd != scaled.gross_jtd:
         raise DrcInputError("gross_jtd amount mismatch between gross and scaled JTD")
-    _require_text(exposure.offset_group, "ctp_offset_group")
+    require_text(exposure.offset_group, "ctp_offset_group")
 
 
 def _validate_ctp_net_jtd(net_jtd: NetJtd, *, bucket_key: str) -> None:
@@ -623,7 +595,7 @@ def _validate_ctp_net_jtd(net_jtd: NetJtd, *, bucket_key: str) -> None:
         raise DrcInputError(
             f"CTP bucket DRC input bucket mismatch: expected {bucket_key}, got {net_jtd.bucket_key}"
         )
-    _require_finite_non_negative(net_jtd.net_amount, f"net JTD amount {net_jtd.net_jtd_id}")
+    require_finite_non_negative(net_jtd.net_amount, f"net JTD amount {net_jtd.net_jtd_id}")
 
 
 def _zero_ctp_category() -> CategoryDrc:
@@ -648,10 +620,10 @@ def _zero_ctp_category() -> CategoryDrc:
 def _offset_group(position: DrcPosition, *, context: DrcCalculationContext) -> str:
     explicit = context.ctp_offset_groups.get(position.position_id)
     if explicit is not None:
-        return _require_text(explicit, f"ctp_offset_groups[{position.position_id!r}]")
-    index_series_id = _optional_text(position.index_series_id)
-    tranche_id = _optional_text(position.tranche_id)
-    issuer_id = _optional_text(position.issuer_id)
+        return require_text(explicit, f"ctp_offset_groups[{position.position_id!r}]")
+    index_series_id = optional_text(position.index_series_id)
+    tranche_id = optional_text(position.tranche_id)
+    issuer_id = optional_text(position.issuer_id)
     if index_series_id is not None and tranche_id is not None:
         return f"exact:index:{index_series_id}:tranche:{tranche_id}"
     if index_series_id is not None:
@@ -664,9 +636,9 @@ def _offset_group(position: DrcPosition, *, context: DrcCalculationContext) -> s
 
 
 def _exposure_key(position: DrcPosition) -> str:
-    index_series_id = _optional_text(position.index_series_id)
-    tranche_id = _optional_text(position.tranche_id)
-    issuer_id = _optional_text(position.issuer_id)
+    index_series_id = optional_text(position.index_series_id)
+    tranche_id = optional_text(position.tranche_id)
+    issuer_id = optional_text(position.issuer_id)
     if index_series_id is not None and tranche_id is not None:
         return f"{index_series_id}/{tranche_id}"
     if index_series_id is not None:
@@ -678,24 +650,6 @@ def _exposure_key(position: DrcPosition) -> str:
     raise DrcInputError(f"CTP position {position.position_id} has no exposure identity")
 
 
-def _risk_weights_for_net_jtd(
-    net_jtd: NetJtd,
-    *,
-    risk_weights: Mapping[str, float],
-) -> set[float]:
-    weights: set[float] = set()
-    for position_id in net_jtd.position_ids:
-        try:
-            risk_weight = risk_weights[position_id]
-        except KeyError as exc:
-            raise DrcInputError(
-                f"context.ctp_risk_weights is required for CTP position {position_id}"
-            ) from exc
-        _require_finite_non_negative(risk_weight, f"ctp_risk_weights[{position_id!r}]")
-        weights.add(risk_weight)
-    return weights
-
-
 def _inputs_by_offset_group(
     items: list[CtpNettingInput],
 ) -> dict[str, list[CtpNettingInput]]:
@@ -705,44 +659,8 @@ def _inputs_by_offset_group(
     return grouped
 
 
-def _representative_scaled_jtd_id(items: list[CtpNettingInput]) -> str:
+def _representative_scaled_jtd_id(items: Sequence[CtpNettingInput]) -> str:
     return sorted(item.scaled_jtd.scaled_jtd_id for item in items)[0]
-
-
-def _require_finite_non_negative(value: float, field_name: str) -> None:
-    if not math.isfinite(value) or value < 0.0:
-        raise DrcInputError(f"{field_name} must be finite and non-negative")
-
-
-def _require_text(value: str | None, field_name: str) -> str:
-    if value is None:
-        raise DrcInputError(f"{field_name} must be non-empty")
-    text = str(value).strip()
-    if not text:
-        raise DrcInputError(f"{field_name} must be non-empty")
-    return text
-
-
-def _optional_text(value: str | None) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    return None if text == "" else text
-
-
-def _merge_citations(citations: tuple[str, ...]) -> tuple[str, ...]:
-    merged: list[str] = []
-    seen: set[str] = set()
-    for citation_id in citations:
-        if citation_id in seen:
-            continue
-        seen.add(citation_id)
-        merged.append(citation_id)
-    return tuple(merged)
-
-
-def _slug(value: str) -> str:
-    return value.lower().replace(" ", "-").replace("_", "-").replace(":", "-").replace("/", "-")
 
 
 __all__ = [

@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from itertools import count
@@ -15,6 +15,15 @@ import numpy as np
 import numpy.typing as npt
 from frtb_common import jsonable
 
+from frtb_drc._identifiers import slug_path as _slug
+from frtb_drc._netting_helpers import (
+    bounded_rejected_group_offsets as _bounded_rejected_group_offsets,
+)
+from frtb_drc._netting_helpers import (
+    risk_weights_for_net_jtd as _risk_weights_for_net_jtd,
+)
+from frtb_drc._validation_utils import optional_text as _optional_text
+from frtb_drc._validation_utils import require_text as _required_text
 from frtb_drc._version import __version__
 from frtb_drc.attribution import calculate_drc_attribution
 from frtb_drc.audit import validate_reconciliation
@@ -1359,66 +1368,15 @@ def _rejected_exact_group_offsets(
             bucket_key=bucket_key,
             long_groups=long_groups,
             short_groups=short_groups,
-            net_prefix=net_prefix,
+            rejection_id_prefix=f"rej-{net_prefix}",
             sequence=sequence,
             representative=lambda item: _representative_scaled_id(batch, item),
-            rejected_reason_code=rejected_reason_code,
-            netting_citations=netting_citations,
+            reason_code=rejected_reason_code,
+            citations=netting_citations,
         )
         if rejected:
             rejected_by_bucket[bucket_key] = tuple(rejected)
     return rejected_by_bucket
-
-
-def _bounded_rejected_group_offsets(
-    *,
-    bucket_key: str,
-    long_groups: Mapping[str, Sequence[int]],
-    short_groups: Mapping[str, Sequence[int]],
-    net_prefix: str,
-    sequence: Iterator[int],
-    representative: Callable[[Sequence[int]], str],
-    rejected_reason_code: str,
-    netting_citations: tuple[str, ...],
-) -> tuple[RejectedOffset, ...]:
-    rejected: list[RejectedOffset] = []
-    sorted_short_groups = sorted(short_groups)
-    for long_group, long_indices in sorted(long_groups.items()):
-        candidate_short_group = next(
-            (item for item in sorted_short_groups if item != long_group), None
-        )
-        if candidate_short_group is None:
-            continue
-        rejected.append(
-            RejectedOffset(
-                rejection_id=f"rej-{net_prefix}-{_slug(bucket_key)}-{next(sequence)}",
-                long_source_id=representative(long_indices),
-                short_source_id=representative(short_groups[candidate_short_group]),
-                reason_code=rejected_reason_code,
-                citations=netting_citations,
-            )
-        )
-    covered_short_source_ids = {record.short_source_id for record in rejected}
-    sorted_long_groups = sorted(long_groups)
-    for short_group, short_indices in sorted(short_groups.items()):
-        short_source_id = representative(short_indices)
-        if short_source_id in covered_short_source_ids:
-            continue
-        candidate_long_group = next(
-            (item for item in sorted_long_groups if item != short_group), None
-        )
-        if candidate_long_group is None:
-            continue
-        rejected.append(
-            RejectedOffset(
-                rejection_id=f"rej-{net_prefix}-{_slug(bucket_key)}-{next(sequence)}",
-                long_source_id=representative(long_groups[candidate_long_group]),
-                short_source_id=short_source_id,
-                reason_code=rejected_reason_code,
-                citations=netting_citations,
-            )
-        )
-    return tuple(rejected)
 
 
 def _direction_groups(
@@ -1766,28 +1724,6 @@ def _ctp_capital_inputs_from_batch(
             )
         inputs.append(CtpCapitalInput(net_jtd=net_jtd, risk_weight=weights[0]))
     return tuple(inputs)
-
-
-def _risk_weights_for_net_jtd(
-    net_jtd: NetJtd,
-    *,
-    risk_weights: Mapping[str, float],
-    field_name: str,
-) -> set[float]:
-    weights: set[float] = set()
-    for position_id in net_jtd.position_ids:
-        try:
-            risk_weight = float(risk_weights[position_id])
-        except KeyError as exc:
-            raise DrcInputError(f"{field_name} is required for position {position_id}") from exc
-        except (ValueError, TypeError) as exc:
-            raise DrcInputError(
-                f"{field_name}[{position_id!r}] must be a valid finite number"
-            ) from exc
-        if not math.isfinite(risk_weight) or risk_weight < 0.0:
-            raise DrcInputError(f"{field_name}[{position_id!r}] must be finite and non-negative")
-        weights.add(risk_weight)
-    return weights
 
 
 def _coerce_finite_non_negative_float(value: object, *, field_name: str) -> float:
@@ -2291,20 +2227,6 @@ def _immutable_float_array(values: FloatArray) -> FloatArray:
     return array
 
 
-def _required_text(value: object | None, field_name: str) -> str:
-    text = _optional_text(value)
-    if text is None:
-        raise DrcInputError(f"{field_name} must be non-empty")
-    return text
-
-
-def _optional_text(value: object | None) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    return text or None
-
-
 def _required_float(value: object, field_name: str) -> float:
     if value is None:
         raise DrcInputError(f"{field_name} must be provided")
@@ -2396,10 +2318,6 @@ def _seniority_rank(seniority: DrcSeniority) -> int:
         return _SENIORITY_RANK[seniority]
     except KeyError as exc:  # pragma: no cover - all enum values are mapped.
         raise DrcInputError(f"missing DRC seniority rank: {seniority.value}") from exc
-
-
-def _slug(value: str) -> str:
-    return value.lower().replace(" ", "-").replace("_", "-").replace(":", "-").replace("/", "-")
 
 
 __all__ = [
