@@ -62,9 +62,7 @@ def compose_standardised_approach_capital(
     _require_component(sbm_handoff, StandardisedComponent.SBM, "sbm_handoff")
 
     handoffs = [
-        handoff
-        for handoff in (rrao_handoff, drc_handoff, sbm_handoff)
-        if handoff is not None
+        handoff for handoff in (rrao_handoff, drc_handoff, sbm_handoff) if handoff is not None
     ]
     _assert_consistent_jurisdiction(handoffs)
 

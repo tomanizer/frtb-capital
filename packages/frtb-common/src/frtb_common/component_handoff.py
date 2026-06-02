@@ -78,9 +78,7 @@ class ComponentResultHandoff:
         _require_non_empty_text(self.package_name, "package_name")
         _require_non_empty_text(self.run_id, "run_id")
         if not isinstance(self.calculation_date, date):
-            raise ComponentHandoffError(
-                "calculation_date must be a date", field="calculation_date"
-            )
+            raise ComponentHandoffError("calculation_date must be a date", field="calculation_date")
         _require_non_empty_text(self.base_currency, "base_currency")
         _require_non_empty_text(self.profile_id, "profile_id")
         _require_non_empty_text(self.profile_hash, "profile_hash")
@@ -111,14 +109,10 @@ def _require_finite_number(value: object, field: str) -> float:
 
 def _require_non_negative_int(value: object, field: str) -> None:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-        raise ComponentHandoffError(
-            f"{field} must be a non-negative integer", field=field
-        )
+        raise ComponentHandoffError(f"{field} must be a non-negative integer", field=field)
 
 
 def _require_text_tuple(value: object, field: str) -> tuple[str, ...]:
     if not isinstance(value, tuple) or not all(isinstance(item, str) for item in value):
-        raise ComponentHandoffError(
-            f"{field} must be a tuple of text values", field=field
-        )
+        raise ComponentHandoffError(f"{field} must be a tuple of text values", field=field)
     return value
