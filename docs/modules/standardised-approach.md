@@ -23,6 +23,13 @@ The suite therefore represents SA through three component packages:
 SA capital = SBM capital + DRC capital + RRAO capital
 ```
 
+Current orchestration validates supplied SBM, DRC, and RRAO
+`frtb_common.ComponentResultHandoff` records for component slot and
+jurisdiction-family consistency, then raises an explicit
+`NotImplementedCapitalComponentError` before aggregation arithmetic. The docs
+therefore describe the target composition and the current fail-closed runtime
+separately.
+
 The same component stack is also the fallback route when a desk is not
 IMA-eligible. The component packages own their own calculations and audit
 records; orchestration owns routing, aggregation, and cross-component

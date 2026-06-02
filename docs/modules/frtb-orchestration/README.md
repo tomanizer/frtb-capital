@@ -29,14 +29,21 @@ result internals. Runtime code must not import sibling capital packages;
 package-local tests use concrete DRC/RRAO fixtures only to verify the adapters
 remain compatible with public component outputs. See ADR 0029.
 
+CVA is separate from SA composition. The current `recognise_cva_result` helper
+projects a public CVA capital result into `CvaResultHandoff` with method,
+BA-CVA/SA-CVA totals where present, lineage hashes, counts, citations, and
+warnings. That handoff is preparatory evidence for top-of-the-house aggregation;
+it does not make `calculate_suite_capital` available.
+
 ## Arrow Boundary
 
 Orchestration may accept Arrow-backed data at suite input boundaries before data
 is routed to component-owned public adapters. Once a component has calculated
-capital, orchestration consumes public audited result shapes only, such as DRC,
-RRAO, SBM, CVA, and IMA result/eligibility summaries. It must not import or
-coordinate private package batch modules, because those batches are package
-kernel internals rather than suite contracts.
+capital, orchestration consumes public audited result or handoff shapes only,
+such as `ComponentResultHandoff`, `CvaResultHandoff`, and future IMA
+result/eligibility summaries. It must not import or coordinate private package
+batch modules, because those batches are package kernel internals rather than
+suite contracts.
 
 IMA scenario cubes remain NumPy-native inside `frtb-ima`; orchestration should
 route IMA eligibility and result summaries, not scenario-cube internals. SA

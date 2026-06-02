@@ -1,6 +1,6 @@
 schema_version: 1
 component: frtb-orchestration
-status: scaffolded
+status: orchestration_partial
 source_register: ../sources.yml
 
 requirements:
@@ -18,7 +18,7 @@ requirements:
     challenger_refs:
       - frtb_net_frtb
       - ultima_ib_ultima
-    notes: "Orchestration owns SA composition and IMA fallback routing."
+    notes: "Shared SA component handoff validation and jurisdiction-family guards are implemented; SA aggregation arithmetic and IMA fallback routing still fail closed."
 
   - id: ORCH-REGIME-001
     topic: Jurisdictional profile selection and effective-date control
@@ -31,5 +31,5 @@ requirements:
       - packages/frtb-orchestration/src/frtb_orchestration/
     test_refs:
       - packages/frtb-orchestration/tests/
-    coverage_status: not_implemented
-    notes: "Run-level policy selection should be immutable and auditable."
+    coverage_status: partially_implemented_under_audit
+    notes: "SA jurisdiction-family guard is implemented for known profile IDs; run-level profile selection and effective-date control remain future suite aggregation work."

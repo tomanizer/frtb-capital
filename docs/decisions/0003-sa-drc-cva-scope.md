@@ -27,10 +27,15 @@ Each of SA, DRC, and CVA was originally expected to be a separate package inside
 this monorepo, not part of `frtb-ima`. ADR 0010 refines the SA side of this
 decision: `SA` is now treated as a composition label implemented by
 `packages/frtb-sbm/`, `packages/frtb-drc/`, and `packages/frtb-rrao/`, while
-`packages/frtb-cva/` remains a separate planned package. Each package will:
+`packages/frtb-cva/` remains a separate package. Each package will:
 
 - Have its own `pyproject.toml`, version, tests, and model documentation pack.
-- Use the same shared abstractions from `frtb-common` (audit records, regulatory policy framework, sign conventions, business calendar).
+- Use package-neutral shared mechanics from `frtb-common` where they have an
+  accepted shared contract, such as package status metadata, explicit
+  unsupported-feature errors, Arrow/CRIF handoff primitives, regulatory
+  citation test helpers, and the standardised-component orchestration handoff.
+  Audit-record schemas, regulatory policy objects, sign conventions, and
+  calendars stay package-owned unless a later cross-cutting ADR extracts them.
 - Follow the same suite-level style and review standards.
 - Be independently validated under SR 11-7 / PRA SS 1/23.
 
