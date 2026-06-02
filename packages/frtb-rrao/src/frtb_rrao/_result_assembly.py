@@ -38,9 +38,14 @@ def partition_lines(
 ) -> tuple[tuple[RraoCapitalLine, ...], tuple[RraoCapitalLine, ...]]:
     """Split included and excluded capital lines without reordering."""
 
-    included = tuple(line for line in lines if not line.is_excluded)
-    excluded = tuple(line for line in lines if line.is_excluded)
-    return included, excluded
+    included: list[RraoCapitalLine] = []
+    excluded: list[RraoCapitalLine] = []
+    for line in lines:
+        if line.is_excluded:
+            excluded.append(line)
+        else:
+            included.append(line)
+    return tuple(included), tuple(excluded)
 
 
 def collect_line_citations(lines: tuple[RraoCapitalLine, ...]) -> tuple[str, ...]:

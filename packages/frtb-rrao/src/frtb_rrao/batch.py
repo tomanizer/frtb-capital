@@ -1243,7 +1243,7 @@ def _position_payload_for_hash(batch: RraoPositionBatch, index: int) -> dict[str
         is_path_dependent=batch.is_path_dependents[index],
         has_maturity=batch.has_maturities[index],
         has_strike_or_barrier=batch.has_strike_or_barriers[index],
-        has_multiple_strikes_or_barrier=batch.has_multiple_strikes_or_barriers[index],
+        has_multiple_strikes_or_barriers=batch.has_multiple_strikes_or_barriers[index],
         is_ctp_hedge=batch.is_ctp_hedges[index],
         is_investment_fund_exposure=batch.is_investment_fund_exposures[index],
         investment_fund_id=batch.investment_fund_ids[index],
