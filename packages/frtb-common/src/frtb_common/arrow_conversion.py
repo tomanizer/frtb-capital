@@ -11,12 +11,13 @@ import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.compute as pc  # type: ignore[import-untyped]
 
-import frtb_common.handoff as _handoff
 from frtb_common.handoff import (
     ColumnSpec,
     NullPolicy,
     TabularHandoffError,
     TabularLogicalType,
+    _validate_column_policy,
+    _validate_unique_column_names,
     resolve_column_name,
     validate_column_specs,
 )
@@ -124,7 +125,7 @@ def read_handoff_columns(
         raise error("table must be a pyarrow.Table", None)
     try:
         column_specs = validate_column_specs(specs)
-        _handoff._validate_unique_column_names(table)
+        _validate_unique_column_names(table)
     except TabularHandoffError as exc:
         raise error(str(exc), None) from exc
 
@@ -155,7 +156,7 @@ def _read_handoff_column(
 
     column = table.column(column_name)
     try:
-        _handoff._validate_column_policy(spec, column)
+        _validate_column_policy(spec, column)
         values = _read_typed_handoff_column(column, spec)
     except (TabularHandoffError, pa.ArrowException) as exc:
         raise error(str(exc), spec.name) from exc
