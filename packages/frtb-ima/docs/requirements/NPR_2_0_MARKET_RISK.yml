@@ -50,7 +50,7 @@ requirements:
       - src/frtb_ima/expected_shortfall.py
     tests:
       - tests/test_expected_shortfall.py
-    notes: "Simple empirical tail mean; interpolation/weighting conventions remain policy-review items."
+    notes: "Implements both discrete ceil-tail ES and weighted-interpolated ES; the Fed NPR 2.0 policy uses the weighted-interpolated estimator documented in ADR 0004."
 
   - id: NPR-MR-LHA-001
     title: "Liquidity-horizon adjusted ES from nested scenario vectors"
@@ -76,7 +76,7 @@ requirements:
       - src/frtb_ima/liquidity_horizon_mapping.py
     tests:
       - tests/test_liquidity_horizon_mapping.py
-    notes: "Fed NPR 2.0 / Basel working-assumption mapping table implemented for caller-supplied regulatory categories, including short-maturity and weighted-average multi-underlying helpers. Trade/vendor-to-category classification remains upstream."
+    notes: "Fed NPR 2.0 / Basel-aligned mapping table implemented for caller-supplied regulatory categories, including short-maturity and weighted-average multi-underlying helpers. Trade/vendor-to-category classification remains upstream."
 
   - id: NPR-MR-RFET-001
     title: "RFET quantitative observation thresholds"
@@ -278,21 +278,21 @@ requirements:
     source: "Standardized measure for market risk"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: out_of_scope
-    notes: "Out of scope for this package. SBM, DRC, RRAO, and CVA are planned sibling packages in the monorepo; orchestration composes the SA total from SBM, DRC, and RRAO. This package covers the IMA model-eligible desk capital path only."
+    notes: "Out of scope for this package. SBM, DRC, RRAO, and CVA are sibling packages in the monorepo; orchestration composes the SA total from SBM, DRC, and RRAO. This package covers the IMA model-eligible desk capital path only."
 
   - id: NPR-MR-CAP-004
     title: "Default risk capital requirement"
     source: "Default risk capital requirement for non-securitization, securitization non-CTP, and CTP"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: out_of_scope
-    notes: "Out of scope for this package. SBM, DRC, RRAO, and CVA are planned sibling packages in the monorepo; orchestration composes the SA total from SBM, DRC, and RRAO. This package covers the IMA model-eligible desk capital path only."
+    notes: "Out of scope for this package. SBM, DRC, RRAO, and CVA are sibling packages in the monorepo; orchestration composes the SA total from SBM, DRC, and RRAO. This package covers the IMA model-eligible desk capital path only."
 
   - id: NPR-MR-CAP-005
     title: "Fallback capital requirement"
     source: "Fallback capital for uncomputable market risk covered positions"
     source_url: "https://www.govinfo.gov/content/pkg/FR-2026-03-27/html/2026-05959.htm"
     status: out_of_scope
-    notes: "Out of scope for this package. SBM, DRC, RRAO, and CVA are planned sibling packages in the monorepo; orchestration composes the SA total from SBM, DRC, and RRAO. This package covers the IMA model-eligible desk capital path only."
+    notes: "Out of scope for this package. SBM, DRC, RRAO, and CVA are sibling packages in the monorepo; orchestration composes the SA total from SBM, DRC, and RRAO. This package covers the IMA model-eligible desk capital path only."
 
   - id: NPR-MR-DESK-001
     title: "Trading desk eligibility lifecycle"

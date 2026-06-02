@@ -9,6 +9,6 @@ It is validated by package tests and should not be duplicated under
 `docs/modules/frtb-ima/requirements/`.
 
 Use this directory as the suite-level pointer for navigation consistency with
-planned modules. If future IMA requirements are split into separate files, this
-README should explain the split and identify the authoritative source of each
-requirement family.
+the other component modules. If future IMA requirements are split into separate
+files, this README should explain the split and identify the authoritative
+source of each requirement family.
