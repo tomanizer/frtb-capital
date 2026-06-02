@@ -103,7 +103,7 @@ mutation_floor = 85.47
 
 [[packages.required_tests]]
 id = "public-api"
-path = "packages/frtb-rrao/tests/test_public_api.py"
+path = "packages/frtb-rrao/tests/test_rrao_public_api.py"
 
 [[packages]]
 package = "frtb-sbm"
