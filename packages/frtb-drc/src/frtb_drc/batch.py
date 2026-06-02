@@ -942,7 +942,12 @@ def _validate_nonsec_batch(batch: DrcPositionBatch, *, profile_id: str) -> None:
             profile_id=profile_id,
         )
     for quality in sorted(set(cast(str, item) for item in batch.credit_qualities.tolist())):
-        ensure_chargeable_credit_quality(quality, profile_id=profile_id)
+        first = int(np.argmax(batch.credit_qualities == quality))
+        ensure_chargeable_credit_quality(
+            quality,
+            position_id=cast(str, batch.position_ids[first]),
+            profile_id=profile_id,
+        )
 
 
 def _validate_securitisation_non_ctp_batch(batch: DrcPositionBatch) -> None:
