@@ -6,6 +6,10 @@ Date: 2026-06-02
 
 Accepted
 
+SA arithmetic availability statements in this ADR are historical. Additive SA
+composition and structural IMA fallback route recording are implemented by
+[ADR 0032](0032-orchestration-sa-arithmetic-and-fallback-routing.md).
+
 ## Context
 
 ADR 0018 made deterministic component handoff and SA composition the next

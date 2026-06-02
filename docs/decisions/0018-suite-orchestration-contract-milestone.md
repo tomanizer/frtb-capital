@@ -7,6 +7,9 @@ Date: 2026-05-31
 Accepted. The M1 milestone remains current, but the recognise-helper handoff
 details in this ADR are superseded by
 [ADR 0029](0029-unified-standardised-component-handoff-contract.md).
+The statements that SA aggregation arithmetic and IMA fallback routing are
+unavailable are superseded by
+[ADR 0032](0032-orchestration-sa-arithmetic-and-fallback-routing.md).
 
 ## Context
 
