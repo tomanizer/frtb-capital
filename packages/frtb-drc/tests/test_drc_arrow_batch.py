@@ -485,6 +485,23 @@ def test_drc_column_batch_copy_false_does_not_freeze_caller_numpy_arrays() -> No
     assert np.shares_memory(batch.maturity_years, maturity_years)
 
 
+def test_drc_column_batch_coerces_boolean_spellings_and_rejects_invalid_values() -> None:
+    columns = _minimal_column_payload(row_count=2) | {
+        "is_defaulted": ["yes", "0"],
+        "is_gse": ["1", "false"],
+    }
+
+    batch = build_drc_nonsec_batch_from_columns(**columns)
+
+    assert batch.is_defaulted.tolist() == [True, False]
+    assert batch.is_gse.tolist() == [True, False]
+    assert not batch.is_defaulted.flags.writeable
+    with pytest.raises(DrcInputError, match="boolean field contains unsupported value"):
+        build_drc_nonsec_batch_from_columns(
+            **(_minimal_column_payload(row_count=1) | {"is_defaulted": ["maybe"]})
+        )
+
+
 def test_drc_batch_rejects_unsupported_citation_policy_like_row_api() -> None:
     fixture = load_drc_nonsec_v2_fixture()
     batch = build_drc_nonsec_batch_from_handoff(

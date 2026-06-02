@@ -9,6 +9,7 @@ from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Any, TypeVar, cast
 
+import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
 import numpy.typing as npt
 
@@ -2301,13 +2302,10 @@ def _bool_array(
     default: bool,
     copy: bool,
 ) -> BoolArray:
-    if values is None:
-        array = np.full(row_count, default, dtype=np.bool_)
-    elif isinstance(values, np.ndarray) and values.dtype == np.bool_:
-        array = np.asarray(values, dtype=np.bool_)
-    else:
-        array = np.asarray([_bool_value(value) for value in values], dtype=np.bool_)
-    return _readonly_array(array, copy=copy)
+    try:
+        return _batch_arrays.bool_array(values, row_count, default=default, copy=copy)
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise CvaInputError(str(exc)) from exc
 
 
 def _float_array_from_numpy(
@@ -2317,23 +2315,19 @@ def _float_array_from_numpy(
     copy: bool,
     allow_nan: bool,
 ) -> FloatArray | None:
-    if not isinstance(values, np.ndarray) or values.dtype.kind not in {"f", "i", "u"}:
-        return None
-    if values.ndim != 1:
-        raise CvaInputError(f"{field} must be 1-dimensional", field=field)
-    array = np.asarray(values, dtype=np.float64)
-    if allow_nan:
-        invalid = ~np.isnan(array) & ~np.isfinite(array)
-    else:
-        invalid = ~np.isfinite(array)
-    if bool(np.any(invalid)):
-        raise CvaInputError("value must be finite", field=field)
-    return _readonly_array(array, copy=copy)
+    try:
+        return _batch_arrays.float_array_from_numpy(
+            values,
+            field=field,
+            copy=copy,
+            allow_nan=allow_nan,
+        )
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise CvaInputError(str(exc), field=exc.field or field) from exc
 
 
 def _object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
-    array = np.asarray(values, dtype=object)
-    return _readonly_array(array, copy=copy)
+    return _batch_arrays.object_array(values, copy=copy)
 
 
 def _readonly_array(
@@ -2341,9 +2335,7 @@ def _readonly_array(
     *,
     copy: bool,
 ) -> npt.NDArray[ArrayScalarT]:
-    frozen = array.copy() if copy else array.view()
-    frozen.setflags(write=False)
-    return frozen
+    return _batch_arrays.readonly_array(array, copy=copy)
 
 
 def _required_text(value: object, field: str, record_id: str = "") -> str:
@@ -2416,14 +2408,10 @@ def _optional_float_value(value: object) -> float | None:
 
 
 def _bool_value(value: object) -> bool:
-    if isinstance(value, (bool, np.bool_)):
-        return bool(value)
-    text = str(value).strip().lower()
-    if text in {"1", "true", "yes", "y"}:
-        return True
-    if text in {"0", "false", "no", "n", ""}:
-        return False
-    raise CvaInputError(f"boolean field contains unsupported value: {value!r}")
+    try:
+        return _batch_arrays.coerce_bool_value(value)
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise CvaInputError(str(exc)) from exc
 
 
 def _require_unique(values: ObjectArray, *, field: str) -> None:
