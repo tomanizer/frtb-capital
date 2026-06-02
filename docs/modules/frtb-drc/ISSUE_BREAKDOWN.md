@@ -46,7 +46,7 @@ current.
   maturity, and implicit direction paths fail deterministically.
 - No sibling package imports.
 
-**Tests/checks:** `tests/test_data_models.py`, `tests/test_validation.py`.
+**Tests/checks:** `tests/test_drc_data_models.py`, `tests/test_drc_validation.py`.
 
 ## Issue 3: Add DRC rule-profile and reference-data layer
 
@@ -68,7 +68,7 @@ non-securitisation slice.
 - Missing lookup keys raise a package input error.
 - Profile hash is deterministic.
 
-**Tests/checks:** `tests/test_reference_data.py`, `tests/test_regimes.py`.
+**Tests/checks:** `tests/test_drc_reference_data.py`, `tests/test_drc_regimes.py`.
 
 ## Issue 4: Implement non-securitisation gross JTD
 
@@ -90,8 +90,8 @@ non-securitisation slice.
 - Defaulted positions use the defaulted LGD treatment.
 - Credit derivative examples use the reference exposure LGD.
 
-**Tests/checks:** `tests/test_gross_jtd.py`,
-`tests/test_unsupported_features.py`.
+**Tests/checks:** `tests/test_drc_gross_jtd.py`,
+`tests/test_drc_regimes.py`.
 
 ## Issue 5: Implement maturity scaling
 
@@ -111,7 +111,7 @@ non-securitisation slice.
 - Maturity one year or greater is unscaled.
 - Invalid maturity fails before calculation.
 
-**Tests/checks:** `tests/test_maturity.py`.
+**Tests/checks:** `tests/test_drc_maturity.py`.
 
 ## Issue 6: Implement same-obligor seniority-aware netting
 
@@ -133,7 +133,7 @@ non-securitisation slice.
 - Seniority-ineligible offsets are rejected with reason codes.
 - Netting records reconcile to scaled gross JTD.
 
-**Tests/checks:** `tests/test_netting.py`.
+**Tests/checks:** `tests/test_drc_netting.py`.
 
 ## Issue 7: Implement HBR and non-securitisation bucket capital
 
@@ -154,7 +154,7 @@ non-securitisation slice.
 - Bucket totals sum to category total.
 - Category total equals non-securitisation DRC for the first slice.
 
-**Tests/checks:** `tests/test_capital.py`.
+**Tests/checks:** `tests/test_drc_capital.py`.
 
 ## Issue 8: Add public DRC run API and audit records
 
@@ -176,8 +176,8 @@ real `DrcCapitalResult`.
   bucket totals, and warnings.
 - Reconciliation errors fail tests.
 
-**Tests/checks:** `tests/test_public_api.py`, `tests/test_audit.py`,
-`tests/test_replay.py`.
+**Tests/checks:** `tests/test_drc_public_api.py`, `tests/test_drc_audit.py`,
+`tests/test_drc_replay.py`.
 
 ## Issue 9: Add synthetic non-securitisation validation fixture
 
@@ -217,7 +217,7 @@ without adding dataframe runtime dependencies.
 - Adapter output is canonical `DrcPosition`.
 - Mapping warnings and rejected rows are auditable.
 
-**Tests/checks:** `tests/test_crif.py`.
+**Tests/checks:** `tests/test_drc_crif.py`.
 
 ## Issue 11: Implement securitisation non-CTP data model and fail-closed profile
 
@@ -236,8 +236,8 @@ without adding dataframe runtime dependencies.
 - Capital calculation remains unsupported until risk weights and formulas land.
 - Errors are specific enough for follow-up implementation.
 
-**Tests/checks:** `tests/test_securitisation_data.py`,
-`tests/test_unsupported_features.py`.
+**Tests/checks:** `tests/test_drc_securitisation.py`,
+`tests/test_drc_regimes.py`.
 
 ## Issue 12: Implement securitisation non-CTP capital
 
@@ -257,7 +257,7 @@ without adding dataframe runtime dependencies.
 - Category total reconciles to bucket totals.
 - Non-securitisation behavior is unchanged.
 
-**Tests/checks:** `tests/test_securitisation.py`.
+**Tests/checks:** `tests/test_drc_securitisation.py`.
 
 ## Issue 13: Implement CTP data model and unsupported gates
 
@@ -275,8 +275,8 @@ without adding dataframe runtime dependencies.
 - Missing decomposition evidence produces deterministic errors.
 - No placeholder CTP capital can be emitted.
 
-**Tests/checks:** `tests/test_ctp_data.py`,
-`tests/test_unsupported_features.py`.
+**Tests/checks:** `tests/test_drc_ctp.py`,
+`tests/test_drc_regimes.py`.
 
 ## Issue 14: Implement CTP capital
 
@@ -295,7 +295,7 @@ without adding dataframe runtime dependencies.
   require CTP-specific treatment.
 - Non-CTP paths are unchanged.
 
-**Tests/checks:** `tests/test_ctp.py`.
+**Tests/checks:** `tests/test_drc_ctp.py`.
 
 ## Issue 15: Add orchestration handoff for DRC output
 
@@ -361,4 +361,5 @@ core DRC is stable.
   explicit method/residual metadata.
 - Capital totals do not change when attribution or impact is requested.
 
-**Tests/checks:** `tests/test_attribution.py`, `tests/test_impact.py`.
+**Tests/checks to add with this issue:** `tests/test_drc_attribution.py`,
+`tests/test_drc_impact.py`.
