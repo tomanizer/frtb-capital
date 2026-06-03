@@ -67,6 +67,19 @@ def test_dead_code_guard_detects_unreferenced_runtime_module(tmp_path: Path) -> 
     assert any("new runtime module is not imported" in error for error in errors)
 
 
+def test_dead_code_guard_resolves_relative_imported_runtime_module(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    module = _runtime_module(tmp_path, "_new_module.py")
+    module.write_text("VALUE = 1\n", encoding="utf-8")
+    package_init = module.parent / "__init__.py"
+    package_init.write_text("from . import _new_module\n", encoding="utf-8")
+
+    report = build_report(tmp_path, "HEAD", ["packages"])
+    errors = collect_dead_code_errors(report)
+
+    assert errors == []
+
+
 def _runtime_module(root: Path, name: str) -> Path:
     source = root / "packages" / "demo" / "src" / "demo"
     source.mkdir(parents=True, exist_ok=True)

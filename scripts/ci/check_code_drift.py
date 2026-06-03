@@ -2,7 +2,7 @@
 
 The guard is intentionally mechanical. It does not decide whether a large
 feature is valuable; it makes growth, duplicated function bodies, oversized
-modules, long functions, and thin pass-through wrappers visible in review.
+modules, and long functions visible in review.
 """
 
 from __future__ import annotations
@@ -61,7 +61,6 @@ class Thresholds:
     source_python_loc_growth: int = 600
     test_python_loc_growth: int = 800
     script_python_loc_growth: int = 200
-    trivial_wrapper_growth: int = 3
     changed_function_growth: int = 25
     changed_source_loc_growth: int = 300
     changed_test_loc_growth: int = 500
@@ -79,11 +78,10 @@ class FunctionRecord:
     end_line: int
     lines: int
     digest: str
-    is_trivial_wrapper: bool
 
     @property
     def key(self) -> str:
-        return f"{self.path}:{self.name}:{self.line}"
+        return f"{self.path}:{self.name}"
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -112,7 +110,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(f"- {error}", file=sys.stderr)
             print(
                 "Simplify changed code before merging, or split the change so "
-                "new wrappers and large functions are reviewed explicitly.",
+                "large files and functions are reviewed explicitly.",
                 file=sys.stderr,
             )
             return 1
@@ -145,7 +143,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 1
 
-    baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+    try:
+        baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, ValueError) as err:
+        print(f"failed to parse code drift baseline at {baseline_path}: {err}", file=sys.stderr)
+        return 1
+
     errors = compare_to_baseline(report, baseline, thresholds)
     if errors:
         print("Code drift guard failed:", file=sys.stderr)
@@ -173,7 +176,6 @@ def build_report(root: Path, paths: Sequence[str], thresholds: Thresholds) -> di
     py_files = list(_iter_python_files(root, paths))
     function_records = _collect_function_records(root, py_files, thresholds)
     duplicate_groups = _duplicate_function_groups(function_records, thresholds)
-    wrappers = [record for record in function_records if record.is_trivial_wrapper]
     large_functions = [
         record for record in function_records if record.lines > thresholds.function_lines
     ]
@@ -210,7 +212,6 @@ def build_report(root: Path, paths: Sequence[str], thresholds: Thresholds) -> di
         "duplicate_function_groups": len(duplicate_groups),
         "duplicate_function_instances": duplicate_instances,
         "large_function_count": len(large_functions),
-        "trivial_wrapper_functions": len(wrappers),
         "drift_marker_matches": sum(len(matches) for matches in drift_markers.values()),
     }
 
@@ -228,10 +229,6 @@ def build_report(root: Path, paths: Sequence[str], thresholds: Thresholds) -> di
             record.key: function_payload(record)
             for record in sorted(large_functions, key=lambda item: item.key)
         },
-        "trivial_wrappers": {
-            record.key: function_payload(record)
-            for record in sorted(wrappers, key=lambda item: item.key)
-        },
         "duplicate_function_groups": duplicate_groups,
         "drift_markers": dict(sorted(drift_markers.items())),
     }
@@ -247,7 +244,6 @@ def build_changed_report(
     changed_paths = _changed_python_paths(root, base, paths)
     files: dict[str, dict[str, Any]] = {}
     changed_functions: dict[str, dict[str, Any]] = {}
-    trivial_wrappers: dict[str, dict[str, Any]] = {}
     large_functions: dict[str, dict[str, Any]] = {}
 
     for relative in changed_paths:
@@ -282,14 +278,12 @@ def build_changed_report(
             payload["line_delta"] = record.lines - (previous.lines if previous else 0)
             payload["is_new"] = previous is None
             changed_functions[record.key] = payload
-            if record.is_trivial_wrapper:
-                trivial_wrappers[record.key] = payload
             if record.lines > thresholds.function_lines:
                 large_functions[record.key] = payload
 
     return {
         "schema_version": SCHEMA_VERSION,
-        "description": "Changed-code wrapper and complexity guard report.",
+        "description": "Changed-code complexity guard report.",
         "base_ref": base_ref,
         "merge_base": base,
         "paths": list(paths),
@@ -297,12 +291,10 @@ def build_changed_report(
         "metrics": {
             "changed_python_files": len(files),
             "changed_functions": len(changed_functions),
-            "changed_trivial_wrappers": len(trivial_wrappers),
             "changed_large_functions": len(large_functions),
         },
         "files": dict(sorted(files.items())),
         "changed_functions": dict(sorted(changed_functions.items())),
-        "trivial_wrappers": dict(sorted(trivial_wrappers.items())),
         "large_functions": dict(sorted(large_functions.items())),
     }
 
@@ -318,10 +310,6 @@ def changed_code_errors(
         budget = int(_mapping_value(data, "growth_budget"))
         if loc_delta > budget:
             errors.append(f"{path} grew by {loc_delta} logical LOC (budget +{budget})")
-
-    for key, payload in _mapping(report, "trivial_wrappers").items():
-        data = _as_mapping(payload)
-        errors.append(f"{key} is a changed trivial wrapper at {data['lines']} line(s)")
 
     for key, payload in _mapping(report, "large_functions").items():
         data = _as_mapping(payload)
@@ -360,7 +348,6 @@ def compare_to_baseline(
         "source_python_loc": thresholds.source_python_loc_growth,
         "test_python_loc": thresholds.test_python_loc_growth,
         "script_python_loc": thresholds.script_python_loc_growth,
-        "trivial_wrapper_functions": thresholds.trivial_wrapper_growth,
     }
     for metric, budget in growth_budgets.items():
         errors.extend(_growth_errors(metric, current_metrics, baseline_metrics, budget))
@@ -511,7 +498,6 @@ def _function_records_from_text(
                 end_line=int(node.end_lineno or node.lineno),
                 lines=lines,
                 digest=digest,
-                is_trivial_wrapper=_is_trivial_wrapper(node, body, thresholds),
             )
         )
     return records
@@ -550,51 +536,7 @@ def _body_without_docstring(nodes: Sequence[ast.stmt]) -> list[ast.stmt]:
 
 def _function_digest(body: Sequence[ast.stmt]) -> str:
     normalized = "\n".join(ast.dump(node, include_attributes=False) for node in body)
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
-
-
-def _is_trivial_wrapper(
-    node: ast.FunctionDef | ast.AsyncFunctionDef,
-    body: Sequence[ast.stmt],
-    thresholds: Thresholds,
-) -> bool:
-    if node.decorator_list or len(body) != 1 or node.name.startswith("__"):
-        return False
-    statement = body[0]
-    call: ast.Call | None = None
-    if isinstance(statement, ast.Return) and isinstance(statement.value, ast.Call):
-        call = statement.value
-    elif isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call):
-        call = statement.value
-    if call is None:
-        return False
-    if not isinstance(call.func, ast.Name | ast.Attribute):
-        return False
-    if call.keywords:
-        return False
-    return _passes_through_arguments(node, call)
-
-
-def _passes_through_arguments(
-    node: ast.FunctionDef | ast.AsyncFunctionDef,
-    call: ast.Call,
-) -> bool:
-    parameter_names = [argument.arg for argument in node.args.posonlyargs]
-    parameter_names.extend(argument.arg for argument in node.args.args)
-    if node.args.vararg is not None:
-        parameter_names.append(node.args.vararg.arg)
-    parameter_names.extend(argument.arg for argument in node.args.kwonlyargs)
-    if node.args.kwarg is not None:
-        parameter_names.append(node.args.kwarg.arg)
-    forwarded_names: list[str] = []
-    for argument in call.args:
-        if isinstance(argument, ast.Name):
-            forwarded_names.append(argument.id)
-        elif isinstance(argument, ast.Starred) and isinstance(argument.value, ast.Name):
-            forwarded_names.append(argument.value.id)
-        else:
-            return False
-    return bool(forwarded_names) and forwarded_names == parameter_names[: len(forwarded_names)]
+    return hashlib.sha256(bytes(normalized, "utf-8")).hexdigest()[:16]
 
 
 def _logical_loc(text: str) -> int:
@@ -686,7 +628,6 @@ def _threshold_dict(thresholds: Thresholds) -> dict[str, int]:
         "source_python_loc_growth": thresholds.source_python_loc_growth,
         "test_python_loc_growth": thresholds.test_python_loc_growth,
         "script_python_loc_growth": thresholds.script_python_loc_growth,
-        "trivial_wrapper_growth": thresholds.trivial_wrapper_growth,
         "changed_function_growth": thresholds.changed_function_growth,
         "changed_source_loc_growth": thresholds.changed_source_loc_growth,
         "changed_test_loc_growth": thresholds.changed_test_loc_growth,

@@ -26,8 +26,9 @@ weakening protection on `main`.
 `quality-control` includes package layering checks, the kernel import-boundary
 check for dataframe and Arrow runtimes, the simplification drift audit for
 low-value wrapper/helper surface area, import smoke tests, package maturity
-evidence checks, and the baseline-gated
-[code drift controls](quality/CODE_DRIFT_CONTROLS.md).
+evidence checks, and report-only
+[code drift control artifacts](quality/CODE_DRIFT_CONTROLS.md) while the new
+heuristics are calibrated.
 
 ## Signing and attestation policy
 

@@ -51,6 +51,28 @@ def test_rejects_bad_value() -> None:
     assert errors == []
 
 
+def test_test_value_guard_allows_directly_imported_raises(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_error.py").write_text(
+        """
+from pytest import raises
+
+
+def test_rejects_bad_value() -> None:
+    with raises(ValueError):
+        raise ValueError("bad")
+""".lstrip(),
+        encoding="utf-8",
+    )
+
+    report = build_report(tmp_path, "HEAD", ["tests"], Thresholds())
+    errors = collect_test_value_errors(report)
+
+    assert errors == []
+
+
 def test_test_value_guard_detects_duplicate_changed_test_bodies(tmp_path: Path) -> None:
     _init_repo(tmp_path)
     tests_dir = tmp_path / "tests"

@@ -175,7 +175,7 @@ def _collect_changed_test_evidence(
                 if not record.has_value_assertion:
                     tests_without_value_assertions[record.key] = payload
         elif _is_fixture_path(relative):
-            base_size = len((base_text or "").encode("utf-8"))
+            base_size = len(bytes(base_text or "", "utf-8"))
             current_size = current_path.stat().st_size
             size_delta = current_size - base_size
             if size_delta > thresholds.fixture_file_bytes:
@@ -302,13 +302,15 @@ def _has_value_assertion(body: Sequence[ast.stmt]) -> bool:
 
 
 def _is_pytest_raises(node: ast.AST) -> bool:
-    return (
-        isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and node.func.attr == "raises"
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == "pytest"
-    )
+    if not isinstance(node, ast.Call):
+        return False
+    if isinstance(node.func, ast.Attribute):
+        return (
+            node.func.attr == "raises"
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "pytest"
+        )
+    return isinstance(node.func, ast.Name) and node.func.id == "raises"
 
 
 def _is_assertion_call(node: ast.Call) -> bool:
@@ -324,7 +326,7 @@ def _body_without_docstring(nodes: Sequence[ast.stmt]) -> list[ast.stmt]:
 
 def _function_digest(body: Sequence[ast.stmt]) -> str:
     normalized = "\n".join(ast.dump(node, include_attributes=False) for node in body)
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha256(bytes(normalized, "utf-8")).hexdigest()[:16]
 
 
 def _changed_paths(root: Path, base: str, paths: Sequence[str]) -> list[str]:

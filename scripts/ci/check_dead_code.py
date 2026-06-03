@@ -153,7 +153,10 @@ def _changed_private_definitions(
     for relative in changed_paths:
         if _is_test_or_example_path(relative):
             continue
-        current_text = (root / relative).read_text(encoding="utf-8", errors="replace")
+        current_path = root / relative
+        if not current_path.exists():
+            continue
+        current_text = current_path.read_text(encoding="utf-8", errors="replace")
         base_by_name = {
             record.name: record
             for record in _definition_records(relative, _git_show(root, base, relative) or "")
@@ -260,11 +263,17 @@ def _new_runtime_modules(
 def _collect_import_references(root: Path, paths: Sequence[Path]) -> set[str]:
     imports: set[str] = set()
     for path in paths:
-        imports.update(_imports_from_text(path.read_text(encoding="utf-8", errors="replace")))
+        relative = path.relative_to(root).as_posix()
+        imports.update(
+            _imports_from_text(
+                path.read_text(encoding="utf-8", errors="replace"),
+                _module_name_for_runtime_path(relative),
+            )
+        )
     return imports
 
 
-def _imports_from_text(text: str) -> set[str]:
+def _imports_from_text(text: str, module_context: str | None = None) -> set[str]:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", SyntaxWarning)
@@ -275,10 +284,26 @@ def _imports_from_text(text: str) -> set[str]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             imports.update(alias.name for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            imports.add(node.module)
-            imports.update(f"{node.module}.{alias.name}" for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            resolved_module = _resolve_import_from_module(node, module_context)
+            if resolved_module:
+                imports.add(resolved_module)
+                imports.update(f"{resolved_module}.{alias.name}" for alias in node.names)
+            else:
+                imports.update(alias.name for alias in node.names)
     return imports
+
+
+def _resolve_import_from_module(node: ast.ImportFrom, module_context: str | None) -> str:
+    if node.level <= 0:
+        return node.module or ""
+    if not module_context:
+        return node.module or ""
+    context_parts = module_context.split(".")
+    base_parts = context_parts[: -node.level]
+    if node.module:
+        base_parts.extend(node.module.split("."))
+    return ".".join(part for part in base_parts if part)
 
 
 def _module_is_referenced(module_payload: Mapping[str, Any], imports: set[str]) -> bool:
@@ -341,7 +366,7 @@ def _module_name_for_runtime_path(relative: str) -> str | None:
 
 
 def _node_digest(node: ast.AST) -> str:
-    return hashlib.sha256(ast.dump(node, include_attributes=False).encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha256(bytes(ast.dump(node, include_attributes=False), "utf-8")).hexdigest()[:16]
 
 
 def _merge_base(root: Path, base_ref: str) -> str:
