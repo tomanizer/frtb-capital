@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
+from dataclasses import replace
 from numbers import Real
 
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
@@ -134,10 +135,12 @@ def _capital_total(capital: Mapping[str, object]) -> float:
     raise ValueError(f"DeskAuditRecord.capital must include one of: {allowed}")
 
 
-def _optional_number(values: Mapping[str, object], key: str) -> float | None:
-    if key not in values:
+def _optional_number(values: Mapping[str, object] | None, key: str) -> float | None:
+    if values is None or key not in values:
         return None
     value = values[key]
+    if value is None:
+        return None
     if isinstance(value, bool) or not isinstance(value, Real):
         raise ValueError(f"{key} must be a finite numeric value")
     amount = float(value)
@@ -146,7 +149,9 @@ def _optional_number(values: Mapping[str, object], key: str) -> float | None:
     return amount
 
 
-def _floor_or_branch_applied(capital: Mapping[str, object]) -> bool:
+def _floor_or_branch_applied(capital: Mapping[str, object] | None) -> bool:
+    if capital is None:
+        return False
     for key in (
         "floor_applied",
         "imcc_floor_applied",
@@ -167,23 +172,7 @@ def _with_status(
     record: CapitalContribution,
     status: ReconciliationStatus,
 ) -> CapitalContribution:
-    return CapitalContribution(
-        contribution_id=record.contribution_id,
-        source_id=record.source_id,
-        source_level=record.source_level,
-        bucket_key=record.bucket_key,
-        category=record.category,
-        base_amount=record.base_amount,
-        marginal_multiplier=record.marginal_multiplier,
-        contribution=record.contribution,
-        method=record.method,
-        residual=record.residual,
-        reason=record.reason,
-        citations=record.citations,
-        input_hash=record.input_hash,
-        profile_hash=record.profile_hash,
-        reconciliation_status=status,
-    )
+    return replace(record, reconciliation_status=status)
 
 
 __all__ = ["desk_contributions"]

@@ -57,6 +57,28 @@ def test_desk_contributions_use_capital_breakdown_when_present() -> None:
     )
 
 
+def test_desk_contributions_ignore_explicit_none_breakdown_values() -> None:
+    record = _desk_record(
+        imcc={"imcc": 100.0},
+        ses={"total_ses": 25.0},
+        capital={
+            "total": 125.0,
+            "imcc_t_minus_1": None,
+            "ses_t_minus_1": None,
+            "pla_addon": None,
+            "binding_term": "SPOT",
+        },
+    )
+
+    contributions = desk_contributions(record)
+
+    assert [(item.category, item.contribution) for item in contributions] == [
+        ("IMCC", 100.0),
+        ("SES", 25.0),
+    ]
+    assert _total(contributions) == pytest.approx(125.0)
+
+
 def test_desk_contributions_emit_partial_residual_for_floor_branch() -> None:
     record = _desk_record(
         imcc={"imcc": 100.0},
