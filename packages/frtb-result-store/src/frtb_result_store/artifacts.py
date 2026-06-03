@@ -6,7 +6,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
-from urllib.parse import quote, unquote, urlparse
+from urllib.parse import quote, urlparse
+from urllib.request import url2pathname
 
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
@@ -279,7 +280,7 @@ def validate_artifact_ref_targets(artifacts: Sequence[ArtifactRef]) -> None:
     for artifact in artifacts:
         parsed = urlparse(artifact.uri)
         if parsed.scheme == "file":
-            path = Path(unquote(parsed.path))
+            path = Path(url2pathname(parsed.path))
             if not path.is_file():
                 raise ResultStoreContractError(
                     f"artifact ref points to missing local file: {artifact.artifact_id}",
