@@ -11,7 +11,8 @@ on:
     # budgets carry 2x-4x tolerance, so a shared PR runner does not flake.
     paths:
       - "packages/**/src/**/batch.py"
-      - "packages/**/src/**/arrow_handoff.py"
+      - "packages/**/src/**/arrow_batch.py"
+      - "packages/**/src/**/component_summary.py"
       - "packages/**/src/**/curvature.py"
       - "packages/**/src/**/weighted_sensitivity.py"
       - "packages/**/src/**/capital.py"

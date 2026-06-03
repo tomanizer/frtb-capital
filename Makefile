@@ -13,7 +13,7 @@ MUTATION_DIST := dist/mutation
 .PHONY: test test-no-cov test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording
 .PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
-.PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-handoff-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
+.PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
 .PHONY: validation-pack agent-setup agent-sync-main agent-new agent-guard
 .PHONY: agent-worktrees agent-doctor ima sa sbm drc rrao cva orchestration clean
@@ -164,8 +164,8 @@ mutation-score-check:
 benchmark:
 	uv run python scripts/benchmark_target_scale.py --output dist/benchmarks/frtb-ima-target-scale.json
 
-ima-arrow-handoff-benchmark:
-	uv run python benchmarks/ima_arrow_handoff_harness.py --output dist/benchmarks/frtb-ima-arrow-handoff.json
+ima-arrow-batch-benchmark:
+	uv run python benchmarks/ima_arrow_batch_harness.py --output dist/benchmarks/frtb-ima-arrow-batch.json
 
 sbm-benchmark:
 	uv run python benchmarks/sbm_adapter_harness.py --output dist/benchmarks/frtb-sbm-batch-arrow.json
@@ -179,7 +179,7 @@ rrao-benchmark:
 cva-benchmark:
 	PYTHONPATH=packages/frtb-common/src:packages/frtb-cva/src uv run python packages/frtb-cva/scripts/benchmark_cva_target_scale.py --output dist/benchmarks/frtb-cva-target-scale.json
 
-benchmark-suite: benchmark ima-arrow-handoff-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark
+benchmark-suite: benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark
 
 benchmark-budget-check:
 	uv run python scripts/ci/check_benchmark_budgets.py

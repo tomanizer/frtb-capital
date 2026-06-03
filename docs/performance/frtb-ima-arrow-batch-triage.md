@@ -1,4 +1,4 @@
-# FRTB IMA Arrow Handoff Triage
+# FRTB IMA Arrow Batch Triage
 
 Issue: #319
 Parent: #312
@@ -20,7 +20,7 @@ The adapter path is:
 
 ```text
 upstream table or file
-    -> pyarrow-backed normalized handoff
+    -> pyarrow-backed normalized Arrow table
     -> IMA-owned immutable metadata/evidence batch
     -> NumPy-native calculation or existing audit result records
 ```
@@ -38,7 +38,7 @@ The #319 implementation adds:
 - `assess_rfet_observation_batch`
 
 `ScenarioMetadataBatch` validates scenario ids, dates, scenario-set labels,
-provenance JSON, source-row lineage, source hashes, and handoff hashes without
+provenance JSON, source-row lineage, source hashes, and input-table hashes without
 constructing one `ScenarioMetadata` object per accepted row. `to_metadata()`
 exists only as a compatibility bridge for current APIs.
 
@@ -59,9 +59,9 @@ records exclusion details.
 
 Package tests cover:
 
-- handoff alias normalization for scenario and RFET tables;
+- Arrow table normalization for scenario and RFET tables;
 - dictionary/chunked text columns;
-- source hash, handoff hash, and batch input hash propagation;
+- source hash, input-table hash, and batch input hash propagation;
 - optional-column defaults;
 - scenario metadata compatibility materialization;
 - RFET batch assessment equivalence with the existing row/dataclass path.
