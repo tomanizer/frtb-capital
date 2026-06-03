@@ -21,6 +21,7 @@ from frtb_result_store import (
     CapitalNode,
     CapitalNodeFamily,
     CapitalNodeSpec,
+    CapitalSummaryRow,
     DuckDbParquetResultStore,
     EdgeType,
     FrtbComponent,
@@ -87,6 +88,8 @@ def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> 
     assert store.lineage_for_result(bundle.run.run_id, "total")[0].source_id == "snapshot-001"
     assert store.attributions_for_node(bundle.run.run_id, "sbm-girr-usd")[0].contribution == 7.5
     assert store.latest_status(bundle.run.run_id) is RunStatus.CANDIDATE
+    assert store.capital_summary(bundle.run.run_id)[0].total_capital == 42.0
+    assert store.component_breakdown(bundle.run.run_id)[0].component is FrtbComponent.IMA
 
     manifest_path = (
         tmp_path / "result-store" / "manifests" / "frtb%2Frun%2F2026-06-03" / "run_manifest.json"
@@ -623,7 +626,95 @@ def test_store_persists_input_events_telemetry_and_manifest_fingerprints(
     assert manifest["result_store_schema_version"] == 1
     assert manifest["writer_version"]
     assert "runs" in manifest["base_table_schema_fingerprints"]
-    assert manifest["mart_schema_fingerprints"] == {}
+    assert sorted(manifest["mart_schema_fingerprints"]) == [
+        "capital_summary",
+        "capital_tree",
+        "component_breakdown",
+    ]
+
+
+def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path) -> None:
+    bundle = _bundle()
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(bundle)
+
+    assert store.capital_summary(bundle.run.run_id) == (
+        CapitalSummaryRow(
+            run_id=bundle.run.run_id,
+            as_of_date=bundle.run.as_of_date,
+            regime_id=bundle.run.regime_id,
+            base_currency="USD",
+            lifecycle_status=RunStatus.CANDIDATE,
+            suggested_status=RunStatus.VALIDATED,
+            total_capital=42.0,
+            currency="USD",
+            node_count=4,
+            measure_count=4,
+            component_count=3,
+        ),
+    )
+    assert [
+        (row.node_id, row.parent_node_id, row.depth)
+        for row in store.capital_tree_mart(bundle.run.run_id)
+    ] == [
+        ("total", None, 0),
+        ("ima-book-rates-core", "total", 1),
+        ("sa", "total", 1),
+        ("sbm-girr-usd", "sa", 2),
+    ]
+    assert [node.node_id for node in store.capital_tree(bundle.run.run_id)] == [
+        "total",
+        "ima-book-rates-core",
+        "sa",
+        "sbm-girr-usd",
+    ]
+    component_amounts = {
+        row.component: row.amount for row in store.component_breakdown(bundle.run.run_id)
+    }
+    assert component_amounts == {
+        FrtbComponent.IMA: 17.0,
+        FrtbComponent.SBM: 25.0,
+        FrtbComponent.STANDARDISED_APPROACH: 25.0,
+    }
+    manifest = json.loads(store._manifest_path(bundle.run.run_id).read_text(encoding="utf-8"))
+    assert manifest["marts"] == {
+        "capital_summary": 1,
+        "capital_tree": 4,
+        "component_breakdown": 3,
+    }
+    assert sorted(manifest["mart_schema_fingerprints"]) == [
+        "capital_summary",
+        "capital_tree",
+        "component_breakdown",
+    ]
+
+
+def test_mart_generation_rejects_cyclic_capital_tree(tmp_path: Path) -> None:
+    bundle = _bundle()
+    cyclic_bundle = ResultBundle(
+        run=bundle.run,
+        nodes=bundle.nodes,
+        edges=tuple(
+            CapitalEdge(
+                run_id=bundle.run.run_id,
+                parent_node_id=parent,
+                child_node_id=child,
+                edge_type=EdgeType.DRILLDOWN,
+                sort_key=index,
+            )
+            for index, (parent, child) in enumerate(
+                (("sa", "sbm-girr-usd"), ("sbm-girr-usd", "sa")),
+                start=1,
+            )
+        ),
+        measures=bundle.measures,
+        artifacts=bundle.artifacts,
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    with pytest.raises(ResultStoreContractError, match="cycle detected in capital tree"):
+        store.write_bundle(cyclic_bundle)
 
 
 def test_incompatible_run_fails_closed_without_blocking_other_runs(tmp_path: Path) -> None:
@@ -725,16 +816,7 @@ def _bundle(
             sort_key=3,
         ),
     )
-    measures = (
-        CapitalMeasure(
-            run_id=run.run_id,
-            node_id="total",
-            measure_name="capital",
-            amount=42.0,
-            currency="USD",
-            regulatory_rule_id="US_NPR_325.201",
-        ),
-    )
+    measures = _default_measures(run)
     artifacts = _default_artifacts(run) if artifacts is None else artifacts
     lineage = (
         LineageRef(
@@ -795,6 +877,43 @@ def _default_artifacts(run: CalculationRun) -> tuple[ArtifactRef, ...]:
             uri="s3://frtb-results/sbm-sensitivity-table.parquet",
             format="parquet",
             row_count=1,
+        ),
+    )
+
+
+def _default_measures(run: CalculationRun) -> tuple[CapitalMeasure, ...]:
+    return (
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id="total",
+            measure_name="capital",
+            amount=42.0,
+            currency="USD",
+            regulatory_rule_id="US_NPR_325.201",
+        ),
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id="ima-book-rates-core",
+            measure_name="capital",
+            amount=17.0,
+            currency="USD",
+            regulatory_rule_id="US_NPR_325.207",
+        ),
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id="sa",
+            measure_name="capital",
+            amount=25.0,
+            currency="USD",
+            regulatory_rule_id="US_NPR_325.204",
+        ),
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id="sbm-girr-usd",
+            measure_name="capital",
+            amount=25.0,
+            currency="USD",
+            regulatory_rule_id="MAR21.4",
         ),
     )
 
