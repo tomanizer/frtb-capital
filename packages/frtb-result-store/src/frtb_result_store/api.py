@@ -11,6 +11,11 @@ from typing import Any, Protocol, cast
 
 from frtb_common import jsonable
 
+from frtb_result_store.api_artifacts import (
+    artifact_download_path,
+    artifact_page_payload,
+    require_artifact_ref,
+)
 from frtb_result_store.io import DuckDbParquetResultStore, ResultStoreConfig
 from frtb_result_store.model import (
     ArtifactType,
@@ -61,6 +66,7 @@ def create_result_store_app(
 
     try:
         from fastapi import FastAPI, HTTPException, Query
+        from fastapi.responses import FileResponse
     except ModuleNotFoundError as exc:
         if exc.name == "fastapi":
             raise ModuleNotFoundError(
@@ -81,7 +87,7 @@ def create_result_store_app(
     routes = cast(_RouteRegistrar, app)
     _register_run_routes(routes, result_store, HTTPException)
     _register_capital_tree_routes(routes, result_store, HTTPException)
-    _register_artifact_routes(routes, result_store, HTTPException, Query)
+    _register_artifact_routes(routes, result_store, HTTPException, Query, FileResponse)
     _register_run_group_routes(routes, result_store, HTTPException)
 
     return app
@@ -199,6 +205,7 @@ def _register_artifact_routes(
     result_store: DuckDbParquetResultStore,
     http_exception_type: type[Exception],
     query: Any,
+    file_response_type: type[Any],
 ) -> None:
     @app.get(
         "/runs/{run_id}/artifacts",
@@ -218,6 +225,60 @@ def _register_artifact_routes(
                 result_store.artifact_refs(run_id, artifact_type=artifact_type)
             )
         }
+
+    @app.get(
+        "/runs/{run_id}/artifacts/{artifact_id}/page",
+        tags=["Artifacts"],
+        summary="Return one deterministic page of artifact rows",
+    )
+    def artifact_page(
+        run_id: str,
+        artifact_id: str,
+        columns: list[str] | None = query(
+            default=None,
+            description="Optional repeated or comma-separated column names",
+        ),
+        filters: list[str] | None = query(
+            default=None,
+            alias="filter",
+            description="Optional repeated equality filters formatted as column=value",
+        ),
+        limit: int = query(default=100, ge=1, le=1000),
+        offset: int = query(default=0, ge=0),
+    ) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        ref = require_artifact_ref(result_store, run_id, artifact_id, http_exception_type)
+        return artifact_page_payload(
+            result_store,
+            ref,
+            columns=columns,
+            filters=filters,
+            limit=limit,
+            offset=offset,
+            http_exception_type=http_exception_type,
+            to_jsonable=_to_jsonable,
+        )
+
+    @app.get(
+        "/runs/{run_id}/artifacts/{artifact_id}/download",
+        tags=["Artifacts"],
+        summary="Download a local Parquet artifact or return an object-store URI handoff",
+    )
+    def artifact_download(run_id: str, artifact_id: str) -> object:
+        _require_run(result_store, run_id, http_exception_type)
+        ref = require_artifact_ref(result_store, run_id, artifact_id, http_exception_type)
+        path = artifact_download_path(result_store, ref, http_exception_type)
+        if path is None:
+            return {
+                "artifact": _to_jsonable(ref),
+                "mode": "s3_uri_handoff",
+                "uri": ref.uri,
+            }
+        return file_response_type(
+            path,
+            media_type="application/vnd.apache.parquet",
+            filename=f"{ref.artifact_id}.parquet",
+        )
 
 
 def _register_run_group_routes(

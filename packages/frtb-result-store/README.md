@@ -37,4 +37,10 @@ DuckLake remains an explicit reserved backend mode.
 The FastAPI service is created with `create_result_store_app(...)`. It exposes
 FRTB-specific read endpoints for runs, run groups, capital trees, measures,
 artifacts, attribution, lineage, events, movements, and regime comparison. It
-does not expose write endpoints or generic raw table-dump routes.
+also supports artifact drillthrough with deterministic Parquet-backed pages:
+`GET /runs/{run_id}/artifacts/{artifact_id}/page` accepts `limit`, `offset`,
+repeated or comma-separated `columns`, and repeated `filter=column=value`
+parameters. `GET /runs/{run_id}/artifacts/{artifact_id}/download` serves local
+Parquet artifacts directly and returns an S3 URI handoff payload for object
+store artifacts. The service does not expose write endpoints or generic raw
+table-dump routes.
