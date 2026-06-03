@@ -253,13 +253,12 @@ def _assert_consistent_calculation_date(
     sa: StandardisedApproachCapitalResult,
     cva: CvaCapitalSummary,
 ) -> None:
-    dates = {ima.calculation_date, sa.calculation_date, cva.calculation_date}
+    ima_date = _as_date(ima.calculation_date)
+    sa_date = _as_date(sa.calculation_date)
+    cva_date = _as_date(cva.calculation_date)
+    dates = {ima_date, sa_date, cva_date}
     if len(dates) > 1:
-        detail = (
-            f"IMA={ima.calculation_date.isoformat()}, "
-            f"SA={sa.calculation_date.isoformat()}, "
-            f"CVA={cva.calculation_date.isoformat()}"
-        )
+        detail = f"IMA={ima_date.isoformat()}, SA={sa_date.isoformat()}, CVA={cva_date.isoformat()}"
         raise OrchestrationInputError(
             "all suite components must share the same calculation_date; "
             f"mixed dates supplied: {detail}",
@@ -332,6 +331,10 @@ def _cva_summary_as_dict(summary: CvaCapitalSummary) -> dict[str, object]:
         "citations": list(summary.citations),
         "warnings": list(summary.warnings),
     }
+
+
+def _as_date(value: date) -> date:
+    return value.date() if hasattr(value, "date") else value
 
 
 def _require_non_empty_text(value: object, field: str) -> None:

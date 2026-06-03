@@ -45,6 +45,8 @@ class ImaCapitalSummary:
             raise OrchestrationInputError(
                 "calculation_date must be a date", field="calculation_date"
             )
+        if hasattr(self.calculation_date, "date"):
+            object.__setattr__(self, "calculation_date", self.calculation_date.date())
         _require_non_empty_text(self.base_currency, "base_currency")
         _require_non_empty_text(self.profile_id, "profile_id")
         object.__setattr__(
@@ -145,13 +147,19 @@ def _desk_counts_from(result: object) -> tuple[int, int]:
         if records is not None:
             eligible = 0
             fallback = 0
-            for record in records:
-                status_raw = getattr(record, "desk_eligibility", _IMA_ELIGIBLE)
-                status = getattr(status_raw, "value", status_raw)
-                if status == _SA_FALLBACK:
-                    fallback += 1
-                else:
-                    eligible += 1
+            try:
+                for record in records:
+                    status_raw = getattr(record, "desk_eligibility", _IMA_ELIGIBLE)
+                    status = getattr(status_raw, "value", status_raw)
+                    if status == _SA_FALLBACK:
+                        fallback += 1
+                    else:
+                        eligible += 1
+            except TypeError as exc:
+                raise OrchestrationInputError(
+                    "IMA desk_records must be an iterable of desk records",
+                    field="desk_records",
+                ) from exc
             return eligible, fallback
 
     maybe_eligible = _optional_non_negative_int_attr(result, "ima_eligible_desk_count")
@@ -191,7 +199,7 @@ def _required_date_attr(result: object, fields: list[str], *, component: str) ->
         if hasattr(result, field):
             value = getattr(result, field)
             if isinstance(value, date):
-                return value
+                return value.date() if hasattr(value, "date") else value
     label = " or ".join(repr(f) for f in fields)
     raise OrchestrationInputError(
         f"{component} result missing required date field {label}",
@@ -256,7 +264,12 @@ def _text_tuple_attr(result: object, field: str) -> tuple[str, ...]:
     value = getattr(result, field)
     if value is None:
         return ()
-    return tuple(str(item) for item in value)
+    if isinstance(value, str):
+        return (value,)
+    try:
+        return tuple(str(item) for item in value)
+    except TypeError:
+        return (str(value),)
 
 
 def _require_non_empty_text(value: object, field: str) -> None:
