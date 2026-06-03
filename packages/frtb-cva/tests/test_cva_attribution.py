@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from frtb_common.attribution import CapitalContribution, ReconciliationStatus
+
 from frtb_cva import CvaMethod, calculate_cva_capital
-from frtb_cva.attribution import attribute_cva_capital
+from frtb_cva.attribution import attribute_cva_capital, project_cva_attribution
 
 
 def test_attribution_does_not_change_capital(
@@ -118,3 +120,69 @@ def test_attribution_sa_cva() -> None:
     assert result.method is CvaMethod.SA_CVA
     assert len(attribution.contributions) == 1
     assert "sa_cva_risk_class_sqrt:GIRR" in attribution.unsupported_branches
+
+
+def test_project_cva_attribution_returns_capital_contributions(
+    reduced_context,
+    sovereign_counterparty,
+    sovereign_netting_set,
+) -> None:
+    result = calculate_cva_capital(
+        reduced_context,
+        (sovereign_counterparty,),
+        (sovereign_netting_set,),
+    )
+    attribution = attribute_cva_capital(result)
+    projected = project_cva_attribution(attribution, result)
+    assert isinstance(projected, tuple)
+    assert all(isinstance(c, CapitalContribution) for c in projected)
+    assert len(projected) == len(attribution.contributions)
+
+
+def test_project_cva_attribution_populates_input_hash(
+    reduced_context,
+    sovereign_counterparty,
+    sovereign_netting_set,
+) -> None:
+    result = calculate_cva_capital(
+        reduced_context,
+        (sovereign_counterparty,),
+        (sovereign_netting_set,),
+    )
+    attribution = attribute_cva_capital(result)
+    projected = project_cva_attribution(attribution, result)
+    assert all(c.input_hash == result.input_hash for c in projected)
+
+
+def test_project_cva_attribution_populates_profile_hash(
+    reduced_context,
+    sovereign_counterparty,
+    sovereign_netting_set,
+) -> None:
+    result = calculate_cva_capital(
+        reduced_context,
+        (sovereign_counterparty,),
+        (sovereign_netting_set,),
+    )
+    attribution = attribute_cva_capital(result)
+    projected = project_cva_attribution(attribution, result)
+    assert all(c.profile_hash == result.profile_hash for c in projected)
+
+
+def test_project_cva_attribution_reconciliation_status_unreconciled(
+    reduced_context,
+    sovereign_counterparty,
+    sovereign_netting_set,
+) -> None:
+    # BA-CVA reduced always has unsupported_branches, so reconciled == False
+    result = calculate_cva_capital(
+        reduced_context,
+        (sovereign_counterparty,),
+        (sovereign_netting_set,),
+    )
+    attribution = attribute_cva_capital(result)
+    assert not attribution.reconciled
+    projected = project_cva_attribution(attribution, result)
+    assert all(
+        c.reconciliation_status == ReconciliationStatus.UNRECONCILED for c in projected
+    )

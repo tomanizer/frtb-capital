@@ -19,6 +19,7 @@ from frtb_cva.attribution import (
     CvaAttributionContribution,
     CvaAttributionResult,
     attribute_cva_capital,
+    project_cva_attribution,
 )
 from frtb_cva.audit import input_hash, serialize_cva_result, validate_cva_result_reconciliation
 from frtb_cva.ba_cva import (
@@ -82,7 +83,7 @@ from frtb_cva.data_models import (
     SaCvaWeightedSensitivity,
     SensitivityTag,
 )
-from frtb_cva.impact import CvaCapitalImpact, assess_cva_capital_impact
+from frtb_cva.impact import assess_cva_capital_impact
 from frtb_cva.numeric import is_reconciled
 from frtb_cva.reference_data import (
     ba_cva_alpha,
@@ -135,7 +136,6 @@ __all__ = [
     "CvaAttributionResult",
     "CvaBatchCapitalCalculation",
     "CvaCalculationContext",
-    "CvaCapitalImpact",
     "CvaCapitalResult",
     "CvaCitation",
     "CvaCounterparty",
@@ -169,6 +169,7 @@ __all__ = [
     "adapt_cva_records",
     "assess_cva_capital_impact",
     "attribute_cva_capital",
+    "project_cva_attribution",
     "ba_cva_alpha",
     "ba_cva_beta",
     "ba_cva_discount_scalar",
