@@ -19,6 +19,11 @@ package. In this suite, `frtb-sbm`, `frtb-drc`, and `frtb-rrao` together produce
 SA capital. `frtb-orchestration` owns SA aggregation and routes non-IMA-eligible
 desks to that SA component stack for fallback capital.
 
+For client onboarding and upstream system integration, start with
+[`CLIENT_INTEGRATION.md`](CLIENT_INTEGRATION.md). It defines the recommended
+Arrow/Parquet handoff tier, component ingress symbols, run-context fields,
+lineage hashes, and rejection semantics.
+
 ## Dependency graph
 
 ```

@@ -43,6 +43,14 @@ uv sync
 
 This installs the full workspace in editable mode plus dev dependencies.
 
+## Integrating
+
+Client risk engines should use the Arrow/Parquet handoff path as the default
+production ingress pattern. Start with
+[`docs/CLIENT_INTEGRATION.md`](docs/CLIENT_INTEGRATION.md) for the suite-level
+contract, component handoff symbols, run-context expectations, hashing, and
+rejection semantics.
+
 ## Local development
 
 ```bash
@@ -57,6 +65,7 @@ Per-package targets are available from each package's own `Makefile` or via `uv 
 
 ## Documentation
 
+- [`docs/CLIENT_INTEGRATION.md`](docs/CLIENT_INTEGRATION.md) — client-facing integration guide for handoff contracts and onboarding
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — suite architecture and dependency graph
 - [`docs/README.md`](docs/README.md) — documentation map
 - [`docs/modules/`](docs/modules/README.md) — suite-level capital module documentation
