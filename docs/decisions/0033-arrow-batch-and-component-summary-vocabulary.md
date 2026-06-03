@@ -288,8 +288,8 @@ names are ergonomic.
 
 **Neutral:**
 
-- Historical ADR titles unchanged; add when 0032 is accepted: "Public names per
-  ADR 0032" at the top of ADR 0023 and 0029.
+- Historical ADR titles unchanged; add when 0033 is accepted: "Public names per
+  ADR 0033" at the top of ADR 0023 and 0029.
 - `frtb_common.batch_arrays` and recent batch-helper public-surface cleanup are
   unchanged (see Non-goals).
 
