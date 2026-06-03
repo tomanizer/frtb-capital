@@ -31,5 +31,8 @@ store as a generic table dump.
 
 The optional FastAPI service is available through the `api` extra. It exposes
 read-only domain endpoints for runs, run groups, capital trees, artifacts,
-attribution, lineage, events, movements, and regime comparison. It does not
-share the writer catalog or expose generic raw table dumps.
+attribution, lineage, events, movements, and regime comparison. Artifact
+drillthrough is served through deterministic paged Parquet reads with optional
+column selection and simple equality filters, plus local Parquet download or
+S3 URI handoff. The service does not share the writer catalog or expose generic
+raw table dumps.

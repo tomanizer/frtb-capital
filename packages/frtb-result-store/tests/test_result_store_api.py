@@ -4,11 +4,13 @@ from collections.abc import Mapping
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+import pyarrow as pa  # type: ignore[import-untyped]
 from fastapi.testclient import TestClient
 from frtb_common import AttributionMethod, CapitalContribution
 from frtb_result_store import (
     ArtifactRef,
     ArtifactType,
+    ArtifactWriteRequest,
     CalculationRun,
     CapitalAttributionRecord,
     CapitalEdge,
@@ -24,6 +26,7 @@ from frtb_result_store import (
     ResultEvent,
     ResultEventSeverity,
     ResultEventType,
+    artifact_schema_for,
     canonical_run_group_identity_payload,
     create_result_store_app,
     generate_run_group_id,
@@ -95,6 +98,11 @@ def test_result_store_api_serves_committed_runs_without_catalog_access(
         params={"artifact_type": ArtifactType.IMA_PNL_VECTOR.value},
     ).json()["artifacts"]
     assert artifacts[0]["uri"].startswith("s3://")
+    handoff = client.get(
+        f"/runs/{current.run_id}/artifacts/{artifacts[0]['artifact_id']}/download"
+    ).json()
+    assert handoff["mode"] == "s3_uri_handoff"
+    assert handoff["uri"].startswith("s3://")
     assert (
         client.get(
             f"/runs/{current.run_id}/artifacts",
@@ -168,6 +176,53 @@ def test_regime_comparison_accepts_single_run_group_fallback(tmp_path: Path) -> 
     assert set(comparison.json()["capital_summary"]) == {run.run_id}
 
 
+def test_artifact_drillthrough_pages_and_downloads_local_parquet(tmp_path: Path) -> None:
+    store, run, artifact = _store_with_drillthrough_artifact(tmp_path)
+    client = TestClient(create_result_store_app(store))
+
+    first_page = client.get(
+        f"/runs/{run.run_id}/artifacts/{artifact.artifact_id}/page",
+        params={
+            "columns": "source_row_id,pnl_amount",
+            "filter": "desk_id=rates",
+            "limit": 1,
+        },
+    ).json()
+    assert first_page["mode"] == "local_parquet"
+    assert first_page["columns"] == ["source_row_id", "pnl_amount"]
+    assert first_page["filtered_row_count"] == 3
+    assert first_page["next_offset"] == 1
+    assert first_page["rows"] == [{"source_row_id": "row-1", "pnl_amount": 1.25}]
+
+    second_page = client.get(
+        f"/runs/{run.run_id}/artifacts/{artifact.artifact_id}/page",
+        params={
+            "columns": ["source_row_id", "pnl_amount"],
+            "filter": "desk_id=rates",
+            "limit": 2,
+            "offset": 1,
+        },
+    ).json()
+    assert second_page["next_offset"] is None
+    assert [row["source_row_id"] for row in second_page["rows"]] == ["row-2", "row-3"]
+
+    bad_column = client.get(
+        f"/runs/{run.run_id}/artifacts/{artifact.artifact_id}/page",
+        params={"columns": "missing_column"},
+    )
+    assert bad_column.status_code == 422
+    assert "missing_column" in bad_column.json()["detail"]
+
+    missing = client.get(f"/runs/{run.run_id}/artifacts/missing-artifact/page")
+    assert missing.status_code == 404
+    assert missing.json()["detail"] == "artifact not found: missing-artifact"
+
+    download = client.get(f"/runs/{run.run_id}/artifacts/{artifact.artifact_id}/download")
+    assert download.status_code == 200
+    assert download.headers["content-type"] == "application/vnd.apache.parquet"
+    assert download.content.startswith(b"PAR1")
+
+
 def _run(
     regime_id: str,
     run_group_id: str | None,
@@ -199,6 +254,56 @@ def _bundle(run: CalculationRun, *, baseline_run_id: str | None = None) -> Resul
         attributions=_attributions(run),
         movement_results=_movement_results(run, baseline_run_id),
         events=_events(run),
+    )
+
+
+def _store_with_drillthrough_artifact(
+    tmp_path: Path,
+) -> tuple[DuckDbParquetResultStore, CalculationRun, ArtifactRef]:
+    run = _run("US_NPR_2_0", None, None)
+    schema = artifact_schema_for("ima.pnl_vector.v1")
+    request = ArtifactWriteRequest(
+        artifact_id_hint="ima-desk-a-pnl",
+        artifact_type=ArtifactType.IMA_PNL_VECTOR,
+        component=FrtbComponent.IMA,
+        schema_id=schema.schema_id,
+        chunks=(_ima_pnl_table(schema.arrow_schema, run.run_id),),
+        partition_values={
+            "desk_id": "rates",
+            "portfolio_id": "rates-options",
+            "book_id": "rates-core",
+        },
+        metadata={"source": "api-drillthrough-test"},
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    store.write_bundle(_bundle(run), artifact_requests=(request,))
+    artifact = next(
+        ref
+        for ref in store.artifact_refs(run.run_id)
+        if ref.metadata.get("source") == "api-drillthrough-test"
+    )
+    return store, run, artifact
+
+
+def _ima_pnl_table(schema: pa.Schema, run_id: str) -> pa.Table:
+    return pa.table(
+        {
+            "run_id": [run_id, run_id, run_id],
+            "desk_id": ["rates", "rates", "rates"],
+            "portfolio_id": ["rates-options", "rates-options", "rates-options"],
+            "book_id": ["rates-core", "rates-core", "rates-core"],
+            "position_id": ["pos-1", "pos-2", "pos-3"],
+            "risk_factor_id": ["rf-1", "rf-2", "rf-3"],
+            "risk_factor_set_id": [None, "set-1", "set-1"],
+            "scenario_id": ["scenario-1", "scenario-2", "scenario-3"],
+            "observation_date": [date(2026, 6, 1), date(2026, 6, 2), date(2026, 6, 3)],
+            "liquidity_horizon": [10, 20, 40],
+            "pnl_amount": [1.25, -2.5, 3.75],
+            "currency": ["USD", "USD", "USD"],
+            "tail_flag": [False, True, False],
+            "source_row_id": ["row-1", "row-2", "row-3"],
+        },
+        schema=schema,
     )
 
 
