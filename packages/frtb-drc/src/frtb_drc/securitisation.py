@@ -38,7 +38,14 @@ from frtb_drc.fair_value_cap import (
 )
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.reference_data import get_bucket_definition
-from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.regimes import (
+    BASEL_MAR22_PROFILE_ID as _BASEL_MAR22_PROFILE_ID,
+)
+from frtb_drc.regimes import (
+    US_NPR_2_0_PROFILE_ID,
+    ensure_risk_class_supported,
+    get_rule_profile,
+)
 from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
     risk_weight_evidence_hash_payload,
@@ -63,7 +70,6 @@ _BUCKET_CITATIONS = (
 _HBR_CITATIONS = ("US_NPR_210_A_2_IV_A", "US_NPR_210_C_3_III", "BASEL_MAR22_33")
 _CATEGORY_CITATIONS = ("US_NPR_210_C_3_IV", "BASEL_MAR22_35")
 _FAIR_VALUE_CAP_CITATIONS = ("US_NPR_210_C_3_III", "BASEL_MAR22_34")
-_BASEL_MAR22_PROFILE_ID = "BASEL_MAR22"
 _BASEL_GROSS_CITATIONS = ("BASEL_MAR22_27",)
 _BASEL_NETTING_CITATIONS = ("BASEL_MAR22_28", "BASEL_MAR22_29", "BASEL_MAR22_30")
 _BASEL_BUCKET_CITATIONS = (

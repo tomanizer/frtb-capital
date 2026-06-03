@@ -184,7 +184,7 @@ def _validate_evidence_record(
     )
     if not record.citation_ids:
         raise DrcInputError(f"{field_name}[{position_id!r}].citation_ids must be non-empty")
-    profile_citations = set(get_rule_profile(context.profile_id).citations)
+    profile_citations = get_rule_profile(context.profile_id).citations
     for citation_id in record.citation_ids:
         citation = _require_text(citation_id, f"{field_name}[{position_id!r}].citation_ids")
         if citation not in profile_citations:
