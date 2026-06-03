@@ -93,6 +93,7 @@ input table.
 | Batch build | `build_<entity>_batch_from_arrow` | Replaces `build_*_batch_from_handoff`. |
 | Row/dict build | `build_<entity>_batch_from_<rows>` | Unchanged (`from_positions`, `from_sensitivities`, `from_columns`, …). |
 | Column contract | `<DOMAIN>_ARROW_COLUMN_SPECS` | New specs use this form; `*_HANDOFF_COLUMN_SPECS` become deprecated aliases. |
+| Column array type alias | `ArrowColumnArray` | Replaces `HandoffColumnArray`; the old type alias is compatibility-only. |
 | Hash helper | `normalized_arrow_table_hash` | Replaces `normalized_handoff_hash` (same digest semantics). |
 | Shared errors | `NormalizedTableError` | Replaces `TabularHandoffError`. Raised for shared **normalization and tabular invariant** failures (schema, null policy, partitioning), not only raw Arrow IO. `ArrowTableError` is reserved for a future narrower class if a distinct Arrow-only error family is needed. |
 | Adapter modules | `arrow_batch.py` or `arrow_adapter.py` | Optional **late** rename from `arrow_handoff.py` (see Implementation sequencing). |
@@ -162,10 +163,17 @@ through the canonical constructor path.
 definition — that leaves `type(obj).__name__` as `NormalizedTabularHandoff` and
 undermines migration.
 
-The same rule applies to `ComponentCapitalSummary` vs `ComponentResultHandoff`
-and to function aliases (`build_rrao_batch_from_arrow` as the real function;
-`build_rrao_batch_from_handoff` as `warnings.deprecated` wrapper or assigned alias
-that points to it).
+The same rule applies to `ComponentCapitalSummary` vs `ComponentResultHandoff`.
+Function aliases such as `build_rrao_batch_from_handoff` use a thin
+`warnings.warn(..., DeprecationWarning)` wrapper around the real
+`build_rrao_batch_from_arrow` implementation.
+
+Class, error, type, and column-spec aliases remain identity-preserving module
+assignments during M1/M2. They are intentionally silent because warning at
+attribute/import time would make ordinary compatibility imports noisy and would
+make the alias a different object from the canonical type or tuple. Tests must
+assert identity equality for those aliases, and #474 removes them in the
+release/breaking-change phase.
 
 ### 4. Public discoverability vs root re-exports
 

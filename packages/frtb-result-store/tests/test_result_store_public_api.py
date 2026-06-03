@@ -58,14 +58,17 @@ def test_top_level_import_does_not_load_duckdb_backend() -> None:
         [
             sys.executable,
             "-c",
-            "import frtb_result_store, sys; print('duckdb' in sys.modules)",
+            (
+                "import frtb_result_store, sys; "
+                "print('duckdb' in sys.modules, 'fastapi' in sys.modules)"
+            ),
         ],
         check=True,
         capture_output=True,
         text=True,
     )
 
-    assert result.stdout.strip() == "False"
+    assert result.stdout.strip() == "False False"
 
 
 def test_canonical_run_identity_uses_full_stable_digest() -> None:
@@ -550,11 +553,42 @@ def test_attribution_record_reuses_common_capital_contribution_contract() -> Non
         run_id="run-001",
         node_id="sbm-girr-usd",
         contribution=contribution,
+        artifact_id="sbm-sensitivity-table",
     )
 
     assert record.method == contribution.method
+    assert record.attribution_id == contribution.contribution_id
+    assert record.target_type == contribution.source_level
+    assert record.target_id == contribution.source_id
+    assert record.category == contribution.category
+    assert record.bucket_key == contribution.bucket_key
+    assert record.marginal_multiplier == contribution.marginal_multiplier
     assert record.contribution == 10.0
     assert record.source_id == "sensitivity-girr-usd-5y"
+    assert record.artifact_id == "sbm-sensitivity-table"
+
+    residual = CapitalAttributionRecord.from_contribution(
+        run_id="run-001",
+        node_id="total",
+        contribution=CapitalContribution(
+            contribution_id="residual-total",
+            source_id="residual-total",
+            source_level="RESIDUAL_BRANCH",
+            bucket_key=None,
+            category="RESIDUAL",
+            base_amount=1.0,
+            marginal_multiplier=None,
+            contribution=None,
+            method="RESIDUAL",
+            residual=1.0,
+            reason="Non-homogeneous branch held as residual.",
+        ),
+        target_type="UNSUPPORTED_BRANCH",
+        target_id="unsupported-total",
+    )
+    assert residual.unsupported_reason == "Non-homogeneous branch held as residual."
+    assert residual.target_type == "UNSUPPORTED_BRANCH"
+    assert residual.target_id == "unsupported-total"
 
 
 def test_measure_names_and_attribution_targets_fail_closed() -> None:

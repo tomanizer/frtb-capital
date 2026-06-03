@@ -97,6 +97,12 @@ def _public_symbols(tree: ast.Module) -> tuple[str, ...]:
                 symbols.extend(_string_sequence(node.value))
         elif isinstance(node, ast.AnnAssign):
             symbols.extend(_target_names(node.target))
+            if (
+                isinstance(node.target, ast.Name)
+                and node.target.id == "__all__"
+                and node.value is not None
+            ):
+                symbols.extend(_string_sequence(node.value))
     return tuple(dict.fromkeys(symbols))
 
 

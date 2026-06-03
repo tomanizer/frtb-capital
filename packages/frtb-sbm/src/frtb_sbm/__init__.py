@@ -672,3 +672,4 @@ _DEPRECATED_ARROW_EXPORTS = [
 ]
 for _name in _DEPRECATED_ARROW_EXPORTS:
     globals()[_name] = getattr(_arrow_handoff, _name)
+__all__.extend(name for name in _DEPRECATED_ARROW_EXPORTS if name not in __all__)

@@ -26,24 +26,24 @@ The high-volume batch boundary is summarized in
 
 | Tier | Client input | CVA path | Notes |
 | --- | --- | --- | --- |
-| 1 - Arrow/Parquet handoff | One or more tables matching the selected method | `normalize_cva_*_arrow_table` -> `build_*_batch_from_handoff` -> `calculate_cva_capital_from_batches` or SA-CVA batch calculator | Recommended production path. |
+| 1 - Arrow/Parquet table | One or more tables matching the selected method | `normalize_cva_*_arrow_table` -> `build_*_batch_from_arrow` -> `calculate_cva_capital_from_batches` or SA-CVA batch calculator | Recommended production path. |
 | 2 - CRIF/vendor rows | Iterable mapping rows | `adapt_cva_records` -> canonical or batch path | Adapter path with explicit diagnostics. |
 | 3 - Canonical dataclasses | Counterparty, netting-set, hedge, and sensitivity dataclasses plus context | `calculate_cva_capital` | Small books, tests, and notebooks. |
 
 Clients must supply all tables required by the selected `CvaMethod`:
 
-| Method | Required handoffs | Optional handoffs | Unsupported/fail-closed notes |
+| Method | Required Arrow tables | Optional Arrow tables | Unsupported/fail-closed notes |
 | --- | --- | --- | --- |
 | Reduced BA-CVA | Counterparty and netting-set tables | None | Materiality-threshold alternative is unsupported. |
 | Full BA-CVA | Counterparty, netting-set, and hedge tables | None | Hedge eligibility metadata must be explicit. |
 | SA-CVA | SA-CVA sensitivity table | Hedge identifiers when sensitivity tag is `HDG` | Unsupported SA-CVA paths fail closed; GIRR delta requires tenor and vega requires volatility input. |
 | Mixed carve-out | SA-CVA sensitivity table plus BA-CVA carve-out netting-set context | Counterparty and netting-set tables for carved-out BA-CVA | Carve-out ids must match supplied netting sets. |
 
-## Handoff column summary
+## Arrow Column Summary
 
 The Python `ColumnSpec` tuples are the source of truth.
 
-| Handoff | Required column families | Notes |
+| Arrow spec | Required column families | Notes |
 | --- | --- | --- |
 | `CVA_COUNTERPARTY_ARROW_COLUMN_SPECS` | Counterparty id, desk, legal entity, sector, credit quality, region, source row id, lineage | Client owns counterparty mastering and sector/quality classification keys. |
 | `CVA_NETTING_SET_ARROW_COLUMN_SPECS` | Netting-set id, counterparty id, EAD, maturity, discount factor, currency, sign convention, IMM flag, source row id, lineage | EAD must be non-negative after sign normalization; discount factor must be positive. |

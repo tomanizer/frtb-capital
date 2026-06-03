@@ -4,12 +4,12 @@ import json
 import shutil
 from datetime import UTC, date, datetime
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import quote, unquote, urlparse
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
-from frtb_common import CapitalContribution
+from frtb_common import AttributionMethod, CapitalContribution
 from frtb_result_store import (
     ArtifactRef,
     ArtifactType,
@@ -21,11 +21,14 @@ from frtb_result_store import (
     CapitalNode,
     CapitalNodeFamily,
     CapitalNodeSpec,
+    CapitalSummaryRow,
     DuckDbParquetResultStore,
     EdgeType,
     FrtbComponent,
     InputSnapshotManifest,
     LineageRef,
+    MovementResult,
+    MovementSummaryRow,
     NodeType,
     RequiredArtifactExpectation,
     ResultBundle,
@@ -56,6 +59,7 @@ from frtb_result_store.io import (
     _json_mapping,
     _json_text_tuple,
 )
+from frtb_result_store.mart_schemas import MART_NAMES
 
 
 def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> None:
@@ -85,8 +89,18 @@ def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> 
         artifact_type=ArtifactType.IMA_PNL_VECTOR,
     )[0].uri.startswith("s3://")
     assert store.lineage_for_result(bundle.run.run_id, "total")[0].source_id == "snapshot-001"
-    assert store.attributions_for_node(bundle.run.run_id, "sbm-girr-usd")[0].contribution == 7.5
+    attribution = store.attributions_for_node(bundle.run.run_id, "sbm-girr-usd")[0]
+    assert attribution.attribution_id == "sbm-girr-usd-5y"
+    assert attribution.target_type == "SENSITIVITY"
+    assert attribution.target_id == "sensitivity-girr-usd-5y"
+    assert attribution.category == "SBM_DELTA"
+    assert attribution.bucket_key == "GIRR:USD"
+    assert attribution.marginal_multiplier == 0.3
+    assert attribution.contribution == 7.5
+    assert attribution.artifact_id == "sbm-sensitivity-table"
     assert store.latest_status(bundle.run.run_id) is RunStatus.CANDIDATE
+    assert store.capital_summary(bundle.run.run_id)[0].total_capital == 42.0
+    assert store.component_breakdown(bundle.run.run_id)[0].component is FrtbComponent.IMA
 
     manifest_path = (
         tmp_path / "result-store" / "manifests" / "frtb%2Frun%2F2026-06-03" / "run_manifest.json"
@@ -547,6 +561,121 @@ def test_reserved_backends_fail_closed(tmp_path: Path) -> None:
         DuckDbParquetResultStore(config)
 
 
+def test_s3_parquet_backend_uses_manifest_gated_logical_layout(tmp_path: Path) -> None:
+    run = _run_with_id("s3/run/2026-06-03")
+    schema = artifact_schema_for("ima.pnl_vector.v1")
+    request = ArtifactWriteRequest(
+        artifact_id_hint="ima-desk-a-pnl",
+        artifact_type=ArtifactType.IMA_PNL_VECTOR,
+        component=FrtbComponent.IMA,
+        schema_id=schema.schema_id,
+        chunks=_ima_pnl_chunks(schema.arrow_schema, run.run_id),
+        partition_values={
+            "desk_id": "rates",
+            "portfolio_id": "rates-options",
+            "book_id": "rates-core",
+        },
+        metadata={"source": "s3-mock-test"},
+    )
+    config = ResultStoreConfig(
+        root="s3://frtb-results/prod",
+        backend=StorageBackend.S3_PARQUET,
+        s3_mock_root=tmp_path / "mock-s3",
+        duckdb_settings={"threads": 1},
+    )
+    store = DuckDbParquetResultStore(config)
+    bundle = _bundle(run)
+
+    store.write_bundle(bundle, artifact_requests=(request,))
+
+    assert store.root == (tmp_path / "mock-s3" / "frtb-results" / "prod").resolve()
+    assert store.root_uri == "s3://frtb-results/prod"
+    assert store.get_run(run.run_id) == run
+    assert store.capital_summary(run.run_id)[0].total_capital == 42.0
+    manifest = json.loads(store._manifest_path(run.run_id).read_text(encoding="utf-8"))
+    assert manifest["backend"] == StorageBackend.S3_PARQUET.value
+    assert manifest["root_uri"] == "s3://frtb-results/prod"
+    assert manifest["paths"] == {
+        "parquet": "s3://frtb-results/prod/parquet",
+        "artifacts": "s3://frtb-results/prod/artifacts",
+        "manifests": "s3://frtb-results/prod/manifests",
+    }
+    generated = next(
+        ref
+        for ref in store.artifact_refs(run.run_id, artifact_type=ArtifactType.IMA_PNL_VECTOR)
+        if ref.metadata.get("source") == "s3-mock-test"
+    )
+    assert generated.uri.startswith(
+        "s3://frtb-results/prod/artifacts/"
+        "artifact_type=IMA_PNL_VECTOR/run_id=s3%2Frun%2F2026-06-03/"
+    )
+    artifact_paths = tuple(
+        store.artifact_root.glob("artifact_type=IMA_PNL_VECTOR/run_id=*/artifact_id=*/data.parquet")
+    )
+    assert len(artifact_paths) == 1
+    assert pq.ParquetFile(artifact_paths[0]).metadata.row_group(0).column(0).compression == "ZSTD"
+
+
+def test_s3_parquet_readers_ignore_orphaned_objects_without_manifest(tmp_path: Path) -> None:
+    run = _run_with_id("orphan/s3/run")
+    store = DuckDbParquetResultStore(
+        ResultStoreConfig(
+            root="s3://frtb-results/prod",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+    )
+    orphan_path = store._run_table_path("runs", run.run_id)
+    orphan_path.parent.mkdir(parents=True)
+    pq.write_table(pa.table({"run_id": [run.run_id]}), orphan_path)
+    staging_path = store.root / "_staging" / quote(run.run_id, safe="")
+    staging_path.mkdir(parents=True)
+    (staging_path / "runs.parquet").write_bytes(b"staged")
+
+    assert store.run_exists(run.run_id) is False
+    assert store.list_runs() == ()
+    assert store.get_run(run.run_id) is None
+    assert store.cleanup_orphaned_staging() == (run.run_id,)
+    assert not staging_path.exists()
+
+
+def test_s3_parquet_config_requires_uri_and_explicit_mock_root(tmp_path: Path) -> None:
+    with pytest.raises(ResultStoreContractError, match="requires s3_mock_root"):
+        ResultStoreConfig(root="s3://frtb-results/prod", backend=StorageBackend.S3_PARQUET)
+    with pytest.raises(ResultStoreContractError, match="s3:// roots require"):
+        ResultStoreConfig(root="s3://frtb-results/prod")
+    with pytest.raises(ResultStoreContractError, match="s3:// URI string"):
+        ResultStoreConfig(
+            root=tmp_path / "result-store",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+    with pytest.raises(ResultStoreContractError, match="relative components"):
+        ResultStoreConfig(
+            root="s3://frtb-results/prod/../other",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+    with pytest.raises(ResultStoreContractError, match="relative components"):
+        ResultStoreConfig(
+            root="s3://frtb-results/prod/%2E%2E/other",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+    with pytest.raises(ResultStoreContractError, match="relative components"):
+        ResultStoreConfig(
+            root="s3://../prod",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+    with pytest.raises(ResultStoreContractError, match="relative components"):
+        ResultStoreConfig(
+            root="s3://%2E/prod",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+
+
 def test_malformed_stored_values_raise_contract_errors() -> None:
     with pytest.raises(ResultStoreContractError, match="malformed JSON object"):
         _json_mapping("{")
@@ -620,10 +749,221 @@ def test_store_persists_input_events_telemetry_and_manifest_fingerprints(
         TelemetryPhase.EXPORT,
     } <= telemetry_phases
     manifest = json.loads(store._manifest_path(run.run_id).read_text(encoding="utf-8"))
-    assert manifest["result_store_schema_version"] == 1
+    assert manifest["result_store_schema_version"] == 2
     assert manifest["writer_version"]
     assert "runs" in manifest["base_table_schema_fingerprints"]
-    assert manifest["mart_schema_fingerprints"] == {}
+    assert sorted(manifest["mart_schema_fingerprints"]) == sorted(MART_NAMES)
+
+
+def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path) -> None:
+    bundle = _bundle()
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(bundle)
+
+    assert store.capital_summary(bundle.run.run_id) == (
+        CapitalSummaryRow(
+            run_id=bundle.run.run_id,
+            as_of_date=bundle.run.as_of_date,
+            regime_id=bundle.run.regime_id,
+            base_currency="USD",
+            lifecycle_status=RunStatus.CANDIDATE,
+            suggested_status=RunStatus.VALIDATED,
+            total_capital=42.0,
+            currency="USD",
+            node_count=4,
+            measure_count=4,
+            component_count=3,
+        ),
+    )
+    assert [
+        (row.node_id, row.parent_node_id, row.depth)
+        for row in store.capital_tree_mart(bundle.run.run_id)
+    ] == [
+        ("total", None, 0),
+        ("ima-book-rates-core", "total", 1),
+        ("sa", "total", 1),
+        ("sbm-girr-usd", "sa", 2),
+    ]
+    assert [node.node_id for node in store.capital_tree(bundle.run.run_id)] == [
+        "total",
+        "ima-book-rates-core",
+        "sa",
+        "sbm-girr-usd",
+    ]
+    component_amounts = {
+        row.component: row.amount for row in store.component_breakdown(bundle.run.run_id)
+    }
+    assert component_amounts == {
+        FrtbComponent.IMA: 17.0,
+        FrtbComponent.SBM: 25.0,
+        FrtbComponent.STANDARDISED_APPROACH: 25.0,
+    }
+    assert store.top_contributors(bundle.run.run_id, limit=1)[0]["attribution_id"] == (
+        "sbm-girr-usd-5y"
+    )
+    assert store.mart_rows(bundle.run.run_id, "ima_desk_dashboard")[0]["desk_id"] == "rates"
+    assert store.mart_rows(bundle.run.run_id, "sbm_bucket_ladder")[0]["bucket"] == "USD"
+    assert store.regime_comparison(f"run:{bundle.run.run_id}")[0]["run_id"] == bundle.run.run_id
+    manifest = json.loads(store._manifest_path(bundle.run.run_id).read_text(encoding="utf-8"))
+    assert manifest["marts"] == {
+        "capital_summary": 1,
+        "capital_tree": 4,
+        "top_contributors": 1,
+        "movement_summary": 0,
+        "regime_comparison": 1,
+        "component_breakdown": 3,
+        "ima_desk_dashboard": 1,
+        "sbm_bucket_ladder": 1,
+        "drc_issuer_contributors": 0,
+        "cva_counterparty_contributors": 0,
+        "rrao_exposure_summary": 0,
+    }
+    assert sorted(manifest["mart_schema_fingerprints"]) == sorted(MART_NAMES)
+
+
+def test_mart_generation_rejects_cyclic_capital_tree(tmp_path: Path) -> None:
+    bundle = _bundle()
+    cyclic_bundle = ResultBundle(
+        run=bundle.run,
+        nodes=bundle.nodes,
+        edges=tuple(
+            CapitalEdge(
+                run_id=bundle.run.run_id,
+                parent_node_id=parent,
+                child_node_id=child,
+                edge_type=EdgeType.DRILLDOWN,
+                sort_key=index,
+            )
+            for index, (parent, child) in enumerate(
+                (("sa", "sbm-girr-usd"), ("sbm-girr-usd", "sa")),
+                start=1,
+            )
+        ),
+        measures=bundle.measures,
+        artifacts=bundle.artifacts,
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    with pytest.raises(ResultStoreContractError, match="cycle detected in capital tree"):
+        store.write_bundle(cyclic_bundle)
+
+
+def test_store_persists_day_over_day_movement_results_and_summary_mart(
+    tmp_path: Path,
+) -> None:
+    run = _run_with_id("run-dod-current")
+    baseline_run_id = "run-dod-baseline"
+    movement = MovementResult(
+        run_id=run.run_id,
+        baseline_run_id=baseline_run_id,
+        movement_id="dod-total-capital",
+        node_id="total",
+        movement_type="DAY_OVER_DAY",
+        from_amount=40.0,
+        to_amount=42.0,
+        delta_amount=2.0,
+        base_currency="USD",
+        driver_type="NODE",
+        driver_id="total",
+        explanation="Total capital increased from the prior business day.",
+        attribution_method=AttributionMethod.ANALYTICAL_EULER,
+        artifact_id="ima-pnl-vector",
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(_bundle(run, movement_results=(movement,)))
+
+    assert store.movement_results(run.run_id) == (movement,)
+    assert store.movement_results(run.run_id, baseline_run_id=baseline_run_id) == (movement,)
+    assert store.movement_summary(run.run_id, node_id="total") == (
+        MovementSummaryRow(
+            run_id=run.run_id,
+            baseline_run_id=baseline_run_id,
+            movement_id="dod-total-capital",
+            node_id="total",
+            movement_type="DAY_OVER_DAY",
+            from_amount=40.0,
+            to_amount=42.0,
+            delta_amount=2.0,
+            base_currency="USD",
+            driver_type="NODE",
+            driver_id="total",
+            attribution_method=AttributionMethod.ANALYTICAL_EULER,
+            artifact_id="ima-pnl-vector",
+        ),
+    )
+    manifest = json.loads(store._manifest_path(run.run_id).read_text(encoding="utf-8"))
+    assert manifest["marts"]["movement_summary"] == 1
+
+
+def test_store_persists_regime_over_regime_movement_results(
+    tmp_path: Path,
+) -> None:
+    run = _run_with_id("run-us-npr-current")
+    movement = MovementResult(
+        run_id=run.run_id,
+        baseline_run_id="run-basel-baseline",
+        movement_id="regime-sbm-girr-usd",
+        node_id="sbm-girr-usd",
+        movement_type="REGIME_OVER_REGIME",
+        from_amount=22.0,
+        to_amount=25.0,
+        delta_amount=3.0,
+        base_currency="USD",
+        driver_type="REGIME",
+        driver_id="US_NPR_325.201",
+        explanation="US NPR regime capital exceeds the Basel comparator for this bucket.",
+        attribution_method=AttributionMethod.RESIDUAL,
+        artifact_id="sbm-sensitivity-table",
+        metadata={"comparison_regime_id": "BASEL_MAR21"},
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(_bundle(run, movement_results=(movement,)))
+
+    assert store.movement_results(run.run_id, node_id="sbm-girr-usd") == (movement,)
+    summary = store.movement_summary(run.run_id, node_id="sbm-girr-usd")
+    assert len(summary) == 1
+    assert summary[0].baseline_run_id == "run-basel-baseline"
+    assert summary[0].movement_type == "REGIME_OVER_REGIME"
+    assert summary[0].base_currency == "USD"
+    assert summary[0].delta_amount == 3.0
+
+
+def test_store_preserves_distinct_attribution_source_and_target(
+    tmp_path: Path,
+) -> None:
+    run = _run_with_id("run-attribution-target-override")
+    attribution = CapitalAttributionRecord.from_contribution(
+        run_id=run.run_id,
+        node_id="total",
+        contribution=CapitalContribution(
+            contribution_id="residual-total",
+            source_id="residual-total-source",
+            source_level="RESIDUAL_BRANCH",
+            bucket_key=None,
+            category="RESIDUAL",
+            base_amount=1.0,
+            marginal_multiplier=None,
+            contribution=None,
+            method="RESIDUAL",
+            residual=1.0,
+            reason="Non-homogeneous branch held as residual.",
+        ),
+        target_type="UNSUPPORTED_BRANCH",
+        target_id="unsupported-total-target",
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(_bundle(run, attributions=(attribution,)))
+
+    stored = store.attributions_for_node(run.run_id, "total")[0]
+    assert stored.source_id == "residual-total-source"
+    assert stored.source_level == "RESIDUAL_BRANCH"
+    assert stored.target_type == "UNSUPPORTED_BRANCH"
+    assert stored.target_id == "unsupported-total-target"
+    assert stored.unsupported_reason == "Non-homogeneous branch held as residual."
 
 
 def test_incompatible_run_fails_closed_without_blocking_other_runs(tmp_path: Path) -> None:
@@ -655,6 +995,8 @@ def _bundle(
     *,
     artifacts: tuple[ArtifactRef, ...] | None = None,
     input_manifests: tuple[InputSnapshotManifest, ...] = (),
+    attributions: tuple[CapitalAttributionRecord, ...] | None = None,
+    movement_results: tuple[MovementResult, ...] = (),
     events: tuple[ResultEvent, ...] = (),
     telemetry: tuple[RunTelemetry, ...] = (),
 ) -> ResultBundle:
@@ -725,16 +1067,7 @@ def _bundle(
             sort_key=3,
         ),
     )
-    measures = (
-        CapitalMeasure(
-            run_id=run.run_id,
-            node_id="total",
-            measure_name="capital",
-            amount=42.0,
-            currency="USD",
-            regulatory_rule_id="US_NPR_325.201",
-        ),
-    )
+    measures = _default_measures(run)
     artifacts = _default_artifacts(run) if artifacts is None else artifacts
     lineage = (
         LineageRef(
@@ -744,7 +1077,7 @@ def _bundle(
             source_id="snapshot-001",
         ),
     )
-    attributions = (
+    default_attributions = (
         CapitalAttributionRecord.from_contribution(
             run_id=run.run_id,
             node_id="sbm-girr-usd",
@@ -759,8 +1092,10 @@ def _bundle(
                 contribution=7.5,
                 method="ANALYTICAL_EULER",
             ),
+            artifact_id="sbm-sensitivity-table",
         ),
     )
+    attributions = default_attributions if attributions is None else attributions
     return ResultBundle(
         run=run,
         nodes=nodes,
@@ -770,6 +1105,7 @@ def _bundle(
         input_manifests=input_manifests,
         lineage=lineage,
         attributions=attributions,
+        movement_results=movement_results,
         events=events,
         telemetry=telemetry,
     )
@@ -795,6 +1131,43 @@ def _default_artifacts(run: CalculationRun) -> tuple[ArtifactRef, ...]:
             uri="s3://frtb-results/sbm-sensitivity-table.parquet",
             format="parquet",
             row_count=1,
+        ),
+    )
+
+
+def _default_measures(run: CalculationRun) -> tuple[CapitalMeasure, ...]:
+    return (
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id="total",
+            measure_name="capital",
+            amount=42.0,
+            currency="USD",
+            regulatory_rule_id="US_NPR_325.201",
+        ),
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id="ima-book-rates-core",
+            measure_name="capital",
+            amount=17.0,
+            currency="USD",
+            regulatory_rule_id="US_NPR_325.207",
+        ),
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id="sa",
+            measure_name="capital",
+            amount=25.0,
+            currency="USD",
+            regulatory_rule_id="US_NPR_325.204",
+        ),
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id="sbm-girr-usd",
+            measure_name="capital",
+            amount=25.0,
+            currency="USD",
+            regulatory_rule_id="MAR21.4",
         ),
     )
 

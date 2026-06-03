@@ -274,10 +274,10 @@
       "path": "packages/frtb-ima/tests/test_stress_periods.py"
     },
     "packages/frtb-result-store/tests/test_duckdb_parquet_store.py:_bundle": {
-      "end_line": 775,
+      "end_line": 1111,
       "key": "packages/frtb-result-store/tests/test_duckdb_parquet_store.py:_bundle",
-      "line": 653,
-      "lines": 123,
+      "line": 993,
+      "lines": 119,
       "name": "_bundle",
       "path": "packages/frtb-result-store/tests/test_duckdb_parquet_store.py"
     },
@@ -464,11 +464,11 @@
     "duplicate_function_instances": 59,
     "large_function_count": 57,
     "other_python_loc": 5401,
-    "python_files": 450,
-    "script_python_loc": 5163,
-    "source_python_loc": 60093,
-    "test_python_loc": 38706,
-    "total_python_loc": 109363
+    "python_files": 460,
+    "script_python_loc": 5173,
+    "source_python_loc": 62561,
+    "test_python_loc": 39856,
+    "total_python_loc": 112991
   },
   "oversized_files": {
     "packages/frtb-common/src/frtb_common/crif.py": {
@@ -603,17 +603,17 @@
     },
     "packages/frtb-result-store/src/frtb_result_store/io.py": {
       "limit": 600,
-      "lines": 1625,
+      "lines": 2229,
       "role": "source"
     },
     "packages/frtb-result-store/src/frtb_result_store/model.py": {
       "limit": 600,
-      "lines": 1258,
+      "lines": 1573,
       "role": "source"
     },
     "packages/frtb-result-store/tests/test_duckdb_parquet_store.py": {
       "limit": 800,
-      "lines": 853,
+      "lines": 1226,
       "role": "test"
     },
     "packages/frtb-rrao/scripts/generate_fixture.py": {
@@ -643,7 +643,7 @@
     },
     "packages/frtb-sbm/src/frtb_sbm/__init__.py": {
       "limit": 600,
-      "lines": 674,
+      "lines": 675,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/aggregation.py": {
@@ -653,7 +653,7 @@
     },
     "packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py": {
       "limit": 600,
-      "lines": 1721,
+      "lines": 1719,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/batch.py": {

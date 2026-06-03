@@ -15,8 +15,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+api = ["duckdb>=1.4,<2", "fastapi>=0.115,<1", "uvicorn>=0.34,<1"]
+cli = ["duckdb>=1.4,<2"]
 duckdb = ["duckdb>=1.4,<2"]
 otel = ["opentelemetry-api>=1,<2"]
+
+[project.scripts]
+frtb-result-store = "frtb_result_store.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -187,7 +187,7 @@ def _read_arrow_column(
     column = table.column(column_name)
     try:
         _handoff._validate_column_policy(spec, column)
-        values = _read_typed_handoff_column(column, spec)
+        values = _read_typed_arrow_column(column, spec)
     except (NormalizedTableError, pa.ArrowException) as exc:
         raise error(str(exc), spec.name) from exc
 
@@ -195,7 +195,7 @@ def _read_arrow_column(
     return {spec.name: values}
 
 
-def _read_typed_handoff_column(
+def _read_typed_arrow_column(
     column: pa.ChunkedArray,
     spec: ColumnSpec,
 ) -> ArrowColumnArray:

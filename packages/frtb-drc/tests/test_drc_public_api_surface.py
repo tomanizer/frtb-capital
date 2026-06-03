@@ -19,6 +19,16 @@ HANDOFF_SURFACE = (
     "input_hash_for_drc_batch",
 )
 
+DEPRECATED_HANDOFF_SURFACE = (
+    "DRC_NONSEC_HANDOFF_COLUMN_SPECS",
+    "DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS",
+    "DRC_CTP_HANDOFF_COLUMN_SPECS",
+    "build_drc_nonsec_batch_from_handoff",
+    "build_drc_securitisation_non_ctp_batch_from_handoff",
+    "build_drc_ctp_batch_from_handoff",
+    "to_orchestration_handoff",
+)
+
 
 def test_documented_handoff_surface_is_top_level_importable() -> None:
     exported = set(frtb_drc.__all__)
@@ -27,6 +37,13 @@ def test_documented_handoff_surface_is_top_level_importable() -> None:
         assert name in exported
         assert hasattr(frtb_drc, name)
         assert f"`{name}`" in documented
+
+
+def test_deprecated_handoff_surface_remains_top_level_importable() -> None:
+    exported = set(frtb_drc.__all__)
+    for name in DEPRECATED_HANDOFF_SURFACE:
+        assert name in exported
+        assert hasattr(frtb_drc, name)
 
 
 def test_minimal_handoff_fixtures_round_trip_to_batches() -> None:

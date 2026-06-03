@@ -391,7 +391,7 @@ def _coalesce_summary_keyword(
     warnings.warn(
         f"{old_name} is deprecated; use {new_name}",
         DeprecationWarning,
-        stacklevel=3,
+        stacklevel=5,
     )
     return old_value
 

@@ -63,7 +63,7 @@ def test_documented_handoff_surface_is_top_level_importable() -> None:
 
 
 def test_top_level_public_api_surface_remains_bounded() -> None:
-    assert len(frtb_sbm.__all__) < 340
+    assert len(frtb_sbm.__all__) < 400
 
 
 def _public_api_doc() -> str:

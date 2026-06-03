@@ -31,6 +31,9 @@ __all__ = [
     "CapitalNode",
     "CapitalNodeFamily",
     "CapitalNodeSpec",
+    "CapitalSummaryRow",
+    "CapitalTreeMartRow",
+    "ComponentBreakdownRow",
     "EdgeType",
     "FrtbComponent",
     "HierarchyDefinition",
@@ -38,6 +41,8 @@ __all__ = [
     "HierarchyNode",
     "InputSnapshotManifest",
     "LineageRef",
+    "MovementResult",
+    "MovementSummaryRow",
     "NodeType",
     "ResultBundle",
     "ResultEvent",
@@ -794,6 +799,10 @@ class CapitalAttributionRecord:
     contribution: float | None = None
     residual: float = 0.0
     reason: str = ""
+    target_type: str | None = None
+    target_id: str | None = None
+    unsupported_reason: str | None = None
+    artifact_id: str | None = None
     metadata: Mapping[str, object] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -811,6 +820,24 @@ class CapitalAttributionRecord:
                 "source_level",
             ),
         )
+        object.__setattr__(self, "method", _coerce_enum(self.method, AttributionMethod, "method"))
+        if self.target_type is None:
+            object.__setattr__(self, "target_type", self.source_level)
+        else:
+            object.__setattr__(
+                self,
+                "target_type",
+                _registered_upper_value(
+                    self.target_type,
+                    VALID_ATTRIBUTION_TARGET_TYPES,
+                    "target_type",
+                ),
+            )
+        if self.target_id is None:
+            object.__setattr__(self, "target_id", self.source_id)
+        else:
+            _require_non_empty_text(self.target_id, "target_id")
+        _validate_optional_text(self.artifact_id, "artifact_id")
         _validate_optional_text(self.bucket_key, "bucket_key")
         _require_non_empty_text(self.category, "category")
         object.__setattr__(
@@ -828,10 +855,24 @@ class CapitalAttributionRecord:
                 "contribution",
                 _require_finite_number(self.contribution, "contribution"),
             )
-        object.__setattr__(self, "method", _coerce_enum(self.method, AttributionMethod, "method"))
         object.__setattr__(self, "residual", _require_finite_number(self.residual, "residual"))
         if not isinstance(self.reason, str):
             raise ResultStoreContractError("reason must be text", field="reason")
+        unsupported_reason = self.unsupported_reason
+        if unsupported_reason is None:
+            unsupported_reason = (
+                self.reason
+                if self.method in (AttributionMethod.RESIDUAL, AttributionMethod.UNSUPPORTED)
+                else ""
+            )
+        if not isinstance(unsupported_reason, str):
+            raise ResultStoreContractError(
+                "unsupported_reason must be text",
+                field="unsupported_reason",
+            )
+        object.__setattr__(self, "unsupported_reason", unsupported_reason)
+        if not self.reason and unsupported_reason:
+            object.__setattr__(self, "reason", unsupported_reason)
         if self.method == AttributionMethod.ANALYTICAL_EULER:
             if self.marginal_multiplier is None or self.contribution is None:
                 raise ResultStoreContractError(
@@ -847,6 +888,9 @@ class CapitalAttributionRecord:
         run_id: str,
         node_id: str,
         contribution: CapitalContribution,
+        target_type: str | None = None,
+        target_id: str | None = None,
+        artifact_id: str | None = None,
         metadata: Mapping[str, object] | None = None,
     ) -> CapitalAttributionRecord:
         """Create a stored attribution record from the shared contribution DTO."""
@@ -865,8 +909,118 @@ class CapitalAttributionRecord:
             method=contribution.method,
             residual=contribution.residual,
             reason=contribution.reason,
+            target_type=target_type,
+            target_id=target_id,
+            unsupported_reason=(
+                contribution.reason
+                if contribution.method
+                in (AttributionMethod.RESIDUAL, AttributionMethod.UNSUPPORTED)
+                else ""
+            ),
+            artifact_id=artifact_id,
             metadata={} if metadata is None else metadata,
         )
+
+    @property
+    def attribution_id(self) -> str:
+        """Stable storage alias for the shared contribution identifier."""
+
+        return self.contribution_id
+
+
+@dataclass(frozen=True, slots=True)
+class MovementResult:
+    """Official movement explanation row between a baseline and current run."""
+
+    run_id: str
+    baseline_run_id: str
+    movement_id: str
+    node_id: str
+    movement_type: str
+    from_amount: float
+    to_amount: float
+    delta_amount: float
+    base_currency: str
+    driver_type: str
+    driver_id: str
+    explanation: str
+    attribution_method: AttributionMethod | str | None = None
+    artifact_id: str | None = None
+    metadata: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        for field_name in (
+            "run_id",
+            "baseline_run_id",
+            "movement_id",
+            "node_id",
+            "movement_type",
+            "base_currency",
+            "driver_type",
+            "driver_id",
+        ):
+            _require_non_empty_text(getattr(self, field_name), field_name)
+        for field_name in ("from_amount", "to_amount", "delta_amount"):
+            object.__setattr__(
+                self,
+                field_name,
+                _require_finite_number(getattr(self, field_name), field_name),
+            )
+        if not isinstance(self.explanation, str):
+            raise ResultStoreContractError("explanation must be text", field="explanation")
+        if self.attribution_method is not None:
+            object.__setattr__(
+                self,
+                "attribution_method",
+                _coerce_enum(self.attribution_method, AttributionMethod, "attribution_method"),
+            )
+        _validate_optional_text(self.artifact_id, "artifact_id")
+        _freeze_metadata(self, self.metadata)
+
+
+@dataclass(frozen=True, slots=True)
+class MovementSummaryRow:
+    """Persisted movement summary mart row queryable by capital node."""
+
+    run_id: str
+    baseline_run_id: str
+    movement_id: str
+    node_id: str
+    movement_type: str
+    from_amount: float
+    to_amount: float
+    delta_amount: float
+    base_currency: str
+    driver_type: str
+    driver_id: str
+    attribution_method: AttributionMethod | str | None = None
+    artifact_id: str | None = None
+
+    def __post_init__(self) -> None:
+        for field_name in (
+            "run_id",
+            "baseline_run_id",
+            "movement_id",
+            "node_id",
+            "movement_type",
+            "base_currency",
+            "driver_type",
+            "driver_id",
+        ):
+            _require_non_empty_text(getattr(self, field_name), field_name)
+        for field_name in ("from_amount", "to_amount", "delta_amount"):
+            object.__setattr__(
+                self,
+                field_name,
+                _require_finite_number(getattr(self, field_name), field_name),
+            )
+        if self.attribution_method is not None:
+            object.__setattr__(
+                self,
+                "attribution_method",
+                _coerce_enum(self.attribution_method, AttributionMethod, "attribution_method"),
+            )
+        _validate_optional_text(self.artifact_id, "artifact_id")
 
 
 @dataclass(frozen=True, slots=True)
@@ -982,6 +1136,142 @@ class RunTelemetry:
 
 
 @dataclass(frozen=True, slots=True)
+class CapitalSummaryRow:
+    """Persisted dashboard summary for one committed run."""
+
+    run_id: str
+    as_of_date: date
+    regime_id: str
+    base_currency: str
+    lifecycle_status: RunStatus | str
+    suggested_status: RunStatus | str | None
+    total_capital: float
+    currency: str
+    node_count: int
+    measure_count: int
+    component_count: int
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        _require_plain_date(self.as_of_date, "as_of_date")
+        _require_non_empty_text(self.regime_id, "regime_id")
+        _require_non_empty_text(self.base_currency, "base_currency")
+        object.__setattr__(
+            self,
+            "lifecycle_status",
+            _coerce_enum(self.lifecycle_status, RunStatus, "lifecycle_status"),
+        )
+        if self.suggested_status is not None:
+            object.__setattr__(
+                self,
+                "suggested_status",
+                _coerce_enum(self.suggested_status, RunStatus, "suggested_status"),
+            )
+        object.__setattr__(
+            self,
+            "total_capital",
+            _require_finite_number(self.total_capital, "total_capital"),
+        )
+        _require_non_empty_text(self.currency, "currency")
+        for field_name in ("node_count", "measure_count", "component_count"):
+            _require_non_negative_int(getattr(self, field_name), field_name)
+
+
+@dataclass(frozen=True, slots=True)
+class CapitalTreeMartRow:
+    """Persisted flattened capital tree row for dashboard drilldown."""
+
+    run_id: str
+    node_id: str
+    parent_node_id: str | None
+    depth: int
+    node_type: NodeType | str
+    component: FrtbComponent | str
+    label: str
+    desk_id: str | None = None
+    portfolio_id: str | None = None
+    book_id: str | None = None
+    risk_class: str | None = None
+    bucket: str | None = None
+    issuer_id: str | None = None
+    counterparty_id: str | None = None
+    calculation_branch: str | None = None
+    regulatory_rule_id: str | None = None
+    sort_key: int = 0
+    metadata: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        _require_non_empty_text(self.node_id, "node_id")
+        _validate_optional_text(self.parent_node_id, "parent_node_id")
+        _require_non_negative_int(self.depth, "depth")
+        object.__setattr__(self, "node_type", _coerce_enum(self.node_type, NodeType, "node_type"))
+        object.__setattr__(
+            self, "component", _coerce_enum(self.component, FrtbComponent, "component")
+        )
+        _require_non_empty_text(self.label, "label")
+        for field_name in (
+            "desk_id",
+            "portfolio_id",
+            "book_id",
+            "risk_class",
+            "bucket",
+            "issuer_id",
+            "counterparty_id",
+            "calculation_branch",
+            "regulatory_rule_id",
+        ):
+            _validate_optional_text(getattr(self, field_name), field_name)
+        if not isinstance(self.sort_key, int) or isinstance(self.sort_key, bool):
+            raise ResultStoreContractError("sort_key must be an integer", field="sort_key")
+        _freeze_metadata(self, self.metadata)
+
+    def to_node(self) -> CapitalNode:
+        """Return the capital-node contract represented by this mart row."""
+
+        return CapitalNode(
+            run_id=self.run_id,
+            node_id=self.node_id,
+            node_type=self.node_type,
+            component=self.component,
+            label=self.label,
+            desk_id=self.desk_id,
+            portfolio_id=self.portfolio_id,
+            book_id=self.book_id,
+            risk_class=self.risk_class,
+            bucket=self.bucket,
+            issuer_id=self.issuer_id,
+            counterparty_id=self.counterparty_id,
+            calculation_branch=self.calculation_branch,
+            regulatory_rule_id=self.regulatory_rule_id,
+            sort_key=self.sort_key,
+            metadata=self.metadata,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ComponentBreakdownRow:
+    """Persisted component-level capital total for dashboard summaries."""
+
+    run_id: str
+    component: FrtbComponent | str
+    amount: float
+    currency: str
+    node_count: int
+    measure_count: int
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        object.__setattr__(
+            self, "component", _coerce_enum(self.component, FrtbComponent, "component")
+        )
+        object.__setattr__(self, "amount", _require_finite_number(self.amount, "amount"))
+        _require_non_empty_text(self.currency, "currency")
+        for field_name in ("node_count", "measure_count"):
+            _require_non_negative_int(getattr(self, field_name), field_name)
+
+
+@dataclass(frozen=True, slots=True)
 class ResultBundle:
     """Complete append-only payload for one FRTB result-store run."""
 
@@ -995,6 +1285,7 @@ class ResultBundle:
     input_manifests: tuple[InputSnapshotManifest, ...] = ()
     lineage: tuple[LineageRef, ...] = ()
     attributions: tuple[CapitalAttributionRecord, ...] = ()
+    movement_results: tuple[MovementResult, ...] = ()
     events: tuple[ResultEvent, ...] = ()
     telemetry: tuple[RunTelemetry, ...] = ()
 
@@ -1031,6 +1322,7 @@ class ResultBundle:
         for lineage in self.lineage:
             _require_run_id(lineage.run_id, run_id, "lineage")
         _validate_bundle_attributions(self.attributions, run_id, known_nodes)
+        _validate_bundle_movements(self.movement_results, run_id, known_nodes)
         for event in self.events:
             _require_run_id(event.run_id, run_id, "events")
         for telemetry in self.telemetry:
@@ -1161,6 +1453,7 @@ def _tuple_bundle_sequences(bundle: ResultBundle) -> None:
         "input_manifests",
         "lineage",
         "attributions",
+        "movement_results",
         "events",
         "telemetry",
     ):
@@ -1244,6 +1537,28 @@ def _validate_bundle_attributions(
                 f"attribution node not found: {attribution.node_id}",
                 field="attributions",
             )
+
+
+def _validate_bundle_movements(
+    movement_results: tuple[MovementResult, ...],
+    run_id: str,
+    known_nodes: set[str],
+) -> None:
+    movement_ids: list[str] = []
+    for movement in movement_results:
+        _require_run_id(movement.run_id, run_id, "movement_results")
+        if movement.node_id not in known_nodes:
+            raise ResultStoreContractError(
+                f"movement node not found: {movement.node_id}",
+                field="movement_results",
+            )
+        movement_ids.append(movement.movement_id)
+    duplicate_movements = _duplicate_values(movement_ids)
+    if duplicate_movements:
+        raise ResultStoreContractError(
+            f"duplicate movement ids: {', '.join(duplicate_movements)}",
+            field="movement_results",
+        )
 
 
 def _freeze_metadata(instance: object, metadata: Mapping[str, object]) -> None:

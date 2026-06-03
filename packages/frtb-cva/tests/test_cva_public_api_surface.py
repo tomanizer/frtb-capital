@@ -21,6 +21,17 @@ HANDOFF_SURFACE = (
     "calculate_cva_capital_from_batches",
 )
 
+DEPRECATED_HANDOFF_SURFACE = (
+    "CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS",
+    "CVA_NETTING_SET_HANDOFF_COLUMN_SPECS",
+    "CVA_HEDGE_HANDOFF_COLUMN_SPECS",
+    "SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS",
+    "build_cva_counterparty_batch_from_handoff",
+    "build_cva_netting_set_batch_from_handoff",
+    "build_cva_hedge_batch_from_handoff",
+    "build_sa_cva_sensitivity_batch_from_handoff",
+)
+
 
 def test_documented_handoff_surface_is_top_level_importable() -> None:
     exported = set(frtb_cva.__all__)
@@ -29,6 +40,13 @@ def test_documented_handoff_surface_is_top_level_importable() -> None:
         assert name in exported
         assert hasattr(frtb_cva, name)
         assert f"`{name}`" in documented
+
+
+def test_deprecated_handoff_surface_remains_top_level_importable() -> None:
+    exported = set(frtb_cva.__all__)
+    for name in DEPRECATED_HANDOFF_SURFACE:
+        assert name in exported
+        assert hasattr(frtb_cva, name)
 
 
 def test_minimal_handoff_fixtures_round_trip_to_batches() -> None:

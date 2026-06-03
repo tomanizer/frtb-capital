@@ -5,15 +5,17 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 import time
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, cast
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, urlparse
 
 import duckdb
 import pyarrow as pa  # type: ignore[import-untyped]
@@ -51,9 +53,22 @@ from frtb_result_store.artifacts import (
     RequiredArtifactExpectation,
     StagedArtifact,
     artifact_expectations_for_requests,
+    artifact_schema_for,
     stage_artifact_write,
     validate_artifact_ref_targets,
     validate_required_artifacts,
+)
+from frtb_result_store.mart_schemas import (
+    MART_NAMES,
+    MART_SCHEMAS,
+    mart_schema_fingerprint,
+)
+from frtb_result_store.marts import (
+    capital_summary_from_row,
+    capital_tree_mart_from_row,
+    component_breakdown_from_row,
+    mart_rows_for_bundle,
+    movement_summary_from_row,
 )
 from frtb_result_store.model import (
     ArtifactRef,
@@ -63,6 +78,9 @@ from frtb_result_store.model import (
     CapitalEdge,
     CapitalMeasure,
     CapitalNode,
+    CapitalSummaryRow,
+    CapitalTreeMartRow,
+    ComponentBreakdownRow,
     EdgeType,
     FrtbComponent,
     HierarchyDefinition,
@@ -70,6 +88,8 @@ from frtb_result_store.model import (
     HierarchyNode,
     InputSnapshotManifest,
     LineageRef,
+    MovementResult,
+    MovementSummaryRow,
     NodeType,
     ResultBundle,
     ResultEvent,
@@ -114,7 +134,7 @@ __all__ = [
 ]
 
 
-RESULT_STORE_SCHEMA_VERSION = 1
+RESULT_STORE_SCHEMA_VERSION = 2
 _LOGGER = logging.getLogger(__name__)
 RUN_TABLE_NAMES = (
     "runs",
@@ -128,6 +148,7 @@ RUN_TABLE_NAMES = (
     "input_snapshot_manifests",
     "lineage_refs",
     "capital_attributions",
+    "movement_results",
     "result_events",
     "run_telemetry",
 )
@@ -147,40 +168,97 @@ class ResultStoreCompatibilityError(ResultStoreContractError):
 class ResultStoreConfig:
     """Concrete storage settings for the first result-store backend."""
 
-    root: Path
+    root: Path | str
     backend: StorageBackend = StorageBackend.LOCAL_PARQUET
     catalog_filename: str = "catalog.duckdb"
+    s3_mock_root: Path | str | None = None
+    duckdb_extensions: tuple[str, ...] = ()
+    duckdb_install_extensions: bool = False
+    duckdb_settings: Mapping[str, str | int | float | bool] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "backend", StorageBackend(self.backend))
-        if not isinstance(self.root, Path):
-            object.__setattr__(self, "root", Path(self.root))
         if not self.catalog_filename:
             raise ResultStoreContractError(
                 "catalog_filename must be non-empty text",
                 field="catalog_filename",
             )
+        if not isinstance(self.duckdb_install_extensions, bool):
+            raise ResultStoreContractError(
+                "duckdb_install_extensions must be boolean",
+                field="duckdb_install_extensions",
+            )
+        object.__setattr__(
+            self,
+            "duckdb_extensions",
+            tuple(
+                _validated_duckdb_name(extension, "duckdb_extensions")
+                for extension in self.duckdb_extensions
+            ),
+        )
+        object.__setattr__(
+            self,
+            "duckdb_settings",
+            MappingProxyType(
+                {
+                    _validated_duckdb_name(name, "duckdb_settings"): value
+                    for name, value in self.duckdb_settings.items()
+                }
+            ),
+        )
+        if self.backend is StorageBackend.S3_PARQUET:
+            object.__setattr__(self, "root", _normalize_s3_uri(self.root))
+            if self.s3_mock_root is None:
+                raise ResultStoreContractError(
+                    "s3_parquet backend requires s3_mock_root for local mock read/write",
+                    field="s3_mock_root",
+                )
+            object.__setattr__(self, "s3_mock_root", Path(self.s3_mock_root))
+            return
+        if isinstance(self.root, str) and self.root.startswith("s3://"):
+            raise ResultStoreContractError(
+                "s3:// roots require the s3_parquet backend",
+                field="root",
+            )
+        if not isinstance(self.root, Path):
+            object.__setattr__(self, "root", Path(self.root))
+        if self.s3_mock_root is not None:
+            raise ResultStoreContractError(
+                "s3_mock_root is only valid for s3_parquet backend",
+                field="s3_mock_root",
+            )
 
 
 class DuckDbParquetResultStore:
-    """Append-only local Parquet store queried through DuckDB.
+    """Append-only Parquet store queried through DuckDB.
 
-    The executable first slice writes one Parquet file per run per table under
-    ``root/parquet``. A run is visible only after its manifest has been written.
-    The DuckDB catalog is derived and rebuildable; query methods use independent
-    in-memory DuckDB connections over committed Parquet files.
+    Local mode writes one Parquet file per run per table under ``root/parquet``.
+    S3 mode keeps the same logical layout under an ``s3://`` root and uses an
+    explicit local mock root for deterministic integration tests. A run is
+    visible only after its manifest has been written.
     """
 
-    def __init__(self, config: ResultStoreConfig | Path) -> None:
+    def __init__(self, config: ResultStoreConfig | Path | str) -> None:
         if isinstance(config, Path):
             config = ResultStoreConfig(root=config)
+        elif isinstance(config, str):
+            config = ResultStoreConfig(root=config)
         self.config = config
-        if self.config.backend is not StorageBackend.LOCAL_PARQUET:
+        if self.config.backend is StorageBackend.DUCKLAKE:
             raise ResultStoreContractError(
                 f"{self.config.backend.value} backend is reserved for a later implementation",
                 field="backend",
             )
-        self.root = self.config.root.resolve()
+        if self.config.backend is StorageBackend.S3_PARQUET:
+            root_uri = cast(str, self.config.root)
+            self.root_uri = root_uri
+            self.root = _s3_mock_physical_root(
+                root_uri,
+                cast(Path, self.config.s3_mock_root),
+            )
+        else:
+            self.root = cast(Path, self.config.root).resolve()
+            self.root_uri = self.root.as_uri()
         self.parquet_root = self.root / "parquet"
         self.artifact_root = self.root / "artifacts"
         self.manifest_root = self.root / "manifests"
@@ -230,14 +308,26 @@ class DuckDbParquetResultStore:
                 _arrow_table(status_rows, _TABLE_SCHEMAS["run_status_events"]),
                 staging_dir / "run_status_events.parquet",
             )
+            mart_rows_by_name = self._write_staged_marts(
+                bundle,
+                lifecycle_status=RunStatus(initial_status_event.to_status),
+                staging_dir=staging_dir,
+            )
 
             moved_paths.extend(
                 self._move_staged_run_tables(run_id, initial_status_event.event_id, staging_dir)
             )
+            moved_paths.extend(self._move_staged_marts(run_id, staging_dir))
             moved_paths.extend(self._move_staged_artifacts(staged_artifacts))
             validate_artifact_ref_targets(committed_artifacts)
 
-            self._write_manifest(bundle, rows_by_table, status_rows, staging_dir)
+            self._write_manifest(
+                bundle,
+                rows_by_table,
+                status_rows,
+                mart_rows_by_name,
+                staging_dir,
+            )
         except Exception:
             for path in moved_paths:
                 path.unlink(missing_ok=True)
@@ -246,6 +336,7 @@ class DuckDbParquetResultStore:
                 ignore_errors=True,
             )
             self._remove_orphaned_artifacts(run_id)
+            self._remove_orphaned_marts(run_id)
             shutil.rmtree(staging_dir, ignore_errors=True)
             raise
         finally:
@@ -307,6 +398,23 @@ class DuckDbParquetResultStore:
         )
         return rows_by_table, staged_artifacts, committed_artifacts
 
+    def _write_staged_marts(
+        self,
+        bundle: ResultBundle,
+        *,
+        lifecycle_status: RunStatus,
+        staging_dir: Path,
+    ) -> dict[str, list[dict[str, object]]]:
+        mart_rows_by_name = mart_rows_for_bundle(bundle, lifecycle_status=lifecycle_status)
+        mart_staging_dir = staging_dir / "marts"
+        mart_staging_dir.mkdir(parents=True, exist_ok=True)
+        for mart_name in MART_NAMES:
+            pq.write_table(
+                _arrow_table(mart_rows_by_name[mart_name], MART_SCHEMAS[mart_name]),
+                mart_staging_dir / f"{mart_name}.parquet",
+            )
+        return mart_rows_by_name
+
     def _move_staged_run_tables(
         self,
         run_id: str,
@@ -318,15 +426,23 @@ class DuckDbParquetResultStore:
             final_path = self._run_table_path(table_name, run_id)
             if final_path.exists():
                 raise ResultStoreWriteError(f"run table already exists: {table_name}/{run_id}")
-            final_path.parent.mkdir(parents=True, exist_ok=True)
-            (staging_dir / f"{table_name}.parquet").rename(final_path)
+            self._publish_staged_file(staging_dir / f"{table_name}.parquet", final_path)
             moved_paths.append(final_path)
         status_path = self._status_event_path(run_id, status_event_id)
         if status_path.exists():
             raise ResultStoreWriteError(f"status event already exists: {status_event_id}")
-        status_path.parent.mkdir(parents=True, exist_ok=True)
-        (staging_dir / "run_status_events.parquet").rename(status_path)
+        self._publish_staged_file(staging_dir / "run_status_events.parquet", status_path)
         moved_paths.append(status_path)
+        return tuple(moved_paths)
+
+    def _move_staged_marts(self, run_id: str, staging_dir: Path) -> tuple[Path, ...]:
+        moved_paths: list[Path] = []
+        for mart_name in MART_NAMES:
+            final_path = self._mart_path(mart_name, run_id)
+            if final_path.exists():
+                raise ResultStoreWriteError(f"mart already exists: {mart_name}/{run_id}")
+            self._publish_staged_file(staging_dir / "marts" / f"{mart_name}.parquet", final_path)
+            moved_paths.append(final_path)
         return tuple(moved_paths)
 
     def _refresh_catalog_after_commit(self, span_attributes: Mapping[str, object]) -> None:
@@ -353,6 +469,7 @@ class DuckDbParquetResultStore:
                 request=request,
                 staging_dir=staging_dir,
                 final_root=self.artifact_root,
+                final_uri=self._artifact_uri(bundle.run.run_id, request),
             )
             for request in artifact_requests
         )
@@ -365,10 +482,35 @@ class DuckDbParquetResultStore:
         for artifact in staged_artifacts:
             if artifact.final_path.exists():
                 raise ResultStoreWriteError(f"artifact already exists: {artifact.ref.artifact_id}")
-            artifact.final_path.parent.mkdir(parents=True, exist_ok=True)
-            artifact.staged_path.rename(artifact.final_path)
+            self._publish_staged_file(artifact.staged_path, artifact.final_path)
             moved_paths.append(artifact.final_path)
         return tuple(moved_paths)
+
+    def _publish_staged_file(self, staged_path: Path, final_path: Path) -> None:
+        final_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.config.backend is StorageBackend.S3_PARQUET:
+            try:
+                shutil.copy2(staged_path, final_path)
+                staged_path.unlink()
+            except Exception:
+                final_path.unlink(missing_ok=True)
+                raise
+            return
+        staged_path.rename(final_path)
+
+    def _artifact_uri(self, run_id: str, request: ArtifactWriteRequest) -> str | None:
+        if self.config.backend is not StorageBackend.S3_PARQUET:
+            return None
+        entry = artifact_schema_for(request.schema_id)
+        artifact_id = _artifact_id_for_request(run_id, request, entry.schema_fingerprint)
+        final_path = (
+            self.artifact_root
+            / f"artifact_type={ArtifactType(request.artifact_type).value}"
+            / f"run_id={_safe_run_id(run_id)}"
+            / f"artifact_id={_safe_run_id(artifact_id)}"
+            / "data.parquet"
+        )
+        return self._path_uri(final_path)
 
     def run_exists(self, run_id: str) -> bool:
         """Return whether a run has already been written."""
@@ -448,23 +590,149 @@ class DuckDbParquetResultStore:
         return tuple(_hierarchy_node_from_row(row) for row in rows)
 
     def capital_tree(self, run_id: str) -> tuple[CapitalNode, ...]:
-        """Return all capital graph nodes for one run."""
+        """Return all capital graph nodes for one run from the persisted mart."""
+
+        return tuple(row.to_node() for row in self.capital_tree_mart(run_id))
+
+    def capital_summary(self, run_id: str) -> tuple[CapitalSummaryRow, ...]:
+        """Return persisted dashboard summary rows for one run."""
 
         if not self.run_exists(run_id):
             return ()
-        rows = self._fetchall(
-            "capital_nodes",
+        rows = self._fetch_mart(
+            "capital_summary",
             """
-            SELECT run_id, node_id, node_type, component, label, desk_id, portfolio_id,
-                   book_id, risk_class, bucket, issuer_id, counterparty_id,
-                   calculation_branch, regulatory_rule_id, sort_key, metadata_json
-            FROM {table}
+            SELECT run_id, as_of_date, regime_id, base_currency, lifecycle_status,
+                   suggested_status, total_capital, currency, node_count, measure_count,
+                   component_count
+            FROM {mart}
             WHERE run_id = ?
-            ORDER BY sort_key, node_id
+            ORDER BY run_id
             """,
             (run_id,),
         )
-        return tuple(_node_from_row(row) for row in rows)
+        return tuple(capital_summary_from_row(row) for row in rows)
+
+    def capital_tree_mart(self, run_id: str) -> tuple[CapitalTreeMartRow, ...]:
+        """Return persisted flattened capital tree rows for one run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetch_mart(
+            "capital_tree",
+            """
+            SELECT run_id, node_id, parent_node_id, depth, node_type, component, label,
+                   desk_id, portfolio_id, book_id, risk_class, bucket, issuer_id,
+                   counterparty_id, calculation_branch, regulatory_rule_id, sort_key,
+                   metadata_json
+            FROM {mart}
+            WHERE run_id = ?
+            ORDER BY depth, sort_key, node_id
+            """,
+            (run_id,),
+        )
+        return tuple(capital_tree_mart_from_row(row) for row in rows)
+
+    def component_breakdown(self, run_id: str) -> tuple[ComponentBreakdownRow, ...]:
+        """Return persisted component-level dashboard totals for one run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetch_mart(
+            "component_breakdown",
+            """
+            SELECT run_id, component, amount, currency, node_count, measure_count
+            FROM {mart}
+            WHERE run_id = ?
+            ORDER BY component
+            """,
+            (run_id,),
+        )
+        return tuple(component_breakdown_from_row(row) for row in rows)
+
+    def movement_summary(
+        self,
+        run_id: str,
+        *,
+        node_id: str | None = None,
+    ) -> tuple[MovementSummaryRow, ...]:
+        """Return persisted movement summary rows for one run, optionally by node."""
+
+        if not self.run_exists(run_id):
+            return ()
+        where_clause = "WHERE run_id = ?"
+        parameters: tuple[object, ...] = (run_id,)
+        if node_id is not None:
+            where_clause += " AND node_id = ?"
+            parameters = (run_id, node_id)
+        rows = self._fetch_mart(
+            "movement_summary",
+            f"""
+            SELECT run_id, baseline_run_id, movement_id, node_id, movement_type,
+                   from_amount, to_amount, delta_amount, base_currency, driver_type,
+                   driver_id, attribution_method, artifact_id
+            FROM {{mart}}
+            {where_clause}
+            ORDER BY node_id, movement_type, driver_type, driver_id, movement_id
+            """,
+            parameters,
+        )
+        return tuple(movement_summary_from_row(row) for row in rows)
+
+    def top_contributors(self, run_id: str, *, limit: int = 10) -> tuple[dict[str, object], ...]:
+        """Return top attribution contributors from the persisted mart."""
+
+        if not self.run_exists(run_id):
+            return ()
+        limit = max(1, limit)
+        columns = _mart_columns("top_contributors")
+        rows = self._fetch_mart(
+            "top_contributors",
+            f"""
+            SELECT {", ".join(columns)}
+            FROM {{mart}}
+            WHERE run_id = ?
+            ORDER BY rank
+            LIMIT ?
+            """,
+            (run_id, limit),
+        )
+        return _dict_rows(columns, rows)
+
+    def mart_rows(self, run_id: str, mart_name: str) -> tuple[dict[str, object], ...]:
+        """Return rows from one persisted mart for a committed run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        columns = _mart_columns(mart_name)
+        rows = self._fetch_mart(
+            mart_name,
+            f"""
+            SELECT {", ".join(columns)}
+            FROM {{mart}}
+            WHERE run_id = ?
+            ORDER BY {", ".join(columns[: min(3, len(columns))])}
+            """,
+            (run_id,),
+        )
+        return _dict_rows(columns, rows)
+
+    def regime_comparison(self, run_group_id: str) -> tuple[dict[str, object], ...]:
+        """Return persisted comparison rows for one run group."""
+
+        columns = _mart_columns("regime_comparison")
+        if not self._has_mart_files("regime_comparison"):
+            return ()
+        rows = self._fetch_custom(
+            f"""
+            SELECT {", ".join(columns)}
+            FROM {self._mart_relation("regime_comparison")}
+            WHERE run_group_id = ?
+            ORDER BY as_of_date, regime_id, run_id
+            """,
+            (run_group_id,),
+        )
+        return _dict_rows(columns, rows)
 
     def child_nodes(self, run_id: str, parent_node_id: str) -> tuple[CapitalNode, ...]:
         """Return direct child nodes in graph order."""
@@ -579,16 +847,50 @@ class DuckDbParquetResultStore:
         rows = self._fetchall(
             "capital_attributions",
             """
-            SELECT run_id, node_id, contribution_id, source_id, source_level, category,
-                   base_amount, method, bucket_key, marginal_multiplier, contribution,
-                   residual, reason, metadata_json
+            SELECT run_id, node_id, attribution_id, target_type, target_id, source_id,
+                   source_level, method, category, bucket_key, base_amount,
+                   marginal_multiplier, contribution, residual, unsupported_reason,
+                   artifact_id, metadata_json
             FROM {table}
             WHERE run_id = ? AND node_id = ?
-            ORDER BY contribution_id
+            ORDER BY attribution_id
             """,
             (run_id, node_id),
         )
         return tuple(_attribution_from_row(row) for row in rows)
+
+    def movement_results(
+        self,
+        run_id: str,
+        *,
+        baseline_run_id: str | None = None,
+        node_id: str | None = None,
+    ) -> tuple[MovementResult, ...]:
+        """Return official movement result rows attached to one current run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        filters = ["run_id = ?"]
+        parameters: list[object] = [run_id]
+        if baseline_run_id is not None:
+            filters.append("baseline_run_id = ?")
+            parameters.append(baseline_run_id)
+        if node_id is not None:
+            filters.append("node_id = ?")
+            parameters.append(node_id)
+        rows = self._fetchall(
+            "movement_results",
+            f"""
+            SELECT run_id, baseline_run_id, movement_id, node_id, movement_type,
+                   from_amount, to_amount, delta_amount, base_currency, driver_type,
+                   driver_id, explanation, attribution_method, artifact_id, metadata_json
+            FROM {{table}}
+            WHERE {" AND ".join(filters)}
+            ORDER BY node_id, movement_type, driver_type, driver_id, movement_id
+            """,
+            tuple(parameters),
+        )
+        return tuple(_movement_from_row(row) for row in rows)
 
     def lineage_for_result(self, run_id: str, result_id: str) -> tuple[LineageRef, ...]:
         """Return lineage references for a stored result object."""
@@ -727,6 +1029,27 @@ class DuckDbParquetResultStore:
         with suppress(Exception):
             self.refresh_catalog()
 
+    def cleanup_orphaned_staging(self, *, run_id: str | None = None) -> tuple[str, ...]:
+        """Remove abandoned staging directories that are not committed manifests."""
+
+        staging_root = self.root / "_staging"
+        if not staging_root.exists():
+            return ()
+        if run_id is not None:
+            path = staging_root / _safe_run_id(run_id)
+            if not path.exists():
+                return ()
+            shutil.rmtree(path)
+            return (run_id,)
+        removed: list[str] = []
+        for path in sorted(staging_root.iterdir()):
+            if not path.is_dir():
+                continue
+            shutil.rmtree(path)
+            if not path.exists():
+                removed.append(unquote(path.name))
+        return tuple(removed)
+
     def resolve_run_id_prefix(self, prefix: str) -> str | None:
         """Resolve a unique full run id from a display prefix.
 
@@ -754,14 +1077,41 @@ class DuckDbParquetResultStore:
                         f"CREATE OR REPLACE VIEW {_view_name(table_name)} AS "
                         f"SELECT * FROM {self._parquet_relation(table_name)}"
                     )
+            for mart_name in MART_NAMES:
+                if self._has_mart_files(mart_name):
+                    con.execute(
+                        f"CREATE OR REPLACE VIEW {_mart_view_name(mart_name)} AS "
+                        f"SELECT * FROM {self._mart_relation(mart_name)}"
+                    )
         finally:
             con.close()
+
+    def read_only_connection(self) -> Any:
+        from frtb_result_store.admin import read_only_connection
+
+        return read_only_connection(self)
+
+    def inspect(self) -> object:
+        from frtb_result_store.admin import inspect_store
+
+        return inspect_store(self)
+
+    def validate_store(self) -> object:
+        from frtb_result_store.admin import validate_store
+
+        return validate_store(self)
+
+    def export_run(self, run_id: str, output_path: Path | str, *, overwrite: bool = False) -> Any:
+        from frtb_result_store.admin import export_run
+
+        return export_run(self, run_id, output_path, overwrite=overwrite)
 
     def _write_manifest(
         self,
         bundle: ResultBundle,
         rows_by_table: Mapping[str, Sequence[Mapping[str, object]]],
         status_rows: Sequence[Mapping[str, object]],
+        mart_rows_by_name: Mapping[str, Sequence[Mapping[str, object]]],
         staging_dir: Path,
     ) -> None:
         manifest_dir = self._manifest_path(bundle.run.run_id).parent
@@ -774,6 +1124,12 @@ class DuckDbParquetResultStore:
             "result_store_schema_version": RESULT_STORE_SCHEMA_VERSION,
             "writer_version": __version__,
             "backend": self.config.backend.value,
+            "root_uri": self.root_uri,
+            "paths": {
+                "parquet": self._path_uri(self.parquet_root),
+                "artifacts": self._path_uri(self.artifact_root),
+                "manifests": self._path_uri(self.manifest_root),
+            },
             "run_id": bundle.run.run_id,
             "run_group_id": bundle.run.run_group_id,
             "as_of_date": bundle.run.as_of_date.isoformat(),
@@ -784,6 +1140,7 @@ class DuckDbParquetResultStore:
                 **{table_name: len(rows_by_table[table_name]) for table_name in RUN_TABLE_NAMES},
                 "run_status_events": len(status_rows),
             },
+            "marts": {mart_name: len(mart_rows_by_name[mart_name]) for mart_name in MART_NAMES},
             "base_table_schema_fingerprints": {
                 table_name: _table_schema_fingerprint(table_name)
                 for table_name in TABLE_NAMES
@@ -796,16 +1153,23 @@ class DuckDbParquetResultStore:
                     if row["schema_fingerprint"] is not None
                 }
             ),
-            "mart_schema_fingerprints": {},
+            "mart_schema_fingerprints": {
+                mart_name: mart_schema_fingerprint(mart_name) for mart_name in MART_NAMES
+            },
         }
         staged_manifest_path.write_text(
             stable_json_dumps(manifest) + "\n",
             encoding="utf-8",
         )
-        try:
-            os.link(staged_manifest_path, manifest_path)
-        except FileExistsError as exc:
-            raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}") from exc
+        if manifest_path.exists():
+            raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}")
+        if self.config.backend is StorageBackend.S3_PARQUET:
+            self._publish_staged_file(staged_manifest_path, manifest_path)
+        else:
+            try:
+                os.link(staged_manifest_path, manifest_path)
+            except FileExistsError as exc:
+                raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}") from exc
         staged_manifest_path.unlink(missing_ok=True)
 
     def _fetchall(
@@ -819,6 +1183,26 @@ class DuckDbParquetResultStore:
         if parameters and isinstance(parameters[0], str) and self.run_exists(parameters[0]):
             self._ensure_run_compatible(parameters[0])
         sql = sql_template.format(table=self._parquet_relation(table_name))
+        return self._fetch_custom(sql, parameters)
+
+    def _fetch_mart(
+        self,
+        mart_name: str,
+        sql_template: str,
+        parameters: Sequence[object] = (),
+    ) -> tuple[tuple[object, ...], ...]:
+        if not self._has_mart_files(mart_name):
+            return ()
+        relation = self._mart_relation(mart_name)
+        if parameters and isinstance(parameters[0], str):
+            run_id = parameters[0]
+            if self.run_exists(run_id):
+                self._ensure_run_compatible(run_id)
+                mart_path = self._mart_path(mart_name, run_id)
+                if not mart_path.exists():
+                    return ()
+                relation = f"read_parquet({_sql_literal(str(mart_path))})"
+        sql = sql_template.format(mart=relation)
         return self._fetch_custom(sql, parameters)
 
     def _ensure_run_compatible(self, run_id: str) -> None:
@@ -850,6 +1234,13 @@ class DuckDbParquetResultStore:
                 table_name
             ):
                 errors.append(f"{table_name} schema fingerprint mismatch")
+        mart_fingerprints = manifest.get("mart_schema_fingerprints")
+        if not isinstance(mart_fingerprints, dict):
+            errors.append("missing mart schema fingerprints")
+            return tuple(errors)
+        for mart_name, fingerprint in mart_fingerprints.items():
+            if mart_name in MART_SCHEMAS and fingerprint != mart_schema_fingerprint(mart_name):
+                errors.append(f"{mart_name} mart schema fingerprint mismatch")
         return tuple(errors)
 
     def _read_manifest(self, run_id: str) -> Mapping[str, object]:
@@ -884,15 +1275,32 @@ class DuckDbParquetResultStore:
             con.close()
 
     def _connect_catalog(self) -> Any:
-        return duckdb.connect(str(self.catalog_path))
+        con = duckdb.connect(str(self.catalog_path))
+        self._configure_duckdb(con)
+        return con
 
     def _connect_query(self) -> Any:
-        return duckdb.connect()
+        con = duckdb.connect()
+        self._configure_duckdb(con)
+        return con
+
+    def _configure_duckdb(self, con: Any) -> None:
+        for extension in self.config.duckdb_extensions:
+            if self.config.duckdb_install_extensions:
+                con.execute(f"INSTALL {extension}")
+            con.execute(f"LOAD {extension}")
+        for name, value in self.config.duckdb_settings.items():
+            con.execute(f"SET {name} = {_duckdb_literal(value)}")
 
     def _run_table_path(self, table_name: str, run_id: str) -> Path:
         if table_name not in RUN_TABLE_NAMES:
             raise ResultStoreContractError(f"unknown table: {table_name}", field="table_name")
         return self.parquet_root / table_name / f"{_safe_run_id(run_id)}.parquet"
+
+    def _mart_path(self, mart_name: str, run_id: str) -> Path:
+        if mart_name not in MART_NAMES:
+            raise ResultStoreContractError(f"unknown mart: {mart_name}", field="mart_name")
+        return self.parquet_root / "marts" / mart_name / f"{_safe_run_id(run_id)}.parquet"
 
     def _status_event_path(self, run_id: str, event_id: str) -> Path:
         return (
@@ -905,12 +1313,25 @@ class DuckDbParquetResultStore:
     def _has_table_files(self, table_name: str) -> bool:
         return bool(self._table_files(table_name))
 
+    def _has_mart_files(self, mart_name: str) -> bool:
+        return bool(self._mart_files(mart_name))
+
     def _parquet_relation(self, table_name: str) -> str:
         file_paths = ", ".join(_sql_literal(str(path)) for path in self._table_files(table_name))
         return f"read_parquet([{file_paths}], union_by_name = true)"
 
+    def _mart_relation(self, mart_name: str) -> str:
+        file_paths = ", ".join(_sql_literal(str(path)) for path in self._mart_files(mart_name))
+        return f"read_parquet([{file_paths}], union_by_name = true)"
+
     def _manifest_path(self, run_id: str) -> Path:
         return self.manifest_root / _safe_run_id(run_id) / "run_manifest.json"
+
+    def _path_uri(self, path: Path) -> str:
+        if self.config.backend is not StorageBackend.S3_PARQUET:
+            return path.resolve().as_uri()
+        relative = path.relative_to(self.root).as_posix()
+        return f"{self.root_uri}/{relative}"
 
     def _committed_run_ids(self) -> tuple[str, ...]:
         return tuple(
@@ -938,6 +1359,15 @@ class DuckDbParquetResultStore:
             if (path := self._run_table_path(table_name, run_id)).exists()
         )
 
+    def _mart_files(self, mart_name: str) -> tuple[Path, ...]:
+        if mart_name not in MART_NAMES:
+            raise ResultStoreContractError(f"unknown mart: {mart_name}", field="mart_name")
+        return tuple(
+            path
+            for run_id in self._committed_run_ids()
+            if (path := self._mart_path(mart_name, run_id)).exists()
+        )
+
     def _remove_orphaned_run_files(self, run_id: str) -> None:
         for table_name in RUN_TABLE_NAMES:
             self._run_table_path(table_name, run_id).unlink(missing_ok=True)
@@ -946,11 +1376,16 @@ class DuckDbParquetResultStore:
             ignore_errors=True,
         )
         self._remove_orphaned_artifacts(run_id)
+        self._remove_orphaned_marts(run_id)
 
     def _remove_orphaned_artifacts(self, run_id: str) -> None:
         safe_run_id = _artifact_safe_run_id(run_id)
         for path in self.artifact_root.glob(f"artifact_type=*/run_id={safe_run_id}"):
             shutil.rmtree(path, ignore_errors=True)
+
+    def _remove_orphaned_marts(self, run_id: str) -> None:
+        for mart_name in MART_NAMES:
+            self._mart_path(mart_name, run_id).unlink(missing_ok=True)
 
 
 def _rows_for_bundle(
@@ -985,6 +1420,7 @@ def _rows_for_bundle(
         "capital_attributions": [
             _attribution_row(attribution) for attribution in bundle.attributions
         ],
+        "movement_results": [_movement_row(movement) for movement in bundle.movement_results],
         "result_events": [_result_event_row(event) for event in bundle.events],
         "run_telemetry": [_telemetry_row(telemetry) for telemetry in bundle.telemetry],
     }
@@ -1148,18 +1584,43 @@ def _attribution_row(attribution: CapitalAttributionRecord) -> dict[str, object]
     return {
         "run_id": attribution.run_id,
         "node_id": attribution.node_id,
-        "contribution_id": attribution.contribution_id,
+        "attribution_id": attribution.attribution_id,
+        "target_type": attribution.target_type,
+        "target_id": attribution.target_id,
         "source_id": attribution.source_id,
         "source_level": attribution.source_level,
-        "category": attribution.category,
-        "base_amount": attribution.base_amount,
         "method": _stored_value(attribution.method),
+        "category": attribution.category,
         "bucket_key": attribution.bucket_key,
+        "base_amount": attribution.base_amount,
         "marginal_multiplier": attribution.marginal_multiplier,
         "contribution": attribution.contribution,
         "residual": attribution.residual,
-        "reason": attribution.reason,
+        "unsupported_reason": attribution.unsupported_reason,
+        "artifact_id": attribution.artifact_id,
         "metadata_json": _metadata_json(attribution.metadata),
+    }
+
+
+def _movement_row(movement: MovementResult) -> dict[str, object]:
+    return {
+        "run_id": movement.run_id,
+        "baseline_run_id": movement.baseline_run_id,
+        "movement_id": movement.movement_id,
+        "node_id": movement.node_id,
+        "movement_type": movement.movement_type,
+        "from_amount": movement.from_amount,
+        "to_amount": movement.to_amount,
+        "delta_amount": movement.delta_amount,
+        "base_currency": movement.base_currency,
+        "driver_type": movement.driver_type,
+        "driver_id": movement.driver_id,
+        "explanation": movement.explanation,
+        "attribution_method": None
+        if movement.attribution_method is None
+        else _stored_value(movement.attribution_method),
+        "artifact_id": movement.artifact_id,
+        "metadata_json": _metadata_json(movement.metadata),
     }
 
 
@@ -1349,17 +1810,41 @@ def _attribution_from_row(row: Sequence[object]) -> CapitalAttributionRecord:
         run_id=str(row[0]),
         node_id=str(row[1]),
         contribution_id=str(row[2]),
-        source_id=str(row[3]),
-        source_level=str(row[4]),
-        category=str(row[5]),
-        base_amount=_float_value(row[6]),
+        source_id=str(row[5]),
+        source_level=str(row[6]),
         method=AttributionMethod(str(row[7])),
-        bucket_key=_optional_text(row[8]),
-        marginal_multiplier=_optional_float(row[9]),
-        contribution=_optional_float(row[10]),
-        residual=_float_value(row[11]),
-        reason=str(row[12]),
-        metadata=_json_mapping(row[13]),
+        category=str(row[8]),
+        bucket_key=_optional_text(row[9]),
+        base_amount=_float_value(row[10]),
+        marginal_multiplier=_optional_float(row[11]),
+        contribution=_optional_float(row[12]),
+        residual=_float_value(row[13]),
+        reason=str(row[14]),
+        target_type=str(row[3]),
+        target_id=str(row[4]),
+        unsupported_reason=str(row[14]),
+        artifact_id=_optional_text(row[15]),
+        metadata=_json_mapping(row[16]),
+    )
+
+
+def _movement_from_row(row: Sequence[object]) -> MovementResult:
+    return MovementResult(
+        run_id=str(row[0]),
+        baseline_run_id=str(row[1]),
+        movement_id=str(row[2]),
+        node_id=str(row[3]),
+        movement_type=str(row[4]),
+        from_amount=_float_value(row[5]),
+        to_amount=_float_value(row[6]),
+        delta_amount=_float_value(row[7]),
+        base_currency=str(row[8]),
+        driver_type=str(row[9]),
+        driver_id=str(row[10]),
+        explanation=str(row[11]),
+        attribution_method=_optional_text(row[12]),
+        artifact_id=_optional_text(row[13]),
+        metadata=_json_mapping(row[14]),
     )
 
 
@@ -1388,6 +1873,86 @@ def _json_object_list(value: object) -> tuple[Mapping[str, object], ...]:
     return tuple(parsed)
 
 
+_DUCKDB_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _normalize_s3_uri(root: Path | str) -> str:
+    if not isinstance(root, str):
+        raise ResultStoreContractError(
+            "s3_parquet root must be an s3:// URI string",
+            field="root",
+        )
+    parsed = urlparse(root)
+    if parsed.scheme != "s3" or not parsed.netloc:
+        raise ResultStoreContractError(
+            "s3_parquet root must be an s3://bucket[/prefix] URI",
+            field="root",
+        )
+    if unquote(parsed.netloc) in {".", ".."}:
+        raise ResultStoreContractError(
+            "s3_parquet root path must not contain relative components",
+            field="root",
+        )
+    if parsed.query or parsed.fragment:
+        raise ResultStoreContractError(
+            "s3_parquet root must not include query or fragment",
+            field="root",
+        )
+    raw_parts = [part for part in parsed.path.split("/") if part]
+    decoded_parts = [unquote(part) for part in raw_parts]
+    if any(part in {".", ".."} for part in decoded_parts):
+        raise ResultStoreContractError(
+            "s3_parquet root path must not contain relative components",
+            field="root",
+        )
+    path = "/".join(raw_parts)
+    return f"s3://{parsed.netloc}" + (f"/{path}" if path else "")
+
+
+def _s3_mock_physical_root(root_uri: str, mock_root: Path) -> Path:
+    parsed = urlparse(root_uri)
+    path_parts = [unquote(part) for part in parsed.path.split("/") if part]
+    return mock_root.resolve().joinpath(parsed.netloc, *path_parts)
+
+
+def _validated_duckdb_name(value: str, field: str) -> str:
+    if not isinstance(value, str) or not _DUCKDB_NAME_RE.fullmatch(value):
+        raise ResultStoreContractError(
+            f"{field} entries must be DuckDB setting or extension names",
+            field=field,
+        )
+    return value
+
+
+def _duckdb_literal(value: str | int | float | bool) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int | float):
+        return str(value)
+    if isinstance(value, str):
+        return _sql_literal(value)
+    raise ResultStoreContractError(
+        "duckdb setting values must be string, number, or boolean",
+        field="duckdb_settings",
+    )
+
+
+def _artifact_id_for_request(
+    run_id: str,
+    request: ArtifactWriteRequest,
+    schema_fingerprint: str,
+) -> str:
+    artifact_type = ArtifactType(request.artifact_type)
+    payload = {
+        "run_id": run_id,
+        "artifact_id_hint": request.artifact_id_hint,
+        "artifact_type": artifact_type.value,
+        "schema_fingerprint": schema_fingerprint,
+        "partition_values": dict(request.partition_values),
+    }
+    return f"{artifact_type.value}:{stable_json_hash(payload)}"
+
+
 def _safe_run_id(run_id: str) -> str:
     return quote(run_id, safe="")
 
@@ -1402,6 +1967,23 @@ def _sql_literal(value: str) -> str:
 
 def _view_name(table_name: str) -> str:
     return f"frtb_result_store_{table_name}"
+
+
+def _mart_view_name(mart_name: str) -> str:
+    return f"frtb_result_store_mart_{mart_name}"
+
+
+def _mart_columns(mart_name: str) -> tuple[str, ...]:
+    if mart_name not in MART_SCHEMAS:
+        raise ResultStoreContractError(f"unknown mart: {mart_name}", field="mart_name")
+    return tuple(MART_SCHEMAS[mart_name].names)
+
+
+def _dict_rows(
+    columns: Sequence[str],
+    rows: Sequence[Sequence[object]],
+) -> tuple[dict[str, object], ...]:
+    return tuple(dict(zip(columns, row, strict=True)) for row in rows)
 
 
 def _arrow_table(rows: Sequence[Mapping[str, object]], schema: Any) -> Any:
@@ -1568,17 +2150,39 @@ _TABLE_SCHEMAS: dict[str, Any] = {
         [
             ("run_id", pa.string()),
             ("node_id", pa.string()),
-            ("contribution_id", pa.string()),
+            ("attribution_id", pa.string()),
+            ("target_type", pa.string()),
+            ("target_id", pa.string()),
             ("source_id", pa.string()),
             ("source_level", pa.string()),
-            ("category", pa.string()),
-            ("base_amount", pa.float64()),
             ("method", pa.string()),
+            ("category", pa.string()),
             ("bucket_key", pa.string()),
+            ("base_amount", pa.float64()),
             ("marginal_multiplier", pa.float64()),
             ("contribution", pa.float64()),
             ("residual", pa.float64()),
-            ("reason", pa.string()),
+            ("unsupported_reason", pa.string()),
+            ("artifact_id", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "movement_results": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("baseline_run_id", pa.string()),
+            ("movement_id", pa.string()),
+            ("node_id", pa.string()),
+            ("movement_type", pa.string()),
+            ("from_amount", pa.float64()),
+            ("to_amount", pa.float64()),
+            ("delta_amount", pa.float64()),
+            ("base_currency", pa.string()),
+            ("driver_type", pa.string()),
+            ("driver_id", pa.string()),
+            ("explanation", pa.string()),
+            ("attribution_method", pa.string()),
+            ("artifact_id", pa.string()),
             ("metadata_json", pa.string()),
         ]
     ),
