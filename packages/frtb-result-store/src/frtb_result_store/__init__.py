@@ -21,7 +21,13 @@ from frtb_result_store.model import (
     NodeType,
     ResultBundle,
     ResultStoreContractError,
+    RunStatus,
+    RunStatusEvent,
     StorageBackend,
+    canonical_run_group_identity_payload,
+    canonical_run_identity_payload,
+    generate_run_group_id,
+    generate_run_id,
 )
 
 if TYPE_CHECKING:
@@ -57,8 +63,14 @@ __all__ = [
     "ResultStoreConfig",
     "ResultStoreContractError",
     "ResultStoreWriteError",
+    "RunStatus",
+    "RunStatusEvent",
     "StorageBackend",
     "__version__",
+    "canonical_run_group_identity_payload",
+    "canonical_run_identity_payload",
+    "generate_run_group_id",
+    "generate_run_id",
 ]
 
 _BACKEND_EXPORTS = frozenset(

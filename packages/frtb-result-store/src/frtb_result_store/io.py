@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote, unquote
 
 import duckdb
@@ -33,6 +33,8 @@ from frtb_result_store.model import (
     NodeType,
     ResultBundle,
     ResultStoreContractError,
+    RunStatus,
+    RunStatusEvent,
     StorageBackend,
 )
 
@@ -44,7 +46,7 @@ __all__ = [
 
 
 RESULT_STORE_SCHEMA_VERSION = 1
-TABLE_NAMES = (
+RUN_TABLE_NAMES = (
     "runs",
     "capital_nodes",
     "capital_edges",
@@ -53,6 +55,8 @@ TABLE_NAMES = (
     "lineage_refs",
     "capital_attributions",
 )
+EVENT_TABLE_NAMES = ("run_status_events",)
+TABLE_NAMES = RUN_TABLE_NAMES + EVENT_TABLE_NAMES
 
 
 class ResultStoreWriteError(RuntimeError):
@@ -114,6 +118,8 @@ class DuckDbParquetResultStore:
             raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}")
 
         rows_by_table = _rows_for_bundle(bundle)
+        initial_status_event = _initial_status_event(bundle.run)
+        status_rows = [_status_event_row(initial_status_event)]
         safe_run_id = _safe_run_id(run_id)
         staging_dir = self.root / "_staging" / safe_run_id
         if staging_dir.exists():
@@ -123,22 +129,38 @@ class DuckDbParquetResultStore:
 
         moved_paths: list[Path] = []
         try:
-            for table_name in TABLE_NAMES:
+            for table_name in RUN_TABLE_NAMES:
                 table = _arrow_table(rows_by_table[table_name], _TABLE_SCHEMAS[table_name])
                 pq.write_table(table, staging_dir / f"{table_name}.parquet")
+            pq.write_table(
+                _arrow_table(status_rows, _TABLE_SCHEMAS["run_status_events"]),
+                staging_dir / "run_status_events.parquet",
+            )
 
-            for table_name in TABLE_NAMES:
+            for table_name in RUN_TABLE_NAMES:
                 final_path = self._run_table_path(table_name, run_id)
                 if final_path.exists():
                     raise ResultStoreWriteError(f"run table already exists: {table_name}/{run_id}")
                 final_path.parent.mkdir(parents=True, exist_ok=True)
                 (staging_dir / f"{table_name}.parquet").rename(final_path)
                 moved_paths.append(final_path)
+            status_path = self._status_event_path(run_id, initial_status_event.event_id)
+            if status_path.exists():
+                raise ResultStoreWriteError(
+                    f"status event already exists: {initial_status_event.event_id}"
+                )
+            status_path.parent.mkdir(parents=True, exist_ok=True)
+            (staging_dir / "run_status_events.parquet").rename(status_path)
+            moved_paths.append(status_path)
 
-            self._write_manifest(bundle, rows_by_table)
+            self._write_manifest(bundle, rows_by_table, status_rows)
         except Exception:
             for path in moved_paths:
                 path.unlink(missing_ok=True)
+            shutil.rmtree(
+                self.parquet_root / "run_status_events" / safe_run_id,
+                ignore_errors=True,
+            )
             shutil.rmtree(staging_dir, ignore_errors=True)
             raise
         finally:
@@ -160,9 +182,10 @@ class DuckDbParquetResultStore:
         rows = self._fetchall(
             "runs",
             """
-            SELECT run_id, as_of_date, regime_id, base_currency, input_snapshot_id,
+            SELECT run_id, run_group_id, as_of_date, regime_id, base_currency, input_snapshot_id,
                    calculation_scope, engine_version, code_version,
-                   calculation_policy_id, created_at, metadata_json
+                   calculation_policy_id, created_at, identity_payload_json,
+                   run_group_identity_payload_json, metadata_json
             FROM {table}
             ORDER BY as_of_date, run_id
             """,
@@ -177,9 +200,10 @@ class DuckDbParquetResultStore:
         rows = self._fetchall(
             "runs",
             """
-            SELECT run_id, as_of_date, regime_id, base_currency, input_snapshot_id,
+            SELECT run_id, run_group_id, as_of_date, regime_id, base_currency, input_snapshot_id,
                    calculation_scope, engine_version, code_version,
-                   calculation_policy_id, created_at, metadata_json
+                   calculation_policy_id, created_at, identity_payload_json,
+                   run_group_identity_payload_json, metadata_json
             FROM {table}
             WHERE run_id = ?
             """,
@@ -347,6 +371,76 @@ class DuckDbParquetResultStore:
         )
         return tuple(_lineage_from_row(row) for row in rows)
 
+    def status_history(self, run_id: str) -> tuple[RunStatusEvent, ...]:
+        """Return append-only lifecycle events for one committed run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetchall(
+            "run_status_events",
+            """
+            SELECT event_id, run_id, from_status, to_status, event_time, actor,
+                   reason_code, reason_text, external_evidence_ref
+            FROM {table}
+            WHERE run_id = ?
+            ORDER BY event_time, event_id
+            """,
+            (run_id,),
+        )
+        return tuple(_status_event_from_row(row) for row in rows)
+
+    def latest_status_event(self, run_id: str) -> RunStatusEvent | None:
+        """Return the latest lifecycle event for a run, or ``None`` when absent."""
+
+        history = self.status_history(run_id)
+        return None if not history else history[-1]
+
+    def latest_status(self, run_id: str) -> RunStatus | None:
+        """Return the latest lifecycle status for a run, or ``None`` when absent."""
+
+        latest = self.latest_status_event(run_id)
+        return None if latest is None else RunStatus(latest.to_status)
+
+    def append_status_event(self, event: RunStatusEvent) -> None:
+        """Append a lifecycle status event for an existing committed run."""
+
+        if not self.run_exists(event.run_id):
+            raise ResultStoreWriteError(f"run does not exist: {event.run_id}")
+        event_path = self._status_event_path(event.run_id, event.event_id)
+        if event_path.exists():
+            raise ResultStoreWriteError(f"status event already exists: {event.event_id}")
+        latest_status = self.latest_status(event.run_id)
+        if event.from_status != latest_status:
+            raise ResultStoreWriteError(
+                f"status transition expected from {latest_status}, got {event.from_status}"
+            )
+        event_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = event_path.with_suffix(".parquet.tmp")
+        pq.write_table(
+            _arrow_table([_status_event_row(event)], _TABLE_SCHEMAS["run_status_events"]),
+            temp_path,
+        )
+        temp_path.replace(event_path)
+
+        with suppress(Exception):
+            self.refresh_catalog()
+
+    def resolve_run_id_prefix(self, prefix: str) -> str | None:
+        """Resolve a unique full run id from a display prefix.
+
+        Ambiguous prefixes fail closed instead of returning an arbitrary run.
+        """
+
+        if not prefix:
+            raise ResultStoreContractError("run_id prefix must be non-empty", field="prefix")
+        matches = tuple(run_id for run_id in self._committed_run_ids() if run_id.startswith(prefix))
+        if len(matches) > 1:
+            raise ResultStoreContractError(
+                f"ambiguous run_id prefix: {prefix}",
+                field="prefix",
+            )
+        return None if not matches else matches[0]
+
     def refresh_catalog(self) -> None:
         """Create or replace DuckDB views over the Parquet result tables."""
 
@@ -365,6 +459,7 @@ class DuckDbParquetResultStore:
         self,
         bundle: ResultBundle,
         rows_by_table: Mapping[str, Sequence[Mapping[str, object]]],
+        status_rows: Sequence[Mapping[str, object]],
     ) -> None:
         manifest_dir = self._manifest_path(bundle.run.run_id).parent
         manifest_dir.mkdir(parents=True, exist_ok=True)
@@ -374,9 +469,15 @@ class DuckDbParquetResultStore:
             "schema_version": RESULT_STORE_SCHEMA_VERSION,
             "backend": self.config.backend.value,
             "run_id": bundle.run.run_id,
+            "run_group_id": bundle.run.run_group_id,
             "as_of_date": bundle.run.as_of_date.isoformat(),
             "regime_id": bundle.run.regime_id,
-            "tables": {table_name: len(rows_by_table[table_name]) for table_name in TABLE_NAMES},
+            "identity_payload": dict(bundle.run.identity_payload),
+            "run_group_identity_payload": dict(bundle.run.run_group_identity_payload),
+            "tables": {
+                **{table_name: len(rows_by_table[table_name]) for table_name in RUN_TABLE_NAMES},
+                "run_status_events": len(status_rows),
+            },
         }
         temp_manifest_path.write_text(
             stable_json_dumps(manifest) + "\n",
@@ -414,9 +515,17 @@ class DuckDbParquetResultStore:
         return duckdb.connect()
 
     def _run_table_path(self, table_name: str, run_id: str) -> Path:
-        if table_name not in TABLE_NAMES:
+        if table_name not in RUN_TABLE_NAMES:
             raise ResultStoreContractError(f"unknown table: {table_name}", field="table_name")
         return self.parquet_root / table_name / f"{_safe_run_id(run_id)}.parquet"
+
+    def _status_event_path(self, run_id: str, event_id: str) -> Path:
+        return (
+            self.parquet_root
+            / "run_status_events"
+            / _safe_run_id(run_id)
+            / f"{_safe_run_id(event_id)}.parquet"
+        )
 
     def _has_table_files(self, table_name: str) -> bool:
         return bool(self._table_files(table_name))
@@ -438,6 +547,16 @@ class DuckDbParquetResultStore:
     def _table_files(self, table_name: str) -> tuple[Path, ...]:
         if table_name not in TABLE_NAMES:
             raise ResultStoreContractError(f"unknown table: {table_name}", field="table_name")
+        if table_name == "run_status_events":
+            return tuple(
+                sorted(
+                    path
+                    for run_id in self._committed_run_ids()
+                    for path in (self.parquet_root / table_name / _safe_run_id(run_id)).glob(
+                        "*.parquet"
+                    )
+                )
+            )
         return tuple(
             path
             for run_id in self._committed_run_ids()
@@ -445,8 +564,12 @@ class DuckDbParquetResultStore:
         )
 
     def _remove_orphaned_run_files(self, run_id: str) -> None:
-        for table_name in TABLE_NAMES:
+        for table_name in RUN_TABLE_NAMES:
             self._run_table_path(table_name, run_id).unlink(missing_ok=True)
+        shutil.rmtree(
+            self.parquet_root / "run_status_events" / _safe_run_id(run_id),
+            ignore_errors=True,
+        )
 
 
 def _rows_for_bundle(bundle: ResultBundle) -> dict[str, list[dict[str, object]]]:
@@ -466,6 +589,7 @@ def _rows_for_bundle(bundle: ResultBundle) -> dict[str, list[dict[str, object]]]
 def _run_row(run: CalculationRun) -> dict[str, object]:
     return {
         "run_id": run.run_id,
+        "run_group_id": run.run_group_id,
         "as_of_date": run.as_of_date.isoformat(),
         "regime_id": run.regime_id,
         "base_currency": run.base_currency,
@@ -475,6 +599,8 @@ def _run_row(run: CalculationRun) -> dict[str, object]:
         "code_version": run.code_version,
         "calculation_policy_id": run.calculation_policy_id,
         "created_at": run.created_at.isoformat(),
+        "identity_payload_json": _metadata_json(run.identity_payload),
+        "run_group_identity_payload_json": _metadata_json(run.run_group_identity_payload),
         "metadata_json": _metadata_json(run.metadata),
     }
 
@@ -573,19 +699,50 @@ def _attribution_row(attribution: CapitalAttributionRecord) -> dict[str, object]
     }
 
 
+def _initial_status_event(run: CalculationRun) -> RunStatusEvent:
+    return RunStatusEvent.transition(
+        run_id=run.run_id,
+        from_status=None,
+        to_status=RunStatus.CANDIDATE,
+        event_time=run.created_at,
+        actor="result-store",
+        reason_code="RUN_COMMITTED",
+        reason_text="Run committed to result store",
+    )
+
+
+def _status_event_row(event: RunStatusEvent) -> dict[str, object]:
+    from_status = None if event.from_status is None else cast(RunStatus, event.from_status)
+    to_status = cast(RunStatus, event.to_status)
+    return {
+        "event_id": event.event_id,
+        "run_id": event.run_id,
+        "from_status": None if from_status is None else from_status.value,
+        "to_status": to_status.value,
+        "event_time": event.event_time.isoformat(),
+        "actor": event.actor,
+        "reason_code": event.reason_code,
+        "reason_text": event.reason_text,
+        "external_evidence_ref": event.external_evidence_ref,
+    }
+
+
 def _run_from_row(row: Sequence[object]) -> CalculationRun:
     return CalculationRun(
         run_id=str(row[0]),
-        as_of_date=date.fromisoformat(str(row[1])),
-        regime_id=str(row[2]),
-        base_currency=str(row[3]),
-        input_snapshot_id=str(row[4]),
-        calculation_scope=str(row[5]),
-        engine_version=str(row[6]),
-        code_version=str(row[7]),
-        calculation_policy_id=str(row[8]),
-        created_at=datetime.fromisoformat(str(row[9])),
-        metadata=_json_mapping(row[10]),
+        run_group_id=_optional_text(row[1]),
+        as_of_date=date.fromisoformat(str(row[2])),
+        regime_id=str(row[3]),
+        base_currency=str(row[4]),
+        input_snapshot_id=str(row[5]),
+        calculation_scope=str(row[6]),
+        engine_version=str(row[7]),
+        code_version=str(row[8]),
+        calculation_policy_id=str(row[9]),
+        created_at=datetime.fromisoformat(str(row[10])),
+        identity_payload=_json_mapping(row[11]),
+        run_group_identity_payload=_json_mapping(row[12]),
+        metadata=_json_mapping(row[13]),
     )
 
 
@@ -683,6 +840,21 @@ def _attribution_from_row(row: Sequence[object]) -> CapitalAttributionRecord:
     )
 
 
+def _status_event_from_row(row: Sequence[object]) -> RunStatusEvent:
+    from_status_text = _optional_text(row[2])
+    return RunStatusEvent(
+        event_id=str(row[0]),
+        run_id=str(row[1]),
+        from_status=None if not from_status_text else RunStatus(from_status_text),
+        to_status=RunStatus(str(row[3])),
+        event_time=datetime.fromisoformat(str(row[4])),
+        actor=str(row[5]),
+        reason_code=str(row[6]),
+        reason_text=str(row[7]),
+        external_evidence_ref=_optional_text(row[8]),
+    )
+
+
 def _metadata_json(metadata: Mapping[str, object]) -> str:
     return str(stable_json_dumps(dict(metadata)))
 
@@ -771,6 +943,7 @@ _TABLE_SCHEMAS: dict[str, Any] = {
     "runs": pa.schema(
         [
             ("run_id", pa.string()),
+            ("run_group_id", pa.string()),
             ("as_of_date", pa.string()),
             ("regime_id", pa.string()),
             ("base_currency", pa.string()),
@@ -780,6 +953,8 @@ _TABLE_SCHEMAS: dict[str, Any] = {
             ("code_version", pa.string()),
             ("calculation_policy_id", pa.string()),
             ("created_at", pa.string()),
+            ("identity_payload_json", pa.string()),
+            ("run_group_identity_payload_json", pa.string()),
             ("metadata_json", pa.string()),
         ]
     ),
@@ -869,6 +1044,19 @@ _TABLE_SCHEMAS: dict[str, Any] = {
             ("residual", pa.float64()),
             ("reason", pa.string()),
             ("metadata_json", pa.string()),
+        ]
+    ),
+    "run_status_events": pa.schema(
+        [
+            ("event_id", pa.string()),
+            ("run_id", pa.string()),
+            ("from_status", pa.string()),
+            ("to_status", pa.string()),
+            ("event_time", pa.string()),
+            ("actor", pa.string()),
+            ("reason_code", pa.string()),
+            ("reason_text", pa.string()),
+            ("external_evidence_ref", pa.string()),
         ]
     ),
 }

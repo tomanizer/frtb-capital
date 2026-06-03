@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -23,7 +24,11 @@ from frtb_result_store import (
     ResultStoreConfig,
     ResultStoreContractError,
     ResultStoreWriteError,
+    RunStatus,
+    RunStatusEvent,
     StorageBackend,
+    canonical_run_group_identity_payload,
+    generate_run_group_id,
 )
 from frtb_result_store.io import _float_value, _int_value, _json_mapping, _json_text_tuple
 
@@ -56,12 +61,117 @@ def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> 
     )[0].uri.startswith("s3://")
     assert store.lineage_for_result(bundle.run.run_id, "total")[0].source_id == "snapshot-001"
     assert store.attributions_for_node(bundle.run.run_id, "sbm-girr-usd")[0].contribution == 7.5
+    assert store.latest_status(bundle.run.run_id) is RunStatus.CANDIDATE
 
     manifest_path = (
         tmp_path / "result-store" / "manifests" / "frtb%2Frun%2F2026-06-03" / "run_manifest.json"
     )
     assert manifest_path.exists()
     assert (tmp_path / "result-store/catalog.duckdb").exists()
+
+
+def test_store_persists_canonical_identity_payloads_and_status_history(tmp_path: Path) -> None:
+    group_payload = canonical_run_group_identity_payload(
+        as_of_date=date(2026, 6, 3),
+        calculation_scope="FIRM",
+        input_snapshot_id="snapshot-001",
+        calculation_policy_group_id="policy-comparison",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+        group_purpose="regime-comparison",
+    )
+    run = CalculationRun.from_identity(
+        as_of_date=date(2026, 6, 3),
+        regime_id="US_NPR_2_0",
+        base_currency="USD",
+        input_snapshot_id="snapshot-001",
+        calculation_scope="FIRM",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+        calculation_policy_id="policy-us-npr",
+        created_at=datetime(2026, 6, 3, 12, 0, tzinfo=UTC),
+        run_group_id=generate_run_group_id(group_payload),
+        run_group_identity_payload=group_payload,
+    )
+    bundle = _bundle(run)
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(bundle)
+
+    stored = store.get_run(run.run_id)
+    assert stored == run
+    assert stored is not None
+    assert dict(stored.identity_payload)["regime_id"] == "US_NPR_2_0"
+    assert dict(stored.run_group_identity_payload)["group_purpose"] == "regime-comparison"
+    assert store.status_history(run.run_id)[0].to_status is RunStatus.CANDIDATE
+
+    validated = RunStatusEvent.transition(
+        run_id=run.run_id,
+        from_status=RunStatus.CANDIDATE,
+        to_status=RunStatus.VALIDATED,
+        event_time=datetime(2026, 6, 3, 12, 5, tzinfo=UTC),
+        actor="validator",
+        reason_code="CHECKS_PASSED",
+        reason_text="Package-local checks passed",
+    )
+    store.append_status_event(validated)
+
+    assert [event.to_status for event in store.status_history(run.run_id)] == [
+        RunStatus.CANDIDATE,
+        RunStatus.VALIDATED,
+    ]
+    assert store.latest_status(run.run_id) is RunStatus.VALIDATED
+
+    manifest_path = tmp_path / "result-store" / "manifests" / run.run_id / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["identity_payload"] == dict(run.identity_payload)
+    assert manifest["run_group_identity_payload"] == dict(run.run_group_identity_payload)
+
+
+def test_status_transitions_are_append_only_and_ordered(tmp_path: Path) -> None:
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    bundle = _bundle()
+    store.write_bundle(bundle)
+
+    with pytest.raises(ResultStoreWriteError, match="status transition expected"):
+        store.append_status_event(
+            RunStatusEvent.transition(
+                run_id=bundle.run.run_id,
+                from_status=RunStatus.OFFICIAL,
+                to_status=RunStatus.SUPERSEDED,
+                event_time=datetime(2026, 6, 3, 12, 5, tzinfo=UTC),
+                actor="validator",
+                reason_code="WRONG_FROM_STATUS",
+                reason_text="Wrong transition",
+            )
+        )
+
+    validated = RunStatusEvent.transition(
+        run_id=bundle.run.run_id,
+        from_status=RunStatus.CANDIDATE,
+        to_status=RunStatus.VALIDATED,
+        event_time=datetime(2026, 6, 3, 12, 5, tzinfo=UTC),
+        actor="validator",
+        reason_code="CHECKS_PASSED",
+        reason_text="Package-local checks passed",
+    )
+    store.append_status_event(validated)
+
+    with pytest.raises(ResultStoreWriteError, match="status event already exists"):
+        store.append_status_event(validated)
+
+
+def test_run_id_prefix_lookup_fails_closed_when_ambiguous(tmp_path: Path) -> None:
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    first_run = _run_with_id("abcdef" + ("0" * 58))
+    second_run = _run_with_id("abc123" + ("1" * 58))
+    store.write_bundle(_bundle(first_run))
+    store.write_bundle(_bundle(second_run))
+
+    assert store.resolve_run_id_prefix("abcdef") == first_run.run_id
+    assert store.resolve_run_id_prefix("missing") is None
+    with pytest.raises(ResultStoreContractError, match="ambiguous run_id prefix"):
+        store.resolve_run_id_prefix("abc")
 
 
 def test_store_is_append_only_by_run_id(tmp_path: Path) -> None:
@@ -101,6 +211,9 @@ def test_failed_manifest_write_rolls_back_moved_run_files(
         "capital_attributions",
     ):
         assert not store._run_table_path(table_name, bundle.run.run_id).exists()
+    assert not (
+        tmp_path / "result-store" / "parquet" / "run_status_events" / "frtb%2Frun%2F2026-06-03"
+    ).exists()
 
     monkeypatch.undo()
     store.write_bundle(bundle)
@@ -159,20 +272,9 @@ def test_malformed_stored_values_raise_contract_errors() -> None:
         _int_value("not-an-integer")
 
 
-def _bundle() -> ResultBundle:
-    run = CalculationRun(
-        run_id="frtb/run/2026-06-03",
-        as_of_date=date(2026, 6, 3),
-        regime_id="US_NPR_2_0",
-        base_currency="USD",
-        input_snapshot_id="snapshot-001",
-        calculation_scope="FIRM",
-        engine_version="frtb-suite-0.1",
-        code_version="abc123",
-        calculation_policy_id="policy-us-npr",
-        created_at=datetime(2026, 6, 3, 12, 0, tzinfo=UTC),
-        metadata={"purpose": "analyst-dashboard-fixture"},
-    )
+def _bundle(run: CalculationRun | None = None) -> ResultBundle:
+    if run is None:
+        run = _run_with_id("frtb/run/2026-06-03")
     nodes = (
         CapitalNode(
             run_id=run.run_id,
@@ -235,40 +337,29 @@ def _bundle() -> ResultBundle:
             parent_node_id="sa",
             child_node_id="sbm-girr-usd",
             edge_type=EdgeType.DRILLDOWN,
-            sort_key=1,
+            sort_key=3,
         ),
     )
     measures = (
         CapitalMeasure(
             run_id=run.run_id,
             node_id="total",
-            measure_name="capital_amount",
+            measure_name="capital",
             amount=42.0,
             currency="USD",
-            citations=("US_NPR_325.207",),
-        ),
-        CapitalMeasure(
-            run_id=run.run_id,
-            node_id="sbm-girr-usd",
-            measure_name="kb",
-            amount=12.5,
-            currency="USD",
-            scenario="medium_correlation",
-            methodology="SBM_DELTA",
-            regulatory_rule_id="MAR21.4",
+            regulatory_rule_id="US_NPR_325.201",
         ),
     )
     artifacts = (
         ArtifactRef(
             run_id=run.run_id,
-            artifact_id="ima-pnl-rates",
+            artifact_id="ima-pnl-vector",
             component=FrtbComponent.IMA,
             artifact_type=ArtifactType.IMA_PNL_VECTOR,
-            uri="s3://frtb-results/as_of=2026-06-03/run=frtb-run/ima_pnl.parquet",
+            uri="s3://frtb-results/ima-pnl-vector.parquet",
             format="parquet",
-            row_count=2500,
-            schema_fingerprint="ima-pnl-v1",
-            partition_keys=("desk_id", "portfolio_id", "book_id", "scenario_id"),
+            row_count=1,
+            partition_keys=("desk_id", "portfolio_id", "book_id"),
         ),
     )
     lineage = (
@@ -277,25 +368,23 @@ def _bundle() -> ResultBundle:
             result_id="total",
             source_type="input_snapshot",
             source_id="snapshot-001",
-            source_hash="abc123",
         ),
-    )
-    contribution = CapitalContribution(
-        contribution_id="alloc-sbm-girr-usd",
-        source_id="sensitivity-girr-usd-5y",
-        source_level="SENSITIVITY",
-        bucket_key="GIRR:USD",
-        category="SBM_DELTA",
-        base_amount=12.5,
-        marginal_multiplier=0.6,
-        contribution=7.5,
-        method="ANALYTICAL_EULER",
     )
     attributions = (
         CapitalAttributionRecord.from_contribution(
             run_id=run.run_id,
             node_id="sbm-girr-usd",
-            contribution=contribution,
+            contribution=CapitalContribution(
+                contribution_id="sbm-girr-usd-5y",
+                source_id="sensitivity-girr-usd-5y",
+                source_level="SENSITIVITY",
+                bucket_key="GIRR:USD",
+                category="SBM_DELTA",
+                base_amount=25.0,
+                marginal_multiplier=0.3,
+                contribution=7.5,
+                method="ANALYTICAL_EULER",
+            ),
         ),
     )
     return ResultBundle(
@@ -306,4 +395,20 @@ def _bundle() -> ResultBundle:
         artifacts=artifacts,
         lineage=lineage,
         attributions=attributions,
+    )
+
+
+def _run_with_id(run_id: str) -> CalculationRun:
+    return CalculationRun(
+        run_id=run_id,
+        as_of_date=date(2026, 6, 3),
+        regime_id="US_NPR_2_0",
+        base_currency="USD",
+        input_snapshot_id="snapshot-001",
+        calculation_scope="FIRM",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+        calculation_policy_id="policy-us-npr",
+        created_at=datetime(2026, 6, 3, 12, 0, tzinfo=UTC),
+        metadata={"purpose": "analyst-dashboard-fixture"},
     )
