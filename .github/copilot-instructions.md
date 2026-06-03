@@ -28,18 +28,16 @@ Follow those files as the source of truth. In particular:
 For IMA work, read `packages/frtb-ima/AGENTS.md` and
 `packages/frtb-ima/CLAUDE.md` before editing IMA code.
 
-<<<<<<< HEAD
 For PR babysitting (CI stabilisation, Gemini/Copilot review incorporation, final
 audit), read and follow `.grok/skills/frtb-ci-babysit/SKILL.md`. Use
 `make agent-new AGENT=copilot TASK=<task-name>` when the worktree guard fails.
 Requires the `gh` CLI.
-=======
+
 For documentation audits across all packages (README, AGENTS/CLAUDE, ARCHITECTURE,
 PUBLIC_API, ADR alignment), read and follow:
 
 - `.grok/skills/frtb-doc-audit/SKILL.md`
 - `.grok/skills/frtb-doc-audit/references/audit-checklist.md`
 
-Use `make agent-new AGENT=copilot TASK=<task-name>` when the worktree guard
-fails. Documentation-only changes do not bump package versions.
->>>>>>> add293d (docs: add cross-agent entrypoints for frtb-doc-audit skill)
+Use `make agent-new AGENT=copilot TASK=<task-name>` when the worktree guard fails.
+Documentation-only changes do not bump package versions.
