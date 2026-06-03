@@ -38,3 +38,6 @@ For IMA work, read `packages/frtb-ima/AGENTS.md` and
 
 For PR babysitting, use `/frtb-ci-babysit` or
 `.grok/skills/frtb-ci-babysit/SKILL.md`.
+
+For documentation audits across all packages, use `/frtb-doc-audit` or
+`.grok/skills/frtb-doc-audit/SKILL.md`.
