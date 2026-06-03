@@ -86,6 +86,13 @@ calculate_cva_capital
 | `MIXED_CARVE_OUT` | MAR50.8 | Implemented | Carve-out evidence on netting sets |
 | MAR50.9 100% CCR alternative | MAR50.9 | **Unsupported** | `materiality_threshold_elected=True` |
 
+**Runtime vs profile metadata:** `capital.py` and `scope.py` already produce capital for
+`BA_CVA_FULL` and `MIXED_CARVE_OUT` (see `test_cva_ba_cva_full.py`,
+`test_cva_mixed_method.py`). `CvaRuleProfile.supported_methods` on
+`get_cva_rule_profile()` is **stale**: `regimes._BASEL_SUPPORTED_METHODS` still lists only
+`BA_CVA_REDUCED` and `SA_CVA`. Phase B aligns profile metadata with the support matrix;
+this design PR does not change `regimes.py` or profile content hashes.
+
 ### 3.3 SA-CVA risk-class × measure cells (`BASEL_MAR50_2020`)
 
 Source of truth in code: `_SUPPORTED_PATHS` in `sa_cva.py`.
@@ -108,13 +115,14 @@ Source of truth in code: `_SUPPORTED_PATHS` in `sa_cva.py`.
 | MAR50.9 hedge recognition | N/A | **Disallowed** | **Disallowed** | Method unsupported |
 | Analytical Euler (nonlinear branches) | N/A | Attribution partial | Attribution partial | ADR 0012 residual branches |
 
-### 3.5 Documentation drift to fix
+### 3.5 Documentation and metadata drift to fix
 
-| Item | Location | Issue |
-| --- | --- | --- |
-| Crosswalk test refs | `docs/regulatory/crosswalk/frtb-cva.yml` | `test_unsupported_features.py` should be `test_cva_unsupported_features.py` |
-| Dual materiality gates | `validation.py` + `scope.py` | `CvaInputError` vs `UnsupportedRegulatoryFeatureError` — consolidate per §6.3 |
-| Package maturity | `package_maturity.toml` | No `support-matrix` required test yet |
+| Item | Location | Issue | Status in PR #527 |
+| --- | --- | --- | --- |
+| Crosswalk test refs | `docs/regulatory/crosswalk/frtb-cva.yml` | Wrong unsupported-features test path | **Fixed** in this PR |
+| `supported_methods` metadata | `regimes.py` | Omits `BA_CVA_FULL`, `MIXED_CARVE_OUT` despite runtime support | Phase B (`support_matrix.py`) |
+| Dual materiality gates | `validation.py` + `scope.py` | `CvaInputError` vs `UnsupportedRegulatoryFeatureError` | Phase B; see §5.5 |
+| Package maturity | `package_maturity.toml` | No `support-matrix` required test yet | Phase B |
 
 ---
 
@@ -145,7 +153,10 @@ def ensure_cva_sa_cva_path_supported(profile, risk_class, risk_measure) -> None:
 
 Design rules:
 
-- **`BASEL_MAR50_2020`:** methods = `{BA_CVA_REDUCED, BA_CVA_FULL, SA_CVA, MIXED_CARVE_OUT}`; SA paths = `_SUPPORTED_PATHS` from `sa_cva.py` (import, do not duplicate literals).
+- **`BASEL_MAR50_2020`:** capital-producing methods are those resolved by `scope.py` /
+  `capital.py` today: `{BA_CVA_REDUCED, BA_CVA_FULL, SA_CVA, MIXED_CARVE_OUT}`. The matrix
+  module imports this set from runtime dispatch (not from stale `regimes._BASEL_SUPPORTED_METHODS`).
+  SA paths = `_SUPPORTED_PATHS` from `sa_cva.py` (import, do not duplicate literals).
 - **Comparison profiles:** methods and SA paths = empty frozensets; `ensure_*` raises `UnsupportedRegulatoryFeatureError` with the same message family as `UNSUPPORTED_PROFILE_REASONS`.
 - **MAR50.9:** not a `CvaMethod` enum value; matrix row `method_policy = MATERIALITY_THRESHOLD_CCR` with status `unsupported` and blocker `CCR_INPUT_BOUNDARY`.
 
