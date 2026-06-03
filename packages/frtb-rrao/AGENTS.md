@@ -1,5 +1,10 @@
 # AGENTS.md — frtb-rrao
 
+Follow the suite-level portable worktree policy in
+[`../../AGENTS.md`](../../AGENTS.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 `frtb-rrao` owns the Standardised Approach residual risk add-on component.
 
 ## Current status

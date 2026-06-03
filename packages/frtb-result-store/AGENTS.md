@@ -1,5 +1,10 @@
 # AGENTS.md — frtb-result-store
 
+Follow the suite-level portable worktree policy in
+[`../../AGENTS.md`](../../AGENTS.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 `frtb-result-store` owns storage and query contracts for FRTB calculation
 evidence.
 

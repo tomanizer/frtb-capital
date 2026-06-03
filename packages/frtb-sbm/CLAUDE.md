@@ -1,5 +1,10 @@
 # CLAUDE.md — frtb-sbm
 
+Follow the suite-level portable worktree policy in
+[`../../CLAUDE.md`](../../CLAUDE.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 Review `frtb-sbm` as the owner of SBM capital only.
 
 ## Current implementation (BASEL_MAR21 phase 1)

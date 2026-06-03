@@ -1,5 +1,10 @@
 # CLAUDE.md — frtb-cva
 
+Follow the suite-level portable worktree policy in
+[`../../CLAUDE.md`](../../CLAUDE.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 Review `frtb-cva` as the owner of CVA capital only.
 
 ## Delivered slice

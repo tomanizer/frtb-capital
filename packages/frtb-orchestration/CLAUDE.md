@@ -1,5 +1,10 @@
 # CLAUDE.md — frtb-orchestration
 
+Follow the suite-level portable worktree policy in
+[`../../CLAUDE.md`](../../CLAUDE.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 Review `frtb-orchestration` as the suite aggregation boundary.
 
 This is the only package allowed to depend on multiple capital components. Until
