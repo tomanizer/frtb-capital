@@ -17,8 +17,8 @@ import pyarrow.parquet as pq  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     DiagnosticSeverity,
-    NormalizedTabularHandoff,
-    normalized_handoff_hash,
+    NormalizedArrowTable,
+    normalized_arrow_table_hash,
     source_content_hash,
 )
 
@@ -69,7 +69,7 @@ def validate_client_handoff(
                 severity=DiagnosticSeverity.ERROR,
             )
         )
-        handoff = NormalizedTabularHandoff(
+        handoff = NormalizedArrowTable(
             accepted=empty_table_for_specs(entry.column_specs),
             column_specs=entry.column_specs,
             rejected=table,
@@ -90,7 +90,7 @@ def validate_client_handoff(
                         severity=DiagnosticSeverity.ERROR,
                     )
                 )
-                handoff = NormalizedTabularHandoff(
+                handoff = NormalizedArrowTable(
                     accepted=handoff.accepted,
                     column_specs=handoff.column_specs,
                     row_id_column=handoff.row_id_column,
@@ -145,7 +145,7 @@ def _write_outputs(
     output_dir: Path,
     package: str,
     handoff_id: str,
-    handoff: NormalizedTabularHandoff,
+    handoff: NormalizedArrowTable,
     diagnostics: list[dict[str, object]],
     batch_built: bool,
 ) -> None:
@@ -161,7 +161,7 @@ def _write_outputs(
     summary = {
         "accepted_rows": handoff.accepted.num_rows,
         "batch_built": batch_built,
-        "handoff_hash": normalized_handoff_hash(handoff),
+        "handoff_hash": normalized_arrow_table_hash(handoff),
         "handoff_id": handoff_id,
         "input_hash": handoff.source_hash,
         "package": package,

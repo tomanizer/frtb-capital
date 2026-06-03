@@ -28,7 +28,7 @@ implementation pattern. `frtb-common` owns package-neutral mechanics: shared
 status metadata, explicit unsupported/unimplemented exception types,
 Arrow-backed tabular handoff primitives, package-neutral CRIF-to-Arrow
 normalization, JSON-ready serialization helpers, regulatory citation test
-helpers, and the `ComponentResultHandoff` contract for standardised-component
+helpers, and the `ComponentCapitalSummary` contract for standardised-component
 orchestration. Capital packages may import from `frtb-common`; they must not
 import from each other.
 

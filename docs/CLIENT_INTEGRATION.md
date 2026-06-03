@@ -18,7 +18,7 @@ dataclasses is acceptable.
 
 | Tier | Client delivers | Library entrypoints | Use |
 | --- | --- | --- | --- |
-| 1 - Arrow/Parquet handoff | Column tables matching package `*_HANDOFF_COLUMN_SPECS` | `normalize_*_arrow_table` -> `build_*_batch_from_handoff` -> `calculate_*_from_batch` | Default production path. |
+| 1 - Arrow/Parquet handoff | Column tables matching package `*_ARROW_COLUMN_SPECS` | `normalize_*_arrow_table` -> `build_*_batch_from_handoff` -> `calculate_*_from_batch` | Default production path. |
 | 2 - CRIF/vendor rows | Iterable of mapping rows from CRIF or vendor extracts | `adapt_crif_records` / `adapt_*_records` -> Tier 1 or Tier 3 | Transitional adapter path where source systems already emit CRIF-like rows. |
 | 3 - Canonical dataclasses | Tuples of package row dataclasses such as `SbmSensitivity` or `DrcPosition` | `calculate_*_capital` | Small books, tests, research, and notebook examples only. |
 
@@ -41,11 +41,11 @@ external table / CRIF / file
 
 | Component | Grain | Required handoff spec symbols | Primary Tier 1 functions | Supported profiles at time of writing | Performance notes |
 | --- | --- | --- | --- | --- | --- |
-| SBM | Sensitivity rows by risk class, measure, bucket, tenor, qualifier, and risk factor | Risk-class handoff specs such as `GIRR_DELTA_HANDOFF_COLUMN_SPECS`, `GIRR_VEGA_HANDOFF_COLUMN_SPECS`, `FX_DELTA_HANDOFF_COLUMN_SPECS`, `EQUITY_DELTA_HANDOFF_COLUMN_SPECS`, `COMMODITY_DELTA_HANDOFF_COLUMN_SPECS`, `CSR_NONSEC_DELTA_HANDOFF_COLUMN_SPECS` | `normalize_*_arrow_table` -> `build_*_batch_from_handoff` -> `calculate_sbm_capital_from_*_batch` or portfolio batch dispatcher | `BASEL_MAR21` paths implemented for supported delta, GIRR vega, non-GIRR vega, and row-wise curvature paths; unsupported profiles fail closed | [SBM Arrow batch report](performance/frtb-sbm-batch-arrow-report.md) |
-| DRC | Position rows split by DRC class: non-securitisation, securitisation non-CTP, and CTP | `DRC_NONSEC_HANDOFF_COLUMN_SPECS`, `DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS`, `DRC_CTP_HANDOFF_COLUMN_SPECS` | `normalize_drc_*_arrow_table` -> `build_drc_*_batch_from_handoff` -> `calculate_drc_capital_from_batch` | Supported cited Basel MAR22 / profile paths implemented by package contexts; missing reference evidence fails closed | [DRC Arrow batch triage](performance/frtb-drc-arrow-batch-triage.md) |
-| RRAO | Residual-risk position rows with classification evidence and lineage | `RRAO_HANDOFF_COLUMN_SPECS` | `normalize_rrao_arrow_table` -> `build_rrao_batch_from_handoff` -> `calculate_rrao_capital_from_batch` | Supported canonical Basel MAR23, U.S. NPR 2.0 comparison, and EU CRR3 comparison inputs; unsupported input paths fail closed | [RRAO Arrow batch triage](performance/frtb-rrao-arrow-batch-triage.md) |
-| CVA | Multi-table delivery: counterparties, netting sets, hedges, and SA-CVA sensitivities | `CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS`, `CVA_NETTING_SET_HANDOFF_COLUMN_SPECS`, `CVA_HEDGE_HANDOFF_COLUMN_SPECS`, `SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS` | `normalize_cva_*_arrow_table` -> `build_*_batch_from_handoff` -> BA-CVA or SA-CVA batch calculators | Reduced and full BA-CVA plus supported SA-CVA delta and vega risk-class paths; unsupported materiality and comparison paths fail closed | [CVA Arrow batch triage](performance/frtb-cva-arrow-batch-triage.md) |
-| IMA | Dense scenario P&L cube plus tabular scenario metadata, RFET observations, and input manifest rows | `IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS`, `IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS`, `IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS` | Arrow tables normalize/build for metadata and RFET evidence; dense NumPy arrays feed ES, LHA, IMCC, and NMRF kernels | Implemented public IMA path for deterministic fixtures; unsupported profile behaviour remains explicit | [IMA Arrow handoff triage](performance/frtb-ima-arrow-handoff-triage.md) |
+| SBM | Sensitivity rows by risk class, measure, bucket, tenor, qualifier, and risk factor | Risk-class handoff specs such as `GIRR_DELTA_ARROW_COLUMN_SPECS`, `GIRR_VEGA_ARROW_COLUMN_SPECS`, `FX_DELTA_ARROW_COLUMN_SPECS`, `EQUITY_DELTA_ARROW_COLUMN_SPECS`, `COMMODITY_DELTA_ARROW_COLUMN_SPECS`, `CSR_NONSEC_DELTA_ARROW_COLUMN_SPECS` | `normalize_*_arrow_table` -> `build_*_batch_from_handoff` -> `calculate_sbm_capital_from_*_batch` or portfolio batch dispatcher | `BASEL_MAR21` paths implemented for supported delta, GIRR vega, non-GIRR vega, and row-wise curvature paths; unsupported profiles fail closed | [SBM Arrow batch report](performance/frtb-sbm-batch-arrow-report.md) |
+| DRC | Position rows split by DRC class: non-securitisation, securitisation non-CTP, and CTP | `DRC_NONSEC_ARROW_COLUMN_SPECS`, `DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS`, `DRC_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_*_arrow_table` -> `build_drc_*_batch_from_handoff` -> `calculate_drc_capital_from_batch` | Supported cited Basel MAR22 / profile paths implemented by package contexts; missing reference evidence fails closed | [DRC Arrow batch triage](performance/frtb-drc-arrow-batch-triage.md) |
+| RRAO | Residual-risk position rows with classification evidence and lineage | `RRAO_ARROW_COLUMN_SPECS` | `normalize_rrao_arrow_table` -> `build_rrao_batch_from_arrow` -> `calculate_rrao_capital_from_batch` | Supported canonical Basel MAR23, U.S. NPR 2.0 comparison, and EU CRR3 comparison inputs; unsupported input paths fail closed | [RRAO Arrow batch triage](performance/frtb-rrao-arrow-batch-triage.md) |
+| CVA | Multi-table delivery: counterparties, netting sets, hedges, and SA-CVA sensitivities | `CVA_COUNTERPARTY_ARROW_COLUMN_SPECS`, `CVA_NETTING_SET_ARROW_COLUMN_SPECS`, `CVA_HEDGE_ARROW_COLUMN_SPECS`, `SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS` | `normalize_cva_*_arrow_table` -> `build_*_batch_from_handoff` -> BA-CVA or SA-CVA batch calculators | Reduced and full BA-CVA plus supported SA-CVA delta and vega risk-class paths; unsupported materiality and comparison paths fail closed | [CVA Arrow batch triage](performance/frtb-cva-arrow-batch-triage.md) |
+| IMA | Dense scenario P&L cube plus tabular scenario metadata, RFET observations, and input manifest rows | `IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS`, `IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS`, `IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS` | Arrow tables normalize/build for metadata and RFET evidence; dense NumPy arrays feed ES, LHA, IMCC, and NMRF kernels | Implemented public IMA path for deterministic fixtures; unsupported profile behaviour remains explicit | [IMA Arrow handoff triage](performance/frtb-ima-arrow-handoff-triage.md) |
 
 For per-package integration surfaces, see
 [SBM PUBLIC_API.md](modules/frtb-sbm/PUBLIC_API.md),
@@ -64,7 +64,7 @@ flowchart LR
     normalize --> batch["package batch"]
     context --> batch
     batch --> capital["component capital"]
-    capital --> handoff["to_orchestration_handoff"]
+    capital --> handoff["to_component_summary"]
     handoff --> sa["compose_standardised_approach_capital"]
 ```
 
@@ -104,7 +104,7 @@ adapters:
 | `handoff_hash` | Hash of the normalized accepted handoff table plus relevant metadata. | Used to prove the package saw the same handoff during replay. |
 | `input_hash` | Hash of the package-owned batch or canonical input object. | Used by package audit records and fixture parity tests. |
 
-The shared handoff type is `NormalizedTabularHandoff` in
+The shared handoff type is `NormalizedArrowTable` in
 `frtb_common.handoff`. It carries accepted rows, rejected rows, diagnostics,
 metadata, and source hash so adapters can preserve lineage without materializing
 accepted rows as Python dataclasses on the hot path.
@@ -149,7 +149,7 @@ schemas can be exported with:
 ```bash
 uv run python scripts/export_handoff_schema.py \
   --package frtb_drc \
-  --spec DRC_NONSEC_HANDOFF_COLUMN_SPECS \
+  --spec DRC_NONSEC_ARROW_COLUMN_SPECS \
   --format json-schema \
   --output dist/schemas/drc_nonsec.handoff.schema.json
 ```
@@ -227,18 +227,18 @@ routes = {
         logical_name=DRC_NONSEC_HANDOFF,
         component=StandardisedComponent.DRC,
         normalize=frtb_drc.normalize_drc_nonsec_arrow_table,
-        build_batch=frtb_drc.build_drc_nonsec_batch_from_handoff,
+        build_batch=frtb_drc.build_drc_nonsec_batch_from_arrow,
         calculate_batch=frtb_drc.calculate_drc_capital_from_batch,
-        to_component_handoff=frtb_drc.to_orchestration_handoff,
+        to_component_handoff=frtb_drc.to_component_summary,
         context_attr="drc_context",
     ),
     RRAO_POSITIONS_HANDOFF: ManifestHandoffRoute(
         logical_name=RRAO_POSITIONS_HANDOFF,
         component=StandardisedComponent.RRAO,
         normalize=frtb_rrao.normalize_rrao_arrow_table,
-        build_batch=frtb_rrao.build_rrao_batch_from_handoff,
+        build_batch=frtb_rrao.build_rrao_batch_from_arrow,
         calculate_batch=frtb_rrao.calculate_rrao_capital_from_batch,
-        to_component_handoff=frtb_rrao.to_orchestration_handoff,
+        to_component_handoff=frtb_rrao.to_component_summary,
         context_attr="rrao_context",
     ),
 }

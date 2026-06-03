@@ -7,7 +7,7 @@ from typing import Protocol
 import numpy as np
 import pyarrow as pa
 import pytest
-from frtb_common import NormalizedTabularHandoff, source_content_hash
+from frtb_common import NormalizedArrowTable, source_content_hash
 from frtb_sbm import (
     SbmCalculationContext,
     SbmCapitalResult,
@@ -35,18 +35,18 @@ from frtb_sbm import (
     weight_non_girr_vega_sensitivity_batch,
 )
 from frtb_sbm.arrow_handoff import (
-    build_commodity_vega_batch_from_handoff,
-    build_csr_nonsec_vega_batch_from_handoff,
-    build_csr_sec_ctp_vega_batch_from_handoff,
-    build_csr_sec_nonctp_vega_batch_from_handoff,
-    build_equity_vega_batch_from_handoff,
-    build_fx_vega_batch_from_handoff,
-    calculate_sbm_capital_from_commodity_vega_handoff,
-    calculate_sbm_capital_from_csr_nonsec_vega_handoff,
-    calculate_sbm_capital_from_csr_sec_ctp_vega_handoff,
-    calculate_sbm_capital_from_csr_sec_nonctp_vega_handoff,
-    calculate_sbm_capital_from_equity_vega_handoff,
-    calculate_sbm_capital_from_fx_vega_handoff,
+    build_commodity_vega_batch_from_arrow,
+    build_csr_nonsec_vega_batch_from_arrow,
+    build_csr_sec_ctp_vega_batch_from_arrow,
+    build_csr_sec_nonctp_vega_batch_from_arrow,
+    build_equity_vega_batch_from_arrow,
+    build_fx_vega_batch_from_arrow,
+    calculate_sbm_capital_from_commodity_vega_arrow,
+    calculate_sbm_capital_from_csr_nonsec_vega_arrow,
+    calculate_sbm_capital_from_csr_sec_ctp_vega_arrow,
+    calculate_sbm_capital_from_csr_sec_nonctp_vega_arrow,
+    calculate_sbm_capital_from_equity_vega_arrow,
+    calculate_sbm_capital_from_fx_vega_arrow,
     normalize_commodity_vega_arrow_table,
     normalize_csr_nonsec_vega_arrow_table,
     normalize_csr_sec_ctp_vega_arrow_table,
@@ -58,7 +58,7 @@ from frtb_sbm.csr_nonsec_reference_data import CSR_BOND_RISK_FACTOR
 from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
 
 BatchBuilder = Callable[[tuple[SbmSensitivity, ...]], SbmSensitivityBatch]
-HandoffBuilder = Callable[[NormalizedTabularHandoff], SbmSensitivityBatch]
+HandoffBuilder = Callable[[NormalizedArrowTable], SbmSensitivityBatch]
 
 
 class NormalizeFn(Protocol):
@@ -67,7 +67,7 @@ class NormalizeFn(Protocol):
         table: pa.Table,
         *,
         source_hash: str | None = None,
-    ) -> NormalizedTabularHandoff: ...
+    ) -> NormalizedArrowTable: ...
 
 
 class BatchCalculator(Protocol):
@@ -82,7 +82,7 @@ class BatchCalculator(Protocol):
 class HandoffCalculator(Protocol):
     def __call__(
         self,
-        handoff: NormalizedTabularHandoff,
+        handoff: NormalizedArrowTable,
         *,
         context: SbmCalculationContext | None = None,
     ) -> SbmCapitalResult: ...
@@ -317,54 +317,54 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             fx_vega_sensitivities,
             normalize_fx_vega_arrow_table,
             build_fx_vega_batch_from_sensitivities,
-            build_fx_vega_batch_from_handoff,
+            build_fx_vega_batch_from_arrow,
             calculate_sbm_capital_from_fx_vega_batch,
-            calculate_sbm_capital_from_fx_vega_handoff,
+            calculate_sbm_capital_from_fx_vega_arrow,
         ),
         (
             SbmRiskClass.EQUITY,
             equity_vega_sensitivities,
             normalize_equity_vega_arrow_table,
             build_equity_vega_batch_from_sensitivities,
-            build_equity_vega_batch_from_handoff,
+            build_equity_vega_batch_from_arrow,
             calculate_sbm_capital_from_equity_vega_batch,
-            calculate_sbm_capital_from_equity_vega_handoff,
+            calculate_sbm_capital_from_equity_vega_arrow,
         ),
         (
             SbmRiskClass.COMMODITY,
             commodity_vega_sensitivities,
             normalize_commodity_vega_arrow_table,
             build_commodity_vega_batch_from_sensitivities,
-            build_commodity_vega_batch_from_handoff,
+            build_commodity_vega_batch_from_arrow,
             calculate_sbm_capital_from_commodity_vega_batch,
-            calculate_sbm_capital_from_commodity_vega_handoff,
+            calculate_sbm_capital_from_commodity_vega_arrow,
         ),
         (
             SbmRiskClass.CSR_NONSEC,
             csr_nonsec_vega_sensitivities,
             normalize_csr_nonsec_vega_arrow_table,
             build_csr_nonsec_vega_batch_from_sensitivities,
-            build_csr_nonsec_vega_batch_from_handoff,
+            build_csr_nonsec_vega_batch_from_arrow,
             calculate_sbm_capital_from_csr_nonsec_vega_batch,
-            calculate_sbm_capital_from_csr_nonsec_vega_handoff,
+            calculate_sbm_capital_from_csr_nonsec_vega_arrow,
         ),
         (
             SbmRiskClass.CSR_SEC_NONCTP,
             csr_sec_nonctp_vega_sensitivities,
             normalize_csr_sec_nonctp_vega_arrow_table,
             build_csr_sec_nonctp_vega_batch_from_sensitivities,
-            build_csr_sec_nonctp_vega_batch_from_handoff,
+            build_csr_sec_nonctp_vega_batch_from_arrow,
             calculate_sbm_capital_from_csr_sec_nonctp_vega_batch,
-            calculate_sbm_capital_from_csr_sec_nonctp_vega_handoff,
+            calculate_sbm_capital_from_csr_sec_nonctp_vega_arrow,
         ),
         (
             SbmRiskClass.CSR_SEC_CTP,
             csr_sec_ctp_vega_sensitivities,
             normalize_csr_sec_ctp_vega_arrow_table,
             build_csr_sec_ctp_vega_batch_from_sensitivities,
-            build_csr_sec_ctp_vega_batch_from_handoff,
+            build_csr_sec_ctp_vega_batch_from_arrow,
             calculate_sbm_capital_from_csr_sec_ctp_vega_batch,
-            calculate_sbm_capital_from_csr_sec_ctp_vega_handoff,
+            calculate_sbm_capital_from_csr_sec_ctp_vega_arrow,
         ),
     ],
 )
@@ -422,7 +422,7 @@ def test_non_girr_vega_batch_and_handoff_match_row_capital(
 
 
 def test_commodity_vega_batch_does_not_require_qualifier() -> None:
-    batch = build_commodity_vega_batch_from_handoff(
+    batch = build_commodity_vega_batch_from_arrow(
         normalize_commodity_vega_arrow_table(arrow_table(commodity_vega_sensitivities()))
     )
 

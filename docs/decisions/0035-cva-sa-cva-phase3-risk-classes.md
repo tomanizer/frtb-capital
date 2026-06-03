@@ -1,4 +1,4 @@
-# 18. SA-CVA phase 3 remaining risk classes (FX, CCS, RCS, equity, commodity, vega)
+# 35. SA-CVA phase 3 remaining risk classes (FX, CCS, RCS, equity, commodity, vega)
 
 Date: 2026-05-31
 

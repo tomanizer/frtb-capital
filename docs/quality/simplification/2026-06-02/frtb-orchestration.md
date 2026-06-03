@@ -18,7 +18,7 @@ public handoff contracts and must not reach into private component modules.
 - `standardised.py` and `cva_handoff.py` both perform required text/hash-like
   attribute validation, but the package is small enough that extraction is not
   urgent.
-- `ComponentResultHandoff` in `frtb-common` already centralizes the SA component
+- `ComponentCapitalSummary` in `frtb-common` already centralizes the SA component
   handoff shape.
 
 ## Dead or storage-only code
@@ -29,7 +29,7 @@ public handoff contracts and must not reach into private component modules.
 ## `frtb-common` candidates
 
 - If CVA top-of-house handoff becomes a shared contract, consider a
-  `frtb-common` handoff type analogous to `ComponentResultHandoff`. Do not move
+  `frtb-common` handoff type analogous to `ComponentCapitalSummary`. Do not move
   orchestration routing decisions into common.
 
 ## Package-local factoring candidates

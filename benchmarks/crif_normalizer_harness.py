@@ -18,11 +18,11 @@ from frtb_common import (
     CRIF_SOURCE_ROW_ID_COLUMN,
     CrifColumnSpec,
     CrifRiskTypeMapping,
-    NormalizedTabularHandoff,
+    NormalizedArrowTable,
     TabularLogicalType,
     normalize_crif_arrow_table,
 )
-from frtb_sbm.arrow_handoff import build_girr_delta_batch_from_handoff
+from frtb_sbm.arrow_handoff import build_girr_delta_batch_from_arrow
 from frtb_sbm.crif import normalize_girr_delta_crif_arrow_table
 
 DEFAULT_OUTPUT = Path("dist/benchmarks/frtb-common-crif-normalizer.json")
@@ -75,7 +75,7 @@ def build_report(*, row_count: int) -> dict[str, object]:
     _assert_handoffs_match(row_handoff, vector_handoff)
 
     sbm_batch, sbm_seconds, sbm_peak = _measure(
-        lambda: build_girr_delta_batch_from_handoff(
+        lambda: build_girr_delta_batch_from_arrow(
             normalize_girr_delta_crif_arrow_table(
                 table,
                 source_file="synthetic-girr-delta.crif.csv",
@@ -150,8 +150,8 @@ def _measure(callback: Callable[[], Any]) -> tuple[Any, float, int]:
 
 
 def _assert_handoffs_match(
-    row_handoff: NormalizedTabularHandoff,
-    vector_handoff: NormalizedTabularHandoff,
+    row_handoff: NormalizedArrowTable,
+    vector_handoff: NormalizedArrowTable,
 ) -> None:
     if row_handoff.accepted.to_pydict() != vector_handoff.accepted.to_pydict():
         raise RuntimeError("accepted CRIF handoff rows diverged")

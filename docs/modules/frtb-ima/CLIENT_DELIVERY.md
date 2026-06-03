@@ -24,9 +24,9 @@ adjustment, IMCC, NMRF, PLA, and backtesting kernels stay NumPy-native.
 
 | Handoff | Spec | Normalize | Build / assess | Notes |
 | --- | --- | --- | --- | --- |
-| Scenario metadata | `IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS` | `normalize_ima_scenario_metadata_arrow_table` | `build_scenario_metadata_batch_from_handoff`, `ScenarioMetadataBatch`, `input_hash_for_scenario_metadata_batch` | Describes scenario ids, dates, sets, calibration windows, provenance, and row lineage. |
-| RFET observations | `IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS` | `normalize_ima_rfet_observation_arrow_table` | `build_rfet_observation_batch_from_handoff`, `assess_rfet_observation_batch`, `RFETObservationBatch`, `input_hash_for_rfet_observation_batch` | High-volume RFET evidence path without accepted-row `RealPriceObservation` materialization. |
-| Input manifest | `IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS` | `normalize_ima_input_manifest_arrow_table` | `build_capital_run_input_manifest_from_handoff`, `CapitalRunInputManifest` | Names NPZ, CSV, evidence, and audit artifacts with source system, checksum, record count, vector count, and validation status. |
+| Scenario metadata | `IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS` | `normalize_ima_scenario_metadata_arrow_table` | `build_scenario_metadata_batch_from_arrow`, `ScenarioMetadataBatch`, `input_hash_for_scenario_metadata_batch` | Describes scenario ids, dates, sets, calibration windows, provenance, and row lineage. |
+| RFET observations | `IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS` | `normalize_ima_rfet_observation_arrow_table` | `build_rfet_observation_batch_from_arrow`, `assess_rfet_observation_batch`, `RFETObservationBatch`, `input_hash_for_rfet_observation_batch` | High-volume RFET evidence path without accepted-row `RealPriceObservation` materialization. |
+| Input manifest | `IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS` | `normalize_ima_input_manifest_arrow_table` | `build_capital_run_input_manifest_from_arrow`, `CapitalRunInputManifest` | Names NPZ, CSV, evidence, and audit artifacts with source system, checksum, record count, vector count, and validation status. |
 
 `ScenarioMetadataBatch.to_metadata()` is a compatibility bridge for existing
 APIs and tests. It is not the production hot path for high-volume metadata.

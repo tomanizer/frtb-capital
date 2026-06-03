@@ -24,9 +24,9 @@ from frtb_drc import (
     validate_reconciliation,
 )
 from frtb_drc.arrow_handoff import (
-    build_drc_ctp_batch_from_handoff,
-    build_drc_nonsec_batch_from_handoff,
-    build_drc_securitisation_non_ctp_batch_from_handoff,
+    build_drc_ctp_batch_from_arrow,
+    build_drc_nonsec_batch_from_arrow,
+    build_drc_securitisation_non_ctp_batch_from_arrow,
     normalize_drc_ctp_arrow_table,
     normalize_drc_nonsec_arrow_table,
     normalize_drc_securitisation_non_ctp_arrow_table,
@@ -102,7 +102,7 @@ def test_drc_arrow_handoff_batch_matches_nonsec_v2_row_capital() -> None:
         source_hash=source_hash,
     )
 
-    batch = build_drc_nonsec_batch_from_handoff(handoff)
+    batch = build_drc_nonsec_batch_from_arrow(handoff)
     calculation = calculate_drc_capital_from_batch(batch, context=fixture.context)
 
     validate_reconciliation(calculation.result)
@@ -138,7 +138,7 @@ def test_drc_arrow_handoff_batch_matches_securitisation_non_ctp_row_capital() ->
         source_hash=source_content_hash("synthetic drc sec non-ctp source"),
     )
 
-    batch = build_drc_securitisation_non_ctp_batch_from_handoff(handoff)
+    batch = build_drc_securitisation_non_ctp_batch_from_arrow(handoff)
     calculation = calculate_drc_capital_from_batch(batch, context=fixture["context"])
 
     validate_reconciliation(calculation.result)
@@ -168,7 +168,7 @@ def test_drc_securitisation_non_ctp_batch_applies_fair_value_cap_evidence() -> N
     )
     row_result = calculate_drc_capital(positions, context=context)
     handoff = normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(positions))
-    batch = build_drc_securitisation_non_ctp_batch_from_handoff(handoff)
+    batch = build_drc_securitisation_non_ctp_batch_from_arrow(handoff)
 
     calculation = calculate_drc_capital_from_batch(batch, context=context)
 
@@ -188,7 +188,7 @@ def test_drc_arrow_handoff_batch_matches_ctp_row_capital() -> None:
         source_hash=source_content_hash("synthetic drc ctp source"),
     )
 
-    batch = build_drc_ctp_batch_from_handoff(handoff)
+    batch = build_drc_ctp_batch_from_arrow(handoff)
     calculation = calculate_drc_capital_from_batch(batch, context=fixture["context"])
 
     validate_reconciliation(calculation.result)
@@ -209,7 +209,7 @@ def test_drc_arrow_handoff_uses_zero_copy_float64_columns_when_possible() -> Non
     fixture = load_drc_nonsec_v2_fixture()
     handoff = normalize_drc_nonsec_arrow_table(_arrow_table(fixture.positions))
 
-    batch = build_drc_nonsec_batch_from_handoff(handoff)
+    batch = build_drc_nonsec_batch_from_arrow(handoff)
 
     notional_view = handoff.accepted.column("notional").chunk(0).to_numpy(zero_copy_only=True)
     maturity_view = handoff.accepted.column("maturity_years").chunk(0).to_numpy(zero_copy_only=True)
@@ -230,7 +230,7 @@ def test_drc_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
     )
     row_batch = build_drc_nonsec_batch_from_positions(fixture.positions)
 
-    arrow_batch = build_drc_nonsec_batch_from_handoff(normalize_drc_nonsec_arrow_table(table))
+    arrow_batch = build_drc_nonsec_batch_from_arrow(normalize_drc_nonsec_arrow_table(table))
 
     assert table.column("risk_class").num_chunks == 2
     assert pa.types.is_dictionary(table.column("risk_class").type)
@@ -284,11 +284,11 @@ def test_drc_batch_calculation_is_deterministic_for_reversed_handoff() -> None:
     reversed_table = table.take(pa.array(list(reversed(range(table.num_rows))), type=pa.int64()))
 
     first = calculate_drc_capital_from_batch(
-        build_drc_nonsec_batch_from_handoff(normalize_drc_nonsec_arrow_table(table)),
+        build_drc_nonsec_batch_from_arrow(normalize_drc_nonsec_arrow_table(table)),
         context=fixture.context,
     )
     second = calculate_drc_capital_from_batch(
-        build_drc_nonsec_batch_from_handoff(normalize_drc_nonsec_arrow_table(reversed_table)),
+        build_drc_nonsec_batch_from_arrow(normalize_drc_nonsec_arrow_table(reversed_table)),
         context=fixture.context,
     )
 
@@ -329,7 +329,7 @@ def test_drc_column_batch_rejects_mixed_risk_classes_without_row_fallback() -> N
 
 def test_drc_securitisation_batch_missing_weight_fails_closed() -> None:
     fixture = _load_fixture("drc_sec_nonctp_v1")
-    batch = build_drc_securitisation_non_ctp_batch_from_handoff(
+    batch = build_drc_securitisation_non_ctp_batch_from_arrow(
         normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(fixture["positions"]))
     )
 
@@ -345,7 +345,7 @@ def test_drc_securitisation_batch_invalid_weight_fails_closed() -> None:
     position_ids = [position.position_id for position in fixture["positions"]]
     risk_weights = dict(fixture["context"].securitisation_non_ctp_risk_weights)
     risk_weights[position_ids[0]] = "not-a-number"
-    batch = build_drc_securitisation_non_ctp_batch_from_handoff(
+    batch = build_drc_securitisation_non_ctp_batch_from_arrow(
         normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(fixture["positions"]))
     )
 
@@ -389,7 +389,7 @@ def test_drc_securitisation_batch_rejected_offsets_are_bounded_by_groups() -> No
             )
         )
         risk_weights[position_id] = 0.2
-    batch = build_drc_securitisation_non_ctp_batch_from_handoff(
+    batch = build_drc_securitisation_non_ctp_batch_from_arrow(
         normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(tuple(positions)))
     )
 
@@ -410,7 +410,7 @@ def test_drc_securitisation_batch_rejected_offsets_are_bounded_by_groups() -> No
 
 def test_drc_ctp_batch_missing_weight_fails_closed() -> None:
     fixture = _load_fixture("drc_ctp_v1")
-    batch = build_drc_ctp_batch_from_handoff(
+    batch = build_drc_ctp_batch_from_arrow(
         normalize_drc_ctp_arrow_table(_arrow_table(fixture["positions"]))
     )
 
@@ -425,7 +425,7 @@ def test_drc_ctp_batch_invalid_weight_fails_closed() -> None:
     position_ids = [position.position_id for position in fixture["positions"]]
     risk_weights = dict(fixture["context"].ctp_risk_weights)
     risk_weights[position_ids[0]] = None
-    batch = build_drc_ctp_batch_from_handoff(
+    batch = build_drc_ctp_batch_from_arrow(
         normalize_drc_ctp_arrow_table(_arrow_table(fixture["positions"]))
     )
 
@@ -504,7 +504,7 @@ def test_drc_column_batch_coerces_boolean_spellings_and_rejects_invalid_values()
 
 def test_drc_batch_rejects_unsupported_citation_policy_like_row_api() -> None:
     fixture = load_drc_nonsec_v2_fixture()
-    batch = build_drc_nonsec_batch_from_handoff(
+    batch = build_drc_nonsec_batch_from_arrow(
         normalize_drc_nonsec_arrow_table(_arrow_table(fixture.positions))
     )
 
@@ -584,7 +584,7 @@ def test_drc_batch_calculation_validates_result_reconciliation(
     import frtb_drc.batch as batch_module
 
     fixture = load_drc_nonsec_v2_fixture()
-    batch = build_drc_nonsec_batch_from_handoff(
+    batch = build_drc_nonsec_batch_from_arrow(
         normalize_drc_nonsec_arrow_table(_arrow_table(fixture.positions))
     )
     calls: list[float] = []

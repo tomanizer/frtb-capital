@@ -6,19 +6,30 @@ import frtb_cva
 import pyarrow.parquet as pq
 
 HANDOFF_SURFACE = (
-    "CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS",
-    "CVA_NETTING_SET_HANDOFF_COLUMN_SPECS",
-    "CVA_HEDGE_HANDOFF_COLUMN_SPECS",
-    "SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS",
+    "CVA_COUNTERPARTY_ARROW_COLUMN_SPECS",
+    "CVA_NETTING_SET_ARROW_COLUMN_SPECS",
+    "CVA_HEDGE_ARROW_COLUMN_SPECS",
+    "SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS",
     "normalize_cva_counterparty_arrow_table",
     "normalize_cva_netting_set_arrow_table",
     "normalize_cva_hedge_arrow_table",
     "normalize_sa_cva_sensitivity_arrow_table",
+    "build_cva_counterparty_batch_from_arrow",
+    "build_cva_netting_set_batch_from_arrow",
+    "build_cva_hedge_batch_from_arrow",
+    "build_sa_cva_sensitivity_batch_from_arrow",
+    "calculate_cva_capital_from_batches",
+)
+
+DEPRECATED_HANDOFF_SURFACE = (
+    "CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS",
+    "CVA_NETTING_SET_HANDOFF_COLUMN_SPECS",
+    "CVA_HEDGE_HANDOFF_COLUMN_SPECS",
+    "SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS",
     "build_cva_counterparty_batch_from_handoff",
     "build_cva_netting_set_batch_from_handoff",
     "build_cva_hedge_batch_from_handoff",
     "build_sa_cva_sensitivity_batch_from_handoff",
-    "calculate_cva_capital_from_batches",
 )
 
 
@@ -31,30 +42,37 @@ def test_documented_handoff_surface_is_top_level_importable() -> None:
         assert f"`{name}`" in documented
 
 
+def test_deprecated_handoff_surface_remains_top_level_importable() -> None:
+    exported = set(frtb_cva.__all__)
+    for name in DEPRECATED_HANDOFF_SURFACE:
+        assert name in exported
+        assert hasattr(frtb_cva, name)
+
+
 def test_minimal_handoff_fixtures_round_trip_to_batches() -> None:
     cases = (
         (
             "cva_counterparty_minimal.parquet",
             frtb_cva.normalize_cva_counterparty_arrow_table,
-            frtb_cva.build_cva_counterparty_batch_from_handoff,
+            frtb_cva.build_cva_counterparty_batch_from_arrow,
             "row_count",
         ),
         (
             "cva_netting_set_minimal.parquet",
             frtb_cva.normalize_cva_netting_set_arrow_table,
-            frtb_cva.build_cva_netting_set_batch_from_handoff,
+            frtb_cva.build_cva_netting_set_batch_from_arrow,
             "row_count",
         ),
         (
             "cva_hedge_minimal.parquet",
             frtb_cva.normalize_cva_hedge_arrow_table,
-            frtb_cva.build_cva_hedge_batch_from_handoff,
+            frtb_cva.build_cva_hedge_batch_from_arrow,
             "row_count",
         ),
         (
             "sa_cva_sensitivity_minimal.parquet",
             frtb_cva.normalize_sa_cva_sensitivity_arrow_table,
-            frtb_cva.build_sa_cva_sensitivity_batch_from_handoff,
+            frtb_cva.build_sa_cva_sensitivity_batch_from_arrow,
             "row_count",
         ),
     )

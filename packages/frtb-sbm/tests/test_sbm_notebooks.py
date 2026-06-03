@@ -22,7 +22,7 @@ for path in (
         sys.path.insert(0, str(path))
 
 from frtb_sbm import calculate_sbm_capital  # noqa: E402
-from frtb_sbm.arrow_handoff import calculate_sbm_portfolio_capital_from_handoffs  # noqa: E402
+from frtb_sbm.arrow_handoff import calculate_sbm_portfolio_capital_from_arrow_tables  # noqa: E402
 from sbm_notebook_data import (  # noqa: E402
     arrow_handoffs_for_sensitivities,
     notebook_context,
@@ -35,7 +35,7 @@ def test_notebook_arrow_handoff_example_matches_row_api() -> None:
     sensitivities = portfolio_sample_sensitivities()
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
-    calculation = calculate_sbm_portfolio_capital_from_handoffs(
+    calculation = calculate_sbm_portfolio_capital_from_arrow_tables(
         arrow_handoffs_for_sensitivities(sensitivities),
         context=context,
     )

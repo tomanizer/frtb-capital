@@ -6,6 +6,12 @@ Date: 2026-06-02
 
 Accepted
 
+Vocabulary note: ADR 0033 supersedes this ADR's public "handoff" wording with
+the canonical component summary vocabulary (`ComponentCapitalSummary`,
+`ComponentSummaryError`, `to_component_summary`, and orchestration
+`*_summary` keywords). The composition contract and package-boundary semantics
+in this ADR are unchanged.
+
 SA arithmetic availability statements in this ADR are historical. Additive SA
 composition and structural IMA fallback route recording are implemented by
 [ADR 0032](0032-orchestration-sa-arithmetic-and-fallback-routing.md).

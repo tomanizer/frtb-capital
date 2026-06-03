@@ -6,7 +6,7 @@ from typing import Protocol
 
 import pyarrow as pa
 import pytest
-from frtb_common import NormalizedTabularHandoff, source_content_hash
+from frtb_common import NormalizedArrowTable, source_content_hash
 from frtb_sbm import (
     FX_CURVATURE_SCALAR_1_5_FLAG,
     SbmCalculationContext,
@@ -36,20 +36,20 @@ from frtb_sbm import (
     input_hash_for_sensitivities,
 )
 from frtb_sbm.arrow_handoff import (
-    build_commodity_curvature_batch_from_handoff,
-    build_csr_nonsec_curvature_batch_from_handoff,
-    build_csr_sec_ctp_curvature_batch_from_handoff,
-    build_csr_sec_nonctp_curvature_batch_from_handoff,
-    build_equity_curvature_batch_from_handoff,
-    build_fx_curvature_batch_from_handoff,
-    build_girr_curvature_batch_from_handoff,
-    calculate_sbm_capital_from_commodity_curvature_handoff,
-    calculate_sbm_capital_from_csr_nonsec_curvature_handoff,
-    calculate_sbm_capital_from_csr_sec_ctp_curvature_handoff,
-    calculate_sbm_capital_from_csr_sec_nonctp_curvature_handoff,
-    calculate_sbm_capital_from_equity_curvature_handoff,
-    calculate_sbm_capital_from_fx_curvature_handoff,
-    calculate_sbm_capital_from_girr_curvature_handoff,
+    build_commodity_curvature_batch_from_arrow,
+    build_csr_nonsec_curvature_batch_from_arrow,
+    build_csr_sec_ctp_curvature_batch_from_arrow,
+    build_csr_sec_nonctp_curvature_batch_from_arrow,
+    build_equity_curvature_batch_from_arrow,
+    build_fx_curvature_batch_from_arrow,
+    build_girr_curvature_batch_from_arrow,
+    calculate_sbm_capital_from_commodity_curvature_arrow,
+    calculate_sbm_capital_from_csr_nonsec_curvature_arrow,
+    calculate_sbm_capital_from_csr_sec_ctp_curvature_arrow,
+    calculate_sbm_capital_from_csr_sec_nonctp_curvature_arrow,
+    calculate_sbm_capital_from_equity_curvature_arrow,
+    calculate_sbm_capital_from_fx_curvature_arrow,
+    calculate_sbm_capital_from_girr_curvature_arrow,
     normalize_commodity_curvature_arrow_table,
     normalize_csr_nonsec_curvature_arrow_table,
     normalize_csr_sec_ctp_curvature_arrow_table,
@@ -60,7 +60,7 @@ from frtb_sbm.arrow_handoff import (
 )
 
 BatchBuilder = Callable[[tuple[SbmSensitivity, ...]], SbmSensitivityBatch]
-HandoffBuilder = Callable[[NormalizedTabularHandoff], SbmSensitivityBatch]
+HandoffBuilder = Callable[[NormalizedArrowTable], SbmSensitivityBatch]
 
 
 class NormalizeFn(Protocol):
@@ -69,7 +69,7 @@ class NormalizeFn(Protocol):
         table: pa.Table,
         *,
         source_hash: str | None = None,
-    ) -> NormalizedTabularHandoff: ...
+    ) -> NormalizedArrowTable: ...
 
 
 class BatchCalculator(Protocol):
@@ -84,7 +84,7 @@ class BatchCalculator(Protocol):
 class HandoffCalculator(Protocol):
     def __call__(
         self,
-        handoff: NormalizedTabularHandoff,
+        handoff: NormalizedArrowTable,
         *,
         context: SbmCalculationContext | None = None,
     ) -> SbmCapitalResult: ...
@@ -366,63 +366,63 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             girr_curvature_sensitivities,
             normalize_girr_curvature_arrow_table,
             build_girr_curvature_batch_from_sensitivities,
-            build_girr_curvature_batch_from_handoff,
+            build_girr_curvature_batch_from_arrow,
             calculate_sbm_capital_from_girr_curvature_batch,
-            calculate_sbm_capital_from_girr_curvature_handoff,
+            calculate_sbm_capital_from_girr_curvature_arrow,
         ),
         (
             SbmRiskClass.FX,
             fx_curvature_sensitivities,
             normalize_fx_curvature_arrow_table,
             build_fx_curvature_batch_from_sensitivities,
-            build_fx_curvature_batch_from_handoff,
+            build_fx_curvature_batch_from_arrow,
             calculate_sbm_capital_from_fx_curvature_batch,
-            calculate_sbm_capital_from_fx_curvature_handoff,
+            calculate_sbm_capital_from_fx_curvature_arrow,
         ),
         (
             SbmRiskClass.EQUITY,
             equity_curvature_sensitivities,
             normalize_equity_curvature_arrow_table,
             build_equity_curvature_batch_from_sensitivities,
-            build_equity_curvature_batch_from_handoff,
+            build_equity_curvature_batch_from_arrow,
             calculate_sbm_capital_from_equity_curvature_batch,
-            calculate_sbm_capital_from_equity_curvature_handoff,
+            calculate_sbm_capital_from_equity_curvature_arrow,
         ),
         (
             SbmRiskClass.COMMODITY,
             commodity_curvature_sensitivities,
             normalize_commodity_curvature_arrow_table,
             build_commodity_curvature_batch_from_sensitivities,
-            build_commodity_curvature_batch_from_handoff,
+            build_commodity_curvature_batch_from_arrow,
             calculate_sbm_capital_from_commodity_curvature_batch,
-            calculate_sbm_capital_from_commodity_curvature_handoff,
+            calculate_sbm_capital_from_commodity_curvature_arrow,
         ),
         (
             SbmRiskClass.CSR_NONSEC,
             csr_nonsec_curvature_sensitivities,
             normalize_csr_nonsec_curvature_arrow_table,
             build_csr_nonsec_curvature_batch_from_sensitivities,
-            build_csr_nonsec_curvature_batch_from_handoff,
+            build_csr_nonsec_curvature_batch_from_arrow,
             calculate_sbm_capital_from_csr_nonsec_curvature_batch,
-            calculate_sbm_capital_from_csr_nonsec_curvature_handoff,
+            calculate_sbm_capital_from_csr_nonsec_curvature_arrow,
         ),
         (
             SbmRiskClass.CSR_SEC_NONCTP,
             csr_sec_nonctp_curvature_sensitivities,
             normalize_csr_sec_nonctp_curvature_arrow_table,
             build_csr_sec_nonctp_curvature_batch_from_sensitivities,
-            build_csr_sec_nonctp_curvature_batch_from_handoff,
+            build_csr_sec_nonctp_curvature_batch_from_arrow,
             calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch,
-            calculate_sbm_capital_from_csr_sec_nonctp_curvature_handoff,
+            calculate_sbm_capital_from_csr_sec_nonctp_curvature_arrow,
         ),
         (
             SbmRiskClass.CSR_SEC_CTP,
             csr_sec_ctp_curvature_sensitivities,
             normalize_csr_sec_ctp_curvature_arrow_table,
             build_csr_sec_ctp_curvature_batch_from_sensitivities,
-            build_csr_sec_ctp_curvature_batch_from_handoff,
+            build_csr_sec_ctp_curvature_batch_from_arrow,
             calculate_sbm_capital_from_csr_sec_ctp_curvature_batch,
-            calculate_sbm_capital_from_csr_sec_ctp_curvature_handoff,
+            calculate_sbm_capital_from_csr_sec_ctp_curvature_arrow,
         ),
     ],
 )

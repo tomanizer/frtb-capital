@@ -20,9 +20,9 @@ packages. It owns the cross-component boundary and will own:
 
 `calculate_suite_capital` raises an explicit unimplemented-component error until
 top-of-the-house aggregation is implemented. SA composition consumes the shared
-`frtb_common.ComponentResultHandoff` contract: each SA component (`frtb-sbm`,
+`frtb_common.ComponentCapitalSummary` contract: each SA component (`frtb-sbm`,
 `frtb-drc`, `frtb-rrao`) projects its result via its own
-`to_orchestration_handoff` adapter, and `compose_standardised_approach_capital`
+`to_component_summary` adapter, and `compose_standardised_approach_capital`
 validates the component slot, jurisdiction family, calculation date, and base
 currency before returning the additive SA result `SBM + DRC + RRAO`.
 `ima_desk_eligibility` can carry structural IMA eligibility strings or string
@@ -44,7 +44,7 @@ it does not make `calculate_suite_capital` available.
 Orchestration may accept Arrow-backed data at suite input boundaries before data
 is routed to component-owned public adapters. Once a component has calculated
 capital, orchestration consumes public audited result or handoff shapes only,
-such as `ComponentResultHandoff`, `CvaResultHandoff`, and future IMA
+such as `ComponentCapitalSummary`, `CvaResultHandoff`, and future IMA
 result/eligibility summaries. It must not import or coordinate private package
 batch modules, because those batches are package kernel internals rather than
 suite contracts.

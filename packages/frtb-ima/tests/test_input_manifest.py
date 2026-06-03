@@ -8,10 +8,10 @@ from typing import cast
 
 import pyarrow as pa
 import pytest
-from frtb_common import NormalizedTabularHandoff, normalized_handoff_hash, source_content_hash
+from frtb_common import NormalizedArrowTable, normalized_arrow_table_hash, source_content_hash
 
 from frtb_ima import (
-    build_capital_run_input_manifest_from_handoff,
+    build_capital_run_input_manifest_from_arrow,
     normalize_ima_input_manifest_arrow_table,
 )
 from frtb_ima.input_manifest import (
@@ -131,7 +131,7 @@ def test_arrow_handoff_builds_capital_run_input_manifest_with_lineage() -> None:
         source_hash=source_hash,
     )
 
-    manifest = build_capital_run_input_manifest_from_handoff(handoff)
+    manifest = build_capital_run_input_manifest_from_arrow(handoff)
 
     scenario_cube = manifest.artifact("scenario_cube.npz")
     rfet_observations = manifest.artifact("rfet_observations.csv")
@@ -139,7 +139,7 @@ def test_arrow_handoff_builds_capital_run_input_manifest_with_lineage() -> None:
     assert manifest.as_of_date == AS_OF
     assert manifest.metadata["producer"] == "risk-engine"
     assert manifest.metadata["source_hash"] == source_hash
-    assert len(normalized_handoff_hash(handoff)) == 64
+    assert len(normalized_arrow_table_hash(handoff)) == 64
     assert scenario_cube.metadata["fixture"] == "capital_run_v1"
     assert scenario_cube.metadata["source_row_id"] == "row-scenario_cube.npz"
     assert rfet_observations.validation_status is InputValidationStatus.WARNING
@@ -148,14 +148,14 @@ def test_arrow_handoff_builds_capital_run_input_manifest_with_lineage() -> None:
 
 def test_arrow_handoff_manifest_hash_is_stable_across_row_order() -> None:
     source_hash = source_content_hash("same source")
-    first = build_capital_run_input_manifest_from_handoff(
+    first = build_capital_run_input_manifest_from_arrow(
         normalize_ima_input_manifest_arrow_table(
             _artifact_handoff_table(("scenario_cube.npz", "rfet_observations.csv")),
             metadata={"run_id": "ima-run-001"},
             source_hash=source_hash,
         )
     )
-    second = build_capital_run_input_manifest_from_handoff(
+    second = build_capital_run_input_manifest_from_arrow(
         normalize_ima_input_manifest_arrow_table(
             _artifact_handoff_table(("rfet_observations.csv", "scenario_cube.npz")),
             metadata={"run_id": "ima-run-001"},
@@ -172,9 +172,9 @@ def test_arrow_handoff_requires_run_id_metadata_or_argument() -> None:
     )
 
     with pytest.raises(ValueError, match="run_id"):
-        build_capital_run_input_manifest_from_handoff(handoff)
+        build_capital_run_input_manifest_from_arrow(handoff)
 
-    manifest = build_capital_run_input_manifest_from_handoff(handoff, run_id="explicit-run")
+    manifest = build_capital_run_input_manifest_from_arrow(handoff, run_id="explicit-run")
 
     assert manifest.run_id == "explicit-run"
 
@@ -191,7 +191,7 @@ def test_arrow_handoff_rejects_non_object_metadata_json() -> None:
     )
 
     with pytest.raises(ValueError, match="metadata_json"):
-        build_capital_run_input_manifest_from_handoff(handoff)
+        build_capital_run_input_manifest_from_arrow(handoff)
 
 
 def test_arrow_handoff_accepts_manifest_metadata_controls() -> None:
@@ -210,7 +210,7 @@ def test_arrow_handoff_accepts_manifest_metadata_controls() -> None:
         },
     )
 
-    manifest = build_capital_run_input_manifest_from_handoff(
+    manifest = build_capital_run_input_manifest_from_arrow(
         handoff,
         metadata={"consumer": "capital-library"},
     )
@@ -232,7 +232,7 @@ def test_arrow_handoff_accepts_explicit_manifest_controls() -> None:
         _artifact_handoff_table(("scenario_cube.npz",)),
     )
 
-    manifest = build_capital_run_input_manifest_from_handoff(
+    manifest = build_capital_run_input_manifest_from_arrow(
         handoff,
         run_id="explicit-run",
         as_of_date=datetime(2026, 5, 27, tzinfo=UTC),
@@ -264,7 +264,7 @@ def test_arrow_handoff_defaults_when_optional_columns_are_absent() -> None:
         metadata={"run_id": "ima-run-001"},
     )
 
-    manifest = build_capital_run_input_manifest_from_handoff(handoff)
+    manifest = build_capital_run_input_manifest_from_arrow(handoff)
     artifact = manifest.artifact("scenario_cube.npz")
 
     assert artifact.validation_status is InputValidationStatus.PASSED
@@ -283,7 +283,7 @@ def test_arrow_handoff_accepts_plain_validation_message() -> None:
         metadata={"run_id": "ima-run-001"},
     )
 
-    artifact = build_capital_run_input_manifest_from_handoff(handoff).artifact("scenario_cube.npz")
+    artifact = build_capital_run_input_manifest_from_arrow(handoff).artifact("scenario_cube.npz")
 
     assert artifact.validation_messages == ("single warning",)
 
@@ -299,7 +299,7 @@ def test_arrow_handoff_accepts_json_validation_message_with_leading_whitespace()
         metadata={"run_id": "ima-run-001"},
     )
 
-    artifact = build_capital_run_input_manifest_from_handoff(handoff).artifact("scenario_cube.npz")
+    artifact = build_capital_run_input_manifest_from_arrow(handoff).artifact("scenario_cube.npz")
 
     assert artifact.validation_messages == ("first warning", "second warning")
 
@@ -316,7 +316,7 @@ def test_arrow_handoff_rejects_invalid_json_validation_message() -> None:
     )
 
     with pytest.raises(ValueError, match="validation_messages contains invalid JSON"):
-        build_capital_run_input_manifest_from_handoff(handoff)
+        build_capital_run_input_manifest_from_arrow(handoff)
 
 
 def test_arrow_handoff_requires_explicit_manifest_date_for_mixed_artifact_dates() -> None:
@@ -331,7 +331,7 @@ def test_arrow_handoff_requires_explicit_manifest_date_for_mixed_artifact_dates(
     )
 
     with pytest.raises(ValueError, match="as_of_date"):
-        build_capital_run_input_manifest_from_handoff(handoff)
+        build_capital_run_input_manifest_from_arrow(handoff)
 
 
 @pytest.mark.parametrize(
@@ -361,7 +361,7 @@ def test_arrow_handoff_rejects_invalid_artifact_values(
     )
 
     with pytest.raises(ValueError, match=match):
-        build_capital_run_input_manifest_from_handoff(handoff)
+        build_capital_run_input_manifest_from_arrow(handoff)
 
 
 def test_arrow_handoff_rejects_invalid_metadata_json() -> None:
@@ -376,7 +376,7 @@ def test_arrow_handoff_rejects_invalid_metadata_json() -> None:
     )
 
     with pytest.raises(ValueError, match="invalid JSON"):
-        build_capital_run_input_manifest_from_handoff(handoff)
+        build_capital_run_input_manifest_from_arrow(handoff)
 
 
 @pytest.mark.parametrize(
@@ -401,12 +401,12 @@ def test_arrow_handoff_rejects_invalid_metadata_json_entries(
     )
 
     with pytest.raises(ValueError, match=match):
-        build_capital_run_input_manifest_from_handoff(handoff)
+        build_capital_run_input_manifest_from_arrow(handoff)
 
 
 def test_arrow_handoff_requires_normalized_handoff() -> None:
-    with pytest.raises(ValueError, match="NormalizedTabularHandoff"):
-        build_capital_run_input_manifest_from_handoff(cast(NormalizedTabularHandoff, object()))
+    with pytest.raises(ValueError, match="NormalizedArrowTable"):
+        build_capital_run_input_manifest_from_arrow(cast(NormalizedArrowTable, object()))
 
 
 def _artifact_handoff_table(artifact_names: tuple[str, ...]) -> pa.Table:

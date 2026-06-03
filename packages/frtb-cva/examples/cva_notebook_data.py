@@ -10,7 +10,7 @@ from pathlib import Path
 from types import ModuleType
 
 import pyarrow as pa  # type: ignore[import-untyped]
-from frtb_common import NormalizedTabularHandoff, source_content_hash
+from frtb_common import NormalizedArrowTable, source_content_hash
 from frtb_cva import (
     BaCvaHedgeType,
     CreditQuality,
@@ -29,10 +29,10 @@ from frtb_cva import (
     SaCvaRiskMeasure,
     SaCvaSensitivity,
     SensitivityTag,
-    build_cva_counterparty_batch_from_handoff,
-    build_cva_hedge_batch_from_handoff,
-    build_cva_netting_set_batch_from_handoff,
-    build_sa_cva_sensitivity_batch_from_handoff,
+    build_cva_counterparty_batch_from_arrow,
+    build_cva_hedge_batch_from_arrow,
+    build_cva_netting_set_batch_from_arrow,
+    build_sa_cva_sensitivity_batch_from_arrow,
     normalize_cva_counterparty_arrow_table,
     normalize_cva_hedge_arrow_table,
     normalize_cva_netting_set_arrow_table,
@@ -78,9 +78,9 @@ class LoadedSaFixture:
 class BaArrowBatchPack:
     """Arrow handoffs and package-owned batches for BA-CVA inputs."""
 
-    counterparty_handoff: NormalizedTabularHandoff
-    netting_set_handoff: NormalizedTabularHandoff
-    hedge_handoff: NormalizedTabularHandoff | None
+    counterparty_handoff: NormalizedArrowTable
+    netting_set_handoff: NormalizedArrowTable
+    hedge_handoff: NormalizedArrowTable | None
     counterparty_batch: CvaCounterpartyBatch
     netting_set_batch: CvaNettingSetBatch
     hedge_batch: CvaHedgeBatch | None
@@ -90,8 +90,8 @@ class BaArrowBatchPack:
 class SaArrowBatchPack:
     """Arrow handoffs and package-owned batches for SA-CVA inputs."""
 
-    sensitivity_handoff: NormalizedTabularHandoff
-    hedge_handoff: NormalizedTabularHandoff | None
+    sensitivity_handoff: NormalizedArrowTable
+    hedge_handoff: NormalizedArrowTable | None
     sensitivity_batch: SaCvaSensitivityBatch
     hedge_batch: CvaHedgeBatch | None
 
@@ -641,9 +641,9 @@ def build_ba_arrow_batches(
         counterparty_handoff=counterparty_handoff,
         netting_set_handoff=netting_set_handoff,
         hedge_handoff=hedge_handoff,
-        counterparty_batch=build_cva_counterparty_batch_from_handoff(counterparty_handoff),
-        netting_set_batch=build_cva_netting_set_batch_from_handoff(netting_set_handoff),
-        hedge_batch=build_cva_hedge_batch_from_handoff(hedge_handoff)
+        counterparty_batch=build_cva_counterparty_batch_from_arrow(counterparty_handoff),
+        netting_set_batch=build_cva_netting_set_batch_from_arrow(netting_set_handoff),
+        hedge_batch=build_cva_hedge_batch_from_arrow(hedge_handoff)
         if hedge_handoff is not None
         else None,
     )
@@ -672,8 +672,8 @@ def build_sa_arrow_batches(
     return SaArrowBatchPack(
         sensitivity_handoff=sensitivity_handoff,
         hedge_handoff=hedge_handoff,
-        sensitivity_batch=build_sa_cva_sensitivity_batch_from_handoff(sensitivity_handoff),
-        hedge_batch=build_cva_hedge_batch_from_handoff(hedge_handoff)
+        sensitivity_batch=build_sa_cva_sensitivity_batch_from_arrow(sensitivity_handoff),
+        hedge_batch=build_cva_hedge_batch_from_arrow(hedge_handoff)
         if hedge_handoff is not None
         else None,
     )

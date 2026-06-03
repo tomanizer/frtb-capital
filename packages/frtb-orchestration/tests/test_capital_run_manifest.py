@@ -102,7 +102,7 @@ def test_standardised_manifest_run_records_fail_closed_missing_sbm_status() -> N
     assert result.standardised_result is None
     assert result.orchestration_error is not None
     assert "missing required component outputs: SBM" in result.orchestration_error
-    assert [handoff.component for handoff in result.component_handoffs] == [
+    assert [handoff.component for handoff in result.component_summaries] == [
         StandardisedComponent.DRC,
         StandardisedComponent.RRAO,
     ]
@@ -129,7 +129,7 @@ def test_standardised_manifest_run_reports_missing_route_context_cleanly() -> No
     assert result.orchestration_error == (
         "rrao.positions: Required context 'rrao_context' is missing from the manifest"
     )
-    assert result.component_handoffs == ()
+    assert result.component_summaries == ()
 
 
 def test_manifest_rejects_empty_mapping_keys_with_clear_error() -> None:
@@ -192,18 +192,18 @@ def _routes() -> dict[str, ManifestHandoffRoute]:
             logical_name=DRC_NONSEC_HANDOFF,
             component=StandardisedComponent.DRC,
             normalize=frtb_drc.normalize_drc_nonsec_arrow_table,
-            build_batch=frtb_drc.build_drc_nonsec_batch_from_handoff,
+            build_batch=frtb_drc.build_drc_nonsec_batch_from_arrow,
             calculate_batch=frtb_drc.calculate_drc_capital_from_batch,
-            to_component_handoff=frtb_drc.to_orchestration_handoff,
+            to_component_summary=frtb_drc.to_component_summary,
             context_attr="drc_context",
         ),
         RRAO_POSITIONS_HANDOFF: ManifestHandoffRoute(
             logical_name=RRAO_POSITIONS_HANDOFF,
             component=StandardisedComponent.RRAO,
             normalize=frtb_rrao.normalize_rrao_arrow_table,
-            build_batch=frtb_rrao.build_rrao_batch_from_handoff,
+            build_batch=frtb_rrao.build_rrao_batch_from_arrow,
             calculate_batch=frtb_rrao.calculate_rrao_capital_from_batch,
-            to_component_handoff=frtb_rrao.to_orchestration_handoff,
+            to_component_summary=frtb_rrao.to_component_summary,
             context_attr="rrao_context",
         ),
     }

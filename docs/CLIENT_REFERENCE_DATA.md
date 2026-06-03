@@ -81,12 +81,12 @@ and unused map entries to prevent accidental stale attachments.
 
 | Field / axis | Source: CLIENT \| LIBRARY \| HYBRID | Delivery mechanism | Required when | Notes / citation |
 | --- | --- | --- | --- | --- |
-| Counterparty identity, desk, legal entity | CLIENT | `CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS` | All CVA methods | Client owns counterparty mastering. |
+| Counterparty identity, desk, legal entity | CLIENT | `CVA_COUNTERPARTY_ARROW_COLUMN_SPECS` | All CVA methods | Client owns counterparty mastering. |
 | Counterparty sector, credit quality, region | HYBRID | Counterparty handoff columns plus package validation | BA-CVA and SA-CVA profile calculations | Client supplies classification keys; package validates supported values and applies cited weights. |
-| Netting-set EAD, maturity, discount factor, currency | CLIENT | `CVA_NETTING_SET_HANDOFF_COLUMN_SPECS` | BA-CVA and mixed-method runs | EAD is non-negative after sign normalization; discount factor must be positive. |
+| Netting-set EAD, maturity, discount factor, currency | CLIENT | `CVA_NETTING_SET_ARROW_COLUMN_SPECS` | BA-CVA and mixed-method runs | EAD is non-negative after sign normalization; discount factor must be positive. |
 | `uses_imm_ead`, carve-out flags | CLIENT | Netting-set handoff columns and `CvaCalculationContext` | BA-CVA / SA-CVA carve-out logic | Invalid references fail closed. |
-| Hedge type, reference relation, eligibility | HYBRID | `CVA_HEDGE_HANDOFF_COLUMN_SPECS` | Hedge recognition | Client supplies hedge metadata and evidence ids; package validates eligibility and unsupported hedge recognition paths. |
-| SA-CVA sensitivity risk class, measure, bucket, factor, tenor | CLIENT | `SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS` | SA-CVA runs | GIRR delta requires tenor; vega requires volatility input. |
+| Hedge type, reference relation, eligibility | HYBRID | `CVA_HEDGE_ARROW_COLUMN_SPECS` | Hedge recognition | Client supplies hedge metadata and evidence ids; package validates eligibility and unsupported hedge recognition paths. |
+| SA-CVA sensitivity risk class, measure, bucket, factor, tenor | CLIENT | `SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS` | SA-CVA runs | GIRR delta requires tenor; vega requires volatility input. |
 | Qualified-index metadata | HYBRID | SA-CVA sensitivity columns such as `index_max_sector_weight`, `index_remap_bucket_id`, `index_dominant_sector` | Index sensitivities and hedges | Client supplies index evidence; package applies qualified-index remapping where supported. |
 | `m_cva`, method, materiality election | HYBRID | `CvaCalculationContext` | Every CVA run | Materiality-threshold alternative is unsupported and fails closed. |
 
@@ -95,9 +95,9 @@ and unused map entries to prevent accidental stale attachments.
 | Field / axis | Source: CLIENT \| LIBRARY \| HYBRID | Delivery mechanism | Required when | Notes / citation |
 | --- | --- | --- | --- | --- |
 | Scenario P&L cube | CLIENT | Dense NumPy `.npz` arrays / `ScenarioCube` | ES, LHA, IMCC, and NMRF capital paths | This is not reference data and must not be put into Arrow handoff for capital kernels. |
-| Scenario metadata | CLIENT | `IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS` | Scenario cube lineage and replay | Arrow metadata rows describe scenario ids, dates, liquidity horizons, and lineage. |
-| RFET observations | CLIENT | `IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS` | RFET assessment | Client supplies real-price observation evidence; package assesses eligibility. |
-| Capital-run input manifest rows | CLIENT | `IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS` | Fixture and delivery-pack replay | Names artifacts, source systems, checksums, record counts, and vector counts. |
+| Scenario metadata | CLIENT | `IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS` | Scenario cube lineage and replay | Arrow metadata rows describe scenario ids, dates, liquidity horizons, and lineage. |
+| RFET observations | CLIENT | `IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS` | RFET assessment | Client supplies real-price observation evidence; package assesses eligibility. |
+| Capital-run input manifest rows | CLIENT | `IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS` | Fixture and delivery-pack replay | Names artifacts, source systems, checksums, record counts, and vector counts. |
 | Calendars and liquidity-horizon mappings | HYBRID | Package calendar/mapping helpers plus client governance inputs | IMA validation and LHA | Client owns governance evidence; library applies implemented mapping rules. |
 | Stress period, NMRF valuation artifacts, PLA/backtesting vectors | CLIENT | Dense arrays and package fixture artifacts | IMA capital assembly | Pricing, NMRF revaluation, and scenario generation remain upstream. |
 

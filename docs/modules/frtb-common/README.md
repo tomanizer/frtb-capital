@@ -14,8 +14,8 @@ Current runtime contents are deliberately small and package-neutral:
 
 - package status metadata plus explicit unsupported/unimplemented exception
   types;
-- `ComponentResultHandoff`, `StandardisedComponent`, and
-  `ComponentHandoffError` for the SA component-to-orchestration contract
+- `ComponentCapitalSummary`, `StandardisedComponent`, and
+  `ComponentSummaryError` for the SA component-to-orchestration contract
   accepted in
   [ADR 0029](../../decisions/0029-unified-standardised-component-handoff-contract.md);
 - Arrow-backed tabular handoff primitives for column declarations,

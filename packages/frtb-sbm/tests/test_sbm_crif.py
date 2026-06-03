@@ -7,7 +7,7 @@ import frtb_sbm.crif as crif_module
 import pyarrow as pa
 import pytest
 from frtb_sbm import SbmRiskClass, SbmRiskMeasure
-from frtb_sbm.arrow_handoff import build_girr_delta_batch_from_handoff
+from frtb_sbm.arrow_handoff import build_girr_delta_batch_from_arrow
 from frtb_sbm.crif import adapt_crif_records, normalize_girr_delta_crif_arrow_table
 
 
@@ -450,7 +450,7 @@ def test_girr_delta_crif_arrow_handoff_partitions_without_row_dataclasses() -> N
     )
 
     handoff = normalize_girr_delta_crif_arrow_table(table, source_file="crif.csv")
-    batch = build_girr_delta_batch_from_handoff(handoff)
+    batch = build_girr_delta_batch_from_arrow(handoff)
 
     assert handoff.accepted.num_rows == 1
     assert handoff.rejected is not None
@@ -489,7 +489,7 @@ def test_girr_delta_crif_arrow_handoff_does_not_construct_sensitivities(
     )
 
     handoff = normalize_girr_delta_crif_arrow_table(table, source_file="crif.csv")
-    batch = build_girr_delta_batch_from_handoff(handoff)
+    batch = build_girr_delta_batch_from_arrow(handoff)
 
     assert batch.row_count == 1
     assert batch.sensitivity_ids.tolist() == ["crif-girr-001"]

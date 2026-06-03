@@ -13,8 +13,8 @@ from frtb_common import (
     CrifColumnSpec,
     CrifRiskTypeMapping,
     DiagnosticSeverity,
-    NormalizedTabularHandoff,
-    TabularHandoffError,
+    NormalizedArrowTable,
+    NormalizedTableError,
     TabularLogicalType,
     normalise_crif_risk_type,
     normalize_crif_arrow_table,
@@ -54,7 +54,7 @@ def test_normalize_crif_arrow_table_partitions_rejections_and_diagnostics() -> N
         source_file="rates.crif.csv",
     )
 
-    assert isinstance(handoff, NormalizedTabularHandoff)
+    assert isinstance(handoff, NormalizedArrowTable)
     assert handoff.metadata["source_system"] == CRIF_SOURCE_SYSTEM
     assert handoff.metadata["source_file"] == "rates.crif.csv"
     assert handoff.source_hash
@@ -268,7 +268,7 @@ def test_normalize_crif_records_synthesizes_source_row_ids_and_hashes_determinis
 
 
 def test_records_with_non_string_keys_are_rejected_before_arrow_conversion() -> None:
-    with pytest.raises(TabularHandoffError, match="non-string or blank field name"):
+    with pytest.raises(NormalizedTableError, match="non-string or blank field name"):
         normalize_crif_records(
             ({1: "t-1", "RiskType": "RISK_IRCURVE", "Amount": "1.0"},),
             column_specs=_column_specs(),
@@ -288,7 +288,7 @@ def test_column_discovery_is_case_spacing_and_underscore_insensitive() -> None:
 def test_column_discovery_rejects_ambiguous_aliases() -> None:
     table = pa.table({"RiskType": ["RISK_IRCURVE"], "risk_type": ["RISK_FX"]})
 
-    with pytest.raises(TabularHandoffError, match="multiple input columns"):
+    with pytest.raises(NormalizedTableError, match="multiple input columns"):
         resolve_crif_column_name(table, ("RiskType",))
 
 
@@ -335,7 +335,7 @@ def test_non_finite_float_mapping_outputs_fail() -> None:
             return None
         return {"package_scalar": math.inf}
 
-    with pytest.raises(TabularHandoffError, match="float values must be finite"):
+    with pytest.raises(NormalizedTableError, match="float values must be finite"):
         normalize_crif_records(
             ({"TradeId": "t-1", "RiskType": "RISK_IRCURVE", "Amount": "1.0"},),
             column_specs=_column_specs(),

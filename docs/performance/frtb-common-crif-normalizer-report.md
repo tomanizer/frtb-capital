@@ -42,7 +42,7 @@ rejected rows, diagnostics, and source hashes match between the row
 compatibility path and vectorized static-mapping path before it emits a report.
 
 The benchmark also feeds the same table through the public SBM GIRR delta CRIF
-handoff and then into `build_girr_delta_batch_from_handoff`. That records zero
+handoff and then into `build_girr_delta_batch_from_arrow`. That records zero
 accepted-row `SbmSensitivity` dataclasses on the high-volume handoff path.
 
 The JSON report records wall-clock seconds and `tracemalloc` peak bytes for the

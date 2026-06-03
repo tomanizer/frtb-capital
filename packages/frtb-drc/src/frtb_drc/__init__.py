@@ -2,11 +2,17 @@
 
 from frtb_drc._version import __version__
 from frtb_drc.arrow_handoff import (
+    DRC_CTP_ARROW_COLUMN_SPECS,
     DRC_CTP_HANDOFF_COLUMN_SPECS,
+    DRC_NONSEC_ARROW_COLUMN_SPECS,
     DRC_NONSEC_HANDOFF_COLUMN_SPECS,
+    DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS,
     DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS,
+    build_drc_ctp_batch_from_arrow,
     build_drc_ctp_batch_from_handoff,
+    build_drc_nonsec_batch_from_arrow,
     build_drc_nonsec_batch_from_handoff,
+    build_drc_securitisation_non_ctp_batch_from_arrow,
     build_drc_securitisation_non_ctp_batch_from_handoff,
     normalize_drc_ctp_arrow_table,
     normalize_drc_nonsec_arrow_table,
@@ -76,7 +82,7 @@ from frtb_drc.data_models import (
 )
 from frtb_drc.fair_value_cap import fair_value_cap_evidence_by_position
 from frtb_drc.gross_jtd import calculate_gross_jtd, calculate_gross_jtds
-from frtb_drc.handoff import to_orchestration_handoff
+from frtb_drc.handoff import to_component_summary, to_orchestration_handoff
 from frtb_drc.maturity import calculate_maturity_weight, scale_gross_jtd, scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.reference_data import (
@@ -118,8 +124,11 @@ from frtb_drc.validation import DrcInputError, validate_position, validate_posit
 
 __all__ = [
     "BASEL_MAR22_PROFILE_ID",
+    "DRC_CTP_ARROW_COLUMN_SPECS",
     "DRC_CTP_HANDOFF_COLUMN_SPECS",
+    "DRC_NONSEC_ARROW_COLUMN_SPECS",
     "DRC_NONSEC_HANDOFF_COLUMN_SPECS",
+    "DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS",
     "DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS",
     "EU_CRR3_PROFILE_ID",
     "PACKAGE_METADATA",
@@ -168,11 +177,14 @@ __all__ = [
     "SecuritisationNonCtpCapitalInput",
     "SecuritisationNonCtpNettingInput",
     "__version__",
+    "build_drc_ctp_batch_from_arrow",
     "build_drc_ctp_batch_from_columns",
     "build_drc_ctp_batch_from_handoff",
+    "build_drc_nonsec_batch_from_arrow",
     "build_drc_nonsec_batch_from_columns",
     "build_drc_nonsec_batch_from_handoff",
     "build_drc_nonsec_batch_from_positions",
+    "build_drc_securitisation_non_ctp_batch_from_arrow",
     "build_drc_securitisation_non_ctp_batch_from_columns",
     "build_drc_securitisation_non_ctp_batch_from_handoff",
     "calculate_bucket_drc",
@@ -215,6 +227,7 @@ __all__ = [
     "scale_gross_jtd",
     "scale_gross_jtds",
     "serialize_result",
+    "to_component_summary",
     "to_orchestration_handoff",
     "validate_attribution_reconciliation",
     "validate_ctp_context",

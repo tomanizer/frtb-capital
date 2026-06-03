@@ -12,7 +12,7 @@ from types import ModuleType
 from typing import Any
 
 import pyarrow as pa
-from frtb_common import NormalizedTabularHandoff
+from frtb_common import NormalizedArrowTable
 from frtb_sbm import (
     SbmCalculationContext,
     SbmRegulatoryProfile,
@@ -71,7 +71,7 @@ class LoadedFixture:
     invalid_cases: tuple[tuple[str, str, tuple[object, ...]], ...]
 
 
-NormalizeFn = Callable[..., NormalizedTabularHandoff]
+NormalizeFn = Callable[..., NormalizedArrowTable]
 PathKey = tuple[SbmRiskClass, SbmRiskMeasure]
 
 
@@ -356,7 +356,7 @@ def arrow_table(sensitivities: Iterable[SbmSensitivity]) -> pa.Table:
 
 def arrow_handoffs_for_sensitivities(
     sensitivities: Iterable[SbmSensitivity],
-) -> tuple[NormalizedTabularHandoff, ...]:
+) -> tuple[NormalizedArrowTable, ...]:
     """Group synthetic rows by path and normalise each group to an Arrow handoff."""
 
     grouped: dict[PathKey, list[SbmSensitivity]] = defaultdict(list)

@@ -4,6 +4,7 @@ import frtb_rrao
 
 EXPECTED_PUBLIC_API = (
     "PACKAGE_METADATA",
+    "RRAO_ARROW_COLUMN_SPECS",
     "RRAO_HANDOFF_COLUMN_SPECS",
     "SUPPORTED_RRAO_ALLOCATION_DIMENSIONS",
     "RraoAdapterResult",
@@ -38,6 +39,7 @@ EXPECTED_PUBLIC_API = (
     "adapt_rrao_records",
     "build_rrao_allocation_report",
     "build_rrao_allocation_reports",
+    "build_rrao_batch_from_arrow",
     "build_rrao_batch_from_columns",
     "build_rrao_batch_from_handoff",
     "build_rrao_batch_from_positions",
@@ -52,6 +54,7 @@ EXPECTED_PUBLIC_API = (
     "resolve_rrao_allocation_dimension",
     "serialize_rrao_allocation_report",
     "serialize_rrao_result",
+    "to_component_summary",
     "to_orchestration_handoff",
     "validate_rrao_allocation_report",
     "validate_rrao_positions",

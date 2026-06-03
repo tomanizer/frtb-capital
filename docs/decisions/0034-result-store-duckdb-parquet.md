@@ -159,4 +159,4 @@ and manifests rather than sharing a mutable writer catalog across processes.
 - ADR 0012: Capital impact attribution.
 - ADR 0011: Core runtime dependency policy.
 - ADR 0023: Arrow tabular handoff boundary.
-- ADR 0032: Analytical Euler decomposition framework.
+- ADR 0037: Analytical Euler decomposition framework.

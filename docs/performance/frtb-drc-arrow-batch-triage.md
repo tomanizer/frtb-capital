@@ -55,11 +55,11 @@ accepted high-volume input.
 The implemented high-volume paths are:
 
 1. `normalize_drc_nonsec_arrow_table` /
-   `build_drc_nonsec_batch_from_handoff` for non-securitisation.
+   `build_drc_nonsec_batch_from_arrow` for non-securitisation.
 2. `normalize_drc_securitisation_non_ctp_arrow_table` /
-   `build_drc_securitisation_non_ctp_batch_from_handoff` for securitisation
+   `build_drc_securitisation_non_ctp_batch_from_arrow` for securitisation
    non-CTP.
-3. `normalize_drc_ctp_arrow_table` / `build_drc_ctp_batch_from_handoff` for
+3. `normalize_drc_ctp_arrow_table` / `build_drc_ctp_batch_from_arrow` for
    CTP.
 4. `calculate_drc_capital_from_batch` computes class-specific gross JTD arrays,
    maturity weight arrays, scaled JTD arrays, regulatory netting, bucket DRC,

@@ -16,13 +16,13 @@ from frtb_cva import (
     CvaInputError,
     CvaNettingSet,
     SaCvaSensitivity,
+    build_cva_counterparty_batch_from_arrow,
     build_cva_counterparty_batch_from_columns,
     build_cva_counterparty_batch_from_counterparties,
-    build_cva_counterparty_batch_from_handoff,
-    build_cva_hedge_batch_from_handoff,
+    build_cva_hedge_batch_from_arrow,
     build_cva_hedge_batch_from_hedges,
+    build_cva_netting_set_batch_from_arrow,
     build_cva_netting_set_batch_from_columns,
-    build_cva_netting_set_batch_from_handoff,
     build_cva_netting_set_batch_from_netting_sets,
     build_sa_cva_sensitivity_batch_from_sensitivities,
     calculate_cva_capital,
@@ -35,7 +35,7 @@ from frtb_cva import (
     validate_cva_result_reconciliation,
 )
 from frtb_cva.arrow_handoff import (
-    build_sa_cva_sensitivity_batch_from_handoff,
+    build_sa_cva_sensitivity_batch_from_arrow,
     normalize_sa_cva_sensitivity_arrow_table,
 )
 
@@ -84,8 +84,8 @@ def test_ba_cva_arrow_handoff_matches_row_fixture_case() -> None:
         source_hash=source_hash,
     )
 
-    counterparty_batch = build_cva_counterparty_batch_from_handoff(counterparty_handoff)
-    netting_set_batch = build_cva_netting_set_batch_from_handoff(netting_set_handoff)
+    counterparty_batch = build_cva_counterparty_batch_from_arrow(counterparty_handoff)
+    netting_set_batch = build_cva_netting_set_batch_from_arrow(netting_set_handoff)
     batch_calculation = calculate_cva_capital_from_batches(
         context,
         counterparty_batch,
@@ -130,7 +130,7 @@ def test_cva_handoff_wraps_arrow_object_conversion_errors(
         CvaInputError,
         match=r"forced conversion failure .*counterparty_id",
     ) as exc:
-        build_cva_counterparty_batch_from_handoff(handoff)
+        build_cva_counterparty_batch_from_arrow(handoff)
 
     assert exc.value.field == "counterparty_id"
     assert isinstance(exc.value.__cause__, pa.ArrowInvalid)
@@ -178,7 +178,7 @@ def test_sa_cva_arrow_handoff_matches_row_fixture_case() -> None:
         source_hash=source_content_hash("synthetic cva sa source"),
     )
 
-    sensitivity_batch = build_sa_cva_sensitivity_batch_from_handoff(sensitivity_handoff)
+    sensitivity_batch = build_sa_cva_sensitivity_batch_from_arrow(sensitivity_handoff)
     hedge_batch = build_cva_hedge_batch_from_hedges(hedges)
     batch_calculation = calculate_cva_capital_from_batches(
         context,
@@ -211,7 +211,7 @@ def test_cva_arrow_handoff_reuses_float64_buffers_where_safe() -> None:
             "lineage_source_file": ["netting-sets.csv"],
         }
     )
-    netting_set_batch = build_cva_netting_set_batch_from_handoff(
+    netting_set_batch = build_cva_netting_set_batch_from_arrow(
         normalize_cva_netting_set_arrow_table(netting_set_table)
     )
     maturity_buffer = (
@@ -246,7 +246,7 @@ def test_cva_arrow_handoff_reuses_float64_buffers_where_safe() -> None:
             "lineage_source_file": ["hedges.csv"],
         }
     )
-    hedge_batch = build_cva_hedge_batch_from_handoff(normalize_cva_hedge_arrow_table(hedge_table))
+    hedge_batch = build_cva_hedge_batch_from_arrow(normalize_cva_hedge_arrow_table(hedge_table))
     notional_buffer = hedge_table.column("notional").chunk(0).to_numpy(zero_copy_only=True)
 
     assert np.shares_memory(hedge_batch.notionals, notional_buffer)
@@ -268,7 +268,7 @@ def test_cva_arrow_handoff_reuses_float64_buffers_where_safe() -> None:
             "lineage_source_file": ["sensitivities.csv"],
         }
     )
-    sensitivity_batch = build_sa_cva_sensitivity_batch_from_handoff(
+    sensitivity_batch = build_sa_cva_sensitivity_batch_from_arrow(
         normalize_sa_cva_sensitivity_arrow_table(sensitivity_table)
     )
     amount_buffer = sensitivity_table.column("amount").chunk(0).to_numpy(zero_copy_only=True)
@@ -316,7 +316,7 @@ def test_cva_arrow_handoff_decodes_chunked_dictionary_text_columns() -> None:
         }
     )
 
-    batch = build_cva_counterparty_batch_from_handoff(normalize_cva_counterparty_arrow_table(table))
+    batch = build_cva_counterparty_batch_from_arrow(normalize_cva_counterparty_arrow_table(table))
 
     assert batch.sectors.tolist() == ["SOVEREIGN", "FINANCIALS"]
     assert batch.credit_qualities.tolist() == ["INVESTMENT_GRADE", "HIGH_YIELD"]
@@ -459,7 +459,7 @@ def test_cva_handoff_preserves_rejected_row_diagnostics() -> None:
         diagnostics=(diagnostic,),
         rejected=rejected,
     )
-    batch = build_cva_counterparty_batch_from_handoff(handoff)
+    batch = build_cva_counterparty_batch_from_arrow(handoff)
 
     assert batch.diagnostics == (diagnostic.as_dict(),)
 
@@ -486,8 +486,8 @@ def test_cva_batch_rejects_unknown_netting_set_counterparty(reduced_context) -> 
 
 
 def test_cva_handoff_rejects_wrong_type() -> None:
-    with pytest.raises(CvaInputError, match="handoff must be NormalizedTabularHandoff"):
-        build_cva_counterparty_batch_from_handoff(object())  # type: ignore[arg-type]
+    with pytest.raises(CvaInputError, match="handoff must be NormalizedArrowTable"):
+        build_cva_counterparty_batch_from_arrow(object())  # type: ignore[arg-type]
 
 
 def _load_fixture_module(path: Path) -> ModuleType:

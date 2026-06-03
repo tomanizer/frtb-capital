@@ -21,7 +21,7 @@ from frtb_common import (
     CRIF_SOURCE_ROW_ID_COLUMN,
     CrifColumnSpec,
     CrifRiskTypeMapping,
-    NormalizedTabularHandoff,
+    NormalizedArrowTable,
     TabularLogicalType,
     UnsupportedRegulatoryFeatureError,
     normalize_crif_arrow_table,
@@ -295,7 +295,7 @@ def normalize_girr_delta_crif_records(
     legal_entity: str = "UNKNOWN",
     sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
     source_hash: str | None = None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     """Normalize CRIF-like row dictionaries into the GIRR delta Arrow handoff."""
 
     if not isinstance(records, Sequence) or isinstance(records, str | bytes):
@@ -331,7 +331,7 @@ def normalize_girr_delta_crif_arrow_table(
     legal_entity: str = "UNKNOWN",
     sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
     source_hash: str | None = None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     """Normalize a CRIF-like Arrow table into the GIRR delta Arrow handoff."""
 
     crif_handoff = normalize_crif_arrow_table(
@@ -350,12 +350,12 @@ def normalize_girr_delta_crif_arrow_table(
 
 
 def _girr_delta_handoff_from_normalized_crif(
-    crif_handoff: NormalizedTabularHandoff,
+    crif_handoff: NormalizedArrowTable,
     *,
     desk_id: str,
     legal_entity: str,
     sign_convention: SbmSignConvention,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     table = crif_handoff.accepted
     amount_currency = _text_column(table, "amount_currency", "USD")
     source_row_ids = _text_column(table, CRIF_SOURCE_ROW_ID_COLUMN, "")

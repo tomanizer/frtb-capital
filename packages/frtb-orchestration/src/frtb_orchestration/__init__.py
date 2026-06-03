@@ -1,9 +1,14 @@
 """Suite-level orchestration scaffold."""
 
-from frtb_common import ComponentResultHandoff, StandardisedComponent
+from frtb_common import ComponentCapitalSummary, StandardisedComponent
 
 from frtb_orchestration._version import __version__
-from frtb_orchestration.cva_handoff import CvaResultHandoff, recognise_cva_result
+from frtb_orchestration.cva_handoff import (
+    CvaCapitalSummary,
+    CvaResultHandoff,
+    recognise_cva_result,
+    recognise_cva_summary,
+)
 from frtb_orchestration.manifest import (
     CVA_COUNTERPARTY_HANDOFF,
     CVA_HEDGE_HANDOFF,
@@ -15,6 +20,7 @@ from frtb_orchestration.manifest import (
     RRAO_POSITIONS_HANDOFF,
     SBM_GIRR_DELTA_HANDOFF,
     STANDARDISED_REQUIRED_HANDOFF_KEYS,
+    STANDARDISED_REQUIRED_INPUT_TABLE_KEYS,
     CapitalRunManifest,
     ManifestHandoffRoute,
     ManifestHandoffValidation,
@@ -45,8 +51,10 @@ __all__ = [
     "RRAO_POSITIONS_HANDOFF",
     "SBM_GIRR_DELTA_HANDOFF",
     "STANDARDISED_REQUIRED_HANDOFF_KEYS",
+    "STANDARDISED_REQUIRED_INPUT_TABLE_KEYS",
     "CapitalRunManifest",
-    "ComponentResultHandoff",
+    "ComponentCapitalSummary",
+    "CvaCapitalSummary",
     "CvaResultHandoff",
     "ManifestHandoffRoute",
     "ManifestHandoffValidation",
@@ -61,6 +69,7 @@ __all__ = [
     "calculate_suite_capital",
     "compose_standardised_approach_capital",
     "recognise_cva_result",
+    "recognise_cva_summary",
     "run_standardised_approach_from_manifest",
     "standardised_jurisdiction_family",
     "validate_capital_run_manifest",

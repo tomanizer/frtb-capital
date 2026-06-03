@@ -6,7 +6,7 @@
 
 The package has partial orchestration contracts:
 
-- SA composition consumes `frtb_common.ComponentResultHandoff` from package-owned
+- SA composition consumes `frtb_common.ComponentCapitalSummary` from package-owned
   SBM, DRC, and RRAO adapters, validates component slots and jurisdiction
   families plus run-context consistency, and returns the additive
   `SBM + DRC + RRAO` result.
