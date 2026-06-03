@@ -204,5 +204,8 @@ def _metadata_int(value: object) -> int:
     if isinstance(value, int) and not isinstance(value, bool):
         return value
     if isinstance(value, str):
-        return int(value)
+        try:
+            return int(value)
+        except ValueError:
+            return 0
     return 0

@@ -830,7 +830,10 @@ class DuckDbParquetResultStore:
             )
 
     def _is_run_compatible(self, run_id: str) -> bool:
-        return not self._manifest_compatibility_errors(run_id)
+        try:
+            return not self._manifest_compatibility_errors(run_id)
+        except ResultStoreCompatibilityError:
+            return False
 
     def _manifest_compatibility_errors(self, run_id: str) -> tuple[str, ...]:
         manifest = self._read_manifest(run_id)
@@ -851,10 +854,17 @@ class DuckDbParquetResultStore:
 
     def _read_manifest(self, run_id: str) -> Mapping[str, object]:
         try:
-            loaded = json.loads(self._manifest_path(run_id).read_text(encoding="utf-8"))
+            manifest_text = self._manifest_path(run_id).read_text(encoding="utf-8")
         except FileNotFoundError as exc:
             raise ResultStoreCompatibilityError(
                 f"run manifest not found: {run_id}",
+                field="run_id",
+            ) from exc
+        try:
+            loaded = json.loads(manifest_text)
+        except json.JSONDecodeError as exc:
+            raise ResultStoreCompatibilityError(
+                f"malformed run manifest JSON: {exc}",
                 field="run_id",
             ) from exc
         if not isinstance(loaded, dict):

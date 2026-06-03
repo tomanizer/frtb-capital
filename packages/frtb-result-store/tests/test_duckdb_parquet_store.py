@@ -644,6 +644,11 @@ def test_incompatible_run_fails_closed_without_blocking_other_runs(tmp_path: Pat
     assert store.get_run(compatible_run.run_id) == compatible_run
     assert [run.run_id for run in store.list_runs()] == [compatible_run.run_id]
 
+    manifest_path.write_text("{", encoding="utf-8")
+    with pytest.raises(ResultStoreCompatibilityError, match="malformed run manifest JSON"):
+        store.get_run(incompatible_run.run_id)
+    assert [run.run_id for run in store.list_runs()] == [compatible_run.run_id]
+
 
 def _bundle(
     run: CalculationRun | None = None,
