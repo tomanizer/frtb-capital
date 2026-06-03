@@ -26,9 +26,13 @@ Pass through to the skill:
 
 1. Run `python3 scripts/agent_worktree.py guard` before edits. On failure:
    `make agent-new AGENT=claude TASK=ci-babysit`.
-2. Complete Phases 0 → 1 → 2 → 3 → 4 in order; do not skip Gemini/Copilot waits.
-3. Use the **current** CI job table in the skill (PRs do not run `test (3.12)` /
+2. Complete Phases 0 → 1 → 2 → 3 → 4 in order.
+3. **Skip unavailable reviewers:** Copilot credit/quota messages → skip Phase 3.
+   Gemini blocked/quota/timeout → skip Gemini; run fallback reviews (`cursor review`,
+   then non-author PR comment review) per the skill; skip if all fail.
+4. Use the **current** CI job table in the skill (PRs do not run `test (3.12)` /
    `test (3.13)`).
-4. Deliver the final output section from the skill before stopping.
+5. Deliver the final output section from the skill (include PHASE2_STATUS and
+   COPILOT_STATUS) before stopping.
 
 Do not invent a shorter babysit flow.
