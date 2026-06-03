@@ -1,4 +1,4 @@
-# 33. Result-store storage and observability dependencies
+# 34. Result-store storage and observability dependencies
 
 Date: 2026-06-03
 
