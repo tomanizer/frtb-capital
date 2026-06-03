@@ -855,6 +855,7 @@ def _hierarchy_definition_from_row(row: Sequence[object]) -> HierarchyDefinition
 
 
 def _hierarchy_node_from_row(row: Sequence[object]) -> HierarchyNode:
+    path = tuple(_hierarchy_path_item_from_mapping(item) for item in _json_object_list(row[9]))
     return HierarchyNode(
         hierarchy_id=str(row[1]),
         hierarchy_version=str(row[2]),
@@ -864,20 +865,36 @@ def _hierarchy_node_from_row(row: Sequence[object]) -> HierarchyNode:
         level_order=_int_value(row[6]),
         business_key=str(row[7]),
         label=str(row[8]),
-        path=tuple(
-            (str(item["level_name"]), str(item["business_key"]))
-            for item in _json_object_list(row[9])
-        ),
+        path=path,
         metadata=_json_mapping(row[10]),
     )
 
 
 def _hierarchy_level_from_mapping(value: Mapping[str, object]) -> HierarchyLevel:
+    level_name = _required_mapping_value(value, "level_name", "hierarchy level")
+    dimension = _required_mapping_value(value, "dimension", "hierarchy level")
+    level_order = _required_mapping_value(value, "level_order", "hierarchy level")
     return HierarchyLevel(
-        level_name=str(value["level_name"]),
-        dimension=str(value["dimension"]),
-        level_order=_int_value(value["level_order"]),
+        level_name=str(level_name),
+        dimension=str(dimension),
+        level_order=_int_value(level_order),
     )
+
+
+def _hierarchy_path_item_from_mapping(value: Mapping[str, object]) -> tuple[str, str]:
+    level_name = _required_mapping_value(value, "level_name", "hierarchy node path")
+    business_key = _required_mapping_value(value, "business_key", "hierarchy node path")
+    return str(level_name), str(business_key)
+
+
+def _required_mapping_value(
+    value: Mapping[str, object],
+    key: str,
+    context: str,
+) -> object:
+    if key not in value:
+        raise ResultStoreContractError(f"missing key in {context}: {key}")
+    return value[key]
 
 
 def _node_from_row(row: Sequence[object]) -> CapitalNode:

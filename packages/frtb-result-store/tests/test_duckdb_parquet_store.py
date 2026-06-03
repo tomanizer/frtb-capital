@@ -35,7 +35,14 @@ from frtb_result_store import (
     default_hierarchy_definition,
     generate_run_group_id,
 )
-from frtb_result_store.io import _float_value, _int_value, _json_mapping, _json_text_tuple
+from frtb_result_store.io import (
+    _float_value,
+    _hierarchy_level_from_mapping,
+    _hierarchy_path_item_from_mapping,
+    _int_value,
+    _json_mapping,
+    _json_text_tuple,
+)
 
 
 def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> None:
@@ -346,6 +353,10 @@ def test_malformed_stored_values_raise_contract_errors() -> None:
         _float_value("not-a-number")
     with pytest.raises(ResultStoreContractError, match="invalid integer value"):
         _int_value("not-an-integer")
+    with pytest.raises(ResultStoreContractError, match="missing key in hierarchy level"):
+        _hierarchy_level_from_mapping({"level_name": "book", "level_order": 5})
+    with pytest.raises(ResultStoreContractError, match="missing key in hierarchy node path"):
+        _hierarchy_path_item_from_mapping({"level_name": "book"})
 
 
 def _bundle(run: CalculationRun | None = None) -> ResultBundle:

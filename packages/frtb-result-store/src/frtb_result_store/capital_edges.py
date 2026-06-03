@@ -116,7 +116,10 @@ def _parent_node_id(
         parent = risk_class_nodes.get((component_value, node.risk_class, risk_measure, branch))
         return None if parent is None else parent.node_id
     if family == CapitalNodeFamily.ISSUER.value and node.risk_class and node.bucket:
-        parent = bucket_nodes.get((component_value, node.risk_class, None, node.bucket, branch))
+        risk_measure = _optional_metadata_text(node.metadata.get("risk_measure"))
+        parent = bucket_nodes.get(
+            (component_value, node.risk_class, risk_measure, node.bucket, branch)
+        )
         return None if parent is None else parent.node_id
     return None
 

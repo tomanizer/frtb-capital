@@ -344,6 +344,54 @@ def test_capital_node_identity_registry_and_standard_edges_are_deterministic() -
     assert generate_capital_node_id(payload) == nodes[2].node_id
 
 
+def test_issuer_edges_match_measured_bucket_parent() -> None:
+    nodes, edges = build_standard_capital_graph(
+        run_id="run-001",
+        hierarchy_leaf_node_id="hierarchy:leaf",
+        hierarchy_leaf_path=(("book", "Book:Alpha"),),
+        specs=(
+            CapitalNodeSpec(
+                node_family=CapitalNodeFamily.COMPONENT,
+                component=FrtbComponent.SBM,
+                label="SBM",
+                sort_key=0,
+            ),
+            CapitalNodeSpec(
+                node_family=CapitalNodeFamily.RISK_CLASS,
+                component=FrtbComponent.SBM,
+                risk_class="GIRR",
+                risk_measure="DELTA",
+                label="SBM GIRR delta",
+                sort_key=1,
+            ),
+            CapitalNodeSpec(
+                node_family=CapitalNodeFamily.BUCKET,
+                component=FrtbComponent.SBM,
+                risk_class="GIRR",
+                risk_measure="DELTA",
+                bucket="USD:OIS",
+                label="SBM GIRR USD OIS",
+                sort_key=2,
+            ),
+            CapitalNodeSpec(
+                node_family=CapitalNodeFamily.ISSUER,
+                component=FrtbComponent.SBM,
+                risk_class="GIRR",
+                risk_measure="DELTA",
+                bucket="USD:OIS",
+                issuer_id="US-TREASURY",
+                label="US Treasury",
+                sort_key=3,
+            ),
+        ),
+    )
+
+    assert nodes[3].node_type is NodeType.ISSUER
+    assert (nodes[2].node_id, nodes[3].node_id) in {
+        (edge.parent_node_id, edge.child_node_id) for edge in edges
+    }
+
+
 def test_capital_node_ids_are_stable_across_hierarchy_versions() -> None:
     created_at = datetime(2026, 6, 3, 12, 0, tzinfo=UTC)
     v1 = default_hierarchy_definition(created_at=created_at)
