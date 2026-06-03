@@ -26,6 +26,7 @@ from frtb_result_store import (
     FrtbComponent,
     LineageRef,
     NodeType,
+    RequiredArtifactExpectation,
     ResultBundle,
     ResultStoreConfig,
     ResultStoreContractError,
@@ -153,6 +154,17 @@ def test_store_round_trips_hierarchy_definition_nodes_and_standard_graph(
         hierarchy_nodes=hierarchy_nodes,
         nodes=nodes,
         edges=edges,
+        artifacts=(
+            ArtifactRef(
+                run_id=run.run_id,
+                artifact_id="sbm-sensitivity-table",
+                component=FrtbComponent.SBM,
+                artifact_type=ArtifactType.SBM_SENSITIVITY_TABLE,
+                uri="s3://frtb-results/sbm-sensitivity-table.parquet",
+                format="parquet",
+                row_count=1,
+            ),
+        ),
     )
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
@@ -171,7 +183,16 @@ def test_store_round_trips_hierarchy_definition_nodes_and_standard_graph(
 
 def test_write_bundle_streams_strict_ima_pnl_artifact_chunks(tmp_path: Path) -> None:
     run = _run_with_id("run-with-artifact")
-    bundle = _bundle(run)
+    tail_artifact = ArtifactRef(
+        run_id=run.run_id,
+        artifact_id="ima-tail-observations",
+        component=FrtbComponent.IMA,
+        artifact_type=ArtifactType.IMA_TAIL_OBSERVATION,
+        uri="s3://frtb-results/ima-tail-observations.parquet",
+        format="parquet",
+        row_count=3,
+    )
+    bundle = _bundle(run, artifacts=(*_default_artifacts(run), tail_artifact))
     schema = artifact_schema_for("ima.pnl_vector.v1")
     request = ArtifactWriteRequest(
         artifact_id_hint="ima-desk-a-pnl",
@@ -185,6 +206,15 @@ def test_write_bundle_streams_strict_ima_pnl_artifact_chunks(tmp_path: Path) -> 
             "book_id": "rates-core",
         },
         metadata={"source": "unit-test"},
+        conditional_expectations=(
+            RequiredArtifactExpectation(
+                component=FrtbComponent.IMA,
+                artifact_type=ArtifactType.IMA_TAIL_OBSERVATION,
+                trigger_name="IMA_ES_TAIL_EVIDENCE",
+                required=True,
+                reason="ES tail evidence declared by writer",
+            ),
+        ),
     )
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
@@ -202,6 +232,90 @@ def test_write_bundle_streams_strict_ima_pnl_artifact_chunks(tmp_path: Path) -> 
     artifact_path = Path(unquote(urlparse(generated.uri).path))
     assert artifact_path.exists()
     assert pq.ParquetFile(artifact_path).metadata.row_group(0).column(0).compression == "ZSTD"
+    expectation_path = store._run_table_path("artifact_expectations", run.run_id)
+    expectation = pq.read_table(expectation_path).to_pylist()[0]
+    assert expectation["trigger_name"] == "IMA_ES_TAIL_EVIDENCE"
+    manifest = json.loads(store._manifest_path(run.run_id).read_text(encoding="utf-8"))
+    assert manifest["tables"]["artifact_expectations"] == 1
+    assert schema.schema_fingerprint in manifest["artifact_schema_fingerprints"]
+
+
+def test_missing_required_artifact_rejects_before_manifest_commit(tmp_path: Path) -> None:
+    run = _run_with_id("run-missing-required-artifact")
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    with pytest.raises(ResultStoreContractError, match="missing required artifacts"):
+        store.write_bundle(_bundle(run, artifacts=()))
+
+    assert not store.run_exists(run.run_id)
+    assert store.list_runs() == ()
+
+
+def test_declared_conditional_artifact_expectation_requires_evidence(tmp_path: Path) -> None:
+    run = _run_with_id("run-missing-conditional-artifact")
+    schema = artifact_schema_for("ima.pnl_vector.v1")
+    request = ArtifactWriteRequest(
+        artifact_id_hint="ima-desk-a-pnl",
+        artifact_type=ArtifactType.IMA_PNL_VECTOR,
+        component="IMA",
+        schema_id=schema.schema_id,
+        chunks=_ima_pnl_chunks(schema.arrow_schema, run.run_id),
+        partition_values={
+            "desk_id": "rates",
+            "portfolio_id": "rates-options",
+            "book_id": "rates-core",
+        },
+        conditional_expectations=(
+            RequiredArtifactExpectation(
+                component=FrtbComponent.IMA,
+                artifact_type=ArtifactType.IMA_TAIL_OBSERVATION,
+                trigger_name="IMA_ES_TAIL_EVIDENCE",
+                required=True,
+                reason="ES tail evidence declared by writer",
+            ),
+        ),
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    with pytest.raises(ResultStoreContractError, match="IMA_ES_TAIL_EVIDENCE"):
+        store.write_bundle(_bundle(run), artifact_requests=(request,))
+
+    assert not store.run_exists(run.run_id)
+    assert not (
+        tmp_path / "result-store" / "_staging" / "run-missing-conditional-artifact"
+    ).exists()
+
+
+def test_invalid_local_artifact_ref_rejects_commit(tmp_path: Path) -> None:
+    run = _run_with_id("run-invalid-artifact-ref")
+    invalid_artifact = ArtifactRef(
+        run_id=run.run_id,
+        artifact_id="missing-local-artifact",
+        component=FrtbComponent.IMA,
+        artifact_type=ArtifactType.IMA_TAIL_OBSERVATION,
+        uri=(tmp_path / "missing-artifact.parquet").as_uri(),
+        format="parquet",
+        row_count=1,
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    with pytest.raises(ResultStoreContractError, match="missing local file"):
+        store.write_bundle(_bundle(run, artifacts=(*_default_artifacts(run), invalid_artifact)))
+
+    assert not store.run_exists(run.run_id)
+
+
+def test_abandoned_staging_is_cleaned_before_successful_commit(tmp_path: Path) -> None:
+    run = _run_with_id("run-abandoned-staging")
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    stale_staging = tmp_path / "result-store" / "_staging" / "run-abandoned-staging"
+    stale_staging.mkdir(parents=True)
+    (stale_staging / "orphan.parquet").write_text("stale", encoding="utf-8")
+
+    store.write_bundle(_bundle(run))
+
+    assert store.run_exists(run.run_id)
+    assert not stale_staging.exists()
 
 
 def test_artifact_schema_mismatch_fails_before_manifest_commit(tmp_path: Path) -> None:
@@ -371,6 +485,7 @@ def test_failed_manifest_write_rolls_back_moved_run_files(
         "capital_edges",
         "capital_measures",
         "artifact_refs",
+        "artifact_expectations",
         "lineage_refs",
         "capital_attributions",
     ):
@@ -440,7 +555,11 @@ def test_malformed_stored_values_raise_contract_errors() -> None:
         _hierarchy_path_item_from_mapping({"level_name": "book"})
 
 
-def _bundle(run: CalculationRun | None = None) -> ResultBundle:
+def _bundle(
+    run: CalculationRun | None = None,
+    *,
+    artifacts: tuple[ArtifactRef, ...] | None = None,
+) -> ResultBundle:
     if run is None:
         run = _run_with_id("frtb/run/2026-06-03")
     nodes = (
@@ -518,18 +637,7 @@ def _bundle(run: CalculationRun | None = None) -> ResultBundle:
             regulatory_rule_id="US_NPR_325.201",
         ),
     )
-    artifacts = (
-        ArtifactRef(
-            run_id=run.run_id,
-            artifact_id="ima-pnl-vector",
-            component=FrtbComponent.IMA,
-            artifact_type=ArtifactType.IMA_PNL_VECTOR,
-            uri="s3://frtb-results/ima-pnl-vector.parquet",
-            format="parquet",
-            row_count=1,
-            partition_keys=("desk_id", "portfolio_id", "book_id"),
-        ),
-    )
+    artifacts = _default_artifacts(run) if artifacts is None else artifacts
     lineage = (
         LineageRef(
             run_id=run.run_id,
@@ -563,6 +671,30 @@ def _bundle(run: CalculationRun | None = None) -> ResultBundle:
         artifacts=artifacts,
         lineage=lineage,
         attributions=attributions,
+    )
+
+
+def _default_artifacts(run: CalculationRun) -> tuple[ArtifactRef, ...]:
+    return (
+        ArtifactRef(
+            run_id=run.run_id,
+            artifact_id="ima-pnl-vector",
+            component=FrtbComponent.IMA,
+            artifact_type=ArtifactType.IMA_PNL_VECTOR,
+            uri="s3://frtb-results/ima-pnl-vector.parquet",
+            format="parquet",
+            row_count=1,
+            partition_keys=("desk_id", "portfolio_id", "book_id"),
+        ),
+        ArtifactRef(
+            run_id=run.run_id,
+            artifact_id="sbm-sensitivity-table",
+            component=FrtbComponent.SBM,
+            artifact_type=ArtifactType.SBM_SENSITIVITY_TABLE,
+            uri="s3://frtb-results/sbm-sensitivity-table.parquet",
+            format="parquet",
+            row_count=1,
+        ),
     )
 
 

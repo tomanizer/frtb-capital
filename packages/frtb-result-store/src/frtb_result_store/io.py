@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
@@ -21,8 +22,12 @@ from frtb_common.hashing import stable_json_dumps
 
 from frtb_result_store.artifacts import (
     ArtifactWriteRequest,
+    RequiredArtifactExpectation,
     StagedArtifact,
+    artifact_expectations_for_requests,
     stage_artifact_write,
+    validate_artifact_ref_targets,
+    validate_required_artifacts,
 )
 from frtb_result_store.model import (
     ArtifactRef,
@@ -62,6 +67,7 @@ RUN_TABLE_NAMES = (
     "capital_edges",
     "capital_measures",
     "artifact_refs",
+    "artifact_expectations",
     "lineage_refs",
     "capital_attributions",
 )
@@ -150,9 +156,14 @@ class DuckDbParquetResultStore:
                 artifact_requests,
                 staging_dir,
             )
+            artifact_expectations = artifact_expectations_for_requests(artifact_requests)
+            generated_artifacts = tuple(artifact.ref for artifact in staged_artifacts)
+            committed_artifacts = tuple(bundle.artifacts) + generated_artifacts
+            validate_required_artifacts(bundle.nodes, committed_artifacts, artifact_expectations)
             rows_by_table = _rows_for_bundle(
                 bundle,
-                artifact_refs=tuple(artifact.ref for artifact in staged_artifacts),
+                artifact_refs=generated_artifacts,
+                artifact_expectations=artifact_expectations,
             )
             for table_name in RUN_TABLE_NAMES:
                 table = _arrow_table(rows_by_table[table_name], _TABLE_SCHEMAS[table_name])
@@ -178,8 +189,9 @@ class DuckDbParquetResultStore:
             (staging_dir / "run_status_events.parquet").rename(status_path)
             moved_paths.append(status_path)
             moved_paths.extend(self._move_staged_artifacts(staged_artifacts))
+            validate_artifact_ref_targets(committed_artifacts)
 
-            self._write_manifest(bundle, rows_by_table, status_rows)
+            self._write_manifest(bundle, rows_by_table, status_rows, staging_dir)
         except Exception:
             for path in moved_paths:
                 path.unlink(missing_ok=True)
@@ -553,11 +565,13 @@ class DuckDbParquetResultStore:
         bundle: ResultBundle,
         rows_by_table: Mapping[str, Sequence[Mapping[str, object]]],
         status_rows: Sequence[Mapping[str, object]],
+        staging_dir: Path,
     ) -> None:
         manifest_dir = self._manifest_path(bundle.run.run_id).parent
         manifest_dir.mkdir(parents=True, exist_ok=True)
         manifest_path = self._manifest_path(bundle.run.run_id)
-        temp_manifest_path = manifest_path.with_suffix(".json.tmp")
+        staged_manifest_path = staging_dir / "manifest" / "run_manifest.json"
+        staged_manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest = {
             "schema_version": RESULT_STORE_SCHEMA_VERSION,
             "backend": self.config.backend.value,
@@ -571,12 +585,23 @@ class DuckDbParquetResultStore:
                 **{table_name: len(rows_by_table[table_name]) for table_name in RUN_TABLE_NAMES},
                 "run_status_events": len(status_rows),
             },
+            "artifact_schema_fingerprints": sorted(
+                {
+                    str(row["schema_fingerprint"])
+                    for row in rows_by_table["artifact_refs"]
+                    if row["schema_fingerprint"] is not None
+                }
+            ),
         }
-        temp_manifest_path.write_text(
+        staged_manifest_path.write_text(
             stable_json_dumps(manifest) + "\n",
             encoding="utf-8",
         )
-        temp_manifest_path.replace(manifest_path)
+        try:
+            os.link(staged_manifest_path, manifest_path)
+        except FileExistsError as exc:
+            raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}") from exc
+        staged_manifest_path.unlink(missing_ok=True)
 
     def _fetchall(
         self,
@@ -675,6 +700,7 @@ def _rows_for_bundle(
     bundle: ResultBundle,
     *,
     artifact_refs: Sequence[ArtifactRef] = (),
+    artifact_expectations: Sequence[RequiredArtifactExpectation] = (),
 ) -> dict[str, list[dict[str, object]]]:
     artifacts = tuple(bundle.artifacts) + tuple(artifact_refs)
     return {
@@ -691,6 +717,10 @@ def _rows_for_bundle(
         "capital_edges": [_edge_row(edge) for edge in bundle.edges],
         "capital_measures": [_measure_row(measure) for measure in bundle.measures],
         "artifact_refs": [_artifact_row(artifact) for artifact in artifacts],
+        "artifact_expectations": [
+            _artifact_expectation_row(bundle.run.run_id, expectation)
+            for expectation in artifact_expectations
+        ],
         "lineage_refs": [_lineage_row(lineage) for lineage in bundle.lineage],
         "capital_attributions": [
             _attribution_row(attribution) for attribution in bundle.attributions
@@ -823,6 +853,20 @@ def _artifact_row(artifact: ArtifactRef) -> dict[str, object]:
         "schema_fingerprint": artifact.schema_fingerprint,
         "partition_keys_json": stable_json_dumps(artifact.partition_keys),
         "metadata_json": _metadata_json(artifact.metadata),
+    }
+
+
+def _artifact_expectation_row(
+    run_id: str,
+    expectation: RequiredArtifactExpectation,
+) -> dict[str, object]:
+    return {
+        "run_id": run_id,
+        "component": _stored_value(expectation.component),
+        "artifact_type": _stored_value(expectation.artifact_type),
+        "trigger_name": expectation.trigger_name,
+        "required": expectation.required,
+        "reason": expectation.reason,
     }
 
 
@@ -1269,6 +1313,16 @@ _TABLE_SCHEMAS: dict[str, Any] = {
             ("schema_fingerprint", pa.string()),
             ("partition_keys_json", pa.string()),
             ("metadata_json", pa.string()),
+        ]
+    ),
+    "artifact_expectations": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("component", pa.string()),
+            ("artifact_type", pa.string()),
+            ("trigger_name", pa.string()),
+            ("required", pa.bool_()),
+            ("reason", pa.string()),
         ]
     ),
     "lineage_refs": pa.schema(

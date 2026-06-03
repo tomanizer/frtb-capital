@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
-from urllib.parse import quote
+from urllib.parse import quote, unquote, urlparse
 
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
@@ -16,6 +16,7 @@ from frtb_result_store.model import (
     ArtifactRef,
     ArtifactType,
     CalculationRun,
+    CapitalNode,
     FrtbComponent,
     ResultStoreContractError,
 )
@@ -25,13 +26,23 @@ __all__ = [
     "ArtifactSchemaEntry",
     "ArtifactWriteRequest",
     "RequiredArtifactExpectation",
+    "artifact_expectations_for_requests",
     "artifact_schema_fingerprint",
     "artifact_schema_for",
     "stage_artifact_write",
+    "validate_artifact_ref_targets",
+    "validate_required_artifacts",
 ]
 
 ARTIFACT_COMPRESSION = "zstd"
 IMA_PNL_VECTOR_SCHEMA_ID = "ima.pnl_vector.v1"
+REQUIRED_ARTIFACTS_BY_COMPONENT: Mapping[FrtbComponent, tuple[ArtifactType, ...]] = {
+    FrtbComponent.IMA: (ArtifactType.IMA_PNL_VECTOR,),
+    FrtbComponent.SBM: (ArtifactType.SBM_SENSITIVITY_TABLE,),
+    FrtbComponent.DRC: (ArtifactType.DRC_JTD_TABLE,),
+    FrtbComponent.RRAO: (ArtifactType.RRAO_EXPOSURE_TABLE,),
+    FrtbComponent.CVA: (ArtifactType.CVA_EXPOSURE_TABLE,),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,6 +233,60 @@ def artifact_schema_fingerprint(entry: ArtifactSchemaEntry) -> str:
     return stable_json_hash(payload)
 
 
+def artifact_expectations_for_requests(
+    artifact_requests: Sequence[ArtifactWriteRequest],
+) -> tuple[RequiredArtifactExpectation, ...]:
+    return tuple(
+        expectation
+        for request in artifact_requests
+        for expectation in request.conditional_expectations
+    )
+
+
+def validate_required_artifacts(
+    nodes: Sequence[CapitalNode],
+    artifacts: Sequence[ArtifactRef],
+    artifact_expectations: Sequence[RequiredArtifactExpectation],
+) -> None:
+    present = {
+        (FrtbComponent(artifact.component), ArtifactType(artifact.artifact_type))
+        for artifact in artifacts
+    }
+    missing = [
+        f"{component.value}:{artifact_type.value}"
+        for component in sorted(_components_requiring_artifacts(nodes), key=lambda item: item.value)
+        for artifact_type in REQUIRED_ARTIFACTS_BY_COMPONENT[component]
+        if (component, artifact_type) not in present
+    ]
+    missing.extend(
+        (
+            f"{expectation.trigger_name}:{FrtbComponent(expectation.component).value}:"
+            f"{ArtifactType(expectation.artifact_type).value}"
+        )
+        for expectation in artifact_expectations
+        if expectation.required
+        and (FrtbComponent(expectation.component), ArtifactType(expectation.artifact_type))
+        not in present
+    )
+    if missing:
+        raise ResultStoreContractError(
+            f"missing required artifacts: {', '.join(missing)}",
+            field="artifacts",
+        )
+
+
+def validate_artifact_ref_targets(artifacts: Sequence[ArtifactRef]) -> None:
+    for artifact in artifacts:
+        parsed = urlparse(artifact.uri)
+        if parsed.scheme == "file":
+            path = Path(unquote(parsed.path))
+            if not path.is_file():
+                raise ResultStoreContractError(
+                    f"artifact ref points to missing local file: {artifact.artifact_id}",
+                    field="uri",
+                )
+
+
 def stage_artifact_write(
     *,
     run: CalculationRun,
@@ -289,6 +354,14 @@ def _validate_request_matches_schema(
             f"missing artifact partition values: {', '.join(missing_partitions)}",
             field="partition_values",
         )
+
+
+def _components_requiring_artifacts(nodes: Sequence[CapitalNode]) -> set[FrtbComponent]:
+    return {
+        component
+        for node in nodes
+        if (component := FrtbComponent(node.component)) in REQUIRED_ARTIFACTS_BY_COMPONENT
+    }
 
 
 def _write_validated_chunks(
