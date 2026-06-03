@@ -66,7 +66,14 @@ The hooks block commits and pushes when:
 - the current branch is `main`;
 - the worktree is outside `~/Documents/Projects/frtb-capital-worktrees`;
 - the first branch component does not match the first worktree path component;
+- the branch fails the changed-code complexity check enforced by
+  `scripts/ci/check_code_drift.py --changed`;
 - a push targets `refs/heads/main`.
+
+During drift-control calibration, `pre-push` runs the broader drift,
+test-value, and dead-code guards as report-only warnings. `make agent-guard`
+does not require hooks to be installed; `make agent-doctor` reports missing
+hooks so contributors can run `make agent-setup`.
 
 The hooks cannot prevent an editor from modifying files in the protected main
 clone before Git is invoked. Agents must still run the guard before changing
