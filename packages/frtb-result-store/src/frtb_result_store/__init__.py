@@ -7,6 +7,18 @@ from typing import TYPE_CHECKING
 from frtb_common import CapitalComponentMetadata, ImplementationStatus, ValidationStatus
 
 from frtb_result_store._version import __version__
+from frtb_result_store.capital_graph import (
+    build_standard_capital_edges,
+    build_standard_capital_graph,
+    capital_node_from_spec,
+    capital_node_identity_payload,
+    generate_capital_node_id,
+)
+from frtb_result_store.hierarchy import (
+    build_hierarchy_nodes,
+    default_hierarchy_definition,
+    generate_hierarchy_node_id,
+)
 from frtb_result_store.model import (
     ArtifactRef,
     ArtifactType,
@@ -15,8 +27,13 @@ from frtb_result_store.model import (
     CapitalEdge,
     CapitalMeasure,
     CapitalNode,
+    CapitalNodeFamily,
+    CapitalNodeSpec,
     EdgeType,
     FrtbComponent,
+    HierarchyDefinition,
+    HierarchyLevel,
+    HierarchyNode,
     LineageRef,
     NodeType,
     ResultBundle,
@@ -54,9 +71,14 @@ __all__ = [
     "CapitalEdge",
     "CapitalMeasure",
     "CapitalNode",
+    "CapitalNodeFamily",
+    "CapitalNodeSpec",
     "DuckDbParquetResultStore",
     "EdgeType",
     "FrtbComponent",
+    "HierarchyDefinition",
+    "HierarchyLevel",
+    "HierarchyNode",
     "LineageRef",
     "NodeType",
     "ResultBundle",
@@ -67,8 +89,16 @@ __all__ = [
     "RunStatusEvent",
     "StorageBackend",
     "__version__",
+    "build_hierarchy_nodes",
+    "build_standard_capital_edges",
+    "build_standard_capital_graph",
     "canonical_run_group_identity_payload",
     "canonical_run_identity_payload",
+    "capital_node_from_spec",
+    "capital_node_identity_payload",
+    "default_hierarchy_definition",
+    "generate_capital_node_id",
+    "generate_hierarchy_node_id",
     "generate_run_group_id",
     "generate_run_id",
 ]

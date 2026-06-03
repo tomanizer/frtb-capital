@@ -18,14 +18,23 @@ from frtb_result_store import (
     CapitalAttributionRecord,
     CapitalEdge,
     CapitalNode,
+    CapitalNodeFamily,
+    CapitalNodeSpec,
     FrtbComponent,
+    HierarchyDefinition,
+    HierarchyLevel,
     NodeType,
     ResultBundle,
     ResultStoreContractError,
     RunStatus,
     RunStatusEvent,
+    build_hierarchy_nodes,
+    build_standard_capital_graph,
     canonical_run_group_identity_payload,
     canonical_run_identity_payload,
+    capital_node_identity_payload,
+    default_hierarchy_definition,
+    generate_capital_node_id,
     generate_run_group_id,
     generate_run_id,
 )
@@ -181,6 +190,235 @@ def test_status_event_requires_valid_transition_payload() -> None:
 
     assert len(event.event_id) == 64
     assert event.to_status is RunStatus.CANDIDATE
+
+
+def test_default_hierarchy_generates_stable_leaf_ids_with_structured_payloads() -> None:
+    definition = default_hierarchy_definition(
+        created_at=datetime(2026, 6, 3, 12, 0, tzinfo=UTC),
+    )
+    dimensions = {
+        "firm_id": "Firm:Å",
+        "legal_entity_id": "LE:London",
+        "business_line_id": "Markets",
+        "desk_id": "Rates",
+        "portfolio_id": "Options",
+        "book_id": "Book:Alpha",
+    }
+    equivalent_dimensions = {
+        **dimensions,
+        "firm_id": "Firm:A\u030a",
+    }
+
+    nodes = build_hierarchy_nodes(definition, dimensions)
+    equivalent_nodes = build_hierarchy_nodes(definition, equivalent_dimensions)
+    case_variant_nodes = build_hierarchy_nodes(
+        definition,
+        {**dimensions, "book_id": "book:alpha"},
+    )
+
+    assert [node.level_name for node in nodes] == [
+        "firm",
+        "legal_entity",
+        "business_line",
+        "desk",
+        "portfolio",
+        "book",
+    ]
+    assert nodes[-1].hierarchy_node_id == equivalent_nodes[-1].hierarchy_node_id
+    assert nodes[-1].hierarchy_node_id != case_variant_nodes[-1].hierarchy_node_id
+    assert nodes[-1].hierarchy_node_id.startswith("hierarchy:")
+    assert nodes[-1].parent_hierarchy_node_id == nodes[-2].hierarchy_node_id
+
+
+def test_client_defined_hierarchy_levels_keep_custom_leaf_semantics() -> None:
+    definition = HierarchyDefinition(
+        hierarchy_id="risk-management",
+        hierarchy_version="2026-06",
+        hierarchy_name="Risk management hierarchy",
+        leaf_level="strategy",
+        levels=(
+            HierarchyLevel("region", "region_id", 0),
+            HierarchyLevel("desk", "desk_id", 1),
+            HierarchyLevel("strategy", "strategy_id", 2),
+        ),
+        created_at=datetime(2026, 6, 3, 12, 0, tzinfo=UTC),
+    )
+
+    nodes = build_hierarchy_nodes(
+        definition,
+        {
+            "region_id": "EMEA",
+            "desk_id": "Rates",
+            "strategy_id": "Inflation:RV",
+        },
+    )
+
+    assert definition.leaf_dimension == "strategy_id"
+    assert [node.level_name for node in nodes] == ["region", "desk", "strategy"]
+    assert nodes[-1].business_key == "Inflation:RV"
+
+
+def test_capital_node_identity_registry_and_standard_edges_are_deterministic() -> None:
+    run_id = "run-001"
+    hierarchy_leaf_node_id = "hierarchy:leaf"
+    hierarchy_leaf_path = (
+        ("firm", "Firm:Å"),
+        ("legal_entity", "LE:London"),
+        ("business_line", "Markets"),
+        ("desk", "Rates"),
+        ("portfolio", "Options"),
+        ("book", "Book:Alpha"),
+    )
+    specs = (
+        CapitalNodeSpec(
+            node_family=CapitalNodeFamily.COMPONENT,
+            component=FrtbComponent.SBM,
+            label="SBM",
+            sort_key=0,
+        ),
+        CapitalNodeSpec(
+            node_family=CapitalNodeFamily.RISK_CLASS,
+            component=FrtbComponent.SBM,
+            risk_class="GIRR",
+            risk_measure="DELTA",
+            label="SBM GIRR delta",
+            sort_key=1,
+        ),
+        CapitalNodeSpec(
+            node_family=CapitalNodeFamily.BUCKET,
+            component=FrtbComponent.SBM,
+            risk_class="GIRR",
+            risk_measure="DELTA",
+            bucket="USD:OIS",
+            label="SBM GIRR USD OIS",
+            regulatory_rule_id="MAR21.4",
+            sort_key=2,
+        ),
+    )
+
+    nodes, edges = build_standard_capital_graph(
+        run_id=run_id,
+        hierarchy_leaf_node_id=hierarchy_leaf_node_id,
+        hierarchy_leaf_path=hierarchy_leaf_path,
+        specs=specs,
+    )
+    repeated_nodes, repeated_edges = build_standard_capital_graph(
+        run_id="run-002",
+        hierarchy_leaf_node_id=hierarchy_leaf_node_id,
+        hierarchy_leaf_path=hierarchy_leaf_path,
+        specs=specs,
+    )
+
+    assert [node.node_type for node in nodes] == [
+        NodeType.COMPONENT,
+        NodeType.RISK_CLASS,
+        NodeType.BUCKET,
+    ]
+    assert [node.node_id for node in nodes] == [node.node_id for node in repeated_nodes]
+    assert [(edge.parent_node_id, edge.child_node_id) for edge in edges] == [
+        (hierarchy_leaf_node_id, nodes[0].node_id),
+        (nodes[0].node_id, nodes[1].node_id),
+        (nodes[1].node_id, nodes[2].node_id),
+    ]
+    assert [edge.parent_node_id for edge in edges] == [
+        edge.parent_node_id for edge in repeated_edges
+    ]
+    payload = capital_node_identity_payload(
+        CapitalNodeFamily.BUCKET,
+        hierarchy_leaf_path=hierarchy_leaf_path,
+        component=FrtbComponent.SBM,
+        risk_class="GIRR",
+        risk_measure="DELTA",
+        bucket="USD:OIS",
+        calculation_branch=None,
+    )
+    assert set(payload) == {
+        "node_family",
+        "schema_version",
+        "hierarchy_leaf_path",
+        "component",
+        "risk_class",
+        "risk_measure",
+        "bucket",
+    }
+    assert generate_capital_node_id(payload) == nodes[2].node_id
+
+
+def test_capital_node_ids_are_stable_across_hierarchy_versions() -> None:
+    created_at = datetime(2026, 6, 3, 12, 0, tzinfo=UTC)
+    v1 = default_hierarchy_definition(created_at=created_at)
+    v2 = HierarchyDefinition(
+        hierarchy_id=v1.hierarchy_id,
+        hierarchy_version="2",
+        hierarchy_name=v1.hierarchy_name,
+        leaf_level=v1.leaf_level,
+        levels=v1.levels,
+        created_at=created_at,
+    )
+    dimensions = {
+        "firm_id": "Firm",
+        "legal_entity_id": "LE",
+        "business_line_id": "Markets",
+        "desk_id": "Rates",
+        "portfolio_id": "Options",
+        "book_id": "Book:USD",
+    }
+    v1_leaf = build_hierarchy_nodes(v1, dimensions)[-1]
+    v2_leaf = build_hierarchy_nodes(v2, dimensions)[-1]
+    spec = CapitalNodeSpec(
+        node_family=CapitalNodeFamily.COMPONENT,
+        component=FrtbComponent.SBM,
+        label="SBM",
+    )
+
+    v1_nodes, _ = build_standard_capital_graph(
+        run_id="run-v1",
+        hierarchy_leaf_node_id=v1_leaf.hierarchy_node_id,
+        hierarchy_leaf_path=v1_leaf.path,
+        specs=(spec,),
+    )
+    v2_nodes, _ = build_standard_capital_graph(
+        run_id="run-v2",
+        hierarchy_leaf_node_id=v2_leaf.hierarchy_node_id,
+        hierarchy_leaf_path=v2_leaf.path,
+        specs=(spec,),
+    )
+
+    assert v1_leaf.hierarchy_node_id != v2_leaf.hierarchy_node_id
+    assert v1_nodes[0].node_id == v2_nodes[0].node_id
+
+
+def test_capital_graph_rejects_custom_frtb_edges() -> None:
+    with pytest.raises(ResultStoreContractError, match="custom FRTB capital edges"):
+        build_standard_capital_graph(
+            run_id="run-001",
+            hierarchy_leaf_node_id="hierarchy:leaf",
+            hierarchy_leaf_path=(("book", "Book"),),
+            specs=(
+                CapitalNodeSpec(
+                    node_family=CapitalNodeFamily.COMPONENT,
+                    component=FrtbComponent.SBM,
+                    label="SBM",
+                ),
+            ),
+            custom_edges=(
+                CapitalEdge(
+                    run_id="run-001",
+                    parent_node_id="custom-parent",
+                    child_node_id="custom-child",
+                ),
+            ),
+        )
+
+
+def test_capital_node_identity_rejects_missing_required_dimensions() -> None:
+    with pytest.raises(ResultStoreContractError, match="missing capital node identity field"):
+        capital_node_identity_payload(
+            CapitalNodeFamily.BUCKET,
+            hierarchy_leaf_path=(("book", "Book"),),
+            component=FrtbComponent.SBM,
+            risk_class="GIRR",
+        )
 
 
 def test_result_bundle_validates_graph_references() -> None:

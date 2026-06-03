@@ -312,14 +312,14 @@ Node ID inputs:
 | Node family | Required identity payload fields |
 | --- | --- |
 | `hierarchy` | `hierarchy_id`, `hierarchy_version`, `level_name`, ordered normalized path from root to this node |
-| `component` | `hierarchy_leaf_node_id`, `component`, optional `calculation_branch` |
-| `risk_class` | `hierarchy_leaf_node_id`, `component`, `risk_class`, optional `risk_measure`, optional `calculation_branch` |
-| `bucket` | `hierarchy_leaf_node_id`, `component`, `risk_class`, optional `risk_measure`, `bucket`, optional `calculation_branch` |
-| `issuer` | `hierarchy_leaf_node_id`, `component`, `risk_class`, `bucket`, `issuer_id`, optional `calculation_branch` |
-| `counterparty` | `hierarchy_leaf_node_id`, `component`, `counterparty_id`, optional `hedge_set_id`, optional `calculation_branch` |
-| `residual_branch` | `hierarchy_leaf_node_id`, `component`, `residual_risk_type`, optional `exposure_category`, optional `calculation_branch` |
-| `risk_factor` | `hierarchy_leaf_node_id`, `component`, `risk_factor_id`, optional `risk_factor_set_id`, optional `calculation_branch` |
-| `position` | `hierarchy_leaf_node_id`, `component`, `position_id`, optional `calculation_branch` |
+| `component` | `hierarchy_leaf_path`, `component`, optional `calculation_branch` |
+| `risk_class` | `hierarchy_leaf_path`, `component`, `risk_class`, optional `risk_measure`, optional `calculation_branch` |
+| `bucket` | `hierarchy_leaf_path`, `component`, `risk_class`, optional `risk_measure`, `bucket`, optional `calculation_branch` |
+| `issuer` | `hierarchy_leaf_path`, `component`, `risk_class`, `bucket`, `issuer_id`, optional `calculation_branch` |
+| `counterparty` | `hierarchy_leaf_path`, `component`, `counterparty_id`, optional `hedge_set_id`, optional `calculation_branch` |
+| `residual_branch` | `hierarchy_leaf_path`, `component`, `residual_risk_type`, optional `exposure_category`, optional `calculation_branch` |
+| `risk_factor` | `hierarchy_leaf_path`, `component`, `risk_factor_id`, optional `risk_factor_set_id`, optional `calculation_branch` |
+| `position` | `hierarchy_leaf_path`, `component`, `position_id`, optional `calculation_branch` |
 
 Fields not listed for a node family are attributes, labels, filters, or lineage
 fields. They do not participate in ID generation unless the registry for that
@@ -330,11 +330,15 @@ The generator must:
 - produce identical hierarchy IDs for identical hierarchy definitions and
   business dimensions across runs;
 - produce identical capital node IDs for identical FRTB dimensions under the
-  same hierarchy leaf across runs;
+  same normalized hierarchy leaf path across runs and hierarchy versions;
 - reject missing required dimensions for a node type;
 - normalize identity payloads deterministically;
 - generate hierarchy edges from the active hierarchy definition;
 - generate standardized FRTB capital edges under the resolved hierarchy leaf.
+
+`hierarchy_leaf_node_id` is stored as graph attachment metadata and used for
+edges from the active hierarchy tree. It is not an ID-bearing capital payload
+field because hierarchy node IDs include `hierarchy_version`.
 
 Standard edge generation:
 
