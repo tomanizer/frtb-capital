@@ -570,7 +570,7 @@ def aggregate_risk_class_with_scenarios(
         scenario_totals,
         risk_class=risk_class,
         risk_measure=risk_measure,
-        citation_ids=_MAR21_SCENARIO_SELECTION_CITATION,
+        citation_ids=citation_ids,
     )
 
     if specs is not None:

@@ -47,6 +47,7 @@ from frtb_sbm.equity_reference_data import (
 from frtb_sbm.validation import SbmInputError, require_positive_int
 
 BASEL_MAR21_URL = "https://www.bis.org/basel_framework/chapter/MAR/21.htm"
+US_NPR_2_0_URL = "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
 
 GIRR_DELTA_INTRA_BUCKET_CONSTANT = 0.03
 GIRR_VEGA_INTRA_BUCKET_CONSTANT = 0.01
@@ -507,8 +508,63 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
     ),
 }
 
+US_NPR_2_0_CITATIONS: dict[str, SbmCitation] = {
+    "us_npr_91_fr_14952_va7a_sbm_scope": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note=(
+            "Standardized non-default capital requirement scope: sensitivities-based "
+            "method capital plus residual risk add-on for comparison-profile runs."
+        ),
+    ),
+    "us_npr_91_fr_14952_va7a_girr_buckets": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="GIRR delta currency bucket mapping for the NPR comparison slice.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_delta_weights": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="GIRR delta tenor risk weights used by the NPR comparison slice.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_special_factors": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="GIRR inflation and cross-currency-basis special risk-factor weights.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_sqrt2": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="Specified-currency square-root-of-two GIRR risk-weight adjustment.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_intra": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="GIRR delta intra-bucket tenor, curve, inflation, and XCCY correlations.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_inter": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="GIRR delta inter-bucket correlation used in the NPR comparison slice.",
+    ),
+    "us_npr_91_fr_14952_va7a_correlation_scenarios": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="Low, medium, and high correlation scenario aggregation.",
+    ),
+}
+
 PROFILE_CITATIONS: dict[SbmRegulatoryProfile, dict[str, SbmCitation]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_CITATIONS,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_2_0_CITATIONS,
 }
 
 BASEL_FX_SPECIFIED_CURRENCIES: frozenset[str] = frozenset(
@@ -616,6 +672,104 @@ BASEL_CORRELATION_SCENARIOS: tuple[SbmCorrelationScenarioDefinition, ...] = (
     ),
 )
 
+US_NPR_GIRR_BUCKETS: tuple[SbmGirrBucketDefinition, ...] = (
+    SbmGirrBucketDefinition("1", "EUR", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("2", "USD", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("3", "GBP", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("4", "JPY", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("5", "AUD", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("6", "CAD", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("7", "CHF", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("8", "CNY", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("9", "HKD", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("10", "KRW", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("11", "MXN", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("12", "NOK", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("13", "NZD", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("14", "SEK", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("15", "SGD", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("16", "TRY", "us_npr_91_fr_14952_va7a_girr_buckets"),
+    SbmGirrBucketDefinition("17", "CNH", "us_npr_91_fr_14952_va7a_girr_buckets"),
+)
+
+US_NPR_GIRR_TENORS: tuple[SbmGirrTenorDefinition, ...] = (
+    SbmGirrTenorDefinition("3m", 0.25, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrTenorDefinition("6m", 0.5, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrTenorDefinition("1y", 1.0, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrTenorDefinition("2y", 2.0, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrTenorDefinition("3y", 3.0, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrTenorDefinition("5y", 5.0, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrTenorDefinition("10y", 10.0, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrTenorDefinition("15y", 15.0, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrTenorDefinition("20y", 20.0, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrTenorDefinition("30y", 30.0, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+)
+
+US_NPR_GIRR_DELTA_RISK_WEIGHTS: tuple[SbmGirrRiskWeightRule, ...] = (
+    SbmGirrRiskWeightRule("3m", 0.017, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrRiskWeightRule("6m", 0.017, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrRiskWeightRule("1y", 0.016, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrRiskWeightRule("2y", 0.013, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrRiskWeightRule("3y", 0.012, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrRiskWeightRule("5y", 0.011, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrRiskWeightRule("10y", 0.011, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrRiskWeightRule("15y", 0.011, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrRiskWeightRule("20y", 0.011, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+    SbmGirrRiskWeightRule("30y", 0.011, "us_npr_91_fr_14952_va7a_girr_delta_weights"),
+)
+
+US_NPR_GIRR_SPECIAL_RISK_FACTORS: tuple[SbmGirrSpecialRiskFactorRule, ...] = (
+    SbmGirrSpecialRiskFactorRule(
+        "INFL",
+        0.016,
+        "us_npr_91_fr_14952_va7a_girr_special_factors",
+    ),
+    SbmGirrSpecialRiskFactorRule(
+        "XCCY",
+        0.016,
+        "us_npr_91_fr_14952_va7a_girr_special_factors",
+    ),
+)
+
+US_NPR_CORRELATION_SCENARIOS: tuple[SbmCorrelationScenarioDefinition, ...] = (
+    SbmCorrelationScenarioDefinition(
+        SbmScenarioLabel.LOW,
+        multiplier=0.75,
+        floor_factor=0.75,
+        cap=None,
+        citation_id="us_npr_91_fr_14952_va7a_correlation_scenarios",
+    ),
+    SbmCorrelationScenarioDefinition(
+        SbmScenarioLabel.MEDIUM,
+        multiplier=1.0,
+        floor_factor=None,
+        cap=None,
+        citation_id="us_npr_91_fr_14952_va7a_correlation_scenarios",
+    ),
+    SbmCorrelationScenarioDefinition(
+        SbmScenarioLabel.HIGH,
+        multiplier=1.25,
+        floor_factor=None,
+        cap=1.0,
+        citation_id="us_npr_91_fr_14952_va7a_correlation_scenarios",
+    ),
+)
+
+PROFILE_GIRR_DELTA_SQRT2_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_44",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_sqrt2",
+}
+
+PROFILE_GIRR_DELTA_INTRA_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_45_49",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_intra",
+}
+
+PROFILE_GIRR_DELTA_INTER_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_50",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_inter",
+}
+
 PROFILE_FX_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmFxBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_FX_BUCKETS,
 }
@@ -626,10 +780,12 @@ PROFILE_FX_SPECIFIED_CURRENCIES: dict[SbmRegulatoryProfile, frozenset[str]] = {
 
 PROFILE_GIRR_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmGirrBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_BUCKETS,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_BUCKETS,
 }
 
 PROFILE_GIRR_TENORS: dict[SbmRegulatoryProfile, tuple[SbmGirrTenorDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_TENORS,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_TENORS,
 }
 
 PROFILE_GIRR_DELTA_RISK_WEIGHTS: dict[
@@ -637,6 +793,7 @@ PROFILE_GIRR_DELTA_RISK_WEIGHTS: dict[
     tuple[SbmGirrRiskWeightRule, ...],
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_DELTA_RISK_WEIGHTS,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_DELTA_RISK_WEIGHTS,
 }
 
 PROFILE_GIRR_SPECIAL_RISK_FACTORS: dict[
@@ -644,6 +801,7 @@ PROFILE_GIRR_SPECIAL_RISK_FACTORS: dict[
     tuple[SbmGirrSpecialRiskFactorRule, ...],
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_SPECIAL_RISK_FACTORS,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_SPECIAL_RISK_FACTORS,
 }
 
 PROFILE_CORRELATION_SCENARIOS: dict[
@@ -651,6 +809,7 @@ PROFILE_CORRELATION_SCENARIOS: dict[
     tuple[SbmCorrelationScenarioDefinition, ...],
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_CORRELATION_SCENARIOS,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_CORRELATION_SCENARIOS,
 }
 
 PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS: dict[SbmRegulatoryProfile, int] = {
@@ -876,6 +1035,7 @@ def girr_delta_risk_weight(
     """Return the cited GIRR delta risk weight and citation ids."""
 
     _ensure_girr_delta_supported(profile)
+    resolved = _resolve_supported_profile(profile)
     rule = girr_delta_risk_weight_rule(profile, tenor)
     normalised_currency = _require_currency(currency)
     normalised_reporting = _require_currency(reporting_currency)
@@ -887,7 +1047,7 @@ def girr_delta_risk_weight(
         reporting_currency=normalised_reporting,
     ):
         risk_weight /= SQRT2
-        citation_ids.append("basel_mar21_44")
+        citation_ids.append(PROFILE_GIRR_DELTA_SQRT2_CITATION_IDS[resolved])
     return risk_weight, tuple(citation_ids)
 
 
@@ -901,9 +1061,10 @@ def girr_delta_intra_bucket_correlation(
     """Return the cited GIRR delta intra-bucket correlation and citation ids."""
 
     _ensure_girr_delta_supported(profile)
+    resolved = _resolve_supported_profile(profile)
     normalised_tenor1 = _require_text(tenor1, "tenor1")
     normalised_tenor2 = _require_text(tenor2, "tenor2")
-    citation_ids = ("basel_mar21_45_49",)
+    citation_ids = (PROFILE_GIRR_DELTA_INTRA_BUCKET_CITATION_IDS[resolved],)
 
     if normalised_tenor1 == "XCCY" or normalised_tenor2 == "XCCY":
         if normalised_tenor1 == normalised_tenor2:
@@ -1066,14 +1227,16 @@ def girr_inter_bucket_correlation(
 ) -> tuple[float, tuple[str, ...]]:
     """Return the cited GIRR inter-bucket correlation and citation ids."""
 
-    _ensure_girr_supported(profile)
+    _ensure_girr_delta_supported(profile)
+    resolved = _resolve_supported_profile(profile)
     normalised_bucket1 = _require_text(bucket1, "bucket1")
     normalised_bucket2 = _require_text(bucket2, "bucket2")
     girr_bucket_definition(profile, normalised_bucket1)
     girr_bucket_definition(profile, normalised_bucket2)
+    citation_ids = (PROFILE_GIRR_DELTA_INTER_BUCKET_CITATION_IDS[resolved],)
     if normalised_bucket1 == normalised_bucket2:
-        return GIRR_SAME_CURVE_CORRELATION, ("basel_mar21_50",)
-    return GIRR_INTER_BUCKET_CORRELATION, ("basel_mar21_50",)
+        return GIRR_SAME_CURVE_CORRELATION, citation_ids
+    return GIRR_INTER_BUCKET_CORRELATION, citation_ids
 
 
 def fx_buckets_for_profile(
@@ -1256,75 +1419,91 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
             }
             for citation_id, citation in sorted(citations.items())
         },
-        "girr_buckets": [
+    }
+    if resolved in PROFILE_GIRR_DELTA_RISK_WEIGHTS:
+        payload.update(
             {
-                "bucket_id": bucket.bucket_id,
-                "currency": bucket.currency,
-                "citation_id": bucket.citation_id,
+                "girr_buckets": [
+                    {
+                        "bucket_id": bucket.bucket_id,
+                        "currency": bucket.currency,
+                        "citation_id": bucket.citation_id,
+                    }
+                    for bucket in girr_buckets_for_profile(resolved)
+                ],
+                "girr_tenors": [
+                    {
+                        "tenor": tenor.tenor,
+                        "maturity_years": tenor.maturity_years,
+                        "citation_id": tenor.citation_id,
+                    }
+                    for tenor in girr_tenors_for_profile(resolved)
+                ],
+                "girr_delta_risk_weights": [
+                    {
+                        "tenor": rule.tenor,
+                        "risk_weight": rule.risk_weight,
+                        "citation_id": rule.citation_id,
+                    }
+                    for rule in sorted(
+                        PROFILE_GIRR_DELTA_RISK_WEIGHTS[resolved],
+                        key=lambda item: item.tenor,
+                    )
+                ],
+                "girr_special_risk_factors": [
+                    {
+                        "risk_factor": rule.risk_factor,
+                        "risk_weight": rule.risk_weight,
+                        "citation_id": rule.citation_id,
+                    }
+                    for rule in PROFILE_GIRR_SPECIAL_RISK_FACTORS[resolved]
+                ],
+                "correlation_scenarios": [
+                    {
+                        "scenario": definition.scenario.value,
+                        "multiplier": definition.multiplier,
+                        "floor_factor": definition.floor_factor,
+                        "cap": definition.cap,
+                        "citation_id": definition.citation_id,
+                    }
+                    for definition in correlation_scenarios_for_profile(resolved)
+                ],
+                "girr_delta_parameters": {
+                    "intra_bucket_constant": GIRR_DELTA_INTRA_BUCKET_CONSTANT,
+                    "intra_bucket_floor": GIRR_INTRA_BUCKET_CORRELATION_FLOOR,
+                    "inter_bucket_correlation": GIRR_INTER_BUCKET_CORRELATION,
+                    "intra_bucket_citation_id": (
+                        PROFILE_GIRR_DELTA_INTRA_BUCKET_CITATION_IDS[resolved]
+                    ),
+                    "inter_bucket_citation_id": (
+                        PROFILE_GIRR_DELTA_INTER_BUCKET_CITATION_IDS[resolved]
+                    ),
+                },
             }
-            for bucket in girr_buckets_for_profile(resolved)
-        ],
-        "girr_tenors": [
+        )
+    if resolved in PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS:
+        payload.update(
             {
-                "tenor": tenor.tenor,
-                "maturity_years": tenor.maturity_years,
-                "citation_id": tenor.citation_id,
+                "girr_vega_parameters": {
+                    "liquidity_horizon_days": PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS[resolved],
+                    "risk_weight_factor": GIRR_VEGA_RISK_WEIGHT_FACTOR,
+                    "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
+                    "intra_bucket_constant": GIRR_VEGA_INTRA_BUCKET_CONSTANT,
+                    "liquidity_horizon_citation_id": "basel_mar21_92",
+                    "intra_bucket_citation_id": "basel_mar21_93",
+                },
+                "girr_vega_option_tenors": [
+                    {
+                        "tenor": tenor.tenor,
+                        "maturity_years": tenor.maturity_years,
+                        "citation_id": tenor.citation_id,
+                    }
+                    for tenor in girr_vega_option_tenors(resolved)
+                ],
             }
-            for tenor in girr_tenors_for_profile(resolved)
-        ],
-        "girr_delta_risk_weights": [
-            {
-                "tenor": rule.tenor,
-                "risk_weight": rule.risk_weight,
-                "citation_id": rule.citation_id,
-            }
-            for rule in sorted(
-                PROFILE_GIRR_DELTA_RISK_WEIGHTS[resolved],
-                key=lambda item: item.tenor,
-            )
-        ],
-        "girr_special_risk_factors": [
-            {
-                "risk_factor": rule.risk_factor,
-                "risk_weight": rule.risk_weight,
-                "citation_id": rule.citation_id,
-            }
-            for rule in PROFILE_GIRR_SPECIAL_RISK_FACTORS[resolved]
-        ],
-        "correlation_scenarios": [
-            {
-                "scenario": definition.scenario.value,
-                "multiplier": definition.multiplier,
-                "floor_factor": definition.floor_factor,
-                "cap": definition.cap,
-                "citation_id": definition.citation_id,
-            }
-            for definition in correlation_scenarios_for_profile(resolved)
-        ],
-        "girr_delta_parameters": {
-            "intra_bucket_constant": GIRR_DELTA_INTRA_BUCKET_CONSTANT,
-            "intra_bucket_floor": GIRR_INTRA_BUCKET_CORRELATION_FLOOR,
-            "inter_bucket_correlation": GIRR_INTER_BUCKET_CORRELATION,
-            "intra_bucket_citation_id": "basel_mar21_45_49",
-            "inter_bucket_citation_id": "basel_mar21_50",
-        },
-        "girr_vega_parameters": {
-            "liquidity_horizon_days": PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS[resolved],
-            "risk_weight_factor": GIRR_VEGA_RISK_WEIGHT_FACTOR,
-            "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
-            "intra_bucket_constant": GIRR_VEGA_INTRA_BUCKET_CONSTANT,
-            "liquidity_horizon_citation_id": "basel_mar21_92",
-            "intra_bucket_citation_id": "basel_mar21_93",
-        },
-        "girr_vega_option_tenors": [
-            {
-                "tenor": tenor.tenor,
-                "maturity_years": tenor.maturity_years,
-                "citation_id": tenor.citation_id,
-            }
-            for tenor in girr_vega_option_tenors(resolved)
-        ],
-        "non_girr_vega_parameters": {
+        )
+    if resolved in PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS:
+        payload["non_girr_vega_parameters"] = {
             "liquidity_horizon_days": {
                 risk_class.value: horizon
                 for risk_class, horizon in sorted(
@@ -1345,27 +1524,33 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
             "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
             "intra_bucket_citation_id": "basel_mar21_94",
             "inter_bucket_citation_id": "basel_mar21_95",
-        },
-        "fx_buckets": [
+        }
+    if resolved in PROFILE_FX_BUCKETS:
+        payload.update(
             {
-                "bucket_id": bucket.bucket_id,
-                "currency": bucket.currency,
-                "citation_id": bucket.citation_id,
+                "fx_buckets": [
+                    {
+                        "bucket_id": bucket.bucket_id,
+                        "currency": bucket.currency,
+                        "citation_id": bucket.citation_id,
+                    }
+                    for bucket in fx_buckets_for_profile(resolved)
+                ],
+                "fx_delta_parameters": {
+                    "risk_weight": FX_DELTA_RISK_WEIGHT,
+                    "intra_bucket_correlation": FX_INTRA_BUCKET_CORRELATION,
+                    "inter_bucket_correlation": FX_INTER_BUCKET_CORRELATION,
+                    "risk_weight_citation_id": "basel_mar21_87",
+                    "sqrt2_citation_id": "basel_mar21_88",
+                    "inter_bucket_citation_id": "basel_mar21_89",
+                },
+                "fx_specified_currencies": sorted(
+                    fx_specified_currencies_for_profile(resolved),
+                ),
             }
-            for bucket in fx_buckets_for_profile(resolved)
-        ],
-        "fx_delta_parameters": {
-            "risk_weight": FX_DELTA_RISK_WEIGHT,
-            "intra_bucket_correlation": FX_INTRA_BUCKET_CORRELATION,
-            "inter_bucket_correlation": FX_INTER_BUCKET_CORRELATION,
-            "risk_weight_citation_id": "basel_mar21_87",
-            "sqrt2_citation_id": "basel_mar21_88",
-            "inter_bucket_citation_id": "basel_mar21_89",
-        },
-        "fx_specified_currencies": sorted(
-            fx_specified_currencies_for_profile(resolved),
-        ),
-        "curvature_parameters": {
+        )
+    if resolved is SbmRegulatoryProfile.BASEL_MAR21:
+        payload["curvature_parameters"] = {
             "citation_ids": list(curvature_citation_ids(resolved)),
             "girr_parallel_shift_risk_weight": max(
                 rule.risk_weight for rule in PROFILE_GIRR_DELTA_RISK_WEIGHTS[resolved]
@@ -1374,19 +1559,19 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
             "parallel_shift_rule_citation_id": "basel_mar21_99",
             "intra_bucket_correlation_citation_id": "basel_mar21_100",
             "inter_bucket_correlation_citation_id": "basel_mar21_101",
-        },
-    }
-    from frtb_sbm.commodity_reference_data import commodity_reference_payload
-    from frtb_sbm.csr_nonsec_reference_data import csr_nonsec_reference_payload
-    from frtb_sbm.csr_sec_ctp_reference_data import csr_sec_ctp_reference_payload
-    from frtb_sbm.csr_sec_nonctp_reference_data import csr_sec_nonctp_reference_payload
-    from frtb_sbm.equity_reference_data import equity_reference_payload
+        }
 
-    payload.update(equity_reference_payload(resolved))
-    payload.update(commodity_reference_payload(resolved))
-    payload.update(csr_nonsec_reference_payload(resolved))
-    payload.update(csr_sec_nonctp_reference_payload(resolved))
-    payload.update(csr_sec_ctp_reference_payload(resolved))
+        from frtb_sbm.commodity_reference_data import commodity_reference_payload
+        from frtb_sbm.csr_nonsec_reference_data import csr_nonsec_reference_payload
+        from frtb_sbm.csr_sec_ctp_reference_data import csr_sec_ctp_reference_payload
+        from frtb_sbm.csr_sec_nonctp_reference_data import csr_sec_nonctp_reference_payload
+        from frtb_sbm.equity_reference_data import equity_reference_payload
+
+        payload.update(equity_reference_payload(resolved))
+        payload.update(commodity_reference_payload(resolved))
+        payload.update(csr_nonsec_reference_payload(resolved))
+        payload.update(csr_sec_nonctp_reference_payload(resolved))
+        payload.update(csr_sec_ctp_reference_payload(resolved))
     return payload
 
 
@@ -1399,7 +1584,11 @@ def _ensure_girr_supported(profile: SbmRegulatoryProfile | str) -> None:
 
 
 def _ensure_girr_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
-    _ensure_girr_supported(profile)
+    resolved = _resolve_supported_profile(profile)
+    if resolved not in PROFILE_GIRR_DELTA_RISK_WEIGHTS:
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR delta reference data is unsupported for profile {resolved.value}"
+        )
 
 
 def _ensure_girr_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
