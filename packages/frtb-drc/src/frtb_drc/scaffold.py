@@ -203,6 +203,8 @@ def calculate_drc_capital(
                 context=context,
                 profile=profile,
             ),
+            input_hash=result.input_hash,
+            profile_hash=result.profile_hash,
         ),
     )
     validate_reconciliation(result)

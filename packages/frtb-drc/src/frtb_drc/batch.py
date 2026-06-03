@@ -771,6 +771,8 @@ def calculate_drc_capital_from_batch(
                 context=context,
                 risk_class=risk_class,
             ),
+            input_hash=result.input_hash,
+            profile_hash=result.profile_hash,
         ),
     )
     validate_reconciliation(result)

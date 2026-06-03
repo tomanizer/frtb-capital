@@ -10,6 +10,7 @@ from types import MappingProxyType
 from typing import Any, TypeVar
 
 from frtb_common import jsonable
+from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
 
 
 class DrcRiskClass(StrEnum):
@@ -91,14 +92,6 @@ class BranchType(StrEnum):
     OFFSET_REJECTED = "OFFSET_REJECTED"
     UNSUPPORTED_FEATURE = "UNSUPPORTED_FEATURE"
     NORMAL = "NORMAL"
-
-
-class AttributionMethod(StrEnum):
-    """Supported DRC attribution method labels."""
-
-    ANALYTICAL_EULER = "ANALYTICAL_EULER"
-    RESIDUAL = "RESIDUAL"
-    UNSUPPORTED = "UNSUPPORTED"
 
 
 EnumT = TypeVar("EnumT", bound=StrEnum)
@@ -190,37 +183,6 @@ class DrcFxConversion:
     def as_dict(self) -> dict[str, object]:
         return _as_dict(self)
 
-
-@dataclass(frozen=True)
-class DrcCapitalContribution:
-    """Attribution or residual record for one DRC capital source."""
-
-    contribution_id: str
-    source_id: str
-    source_level: str
-    bucket_key: str | None
-    category: DrcRiskClass | str
-    base_amount: float
-    marginal_multiplier: float | None
-    contribution: float | None
-    method: AttributionMethod | str
-    residual: float = 0.0
-    reason: str = ""
-
-    def __post_init__(self) -> None:
-        object.__setattr__(
-            self,
-            "category",
-            _coerce_enum(self.category, DrcRiskClass, "category"),
-        )
-        object.__setattr__(
-            self,
-            "method",
-            _coerce_enum(self.method, AttributionMethod, "method"),
-        )
-
-    def as_dict(self) -> dict[str, object]:
-        return _as_dict(self)
 
 
 @dataclass(frozen=True)
@@ -650,7 +612,7 @@ class DrcCapitalResult:
     fx_conversions: tuple[DrcFxConversion, ...] = ()
     risk_weight_evidence: tuple[DrcRiskWeightEvidence, ...] = ()
     fair_value_cap_evidence: tuple[DrcFairValueCapEvidence, ...] = ()
-    attribution_records: tuple[DrcCapitalContribution, ...] = ()
+    attribution_records: tuple[CapitalContribution, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "categories", tuple(self.categories))
