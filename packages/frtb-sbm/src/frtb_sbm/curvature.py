@@ -21,6 +21,7 @@ from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
 from frtb_sbm.aggregation import (
     adjust_correlation_for_scenario,
     adjust_correlation_matrix_for_scenario,
+    pairwise_correlation_audit_from_matrix,
     select_max_correlation_scenario,
 )
 from frtb_sbm.batch import (
@@ -108,7 +109,6 @@ from frtb_sbm.reference_data import (
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 from frtb_sbm.validation import (
     SbmInputError,
-    coerce_pairwise_evidence_mode,
     ensure_sbm_profile_known,
     normalise_sensitivity_amount,
     sensitivity_sort_key,
@@ -489,8 +489,8 @@ def _calculate_curvature_risk_class_capital(
     profile_id: str,
     reporting_currency: str,
     expected_risk_class: SbmRiskClass | None,
-    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str,
-    pairwise_evidence_limit: int,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     if not sensitivities:
         raise SbmInputError("sensitivities must not be empty", field="sensitivities")
@@ -1338,61 +1338,11 @@ def _curvature_pairwise_audit(
     pairwise_evidence_limit: int,
 ) -> tuple[tuple[PairwiseCorrelationRecord, ...], PairwiseCorrelationSummary]:
     factors = bucket_scenario.factors
-    mode = coerce_pairwise_evidence_mode(pairwise_evidence_mode)
-    total_count = len(factors) * (len(factors) + 1) // 2
-    if (
-        isinstance(pairwise_evidence_limit, bool)
-        or not isinstance(pairwise_evidence_limit, int)
-        or pairwise_evidence_limit < 0
-    ):
-        raise SbmInputError(
-            "pairwise_evidence_limit must be a non-negative integer",
-            field="pairwise_evidence_limit",
-        )
-    materialize = mode is SbmPairwiseEvidenceMode.FULL or (
-        mode is SbmPairwiseEvidenceMode.AUTO and total_count <= pairwise_evidence_limit
-    )
-    if not materialize:
-        return (), _curvature_pairwise_correlation_summary(
-            factors,
-            mode=mode,
-            materialized_count=0,
-            total_count=total_count,
-        )
-
-    records: list[PairwiseCorrelationRecord] = []
-    for row_index, factor_a in enumerate(factors):
-        for col_index in range(row_index, len(factors)):
-            factor_b = factors[col_index]
-            records.append(
-                PairwiseCorrelationRecord(
-                    sensitivity_a=factor_a.factor_id,
-                    sensitivity_b=factor_b.factor_id,
-                    correlation=float(bucket_scenario.correlation_matrix[row_index, col_index]),
-                )
-            )
-    summary = _curvature_pairwise_correlation_summary(
-        factors,
-        mode=mode,
-        materialized_count=len(records),
-        total_count=total_count,
-    )
-    return tuple(records), summary
-
-
-def _curvature_pairwise_correlation_summary(
-    factors: Sequence[_CurvatureFactor],
-    *,
-    mode: SbmPairwiseEvidenceMode,
-    materialized_count: int,
-    total_count: int,
-) -> PairwiseCorrelationSummary:
-    return PairwiseCorrelationSummary(
-        evidence_mode=mode,
-        total_count=total_count,
-        materialized_count=materialized_count,
-        omitted_count=total_count - materialized_count,
-        factor_ids=tuple(factor.factor_id for factor in factors),
+    return pairwise_correlation_audit_from_matrix(
+        tuple(factor.factor_id for factor in factors),
+        bucket_scenario.correlation_matrix,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -1497,6 +1447,8 @@ def _build_vectorized_curvature_intra_bucket_correlation_matrix(
         )
         # CSR curvature factors collapse BOND/CDS to CREDIT_SPREAD_CURVE before aggregation.
         same_name = qualifiers[:, None] == qualifiers[None, :]
+        # CSR curvature factors collapse to CREDIT_SPREAD_CURVE via
+        # _curvature_factor_risk_factor, so same_basis is inert for production capital.
         same_basis = risk_factors[:, None] == risk_factors[None, :]
         delta = np.where(same_name, 1.0, name_rho) * np.where(
             same_basis,
