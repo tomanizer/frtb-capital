@@ -5,23 +5,17 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 import shutil
 import time
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
-from dataclasses import dataclass, field
-from datetime import date, datetime
 from pathlib import Path
-from types import MappingProxyType
 from typing import Any, cast
-from urllib.parse import quote, unquote, urlparse
+from urllib.parse import unquote
 
 import duckdb
-import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
-from frtb_common import AttributionMethod
-from frtb_common.hashing import stable_json_dumps, stable_json_hash
+from frtb_common.hashing import stable_json_dumps
 
 from frtb_result_store._row_codecs import (
     float_value as _float_value,
@@ -35,34 +29,16 @@ from frtb_result_store._row_codecs import (
 from frtb_result_store._row_codecs import (
     json_text_tuple as _json_text_tuple,
 )
-from frtb_result_store._row_codecs import (
-    metadata_json as _metadata_json,
-)
-from frtb_result_store._row_codecs import (
-    optional_float as _optional_float,
-)
-from frtb_result_store._row_codecs import (
-    optional_text as _optional_text,
-)
-from frtb_result_store._row_codecs import (
-    stored_value as _stored_value,
-)
 from frtb_result_store._version import __version__
 from frtb_result_store.artifacts import (
     ArtifactWriteRequest,
-    RequiredArtifactExpectation,
     StagedArtifact,
     artifact_expectations_for_requests,
-    artifact_schema_for,
     stage_artifact_write,
     validate_artifact_ref_targets,
     validate_required_artifacts,
 )
-from frtb_result_store.mart_schemas import (
-    MART_NAMES,
-    MART_SCHEMAS,
-    mart_schema_fingerprint,
-)
+from frtb_result_store.mart_schemas import MART_NAMES, MART_SCHEMAS, mart_schema_fingerprint
 from frtb_result_store.marts import (
     capital_summary_from_row,
     capital_tree_mart_from_row,
@@ -81,16 +57,12 @@ from frtb_result_store.model import (
     CapitalSummaryRow,
     CapitalTreeMartRow,
     ComponentBreakdownRow,
-    EdgeType,
-    FrtbComponent,
     HierarchyDefinition,
-    HierarchyLevel,
     HierarchyNode,
     InputSnapshotManifest,
     LineageRef,
     MovementResult,
     MovementSummaryRow,
-    NodeType,
     ResultBundle,
     ResultEvent,
     ResultEventSeverity,
@@ -111,19 +83,56 @@ from frtb_result_store.run_metadata_io import (
     input_manifest_from_row as _input_manifest_from_row,
 )
 from frtb_result_store.run_metadata_io import (
-    input_manifest_row as _input_manifest_row,
-)
-from frtb_result_store.run_metadata_io import (
     result_event_from_row as _result_event_from_row,
-)
-from frtb_result_store.run_metadata_io import (
-    result_event_row as _result_event_row,
 )
 from frtb_result_store.run_metadata_io import (
     telemetry_from_row as _telemetry_from_row,
 )
-from frtb_result_store.run_metadata_io import (
-    telemetry_row as _telemetry_row,
+from frtb_result_store.store_config import (
+    EVENT_TABLE_NAMES,
+    RESULT_STORE_SCHEMA_VERSION,
+    RUN_TABLE_NAMES,
+    TABLE_NAMES,
+    ResultStoreCompatibilityError,
+    ResultStoreConfig,
+    ResultStoreWriteError,
+)
+from frtb_result_store.artifacts import artifact_schema_for
+from frtb_result_store.store_paths import (
+    _artifact_id_for_request,
+    _artifact_safe_run_id,
+    _duckdb_literal,
+    _mart_columns,
+    _mart_view_name,
+    _safe_run_id,
+    _s3_mock_physical_root,
+    _sql_literal,
+    _view_name,
+)
+from frtb_result_store.store_row_io import (
+    _artifact_from_row,
+    _attribution_from_row,
+    _edge_from_row,
+    _elapsed_ms,
+    _hierarchy_definition_from_row,
+    _hierarchy_level_from_mapping,
+    _hierarchy_node_from_row,
+    _hierarchy_path_item_from_mapping,
+    _initial_status_event,
+    _lineage_from_row,
+    _measure_from_row,
+    _movement_from_row,
+    _node_from_row,
+    _rows_for_bundle,
+    _run_from_row,
+    _status_event_from_row,
+    _status_event_row,
+)
+from frtb_result_store.store_schemas import (
+    _TABLE_SCHEMAS,
+    _arrow_table,
+    _dict_rows,
+    _table_schema_fingerprint,
 )
 
 __all__ = [
@@ -133,101 +142,7 @@ __all__ = [
     "ResultStoreWriteError",
 ]
 
-
-RESULT_STORE_SCHEMA_VERSION = 2
 _LOGGER = logging.getLogger(__name__)
-RUN_TABLE_NAMES = (
-    "runs",
-    "hierarchy_definitions",
-    "hierarchy_nodes",
-    "capital_nodes",
-    "capital_edges",
-    "capital_measures",
-    "artifact_refs",
-    "artifact_expectations",
-    "input_snapshot_manifests",
-    "lineage_refs",
-    "capital_attributions",
-    "movement_results",
-    "result_events",
-    "run_telemetry",
-)
-EVENT_TABLE_NAMES = ("run_status_events",)
-TABLE_NAMES = RUN_TABLE_NAMES + EVENT_TABLE_NAMES
-
-
-class ResultStoreWriteError(RuntimeError):
-    """Raised when a result bundle cannot be written append-only."""
-
-
-class ResultStoreCompatibilityError(ResultStoreContractError):
-    """Raised when one committed run is incompatible with this reader."""
-
-
-@dataclass(frozen=True, slots=True)
-class ResultStoreConfig:
-    """Concrete storage settings for the first result-store backend."""
-
-    root: Path | str
-    backend: StorageBackend = StorageBackend.LOCAL_PARQUET
-    catalog_filename: str = "catalog.duckdb"
-    s3_mock_root: Path | str | None = None
-    duckdb_extensions: tuple[str, ...] = ()
-    duckdb_install_extensions: bool = False
-    duckdb_settings: Mapping[str, str | int | float | bool] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "backend", StorageBackend(self.backend))
-        if not self.catalog_filename:
-            raise ResultStoreContractError(
-                "catalog_filename must be non-empty text",
-                field="catalog_filename",
-            )
-        if not isinstance(self.duckdb_install_extensions, bool):
-            raise ResultStoreContractError(
-                "duckdb_install_extensions must be boolean",
-                field="duckdb_install_extensions",
-            )
-        object.__setattr__(
-            self,
-            "duckdb_extensions",
-            tuple(
-                _validated_duckdb_name(extension, "duckdb_extensions")
-                for extension in self.duckdb_extensions
-            ),
-        )
-        object.__setattr__(
-            self,
-            "duckdb_settings",
-            MappingProxyType(
-                {
-                    _validated_duckdb_name(name, "duckdb_settings"): value
-                    for name, value in self.duckdb_settings.items()
-                }
-            ),
-        )
-        if self.backend is StorageBackend.S3_PARQUET:
-            object.__setattr__(self, "root", _normalize_s3_uri(self.root))
-            if self.s3_mock_root is None:
-                raise ResultStoreContractError(
-                    "s3_parquet backend requires s3_mock_root for local mock read/write",
-                    field="s3_mock_root",
-                )
-            object.__setattr__(self, "s3_mock_root", Path(self.s3_mock_root))
-            return
-        if isinstance(self.root, str) and self.root.startswith("s3://"):
-            raise ResultStoreContractError(
-                "s3:// roots require the s3_parquet backend",
-                field="root",
-            )
-        if not isinstance(self.root, Path):
-            object.__setattr__(self, "root", Path(self.root))
-        if self.s3_mock_root is not None:
-            raise ResultStoreContractError(
-                "s3_mock_root is only valid for s3_parquet backend",
-                field="s3_mock_root",
-            )
-
 
 class DuckDbParquetResultStore:
     """Append-only Parquet store queried through DuckDB.
@@ -1387,843 +1302,3 @@ class DuckDbParquetResultStore:
         for mart_name in MART_NAMES:
             self._mart_path(mart_name, run_id).unlink(missing_ok=True)
 
-
-def _rows_for_bundle(
-    bundle: ResultBundle,
-    *,
-    artifact_refs: Sequence[ArtifactRef] = (),
-    artifact_expectations: Sequence[RequiredArtifactExpectation] = (),
-) -> dict[str, list[dict[str, object]]]:
-    artifacts = tuple(bundle.artifacts) + tuple(artifact_refs)
-    return {
-        "runs": [_run_row(bundle.run)],
-        "hierarchy_definitions": (
-            []
-            if bundle.hierarchy_definition is None
-            else [_hierarchy_definition_row(bundle.run.run_id, bundle.hierarchy_definition)]
-        ),
-        "hierarchy_nodes": [
-            _hierarchy_node_row(bundle.run.run_id, node) for node in bundle.hierarchy_nodes
-        ],
-        "capital_nodes": [_node_row(node) for node in bundle.nodes],
-        "capital_edges": [_edge_row(edge) for edge in bundle.edges],
-        "capital_measures": [_measure_row(measure) for measure in bundle.measures],
-        "artifact_refs": [_artifact_row(artifact) for artifact in artifacts],
-        "artifact_expectations": [
-            _artifact_expectation_row(bundle.run.run_id, expectation)
-            for expectation in artifact_expectations
-        ],
-        "input_snapshot_manifests": [
-            _input_manifest_row(manifest) for manifest in bundle.input_manifests
-        ],
-        "lineage_refs": [_lineage_row(lineage) for lineage in bundle.lineage],
-        "capital_attributions": [
-            _attribution_row(attribution) for attribution in bundle.attributions
-        ],
-        "movement_results": [_movement_row(movement) for movement in bundle.movement_results],
-        "result_events": [_result_event_row(event) for event in bundle.events],
-        "run_telemetry": [_telemetry_row(telemetry) for telemetry in bundle.telemetry],
-    }
-
-
-def _hierarchy_definition_row(
-    run_id: str,
-    definition: HierarchyDefinition,
-) -> dict[str, object]:
-    return {
-        "run_id": run_id,
-        "hierarchy_id": definition.hierarchy_id,
-        "hierarchy_version": definition.hierarchy_version,
-        "hierarchy_name": definition.hierarchy_name,
-        "leaf_level": definition.leaf_level,
-        "levels_json": stable_json_dumps(
-            [
-                {
-                    "level_name": level.level_name,
-                    "dimension": level.dimension,
-                    "level_order": level.level_order,
-                }
-                for level in definition.levels
-            ]
-        ),
-        "created_at": definition.created_at.isoformat(),
-        "metadata_json": _metadata_json(definition.metadata),
-    }
-
-
-def _hierarchy_node_row(run_id: str, node: HierarchyNode) -> dict[str, object]:
-    return {
-        "run_id": run_id,
-        "hierarchy_id": node.hierarchy_id,
-        "hierarchy_version": node.hierarchy_version,
-        "hierarchy_node_id": node.hierarchy_node_id,
-        "parent_hierarchy_node_id": node.parent_hierarchy_node_id,
-        "level_name": node.level_name,
-        "level_order": node.level_order,
-        "business_key": node.business_key,
-        "label": node.label,
-        "path_json": stable_json_dumps(
-            [
-                {"level_name": level_name, "business_key": business_key}
-                for level_name, business_key in node.path
-            ]
-        ),
-        "metadata_json": _metadata_json(node.metadata),
-    }
-
-
-def _run_row(run: CalculationRun) -> dict[str, object]:
-    return {
-        "run_id": run.run_id,
-        "run_group_id": run.run_group_id,
-        "as_of_date": run.as_of_date.isoformat(),
-        "regime_id": run.regime_id,
-        "base_currency": run.base_currency,
-        "input_snapshot_id": run.input_snapshot_id,
-        "calculation_scope": run.calculation_scope,
-        "engine_version": run.engine_version,
-        "code_version": run.code_version,
-        "calculation_policy_id": run.calculation_policy_id,
-        "created_at": run.created_at.isoformat(),
-        "identity_payload_json": _metadata_json(run.identity_payload),
-        "run_group_identity_payload_json": _metadata_json(run.run_group_identity_payload),
-        "metadata_json": _metadata_json(run.metadata),
-    }
-
-
-def _node_row(node: CapitalNode) -> dict[str, object]:
-    return {
-        "run_id": node.run_id,
-        "node_id": node.node_id,
-        "node_type": _stored_value(node.node_type),
-        "component": _stored_value(node.component),
-        "label": node.label,
-        "desk_id": node.desk_id,
-        "portfolio_id": node.portfolio_id,
-        "book_id": node.book_id,
-        "risk_class": node.risk_class,
-        "bucket": node.bucket,
-        "issuer_id": node.issuer_id,
-        "counterparty_id": node.counterparty_id,
-        "calculation_branch": node.calculation_branch,
-        "regulatory_rule_id": node.regulatory_rule_id,
-        "sort_key": node.sort_key,
-        "metadata_json": _metadata_json(node.metadata),
-    }
-
-
-def _edge_row(edge: CapitalEdge) -> dict[str, object]:
-    return {
-        "run_id": edge.run_id,
-        "parent_node_id": edge.parent_node_id,
-        "child_node_id": edge.child_node_id,
-        "edge_type": _stored_value(edge.edge_type),
-        "aggregation_weight": edge.aggregation_weight,
-        "sort_key": edge.sort_key,
-    }
-
-
-def _measure_row(measure: CapitalMeasure) -> dict[str, object]:
-    return {
-        "run_id": measure.run_id,
-        "node_id": measure.node_id,
-        "measure_name": measure.measure_name,
-        "amount": measure.amount,
-        "currency": measure.currency,
-        "unit": measure.unit,
-        "scenario": measure.scenario,
-        "methodology": measure.methodology,
-        "regulatory_rule_id": measure.regulatory_rule_id,
-        "citations_json": stable_json_dumps(measure.citations),
-        "metadata_json": _metadata_json(measure.metadata),
-    }
-
-
-def _artifact_row(artifact: ArtifactRef) -> dict[str, object]:
-    return {
-        "run_id": artifact.run_id,
-        "artifact_id": artifact.artifact_id,
-        "component": _stored_value(artifact.component),
-        "artifact_type": _stored_value(artifact.artifact_type),
-        "uri": artifact.uri,
-        "format": artifact.format,
-        "row_count": artifact.row_count,
-        "schema_fingerprint": artifact.schema_fingerprint,
-        "partition_keys_json": stable_json_dumps(artifact.partition_keys),
-        "metadata_json": _metadata_json(artifact.metadata),
-    }
-
-
-def _artifact_expectation_row(
-    run_id: str,
-    expectation: RequiredArtifactExpectation,
-) -> dict[str, object]:
-    return {
-        "run_id": run_id,
-        "component": _stored_value(expectation.component),
-        "artifact_type": _stored_value(expectation.artifact_type),
-        "trigger_name": expectation.trigger_name,
-        "required": expectation.required,
-        "reason": expectation.reason,
-    }
-
-
-def _lineage_row(lineage: LineageRef) -> dict[str, object]:
-    return {
-        "run_id": lineage.run_id,
-        "result_id": lineage.result_id,
-        "source_type": lineage.source_type,
-        "source_id": lineage.source_id,
-        "relationship": lineage.relationship,
-        "source_hash": lineage.source_hash,
-        "metadata_json": _metadata_json(lineage.metadata),
-    }
-
-
-def _attribution_row(attribution: CapitalAttributionRecord) -> dict[str, object]:
-    return {
-        "run_id": attribution.run_id,
-        "node_id": attribution.node_id,
-        "attribution_id": attribution.attribution_id,
-        "target_type": attribution.target_type,
-        "target_id": attribution.target_id,
-        "source_id": attribution.source_id,
-        "source_level": attribution.source_level,
-        "method": _stored_value(attribution.method),
-        "category": attribution.category,
-        "bucket_key": attribution.bucket_key,
-        "base_amount": attribution.base_amount,
-        "marginal_multiplier": attribution.marginal_multiplier,
-        "contribution": attribution.contribution,
-        "residual": attribution.residual,
-        "unsupported_reason": attribution.unsupported_reason,
-        "artifact_id": attribution.artifact_id,
-        "metadata_json": _metadata_json(attribution.metadata),
-    }
-
-
-def _movement_row(movement: MovementResult) -> dict[str, object]:
-    return {
-        "run_id": movement.run_id,
-        "baseline_run_id": movement.baseline_run_id,
-        "movement_id": movement.movement_id,
-        "node_id": movement.node_id,
-        "movement_type": movement.movement_type,
-        "from_amount": movement.from_amount,
-        "to_amount": movement.to_amount,
-        "delta_amount": movement.delta_amount,
-        "base_currency": movement.base_currency,
-        "driver_type": movement.driver_type,
-        "driver_id": movement.driver_id,
-        "explanation": movement.explanation,
-        "attribution_method": None
-        if movement.attribution_method is None
-        else _stored_value(movement.attribution_method),
-        "artifact_id": movement.artifact_id,
-        "metadata_json": _metadata_json(movement.metadata),
-    }
-
-
-def _elapsed_ms(started_at: float) -> float:
-    return (time.perf_counter() - started_at) * 1000.0
-
-
-def _initial_status_event(run: CalculationRun) -> RunStatusEvent:
-    return RunStatusEvent.transition(
-        run_id=run.run_id,
-        from_status=None,
-        to_status=RunStatus.CANDIDATE,
-        event_time=run.created_at,
-        actor="result-store",
-        reason_code="RUN_COMMITTED",
-        reason_text="Run committed to result store",
-    )
-
-
-def _status_event_row(event: RunStatusEvent) -> dict[str, object]:
-    from_status = None if event.from_status is None else cast(RunStatus, event.from_status)
-    to_status = cast(RunStatus, event.to_status)
-    return {
-        "event_id": event.event_id,
-        "run_id": event.run_id,
-        "from_status": None if from_status is None else from_status.value,
-        "to_status": to_status.value,
-        "event_time": event.event_time.isoformat(),
-        "actor": event.actor,
-        "reason_code": event.reason_code,
-        "reason_text": event.reason_text,
-        "external_evidence_ref": event.external_evidence_ref,
-    }
-
-
-def _run_from_row(row: Sequence[object]) -> CalculationRun:
-    return CalculationRun(
-        run_id=str(row[0]),
-        run_group_id=_optional_text(row[1]),
-        as_of_date=date.fromisoformat(str(row[2])),
-        regime_id=str(row[3]),
-        base_currency=str(row[4]),
-        input_snapshot_id=str(row[5]),
-        calculation_scope=str(row[6]),
-        engine_version=str(row[7]),
-        code_version=str(row[8]),
-        calculation_policy_id=str(row[9]),
-        created_at=datetime.fromisoformat(str(row[10])),
-        identity_payload=_json_mapping(row[11]),
-        run_group_identity_payload=_json_mapping(row[12]),
-        metadata=_json_mapping(row[13]),
-    )
-
-
-def _hierarchy_definition_from_row(row: Sequence[object]) -> HierarchyDefinition:
-    return HierarchyDefinition(
-        hierarchy_id=str(row[1]),
-        hierarchy_version=str(row[2]),
-        hierarchy_name=str(row[3]),
-        leaf_level=str(row[4]),
-        levels=tuple(_hierarchy_level_from_mapping(item) for item in _json_object_list(row[5])),
-        created_at=datetime.fromisoformat(str(row[6])),
-        metadata=_json_mapping(row[7]),
-    )
-
-
-def _hierarchy_node_from_row(row: Sequence[object]) -> HierarchyNode:
-    path = tuple(_hierarchy_path_item_from_mapping(item) for item in _json_object_list(row[9]))
-    return HierarchyNode(
-        hierarchy_id=str(row[1]),
-        hierarchy_version=str(row[2]),
-        hierarchy_node_id=str(row[3]),
-        parent_hierarchy_node_id=_optional_text(row[4]),
-        level_name=str(row[5]),
-        level_order=_int_value(row[6]),
-        business_key=str(row[7]),
-        label=str(row[8]),
-        path=path,
-        metadata=_json_mapping(row[10]),
-    )
-
-
-def _hierarchy_level_from_mapping(value: Mapping[str, object]) -> HierarchyLevel:
-    level_name = _required_mapping_value(value, "level_name", "hierarchy level")
-    dimension = _required_mapping_value(value, "dimension", "hierarchy level")
-    level_order = _required_mapping_value(value, "level_order", "hierarchy level")
-    return HierarchyLevel(
-        level_name=str(level_name),
-        dimension=str(dimension),
-        level_order=_int_value(level_order),
-    )
-
-
-def _hierarchy_path_item_from_mapping(value: Mapping[str, object]) -> tuple[str, str]:
-    level_name = _required_mapping_value(value, "level_name", "hierarchy node path")
-    business_key = _required_mapping_value(value, "business_key", "hierarchy node path")
-    return str(level_name), str(business_key)
-
-
-def _required_mapping_value(
-    value: Mapping[str, object],
-    key: str,
-    context: str,
-) -> object:
-    if key not in value:
-        raise ResultStoreContractError(f"missing key in {context}: {key}")
-    return value[key]
-
-
-def _node_from_row(row: Sequence[object]) -> CapitalNode:
-    return CapitalNode(
-        run_id=str(row[0]),
-        node_id=str(row[1]),
-        node_type=NodeType(str(row[2])),
-        component=FrtbComponent(str(row[3])),
-        label=str(row[4]),
-        desk_id=_optional_text(row[5]),
-        portfolio_id=_optional_text(row[6]),
-        book_id=_optional_text(row[7]),
-        risk_class=_optional_text(row[8]),
-        bucket=_optional_text(row[9]),
-        issuer_id=_optional_text(row[10]),
-        counterparty_id=_optional_text(row[11]),
-        calculation_branch=_optional_text(row[12]),
-        regulatory_rule_id=_optional_text(row[13]),
-        sort_key=_int_value(row[14]),
-        metadata=_json_mapping(row[15]),
-    )
-
-
-def _edge_from_row(row: Sequence[object]) -> CapitalEdge:
-    return CapitalEdge(
-        run_id=str(row[0]),
-        parent_node_id=str(row[1]),
-        child_node_id=str(row[2]),
-        edge_type=EdgeType(str(row[3])),
-        aggregation_weight=_float_value(row[4]),
-        sort_key=_int_value(row[5]),
-    )
-
-
-def _measure_from_row(row: Sequence[object]) -> CapitalMeasure:
-    return CapitalMeasure(
-        run_id=str(row[0]),
-        node_id=str(row[1]),
-        measure_name=str(row[2]),
-        amount=_float_value(row[3]),
-        currency=str(row[4]),
-        unit=str(row[5]),
-        scenario=_optional_text(row[6]),
-        methodology=_optional_text(row[7]),
-        regulatory_rule_id=_optional_text(row[8]),
-        citations=_json_text_tuple(row[9]),
-        metadata=_json_mapping(row[10]),
-    )
-
-
-def _artifact_from_row(row: Sequence[object]) -> ArtifactRef:
-    return ArtifactRef(
-        run_id=str(row[0]),
-        artifact_id=str(row[1]),
-        component=FrtbComponent(str(row[2])),
-        artifact_type=ArtifactType(str(row[3])),
-        uri=str(row[4]),
-        format=str(row[5]),
-        row_count=_int_value(row[6]),
-        schema_fingerprint=_optional_text(row[7]),
-        partition_keys=_json_text_tuple(row[8]),
-        metadata=_json_mapping(row[9]),
-    )
-
-
-def _lineage_from_row(row: Sequence[object]) -> LineageRef:
-    return LineageRef(
-        run_id=str(row[0]),
-        result_id=str(row[1]),
-        source_type=str(row[2]),
-        source_id=str(row[3]),
-        relationship=str(row[4]),
-        source_hash=_optional_text(row[5]),
-        metadata=_json_mapping(row[6]),
-    )
-
-
-def _attribution_from_row(row: Sequence[object]) -> CapitalAttributionRecord:
-    return CapitalAttributionRecord(
-        run_id=str(row[0]),
-        node_id=str(row[1]),
-        contribution_id=str(row[2]),
-        source_id=str(row[5]),
-        source_level=str(row[6]),
-        method=AttributionMethod(str(row[7])),
-        category=str(row[8]),
-        bucket_key=_optional_text(row[9]),
-        base_amount=_float_value(row[10]),
-        marginal_multiplier=_optional_float(row[11]),
-        contribution=_optional_float(row[12]),
-        residual=_float_value(row[13]),
-        reason=str(row[14]),
-        target_type=str(row[3]),
-        target_id=str(row[4]),
-        unsupported_reason=str(row[14]),
-        artifact_id=_optional_text(row[15]),
-        metadata=_json_mapping(row[16]),
-    )
-
-
-def _movement_from_row(row: Sequence[object]) -> MovementResult:
-    return MovementResult(
-        run_id=str(row[0]),
-        baseline_run_id=str(row[1]),
-        movement_id=str(row[2]),
-        node_id=str(row[3]),
-        movement_type=str(row[4]),
-        from_amount=_float_value(row[5]),
-        to_amount=_float_value(row[6]),
-        delta_amount=_float_value(row[7]),
-        base_currency=str(row[8]),
-        driver_type=str(row[9]),
-        driver_id=str(row[10]),
-        explanation=str(row[11]),
-        attribution_method=_optional_text(row[12]),
-        artifact_id=_optional_text(row[13]),
-        metadata=_json_mapping(row[14]),
-    )
-
-
-def _status_event_from_row(row: Sequence[object]) -> RunStatusEvent:
-    from_status_text = _optional_text(row[2])
-    return RunStatusEvent(
-        event_id=str(row[0]),
-        run_id=str(row[1]),
-        from_status=None if not from_status_text else RunStatus(from_status_text),
-        to_status=RunStatus(str(row[3])),
-        event_time=datetime.fromisoformat(str(row[4])),
-        actor=str(row[5]),
-        reason_code=str(row[6]),
-        reason_text=str(row[7]),
-        external_evidence_ref=_optional_text(row[8]),
-    )
-
-
-def _json_object_list(value: object) -> tuple[Mapping[str, object], ...]:
-    try:
-        parsed = json.loads(str(value))
-    except json.JSONDecodeError as exc:
-        raise ResultStoreContractError(f"malformed JSON object list: {exc}") from exc
-    if not isinstance(parsed, list) or not all(isinstance(item, dict) for item in parsed):
-        raise ResultStoreContractError("JSON field must decode to a list of objects")
-    return tuple(parsed)
-
-
-_DUCKDB_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-
-
-def _normalize_s3_uri(root: Path | str) -> str:
-    if not isinstance(root, str):
-        raise ResultStoreContractError(
-            "s3_parquet root must be an s3:// URI string",
-            field="root",
-        )
-    parsed = urlparse(root)
-    if parsed.scheme != "s3" or not parsed.netloc:
-        raise ResultStoreContractError(
-            "s3_parquet root must be an s3://bucket[/prefix] URI",
-            field="root",
-        )
-    if unquote(parsed.netloc) in {".", ".."}:
-        raise ResultStoreContractError(
-            "s3_parquet root path must not contain relative components",
-            field="root",
-        )
-    if parsed.query or parsed.fragment:
-        raise ResultStoreContractError(
-            "s3_parquet root must not include query or fragment",
-            field="root",
-        )
-    raw_parts = [part for part in parsed.path.split("/") if part]
-    decoded_parts = [unquote(part) for part in raw_parts]
-    if any(part in {".", ".."} for part in decoded_parts):
-        raise ResultStoreContractError(
-            "s3_parquet root path must not contain relative components",
-            field="root",
-        )
-    path = "/".join(raw_parts)
-    return f"s3://{parsed.netloc}" + (f"/{path}" if path else "")
-
-
-def _s3_mock_physical_root(root_uri: str, mock_root: Path) -> Path:
-    parsed = urlparse(root_uri)
-    path_parts = [unquote(part) for part in parsed.path.split("/") if part]
-    return mock_root.resolve().joinpath(parsed.netloc, *path_parts)
-
-
-def _validated_duckdb_name(value: str, field: str) -> str:
-    if not isinstance(value, str) or not _DUCKDB_NAME_RE.fullmatch(value):
-        raise ResultStoreContractError(
-            f"{field} entries must be DuckDB setting or extension names",
-            field=field,
-        )
-    return value
-
-
-def _duckdb_literal(value: str | int | float | bool) -> str:
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, int | float):
-        return str(value)
-    if isinstance(value, str):
-        return _sql_literal(value)
-    raise ResultStoreContractError(
-        "duckdb setting values must be string, number, or boolean",
-        field="duckdb_settings",
-    )
-
-
-def _artifact_id_for_request(
-    run_id: str,
-    request: ArtifactWriteRequest,
-    schema_fingerprint: str,
-) -> str:
-    artifact_type = ArtifactType(request.artifact_type)
-    payload = {
-        "run_id": run_id,
-        "artifact_id_hint": request.artifact_id_hint,
-        "artifact_type": artifact_type.value,
-        "schema_fingerprint": schema_fingerprint,
-        "partition_values": dict(request.partition_values),
-    }
-    return f"{artifact_type.value}:{stable_json_hash(payload)}"
-
-
-def _safe_run_id(run_id: str) -> str:
-    return quote(run_id, safe="")
-
-
-def _artifact_safe_run_id(run_id: str) -> str:
-    return _safe_run_id(run_id)
-
-
-def _sql_literal(value: str) -> str:
-    return "'" + value.replace("'", "''") + "'"
-
-
-def _view_name(table_name: str) -> str:
-    return f"frtb_result_store_{table_name}"
-
-
-def _mart_view_name(mart_name: str) -> str:
-    return f"frtb_result_store_mart_{mart_name}"
-
-
-def _mart_columns(mart_name: str) -> tuple[str, ...]:
-    if mart_name not in MART_SCHEMAS:
-        raise ResultStoreContractError(f"unknown mart: {mart_name}", field="mart_name")
-    return tuple(MART_SCHEMAS[mart_name].names)
-
-
-def _dict_rows(
-    columns: Sequence[str],
-    rows: Sequence[Sequence[object]],
-) -> tuple[dict[str, object], ...]:
-    return tuple(dict(zip(columns, row, strict=True)) for row in rows)
-
-
-def _arrow_table(rows: Sequence[Mapping[str, object]], schema: Any) -> Any:
-    return pa.Table.from_pylist(list(rows), schema=schema)
-
-
-def _table_schema_fingerprint(table_name: str) -> str:
-    schema = _TABLE_SCHEMAS[table_name]
-    return stable_json_hash(
-        {
-            "table_name": table_name,
-            "fields": [
-                {"name": field.name, "type": str(field.type), "nullable": field.nullable}
-                for field in schema
-            ],
-        }
-    )
-
-
-_TABLE_SCHEMAS: dict[str, Any] = {
-    "runs": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("run_group_id", pa.string()),
-            ("as_of_date", pa.string()),
-            ("regime_id", pa.string()),
-            ("base_currency", pa.string()),
-            ("input_snapshot_id", pa.string()),
-            ("calculation_scope", pa.string()),
-            ("engine_version", pa.string()),
-            ("code_version", pa.string()),
-            ("calculation_policy_id", pa.string()),
-            ("created_at", pa.string()),
-            ("identity_payload_json", pa.string()),
-            ("run_group_identity_payload_json", pa.string()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "hierarchy_definitions": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("hierarchy_id", pa.string()),
-            ("hierarchy_version", pa.string()),
-            ("hierarchy_name", pa.string()),
-            ("leaf_level", pa.string()),
-            ("levels_json", pa.string()),
-            ("created_at", pa.string()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "hierarchy_nodes": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("hierarchy_id", pa.string()),
-            ("hierarchy_version", pa.string()),
-            ("hierarchy_node_id", pa.string()),
-            ("parent_hierarchy_node_id", pa.string()),
-            ("level_name", pa.string()),
-            ("level_order", pa.int64()),
-            ("business_key", pa.string()),
-            ("label", pa.string()),
-            ("path_json", pa.string()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "capital_nodes": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("node_id", pa.string()),
-            ("node_type", pa.string()),
-            ("component", pa.string()),
-            ("label", pa.string()),
-            ("desk_id", pa.string()),
-            ("portfolio_id", pa.string()),
-            ("book_id", pa.string()),
-            ("risk_class", pa.string()),
-            ("bucket", pa.string()),
-            ("issuer_id", pa.string()),
-            ("counterparty_id", pa.string()),
-            ("calculation_branch", pa.string()),
-            ("regulatory_rule_id", pa.string()),
-            ("sort_key", pa.int64()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "capital_edges": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("parent_node_id", pa.string()),
-            ("child_node_id", pa.string()),
-            ("edge_type", pa.string()),
-            ("aggregation_weight", pa.float64()),
-            ("sort_key", pa.int64()),
-        ]
-    ),
-    "capital_measures": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("node_id", pa.string()),
-            ("measure_name", pa.string()),
-            ("amount", pa.float64()),
-            ("currency", pa.string()),
-            ("unit", pa.string()),
-            ("scenario", pa.string()),
-            ("methodology", pa.string()),
-            ("regulatory_rule_id", pa.string()),
-            ("citations_json", pa.string()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "artifact_refs": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("artifact_id", pa.string()),
-            ("component", pa.string()),
-            ("artifact_type", pa.string()),
-            ("uri", pa.string()),
-            ("format", pa.string()),
-            ("row_count", pa.int64()),
-            ("schema_fingerprint", pa.string()),
-            ("partition_keys_json", pa.string()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "artifact_expectations": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("component", pa.string()),
-            ("artifact_type", pa.string()),
-            ("trigger_name", pa.string()),
-            ("required", pa.bool_()),
-            ("reason", pa.string()),
-        ]
-    ),
-    "input_snapshot_manifests": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("input_snapshot_id", pa.string()),
-            ("input_snapshot_hash", pa.string()),
-            ("as_of_date", pa.string()),
-            ("source_system", pa.string()),
-            ("handoff_key", pa.string()),
-            ("row_count", pa.int64()),
-            ("accepted_row_count", pa.int64()),
-            ("rejected_row_count", pa.int64()),
-            ("source_uri", pa.string()),
-            ("source_hash", pa.string()),
-            ("schema_fingerprint", pa.string()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "lineage_refs": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("result_id", pa.string()),
-            ("source_type", pa.string()),
-            ("source_id", pa.string()),
-            ("relationship", pa.string()),
-            ("source_hash", pa.string()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "capital_attributions": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("node_id", pa.string()),
-            ("attribution_id", pa.string()),
-            ("target_type", pa.string()),
-            ("target_id", pa.string()),
-            ("source_id", pa.string()),
-            ("source_level", pa.string()),
-            ("method", pa.string()),
-            ("category", pa.string()),
-            ("bucket_key", pa.string()),
-            ("base_amount", pa.float64()),
-            ("marginal_multiplier", pa.float64()),
-            ("contribution", pa.float64()),
-            ("residual", pa.float64()),
-            ("unsupported_reason", pa.string()),
-            ("artifact_id", pa.string()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "movement_results": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("baseline_run_id", pa.string()),
-            ("movement_id", pa.string()),
-            ("node_id", pa.string()),
-            ("movement_type", pa.string()),
-            ("from_amount", pa.float64()),
-            ("to_amount", pa.float64()),
-            ("delta_amount", pa.float64()),
-            ("base_currency", pa.string()),
-            ("driver_type", pa.string()),
-            ("driver_id", pa.string()),
-            ("explanation", pa.string()),
-            ("attribution_method", pa.string()),
-            ("artifact_id", pa.string()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "result_events": pa.schema(
-        [
-            ("event_id", pa.string()),
-            ("run_id", pa.string()),
-            ("event_time", pa.string()),
-            ("severity", pa.string()),
-            ("event_type", pa.string()),
-            ("message", pa.string()),
-            ("component", pa.string()),
-            ("suggested_status", pa.string()),
-            ("metadata_json", pa.string()),
-        ]
-    ),
-    "run_telemetry": pa.schema(
-        [
-            ("run_id", pa.string()),
-            ("phase", pa.string()),
-            ("duration_ms", pa.float64()),
-            ("created_at", pa.string()),
-            ("trace_id", pa.string()),
-            ("span_id", pa.string()),
-            ("row_count", pa.int64()),
-            ("byte_count", pa.int64()),
-            ("artifact_id", pa.string()),
-            ("mart_name", pa.string()),
-        ]
-    ),
-    "run_status_events": pa.schema(
-        [
-            ("event_id", pa.string()),
-            ("run_id", pa.string()),
-            ("from_status", pa.string()),
-            ("to_status", pa.string()),
-            ("event_time", pa.string()),
-            ("actor", pa.string()),
-            ("reason_code", pa.string()),
-            ("reason_text", pa.string()),
-            ("external_evidence_ref", pa.string()),
-        ]
-    ),
-}
