@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FRTB Risk Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dense-theme">
+    <div id="app-container">
+        <!-- Persistent Context Header -->
+        <header id="global-context">
+            <div class="header-left">
+                <span class="logo">FRTB CONSOLE</span>
+                <span class="divider"></span>
+                <span class="context-item" id="ctx-date">Date: 2026-06-03</span>
+                <span class="context-item" id="ctx-currency">CCY: USD</span>
+                <span class="context-item" id="ctx-regime">Regime: BASEL_MAR21</span>
+                <span class="context-item" id="ctx-run-id">Run ID: RUN_123</span>
+            </div>
+            <div class="header-right">
+                <div class="total-capital-widget">
+                    <span class="widget-label">TOTAL MARKET RISK CAPITAL</span>
+                    <span class="widget-value" id="global-total-capital">--</span>
+                </div>
+                <button id="recalculate-btn" class="action-btn primary">Recalculate</button>
+            </div>
+        </header>
+
+        <div id="main-workspace">
+            <!-- Sidebar Navigation -->
+            <nav id="sidebar">
+                <ul class="nav-links">
+                    <li class="active" data-tab="tab-orchestration">Top-of-House Orchestration</li>
+                    <li data-tab="tab-sbm">SBM Drill-Down</li>
+                    <li data-tab="tab-drc">DRC Drill-Down</li>
+                    <li data-tab="tab-ima">IMA Desk Analytics</li>
+                    <li data-tab="tab-cva">CVA Engine</li>
+                    <li data-tab="tab-rrao">RRAO Summary</li>
+                </ul>
+            </nav>
+
+            <!-- Content Area -->
+            <main id="content-area">
+                
+                <!-- TAB 1: ORCHESTRATION -->
+                <div id="tab-orchestration" class="tab-content active">
+                    <div class="split-pane horizontal">
+                        <div class="pane top-pane">
+                            <h2 class="pane-title">Standardised Approach Capital Result</h2>
+                            <table class="dense-table" id="sa-subtotals-table">
+                                <thead>
+                                    <tr>
+                                        <th>Component</th>
+                                        <th>Package Name</th>
+                                        <th>Subtotal Count</th>
+                                        <th>Total Capital</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pane bottom-pane">
+                            <h2 class="pane-title">IMA Desk Routing (StandardisedFallbackRoute)</h2>
+                            <table class="dense-table" id="ima-routing-table">
+                                <thead>
+                                    <tr>
+                                        <th>Desk ID</th>
+                                        <th>Eligibility Status</th>
+                                        <th>Models Based Capital</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: SBM -->
+                <div id="tab-sbm" class="tab-content">
+                    <div class="split-pane vertical">
+                        <div class="pane left-pane" style="flex: 1;">
+                            <h2 class="pane-title">SBM Risk Classes</h2>
+                            <table class="dense-table" id="sbm-risk-classes-table">
+                                <thead>
+                                    <tr>
+                                        <th>Risk Class</th>
+                                        <th>Measure</th>
+                                        <th>Selected Cap.</th>
+                                        <th>LOW</th>
+                                        <th>MEDIUM</th>
+                                        <th>HIGH</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pane right-pane" style="flex: 2;">
+                            <h2 class="pane-title">Buckets & Weighted Sensitivities (Drill-Down)</h2>
+                            <div id="sbm-buckets-container">
+                                <p class="placeholder-text">Select a Risk Class to view buckets.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: DRC -->
+                <div id="tab-drc" class="tab-content">
+                    <div class="split-pane vertical">
+                        <div class="pane left-pane" style="flex: 2;">
+                            <h2 class="pane-title">DRC Categories & Net JTDs</h2>
+                            <div id="drc-tree-container">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                        <div class="pane right-pane" style="flex: 1;">
+                            <h2 class="pane-title">Attribution (Analytical Euler)</h2>
+                            <table class="dense-table" id="drc-attribution-table">
+                                <thead>
+                                    <tr>
+                                        <th>Source ID</th>
+                                        <th>Level</th>
+                                        <th>Contribution</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: IMA -->
+                <div id="tab-ima" class="tab-content">
+                    <div class="split-pane horizontal">
+                        <div class="pane top-pane">
+                            <h2 class="pane-title">Desk Audit Records</h2>
+                            <frtb-desk-table id="ima-desk-summary"></frtb-desk-table>
+                        </div>
+                        <div class="pane bottom-pane split-pane vertical">
+                            <div class="pane left-pane">
+                                <h2 class="pane-title">IMCC & SES Decomposition</h2>
+                                <div id="ima-imcc-ses-details">
+                                    <p class="placeholder-text">Select a desk to view decomposition.</p>
+                                </div>
+                            </div>
+                            <div class="pane right-pane">
+                                <h2 class="pane-title">Backtesting & PLA Diagnostics</h2>
+                                <div id="ima-backtest-details">
+                                    <p class="placeholder-text">Select a desk to view diagnostics.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: CVA -->
+                <div id="tab-cva" class="tab-content">
+                    <div class="pane">
+                        <h2 class="pane-title">CVA Engine (Mock)</h2>
+                        <p class="placeholder-text">CVA Drill-down coming soon. Refer to BaCvaCounterpartyCapital structures.</p>
+                    </div>
+                </div>
+
+                <!-- TAB 6: RRAO -->
+                <div id="tab-rrao" class="tab-content">
+                    <div class="pane">
+                        <h2 class="pane-title">RRAO Line Items (Mock)</h2>
+                        <p class="placeholder-text">RRAO Drill-down coming soon. Refer to RraoCapitalLine structures.</p>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
