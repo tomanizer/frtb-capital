@@ -27,6 +27,8 @@ matrix. Unsupported profiles and unmapped sub-features fail closed.
 - [Product requirements](PRD.md)
 - [Regulatory requirements](REGULATORY_REQUIREMENTS.md)
 - [Detailed requirements](DETAILED_REQUIREMENTS.md)
+- [Non-Basel profile design](NON_BASEL_PROFILE_DESIGN.md) — AUDIT-IMP-003 / #501
+- [Non-Basel profile requirements](NON_BASEL_PROFILE_REQUIREMENTS.md) — `SBM-NBP-*`
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
 - [Decisions and plan](DECISIONS_AND_PLAN.md)
 - [Issue breakdown](ISSUE_BREAKDOWN.md)

@@ -51,6 +51,7 @@ from frtb_sbm.data_models import (
     SbmCapitalResult,
     SbmPairwiseEvidenceMode,
     SbmReconciliationMetadata,
+    SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmRuleProfile,
@@ -133,6 +134,29 @@ _GIRR_DELTA_INTRA_CITATIONS = (*_MAR21_INTRA_BUCKET_CITATION, "basel_mar21_45_49
 _GIRR_DELTA_INTER_CITATIONS = (*_MAR21_INTER_BUCKET_CITATION, "basel_mar21_50")
 _GIRR_VEGA_INTRA_CITATIONS = (*_MAR21_INTRA_BUCKET_CITATION, "basel_mar21_93")
 _GIRR_VEGA_INTER_CITATIONS = (*_MAR21_INTER_BUCKET_CITATION, "basel_mar21_95", "basel_mar21_50")
+_PROFILE_GIRR_DELTA_INTRA_CITATIONS = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: _GIRR_DELTA_INTRA_CITATIONS,
+    SbmRegulatoryProfile.US_NPR_2_0.value: (
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_intra",
+    ),
+}
+_PROFILE_GIRR_DELTA_INTER_CITATIONS = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: _GIRR_DELTA_INTER_CITATIONS,
+    SbmRegulatoryProfile.US_NPR_2_0.value: (
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_inter",
+    ),
+}
+_PROFILE_GIRR_DELTA_SCENARIO_CITATIONS = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: (
+        "basel_mar21_6_correlation_scenarios",
+        "basel_mar21_7_scenario_selection",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0.value: (
+        "us_npr_91_fr_14952_va7a_correlation_scenarios",
+    ),
+}
 _SBM_CAPITAL_PATH_ORDER = (
     (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
     (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
@@ -1319,7 +1343,10 @@ def _build_sbm_capital_result(
         portfolio_scenario_totals,
         selected_portfolio_scenario,
         portfolio_scenario_selection,
-    ) = select_portfolio_correlation_scenario(risk_class_results)
+    ) = select_portfolio_correlation_scenario(
+        risk_class_results,
+        citation_ids=_portfolio_scenario_citations(rule_profile.profile_id),
+    )
     citation_ids = _collect_citation_ids(
         aligned_risk_classes,
         portfolio_scenario_selection=portfolio_scenario_selection,
@@ -1349,6 +1376,12 @@ def _build_sbm_capital_result(
     )
     validate_sbm_result_reconciliation(result)
     return result
+
+
+def _portfolio_scenario_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == SbmRegulatoryProfile.US_NPR_2_0.value:
+        return _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS[profile_id]
+    return ("basel_mar21_7_scenario_selection",)
 
 
 def _calculate_girr_vega_risk_class_capital(
@@ -1441,19 +1474,54 @@ def _aggregate_girr_measure_capital(
         inter_bucket_correlations,
         risk_class=SbmRiskClass.GIRR,
         risk_measure=risk_measure,
+        citation_ids=(
+            _girr_delta_scenario_citations(profile_id)
+            if risk_measure is SbmRiskMeasure.DELTA
+            else (
+                "basel_mar21_6_correlation_scenarios",
+                "basel_mar21_7_scenario_selection",
+            )
+        ),
         intra_bucket_citation_ids=(
-            _GIRR_DELTA_INTRA_CITATIONS
+            _girr_delta_intra_citations(profile_id)
             if risk_measure is SbmRiskMeasure.DELTA
             else _GIRR_VEGA_INTRA_CITATIONS
         ),
         inter_bucket_citation_ids=(
-            _GIRR_DELTA_INTER_CITATIONS
+            _girr_delta_inter_citations(profile_id)
             if risk_measure is SbmRiskMeasure.DELTA
             else _GIRR_VEGA_INTER_CITATIONS
         ),
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
     )
+
+
+def _girr_delta_scenario_citations(profile_id: str) -> tuple[str, ...]:
+    try:
+        return _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS[profile_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR delta scenario citations are unsupported for profile={profile_id}"
+        ) from exc
+
+
+def _girr_delta_intra_citations(profile_id: str) -> tuple[str, ...]:
+    try:
+        return _PROFILE_GIRR_DELTA_INTRA_CITATIONS[profile_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR delta intra-bucket citations are unsupported for profile={profile_id}"
+        ) from exc
+
+
+def _girr_delta_inter_citations(profile_id: str) -> tuple[str, ...]:
+    try:
+        return _PROFILE_GIRR_DELTA_INTER_CITATIONS[profile_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR delta inter-bucket citations are unsupported for profile={profile_id}"
+        ) from exc
 
 
 def _build_girr_delta_intra_bucket_correlation_matrix(

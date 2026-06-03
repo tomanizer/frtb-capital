@@ -48,9 +48,9 @@ sources:
     jurisdiction: US
     title: "Federal Register 91 FR 14952, Regulatory Capital Rule market-risk proposal"
     url: "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
-    section_hint: "Section V.A.7.a and pages around 91 FR 15037 describe the six-step standardized non-default capital requirement."
+    section_hint: "Section V.A.7.a describes the standardized non-default capital requirement; the current implementation uses profile-owned GIRR delta bucket, weight, correlation, and scenario citation ids for the US_NPR_2_0 comparison slice."
     status: proposed_rule_reference
-    reuse_note: "GovInfo is the primary U.S. NPR source link for this package."
+    reuse_note: "GovInfo is the primary U.S. NPR source link for this package. Outputs are proposed-rule comparison material only."
     module_paths:
       - src/frtb_sbm/regimes.py
       - src/frtb_sbm/reference_data.py

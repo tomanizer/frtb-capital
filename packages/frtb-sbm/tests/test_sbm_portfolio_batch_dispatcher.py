@@ -223,10 +223,10 @@ def test_batch_dispatcher_fails_closed_for_unsupported_profile() -> None:
         calculation_date=date(2026, 5, 30),
         base_currency="USD",
         reporting_currency="USD",
-        profile_id=SbmRegulatoryProfile.US_NPR_2_0.value,
+        profile_id=SbmRegulatoryProfile.EU_CRR3.value,
     )
 
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile is unsupported"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
         calculate_sbm_portfolio_capital_from_arrow_tables((handoff,), context=context)
 
 

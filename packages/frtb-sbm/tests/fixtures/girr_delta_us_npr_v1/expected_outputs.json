@@ -1,0 +1,90 @@
+{
+  "profile_id": "US_NPR_2_0",
+  "profile_hash": "9d7d2190ab9b656d436849c1ddc6367f3ad35b4de9b901ca4ec7dadf8cf1236e",
+  "input_hash": "0d90b8f8b8b9b50f27cd614fb54a9705aa566609dfc0d4c2650a8e0e1a50a717",
+  "total_capital": 19700.12690314456,
+  "warnings": [],
+  "selected_portfolio_scenario": "HIGH",
+  "portfolio_scenario_totals": {
+    "HIGH": 19700.12690314456,
+    "LOW": 17913.48645189483,
+    "MEDIUM": 18828.011005709282
+  },
+  "risk_classes": [
+    {
+      "risk_class": "GIRR",
+      "selected_capital": 19700.12690314456,
+      "selected_scenario": "HIGH",
+      "risk_measure": "DELTA",
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_correlation_scenarios",
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_intra",
+        "us_npr_91_fr_14952_va7a_girr_inter"
+      ]
+    }
+  ],
+  "scenario_totals": {
+    "HIGH": 19700.12690314456,
+    "LOW": 17913.48645189483,
+    "MEDIUM": 18828.011005709282
+  },
+  "buckets": [
+    [
+      {
+        "bucket_id": "1",
+        "kb": 15202.795795510772,
+        "sb": 15202.795795510772,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_girr_intra"
+        ]
+      },
+      {
+        "bucket_id": "2",
+        "kb": 6222.5396744416175,
+        "sb": 6222.5396744416175,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_girr_intra"
+        ]
+      }
+    ]
+  ],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "sensitivity_id": "us-npr-eur-1y",
+          "risk_weight": 0.01131370849898476,
+          "scaled_amount": 11313.70849898476,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_girr_delta_weights",
+            "us_npr_91_fr_14952_va7a_girr_sqrt2"
+          ]
+        },
+        {
+          "sensitivity_id": "us-npr-eur-5y",
+          "risk_weight": 0.007778174593052022,
+          "scaled_amount": 3889.087296526011,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_girr_delta_weights",
+            "us_npr_91_fr_14952_va7a_girr_sqrt2"
+          ]
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "us-npr-usd-5y",
+          "risk_weight": 0.007778174593052022,
+          "scaled_amount": 6222.5396744416175,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_girr_delta_weights",
+            "us_npr_91_fr_14952_va7a_girr_sqrt2"
+          ]
+        }
+      ]
+    ]
+  ]
+}
+

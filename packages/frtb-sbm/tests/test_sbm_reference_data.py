@@ -14,6 +14,7 @@ from frtb_sbm import (
 from frtb_sbm.reference_data import (
     FX_DELTA_RISK_WEIGHT,
     FX_INTER_BUCKET_CORRELATION,
+    GIRR_INTER_BUCKET_CORRELATION,
     apply_correlation_scenario,
     apply_correlation_scenario_definition,
     citations_for_profile,
@@ -192,6 +193,41 @@ def test_girr_delta_risk_weight_skips_sqrt2_for_special_factors() -> None:
 
     assert adjusted == 0.016
     assert citation_ids == ("basel_mar21_43",)
+
+
+def test_us_npr_girr_delta_reference_data_uses_profile_owned_citations() -> None:
+    citations = citations_for_profile(SbmRegulatoryProfile.US_NPR_2_0)
+    bucket = girr_bucket_definition(SbmRegulatoryProfile.US_NPR_2_0, "2")
+    adjusted, weight_citations = girr_delta_risk_weight(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        tenor="5y",
+        currency="USD",
+        reporting_currency="USD",
+    )
+    intra_correlation, intra_citations = girr_delta_intra_bucket_correlation(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        tenor1="1y",
+        tenor2="5y",
+        same_curve=True,
+    )
+    inter_correlation, inter_citations = girr_inter_bucket_correlation(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        bucket1="1",
+        bucket2="2",
+    )
+
+    assert "us_npr_91_fr_14952_va7a_girr_delta_weights" in citations
+    assert bucket.currency == "USD"
+    assert bucket.citation_id == "us_npr_91_fr_14952_va7a_girr_buckets"
+    assert adjusted == pytest.approx(0.011 / math.sqrt(2.0))
+    assert weight_citations == (
+        "us_npr_91_fr_14952_va7a_girr_delta_weights",
+        "us_npr_91_fr_14952_va7a_girr_sqrt2",
+    )
+    assert intra_correlation == pytest.approx(math.exp(-0.03 * 4.0))
+    assert intra_citations == ("us_npr_91_fr_14952_va7a_girr_intra",)
+    assert inter_correlation == GIRR_INTER_BUCKET_CORRELATION
+    assert inter_citations == ("us_npr_91_fr_14952_va7a_girr_inter",)
 
 
 def test_girr_delta_intra_bucket_correlation_uses_exponential_tenor_formula() -> None:
@@ -554,7 +590,6 @@ def test_curvature_reference_weights_include_paragraph_citations() -> None:
 @pytest.mark.parametrize(
     "profile",
     [
-        SbmRegulatoryProfile.US_NPR_2_0,
         SbmRegulatoryProfile.EU_CRR3,
     ],
 )

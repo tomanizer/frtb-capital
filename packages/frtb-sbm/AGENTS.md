@@ -14,9 +14,10 @@ supported paths; unsupported sub-features still fail closed.
 and do not constitute independent model validation. Do not treat outputs as
 production regulatory capital.
 
-Only `BASEL_MAR21` produces phase-1 capital. Other profile enum values
-(`US_NPR_2_0`, `EU_CRR3`, `PRA_UK_CRR`) are accepted at the type level but fail
-closed at runtime until cited reference data exists.
+`BASEL_MAR21` produces phase-1 capital for the supported delta, vega, and
+curvature matrix. `US_NPR_2_0` produces capital only for GIRR delta; all other
+U.S. NPR cells and the `EU_CRR3` / `PRA_UK_CRR` profiles fail closed until cited
+reference data exists.
 
 Package-local traceability lives under `packages/frtb-sbm/docs/`. See
 `REGULATORY_TRACEABILITY.md` for implemented/unsupported status by area.

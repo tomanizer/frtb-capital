@@ -32,12 +32,21 @@ SUPPORTED_PROFILE_METADATA: dict[SbmRegulatoryProfile, dict[str, object]] = {
         "status": "supported_canonical_girr_fx_equity_commodity_csr_delta_curvature_slice",
         "effective_date": None,
     },
+    SbmRegulatoryProfile.US_NPR_2_0: (
+        {
+            "regulator": (
+                "Office of the Comptroller of the Currency, Board of Governors of the "
+                "Federal Reserve System, and Federal Deposit Insurance Corporation"
+            ),
+            "version": "Federal Register 91 FR 14952 proposed market-risk rule",
+            "publication_date": date(2026, 3, 27),
+            "status": "supported_us_npr_girr_delta_comparison_slice",
+            "effective_date": None,
+        }
+    ),
 }
 
 UNSUPPORTED_PROFILE_REASONS: dict[SbmRegulatoryProfile, str] = {
-    SbmRegulatoryProfile.US_NPR_2_0: (
-        "U.S. NPR 2.0 SBM profile is unsupported until cited reference data and fixtures are added."
-    ),
     SbmRegulatoryProfile.EU_CRR3: (
         "EU CRR3 SBM profile is unsupported until cited reference data and fixtures are added."
     ),
@@ -72,6 +81,9 @@ PROFILE_SUPPORTED_MEASURES: dict[
         SbmRiskClass.CSR_SEC_CTP: frozenset(
             {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
         ),
+    },
+    SbmRegulatoryProfile.US_NPR_2_0: {
+        SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),
     },
 }
 

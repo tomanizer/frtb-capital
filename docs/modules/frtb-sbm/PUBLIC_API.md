@@ -32,11 +32,11 @@ requires every documented input_table symbol to remain importable.
 | 2 - CRIF/vendor rows | Iterable mapping rows or GIRR delta CRIF Arrow table | `adapt_crif_records` or `normalize_girr_delta_crif_arrow_table` | Adapter path with explicit rejected-row diagnostics. |
 | 3 - Canonical dataclasses | `tuple[SbmSensitivity, ...]` plus `SbmCalculationContext` | `calculate_sbm_capital` | Small books, tests, and notebooks only. |
 
-Supported runtime profile: `BASEL_MAR21` for implemented delta, vega, and
-curvature paths described in
+Supported runtime profiles: `BASEL_MAR21` for implemented delta, vega, and
+curvature paths, plus `US_NPR_2_0` for GIRR delta only, as described in
 [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).
-U.S. NPR 2.0, EU CRR3, and PRA UK CRR comparison profiles fail closed until
-separately implemented and cited.
+All other U.S. NPR 2.0 cells, and the EU CRR3 and PRA UK CRR comparison
+profiles, fail closed until separately implemented and cited.
 
 ## InputTable specs and normalizers
 

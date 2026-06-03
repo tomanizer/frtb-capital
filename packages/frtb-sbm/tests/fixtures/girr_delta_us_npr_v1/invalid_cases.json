@@ -1,0 +1,25 @@
+[
+  {
+    "case_id": "npr-girr-vega-unsupported",
+    "expected_error_match": "US_NPR_2_0",
+    "sensitivity": {
+      "sensitivity_id": "us-npr-vega-unsupported",
+      "source_row_id": "row-invalid-001",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "bucket": "2",
+      "risk_factor": "USD",
+      "amount": 100000.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "option_tenor": "1y",
+      "sign_convention": "RECEIVE",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_girr_buckets"
+      ]
+    }
+  }
+]
+

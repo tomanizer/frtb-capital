@@ -79,7 +79,6 @@ def test_unknown_profile_fails_closed() -> None:
 @pytest.mark.parametrize(
     ("risk_class", "risk_measure"),
     [
-        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
@@ -90,7 +89,7 @@ def test_unsupported_risk_class_measure_paths_fail_closed(
     risk_class: SbmRiskClass,
     risk_measure: SbmRiskMeasure,
 ) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
         ensure_sbm_risk_class_measure_supported(
             SbmRegulatoryProfile.US_NPR_2_0.value,
             risk_class,
@@ -106,11 +105,18 @@ def test_ensure_sbm_run_supported_rejects_scope_mismatch() -> None:
         ensure_sbm_run_supported(context, (sensitivity,))
 
 
-def test_ensure_sbm_capital_paths_supported_rejects_non_basel_profile() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital is unsupported"):
+def test_ensure_sbm_capital_paths_supported_rejects_unsupported_npr_cell() -> None:
+    sensitivity = sample_sensitivity(
+        risk_class=SbmRiskClass.FX,
+        risk_measure=SbmRiskMeasure.DELTA,
+        bucket="EUR",
+        risk_factor="EUR",
+        tenor=None,
+    )
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR_2_0"):
         ensure_sbm_capital_paths_supported(
             SbmRegulatoryProfile.US_NPR_2_0.value,
-            (sample_sensitivity(),),
+            (sensitivity,),
         )
 
 
