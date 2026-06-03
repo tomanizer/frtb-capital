@@ -151,6 +151,18 @@ jobs:
           path: dist/quality/package-maturity.json
           if-no-files-found: ignore
 
+      - name: Upload code drift report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: code-drift
+          path: |
+            dist/quality/code-drift-report.json
+            dist/quality/changed-code-report.json
+            dist/quality/test-value-report.json
+            dist/quality/dead-code-report.json
+          if-no-files-found: ignore
+
   test:
     name: test (3.11)
     needs: changes
