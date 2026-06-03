@@ -161,8 +161,8 @@ def render_dashboard(*, root: Path = ROOT) -> str:
             "| `result_store_partial` | Storage contracts with a local DuckDB/Parquet backend |",
             "| `shared` | Shared library, not a capital component |",
             "",
-            "Outputs from this suite are prototype model-validation evidence, not final",
-            "regulatory capital.",
+            "Outputs from this suite are synthetic engineering and validation evidence,",
+            "not final regulatory capital.",
             "",
         ]
     )

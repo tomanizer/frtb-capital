@@ -25,6 +25,9 @@ packages. It owns the cross-component boundary and implements:
 - Top-of-house suite capital aggregation (`calculate_suite_capital`):
   `IMA + SA + CVA` with cross-component validation of calculation date,
   base currency, and regulatory jurisdiction family.
+- Attribution-ready branch metadata and fallback counts are preserved through
+  component summaries so unsupported or residual branches remain explainable
+  after suite aggregation.
 
 ## Public API
 
@@ -100,6 +103,15 @@ SA profile, or CVA profile string to a canonical family label (`"BASEL"`,
 `"US_NPR"`, or `"EU_CRR3"`). Components from different families cannot be
 composed into a single suite result.
 
+### Result-store handoff
+
+`SuiteCapitalResult` and `StandardisedApproachCapitalResult` carry stable run
+identity, component summaries, branch metadata, source citations, input hashes,
+and fallback counts that can be converted into result-store nodes, measures,
+lineage refs, and attribution records. Orchestration does not write storage
+artifacts directly; callers hand completed suite results to
+`frtb-result-store` adapters after component calculations finish.
+
 ## Validation Evidence
 
 - All 70 orchestration tests pass (`make check`).
@@ -121,6 +133,9 @@ composed into a single suite result.
 - IMA `CapitalRunAuditLog` does not expose `base_currency` or
   `total_market_risk_capital` directly; users must supply these when calling
   `recognise_ima_summary`, or construct `ImaCapitalSummary` directly.
+- Orchestration records unsupported and residual branch metadata supplied by
+  components; it does not convert those branches into exact Euler
+  decomposition when the component marked that method unsupported.
 
 ## Arrow Boundary
 
