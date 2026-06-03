@@ -294,7 +294,10 @@ def _build_vectorized_non_girr_vega_intra_bucket_correlation_matrix(
         [_lookup_axis(risk_factor_by_id, sensitivity_id, "risk_factor") for sensitivity_id in ids],
         dtype=object,
     )
-    qualifiers = np.array([qualifier_by_id.get(sensitivity_id, "") for sensitivity_id in ids])
+    qualifiers = np.array(
+        [qualifier_by_id.get(sensitivity_id, "") for sensitivity_id in ids],
+        dtype=object,
+    )
     option_tenors = tuple(
         _lookup_axis(option_tenor_by_id, sensitivity_id, "option_tenor") for sensitivity_id in ids
     )

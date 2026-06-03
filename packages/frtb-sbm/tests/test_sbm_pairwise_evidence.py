@@ -73,6 +73,34 @@ def _girr_sensitivities(size: int) -> tuple[SbmSensitivity, ...]:
     )
 
 
+def _girr_curvature_sensitivities(size: int) -> tuple[SbmSensitivity, ...]:
+    currencies = ("USD", "EUR", "GBP", "JPY", "AUD")
+    return tuple(
+        SbmSensitivity(
+            sensitivity_id=f"girr-curv-{index:05d}",
+            source_row_id=f"row-curv-{index:05d}",
+            desk_id="rates-desk",
+            legal_entity="LE-001",
+            risk_class=SbmRiskClass.GIRR,
+            risk_measure=SbmRiskMeasure.CURVATURE,
+            bucket="1",
+            risk_factor=currencies[index % len(currencies)],
+            amount=0.0,
+            amount_currency="USD",
+            tenor="5y",
+            sign_convention=SbmSignConvention.RECEIVE,
+            lineage=SbmSourceLineage(
+                source_system="synthetic",
+                source_file="curvature-pairwise-evidence.csv",
+                source_row_id=f"row-curv-{index:05d}",
+            ),
+            up_shock_amount=100.0 + index,
+            down_shock_amount=40.0 + index,
+        )
+        for index in range(size)
+    )
+
+
 def test_default_auto_pairwise_evidence_keeps_small_fixture_detail() -> None:
     result = aggregate_intra_bucket(
         "1",
@@ -175,3 +203,37 @@ def test_serialized_summary_preserves_reconstruction_metadata() -> None:
         "omitted_count": 6,
         "factor_ids": ["girr-00000", "girr-00001", "girr-00002"],
     }
+
+
+def test_curvature_summary_pairwise_evidence_mode_omits_materialized_records() -> None:
+    result = calculate_sbm_capital(
+        _girr_curvature_sensitivities(3),
+        context=_context(
+            run_controls=SbmRunControls(pairwise_evidence_mode=SbmPairwiseEvidenceMode.SUMMARY)
+        ),
+    )
+
+    bucket = result.risk_classes[0].scenario_details[0].intra_buckets[0]
+
+    assert bucket.pairwise_correlations == ()
+    assert bucket.pairwise_correlation_summary is not None
+    assert bucket.pairwise_correlation_summary.evidence_mode is SbmPairwiseEvidenceMode.SUMMARY
+    assert bucket.pairwise_correlation_summary.total_count == 6
+    assert bucket.pairwise_correlation_summary.materialized_count == 0
+    assert bucket.pairwise_correlation_summary.omitted_count == 6
+
+
+def test_curvature_full_pairwise_evidence_mode_preserves_materialized_records() -> None:
+    result = calculate_sbm_capital(
+        _girr_curvature_sensitivities(3),
+        context=_context(
+            run_controls=SbmRunControls(pairwise_evidence_mode=SbmPairwiseEvidenceMode.FULL)
+        ),
+    )
+
+    bucket = result.risk_classes[0].scenario_details[0].intra_buckets[0]
+
+    assert len(bucket.pairwise_correlations) == 6
+    assert bucket.pairwise_correlation_summary is not None
+    assert bucket.pairwise_correlation_summary.evidence_mode is SbmPairwiseEvidenceMode.FULL
+    assert bucket.pairwise_correlation_summary.materialized_count == 6

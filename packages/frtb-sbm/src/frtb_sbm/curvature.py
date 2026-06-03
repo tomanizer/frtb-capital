@@ -66,6 +66,7 @@ from frtb_sbm.csr_sec_nonctp_reference_data import (
     csr_sec_nonctp_inter_bucket_correlation,
 )
 from frtb_sbm.data_models import (
+    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
     CurvatureBranchRecord,
     CurvatureBucketBranchRecord,
@@ -107,6 +108,7 @@ from frtb_sbm.reference_data import (
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 from frtb_sbm.validation import (
     SbmInputError,
+    coerce_pairwise_evidence_mode,
     ensure_sbm_profile_known,
     normalise_sensitivity_amount,
     sensitivity_sort_key,
@@ -370,6 +372,8 @@ def calculate_girr_curvature_risk_class_capital(
     *,
     profile_id: str,
     reporting_currency: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited GIRR curvature risk-class capital."""
 
@@ -378,6 +382,8 @@ def calculate_girr_curvature_risk_class_capital(
         profile_id=profile_id,
         reporting_currency=reporting_currency,
         expected_risk_class=SbmRiskClass.GIRR,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -403,6 +409,8 @@ def calculate_curvature_risk_class_capital(
     *,
     profile_id: str,
     reporting_currency: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited curvature capital for supported risk classes."""
 
@@ -411,6 +419,8 @@ def calculate_curvature_risk_class_capital(
         profile_id=profile_id,
         reporting_currency=reporting_currency,
         expected_risk_class=None,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -419,6 +429,8 @@ def calculate_girr_curvature_risk_class_capital_from_batch(
     *,
     profile_id: str,
     reporting_currency: str,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited GIRR curvature capital directly from a sensitivity batch."""
 
@@ -427,6 +439,8 @@ def calculate_girr_curvature_risk_class_capital_from_batch(
         profile_id=profile_id,
         reporting_currency=reporting_currency,
         expected_risk_class=SbmRiskClass.GIRR,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -436,6 +450,8 @@ def calculate_curvature_risk_class_capital_from_batch(
     profile_id: str,
     reporting_currency: str,
     expected_risk_class: SbmRiskClass | None = None,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     """Calculate cited curvature capital directly from package-owned batch arrays."""
 
@@ -462,6 +478,8 @@ def calculate_curvature_risk_class_capital_from_batch(
         profile_id=profile_id,
         risk_class=risk_class,
         curvature_branches=branches,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -471,6 +489,8 @@ def _calculate_curvature_risk_class_capital(
     profile_id: str,
     reporting_currency: str,
     expected_risk_class: SbmRiskClass | None,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str,
+    pairwise_evidence_limit: int,
 ) -> RiskClassCapital:
     if not sensitivities:
         raise SbmInputError("sensitivities must not be empty", field="sensitivities")
@@ -505,6 +525,8 @@ def _calculate_curvature_risk_class_capital(
         profile_id=profile_id,
         risk_class=risk_class,
         curvature_branches=branches,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
     )
 
 
@@ -990,6 +1012,8 @@ def _aggregate_curvature_factors(
     profile_id: str,
     risk_class: SbmRiskClass,
     curvature_branches: tuple[CurvatureBranchRecord, ...],
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
+    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
     grouped: dict[str, list[_CurvatureFactor]] = {}
     for factor in factors:
@@ -1036,7 +1060,11 @@ def _aggregate_curvature_factors(
                 inter_bucket_correlations=inter_correlations,
                 alternative_sb_used=False,
                 intra_buckets=tuple(
-                    _curvature_bucket_to_intra_record(bucket_scenario)
+                    _curvature_bucket_to_intra_record(
+                        bucket_scenario,
+                        pairwise_evidence_mode=pairwise_evidence_mode,
+                        pairwise_evidence_limit=pairwise_evidence_limit,
+                    )
                     for bucket_scenario in bucket_scenarios
                 ),
                 citation_ids=_merge_citation_ids(
@@ -1236,8 +1264,15 @@ def _curvature_inter_bucket_correlation_audit(
 
 def _curvature_bucket_to_intra_record(
     bucket_scenario: _CurvatureBucketScenario,
+    *,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str,
+    pairwise_evidence_limit: int,
 ) -> IntraBucketScenarioRecord:
-    pairwise_records, summary = _curvature_pairwise_audit(bucket_scenario)
+    pairwise_records, summary = _curvature_pairwise_audit(
+        bucket_scenario,
+        pairwise_evidence_mode=pairwise_evidence_mode,
+        pairwise_evidence_limit=pairwise_evidence_limit,
+    )
     return IntraBucketScenarioRecord(
         bucket_id=bucket_scenario.bucket_id,
         kb=bucket_scenario.selected.bucket_capital,
@@ -1298,8 +1333,33 @@ def _curvature_factor_to_weighted_sensitivity(
 
 def _curvature_pairwise_audit(
     bucket_scenario: _CurvatureBucketScenario,
+    *,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str,
+    pairwise_evidence_limit: int,
 ) -> tuple[tuple[PairwiseCorrelationRecord, ...], PairwiseCorrelationSummary]:
     factors = bucket_scenario.factors
+    mode = coerce_pairwise_evidence_mode(pairwise_evidence_mode)
+    total_count = len(factors) * (len(factors) + 1) // 2
+    if (
+        isinstance(pairwise_evidence_limit, bool)
+        or not isinstance(pairwise_evidence_limit, int)
+        or pairwise_evidence_limit < 0
+    ):
+        raise SbmInputError(
+            "pairwise_evidence_limit must be a non-negative integer",
+            field="pairwise_evidence_limit",
+        )
+    materialize = mode is SbmPairwiseEvidenceMode.FULL or (
+        mode is SbmPairwiseEvidenceMode.AUTO and total_count <= pairwise_evidence_limit
+    )
+    if not materialize:
+        return (), _curvature_pairwise_correlation_summary(
+            factors,
+            mode=mode,
+            materialized_count=0,
+            total_count=total_count,
+        )
+
     records: list[PairwiseCorrelationRecord] = []
     for row_index, factor_a in enumerate(factors):
         for col_index in range(row_index, len(factors)):
@@ -1311,15 +1371,29 @@ def _curvature_pairwise_audit(
                     correlation=float(bucket_scenario.correlation_matrix[row_index, col_index]),
                 )
             )
-    total_count = len(factors) * (len(factors) + 1) // 2
-    summary = PairwiseCorrelationSummary(
-        evidence_mode=SbmPairwiseEvidenceMode.FULL,
-        total_count=total_count,
+    summary = _curvature_pairwise_correlation_summary(
+        factors,
+        mode=mode,
         materialized_count=len(records),
-        omitted_count=0,
-        factor_ids=tuple(factor.factor_id for factor in factors),
+        total_count=total_count,
     )
     return tuple(records), summary
+
+
+def _curvature_pairwise_correlation_summary(
+    factors: Sequence[_CurvatureFactor],
+    *,
+    mode: SbmPairwiseEvidenceMode,
+    materialized_count: int,
+    total_count: int,
+) -> PairwiseCorrelationSummary:
+    return PairwiseCorrelationSummary(
+        evidence_mode=mode,
+        total_count=total_count,
+        materialized_count=materialized_count,
+        omitted_count=total_count - materialized_count,
+        factor_ids=tuple(factor.factor_id for factor in factors),
+    )
 
 
 def _curvature_bucket_branch_record(
@@ -1421,6 +1495,7 @@ def _build_vectorized_curvature_intra_bucket_correlation_matrix(
         name_rho = (
             CSR_INDEX_NAME_CORRELATION if csr_bucket.is_index_bucket else CSR_NAME_CORRELATION
         )
+        # CSR curvature factors collapse BOND/CDS to CREDIT_SPREAD_CURVE before aggregation.
         same_name = qualifiers[:, None] == qualifiers[None, :]
         same_basis = risk_factors[:, None] == risk_factors[None, :]
         delta = np.where(same_name, 1.0, name_rho) * np.where(
@@ -1431,6 +1506,7 @@ def _build_vectorized_curvature_intra_bucket_correlation_matrix(
         return delta.astype(np.float64) ** 2
     if risk_class is SbmRiskClass.CSR_SEC_CTP:
         csr_sec_ctp_bucket_definition(profile_id, ordered[0].bucket_id)
+        # CSR curvature factors collapse BOND/CDS to CREDIT_SPREAD_CURVE before aggregation.
         same_name = qualifiers[:, None] == qualifiers[None, :]
         same_basis = risk_factors[:, None] == risk_factors[None, :]
         delta = np.where(same_name, 1.0, CSR_NAME_CORRELATION) * np.where(
@@ -1443,6 +1519,7 @@ def _build_vectorized_curvature_intra_bucket_correlation_matrix(
         nonctp_bucket = csr_sec_nonctp_bucket_definition(profile_id, ordered[0].bucket_id)
         if nonctp_bucket.bucket_id == CSR_SEC_OTHER_SECTOR_BUCKET:
             return np.eye(size, dtype=np.float64)
+        # CSR curvature factors collapse BOND/CDS to CREDIT_SPREAD_CURVE before aggregation.
         same_tranche = qualifiers[:, None] == qualifiers[None, :]
         same_basis = risk_factors[:, None] == risk_factors[None, :]
         delta = np.where(
