@@ -1002,8 +1002,7 @@ class CapitalSummaryRow:
 
     def __post_init__(self) -> None:
         _require_non_empty_text(self.run_id, "run_id")
-        if not isinstance(self.as_of_date, date) or isinstance(self.as_of_date, datetime):
-            raise ResultStoreContractError("as_of_date must be a date", field="as_of_date")
+        _require_plain_date(self.as_of_date, "as_of_date")
         _require_non_empty_text(self.regime_id, "regime_id")
         _require_non_empty_text(self.base_currency, "base_currency")
         object.__setattr__(

@@ -33,6 +33,7 @@ from frtb_result_store.model import (
     ResultBundle,
     ResultEvent,
     ResultEventSeverity,
+    ResultStoreContractError,
     RunStatus,
 )
 
@@ -185,7 +186,11 @@ def _component_breakdown_rows(bundle: ResultBundle) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for component in sorted(nodes_by_component, key=lambda item: item.value):
         node_ids = {node.node_id for node in nodes_by_component[component]}
-        measures = [measure for measure in bundle.measures if measure.node_id in node_ids]
+        measures = [
+            measure
+            for measure in bundle.measures
+            if measure.node_id in node_ids and measure.measure_name == "capital"
+        ]
         currency = measures[0].currency if measures else bundle.run.base_currency
         row = ComponentBreakdownRow(
             run_id=bundle.run.run_id,
@@ -270,12 +275,20 @@ def _parent_by_child(bundle: ResultBundle) -> dict[str, str]:
 
 def _depth_by_node(parent_by_child: Mapping[str, str]) -> dict[str, int]:
     depth_by_node: dict[str, int] = {}
+    visiting: set[str] = set()
 
     def depth(node_id: str) -> int:
         if node_id in depth_by_node:
             return depth_by_node[node_id]
+        if node_id in visiting:
+            raise ResultStoreContractError(
+                f"cycle detected in capital tree at node: {node_id}",
+                field="edges",
+            )
+        visiting.add(node_id)
         parent = parent_by_child.get(node_id)
         depth_by_node[node_id] = 0 if parent is None else depth(parent) + 1
+        visiting.remove(node_id)
         return depth_by_node[node_id]
 
     for node_id in set(parent_by_child) | set(parent_by_child.values()):

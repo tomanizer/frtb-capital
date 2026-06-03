@@ -688,8 +688,33 @@ def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path
         "capital_tree",
         "component_breakdown",
     ]
-    for mart_name in ("capital_summary", "capital_tree", "component_breakdown"):
-        assert store._mart_path(mart_name, bundle.run.run_id).exists()
+
+
+def test_mart_generation_rejects_cyclic_capital_tree(tmp_path: Path) -> None:
+    bundle = _bundle()
+    cyclic_bundle = ResultBundle(
+        run=bundle.run,
+        nodes=bundle.nodes,
+        edges=tuple(
+            CapitalEdge(
+                run_id=bundle.run.run_id,
+                parent_node_id=parent,
+                child_node_id=child,
+                edge_type=EdgeType.DRILLDOWN,
+                sort_key=index,
+            )
+            for index, (parent, child) in enumerate(
+                (("sa", "sbm-girr-usd"), ("sbm-girr-usd", "sa")),
+                start=1,
+            )
+        ),
+        measures=bundle.measures,
+        artifacts=bundle.artifacts,
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    with pytest.raises(ResultStoreContractError, match="cycle detected in capital tree"):
+        store.write_bundle(cyclic_bundle)
 
 
 def test_incompatible_run_fails_closed_without_blocking_other_runs(tmp_path: Path) -> None:

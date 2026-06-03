@@ -936,9 +936,16 @@ class DuckDbParquetResultStore:
     ) -> tuple[tuple[object, ...], ...]:
         if not self._has_mart_files(mart_name):
             return ()
-        if parameters and isinstance(parameters[0], str) and self.run_exists(parameters[0]):
-            self._ensure_run_compatible(parameters[0])
-        sql = sql_template.format(mart=self._mart_relation(mart_name))
+        relation = self._mart_relation(mart_name)
+        if parameters and isinstance(parameters[0], str):
+            run_id = parameters[0]
+            if self.run_exists(run_id):
+                self._ensure_run_compatible(run_id)
+                mart_path = self._mart_path(mart_name, run_id)
+                if not mart_path.exists():
+                    return ()
+                relation = f"read_parquet({_sql_literal(str(mart_path))})"
+        sql = sql_template.format(mart=relation)
         return self._fetch_custom(sql, parameters)
 
     def _ensure_run_compatible(self, run_id: str) -> None:
