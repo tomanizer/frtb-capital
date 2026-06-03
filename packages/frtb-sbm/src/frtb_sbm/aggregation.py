@@ -687,6 +687,58 @@ def _inter_bucket_correlation_audit(
     return tuple(audit)
 
 
+def pairwise_correlation_audit_from_matrix(
+    factor_ids: Sequence[str],
+    matrix: npt.NDArray[np.float64],
+    *,
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str,
+    pairwise_evidence_limit: int,
+) -> tuple[tuple[PairwiseCorrelationRecord, ...], PairwiseCorrelationSummary]:
+    """Build pairwise correlation audit records honoring evidence mode controls."""
+
+    mode = _coerce_pairwise_evidence_mode(pairwise_evidence_mode)
+    size = len(factor_ids)
+    total_count = _upper_triangle_count(size)
+    if (
+        isinstance(pairwise_evidence_limit, bool)
+        or not isinstance(pairwise_evidence_limit, int)
+        or pairwise_evidence_limit < 0
+    ):
+        raise SbmInputError(
+            "pairwise_evidence_limit must be a non-negative integer",
+            field="pairwise_evidence_limit",
+        )
+    materialize = mode is SbmPairwiseEvidenceMode.FULL or (
+        mode is SbmPairwiseEvidenceMode.AUTO and total_count <= pairwise_evidence_limit
+    )
+    if not materialize:
+        return (), _pairwise_correlation_summary_from_factor_ids(
+            factor_ids,
+            mode=mode,
+            materialized_count=0,
+            total_count=total_count,
+        )
+
+    records: list[PairwiseCorrelationRecord] = []
+    for row_index, factor_a in enumerate(factor_ids):
+        for col_index in range(row_index, size):
+            factor_b = factor_ids[col_index]
+            records.append(
+                PairwiseCorrelationRecord(
+                    sensitivity_a=factor_a,
+                    sensitivity_b=factor_b,
+                    correlation=float(matrix[row_index, col_index]),
+                )
+            )
+    pairwise = tuple(records)
+    return pairwise, _pairwise_correlation_summary_from_factor_ids(
+        factor_ids,
+        mode=mode,
+        materialized_count=len(pairwise),
+        total_count=total_count,
+    )
+
+
 def _pairwise_correlation_audit(
     ordered: Sequence[WeightedSensitivity],
     matrix: npt.NDArray[np.float64],
@@ -745,12 +797,27 @@ def _pairwise_correlation_summary(
     materialized_count: int,
     total_count: int,
 ) -> PairwiseCorrelationSummary:
+    return _pairwise_correlation_summary_from_factor_ids(
+        tuple(item.sensitivity_id for item in ordered),
+        mode=mode,
+        materialized_count=materialized_count,
+        total_count=total_count,
+    )
+
+
+def _pairwise_correlation_summary_from_factor_ids(
+    factor_ids: Sequence[str],
+    *,
+    mode: SbmPairwiseEvidenceMode,
+    materialized_count: int,
+    total_count: int,
+) -> PairwiseCorrelationSummary:
     return PairwiseCorrelationSummary(
         evidence_mode=mode,
         total_count=total_count,
         materialized_count=materialized_count,
         omitted_count=total_count - materialized_count,
-        factor_ids=tuple(item.sensitivity_id for item in ordered),
+        factor_ids=tuple(factor_ids),
     )
 
 
