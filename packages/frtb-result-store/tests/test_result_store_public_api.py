@@ -13,10 +13,13 @@ from frtb_common import (
 from frtb_result_store import (
     PACKAGE_METADATA,
     ArtifactRef,
+    ArtifactSchemaEntry,
     ArtifactType,
+    ArtifactWriteRequest,
     CalculationRun,
     CapitalAttributionRecord,
     CapitalEdge,
+    CapitalMeasure,
     CapitalNode,
     CapitalNodeFamily,
     CapitalNodeSpec,
@@ -24,10 +27,12 @@ from frtb_result_store import (
     HierarchyDefinition,
     HierarchyLevel,
     NodeType,
+    RequiredArtifactExpectation,
     ResultBundle,
     ResultStoreContractError,
     RunStatus,
     RunStatusEvent,
+    artifact_schema_for,
     build_hierarchy_nodes,
     build_standard_capital_graph,
     canonical_run_group_identity_payload,
@@ -550,6 +555,114 @@ def test_attribution_record_reuses_common_capital_contribution_contract() -> Non
     assert record.method == contribution.method
     assert record.contribution == 10.0
     assert record.source_id == "sensitivity-girr-usd-5y"
+
+
+def test_measure_names_and_attribution_targets_fail_closed() -> None:
+    run = _run()
+    node = CapitalNode(
+        run_id=run.run_id,
+        node_id="total",
+        node_type=NodeType.ROOT,
+        component=FrtbComponent.TOP_OF_HOUSE,
+        label="Total capital",
+    )
+
+    CapitalMeasure(
+        run_id=run.run_id,
+        node_id=node.node_id,
+        measure_name="capital",
+        amount=42.0,
+        currency="USD",
+    )
+    with pytest.raises(ResultStoreContractError, match="measure_name must be one of"):
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id=node.node_id,
+            measure_name="ad_hoc_total",
+            amount=42.0,
+            currency="USD",
+        )
+    with pytest.raises(ResultStoreContractError, match="source_level must be one of"):
+        CapitalAttributionRecord(
+            run_id=run.run_id,
+            node_id=node.node_id,
+            contribution_id="bad-target",
+            source_id="target-001",
+            source_level="unregistered",
+            category="CAPITAL",
+            base_amount=1.0,
+            method="RESIDUAL",
+        )
+
+
+def test_artifact_schema_registry_and_expectation_contracts() -> None:
+    schema = artifact_schema_for("ima.pnl_vector.v1")
+    expectation = RequiredArtifactExpectation(
+        component="IMA",
+        artifact_type=ArtifactType.IMA_TAIL_OBSERVATION,
+        trigger_name="IMA_ES_TAIL_EVIDENCE",
+        required=True,
+        reason="ES tail evidence declared by writer",
+    )
+    request = ArtifactWriteRequest(
+        artifact_id_hint="ima-pnl",
+        artifact_type=ArtifactType.IMA_PNL_VECTOR,
+        component="IMA",
+        schema_id=schema.schema_id,
+        chunks=(),
+        partition_values={
+            "desk_id": "rates",
+            "portfolio_id": "rates-options",
+            "book_id": "rates-core",
+        },
+        conditional_expectations=(expectation,),
+    )
+
+    assert schema.schema_fingerprint == artifact_schema_for(schema.schema_id).schema_fingerprint
+    assert schema.arrow_schema.names == [
+        "run_id",
+        "desk_id",
+        "portfolio_id",
+        "book_id",
+        "position_id",
+        "risk_factor_id",
+        "risk_factor_set_id",
+        "scenario_id",
+        "observation_date",
+        "liquidity_horizon",
+        "pnl_amount",
+        "currency",
+        "tail_flag",
+        "source_row_id",
+    ]
+    assert request.conditional_expectations == (expectation,)
+    with pytest.raises(ResultStoreContractError, match="invalid artifact_type"):
+        ArtifactSchemaEntry(
+            schema_id="bad-artifact-type",
+            artifact_type="UNKNOWN",
+            schema_version=1,
+            arrow_schema=schema.arrow_schema,
+            required_columns=tuple(schema.arrow_schema.names),
+        )
+    with pytest.raises(ResultStoreContractError, match="invalid component"):
+        RequiredArtifactExpectation(
+            component="UNKNOWN",
+            artifact_type=ArtifactType.IMA_TAIL_OBSERVATION,
+            trigger_name="IMA_ES_TAIL_EVIDENCE",
+            required=True,
+            reason="ES tail evidence declared by writer",
+        )
+    with pytest.raises(ResultStoreContractError, match="invalid artifact_type"):
+        ArtifactWriteRequest(
+            artifact_id_hint="ima-pnl",
+            artifact_type="UNKNOWN",
+            component="IMA",
+            schema_id=schema.schema_id,
+            chunks=(),
+            partition_values={},
+        )
+    with pytest.raises(ResultStoreContractError, match="unknown artifact schema"):
+        artifact_schema_for("missing.schema")
 
 
 def test_artifact_ref_accepts_object_store_drillthrough_uri() -> None:

@@ -19,6 +19,11 @@ import pyarrow.parquet as pq  # type: ignore[import-untyped]
 from frtb_common import AttributionMethod
 from frtb_common.hashing import stable_json_dumps
 
+from frtb_result_store.artifacts import (
+    ArtifactWriteRequest,
+    StagedArtifact,
+    stage_artifact_write,
+)
 from frtb_result_store.model import (
     ArtifactRef,
     ArtifactType,
@@ -105,13 +110,19 @@ class DuckDbParquetResultStore:
                 f"{self.config.backend.value} backend is reserved for a later implementation",
                 field="backend",
             )
-        self.root = self.config.root
+        self.root = self.config.root.resolve()
         self.parquet_root = self.root / "parquet"
+        self.artifact_root = self.root / "artifacts"
         self.manifest_root = self.root / "manifests"
         self.catalog_path = self.root / self.config.catalog_filename
         self.root.mkdir(parents=True, exist_ok=True)
 
-    def write_bundle(self, bundle: ResultBundle) -> None:
+    def write_bundle(
+        self,
+        bundle: ResultBundle,
+        *,
+        artifact_requests: Sequence[ArtifactWriteRequest] = (),
+    ) -> None:
         """Persist one validated run bundle.
 
         The operation is append-only by ``run_id``. Rewriting the same run is a
@@ -122,7 +133,6 @@ class DuckDbParquetResultStore:
         if self.run_exists(run_id):
             raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}")
 
-        rows_by_table = _rows_for_bundle(bundle)
         initial_status_event = _initial_status_event(bundle.run)
         status_rows = [_status_event_row(initial_status_event)]
         safe_run_id = _safe_run_id(run_id)
@@ -133,7 +143,17 @@ class DuckDbParquetResultStore:
         staging_dir.mkdir(parents=True)
 
         moved_paths: list[Path] = []
+        staged_artifacts: tuple[StagedArtifact, ...] = ()
         try:
+            staged_artifacts = self._stage_artifact_requests(
+                bundle,
+                artifact_requests,
+                staging_dir,
+            )
+            rows_by_table = _rows_for_bundle(
+                bundle,
+                artifact_refs=tuple(artifact.ref for artifact in staged_artifacts),
+            )
             for table_name in RUN_TABLE_NAMES:
                 table = _arrow_table(rows_by_table[table_name], _TABLE_SCHEMAS[table_name])
                 pq.write_table(table, staging_dir / f"{table_name}.parquet")
@@ -157,6 +177,7 @@ class DuckDbParquetResultStore:
             status_path.parent.mkdir(parents=True, exist_ok=True)
             (staging_dir / "run_status_events.parquet").rename(status_path)
             moved_paths.append(status_path)
+            moved_paths.extend(self._move_staged_artifacts(staged_artifacts))
 
             self._write_manifest(bundle, rows_by_table, status_rows)
         except Exception:
@@ -166,6 +187,7 @@ class DuckDbParquetResultStore:
                 self.parquet_root / "run_status_events" / safe_run_id,
                 ignore_errors=True,
             )
+            self._remove_orphaned_artifacts(run_id)
             shutil.rmtree(staging_dir, ignore_errors=True)
             raise
         finally:
@@ -175,6 +197,35 @@ class DuckDbParquetResultStore:
         # turn a fully manifested run into a failed append.
         with suppress(Exception):
             self.refresh_catalog()
+
+    def _stage_artifact_requests(
+        self,
+        bundle: ResultBundle,
+        artifact_requests: Sequence[ArtifactWriteRequest],
+        staging_dir: Path,
+    ) -> tuple[StagedArtifact, ...]:
+        return tuple(
+            stage_artifact_write(
+                run=bundle.run,
+                request=request,
+                staging_dir=staging_dir,
+                final_root=self.artifact_root,
+            )
+            for request in artifact_requests
+        )
+
+    def _move_staged_artifacts(
+        self,
+        staged_artifacts: Sequence[StagedArtifact],
+    ) -> tuple[Path, ...]:
+        moved_paths: list[Path] = []
+        for artifact in staged_artifacts:
+            if artifact.final_path.exists():
+                raise ResultStoreWriteError(f"artifact already exists: {artifact.ref.artifact_id}")
+            artifact.final_path.parent.mkdir(parents=True, exist_ok=True)
+            artifact.staged_path.rename(artifact.final_path)
+            moved_paths.append(artifact.final_path)
+        return tuple(moved_paths)
 
     def run_exists(self, run_id: str) -> bool:
         """Return whether a run has already been written."""
@@ -612,9 +663,20 @@ class DuckDbParquetResultStore:
             self.parquet_root / "run_status_events" / _safe_run_id(run_id),
             ignore_errors=True,
         )
+        self._remove_orphaned_artifacts(run_id)
+
+    def _remove_orphaned_artifacts(self, run_id: str) -> None:
+        safe_run_id = _artifact_safe_run_id(run_id)
+        for path in self.artifact_root.glob(f"artifact_type=*/run_id={safe_run_id}"):
+            shutil.rmtree(path, ignore_errors=True)
 
 
-def _rows_for_bundle(bundle: ResultBundle) -> dict[str, list[dict[str, object]]]:
+def _rows_for_bundle(
+    bundle: ResultBundle,
+    *,
+    artifact_refs: Sequence[ArtifactRef] = (),
+) -> dict[str, list[dict[str, object]]]:
+    artifacts = tuple(bundle.artifacts) + tuple(artifact_refs)
     return {
         "runs": [_run_row(bundle.run)],
         "hierarchy_definitions": (
@@ -628,7 +690,7 @@ def _rows_for_bundle(bundle: ResultBundle) -> dict[str, list[dict[str, object]]]
         "capital_nodes": [_node_row(node) for node in bundle.nodes],
         "capital_edges": [_edge_row(edge) for edge in bundle.edges],
         "capital_measures": [_measure_row(measure) for measure in bundle.measures],
-        "artifact_refs": [_artifact_row(artifact) for artifact in bundle.artifacts],
+        "artifact_refs": [_artifact_row(artifact) for artifact in artifacts],
         "lineage_refs": [_lineage_row(lineage) for lineage in bundle.lineage],
         "capital_attributions": [
             _attribution_row(attribution) for attribution in bundle.attributions
@@ -1086,6 +1148,10 @@ def _stored_value(value: StrEnum | str) -> str:
 
 def _safe_run_id(run_id: str) -> str:
     return quote(run_id, safe="")
+
+
+def _artifact_safe_run_id(run_id: str) -> str:
+    return _safe_run_id(run_id)
 
 
 def _sql_literal(value: str) -> str:

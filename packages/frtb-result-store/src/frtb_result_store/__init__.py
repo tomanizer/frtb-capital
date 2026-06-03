@@ -7,6 +7,14 @@ from typing import TYPE_CHECKING
 from frtb_common import CapitalComponentMetadata, ImplementationStatus, ValidationStatus
 
 from frtb_result_store._version import __version__
+from frtb_result_store.artifacts import (
+    ARTIFACT_SCHEMA_REGISTRY,
+    ArtifactSchemaEntry,
+    ArtifactWriteRequest,
+    RequiredArtifactExpectation,
+    artifact_schema_fingerprint,
+    artifact_schema_for,
+)
 from frtb_result_store.capital_graph import (
     build_standard_capital_edges,
     build_standard_capital_graph,
@@ -63,9 +71,12 @@ PACKAGE_METADATA = CapitalComponentMetadata(
 )
 
 __all__ = [
+    "ARTIFACT_SCHEMA_REGISTRY",
     "PACKAGE_METADATA",
     "ArtifactRef",
+    "ArtifactSchemaEntry",
     "ArtifactType",
+    "ArtifactWriteRequest",
     "CalculationRun",
     "CapitalAttributionRecord",
     "CapitalEdge",
@@ -81,6 +92,7 @@ __all__ = [
     "HierarchyNode",
     "LineageRef",
     "NodeType",
+    "RequiredArtifactExpectation",
     "ResultBundle",
     "ResultStoreConfig",
     "ResultStoreContractError",
@@ -89,6 +101,8 @@ __all__ = [
     "RunStatusEvent",
     "StorageBackend",
     "__version__",
+    "artifact_schema_fingerprint",
+    "artifact_schema_for",
     "build_hierarchy_nodes",
     "build_standard_capital_edges",
     "build_standard_capital_graph",

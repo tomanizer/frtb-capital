@@ -4,12 +4,16 @@ import json
 import shutil
 from datetime import UTC, date, datetime
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 from frtb_common import CapitalContribution
 from frtb_result_store import (
     ArtifactRef,
     ArtifactType,
+    ArtifactWriteRequest,
     CalculationRun,
     CapitalAttributionRecord,
     CapitalEdge,
@@ -29,6 +33,7 @@ from frtb_result_store import (
     RunStatus,
     RunStatusEvent,
     StorageBackend,
+    artifact_schema_for,
     build_hierarchy_nodes,
     build_standard_capital_graph,
     canonical_run_group_identity_payload,
@@ -80,6 +85,19 @@ def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> 
     )
     assert manifest_path.exists()
     assert (tmp_path / "result-store/catalog.duckdb").exists()
+
+
+def test_duckdb_parquet_store_resolves_relative_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    store = DuckDbParquetResultStore(Path("result-store"))
+
+    assert store.root == (tmp_path / "result-store").resolve()
+    assert store.parquet_root == store.root / "parquet"
+    assert store.artifact_root == store.root / "artifacts"
+    assert store.catalog_path == store.root / "catalog.duckdb"
 
 
 def test_store_round_trips_hierarchy_definition_nodes_and_standard_graph(
@@ -149,6 +167,69 @@ def test_store_round_trips_hierarchy_definition_nodes_and_standard_graph(
     assert [node.node_id for node in store.child_nodes(run.run_id, nodes[1].node_id)] == [
         nodes[2].node_id
     ]
+
+
+def test_write_bundle_streams_strict_ima_pnl_artifact_chunks(tmp_path: Path) -> None:
+    run = _run_with_id("run-with-artifact")
+    bundle = _bundle(run)
+    schema = artifact_schema_for("ima.pnl_vector.v1")
+    request = ArtifactWriteRequest(
+        artifact_id_hint="ima-desk-a-pnl",
+        artifact_type=ArtifactType.IMA_PNL_VECTOR,
+        component="IMA",
+        schema_id=schema.schema_id,
+        chunks=_ima_pnl_chunks(schema.arrow_schema, run.run_id),
+        partition_values={
+            "desk_id": "rates",
+            "portfolio_id": "rates-options",
+            "book_id": "rates-core",
+        },
+        metadata={"source": "unit-test"},
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(bundle, artifact_requests=(request,))
+
+    refs = store.artifact_refs(run.run_id, artifact_type=ArtifactType.IMA_PNL_VECTOR)
+    assert len(refs) == 2
+    generated = next(ref for ref in refs if ref.metadata.get("source") == "unit-test")
+    assert generated.row_count == 2
+    assert generated.schema_fingerprint == schema.schema_fingerprint
+    assert generated.partition_keys == ("desk_id", "portfolio_id", "book_id")
+    assert generated.metadata["compression"] == "zstd"
+    assert generated.metadata["chunk_count"] == 2
+    assert generated.metadata["byte_count"] > 0
+    artifact_path = Path(unquote(urlparse(generated.uri).path))
+    assert artifact_path.exists()
+    assert pq.ParquetFile(artifact_path).metadata.row_group(0).column(0).compression == "ZSTD"
+
+
+def test_artifact_schema_mismatch_fails_before_manifest_commit(tmp_path: Path) -> None:
+    run = _run_with_id("run-with-bad-artifact")
+    schema = artifact_schema_for("ima.pnl_vector.v1")
+    bad_chunk = pa.Table.from_pylist(
+        [{"run_id": run.run_id, "desk_id": "rates"}],
+        schema=pa.schema([("run_id", pa.string()), ("desk_id", pa.string())]),
+    )
+    request = ArtifactWriteRequest(
+        artifact_id_hint="bad-ima-pnl",
+        artifact_type=ArtifactType.IMA_PNL_VECTOR,
+        component="IMA",
+        schema_id=schema.schema_id,
+        chunks=(bad_chunk,),
+        partition_values={
+            "desk_id": "rates",
+            "portfolio_id": "rates-options",
+            "book_id": "rates-core",
+        },
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    with pytest.raises(ResultStoreContractError, match="artifact chunk schema"):
+        store.write_bundle(_bundle(run), artifact_requests=(request,))
+
+    assert not store.run_exists(run.run_id)
+    assert store.artifact_refs(run.run_id) == ()
 
 
 def test_store_persists_canonical_identity_payloads_and_status_history(tmp_path: Path) -> None:
@@ -483,6 +564,44 @@ def _bundle(run: CalculationRun | None = None) -> ResultBundle:
         lineage=lineage,
         attributions=attributions,
     )
+
+
+def _ima_pnl_chunks(schema: pa.Schema, run_id: str) -> tuple[pa.Table, pa.Table]:
+    rows = [
+        {
+            "run_id": run_id,
+            "desk_id": "rates",
+            "portfolio_id": "rates-options",
+            "book_id": "rates-core",
+            "position_id": "pos-001",
+            "risk_factor_id": "rf-girr-usd-5y",
+            "risk_factor_set_id": None,
+            "scenario_id": "s-001",
+            "observation_date": date(2026, 6, 1),
+            "liquidity_horizon": 20,
+            "pnl_amount": 1.25,
+            "currency": "USD",
+            "tail_flag": False,
+            "source_row_id": "row-001",
+        },
+        {
+            "run_id": run_id,
+            "desk_id": "rates",
+            "portfolio_id": "rates-options",
+            "book_id": "rates-core",
+            "position_id": "pos-002",
+            "risk_factor_id": "rf-girr-usd-10y",
+            "risk_factor_set_id": "girr-usd",
+            "scenario_id": "s-002",
+            "observation_date": date(2026, 6, 2),
+            "liquidity_horizon": 40,
+            "pnl_amount": -0.5,
+            "currency": "USD",
+            "tail_flag": True,
+            "source_row_id": "row-002",
+        },
+    ]
+    return tuple(pa.Table.from_pylist([row], schema=schema) for row in rows)
 
 
 def _run_with_id(run_id: str) -> CalculationRun:

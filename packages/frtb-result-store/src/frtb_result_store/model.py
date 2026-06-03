@@ -20,6 +20,8 @@ from frtb_common import AttributionMethod, CapitalContribution
 from frtb_common.hashing import stable_json_hash
 
 __all__ = [
+    "VALID_ATTRIBUTION_TARGET_TYPES",
+    "VALID_MEASURE_NAMES",
     "ArtifactRef",
     "ArtifactType",
     "CalculationRun",
@@ -139,6 +141,28 @@ class CapitalNodeFamily(StrEnum):
     RESIDUAL_BRANCH = "residual_branch"
     RISK_FACTOR = "risk_factor"
     POSITION = "position"
+
+
+VALID_MEASURE_NAMES = frozenset(
+    {
+        "capital",
+    }
+)
+
+VALID_ATTRIBUTION_TARGET_TYPES = frozenset(
+    {
+        "POSITION",
+        "SENSITIVITY",
+        "RISK_FACTOR",
+        "ISSUER",
+        "COUNTERPARTY",
+        "DESK",
+        "PORTFOLIO",
+        "BOOK",
+        "RESIDUAL_BRANCH",
+        "UNSUPPORTED_BRANCH",
+    }
+)
 
 
 EnumT = TypeVar("EnumT", bound=StrEnum)
@@ -647,6 +671,7 @@ class CapitalMeasure:
         _require_non_empty_text(self.run_id, "run_id")
         _require_non_empty_text(self.node_id, "node_id")
         _require_non_empty_text(self.measure_name, "measure_name")
+        _require_registered_value(self.measure_name, VALID_MEASURE_NAMES, "measure_name")
         object.__setattr__(self, "amount", _require_finite_number(self.amount, "amount"))
         _require_non_empty_text(self.currency, "currency")
         _require_non_empty_text(self.unit, "unit")
@@ -742,6 +767,15 @@ class CapitalAttributionRecord:
         _require_non_empty_text(self.contribution_id, "contribution_id")
         _require_non_empty_text(self.source_id, "source_id")
         _require_non_empty_text(self.source_level, "source_level")
+        object.__setattr__(
+            self,
+            "source_level",
+            _registered_upper_value(
+                self.source_level,
+                VALID_ATTRIBUTION_TARGET_TYPES,
+                "source_level",
+            ),
+        )
         _validate_optional_text(self.bucket_key, "bucket_key")
         _require_non_empty_text(self.category, "category")
         object.__setattr__(
@@ -895,6 +929,18 @@ def _normalize_identity_value(value: object, field: str) -> object:
 def _require_non_empty_text(value: object, field: str) -> None:
     if not isinstance(value, str) or not value:
         raise ResultStoreContractError(f"{field} must be non-empty text", field=field)
+
+
+def _require_registered_value(value: str, registry: frozenset[str], field: str) -> None:
+    if value not in registry:
+        allowed = ", ".join(sorted(registry))
+        raise ResultStoreContractError(f"{field} must be one of: {allowed}", field=field)
+
+
+def _registered_upper_value(value: str, registry: frozenset[str], field: str) -> str:
+    normalized = value.upper()
+    _require_registered_value(normalized, registry, field)
+    return normalized
 
 
 def _require_mapping(value: object, field: str) -> None:
