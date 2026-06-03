@@ -18,6 +18,7 @@ SUPPORTED_PROFILES = {
     "partial_runtime",
     "scaffolded",
     "orchestration_partial",
+    "orchestration_implemented",
     "result_store_partial",
     "shared",
 }
@@ -28,6 +29,7 @@ EXPECTED_IMPLEMENTATION_STATUS = {
     "partial_runtime": ImplementationStatus.PARTIAL,
     "scaffolded": ImplementationStatus.SCAFFOLDED,
     "orchestration_partial": ImplementationStatus.PARTIAL,
+    "orchestration_implemented": ImplementationStatus.IMPLEMENTED,
     "result_store_partial": ImplementationStatus.PARTIAL,
 }
 EXPECTED_VALIDATION_STATUS = {
@@ -35,6 +37,7 @@ EXPECTED_VALIDATION_STATUS = {
     "partial_runtime": ValidationStatus.PENDING,
     "scaffolded": ValidationStatus.NOT_STARTED,
     "orchestration_partial": ValidationStatus.PENDING,
+    "orchestration_implemented": ValidationStatus.PENDING,
     "result_store_partial": ValidationStatus.PENDING,
 }
 REQUIRED_TEST_IDS = {
@@ -42,6 +45,7 @@ REQUIRED_TEST_IDS = {
     "partial_runtime": {"public-api", "unsupported-runtime-paths"},
     "scaffolded": {"scaffold-boundary"},
     "orchestration_partial": {"orchestration-boundary"},
+    "orchestration_implemented": {"orchestration-boundary", "suite-capital-end-to-end"},
     "result_store_partial": {"public-api", "duckdb-parquet"},
     "shared": {"regulatory-helpers"},
 }
@@ -327,6 +331,7 @@ def _entry_requirement_failures(entry: PackageEntry, *, root: Path) -> list[str]
         "partial_runtime": _partial_runtime_failures,
         "scaffolded": _scaffolded_failures,
         "orchestration_partial": _orchestration_partial_failures,
+        "orchestration_implemented": _orchestration_implemented_failures,
         "result_store_partial": _result_store_partial_failures,
         "shared": _shared_failures,
     }
@@ -485,6 +490,18 @@ def _orchestration_partial_failures(entry: PackageEntry, *, root: Path) -> list[
         failures.append("tests-directory")
     if not list(tests_dir.glob("test_*orchestration*.py")):
         failures.append("orchestration-tests")
+    return failures
+
+
+def _orchestration_implemented_failures(entry: PackageEntry, *, root: Path) -> list[str]:
+    failures = _common_package_file_failures(entry, root=root)
+    tests_dir = root / entry.path / "tests"
+    if not tests_dir.is_dir():
+        failures.append("tests-directory")
+    if not list(tests_dir.glob("test_*orchestration*.py")):
+        failures.append("orchestration-tests")
+    if not list(tests_dir.glob("test_*suite*.py")):
+        failures.append("suite-capital-tests")
     return failures
 
 
