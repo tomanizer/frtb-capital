@@ -77,6 +77,12 @@ def test_result_store_api_serves_committed_runs_without_catalog_access(
         == 42.0
     )
     assert (
+        client.get(f"/runs/{current.run_id}/top-contributors").json()["contributors"][0][
+            "attribution_id"
+        ]
+        == "ima-desk"
+    )
+    assert (
         client.get(f"/runs/{current.run_id}/nodes/ima/attribution").json()["attributions"][0][
             "attribution_id"
         ]
@@ -112,7 +118,10 @@ def test_result_store_api_serves_committed_runs_without_catalog_access(
     )
     comparison = client.get(f"/run-groups/{group_id}/regime-comparison").json()
     assert comparison["run_group_id"] == group_id
-    assert set(comparison["capital_summary"]) == {baseline.run_id, current.run_id}
+    assert {row["run_id"] for row in comparison["regime_comparison"]} == {
+        baseline.run_id,
+        current.run_id,
+    }
 
 
 def test_result_store_api_is_read_only_and_has_domain_openapi_tags(tmp_path: Path) -> None:
@@ -173,7 +182,7 @@ def test_regime_comparison_accepts_single_run_group_fallback(tmp_path: Path) -> 
     comparison = client.get(f"/run-groups/{fallback_group_id}/regime-comparison")
     assert comparison.status_code == 200
     assert comparison.json()["run_group_id"] == fallback_group_id
-    assert set(comparison.json()["capital_summary"]) == {run.run_id}
+    assert comparison.json()["regime_comparison"][0]["run_id"] == run.run_id
 
 
 def test_artifact_drillthrough_pages_and_downloads_local_parquet(tmp_path: Path) -> None:

@@ -679,6 +679,61 @@ class DuckDbParquetResultStore:
         )
         return tuple(movement_summary_from_row(row) for row in rows)
 
+    def top_contributors(self, run_id: str, *, limit: int = 10) -> tuple[dict[str, object], ...]:
+        """Return top attribution contributors from the persisted mart."""
+
+        if not self.run_exists(run_id):
+            return ()
+        limit = max(1, limit)
+        columns = _mart_columns("top_contributors")
+        rows = self._fetch_mart(
+            "top_contributors",
+            f"""
+            SELECT {", ".join(columns)}
+            FROM {{mart}}
+            WHERE run_id = ?
+            ORDER BY rank
+            LIMIT {limit}
+            """,
+            (run_id,),
+        )
+        return _dict_rows(columns, rows)
+
+    def mart_rows(self, run_id: str, mart_name: str) -> tuple[dict[str, object], ...]:
+        """Return rows from one persisted mart for a committed run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        columns = _mart_columns(mart_name)
+        rows = self._fetch_mart(
+            mart_name,
+            f"""
+            SELECT {", ".join(columns)}
+            FROM {{mart}}
+            WHERE run_id = ?
+            ORDER BY {", ".join(columns[: min(3, len(columns))])}
+            """,
+            (run_id,),
+        )
+        return _dict_rows(columns, rows)
+
+    def regime_comparison(self, run_group_id: str) -> tuple[dict[str, object], ...]:
+        """Return persisted comparison rows for one run group."""
+
+        columns = _mart_columns("regime_comparison")
+        if not self._has_mart_files("regime_comparison"):
+            return ()
+        rows = self._fetch_custom(
+            f"""
+            SELECT {", ".join(columns)}
+            FROM {self._mart_relation("regime_comparison")}
+            WHERE run_group_id = ?
+            ORDER BY as_of_date, regime_id, run_id
+            """,
+            (run_group_id,),
+        )
+        return _dict_rows(columns, rows)
+
     def child_nodes(self, run_id: str, parent_node_id: str) -> tuple[CapitalNode, ...]:
         """Return direct child nodes in graph order."""
 
@@ -1916,6 +1971,19 @@ def _view_name(table_name: str) -> str:
 
 def _mart_view_name(mart_name: str) -> str:
     return f"frtb_result_store_mart_{mart_name}"
+
+
+def _mart_columns(mart_name: str) -> tuple[str, ...]:
+    if mart_name not in MART_SCHEMAS:
+        raise ResultStoreContractError(f"unknown mart: {mart_name}", field="mart_name")
+    return tuple(MART_SCHEMAS[mart_name].names)
+
+
+def _dict_rows(
+    columns: Sequence[str],
+    rows: Sequence[Sequence[object]],
+) -> tuple[dict[str, object], ...]:
+    return tuple(dict(zip(columns, row, strict=True)) for row in rows)
 
 
 def _arrow_table(rows: Sequence[Mapping[str, object]], schema: Any) -> Any:

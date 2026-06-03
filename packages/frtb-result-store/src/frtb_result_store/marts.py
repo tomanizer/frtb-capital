@@ -24,6 +24,9 @@ from frtb_result_store._row_codecs import (
     stored_value as _stored_value,
 )
 from frtb_result_store.model import (
+    ArtifactRef,
+    ArtifactType,
+    CapitalAttributionRecord,
     CapitalMeasure,
     CapitalNode,
     CapitalSummaryRow,
@@ -56,8 +59,25 @@ def mart_rows_for_bundle(
     return {
         "capital_summary": [_capital_summary_row(bundle, lifecycle_status=lifecycle_status)],
         "capital_tree": _capital_tree_rows(bundle),
-        "component_breakdown": _component_breakdown_rows(bundle),
+        "top_contributors": _top_contributor_rows(bundle),
         "movement_summary": _movement_summary_rows(bundle),
+        "regime_comparison": [_regime_comparison_row(bundle, lifecycle_status=lifecycle_status)],
+        "component_breakdown": _component_breakdown_rows(bundle),
+        "ima_desk_dashboard": _ima_desk_dashboard_rows(bundle),
+        "sbm_bucket_ladder": _sbm_bucket_ladder_rows(bundle),
+        "drc_issuer_contributors": _component_identifier_rows(
+            bundle,
+            component=FrtbComponent.DRC,
+            identifier_field="issuer_id",
+            artifact_type=ArtifactType.DRC_JTD_TABLE,
+        ),
+        "cva_counterparty_contributors": _component_identifier_rows(
+            bundle,
+            component=FrtbComponent.CVA,
+            identifier_field="counterparty_id",
+            artifact_type=ArtifactType.CVA_EXPOSURE_TABLE,
+        ),
+        "rrao_exposure_summary": _rrao_exposure_summary_rows(bundle),
     }
 
 
@@ -286,6 +306,163 @@ def _movement_summary_row(movement: MovementResult) -> dict[str, object]:
     }
 
 
+def _top_contributor_rows(bundle: ResultBundle) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    component_by_node = {node.node_id: FrtbComponent(node.component) for node in bundle.nodes}
+    for rank, attribution in enumerate(
+        sorted(
+            bundle.attributions,
+            key=lambda item: (-abs(_contribution_amount(item)), item.node_id, item.attribution_id),
+        ),
+        start=1,
+    ):
+        rows.append(
+            {
+                "run_id": attribution.run_id,
+                "rank": rank,
+                "node_id": attribution.node_id,
+                "component": _stored_value(
+                    component_by_node.get(attribution.node_id, FrtbComponent.TOP_OF_HOUSE)
+                ),
+                "attribution_id": attribution.attribution_id,
+                "target_type": attribution.target_type,
+                "target_id": attribution.target_id,
+                "source_level": attribution.source_level,
+                "category": attribution.category,
+                "bucket_key": attribution.bucket_key,
+                "base_amount": attribution.base_amount,
+                "contribution": _contribution_amount(attribution),
+                "residual": attribution.residual,
+                "method": _stored_value(attribution.method),
+                "artifact_id": attribution.artifact_id,
+            }
+        )
+    return rows
+
+
+def _regime_comparison_row(
+    bundle: ResultBundle,
+    *,
+    lifecycle_status: RunStatus,
+) -> dict[str, object]:
+    total_measure = _measure_for_node(bundle.measures, node_id="total")
+    currency = total_measure.currency if total_measure is not None else bundle.run.base_currency
+    return {
+        "run_group_id": bundle.run.run_group_id or f"run:{bundle.run.run_id}",
+        "run_id": bundle.run.run_id,
+        "as_of_date": bundle.run.as_of_date.isoformat(),
+        "regime_id": bundle.run.regime_id,
+        "base_currency": bundle.run.base_currency,
+        "lifecycle_status": _stored_value(lifecycle_status),
+        "suggested_status": _stored_value(_suggested_status(bundle.events)),
+        "total_capital": 0.0 if total_measure is None else total_measure.amount,
+        "currency": currency,
+        "component_count": len(_components(bundle.nodes)),
+    }
+
+
+def _ima_desk_dashboard_rows(bundle: ResultBundle) -> list[dict[str, object]]:
+    groups: dict[str, list[CapitalNode]] = {}
+    for node in bundle.nodes:
+        if FrtbComponent(node.component) is FrtbComponent.IMA and node.desk_id:
+            groups.setdefault(node.desk_id, []).append(node)
+    capital_by_node = _capital_amount_by_node(bundle.measures)
+    currency_by_node = _currency_by_node(bundle.measures, bundle.run.base_currency)
+    rows: list[dict[str, object]] = []
+    for desk_id, nodes in sorted(groups.items()):
+        node_ids = {node.node_id for node in nodes}
+        rows.append(
+            {
+                "run_id": bundle.run.run_id,
+                "desk_id": desk_id,
+                "portfolio_count": len({node.portfolio_id for node in nodes if node.portfolio_id}),
+                "book_count": len({node.book_id for node in nodes if node.book_id}),
+                "node_count": len(node_ids),
+                "capital": sum(capital_by_node.get(node_id, 0.0) for node_id in node_ids),
+                "currency": _first_currency(nodes, currency_by_node, bundle.run.base_currency),
+            }
+        )
+    return rows
+
+
+def _sbm_bucket_ladder_rows(bundle: ResultBundle) -> list[dict[str, object]]:
+    groups: dict[tuple[str, str], list[CapitalNode]] = {}
+    for node in bundle.nodes:
+        if FrtbComponent(node.component) is FrtbComponent.SBM and node.risk_class and node.bucket:
+            groups.setdefault((node.risk_class, node.bucket), []).append(node)
+    capital_by_node = _capital_amount_by_node(bundle.measures)
+    currency_by_node = _currency_by_node(bundle.measures, bundle.run.base_currency)
+    rows: list[dict[str, object]] = []
+    for (risk_class, bucket), nodes in sorted(groups.items()):
+        node_ids = {node.node_id for node in nodes}
+        rows.append(
+            {
+                "run_id": bundle.run.run_id,
+                "risk_class": risk_class,
+                "bucket": bucket,
+                "node_count": len(node_ids),
+                "capital": sum(capital_by_node.get(node_id, 0.0) for node_id in node_ids),
+                "currency": _first_currency(nodes, currency_by_node, bundle.run.base_currency),
+            }
+        )
+    return rows
+
+
+def _component_identifier_rows(
+    bundle: ResultBundle,
+    *,
+    component: FrtbComponent,
+    identifier_field: str,
+    artifact_type: ArtifactType,
+) -> list[dict[str, object]]:
+    capital_by_node = _capital_amount_by_node(bundle.measures)
+    currency_by_node = _currency_by_node(bundle.measures, bundle.run.base_currency)
+    artifact_id = _artifact_id(bundle.artifacts, component=component, artifact_type=artifact_type)
+    rows: list[dict[str, object]] = []
+    for node in sorted(bundle.nodes, key=lambda item: (item.sort_key, item.node_id)):
+        if FrtbComponent(node.component) is not component:
+            continue
+        identifier = getattr(node, identifier_field)
+        if not identifier:
+            continue
+        rows.append(
+            {
+                "run_id": bundle.run.run_id,
+                identifier_field: identifier,
+                "node_id": node.node_id,
+                "capital": capital_by_node.get(node.node_id, 0.0),
+                "currency": currency_by_node.get(node.node_id, bundle.run.base_currency),
+                "artifact_id": artifact_id,
+            }
+        )
+    return rows
+
+
+def _rrao_exposure_summary_rows(bundle: ResultBundle) -> list[dict[str, object]]:
+    capital_by_node = _capital_amount_by_node(bundle.measures)
+    currency_by_node = _currency_by_node(bundle.measures, bundle.run.base_currency)
+    artifact_id = _artifact_id(
+        bundle.artifacts,
+        component=FrtbComponent.RRAO,
+        artifact_type=ArtifactType.RRAO_EXPOSURE_TABLE,
+    )
+    rows: list[dict[str, object]] = []
+    for node in sorted(bundle.nodes, key=lambda item: (item.sort_key, item.node_id)):
+        if FrtbComponent(node.component) is not FrtbComponent.RRAO:
+            continue
+        rows.append(
+            {
+                "run_id": bundle.run.run_id,
+                "node_id": node.node_id,
+                "exposure_class": node.calculation_branch or node.label,
+                "capital": capital_by_node.get(node.node_id, 0.0),
+                "currency": currency_by_node.get(node.node_id, bundle.run.base_currency),
+                "artifact_id": artifact_id,
+            }
+        )
+    return rows
+
+
 def _capital_tree_row(row: CapitalTreeMartRow) -> dict[str, object]:
     return {
         "run_id": row.run_id,
@@ -318,6 +495,51 @@ def _measure_for_node(
         if measure.node_id == node_id and measure.measure_name == "capital":
             return measure
     return None
+
+
+def _capital_amount_by_node(measures: Sequence[CapitalMeasure]) -> dict[str, float]:
+    return {
+        measure.node_id: measure.amount for measure in measures if measure.measure_name == "capital"
+    }
+
+
+def _currency_by_node(
+    measures: Sequence[CapitalMeasure],
+    default_currency: str,
+) -> dict[str, str]:
+    return {
+        measure.node_id: measure.currency or default_currency
+        for measure in measures
+        if measure.measure_name == "capital"
+    }
+
+
+def _first_currency(
+    nodes: Sequence[CapitalNode],
+    currency_by_node: Mapping[str, str],
+    default_currency: str,
+) -> str:
+    for node in sorted(nodes, key=lambda item: (item.sort_key, item.node_id)):
+        if node.node_id in currency_by_node:
+            return currency_by_node[node.node_id]
+    return default_currency
+
+
+def _artifact_id(
+    artifacts: Sequence[ArtifactRef],
+    *,
+    component: FrtbComponent,
+    artifact_type: ArtifactType,
+) -> str | None:
+    for artifact in sorted(artifacts, key=lambda item: item.artifact_id):
+        if artifact.component is component and artifact.artifact_type is artifact_type:
+            return artifact.artifact_id
+    return None
+
+
+def _contribution_amount(attribution: CapitalAttributionRecord) -> float:
+    contribution = attribution.contribution
+    return 0.0 if contribution is None else float(contribution)
 
 
 def _suggested_status(events: Sequence[ResultEvent]) -> RunStatus:

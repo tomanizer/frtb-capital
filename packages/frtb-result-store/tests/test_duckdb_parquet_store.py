@@ -59,6 +59,7 @@ from frtb_result_store.io import (
     _json_mapping,
     _json_text_tuple,
 )
+from frtb_result_store.mart_schemas import MART_NAMES
 
 
 def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> None:
@@ -751,12 +752,7 @@ def test_store_persists_input_events_telemetry_and_manifest_fingerprints(
     assert manifest["result_store_schema_version"] == 2
     assert manifest["writer_version"]
     assert "runs" in manifest["base_table_schema_fingerprints"]
-    assert sorted(manifest["mart_schema_fingerprints"]) == [
-        "capital_summary",
-        "capital_tree",
-        "component_breakdown",
-        "movement_summary",
-    ]
+    assert sorted(manifest["mart_schema_fingerprints"]) == sorted(MART_NAMES)
 
 
 def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path) -> None:
@@ -803,19 +799,27 @@ def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path
         FrtbComponent.SBM: 25.0,
         FrtbComponent.STANDARDISED_APPROACH: 25.0,
     }
+    assert store.top_contributors(bundle.run.run_id, limit=1)[0]["attribution_id"] == (
+        "sbm-girr-usd-5y"
+    )
+    assert store.mart_rows(bundle.run.run_id, "ima_desk_dashboard")[0]["desk_id"] == "rates"
+    assert store.mart_rows(bundle.run.run_id, "sbm_bucket_ladder")[0]["bucket"] == "USD"
+    assert store.regime_comparison(f"run:{bundle.run.run_id}")[0]["run_id"] == bundle.run.run_id
     manifest = json.loads(store._manifest_path(bundle.run.run_id).read_text(encoding="utf-8"))
     assert manifest["marts"] == {
         "capital_summary": 1,
         "capital_tree": 4,
-        "component_breakdown": 3,
+        "top_contributors": 1,
         "movement_summary": 0,
+        "regime_comparison": 1,
+        "component_breakdown": 3,
+        "ima_desk_dashboard": 1,
+        "sbm_bucket_ladder": 1,
+        "drc_issuer_contributors": 0,
+        "cva_counterparty_contributors": 0,
+        "rrao_exposure_summary": 0,
     }
-    assert sorted(manifest["mart_schema_fingerprints"]) == [
-        "capital_summary",
-        "capital_tree",
-        "component_breakdown",
-        "movement_summary",
-    ]
+    assert sorted(manifest["mart_schema_fingerprints"]) == sorted(MART_NAMES)
 
 
 def test_mart_generation_rejects_cyclic_capital_tree(tmp_path: Path) -> None:
