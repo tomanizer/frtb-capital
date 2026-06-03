@@ -9,7 +9,7 @@ from urllib.parse import unquote, urlparse
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
-from frtb_common import CapitalContribution
+from frtb_common import AttributionMethod, CapitalContribution
 from frtb_result_store import (
     ArtifactRef,
     ArtifactType,
@@ -27,6 +27,8 @@ from frtb_result_store import (
     FrtbComponent,
     InputSnapshotManifest,
     LineageRef,
+    MovementResult,
+    MovementSummaryRow,
     NodeType,
     RequiredArtifactExpectation,
     ResultBundle,
@@ -86,7 +88,15 @@ def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> 
         artifact_type=ArtifactType.IMA_PNL_VECTOR,
     )[0].uri.startswith("s3://")
     assert store.lineage_for_result(bundle.run.run_id, "total")[0].source_id == "snapshot-001"
-    assert store.attributions_for_node(bundle.run.run_id, "sbm-girr-usd")[0].contribution == 7.5
+    attribution = store.attributions_for_node(bundle.run.run_id, "sbm-girr-usd")[0]
+    assert attribution.attribution_id == "sbm-girr-usd-5y"
+    assert attribution.target_type == "SENSITIVITY"
+    assert attribution.target_id == "sensitivity-girr-usd-5y"
+    assert attribution.category == "SBM_DELTA"
+    assert attribution.bucket_key == "GIRR:USD"
+    assert attribution.marginal_multiplier == 0.3
+    assert attribution.contribution == 7.5
+    assert attribution.artifact_id == "sbm-sensitivity-table"
     assert store.latest_status(bundle.run.run_id) is RunStatus.CANDIDATE
     assert store.capital_summary(bundle.run.run_id)[0].total_capital == 42.0
     assert store.component_breakdown(bundle.run.run_id)[0].component is FrtbComponent.IMA
@@ -623,13 +633,14 @@ def test_store_persists_input_events_telemetry_and_manifest_fingerprints(
         TelemetryPhase.EXPORT,
     } <= telemetry_phases
     manifest = json.loads(store._manifest_path(run.run_id).read_text(encoding="utf-8"))
-    assert manifest["result_store_schema_version"] == 1
+    assert manifest["result_store_schema_version"] == 2
     assert manifest["writer_version"]
     assert "runs" in manifest["base_table_schema_fingerprints"]
     assert sorted(manifest["mart_schema_fingerprints"]) == [
         "capital_summary",
         "capital_tree",
         "component_breakdown",
+        "movement_summary",
     ]
 
 
@@ -682,11 +693,13 @@ def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path
         "capital_summary": 1,
         "capital_tree": 4,
         "component_breakdown": 3,
+        "movement_summary": 0,
     }
     assert sorted(manifest["mart_schema_fingerprints"]) == [
         "capital_summary",
         "capital_tree",
         "component_breakdown",
+        "movement_summary",
     ]
 
 
@@ -715,6 +728,88 @@ def test_mart_generation_rejects_cyclic_capital_tree(tmp_path: Path) -> None:
 
     with pytest.raises(ResultStoreContractError, match="cycle detected in capital tree"):
         store.write_bundle(cyclic_bundle)
+
+
+def test_store_persists_day_over_day_movement_results_and_summary_mart(
+    tmp_path: Path,
+) -> None:
+    run = _run_with_id("run-dod-current")
+    baseline_run_id = "run-dod-baseline"
+    movement = MovementResult(
+        run_id=run.run_id,
+        baseline_run_id=baseline_run_id,
+        movement_id="dod-total-capital",
+        node_id="total",
+        movement_type="DAY_OVER_DAY",
+        from_amount=40.0,
+        to_amount=42.0,
+        delta_amount=2.0,
+        base_currency="USD",
+        driver_type="NODE",
+        driver_id="total",
+        explanation="Total capital increased from the prior business day.",
+        attribution_method=AttributionMethod.ANALYTICAL_EULER,
+        artifact_id="ima-pnl-vector",
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(_bundle(run, movement_results=(movement,)))
+
+    assert store.movement_results(run.run_id) == (movement,)
+    assert store.movement_results(run.run_id, baseline_run_id=baseline_run_id) == (movement,)
+    assert store.movement_summary(run.run_id, node_id="total") == (
+        MovementSummaryRow(
+            run_id=run.run_id,
+            baseline_run_id=baseline_run_id,
+            movement_id="dod-total-capital",
+            node_id="total",
+            movement_type="DAY_OVER_DAY",
+            from_amount=40.0,
+            to_amount=42.0,
+            delta_amount=2.0,
+            base_currency="USD",
+            driver_type="NODE",
+            driver_id="total",
+            attribution_method=AttributionMethod.ANALYTICAL_EULER,
+            artifact_id="ima-pnl-vector",
+        ),
+    )
+    manifest = json.loads(store._manifest_path(run.run_id).read_text(encoding="utf-8"))
+    assert manifest["marts"]["movement_summary"] == 1
+
+
+def test_store_persists_regime_over_regime_movement_results(
+    tmp_path: Path,
+) -> None:
+    run = _run_with_id("run-us-npr-current")
+    movement = MovementResult(
+        run_id=run.run_id,
+        baseline_run_id="run-basel-baseline",
+        movement_id="regime-sbm-girr-usd",
+        node_id="sbm-girr-usd",
+        movement_type="REGIME_OVER_REGIME",
+        from_amount=22.0,
+        to_amount=25.0,
+        delta_amount=3.0,
+        base_currency="USD",
+        driver_type="REGIME",
+        driver_id="US_NPR_325.201",
+        explanation="US NPR regime capital exceeds the Basel comparator for this bucket.",
+        attribution_method=AttributionMethod.RESIDUAL,
+        artifact_id="sbm-sensitivity-table",
+        metadata={"comparison_regime_id": "BASEL_MAR21"},
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(_bundle(run, movement_results=(movement,)))
+
+    assert store.movement_results(run.run_id, node_id="sbm-girr-usd") == (movement,)
+    summary = store.movement_summary(run.run_id, node_id="sbm-girr-usd")
+    assert len(summary) == 1
+    assert summary[0].baseline_run_id == "run-basel-baseline"
+    assert summary[0].movement_type == "REGIME_OVER_REGIME"
+    assert summary[0].base_currency == "USD"
+    assert summary[0].delta_amount == 3.0
 
 
 def test_incompatible_run_fails_closed_without_blocking_other_runs(tmp_path: Path) -> None:
@@ -746,6 +841,7 @@ def _bundle(
     *,
     artifacts: tuple[ArtifactRef, ...] | None = None,
     input_manifests: tuple[InputSnapshotManifest, ...] = (),
+    movement_results: tuple[MovementResult, ...] = (),
     events: tuple[ResultEvent, ...] = (),
     telemetry: tuple[RunTelemetry, ...] = (),
 ) -> ResultBundle:
@@ -841,6 +937,7 @@ def _bundle(
                 contribution=7.5,
                 method="ANALYTICAL_EULER",
             ),
+            artifact_id="sbm-sensitivity-table",
         ),
     )
     return ResultBundle(
@@ -852,6 +949,7 @@ def _bundle(
         input_manifests=input_manifests,
         lineage=lineage,
         attributions=attributions,
+        movement_results=movement_results,
         events=events,
         telemetry=telemetry,
     )

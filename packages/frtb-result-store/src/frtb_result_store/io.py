@@ -65,6 +65,7 @@ from frtb_result_store.marts import (
     capital_tree_mart_from_row,
     component_breakdown_from_row,
     mart_rows_for_bundle,
+    movement_summary_from_row,
 )
 from frtb_result_store.model import (
     ArtifactRef,
@@ -84,6 +85,8 @@ from frtb_result_store.model import (
     HierarchyNode,
     InputSnapshotManifest,
     LineageRef,
+    MovementResult,
+    MovementSummaryRow,
     NodeType,
     ResultBundle,
     ResultEvent,
@@ -128,7 +131,7 @@ __all__ = [
 ]
 
 
-RESULT_STORE_SCHEMA_VERSION = 1
+RESULT_STORE_SCHEMA_VERSION = 2
 _LOGGER = logging.getLogger(__name__)
 RUN_TABLE_NAMES = (
     "runs",
@@ -142,6 +145,7 @@ RUN_TABLE_NAMES = (
     "input_snapshot_manifests",
     "lineage_refs",
     "capital_attributions",
+    "movement_results",
     "result_events",
     "run_telemetry",
 )
@@ -563,6 +567,35 @@ class DuckDbParquetResultStore:
         )
         return tuple(component_breakdown_from_row(row) for row in rows)
 
+    def movement_summary(
+        self,
+        run_id: str,
+        *,
+        node_id: str | None = None,
+    ) -> tuple[MovementSummaryRow, ...]:
+        """Return persisted movement summary rows for one run, optionally by node."""
+
+        if not self.run_exists(run_id):
+            return ()
+        where_clause = "WHERE run_id = ?"
+        parameters: tuple[object, ...] = (run_id,)
+        if node_id is not None:
+            where_clause += " AND node_id = ?"
+            parameters = (run_id, node_id)
+        rows = self._fetch_mart(
+            "movement_summary",
+            f"""
+            SELECT run_id, baseline_run_id, movement_id, node_id, movement_type,
+                   from_amount, to_amount, delta_amount, base_currency, driver_type,
+                   driver_id, attribution_method, artifact_id
+            FROM {{mart}}
+            {where_clause}
+            ORDER BY node_id, movement_type, driver_type, driver_id, movement_id
+            """,
+            parameters,
+        )
+        return tuple(movement_summary_from_row(row) for row in rows)
+
     def child_nodes(self, run_id: str, parent_node_id: str) -> tuple[CapitalNode, ...]:
         """Return direct child nodes in graph order."""
 
@@ -676,16 +709,49 @@ class DuckDbParquetResultStore:
         rows = self._fetchall(
             "capital_attributions",
             """
-            SELECT run_id, node_id, contribution_id, source_id, source_level, category,
-                   base_amount, method, bucket_key, marginal_multiplier, contribution,
-                   residual, reason, metadata_json
+            SELECT run_id, node_id, attribution_id, target_type, target_id, source_level,
+                   method, category, bucket_key, base_amount, marginal_multiplier,
+                   contribution, residual, unsupported_reason, artifact_id, metadata_json
             FROM {table}
             WHERE run_id = ? AND node_id = ?
-            ORDER BY contribution_id
+            ORDER BY attribution_id
             """,
             (run_id, node_id),
         )
         return tuple(_attribution_from_row(row) for row in rows)
+
+    def movement_results(
+        self,
+        run_id: str,
+        *,
+        baseline_run_id: str | None = None,
+        node_id: str | None = None,
+    ) -> tuple[MovementResult, ...]:
+        """Return official movement result rows attached to one current run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        filters = ["run_id = ?"]
+        parameters: list[object] = [run_id]
+        if baseline_run_id is not None:
+            filters.append("baseline_run_id = ?")
+            parameters.append(baseline_run_id)
+        if node_id is not None:
+            filters.append("node_id = ?")
+            parameters.append(node_id)
+        rows = self._fetchall(
+            "movement_results",
+            f"""
+            SELECT run_id, baseline_run_id, movement_id, node_id, movement_type,
+                   from_amount, to_amount, delta_amount, base_currency, driver_type,
+                   driver_id, explanation, attribution_method, artifact_id, metadata_json
+            FROM {{table}}
+            WHERE {" AND ".join(filters)}
+            ORDER BY node_id, movement_type, driver_type, driver_id, movement_id
+            """,
+            tuple(parameters),
+        )
+        return tuple(_movement_from_row(row) for row in rows)
 
     def lineage_for_result(self, run_id: str, result_id: str) -> tuple[LineageRef, ...]:
         """Return lineage references for a stored result object."""
@@ -1145,6 +1211,7 @@ def _rows_for_bundle(
         "capital_attributions": [
             _attribution_row(attribution) for attribution in bundle.attributions
         ],
+        "movement_results": [_movement_row(movement) for movement in bundle.movement_results],
         "result_events": [_result_event_row(event) for event in bundle.events],
         "run_telemetry": [_telemetry_row(telemetry) for telemetry in bundle.telemetry],
     }
@@ -1308,18 +1375,42 @@ def _attribution_row(attribution: CapitalAttributionRecord) -> dict[str, object]
     return {
         "run_id": attribution.run_id,
         "node_id": attribution.node_id,
-        "contribution_id": attribution.contribution_id,
-        "source_id": attribution.source_id,
+        "attribution_id": attribution.attribution_id,
+        "target_type": attribution.target_type,
+        "target_id": attribution.target_id,
         "source_level": attribution.source_level,
-        "category": attribution.category,
-        "base_amount": attribution.base_amount,
         "method": _stored_value(attribution.method),
+        "category": attribution.category,
         "bucket_key": attribution.bucket_key,
+        "base_amount": attribution.base_amount,
         "marginal_multiplier": attribution.marginal_multiplier,
         "contribution": attribution.contribution,
         "residual": attribution.residual,
-        "reason": attribution.reason,
+        "unsupported_reason": attribution.unsupported_reason,
+        "artifact_id": attribution.artifact_id,
         "metadata_json": _metadata_json(attribution.metadata),
+    }
+
+
+def _movement_row(movement: MovementResult) -> dict[str, object]:
+    return {
+        "run_id": movement.run_id,
+        "baseline_run_id": movement.baseline_run_id,
+        "movement_id": movement.movement_id,
+        "node_id": movement.node_id,
+        "movement_type": movement.movement_type,
+        "from_amount": movement.from_amount,
+        "to_amount": movement.to_amount,
+        "delta_amount": movement.delta_amount,
+        "base_currency": movement.base_currency,
+        "driver_type": movement.driver_type,
+        "driver_id": movement.driver_id,
+        "explanation": movement.explanation,
+        "attribution_method": None
+        if movement.attribution_method is None
+        else _stored_value(movement.attribution_method),
+        "artifact_id": movement.artifact_id,
+        "metadata_json": _metadata_json(movement.metadata),
     }
 
 
@@ -1509,17 +1600,41 @@ def _attribution_from_row(row: Sequence[object]) -> CapitalAttributionRecord:
         run_id=str(row[0]),
         node_id=str(row[1]),
         contribution_id=str(row[2]),
-        source_id=str(row[3]),
-        source_level=str(row[4]),
-        category=str(row[5]),
-        base_amount=_float_value(row[6]),
-        method=AttributionMethod(str(row[7])),
+        source_id=str(row[4]),
+        source_level=str(row[5]),
+        method=AttributionMethod(str(row[6])),
+        category=str(row[7]),
         bucket_key=_optional_text(row[8]),
-        marginal_multiplier=_optional_float(row[9]),
-        contribution=_optional_float(row[10]),
-        residual=_float_value(row[11]),
-        reason=str(row[12]),
-        metadata=_json_mapping(row[13]),
+        base_amount=_float_value(row[9]),
+        marginal_multiplier=_optional_float(row[10]),
+        contribution=_optional_float(row[11]),
+        residual=_float_value(row[12]),
+        reason=str(row[13]),
+        target_type=str(row[3]),
+        target_id=str(row[4]),
+        unsupported_reason=str(row[13]),
+        artifact_id=_optional_text(row[14]),
+        metadata=_json_mapping(row[15]),
+    )
+
+
+def _movement_from_row(row: Sequence[object]) -> MovementResult:
+    return MovementResult(
+        run_id=str(row[0]),
+        baseline_run_id=str(row[1]),
+        movement_id=str(row[2]),
+        node_id=str(row[3]),
+        movement_type=str(row[4]),
+        from_amount=_float_value(row[5]),
+        to_amount=_float_value(row[6]),
+        delta_amount=_float_value(row[7]),
+        base_currency=str(row[8]),
+        driver_type=str(row[9]),
+        driver_id=str(row[10]),
+        explanation=str(row[11]),
+        attribution_method=_optional_text(row[12]),
+        artifact_id=_optional_text(row[13]),
+        metadata=_json_mapping(row[14]),
     )
 
 
@@ -1732,17 +1847,38 @@ _TABLE_SCHEMAS: dict[str, Any] = {
         [
             ("run_id", pa.string()),
             ("node_id", pa.string()),
-            ("contribution_id", pa.string()),
-            ("source_id", pa.string()),
+            ("attribution_id", pa.string()),
+            ("target_type", pa.string()),
+            ("target_id", pa.string()),
             ("source_level", pa.string()),
-            ("category", pa.string()),
-            ("base_amount", pa.float64()),
             ("method", pa.string()),
+            ("category", pa.string()),
             ("bucket_key", pa.string()),
+            ("base_amount", pa.float64()),
             ("marginal_multiplier", pa.float64()),
             ("contribution", pa.float64()),
             ("residual", pa.float64()),
-            ("reason", pa.string()),
+            ("unsupported_reason", pa.string()),
+            ("artifact_id", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "movement_results": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("baseline_run_id", pa.string()),
+            ("movement_id", pa.string()),
+            ("node_id", pa.string()),
+            ("movement_type", pa.string()),
+            ("from_amount", pa.float64()),
+            ("to_amount", pa.float64()),
+            ("delta_amount", pa.float64()),
+            ("base_currency", pa.string()),
+            ("driver_type", pa.string()),
+            ("driver_id", pa.string()),
+            ("explanation", pa.string()),
+            ("attribution_method", pa.string()),
+            ("artifact_id", pa.string()),
             ("metadata_json", pa.string()),
         ]
     ),

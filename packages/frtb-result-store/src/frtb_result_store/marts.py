@@ -30,6 +30,8 @@ from frtb_result_store.model import (
     CapitalTreeMartRow,
     ComponentBreakdownRow,
     FrtbComponent,
+    MovementResult,
+    MovementSummaryRow,
     ResultBundle,
     ResultEvent,
     ResultEventSeverity,
@@ -42,6 +44,7 @@ __all__ = [
     "capital_tree_mart_from_row",
     "component_breakdown_from_row",
     "mart_rows_for_bundle",
+    "movement_summary_from_row",
 ]
 
 
@@ -54,6 +57,7 @@ def mart_rows_for_bundle(
         "capital_summary": [_capital_summary_row(bundle, lifecycle_status=lifecycle_status)],
         "capital_tree": _capital_tree_rows(bundle),
         "component_breakdown": _component_breakdown_rows(bundle),
+        "movement_summary": _movement_summary_rows(bundle),
     }
 
 
@@ -104,6 +108,24 @@ def component_breakdown_from_row(row: Sequence[object]) -> ComponentBreakdownRow
         currency=str(row[3]),
         node_count=_int_value(row[4]),
         measure_count=_int_value(row[5]),
+    )
+
+
+def movement_summary_from_row(row: Sequence[object]) -> MovementSummaryRow:
+    return MovementSummaryRow(
+        run_id=str(row[0]),
+        baseline_run_id=str(row[1]),
+        movement_id=str(row[2]),
+        node_id=str(row[3]),
+        movement_type=str(row[4]),
+        from_amount=_float_value(row[5]),
+        to_amount=_float_value(row[6]),
+        delta_amount=_float_value(row[7]),
+        base_currency=str(row[8]),
+        driver_type=str(row[9]),
+        driver_id=str(row[10]),
+        attribution_method=_optional_text(row[11]),
+        artifact_id=_optional_text(row[12]),
     )
 
 
@@ -211,6 +233,57 @@ def _component_breakdown_rows(bundle: ResultBundle) -> list[dict[str, object]]:
             }
         )
     return rows
+
+
+def _movement_summary_rows(bundle: ResultBundle) -> list[dict[str, object]]:
+    return [
+        _movement_summary_row(movement)
+        for movement in sorted(
+            bundle.movement_results,
+            key=lambda item: (
+                item.node_id,
+                item.movement_type,
+                item.driver_type,
+                item.driver_id,
+                item.movement_id,
+            ),
+        )
+    ]
+
+
+def _movement_summary_row(movement: MovementResult) -> dict[str, object]:
+    row = MovementSummaryRow(
+        run_id=movement.run_id,
+        baseline_run_id=movement.baseline_run_id,
+        movement_id=movement.movement_id,
+        node_id=movement.node_id,
+        movement_type=movement.movement_type,
+        from_amount=movement.from_amount,
+        to_amount=movement.to_amount,
+        delta_amount=movement.delta_amount,
+        base_currency=movement.base_currency,
+        driver_type=movement.driver_type,
+        driver_id=movement.driver_id,
+        attribution_method=movement.attribution_method,
+        artifact_id=movement.artifact_id,
+    )
+    return {
+        "run_id": row.run_id,
+        "baseline_run_id": row.baseline_run_id,
+        "movement_id": row.movement_id,
+        "node_id": row.node_id,
+        "movement_type": row.movement_type,
+        "from_amount": row.from_amount,
+        "to_amount": row.to_amount,
+        "delta_amount": row.delta_amount,
+        "base_currency": row.base_currency,
+        "driver_type": row.driver_type,
+        "driver_id": row.driver_id,
+        "attribution_method": None
+        if row.attribution_method is None
+        else _stored_value(row.attribution_method),
+        "artifact_id": row.artifact_id,
+    }
 
 
 def _capital_tree_row(row: CapitalTreeMartRow) -> dict[str, object]:
