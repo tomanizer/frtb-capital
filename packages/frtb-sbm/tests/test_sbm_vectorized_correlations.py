@@ -11,9 +11,9 @@ from frtb_sbm import (
     non_girr_vega_intra_bucket_correlation,
 )
 from frtb_sbm.curvature import (
-    _CurvatureFactor,
     _build_curvature_intra_bucket_correlation_matrix,
     _curvature_intra_bucket_correlation,
+    _CurvatureFactor,
 )
 
 _PROFILE = SbmRegulatoryProfile.BASEL_MAR21.value

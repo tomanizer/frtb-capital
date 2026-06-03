@@ -181,7 +181,7 @@ def test_auto_pairwise_evidence_omits_large_buckets_without_changing_capital() -
     assert len(full_bucket.pairwise_correlations) == 3240
 
 
-def test_curvature_summary_pairwise_evidence_mode_omits_materialized_records() -> None:
+def test_curvature_batch_summary_pairwise_evidence_mode_omits_materialized_records() -> None:
     sensitivities = tuple(
         SbmSensitivity(
             sensitivity_id=f"girr-curv-{index:02d}",
