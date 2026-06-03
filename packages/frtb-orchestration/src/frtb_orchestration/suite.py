@@ -19,6 +19,9 @@ import math
 from dataclasses import dataclass
 from datetime import date
 
+from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
+from frtb_common.contribution_bundle import ComponentContributionBundle
+
 from frtb_orchestration.cva_summary import CvaCapitalSummary
 from frtb_orchestration.ima_summary import ImaCapitalSummary
 from frtb_orchestration.standardised import (
@@ -47,6 +50,37 @@ _SUITE_PROFILE_FAMILY: dict[str, str] = {
     "UK_PRA_CVA": "BASEL",
 }
 
+_ATTRIBUTION_RECONCILIATION_TOLERANCE = 1e-6
+
+_COMPONENT_LABEL_ALIASES: dict[str, str] = {
+    "ima": "frtb_ima",
+    "frtb_ima": "frtb_ima",
+    "frtb_ima_package": "frtb_ima",
+    "frtb_ima_component": "frtb_ima",
+    "sa": "frtb_sa",
+    "standardised": "frtb_sa",
+    "standardised_approach": "frtb_sa",
+    "frtb_sa": "frtb_sa",
+    "frtb_standardised": "frtb_sa",
+    "sbm": "frtb_sbm",
+    "frtb_sbm": "frtb_sbm",
+    "drc": "frtb_drc",
+    "frtb_drc": "frtb_drc",
+    "rrao": "frtb_rrao",
+    "frtb_rrao": "frtb_rrao",
+    "cva": "frtb_cva",
+    "frtb_cva": "frtb_cva",
+}
+
+_TOP_LEVEL_ATTRIBUTION_COMPONENTS = ("frtb_ima", "frtb_sa", "frtb_cva")
+_DECOMPOSED_ATTRIBUTION_COMPONENTS = (
+    "frtb_ima",
+    "frtb_sbm",
+    "frtb_drc",
+    "frtb_rrao",
+    "frtb_cva",
+)
+
 
 def suite_jurisdiction_family(profile_id: str) -> str:
     """Return the suite-level jurisdiction family for a profile or regime id."""
@@ -59,6 +93,55 @@ def suite_jurisdiction_family(profile_id: str) -> str:
             field="profile_id",
         )
     return family
+
+
+@dataclass(frozen=True)
+class SuiteAttributionResult:
+    """Suite-level attribution report that preserves component bundles unchanged."""
+
+    run_id: str
+    suite_total_capital: float
+    component_bundles: tuple[ComponentContributionBundle, ...]
+    suite_residual: CapitalContribution
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        object.__setattr__(
+            self,
+            "suite_total_capital",
+            _require_non_negative_finite_number(self.suite_total_capital, "suite_total_capital"),
+        )
+        _require_tuple_of(self.component_bundles, ComponentContributionBundle, "component_bundles")
+        if not isinstance(self.suite_residual, CapitalContribution):
+            raise OrchestrationInputError(
+                "suite_residual must be a CapitalContribution", field="suite_residual"
+            )
+        if self.suite_residual.method != AttributionMethod.RESIDUAL:
+            raise OrchestrationInputError(
+                "suite_residual method must be RESIDUAL", field="suite_residual"
+            )
+        reconciled_total = math.fsum(
+            [bundle.component_total for bundle in self.component_bundles]
+            + [
+                self.suite_residual.contribution or 0.0,
+                self.suite_residual.residual,
+            ]
+        )
+        if not _within_attribution_tolerance(reconciled_total, self.suite_total_capital):
+            raise OrchestrationInputError(
+                "suite attribution records must reconcile to suite_total_capital",
+                field="suite_total_capital",
+            )
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable attribution report."""
+
+        return {
+            "run_id": self.run_id,
+            "suite_total_capital": self.suite_total_capital,
+            "component_bundles": [bundle.as_dict() for bundle in self.component_bundles],
+            "suite_residual": self.suite_residual.as_dict(),
+        }
 
 
 @dataclass(frozen=True)
@@ -89,6 +172,7 @@ class SuiteCapitalResult:
     cva_summary: CvaCapitalSummary
     citations: tuple[str, ...]
     warnings: tuple[str, ...] = ()
+    attribution_result: SuiteAttributionResult | None = None
 
     def __post_init__(self) -> None:
         _require_non_empty_text(self.run_id, "run_id")
@@ -138,11 +222,26 @@ class SuiteCapitalResult:
             )
         _require_text_tuple(self.citations, "citations")
         _require_text_tuple(self.warnings, "warnings")
+        if self.attribution_result is not None and not isinstance(
+            self.attribution_result, SuiteAttributionResult
+        ):
+            raise OrchestrationInputError(
+                "attribution_result must be a SuiteAttributionResult",
+                field="attribution_result",
+            )
+        if self.attribution_result is not None:
+            if not _within_attribution_tolerance(
+                self.attribution_result.suite_total_capital, self.total_capital
+            ):
+                raise OrchestrationInputError(
+                    "attribution_result suite_total_capital must match total_capital",
+                    field="attribution_result",
+                )
 
     def as_dict(self) -> dict[str, object]:
         """Return a deterministic audit payload for the suite capital result."""
 
-        return {
+        payload: dict[str, object] = {
             "run_id": self.run_id,
             "calculation_date": self.calculation_date.isoformat(),
             "base_currency": self.base_currency,
@@ -157,6 +256,9 @@ class SuiteCapitalResult:
             "citations": list(self.citations),
             "warnings": list(self.warnings),
         }
+        if self.attribution_result is not None:
+            payload["attribution_result"] = self.attribution_result.as_dict()
+        return payload
 
 
 def calculate_suite_capital(
@@ -165,26 +267,13 @@ def calculate_suite_capital(
     sa_result: StandardisedApproachCapitalResult,
     cva_summary: CvaCapitalSummary,
     run_id: str | None = None,
+    component_contribution_bundles: tuple[ComponentContributionBundle, ...] = (),
 ) -> SuiteCapitalResult:
     """Aggregate IMA, SA, and CVA capital into the top-of-house suite result.
 
-    All three components must share the same calculation date, base currency,
-    and regulatory jurisdiction family. Missing, incompatible, or mixed-family
-    inputs raise ``OrchestrationInputError``.
-
-    Parameters
-    ----------
-    ima_summary:
-        IMA component capital summary, constructed via ``ImaCapitalSummary``
-        or ``recognise_ima_summary``.
-    sa_result:
-        Composed Standardised Approach result from
-        ``compose_standardised_approach_capital``.
-    cva_summary:
-        CVA capital summary from ``recognise_cva_summary``.
-    run_id:
-        Optional override for the suite run identifier. When omitted, a
-        deterministic id is derived from the component run identifiers.
+    Components must share calculation date, base currency, and jurisdiction
+    family. When attribution bundles are supplied, they are validated and
+    re-exposed with an explicit suite-level residual record.
     """
 
     if not isinstance(ima_summary, ImaCapitalSummary):
@@ -231,11 +320,121 @@ def calculate_suite_capital(
     else:
         effective_run_id = _default_suite_run_id(ima_summary, sa_result, cva_summary)
 
-    return SuiteCapitalResult(
+    result = _build_suite_capital_result(
         run_id=effective_run_id,
+        suite_profile_family=suite_family,
+        total_capital=total_capital,
+        ima_summary=ima_summary,
+        sa_result=sa_result,
+        cva_summary=cva_summary,
+        citations=citations,
+        warnings=warnings,
+    )
+    if not component_contribution_bundles:
+        return result
+
+    attribution_result = aggregate_suite_attribution(
+        suite_result=result,
+        component_bundles=component_contribution_bundles,
+    )
+    return _build_suite_capital_result(
+        run_id=effective_run_id,
+        suite_profile_family=suite_family,
+        total_capital=total_capital,
+        ima_summary=ima_summary,
+        sa_result=sa_result,
+        cva_summary=cva_summary,
+        citations=citations,
+        warnings=warnings,
+        attribution_result=attribution_result,
+    )
+
+
+def aggregate_suite_attribution(
+    *,
+    suite_result: SuiteCapitalResult,
+    component_bundles: tuple[ComponentContributionBundle, ...],
+    suite_total_capital: float | None = None,
+) -> SuiteAttributionResult:
+    """Validate and aggregate component contribution bundles at suite level.
+
+    Incoming component bundles and their contained ``CapitalContribution``
+    records are preserved unchanged. The returned suite residual explicitly
+    reconciles bundle totals to the top-of-house suite capital.
+    """
+
+    if not isinstance(suite_result, SuiteCapitalResult):
+        raise OrchestrationInputError(
+            "suite_result must be a SuiteCapitalResult", field="suite_result"
+        )
+    _require_tuple_of(component_bundles, ComponentContributionBundle, "component_bundles")
+    if suite_total_capital is None:
+        effective_suite_total = suite_result.total_capital
+    else:
+        effective_suite_total = _require_non_negative_finite_number(
+            suite_total_capital, "suite_total_capital"
+        )
+    component_capitals = _expected_component_capitals(suite_result)
+    canonical_components = _validate_component_bundles(component_bundles, component_capitals)
+    _require_supported_attribution_component_set(canonical_components)
+
+    component_total = math.fsum(bundle.component_total for bundle in component_bundles)
+    residual = effective_suite_total - component_total
+    residual_status = (
+        ReconciliationStatus.RECONCILED
+        if _within_attribution_tolerance(residual, 0.0)
+        else ReconciliationStatus.PARTIAL_RESIDUAL
+    )
+    residual_reason = (
+        "suite-level residual reconciles component contribution bundles to "
+        "top-of-house capital; non-zero residuals represent explicitly "
+        "unallocated cross-component interactions"
+    )
+    if residual_status == ReconciliationStatus.RECONCILED:
+        residual_reason = (
+            "suite-level residual record retained for audit; component "
+            "contribution bundles reconcile exactly to top-of-house capital"
+        )
+
+    return SuiteAttributionResult(
+        run_id=suite_result.run_id,
+        suite_total_capital=effective_suite_total,
+        component_bundles=component_bundles,
+        suite_residual=CapitalContribution(
+            contribution_id=f"{suite_result.run_id}:suite-residual",
+            source_id=suite_result.run_id,
+            source_level="suite",
+            bucket_key=None,
+            category="SUITE_RESIDUAL",
+            base_amount=effective_suite_total,
+            marginal_multiplier=None,
+            contribution=None,
+            method=AttributionMethod.RESIDUAL,
+            residual=residual,
+            reason=residual_reason,
+            citations=("ADR 0038",),
+            reconciliation_status=residual_status,
+        ),
+    )
+
+
+def _build_suite_capital_result(
+    *,
+    run_id: str,
+    suite_profile_family: str,
+    total_capital: float,
+    ima_summary: ImaCapitalSummary,
+    sa_result: StandardisedApproachCapitalResult,
+    cva_summary: CvaCapitalSummary,
+    citations: tuple[str, ...],
+    warnings: tuple[str, ...],
+    attribution_result: SuiteAttributionResult | None = None,
+) -> SuiteCapitalResult:
+    return SuiteCapitalResult(
+        run_id=run_id,
         calculation_date=ima_summary.calculation_date,
         base_currency=ima_summary.base_currency,
-        suite_profile_family=suite_family,
+        suite_profile_family=suite_profile_family,
         total_capital=total_capital,
         ima_capital=ima_summary.total_ima_capital,
         sa_capital=sa_result.total_capital,
@@ -245,6 +444,7 @@ def calculate_suite_capital(
         cva_summary=cva_summary,
         citations=citations,
         warnings=warnings,
+        attribution_result=attribution_result,
     )
 
 
@@ -313,6 +513,97 @@ def _default_suite_run_id(
     return f"suite:{ima.run_id}:{sa.run_id}:{cva.run_id}"
 
 
+def _expected_component_capitals(result: SuiteCapitalResult) -> dict[str, float]:
+    component_capitals = {
+        "frtb_ima": result.ima_capital,
+        "frtb_sa": result.sa_capital,
+        "frtb_cva": result.cva_capital,
+    }
+    for subtotal in result.sa_result.component_subtotals:
+        component_capitals[_canonical_standardised_component(subtotal.component.value)] = (
+            subtotal.total_capital
+        )
+    return component_capitals
+
+
+def _validate_component_bundles(
+    component_bundles: tuple[ComponentContributionBundle, ...],
+    component_capitals: dict[str, float],
+) -> tuple[str, ...]:
+    canonical_components: list[str] = []
+    seen: set[str] = set()
+    for bundle in component_bundles:
+        component = _canonical_component_label(bundle.component)
+        if component in seen:
+            raise OrchestrationInputError(
+                f"duplicate contribution bundle for component {bundle.component!r}",
+                field="component_bundles",
+            )
+        expected_total = component_capitals.get(component)
+        if expected_total is None:
+            raise OrchestrationInputError(
+                f"component contribution bundle {bundle.component!r} is not recognised "
+                "for suite attribution",
+                field="component_bundles",
+            )
+        if not _within_attribution_tolerance(bundle.component_total, expected_total):
+            raise OrchestrationInputError(
+                f"component contribution bundle {bundle.component!r} has component_total "
+                f"{bundle.component_total:.6g}, expected {expected_total:.6g}",
+                field="component_total",
+            )
+        canonical_components.append(component)
+        seen.add(component)
+    return tuple(canonical_components)
+
+
+def _require_supported_attribution_component_set(canonical_components: tuple[str, ...]) -> None:
+    component_set = set(canonical_components)
+    allowed_sets = (
+        set(_TOP_LEVEL_ATTRIBUTION_COMPONENTS),
+        set(_DECOMPOSED_ATTRIBUTION_COMPONENTS),
+    )
+    if component_set not in allowed_sets:
+        expected = " or ".join(
+            ", ".join(components)
+            for components in (
+                _TOP_LEVEL_ATTRIBUTION_COMPONENTS,
+                _DECOMPOSED_ATTRIBUTION_COMPONENTS,
+            )
+        )
+        actual = ", ".join(sorted(component_set)) or "<empty>"
+        raise OrchestrationInputError(
+            "component_bundles must contain exactly one complete suite attribution "
+            f"component set; got {actual}, expected {expected}",
+            field="component_bundles",
+        )
+
+
+def _canonical_component_label(component: object) -> str:
+    if not isinstance(component, str) or not component:
+        raise OrchestrationInputError(
+            "component contribution bundle component must be non-empty text",
+            field="component_bundles",
+        )
+    normalised = component.strip().lower().replace("-", "_")
+    canonical = _COMPONENT_LABEL_ALIASES.get(normalised)
+    if canonical is None:
+        raise OrchestrationInputError(
+            f"component contribution bundle component {component!r} is not recognised",
+            field="component_bundles",
+        )
+    return canonical
+
+
+def _canonical_standardised_component(component: str) -> str:
+    return _canonical_component_label(component)
+
+
+def _within_attribution_tolerance(actual: float, expected: float) -> bool:
+    tolerance = _ATTRIBUTION_RECONCILIATION_TOLERANCE * max(abs(expected), 1.0)
+    return abs(actual - expected) <= tolerance
+
+
 def _unique_texts(values: list[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(values))
 
@@ -358,8 +649,18 @@ def _require_text_tuple(value: object, field: str) -> None:
         raise OrchestrationInputError(f"{field} must be a tuple of text values", field=field)
 
 
+def _require_tuple_of(value: object, expected_type: type[object], field: str) -> None:
+    if not isinstance(value, tuple) or not all(isinstance(item, expected_type) for item in value):
+        raise OrchestrationInputError(
+            f"{field} must be a tuple of {expected_type.__name__} values",
+            field=field,
+        )
+
+
 __all__ = [
+    "SuiteAttributionResult",
     "SuiteCapitalResult",
+    "aggregate_suite_attribution",
     "calculate_suite_capital",
     "suite_jurisdiction_family",
 ]

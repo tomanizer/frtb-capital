@@ -8,7 +8,7 @@ from frtb_common import (
     ValidationStatus,
 )
 
-from frtb_orchestration.suite import calculate_suite_capital
+from frtb_orchestration.suite import aggregate_suite_attribution, calculate_suite_capital
 
 PACKAGE_METADATA = CapitalComponentMetadata(
     package_name="frtb-orchestration",
@@ -20,5 +20,6 @@ PACKAGE_METADATA = CapitalComponentMetadata(
 
 __all__ = [
     "PACKAGE_METADATA",
+    "aggregate_suite_attribution",
     "calculate_suite_capital",
 ]

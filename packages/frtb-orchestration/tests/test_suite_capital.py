@@ -12,17 +12,22 @@ Expected total = IMA 100.0 + SA (42 + DRC + RRAO) + CVA.
 
 from __future__ import annotations
 
+import json
 import math
 from dataclasses import dataclass
 from datetime import date, datetime
 
 import pytest
 from frtb_common import (
+    AttributionMethod,
+    CapitalContribution,
     ComponentCapitalSummary,
     ImplementationStatus,
     StandardisedComponent,
     ValidationStatus,
 )
+from frtb_common.attribution import ReconciliationStatus
+from frtb_common.contribution_bundle import ComponentContributionBundle
 from frtb_cva import (
     CreditQuality as CvaCreditQuality,
 )
@@ -56,7 +61,9 @@ from frtb_orchestration import (
     ImaCapitalSummary,
     OrchestrationInputError,
     StandardisedApproachCapitalResult,
+    SuiteAttributionResult,
     SuiteCapitalResult,
+    aggregate_suite_attribution,
     calculate_suite_capital,
     compose_standardised_approach_capital,
     recognise_cva_summary,
@@ -253,6 +260,64 @@ def synthetic_cva_summary(
     return recognise_cva_summary(result)
 
 
+def synthetic_contribution_bundle(
+    component: str,
+    component_total: float,
+    *,
+    source_id: str | None = None,
+    citations: tuple[str, ...] = ("ADR 0038",),
+) -> ComponentContributionBundle:
+    contribution = CapitalContribution(
+        contribution_id=f"attr-{component}",
+        source_id=source_id or f"{component}-source",
+        source_level="component",
+        bucket_key=None,
+        category=component.upper().replace("-", "_"),
+        base_amount=component_total,
+        marginal_multiplier=1.0,
+        contribution=component_total,
+        method=AttributionMethod.ANALYTICAL_EULER,
+        citations=citations,
+        input_hash=f"input-hash-{component}",
+        profile_hash=f"profile-hash-{component}",
+        reconciliation_status=ReconciliationStatus.RECONCILED,
+    )
+    return ComponentContributionBundle(
+        component=component,
+        contributions=(contribution,),
+        component_total=component_total,
+        component_input_hash=f"input-hash-{component}",
+        component_profile_hash=f"profile-hash-{component}",
+    )
+
+
+def top_level_attribution_bundles(
+    ima: ImaCapitalSummary,
+    sa: StandardisedApproachCapitalResult,
+    cva: CvaCapitalSummary,
+) -> tuple[ComponentContributionBundle, ...]:
+    return (
+        synthetic_contribution_bundle("frtb_ima", ima.total_ima_capital),
+        synthetic_contribution_bundle("frtb_sa", sa.total_capital),
+        synthetic_contribution_bundle("frtb_cva", cva.total_cva_capital),
+    )
+
+
+def decomposed_attribution_bundles(
+    ima: ImaCapitalSummary,
+    sa: StandardisedApproachCapitalResult,
+    cva: CvaCapitalSummary,
+) -> tuple[ComponentContributionBundle, ...]:
+    subtotals = {subtotal.component: subtotal.total_capital for subtotal in sa.component_subtotals}
+    return (
+        synthetic_contribution_bundle("frtb_ima", ima.total_ima_capital),
+        synthetic_contribution_bundle("frtb_sbm", subtotals[StandardisedComponent.SBM]),
+        synthetic_contribution_bundle("frtb_drc", subtotals[StandardisedComponent.DRC]),
+        synthetic_contribution_bundle("frtb_rrao", subtotals[StandardisedComponent.RRAO]),
+        synthetic_contribution_bundle("frtb_cva", cva.total_cva_capital),
+    )
+
+
 # ── Happy-path tests ──────────────────────────────────────────────────────────
 
 
@@ -374,6 +439,152 @@ def test_suite_result_sa_subtotals_cover_sbm_drc_rrao() -> None:
     assert StandardisedComponent.SBM in components
     assert StandardisedComponent.DRC in components
     assert StandardisedComponent.RRAO in components
+
+
+# ── Suite attribution aggregation tests ──────────────────────────────────────
+
+
+def test_calculate_suite_capital_attaches_top_level_attribution_result() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    bundles = top_level_attribution_bundles(ima, sa, cva)
+
+    result = calculate_suite_capital(
+        ima_summary=ima,
+        sa_result=sa,
+        cva_summary=cva,
+        component_contribution_bundles=bundles,
+    )
+
+    assert isinstance(result.attribution_result, SuiteAttributionResult)
+    attribution = result.attribution_result
+    assert attribution.component_bundles == bundles
+    assert attribution.component_bundles[0] is bundles[0]
+    assert attribution.suite_total_capital == pytest.approx(result.total_capital)
+    assert attribution.suite_residual.method == AttributionMethod.RESIDUAL
+    assert attribution.suite_residual.residual == pytest.approx(0.0)
+    assert attribution.suite_residual.reconciliation_status == ReconciliationStatus.RECONCILED
+
+
+def test_suite_attribution_preserves_incoming_contribution_fields() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    bundle = synthetic_contribution_bundle(
+        "frtb_ima",
+        ima.total_ima_capital,
+        source_id="desk-ima-001",
+        citations=("MAR31.25", "ADR 0038"),
+    )
+    bundles = (
+        bundle,
+        synthetic_contribution_bundle("frtb_sa", sa.total_capital),
+        synthetic_contribution_bundle("frtb_cva", cva.total_cva_capital),
+    )
+    incoming_record = bundle.contributions[0]
+
+    result = calculate_suite_capital(
+        ima_summary=ima,
+        sa_result=sa,
+        cva_summary=cva,
+        component_contribution_bundles=bundles,
+    )
+
+    preserved = result.attribution_result.component_bundles[0].contributions[0]  # type: ignore[union-attr]
+    assert preserved is incoming_record
+    assert preserved.contribution == incoming_record.contribution
+    assert preserved.base_amount == incoming_record.base_amount
+    assert preserved.method == incoming_record.method
+    assert preserved.source_id == "desk-ima-001"
+    assert preserved.citations == ("MAR31.25", "ADR 0038")
+
+
+def test_aggregate_suite_attribution_accepts_decomposed_sa_component_bundles() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    suite = calculate_suite_capital(ima_summary=ima, sa_result=sa, cva_summary=cva)
+    bundles = decomposed_attribution_bundles(ima, sa, cva)
+
+    attribution = aggregate_suite_attribution(suite_result=suite, component_bundles=bundles)
+
+    assert [bundle.component for bundle in attribution.component_bundles] == [
+        "frtb_ima",
+        "frtb_sbm",
+        "frtb_drc",
+        "frtb_rrao",
+        "frtb_cva",
+    ]
+    assert attribution.suite_residual.residual == pytest.approx(0.0)
+
+
+def test_aggregate_suite_attribution_emits_non_zero_suite_residual() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    suite = calculate_suite_capital(ima_summary=ima, sa_result=sa, cva_summary=cva)
+    bundles = top_level_attribution_bundles(ima, sa, cva)
+
+    attribution = aggregate_suite_attribution(
+        suite_result=suite,
+        component_bundles=bundles,
+        suite_total_capital=suite.total_capital + 7.5,
+    )
+
+    assert attribution.suite_total_capital == pytest.approx(suite.total_capital + 7.5)
+    assert attribution.suite_residual.method == AttributionMethod.RESIDUAL
+    assert attribution.suite_residual.residual == pytest.approx(7.5)
+    assert attribution.suite_residual.reconciliation_status == ReconciliationStatus.PARTIAL_RESIDUAL
+    assert "cross-component interactions" in attribution.suite_residual.reason
+
+
+def test_suite_attribution_rejects_component_total_mismatch() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    suite = calculate_suite_capital(ima_summary=ima, sa_result=sa, cva_summary=cva)
+    bundles = (
+        synthetic_contribution_bundle("frtb_ima", ima.total_ima_capital + 1.0),
+        synthetic_contribution_bundle("frtb_sa", sa.total_capital),
+        synthetic_contribution_bundle("frtb_cva", cva.total_cva_capital),
+    )
+
+    with pytest.raises(OrchestrationInputError, match="component_total"):
+        aggregate_suite_attribution(suite_result=suite, component_bundles=bundles)
+
+
+def test_suite_attribution_rejects_incomplete_component_set() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    suite = calculate_suite_capital(ima_summary=ima, sa_result=sa, cva_summary=cva)
+    bundles = (
+        synthetic_contribution_bundle("frtb_ima", ima.total_ima_capital),
+        synthetic_contribution_bundle("frtb_sa", sa.total_capital),
+    )
+
+    with pytest.raises(OrchestrationInputError, match="complete suite attribution"):
+        aggregate_suite_attribution(suite_result=suite, component_bundles=bundles)
+
+
+def test_suite_attribution_result_as_dict_is_json_serialisable() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    result = calculate_suite_capital(
+        ima_summary=ima,
+        sa_result=sa,
+        cva_summary=cva,
+        component_contribution_bundles=top_level_attribution_bundles(ima, sa, cva),
+    )
+
+    payload = result.as_dict()
+
+    json.dumps(payload, sort_keys=True)
+    assert payload["attribution_result"]["suite_total_capital"] == pytest.approx(  # type: ignore[index]
+        result.total_capital
+    )
 
 
 # ── Deterministic expected-output hash ───────────────────────────────────────
