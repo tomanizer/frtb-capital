@@ -1,0 +1,470 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "back_to_back_match_group_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "backToBackMatchGroupID",
+        "backToBackMatchGroupId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "back_to_back_matched_position_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "backToBackMatchedPositionID",
+        "backToBackMatchedPositionId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "citations": {
+      "type": "string",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "classification_hint": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "classificationHint"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "currency": {
+      "type": "string",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "desk_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "deskId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "evidence_label": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "evidenceLabel"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "evidence_type": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "evidenceType"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "exclusion_evidence_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "exclusionEvidenceID",
+        "exclusionEvidenceId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "exclusion_reason": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "exclusionReason"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "gross_effective_notional": {
+      "type": "number",
+      "x-frtb-aliases": [
+        "grossEffectiveNotional",
+        "gross_notional"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "has_maturity": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "hasMaturity"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "has_multiple_strikes_or_barriers": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "hasMultipleStrikesOrBarriers"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "has_strike_or_barrier": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "hasStrikeOrBarrier"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "investment_fund_gross_effective_notional": {
+      "type": "number",
+      "x-frtb-aliases": [
+        "fund_gross_effective_notional",
+        "investmentFundGrossEffectiveNotional"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "investment_fund_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "fundId",
+        "fund_id",
+        "investmentFundId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "investment_fund_included_exposure_ratio": {
+      "type": "number",
+      "x-frtb-aliases": [
+        "included_exposure_ratio",
+        "investmentFundIncludedExposureRatio"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "investment_fund_included_exposure_type": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "included_exposure_type",
+        "investmentFundIncludedExposureType"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "investment_fund_look_through_available": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "investmentFundLookThroughAvailable",
+        "look_through_available"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "investment_fund_mandate_allows_rrao_exposures": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "investmentFundMandateAllowsRraoExposures",
+        "mandate_allows_rrao_exposures"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "investment_fund_mandate_evidence_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "investmentFundMandateEvidenceId",
+        "mandate_evidence_id"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "investment_fund_section_205_evidence_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "investmentFundSection205EvidenceId",
+        "section_205_evidence_id"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "investment_fund_section_205_method": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "investmentFundSection205Method",
+        "section_205_method"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "is_ctp_hedge": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "isCtpHedge"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "is_investment_fund_exposure": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "isInvestmentFundExposure"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "is_path_dependent": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "isPathDependent"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "legal_entity": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "legalEntity"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "lineage_source_file": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sourceFile",
+        "source_file"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "lineage_source_row_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "lineageSourceRowId",
+        "sourceLineageRowId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "lineage_source_system": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sourceSystem",
+        "source_system"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "notional_source": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "notionalSource"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "position_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "positionId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "source_row_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sourceRowId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "supervisor_directive_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "supervisorDirectiveID",
+        "supervisorDirectiveId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "underlying_count": {
+      "type": "integer",
+      "x-frtb-aliases": [
+        "underlyingCount"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "integer",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "unsupported_nested_payload": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "back_to_back_match",
+        "investment_fund_descriptor",
+        "nested_payload"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    }
+  },
+  "required": [
+    "position_id",
+    "source_row_id",
+    "desk_id",
+    "legal_entity",
+    "gross_effective_notional",
+    "currency",
+    "evidence_type",
+    "evidence_label",
+    "lineage_source_system",
+    "lineage_source_file"
+  ],
+  "title": "frtb_rrao.positions",
+  "type": "object",
+  "x-frtb-column-order": [
+    "position_id",
+    "source_row_id",
+    "desk_id",
+    "legal_entity",
+    "gross_effective_notional",
+    "currency",
+    "evidence_type",
+    "evidence_label",
+    "classification_hint",
+    "exclusion_reason",
+    "exclusion_evidence_id",
+    "back_to_back_match_group_id",
+    "back_to_back_matched_position_id",
+    "supervisor_directive_id",
+    "underlying_count",
+    "is_path_dependent",
+    "has_maturity",
+    "has_strike_or_barrier",
+    "has_multiple_strikes_or_barriers",
+    "is_ctp_hedge",
+    "is_investment_fund_exposure",
+    "investment_fund_id",
+    "investment_fund_section_205_method",
+    "investment_fund_included_exposure_type",
+    "investment_fund_mandate_evidence_id",
+    "investment_fund_section_205_evidence_id",
+    "investment_fund_gross_effective_notional",
+    "investment_fund_included_exposure_ratio",
+    "investment_fund_look_through_available",
+    "investment_fund_mandate_allows_rrao_exposures",
+    "notional_source",
+    "lineage_source_system",
+    "lineage_source_file",
+    "lineage_source_row_id",
+    "citations",
+    "unsupported_nested_payload"
+  ]
+}

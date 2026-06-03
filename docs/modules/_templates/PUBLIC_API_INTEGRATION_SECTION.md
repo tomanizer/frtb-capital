@@ -40,6 +40,5 @@ client-facing summary, not a replacement for generated machine-readable schemas.
 - Suite guide: [`docs/CLIENT_INTEGRATION.md`](../../CLIENT_INTEGRATION.md)
 - Reference data matrix:
   [#422](https://github.com/tomanizer/frtb-capital/issues/422)
-- Schema exports:
-  [#423](https://github.com/tomanizer/frtb-capital/issues/423)
+- Schema exports: [`docs/schemas/handoff/`](../../schemas/handoff/)
 - Validation harness: `scripts/validate_client_handoff.py`

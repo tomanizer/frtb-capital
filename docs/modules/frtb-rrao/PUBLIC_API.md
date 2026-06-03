@@ -33,11 +33,9 @@ and other package docs should copy the integration checklist in
 | 2 - CRIF/FNet/vendor rows | Iterable mapping rows | `adapt_crif_records`, `adapt_fnet_records`, or `adapt_rrao_records` | Adapter path with explicit rejected rows and diagnostics. |
 | 3 - Canonical dataclasses | `tuple[RraoPosition, ...]` plus `RraoCalculationContext` | `calculate_rrao_capital` | Small books, tests, notebooks, and fixture workflows. |
 
-Machine-readable schema export is tracked by
-[#423](https://github.com/tomanizer/frtb-capital/issues/423). The intended
-schema artifact for this contract is
-`docs/schemas/handoff/frtb_rrao.positions.schema.json` generated from
-`RRAO_HANDOFF_COLUMN_SPECS`.
+The machine-readable schema artifact for this contract is
+[`docs/schemas/handoff/frtb_rrao.positions.schema.json`](../../schemas/handoff/frtb_rrao.positions.schema.json),
+generated from `RRAO_HANDOFF_COLUMN_SPECS`.
 
 The validation harness is tracked by
 [#428](https://github.com/tomanizer/frtb-capital/issues/428). Expected RRAO

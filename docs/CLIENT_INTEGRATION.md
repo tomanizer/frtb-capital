@@ -139,6 +139,21 @@ Supported interchange formats at the client boundary are:
 adapters when they do not leak into the core runtime path. Package capital
 kernels continue to use NumPy arrays and package-owned batches.
 
+## Handoff schemas
+
+Checked-in example JSON schemas live under
+[`docs/schemas/handoff/`](schemas/handoff/). They are generated from public
+`ColumnSpec` tuples and are intended for client ETL contract tests. Additional
+schemas can be exported with:
+
+```bash
+uv run python scripts/export_handoff_schema.py \
+  --package frtb_drc \
+  --spec DRC_NONSEC_HANDOFF_COLUMN_SPECS \
+  --format json-schema \
+  --output dist/schemas/drc_nonsec.handoff.schema.json
+```
+
 ## Validate before calculate
 
 The client validation harness is tracked in

@@ -54,6 +54,12 @@ from frtb_common.handoff import (
     validate_arrow_table,
     validate_column_specs,
 )
+from frtb_common.handoff_schema import (
+    arrow_schema_to_dict,
+    column_spec_to_json_schema,
+    handoff_specs_to_arrow_schema,
+    handoff_specs_to_json_schema,
+)
 from frtb_common.hashing import (
     is_sha256_hex,
     require_sha256_hex,
@@ -108,11 +114,15 @@ __all__ = [
     "arrow_float64_array",
     "arrow_float64_array_with_nulls",
     "arrow_object_array",
+    "arrow_schema_to_dict",
     "arrow_table_content_hash",
     "assert_policy_has_regulatory_citations",
     "crif_records_to_arrow_table",
+    "column_spec_to_json_schema",
     "dictionary_code_chunks",
     "dictionary_code_column",
+    "handoff_specs_to_arrow_schema",
+    "handoff_specs_to_json_schema",
     "is_sha256_hex",
     "jsonable",
     "normalise_crif_risk_type",
