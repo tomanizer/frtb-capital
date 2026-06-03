@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -94,6 +95,13 @@ def test_result_store_api_serves_committed_runs_without_catalog_access(
         params={"artifact_type": ArtifactType.IMA_PNL_VECTOR.value},
     ).json()["artifacts"]
     assert artifacts[0]["uri"].startswith("s3://")
+    assert (
+        client.get(
+            f"/runs/{current.run_id}/artifacts",
+            params={"artifact_type": "not-an-artifact-type"},
+        ).status_code
+        == 422
+    )
     comparison = client.get(f"/run-groups/{group_id}/regime-comparison").json()
     assert comparison["run_group_id"] == group_id
     assert set(comparison["capital_summary"]) == {baseline.run_id, current.run_id}
@@ -146,10 +154,24 @@ def test_result_store_api_is_read_only_and_has_domain_openapi_tags(tmp_path: Pat
     assert expected_tags <= operation_tags
 
 
+def test_regime_comparison_accepts_single_run_group_fallback(tmp_path: Path) -> None:
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    run = _run("US_NPR_2_0", None, None)
+    store.write_bundle(_bundle(run))
+    client = TestClient(create_result_store_app(store))
+
+    fallback_group_id = f"run:{run.run_id}"
+    assert client.get("/run-groups").json()["run_groups"][0]["run_group_id"] == fallback_group_id
+    comparison = client.get(f"/run-groups/{fallback_group_id}/regime-comparison")
+    assert comparison.status_code == 200
+    assert comparison.json()["run_group_id"] == fallback_group_id
+    assert set(comparison.json()["capital_summary"]) == {run.run_id}
+
+
 def _run(
     regime_id: str,
-    run_group_id: str,
-    run_group_identity_payload: object,
+    run_group_id: str | None,
+    run_group_identity_payload: Mapping[str, object] | None,
 ) -> CalculationRun:
     return CalculationRun.from_identity(
         as_of_date=date(2026, 6, 3),

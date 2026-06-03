@@ -207,15 +207,16 @@ def _register_artifact_routes(
     )
     def artifact_refs(
         run_id: str,
-        artifact_type: str | None = query(
+        artifact_type: ArtifactType | None = query(
             default=None,
             description="Optional ArtifactType value",
         ),
     ) -> dict[str, object]:
         _require_run(result_store, run_id, http_exception_type)
-        coerced = None if artifact_type is None else ArtifactType(artifact_type)
         return {
-            "artifacts": _to_jsonable(result_store.artifact_refs(run_id, artifact_type=coerced))
+            "artifacts": _to_jsonable(
+                result_store.artifact_refs(run_id, artifact_type=artifact_type)
+            )
         }
 
 
@@ -230,7 +231,7 @@ def _register_run_group_routes(
         summary="Return per-run summary rows for one comparison group",
     )
     def regime_comparison(run_group_id: str) -> dict[str, object]:
-        runs = tuple(run for run in result_store.list_runs() if run.run_group_id == run_group_id)
+        runs = tuple(run for run in result_store.list_runs() if _run_group_key(run) == run_group_id)
         if not runs:
             raise http_exception_type(  # type: ignore[call-arg]
                 status_code=404,
@@ -285,7 +286,7 @@ def _run_payload(store: DuckDbParquetResultStore, run: CalculationRun) -> dict[s
 def _run_group_payloads(runs: Sequence[CalculationRun]) -> list[dict[str, object]]:
     groups: dict[str, list[CalculationRun]] = {}
     for run in runs:
-        groups.setdefault(run.run_group_id or f"run:{run.run_id}", []).append(run)
+        groups.setdefault(_run_group_key(run), []).append(run)
     return [
         {
             "run_group_id": run_group_id,
@@ -296,6 +297,10 @@ def _run_group_payloads(runs: Sequence[CalculationRun]) -> list[dict[str, object
         }
         for run_group_id, group_runs in sorted(groups.items())
     ]
+
+
+def _run_group_key(run: CalculationRun) -> str:
+    return run.run_group_id or f"run:{run.run_id}"
 
 
 def _attribution_payload(attribution: CapitalAttributionRecord) -> dict[str, object]:
