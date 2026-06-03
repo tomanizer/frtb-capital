@@ -443,7 +443,7 @@ These fields are **not** added in Phase B.
 - [`DECISIONS_AND_PLAN.md`](DECISIONS_AND_PLAN.md) — CVA-DEC-001 through CVA-DEC-011
 - [`ARCHITECTURE_AND_DATA_DESIGN.md`](ARCHITECTURE_AND_DATA_DESIGN.md)
 - [`requirements/BASEL_FRTB_CVA.yml`](requirements/BASEL_FRTB_CVA.yml)
-- [`packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md`](../../packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md)
-- [`packages/frtb-sbm/tests/test_sbm_support_matrix.py`](../../packages/frtb-sbm/tests/test_sbm_support_matrix.py) — pattern reference
+- [`packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md)
+- [`packages/frtb-sbm/tests/test_sbm_support_matrix.py`](../../../packages/frtb-sbm/tests/test_sbm_support_matrix.py) — pattern reference
 - Basel MAR50.8–MAR50.9, MAR50.14–MAR50.26, MAR50.42–MAR50.77
 - U.S. NPR 2.0 91 FR 14952 section V.B (proposed rule; comparison only)
