@@ -301,10 +301,7 @@ PRA_UK_CRR_CITATIONS: dict[str, RraoCitation] = {
         source_id="uk_retained_dr_2022_2328_rrao",
         paragraph="Article 1",
         url=UK_RETAINED_RRAO_RTS_URL,
-        note=(
-            "UK retained RTS exotic underlyings, including future realised "
-            "volatility."
-        ),
+        note=("UK retained RTS exotic underlyings, including future realised volatility."),
     ),
     "uk_rts_2022_2328_article_2_annex": RraoCitation(
         source_id="uk_retained_dr_2022_2328_rrao",
