@@ -261,10 +261,79 @@ EU_CRR3_CITATIONS: dict[str, RraoCitation] = {
     ),
 }
 
+UK_CRR_RRAO_URL = (
+    "https://www.legislation.gov.uk/eur/2013/575/part/8/crossheading/residual-risk-add-on"
+)
+UK_RETAINED_RRAO_RTS_URL = "https://www.legislation.gov.uk/eur/2022/2328"
+
+PRA_UK_CRR_CITATIONS: dict[str, RraoCitation] = {
+    "uk_crr_325u_2_a": RraoCitation(
+        source_id="uk_crr_article_325u_rrao",
+        paragraph="Article 325u(2)(a)",
+        url=UK_CRR_RRAO_URL,
+        note="UK onshored exotic underlying residual-risk condition.",
+    ),
+    "uk_crr_325u_2_b": RraoCitation(
+        source_id="uk_crr_article_325u_rrao",
+        paragraph="Article 325u(2)(b)",
+        url=UK_CRR_RRAO_URL,
+        note="UK onshored other residual-risk instrument condition.",
+    ),
+    "uk_crr_325u_3_a": RraoCitation(
+        source_id="uk_crr_article_325u_rrao",
+        paragraph="Article 325u(3)(a)",
+        url=UK_CRR_RRAO_URL,
+        note="1.0% gross notional add-on for Article 325u(2)(a) instruments.",
+    ),
+    "uk_crr_325u_3_b": RraoCitation(
+        source_id="uk_crr_article_325u_rrao",
+        paragraph="Article 325u(3)(b)",
+        url=UK_CRR_RRAO_URL,
+        note="0.1% gross notional add-on for Article 325u(2)(b) instruments.",
+    ),
+    "uk_crr_325u_4": RraoCitation(
+        source_id="uk_crr_article_325u_rrao",
+        paragraph="Article 325u(4)",
+        url=UK_CRR_RRAO_URL,
+        note="Listed, centrally clearable, and perfectly offsetting exemptions.",
+    ),
+    "uk_rts_2022_2328_article_1": RraoCitation(
+        source_id="uk_retained_dr_2022_2328_rrao",
+        paragraph="Article 1",
+        url=UK_RETAINED_RRAO_RTS_URL,
+        note=("UK retained RTS exotic underlyings, including future realised volatility."),
+    ),
+    "uk_rts_2022_2328_article_2_annex": RraoCitation(
+        source_id="uk_retained_dr_2022_2328_rrao",
+        paragraph="Article 2 and Annex",
+        url=UK_RETAINED_RRAO_RTS_URL,
+        note="UK retained RTS instruments bearing residual risks.",
+    ),
+    "uk_rts_2022_2328_article_3": RraoCitation(
+        source_id="uk_retained_dr_2022_2328_rrao",
+        paragraph="Article 3",
+        url=UK_RETAINED_RRAO_RTS_URL,
+        note=(
+            "UK retained RTS risks that do not by themselves presume "
+            "Article 325u(2)(b) residual-risk treatment."
+        ),
+    ),
+    "pra_ps1_26_chapter_3": RraoCitation(
+        source_id="pra_rrao_basel_3_1_final_rules",
+        paragraph="Chapter 3 market risk",
+        url=(
+            "https://www.bankofengland.co.uk/prudential-regulation/publication/2026/"
+            "january/implementation-of-the-basel-3-1-final-rules-policy-statement"
+        ),
+        note="PRA PS1/26 profile anchor for UK RRAO implementation timing.",
+    ),
+}
+
 PROFILE_CITATIONS: dict[RraoRegulatoryProfile, dict[str, RraoCitation]] = {
     RraoRegulatoryProfile.BASEL_MAR23: BASEL_CITATIONS,
     RraoRegulatoryProfile.US_NPR_2_0: US_NPR_CITATIONS,
     RraoRegulatoryProfile.EU_CRR3: EU_CRR3_CITATIONS,
+    RraoRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_CITATIONS,
 }
 
 _EU_ARTICLE_2_EVIDENCE_TYPES = (
@@ -370,6 +439,25 @@ PROFILE_EVIDENCE_RULES: dict[RraoRegulatoryProfile, tuple[RraoEvidenceRule, ...]
             for evidence_type in _EU_ARTICLE_2_EVIDENCE_TYPES
         ),
     ),
+    RraoRegulatoryProfile.PRA_UK_CRR: (
+        RraoEvidenceRule(
+            evidence_type=RraoEvidenceType.EXOTIC_UNDERLYING,
+            classification=RraoClassification.EXOTIC,
+            risk_weight_key="EXOTIC_1_PERCENT",
+            reason_code="PRA_UK_CRR_EXOTIC_UNDERLYING",
+            citation_id="uk_rts_2022_2328_article_1",
+        ),
+        *(
+            RraoEvidenceRule(
+                evidence_type=evidence_type,
+                classification=RraoClassification.OTHER_RESIDUAL_RISK,
+                risk_weight_key="OTHER_0_1_PERCENT",
+                reason_code=f"PRA_UK_CRR_{evidence_type.value}",
+                citation_id="uk_rts_2022_2328_article_2_annex",
+            )
+            for evidence_type in _EU_ARTICLE_2_EVIDENCE_TYPES
+        ),
+    ),
 }
 
 PROFILE_INVESTMENT_FUND_RULES: dict[
@@ -402,6 +490,7 @@ PROFILE_INVESTMENT_FUND_RULES: dict[
         ),
     ),
     RraoRegulatoryProfile.EU_CRR3: (),
+    RraoRegulatoryProfile.PRA_UK_CRR: (),
 }
 
 PROFILE_EXCLUSION_RULES: dict[RraoRegulatoryProfile, tuple[RraoExclusionRule, ...]] = {
@@ -504,6 +593,35 @@ PROFILE_EXCLUSION_RULES: dict[RraoRegulatoryProfile, tuple[RraoExclusionRule, ..
             for reason in _EU_ARTICLE_3_EXCLUSION_REASONS
         ),
     ),
+    RraoRegulatoryProfile.PRA_UK_CRR: (
+        RraoExclusionRule(
+            exclusion_reason=RraoExclusionReason.LISTED,
+            risk_weight_key="EXCLUDED_0_PERCENT",
+            reason_code="PRA_UK_CRR_EXCLUSION_LISTED",
+            citation_id="uk_crr_325u_4",
+        ),
+        RraoExclusionRule(
+            exclusion_reason=RraoExclusionReason.CCP_OR_QCCP_CLEARABLE,
+            risk_weight_key="EXCLUDED_0_PERCENT",
+            reason_code="PRA_UK_CRR_EXCLUSION_CLEARABLE",
+            citation_id="uk_crr_325u_4",
+        ),
+        RraoExclusionRule(
+            exclusion_reason=RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK,
+            risk_weight_key="EXCLUDED_0_PERCENT",
+            reason_code="PRA_UK_CRR_EXCLUSION_PERFECTLY_OFFSETTING",
+            citation_id="uk_crr_325u_4",
+        ),
+        *(
+            RraoExclusionRule(
+                exclusion_reason=reason,
+                risk_weight_key="NON_PRESUMPTIVE_0_PERCENT",
+                reason_code=f"PRA_UK_CRR_NON_PRESUMPTIVE_{reason.value}",
+                citation_id="uk_rts_2022_2328_article_3",
+            )
+            for reason in _EU_ARTICLE_3_EXCLUSION_REASONS
+        ),
+    ),
 }
 
 PROFILE_RISK_WEIGHT_RULES: dict[RraoRegulatoryProfile, tuple[RraoRiskWeightRule, ...]] = {
@@ -577,6 +695,32 @@ PROFILE_RISK_WEIGHT_RULES: dict[RraoRegulatoryProfile, tuple[RraoRiskWeightRule,
             classification=RraoClassification.EXCLUDED,
             risk_weight=0.0,
             citation_id="eu_rts_2022_2328_article_3",
+        ),
+    ),
+    RraoRegulatoryProfile.PRA_UK_CRR: (
+        RraoRiskWeightRule(
+            key="EXOTIC_1_PERCENT",
+            classification=RraoClassification.EXOTIC,
+            risk_weight=0.01,
+            citation_id="uk_crr_325u_3_a",
+        ),
+        RraoRiskWeightRule(
+            key="OTHER_0_1_PERCENT",
+            classification=RraoClassification.OTHER_RESIDUAL_RISK,
+            risk_weight=0.001,
+            citation_id="uk_crr_325u_3_b",
+        ),
+        RraoRiskWeightRule(
+            key="EXCLUDED_0_PERCENT",
+            classification=RraoClassification.EXCLUDED,
+            risk_weight=0.0,
+            citation_id="uk_crr_325u_4",
+        ),
+        RraoRiskWeightRule(
+            key="NON_PRESUMPTIVE_0_PERCENT",
+            classification=RraoClassification.EXCLUDED,
+            risk_weight=0.0,
+            citation_id="uk_rts_2022_2328_article_3",
         ),
     ),
 }

@@ -33,7 +33,6 @@ from frtb_orchestration import (
     StandardisedComponentSubtotal,
     StandardisedFallbackRoute,
     __version__,
-    calculate_suite_capital,
     compose_standardised_approach_capital,
 )
 from frtb_rrao import (
@@ -51,17 +50,12 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = ROOT / "src" / "frtb_orchestration"
 
 
-def test_orchestration_package_imports_with_partial_status() -> None:
+def test_orchestration_package_imports_with_implemented_status() -> None:
     assert isinstance(__version__, str)
     assert PACKAGE_METADATA.package_name == "frtb-orchestration"
     assert PACKAGE_METADATA.import_name == "frtb_orchestration"
-    assert PACKAGE_METADATA.implementation_status is ImplementationStatus.PARTIAL
+    assert PACKAGE_METADATA.implementation_status is ImplementationStatus.IMPLEMENTED
     assert PACKAGE_METADATA.validation_status is ValidationStatus.PENDING
-
-
-def test_suite_capital_aggregation_fails_explicitly() -> None:
-    with pytest.raises(NotImplementedCapitalComponentError, match="suite capital aggregation"):
-        calculate_suite_capital()
 
 
 def test_rrao_adapter_produces_shared_handoff() -> None:

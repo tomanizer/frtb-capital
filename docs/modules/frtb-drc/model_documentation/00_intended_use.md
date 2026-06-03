@@ -39,12 +39,15 @@ Supported profile coverage is:
   `DrcRiskWeightEvidence` inputs or legacy low-level run-scoped maps.
 - `BASEL_MAR22`: non-securitisation row and batch paths using MAR22.12 LGD,
   MAR22.15-MAR22.18 maturity weighting, MAR22.22 buckets, and MAR22.24
-  letter-grade risk weights.
+  letter-grade risk weights; securitisation non-CTP row and batch paths using
+  MAR22.31 bucket mappings, MAR22.34 typed banking-book securitisation
+  risk-weight evidence, MAR22.34 fair-value cap evidence, and MAR22.35
+  category aggregation.
 
 Known fail-closed profile paths are:
 
-- `BASEL_MAR22` securitisation non-CTP and CTP, pending MAR22.34/MAR22.42
-  banking-book securitisation mappings and decomposition contracts.
+- `BASEL_MAR22` CTP, pending MAR22.42 banking-book securitisation mappings and
+  decomposition contracts.
 - `EU_CRR3` for all DRC risk classes, pending Article 325w and related CQS/RTS
   mappings.
 - `PRA_UK_CRR` for all DRC risk classes, pending PRA PS1/26 Chapter 3 and

@@ -267,17 +267,17 @@ must reflect the cited profile — not Basel shortcuts.
 
 ---
 
-## Requirement traceability matrix (phase 0 baseline)
+## Requirement traceability matrix
 
-| Requirement | Phase 0 (design) | Phase 1 target |
+| Requirement | Current evidence | Remaining target |
 | --- | --- | --- |
-| SBM-NBP-001 | Met (design + traceability link) | Maintain in traceability |
-| SBM-NBP-002 | Met (existing tests) | Extend for NPR GIRR delta |
-| SBM-NBP-010 | Documented | Enforced in code review |
+| SBM-NBP-001 | Met (design + traceability link; `US_NPR_2_0` partial matrix) | Maintain in traceability |
+| SBM-NBP-002 | Met for Basel and `US_NPR_2_0` GIRR delta via `test_sbm_support_matrix.py` | Extend for each new cell |
+| SBM-NBP-010 | Enforced for the implemented NPR GIRR delta slice through profile-owned citations and fixture citation checks | Extend for each new cell |
 | SBM-NBP-013 | Met | Until PRA mapping issue |
-| SBM-NBP-030–032 | Specified | Implement |
-| SBM-NBP-040–042 | Met (Basel + global fail-closed) | Extend NPR tests |
-| SBM-NBP-060 | N/A docs PR | Required |
+| SBM-NBP-030–032 | Met for `US_NPR_2_0` GIRR delta with `girr_delta_us_npr_v1` and row/batch/Arrow tests | Extend to later NPR cells |
+| SBM-NBP-040–042 | Met for unsupported NPR cells, EU, and PRA fail-closed tests | Preserve as coverage expands |
+| SBM-NBP-060 | Required for implementation PRs | Run before push |
 
 ---
 
@@ -285,7 +285,7 @@ must reflect the cited profile — not Basel shortcuts.
 
 Use these titles when splitting implementation work:
 
-1. **SBM NPR GIRR delta** — `US_NPR_2_0` GIRR delta reference data + fixture (SBM-NBP-030–032).
-2. **SBM NPR GIRR vega/curvature** — extend NPR GIRR row (phase 2).
+1. **SBM NPR GIRR vega/curvature** — extend NPR GIRR row (phase 2).
+2. **SBM NPR non-GIRR delta** — FX, equity, commodity, and CSR NPR mappings.
 3. **SBM EU CRR3 GIRR delta** — article mapping + first EU cell (blocked on legal mapping review).
 4. **SBM PRA UK CRR source mapping** — SBM-NBP-020 prerequisite.

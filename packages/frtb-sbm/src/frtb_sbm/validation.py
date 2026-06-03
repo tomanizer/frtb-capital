@@ -74,7 +74,11 @@ _QUALIFIER_REQUIRED: frozenset[SbmRiskClass] = frozenset(
 )
 
 _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
-    SbmRegulatoryProfile.US_NPR_2_0.value: frozenset(),
+    SbmRegulatoryProfile.US_NPR_2_0.value: frozenset(
+        {
+            (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+        }
+    ),
     SbmRegulatoryProfile.BASEL_MAR21.value: frozenset(
         {
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
@@ -297,6 +301,7 @@ def _raise_unsupported_capital_path(
         raise UnsupportedRegulatoryFeatureError(
             "frtb-sbm curvature capital is unsupported for the requested profile "
             f"or risk class ({_CURVATURE_CAPITAL_REQUIREMENT_ID}); "
+            f"received profile_id={profile.value}; "
             f"received risk_class={risk_class.value}; "
             "use validate_curvature_sensitivities to validate up/down shock inputs"
         )
@@ -306,9 +311,8 @@ def _raise_unsupported_capital_path(
             f"risk_class={risk_class.value}, profile={profile.value}"
         )
     raise UnsupportedRegulatoryFeatureError(
-        "frtb-sbm phase-1 capital supports GIRR delta/vega/curvature and "
-        "FX, equity, commodity, CSR non-securitisation, and CSR securitisation "
-        "delta/vega/curvature inputs; "
+        "frtb-sbm phase-1 capital is unsupported for the requested profile path; "
+        f"received profile_id={profile.value}, "
         f"received risk_class={risk_class.value}, "
         f"risk_measure={risk_measure.value}"
     )

@@ -1,0 +1,63 @@
+{
+  "context": {
+    "run_id": "sbm-girr-delta-us-npr-v1",
+    "calculation_date": "2026-06-03",
+    "base_currency": "USD",
+    "reporting_currency": "USD",
+    "profile_id": "US_NPR_2_0"
+  },
+  "sensitivities": [
+    {
+      "sensitivity_id": "us-npr-eur-1y",
+      "source_row_id": "row-001",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "DELTA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "tenor": "1y",
+      "sign_convention": "RECEIVE",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_girr_buckets"
+      ]
+    },
+    {
+      "sensitivity_id": "us-npr-eur-5y",
+      "source_row_id": "row-002",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "DELTA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 500000.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "sign_convention": "RECEIVE",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_girr_buckets"
+      ]
+    },
+    {
+      "sensitivity_id": "us-npr-usd-5y",
+      "source_row_id": "row-003",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "DELTA",
+      "bucket": "2",
+      "risk_factor": "USD",
+      "amount": 800000.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "sign_convention": "RECEIVE",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_girr_buckets"
+      ]
+    }
+  ]
+}
+

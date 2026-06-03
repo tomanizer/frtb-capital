@@ -362,9 +362,9 @@
       "path": "packages/frtb-sbm/src/frtb_sbm/batch.py"
     },
     "packages/frtb-sbm/src/frtb_sbm/capital.py:calculate_sbm_capital": {
-      "end_line": 299,
+      "end_line": 323,
       "key": "packages/frtb-sbm/src/frtb_sbm/capital.py:calculate_sbm_capital",
-      "line": 161,
+      "line": 185,
       "lines": 139,
       "name": "calculate_sbm_capital",
       "path": "packages/frtb-sbm/src/frtb_sbm/capital.py"
@@ -394,10 +394,10 @@
       "path": "packages/frtb-sbm/src/frtb_sbm/curvature.py"
     },
     "packages/frtb-sbm/src/frtb_sbm/reference_data.py:profile_reference_payload": {
-      "end_line": 1390,
+      "end_line": 1577,
       "key": "packages/frtb-sbm/src/frtb_sbm/reference_data.py:profile_reference_payload",
-      "line": 1243,
-      "lines": 148,
+      "line": 1406,
+      "lines": 172,
       "name": "profile_reference_payload",
       "path": "packages/frtb-sbm/src/frtb_sbm/reference_data.py"
     },
@@ -461,14 +461,14 @@
   "metrics": {
     "drift_marker_matches": 31,
     "duplicate_function_groups": 37,
-    "duplicate_function_instances": 59,
+    "duplicate_function_instances": 60,
     "large_function_count": 57,
     "other_python_loc": 5401,
-    "python_files": 460,
-    "script_python_loc": 5173,
-    "source_python_loc": 62561,
-    "test_python_loc": 39856,
-    "total_python_loc": 112991
+    "python_files": 462,
+    "script_python_loc": 5155,
+    "source_python_loc": 62397,
+    "test_python_loc": 40070,
+    "total_python_loc": 113023
   },
   "oversized_files": {
     "packages/frtb-common/src/frtb_common/crif.py": {
@@ -485,11 +485,6 @@
       "limit": 600,
       "lines": 601,
       "role": "other"
-    },
-    "packages/frtb-cva/src/frtb_cva/arrow_batch.py": {
-      "limit": 600,
-      "lines": 665,
-      "role": "source"
     },
     "packages/frtb-cva/src/frtb_cva/batch.py": {
       "limit": 600,
@@ -558,7 +553,7 @@
     },
     "packages/frtb-ima/src/frtb_ima/arrow_batch.py": {
       "limit": 600,
-      "lines": 838,
+      "lines": 773,
       "role": "source"
     },
     "packages/frtb-ima/src/frtb_ima/backtesting.py": {
@@ -595,11 +590,6 @@
       "limit": 800,
       "lines": 823,
       "role": "test"
-    },
-    "packages/frtb-orchestration/src/frtb_orchestration/standardised.py": {
-      "limit": 600,
-      "lines": 625,
-      "role": "source"
     },
     "packages/frtb-result-store/src/frtb_result_store/io.py": {
       "limit": 600,
@@ -643,7 +633,7 @@
     },
     "packages/frtb-sbm/src/frtb_sbm/__init__.py": {
       "limit": 600,
-      "lines": 675,
+      "lines": 661,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/aggregation.py": {
@@ -653,7 +643,7 @@
     },
     "packages/frtb-sbm/src/frtb_sbm/arrow_batch.py": {
       "limit": 600,
-      "lines": 1719,
+      "lines": 1684,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/batch.py": {
@@ -663,7 +653,7 @@
     },
     "packages/frtb-sbm/src/frtb_sbm/capital.py": {
       "limit": 600,
-      "lines": 1744,
+      "lines": 1812,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/crif.py": {
@@ -678,7 +668,7 @@
     },
     "packages/frtb-sbm/src/frtb_sbm/reference_data.py": {
       "limit": 600,
-      "lines": 1584,
+      "lines": 1775,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/risk_classes/vega.py": {
@@ -688,7 +678,7 @@
     },
     "packages/frtb-sbm/src/frtb_sbm/validation.py": {
       "limit": 600,
-      "lines": 800,
+      "lines": 804,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/weighted_sensitivity.py": {

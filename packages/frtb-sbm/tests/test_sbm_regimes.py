@@ -56,16 +56,32 @@ def test_get_sbm_rule_profile_returns_supported_basel_profile() -> None:
 
 def test_profile_content_hash_is_deterministic_and_profile_specific() -> None:
     basel_profile = get_sbm_rule_profile(SbmRegulatoryProfile.BASEL_MAR21)
+    us_npr_profile = get_sbm_rule_profile(SbmRegulatoryProfile.US_NPR_2_0)
 
     assert re.fullmatch(r"[0-9a-f]{64}", basel_profile.content_hash)
     assert basel_profile.content_hash == profile_content_hash(SbmRegulatoryProfile.BASEL_MAR21)
     assert basel_profile.content_hash == get_sbm_rule_profile("BASEL_MAR21").content_hash
+    assert re.fullmatch(r"[0-9a-f]{64}", us_npr_profile.content_hash)
+    assert us_npr_profile.content_hash == profile_content_hash(SbmRegulatoryProfile.US_NPR_2_0)
+    assert us_npr_profile.content_hash != basel_profile.content_hash
+
+
+def test_get_sbm_rule_profile_returns_partial_us_npr_profile() -> None:
+    profile = get_sbm_rule_profile(SbmRegulatoryProfile.US_NPR_2_0)
+
+    assert resolve_sbm_profile(SbmRegulatoryProfile.US_NPR_2_0) is SbmRegulatoryProfile.US_NPR_2_0
+    assert profile.profile_id == SbmRegulatoryProfile.US_NPR_2_0.value
+    assert profile.publication_date == date(2026, 3, 27)
+    assert profile.supported_risk_classes == frozenset({SbmRiskClass.GIRR})
+    assert profile.supported_measures == {
+        SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),
+    }
+    assert "us_npr_91_fr_14952_va7a_girr_delta_weights" in profile.citations
 
 
 @pytest.mark.parametrize(
     "profile",
     [
-        SbmRegulatoryProfile.US_NPR_2_0,
         SbmRegulatoryProfile.EU_CRR3,
         SbmRegulatoryProfile.PRA_UK_CRR,
     ],
@@ -169,3 +185,25 @@ def test_supported_risk_class_measures_lists_delta_vega_and_curvature_paths() ->
             (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE),
         }
     )
+
+
+def test_us_npr_profile_support_map_is_girr_delta_only() -> None:
+    supported = supported_risk_class_measures(SbmRegulatoryProfile.US_NPR_2_0)
+
+    assert supported == frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
+    assert profile_supports_risk_class_measure(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.DELTA,
+    )
+    ensure_profile_supports_risk_class_measure(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.DELTA,
+    )
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR_2_0"):
+        ensure_profile_supports_risk_class_measure(
+            SbmRegulatoryProfile.US_NPR_2_0,
+            SbmRiskClass.GIRR,
+            SbmRiskMeasure.VEGA,
+        )

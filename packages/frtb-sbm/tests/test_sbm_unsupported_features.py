@@ -18,6 +18,7 @@ from frtb_sbm import (
     ensure_sbm_risk_class_measure_supported,
     ensure_sbm_run_supported,
 )
+from frtb_sbm.capital import _portfolio_scenario_citations
 
 
 def sample_lineage() -> SbmSourceLineage:
@@ -79,7 +80,6 @@ def test_unknown_profile_fails_closed() -> None:
 @pytest.mark.parametrize(
     ("risk_class", "risk_measure"),
     [
-        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
@@ -90,7 +90,7 @@ def test_unsupported_risk_class_measure_paths_fail_closed(
     risk_class: SbmRiskClass,
     risk_measure: SbmRiskMeasure,
 ) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
         ensure_sbm_risk_class_measure_supported(
             SbmRegulatoryProfile.US_NPR_2_0.value,
             risk_class,
@@ -106,12 +106,30 @@ def test_ensure_sbm_run_supported_rejects_scope_mismatch() -> None:
         ensure_sbm_run_supported(context, (sensitivity,))
 
 
-def test_ensure_sbm_capital_paths_supported_rejects_non_basel_profile() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="phase-1 capital is unsupported"):
+def test_ensure_sbm_capital_paths_supported_rejects_unsupported_npr_cell() -> None:
+    sensitivity = sample_sensitivity(
+        risk_class=SbmRiskClass.FX,
+        risk_measure=SbmRiskMeasure.DELTA,
+        bucket="EUR",
+        risk_factor="EUR",
+        tenor=None,
+    )
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR_2_0"):
         ensure_sbm_capital_paths_supported(
             SbmRegulatoryProfile.US_NPR_2_0.value,
-            (sample_sensitivity(),),
+            (sensitivity,),
         )
+
+
+def test_portfolio_scenario_citations_do_not_fall_back_to_basel() -> None:
+    assert _portfolio_scenario_citations(SbmRegulatoryProfile.BASEL_MAR21.value) == (
+        "basel_mar21_7_scenario_selection",
+    )
+    assert _portfolio_scenario_citations(SbmRegulatoryProfile.US_NPR_2_0.value) == (
+        "us_npr_91_fr_14952_va7a_correlation_scenarios",
+    )
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile=EU_CRR3"):
+        _portfolio_scenario_citations(SbmRegulatoryProfile.EU_CRR3.value)
 
 
 def test_basel_fx_curvature_measure_is_supported() -> None:

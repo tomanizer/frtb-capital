@@ -1,58 +1,42 @@
 """
-Impact-analysis placeholder consuming audited SBM capital graphs.
+Baseline-vs-candidate capital impact assessment for SBM.
 
 Regulatory traceability:
-    SBM-FUNC-022 — baseline-vs-candidate impact readiness without placeholder capital.
+    ADR 0038 — suite-wide attribution and impact contract.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from frtb_common import UnsupportedRegulatoryFeatureError
+from frtb_common.impact import CapitalImpact, ImpactMethod
 
 from frtb_sbm.data_models import SbmCapitalResult
 
-
-@dataclass(frozen=True)
-class SbmImpactPlaceholder:
-    """Structured placeholder for future capital impact analysis."""
-
-    status: str
-    reason: str
-    requirement_id: str = "SBM-FUNC-022"
+_COMPONENT = "frtb_sbm"
 
 
-def impact_placeholder_for_results(
+def calculate_sbm_capital_impact(
     baseline: SbmCapitalResult,
     candidate: SbmCapitalResult,
-) -> SbmImpactPlaceholder:
-    """Return an explicit unsupported impact placeholder for two capital results."""
+) -> CapitalImpact:
+    """Return the finite-difference capital delta between two reconciled SBM results.
 
-    del baseline, candidate
-    return SbmImpactPlaceholder(
-        status="unsupported",
-        reason=(
-            "Finite-difference capital impact is not implemented; baseline and candidate "
-            "results retain deterministic hashes for future impact analysis."
-        ),
+    Both results must be independently reconciled before calling this function.
+    The returned record must not be presented as a marginal contribution; it is
+    a cross-run impact assessment (ADR 0038 §3).
+    """
+    return CapitalImpact(
+        baseline_run_id=baseline.run_context.run_id if baseline.run_context else "",
+        candidate_run_id=candidate.run_context.run_id if candidate.run_context else "",
+        component=_COMPONENT,
+        baseline_total=baseline.total_capital,
+        candidate_total=candidate.total_capital,
+        delta=candidate.total_capital - baseline.total_capital,
+        method=ImpactMethod.FINITE_DIFFERENCE,
+        baseline_input_hash=baseline.input_hash,
+        candidate_input_hash=candidate.input_hash,
+        baseline_profile_hash=baseline.profile_hash,
+        candidate_profile_hash=candidate.profile_hash,
     )
 
 
-def ensure_sbm_impact_unsupported(
-    baseline: SbmCapitalResult,
-    candidate: SbmCapitalResult,
-) -> None:
-    """Fail closed when callers request unsupported capital impact analysis."""
-
-    del baseline, candidate
-    raise UnsupportedRegulatoryFeatureError(
-        "frtb-sbm capital impact analysis is unsupported (SBM-FUNC-022)"
-    )
-
-
-__all__ = [
-    "SbmImpactPlaceholder",
-    "ensure_sbm_impact_unsupported",
-    "impact_placeholder_for_results",
-]
+__all__ = ["calculate_sbm_capital_impact"]

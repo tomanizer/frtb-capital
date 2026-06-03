@@ -386,7 +386,6 @@ def calculate_nmrf_ses_from_revaluation(
     gain, so SES is floored at zero. ``MAX_LOSS_FALLBACK`` artifacts use the
     maximum supplied loss instead of a tail average.
     """
-    policy.require_supported("type_a_type_b_nmrf_taxonomy")
     if artifact.method == NMRFStressMethod.LINEAR_SENSITIVITY and not allow_linear_approximation:
         raise ValueError(
             "LINEAR_SENSITIVITY artifacts are approximation-only and require "
@@ -508,18 +507,26 @@ def aggregate_ses_breakdown_for_policy(
     policy: RegulatoryPolicy,
 ) -> SESAggregationResult:
     """Compute decomposed SES using policy parameters and taxonomy support gates."""
-    policy.require_supported("type_a_type_b_nmrf_taxonomy")
-    if (
-        policy.type_a_ses_aggregation_mode
-        != TypeASESAggregationMode.ZERO_CORRELATION_ROOT_SUM_SQUARES
-    ):
-        raise ValueError(
-            "NPR 2.0 policy must use zero-correlation root-sum-square aggregation for Type A SES"
+    policy.require_capital_runtime_supported()
+    if policy.uses_type_a_type_b_taxonomy:
+        policy.require_type_a_type_b_taxonomy()
+        if (
+            policy.type_a_ses_aggregation_mode
+            != TypeASESAggregationMode.ZERO_CORRELATION_ROOT_SUM_SQUARES
+        ):
+            raise ValueError(
+                "NPR 2.0 policy must use zero-correlation root-sum-square aggregation "
+                "for Type A SES"
+            )
+        return aggregate_ses_breakdown(
+            type_a_values,
+            type_b_values,
+            type_b_rho=policy.type_b_ses_rho,
         )
     return aggregate_ses_breakdown(
         type_a_values,
         type_b_values,
-        type_b_rho=policy.type_b_ses_rho,
+        type_b_rho=0.0,
     )
 
 
@@ -575,9 +582,10 @@ def route_nmrf_classifications_for_capital(
     Route RFET classifications into IMCC and SES populations.
 
     Under the Fed NPR 2.0 profile, Type A NMRFs remain in IMCC and also
-    require SES. Type B NMRFs require SES only.
+    require SES. Type B NMRFs require SES only. Under UK CRR / EU comparison
+    profiles, modellable factors stay in IMCC and all NMRF statuses feed SES only.
     """
-    policy.require_supported("type_a_type_b_nmrf_taxonomy")
+    policy.require_capital_runtime_supported()
     _validate_classification_mapping(classifications)
 
     modellable: list[str] = []
@@ -595,11 +603,17 @@ def route_nmrf_classifications_for_capital(
     type_a = sorted(type_a)
     type_b = sorted(type_b)
 
+    if policy.uses_type_a_type_b_taxonomy:
+        policy.require_type_a_type_b_taxonomy()
+        imcc_risk_factors = tuple(modellable + type_a)
+    else:
+        imcc_risk_factors = tuple(modellable)
+
     return NMRFCapitalRouting(
         modellable_risk_factors=tuple(modellable),
         type_a_nmrf_risk_factors=tuple(type_a),
         type_b_nmrf_risk_factors=tuple(type_b),
-        imcc_risk_factors=tuple(modellable + type_a),
+        imcc_risk_factors=imcc_risk_factors,
         ses_risk_factors=tuple(type_a + type_b),
     )
 
@@ -690,6 +704,7 @@ def calculate_nmrf_capital_for_policy(
     Missing Type A or Type B stress artifacts are hard errors. This prevents the
     capital layer from silently falling back to the linear approximation helper.
     """
+    policy.require_capital_runtime_supported()
     routing = route_nmrf_classifications_for_capital(classifications, policy)
     artifacts_by_name = _artifact_by_risk_factor(tuple(artifacts))
     _validate_required_artifacts(

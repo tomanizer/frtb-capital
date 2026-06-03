@@ -65,6 +65,7 @@ from frtb_ima.stress_periods import (
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CAPITAL_RUN_V1_ROOT = ROOT / "tests" / "fixtures" / "capital_run_v1"
+DEFAULT_IMA_PRA_FIXTURE_ROOT = ROOT / "tests" / "fixtures" / "ima_pra"
 NMRF_ARTIFACT_SOURCE = "fixture upstream valuation artifact"
 
 
@@ -88,6 +89,11 @@ class CapitalRunFixture:
 def load_capital_run_v1_fixture() -> CapitalRunFixture:
     """Load the repository's canonical capital-run v1 fixture."""
     return load_capital_run_fixture(DEFAULT_CAPITAL_RUN_V1_ROOT)
+
+
+def load_capital_run_pra_fixture() -> CapitalRunFixture:
+    """Load the PRA UK CRR replay fixture (shared inputs, PRA policy outputs)."""
+    return load_capital_run_fixture(DEFAULT_IMA_PRA_FIXTURE_ROOT)
 
 
 def load_capital_run_fixture(root: Path) -> CapitalRunFixture:

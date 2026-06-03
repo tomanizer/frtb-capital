@@ -9,11 +9,10 @@ Detailed requirements: [NON_BASEL_PROFILE_REQUIREMENTS.md](NON_BASEL_PROFILE_REQ
 `frtb-sbm` implements cited **BASEL_MAR21** delta, vega, and curvature capital
 for all seven SBM risk classes (21 profile/risk-class/measure cells). The
 comparison profiles `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` are recognised at
-the type level but **fail closed** before reference-data lookup or capital
-calculation. That behaviour is correct for audit safety, but it blocks
-comparison-profile capital runs and keeps the package at `partial_runtime`
-maturity until at least one non-Basel cell is either implemented with fixture
-evidence or explicitly documented as blocked/out-of-scope.
+the type level. Issue #504 implements the first comparison-profile cell,
+`US_NPR_2_0` GIRR delta, with cited profile-owned reference data and fixture
+evidence. All other non-Basel cells still fail closed before capital
+calculation until cited reference data and deterministic fixtures exist.
 
 This design records research on the current boundary, defines a normative
 support matrix, and sequences implementation without changing public API
@@ -26,12 +25,12 @@ semantics or Basel fixture hashes.
 | Layer | BASEL_MAR21 | Non-Basel profiles |
 | --- | --- | --- |
 | `SbmRegulatoryProfile` enum | `BASEL_MAR21` | `US_NPR_2_0`, `EU_CRR3`, `PRA_UK_CRR` |
-| `phase1_capital_supported_paths()` | 21 cells (7×3) | Empty frozenset per profile |
-| `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | `UnsupportedRegulatoryFeatureError` via `UNSUPPORTED_PROFILE_REASONS` |
-| `PROFILE_*` reference-data maps in `reference_data.py` | Populated | Absent (lookup fails closed) |
-| Fixture packs under `tests/fixtures/` | 7 packs (`*_v1`) | None |
-| `REGULATORY_TRACEABILITY.md` | Full 7×3 matrix | Profile rows: unsupported fail-closed / planned |
-| Enforcement tests | `test_sbm_support_matrix.py`, `test_sbm_unsupported_features.py` | Non-Basel zero paths + fail-closed |
+| `phase1_capital_supported_paths()` | 21 cells (7×3) | `US_NPR_2_0` GIRR delta; EU/PRA empty frozenset |
+| `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | `US_NPR_2_0` supported for GIRR delta; EU/PRA fail closed via `UNSUPPORTED_PROFILE_REASONS` |
+| `PROFILE_*` reference-data maps in `reference_data.py` | Populated | NPR GIRR delta populated; other non-Basel lookup paths fail closed |
+| Fixture packs under `tests/fixtures/` | 7 packs (`*_v1`) | `girr_delta_us_npr_v1` |
+| `REGULATORY_TRACEABILITY.md` | Full 7×3 matrix | `US_NPR_2_0` partial; EU/PRA unsupported fail-closed / blocked |
+| Enforcement tests | `test_sbm_support_matrix.py`, `test_sbm_unsupported_features.py` | NPR one-cell support + fail-closed tests for remaining cells |
 
 Authoritative runtime gates:
 
@@ -91,7 +90,7 @@ Status labels match `REGULATORY_TRACEABILITY.md`:
 | Profile | Cells | Runtime today |
 | --- | ---: | --- |
 | `BASEL_MAR21` | 21 / 21 | 21 implemented under audit |
-| `US_NPR_2_0` | 0 / 21 | 21 unsupported fail-closed |
+| `US_NPR_2_0` | 1 / 21 | GIRR delta implemented under audit; 20 unsupported fail-closed |
 | `EU_CRR3` | 0 / 21 | 21 unsupported fail-closed |
 | `PRA_UK_CRR` | 0 / 21 | 21 unsupported fail-closed |
 
@@ -99,7 +98,7 @@ Per-class detail for non-Basel profiles (all measures share the same status unti
 
 | Risk class | `US_NPR_2_0` | `EU_CRR3` | `PRA_UK_CRR` |
 | --- | --- | --- | --- |
-| GIRR | Planned | Planned | Blocked |
+| GIRR | Delta implemented under audit; vega/curvature unsupported fail-closed | Planned | Blocked |
 | FX | Planned | Planned | Blocked |
 | Equity | Planned | Planned | Blocked |
 | Commodity | Planned | Planned | Blocked |
@@ -107,7 +106,7 @@ Per-class detail for non-Basel profiles (all measures share the same status unti
 | CSR sec non-CTP | Planned | Planned | Blocked |
 | CSR sec CTP | Planned | Planned | Blocked |
 
-### Recommended first implementation cell
+### First implementation cell
 
 **`US_NPR_2_0` × GIRR × DELTA**
 
@@ -256,7 +255,7 @@ regulatory definition change.
 | Criterion | Phase 0 (design) | Phase 1+ (implementation) |
 | --- | --- | --- |
 | Support matrix in docs | This doc + requirements + traceability cross-link | Per-cell updates |
-| ≥1 non-Basel cell implemented or blocked | First cell **planned** with explicit reqs | GIRR delta NPR or blocked issue |
+| ≥1 non-Basel cell implemented or blocked | First cell implemented with `girr_delta_us_npr_v1` fixture evidence | Continue with remaining NPR cells or blocked issue |
 | Unsupported cells fail closed | Documented | Tested (existing + extended) |
 | Basel hashes unchanged | N/A (docs only) | Enforced in CI |
 | `make quality-control` + SBM tests | Docs-only PR: QC unchanged | Required on implementation PR |

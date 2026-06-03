@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_rrao import (
     RraoClassification,
@@ -51,10 +50,14 @@ def test_partial_investment_fund_path_fails_without_descriptor() -> None:
         )
 
 
-@pytest.mark.parametrize(
-    "profile",
-    [RraoRegulatoryProfile.PRA_UK_CRR],
-)
-def test_unsupported_profiles_fail_closed(profile: RraoRegulatoryProfile) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        classify_rrao_position(sample_position(), profile=profile)
+def test_pra_investment_fund_path_fails_without_descriptor() -> None:
+    with pytest.raises(RraoInputError, match="investment fund descriptor"):
+        classify_rrao_position(
+            sample_position(
+                evidence_type=RraoEvidenceType.INVESTMENT_FUND_EXPOSURE,
+                evidence_label="investment fund exposure",
+                classification_hint=RraoClassification.OTHER_RESIDUAL_RISK,
+                is_investment_fund_exposure=True,
+            ),
+            profile=RraoRegulatoryProfile.PRA_UK_CRR,
+        )
