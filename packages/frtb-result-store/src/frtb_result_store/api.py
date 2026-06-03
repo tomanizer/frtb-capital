@@ -149,6 +149,11 @@ def _register_capital_tree_routes(
         summary="Return top persisted attribution contributors",
     )
     def top_contributors(run_id: str, limit: int = 10) -> dict[str, object]:
+        if limit < 1 or limit > 1000:
+            raise http_exception_type(  # type: ignore[call-arg]
+                status_code=422,
+                detail="limit must be between 1 and 1000",
+            )
         _require_run(result_store, run_id, http_exception_type)
         return {"contributors": _to_jsonable(result_store.top_contributors(run_id, limit=limit))}
 

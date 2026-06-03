@@ -693,9 +693,9 @@ class DuckDbParquetResultStore:
             FROM {{mart}}
             WHERE run_id = ?
             ORDER BY rank
-            LIMIT {limit}
+            LIMIT ?
             """,
-            (run_id,),
+            (run_id, limit),
         )
         return _dict_rows(columns, rows)
 

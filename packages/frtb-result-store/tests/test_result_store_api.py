@@ -77,12 +77,6 @@ def test_result_store_api_serves_committed_runs_without_catalog_access(
         == 42.0
     )
     assert (
-        client.get(f"/runs/{current.run_id}/top-contributors").json()["contributors"][0][
-            "attribution_id"
-        ]
-        == "ima-desk"
-    )
-    assert (
         client.get(f"/runs/{current.run_id}/nodes/ima/attribution").json()["attributions"][0][
             "attribution_id"
         ]
@@ -122,6 +116,23 @@ def test_result_store_api_serves_committed_runs_without_catalog_access(
         baseline.run_id,
         current.run_id,
     }
+
+
+def test_top_contributors_api_validates_limit(tmp_path: Path) -> None:
+    run = _run("US_NPR_2_0", None, None)
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    store.write_bundle(_bundle(run))
+    client = TestClient(create_result_store_app(store))
+
+    contributors = client.get(f"/runs/{run.run_id}/top-contributors").json()["contributors"]
+    assert contributors[0]["attribution_id"] == "ima-desk"
+    assert (
+        client.get(f"/runs/{run.run_id}/top-contributors", params={"limit": 0}).status_code == 422
+    )
+    assert (
+        client.get(f"/runs/{run.run_id}/top-contributors", params={"limit": 1001}).status_code
+        == 422
+    )
 
 
 def test_result_store_api_is_read_only_and_has_domain_openapi_tags(tmp_path: Path) -> None:

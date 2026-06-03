@@ -364,7 +364,7 @@ def _regime_comparison_row(
 def _ima_desk_dashboard_rows(bundle: ResultBundle) -> list[dict[str, object]]:
     groups: dict[str, list[CapitalNode]] = {}
     for node in bundle.nodes:
-        if FrtbComponent(node.component) is FrtbComponent.IMA and node.desk_id:
+        if FrtbComponent(node.component) == FrtbComponent.IMA and node.desk_id:
             groups.setdefault(node.desk_id, []).append(node)
     capital_by_node = _capital_amount_by_node(bundle.measures)
     currency_by_node = _currency_by_node(bundle.measures, bundle.run.base_currency)
@@ -388,7 +388,7 @@ def _ima_desk_dashboard_rows(bundle: ResultBundle) -> list[dict[str, object]]:
 def _sbm_bucket_ladder_rows(bundle: ResultBundle) -> list[dict[str, object]]:
     groups: dict[tuple[str, str], list[CapitalNode]] = {}
     for node in bundle.nodes:
-        if FrtbComponent(node.component) is FrtbComponent.SBM and node.risk_class and node.bucket:
+        if FrtbComponent(node.component) == FrtbComponent.SBM and node.risk_class and node.bucket:
             groups.setdefault((node.risk_class, node.bucket), []).append(node)
     capital_by_node = _capital_amount_by_node(bundle.measures)
     currency_by_node = _currency_by_node(bundle.measures, bundle.run.base_currency)
@@ -420,7 +420,7 @@ def _component_identifier_rows(
     artifact_id = _artifact_id(bundle.artifacts, component=component, artifact_type=artifact_type)
     rows: list[dict[str, object]] = []
     for node in sorted(bundle.nodes, key=lambda item: (item.sort_key, item.node_id)):
-        if FrtbComponent(node.component) is not component:
+        if FrtbComponent(node.component) != component:
             continue
         identifier = getattr(node, identifier_field)
         if not identifier:
@@ -448,7 +448,7 @@ def _rrao_exposure_summary_rows(bundle: ResultBundle) -> list[dict[str, object]]
     )
     rows: list[dict[str, object]] = []
     for node in sorted(bundle.nodes, key=lambda item: (item.sort_key, item.node_id)):
-        if FrtbComponent(node.component) is not FrtbComponent.RRAO:
+        if FrtbComponent(node.component) != FrtbComponent.RRAO:
             continue
         rows.append(
             {
@@ -532,7 +532,7 @@ def _artifact_id(
     artifact_type: ArtifactType,
 ) -> str | None:
     for artifact in sorted(artifacts, key=lambda item: item.artifact_id):
-        if artifact.component is component and artifact.artifact_type is artifact_type:
+        if artifact.component == component and artifact.artifact_type == artifact_type:
             return artifact.artifact_id
     return None
 
