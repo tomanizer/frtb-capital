@@ -45,8 +45,11 @@ This audit checks whether repository documentation reflects the current
 
 ## Residual Follow-Ups
 
-- Future package work: add formal model documentation packs as scaffolded
-  components become implemented calculation packages.
+- Current package maturity and validation-pack evidence are tracked in
+  [quality/package_maturity.toml](quality/package_maturity.toml),
+  [quality/PACKAGE_STATUS.md](quality/PACKAGE_STATUS.md), and
+  [VALIDATION_PACK.md](VALIDATION_PACK.md). This 2026-05-28 audit is retained
+  as historical migration evidence.
 - `tomanizer/frtb-capital#2`: dependency pinning and supply-chain hygiene.
 - `tomanizer/frtb-capital#3`: governance file completion, including PR
   templates if desired.

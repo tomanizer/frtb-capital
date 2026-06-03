@@ -9,8 +9,9 @@ model.
 | Area | Purpose |
 | --- | --- |
 | [Architecture](ARCHITECTURE.md) | Workspace structure, package boundaries, dependency rules, and orchestration ownership. |
-| [Modules](modules/README.md) | Component documentation for implemented and scaffolded capital modules. |
+| [Modules](modules/README.md) | Component documentation for implemented and partial-runtime capital modules. |
 | [ADRs](decisions/) | Architecture and material model decisions. |
+| [Documentation ownership](DOCUMENTATION_OWNERSHIP.md) | Canonical sources, review ownership, status vocabulary, and stale-roadmap policy. |
 | [Validation packs](VALIDATION_PACK.md) | Suite index for validation evidence and package review bundles. |
 | [Regulatory corpus](regulatory/README.md) | Source register, jurisdictional profiles, and component regulatory crosswalks. |
 | [Quality](quality/) | Coverage, mutation-testing, and engineering-quality evidence. |

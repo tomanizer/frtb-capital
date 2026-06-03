@@ -18,7 +18,7 @@ Architectural decision records: [`docs/decisions/`](../../../decisions/).
 |------|-----------|
 | Primary regulatory profile | U.S. NPR 2.0 (proposed rule, March 2026) — treated as proposed material |
 | Conceptual baseline | Basel FRTB MAR30–MAR33 and MAR99 (traffic-light multipliers) |
-| Comparison anchors | EU CRR3 Articles 325ba–325bg and 325bk; Delegated Regulations (EU) 2022/2059 and 2022/2060; UK CRR / PRA rulebook placeholders |
+| Comparison anchors | EU CRR3 Articles 325ba–325bg and 325bk; Delegated Regulations (EU) 2022/2059 and 2022/2060; UK CRR / PRA rulebook comparison references |
 | Package boundary | IMA desk-level capital assembly inside a multi-package suite — not a full FRTB calculator and not a firm-level consolidator |
 | Validation status | Independent validation engagement defined in `docs/VALIDATION_ENGAGEMENT_CHARTER.md`; model is currently `under_validation` |
 

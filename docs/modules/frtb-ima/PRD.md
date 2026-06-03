@@ -39,7 +39,8 @@ evidence.
 - Do not implement SA component capital inside `frtb-ima`.
 - Do not make RFET, PLA, stress-period selection, or SES separate workspace
   packages unless a future ADR demonstrates independent reuse and versioning.
-- Do not present prototype outputs as final regulatory capital.
+- Do not present synthetic engineering or validation outputs as final
+  regulatory capital.
 
 ## Orchestration Contract
 

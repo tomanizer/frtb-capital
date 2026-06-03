@@ -177,7 +177,7 @@ five.
 
 If required inputs are missing, the package must raise an explicit
 `UnsupportedRegulatoryFeatureError` or `DrcInputError`; it must not silently
-compute a placeholder. Fallback capital remains outside `frtb-drc`, but the
+emit fabricated capital. Fallback capital remains outside `frtb-drc`, but the
 result should identify positions that must be routed to fallback.
 
 U.S. source: section V.A.3.d fallback capital requirement and section V.A.9.

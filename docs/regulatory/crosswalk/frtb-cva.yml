@@ -94,7 +94,7 @@ requirements:
     code_refs:
       - packages/frtb-cva/src/frtb_cva/regimes.py
     test_refs:
-      - packages/frtb-cva/tests/test_unsupported_features.py
+      - packages/frtb-cva/tests/test_cva_unsupported_features.py
     coverage_status: not_implemented
     notes: Fail closed until Articles 382-386 are mapped.
   - id: CVA-UK-001
@@ -106,6 +106,6 @@ requirements:
     code_refs:
       - packages/frtb-cva/src/frtb_cva/regimes.py
     test_refs:
-      - packages/frtb-cva/tests/test_unsupported_features.py
+      - packages/frtb-cva/tests/test_cva_unsupported_features.py
     coverage_status: not_implemented
     notes: Comparison profile only; Basel MAR50 is first implementation target.
