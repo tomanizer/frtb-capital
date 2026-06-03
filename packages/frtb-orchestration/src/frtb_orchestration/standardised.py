@@ -301,6 +301,19 @@ def compose_standardised_approach_capital(
     )
 
 
+def standardised_jurisdiction_family(profile_id: str) -> str:
+    """Return the ADR 0022 SA jurisdiction family for a public profile id."""
+
+    _require_non_empty_text(profile_id, "profile_id")
+    family = _SA_JURISDICTION_FAMILY.get(profile_id)
+    if family is None:
+        raise OrchestrationInputError(
+            f"profile_id {profile_id!r} is not recognised as a known SA jurisdiction profile",
+            field="profile_id",
+        )
+    return family
+
+
 def _require_component(
     handoff: ComponentResultHandoff | None,
     expected: StandardisedComponent,
@@ -361,15 +374,14 @@ def _missing_standardised_components(
 
 
 def _jurisdiction_family(handoff: ComponentResultHandoff) -> str:
-    family = _SA_JURISDICTION_FAMILY.get(handoff.profile_id)
-    if family is None:
+    try:
+        return standardised_jurisdiction_family(handoff.profile_id)
+    except OrchestrationInputError as exc:
         raise OrchestrationInputError(
             f"{handoff.component.value} profile_id {handoff.profile_id!r} is not "
-            "recognised as a known SA jurisdiction profile; add it to "
-            "_SA_JURISDICTION_FAMILY in standardised.py",
+            "recognised as a known SA jurisdiction profile",
             field="profile_id",
-        )
-    return family
+        ) from exc
 
 
 def _assert_consistent_run_context(handoffs: Sequence[ComponentResultHandoff]) -> None:
@@ -527,4 +539,5 @@ __all__ = [
     "StandardisedComponentSubtotal",
     "StandardisedFallbackRoute",
     "compose_standardised_approach_capital",
+    "standardised_jurisdiction_family",
 ]

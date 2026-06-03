@@ -26,6 +26,10 @@ capital inputs, and can select stress windows from supplied historical loss
 series, but it does not source raw market data, price trades, run
 SBM/DRC/RRAO/CVA capital, compose SA totals, or produce final regulatory
 submissions.
+Client delivery is documented in
+[`docs/modules/frtb-ima/CLIENT_DELIVERY.md`](../../docs/modules/frtb-ima/CLIENT_DELIVERY.md),
+including the split between dense NumPy scenario artifacts and Arrow tabular
+handoffs.
 
 ## Install
 

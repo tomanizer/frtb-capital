@@ -28,6 +28,7 @@ matrix in [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md).
 
 | Document | Purpose |
 | --- | --- |
+| [PUBLIC_API.md](../../docs/modules/frtb-sbm/PUBLIC_API.md) | Stable client integration surface, handoff specs, and top-level imports |
 | [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md) | Code-to-regulation map and phase-1 support status |
 | [REGULATORY_ASSUMPTIONS.md](docs/REGULATORY_ASSUMPTIONS.md) | Source-cited implementation boundaries |
 | [regulatory_sources.yml](docs/regulatory_sources.yml) | Link-only regulatory source manifest |
