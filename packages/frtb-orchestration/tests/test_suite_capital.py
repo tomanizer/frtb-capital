@@ -550,8 +550,9 @@ def test_suite_attribution_rejects_component_total_mismatch() -> None:
         synthetic_contribution_bundle("frtb_cva", cva.total_cva_capital),
     )
 
-    with pytest.raises(OrchestrationInputError, match="component_total"):
+    with pytest.raises(OrchestrationInputError, match="component_total") as exc_info:
         aggregate_suite_attribution(suite_result=suite, component_bundles=bundles)
+    assert exc_info.value.field == "component_bundles"
 
 
 def test_suite_attribution_rejects_incomplete_component_set() -> None:

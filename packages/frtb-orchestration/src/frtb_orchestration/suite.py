@@ -124,7 +124,7 @@ class SuiteAttributionResult:
             [bundle.component_total for bundle in self.component_bundles]
             + [
                 self.suite_residual.contribution or 0.0,
-                self.suite_residual.residual,
+                self.suite_residual.residual or 0.0,
             ]
         )
         if not _within_attribution_tolerance(reconciled_total, self.suite_total_capital):
@@ -550,7 +550,7 @@ def _validate_component_bundles(
             raise OrchestrationInputError(
                 f"component contribution bundle {bundle.component!r} has component_total "
                 f"{bundle.component_total:.6g}, expected {expected_total:.6g}",
-                field="component_total",
+                field="component_bundles",
             )
         canonical_components.append(component)
         seen.add(component)
@@ -579,24 +579,24 @@ def _require_supported_attribution_component_set(canonical_components: tuple[str
         )
 
 
-def _canonical_component_label(component: object) -> str:
+def _canonical_component_label(component: object, field: str = "component_bundles") -> str:
     if not isinstance(component, str) or not component:
         raise OrchestrationInputError(
-            "component contribution bundle component must be non-empty text",
-            field="component_bundles",
+            f"{field} component must be non-empty text",
+            field=field,
         )
     normalised = component.strip().lower().replace("-", "_")
     canonical = _COMPONENT_LABEL_ALIASES.get(normalised)
     if canonical is None:
         raise OrchestrationInputError(
-            f"component contribution bundle component {component!r} is not recognised",
-            field="component_bundles",
+            f"{field} component {component!r} is not recognised",
+            field=field,
         )
     return canonical
 
 
 def _canonical_standardised_component(component: str) -> str:
-    return _canonical_component_label(component)
+    return _canonical_component_label(component, field="component_subtotals")
 
 
 def _within_attribution_tolerance(actual: float, expected: float) -> bool:
