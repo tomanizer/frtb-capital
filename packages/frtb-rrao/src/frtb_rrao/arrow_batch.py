@@ -1,8 +1,7 @@
-"""Arrow handoff adapter for RRAO residual-risk batches."""
+"""Arrow batch adapter for RRAO residual-risk batches."""
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -22,7 +21,7 @@ from frtb_common import (
 from frtb_rrao.batch import RraoPositionBatch, build_rrao_batch_from_columns
 from frtb_rrao.validation import RraoInputError
 
-HandoffColumnArray = npt.NDArray[Any]
+ArrowColumnArray = npt.NDArray[Any]
 
 RRAO_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("position_id", aliases=("positionId",), logical_type=TabularLogicalType.STRING),
@@ -237,9 +236,6 @@ RRAO_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         null_policy=NullPolicy.ALLOW,
     ),
 )
-RRAO_HANDOFF_COLUMN_SPECS = RRAO_ARROW_COLUMN_SPECS
-
-
 _RRAO_BATCH_COLUMN_ARGS: Mapping[str, str] = {
     "position_id": "position_ids",
     "source_row_id": "source_row_ids",
@@ -301,7 +297,7 @@ def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
         if spec.logical_type is TabularLogicalType.UNKNOWN
     )
     if unknown:
-        raise RuntimeError("RRAO handoff specs must declare logical_type: " + ", ".join(unknown))
+        raise RuntimeError("RRAO Arrow specs must declare logical_type: " + ", ".join(unknown))
 
 
 _ensure_explicit_logical_types(RRAO_ARROW_COLUMN_SPECS)
@@ -315,7 +311,7 @@ def normalize_rrao_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the RRAO handoff contract."""
+    """Normalize a raw Arrow table to the RRAO batch contract."""
 
     return normalize_arrow_table(
         table,
@@ -331,7 +327,7 @@ def normalize_rrao_arrow_table(
 def build_rrao_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> RraoPositionBatch:
-    """Build an RRAO-owned residual-risk batch from a normalized Arrow handoff."""
+    """Build an RRAO-owned residual-risk batch from a normalized Arrow batch."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise RraoInputError("handoff must be NormalizedArrowTable", field="handoff")
@@ -355,17 +351,6 @@ def build_rrao_batch_from_arrow(
     )
 
 
-def build_rrao_batch_from_handoff(handoff: NormalizedArrowTable) -> RraoPositionBatch:
-    """Deprecated alias for :func:`build_rrao_batch_from_arrow`."""
-
-    warnings.warn(
-        "build_rrao_batch_from_handoff is deprecated; use build_rrao_batch_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_rrao_batch_from_arrow(handoff)
-
-
 def _rrao_batch_column_kwargs(columns: Mapping[str, object]) -> dict[str, Any]:
     return {
         argument_name: columns.get(column_name)
@@ -377,18 +362,18 @@ def _rrao_error(message: str, field: str | None) -> RraoInputError:
     return RraoInputError(message, field="" if field is None else field)
 
 
-def _reject_unsupported_nested_payload(values: HandoffColumnArray | None) -> None:
+def _reject_unsupported_nested_payload(values: ArrowColumnArray | None) -> None:
     if values is None:
         return
     for value in values:
         if value is not None and str(value).strip():
             raise RraoInputError(
-                "unsupported nested payload requires flattened RRAO handoff columns",
+                "unsupported nested payload requires flattened RRAO Arrow columns",
                 field="unsupported_nested_payload",
             )
 
 
-def _citations_column(values: HandoffColumnArray | None) -> tuple[tuple[str, ...], ...] | None:
+def _citations_column(values: ArrowColumnArray | None) -> tuple[tuple[str, ...], ...] | None:
     if values is None:
         return None
     groups: list[tuple[str, ...]] = []
@@ -402,8 +387,6 @@ def _citations_column(values: HandoffColumnArray | None) -> tuple[tuple[str, ...
 
 __all__ = [
     "RRAO_ARROW_COLUMN_SPECS",
-    "RRAO_HANDOFF_COLUMN_SPECS",
     "build_rrao_batch_from_arrow",
-    "build_rrao_batch_from_handoff",
     "normalize_rrao_arrow_table",
 ]

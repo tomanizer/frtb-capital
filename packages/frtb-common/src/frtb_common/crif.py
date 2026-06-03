@@ -18,7 +18,7 @@ from typing import TypeAlias, cast
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.compute as pc  # type: ignore[import-untyped]
 
-from frtb_common.handoff import (
+from frtb_common.arrow_table import (
     AdapterDiagnostic,
     ColumnSpec,
     DiagnosticSeverity,
@@ -213,7 +213,7 @@ def normalize_crif_records(
     metadata: Mapping[str, str] | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize CRIF-like mapping rows into an Arrow handoff."""
+    """Normalize CRIF-like mapping rows into an Arrow batch."""
 
     table = crif_records_to_arrow_table(records)
     return normalize_crif_arrow_table(

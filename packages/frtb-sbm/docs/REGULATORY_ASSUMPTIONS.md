@@ -72,7 +72,7 @@ risk classes (SBM-DEC-004). GIRR delta phase 1 exercises:
 
 GIRR and non-GIRR vega liquidity-horizon scaling and curvature up/down branch
 logic are implemented for the supported Basel paths. High-volume callers should
-use Arrow handoff normalizers and package-owned batches; kernels remain
+use Arrow batch normalizers and package-owned batches; kernels remain
 NumPy-native and do not import Arrow, pandas, or polars.
 
 ## Fail-closed unsupported scope

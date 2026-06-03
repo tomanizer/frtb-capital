@@ -11,32 +11,6 @@ PUBLIC_HANDOFF_RE = re.compile(r"handoff|Handoff|HANDOFF")
 ADR_PREFIX_RE = re.compile(r"^(\d{4})-")
 ROOT = Path.cwd()
 
-COMPATIBILITY_ALLOWLIST = {
-    "ComponentHandoffError",
-    "ComponentResultHandoff",
-    "CvaResultHandoff",
-    "HandoffColumnArray",
-    "ManifestHandoffRoute",
-    "ManifestHandoffValidation",
-    "NormalizedTabularHandoff",
-    "STANDARDISED_REQUIRED_HANDOFF_KEYS",
-    "TabularHandoffError",
-    "ToComponentHandoffCallable",
-    "handoff_specs_to_arrow_schema",
-    "handoff_specs_to_json_schema",
-    "normalized_handoff_hash",
-    "read_handoff_columns",
-    "to_orchestration_handoff",
-}
-
-COMPATIBILITY_ALLOWLIST_PATTERNS = (
-    re.compile(r"^[A-Z0-9_]+_HANDOFF$"),
-    re.compile(r"^[A-Z0-9_]+_HANDOFF_COLUMN_SPECS$"),
-    re.compile(r"^build_[a-z0-9_]+_from_handoff$"),
-    re.compile(r"^calculate_sbm_capital_from_[a-z0-9_]+_handoff$"),
-    re.compile(r"^calculate_sbm_portfolio_capital_from_handoffs$"),
-)
-
 
 @dataclass(frozen=True)
 class Finding:
@@ -68,7 +42,7 @@ def public_handoff_symbol_findings(packages_root: Path) -> tuple[Finding, ...]:
     for source in sorted(packages_root.glob("*/src/**/*.py")):
         tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
         for symbol in _public_symbols(tree):
-            if PUBLIC_HANDOFF_RE.search(symbol) and not _is_allowed_compatibility(symbol):
+            if PUBLIC_HANDOFF_RE.search(symbol):
                 findings.append(Finding(source, symbol))
     return tuple(findings)
 
@@ -131,12 +105,6 @@ def _string_sequence(node: ast.expr) -> tuple[str, ...]:
             if isinstance(item, ast.Constant) and isinstance(item.value, str)
         )
     return ()
-
-
-def _is_allowed_compatibility(symbol: str) -> bool:
-    return symbol in COMPATIBILITY_ALLOWLIST or any(
-        pattern.match(symbol) for pattern in COMPATIBILITY_ALLOWLIST_PATTERNS
-    )
 
 
 if __name__ == "__main__":

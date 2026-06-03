@@ -15,7 +15,7 @@ comparison material.
 | --- | --- | --- |
 | Identity | `PACKAGE_METADATA`, `__version__` | Workspace discovery and status reporting. |
 | Row capital (Tier 3) | `calculate_drc_capital`, `DrcPosition`, `DrcCalculationContext`, `DrcCapitalResult`, `DrcRiskClass`, `DrcInstrumentType`, `DefaultDirection`, `DrcSeniority`, `CreditQuality`, `DrcSourceLineage` | Small books, tests, notebooks, and fixture workflows. |
-| Batch capital (Tier 1) | `DrcPositionBatch`, `DrcBatchCapitalCalculation`, `build_drc_nonsec_batch_from_arrow`, `build_drc_securitisation_non_ctp_batch_from_arrow`, `build_drc_ctp_batch_from_arrow`, `build_drc_*_batch_from_columns`, `calculate_drc_capital_from_batch`, `input_hash_for_drc_batch` | Production path from normalized Arrow handoffs to package-owned NumPy batches. |
+| Batch capital (Tier 1) | `DrcPositionBatch`, `DrcBatchCapitalCalculation`, `build_drc_nonsec_batch_from_arrow`, `build_drc_securitisation_non_ctp_batch_from_arrow`, `build_drc_ctp_batch_from_arrow`, `build_drc_*_batch_from_columns`, `calculate_drc_capital_from_batch`, `input_hash_for_drc_batch` | Production path from normalized Arrow batches to package-owned NumPy batches. |
 | Handoff specs | `DRC_NONSEC_ARROW_COLUMN_SPECS`, `DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS`, `DRC_CTP_ARROW_COLUMN_SPECS` | Client schema alignment and generated schema export. |
 | Normalize | `normalize_drc_nonsec_arrow_table`, `normalize_drc_securitisation_non_ctp_arrow_table`, `normalize_drc_ctp_arrow_table` | Ingress from raw Arrow tables to `NormalizedArrowTable`. |
 | Reference overlays | `DrcCalculationContext`, `DrcFxRate`, `DrcRiskWeightEvidence`, `DrcFairValueCapEvidence` | Run-scoped FX rates, securitisation risk weights, fair-value cap evidence, and offset groups. |

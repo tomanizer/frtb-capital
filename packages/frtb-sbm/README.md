@@ -16,8 +16,8 @@ explicit errors.
 | BASEL_MAR21 vega capital paths | Implemented under audit for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP |
 | BASEL_MAR21 curvature capital paths | Implemented under audit for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP |
 | Unsupported profiles and unmapped sub-features | Unsupported capital (fail-closed) |
-| Arrow handoff | Supported BASEL_MAR21 delta, vega, and curvature capital paths implemented; portfolio dispatcher available |
-| CRIF/CSV adapters | Implemented row-dict canonical mapping for supported BASEL_MAR21 delta/vega/curvature paths; GIRR delta CRIF-to-Arrow handoff |
+| Arrow batch | Supported BASEL_MAR21 delta, vega, and curvature capital paths implemented; portfolio dispatcher available |
+| CRIF/CSV adapters | Implemented row-dict canonical mapping for supported BASEL_MAR21 delta/vega/curvature paths; GIRR delta CRIF-to-Arrow batch |
 
 Outputs from this prototype package are not final regulatory capital.
 `PACKAGE_METADATA.validation_status` remains `PENDING`; current evidence is
@@ -48,7 +48,7 @@ accepted `SbmSensitivity` per row. Single-path handoff helpers remain available;
 portfolio callers can pass multiple normalized handoffs to the dispatcher.
 
 ```python
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     calculate_sbm_portfolio_capital_from_arrow_tables,
     calculate_sbm_capital_from_commodity_delta_arrow,
     calculate_sbm_capital_from_commodity_vega_arrow,
@@ -105,7 +105,7 @@ For FX curvature rows that use the optional MAR21.98 non-reporting-currency
 pair scalar, set `FX_CURVATURE_SCALAR_1_5_FLAG` in `mapping_citation_ids` and
 provide the two-currency pair in `qualifier`, for example `EUR/GBP`.
 
-The migrated Arrow handoff paths avoid accepted-row `SbmSensitivity` dataclass
+The migrated Arrow batch paths avoid accepted-row `SbmSensitivity` dataclass
 materialization. The row API remains available for compatibility and tests, but
 high-volume callers should hand off Arrow tables to the public normalizers and
 capital-from-handoff helpers.
@@ -113,7 +113,7 @@ capital-from-handoff helpers.
 CRIF-shaped row dictionaries can use `adapt_crif_records` to map supported
 BASEL_MAR21 delta, vega, and curvature risk types into canonical
 `SbmSensitivity` rows with auditable rejected rows. GIRR delta inputs can also
-use the package-owned CRIF-to-Arrow handoff, which delegates package-neutral
+use the package-owned CRIF-to-Arrow batch, which delegates package-neutral
 column discovery and rejected-row partitioning to `frtb_common.crif` while
 retaining SBM RiskType semantics in `frtb_sbm`:
 

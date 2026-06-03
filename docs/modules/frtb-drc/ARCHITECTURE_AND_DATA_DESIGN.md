@@ -482,7 +482,7 @@ The test suite should mirror calculation layers:
   aggregation, and fail-closed validation paths.
 - `test_drc_attribution.py`: analytical, residual, unsupported, row, batch,
   securitisation non-CTP, CTP, and reconciliation-failure attribution paths.
-- `test_drc_arrow_batch.py`: Arrow handoff normalization and batch parity for
+- `test_drc_arrow_batch.py`: Arrow batch normalization and batch parity for
   non-securitisation, securitisation non-CTP, and CTP inputs.
 - `test_drc_audit.py`: profile hash, input hash, deterministic ordering,
   serialization.

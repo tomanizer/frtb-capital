@@ -26,10 +26,10 @@ agent worktree on branch `codex/simplification-audit`.
 | --- | --- | --- | --- |
 | P0 | audit-only | Several packages carry parallel row/batch or audit/batch implementations of the same payload and validation concepts. This is the main drift risk. | Add regression tests around hashes, accepted/rejected row counts, and capital totals before consolidation. |
 | P1 | `frtb-common` | Deterministic JSON hashing is duplicated in SBM, DRC, RRAO, CVA, IMA, and `frtb-common` handoff helpers. Implementations differ in whether they call `jsonable`. | Design `frtb_common.stable_hash` with shared tests; migrate package helpers one package at a time. |
-| P1 | `frtb-common` | Arrow object/float/bool conversion helpers are repeated in SBM, DRC, RRAO, CVA, and IMA handoff modules. | Add package-neutral Arrow conversion utilities under `frtb_common.handoff` or a new handoff submodule. |
+| P1 | `frtb-common` | Arrow object/float/bool conversion helpers are repeated in SBM, DRC, RRAO, CVA, and IMA handoff modules. | Add package-neutral Arrow conversion utilities under `frtb_common.arrow_table` or a new handoff submodule. |
 | P1 | `frtb-common` | Batch array coercion helpers repeat across RRAO, DRC, and CVA (`_required_text_array`, `_optional_text_array`, `_readonly_array`, `_object_array`, enum/float/bool coercers). | Add a small `frtb_common.batch_arrays` candidate only if ADR 0023 boundaries are preserved. |
 | P1 | package-local | SBM, DRC, RRAO, and CVA have repeated private citation, profile-warning, context, and payload helpers inside each package. | Extract package-local internal helpers before suite-wide abstractions. |
-| P2 | package-local | Large monoliths are concentrated in `batch.py`, `arrow_handoff.py`, capital, and reference-data modules. | Split by mechanics, validation, kernel, and result assembly while preserving public entrypoints. |
+| P2 | package-local | Large monoliths are concentrated in `batch.py`, `arrow_batch.py`, capital, and reference-data modules. | Split by mechanics, validation, kernel, and result assembly while preserving public entrypoints. |
 | P2 | audit-only | `accepted_row_dataclasses_materialized` is meaningful in SBM but appears storage-only in DRC and RRAO, where tests assert it stays zero. | Decide whether it is a suite-wide performance metric or remove/defer it in packages that never materialize rows. |
 
 ## Important boundary constraints

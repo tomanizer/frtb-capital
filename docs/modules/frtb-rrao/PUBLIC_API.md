@@ -14,7 +14,7 @@ their owning submodule only and are not part of the v1 compatibility contract.
 | Enums | `RraoClassification`, `RraoEvidenceType`, `RraoExclusionReason`, `RraoRegulatoryProfile`, `RraoInvestmentFundMethod`, `RraoInvestmentFundExposureType`, `RraoAllocationDimension` | Stable wire values used by inputs, audit payloads, adapters, and allocation reports. |
 | Investment-fund data | `RraoInvestmentFundDescriptor` | Public descriptor for U.S. NPR 2.0 proposed section `__.205(e)(3)(iii)` and `__.211(a)(3)` inclusion. |
 | Audit helpers | `serialize_rrao_result`, `input_hash_for_positions`, `validate_rrao_result_reconciliation` | Deterministic replay and reconciliation support for public results. |
-| Batch and Arrow handoff helpers | `RRAO_ARROW_COLUMN_SPECS`, `RraoPositionBatch`, `RraoBatchCapitalCalculation`, `build_rrao_batch_from_columns`, `build_rrao_batch_from_positions`, `build_rrao_batch_from_arrow`, `calculate_rrao_capital_from_batch`, `input_hash_for_rrao_batch`, `normalize_rrao_arrow_table` | High-volume canonical column and Arrow handoff paths that preserve the same supported-profile capital semantics without accepted-row dataclass materialisation. |
+| Batch and Arrow input_table helpers | `RRAO_ARROW_COLUMN_SPECS`, `RraoPositionBatch`, `RraoBatchCapitalCalculation`, `build_rrao_batch_from_columns`, `build_rrao_batch_from_positions`, `build_rrao_batch_from_arrow`, `calculate_rrao_capital_from_batch`, `input_hash_for_rrao_batch`, `normalize_rrao_arrow_table` | High-volume canonical column and Arrow input_table paths that preserve the same supported-profile capital semantics without accepted-row dataclass materialisation. |
 | Allocation reports | `RraoAllocationBucket`, `RraoAllocationReport`, `SUPPORTED_RRAO_ALLOCATION_DIMENSIONS`, `build_rrao_allocation_report`, `build_rrao_allocation_reports`, `resolve_rrao_allocation_dimension`, `serialize_rrao_allocation_report`, `validate_rrao_allocation_report` | Additive line, desk, legal-entity, and evidence-type explain outputs. |
 | Optional adapters | `RraoAdapterResult`, `RraoAdapterWarning`, `RraoRejectedRow`, `adapt_rrao_records`, `adapt_crif_records`, `adapt_fnet_records` | Standard-library adapters from supported CRIF/FNet-shaped rows to canonical inputs. |
 | Classification/profile helpers | `classify_rrao_position`, `classify_rrao_positions`, `RraoRuleProfile`, `get_rrao_rule_profile`, `validate_rrao_positions` | Public validation, classification, and supported profile metadata. |
@@ -29,12 +29,12 @@ and other package docs should copy the integration checklist in
 
 | Tier | Client input | RRAO path | Notes |
 | --- | --- | --- | --- |
-| 1 - Arrow/Parquet handoff | Position table matching `RRAO_ARROW_COLUMN_SPECS` | `normalize_rrao_arrow_table` -> `build_rrao_batch_from_arrow` -> `calculate_rrao_capital_from_batch` | Recommended production path. |
+| 1 - Arrow/Parquet input_table | Position table matching `RRAO_ARROW_COLUMN_SPECS` | `normalize_rrao_arrow_table` -> `build_rrao_batch_from_arrow` -> `calculate_rrao_capital_from_batch` | Recommended production path. |
 | 2 - CRIF/FNet/vendor rows | Iterable mapping rows | `adapt_crif_records`, `adapt_fnet_records`, or `adapt_rrao_records` | Adapter path with explicit rejected rows and diagnostics. |
 | 3 - Canonical dataclasses | `tuple[RraoPosition, ...]` plus `RraoCalculationContext` | `calculate_rrao_capital` | Small books, tests, notebooks, and fixture workflows. |
 
 The machine-readable schema artifact for this contract is
-[`docs/schemas/handoff/frtb_rrao.positions.schema.json`](../../schemas/handoff/frtb_rrao.positions.schema.json),
+[`docs/schemas/input_table/frtb_rrao.positions.schema.json`](../../schemas/input_table/frtb_rrao.positions.schema.json),
 generated from `RRAO_ARROW_COLUMN_SPECS`.
 
 The validation harness is tracked by
@@ -42,14 +42,14 @@ The validation harness is tracked by
 usage:
 
 ```bash
-uv run python scripts/validate_client_handoff.py \
+uv run python scripts/validate_client_input_table.py \
   --package frtb_rrao \
-  --handoff positions \
+  --input-table positions \
   --input path/to/rrao_positions.parquet \
   --output-dir dist/client-validation/rrao_positions/
 ```
 
-### RRAO handoff column summary
+### RRAO input_table column summary
 
 The source of truth is the Python `RRAO_ARROW_COLUMN_SPECS` tuple. This table
 summarizes the client-facing columns for onboarding and contract review.
@@ -91,7 +91,7 @@ summarizes the client-facing columns for onboarding and contract review.
 | `lineage_source_file` | yes | `string` | `forbid` | Aliases: `source_file`, `sourceFile` |
 | `lineage_source_row_id` | no | `string` | `allow` | Aliases: `lineageSourceRowId`, `sourceLineageRowId` |
 | `citations` | no | `string` | `allow` | Comma-separated citation identifiers carried into audit records. |
-| `unsupported_nested_payload` | no | `string` | `allow` | Compatibility rejection field; nested descriptors must be flattened before handoff. |
+| `unsupported_nested_payload` | no | `string` | `allow` | Compatibility rejection field; nested descriptors must be flattened before input_table. |
 
 ## Submodule-Only Surface
 
@@ -103,7 +103,7 @@ or test-support details rather than stable v1 contracts:
 - profile-hash and profile-resolution internals in `frtb_rrao.regimes`;
 - notional normalisation helpers in `frtb_rrao.validation`;
 - numeric tolerance constants in `frtb_rrao.numeric`;
-- low-level Arrow normalisation internals in `frtb_rrao.arrow_handoff`;
+- low-level Arrow normalisation internals in `frtb_rrao.arrow_batch`;
 - vectorised batch implementation details in `frtb_rrao.batch`.
 
 Tests may import these from the owning submodule when they need direct module

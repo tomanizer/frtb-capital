@@ -27,7 +27,7 @@ from frtb_sbm import (
     input_hash_for_sbm_batch,
     input_hash_for_sensitivities,
 )
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     build_girr_delta_batch_from_arrow,
     calculate_sbm_capital_from_girr_delta_arrow,
     normalize_girr_delta_arrow_table,
@@ -232,7 +232,7 @@ def test_generic_column_builder_rejects_mixed_homogeneous_path_columns() -> None
         )
 
 
-def test_arrow_handoff_batch_matches_row_batch_and_preserves_handoff_metadata() -> None:
+def test_arrow_batch_batch_matches_row_batch_and_preserves_handoff_metadata() -> None:
     sensitivities = _sensitivities()
     row_batch = build_girr_delta_batch_from_sensitivities(sensitivities)
     source_hash = source_content_hash("synthetic GIRR delta source")
@@ -259,7 +259,7 @@ def test_arrow_handoff_batch_matches_row_batch_and_preserves_handoff_metadata() 
     np.testing.assert_allclose(arrow_batch.amounts, row_batch.amounts)
 
 
-def test_arrow_handoff_uses_zero_copy_float64_amount_column_when_possible() -> None:
+def test_arrow_batch_uses_zero_copy_float64_amount_column_when_possible() -> None:
     sensitivities = _sensitivities()
     handoff = normalize_girr_delta_arrow_table(_arrow_table(sensitivities))
 
@@ -287,7 +287,7 @@ def test_sbm_handoff_wraps_arrow_object_conversion_errors(
     assert isinstance(exc.value.__cause__, pa.ArrowInvalid)
 
 
-def test_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
+def test_arrow_batch_handles_chunked_dictionary_text_columns() -> None:
     sensitivities = _sensitivities()
     table = pa.concat_tables(
         [
@@ -305,7 +305,7 @@ def test_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
     np.testing.assert_array_equal(arrow_batch.risk_factors, row_batch.risk_factors)
 
 
-def test_arrow_handoff_rejects_non_finite_optional_float_columns() -> None:
+def test_arrow_batch_rejects_non_finite_optional_float_columns() -> None:
     sensitivities = _sensitivities()[:1]
     table = _arrow_table(sensitivities).append_column(
         "up_shock_amount",
@@ -403,10 +403,10 @@ def test_batch_factor_grid_converges_with_existing_row_factor_grid() -> None:
     ]
 
 
-def test_arrow_handoff_builder_does_not_depend_on_row_dataclass_construction() -> None:
-    import frtb_sbm.arrow_handoff as arrow_handoff
+def test_arrow_batch_builder_does_not_depend_on_row_dataclass_construction() -> None:
+    import frtb_sbm.arrow_batch as arrow_batch
 
-    source = inspect.getsource(arrow_handoff)
+    source = inspect.getsource(arrow_batch)
 
     assert "SbmSensitivity(" not in source
     assert "from frtb_sbm.data_models import SbmSensitivity" not in source

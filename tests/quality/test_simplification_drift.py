@@ -120,7 +120,7 @@ def test_simplification_drift_rejects_suppression_without_reason(tmp_path: Path)
 def test_simplification_drift_reports_stale_arrow_converter_names(tmp_path: Path) -> None:
     _write_module(
         tmp_path,
-        "packages/frtb-cva/src/frtb_cva/arrow_handoff.py",
+        "packages/frtb-cva/src/frtb_cva/arrow_batch.py",
         "\n".join(
             [
                 "def _object_array_from_arrow_column(column):",

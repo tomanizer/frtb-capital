@@ -20,8 +20,6 @@ from enum import StrEnum
 
 __all__ = [
     "ComponentCapitalSummary",
-    "ComponentHandoffError",
-    "ComponentResultHandoff",
     "ComponentSummaryError",
     "StandardisedComponent",
 ]
@@ -118,7 +116,3 @@ def _require_text_tuple(value: object, field: str) -> tuple[str, ...]:
     if not isinstance(value, tuple) or not all(isinstance(item, str) for item in value):
         raise ComponentSummaryError(f"{field} must be a tuple of text values", field=field)
     return value
-
-
-ComponentHandoffError = ComponentSummaryError
-ComponentResultHandoff = ComponentCapitalSummary

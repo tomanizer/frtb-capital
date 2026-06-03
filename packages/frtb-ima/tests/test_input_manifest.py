@@ -123,7 +123,7 @@ def test_fixture_manifest_maps_to_capital_run_input_manifest() -> None:
     assert manifest.as_dict()["run_id"] == "capital_run_v1"
 
 
-def test_arrow_handoff_builds_capital_run_input_manifest_with_lineage() -> None:
+def test_arrow_batch_builds_capital_run_input_manifest_with_lineage() -> None:
     source_hash = source_content_hash("synthetic ima lineage table")
     handoff = normalize_ima_input_manifest_arrow_table(
         _artifact_handoff_table(("scenario_cube.npz", "rfet_observations.csv")),
@@ -146,7 +146,7 @@ def test_arrow_handoff_builds_capital_run_input_manifest_with_lineage() -> None:
     assert rfet_observations.validation_messages == ("row count was adapter-normalised",)
 
 
-def test_arrow_handoff_manifest_hash_is_stable_across_row_order() -> None:
+def test_arrow_batch_manifest_hash_is_stable_across_row_order() -> None:
     source_hash = source_content_hash("same source")
     first = build_capital_run_input_manifest_from_arrow(
         normalize_ima_input_manifest_arrow_table(
@@ -166,7 +166,7 @@ def test_arrow_handoff_manifest_hash_is_stable_across_row_order() -> None:
     assert first.manifest_hash == second.manifest_hash
 
 
-def test_arrow_handoff_requires_run_id_metadata_or_argument() -> None:
+def test_arrow_batch_requires_run_id_metadata_or_argument() -> None:
     handoff = normalize_ima_input_manifest_arrow_table(
         _artifact_handoff_table(("scenario_cube.npz",)),
     )
@@ -179,7 +179,7 @@ def test_arrow_handoff_requires_run_id_metadata_or_argument() -> None:
     assert manifest.run_id == "explicit-run"
 
 
-def test_arrow_handoff_rejects_non_object_metadata_json() -> None:
+def test_arrow_batch_rejects_non_object_metadata_json() -> None:
     table = _artifact_handoff_table(("scenario_cube.npz",)).set_column(
         13,
         "metadata_json",
@@ -194,7 +194,7 @@ def test_arrow_handoff_rejects_non_object_metadata_json() -> None:
         build_capital_run_input_manifest_from_arrow(handoff)
 
 
-def test_arrow_handoff_accepts_manifest_metadata_controls() -> None:
+def test_arrow_batch_accepts_manifest_metadata_controls() -> None:
     table = _replace_handoff_column(
         _artifact_handoff_table(("scenario_cube.npz",)),
         "extractionTimestamp",
@@ -227,7 +227,7 @@ def test_arrow_handoff_accepts_manifest_metadata_controls() -> None:
     )
 
 
-def test_arrow_handoff_accepts_explicit_manifest_controls() -> None:
+def test_arrow_batch_accepts_explicit_manifest_controls() -> None:
     handoff = normalize_ima_input_manifest_arrow_table(
         _artifact_handoff_table(("scenario_cube.npz",)),
     )
@@ -244,7 +244,7 @@ def test_arrow_handoff_accepts_explicit_manifest_controls() -> None:
     assert manifest.schema_version == "ima_manifest_explicit_v2"
 
 
-def test_arrow_handoff_defaults_when_optional_columns_are_absent() -> None:
+def test_arrow_batch_defaults_when_optional_columns_are_absent() -> None:
     optional_columns = {
         "validationStatus",
         "validationMessages",
@@ -272,7 +272,7 @@ def test_arrow_handoff_defaults_when_optional_columns_are_absent() -> None:
     assert artifact.metadata == {}
 
 
-def test_arrow_handoff_accepts_plain_validation_message() -> None:
+def test_arrow_batch_accepts_plain_validation_message() -> None:
     table = _replace_handoff_column(
         _artifact_handoff_table(("scenario_cube.npz",)),
         "validationMessages",
@@ -288,7 +288,7 @@ def test_arrow_handoff_accepts_plain_validation_message() -> None:
     assert artifact.validation_messages == ("single warning",)
 
 
-def test_arrow_handoff_accepts_json_validation_message_with_leading_whitespace() -> None:
+def test_arrow_batch_accepts_json_validation_message_with_leading_whitespace() -> None:
     table = _replace_handoff_column(
         _artifact_handoff_table(("scenario_cube.npz",)),
         "validationMessages",
@@ -304,7 +304,7 @@ def test_arrow_handoff_accepts_json_validation_message_with_leading_whitespace()
     assert artifact.validation_messages == ("first warning", "second warning")
 
 
-def test_arrow_handoff_rejects_invalid_json_validation_message() -> None:
+def test_arrow_batch_rejects_invalid_json_validation_message() -> None:
     table = _replace_handoff_column(
         _artifact_handoff_table(("scenario_cube.npz",)),
         "validationMessages",
@@ -319,7 +319,7 @@ def test_arrow_handoff_rejects_invalid_json_validation_message() -> None:
         build_capital_run_input_manifest_from_arrow(handoff)
 
 
-def test_arrow_handoff_requires_explicit_manifest_date_for_mixed_artifact_dates() -> None:
+def test_arrow_batch_requires_explicit_manifest_date_for_mixed_artifact_dates() -> None:
     table = _replace_handoff_column(
         _artifact_handoff_table(("scenario_cube.npz", "rfet_observations.csv")),
         "asOfDate",
@@ -346,7 +346,7 @@ def test_arrow_handoff_requires_explicit_manifest_date_for_mixed_artifact_dates(
         ("recordCount", [1.5], "record_count must contain whole-number values"),
     ),
 )
-def test_arrow_handoff_rejects_invalid_artifact_values(
+def test_arrow_batch_rejects_invalid_artifact_values(
     column_name: str,
     replacement: list[object],
     match: str,
@@ -364,7 +364,7 @@ def test_arrow_handoff_rejects_invalid_artifact_values(
         build_capital_run_input_manifest_from_arrow(handoff)
 
 
-def test_arrow_handoff_rejects_invalid_metadata_json() -> None:
+def test_arrow_batch_rejects_invalid_metadata_json() -> None:
     table = _replace_handoff_column(
         _artifact_handoff_table(("scenario_cube.npz",)),
         "metadataJson",
@@ -386,7 +386,7 @@ def test_arrow_handoff_rejects_invalid_metadata_json() -> None:
         (json.dumps({"desk": 3}), "values"),
     ),
 )
-def test_arrow_handoff_rejects_invalid_metadata_json_entries(
+def test_arrow_batch_rejects_invalid_metadata_json_entries(
     metadata_json: str,
     match: str,
 ) -> None:
@@ -404,7 +404,7 @@ def test_arrow_handoff_rejects_invalid_metadata_json_entries(
         build_capital_run_input_manifest_from_arrow(handoff)
 
 
-def test_arrow_handoff_requires_normalized_handoff() -> None:
+def test_arrow_batch_requires_normalized_handoff() -> None:
     with pytest.raises(ValueError, match="NormalizedArrowTable"):
         build_capital_run_input_manifest_from_arrow(cast(NormalizedArrowTable, object()))
 

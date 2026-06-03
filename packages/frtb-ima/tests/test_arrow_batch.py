@@ -34,7 +34,7 @@ from frtb_ima import (
 AS_OF = date(2025, 6, 30)
 
 
-def test_scenario_metadata_arrow_handoff_builds_columnar_batch_with_lineage() -> None:
+def test_scenario_metadata_arrow_batch_builds_columnar_batch_with_lineage() -> None:
     source_hash = source_content_hash("ima scenario metadata")
     table = pa.table(
         {
@@ -89,7 +89,7 @@ def test_scenario_metadata_arrow_handoff_builds_columnar_batch_with_lineage() ->
     assert metadata[0].provenance == {"window": "global-financial-crisis"}
 
 
-def test_scenario_metadata_arrow_handoff_defaults_optional_columns() -> None:
+def test_scenario_metadata_arrow_batch_defaults_optional_columns() -> None:
     handoff = normalize_ima_scenario_metadata_arrow_table(
         pa.table(
             {
@@ -108,7 +108,7 @@ def test_scenario_metadata_arrow_handoff_defaults_optional_columns() -> None:
     assert metadata[0].provenance == {}
 
 
-def test_scenario_metadata_arrow_handoff_restores_null_optional_strings() -> None:
+def test_scenario_metadata_arrow_batch_restores_null_optional_strings() -> None:
     handoff = normalize_ima_scenario_metadata_arrow_table(
         pa.table(
             {
@@ -133,7 +133,7 @@ def test_scenario_metadata_arrow_handoff_restores_null_optional_strings() -> Non
     assert batch.provenance_json.tolist() == ["", '{"window":"gfc"}']
 
 
-def test_scenario_metadata_arrow_handoff_rejects_invalid_provenance_json() -> None:
+def test_scenario_metadata_arrow_batch_rejects_invalid_provenance_json() -> None:
     handoff = normalize_ima_scenario_metadata_arrow_table(
         pa.table(
             {
@@ -148,7 +148,7 @@ def test_scenario_metadata_arrow_handoff_rejects_invalid_provenance_json() -> No
         build_scenario_metadata_batch_from_arrow(handoff)
 
 
-def test_rfet_observation_arrow_handoff_assesses_without_row_materialization() -> None:
+def test_rfet_observation_arrow_batch_assesses_without_row_materialization() -> None:
     risk_factor = _risk_factor()
     policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
     handoff = normalize_ima_rfet_observation_arrow_table(
@@ -184,7 +184,7 @@ def test_rfet_observation_arrow_handoff_assesses_without_row_materialization() -
     assert batch_result.as_dict() == row_result.as_dict()
 
 
-def test_rfet_observation_arrow_handoff_normalizes_nulls_and_scalar_fallbacks() -> None:
+def test_rfet_observation_arrow_batch_normalizes_nulls_and_scalar_fallbacks() -> None:
     handoff = normalize_ima_rfet_observation_arrow_table(
         pa.table(
             {
@@ -218,7 +218,7 @@ def test_rfet_observation_arrow_handoff_normalizes_nulls_and_scalar_fallbacks() 
     assert observation.observation_timestamp == datetime(2025, 6, 30, 9, 30, tzinfo=UTC)
 
 
-def test_rfet_observation_arrow_handoff_defaults_optional_columns() -> None:
+def test_rfet_observation_arrow_batch_defaults_optional_columns() -> None:
     handoff = normalize_ima_rfet_observation_arrow_table(
         pa.table(
             {
@@ -236,7 +236,7 @@ def test_rfet_observation_arrow_handoff_defaults_optional_columns() -> None:
     assert batch.observation_timestamps.astype("datetime64[us]").astype(str).tolist() == ["NaT"]
 
 
-def test_arrow_handoff_batch_builders_reject_wrong_handoff_type() -> None:
+def test_arrow_batch_batch_builders_reject_wrong_handoff_type() -> None:
     with pytest.raises(ValueError, match="NormalizedArrowTable"):
         build_scenario_metadata_batch_from_arrow(object())  # type: ignore[arg-type]
 

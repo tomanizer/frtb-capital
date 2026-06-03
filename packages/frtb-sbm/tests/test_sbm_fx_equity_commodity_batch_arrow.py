@@ -27,7 +27,7 @@ from frtb_sbm import (
     weight_equity_delta_sensitivity_batch,
     weight_fx_delta_sensitivity_batch,
 )
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     build_commodity_delta_batch_from_arrow,
     build_equity_delta_batch_from_arrow,
     build_fx_delta_batch_from_arrow,
@@ -389,10 +389,10 @@ def test_delta_handoff_contracts_require_path_specific_axes() -> None:
         normalize_commodity_delta_arrow_table(commodity_table)
 
 
-def test_delta_arrow_handoff_builders_do_not_construct_row_dataclasses() -> None:
-    import frtb_sbm.arrow_handoff as arrow_handoff
+def test_delta_arrow_batch_builders_do_not_construct_row_dataclasses() -> None:
+    import frtb_sbm.arrow_batch as arrow_batch
 
-    source = inspect.getsource(arrow_handoff)
+    source = inspect.getsource(arrow_batch)
 
     assert "SbmSensitivity(" not in source
     assert "from frtb_sbm.data_models import SbmSensitivity" not in source

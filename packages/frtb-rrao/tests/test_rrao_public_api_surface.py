@@ -5,7 +5,6 @@ import frtb_rrao
 EXPECTED_PUBLIC_API = (
     "PACKAGE_METADATA",
     "RRAO_ARROW_COLUMN_SPECS",
-    "RRAO_HANDOFF_COLUMN_SPECS",
     "SUPPORTED_RRAO_ALLOCATION_DIMENSIONS",
     "RraoAdapterResult",
     "RraoAdapterWarning",
@@ -41,7 +40,6 @@ EXPECTED_PUBLIC_API = (
     "build_rrao_allocation_reports",
     "build_rrao_batch_from_arrow",
     "build_rrao_batch_from_columns",
-    "build_rrao_batch_from_handoff",
     "build_rrao_batch_from_positions",
     "calculate_rrao_capital",
     "calculate_rrao_capital_from_batch",
@@ -55,7 +53,6 @@ EXPECTED_PUBLIC_API = (
     "serialize_rrao_allocation_report",
     "serialize_rrao_result",
     "to_component_summary",
-    "to_orchestration_handoff",
     "validate_rrao_allocation_report",
     "validate_rrao_positions",
     "validate_rrao_result_reconciliation",
@@ -64,4 +61,4 @@ EXPECTED_PUBLIC_API = (
 
 def test_top_level_public_api_surface_is_explicit_and_narrow() -> None:
     assert frtb_rrao.__all__ == list(EXPECTED_PUBLIC_API)
-    assert len(frtb_rrao.__all__) < 60
+    assert len(frtb_rrao.__all__) < 57

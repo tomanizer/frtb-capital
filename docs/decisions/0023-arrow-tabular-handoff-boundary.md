@@ -33,7 +33,7 @@ table operations.
 
 `pyarrow` is approved and required for normalized tabular handoff and IO layers.
 The concrete dependency and first shared handoff API are implemented under #267
-in `frtb_common.handoff`.
+in `frtb_common.arrow_table`.
 
 Arrow is an interchange and lineage representation, not a calculation-kernel
 representation. The required runtime pattern is:

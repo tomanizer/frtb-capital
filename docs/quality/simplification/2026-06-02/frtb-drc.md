@@ -17,7 +17,7 @@ seniority, securitisation, CTP, and HBR semantics package-local.
 | `regimes.py` | 674 | Rule profiles and support matrix. |
 | `data_models.py` | 674 | Frozen domain records. |
 | `reference_data.py` | 607 | Risk weights and bucket definitions. |
-| `arrow_handoff.py` | 518 | Arrow-to-batch boundary. |
+| `arrow_batch.py` | 518 | Arrow-to-batch boundary. |
 | `scaffold.py` | 499 | Row calculation orchestration. |
 
 ## Duplicated code

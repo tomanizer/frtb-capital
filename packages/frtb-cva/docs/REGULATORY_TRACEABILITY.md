@@ -43,7 +43,7 @@ Companion source manifest: [`regulatory_sources.yml`](regulatory_sources.yml).
 | `risk_classes/equity.py` | Equity delta and vega bucket routing with qualified-index handling | MAR50.50, MAR50.70-MAR50.73 | Implemented |
 | `risk_classes/commodity.py` | Commodity delta and vega bucket routing | MAR50.74-MAR50.77 | Implemented |
 | `sa_cva.py` | SA-CVA risk-class orchestration across supported delta and vega paths | MAR50.42-MAR50.77 | Implemented |
-| `batch.py`, `arrow_handoff.py` | Package-owned columnar batches and Arrow handoff normalisation | ADR 0023; MAR50 calculation boundary | Implemented |
+| `batch.py`, `arrow_batch.py` | Package-owned columnar batches and Arrow batch normalisation | ADR 0023; MAR50 calculation boundary | Implemented |
 | `capital.py` | Public `calculate_cva_capital` | MAR50.8, MAR50.14-MAR50.26, MAR50.42-MAR50.77 | Implemented |
 | `audit.py` | Input hash, serialization, reconciliation | Audit traceability | Implemented |
 

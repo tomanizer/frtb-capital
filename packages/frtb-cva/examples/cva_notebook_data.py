@@ -1,4 +1,4 @@
-"""Synthetic CVA notebook inputs and Arrow handoff helpers."""
+"""Synthetic CVA notebook inputs and Arrow batch helpers."""
 
 from __future__ import annotations
 
@@ -76,7 +76,7 @@ class LoadedSaFixture:
 
 @dataclass(frozen=True)
 class BaArrowBatchPack:
-    """Arrow handoffs and package-owned batches for BA-CVA inputs."""
+    """Arrow batches and package-owned batches for BA-CVA inputs."""
 
     counterparty_handoff: NormalizedArrowTable
     netting_set_handoff: NormalizedArrowTable
@@ -88,7 +88,7 @@ class BaArrowBatchPack:
 
 @dataclass(frozen=True)
 class SaArrowBatchPack:
-    """Arrow handoffs and package-owned batches for SA-CVA inputs."""
+    """Arrow batches and package-owned batches for SA-CVA inputs."""
 
     sensitivity_handoff: NormalizedArrowTable
     hedge_handoff: NormalizedArrowTable | None

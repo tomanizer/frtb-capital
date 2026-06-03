@@ -32,7 +32,7 @@ from frtb_rrao import (
     serialize_rrao_result,
     validate_rrao_result_reconciliation,
 )
-from frtb_rrao.arrow_handoff import (
+from frtb_rrao.arrow_batch import (
     build_rrao_batch_from_arrow,
     normalize_rrao_arrow_table,
 )
@@ -70,7 +70,7 @@ def test_rrao_position_batch_preserves_distinct_lineage_source_row_hash() -> Non
     assert batch.input_hash == input_hash_for_positions((position,))
 
 
-def test_rrao_arrow_handoff_batch_matches_v1_row_capital() -> None:
+def test_rrao_arrow_batch_batch_matches_v1_row_capital() -> None:
     loader = _load_fixture_module()
     positions = loader.load_fixture_positions()
     context = loader.load_fixture_context()
@@ -98,7 +98,7 @@ def test_rrao_arrow_handoff_batch_matches_v1_row_capital() -> None:
     )
 
 
-def test_rrao_arrow_handoff_uses_zero_copy_float64_columns_when_possible() -> None:
+def test_rrao_arrow_batch_uses_zero_copy_float64_columns_when_possible() -> None:
     loader = _load_fixture_module()
     positions = loader.load_fixture_positions()
     handoff = normalize_rrao_arrow_table(_arrow_table(positions))
@@ -223,7 +223,7 @@ def test_rrao_handoff_reader_wraps_optional_bool_fill_errors(
     assert exc.value.field == "is_ctp_hedge"
 
 
-def test_rrao_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
+def test_rrao_arrow_batch_handles_chunked_dictionary_text_columns() -> None:
     payload = _minimal_column_payload(row_count=4)
     plain_table = pa.table(
         {
@@ -263,7 +263,7 @@ def test_rrao_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
     )
 
 
-def test_rrao_arrow_handoff_batch_matches_investment_fund_row_capital() -> None:
+def test_rrao_arrow_batch_batch_matches_investment_fund_row_capital() -> None:
     position = _investment_fund_position()
     context = _sample_context()
     row_result = calculate_rrao_capital((position,), context=context)
@@ -276,7 +276,7 @@ def test_rrao_arrow_handoff_batch_matches_investment_fund_row_capital() -> None:
     assert calculation.result.total_rrao == pytest.approx(row_result.total_rrao)
 
 
-def test_rrao_arrow_handoff_defaults_nullable_fund_mandate_flag_to_true() -> None:
+def test_rrao_arrow_batch_defaults_nullable_fund_mandate_flag_to_true() -> None:
     position = _investment_fund_position()
     table = _arrow_table((position,))
     column_index = table.column_names.index("investment_fund_mandate_allows_rrao_exposures")
@@ -293,7 +293,7 @@ def test_rrao_arrow_handoff_defaults_nullable_fund_mandate_flag_to_true() -> Non
     assert calculation.result.total_rrao > 0.0
 
 
-def test_rrao_arrow_handoff_preserves_bool_strings_for_batch_parser() -> None:
+def test_rrao_arrow_batch_preserves_bool_strings_for_batch_parser() -> None:
     payload = _minimal_column_payload(row_count=1)
     table = pa.table(
         {

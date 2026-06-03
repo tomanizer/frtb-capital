@@ -587,7 +587,7 @@ be used only for tabular handoff, CRIF normalization, adapters, and handoff
 objects under
 [ADR 0023](../../decisions/0023-arrow-tabular-handoff-boundary.md). Kernels
 must not import `pyarrow`, `pandas`, or `polars`. Additional runtime numerical
-dependencies beyond the approved Arrow handoff boundary require explicit design
+dependencies beyond the approved Arrow batch boundary require explicit design
 approval consistent with
 [ADR 0011](../../decisions/0011-core-runtime-dependency-policy.md).
 

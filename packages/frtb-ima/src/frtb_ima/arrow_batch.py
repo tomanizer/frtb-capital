@@ -1,9 +1,8 @@
-"""Arrow handoff adapters for IMA tabular input lineage."""
+"""Arrow batch adapters for IMA tabular input lineage."""
 
 from __future__ import annotations
 
 import json
-import warnings
 from collections.abc import Mapping, Sequence
 from datetime import UTC, date, datetime
 from typing import Any, cast
@@ -222,11 +221,6 @@ IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         null_policy=NullPolicy.ALLOW,
     ),
 )
-IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS = IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS
-IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS = IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS
-IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS = IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS
-
-
 _IMA_SCENARIO_METADATA_BATCH_COLUMN_ARGS: Mapping[str, str] = {
     "scenario_id": "scenario_ids",
     "scenario_set": "scenario_sets",
@@ -287,7 +281,7 @@ def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
         if spec.logical_type is TabularLogicalType.UNKNOWN
     )
     if unknown:
-        raise RuntimeError("IMA handoff specs must declare logical_type: " + ", ".join(unknown))
+        raise RuntimeError("IMA Arrow specs must declare logical_type: " + ", ".join(unknown))
 
 
 _ensure_explicit_logical_types(
@@ -326,7 +320,7 @@ def normalize_ima_scenario_metadata_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize an Arrow scenario metadata table for IMA scenario-axis handoff."""
+    """Normalize an Arrow scenario metadata table for IMA scenario-axis batches."""
 
     return normalize_arrow_table(
         table,
@@ -347,7 +341,7 @@ def normalize_ima_rfet_observation_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize an Arrow real-price observation table for RFET handoff."""
+    """Normalize an Arrow real-price observation table for RFET batches."""
 
     return normalize_arrow_table(
         table,
@@ -363,12 +357,12 @@ def normalize_ima_rfet_observation_arrow_table(
 def build_scenario_metadata_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> ScenarioMetadataBatch:
-    """Build a columnar IMA scenario metadata batch from a normalized Arrow handoff."""
+    """Build a columnar IMA scenario metadata batch from a normalized Arrow batch."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise ValueError("handoff must be NormalizedArrowTable")
     table = handoff.accepted
-    columns = _read_ima_handoff_columns(table, IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS)
+    columns = _read_ima_arrow_columns(table, IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS)
     return ScenarioMetadataBatch(
         scenario_dates=_date_column(table, "scenario_date"),
         **_ima_batch_column_kwargs(
@@ -385,12 +379,12 @@ def build_scenario_metadata_batch_from_arrow(
 def build_rfet_observation_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> RFETObservationBatch:
-    """Build a columnar RFET observation batch from a normalized Arrow handoff."""
+    """Build a columnar RFET observation batch from a normalized Arrow batch."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise ValueError("handoff must be NormalizedArrowTable")
     table = handoff.accepted
-    columns = _read_ima_handoff_columns(table, IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS)
+    columns = _read_ima_arrow_columns(table, IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS)
     return RFETObservationBatch(
         observation_dates=_date_column(table, "observation_date"),
         observation_timestamps=_timestamp_column(table, "observation_timestamp"),
@@ -413,12 +407,12 @@ def build_capital_run_input_manifest_from_arrow(
     schema_version: str | None = None,
     metadata: Mapping[str, str] | None = None,
 ) -> CapitalRunInputManifest:
-    """Build an IMA capital-run input manifest from a normalized Arrow handoff."""
+    """Build an IMA capital-run input manifest from a normalized Arrow batch."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise ValueError("handoff must be NormalizedArrowTable")
     table = handoff.accepted
-    columns = _read_ima_handoff_columns(table, IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS)
+    columns = _read_ima_arrow_columns(table, IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS)
 
     artifacts = _artifact_lineages_from_table(table, columns)
     manifest_as_of = _manifest_as_of_date(
@@ -451,59 +445,6 @@ def build_capital_run_input_manifest_from_arrow(
         artifacts=tuple(sorted(artifacts, key=lambda artifact: artifact.artifact_name)),
         metadata=manifest_metadata,
         schema_version=manifest_schema_version,
-    )
-
-
-def build_scenario_metadata_batch_from_handoff(
-    handoff: NormalizedArrowTable,
-) -> ScenarioMetadataBatch:
-    """Deprecated alias for :func:`build_scenario_metadata_batch_from_arrow`."""
-
-    warnings.warn(
-        "build_scenario_metadata_batch_from_handoff is deprecated; "
-        "use build_scenario_metadata_batch_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_scenario_metadata_batch_from_arrow(handoff)
-
-
-def build_rfet_observation_batch_from_handoff(
-    handoff: NormalizedArrowTable,
-) -> RFETObservationBatch:
-    """Deprecated alias for :func:`build_rfet_observation_batch_from_arrow`."""
-
-    warnings.warn(
-        "build_rfet_observation_batch_from_handoff is deprecated; "
-        "use build_rfet_observation_batch_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_rfet_observation_batch_from_arrow(handoff)
-
-
-def build_capital_run_input_manifest_from_handoff(
-    handoff: NormalizedArrowTable,
-    *,
-    run_id: str | None = None,
-    as_of_date: date | datetime | str | None = None,
-    schema_version: str | None = None,
-    metadata: Mapping[str, str] | None = None,
-) -> CapitalRunInputManifest:
-    """Deprecated alias for :func:`build_capital_run_input_manifest_from_arrow`."""
-
-    warnings.warn(
-        "build_capital_run_input_manifest_from_handoff is deprecated; "
-        "use build_capital_run_input_manifest_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_capital_run_input_manifest_from_arrow(
-        handoff,
-        run_id=run_id,
-        as_of_date=as_of_date,
-        schema_version=schema_version,
-        metadata=metadata,
     )
 
 
@@ -568,7 +509,7 @@ def _manifest_as_of_date(
     raise ValueError("as_of_date must be supplied when artifact rows have multiple dates")
 
 
-def _read_ima_handoff_columns(
+def _read_ima_arrow_columns(
     table: pa.Table,
     column_specs: tuple[ColumnSpec, ...],
 ) -> Mapping[str, object]:
@@ -821,17 +762,11 @@ def _ima_error(message: str, _field: str | None) -> ValueError:
 
 __all__ = [
     "IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS",
-    "IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS",
     "IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS",
-    "IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS",
     "IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS",
-    "IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS",
     "build_capital_run_input_manifest_from_arrow",
-    "build_capital_run_input_manifest_from_handoff",
     "build_rfet_observation_batch_from_arrow",
-    "build_rfet_observation_batch_from_handoff",
     "build_scenario_metadata_batch_from_arrow",
-    "build_scenario_metadata_batch_from_handoff",
     "normalize_ima_input_manifest_arrow_table",
     "normalize_ima_rfet_observation_arrow_table",
     "normalize_ima_scenario_metadata_arrow_table",

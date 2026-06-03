@@ -72,7 +72,7 @@ kernels must receive typed axes and arrays, not Arrow or dataframe objects.
 Avoid row-wise dataframe execution, hidden table shims, mutable model classes
 that load/calculate/save/report in one object, and duplicated risk-class
 classes where profile data can drive shared aggregation logic. Any new runtime
-dependency beyond the approved Arrow handoff boundary requires an ADR.
+dependency beyond the approved Arrow batch boundary requires an ADR.
 Dataframe and statistical libraries may be used in notebooks, validation, tests,
 research, and optional adapters when they do not leak into the capital
 calculation runtime path; see

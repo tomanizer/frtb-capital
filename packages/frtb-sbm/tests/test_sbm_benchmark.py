@@ -18,7 +18,7 @@ from frtb_sbm import (
     calculate_sbm_capital,
 )
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     calculate_sbm_capital_from_commodity_delta_arrow,
     calculate_sbm_capital_from_csr_nonsec_delta_arrow,
     calculate_sbm_capital_from_equity_delta_arrow,
@@ -119,7 +119,7 @@ def test_girr_delta_matrix_and_scenario_phase_benchmark(
 def test_girr_vega_arrow_batch_phase_benchmark(
     record_property: Callable[[str, object], None],
 ) -> None:
-    """Report GIRR vega Arrow handoff timing without accepted-row dataclasses."""
+    """Report GIRR vega Arrow batch timing without accepted-row dataclasses."""
 
     context = SbmCalculationContext(
         run_id="run-benchmark-vega-001",
@@ -152,7 +152,7 @@ def test_girr_vega_arrow_batch_phase_benchmark(
 def test_non_credit_delta_arrow_batch_phase_benchmark(
     record_property: Callable[[str, object], None],
 ) -> None:
-    """Report FX, equity, and commodity Arrow handoff timings without row dataclasses."""
+    """Report FX, equity, and commodity Arrow batch timings without row dataclasses."""
 
     cases = (
         (
@@ -203,7 +203,7 @@ def test_non_credit_delta_arrow_batch_phase_benchmark(
 def test_csr_delta_arrow_batch_phase_benchmark(
     record_property: Callable[[str, object], None],
 ) -> None:
-    """Report CSR Arrow handoff timing without accepted-row dataclasses."""
+    """Report CSR Arrow batch timing without accepted-row dataclasses."""
 
     context = SbmCalculationContext(
         run_id="run-benchmark-csr-nonsec-delta-001",

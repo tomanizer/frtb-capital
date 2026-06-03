@@ -65,7 +65,7 @@ risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN
 | `numeric.py` | Reconciliation helpers for supported capital and attribution paths. |
 | `crif.py` | Optional CRIF/vendor-to-canonical mapping. No kernel imports. |
 | `batch.py` | Package-owned NumPy batches for BA-CVA, SA-CVA, and hedge inputs. |
-| `arrow_handoff.py` | Arrow tabular handoff normalisation under ADR 0023. |
+| `arrow_batch.py` | Arrow tabular handoff normalisation under ADR 0023. |
 | `audit.py` | Deterministic result serialisation, input hash, profile hash, and reconciliation. |
 | `attribution.py` | Additive attribution for supported branches with explicit unsupported nonlinear residuals. |
 | `impact.py` | Baseline-vs-candidate finite-difference capital deltas. |

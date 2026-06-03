@@ -13,7 +13,7 @@ alternatives must fail closed.
 | `batch.py` | 2814 | Largest package module; batch schema, validation, hashing, and kernels. |
 | `reference_data.py` | 779 | CVA profile and reference data. |
 | `sa_cva_reference_data.py` | 625 | SA-CVA risk weights and correlations. |
-| `arrow_handoff.py` | 612 | Arrow-to-batch conversion. |
+| `arrow_batch.py` | 612 | Arrow-to-batch conversion. |
 | `weighted_sensitivity.py` | 599 | SA-CVA sensitivity weighting. |
 | `audit.py` | 556 | Reconciliation, input hashes, payloads. |
 | `validation.py` | 489 | CVA input validation. |

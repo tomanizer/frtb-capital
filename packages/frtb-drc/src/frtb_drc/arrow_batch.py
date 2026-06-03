@@ -1,8 +1,7 @@
-"""Arrow handoff adapters for DRC batches."""
+"""Arrow batch adapters for DRC batches."""
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -182,10 +181,6 @@ DRC_CTP_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = tuple(
     else spec
     for spec in DRC_NONSEC_ARROW_COLUMN_SPECS
 )
-DRC_NONSEC_HANDOFF_COLUMN_SPECS = DRC_NONSEC_ARROW_COLUMN_SPECS
-DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS = DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS
-DRC_CTP_HANDOFF_COLUMN_SPECS = DRC_CTP_ARROW_COLUMN_SPECS
-
 _DRC_BATCH_COLUMN_ARGS: Mapping[str, str] = {
     "position_id": "position_ids",
     "source_row_id": "source_row_ids",
@@ -223,7 +218,7 @@ def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
         if spec.logical_type is TabularLogicalType.UNKNOWN
     )
     if unknown:
-        raise RuntimeError("DRC handoff specs must declare logical_type: " + ", ".join(unknown))
+        raise RuntimeError("DRC Arrow specs must declare logical_type: " + ", ".join(unknown))
 
 
 _ensure_explicit_logical_types(
@@ -241,7 +236,7 @@ def normalize_drc_nonsec_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the DRC non-securitisation handoff contract."""
+    """Normalize a raw Arrow table to the DRC non-securitisation batch contract."""
 
     return normalize_arrow_table(
         table,
@@ -262,7 +257,7 @@ def normalize_drc_securitisation_non_ctp_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the DRC securitisation non-CTP handoff contract."""
+    """Normalize a raw Arrow table to the DRC securitisation non-CTP batch contract."""
 
     return normalize_arrow_table(
         table,
@@ -283,7 +278,7 @@ def normalize_drc_ctp_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the DRC CTP handoff contract."""
+    """Normalize a raw Arrow table to the DRC CTP batch contract."""
 
     return normalize_arrow_table(
         table,
@@ -299,7 +294,7 @@ def normalize_drc_ctp_arrow_table(
 def build_drc_nonsec_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> DrcPositionBatch:
-    """Build a DRC-owned non-securitisation batch from a normalized Arrow handoff."""
+    """Build a DRC-owned non-securitisation batch from a normalized Arrow batch."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise DrcInputError("handoff must be NormalizedArrowTable")
@@ -320,7 +315,7 @@ def build_drc_nonsec_batch_from_arrow(
 def build_drc_securitisation_non_ctp_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> DrcPositionBatch:
-    """Build a DRC-owned securitisation non-CTP batch from a normalized Arrow handoff."""
+    """Build a DRC-owned securitisation non-CTP batch from a normalized Arrow batch."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise DrcInputError("handoff must be NormalizedArrowTable")
@@ -345,7 +340,7 @@ def build_drc_securitisation_non_ctp_batch_from_arrow(
 def build_drc_ctp_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> DrcPositionBatch:
-    """Build a DRC-owned CTP batch from a normalized Arrow handoff."""
+    """Build a DRC-owned CTP batch from a normalized Arrow batch."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise DrcInputError("handoff must be NormalizedArrowTable")
@@ -361,42 +356,6 @@ def build_drc_ctp_batch_from_arrow(
         diagnostics=diagnostics,
         copy_arrays=False,
     )
-
-
-def build_drc_nonsec_batch_from_handoff(handoff: NormalizedArrowTable) -> DrcPositionBatch:
-    """Deprecated alias for :func:`build_drc_nonsec_batch_from_arrow`."""
-
-    warnings.warn(
-        "build_drc_nonsec_batch_from_handoff is deprecated; use build_drc_nonsec_batch_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_drc_nonsec_batch_from_arrow(handoff)
-
-
-def build_drc_securitisation_non_ctp_batch_from_handoff(
-    handoff: NormalizedArrowTable,
-) -> DrcPositionBatch:
-    """Deprecated alias for :func:`build_drc_securitisation_non_ctp_batch_from_arrow`."""
-
-    warnings.warn(
-        "build_drc_securitisation_non_ctp_batch_from_handoff is deprecated; "
-        "use build_drc_securitisation_non_ctp_batch_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_drc_securitisation_non_ctp_batch_from_arrow(handoff)
-
-
-def build_drc_ctp_batch_from_handoff(handoff: NormalizedArrowTable) -> DrcPositionBatch:
-    """Deprecated alias for :func:`build_drc_ctp_batch_from_arrow`."""
-
-    warnings.warn(
-        "build_drc_ctp_batch_from_handoff is deprecated; use build_drc_ctp_batch_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_drc_ctp_batch_from_arrow(handoff)
 
 
 def _drc_batch_column_kwargs(columns: Mapping[str, object]) -> dict[str, Any]:
@@ -424,17 +383,11 @@ def _citation_ids_column(values: npt.NDArray[Any] | None) -> tuple[tuple[str, ..
 
 __all__ = [
     "DRC_CTP_ARROW_COLUMN_SPECS",
-    "DRC_CTP_HANDOFF_COLUMN_SPECS",
     "DRC_NONSEC_ARROW_COLUMN_SPECS",
-    "DRC_NONSEC_HANDOFF_COLUMN_SPECS",
     "DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS",
-    "DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS",
     "build_drc_ctp_batch_from_arrow",
-    "build_drc_ctp_batch_from_handoff",
     "build_drc_nonsec_batch_from_arrow",
-    "build_drc_nonsec_batch_from_handoff",
     "build_drc_securitisation_non_ctp_batch_from_arrow",
-    "build_drc_securitisation_non_ctp_batch_from_handoff",
     "normalize_drc_ctp_arrow_table",
     "normalize_drc_nonsec_arrow_table",
     "normalize_drc_securitisation_non_ctp_arrow_table",

@@ -223,7 +223,7 @@ def build_girr_delta_batch_from_sensitivities(
 
     This compatibility builder is intentionally outside the high-volume Arrow
     path: it starts from already-materialised ``SbmSensitivity`` rows, then
-    converts them to the same batch representation used by Arrow handoffs.
+    converts them to the same batch representation used by Arrow batches.
     """
 
     return build_sbm_batch_from_sensitivities(

@@ -172,9 +172,9 @@ requirements:
     detailed_ids: [CVA-FUNC-026]
     source: ADR 0023; Basel MAR50 calculation boundary
     status: implemented
-    modules: [src/frtb_cva/crif.py, src/frtb_cva/batch.py, src/frtb_cva/arrow_handoff.py]
+    modules: [src/frtb_cva/crif.py, src/frtb_cva/batch.py, src/frtb_cva/arrow_batch.py]
     tests: [tests/test_cva_crif.py, tests/test_cva_arrow_batch.py]
-    notes: Converts supported source rows and Arrow handoffs into canonical package-owned batches without moving regulatory kernels into dataframe or Arrow expressions.
+    notes: Converts supported source rows and Arrow batches into canonical package-owned batches without moving regulatory kernels into dataframe or Arrow expressions.
   - id: CVA-QUALITY-001
     title: External comparator, property, performance, and notebook evidence
     detailed_ids: [CVA-NFR-005, CVA-NFR-007]

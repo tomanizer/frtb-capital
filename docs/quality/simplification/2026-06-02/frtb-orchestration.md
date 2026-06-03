@@ -10,12 +10,12 @@ public handoff contracts and must not reach into private component modules.
 | Module | Lines | Notes |
 | --- | ---: | --- |
 | `standardised.py` | 158 | SA component handoff validation and fail-closed aggregation boundary. |
-| `cva_handoff.py` | 156 | CVA result projection. |
+| `cva_summary.py` | 156 | CVA result projection. |
 | `scaffold.py` | 29 | Suite capital fail-closed entrypoint. |
 
 ## Duplicated code
 
-- `standardised.py` and `cva_handoff.py` both perform required text/hash-like
+- `standardised.py` and `cva_summary.py` both perform required text/hash-like
   attribute validation, but the package is small enough that extraction is not
   urgent.
 - `ComponentCapitalSummary` in `frtb-common` already centralizes the SA component

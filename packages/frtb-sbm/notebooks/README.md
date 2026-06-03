@@ -2,7 +2,7 @@
 
 These notebooks are deterministic development artifacts for `frtb-sbm`. They
 use synthetic inputs and package-local fixtures to demonstrate public APIs,
-validation replay, curvature/vega treatment, and the Arrow handoff fast path.
+validation replay, curvature/vega treatment, and the Arrow batch fast path.
 They are not final regulatory capital outputs.
 
 Smoke-test the notebook code cells from the repository root with:
@@ -22,5 +22,5 @@ Current notebooks:
   deterministic audit output.
 - `02_vega_curvature_paths.ipynb` demonstrates GIRR/non-GIRR vega fixtures and
   synthetic curvature branch evidence.
-- `03_batch_arrow_handoff.ipynb` compares row API output with the Arrow handoff
+- `03_arrow_batch_fast_path.ipynb` compares row API output with the Arrow batch
   portfolio dispatcher and shows fast-path diagnostics.

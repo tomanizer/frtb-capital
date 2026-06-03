@@ -12,7 +12,7 @@ is proposed-rule comparison material.
 
 | Source | Meaning |
 | --- | --- |
-| CLIENT | Upstream systems must supply the value on each row or join it before handoff. |
+| CLIENT | Upstream systems must supply the value on each row or join it before input_table. |
 | LIBRARY | Package rule tables or profiles resolve the value from client-supplied keys. |
 | HYBRID | Client supplies keys or optional overlays; the library applies cited rules and fails closed when mandatory evidence is absent. |
 
@@ -25,11 +25,11 @@ silent default.
 
 | Field / axis | Source: CLIENT \| LIBRARY \| HYBRID | Delivery mechanism | Required when | Notes / citation |
 | --- | --- | --- | --- | --- |
-| `sensitivity_id`, `source_row_id`, desk, legal entity | CLIENT | Arrow handoff columns or CRIF adapter output | All SBM handoffs | Stable row identity supports replay and attribution. |
-| `risk_class`, `risk_measure` | CLIENT | Handoff columns | All SBM rows | Must match a supported BASEL_MAR21 path; non-Basel profiles fail closed. |
-| Bucket and qualifier keys | CLIENT | `bucket`, `qualifier`, `risk_factor`, issuer or curve identifiers | All delta, vega, and curvature rows | Client owns product classification and identifier mastering before handoff. |
+| `sensitivity_id`, `source_row_id`, desk, legal entity | CLIENT | Arrow input_table columns or CRIF adapter output | All SBM input_tables | Stable row identity supports replay and attribution. |
+| `risk_class`, `risk_measure` | CLIENT | InputTable columns | All SBM rows | Must match a supported BASEL_MAR21 path; non-Basel profiles fail closed. |
+| Bucket and qualifier keys | CLIENT | `bucket`, `qualifier`, `risk_factor`, issuer or curve identifiers | All delta, vega, and curvature rows | Client owns product classification and identifier mastering before input_table. |
 | Tenor / maturity / curve axis | CLIENT | `tenor`, maturity columns, or risk-class-specific axis columns | GIRR, CSR, vega, and curvature paths using tenor-sensitive rules | Library validates against package tenor sets. |
-| Sensitivity amount and currency | CLIENT | `amount`, `amount_currency` or package-specific amount columns | All rows | Client ETL must apply sign convention before handoff. |
+| Sensitivity amount and currency | CLIENT | `amount`, `amount_currency` or package-specific amount columns | All rows | Client ETL must apply sign convention before input_table. |
 | Risk weights and correlations | LIBRARY | `frtb_sbm.reference_data` and risk-class reference modules | Supported BASEL_MAR21 rows | Basel MAR21 risk weights, correlations, and bucket tables are package-owned. |
 | Equity repo and CTP decomposition evidence flags | HYBRID | Evidence columns or context flags where implemented | Paths requiring explicit evidence | Missing evidence fails closed under the package validation policy. |
 | Regulatory profile | LIBRARY | `SbmCalculationContext.profile` / profile enum | Every run | BASEL_MAR21 is the supported runtime profile; U.S. NPR 2.0, EU CRR3, and PRA UK CRR comparison profiles are documented as unsupported fail-closed. |
@@ -41,14 +41,14 @@ non-securitisation, securitisation non-CTP, and CTP.
 
 | Field / axis | Source: CLIENT \| LIBRARY \| HYBRID | Delivery mechanism | Required when | Notes / citation |
 | --- | --- | --- | --- | --- |
-| `position_id`, `source_row_id`, desk, legal entity | CLIENT | DRC handoff columns | All DRC classes | Stable `position_id` is also the key for run-scoped maps. |
-| `risk_class` | CLIENT | Class-specific handoff table | All DRC rows | Mixed classes in one batch fail closed. |
+| `position_id`, `source_row_id`, desk, legal entity | CLIENT | DRC input_table columns | All DRC classes | Stable `position_id` is also the key for run-scoped maps. |
+| `risk_class` | CLIENT | Class-specific input_table table | All DRC rows | Mixed classes in one batch fail closed. |
 | Issuer, obligor, tranche, or securitisation identifier | CLIENT | `issuer_id`, `issuer_name`, `position_id`, and tranche fields | All rows | Client owns mastering; library does not source issuer records. |
 | Non-securitisation bucket | HYBRID | `bucket_key` plus package validation | Non-sec rows | Client supplies a bucket key; library validates against cited Basel MAR22 / package profile tables. |
 | Non-securitisation seniority | CLIENT | `seniority` | Non-sec rows | Used in LGD and netting treatment. |
 | Non-securitisation credit quality | HYBRID | `credit_quality` or package profile resolution | Non-sec rows | Client may supply classification; library applies supported risk-weight table where implemented. |
 | Non-securitisation LGD | HYBRID | Row field or package default by seniority/profile | Non-sec rows | Client override is accepted only through documented fields; invalid values fail closed. |
-| Gross JTD inputs, notional, P&L, maturity | CLIENT | DRC handoff columns | All classes | Client signs and scales values before handoff. |
+| Gross JTD inputs, notional, P&L, maturity | CLIENT | DRC input_table columns | All classes | Client signs and scales values before input_table. |
 | Currency and base currency | HYBRID | Row `currency`; `DrcCalculationContext.base_currency`; `fx_rates` map | Any non-base-currency row | `fx_rates` keys are source currency codes. Missing `source_currency -> base_currency` rate or missing lineage raises `DrcInputError`. |
 | `securitisation_non_ctp_risk_weights` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` | Securitisation non-CTP rows | Mandatory for each position; unused keys and missing keys fail closed. |
 | `securitisation_non_ctp_risk_weight_evidence` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` | Securitisation non-CTP rows | Evidence records carry source profile, source id, lineage, and citation ids. Missing or stale evidence fails closed. |
@@ -66,15 +66,15 @@ and unused map entries to prevent accidental stale attachments.
 
 | Field / axis | Source: CLIENT \| LIBRARY \| HYBRID | Delivery mechanism | Required when | Notes / citation |
 | --- | --- | --- | --- | --- |
-| `position_id`, `source_row_id`, desk, legal entity | CLIENT | RRAO handoff columns | All RRAO rows | Required for replay and allocation. |
-| `gross_effective_notional`, `currency` | CLIENT | RRAO handoff columns | All RRAO rows | Notional must be finite and non-negative after client sign normalization. |
-| `evidence_type`, `evidence_label` | CLIENT | RRAO handoff columns | All rows | Evidence type drives classification and exclusion validation. |
+| `position_id`, `source_row_id`, desk, legal entity | CLIENT | RRAO input_table columns | All RRAO rows | Required for replay and allocation. |
+| `gross_effective_notional`, `currency` | CLIENT | RRAO input_table columns | All RRAO rows | Notional must be finite and non-negative after client sign normalization. |
+| `evidence_type`, `evidence_label` | CLIENT | RRAO input_table columns | All rows | Evidence type drives classification and exclusion validation. |
 | Classification rule tables | LIBRARY | `frtb_rrao.reference_data` and profile helpers | All supported profiles | Basel MAR23 residual-risk classification and comparison profile logic live in package rules. |
-| `classification_hint` | HYBRID | Optional handoff column | When client pre-classifies or has supervisor-directed classification | Library validates hints and rejects unsupported classifications. |
+| `classification_hint` | HYBRID | Optional input_table column | When client pre-classifies or has supervisor-directed classification | Library validates hints and rejects unsupported classifications. |
 | Explicit exclusion fields | CLIENT | `exclusion_reason`, `exclusion_evidence_id` | Rows claiming exclusion | Exclusion reason requires explicit exclusion evidence; no silent row drops. |
 | Back-to-back match evidence | CLIENT | Flat columns: `back_to_back_match_group_id`, `back_to_back_matched_position_id` | Exact third-party back-to-back exclusions | Nested JSON blobs are rejected through `unsupported_nested_payload`. |
 | Supervisor directive evidence | CLIENT | `supervisor_directive_id` | Supervisor-directed classification or evidence type | Missing directive id fails closed. |
-| Investment-fund descriptor fields | CLIENT | Flat columns such as `investment_fund_id`, `investment_fund_section_205_method`, `investment_fund_included_exposure_type`, evidence ids, ratios, and look-through flags | Investment-fund exposures | Descriptor must be flattened before handoff; this aligns with [RRAO Arrow batch triage](performance/frtb-rrao-arrow-batch-triage.md). |
+| Investment-fund descriptor fields | CLIENT | Flat columns such as `investment_fund_id`, `investment_fund_section_205_method`, `investment_fund_included_exposure_type`, evidence ids, ratios, and look-through flags | Investment-fund exposures | Descriptor must be flattened before input_table; this aligns with [RRAO Arrow batch triage](performance/frtb-rrao-arrow-batch-triage.md). |
 | Citation ids and lineage | CLIENT | `citations`, `lineage_source_system`, `lineage_source_file`, `lineage_source_row_id` | Audit-ready runs | Lineage is required for canonical validation. |
 
 ## CVA
@@ -82,9 +82,9 @@ and unused map entries to prevent accidental stale attachments.
 | Field / axis | Source: CLIENT \| LIBRARY \| HYBRID | Delivery mechanism | Required when | Notes / citation |
 | --- | --- | --- | --- | --- |
 | Counterparty identity, desk, legal entity | CLIENT | `CVA_COUNTERPARTY_ARROW_COLUMN_SPECS` | All CVA methods | Client owns counterparty mastering. |
-| Counterparty sector, credit quality, region | HYBRID | Counterparty handoff columns plus package validation | BA-CVA and SA-CVA profile calculations | Client supplies classification keys; package validates supported values and applies cited weights. |
+| Counterparty sector, credit quality, region | HYBRID | Counterparty input_table columns plus package validation | BA-CVA and SA-CVA profile calculations | Client supplies classification keys; package validates supported values and applies cited weights. |
 | Netting-set EAD, maturity, discount factor, currency | CLIENT | `CVA_NETTING_SET_ARROW_COLUMN_SPECS` | BA-CVA and mixed-method runs | EAD is non-negative after sign normalization; discount factor must be positive. |
-| `uses_imm_ead`, carve-out flags | CLIENT | Netting-set handoff columns and `CvaCalculationContext` | BA-CVA / SA-CVA carve-out logic | Invalid references fail closed. |
+| `uses_imm_ead`, carve-out flags | CLIENT | Netting-set input_table columns and `CvaCalculationContext` | BA-CVA / SA-CVA carve-out logic | Invalid references fail closed. |
 | Hedge type, reference relation, eligibility | HYBRID | `CVA_HEDGE_ARROW_COLUMN_SPECS` | Hedge recognition | Client supplies hedge metadata and evidence ids; package validates eligibility and unsupported hedge recognition paths. |
 | SA-CVA sensitivity risk class, measure, bucket, factor, tenor | CLIENT | `SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS` | SA-CVA runs | GIRR delta requires tenor; vega requires volatility input. |
 | Qualified-index metadata | HYBRID | SA-CVA sensitivity columns such as `index_max_sector_weight`, `index_remap_bucket_id`, `index_dominant_sector` | Index sensitivities and hedges | Client supplies index evidence; package applies qualified-index remapping where supported. |
@@ -94,7 +94,7 @@ and unused map entries to prevent accidental stale attachments.
 
 | Field / axis | Source: CLIENT \| LIBRARY \| HYBRID | Delivery mechanism | Required when | Notes / citation |
 | --- | --- | --- | --- | --- |
-| Scenario P&L cube | CLIENT | Dense NumPy `.npz` arrays / `ScenarioCube` | ES, LHA, IMCC, and NMRF capital paths | This is not reference data and must not be put into Arrow handoff for capital kernels. |
+| Scenario P&L cube | CLIENT | Dense NumPy `.npz` arrays / `ScenarioCube` | ES, LHA, IMCC, and NMRF capital paths | This is not reference data and must not be put into Arrow input_table for capital kernels. |
 | Scenario metadata | CLIENT | `IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS` | Scenario cube lineage and replay | Arrow metadata rows describe scenario ids, dates, liquidity horizons, and lineage. |
 | RFET observations | CLIENT | `IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS` | RFET assessment | Client supplies real-price observation evidence; package assesses eligibility. |
 | Capital-run input manifest rows | CLIENT | `IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS` | Fixture and delivery-pack replay | Names artifacts, source systems, checksums, record counts, and vector counts. |
@@ -104,7 +104,7 @@ and unused map entries to prevent accidental stale attachments.
 ## Manifest attachment naming
 
 `CapitalRunManifest` names reference attachments explicitly so a validator can
-match them to component handoffs:
+match them to component input_tables:
 
 | Logical attachment | Intended content | Hash expectation |
 | --- | --- | --- |
@@ -118,6 +118,6 @@ match them to component handoffs:
 | `rrao.classification_evidence` | Optional evidence catalog referenced by flat RRAO row columns | Stable hash if supplied outside the positions table. |
 | `ima.artifact_manifest` | IMA input-manifest table naming NPZ, CSV, and evidence artifacts | Stable hash of artifact metadata and checksums. |
 
-File-backed clients can use `scripts/validate_client_handoff.py` before
+File-backed clients can use `scripts/validate_client_input_table.py` before
 constructing a runtime manifest. In-memory clients should supply Arrow tables
-and let `validate_capital_run_manifest` compute source and handoff hashes.
+and let `validate_capital_run_manifest` compute source and input_table hashes.

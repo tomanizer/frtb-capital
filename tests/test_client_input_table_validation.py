@@ -6,10 +6,10 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from scripts.validate_client_handoff import main as validate_handoff_main
+from scripts.validate_client_input_table import main as validate_input_table_main
 
 
-def test_validate_client_handoff_accepts_drc_nonsec_fixture(tmp_path: Path) -> None:
+def test_validate_client_input_table_accepts_drc_nonsec_fixture(tmp_path: Path) -> None:
     input_path = (
         _repo_root() / "packages/frtb-drc/tests/fixtures/handoff/drc_nonsec_minimal.parquet"
     )
@@ -25,12 +25,12 @@ def test_validate_client_handoff_accepts_drc_nonsec_fixture(tmp_path: Path) -> N
     assert first_summary["rejected_rows"] == 0
     assert first_summary["batch_built"] is True
     assert first_summary["source_hash"] == second_summary["source_hash"]
-    assert first_summary["handoff_hash"] == second_summary["handoff_hash"]
+    assert first_summary["input_table_hash"] == second_summary["input_table_hash"]
     assert pq.read_table(first_output / "accepted.parquet").num_rows == 1
     assert _json(first_output / "diagnostics.json") == []
 
 
-def test_validate_client_handoff_accepts_rrao_inline_file(tmp_path: Path) -> None:
+def test_validate_client_input_table_accepts_rrao_inline_file(tmp_path: Path) -> None:
     input_path = tmp_path / "rrao.parquet"
     pq.write_table(_rrao_table(), input_path)
     output_dir = tmp_path / "out"
@@ -39,12 +39,12 @@ def test_validate_client_handoff_accepts_rrao_inline_file(tmp_path: Path) -> Non
 
     summary = _json(output_dir / "summary.json")
     assert summary["package"] == "frtb_rrao"
-    assert summary["handoff_id"] == "positions"
+    assert summary["input_table_id"] == "positions"
     assert summary["accepted_rows"] == 1
     assert summary["rejected_rows"] == 0
 
 
-def test_validate_client_handoff_rejects_missing_required_column(tmp_path: Path) -> None:
+def test_validate_client_input_table_rejects_missing_required_column(tmp_path: Path) -> None:
     bad_input = tmp_path / "bad.parquet"
     pq.write_table(pa.table({"source_row_id": ["row-1"]}), bad_input)
     output_dir = tmp_path / "bad-out"
@@ -54,7 +54,7 @@ def test_validate_client_handoff_rejects_missing_required_column(tmp_path: Path)
     diagnostics = _json(output_dir / "diagnostics.json")
     assert diagnostics == [
         {
-            "code": "HANDOFF_NORMALIZATION_ERROR",
+            "code": "INPUT_TABLE_NORMALIZATION_ERROR",
             "column_name": None,
             "message": "Required column 'position_id' is missing",
             "row_id": None,
@@ -67,13 +67,13 @@ def test_validate_client_handoff_rejects_missing_required_column(tmp_path: Path)
     assert (output_dir / "rejected.parquet").exists()
 
 
-def _run_cli(package: str, handoff: str, input_path: Path, output_dir: Path) -> int:
-    return validate_handoff_main(
+def _run_cli(package: str, input_table: str, input_path: Path, output_dir: Path) -> int:
+    return validate_input_table_main(
         (
             "--package",
             package,
-            "--handoff",
-            handoff,
+            "--input-table",
+            input_table,
             "--input",
             str(input_path),
             "--output-dir",

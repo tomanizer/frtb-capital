@@ -15,7 +15,7 @@ requirements:
       - packages/frtb-sbm/src/frtb_sbm/reference_data.py
       - packages/frtb-sbm/src/frtb_sbm/weighted_sensitivity.py
       - packages/frtb-sbm/src/frtb_sbm/capital.py
-      - packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py
+      - packages/frtb-sbm/src/frtb_sbm/arrow_batch.py
     test_refs:
       - packages/frtb-sbm/tests/test_sbm_girr_delta_factor_grid.py
       - packages/frtb-sbm/tests/test_sbm_girr_delta_batch.py
@@ -25,7 +25,7 @@ requirements:
     challenger_refs:
       - frtb_net_frtb
       - hemanth_frtb_sa_capital_engine
-    notes: "BASEL_MAR21 GIRR delta is capital-producing through row, batch, and Arrow handoff paths. Non-Basel profiles remain unsupported fail-closed."
+    notes: "BASEL_MAR21 GIRR delta is capital-producing through row, batch, and Arrow batch paths. Non-Basel profiles remain unsupported fail-closed."
 
   - id: SBM-FX-DELTA-001
     topic: FX delta, reporting currency, major pairs, and historical FX-rate treatment
@@ -37,7 +37,7 @@ requirements:
       - packages/frtb-sbm/src/frtb_sbm/reference_data.py
       - packages/frtb-sbm/src/frtb_sbm/risk_classes/fx.py
       - packages/frtb-sbm/src/frtb_sbm/capital.py
-      - packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py
+      - packages/frtb-sbm/src/frtb_sbm/arrow_batch.py
     test_refs:
       - packages/frtb-sbm/tests/risk_classes/test_sbm_fx.py
       - packages/frtb-sbm/tests/test_sbm_fx_equity_commodity_batch_arrow.py
@@ -59,7 +59,7 @@ requirements:
       - packages/frtb-sbm/src/frtb_sbm/risk_classes/csr_nonsec.py
       - packages/frtb-sbm/src/frtb_sbm/risk_classes/csr_sec_nonctp.py
       - packages/frtb-sbm/src/frtb_sbm/risk_classes/csr_sec_ctp.py
-      - packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py
+      - packages/frtb-sbm/src/frtb_sbm/arrow_batch.py
     test_refs:
       - packages/frtb-sbm/tests/risk_classes/test_equity.py
       - packages/frtb-sbm/tests/risk_classes/test_commodity.py
@@ -85,7 +85,7 @@ requirements:
       - packages/frtb-sbm/src/frtb_sbm/weighted_sensitivity.py
       - packages/frtb-sbm/src/frtb_sbm/risk_classes/vega.py
       - packages/frtb-sbm/src/frtb_sbm/capital.py
-      - packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py
+      - packages/frtb-sbm/src/frtb_sbm/arrow_batch.py
     test_refs:
       - packages/frtb-sbm/tests/test_sbm_girr_vega.py
       - packages/frtb-sbm/tests/test_sbm_non_girr_vega.py
@@ -96,7 +96,7 @@ requirements:
       - frtb_net_frtb
       - levan_danelia_frtb
       - ivanshuer_frtb
-    notes: "BASEL_MAR21 vega is implemented for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP with row, batch, and Arrow handoff paths. Equity repo vega remains unsupported fail-closed."
+    notes: "BASEL_MAR21 vega is implemented for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP with row, batch, and Arrow batch paths. Equity repo vega remains unsupported fail-closed."
 
   - id: SBM-CURVATURE-001
     topic: Curvature scenario selection and correlation treatment
@@ -107,7 +107,7 @@ requirements:
       - packages/frtb-sbm/src/frtb_sbm/curvature.py
       - packages/frtb-sbm/src/frtb_sbm/reference_data.py
       - packages/frtb-sbm/src/frtb_sbm/capital.py
-      - packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py
+      - packages/frtb-sbm/src/frtb_sbm/arrow_batch.py
     test_refs:
       - packages/frtb-sbm/tests/test_curvature.py
       - packages/frtb-sbm/tests/test_sbm_curvature_batch_arrow.py
@@ -118,4 +118,4 @@ requirements:
       - frtb_net_frtb
       - levan_danelia_frtb
       - ivanshuer_frtb
-    notes: "BASEL_MAR21 curvature is capital-producing across all seven SBM risk classes with row, batch, and Arrow handoff paths. Equity repo curvature and unsupported profile variants fail closed."
+    notes: "BASEL_MAR21 curvature is capital-producing across all seven SBM risk classes with row, batch, and Arrow batch paths. Equity repo curvature and unsupported profile variants fail closed."

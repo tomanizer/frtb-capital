@@ -1,6 +1,5 @@
 """Standardised Approach sensitivities-based method scaffold."""
 
-from frtb_sbm import arrow_handoff as _arrow_handoff
 from frtb_sbm._version import __version__
 from frtb_sbm.aggregation import (
     InterBucketScenarioResult,
@@ -16,7 +15,7 @@ from frtb_sbm.aggregation import (
     group_weighted_sensitivities_by_bucket,
     select_max_correlation_scenario,
 )
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     COMMODITY_CURVATURE_ARROW_COLUMN_SPECS,
     COMMODITY_DELTA_ARROW_COLUMN_SPECS,
     COMMODITY_VEGA_ARROW_COLUMN_SPECS,
@@ -191,6 +190,7 @@ from frtb_sbm.capital import (
     calculate_sbm_capital_from_girr_vega_batch,
     calculate_sbm_portfolio_capital_from_batches,
 )
+from frtb_sbm.component_summary import to_component_summary
 from frtb_sbm.curvature import (
     CURVATURE_CAPITAL_REQUIREMENT_ID,
     FX_CURVATURE_SCALAR_1_5_FLAG,
@@ -242,7 +242,6 @@ from frtb_sbm.data_models import (
     SbmWarning,
     WeightedSensitivity,
 )
-from frtb_sbm.handoff import to_component_summary, to_orchestration_handoff
 from frtb_sbm.reference_data import (
     FX_DELTA_RISK_WEIGHT,
     FX_INTER_BUCKET_CORRELATION,
@@ -631,7 +630,6 @@ __all__ = [
     "sorted_sbm_batch_indices",
     "supported_risk_class_measures",
     "to_component_summary",
-    "to_orchestration_handoff",
     "validate_curvature_batch",
     "validate_curvature_sensitivities",
     "validate_girr_curvature_batch",
@@ -661,15 +659,3 @@ __all__ = [
     "weight_non_girr_vega_sensitivity_batch",
     "weighted_sensitivity_sort_key",
 ]
-
-_DEPRECATED_ARROW_EXPORTS = [
-    name
-    for name in _arrow_handoff.__all__
-    if "HANDOFF_COLUMN_SPECS" in name
-    or name.endswith("_from_handoff")
-    or name.endswith("_handoff")
-    or name.endswith("_handoffs")
-]
-for _name in _DEPRECATED_ARROW_EXPORTS:
-    globals()[_name] = getattr(_arrow_handoff, _name)
-__all__.extend(name for name in _DEPRECATED_ARROW_EXPORTS if name not in __all__)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Benchmark DRC row, Arrow handoff, and package batch paths."""
+"""Benchmark DRC row, Arrow batch, and package batch paths."""
 
 from __future__ import annotations
 
@@ -122,7 +122,7 @@ def run_benchmark(config: DrcBenchmarkConfig) -> dict[str, object]:
                 "row_calculation": row_result.seconds,
                 "row_audit_serialization": row_payload.seconds,
                 "arrow_table_construction": arrow_table.seconds,
-                "handoff_normalization": handoff.seconds,
+                "arrow_normalization": handoff.seconds,
                 "batch_construction": batch.seconds,
                 "batch_calculation": batch_result.seconds,
                 "batch_audit_serialization": batch_payload.seconds,

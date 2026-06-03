@@ -21,7 +21,7 @@ from frtb_sbm import (
     calculate_sbm_portfolio_capital_from_batches,
     input_hash_for_sensitivities,
 )
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     build_fx_delta_batch_from_arrow,
     calculate_sbm_portfolio_capital_from_arrow_tables,
     normalize_commodity_curvature_arrow_table,
@@ -175,7 +175,7 @@ def test_row_compatibility_batches_report_materialized_input_dataclasses() -> No
     assert calculation.path_diagnostics[0].accepted_row_dataclasses_materialized == 2
 
 
-def test_handoff_dispatcher_rejects_mixed_path_handoff() -> None:
+def test_arrow_table_dispatcher_rejects_mixed_path_table() -> None:
     context = sample_context()
     fx_row = replace(
         sample_sensitivity(2, risk_class=SbmRiskClass.FX, risk_measure=SbmRiskMeasure.DELTA),
@@ -185,13 +185,13 @@ def test_handoff_dispatcher_rejects_mixed_path_handoff() -> None:
         sample_sensitivity(1, risk_class=SbmRiskClass.GIRR, risk_measure=SbmRiskMeasure.DELTA),
         fx_row,
     )
-    handoff = normalize_girr_delta_arrow_table(arrow_table(mixed_rows))
+    normalized_table = normalize_girr_delta_arrow_table(arrow_table(mixed_rows))
 
     with pytest.raises(
         SbmInputError,
-        match="handoff 1 must be homogeneous by risk_class and risk_measure",
+        match="arrow table 1 must be homogeneous by risk_class and risk_measure",
     ):
-        calculate_sbm_portfolio_capital_from_arrow_tables((handoff,), context=context)
+        calculate_sbm_portfolio_capital_from_arrow_tables((normalized_table,), context=context)
 
 
 def test_batch_dispatcher_reports_batch_field_for_invalid_batch_inputs() -> None:

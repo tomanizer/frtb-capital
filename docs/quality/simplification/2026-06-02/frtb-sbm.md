@@ -10,7 +10,7 @@
 | Module | Lines | Notes |
 | --- | ---: | --- |
 | `batch.py` | 2503 | Batch construction, hashing, dispatch, and array helpers. |
-| `arrow_handoff.py` | 1951 | Large Arrow-to-batch boundary. |
+| `arrow_batch.py` | 1951 | Large Arrow-to-batch boundary. |
 | `curvature.py` | 1897 | Curvature calculation and unsupported-feature branches. |
 | `capital.py` | 1759 | Portfolio/risk-class capital assembly. |
 | `reference_data.py` | 1599 | GIRR and generic reference data. |
@@ -54,7 +54,7 @@
 - Add `frtb_sbm._citations` for `_merge_citation_ids`.
 - Add `frtb_sbm._batch_lookup` for `_batch_text_by_id` and optional lookups so
   risk-class modules do not import private helpers from `batch.py`.
-- Split `arrow_handoff.py` by supported input family or by conversion mechanics
+- Split `arrow_batch.py` by supported input family or by conversion mechanics
   versus semantic batch construction.
 - Split `batch.py` into construction, hashing, dispatch, and array helper
   modules.
@@ -77,13 +77,13 @@ rules, curvature formulas, or BASEL_MAR21 support decisions into `frtb-common`.
 1. Extract `_citations`, `_text`, and `_batch_lookup` locally.
 2. Migrate hashing to a future common stable-hash helper after shared tests land.
 3. Migrate Arrow conversion helpers to common handoff helpers.
-4. Split `batch.py` and `arrow_handoff.py`.
+4. Split `batch.py` and `arrow_batch.py`.
 5. Only then consider deeper risk-class dispatch simplification.
 
 ## Validation required
 
 - Full SBM package tests if touching capital, aggregation, curvature, weighting,
-  batch, or Arrow handoff.
+  batch, or Arrow batch.
 - Hash and audit replay tests must remain stable unless an ADR records an
   intentional hash contract change.
 - `make quality-control`.

@@ -82,7 +82,7 @@ fail-closed treatment for CCS vega.
 
 ## Arrow Conversion
 
-The CVA Arrow handoff now avoids whole-column `to_pylist()` conversions for the
+The CVA Arrow batch now avoids whole-column `to_pylist()` conversions for the
 accepted high-volume columns. Numeric float64 Arrow chunks use zero-copy NumPy
 views where Arrow exposes a contiguous non-null buffer; nullable numeric columns
 are filled through Arrow compute before NumPy conversion. Dictionary-encoded
@@ -102,7 +102,7 @@ optional numeric arrays still permit null/NaN but reject infinities.
 
 - BA-CVA row calculation;
 - BA-CVA column batch build and calculation;
-- BA-CVA Arrow handoff build and batch calculation;
+- BA-CVA Arrow batch build and batch calculation;
 - SA-CVA row calculation;
 - SA-CVA sensitivity column batch build and calculation.
 
@@ -123,7 +123,7 @@ with row 0.053s, column batch 0.068s, and Arrow batch 0.089s.
 
 The batch builders reject:
 
-- missing required lineage columns in Arrow handoffs;
+- missing required lineage columns in Arrow batches;
 - duplicate stable ids;
 - netting sets referencing unknown counterparties at calculation time;
 - unsupported SA-CVA risk-class/risk-measure paths;

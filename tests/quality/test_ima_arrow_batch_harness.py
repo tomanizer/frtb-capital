@@ -7,8 +7,8 @@ from types import ModuleType
 
 
 def _load_harness() -> ModuleType:
-    module_name = "ima_arrow_handoff_harness_for_test"
-    module_path = Path(__file__).parents[2] / "benchmarks" / "ima_arrow_handoff_harness.py"
+    module_name = "ima_arrow_batch_harness_for_test"
+    module_path = Path(__file__).parents[2] / "benchmarks" / "ima_arrow_batch_harness.py"
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     assert spec is not None
     assert spec.loader is not None
@@ -18,9 +18,9 @@ def _load_harness() -> ModuleType:
     return module
 
 
-def test_ima_arrow_handoff_harness_reports_zero_fast_path_dataclasses() -> None:
+def test_ima_arrow_batch_harness_reports_zero_fast_path_dataclasses() -> None:
     harness = _load_harness()
-    config = harness.IMAArrowHandoffBenchmarkConfig(
+    config = harness.IMAArrowBatchBenchmarkConfig(
         scenario_count=20,
         risk_factor_count=4,
         observations_per_factor=30,

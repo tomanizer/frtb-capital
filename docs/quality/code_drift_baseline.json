@@ -257,13 +257,13 @@
       "name": "assess_rfet_observation_batch",
       "path": "packages/frtb-ima/src/frtb_ima/rfet_evidence.py"
     },
-    "packages/frtb-ima/tests/test_arrow_handoff.py:_rfet_exclusion_table": {
+    "packages/frtb-ima/tests/test_arrow_batch.py:_rfet_exclusion_table": {
       "end_line": 550,
-      "key": "packages/frtb-ima/tests/test_arrow_handoff.py:_rfet_exclusion_table",
+      "key": "packages/frtb-ima/tests/test_arrow_batch.py:_rfet_exclusion_table",
       "line": 443,
       "lines": 108,
       "name": "_rfet_exclusion_table",
-      "path": "packages/frtb-ima/tests/test_arrow_handoff.py"
+      "path": "packages/frtb-ima/tests/test_arrow_batch.py"
     },
     "packages/frtb-ima/tests/test_stress_periods.py:test_selection_result_validates_candidate_mapping": {
       "end_line": 689,
@@ -486,7 +486,7 @@
       "lines": 601,
       "role": "other"
     },
-    "packages/frtb-cva/src/frtb_cva/arrow_handoff.py": {
+    "packages/frtb-cva/src/frtb_cva/arrow_batch.py": {
       "limit": 600,
       "lines": 665,
       "role": "source"
@@ -556,7 +556,7 @@
       "lines": 893,
       "role": "other"
     },
-    "packages/frtb-ima/src/frtb_ima/arrow_handoff.py": {
+    "packages/frtb-ima/src/frtb_ima/arrow_batch.py": {
       "limit": 600,
       "lines": 838,
       "role": "source"
@@ -651,7 +651,7 @@
       "lines": 1100,
       "role": "source"
     },
-    "packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py": {
+    "packages/frtb-sbm/src/frtb_sbm/arrow_batch.py": {
       "limit": 600,
       "lines": 1719,
       "role": "source"

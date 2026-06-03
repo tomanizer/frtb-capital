@@ -7,7 +7,7 @@ budgets used by `scripts/ci/check_benchmark_budgets.py`.
 
 ```bash
 make benchmark              # IMA target-scale JSON -> dist/benchmarks/frtb-ima-target-scale.json
-make ima-arrow-handoff-benchmark # IMA Arrow handoff JSON -> dist/benchmarks/frtb-ima-arrow-handoff.json
+make ima-arrow-handoff-benchmark # IMA Arrow batch JSON -> dist/benchmarks/frtb-ima-arrow-batch.json
 make sbm-benchmark          # SBM Arrow/batch JSON -> dist/benchmarks/frtb-sbm-batch-arrow.json
 make drc-benchmark          # DRC Arrow/batch JSON -> dist/benchmarks/frtb-drc-batch-arrow.json
 make rrao-benchmark         # RRAO target-scale JSON -> dist/benchmarks/frtb-rrao-target-scale.json
@@ -30,7 +30,7 @@ performance-sensitive changes or when investigating regressions.
 | SBM Arrow/batch | ~3.4 s wall-clock proxy | migrated batch capital calculations | 5,760 synthetic rows across migrated paths, zero accepted-row dataclasses, 1,111,320 pairwise relationships summarized |
 | RRAO target-scale | ~45.2 s | validation/classification/allocation | 100k positions, ~3,024 positions/s, ~402 MB peak traced memory |
 
-The suite gate also covers generated DRC, CVA, and IMA Arrow handoff artifacts.
+The suite gate also covers generated DRC, CVA, and IMA Arrow batch artifacts.
 Those artifacts hard-gate accepted-row dataclass materialization at zero on the
 Arrow/batch paths, require parse/adapt/build/calculate phase timings, and check
 capital or audit-hash equivalence where a row-compatibility comparison exists.

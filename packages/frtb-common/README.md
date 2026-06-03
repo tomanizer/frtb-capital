@@ -23,7 +23,7 @@ Current contents:
     diagnostics, row id column naming, metadata, and source hashes;
   - deterministic source, Arrow table, and normalized Arrow-table hashes;
   - dictionary-code extraction and deterministic Arrow table sorting helpers;
-  - schema export helpers in `frtb_common.handoff_schema`:
+  - schema export helpers in `frtb_common.arrow_table_schema`:
     `column_spec_to_json_schema`, `column_specs_to_json_schema`, and
     `column_specs_to_arrow_schema`.
 - CRIF-to-Arrow normalization helpers:
@@ -47,11 +47,9 @@ semantics, capital audit records, sign conventions, business calendars, or
 component regulatory parameters unless a future cross-cutting ADR explicitly
 extracts those contracts into `frtb-common`.
 
-Deprecated `*Handoff*`, `*_HANDOFF_COLUMN_SPECS`, and `*_from_handoff` public
-names remain available during the ADR 0033 compatibility window. Function
-aliases emit `DeprecationWarning`; class, error, type, and column-spec aliases
-preserve object identity and are intentionally silent until the #474
-release/breaking-change removal.
+ADR 0033 M3 removed the old `*Handoff*`, `*_HANDOFF_COLUMN_SPECS`, and
+`*_from_handoff` public names. Use the Arrow table and component summary names
+listed above.
 
 `pyarrow` imports are limited to shared Arrow-ingest and CRIF normalization mechanics
 under [ADR 0023](../../docs/decisions/0023-arrow-tabular-handoff-boundary.md).
@@ -64,13 +62,13 @@ Clients can generate JSON Schema or Arrow schema descriptions from public
 `ColumnSpec` tuples without importing component packages from `frtb-common`:
 
 ```bash
-uv run python scripts/export_handoff_schema.py \
+uv run python scripts/export_arrow_schema.py \
   --package frtb_drc \
   --spec DRC_NONSEC_ARROW_COLUMN_SPECS \
   --format json-schema \
   --output dist/schemas/drc_nonsec.arrow.schema.json
 ```
 
-The library functions live in `frtb_common.handoff_schema`; the CLI dynamically
+The library functions live in `frtb_common.arrow_table_schema`; the CLI dynamically
 imports the requested package or module so dependency direction remains
 package-neutral.

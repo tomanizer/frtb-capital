@@ -12,7 +12,7 @@ The package has partial orchestration contracts:
   `SBM + DRC + RRAO` result.
 - IMA fallback route recording accepts structural desk eligibility signals and
   records `SA_FALLBACK` desks as routed to the Standardised Approach stack.
-- CVA has a structural `CvaResultHandoff` projection for future top-of-house
+- CVA has a structural `CvaCapitalSummary` projection for future top-of-house
   aggregation.
 - `calculate_suite_capital` still fails explicitly until full suite aggregation
   lands.
@@ -25,5 +25,5 @@ The package has partial orchestration contracts:
 - Owns SA composition from `frtb-sbm + frtb-drc + frtb-rrao`.
 - Owns fallback routing when IMA eligibility fails.
 - Do not emit successful placeholder capital.
-- Do not reach into private component batch modules; consume public handoff or
+- Do not reach into private component batch modules; consume public input_table or
   result-summary contracts only.

@@ -21,7 +21,7 @@ zero-capital placeholders.
 
 Curvature up/down shock inputs may be validated with
 `validate_curvature_sensitivities`. Public curvature capital is available
-through row-wise, package-owned batch, and Arrow handoff entrypoints for all
+through row-wise, package-owned batch, and Arrow batch entrypoints for all
 supported BASEL_MAR21 risk classes.
 
 ## Validation and deployment readiness

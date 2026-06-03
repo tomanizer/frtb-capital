@@ -7,7 +7,7 @@ Architecture: #262
 ## Decision Summary
 
 The DRC, RRAO, and CVA rollout is complete for the scope of #271. Each package now
-has a package-owned Arrow handoff -> immutable NumPy batch -> regulatory kernel
+has a package-owned Arrow batch -> immutable NumPy batch -> regulatory kernel
 path, plus checked-in triage evidence that explains the package-specific data
 shape and hotspot decisions.
 
@@ -23,7 +23,7 @@ Polars, or Arrow dataframe expressions.
 | DRC | [#299](https://github.com/tomanizer/frtb-capital/issues/299), [#351](https://github.com/tomanizer/frtb-capital/issues/351) | [#303](https://github.com/tomanizer/frtb-capital/pull/303), #351 delivery PR | `frtb-drc-arrow-batch-triage.md` | `build_drc_nonsec_batch_from_arrow`, `build_drc_securitisation_non_ctp_batch_from_arrow`, `build_drc_ctp_batch_from_arrow`, `build_drc_nonsec_batch_from_columns`, `build_drc_securitisation_non_ctp_batch_from_columns`, `build_drc_ctp_batch_from_columns`, `calculate_drc_capital_from_batch`, `input_hash_for_drc_batch` | PR #303 CI passed for the original non-securitisation path; issue #351 adds local row/batch parity, zero accepted-row materialization, docs, quality-control, docs-check, and DRC test evidence for securitisation non-CTP and CTP. |
 | RRAO | [#300](https://github.com/tomanizer/frtb-capital/issues/300) | [#304](https://github.com/tomanizer/frtb-capital/pull/304) | `frtb-rrao-arrow-batch-triage.md` | `build_rrao_batch_from_arrow`, `build_rrao_batch_from_columns`, `calculate_rrao_capital_from_batch`, `input_hash_for_rrao_batch` | PR #304 CI passed; local `packages/frtb-rrao/tests` reported 256 tests; broad `make check` reported 1385 tests. |
 | CVA | [#301](https://github.com/tomanizer/frtb-capital/issues/301) | [#305](https://github.com/tomanizer/frtb-capital/pull/305) | `frtb-cva-arrow-batch-triage.md` | `build_cva_counterparty_batch_from_arrow`, `build_cva_netting_set_batch_from_arrow`, `build_cva_hedge_batch_from_arrow`, `build_sa_cva_sensitivity_batch_from_arrow`, `calculate_cva_capital_from_batches`, `input_hash_for_cva_batches` | PR #305 CI passed; local `packages/frtb-cva/tests` reported 151 tests after review fixes; broad `make check` reported 1398 tests before review fixes and the final PR CI test job passed. |
-| IMA | [#319](https://github.com/tomanizer/frtb-capital/issues/319) | [#328](https://github.com/tomanizer/frtb-capital/pull/328) | `frtb-ima-arrow-handoff-triage.md` | `build_scenario_metadata_batch_from_arrow`, `build_rfet_observation_batch_from_arrow`, `assess_rfet_observation_batch`, `input_hash_for_scenario_metadata_batch`, `input_hash_for_rfet_observation_batch` | Local `make quality-control` and `make check` passed; PR CI pending. Dense scenario P&L kernels remain NumPy-backed. |
+| IMA | [#319](https://github.com/tomanizer/frtb-capital/issues/319) | [#328](https://github.com/tomanizer/frtb-capital/pull/328) | `frtb-ima-arrow-batch-triage.md` | `build_scenario_metadata_batch_from_arrow`, `build_rfet_observation_batch_from_arrow`, `assess_rfet_observation_batch`, `input_hash_for_scenario_metadata_batch`, `input_hash_for_rfet_observation_batch` | Local `make quality-control` and `make check` passed; PR CI pending. Dense scenario P&L kernels remain NumPy-backed. |
 
 ## Compatibility and Kernel Boundaries
 
@@ -41,7 +41,7 @@ The package-local row builders remain available for compatibility tests and
 smaller integrations. They are not the intended high-volume ingestion boundary.
 
 The import audit for this rollout found `pyarrow` only in package
-`arrow_handoff.py` modules for DRC, RRAO, and CVA. The new package kernels do not
+`arrow_batch.py` modules for DRC, RRAO, and CVA. The new package kernels do not
 import pandas or Polars and do not encode regulatory capital logic as dataframe
 expressions.
 

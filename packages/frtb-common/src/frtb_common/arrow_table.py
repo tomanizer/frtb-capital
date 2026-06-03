@@ -7,7 +7,6 @@ their regulatory meanings, package-specific batches, and NumPy kernel inputs.
 from __future__ import annotations
 
 import hashlib
-import warnings
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -210,7 +209,7 @@ def validate_arrow_table(
     row_id_column: str | None = None,
     require_unique_row_ids: bool = False,
 ) -> None:
-    """Validate an already-normalized Arrow table against shared handoff rules."""
+    """Validate an already-normalized Arrow table against shared table rules."""
 
     _require_table(table, "table")
     specs = validate_column_specs(column_specs)
@@ -330,17 +329,6 @@ def normalized_arrow_table_hash(table: NormalizedArrowTable) -> str:
     return stable_json_hash(payload)
 
 
-def normalized_handoff_hash(handoff: NormalizedArrowTable) -> str:
-    """Deprecated alias for :func:`normalized_arrow_table_hash`."""
-
-    warnings.warn(
-        "normalized_handoff_hash is deprecated; use normalized_arrow_table_hash",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return normalized_arrow_table_hash(handoff)
-
-
 def _validate_arrow_table(
     table: pa.Table,
     *,
@@ -448,7 +436,3 @@ def _freeze_metadata(metadata: Mapping[str, str]) -> Mapping[str, str]:
 def _validate_non_empty_name(value: str, label: str) -> None:
     if not isinstance(value, str) or not value:
         raise NormalizedTableError(f"{label} must be a non-empty string")
-
-
-TabularHandoffError = NormalizedTableError
-NormalizedTabularHandoff = NormalizedArrowTable

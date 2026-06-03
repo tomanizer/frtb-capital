@@ -14,7 +14,7 @@ closed.
 | `batch.py` | 1695 | Batch validation, classification, hashing, and result assembly. |
 | `reference_data.py` | 781 | Citations, evidence rules, exclusions, and risk weights. |
 | `crif.py` | 649 | CRIF/FNet adapter. |
-| `arrow_handoff.py` | 522 | Arrow-to-batch bridge. |
+| `arrow_batch.py` | 522 | Arrow-to-batch bridge. |
 | `validation.py` | 517 | Dataclass validation. |
 | `data_models.py` | 320 | Frozen types/enums. |
 | `audit.py` | 274 | Serialization, hashing, reconciliation. |

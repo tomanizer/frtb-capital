@@ -26,7 +26,7 @@ from frtb_sbm import (
     input_hash_for_sensitivities,
     weight_csr_sec_ctp_delta_sensitivity_batch,
 )
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     build_csr_nonsec_delta_batch_from_arrow,
     build_csr_sec_ctp_delta_batch_from_arrow,
     build_csr_sec_nonctp_delta_batch_from_arrow,
@@ -524,10 +524,10 @@ def test_csr_delta_handoff_contracts_require_credit_axes() -> None:
         normalize_csr_sec_ctp_delta_arrow_table(ctp_without_tenor)
 
 
-def test_csr_arrow_handoff_builders_do_not_construct_row_dataclasses() -> None:
-    import frtb_sbm.arrow_handoff as arrow_handoff
+def test_csr_arrow_batch_builders_do_not_construct_row_dataclasses() -> None:
+    import frtb_sbm.arrow_batch as arrow_batch
 
-    source = inspect.getsource(arrow_handoff)
+    source = inspect.getsource(arrow_batch)
 
     assert "SbmSensitivity(" not in source
     assert "from frtb_sbm.data_models import SbmSensitivity" not in source

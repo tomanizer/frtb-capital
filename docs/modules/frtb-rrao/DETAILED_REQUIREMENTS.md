@@ -300,7 +300,7 @@ handoff objects under ADR 0023. `pandas`, `polars`, `scipy`, and `statsmodels`
 may be used in tests, notebooks, validation, research, or optional adapters only
 when they do not leak into the core runtime path. Kernels must not import
 `pyarrow`, `pandas`, or `polars`. Any new runtime dependency beyond the
-approved Arrow handoff boundary requires an ADR under ADR 0011.
+approved Arrow batch boundary requires an ADR under ADR 0011.
 
 ### RRAO-NFR-003: Numeric representation
 

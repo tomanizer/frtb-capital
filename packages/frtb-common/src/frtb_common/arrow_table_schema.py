@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Sequence
 
 import pyarrow as pa  # type: ignore[import-untyped]
 
-from frtb_common.handoff import (
+from frtb_common.arrow_table import (
     ColumnSpec,
     NormalizedTableError,
     NullPolicy,
@@ -17,7 +16,7 @@ from frtb_common.handoff import (
 
 
 def column_spec_to_json_schema(spec: ColumnSpec) -> dict[str, object]:
-    """Return a JSON Schema property for one handoff column spec."""
+    """Return a JSON Schema property for one Arrow column spec."""
 
     return {
         **_json_type_for_logical_type(spec.logical_type),
@@ -96,33 +95,6 @@ def arrow_schema_to_dict(schema: pa.Schema) -> dict[str, object]:
     return {"fields": fields}
 
 
-def handoff_specs_to_json_schema(
-    specs: Sequence[ColumnSpec],
-    *,
-    title: str,
-    description: str | None = None,
-) -> dict[str, object]:
-    """Deprecated alias for :func:`column_specs_to_json_schema`."""
-
-    warnings.warn(
-        "handoff_specs_to_json_schema is deprecated; use column_specs_to_json_schema",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return column_specs_to_json_schema(specs, title=title, description=description)
-
-
-def handoff_specs_to_arrow_schema(specs: Sequence[ColumnSpec]) -> pa.Schema:
-    """Deprecated alias for :func:`column_specs_to_arrow_schema`."""
-
-    warnings.warn(
-        "handoff_specs_to_arrow_schema is deprecated; use column_specs_to_arrow_schema",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return column_specs_to_arrow_schema(specs)
-
-
 def _json_type_for_logical_type(logical_type: TabularLogicalType) -> dict[str, object]:
     mapping: dict[TabularLogicalType, dict[str, object]] = {
         TabularLogicalType.BOOLEAN: {"type": "boolean"},
@@ -168,6 +140,4 @@ __all__ = [
     "column_spec_to_json_schema",
     "column_specs_to_arrow_schema",
     "column_specs_to_json_schema",
-    "handoff_specs_to_arrow_schema",
-    "handoff_specs_to_json_schema",
 ]

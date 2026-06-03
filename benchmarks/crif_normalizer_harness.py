@@ -22,7 +22,7 @@ from frtb_common import (
     TabularLogicalType,
     normalize_crif_arrow_table,
 )
-from frtb_sbm.arrow_handoff import build_girr_delta_batch_from_arrow
+from frtb_sbm.arrow_batch import build_girr_delta_batch_from_arrow
 from frtb_sbm.crif import normalize_girr_delta_crif_arrow_table
 
 DEFAULT_OUTPUT = Path("dist/benchmarks/frtb-common-crif-normalizer.json")

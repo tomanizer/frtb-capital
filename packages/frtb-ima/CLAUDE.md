@@ -149,7 +149,7 @@ explicit architectural decision. These libraries may be used outside the runtime
 kernel path for tests, notebooks, validation, research, or optional adapters
 under suite
 [`ADR 0011`](../../docs/decisions/0011-core-runtime-dependency-policy.md).
-Optional orchestration integrations beyond the approved Arrow handoff boundary
+Optional orchestration integrations beyond the approved Arrow batch boundary
 (DuckDB, object stores, telemetry clients) are future scope — document them as
 such, do not import them in the main calculation path.
 

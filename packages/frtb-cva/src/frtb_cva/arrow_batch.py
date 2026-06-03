@@ -1,8 +1,7 @@
-"""Arrow handoff adapters for CVA batch inputs."""
+"""Arrow batch adapters for CVA batch inputs."""
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -328,12 +327,6 @@ SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         null_policy=NullPolicy.ALLOW,
     ),
 )
-CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS = CVA_COUNTERPARTY_ARROW_COLUMN_SPECS
-CVA_NETTING_SET_HANDOFF_COLUMN_SPECS = CVA_NETTING_SET_ARROW_COLUMN_SPECS
-CVA_HEDGE_HANDOFF_COLUMN_SPECS = CVA_HEDGE_ARROW_COLUMN_SPECS
-SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS = SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS
-
-
 _CVA_COUNTERPARTY_BATCH_COLUMN_ARGS: Mapping[str, str] = {
     "counterparty_id": "counterparty_ids",
     "desk_id": "desk_ids",
@@ -421,7 +414,7 @@ def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
         if spec.logical_type is TabularLogicalType.UNKNOWN
     )
     if unknown:
-        raise RuntimeError("CVA handoff specs must declare logical_type: " + ", ".join(unknown))
+        raise RuntimeError("CVA Arrow specs must declare logical_type: " + ", ".join(unknown))
 
 
 _ensure_explicit_logical_types(
@@ -550,59 +543,6 @@ def build_sa_cva_sensitivity_batch_from_arrow(
     )
 
 
-def build_cva_counterparty_batch_from_handoff(
-    handoff: NormalizedArrowTable,
-) -> CvaCounterpartyBatch:
-    """Deprecated alias for :func:`build_cva_counterparty_batch_from_arrow`."""
-
-    warnings.warn(
-        "build_cva_counterparty_batch_from_handoff is deprecated; "
-        "use build_cva_counterparty_batch_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_cva_counterparty_batch_from_arrow(handoff)
-
-
-def build_cva_netting_set_batch_from_handoff(
-    handoff: NormalizedArrowTable,
-) -> CvaNettingSetBatch:
-    """Deprecated alias for :func:`build_cva_netting_set_batch_from_arrow`."""
-
-    warnings.warn(
-        "build_cva_netting_set_batch_from_handoff is deprecated; "
-        "use build_cva_netting_set_batch_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_cva_netting_set_batch_from_arrow(handoff)
-
-
-def build_cva_hedge_batch_from_handoff(handoff: NormalizedArrowTable) -> CvaHedgeBatch:
-    """Deprecated alias for :func:`build_cva_hedge_batch_from_arrow`."""
-
-    warnings.warn(
-        "build_cva_hedge_batch_from_handoff is deprecated; use build_cva_hedge_batch_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_cva_hedge_batch_from_arrow(handoff)
-
-
-def build_sa_cva_sensitivity_batch_from_handoff(
-    handoff: NormalizedArrowTable,
-) -> SaCvaSensitivityBatch:
-    """Deprecated alias for :func:`build_sa_cva_sensitivity_batch_from_arrow`."""
-
-    warnings.warn(
-        "build_sa_cva_sensitivity_batch_from_handoff is deprecated; "
-        "use build_sa_cva_sensitivity_batch_from_arrow",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return build_sa_cva_sensitivity_batch_from_arrow(handoff)
-
-
 def _normalize(
     table: pa.Table,
     column_specs: tuple[ColumnSpec, ...],
@@ -643,21 +583,13 @@ def _diagnostics(handoff: NormalizedArrowTable) -> tuple[Mapping[str, object], .
 
 __all__ = [
     "CVA_COUNTERPARTY_ARROW_COLUMN_SPECS",
-    "CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS",
     "CVA_HEDGE_ARROW_COLUMN_SPECS",
-    "CVA_HEDGE_HANDOFF_COLUMN_SPECS",
     "CVA_NETTING_SET_ARROW_COLUMN_SPECS",
-    "CVA_NETTING_SET_HANDOFF_COLUMN_SPECS",
     "SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS",
-    "SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS",
     "build_cva_counterparty_batch_from_arrow",
-    "build_cva_counterparty_batch_from_handoff",
     "build_cva_hedge_batch_from_arrow",
-    "build_cva_hedge_batch_from_handoff",
     "build_cva_netting_set_batch_from_arrow",
-    "build_cva_netting_set_batch_from_handoff",
     "build_sa_cva_sensitivity_batch_from_arrow",
-    "build_sa_cva_sensitivity_batch_from_handoff",
     "normalize_cva_counterparty_arrow_table",
     "normalize_cva_hedge_arrow_table",
     "normalize_cva_netting_set_arrow_table",

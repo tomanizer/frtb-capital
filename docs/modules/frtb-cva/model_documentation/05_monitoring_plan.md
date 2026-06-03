@@ -18,7 +18,7 @@ Monitor these evidence points:
 - BA-CVA and SA-CVA fixture expected outputs;
 - profile hashes and reference-data hashes;
 - public API and unsupported-feature tests;
-- row, batch, and Arrow handoff parity;
+- row, batch, and Arrow batch parity;
 - property tests for hedge benefit and aggregation behavior;
 - regulatory crosswalk entries under `docs/regulatory/crosswalk/frtb-cva.yml`.
 

@@ -46,7 +46,7 @@ batch decision-vectorization work:
 | Batch serialize | 0.662 seconds |
 | Batch calculate throughput | 28,393 positions/second |
 | Arrow table build | 0.052 seconds |
-| Arrow handoff build/validate/hash | 30.787 seconds |
+| Arrow batch build/validate/hash | 30.787 seconds |
 | Arrow calculate | 3.820 seconds |
 | Arrow calculate throughput | 26,177 positions/second |
 | Peak traced memory | 847,075,379 bytes |
@@ -62,7 +62,7 @@ batch decision-vectorization work:
 | Input hash | `fb63ed0fb27d0134c3ad9812da579b375bfc10c63520a91a550bf101943d8dbf` |
 
 The column-batch payload hash matches the row path because the benchmark
-provides the same lineage source-column map. The Arrow handoff has a distinct
+provides the same lineage source-column map. The Arrow batch has a distinct
 payload hash because the flat handoff does not carry that tuple-valued lineage
 map, but it preserves capital, line ordering, and zero accepted-row dataclass
 materialization.

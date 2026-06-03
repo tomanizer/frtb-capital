@@ -145,7 +145,7 @@ def build_rrao_batch_from_positions(
     Build an RRAO batch from existing canonical position rows.
 
     This compatibility bridge is for callers that already hold dataclasses.
-    High-volume adapters should build from Arrow handoffs or columns.
+    High-volume adapters should build from Arrow batches or columns.
     """
 
     validated = validate_rrao_positions(positions)

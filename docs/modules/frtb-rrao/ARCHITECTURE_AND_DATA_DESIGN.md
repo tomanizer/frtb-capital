@@ -34,7 +34,7 @@ top-of-house aggregation.
 | `capital.py` | Weighted notional line add-ons, subtotals, and total RRAO helpers. |
 | `scaffold.py` | Public `calculate_rrao_capital` entry point, package metadata, supported-profile result assembly, and proposed-rule warnings. |
 | `batch.py` | NumPy-backed batch validation, hashing, and calculation for high-volume canonical columns. |
-| `arrow_handoff.py` | Arrow tabular handoff normalisation under ADR 0023; kernels remain outside the Arrow expression layer. |
+| `arrow_batch.py` | Arrow tabular handoff normalisation under ADR 0023; kernels remain outside the Arrow expression layer. |
 | `audit.py` | Deterministic JSON-compatible serialization, profile/input hashes, and reconciliation. |
 | `allocation.py` | Additive line, desk, legal-entity, and evidence-type allocation reports. |
 | `crif.py` | Optional CRIF/FNet-to-canonical mapping. Not imported by kernels. |

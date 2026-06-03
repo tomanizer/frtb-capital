@@ -69,7 +69,7 @@ Shared primitives used by every capital component:
   package-status primitives.
 - `UnsupportedRegulatoryFeatureError` and
   `NotImplementedCapitalComponentError`.
-- Arrow-backed normalized tabular handoff primitives in `frtb_common.handoff`,
+- Arrow-backed normalized tabular handoff primitives in `frtb_common.arrow_table`,
   including column specs, adapter diagnostics, null/chunk/dictionary policies,
   accepted/rejected tables, row id validation, sorting helpers, and stable
   content/handoff hashes.
@@ -116,7 +116,7 @@ Status: partial runtime. GIRR delta/vega, FX/equity/commodity/CSR delta/vega,
 and row-wise curvature capital are implemented under BASEL_MAR21. Public
 high-volume Arrow/batch capital entrypoints cover delta and GIRR vega; non-GIRR
 vega and curvature capital remain row-wise. GIRR curvature has a validation-only
-Arrow handoff. Public entry point: `calculate_sbm_capital`. Unsupported paths
+Arrow batch. Public entry point: `calculate_sbm_capital`. Unsupported paths
 fail closed; no silent zero-capital placeholders.
 
 ### `frtb-drc` — Default Risk Charge
@@ -167,7 +167,7 @@ validates shared `frtb_common.ComponentCapitalSummary` inputs for SBM, DRC, and
 RRAO, enforces ADR 0022 jurisdiction-family consistency plus calculation-date
 and base-currency consistency, then returns the additive SA result. It can also
 record non-IMA-eligible desks as routed to the SA fallback stack from structural
-eligibility signals. `recognise_cva_result` prepares a CVA result summary for
+eligibility signals. `recognise_cva_summary` prepares a CVA result summary for
 future top-of-house aggregation. Runtime source does not import sibling capital
 packages or private batch internals.
 

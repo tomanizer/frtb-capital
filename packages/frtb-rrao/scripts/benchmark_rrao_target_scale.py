@@ -164,9 +164,9 @@ def run_benchmark(config: RraoBenchmarkConfig) -> dict[str, object]:
     arrow_table = pa.table(_arrow_columns_from_payload(columns))
     arrow_table_seconds = time.perf_counter() - arrow_table_started
 
-    arrow_handoff_started = time.perf_counter()
+    arrow_batch_started = time.perf_counter()
     arrow_batch = build_rrao_batch_from_arrow(normalize_rrao_arrow_table(arrow_table))
-    arrow_handoff_seconds = time.perf_counter() - arrow_handoff_started
+    arrow_batch_seconds = time.perf_counter() - arrow_batch_started
 
     arrow_calculate_started = time.perf_counter()
     arrow_calculation = calculate_rrao_capital_from_batch(
@@ -213,7 +213,7 @@ def run_benchmark(config: RraoBenchmarkConfig) -> dict[str, object]:
             if batch_calculate_seconds
             else 0.0,
             "arrow_table_seconds": arrow_table_seconds,
-            "arrow_handoff_seconds": arrow_handoff_seconds,
+            "arrow_batch_seconds": arrow_batch_seconds,
             "arrow_calculate_seconds": arrow_calculate_seconds,
             "arrow_positions_per_second": config.positions / arrow_calculate_seconds
             if arrow_calculate_seconds

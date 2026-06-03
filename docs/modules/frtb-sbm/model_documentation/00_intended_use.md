@@ -14,7 +14,7 @@ belongs in `frtb-orchestration`.
 ## Supported Scope
 
 The current partial runtime supports `BASEL_MAR21` delta, vega, and row-wise,
-batch, and Arrow handoff curvature paths for:
+batch, and Arrow batch curvature paths for:
 
 - GIRR;
 - FX;

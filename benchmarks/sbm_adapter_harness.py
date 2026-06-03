@@ -1,4 +1,4 @@
-"""Benchmark migrated SBM row, Arrow handoff, and package batch paths."""
+"""Benchmark migrated SBM row, Arrow batch, and package batch paths."""
 
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ from frtb_sbm import (
     validate_curvature_sensitivities,
 )
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     build_commodity_curvature_batch_from_arrow,
     build_commodity_delta_batch_from_arrow,
     build_commodity_vega_batch_from_arrow,
@@ -273,7 +273,7 @@ def _run_capital_case(spec: CapitalPathSpec, *, row_count: int) -> dict[str, obj
             "accepted_row_dataclasses_avoided": True,
             "timings_seconds": {
                 "synthetic_arrow_table_construction": table_seconds,
-                "handoff_normalization": normalize_seconds,
+                "arrow_normalization": normalize_seconds,
                 "batch_construction": batch_seconds,
                 "weighting_factor_grid_aggregation_and_result": batch_compute_seconds,
                 "audit_result_materialization": batch_audit_seconds,
@@ -350,7 +350,7 @@ def _run_curvature_validation_case(*, row_count: int) -> dict[str, object]:
             "accepted_row_dataclasses_avoided": True,
             "timings_seconds": {
                 "synthetic_arrow_table_construction": table_seconds,
-                "handoff_normalization": normalize_seconds,
+                "arrow_normalization": normalize_seconds,
                 "batch_construction": batch_seconds,
                 "curvature_branch_selection": batch_branch_seconds,
             },
@@ -624,7 +624,7 @@ def _summary(
         ingestion_seconds += _sum_timing(arrow_timings, ("synthetic_arrow_table_construction",))
         validation_seconds += _sum_timing(
             arrow_timings,
-            ("handoff_normalization", "batch_construction"),
+            ("arrow_normalization", "batch_construction"),
         )
         capital_compute_seconds += _sum_timing(
             arrow_timings,

@@ -28,7 +28,7 @@ Python, NumPy, or benchmark dimensions change.
 
 ## FRTB-IMA Arrow Handoffs
 
-Run the IMA Arrow handoff benchmark from the workspace root:
+Run the IMA Arrow batch benchmark from the workspace root:
 
 ```bash
 make ima-arrow-handoff-benchmark
@@ -94,7 +94,7 @@ dataframe expression layers.
 ## FRTB-DRC Arrow Batch Triage
 
 `frtb-drc-arrow-batch-triage.md` documents the DRC data-shape and hotspot
-assessment for the package-owned Arrow handoff -> NumPy batch -> kernel path.
+assessment for the package-owned Arrow batch -> NumPy batch -> kernel path.
 It now covers non-securitisation, securitisation non-CTP, and CTP fast paths,
 and explains why DRC keeps regulatory netting inside package NumPy code instead
 of moving regulatory calculations into a dataframe expression layer.
@@ -106,7 +106,7 @@ make drc-benchmark
 ```
 
 The command writes `dist/benchmarks/frtb-drc-batch-arrow.json` and compares
-row-compatible `DrcPosition` processing with class-specific Arrow handoff ->
+row-compatible `DrcPosition` processing with class-specific Arrow batch ->
 `DrcPositionBatch` paths for deterministic synthetic non-securitisation,
 securitisation non-CTP, and CTP inputs.
 The default PR-scale benchmark uses 500 rows and 100 issuer/group identities;
@@ -116,7 +116,7 @@ larger exploratory runs can pass `--row-count` and `--issuer-count` directly to
 ## FRTB-RRAO Arrow Batch Triage
 
 `frtb-rrao-arrow-batch-triage.md` documents the RRAO residual-risk data-shape
-and hotspot assessment for the package-owned Arrow handoff -> NumPy batch ->
+and hotspot assessment for the package-owned Arrow batch -> NumPy batch ->
 line-kernel path. It covers flat evidence columns for exotic, other residual
 risk, supervisor-directed, exclusion, back-to-back, and investment-fund rows,
 and it defines opaque nested payloads as fail-closed inputs.
@@ -136,6 +136,6 @@ make cva-benchmark
 ```
 
 The command writes `dist/benchmarks/frtb-cva-target-scale.json` and covers BA-CVA
-counterparty/netting-set Arrow handoffs plus SA-CVA sensitivity Arrow handoffs.
+counterparty/netting-set Arrow batches plus SA-CVA sensitivity Arrow batches.
 It exposes parse, adapt, build, calculate, memory, accepted-row dataclass, and
 row-vs-Arrow payload-hash equivalence metrics for budget checks.
