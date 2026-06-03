@@ -222,15 +222,16 @@ babysitting agent as the “external” reviewer.
 
 Skip this fallback when `BABYSITTER=cursor`.
 
-Post a **new top-level** PR comment (not a reply in a thread). Official triggers:
+Post a **new top-level** PR comment (not a reply in a thread):
 
 ```bash
-gh pr comment $PR --body "cursor review"
+gh pr comment $PR --body "@cursoragent review"
 ```
 
-Also accepted: `bugbot run`. Do **not** rely on `@cursoragent` unless your org
-documents that alias; `cursor review` is the canonical Bugbot trigger per
-[Cursor Bugbot docs](https://cursor.com/docs/bugbot).
+Use exactly that text for this repository. If Bugbot does not respond within the
+poll window, retry once with `cursor review` or `bugbot run` (alternate triggers
+in [Cursor Bugbot docs](https://cursor.com/docs/bugbot)) before moving to
+Fallback 2.
 
 Poll up to **45 minutes** for:
 
