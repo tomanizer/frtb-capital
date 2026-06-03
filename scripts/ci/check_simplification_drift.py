@@ -151,7 +151,18 @@ def _scan_files(repo_root: Path, scan_paths: tuple[Path, ...]) -> tuple[Path, ..
 
 
 def _findings_in_file(path: Path, repo_root: Path) -> tuple[SimplificationFinding, ...]:
-    source = path.read_text(encoding="utf-8")
+    try:
+        source = path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, OSError) as exc:
+        return (
+            SimplificationFinding(
+                path=path,
+                line_number=1,
+                code="SIMPLIFICATION_AUDIT_READ_ERROR",
+                subject=path.name,
+                reason=str(exc),
+            ),
+        )
     lines = source.splitlines()
     try:
         tree = ast.parse(source, filename=str(path))
@@ -337,7 +348,11 @@ def _batch_alias_findings(
     aliases: ImportAliases,
     lines: list[str],
 ) -> tuple[SimplificationFinding, ...]:
-    if "frtb_common.batch_arrays" not in aliases.module_aliases.values():
+    has_common_helpers = "frtb_common.batch_arrays" in aliases.module_aliases.values() or any(
+        module == "frtb_common.batch_arrays"
+        for module, _helper in aliases.function_aliases.values()
+    )
+    if not has_common_helpers:
         return ()
 
     findings: list[SimplificationFinding] = []
@@ -370,8 +385,11 @@ def _import_aliases(tree: ast.Module) -> ImportAliases:
         if isinstance(node, ast.Import):
             for alias in node.names:
                 module_name = alias.name
-                local_name = alias.asname or module_name.split(".", maxsplit=1)[0]
-                module_aliases[local_name] = module_name
+                if alias.asname:
+                    module_aliases[alias.asname] = module_name
+                else:
+                    top_level = module_name.split(".", maxsplit=1)[0]
+                    module_aliases[top_level] = top_level
         elif isinstance(node, ast.ImportFrom):
             module_name = _resolved_module(node)
             if module_name is None:
@@ -431,19 +449,23 @@ def _function_body_without_docstring(node: ast.FunctionDef) -> list[ast.stmt]:
 
 
 def _forwards_only_unmodified_parameters(call: ast.Call, node: ast.FunctionDef) -> bool:
+    args = node.args
+    positional_parameters = [arg.arg for arg in (*args.posonlyargs, *args.args)]
     parameter_names = _parameter_names(node)
     forwarded: list[str] = []
-    for arg in call.args:
-        if not isinstance(arg, ast.Name) or arg.id not in parameter_names:
+    for index, arg in enumerate(call.args):
+        if not isinstance(arg, ast.Name):
+            return False
+        if index >= len(positional_parameters) or arg.id != positional_parameters[index]:
             return False
         forwarded.append(arg.id)
     for keyword in call.keywords:
-        if keyword.arg is None:
+        if keyword.arg is None or not isinstance(keyword.value, ast.Name):
             return False
-        if not isinstance(keyword.value, ast.Name) or keyword.value.id not in parameter_names:
+        if keyword.arg != keyword.value.id:
             return False
-        forwarded.append(keyword.value.id)
-    return bool(forwarded) and len(set(forwarded)) == len(forwarded)
+        forwarded.append(keyword.arg)
+    return bool(forwarded) and set(forwarded) == parameter_names
 
 
 def _parameter_names(node: ast.FunctionDef) -> frozenset[str]:
@@ -469,8 +491,8 @@ def _assigned_name(node: ast.AST) -> str | None:
 
 
 def _is_suppressed(lines: list[str], node: ast.AST) -> bool:
-    start = getattr(node, "lineno", 1)
-    end = getattr(node, "end_lineno", start)
+    start = getattr(node, "lineno", 1) or 1
+    end = getattr(node, "end_lineno", None) or start
     return any(
         SUPPRESSION_MARKER in line and _suppression_reason(line) is not None
         for line in lines[start - 1 : end]
