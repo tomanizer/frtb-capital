@@ -1,4 +1,4 @@
-# 32. Arrow/batch and component-summary public vocabulary
+# 33. Arrow/batch and component-summary public vocabulary
 
 Date: 2026-06-03
 
