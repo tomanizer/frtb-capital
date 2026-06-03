@@ -144,6 +144,20 @@ def _register_capital_tree_routes(
         return {"nodes": _to_jsonable(result_store.capital_tree(run_id))}
 
     @app.get(
+        "/runs/{run_id}/top-contributors",
+        tags=["Attribution"],
+        summary="Return top persisted attribution contributors",
+    )
+    def top_contributors(run_id: str, limit: int = 10) -> dict[str, object]:
+        if limit < 1 or limit > 1000:
+            raise http_exception_type(  # type: ignore[call-arg]
+                status_code=422,
+                detail="limit must be between 1 and 1000",
+            )
+        _require_run(result_store, run_id, http_exception_type)
+        return {"contributors": _to_jsonable(result_store.top_contributors(run_id, limit=limit))}
+
+    @app.get(
         "/runs/{run_id}/nodes/{node_id}",
         tags=["Capital Tree"],
         summary="Return one capital tree node",
@@ -301,9 +315,7 @@ def _register_run_group_routes(
         return {
             "run_group_id": run_group_id,
             "runs": [_run_payload(result_store, run) for run in runs],
-            "capital_summary": {
-                run.run_id: _to_jsonable(result_store.capital_summary(run.run_id)) for run in runs
-            },
+            "regime_comparison": _to_jsonable(result_store.regime_comparison(run_group_id)),
             "component_breakdown": {
                 run.run_id: _to_jsonable(result_store.component_breakdown(run.run_id))
                 for run in runs

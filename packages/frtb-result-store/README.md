@@ -57,6 +57,19 @@ frtb-result-store validate-store <root>
 `parquet/artifacts/`, and `checksums.json`. Import, approval, and lifecycle
 workflow commands are intentionally not provided.
 
+First-pass persisted marts are generated for `capital_summary`, `capital_tree`,
+`top_contributors`, `movement_summary`, `regime_comparison`,
+`component_breakdown`, `ima_desk_dashboard`, `sbm_bucket_ladder`,
+`drc_issuer_contributors`, `cva_counterparty_contributors`, and
+`rrao_exposure_summary`. The package test
+`test_representative_dashboard_query_latency_fixture` records representative
+latency envelopes for local synthetic data: summary, capital tree, and
+top-contributor mart reads are expected below 250 ms, while artifact first-page
+drillthrough is expected below 1000 ms. These are local first-pass envelopes,
+not production SLOs; large object-store artifacts, cold DuckDB extension loads,
+remote storage latency, and analyst concurrency are outside the benchmark
+fixture.
+
 The FastAPI service is created with `create_result_store_app(...)`. It exposes
 FRTB-specific read endpoints for runs, run groups, capital trees, measures,
 artifacts, attribution, lineage, events, movements, and regime comparison. It
