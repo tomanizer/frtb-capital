@@ -156,10 +156,9 @@ uv run python scripts/export_handoff_schema.py \
 
 ## Validate before calculate
 
-The client validation harness is tracked in
-[#428](https://github.com/tomanizer/frtb-capital/issues/428). Its default mode
-normalizes handoffs and writes accepted rows, rejected rows, diagnostics, and a
-summary with stable hashes without calling capital calculators.
+The client validation harness normalizes handoffs and writes accepted rows,
+rejected rows, diagnostics, and a summary with stable hashes without calling
+capital calculators.
 
 Expected usage:
 
@@ -170,6 +169,18 @@ uv run python scripts/validate_client_handoff.py \
   --input path/to/drc_nonsec.parquet \
   --output-dir dist/client-validation/drc_nonsec/
 ```
+
+Outputs:
+
+| File | Content |
+| --- | --- |
+| `accepted.parquet` | Canonical accepted handoff rows. |
+| `rejected.parquet` | Rejected input rows when any are present. |
+| `diagnostics.json` | Sorted `AdapterDiagnostic.as_dict()` records or validation errors. |
+| `summary.json` | Row counts, source hash, handoff hash, package/version, and UTC timestamp. |
+
+Exit code is `0` when there are no error diagnostics and no rejected rows, and
+non-zero otherwise.
 
 ## Reference data and manifests
 
