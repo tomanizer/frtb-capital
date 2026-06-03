@@ -34,7 +34,8 @@ capital breakdowns.
 3. Non-securitisation DRC calculation path.
 4. Securitisation non-CTP DRC calculation path.
 5. Correlation trading portfolio DRC calculation path.
-6. Regime policy layer for Basel, U.S. NPR 2.0, CRR3, and PRA placeholders.
+6. Regime policy layer for Basel, U.S. NPR 2.0, CRR3, and PRA identities,
+   with unsupported comparison-profile paths failing closed until mapped.
 7. Deterministic audit records and Markdown/JSON-ready outputs.
 8. Synthetic fixtures covering long/short offsetting, LGD categories, defaulted
    positions, securitisation tranche cases, and CTP aggregation.
@@ -123,5 +124,6 @@ complete.
   until implemented with profile-specific citations and tests.
 - U.S. NPR 2.0 is proposed-rule material. Label all U.S. outputs as proposed
   and keep Basel defaults separately selectable.
-- The reference implementation is reconstructed from video and has placeholder
-  markers. Use it for naming and workflow inspiration only.
+- The reference implementation is reconstructed from video and contains
+  non-authoritative status markers. Use it for naming and workflow inspiration
+  only; regulatory requirements remain sourced from cited rule text.

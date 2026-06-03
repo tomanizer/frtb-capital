@@ -10,7 +10,7 @@ COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_rrao
 MUTATION_DIST := dist/mutation
 
 .PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
-.PHONY: test test-no-cov test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording
+.PHONY: test test-no-cov test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording docs-staleness
 .PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
 .PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
@@ -54,12 +54,15 @@ test-partial-runtime-coverage:
 	uv run python scripts/ci/check_module_coverage.py dist/coverage/partial-runtime.json \
 		--maturity partial_runtime --report-only
 
-docs-check: regulatory-corpus regulatory-wording package-status-dashboard
+docs-check: regulatory-corpus regulatory-wording docs-staleness package-status-dashboard
 	python3 scripts/ci/check_markdown_links.py
 	python3 scripts/ci/check_requirement_yaml.py
 
 regulatory-wording:
 	python3 scripts/ci/check_regulatory_wording.py
+
+docs-staleness:
+	python3 scripts/ci/check_docs_staleness.py
 
 package-status-dashboard:
 	python3 scripts/ci/generate_package_status_dashboard.py --check
@@ -127,7 +130,7 @@ drift-reports: drift-report changed-code-report test-value-report dead-code-repo
 drift-baseline:
 	uv run python scripts/ci/check_code_drift.py --update-baseline
 
-quality-control: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check drift-reports
+quality-control: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift docs-staleness import-smoke maturity-check drift-reports
 
 regulatory-corpus:
 	python3 tools/regulatory/lint_regulatory_corpus.py
