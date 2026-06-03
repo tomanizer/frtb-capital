@@ -42,13 +42,19 @@ from frtb_result_store.model import (
     HierarchyDefinition,
     HierarchyLevel,
     HierarchyNode,
+    InputSnapshotManifest,
     LineageRef,
     NodeType,
     ResultBundle,
+    ResultEvent,
+    ResultEventSeverity,
+    ResultEventType,
     ResultStoreContractError,
     RunStatus,
     RunStatusEvent,
+    RunTelemetry,
     StorageBackend,
+    TelemetryPhase,
     canonical_run_group_identity_payload,
     canonical_run_identity_payload,
     generate_run_group_id,
@@ -58,6 +64,7 @@ from frtb_result_store.model import (
 if TYPE_CHECKING:
     from frtb_result_store.io import (
         DuckDbParquetResultStore,
+        ResultStoreCompatibilityError,
         ResultStoreConfig,
         ResultStoreWriteError,
     )
@@ -90,16 +97,23 @@ __all__ = [
     "HierarchyDefinition",
     "HierarchyLevel",
     "HierarchyNode",
+    "InputSnapshotManifest",
     "LineageRef",
     "NodeType",
     "RequiredArtifactExpectation",
     "ResultBundle",
+    "ResultEvent",
+    "ResultEventSeverity",
+    "ResultEventType",
+    "ResultStoreCompatibilityError",
     "ResultStoreConfig",
     "ResultStoreContractError",
     "ResultStoreWriteError",
     "RunStatus",
     "RunStatusEvent",
+    "RunTelemetry",
     "StorageBackend",
+    "TelemetryPhase",
     "__version__",
     "artifact_schema_fingerprint",
     "artifact_schema_for",
@@ -120,6 +134,7 @@ __all__ = [
 _BACKEND_EXPORTS = frozenset(
     {
         "DuckDbParquetResultStore",
+        "ResultStoreCompatibilityError",
         "ResultStoreConfig",
         "ResultStoreWriteError",
     }
@@ -140,6 +155,7 @@ def _load_backend_exports() -> dict[str, object]:
     try:
         from frtb_result_store.io import (
             DuckDbParquetResultStore,
+            ResultStoreCompatibilityError,
             ResultStoreConfig,
             ResultStoreWriteError,
         )
@@ -152,6 +168,7 @@ def _load_backend_exports() -> dict[str, object]:
         raise
     return {
         "DuckDbParquetResultStore": DuckDbParquetResultStore,
+        "ResultStoreCompatibilityError": ResultStoreCompatibilityError,
         "ResultStoreConfig": ResultStoreConfig,
         "ResultStoreWriteError": ResultStoreWriteError,
     }

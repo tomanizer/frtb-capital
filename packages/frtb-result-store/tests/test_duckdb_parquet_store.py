@@ -24,16 +24,23 @@ from frtb_result_store import (
     DuckDbParquetResultStore,
     EdgeType,
     FrtbComponent,
+    InputSnapshotManifest,
     LineageRef,
     NodeType,
     RequiredArtifactExpectation,
     ResultBundle,
+    ResultEvent,
+    ResultEventSeverity,
+    ResultEventType,
+    ResultStoreCompatibilityError,
     ResultStoreConfig,
     ResultStoreContractError,
     ResultStoreWriteError,
     RunStatus,
     RunStatusEvent,
+    RunTelemetry,
     StorageBackend,
+    TelemetryPhase,
     artifact_schema_for,
     build_hierarchy_nodes,
     build_standard_capital_graph,
@@ -555,10 +562,96 @@ def test_malformed_stored_values_raise_contract_errors() -> None:
         _hierarchy_path_item_from_mapping({"level_name": "book"})
 
 
+def test_store_persists_input_events_telemetry_and_manifest_fingerprints(
+    tmp_path: Path,
+) -> None:
+    run = _run_with_id("run-with-events")
+    input_manifest = InputSnapshotManifest(
+        run_id=run.run_id,
+        input_snapshot_id=run.input_snapshot_id,
+        input_snapshot_hash="input-hash-001",
+        as_of_date=run.as_of_date,
+        source_system="risk-engine",
+        handoff_key="ima.pnl",
+        row_count=10,
+        accepted_row_count=9,
+        rejected_row_count=1,
+        source_uri="s3://inputs/snapshot-001.parquet",
+        source_hash="source-hash-001",
+        schema_fingerprint="input-schema-001",
+    )
+    event = ResultEvent(
+        event_id="event-001",
+        run_id=run.run_id,
+        event_time=run.created_at,
+        severity=ResultEventSeverity.ERROR,
+        event_type=ResultEventType.DATA_QUALITY,
+        message="Rejected input row count is non-zero",
+        component=FrtbComponent.IMA,
+    )
+    export_telemetry = RunTelemetry(
+        run_id=run.run_id,
+        phase=TelemetryPhase.EXPORT,
+        duration_ms=12.5,
+        created_at=run.created_at,
+        row_count=2,
+        byte_count=128,
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(
+        _bundle(
+            run,
+            input_manifests=(input_manifest,),
+            events=(event,),
+            telemetry=(export_telemetry,),
+        )
+    )
+
+    assert store.input_snapshot_manifests(run.run_id) == (input_manifest,)
+    assert store.result_events(run.run_id) == (event,)
+    assert store.suggested_status(run.run_id) is RunStatus.REJECTED
+    telemetry_phases = {row.phase for row in store.run_telemetry(run.run_id)}
+    assert {
+        TelemetryPhase.ARTIFACT_WRITE,
+        TelemetryPhase.BASE_TABLE_WRITE,
+        TelemetryPhase.MART_GENERATION,
+        TelemetryPhase.CATALOG_REFRESH,
+        TelemetryPhase.EXPORT,
+    } <= telemetry_phases
+    manifest = json.loads(store._manifest_path(run.run_id).read_text(encoding="utf-8"))
+    assert manifest["result_store_schema_version"] == 1
+    assert manifest["writer_version"]
+    assert "runs" in manifest["base_table_schema_fingerprints"]
+    assert manifest["mart_schema_fingerprints"] == {}
+
+
+def test_incompatible_run_fails_closed_without_blocking_other_runs(tmp_path: Path) -> None:
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    incompatible_run = _run_with_id("run-incompatible")
+    compatible_run = _run_with_id("run-compatible")
+    store.write_bundle(_bundle(incompatible_run))
+    store.write_bundle(_bundle(compatible_run))
+    manifest_path = store._manifest_path(incompatible_run.run_id)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["result_store_schema_version"] = 999
+    manifest_path.write_text(json.dumps(manifest, sort_keys=True) + "\n", encoding="utf-8")
+
+    with pytest.raises(ResultStoreCompatibilityError, match="incompatible result-store run"):
+        store.get_run(incompatible_run.run_id)
+    with pytest.raises(ResultStoreCompatibilityError, match="incompatible result-store run"):
+        store.child_nodes(incompatible_run.run_id, "total")
+    assert store.get_run(compatible_run.run_id) == compatible_run
+    assert [run.run_id for run in store.list_runs()] == [compatible_run.run_id]
+
+
 def _bundle(
     run: CalculationRun | None = None,
     *,
     artifacts: tuple[ArtifactRef, ...] | None = None,
+    input_manifests: tuple[InputSnapshotManifest, ...] = (),
+    events: tuple[ResultEvent, ...] = (),
+    telemetry: tuple[RunTelemetry, ...] = (),
 ) -> ResultBundle:
     if run is None:
         run = _run_with_id("frtb/run/2026-06-03")
@@ -669,8 +762,11 @@ def _bundle(
         edges=edges,
         measures=measures,
         artifacts=artifacts,
+        input_manifests=input_manifests,
         lineage=lineage,
         attributions=attributions,
+        events=events,
+        telemetry=telemetry,
     )
 
 
