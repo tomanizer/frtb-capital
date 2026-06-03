@@ -29,6 +29,9 @@ from frtb_result_store.model import (
     CapitalNode,
     EdgeType,
     FrtbComponent,
+    HierarchyDefinition,
+    HierarchyLevel,
+    HierarchyNode,
     LineageRef,
     NodeType,
     ResultBundle,
@@ -48,6 +51,8 @@ __all__ = [
 RESULT_STORE_SCHEMA_VERSION = 1
 RUN_TABLE_NAMES = (
     "runs",
+    "hierarchy_definitions",
+    "hierarchy_nodes",
     "capital_nodes",
     "capital_edges",
     "capital_measures",
@@ -210,6 +215,43 @@ class DuckDbParquetResultStore:
             (run_id,),
         )
         return None if not rows else _run_from_row(rows[0])
+
+    def hierarchy_definition(self, run_id: str) -> HierarchyDefinition | None:
+        """Return the hierarchy definition stored with a run, when present."""
+
+        if not self.run_exists(run_id):
+            return None
+        rows = self._fetchall(
+            "hierarchy_definitions",
+            """
+            SELECT run_id, hierarchy_id, hierarchy_version, hierarchy_name, leaf_level,
+                   levels_json, created_at, metadata_json
+            FROM {table}
+            WHERE run_id = ?
+            ORDER BY hierarchy_id, hierarchy_version
+            """,
+            (run_id,),
+        )
+        return None if not rows else _hierarchy_definition_from_row(rows[0])
+
+    def hierarchy_nodes(self, run_id: str) -> tuple[HierarchyNode, ...]:
+        """Return generated hierarchy nodes stored with a run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetchall(
+            "hierarchy_nodes",
+            """
+            SELECT run_id, hierarchy_id, hierarchy_version, hierarchy_node_id,
+                   parent_hierarchy_node_id, level_name, level_order, business_key,
+                   label, path_json, metadata_json
+            FROM {table}
+            WHERE run_id = ?
+            ORDER BY level_order, hierarchy_node_id
+            """,
+            (run_id,),
+        )
+        return tuple(_hierarchy_node_from_row(row) for row in rows)
 
     def capital_tree(self, run_id: str) -> tuple[CapitalNode, ...]:
         """Return all capital graph nodes for one run."""
@@ -575,6 +617,14 @@ class DuckDbParquetResultStore:
 def _rows_for_bundle(bundle: ResultBundle) -> dict[str, list[dict[str, object]]]:
     return {
         "runs": [_run_row(bundle.run)],
+        "hierarchy_definitions": (
+            []
+            if bundle.hierarchy_definition is None
+            else [_hierarchy_definition_row(bundle.run.run_id, bundle.hierarchy_definition)]
+        ),
+        "hierarchy_nodes": [
+            _hierarchy_node_row(bundle.run.run_id, node) for node in bundle.hierarchy_nodes
+        ],
         "capital_nodes": [_node_row(node) for node in bundle.nodes],
         "capital_edges": [_edge_row(edge) for edge in bundle.edges],
         "capital_measures": [_measure_row(measure) for measure in bundle.measures],
@@ -583,6 +633,52 @@ def _rows_for_bundle(bundle: ResultBundle) -> dict[str, list[dict[str, object]]]
         "capital_attributions": [
             _attribution_row(attribution) for attribution in bundle.attributions
         ],
+    }
+
+
+def _hierarchy_definition_row(
+    run_id: str,
+    definition: HierarchyDefinition,
+) -> dict[str, object]:
+    return {
+        "run_id": run_id,
+        "hierarchy_id": definition.hierarchy_id,
+        "hierarchy_version": definition.hierarchy_version,
+        "hierarchy_name": definition.hierarchy_name,
+        "leaf_level": definition.leaf_level,
+        "levels_json": stable_json_dumps(
+            [
+                {
+                    "level_name": level.level_name,
+                    "dimension": level.dimension,
+                    "level_order": level.level_order,
+                }
+                for level in definition.levels
+            ]
+        ),
+        "created_at": definition.created_at.isoformat(),
+        "metadata_json": _metadata_json(definition.metadata),
+    }
+
+
+def _hierarchy_node_row(run_id: str, node: HierarchyNode) -> dict[str, object]:
+    return {
+        "run_id": run_id,
+        "hierarchy_id": node.hierarchy_id,
+        "hierarchy_version": node.hierarchy_version,
+        "hierarchy_node_id": node.hierarchy_node_id,
+        "parent_hierarchy_node_id": node.parent_hierarchy_node_id,
+        "level_name": node.level_name,
+        "level_order": node.level_order,
+        "business_key": node.business_key,
+        "label": node.label,
+        "path_json": stable_json_dumps(
+            [
+                {"level_name": level_name, "business_key": business_key}
+                for level_name, business_key in node.path
+            ]
+        ),
+        "metadata_json": _metadata_json(node.metadata),
     }
 
 
@@ -746,6 +842,61 @@ def _run_from_row(row: Sequence[object]) -> CalculationRun:
     )
 
 
+def _hierarchy_definition_from_row(row: Sequence[object]) -> HierarchyDefinition:
+    return HierarchyDefinition(
+        hierarchy_id=str(row[1]),
+        hierarchy_version=str(row[2]),
+        hierarchy_name=str(row[3]),
+        leaf_level=str(row[4]),
+        levels=tuple(_hierarchy_level_from_mapping(item) for item in _json_object_list(row[5])),
+        created_at=datetime.fromisoformat(str(row[6])),
+        metadata=_json_mapping(row[7]),
+    )
+
+
+def _hierarchy_node_from_row(row: Sequence[object]) -> HierarchyNode:
+    path = tuple(_hierarchy_path_item_from_mapping(item) for item in _json_object_list(row[9]))
+    return HierarchyNode(
+        hierarchy_id=str(row[1]),
+        hierarchy_version=str(row[2]),
+        hierarchy_node_id=str(row[3]),
+        parent_hierarchy_node_id=_optional_text(row[4]),
+        level_name=str(row[5]),
+        level_order=_int_value(row[6]),
+        business_key=str(row[7]),
+        label=str(row[8]),
+        path=path,
+        metadata=_json_mapping(row[10]),
+    )
+
+
+def _hierarchy_level_from_mapping(value: Mapping[str, object]) -> HierarchyLevel:
+    level_name = _required_mapping_value(value, "level_name", "hierarchy level")
+    dimension = _required_mapping_value(value, "dimension", "hierarchy level")
+    level_order = _required_mapping_value(value, "level_order", "hierarchy level")
+    return HierarchyLevel(
+        level_name=str(level_name),
+        dimension=str(dimension),
+        level_order=_int_value(level_order),
+    )
+
+
+def _hierarchy_path_item_from_mapping(value: Mapping[str, object]) -> tuple[str, str]:
+    level_name = _required_mapping_value(value, "level_name", "hierarchy node path")
+    business_key = _required_mapping_value(value, "business_key", "hierarchy node path")
+    return str(level_name), str(business_key)
+
+
+def _required_mapping_value(
+    value: Mapping[str, object],
+    key: str,
+    context: str,
+) -> object:
+    if key not in value:
+        raise ResultStoreContractError(f"missing key in {context}: {key}")
+    return value[key]
+
+
 def _node_from_row(row: Sequence[object]) -> CapitalNode:
     return CapitalNode(
         run_id=str(row[0]),
@@ -879,6 +1030,16 @@ def _json_text_tuple(value: object) -> tuple[str, ...]:
     return tuple(parsed)
 
 
+def _json_object_list(value: object) -> tuple[Mapping[str, object], ...]:
+    try:
+        parsed = json.loads(str(value))
+    except json.JSONDecodeError as exc:
+        raise ResultStoreContractError(f"malformed JSON object list: {exc}") from exc
+    if not isinstance(parsed, list) or not all(isinstance(item, dict) for item in parsed):
+        raise ResultStoreContractError("JSON field must decode to a list of objects")
+    return tuple(parsed)
+
+
 def _optional_text(value: object) -> str | None:
     if value is None:
         return None
@@ -955,6 +1116,33 @@ _TABLE_SCHEMAS: dict[str, Any] = {
             ("created_at", pa.string()),
             ("identity_payload_json", pa.string()),
             ("run_group_identity_payload_json", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "hierarchy_definitions": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("hierarchy_id", pa.string()),
+            ("hierarchy_version", pa.string()),
+            ("hierarchy_name", pa.string()),
+            ("leaf_level", pa.string()),
+            ("levels_json", pa.string()),
+            ("created_at", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "hierarchy_nodes": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("hierarchy_id", pa.string()),
+            ("hierarchy_version", pa.string()),
+            ("hierarchy_node_id", pa.string()),
+            ("parent_hierarchy_node_id", pa.string()),
+            ("level_name", pa.string()),
+            ("level_order", pa.int64()),
+            ("business_key", pa.string()),
+            ("label", pa.string()),
+            ("path_json", pa.string()),
             ("metadata_json", pa.string()),
         ]
     ),

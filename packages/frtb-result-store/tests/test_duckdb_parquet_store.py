@@ -15,6 +15,8 @@ from frtb_result_store import (
     CapitalEdge,
     CapitalMeasure,
     CapitalNode,
+    CapitalNodeFamily,
+    CapitalNodeSpec,
     DuckDbParquetResultStore,
     EdgeType,
     FrtbComponent,
@@ -27,10 +29,20 @@ from frtb_result_store import (
     RunStatus,
     RunStatusEvent,
     StorageBackend,
+    build_hierarchy_nodes,
+    build_standard_capital_graph,
     canonical_run_group_identity_payload,
+    default_hierarchy_definition,
     generate_run_group_id,
 )
-from frtb_result_store.io import _float_value, _int_value, _json_mapping, _json_text_tuple
+from frtb_result_store.io import (
+    _float_value,
+    _hierarchy_level_from_mapping,
+    _hierarchy_path_item_from_mapping,
+    _int_value,
+    _json_mapping,
+    _json_text_tuple,
+)
 
 
 def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> None:
@@ -68,6 +80,75 @@ def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> 
     )
     assert manifest_path.exists()
     assert (tmp_path / "result-store/catalog.duckdb").exists()
+
+
+def test_store_round_trips_hierarchy_definition_nodes_and_standard_graph(
+    tmp_path: Path,
+) -> None:
+    run = _run_with_id("run-with-hierarchy")
+    definition = default_hierarchy_definition(created_at=run.created_at)
+    hierarchy_nodes = build_hierarchy_nodes(
+        definition,
+        {
+            "firm_id": "Firm",
+            "legal_entity_id": "LE",
+            "business_line_id": "Markets",
+            "desk_id": "Rates",
+            "portfolio_id": "Options",
+            "book_id": "Book:USD",
+        },
+    )
+    leaf_id = hierarchy_nodes[-1].hierarchy_node_id
+    nodes, edges = build_standard_capital_graph(
+        run_id=run.run_id,
+        hierarchy_leaf_node_id=leaf_id,
+        hierarchy_leaf_path=hierarchy_nodes[-1].path,
+        specs=(
+            CapitalNodeSpec(
+                node_family=CapitalNodeFamily.COMPONENT,
+                component=FrtbComponent.SBM,
+                label="SBM",
+                sort_key=0,
+            ),
+            CapitalNodeSpec(
+                node_family=CapitalNodeFamily.RISK_CLASS,
+                component=FrtbComponent.SBM,
+                risk_class="GIRR",
+                risk_measure="DELTA",
+                label="GIRR delta",
+                sort_key=1,
+            ),
+            CapitalNodeSpec(
+                node_family=CapitalNodeFamily.BUCKET,
+                component=FrtbComponent.SBM,
+                risk_class="GIRR",
+                risk_measure="DELTA",
+                bucket="USD",
+                label="GIRR USD",
+                sort_key=2,
+            ),
+        ),
+    )
+    bundle = ResultBundle(
+        run=run,
+        hierarchy_definition=definition,
+        hierarchy_nodes=hierarchy_nodes,
+        nodes=nodes,
+        edges=edges,
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(bundle)
+
+    assert store.hierarchy_definition(run.run_id) == definition
+    assert store.hierarchy_nodes(run.run_id) == hierarchy_nodes
+    assert [node.node_id for node in store.child_nodes(run.run_id, leaf_id)] == [nodes[0].node_id]
+    assert [node.node_id for node in store.child_nodes(run.run_id, nodes[0].node_id)] == [
+        nodes[1].node_id
+    ]
+    assert [node.node_id for node in store.child_nodes(run.run_id, nodes[1].node_id)] == [
+        nodes[2].node_id
+    ]
 
 
 def test_store_persists_canonical_identity_payloads_and_status_history(tmp_path: Path) -> None:
@@ -203,6 +284,8 @@ def test_failed_manifest_write_rolls_back_moved_run_files(
     assert store.list_runs() == ()
     for table_name in (
         "runs",
+        "hierarchy_definitions",
+        "hierarchy_nodes",
         "capital_nodes",
         "capital_edges",
         "capital_measures",
@@ -270,6 +353,10 @@ def test_malformed_stored_values_raise_contract_errors() -> None:
         _float_value("not-a-number")
     with pytest.raises(ResultStoreContractError, match="invalid integer value"):
         _int_value("not-an-integer")
+    with pytest.raises(ResultStoreContractError, match="missing key in hierarchy level"):
+        _hierarchy_level_from_mapping({"level_name": "book", "level_order": 5})
+    with pytest.raises(ResultStoreContractError, match="missing key in hierarchy node path"):
+        _hierarchy_path_item_from_mapping({"level_name": "book"})
 
 
 def _bundle(run: CalculationRun | None = None) -> ResultBundle:
