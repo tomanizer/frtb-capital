@@ -20,6 +20,21 @@ completeness, and professionalism. Optionally open a doc-fix PR.
 Read `.grok/skills/frtb-capital/SKILL.md`, `AGENTS.md`, and `CLAUDE.md` first.
 Documentation-only changes do not bump package versions (ADR 0015).
 
+## Cross-agent entrypoints
+
+This skill is the single source of truth. Other agents reach it via:
+
+| Agent | Entry |
+| --- | --- |
+| Grok | `/frtb-doc-audit` (this skill) |
+| Claude Code | `/frtb-doc-audit` → `.claude/commands/frtb-doc-audit.md` |
+| Codex | `AGENTS.md` → Documentation audits section |
+| Cursor | `.cursor/rules/frtb-capital.mdc` |
+| GitHub Copilot | `.github/copilot-instructions.md` |
+
+All agents use the same worktree policy; set `--agent` to match the active agent
+when creating a worktree (`codex`, `claude`, `cursor`, `copilot`, `grok`).
+
 ## Arguments
 
 Parse the user message:

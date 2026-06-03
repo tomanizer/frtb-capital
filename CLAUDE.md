@@ -134,6 +134,18 @@ When asked to babysit a pull request through CI and bot reviews, read and execut
 
 Or run `/frtb-ci-babysit` ([`.claude/commands/frtb-ci-babysit.md`](.claude/commands/frtb-ci-babysit.md)).
 
+## Documentation audits
+
+When asked to audit or align package documentation across the suite, read and
+execute:
+
+- [`.grok/skills/frtb-doc-audit/SKILL.md`](.grok/skills/frtb-doc-audit/SKILL.md)
+- [`.grok/skills/frtb-doc-audit/references/audit-checklist.md`](.grok/skills/frtb-doc-audit/references/audit-checklist.md)
+
+Or run the Claude command `/frtb-doc-audit` (wrapper:
+[`.claude/commands/frtb-doc-audit.md`](.claude/commands/frtb-doc-audit.md)).
+Use `make agent-new AGENT=claude TASK=<task-name>` when the worktree guard fails.
+
 ---
 
 ## Commands
