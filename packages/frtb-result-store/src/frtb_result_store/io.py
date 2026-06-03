@@ -55,6 +55,17 @@ from frtb_result_store.artifacts import (
     validate_artifact_ref_targets,
     validate_required_artifacts,
 )
+from frtb_result_store.mart_schemas import (
+    MART_NAMES,
+    MART_SCHEMAS,
+    mart_schema_fingerprint,
+)
+from frtb_result_store.marts import (
+    capital_summary_from_row,
+    capital_tree_mart_from_row,
+    component_breakdown_from_row,
+    mart_rows_for_bundle,
+)
 from frtb_result_store.model import (
     ArtifactRef,
     ArtifactType,
@@ -63,6 +74,9 @@ from frtb_result_store.model import (
     CapitalEdge,
     CapitalMeasure,
     CapitalNode,
+    CapitalSummaryRow,
+    CapitalTreeMartRow,
+    ComponentBreakdownRow,
     EdgeType,
     FrtbComponent,
     HierarchyDefinition,
@@ -230,14 +244,26 @@ class DuckDbParquetResultStore:
                 _arrow_table(status_rows, _TABLE_SCHEMAS["run_status_events"]),
                 staging_dir / "run_status_events.parquet",
             )
+            mart_rows_by_name = self._write_staged_marts(
+                bundle,
+                lifecycle_status=RunStatus(initial_status_event.to_status),
+                staging_dir=staging_dir,
+            )
 
             moved_paths.extend(
                 self._move_staged_run_tables(run_id, initial_status_event.event_id, staging_dir)
             )
+            moved_paths.extend(self._move_staged_marts(run_id, staging_dir))
             moved_paths.extend(self._move_staged_artifacts(staged_artifacts))
             validate_artifact_ref_targets(committed_artifacts)
 
-            self._write_manifest(bundle, rows_by_table, status_rows, staging_dir)
+            self._write_manifest(
+                bundle,
+                rows_by_table,
+                status_rows,
+                mart_rows_by_name,
+                staging_dir,
+            )
         except Exception:
             for path in moved_paths:
                 path.unlink(missing_ok=True)
@@ -246,6 +272,7 @@ class DuckDbParquetResultStore:
                 ignore_errors=True,
             )
             self._remove_orphaned_artifacts(run_id)
+            self._remove_orphaned_marts(run_id)
             shutil.rmtree(staging_dir, ignore_errors=True)
             raise
         finally:
@@ -307,6 +334,23 @@ class DuckDbParquetResultStore:
         )
         return rows_by_table, staged_artifacts, committed_artifacts
 
+    def _write_staged_marts(
+        self,
+        bundle: ResultBundle,
+        *,
+        lifecycle_status: RunStatus,
+        staging_dir: Path,
+    ) -> dict[str, list[dict[str, object]]]:
+        mart_rows_by_name = mart_rows_for_bundle(bundle, lifecycle_status=lifecycle_status)
+        mart_staging_dir = staging_dir / "marts"
+        mart_staging_dir.mkdir(parents=True, exist_ok=True)
+        for mart_name in MART_NAMES:
+            pq.write_table(
+                _arrow_table(mart_rows_by_name[mart_name], MART_SCHEMAS[mart_name]),
+                mart_staging_dir / f"{mart_name}.parquet",
+            )
+        return mart_rows_by_name
+
     def _move_staged_run_tables(
         self,
         run_id: str,
@@ -327,6 +371,17 @@ class DuckDbParquetResultStore:
         status_path.parent.mkdir(parents=True, exist_ok=True)
         (staging_dir / "run_status_events.parquet").rename(status_path)
         moved_paths.append(status_path)
+        return tuple(moved_paths)
+
+    def _move_staged_marts(self, run_id: str, staging_dir: Path) -> tuple[Path, ...]:
+        moved_paths: list[Path] = []
+        for mart_name in MART_NAMES:
+            final_path = self._mart_path(mart_name, run_id)
+            if final_path.exists():
+                raise ResultStoreWriteError(f"mart already exists: {mart_name}/{run_id}")
+            final_path.parent.mkdir(parents=True, exist_ok=True)
+            (staging_dir / "marts" / f"{mart_name}.parquet").rename(final_path)
+            moved_paths.append(final_path)
         return tuple(moved_paths)
 
     def _refresh_catalog_after_commit(self, span_attributes: Mapping[str, object]) -> None:
@@ -448,23 +503,65 @@ class DuckDbParquetResultStore:
         return tuple(_hierarchy_node_from_row(row) for row in rows)
 
     def capital_tree(self, run_id: str) -> tuple[CapitalNode, ...]:
-        """Return all capital graph nodes for one run."""
+        """Return all capital graph nodes for one run from the persisted mart."""
+
+        return tuple(row.to_node() for row in self.capital_tree_mart(run_id))
+
+    def capital_summary(self, run_id: str) -> tuple[CapitalSummaryRow, ...]:
+        """Return persisted dashboard summary rows for one run."""
 
         if not self.run_exists(run_id):
             return ()
-        rows = self._fetchall(
-            "capital_nodes",
+        rows = self._fetch_mart(
+            "capital_summary",
             """
-            SELECT run_id, node_id, node_type, component, label, desk_id, portfolio_id,
-                   book_id, risk_class, bucket, issuer_id, counterparty_id,
-                   calculation_branch, regulatory_rule_id, sort_key, metadata_json
-            FROM {table}
+            SELECT run_id, as_of_date, regime_id, base_currency, lifecycle_status,
+                   suggested_status, total_capital, currency, node_count, measure_count,
+                   component_count
+            FROM {mart}
             WHERE run_id = ?
-            ORDER BY sort_key, node_id
+            ORDER BY run_id
             """,
             (run_id,),
         )
-        return tuple(_node_from_row(row) for row in rows)
+        return tuple(capital_summary_from_row(row) for row in rows)
+
+    def capital_tree_mart(self, run_id: str) -> tuple[CapitalTreeMartRow, ...]:
+        """Return persisted flattened capital tree rows for one run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetch_mart(
+            "capital_tree",
+            """
+            SELECT run_id, node_id, parent_node_id, depth, node_type, component, label,
+                   desk_id, portfolio_id, book_id, risk_class, bucket, issuer_id,
+                   counterparty_id, calculation_branch, regulatory_rule_id, sort_key,
+                   metadata_json
+            FROM {mart}
+            WHERE run_id = ?
+            ORDER BY depth, sort_key, node_id
+            """,
+            (run_id,),
+        )
+        return tuple(capital_tree_mart_from_row(row) for row in rows)
+
+    def component_breakdown(self, run_id: str) -> tuple[ComponentBreakdownRow, ...]:
+        """Return persisted component-level dashboard totals for one run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetch_mart(
+            "component_breakdown",
+            """
+            SELECT run_id, component, amount, currency, node_count, measure_count
+            FROM {mart}
+            WHERE run_id = ?
+            ORDER BY component
+            """,
+            (run_id,),
+        )
+        return tuple(component_breakdown_from_row(row) for row in rows)
 
     def child_nodes(self, run_id: str, parent_node_id: str) -> tuple[CapitalNode, ...]:
         """Return direct child nodes in graph order."""
@@ -754,6 +851,12 @@ class DuckDbParquetResultStore:
                         f"CREATE OR REPLACE VIEW {_view_name(table_name)} AS "
                         f"SELECT * FROM {self._parquet_relation(table_name)}"
                     )
+            for mart_name in MART_NAMES:
+                if self._has_mart_files(mart_name):
+                    con.execute(
+                        f"CREATE OR REPLACE VIEW {_mart_view_name(mart_name)} AS "
+                        f"SELECT * FROM {self._mart_relation(mart_name)}"
+                    )
         finally:
             con.close()
 
@@ -762,6 +865,7 @@ class DuckDbParquetResultStore:
         bundle: ResultBundle,
         rows_by_table: Mapping[str, Sequence[Mapping[str, object]]],
         status_rows: Sequence[Mapping[str, object]],
+        mart_rows_by_name: Mapping[str, Sequence[Mapping[str, object]]],
         staging_dir: Path,
     ) -> None:
         manifest_dir = self._manifest_path(bundle.run.run_id).parent
@@ -784,6 +888,7 @@ class DuckDbParquetResultStore:
                 **{table_name: len(rows_by_table[table_name]) for table_name in RUN_TABLE_NAMES},
                 "run_status_events": len(status_rows),
             },
+            "marts": {mart_name: len(mart_rows_by_name[mart_name]) for mart_name in MART_NAMES},
             "base_table_schema_fingerprints": {
                 table_name: _table_schema_fingerprint(table_name)
                 for table_name in TABLE_NAMES
@@ -796,7 +901,9 @@ class DuckDbParquetResultStore:
                     if row["schema_fingerprint"] is not None
                 }
             ),
-            "mart_schema_fingerprints": {},
+            "mart_schema_fingerprints": {
+                mart_name: mart_schema_fingerprint(mart_name) for mart_name in MART_NAMES
+            },
         }
         staged_manifest_path.write_text(
             stable_json_dumps(manifest) + "\n",
@@ -819,6 +926,19 @@ class DuckDbParquetResultStore:
         if parameters and isinstance(parameters[0], str) and self.run_exists(parameters[0]):
             self._ensure_run_compatible(parameters[0])
         sql = sql_template.format(table=self._parquet_relation(table_name))
+        return self._fetch_custom(sql, parameters)
+
+    def _fetch_mart(
+        self,
+        mart_name: str,
+        sql_template: str,
+        parameters: Sequence[object] = (),
+    ) -> tuple[tuple[object, ...], ...]:
+        if not self._has_mart_files(mart_name):
+            return ()
+        if parameters and isinstance(parameters[0], str) and self.run_exists(parameters[0]):
+            self._ensure_run_compatible(parameters[0])
+        sql = sql_template.format(mart=self._mart_relation(mart_name))
         return self._fetch_custom(sql, parameters)
 
     def _ensure_run_compatible(self, run_id: str) -> None:
@@ -850,6 +970,13 @@ class DuckDbParquetResultStore:
                 table_name
             ):
                 errors.append(f"{table_name} schema fingerprint mismatch")
+        mart_fingerprints = manifest.get("mart_schema_fingerprints")
+        if not isinstance(mart_fingerprints, dict):
+            errors.append("missing mart schema fingerprints")
+            return tuple(errors)
+        for mart_name, fingerprint in mart_fingerprints.items():
+            if mart_name in MART_SCHEMAS and fingerprint != mart_schema_fingerprint(mart_name):
+                errors.append(f"{mart_name} mart schema fingerprint mismatch")
         return tuple(errors)
 
     def _read_manifest(self, run_id: str) -> Mapping[str, object]:
@@ -894,6 +1021,11 @@ class DuckDbParquetResultStore:
             raise ResultStoreContractError(f"unknown table: {table_name}", field="table_name")
         return self.parquet_root / table_name / f"{_safe_run_id(run_id)}.parquet"
 
+    def _mart_path(self, mart_name: str, run_id: str) -> Path:
+        if mart_name not in MART_NAMES:
+            raise ResultStoreContractError(f"unknown mart: {mart_name}", field="mart_name")
+        return self.parquet_root / "marts" / mart_name / f"{_safe_run_id(run_id)}.parquet"
+
     def _status_event_path(self, run_id: str, event_id: str) -> Path:
         return (
             self.parquet_root
@@ -905,8 +1037,15 @@ class DuckDbParquetResultStore:
     def _has_table_files(self, table_name: str) -> bool:
         return bool(self._table_files(table_name))
 
+    def _has_mart_files(self, mart_name: str) -> bool:
+        return bool(self._mart_files(mart_name))
+
     def _parquet_relation(self, table_name: str) -> str:
         file_paths = ", ".join(_sql_literal(str(path)) for path in self._table_files(table_name))
+        return f"read_parquet([{file_paths}], union_by_name = true)"
+
+    def _mart_relation(self, mart_name: str) -> str:
+        file_paths = ", ".join(_sql_literal(str(path)) for path in self._mart_files(mart_name))
         return f"read_parquet([{file_paths}], union_by_name = true)"
 
     def _manifest_path(self, run_id: str) -> Path:
@@ -938,6 +1077,15 @@ class DuckDbParquetResultStore:
             if (path := self._run_table_path(table_name, run_id)).exists()
         )
 
+    def _mart_files(self, mart_name: str) -> tuple[Path, ...]:
+        if mart_name not in MART_NAMES:
+            raise ResultStoreContractError(f"unknown mart: {mart_name}", field="mart_name")
+        return tuple(
+            path
+            for run_id in self._committed_run_ids()
+            if (path := self._mart_path(mart_name, run_id)).exists()
+        )
+
     def _remove_orphaned_run_files(self, run_id: str) -> None:
         for table_name in RUN_TABLE_NAMES:
             self._run_table_path(table_name, run_id).unlink(missing_ok=True)
@@ -946,11 +1094,16 @@ class DuckDbParquetResultStore:
             ignore_errors=True,
         )
         self._remove_orphaned_artifacts(run_id)
+        self._remove_orphaned_marts(run_id)
 
     def _remove_orphaned_artifacts(self, run_id: str) -> None:
         safe_run_id = _artifact_safe_run_id(run_id)
         for path in self.artifact_root.glob(f"artifact_type=*/run_id={safe_run_id}"):
             shutil.rmtree(path, ignore_errors=True)
+
+    def _remove_orphaned_marts(self, run_id: str) -> None:
+        for mart_name in MART_NAMES:
+            self._mart_path(mart_name, run_id).unlink(missing_ok=True)
 
 
 def _rows_for_bundle(
@@ -1402,6 +1555,10 @@ def _sql_literal(value: str) -> str:
 
 def _view_name(table_name: str) -> str:
     return f"frtb_result_store_{table_name}"
+
+
+def _mart_view_name(mart_name: str) -> str:
+    return f"frtb_result_store_mart_{mart_name}"
 
 
 def _arrow_table(rows: Sequence[Mapping[str, object]], schema: Any) -> Any:

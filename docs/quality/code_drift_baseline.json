@@ -274,10 +274,10 @@
       "path": "packages/frtb-ima/tests/test_stress_periods.py"
     },
     "packages/frtb-result-store/tests/test_duckdb_parquet_store.py:_bundle": {
-      "end_line": 770,
+      "end_line": 832,
       "key": "packages/frtb-result-store/tests/test_duckdb_parquet_store.py:_bundle",
-      "line": 648,
-      "lines": 123,
+      "line": 719,
+      "lines": 114,
       "name": "_bundle",
       "path": "packages/frtb-result-store/tests/test_duckdb_parquet_store.py"
     },
@@ -464,11 +464,11 @@
     "duplicate_function_instances": 57,
     "large_function_count": 57,
     "other_python_loc": 5401,
-    "python_files": 447,
+    "python_files": 449,
     "script_python_loc": 5054,
-    "source_python_loc": 59630,
-    "test_python_loc": 38577,
-    "total_python_loc": 108662
+    "source_python_loc": 60237,
+    "test_python_loc": 38669,
+    "total_python_loc": 109361
   },
   "oversized_files": {
     "packages/frtb-common/src/frtb_common/crif.py": {
@@ -593,17 +593,17 @@
     },
     "packages/frtb-result-store/src/frtb_result_store/io.py": {
       "limit": 600,
-      "lines": 1615,
+      "lines": 1782,
       "role": "source"
     },
     "packages/frtb-result-store/src/frtb_result_store/model.py": {
       "limit": 600,
-      "lines": 1258,
+      "lines": 1398,
       "role": "source"
     },
     "packages/frtb-result-store/tests/test_duckdb_parquet_store.py": {
       "limit": 800,
-      "lines": 848,
+      "lines": 947,
       "role": "test"
     },
     "packages/frtb-rrao/scripts/generate_fixture.py": {
