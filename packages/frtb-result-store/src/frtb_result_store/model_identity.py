@@ -14,6 +14,7 @@ from frtb_result_store.model_validation import (
     _require_plain_date,
 )
 
+
 def canonical_run_identity_payload(
     *,
     as_of_date: date,

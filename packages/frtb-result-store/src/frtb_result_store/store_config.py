@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
-from typing import Mapping
 
 from frtb_result_store.model import ResultStoreContractError, StorageBackend
 from frtb_result_store.store_paths import _normalize_s3_uri, _validated_duckdb_name
@@ -102,4 +102,3 @@ class ResultStoreConfig:
                 "s3_mock_root is only valid for s3_parquet backend",
                 field="s3_mock_root",
             )
-

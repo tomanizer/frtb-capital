@@ -10,6 +10,8 @@ from frtb_common import AttributionMethod, CapitalContribution
 from frtb_common.hashing import stable_json_hash
 
 from frtb_result_store.model_enums import (
+    VALID_ATTRIBUTION_TARGET_TYPES,
+    VALID_MEASURE_NAMES,
     ArtifactType,
     CapitalNodeFamily,
     EdgeType,
@@ -20,11 +22,8 @@ from frtb_result_store.model_enums import (
     ResultStoreContractError,
     RunStatus,
     TelemetryPhase,
-    VALID_ATTRIBUTION_TARGET_TYPES,
-    VALID_MEASURE_NAMES,
 )
 from frtb_result_store.model_identity import (
-    canonical_run_group_identity_payload,
     canonical_run_identity_payload,
     generate_run_group_id,
     generate_run_id,
@@ -53,6 +52,7 @@ from frtb_result_store.model_validation import (
     _validate_bundle_movements,
     _validate_optional_text,
 )
+
 
 @dataclass(frozen=True, slots=True)
 class HierarchyLevel:
@@ -1089,4 +1089,3 @@ class ResultBundle:
             _require_run_id(event.run_id, run_id, "events")
         for telemetry in self.telemetry:
             _require_run_id(telemetry.run_id, run_id, "telemetry")
-

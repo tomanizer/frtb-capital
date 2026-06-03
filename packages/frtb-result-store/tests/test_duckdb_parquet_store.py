@@ -9,6 +9,12 @@ from urllib.parse import quote, unquote, urlparse
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
+from fixtures.result_store_bundle import (
+    default_artifacts,
+    ima_pnl_chunks,
+    run_with_id,
+    sample_bundle,
+)
 from frtb_common import AttributionMethod, CapitalContribution
 from frtb_result_store import (
     ArtifactRef,
@@ -17,8 +23,6 @@ from frtb_result_store import (
     CalculationRun,
     CapitalAttributionRecord,
     CapitalEdge,
-    CapitalMeasure,
-    CapitalNode,
     CapitalNodeFamily,
     CapitalNodeSpec,
     CapitalSummaryRow,
@@ -26,7 +30,6 @@ from frtb_result_store import (
     EdgeType,
     FrtbComponent,
     InputSnapshotManifest,
-    LineageRef,
     MovementResult,
     MovementSummaryRow,
     NodeType,
@@ -51,20 +54,22 @@ from frtb_result_store import (
     default_hierarchy_definition,
     generate_run_group_id,
 )
-from frtb_result_store.io import (
-    _float_value,
-    _hierarchy_level_from_mapping,
-    _hierarchy_path_item_from_mapping,
-    _int_value,
-    _json_mapping,
-    _json_text_tuple,
+from frtb_result_store._row_codecs import (
+    float_value as _float_value,
+)
+from frtb_result_store._row_codecs import (
+    int_value as _int_value,
+)
+from frtb_result_store._row_codecs import (
+    json_mapping as _json_mapping,
+)
+from frtb_result_store._row_codecs import (
+    json_text_tuple as _json_text_tuple,
 )
 from frtb_result_store.mart_schemas import MART_NAMES
-from fixtures.result_store_bundle import (
-    default_artifacts,
-    ima_pnl_chunks,
-    run_with_id,
-    sample_bundle,
+from frtb_result_store.store_row_io import (
+    _hierarchy_level_from_mapping,
+    _hierarchy_path_item_from_mapping,
 )
 
 
@@ -327,7 +332,9 @@ def test_invalid_local_artifact_ref_rejects_commit(tmp_path: Path) -> None:
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
     with pytest.raises(ResultStoreContractError, match="missing local file"):
-        store.write_bundle(sample_bundle(run, artifacts=(*default_artifacts(run), invalid_artifact)))
+        store.write_bundle(
+            sample_bundle(run, artifacts=(*default_artifacts(run), invalid_artifact))
+        )
 
     assert not store.run_exists(run.run_id)
 
@@ -994,4 +1001,3 @@ def test_incompatible_run_fails_closed_without_blocking_other_runs(tmp_path: Pat
     with pytest.raises(ResultStoreCompatibilityError, match="malformed run manifest JSON"):
         store.get_run(incompatible_run.run_id)
     assert [run.run_id for run in store.list_runs()] == [compatible_run.run_id]
-

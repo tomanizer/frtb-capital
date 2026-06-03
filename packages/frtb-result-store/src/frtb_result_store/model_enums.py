@@ -5,6 +5,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import TypeVar
 
+
 class ResultStoreContractError(ValueError):
     """Raised when a result-store contract would produce unauditable output."""
 

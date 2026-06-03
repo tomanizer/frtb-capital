@@ -6,7 +6,6 @@ from datetime import UTC, date, datetime
 
 import pyarrow as pa
 from frtb_common import CapitalContribution
-
 from frtb_result_store import (
     ArtifactRef,
     ArtifactType,

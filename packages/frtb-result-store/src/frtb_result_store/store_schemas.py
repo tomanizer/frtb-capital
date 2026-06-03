@@ -8,6 +8,7 @@ from typing import Any
 import pyarrow as pa  # type: ignore[import-untyped]
 from frtb_common.hashing import stable_json_hash
 
+
 def _dict_rows(
     columns: Sequence[str],
     rows: Sequence[Sequence[object]],

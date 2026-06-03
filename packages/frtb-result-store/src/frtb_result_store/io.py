@@ -17,23 +17,12 @@ import duckdb
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 from frtb_common.hashing import stable_json_dumps
 
-from frtb_result_store._row_codecs import (
-    float_value as _float_value,
-)
-from frtb_result_store._row_codecs import (
-    int_value as _int_value,
-)
-from frtb_result_store._row_codecs import (
-    json_mapping as _json_mapping,
-)
-from frtb_result_store._row_codecs import (
-    json_text_tuple as _json_text_tuple,
-)
 from frtb_result_store._version import __version__
 from frtb_result_store.artifacts import (
     ArtifactWriteRequest,
     StagedArtifact,
     artifact_expectations_for_requests,
+    artifact_schema_for,
     stage_artifact_write,
     validate_artifact_ref_targets,
     validate_required_artifacts,
@@ -89,7 +78,6 @@ from frtb_result_store.run_metadata_io import (
     telemetry_from_row as _telemetry_from_row,
 )
 from frtb_result_store.store_config import (
-    EVENT_TABLE_NAMES,
     RESULT_STORE_SCHEMA_VERSION,
     RUN_TABLE_NAMES,
     TABLE_NAMES,
@@ -97,15 +85,14 @@ from frtb_result_store.store_config import (
     ResultStoreConfig,
     ResultStoreWriteError,
 )
-from frtb_result_store.artifacts import artifact_schema_for
 from frtb_result_store.store_paths import (
     _artifact_id_for_request,
     _artifact_safe_run_id,
     _duckdb_literal,
     _mart_columns,
     _mart_view_name,
-    _safe_run_id,
     _s3_mock_physical_root,
+    _safe_run_id,
     _sql_literal,
     _view_name,
 )
@@ -115,9 +102,7 @@ from frtb_result_store.store_row_io import (
     _edge_from_row,
     _elapsed_ms,
     _hierarchy_definition_from_row,
-    _hierarchy_level_from_mapping,
     _hierarchy_node_from_row,
-    _hierarchy_path_item_from_mapping,
     _initial_status_event,
     _lineage_from_row,
     _measure_from_row,
@@ -136,6 +121,8 @@ from frtb_result_store.store_schemas import (
 )
 
 __all__ = [
+    "RUN_TABLE_NAMES",
+    "TABLE_NAMES",
     "DuckDbParquetResultStore",
     "ResultStoreCompatibilityError",
     "ResultStoreConfig",
@@ -143,6 +130,7 @@ __all__ = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class DuckDbParquetResultStore:
     """Append-only Parquet store queried through DuckDB.
@@ -1301,4 +1289,3 @@ class DuckDbParquetResultStore:
     def _remove_orphaned_marts(self, run_id: str) -> None:
         for mart_name in MART_NAMES:
             self._mart_path(mart_name, run_id).unlink(missing_ok=True)
-

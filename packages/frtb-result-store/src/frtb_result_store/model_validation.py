@@ -6,9 +6,8 @@ import math
 import unicodedata
 from collections.abc import Mapping
 from datetime import date, datetime
-from enum import StrEnum
 from types import MappingProxyType
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 from frtb_result_store.model_enums import EnumT, ResultStoreContractError
 
@@ -17,10 +16,10 @@ if TYPE_CHECKING:
         CapitalAttributionRecord,
         CapitalEdge,
         CapitalMeasure,
-        HierarchyDefinition,
         MovementResult,
         ResultBundle,
     )
+
 
 def _coerce_enum(value: EnumT | str, enum_type: type[EnumT], field_name: str) -> EnumT:
     if isinstance(value, enum_type):
@@ -137,7 +136,7 @@ def _require_run_id(value: str, expected: str, field: str) -> None:
         )
 
 
-def _tuple_bundle_sequences(bundle: "ResultBundle") -> None:
+def _tuple_bundle_sequences(bundle: ResultBundle) -> None:
     for field_name in (
         "hierarchy_nodes",
         "edges",
@@ -153,7 +152,7 @@ def _tuple_bundle_sequences(bundle: "ResultBundle") -> None:
         object.__setattr__(bundle, field_name, tuple(getattr(bundle, field_name)))
 
 
-def _validate_bundle_hierarchy(bundle: "ResultBundle") -> None:
+def _validate_bundle_hierarchy(bundle: ResultBundle) -> None:
     from frtb_result_store.model_entities import HierarchyDefinition
 
     definition = bundle.hierarchy_definition
@@ -188,7 +187,7 @@ def _duplicate_values(values: list[str]) -> list[str]:
 
 
 def _validate_bundle_edges(
-    edges: tuple["CapitalEdge", ...],
+    edges: tuple[CapitalEdge, ...],
     run_id: str,
     known_nodes: set[str],
 ) -> None:
@@ -207,7 +206,7 @@ def _validate_bundle_edges(
 
 
 def _validate_bundle_measures(
-    measures: tuple["CapitalMeasure", ...],
+    measures: tuple[CapitalMeasure, ...],
     run_id: str,
     known_nodes: set[str],
 ) -> None:
@@ -221,7 +220,7 @@ def _validate_bundle_measures(
 
 
 def _validate_bundle_attributions(
-    attributions: tuple["CapitalAttributionRecord", ...],
+    attributions: tuple[CapitalAttributionRecord, ...],
     run_id: str,
     known_nodes: set[str],
 ) -> None:
@@ -235,7 +234,7 @@ def _validate_bundle_attributions(
 
 
 def _validate_bundle_movements(
-    movement_results: tuple["MovementResult", ...],
+    movement_results: tuple[MovementResult, ...],
     run_id: str,
     known_nodes: set[str],
 ) -> None:

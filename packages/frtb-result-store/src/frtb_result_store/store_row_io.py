@@ -67,6 +67,7 @@ from frtb_result_store.run_metadata_io import (
     telemetry_row as _telemetry_row,
 )
 
+
 def _rows_for_bundle(
     bundle: ResultBundle,
     *,
@@ -550,4 +551,3 @@ def _json_object_list(value: object) -> tuple[Mapping[str, object], ...]:
     if not isinstance(parsed, list) or not all(isinstance(item, dict) for item in parsed):
         raise ResultStoreContractError("JSON field must decode to a list of objects")
     return tuple(parsed)
-
