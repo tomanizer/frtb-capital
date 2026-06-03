@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pyarrow.parquet as pq
-
 import frtb_drc
-
+import pyarrow.parquet as pq
 
 HANDOFF_SURFACE = (
     "DRC_NONSEC_HANDOFF_COLUMN_SPECS",

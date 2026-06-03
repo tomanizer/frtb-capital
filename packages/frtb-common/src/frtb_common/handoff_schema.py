@@ -41,9 +41,7 @@ def handoff_specs_to_json_schema(
     schema: dict[str, object] = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "additionalProperties": True,
-        "properties": {
-            spec.name: column_spec_to_json_schema(spec) for spec in validated
-        },
+        "properties": {spec.name: column_spec_to_json_schema(spec) for spec in validated},
         "required": [spec.name for spec in validated if spec.required],
         "title": title,
         "type": "object",
@@ -84,8 +82,7 @@ def arrow_schema_to_dict(schema: pa.Schema) -> dict[str, object]:
     fields: list[dict[str, object]] = []
     for field in schema:
         metadata = {
-            key.decode(): value.decode()
-            for key, value in sorted((field.metadata or {}).items())
+            key.decode(): value.decode() for key, value in sorted((field.metadata or {}).items())
         }
         fields.append(
             {

@@ -4,7 +4,6 @@ from pathlib import Path
 
 import frtb_sbm
 
-
 HANDOFF_SPECS = (
     "GIRR_DELTA_HANDOFF_COLUMN_SPECS",
     "GIRR_VEGA_HANDOFF_COLUMN_SPECS",

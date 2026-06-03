@@ -186,11 +186,84 @@ non-zero otherwise.
 
 Reference-data responsibilities are documented in the
 [client reference-data attachment matrix](CLIENT_REFERENCE_DATA.md). Runtime
-manifest ingress is tracked by
-[#429](https://github.com/tomanizer/frtb-capital/issues/429). The intended
-manifest convention is to name every table explicitly, for example
-`drc.nonsec`, `drc.securitisation_non_ctp`, `drc.ctp`, `rrao.positions`,
-`cva.counterparty`, and `sbm.girr_delta`.
+manifest ingress is exposed by `frtb_orchestration.CapitalRunManifest`.
+The manifest convention is to name every table explicitly, using constants such
+as `DRC_NONSEC_HANDOFF`, `DRC_SECURITISATION_NON_CTP_HANDOFF`,
+`DRC_CTP_HANDOFF`, `RRAO_POSITIONS_HANDOFF`, `CVA_COUNTERPARTY_HANDOFF`, and
+`SBM_GIRR_DELTA_HANDOFF`.
+
+`validate_capital_run_manifest` returns a `ManifestValidationResult` with:
+
+| Field | Client use |
+| --- | --- |
+| `handoffs` | Per-table accepted row count, rejected row count, diagnostics, source hash, and normalized handoff hash. |
+| `missing_required_handoffs` | Required SA inputs absent from the manifest profile. |
+| `jurisdiction_family` | ADR 0022 profile-family classification used before SA composition. |
+| `errors` | Missing routes, missing route contexts, validation failures, or mixed jurisdiction-family inputs. |
+
+`run_standardised_approach_from_manifest` performs the same validation, routes
+available component handoffs through registered public package APIs, and records
+fail-closed aggregation status in `SaManifestRunResult.orchestration_error`.
+For example, a DRC plus RRAO onboarding manifest can validate and produce
+component handoffs while still reporting that SBM is missing for final SA
+composition.
+
+Minimal route registration pattern:
+
+```python
+import frtb_drc
+import frtb_rrao
+from frtb_common import StandardisedComponent
+from frtb_orchestration import (
+    DRC_NONSEC_HANDOFF,
+    RRAO_POSITIONS_HANDOFF,
+    CapitalRunManifest,
+    ManifestHandoffRoute,
+    run_standardised_approach_from_manifest,
+)
+
+routes = {
+    DRC_NONSEC_HANDOFF: ManifestHandoffRoute(
+        logical_name=DRC_NONSEC_HANDOFF,
+        component=StandardisedComponent.DRC,
+        normalize=frtb_drc.normalize_drc_nonsec_arrow_table,
+        build_batch=frtb_drc.build_drc_nonsec_batch_from_handoff,
+        calculate_batch=frtb_drc.calculate_drc_capital_from_batch,
+        to_component_handoff=frtb_drc.to_orchestration_handoff,
+        context_attr="drc_context",
+    ),
+    RRAO_POSITIONS_HANDOFF: ManifestHandoffRoute(
+        logical_name=RRAO_POSITIONS_HANDOFF,
+        component=StandardisedComponent.RRAO,
+        normalize=frtb_rrao.normalize_rrao_arrow_table,
+        build_batch=frtb_rrao.build_rrao_batch_from_handoff,
+        calculate_batch=frtb_rrao.calculate_rrao_capital_from_batch,
+        to_component_handoff=frtb_rrao.to_orchestration_handoff,
+        context_attr="rrao_context",
+    ),
+}
+
+result = run_standardised_approach_from_manifest(
+    CapitalRunManifest(
+        run_id="client-sa-run-001",
+        calculation_date=calculation_date,
+        profile_id="US_NPR_2_0",
+        base_currency="USD",
+        handoffs={
+            DRC_NONSEC_HANDOFF: drc_nonsec_table,
+            RRAO_POSITIONS_HANDOFF: rrao_positions_table,
+        },
+        drc_context=drc_context,
+        rrao_context=rrao_context,
+    ),
+    routes=routes,
+)
+```
+
+Orchestration runtime modules remain decoupled from component packages. The
+client application owns route registration so the manifest can use public
+component APIs without importing private batch internals or forcing clients to
+construct package dataclass rows.
 
 ## Non-goals
 

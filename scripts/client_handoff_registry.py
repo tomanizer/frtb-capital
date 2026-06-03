@@ -4,12 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any
 
 import pyarrow as pa  # type: ignore[import-untyped]
-
 from frtb_common import ColumnSpec, NormalizedTabularHandoff
-
 
 NormalizeCallable = Callable[..., NormalizedTabularHandoff]
 BuildBatchCallable = Callable[[NormalizedTabularHandoff], object]

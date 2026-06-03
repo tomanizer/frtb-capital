@@ -11,8 +11,7 @@ from scripts.validate_client_handoff import main as validate_handoff_main
 
 def test_validate_client_handoff_accepts_drc_nonsec_fixture(tmp_path: Path) -> None:
     input_path = (
-        _repo_root()
-        / "packages/frtb-drc/tests/fixtures/handoff/drc_nonsec_minimal.parquet"
+        _repo_root() / "packages/frtb-drc/tests/fixtures/handoff/drc_nonsec_minimal.parquet"
     )
     first_output = tmp_path / "first"
     second_output = tmp_path / "second"

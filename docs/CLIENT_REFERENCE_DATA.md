@@ -103,8 +103,8 @@ and unused map entries to prevent accidental stale attachments.
 
 ## Manifest attachment naming
 
-The future `CapitalRunManifest` ingress should name reference attachments
-explicitly so a validator can match them to component handoffs:
+`CapitalRunManifest` names reference attachments explicitly so a validator can
+match them to component handoffs:
 
 | Logical attachment | Intended content | Hash expectation |
 | --- | --- | --- |
@@ -118,6 +118,6 @@ explicitly so a validator can match them to component handoffs:
 | `rrao.classification_evidence` | Optional evidence catalog referenced by flat RRAO row columns | Stable hash if supplied outside the positions table. |
 | `ima.artifact_manifest` | IMA input-manifest table naming NPZ, CSV, and evidence artifacts | Stable hash of artifact metadata and checksums. |
 
-File-backed clients should supply either paths or Arrow tables plus content
-hashes. In-memory clients should supply Arrow tables and let the manifest
-validator compute handoff hashes.
+File-backed clients can use `scripts/validate_client_handoff.py` before
+constructing a runtime manifest. In-memory clients should supply Arrow tables
+and let `validate_capital_run_manifest` compute source and handoff hashes.

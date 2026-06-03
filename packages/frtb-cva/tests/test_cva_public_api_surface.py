@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pyarrow.parquet as pq
-
 import frtb_cva
-
+import pyarrow.parquet as pq
 
 HANDOFF_SURFACE = (
     "CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS",

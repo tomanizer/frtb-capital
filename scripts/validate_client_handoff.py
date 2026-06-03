@@ -14,7 +14,6 @@ import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.csv as pa_csv  # type: ignore[import-untyped]
 import pyarrow.ipc as pa_ipc  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
-
 from frtb_common import (
     AdapterDiagnostic,
     DiagnosticSeverity,
@@ -30,8 +29,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--package", required=True, help="Package import name, e.g. frtb_drc")
     parser.add_argument("--handoff", required=True, help="Registered handoff id, e.g. nonsec")
-    parser.add_argument("--input", required=True, type=Path, help="Input .parquet, .arrow, .ipc, or .csv file")
-    parser.add_argument("--output-dir", required=True, type=Path, help="Directory for validation outputs")
+    parser.add_argument(
+        "--input",
+        required=True,
+        type=Path,
+        help="Input .parquet, .arrow, .ipc, or .csv file",
+    )
+    parser.add_argument(
+        "--output-dir",
+        required=True,
+        type=Path,
+        help="Directory for validation outputs",
+    )
     args = parser.parse_args(argv)
 
     return validate_client_handoff(args.package, args.handoff, args.input, args.output_dir)
@@ -52,7 +61,7 @@ def validate_client_handoff(
 
     try:
         handoff = entry.normalize(table, source_hash=source_hash)
-    except Exception as exc:  # noqa: BLE001 - validation CLI must emit diagnostics
+    except Exception as exc:
         diagnostics.append(
             AdapterDiagnostic(
                 code="HANDOFF_NORMALIZATION_ERROR",
@@ -73,7 +82,7 @@ def validate_client_handoff(
             try:
                 entry.build_batch(handoff)
                 batch_built = True
-            except Exception as exc:  # noqa: BLE001 - validation CLI must emit diagnostics
+            except Exception as exc:
                 diagnostics.append(
                     AdapterDiagnostic(
                         code="HANDOFF_BATCH_BUILD_ERROR",
@@ -108,7 +117,9 @@ def validate_client_handoff(
         diagnostics=sorted_diagnostics,
         batch_built=batch_built,
     )
-    has_errors = any(item["severity"] == DiagnosticSeverity.ERROR.value for item in sorted_diagnostics)
+    has_errors = any(
+        item["severity"] == DiagnosticSeverity.ERROR.value for item in sorted_diagnostics
+    )
     rejected_rows = handoff.rejected.num_rows if handoff.rejected is not None else 0
     return 1 if has_errors or rejected_rows else 0
 
