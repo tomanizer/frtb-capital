@@ -1,0 +1,874 @@
+"""DuckDB/Parquet result-store backend."""
+
+from __future__ import annotations
+
+import json
+import shutil
+from collections.abc import Mapping, Sequence
+from contextlib import suppress
+from dataclasses import dataclass
+from datetime import date, datetime
+from enum import StrEnum
+from pathlib import Path
+from typing import Any
+from urllib.parse import quote, unquote
+
+import duckdb
+import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.parquet as pq  # type: ignore[import-untyped]
+from frtb_common import AttributionMethod
+from frtb_common.hashing import stable_json_dumps
+
+from frtb_result_store.model import (
+    ArtifactRef,
+    ArtifactType,
+    CalculationRun,
+    CapitalAttributionRecord,
+    CapitalEdge,
+    CapitalMeasure,
+    CapitalNode,
+    EdgeType,
+    FrtbComponent,
+    LineageRef,
+    NodeType,
+    ResultBundle,
+    ResultStoreContractError,
+    StorageBackend,
+)
+
+__all__ = [
+    "DuckDbParquetResultStore",
+    "ResultStoreConfig",
+    "ResultStoreWriteError",
+]
+
+
+RESULT_STORE_SCHEMA_VERSION = 1
+TABLE_NAMES = (
+    "runs",
+    "capital_nodes",
+    "capital_edges",
+    "capital_measures",
+    "artifact_refs",
+    "lineage_refs",
+    "capital_attributions",
+)
+
+
+class ResultStoreWriteError(RuntimeError):
+    """Raised when a result bundle cannot be written append-only."""
+
+
+@dataclass(frozen=True, slots=True)
+class ResultStoreConfig:
+    """Concrete storage settings for the first result-store backend."""
+
+    root: Path
+    backend: StorageBackend = StorageBackend.LOCAL_PARQUET
+    catalog_filename: str = "catalog.duckdb"
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "backend", StorageBackend(self.backend))
+        if not isinstance(self.root, Path):
+            object.__setattr__(self, "root", Path(self.root))
+        if not self.catalog_filename:
+            raise ResultStoreContractError(
+                "catalog_filename must be non-empty text",
+                field="catalog_filename",
+            )
+
+
+class DuckDbParquetResultStore:
+    """Append-only local Parquet store queried through DuckDB.
+
+    The executable first slice writes one Parquet file per run per table under
+    ``root/parquet``. A run is visible only after its manifest has been written.
+    The DuckDB catalog is derived and rebuildable; query methods use independent
+    in-memory DuckDB connections over committed Parquet files.
+    """
+
+    def __init__(self, config: ResultStoreConfig | Path) -> None:
+        if isinstance(config, Path):
+            config = ResultStoreConfig(root=config)
+        self.config = config
+        if self.config.backend is not StorageBackend.LOCAL_PARQUET:
+            raise ResultStoreContractError(
+                f"{self.config.backend.value} backend is reserved for a later implementation",
+                field="backend",
+            )
+        self.root = self.config.root
+        self.parquet_root = self.root / "parquet"
+        self.manifest_root = self.root / "manifests"
+        self.catalog_path = self.root / self.config.catalog_filename
+        self.root.mkdir(parents=True, exist_ok=True)
+
+    def write_bundle(self, bundle: ResultBundle) -> None:
+        """Persist one validated run bundle.
+
+        The operation is append-only by ``run_id``. Rewriting the same run is a
+        hard error; corrections must be represented by a new calculation run.
+        """
+
+        run_id = bundle.run.run_id
+        if self.run_exists(run_id):
+            raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}")
+
+        rows_by_table = _rows_for_bundle(bundle)
+        safe_run_id = _safe_run_id(run_id)
+        staging_dir = self.root / "_staging" / safe_run_id
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir)
+        self._remove_orphaned_run_files(run_id)
+        staging_dir.mkdir(parents=True)
+
+        moved_paths: list[Path] = []
+        try:
+            for table_name in TABLE_NAMES:
+                table = _arrow_table(rows_by_table[table_name], _TABLE_SCHEMAS[table_name])
+                pq.write_table(table, staging_dir / f"{table_name}.parquet")
+
+            for table_name in TABLE_NAMES:
+                final_path = self._run_table_path(table_name, run_id)
+                if final_path.exists():
+                    raise ResultStoreWriteError(f"run table already exists: {table_name}/{run_id}")
+                final_path.parent.mkdir(parents=True, exist_ok=True)
+                (staging_dir / f"{table_name}.parquet").rename(final_path)
+                moved_paths.append(final_path)
+
+            self._write_manifest(bundle, rows_by_table)
+        except Exception:
+            for path in moved_paths:
+                path.unlink(missing_ok=True)
+            shutil.rmtree(staging_dir, ignore_errors=True)
+            raise
+        finally:
+            shutil.rmtree(staging_dir, ignore_errors=True)
+
+        # The catalog is derived convenience state. A refresh failure must not
+        # turn a fully manifested run into a failed append.
+        with suppress(Exception):
+            self.refresh_catalog()
+
+    def run_exists(self, run_id: str) -> bool:
+        """Return whether a run has already been written."""
+
+        return self._manifest_path(run_id).exists()
+
+    def list_runs(self) -> tuple[CalculationRun, ...]:
+        """Return stored calculation runs ordered by business date and run id."""
+
+        rows = self._fetchall(
+            "runs",
+            """
+            SELECT run_id, as_of_date, regime_id, base_currency, input_snapshot_id,
+                   calculation_scope, engine_version, code_version,
+                   calculation_policy_id, created_at, metadata_json
+            FROM {table}
+            ORDER BY as_of_date, run_id
+            """,
+        )
+        return tuple(_run_from_row(row) for row in rows)
+
+    def get_run(self, run_id: str) -> CalculationRun | None:
+        """Return a stored run by id, or ``None`` when absent."""
+
+        if not self.run_exists(run_id):
+            return None
+        rows = self._fetchall(
+            "runs",
+            """
+            SELECT run_id, as_of_date, regime_id, base_currency, input_snapshot_id,
+                   calculation_scope, engine_version, code_version,
+                   calculation_policy_id, created_at, metadata_json
+            FROM {table}
+            WHERE run_id = ?
+            """,
+            (run_id,),
+        )
+        return None if not rows else _run_from_row(rows[0])
+
+    def capital_tree(self, run_id: str) -> tuple[CapitalNode, ...]:
+        """Return all capital graph nodes for one run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetchall(
+            "capital_nodes",
+            """
+            SELECT run_id, node_id, node_type, component, label, desk_id, portfolio_id,
+                   book_id, risk_class, bucket, issuer_id, counterparty_id,
+                   calculation_branch, regulatory_rule_id, sort_key, metadata_json
+            FROM {table}
+            WHERE run_id = ?
+            ORDER BY sort_key, node_id
+            """,
+            (run_id,),
+        )
+        return tuple(_node_from_row(row) for row in rows)
+
+    def child_nodes(self, run_id: str, parent_node_id: str) -> tuple[CapitalNode, ...]:
+        """Return direct child nodes in graph order."""
+
+        if not self.run_exists(run_id):
+            return ()
+        if not self._has_table_files("capital_nodes") or not self._has_table_files("capital_edges"):
+            return ()
+        rows = self._fetch_custom(
+            """
+            SELECT n.run_id, n.node_id, n.node_type, n.component, n.label, n.desk_id,
+                   n.portfolio_id, n.book_id, n.risk_class, n.bucket, n.issuer_id,
+                   n.counterparty_id, n.calculation_branch, n.regulatory_rule_id,
+                   n.sort_key, n.metadata_json
+            FROM {nodes} n
+            JOIN {edges} e
+              ON e.run_id = n.run_id
+             AND e.child_node_id = n.node_id
+            WHERE e.run_id = ? AND e.parent_node_id = ?
+            ORDER BY e.sort_key, n.sort_key, n.node_id
+            """.format(
+                nodes=self._parquet_relation("capital_nodes"),
+                edges=self._parquet_relation("capital_edges"),
+            ),
+            (run_id, parent_node_id),
+        )
+        return tuple(_node_from_row(row) for row in rows)
+
+    def edges(self, run_id: str) -> tuple[CapitalEdge, ...]:
+        """Return graph edges for one run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetchall(
+            "capital_edges",
+            """
+            SELECT run_id, parent_node_id, child_node_id, edge_type,
+                   aggregation_weight, sort_key
+            FROM {table}
+            WHERE run_id = ?
+            ORDER BY sort_key, parent_node_id, child_node_id
+            """,
+            (run_id,),
+        )
+        return tuple(_edge_from_row(row) for row in rows)
+
+    def measures_for_node(self, run_id: str, node_id: str) -> tuple[CapitalMeasure, ...]:
+        """Return scalar measures attached to one node."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetchall(
+            "capital_measures",
+            """
+            SELECT run_id, node_id, measure_name, amount, currency, unit, scenario,
+                   methodology, regulatory_rule_id, citations_json, metadata_json
+            FROM {table}
+            WHERE run_id = ? AND node_id = ?
+            ORDER BY measure_name, scenario NULLS FIRST
+            """,
+            (run_id, node_id),
+        )
+        return tuple(_measure_from_row(row) for row in rows)
+
+    def artifact_refs(
+        self,
+        run_id: str,
+        *,
+        artifact_type: ArtifactType | str | None = None,
+    ) -> tuple[ArtifactRef, ...]:
+        """Return large-artifact references for a run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        if artifact_type is None:
+            rows = self._fetchall(
+                "artifact_refs",
+                """
+                SELECT run_id, artifact_id, component, artifact_type, uri, format,
+                       row_count, schema_fingerprint, partition_keys_json, metadata_json
+                FROM {table}
+                WHERE run_id = ?
+                ORDER BY artifact_type, artifact_id
+                """,
+                (run_id,),
+            )
+        else:
+            coerced = ArtifactType(artifact_type).value
+            rows = self._fetchall(
+                "artifact_refs",
+                """
+                SELECT run_id, artifact_id, component, artifact_type, uri, format,
+                       row_count, schema_fingerprint, partition_keys_json, metadata_json
+                FROM {table}
+                WHERE run_id = ? AND artifact_type = ?
+                ORDER BY artifact_id
+                """,
+                (run_id, coerced),
+            )
+        return tuple(_artifact_from_row(row) for row in rows)
+
+    def attributions_for_node(
+        self,
+        run_id: str,
+        node_id: str,
+    ) -> tuple[CapitalAttributionRecord, ...]:
+        """Return attribution rows attached to one capital node."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetchall(
+            "capital_attributions",
+            """
+            SELECT run_id, node_id, contribution_id, source_id, source_level, category,
+                   base_amount, method, bucket_key, marginal_multiplier, contribution,
+                   residual, reason, metadata_json
+            FROM {table}
+            WHERE run_id = ? AND node_id = ?
+            ORDER BY contribution_id
+            """,
+            (run_id, node_id),
+        )
+        return tuple(_attribution_from_row(row) for row in rows)
+
+    def lineage_for_result(self, run_id: str, result_id: str) -> tuple[LineageRef, ...]:
+        """Return lineage references for a stored result object."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetchall(
+            "lineage_refs",
+            """
+            SELECT run_id, result_id, source_type, source_id, relationship, source_hash,
+                   metadata_json
+            FROM {table}
+            WHERE run_id = ? AND result_id = ?
+            ORDER BY source_type, source_id, relationship
+            """,
+            (run_id, result_id),
+        )
+        return tuple(_lineage_from_row(row) for row in rows)
+
+    def refresh_catalog(self) -> None:
+        """Create or replace DuckDB views over the Parquet result tables."""
+
+        con = self._connect_catalog()
+        try:
+            for table_name in TABLE_NAMES:
+                if self._has_table_files(table_name):
+                    con.execute(
+                        f"CREATE OR REPLACE VIEW {_view_name(table_name)} AS "
+                        f"SELECT * FROM {self._parquet_relation(table_name)}"
+                    )
+        finally:
+            con.close()
+
+    def _write_manifest(
+        self,
+        bundle: ResultBundle,
+        rows_by_table: Mapping[str, Sequence[Mapping[str, object]]],
+    ) -> None:
+        manifest_dir = self._manifest_path(bundle.run.run_id).parent
+        manifest_dir.mkdir(parents=True, exist_ok=True)
+        manifest_path = self._manifest_path(bundle.run.run_id)
+        temp_manifest_path = manifest_path.with_suffix(".json.tmp")
+        manifest = {
+            "schema_version": RESULT_STORE_SCHEMA_VERSION,
+            "backend": self.config.backend.value,
+            "run_id": bundle.run.run_id,
+            "as_of_date": bundle.run.as_of_date.isoformat(),
+            "regime_id": bundle.run.regime_id,
+            "tables": {table_name: len(rows_by_table[table_name]) for table_name in TABLE_NAMES},
+        }
+        temp_manifest_path.write_text(
+            stable_json_dumps(manifest) + "\n",
+            encoding="utf-8",
+        )
+        temp_manifest_path.replace(manifest_path)
+
+    def _fetchall(
+        self,
+        table_name: str,
+        sql_template: str,
+        parameters: Sequence[object] = (),
+    ) -> tuple[tuple[object, ...], ...]:
+        if not self._has_table_files(table_name):
+            return ()
+        sql = sql_template.format(table=self._parquet_relation(table_name))
+        return self._fetch_custom(sql, parameters)
+
+    def _fetch_custom(
+        self,
+        sql: str,
+        parameters: Sequence[object] = (),
+    ) -> tuple[tuple[object, ...], ...]:
+        con = self._connect_query()
+        try:
+            raw_rows = con.execute(sql, parameters).fetchall()
+            return tuple(tuple(row) for row in raw_rows)
+        finally:
+            con.close()
+
+    def _connect_catalog(self) -> Any:
+        return duckdb.connect(str(self.catalog_path))
+
+    def _connect_query(self) -> Any:
+        return duckdb.connect()
+
+    def _run_table_path(self, table_name: str, run_id: str) -> Path:
+        if table_name not in TABLE_NAMES:
+            raise ResultStoreContractError(f"unknown table: {table_name}", field="table_name")
+        return self.parquet_root / table_name / f"{_safe_run_id(run_id)}.parquet"
+
+    def _has_table_files(self, table_name: str) -> bool:
+        return bool(self._table_files(table_name))
+
+    def _parquet_relation(self, table_name: str) -> str:
+        file_paths = ", ".join(_sql_literal(str(path)) for path in self._table_files(table_name))
+        return f"read_parquet([{file_paths}], union_by_name = true)"
+
+    def _manifest_path(self, run_id: str) -> Path:
+        return self.manifest_root / _safe_run_id(run_id) / "run_manifest.json"
+
+    def _committed_run_ids(self) -> tuple[str, ...]:
+        return tuple(
+            sorted(
+                unquote(path.parent.name) for path in self.manifest_root.glob("*/run_manifest.json")
+            )
+        )
+
+    def _table_files(self, table_name: str) -> tuple[Path, ...]:
+        if table_name not in TABLE_NAMES:
+            raise ResultStoreContractError(f"unknown table: {table_name}", field="table_name")
+        return tuple(
+            path
+            for run_id in self._committed_run_ids()
+            if (path := self._run_table_path(table_name, run_id)).exists()
+        )
+
+    def _remove_orphaned_run_files(self, run_id: str) -> None:
+        for table_name in TABLE_NAMES:
+            self._run_table_path(table_name, run_id).unlink(missing_ok=True)
+
+
+def _rows_for_bundle(bundle: ResultBundle) -> dict[str, list[dict[str, object]]]:
+    return {
+        "runs": [_run_row(bundle.run)],
+        "capital_nodes": [_node_row(node) for node in bundle.nodes],
+        "capital_edges": [_edge_row(edge) for edge in bundle.edges],
+        "capital_measures": [_measure_row(measure) for measure in bundle.measures],
+        "artifact_refs": [_artifact_row(artifact) for artifact in bundle.artifacts],
+        "lineage_refs": [_lineage_row(lineage) for lineage in bundle.lineage],
+        "capital_attributions": [
+            _attribution_row(attribution) for attribution in bundle.attributions
+        ],
+    }
+
+
+def _run_row(run: CalculationRun) -> dict[str, object]:
+    return {
+        "run_id": run.run_id,
+        "as_of_date": run.as_of_date.isoformat(),
+        "regime_id": run.regime_id,
+        "base_currency": run.base_currency,
+        "input_snapshot_id": run.input_snapshot_id,
+        "calculation_scope": run.calculation_scope,
+        "engine_version": run.engine_version,
+        "code_version": run.code_version,
+        "calculation_policy_id": run.calculation_policy_id,
+        "created_at": run.created_at.isoformat(),
+        "metadata_json": _metadata_json(run.metadata),
+    }
+
+
+def _node_row(node: CapitalNode) -> dict[str, object]:
+    return {
+        "run_id": node.run_id,
+        "node_id": node.node_id,
+        "node_type": _stored_value(node.node_type),
+        "component": _stored_value(node.component),
+        "label": node.label,
+        "desk_id": node.desk_id,
+        "portfolio_id": node.portfolio_id,
+        "book_id": node.book_id,
+        "risk_class": node.risk_class,
+        "bucket": node.bucket,
+        "issuer_id": node.issuer_id,
+        "counterparty_id": node.counterparty_id,
+        "calculation_branch": node.calculation_branch,
+        "regulatory_rule_id": node.regulatory_rule_id,
+        "sort_key": node.sort_key,
+        "metadata_json": _metadata_json(node.metadata),
+    }
+
+
+def _edge_row(edge: CapitalEdge) -> dict[str, object]:
+    return {
+        "run_id": edge.run_id,
+        "parent_node_id": edge.parent_node_id,
+        "child_node_id": edge.child_node_id,
+        "edge_type": _stored_value(edge.edge_type),
+        "aggregation_weight": edge.aggregation_weight,
+        "sort_key": edge.sort_key,
+    }
+
+
+def _measure_row(measure: CapitalMeasure) -> dict[str, object]:
+    return {
+        "run_id": measure.run_id,
+        "node_id": measure.node_id,
+        "measure_name": measure.measure_name,
+        "amount": measure.amount,
+        "currency": measure.currency,
+        "unit": measure.unit,
+        "scenario": measure.scenario,
+        "methodology": measure.methodology,
+        "regulatory_rule_id": measure.regulatory_rule_id,
+        "citations_json": stable_json_dumps(measure.citations),
+        "metadata_json": _metadata_json(measure.metadata),
+    }
+
+
+def _artifact_row(artifact: ArtifactRef) -> dict[str, object]:
+    return {
+        "run_id": artifact.run_id,
+        "artifact_id": artifact.artifact_id,
+        "component": _stored_value(artifact.component),
+        "artifact_type": _stored_value(artifact.artifact_type),
+        "uri": artifact.uri,
+        "format": artifact.format,
+        "row_count": artifact.row_count,
+        "schema_fingerprint": artifact.schema_fingerprint,
+        "partition_keys_json": stable_json_dumps(artifact.partition_keys),
+        "metadata_json": _metadata_json(artifact.metadata),
+    }
+
+
+def _lineage_row(lineage: LineageRef) -> dict[str, object]:
+    return {
+        "run_id": lineage.run_id,
+        "result_id": lineage.result_id,
+        "source_type": lineage.source_type,
+        "source_id": lineage.source_id,
+        "relationship": lineage.relationship,
+        "source_hash": lineage.source_hash,
+        "metadata_json": _metadata_json(lineage.metadata),
+    }
+
+
+def _attribution_row(attribution: CapitalAttributionRecord) -> dict[str, object]:
+    return {
+        "run_id": attribution.run_id,
+        "node_id": attribution.node_id,
+        "contribution_id": attribution.contribution_id,
+        "source_id": attribution.source_id,
+        "source_level": attribution.source_level,
+        "category": attribution.category,
+        "base_amount": attribution.base_amount,
+        "method": _stored_value(attribution.method),
+        "bucket_key": attribution.bucket_key,
+        "marginal_multiplier": attribution.marginal_multiplier,
+        "contribution": attribution.contribution,
+        "residual": attribution.residual,
+        "reason": attribution.reason,
+        "metadata_json": _metadata_json(attribution.metadata),
+    }
+
+
+def _run_from_row(row: Sequence[object]) -> CalculationRun:
+    return CalculationRun(
+        run_id=str(row[0]),
+        as_of_date=date.fromisoformat(str(row[1])),
+        regime_id=str(row[2]),
+        base_currency=str(row[3]),
+        input_snapshot_id=str(row[4]),
+        calculation_scope=str(row[5]),
+        engine_version=str(row[6]),
+        code_version=str(row[7]),
+        calculation_policy_id=str(row[8]),
+        created_at=datetime.fromisoformat(str(row[9])),
+        metadata=_json_mapping(row[10]),
+    )
+
+
+def _node_from_row(row: Sequence[object]) -> CapitalNode:
+    return CapitalNode(
+        run_id=str(row[0]),
+        node_id=str(row[1]),
+        node_type=NodeType(str(row[2])),
+        component=FrtbComponent(str(row[3])),
+        label=str(row[4]),
+        desk_id=_optional_text(row[5]),
+        portfolio_id=_optional_text(row[6]),
+        book_id=_optional_text(row[7]),
+        risk_class=_optional_text(row[8]),
+        bucket=_optional_text(row[9]),
+        issuer_id=_optional_text(row[10]),
+        counterparty_id=_optional_text(row[11]),
+        calculation_branch=_optional_text(row[12]),
+        regulatory_rule_id=_optional_text(row[13]),
+        sort_key=_int_value(row[14]),
+        metadata=_json_mapping(row[15]),
+    )
+
+
+def _edge_from_row(row: Sequence[object]) -> CapitalEdge:
+    return CapitalEdge(
+        run_id=str(row[0]),
+        parent_node_id=str(row[1]),
+        child_node_id=str(row[2]),
+        edge_type=EdgeType(str(row[3])),
+        aggregation_weight=_float_value(row[4]),
+        sort_key=_int_value(row[5]),
+    )
+
+
+def _measure_from_row(row: Sequence[object]) -> CapitalMeasure:
+    return CapitalMeasure(
+        run_id=str(row[0]),
+        node_id=str(row[1]),
+        measure_name=str(row[2]),
+        amount=_float_value(row[3]),
+        currency=str(row[4]),
+        unit=str(row[5]),
+        scenario=_optional_text(row[6]),
+        methodology=_optional_text(row[7]),
+        regulatory_rule_id=_optional_text(row[8]),
+        citations=_json_text_tuple(row[9]),
+        metadata=_json_mapping(row[10]),
+    )
+
+
+def _artifact_from_row(row: Sequence[object]) -> ArtifactRef:
+    return ArtifactRef(
+        run_id=str(row[0]),
+        artifact_id=str(row[1]),
+        component=FrtbComponent(str(row[2])),
+        artifact_type=ArtifactType(str(row[3])),
+        uri=str(row[4]),
+        format=str(row[5]),
+        row_count=_int_value(row[6]),
+        schema_fingerprint=_optional_text(row[7]),
+        partition_keys=_json_text_tuple(row[8]),
+        metadata=_json_mapping(row[9]),
+    )
+
+
+def _lineage_from_row(row: Sequence[object]) -> LineageRef:
+    return LineageRef(
+        run_id=str(row[0]),
+        result_id=str(row[1]),
+        source_type=str(row[2]),
+        source_id=str(row[3]),
+        relationship=str(row[4]),
+        source_hash=_optional_text(row[5]),
+        metadata=_json_mapping(row[6]),
+    )
+
+
+def _attribution_from_row(row: Sequence[object]) -> CapitalAttributionRecord:
+    return CapitalAttributionRecord(
+        run_id=str(row[0]),
+        node_id=str(row[1]),
+        contribution_id=str(row[2]),
+        source_id=str(row[3]),
+        source_level=str(row[4]),
+        category=str(row[5]),
+        base_amount=_float_value(row[6]),
+        method=AttributionMethod(str(row[7])),
+        bucket_key=_optional_text(row[8]),
+        marginal_multiplier=_optional_float(row[9]),
+        contribution=_optional_float(row[10]),
+        residual=_float_value(row[11]),
+        reason=str(row[12]),
+        metadata=_json_mapping(row[13]),
+    )
+
+
+def _metadata_json(metadata: Mapping[str, object]) -> str:
+    return str(stable_json_dumps(dict(metadata)))
+
+
+def _json_mapping(value: object) -> Mapping[str, object]:
+    try:
+        parsed = json.loads(str(value))
+    except json.JSONDecodeError as exc:
+        raise ResultStoreContractError(f"malformed JSON object: {exc}") from exc
+    if not isinstance(parsed, dict):
+        raise ResultStoreContractError("JSON field must decode to an object")
+    return parsed
+
+
+def _json_text_tuple(value: object) -> tuple[str, ...]:
+    try:
+        parsed = json.loads(str(value))
+    except json.JSONDecodeError as exc:
+        raise ResultStoreContractError(f"malformed JSON text list: {exc}") from exc
+    if not isinstance(parsed, list) or not all(isinstance(item, str) for item in parsed):
+        raise ResultStoreContractError("JSON field must decode to a list of strings")
+    return tuple(parsed)
+
+
+def _optional_text(value: object) -> str | None:
+    if value is None:
+        return None
+    return str(value)
+
+
+def _optional_float(value: object) -> float | None:
+    if value is None:
+        return None
+    return _float_value(value)
+
+
+def _float_value(value: object) -> float:
+    if isinstance(value, bool):
+        raise ResultStoreContractError("numeric field must not be boolean")
+    if isinstance(value, int | float | str):
+        try:
+            return float(value)
+        except ValueError as exc:
+            raise ResultStoreContractError(f"invalid numeric value: {value}") from exc
+    raise ResultStoreContractError("numeric field must be int, float, or numeric text")
+
+
+def _int_value(value: object) -> int:
+    if isinstance(value, bool):
+        raise ResultStoreContractError("integer field must not be boolean")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError as exc:
+            raise ResultStoreContractError(f"invalid integer value: {value}") from exc
+    raise ResultStoreContractError("integer field must be int or integer text")
+
+
+def _stored_value(value: StrEnum | str) -> str:
+    if isinstance(value, StrEnum):
+        return value.value
+    return value
+
+
+def _safe_run_id(run_id: str) -> str:
+    return quote(run_id, safe="")
+
+
+def _sql_literal(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _view_name(table_name: str) -> str:
+    return f"frtb_result_store_{table_name}"
+
+
+def _arrow_table(rows: Sequence[Mapping[str, object]], schema: Any) -> Any:
+    return pa.Table.from_pylist(list(rows), schema=schema)
+
+
+_TABLE_SCHEMAS: dict[str, Any] = {
+    "runs": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("as_of_date", pa.string()),
+            ("regime_id", pa.string()),
+            ("base_currency", pa.string()),
+            ("input_snapshot_id", pa.string()),
+            ("calculation_scope", pa.string()),
+            ("engine_version", pa.string()),
+            ("code_version", pa.string()),
+            ("calculation_policy_id", pa.string()),
+            ("created_at", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "capital_nodes": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("node_id", pa.string()),
+            ("node_type", pa.string()),
+            ("component", pa.string()),
+            ("label", pa.string()),
+            ("desk_id", pa.string()),
+            ("portfolio_id", pa.string()),
+            ("book_id", pa.string()),
+            ("risk_class", pa.string()),
+            ("bucket", pa.string()),
+            ("issuer_id", pa.string()),
+            ("counterparty_id", pa.string()),
+            ("calculation_branch", pa.string()),
+            ("regulatory_rule_id", pa.string()),
+            ("sort_key", pa.int64()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "capital_edges": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("parent_node_id", pa.string()),
+            ("child_node_id", pa.string()),
+            ("edge_type", pa.string()),
+            ("aggregation_weight", pa.float64()),
+            ("sort_key", pa.int64()),
+        ]
+    ),
+    "capital_measures": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("node_id", pa.string()),
+            ("measure_name", pa.string()),
+            ("amount", pa.float64()),
+            ("currency", pa.string()),
+            ("unit", pa.string()),
+            ("scenario", pa.string()),
+            ("methodology", pa.string()),
+            ("regulatory_rule_id", pa.string()),
+            ("citations_json", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "artifact_refs": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("artifact_id", pa.string()),
+            ("component", pa.string()),
+            ("artifact_type", pa.string()),
+            ("uri", pa.string()),
+            ("format", pa.string()),
+            ("row_count", pa.int64()),
+            ("schema_fingerprint", pa.string()),
+            ("partition_keys_json", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "lineage_refs": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("result_id", pa.string()),
+            ("source_type", pa.string()),
+            ("source_id", pa.string()),
+            ("relationship", pa.string()),
+            ("source_hash", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "capital_attributions": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("node_id", pa.string()),
+            ("contribution_id", pa.string()),
+            ("source_id", pa.string()),
+            ("source_level", pa.string()),
+            ("category", pa.string()),
+            ("base_amount", pa.float64()),
+            ("method", pa.string()),
+            ("bucket_key", pa.string()),
+            ("marginal_multiplier", pa.float64()),
+            ("contribution", pa.float64()),
+            ("residual", pa.float64()),
+            ("reason", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+}

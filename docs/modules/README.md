@@ -3,7 +3,7 @@
 This directory is the suite-level home for capital component documentation. It
 contains implemented IMA and RRAO module documentation, DRC partial-runtime
 planning and requirements, partial-runtime front doors for SBM and CVA, and
-suite support documentation for common and orchestration.
+suite support documentation for common, orchestration, and result storage.
 
 For market risk Standardised Approach, SA is the composed total `SBM + DRC +
 RRAO` under Basel MAR20.4. The implementation taxonomy therefore uses three
@@ -19,6 +19,7 @@ component packages: `frtb-sbm`, `frtb-drc`, and `frtb-rrao`. See the
 | RRAO | Implemented for supported canonical inputs | [frtb-rrao/README.md](frtb-rrao/README.md) | [frtb-rrao/REGULATORY_REQUIREMENTS.md](frtb-rrao/REGULATORY_REQUIREMENTS.md) | [frtb-rrao/PRD.md](frtb-rrao/PRD.md) | [frtb-rrao/requirements/BASEL_FRTB_RRAO.yml](frtb-rrao/requirements/BASEL_FRTB_RRAO.yml) |
 | CVA | Partial runtime; reduced/full BA-CVA, supported SA-CVA delta/vega, and mixed carve-out paths implemented | [frtb-cva/README.md](frtb-cva/README.md) | [frtb-cva/REGULATORY_REQUIREMENTS.md](frtb-cva/REGULATORY_REQUIREMENTS.md) | [frtb-cva/PRD.md](frtb-cva/PRD.md) | [frtb-cva/requirements/BASEL_FRTB_CVA.yml](frtb-cva/requirements/BASEL_FRTB_CVA.yml) |
 | Orchestration | Partial; SA handoff/profile guards, SA arithmetic, IMA fallback route recording, and CVA handoff preparation implemented; suite arithmetic fails closed | [frtb-orchestration/README.md](frtb-orchestration/README.md) | N/A | N/A | N/A |
+| Result store | Partial; local DuckDB/Parquet run store for capital graph drilldown, artifacts, lineage, and attribution | [frtb-result-store/README.md](frtb-result-store/README.md) | N/A | [frtb-result-store/DETAILED_DESIGN.md](frtb-result-store/DETAILED_DESIGN.md) / [issue plan](frtb-result-store/ISSUE_BREAKDOWN.md) | [frtb-result-store/PUBLIC_API.md](frtb-result-store/PUBLIC_API.md) |
 
 ## Implementation Pattern
 
@@ -53,11 +54,11 @@ duplicate keys unless aggregation is explicit, unknown enum values, non-finite
 numbers, implicit sign conventions, and unsupported regulatory features.
 
 Calculation modules are pure kernels: typed inputs in, frozen result objects
-out. Database reads, Excel output, dashboard writes, and persisted manifests
-belong in adapters or `frtb-orchestration`, not in capital package kernels.
-`frtb-orchestration` owns composed SA capital, IMA fallback routing,
-top-of-house aggregation, cross-component reconciliation, reporting adapters,
-and run manifests.
+out. Database reads, Excel output, dashboard writes, persisted manifests, and
+result-store writes belong in adapters, `frtb-orchestration`, or
+`frtb-result-store`, not in capital package kernels. `frtb-orchestration` owns
+composed SA capital, IMA fallback routing, top-of-house aggregation,
+cross-component reconciliation, reporting adapters, and run manifests.
 
 Every capital-producing result must carry enough metadata to reproduce and
 explain the number: run id, package id, model version, code version, rule

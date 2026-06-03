@@ -7,7 +7,8 @@
 ## Components
 
 This repository is a `uv` workspace with one Python package per capital
-component plus a shared common package. IMA and RRAO have implemented public calculation paths, DRC has a partial
+component, a shared common package, orchestration, and result-store
+infrastructure. IMA and RRAO have implemented public calculation paths, DRC has a partial
 non-securitisation runtime path, SBM has delta capital implemented for five
 risk classes (GIRR vega also implemented; curvature pending), and CVA has
 Reduced BA-CVA and SA-CVA GIRR delta implemented.
@@ -26,6 +27,7 @@ capital when a desk is not IMA-eligible.
 | `packages/frtb-rrao` | Standardised Approach residual risk add-on component | Implemented for supported canonical-input profiles |
 | `packages/frtb-cva` | Credit Valuation Adjustment capital | Partial runtime; Reduced BA-CVA and SA-CVA GIRR delta implemented; other SA-CVA risk classes and full hedge recognition unsupported |
 | `packages/frtb-orchestration` | Suite-level capital aggregation and firm-level consolidation | Partial; component handoff contracts exist, aggregation not implemented |
+| `packages/frtb-result-store` | DuckDB/Parquet store for immutable FRTB runs, drilldown, artifacts, lineage, and attribution | Partial result-store backend; not a capital calculation package |
 
 ## Why a monorepo
 
@@ -69,6 +71,7 @@ Per-package targets are available from each package's own `Makefile` or via `uv 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — suite architecture and dependency graph
 - [`docs/README.md`](docs/README.md) — documentation map
 - [`docs/modules/`](docs/modules/README.md) — suite-level capital module documentation
+- [`docs/modules/frtb-result-store/`](docs/modules/frtb-result-store/README.md) — result-store module documentation
 - [`docs/modules/frtb-ima/`](docs/modules/frtb-ima/README.md) — FRTB-IMA module documentation front door
 - [`docs/modules/standardised-approach.md`](docs/modules/standardised-approach.md) — SA composition from SBM, DRC, and RRAO
 - [`docs/modules/frtb-ima/model_documentation/`](docs/modules/frtb-ima/model_documentation/README.md) — FRTB-IMA model documentation pack

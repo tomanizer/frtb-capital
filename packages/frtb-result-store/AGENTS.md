@@ -1,0 +1,25 @@
+# AGENTS.md — frtb-result-store
+
+`frtb-result-store` owns storage and query contracts for FRTB calculation
+evidence.
+
+## Current status
+
+The package has a first local DuckDB/Parquet backend:
+
+- append-only run bundles;
+- capital result graph nodes and edges;
+- scalar capital and intermediate measures;
+- large-artifact references for vector and drillthrough data;
+- lineage and attribution records.
+
+## Rules
+
+- Do not implement capital formulae in this package.
+- Do not import private modules from capital packages.
+- Keep DuckDB, Parquet, and Arrow dependencies inside result-store IO and
+  artifact handling modules.
+- Capital packages must not import `frtb-result-store`.
+- Preserve append-only run semantics; corrections require a new `run_id`.
+- Keep artifact references URI-based so local and object-storage drillthrough
+  can share the same domain model.

@@ -11,6 +11,7 @@ dependencies = [
     "frtb-drc",
     "frtb-ima",
     "frtb-orchestration",
+    "frtb-result-store",
     "frtb-rrao",
     "frtb-sbm",
 ]
@@ -24,12 +25,14 @@ frtb-cva = { workspace = true }
 frtb-drc = { workspace = true }
 frtb-ima = { workspace = true }
 frtb-orchestration = { workspace = true }
+frtb-result-store = { workspace = true }
 frtb-rrao = { workspace = true }
 frtb-sbm = { workspace = true }
 
 [dependency-groups]
 dev = [
     "cyclonedx-bom>=7.3,<7.4",
+    "duckdb>=1.4,<2",
     "hypothesis>=6.152,<6.153",
     "import-linter>=2.8,<2.9",
     "mutmut>=3.5,<3.6",
@@ -49,6 +52,7 @@ root_packages = [
     "frtb_drc",
     "frtb_ima",
     "frtb_orchestration",
+    "frtb_result_store",
     "frtb_rrao",
     "frtb_sbm",
 ]
@@ -61,6 +65,33 @@ layers = [
     "frtb_ima | frtb_sbm | frtb_drc | frtb_rrao | frtb_cva",
     "frtb_common",
 ]
+
+[[tool.importlinter.contracts]]
+name = "Result store depends only on shared primitives"
+type = "forbidden"
+source_modules = ["frtb_result_store"]
+forbidden_modules = [
+    "frtb_cva",
+    "frtb_drc",
+    "frtb_ima",
+    "frtb_orchestration",
+    "frtb_rrao",
+    "frtb_sbm",
+]
+
+[[tool.importlinter.contracts]]
+name = "Capital suite does not import the result store"
+type = "forbidden"
+source_modules = [
+    "frtb_common",
+    "frtb_cva",
+    "frtb_drc",
+    "frtb_ima",
+    "frtb_orchestration",
+    "frtb_rrao",
+    "frtb_sbm",
+]
+forbidden_modules = ["frtb_result_store"]
 
 [tool.ruff]
 line-length = 100

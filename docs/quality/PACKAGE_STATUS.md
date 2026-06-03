@@ -18,6 +18,7 @@ make package-status-dashboard
 | `frtb-drc` | `frtb_drc` | `partial_runtime` | `capital` | `frtb_drc:PACKAGE_METADATA` | `frtb_drc:calculate_drc_capital` | `public-api` (`packages/frtb-drc/tests/test_drc_public_api.py`), `unsupported-runtime-paths` (`packages/frtb-drc/tests/test_drc_public_api.py`) | 2 requirements, 11 source refs ([`frtb-drc.yml`](../regulatory/crosswalk/frtb-drc.yml)) |
 | `frtb-ima` | `frtb_ima` | `implemented` | `capital` | `frtb_ima:PACKAGE_METADATA` | `frtb_ima:models_based_capital_for_policy` | `public-api` (`packages/frtb-ima/tests/test_public_api.py`) | 5 requirements, 28 source refs ([`frtb-ima.yml`](../regulatory/crosswalk/frtb-ima.yml)) |
 | `frtb-orchestration` | `frtb_orchestration` | `orchestration_partial` | `orchestration` | `frtb_orchestration:PACKAGE_METADATA` | `frtb_orchestration:calculate_suite_capital` | `orchestration-boundary` (`packages/frtb-orchestration/tests/test_orchestration_scaffold.py`) | 2 requirements, 13 source refs ([`frtb-orchestration.yml`](../regulatory/crosswalk/frtb-orchestration.yml)) |
+| `frtb-result-store` | `frtb_result_store` | `result_store_partial` | `result_store` | `frtb_result_store:PACKAGE_METADATA` | — | `duckdb-parquet` (`packages/frtb-result-store/tests/test_duckdb_parquet_store.py`), `public-api` (`packages/frtb-result-store/tests/test_result_store_public_api.py`) | — |
 | `frtb-rrao` | `frtb_rrao` | `implemented` | `capital` | `frtb_rrao:PACKAGE_METADATA` | `frtb_rrao:calculate_rrao_capital` | `public-api` (`packages/frtb-rrao/tests/test_rrao_public_api.py`) | 2 requirements, 11 source refs ([`frtb-rrao.yml`](../regulatory/crosswalk/frtb-rrao.yml)) |
 | `frtb-sbm` | `frtb_sbm` | `partial_runtime` | `capital` | `frtb_sbm:PACKAGE_METADATA` | `frtb_sbm:calculate_sbm_capital` | `public-api` (`packages/frtb-sbm/tests/test_sbm_public_api.py`), `support-matrix` (`packages/frtb-sbm/tests/test_sbm_support_matrix.py`), `unsupported-runtime-paths` (`packages/frtb-sbm/tests/test_sbm_unsupported_features.py`) | 5 requirements, 71 source refs ([`frtb-sbm.yml`](../regulatory/crosswalk/frtb-sbm.yml)) |
 
@@ -28,6 +29,7 @@ make package-status-dashboard
 | `implemented` | Deterministic public calculation path with validation evidence |
 | `partial_runtime` | Supported runtime slice with explicit fail-closed paths |
 | `orchestration_partial` | Suite handoff contracts without full aggregation |
+| `result_store_partial` | Storage contracts with a local DuckDB/Parquet backend |
 | `shared` | Shared library, not a capital component |
 
 Outputs from this suite are prototype model-validation evidence, not final

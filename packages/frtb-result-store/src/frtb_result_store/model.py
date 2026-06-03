@@ -1,0 +1,524 @@
+"""FRTB result-store domain contracts.
+
+The result store persists capital evidence after calculation. It does not own
+regulatory capital formulae; it owns immutable run identity, FRTB drilldown
+shape, large-artifact references, and attribution-ready records.
+"""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import StrEnum
+from types import MappingProxyType
+from typing import TypeVar
+
+from frtb_common import AttributionMethod, CapitalContribution
+
+__all__ = [
+    "ArtifactRef",
+    "ArtifactType",
+    "CalculationRun",
+    "CapitalAttributionRecord",
+    "CapitalEdge",
+    "CapitalMeasure",
+    "CapitalNode",
+    "EdgeType",
+    "FrtbComponent",
+    "LineageRef",
+    "NodeType",
+    "ResultBundle",
+    "ResultStoreContractError",
+    "StorageBackend",
+]
+
+
+class ResultStoreContractError(ValueError):
+    """Raised when a result-store contract would produce unauditable output."""
+
+    def __init__(self, message: str, *, field: str = "") -> None:
+        self.field = field
+        super().__init__(message)
+
+
+class StorageBackend(StrEnum):
+    """Supported or reserved storage backend modes."""
+
+    LOCAL_PARQUET = "local_parquet"
+    S3_PARQUET = "s3_parquet"
+    DUCKLAKE = "ducklake"
+
+
+class FrtbComponent(StrEnum):
+    """FRTB result components served by the store."""
+
+    TOP_OF_HOUSE = "TOP_OF_HOUSE"
+    IMA = "IMA"
+    STANDARDISED_APPROACH = "SA"
+    SBM = "SBM"
+    DRC = "DRC"
+    RRAO = "RRAO"
+    CVA = "CVA"
+
+
+class NodeType(StrEnum):
+    """Capital graph node classes used for FRTB drilldown."""
+
+    ROOT = "ROOT"
+    COMPONENT = "COMPONENT"
+    DESK = "DESK"
+    PORTFOLIO = "PORTFOLIO"
+    BOOK = "BOOK"
+    RISK_CLASS = "RISK_CLASS"
+    BUCKET = "BUCKET"
+    ISSUER = "ISSUER"
+    COUNTERPARTY = "COUNTERPARTY"
+    HEDGE_SET = "HEDGE_SET"
+    MEASURE_BRANCH = "MEASURE_BRANCH"
+    RISK_FACTOR = "RISK_FACTOR"
+    POSITION = "POSITION"
+
+
+class EdgeType(StrEnum):
+    """Capital graph relationship types."""
+
+    AGGREGATES = "AGGREGATES"
+    DRILLDOWN = "DRILLDOWN"
+    ATTRIBUTION_BRANCH = "ATTRIBUTION_BRANCH"
+
+
+class ArtifactType(StrEnum):
+    """Large drillthrough artifacts stored outside scalar measure rows."""
+
+    IMA_PNL_VECTOR = "IMA_PNL_VECTOR"
+    IMA_TAIL_OBSERVATION = "IMA_TAIL_OBSERVATION"
+    IMA_LIQUIDITY_HORIZON_VECTOR = "IMA_LIQUIDITY_HORIZON_VECTOR"
+    SBM_SENSITIVITY_TABLE = "SBM_SENSITIVITY_TABLE"
+    SBM_CORRELATION_INPUT = "SBM_CORRELATION_INPUT"
+    DRC_JTD_TABLE = "DRC_JTD_TABLE"
+    RRAO_EXPOSURE_TABLE = "RRAO_EXPOSURE_TABLE"
+    CVA_EXPOSURE_TABLE = "CVA_EXPOSURE_TABLE"
+    ATTRIBUTION_VECTOR = "ATTRIBUTION_VECTOR"
+    MOVEMENT_EXPLAIN = "MOVEMENT_EXPLAIN"
+    OTHER = "OTHER"
+
+
+EnumT = TypeVar("EnumT", bound=StrEnum)
+
+
+@dataclass(frozen=True, slots=True)
+class CalculationRun:
+    """Immutable identity for one linked FRTB calculation run."""
+
+    run_id: str
+    as_of_date: date
+    regime_id: str
+    base_currency: str
+    input_snapshot_id: str
+    calculation_scope: str
+    engine_version: str
+    code_version: str
+    calculation_policy_id: str
+    created_at: datetime
+    metadata: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        _require_plain_date(self.as_of_date, "as_of_date")
+        _require_non_empty_text(self.regime_id, "regime_id")
+        _require_non_empty_text(self.base_currency, "base_currency")
+        _require_non_empty_text(self.input_snapshot_id, "input_snapshot_id")
+        _require_non_empty_text(self.calculation_scope, "calculation_scope")
+        _require_non_empty_text(self.engine_version, "engine_version")
+        _require_non_empty_text(self.code_version, "code_version")
+        _require_non_empty_text(self.calculation_policy_id, "calculation_policy_id")
+        if not isinstance(self.created_at, datetime):
+            raise ResultStoreContractError("created_at must be a datetime", field="created_at")
+        if self.created_at.tzinfo is None:
+            raise ResultStoreContractError("created_at must be timezone-aware", field="created_at")
+        _freeze_metadata(self, self.metadata)
+
+
+@dataclass(frozen=True, slots=True)
+class CapitalNode:
+    """One node in the FRTB capital result graph."""
+
+    run_id: str
+    node_id: str
+    node_type: NodeType | str
+    component: FrtbComponent | str
+    label: str
+    desk_id: str | None = None
+    portfolio_id: str | None = None
+    book_id: str | None = None
+    risk_class: str | None = None
+    bucket: str | None = None
+    issuer_id: str | None = None
+    counterparty_id: str | None = None
+    calculation_branch: str | None = None
+    regulatory_rule_id: str | None = None
+    sort_key: int = 0
+    metadata: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        _require_non_empty_text(self.node_id, "node_id")
+        object.__setattr__(self, "node_type", _coerce_enum(self.node_type, NodeType, "node_type"))
+        object.__setattr__(
+            self, "component", _coerce_enum(self.component, FrtbComponent, "component")
+        )
+        _require_non_empty_text(self.label, "label")
+        for field_name in (
+            "desk_id",
+            "portfolio_id",
+            "book_id",
+            "risk_class",
+            "bucket",
+            "issuer_id",
+            "counterparty_id",
+            "calculation_branch",
+            "regulatory_rule_id",
+        ):
+            _validate_optional_text(getattr(self, field_name), field_name)
+        _require_int(self.sort_key, "sort_key")
+        _freeze_metadata(self, self.metadata)
+
+
+@dataclass(frozen=True, slots=True)
+class CapitalEdge:
+    """Directed relationship between two capital graph nodes."""
+
+    run_id: str
+    parent_node_id: str
+    child_node_id: str
+    edge_type: EdgeType | str = EdgeType.AGGREGATES
+    aggregation_weight: float = 1.0
+    sort_key: int = 0
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        _require_non_empty_text(self.parent_node_id, "parent_node_id")
+        _require_non_empty_text(self.child_node_id, "child_node_id")
+        object.__setattr__(self, "edge_type", _coerce_enum(self.edge_type, EdgeType, "edge_type"))
+        object.__setattr__(
+            self,
+            "aggregation_weight",
+            _require_finite_number(self.aggregation_weight, "aggregation_weight"),
+        )
+        _require_int(self.sort_key, "sort_key")
+
+
+@dataclass(frozen=True, slots=True)
+class CapitalMeasure:
+    """Scalar capital amount or intermediate FRTB result attached to a node."""
+
+    run_id: str
+    node_id: str
+    measure_name: str
+    amount: float
+    currency: str
+    unit: str = "currency"
+    scenario: str | None = None
+    methodology: str | None = None
+    regulatory_rule_id: str | None = None
+    citations: tuple[str, ...] = ()
+    metadata: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        _require_non_empty_text(self.node_id, "node_id")
+        _require_non_empty_text(self.measure_name, "measure_name")
+        object.__setattr__(self, "amount", _require_finite_number(self.amount, "amount"))
+        _require_non_empty_text(self.currency, "currency")
+        _require_non_empty_text(self.unit, "unit")
+        _validate_optional_text(self.scenario, "scenario")
+        _validate_optional_text(self.methodology, "methodology")
+        _validate_optional_text(self.regulatory_rule_id, "regulatory_rule_id")
+        object.__setattr__(self, "citations", _require_text_tuple(self.citations, "citations"))
+        _freeze_metadata(self, self.metadata)
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactRef:
+    """Reference to a large drillthrough artifact such as an IMA P&L vector."""
+
+    run_id: str
+    artifact_id: str
+    component: FrtbComponent | str
+    artifact_type: ArtifactType | str
+    uri: str
+    format: str
+    row_count: int
+    schema_fingerprint: str | None = None
+    partition_keys: tuple[str, ...] = ()
+    metadata: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        _require_non_empty_text(self.artifact_id, "artifact_id")
+        object.__setattr__(
+            self, "component", _coerce_enum(self.component, FrtbComponent, "component")
+        )
+        object.__setattr__(
+            self,
+            "artifact_type",
+            _coerce_enum(self.artifact_type, ArtifactType, "artifact_type"),
+        )
+        _require_non_empty_text(self.uri, "uri")
+        _require_non_empty_text(self.format, "format")
+        _require_non_negative_int(self.row_count, "row_count")
+        _validate_optional_text(self.schema_fingerprint, "schema_fingerprint")
+        object.__setattr__(
+            self,
+            "partition_keys",
+            _require_text_tuple(self.partition_keys, "partition_keys"),
+        )
+        _freeze_metadata(self, self.metadata)
+
+
+@dataclass(frozen=True, slots=True)
+class LineageRef:
+    """Trace one stored result object back to an input, policy, or source hash."""
+
+    run_id: str
+    result_id: str
+    source_type: str
+    source_id: str
+    relationship: str = "derived_from"
+    source_hash: str | None = None
+    metadata: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        _require_non_empty_text(self.result_id, "result_id")
+        _require_non_empty_text(self.source_type, "source_type")
+        _require_non_empty_text(self.source_id, "source_id")
+        _require_non_empty_text(self.relationship, "relationship")
+        _validate_optional_text(self.source_hash, "source_hash")
+        _freeze_metadata(self, self.metadata)
+
+
+@dataclass(frozen=True, slots=True)
+class CapitalAttributionRecord:
+    """Attribution row for Euler, residual, or unsupported contribution methods."""
+
+    run_id: str
+    node_id: str
+    contribution_id: str
+    source_id: str
+    source_level: str
+    category: str
+    base_amount: float
+    method: AttributionMethod | str
+    bucket_key: str | None = None
+    marginal_multiplier: float | None = None
+    contribution: float | None = None
+    residual: float = 0.0
+    reason: str = ""
+    metadata: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        _require_non_empty_text(self.node_id, "node_id")
+        _require_non_empty_text(self.contribution_id, "contribution_id")
+        _require_non_empty_text(self.source_id, "source_id")
+        _require_non_empty_text(self.source_level, "source_level")
+        _validate_optional_text(self.bucket_key, "bucket_key")
+        _require_non_empty_text(self.category, "category")
+        object.__setattr__(
+            self, "base_amount", _require_finite_number(self.base_amount, "base_amount")
+        )
+        if self.marginal_multiplier is not None:
+            object.__setattr__(
+                self,
+                "marginal_multiplier",
+                _require_finite_number(self.marginal_multiplier, "marginal_multiplier"),
+            )
+        if self.contribution is not None:
+            object.__setattr__(
+                self,
+                "contribution",
+                _require_finite_number(self.contribution, "contribution"),
+            )
+        object.__setattr__(self, "method", _coerce_enum(self.method, AttributionMethod, "method"))
+        object.__setattr__(self, "residual", _require_finite_number(self.residual, "residual"))
+        if not isinstance(self.reason, str):
+            raise ResultStoreContractError("reason must be text", field="reason")
+        if self.method == AttributionMethod.ANALYTICAL_EULER:
+            if self.marginal_multiplier is None or self.contribution is None:
+                raise ResultStoreContractError(
+                    "analytical Euler attribution requires marginal_multiplier and contribution",
+                    field="method",
+                )
+        _freeze_metadata(self, self.metadata)
+
+    @classmethod
+    def from_contribution(
+        cls,
+        *,
+        run_id: str,
+        node_id: str,
+        contribution: CapitalContribution,
+        metadata: Mapping[str, object] | None = None,
+    ) -> CapitalAttributionRecord:
+        """Create a stored attribution record from the shared contribution DTO."""
+
+        return cls(
+            run_id=run_id,
+            node_id=node_id,
+            contribution_id=contribution.contribution_id,
+            source_id=contribution.source_id,
+            source_level=contribution.source_level,
+            bucket_key=contribution.bucket_key,
+            category=contribution.category,
+            base_amount=contribution.base_amount,
+            marginal_multiplier=contribution.marginal_multiplier,
+            contribution=contribution.contribution,
+            method=contribution.method,
+            residual=contribution.residual,
+            reason=contribution.reason,
+            metadata={} if metadata is None else metadata,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ResultBundle:
+    """Complete append-only payload for one FRTB result-store run."""
+
+    run: CalculationRun
+    nodes: tuple[CapitalNode, ...]
+    edges: tuple[CapitalEdge, ...] = ()
+    measures: tuple[CapitalMeasure, ...] = ()
+    artifacts: tuple[ArtifactRef, ...] = ()
+    lineage: tuple[LineageRef, ...] = ()
+    attributions: tuple[CapitalAttributionRecord, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.run, CalculationRun):
+            raise ResultStoreContractError("run must be a CalculationRun", field="run")
+        _require_non_empty_tuple(self.nodes, "nodes")
+        for field_name in ("edges", "measures", "artifacts", "lineage", "attributions"):
+            object.__setattr__(self, field_name, tuple(getattr(self, field_name)))
+
+        run_id = self.run.run_id
+        node_ids = [node.node_id for node in self.nodes]
+        seen_node_ids: set[str] = set()
+        duplicate_node_ids: set[str] = set()
+        for node_id in node_ids:
+            if node_id in seen_node_ids:
+                duplicate_node_ids.add(node_id)
+            else:
+                seen_node_ids.add(node_id)
+        duplicate_nodes = sorted(duplicate_node_ids)
+        if duplicate_nodes:
+            raise ResultStoreContractError(
+                f"duplicate node ids: {', '.join(duplicate_nodes)}",
+                field="nodes",
+            )
+        known_nodes = set(node_ids)
+        for node in self.nodes:
+            _require_run_id(node.run_id, run_id, "nodes")
+        for edge in self.edges:
+            _require_run_id(edge.run_id, run_id, "edges")
+            if edge.parent_node_id not in known_nodes:
+                raise ResultStoreContractError(
+                    f"edge parent node not found: {edge.parent_node_id}",
+                    field="edges",
+                )
+            if edge.child_node_id not in known_nodes:
+                raise ResultStoreContractError(
+                    f"edge child node not found: {edge.child_node_id}",
+                    field="edges",
+                )
+        for measure in self.measures:
+            _require_run_id(measure.run_id, run_id, "measures")
+            if measure.node_id not in known_nodes:
+                raise ResultStoreContractError(
+                    f"measure node not found: {measure.node_id}",
+                    field="measures",
+                )
+        for artifact in self.artifacts:
+            _require_run_id(artifact.run_id, run_id, "artifacts")
+        for lineage in self.lineage:
+            _require_run_id(lineage.run_id, run_id, "lineage")
+        for attribution in self.attributions:
+            _require_run_id(attribution.run_id, run_id, "attributions")
+            if attribution.node_id not in known_nodes:
+                raise ResultStoreContractError(
+                    f"attribution node not found: {attribution.node_id}",
+                    field="attributions",
+                )
+
+
+def _coerce_enum(value: EnumT | str, enum_type: type[EnumT], field_name: str) -> EnumT:
+    if isinstance(value, enum_type):
+        return value
+    try:
+        return enum_type(value)
+    except ValueError as exc:
+        allowed = ", ".join(item.value for item in enum_type)
+        raise ResultStoreContractError(
+            f"{field_name} must be one of: {allowed}",
+            field=field_name,
+        ) from exc
+
+
+def _require_non_empty_text(value: object, field: str) -> None:
+    if not isinstance(value, str) or not value:
+        raise ResultStoreContractError(f"{field} must be non-empty text", field=field)
+
+
+def _validate_optional_text(value: object, field: str) -> None:
+    if value is not None and (not isinstance(value, str) or not value):
+        raise ResultStoreContractError(f"{field} must be non-empty text when set", field=field)
+
+
+def _require_plain_date(value: object, field: str) -> None:
+    if not isinstance(value, date) or isinstance(value, datetime):
+        raise ResultStoreContractError(f"{field} must be a date", field=field)
+
+
+def _require_finite_number(value: object, field: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ResultStoreContractError(f"{field} must be numeric", field=field)
+    number = float(value)
+    if not math.isfinite(number):
+        raise ResultStoreContractError(f"{field} must be finite", field=field)
+    return number
+
+
+def _require_non_negative_int(value: object, field: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ResultStoreContractError(f"{field} must be a non-negative integer", field=field)
+
+
+def _require_int(value: object, field: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ResultStoreContractError(f"{field} must be an integer", field=field)
+
+
+def _require_text_tuple(value: object, field: str) -> tuple[str, ...]:
+    if not isinstance(value, tuple) or not all(isinstance(item, str) and item for item in value):
+        raise ResultStoreContractError(f"{field} must be a tuple of non-empty text", field=field)
+    return value
+
+
+def _require_non_empty_tuple(value: object, field: str) -> None:
+    if not isinstance(value, tuple) or not value:
+        raise ResultStoreContractError(f"{field} must be a non-empty tuple", field=field)
+
+
+def _require_run_id(value: str, expected: str, field: str) -> None:
+    if value != expected:
+        raise ResultStoreContractError(
+            f"{field} run_id {value!r} does not match bundle run_id {expected!r}",
+            field=field,
+        )
+
+
+def _freeze_metadata(instance: object, metadata: Mapping[str, object]) -> None:
+    if not isinstance(metadata, Mapping):
+        raise ResultStoreContractError("metadata must be a mapping", field="metadata")
+    object.__setattr__(instance, "metadata", MappingProxyType(dict(metadata)))

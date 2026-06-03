@@ -66,6 +66,16 @@ def test_kernel_import_boundary_allows_handoff_and_adapter_imports(tmp_path: Pat
     assert check_repo(tmp_path) == ()
 
 
+def test_kernel_import_boundary_exempts_result_store_io_package(tmp_path: Path) -> None:
+    _write_module(
+        tmp_path,
+        "packages/frtb-result-store/src/frtb_result_store/schema_registry.py",
+        "import pyarrow as pa\n",
+    )
+
+    assert check_repo(tmp_path) == ()
+
+
 def test_kernel_import_boundary_detects_dataframe_import_forms(tmp_path: Path) -> None:
     _write_module(
         tmp_path,

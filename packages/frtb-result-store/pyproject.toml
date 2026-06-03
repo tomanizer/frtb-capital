@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frtb-result-store"
+version = "0.1.0"
+description = "DuckDB and Parquet result store for FRTB capital evidence"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+    "frtb-common",
+    "pyarrow>=23.0.1,<24",
+]
+
+[project.optional-dependencies]
+duckdb = ["duckdb>=1.4,<2"]
+otel = ["opentelemetry-api>=1,<2"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+frtb_result_store = ["py.typed"]
+
+[tool.towncrier]
+package = "frtb_result_store"
+package_dir = "src"
+filename = "CHANGELOG.md"
+directory = "changelog.d"
+title_format = "## [{version}] - {project_date}"
+issue_format = "#{issue}"
+underlines = ["", "", ""]
+
+[[tool.towncrier.type]]
+directory = "fix"
+name = "Fixed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "feat"
+name = "Added"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "security"
+name = "Security"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "chore"
+name = "Changed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
+showcontent = true
