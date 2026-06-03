@@ -1,6 +1,6 @@
 # Documentation Audit
 
-Date: 2026-06-03
+Date: 2026-06-04
 
 ## Scope
 
@@ -41,12 +41,22 @@ and the generated [`docs/quality/PACKAGE_STATUS.md`](quality/PACKAGE_STATUS.md).
   workspace structure.
 - Corrected the SBM summary line in `docs/modules/README.md`.
 
+## Findings addressed (2026-06-04)
+
+- Clarified that
+  [`docs/quality/QUALITY_CONTROL_PLANE_REQUIREMENTS.md`](quality/QUALITY_CONTROL_PLANE_REQUIREMENTS.md)
+  is a historical first-implementation requirement record and that live package
+  maturity status comes from `package_maturity.toml` and `PACKAGE_STATUS.md`.
+- Added [`docs/modules/frtb-orchestration/PUBLIC_API.md`](modules/frtb-orchestration/PUBLIC_API.md)
+  for the stable suite aggregation, SA composition, summary handoff, manifest
+  routing, and fail-closed public surface.
+- Updated orchestration README links and the suite module index to point to the
+  dedicated public API page.
+
 ## Residual follow-ups
 
 - Promote a suite-level audit-record home from `frtb_ima.audit` when an ADR
   extracts shared audit types into `frtb-common`.
-- Add `docs/modules/frtb-orchestration/PUBLIC_API.md` if orchestration exports
-  grow beyond summary-handoff symbols.
 - Keep model-documentation packs aligned when partial-runtime packages add new
   cited paths (see [`docs/modules/MODEL_DOCUMENTATION_PROMOTION_PLAN.md`](modules/MODEL_DOCUMENTATION_PROMOTION_PLAN.md)).
 - Manifest-driven end-to-end suite runs from a single `CapitalRunManifest` may

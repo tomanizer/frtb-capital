@@ -15,7 +15,8 @@ Outputs are prototype engineering evidence, not final regulatory capital.
 
 | Document | Purpose |
 | --- | --- |
-| [Module README](../../docs/modules/frtb-orchestration/README.md) | Public API, validation evidence, limitations, Arrow boundary |
+| [Module README](../../docs/modules/frtb-orchestration/README.md) | Package status, examples, validation evidence, limitations, Arrow boundary |
+| [PUBLIC_API.md](../../docs/modules/frtb-orchestration/PUBLIC_API.md) | Stable top-level exports, suite handoffs, manifest table keys, and unsupported paths |
 | [ADR 0039](../../docs/decisions/0039-orchestration-suite-capital-aggregation.md) | Top-of-house suite aggregation decision |
 | [ADR 0032](../../docs/decisions/0032-orchestration-sa-arithmetic-and-fallback-routing.md) | SA arithmetic and IMA fallback route recording |
 | [ADR 0022](../../docs/decisions/0022-sa-jurisdiction-profile-consistency-guard.md) | Jurisdiction-family guard |
@@ -47,8 +48,10 @@ from frtb_orchestration import (
 )
 ```
 
-See [`docs/modules/frtb-orchestration/README.md`](../../docs/modules/frtb-orchestration/README.md)
-for examples, jurisdiction-family rules, and integration limits.
+See [`docs/modules/frtb-orchestration/PUBLIC_API.md`](../../docs/modules/frtb-orchestration/PUBLIC_API.md)
+for the stable top-level surface, and
+[`docs/modules/frtb-orchestration/README.md`](../../docs/modules/frtb-orchestration/README.md)
+for examples, validation evidence, and integration limits.
 
 ## Manifest input tables
 
