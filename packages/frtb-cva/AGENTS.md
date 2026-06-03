@@ -1,5 +1,10 @@
 # AGENTS.md — frtb-cva
 
+Follow the suite-level portable worktree policy in
+[`../../AGENTS.md`](../../AGENTS.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 `frtb-cva` owns CVA capital.
 
 ## Current status

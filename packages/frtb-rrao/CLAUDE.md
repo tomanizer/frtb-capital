@@ -1,5 +1,10 @@
 # CLAUDE.md — frtb-rrao
 
+Follow the suite-level portable worktree policy in
+[`../../CLAUDE.md`](../../CLAUDE.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 Review `frtb-rrao` as the owner of residual risk add-on capital only.
 
 The package has an implemented v1 canonical-input calculation path for Basel

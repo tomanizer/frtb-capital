@@ -1,5 +1,10 @@
 # CLAUDE.md — frtb-common
 
+Follow the suite-level portable worktree policy in
+[`../../CLAUDE.md`](../../CLAUDE.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 Review `frtb-common` as the suite foundation package.
 
 Reject changes that create dependency cycles, pull model-specific behavior into

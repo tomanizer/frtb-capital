@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -13,8 +14,10 @@ from pathlib import Path
 REPO_NAME = "frtb-capital"
 MAIN_BRANCH = "main"
 REMOTE = "origin"
-DEFAULT_MAIN_CLONE = Path.home() / "Documents" / "Projects" / REPO_NAME
-DEFAULT_WORKTREE_ROOT = Path.home() / "Documents" / "Projects" / f"{REPO_NAME}-worktrees"
+CONFIG_MAIN_CLONE = "frtb.agentMainClone"
+CONFIG_WORKTREE_ROOT = "frtb.agentWorktreeRoot"
+ENV_MAIN_CLONE = "FRTB_AGENT_MAIN_CLONE"
+ENV_WORKTREE_ROOT = "FRTB_AGENT_WORKTREE_ROOT"
 
 
 class AgentWorktreeError(RuntimeError):
@@ -63,6 +66,20 @@ def git_optional_output(args: list[str], cwd: Path) -> str:
     return result.stdout.strip()
 
 
+def path_from_env(name: str) -> Path | None:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        return None
+    return Path(value).expanduser()
+
+
+def path_from_git_config(key: str, cwd: Path) -> Path | None:
+    value = git_optional_output(["config", "--get", key], cwd)
+    if not value:
+        return None
+    return Path(value).expanduser()
+
+
 def resolve_repo_root(path: Path) -> Path:
     try:
         return Path(git_output(["rev-parse", "--show-toplevel"], path)).resolve()
@@ -78,6 +95,48 @@ def require_main_clone(path: Path) -> Path:
     if root != expanded:
         raise AgentWorktreeError(f"protected main clone must be a repo root: {expanded}")
     return root
+
+
+def discover_main_clone(cwd: Path) -> Path:
+    current = resolve_repo_root(cwd)
+    main_worktrees = [
+        worktree.path
+        for worktree in parse_worktrees(current)
+        if worktree.branch == MAIN_BRANCH and not worktree.detached
+    ]
+    if len(main_worktrees) == 1:
+        return main_worktrees[0]
+    if len(main_worktrees) > 1:
+        raise AgentWorktreeError(
+            f"multiple main worktrees found; set {CONFIG_MAIN_CLONE} or {ENV_MAIN_CLONE} explicitly"
+        )
+    if current_branch(current) == MAIN_BRANCH:
+        return current
+    raise AgentWorktreeError(
+        f"could not discover protected main clone; set {CONFIG_MAIN_CLONE} or {ENV_MAIN_CLONE}"
+    )
+
+
+def default_worktree_root(main_clone: Path) -> Path:
+    return main_clone.parent / f"{main_clone.name}-worktrees"
+
+
+def resolve_policy_paths(args: argparse.Namespace, *, cwd: Path | None = None) -> None:
+    lookup_cwd = cwd or Path.cwd()
+    main_clone = (
+        args.main_clone
+        or path_from_env(ENV_MAIN_CLONE)
+        or path_from_git_config(CONFIG_MAIN_CLONE, lookup_cwd)
+        or discover_main_clone(lookup_cwd)
+    )
+    worktree_root = (
+        args.worktree_root
+        or path_from_env(ENV_WORKTREE_ROOT)
+        or path_from_git_config(CONFIG_WORKTREE_ROOT, lookup_cwd)
+        or default_worktree_root(main_clone)
+    )
+    args.main_clone = main_clone.expanduser().resolve()
+    args.worktree_root = worktree_root.expanduser().resolve()
 
 
 def current_branch(path: Path) -> str:
@@ -368,8 +427,23 @@ def install_hooks(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--main-clone", type=Path, default=DEFAULT_MAIN_CLONE)
-    parser.add_argument("--worktree-root", type=Path, default=DEFAULT_WORKTREE_ROOT)
+    parser.add_argument(
+        "--main-clone",
+        type=Path,
+        help=(
+            "protected main clone; defaults to "
+            f"${ENV_MAIN_CLONE}, git config {CONFIG_MAIN_CLONE}, or auto-discovery"
+        ),
+    )
+    parser.add_argument(
+        "--worktree-root",
+        type=Path,
+        help=(
+            "agent worktree root; defaults to "
+            f"${ENV_WORKTREE_ROOT}, git config {CONFIG_WORKTREE_ROOT}, "
+            "or a sibling of the protected main clone"
+        ),
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     sync_parser = subparsers.add_parser("sync-main", help="fast-forward protected main clone")
@@ -402,6 +476,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
+        resolve_policy_paths(args)
         return args.func(args)
     except AgentWorktreeError as exc:
         return print_error(exc)

@@ -1,5 +1,10 @@
 # CLAUDE.md — frtb-drc
 
+Follow the suite-level portable worktree policy in
+[`../../CLAUDE.md`](../../CLAUDE.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 Review `frtb-drc` as the owner of default risk charge capital only.
 
 The package has a capital-producing partial implementation for U.S. NPR 2.0

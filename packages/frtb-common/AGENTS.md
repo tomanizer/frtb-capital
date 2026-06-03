@@ -1,5 +1,10 @@
 # AGENTS.md — frtb-common
 
+Follow the suite-level portable worktree policy in
+[`../../AGENTS.md`](../../AGENTS.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 `frtb-common` owns shared primitives used across the `frtb-capital` suite.
 
 ## Scope

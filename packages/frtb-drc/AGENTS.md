@@ -1,5 +1,10 @@
 # AGENTS.md — frtb-drc
 
+Follow the suite-level portable worktree policy in
+[`../../AGENTS.md`](../../AGENTS.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 `frtb-drc` owns the Standardised Approach default risk charge component.
 
 ## Current status
