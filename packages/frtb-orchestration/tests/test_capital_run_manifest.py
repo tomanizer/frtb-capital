@@ -7,6 +7,7 @@ import frtb_drc
 import frtb_rrao
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pytest
 from frtb_common import StandardisedComponent
 from frtb_orchestration import (
     DRC_NONSEC_HANDOFF,
@@ -106,6 +107,40 @@ def test_standardised_manifest_run_records_fail_closed_missing_sbm_status() -> N
         StandardisedComponent.RRAO,
     ]
     assert result.as_dict()["orchestration_error"] == result.orchestration_error
+
+
+def test_standardised_manifest_run_reports_missing_route_context_cleanly() -> None:
+    manifest = CapitalRunManifest(
+        run_id="client-sa-run-001",
+        calculation_date=date(2026, 5, 29),
+        profile_id="US_NPR_2_0",
+        base_currency="USD",
+        handoffs={RRAO_POSITIONS_HANDOFF: _rrao_positions_table()},
+    )
+
+    result = run_standardised_approach_from_manifest(
+        manifest,
+        routes=_routes(),
+        required_handoff_keys=(RRAO_POSITIONS_HANDOFF,),
+    )
+
+    assert not result.validation.valid
+    assert result.validation.errors == ("rrao.positions requires manifest.rrao_context",)
+    assert result.orchestration_error == (
+        "rrao.positions: Required context 'rrao_context' is missing from the manifest"
+    )
+    assert result.component_handoffs == ()
+
+
+def test_manifest_rejects_empty_mapping_keys_with_clear_error() -> None:
+    with pytest.raises(OrchestrationInputError, match="handoffs keys must be non-empty text"):
+        CapitalRunManifest(
+            run_id="client-sa-run-001",
+            calculation_date=date(2026, 5, 29),
+            profile_id="US_NPR_2_0",
+            base_currency="USD",
+            handoffs={"": _rrao_positions_table()},
+        )
 
 
 def test_manifest_route_rejects_calculation_route_without_context_attr() -> None:

@@ -242,7 +242,13 @@ def run_standardised_approach_from_manifest(
             source_hash = arrow_table_content_hash(manifest.handoffs[logical_name])
             handoff = route.normalize(manifest.handoffs[logical_name], source_hash=source_hash)
             batch = handoff if route.build_batch is None else route.build_batch(handoff)
-            context = getattr(manifest, route.context_attr or "")
+            context_attr = route.context_attr or ""
+            context = getattr(manifest, context_attr, None)
+            if context is None:
+                raise OrchestrationInputError(
+                    f"Required context {context_attr!r} is missing from the manifest",
+                    field=context_attr,
+                )
             calculation = route.calculate_batch(batch, context=context)
             result = getattr(calculation, "result", calculation)
             component_handoffs.append(route.to_component_handoff(result))
@@ -391,7 +397,11 @@ def _freeze_table_mapping(
 ) -> Mapping[str, pa.Table]:
     frozen = dict(values)
     for key, value in frozen.items():
-        _require_text(key, field_name)
+        if not isinstance(key, str) or not key.strip():
+            raise OrchestrationInputError(
+                f"{field_name} keys must be non-empty text",
+                field=field_name,
+            )
         if not isinstance(value, pa.Table):
             raise OrchestrationInputError(f"{field_name}[{key!r}] must be a pyarrow.Table")
     return MappingProxyType(frozen)

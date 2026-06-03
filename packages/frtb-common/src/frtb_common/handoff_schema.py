@@ -63,12 +63,12 @@ def handoff_specs_to_arrow_schema(specs: Sequence[ColumnSpec]) -> pa.Schema:
                 _arrow_type_for_logical_type(spec.logical_type),
                 nullable=spec.null_policy is not NullPolicy.FORBID,
                 metadata={
-                    b"frtb.aliases": ",".join(sorted(spec.aliases)).encode(),
-                    b"frtb.chunk_policy": spec.chunk_policy.value.encode(),
-                    b"frtb.dictionary_policy": spec.dictionary_policy.value.encode(),
-                    b"frtb.logical_type": spec.logical_type.value.encode(),
-                    b"frtb.null_policy": spec.null_policy.value.encode(),
-                    b"frtb.required": str(spec.required).lower().encode(),
+                    b"frtb.aliases": bytes(",".join(sorted(spec.aliases)), "utf-8"),
+                    b"frtb.chunk_policy": bytes(spec.chunk_policy.value, "utf-8"),
+                    b"frtb.dictionary_policy": bytes(spec.dictionary_policy.value, "utf-8"),
+                    b"frtb.logical_type": bytes(spec.logical_type.value, "utf-8"),
+                    b"frtb.null_policy": bytes(spec.null_policy.value, "utf-8"),
+                    b"frtb.required": bytes(str(spec.required).lower(), "utf-8"),
                 },
             )
             for spec in validated
