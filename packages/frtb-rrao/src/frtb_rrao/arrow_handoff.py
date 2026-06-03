@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-import numpy as np
 import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
 from frtb_common import (
@@ -17,7 +16,6 @@ from frtb_common import (
     normalize_arrow_table,
     normalized_handoff_hash,
     read_handoff_columns,
-    resolve_column_name,
 )
 
 from frtb_rrao.batch import RraoPositionBatch, build_rrao_batch_from_columns
@@ -278,10 +276,6 @@ _RRAO_BATCH_COLUMN_ARGS: Mapping[str, str] = {
     "lineage_source_file": "lineage_source_files",
     "lineage_source_row_id": "lineage_source_row_ids",
 }
-_RRAO_COLUMN_SPECS_BY_NAME: Mapping[str, ColumnSpec] = {
-    spec.name: spec for spec in RRAO_HANDOFF_COLUMN_SPECS
-}
-
 _OPTIONAL_BOOL_OBJECT_COLUMNS = frozenset(
     {
         "is_path_dependent",
@@ -290,6 +284,11 @@ _OPTIONAL_BOOL_OBJECT_COLUMNS = frozenset(
         "has_multiple_strikes_or_barriers",
     }
 )
+
+_RRAO_NULL_DEFAULTS: Mapping[str, object] = {
+    **{column_name: None for column_name in _OPTIONAL_BOOL_OBJECT_COLUMNS},
+    "investment_fund_mandate_allows_rrao_exposures": True,
+}
 
 
 def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
@@ -335,8 +334,12 @@ def build_rrao_batch_from_handoff(
     if not isinstance(handoff, NormalizedTabularHandoff):
         raise RraoInputError("handoff must be NormalizedTabularHandoff", field="handoff")
     table = handoff.accepted
-    columns = read_handoff_columns(table, RRAO_HANDOFF_COLUMN_SPECS, error=_rrao_error)
-    columns = _rrao_columns_with_package_defaults(table, columns)
+    columns = read_handoff_columns(
+        table,
+        RRAO_HANDOFF_COLUMN_SPECS,
+        error=_rrao_error,
+        null_defaults=_RRAO_NULL_DEFAULTS,
+    )
     _reject_unsupported_nested_payload(columns.get("unsupported_nested_payload"))
     diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
     return build_rrao_batch_from_columns(
@@ -359,45 +362,6 @@ def _rrao_batch_column_kwargs(columns: Mapping[str, object]) -> dict[str, Any]:
 
 def _rrao_error(message: str, field: str | None) -> RraoInputError:
     return RraoInputError(message, field="" if field is None else field)
-
-
-def _rrao_columns_with_package_defaults(
-    table: pa.Table,
-    columns: dict[str, HandoffColumnArray],
-) -> dict[str, HandoffColumnArray]:
-    updated = columns
-    for column_name in _OPTIONAL_BOOL_OBJECT_COLUMNS:
-        updated = _restore_null_values(table, updated, column_name, null_value=None)
-    return _restore_null_values(
-        table,
-        updated,
-        "investment_fund_mandate_allows_rrao_exposures",
-        null_value=True,
-    )
-
-
-def _restore_null_values(
-    table: pa.Table,
-    columns: dict[str, HandoffColumnArray],
-    column_name: str,
-    *,
-    null_value: object,
-) -> dict[str, HandoffColumnArray]:
-    values = columns.get(column_name)
-    physical_column_name = resolve_column_name(table, _RRAO_COLUMN_SPECS_BY_NAME[column_name])
-    if values is None or physical_column_name is None:
-        return columns
-
-    column = table.column(physical_column_name)
-    if not column.null_count:
-        return columns
-
-    array = column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
-    valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
-    restored = values.astype(object)
-    restored[~valid] = null_value
-    restored.setflags(write=False)
-    return columns | {column_name: restored}
 
 
 def _reject_unsupported_nested_payload(values: HandoffColumnArray | None) -> None:

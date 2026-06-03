@@ -217,6 +217,50 @@ def test_read_handoff_columns_fills_allowed_float_nulls() -> None:
     assert not columns["amount"].flags.writeable
 
 
+def test_read_handoff_columns_restores_per_column_null_defaults() -> None:
+    table = pa.table(
+        {
+            "amountAlias": pa.array([1.0, None], type=pa.float64()),
+            "flagAlias": pa.array([None, False], type=pa.bool_()),
+            "textAlias": pa.array([None, "desk-1"], type=pa.string()),
+        }
+    )
+
+    columns = read_handoff_columns(
+        table,
+        (
+            ColumnSpec(
+                "amount",
+                aliases=("amountAlias",),
+                logical_type=TabularLogicalType.FLOAT,
+                required=False,
+                null_policy=NullPolicy.ALLOW,
+            ),
+            ColumnSpec(
+                "flag",
+                aliases=("flagAlias",),
+                logical_type=TabularLogicalType.BOOLEAN,
+                required=False,
+                null_policy=NullPolicy.ALLOW,
+            ),
+            ColumnSpec(
+                "text",
+                aliases=("textAlias",),
+                logical_type=TabularLogicalType.STRING,
+                required=False,
+                null_policy=NullPolicy.ALLOW,
+            ),
+        ),
+        error=_reader_error,
+        null_defaults={"amount": None, "flag": True, "text": ""},
+    )
+
+    assert columns["amount"].tolist() == [1.0, None]
+    assert columns["flag"].tolist() == [True, False]
+    assert columns["text"].tolist() == ["", "desk-1"]
+    assert all(not column.flags.writeable for column in columns.values())
+
+
 def test_read_handoff_columns_uses_float_zero_copy_when_nulls_are_allowed_but_absent() -> None:
     table = pa.table({"amount": pa.array([1.0, 2.0], type=pa.float64())})
 
