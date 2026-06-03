@@ -34,9 +34,7 @@ class ComponentContributionBundle:
     component_profile_hash: str
 
     def __post_init__(self) -> None:
-        contributions_sum = sum(
-            (r.contribution or 0.0) + r.residual for r in self.contributions
-        )
+        contributions_sum = sum((r.contribution or 0.0) + r.residual for r in self.contributions)
         total = self.component_total
         tol = _RECONCILIATION_TOLERANCE * max(abs(total), 1.0)
         if abs(contributions_sum - total) > tol:

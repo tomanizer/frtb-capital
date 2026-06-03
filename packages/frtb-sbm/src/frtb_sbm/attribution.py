@@ -53,9 +53,7 @@ def calculate_sbm_attribution(
     """
     records: list[CapitalContribution] = []
     for rc in result.risk_classes:
-        records.extend(
-            _risk_class_contributions(rc, result.input_hash, result.profile_hash)
-        )
+        records.extend(_risk_class_contributions(rc, result.input_hash, result.profile_hash))
     return tuple(records)
 
 
@@ -88,8 +86,8 @@ def _risk_class_contributions(
             )
         ]
 
-    K = rc.selected_capital
-    if K == 0.0:
+    capital = rc.selected_capital
+    if capital == 0.0:
         return []
 
     # Find the selected scenario detail (needed for pairwise correlations and S_b).
@@ -179,10 +177,8 @@ def _risk_class_contributions(
             ]
 
     # All preconditions met → compute analytical Euler contributions.
-    S_by_bucket: dict[str, float] = {
-        rec.bucket_id: rec.sb for rec in selected_detail.intra_buckets
-    }
-    gamma_s = _compute_gamma_s(selected_detail.inter_bucket_correlations, S_by_bucket)
+    s_by_bucket: dict[str, float] = {rec.bucket_id: rec.sb for rec in selected_detail.intra_buckets}
+    gamma_s = _compute_gamma_s(selected_detail.inter_bucket_correlations, s_by_bucket)
 
     records: list[CapitalContribution] = []
     for bucket in rc.buckets:
@@ -204,7 +200,7 @@ def _risk_class_contributions(
             _bucket_euler_contributions(
                 bucket=bucket,
                 intra=intra,
-                K=K,
+                capital=capital,
                 gamma_s_a=gamma_s_a,
                 citations=citations,
                 input_hash=input_hash,
@@ -214,8 +210,8 @@ def _risk_class_contributions(
 
     # Add a reconciliation residual for floating-point drift (should be negligible).
     total = sum((r.contribution or 0.0) + r.residual for r in records)
-    tol = _RECONCILIATION_TOLERANCE * max(abs(K), 1.0)
-    if abs(total - K) > tol:
+    tol = _RECONCILIATION_TOLERANCE * max(abs(capital), 1.0)
+    if abs(total - capital) > tol:
         records.append(
             CapitalContribution(
                 contribution_id=f"sbm-{source_id}-residual",
@@ -227,7 +223,7 @@ def _risk_class_contributions(
                 marginal_multiplier=None,
                 contribution=None,
                 method=AttributionMethod.RESIDUAL,
-                residual=K - total,
+                residual=capital - total,
                 reason="Euler decomposition rounding residual.",
                 citations=citations,
                 input_hash=input_hash,
@@ -243,7 +239,7 @@ def _bucket_euler_contributions(
     *,
     bucket: BucketCapital,
     intra: IntraBucketScenarioRecord,
-    K: float,
+    capital: float,
     gamma_s_a: float,
     citations: tuple[str, ...],
     input_hash: str,
@@ -268,7 +264,7 @@ def _bucket_euler_contributions(
     records: list[CapitalContribution] = []
     for i, ws in enumerate(ws_list):
         numerator_i = rho_ws[i] + gamma_s_a
-        marginal = numerator_i / K
+        marginal = numerator_i / capital
         contribution = ws.scaled_amount * marginal
 
         sensitivity_citations = citations + tuple(ws.citation_ids)
@@ -323,20 +319,20 @@ def _compute_rho_times_ws(
 
 def _compute_gamma_s(
     inter_bucket_correlations: tuple[tuple[str, str, float], ...],
-    S_by_bucket: dict[str, float],
+    s_by_bucket: dict[str, float],
 ) -> dict[str, float]:
     """Compute (gamma @ S) for each bucket from stored upper-triangle gamma records.
 
     The stored records have one direction per pair (a < b in sorted order).
     Each entry contributes symmetrically to both buckets.
     """
-    gamma_s: dict[str, float] = {bid: 0.0 for bid in S_by_bucket}
+    gamma_s: dict[str, float] = {bid: 0.0 for bid in s_by_bucket}
 
     for bucket_a, bucket_b, gamma_ab in inter_bucket_correlations:
         if bucket_a == bucket_b:
             continue
-        s_a = S_by_bucket.get(bucket_a, 0.0)
-        s_b = S_by_bucket.get(bucket_b, 0.0)
+        s_a = s_by_bucket.get(bucket_a, 0.0)
+        s_b = s_by_bucket.get(bucket_b, 0.0)
         if bucket_a in gamma_s:
             gamma_s[bucket_a] += gamma_ab * s_b
         if bucket_b in gamma_s:

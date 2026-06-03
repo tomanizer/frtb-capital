@@ -5,7 +5,6 @@ from __future__ import annotations
 import math
 from datetime import date
 
-import pytest
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
 from frtb_common.impact import CapitalImpact, ImpactMethod
 from frtb_sbm import (
@@ -19,7 +18,6 @@ from frtb_sbm import (
 )
 from frtb_sbm.attribution import calculate_sbm_attribution
 from frtb_sbm.impact import calculate_sbm_capital_impact
-
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -182,13 +180,11 @@ def test_attribution_curvature_is_unsupported() -> None:
     contributions = calculate_sbm_attribution(result)
 
     curv_unsupported = [
-        c for c in contributions
-        if c.method == AttributionMethod.UNSUPPORTED
-        and "Curvature" in c.reason
+        c
+        for c in contributions
+        if c.method == AttributionMethod.UNSUPPORTED and "Curvature" in c.reason
     ]
-    assert curv_unsupported, (
-        "Expected at least one UNSUPPORTED record for curvature risk class"
-    )
+    assert curv_unsupported, "Expected at least one UNSUPPORTED record for curvature risk class"
     # Curvature record residual carries the unattributed capital
     total_residual = sum(c.residual for c in curv_unsupported)
     curv_capital = next(
@@ -283,7 +279,11 @@ def test_impact_delta_equals_difference() -> None:
     assert isinstance(impact, CapitalImpact)
     assert impact.component == "frtb_sbm"
     assert impact.method == ImpactMethod.FINITE_DIFFERENCE
-    assert math.isclose(impact.delta, candidate.total_capital - baseline.total_capital, rel_tol=1e-9)
+    assert math.isclose(
+        impact.delta,
+        candidate.total_capital - baseline.total_capital,
+        rel_tol=1e-9,
+    )
 
 
 def test_impact_carries_input_and_profile_hashes() -> None:
@@ -315,4 +315,8 @@ def test_impact_negative_delta_when_candidate_lower() -> None:
     impact = calculate_sbm_capital_impact(baseline, candidate)
 
     assert impact.delta < 0.0
-    assert math.isclose(impact.delta, candidate.total_capital - baseline.total_capital, rel_tol=1e-9)
+    assert math.isclose(
+        impact.delta,
+        candidate.total_capital - baseline.total_capital,
+        rel_tol=1e-9,
+    )

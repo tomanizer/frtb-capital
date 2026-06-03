@@ -18,7 +18,6 @@ from frtb_common.attribution import (
 from frtb_common.contribution_bundle import ComponentContributionBundle
 from frtb_common.impact import CapitalImpact, ImpactMethod
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -151,9 +150,7 @@ def test_reconciliation_invariant_exact() -> None:
     c2 = _make_euler("c2", contribution=30.0)
     capital_total = 150.0
 
-    total = sum(
-        (r.contribution or 0.0) + r.residual for r in (c1, c2)
-    )
+    total = sum((r.contribution or 0.0) + r.residual for r in (c1, c2))
     assert abs(total - capital_total) <= _EULER_TOL
 
 
@@ -164,9 +161,7 @@ def test_reconciliation_invariant_with_residual() -> None:
     r1 = _make_residual("r1", residual=10.0)
     capital_total = 150.0
 
-    total = sum(
-        (r.contribution or 0.0) + r.residual for r in (c1, r1)
-    )
+    total = sum((r.contribution or 0.0) + r.residual for r in (c1, r1))
     assert abs(total - capital_total) <= _EULER_TOL
 
 
@@ -228,7 +223,7 @@ def test_capital_impact_delta_equals_difference() -> None:
 
 
 def test_capital_impact_delta_mismatch_raises() -> None:
-    with pytest.raises(ValueError, match="delta.*does not equal"):
+    with pytest.raises(ValueError, match=r"delta.*does not equal"):
         CapitalImpact(
             baseline_run_id="run-A",
             candidate_run_id="run-B",
@@ -308,7 +303,11 @@ def test_bundle_inconsistent_total_raises() -> None:
 
 
 def test_bundle_with_residual() -> None:
-    c1 = _make_euler("c1", contribution=140.0, reconciliation_status=ReconciliationStatus.PARTIAL_RESIDUAL)
+    c1 = _make_euler(
+        "c1",
+        contribution=140.0,
+        reconciliation_status=ReconciliationStatus.PARTIAL_RESIDUAL,
+    )
     r1 = _make_residual("r1", residual=10.0)
     bundle = ComponentContributionBundle(
         component="frtb_drc",

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from frtb_common.impact import CapitalImpact, ImpactMethod
-
 from frtb_cva import calculate_cva_capital
 from frtb_cva.impact import assess_cva_capital_impact
 

@@ -10,7 +10,7 @@ from types import MappingProxyType
 from typing import Any, TypeVar
 
 from frtb_common import jsonable
-from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
+from frtb_common.attribution import CapitalContribution
 
 
 class DrcRiskClass(StrEnum):
@@ -182,7 +182,6 @@ class DrcFxConversion:
 
     def as_dict(self) -> dict[str, object]:
         return _as_dict(self)
-
 
 
 @dataclass(frozen=True)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from frtb_common.attribution import CapitalContribution, ReconciliationStatus
-
 from frtb_cva import CvaMethod, calculate_cva_capital
 from frtb_cva.attribution import attribute_cva_capital, project_cva_attribution
 
@@ -183,6 +182,4 @@ def test_project_cva_attribution_reconciliation_status_unreconciled(
     attribution = attribute_cva_capital(result)
     assert not attribution.reconciled
     projected = project_cva_attribution(attribution, result)
-    assert all(
-        c.reconciliation_status == ReconciliationStatus.UNRECONCILED for c in projected
-    )
+    assert all(c.reconciliation_status == ReconciliationStatus.UNRECONCILED for c in projected)
