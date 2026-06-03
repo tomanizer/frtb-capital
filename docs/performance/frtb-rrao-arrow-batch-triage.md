@@ -4,7 +4,7 @@ Issue: #300
 
 ## Scope
 
-The RRAO high-volume path uses Arrow handoff -> package-owned NumPy batch ->
+The RRAO high-volume path uses Arrow batch -> package-owned NumPy batch ->
 package RRAO line kernel. It preserves the row API for compatibility, but the
 accepted-row path does not materialize one `RraoPosition` dataclass per input
 row.
@@ -67,7 +67,7 @@ The batch path addresses these hotspots:
   code, and citation groups with profile-rule masks. The final row loop only
   emits the public audit lines; it no longer performs a reference-data lookup
   for each accepted position.
-- Arrow handoff numeric columns are passed as NumPy arrays where possible,
+- Arrow batch numeric columns are passed as NumPy arrays where possible,
   including zero-copy `float64` views for required gross effective notional
   columns. Object and dictionary text columns are converted chunk-wise without
   routing the whole column through `to_pylist()`.
@@ -97,7 +97,7 @@ The batch implementation is covered by `packages/frtb-rrao/tests/test_rrao_arrow
 The tests assert:
 
 - row-built batches preserve the existing row input hash;
-- Arrow handoff batches reconcile with the existing RRAO v1 fixture for lines,
+- Arrow batch batches reconcile with the existing RRAO v1 fixture for lines,
   excluded lines, subtotals, total, source row ids, and citations;
 - investment-fund rows reconcile against the row API;
 - high-volume synthetic batches report zero accepted-row `RraoPosition`

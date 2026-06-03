@@ -604,7 +604,7 @@ def test_sa_cva_no_eligible_sensitivities() -> None:
         calculate_cva_capital_from_batches(context, sensitivities=sens_batch)
 
 
-def test_arrow_handoff_wrong_instance_rejections() -> None:
+def test_arrow_batch_wrong_instance_rejections() -> None:
     with pytest.raises(CvaInputError, match="handoff must be NormalizedArrowTable"):
         build_cva_counterparty_batch_from_arrow(object())  # type: ignore[arg-type]
     with pytest.raises(CvaInputError, match="handoff must be NormalizedArrowTable"):
@@ -615,8 +615,8 @@ def test_arrow_handoff_wrong_instance_rejections() -> None:
         build_sa_cva_sensitivity_batch_from_arrow(object())  # type: ignore[arg-type]
 
 
-def test_arrow_handoff_chunked_dictionary_and_arrays() -> None:
-    # Test booleans chunked/non-boolean columns logic in arrow_handoff.py
+def test_arrow_batch_chunked_dictionary_and_arrays() -> None:
+    # Test booleans chunked/non-boolean columns logic in arrow_batch.py
     # and dictionary columns, missing required columns etc.
     table = pa.table(
         {
@@ -638,7 +638,7 @@ def test_arrow_handoff_chunked_dictionary_and_arrays() -> None:
     batch = build_cva_netting_set_batch_from_arrow(handoff)
     assert batch.eads[0] == 100000.0
 
-    # Test dictionary / integer array conversions in arrow_handoff.py
+    # Test dictionary / integer array conversions in arrow_batch.py
     # We will test booleans as string column (not standard boolean) to trigger
     # fallback in _bool_array_from_arrow_column
     bad_bool_table = pa.table(

@@ -5,7 +5,7 @@
 The package is partial runtime for `BASEL_MAR50_2020` only. It supports reduced
 and full BA-CVA, supported SA-CVA delta/vega risk classes, mixed carve-out,
 qualified-index routing where metadata is supplied, and package-owned batch and
-Arrow handoffs.
+Arrow batches.
 
 ## Unsupported Scope
 

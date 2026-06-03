@@ -15,7 +15,7 @@
         "timings_seconds": {
           "audit_result_materialization": 0.0011868749861605465,
           "batch_construction": 0.06436483401921578,
-          "handoff_normalization": 0.0015581670159008354,
+          "arrow_normalization": 0.0015581670159008354,
           "synthetic_arrow_table_construction": 0.018966542003909126,
           "weighting_factor_grid_aggregation_and_result": 1.2815544589830097
         },
@@ -60,7 +60,7 @@
         "timings_seconds": {
           "audit_result_materialization": 0.001052541978424415,
           "batch_construction": 0.050683332985499874,
-          "handoff_normalization": 0.0009985409851651639,
+          "arrow_normalization": 0.0009985409851651639,
           "synthetic_arrow_table_construction": 0.0028864589985460043,
           "weighting_factor_grid_aggregation_and_result": 0.04079854200244881
         },
@@ -105,7 +105,7 @@
         "timings_seconds": {
           "audit_result_materialization": 0.001128916017478332,
           "batch_construction": 0.05200325002078898,
-          "handoff_normalization": 0.0009955840068869293,
+          "arrow_normalization": 0.0009955840068869293,
           "synthetic_arrow_table_construction": 0.004098624980542809,
           "weighting_factor_grid_aggregation_and_result": 0.2990737910149619
         },
@@ -150,7 +150,7 @@
         "timings_seconds": {
           "audit_result_materialization": 0.0010339579894207418,
           "batch_construction": 0.06730083402362652,
-          "handoff_normalization": 0.0010776669951155782,
+          "arrow_normalization": 0.0010776669951155782,
           "synthetic_arrow_table_construction": 0.0034143330121878535,
           "weighting_factor_grid_aggregation_and_result": 0.2710762080096174
         },
@@ -195,7 +195,7 @@
         "timings_seconds": {
           "audit_result_materialization": 0.001063500007148832,
           "batch_construction": 0.06307766601094045,
-          "handoff_normalization": 0.001101750007364899,
+          "arrow_normalization": 0.001101750007364899,
           "synthetic_arrow_table_construction": 0.004365958011476323,
           "weighting_factor_grid_aggregation_and_result": 0.48226204101229087
         },
@@ -240,7 +240,7 @@
         "timings_seconds": {
           "audit_result_materialization": 0.0010393749980721623,
           "batch_construction": 0.059024250018410385,
-          "handoff_normalization": 0.0010824580094777048,
+          "arrow_normalization": 0.0010824580094777048,
           "synthetic_arrow_table_construction": 0.004452583001693711,
           "weighting_factor_grid_aggregation_and_result": 0.3111643749871291
         },
@@ -285,7 +285,7 @@
         "timings_seconds": {
           "audit_result_materialization": 0.001068457990186289,
           "batch_construction": 0.055596541991690174,
-          "handoff_normalization": 0.001126332994317636,
+          "arrow_normalization": 0.001126332994317636,
           "synthetic_arrow_table_construction": 0.004217665991745889,
           "weighting_factor_grid_aggregation_and_result": 0.20869312499416992
         },
@@ -330,7 +330,7 @@
         "timings_seconds": {
           "batch_construction": 0.06360324998968281,
           "curvature_branch_selection": 0.00854675000300631,
-          "handoff_normalization": 0.001170167000964284,
+          "arrow_normalization": 0.001170167000964284,
           "synthetic_arrow_table_construction": 0.00373408300220035
         },
         "tracemalloc_peak_bytes": 3713681
@@ -396,7 +396,7 @@
     }
   ],
   "remaining_boundaries": {
-    "curvature_capital": "supported for BASEL_MAR21 row, batch, and Arrow handoff paths across the current SBM risk-class matrix; unsupported profiles and sub-features still fail closed",
+    "curvature_capital": "supported for BASEL_MAR21 row, batch, and Arrow batch paths across the current SBM risk-class matrix; unsupported profiles and sub-features still fail closed",
     "parent_issue": "#270",
     "current_support_matrix_note": "the original #270 baseline predates the completed supported-path vectorisation sprint; use packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md for the current supported BASEL_MAR21 delta/vega/curvature matrix"
   },

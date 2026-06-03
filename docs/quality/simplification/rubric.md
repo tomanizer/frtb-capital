@@ -32,7 +32,7 @@ rg "from frtb_(ima|sbm|drc|rrao|cva)|import frtb_(ima|sbm|drc|rrao|cva)" package
 ```
 
 `make quality-control` runs `check_simplification_drift.py` on every PR. Run it
-directly before and after changing batch column coercion, Arrow handoff readers,
+directly before and after changing batch column coercion, Arrow batch readers,
 or wrapper/helper modules. If a flagged wrapper is intentionally retained, add
 an inline `# simplify-audit: keep - <reason>` marker next to the wrapper so the
 justification survives refactors.

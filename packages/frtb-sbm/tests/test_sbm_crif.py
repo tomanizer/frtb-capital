@@ -7,7 +7,7 @@ import frtb_sbm.crif as crif_module
 import pyarrow as pa
 import pytest
 from frtb_sbm import SbmRiskClass, SbmRiskMeasure
-from frtb_sbm.arrow_handoff import build_girr_delta_batch_from_arrow
+from frtb_sbm.arrow_batch import build_girr_delta_batch_from_arrow
 from frtb_sbm.crif import adapt_crif_records, normalize_girr_delta_crif_arrow_table
 
 
@@ -435,7 +435,7 @@ def test_crif_adapter_rejects_duplicate_sensitivity_ids_without_aborting() -> No
     assert result.rejected_rows[0].field == "sensitivity_id"
 
 
-def test_girr_delta_crif_arrow_handoff_partitions_without_row_dataclasses() -> None:
+def test_girr_delta_crif_arrow_batch_partitions_without_row_dataclasses() -> None:
     table = pa.table(
         {
             "SensitivityId": ["crif-girr-001", "bad-amount", "fx-row"],
@@ -468,11 +468,11 @@ def test_girr_delta_crif_arrow_handoff_partitions_without_row_dataclasses() -> N
     assert batch.source_hash == handoff.source_hash
 
 
-def test_girr_delta_crif_arrow_handoff_does_not_construct_sensitivities(
+def test_girr_delta_crif_arrow_batch_does_not_construct_sensitivities(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fail_sensitivity_construction(*_args: Any, **_kwargs: Any) -> None:
-        raise AssertionError("CRIF Arrow handoff must not construct SbmSensitivity rows")
+        raise AssertionError("CRIF Arrow batch must not construct SbmSensitivity rows")
 
     monkeypatch.setattr(crif_module, "SbmSensitivity", fail_sensitivity_construction)
     table = pa.table(

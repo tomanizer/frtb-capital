@@ -34,7 +34,7 @@ from frtb_sbm import (
     input_hash_for_sensitivities,
     weight_non_girr_vega_sensitivity_batch,
 )
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     build_commodity_vega_batch_from_arrow,
     build_csr_nonsec_vega_batch_from_arrow,
     build_csr_sec_ctp_vega_batch_from_arrow,

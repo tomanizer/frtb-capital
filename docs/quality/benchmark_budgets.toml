@@ -31,8 +31,8 @@ path = ["phase_timings", "imcc_decomposition", "seconds"]
 max = 90.0
 
 [[benchmarks]]
-name = "frtb-ima-arrow-handoff"
-artifact = "dist/benchmarks/frtb-ima-arrow-handoff.json"
+name = "frtb-ima-arrow-batch"
+artifact = "dist/benchmarks/frtb-ima-arrow-batch.json"
 wall_clock_path = ["summary", "timings_seconds", "wall_clock"]
 wall_clock_seconds_max = 45.0
 
@@ -142,7 +142,7 @@ path = ["summary", "timings_seconds", "arrow_table_construction"]
 
 [[benchmarks.required_paths]]
 name = "adapt phase"
-path = ["summary", "timings_seconds", "handoff_normalization"]
+path = ["summary", "timings_seconds", "arrow_normalization"]
 
 [[benchmarks.required_paths]]
 name = "build phase"
@@ -215,7 +215,7 @@ path = ["timings", "arrow_table_seconds"]
 
 [[benchmarks.required_paths]]
 name = "adapt/build phase"
-path = ["timings", "arrow_handoff_seconds"]
+path = ["timings", "arrow_batch_seconds"]
 
 [[benchmarks.required_paths]]
 name = "calculate phase"

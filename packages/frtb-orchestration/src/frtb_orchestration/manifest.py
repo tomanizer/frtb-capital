@@ -1,4 +1,4 @@
-"""Manifest-driven client ingress for Standardised Approach handoffs."""
+"""Manifest-driven client ingress for Standardised Approach input tables."""
 
 from __future__ import annotations
 
@@ -23,24 +23,21 @@ from frtb_orchestration.standardised import (
     standardised_jurisdiction_family,
 )
 
-SBM_GIRR_DELTA_HANDOFF = "sbm.girr_delta"
-DRC_NONSEC_HANDOFF = "drc.nonsec"
-DRC_SECURITISATION_NON_CTP_HANDOFF = "drc.securitisation_non_ctp"
-DRC_CTP_HANDOFF = "drc.ctp"
-RRAO_POSITIONS_HANDOFF = "rrao.positions"
-CVA_COUNTERPARTY_HANDOFF = "cva.counterparty"
-CVA_NETTING_SET_HANDOFF = "cva.netting_set"
-CVA_HEDGE_HANDOFF = "cva.hedge"
-CVA_SA_SENSITIVITY_HANDOFF = "cva.sa_sensitivity"
+SBM_GIRR_DELTA_INPUT_TABLE = "sbm.girr_delta"
+DRC_NONSEC_INPUT_TABLE = "drc.nonsec"
+DRC_SECURITISATION_NON_CTP_INPUT_TABLE = "drc.securitisation_non_ctp"
+DRC_CTP_INPUT_TABLE = "drc.ctp"
+RRAO_POSITIONS_INPUT_TABLE = "rrao.positions"
+CVA_COUNTERPARTY_INPUT_TABLE = "cva.counterparty"
+CVA_NETTING_SET_INPUT_TABLE = "cva.netting_set"
+CVA_HEDGE_INPUT_TABLE = "cva.hedge"
+CVA_SA_SENSITIVITY_INPUT_TABLE = "cva.sa_sensitivity"
 
 STANDARDISED_REQUIRED_INPUT_TABLE_KEYS = (
-    SBM_GIRR_DELTA_HANDOFF,
-    DRC_NONSEC_HANDOFF,
-    RRAO_POSITIONS_HANDOFF,
+    SBM_GIRR_DELTA_INPUT_TABLE,
+    DRC_NONSEC_INPUT_TABLE,
+    RRAO_POSITIONS_INPUT_TABLE,
 )
-STANDARDISED_REQUIRED_HANDOFF_KEYS = STANDARDISED_REQUIRED_INPUT_TABLE_KEYS
-
-
 NormalizeCallable = Callable[..., NormalizedArrowTable]
 BuildBatchCallable = Callable[[NormalizedArrowTable], object]
 CalculateBatchCallable = Callable[..., object]
@@ -55,7 +52,7 @@ class CapitalRunManifest:
     calculation_date: date
     profile_id: str
     base_currency: str
-    handoffs: Mapping[str, pa.Table]
+    input_tables: Mapping[str, pa.Table]
     sbm_context: object | None = None
     drc_context: object | None = None
     rrao_context: object | None = None
@@ -71,7 +68,11 @@ class CapitalRunManifest:
             )
         _require_text(self.profile_id, "profile_id")
         _require_text(self.base_currency, "base_currency")
-        object.__setattr__(self, "handoffs", _freeze_table_mapping(self.handoffs, "handoffs"))
+        object.__setattr__(
+            self,
+            "input_tables",
+            _freeze_table_mapping(self.input_tables, "input_tables"),
+        )
         object.__setattr__(
             self,
             "reference_attachments",
@@ -81,8 +82,8 @@ class CapitalRunManifest:
 
 
 @dataclass(frozen=True)
-class ManifestHandoffRoute:
-    """Registered public package callables for one manifest handoff key."""
+class ManifestInputTableRoute:
+    """Registered public package callables for one manifest input table key."""
 
     logical_name: str
     component: StandardisedComponent | None
@@ -104,21 +105,21 @@ class ManifestHandoffRoute:
 
 
 @dataclass(frozen=True)
-class ManifestHandoffValidation:
-    """Validation result for one manifest handoff table."""
+class ManifestInputTableValidation:
+    """Validation result for one manifest input table."""
 
     logical_name: str
     accepted_row_count: int
     rejected_row_count: int
     diagnostics: tuple[Mapping[str, object], ...]
     source_hash: str | None
-    handoff_hash: str | None
+    input_table_hash: str | None
 
     def as_dict(self) -> dict[str, object]:
         return {
             "accepted_row_count": self.accepted_row_count,
             "diagnostics": [dict(item) for item in self.diagnostics],
-            "handoff_hash": self.handoff_hash,
+            "input_table_hash": self.input_table_hash,
             "logical_name": self.logical_name,
             "rejected_row_count": self.rejected_row_count,
             "source_hash": self.source_hash,
@@ -133,21 +134,21 @@ class ManifestValidationResult:
     profile_id: str
     base_currency: str
     jurisdiction_family: str | None
-    handoffs: tuple[ManifestHandoffValidation, ...]
-    missing_required_handoffs: tuple[str, ...] = ()
+    input_tables: tuple[ManifestInputTableValidation, ...]
+    missing_required_input_tables: tuple[str, ...] = ()
     errors: tuple[str, ...] = ()
 
     @property
     def valid(self) -> bool:
-        return not self.missing_required_handoffs and not self.errors
+        return not self.missing_required_input_tables and not self.errors
 
     def as_dict(self) -> dict[str, object]:
         return {
             "base_currency": self.base_currency,
             "errors": list(self.errors),
-            "handoffs": [handoff.as_dict() for handoff in self.handoffs],
+            "input_tables": [input_table.as_dict() for input_table in self.input_tables],
             "jurisdiction_family": self.jurisdiction_family,
-            "missing_required_handoffs": list(self.missing_required_handoffs),
+            "missing_required_input_tables": list(self.missing_required_input_tables),
             "profile_id": self.profile_id,
             "run_id": self.run_id,
             "valid": self.valid,
@@ -179,12 +180,12 @@ class SaManifestRunResult:
 def validate_capital_run_manifest(
     manifest: CapitalRunManifest,
     *,
-    routes: Mapping[str, ManifestHandoffRoute],
-    required_handoff_keys: Sequence[str] = STANDARDISED_REQUIRED_INPUT_TABLE_KEYS,
+    routes: Mapping[str, ManifestInputTableRoute],
+    required_input_table_keys: Sequence[str] = STANDARDISED_REQUIRED_INPUT_TABLE_KEYS,
 ) -> ManifestValidationResult:
-    """Validate manifest handoff tables without calculating capital."""
+    """Validate manifest input tables without calculating capital."""
 
-    validations: list[ManifestHandoffValidation] = []
+    validations: list[ManifestInputTableValidation] = []
     errors: list[str] = []
     try:
         jurisdiction_family = standardised_jurisdiction_family(manifest.profile_id)
@@ -192,13 +193,13 @@ def validate_capital_run_manifest(
         jurisdiction_family = None
         errors.append(str(exc))
 
-    for logical_name in sorted(manifest.handoffs):
-        table = manifest.handoffs[logical_name]
+    for logical_name in sorted(manifest.input_tables):
+        table = manifest.input_tables[logical_name]
         route = routes.get(logical_name)
         if route is None:
-            errors.append(f"no route registered for handoff {logical_name}")
+            errors.append(f"no route registered for input table {logical_name}")
             continue
-        validations.append(_validate_one_handoff(logical_name, table, route))
+        validations.append(_validate_one_input_table(logical_name, table, route))
 
     errors.extend(
         _profile_consistency_errors(
@@ -207,14 +208,14 @@ def validate_capital_run_manifest(
             manifest_jurisdiction_family=jurisdiction_family,
         )
     )
-    missing = tuple(key for key in required_handoff_keys if key not in manifest.handoffs)
+    missing = tuple(key for key in required_input_table_keys if key not in manifest.input_tables)
     return ManifestValidationResult(
         run_id=manifest.run_id,
         profile_id=manifest.profile_id,
         base_currency=manifest.base_currency,
         jurisdiction_family=jurisdiction_family,
-        handoffs=tuple(validations),
-        missing_required_handoffs=missing,
+        input_tables=tuple(validations),
+        missing_required_input_tables=missing,
         errors=tuple(errors),
     )
 
@@ -222,27 +223,30 @@ def validate_capital_run_manifest(
 def run_standardised_approach_from_manifest(
     manifest: CapitalRunManifest,
     *,
-    routes: Mapping[str, ManifestHandoffRoute],
-    required_handoff_keys: Sequence[str] = STANDARDISED_REQUIRED_INPUT_TABLE_KEYS,
+    routes: Mapping[str, ManifestInputTableRoute],
+    required_input_table_keys: Sequence[str] = STANDARDISED_REQUIRED_INPUT_TABLE_KEYS,
 ) -> SaManifestRunResult:
-    """Validate, route available SA handoffs, and compose SA capital if complete."""
+    """Validate, route available SA input tables, and compose SA capital if complete."""
 
     validation = validate_capital_run_manifest(
         manifest,
         routes=routes,
-        required_handoff_keys=required_handoff_keys,
+        required_input_table_keys=required_input_table_keys,
     )
     component_summaries: list[ComponentCapitalSummary] = []
     orchestration_error: str | None = None
 
-    for logical_name in sorted(manifest.handoffs):
+    for logical_name in sorted(manifest.input_tables):
         route = routes.get(logical_name)
         if route is None or route.calculate_batch is None or route.to_component_summary is None:
             continue
         try:
-            source_hash = arrow_table_content_hash(manifest.handoffs[logical_name])
-            handoff = route.normalize(manifest.handoffs[logical_name], source_hash=source_hash)
-            batch = handoff if route.build_batch is None else route.build_batch(handoff)
+            source_hash = arrow_table_content_hash(manifest.input_tables[logical_name])
+            input_table = route.normalize(
+                manifest.input_tables[logical_name],
+                source_hash=source_hash,
+            )
+            batch = input_table if route.build_batch is None else route.build_batch(input_table)
             context_attr = route.context_attr or ""
             context = getattr(manifest, context_attr, None)
             if context is None:
@@ -278,38 +282,38 @@ def run_standardised_approach_from_manifest(
     )
 
 
-def _validate_one_handoff(
+def _validate_one_input_table(
     logical_name: str,
     table: pa.Table,
-    route: ManifestHandoffRoute,
-) -> ManifestHandoffValidation:
+    route: ManifestInputTableRoute,
+) -> ManifestInputTableValidation:
     source_hash = arrow_table_content_hash(table)
     try:
-        handoff = route.normalize(table, source_hash=source_hash)
+        input_table = route.normalize(table, source_hash=source_hash)
         if route.build_batch is not None:
-            route.build_batch(handoff)
+            route.build_batch(input_table)
     except Exception as exc:
-        return ManifestHandoffValidation(
+        return ManifestInputTableValidation(
             logical_name=logical_name,
             accepted_row_count=0,
             rejected_row_count=table.num_rows,
             diagnostics=(
                 {
-                    "code": "MANIFEST_HANDOFF_VALIDATION_ERROR",
+                    "code": "MANIFEST_INPUT_TABLE_VALIDATION_ERROR",
                     "message": str(exc),
                     "severity": "error",
                 },
             ),
             source_hash=source_hash,
-            handoff_hash=None,
+            input_table_hash=None,
         )
-    return ManifestHandoffValidation(
+    return ManifestInputTableValidation(
         logical_name=logical_name,
-        accepted_row_count=handoff.accepted.num_rows,
-        rejected_row_count=0 if handoff.rejected is None else handoff.rejected.num_rows,
-        diagnostics=tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics),
+        accepted_row_count=input_table.accepted.num_rows,
+        rejected_row_count=0 if input_table.rejected is None else input_table.rejected.num_rows,
+        diagnostics=tuple(diagnostic.as_dict() for diagnostic in input_table.diagnostics),
         source_hash=source_hash,
-        handoff_hash=normalized_arrow_table_hash(handoff),
+        input_table_hash=normalized_arrow_table_hash(input_table),
     )
 
 
@@ -350,14 +354,14 @@ def _component_summary_as_dict(summary: ComponentCapitalSummary) -> dict[str, ob
 def _profile_consistency_errors(
     manifest: CapitalRunManifest,
     *,
-    routes: Mapping[str, ManifestHandoffRoute],
+    routes: Mapping[str, ManifestInputTableRoute],
     manifest_jurisdiction_family: str | None,
 ) -> tuple[str, ...]:
     if manifest_jurisdiction_family is None:
         return ()
 
     errors: list[str] = []
-    for logical_name in sorted(manifest.handoffs):
+    for logical_name in sorted(manifest.input_tables):
         route = routes.get(logical_name)
         if route is None or route.context_attr is None:
             continue
@@ -414,20 +418,19 @@ def _require_text(value: object, field_name: str) -> None:
 
 
 __all__ = [
-    "CVA_COUNTERPARTY_HANDOFF",
-    "CVA_HEDGE_HANDOFF",
-    "CVA_NETTING_SET_HANDOFF",
-    "CVA_SA_SENSITIVITY_HANDOFF",
-    "DRC_CTP_HANDOFF",
-    "DRC_NONSEC_HANDOFF",
-    "DRC_SECURITISATION_NON_CTP_HANDOFF",
-    "RRAO_POSITIONS_HANDOFF",
-    "SBM_GIRR_DELTA_HANDOFF",
-    "STANDARDISED_REQUIRED_HANDOFF_KEYS",
+    "CVA_COUNTERPARTY_INPUT_TABLE",
+    "CVA_HEDGE_INPUT_TABLE",
+    "CVA_NETTING_SET_INPUT_TABLE",
+    "CVA_SA_SENSITIVITY_INPUT_TABLE",
+    "DRC_CTP_INPUT_TABLE",
+    "DRC_NONSEC_INPUT_TABLE",
+    "DRC_SECURITISATION_NON_CTP_INPUT_TABLE",
+    "RRAO_POSITIONS_INPUT_TABLE",
+    "SBM_GIRR_DELTA_INPUT_TABLE",
     "STANDARDISED_REQUIRED_INPUT_TABLE_KEYS",
     "CapitalRunManifest",
-    "ManifestHandoffRoute",
-    "ManifestHandoffValidation",
+    "ManifestInputTableRoute",
+    "ManifestInputTableValidation",
     "ManifestValidationResult",
     "SaManifestRunResult",
     "run_standardised_approach_from_manifest",

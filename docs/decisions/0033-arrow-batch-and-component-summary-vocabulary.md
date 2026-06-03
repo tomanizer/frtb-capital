@@ -4,7 +4,7 @@ Date: 2026-06-03
 
 ## Status
 
-Accepted
+Accepted; M3/M4 breaking cleanup implemented in the issue #474/#475 follow-up.
 
 ## Context
 
@@ -18,7 +18,7 @@ the umbrella term for two different concepts:
    aggregation, without importing sibling package internals (ADR 0029).
 
 Library users and reviewers routinely conflate these paths because the same word
-appears in module names (`arrow_handoff.py`), types (`NormalizedTabularHandoff`),
+appears in module names (`arrow_batch.py`), types (`NormalizedTabularHandoff`),
 builders (`build_rrao_batch_from_handoff`), orchestration parameters
 (`sbm_handoff`), and documentation. **Handoff** does not tell a caller whether
 they need a columnar table, a batch object, or a capital summary.
@@ -32,7 +32,7 @@ orchestration.
 An audit in 2026-06-03 also found **surface inconsistencies** that this ADR
 clarifies but does not require fixing in one step:
 
-- SBM exposes many tabular APIs on `frtb_sbm.arrow_handoff` while some siblings
+- SBM exposes many tabular APIs on `frtb_sbm.arrow_batch` while some siblings
   also re-export tabular symbols from the package root.
 - SBM adds `calculate_sbm_capital_from_*_handoff` shortcuts; other components use
   normalize → batch → `calculate_*_from_batch` only.
@@ -96,7 +96,7 @@ input table.
 | Column array type alias | `ArrowColumnArray` | Replaces `HandoffColumnArray`; the old type alias is compatibility-only. |
 | Hash helper | `normalized_arrow_table_hash` | Replaces `normalized_handoff_hash` (same digest semantics). |
 | Shared errors | `NormalizedTableError` | Replaces `TabularHandoffError`. Raised for shared **normalization and tabular invariant** failures (schema, null policy, partitioning), not only raw Arrow IO. `ArrowTableError` is reserved for a future narrower class if a distinct Arrow-only error family is needed. |
-| Adapter modules | `arrow_batch.py` or `arrow_adapter.py` | Optional **late** rename from `arrow_handoff.py` (see Implementation sequencing). |
+| Adapter modules | `arrow_batch.py` | M4 settled on `arrow_batch.py` for package-local Arrow-to-batch adapters. |
 | CRIF shim | `normalize_<slice>_crif_arrow_table` | Unchanged pattern (e.g. SBM `normalize_girr_delta_crif_arrow_table`); CRIF is a source format, not a synonym for Arrow. |
 
 **Prohibited on the Arrow path:** names that suggest orchestration or suite
@@ -144,11 +144,12 @@ and `pyarrow` in orchestration-facing public names.
 |-------|-------------|---------------|
 | **M1 — aliases** | New symbols are **canonical**; old names are thin deprecated aliases (see Class and function aliases below). `__all__` lists new names first. | New examples use Arrow/summary vocabulary only; old names documented as deprecated. |
 | **M2 — warnings** | In-repo call sites updated to new names. `DeprecationWarning` on old public symbols. | ADR 0023/0029 cross-links updated; prose uses "Arrow ingest" and "component summary" where describing behavior. |
-| **M3 — removal** | Old public names removed in a `release/*` PR per ADR 0015. | "Handoff" removed from public API docs except historical ADR titles and changelog entries. |
-| **M4 — module paths (optional)** | File renames (`arrow_handoff.py`, `handoff.py`, `frtb_common.handoff`) after symbols and docs stabilize. | Crosswalk YAML and import-boundary allowlists updated in the same PR as renames. |
+| **M3 — removal** | Old public names removed in the ADR 0015 breaking-cleanup vehicle. | "Handoff" removed from public API docs except historical ADR titles and changelog entries. |
+| **M4 — module paths** | File renames completed with the M3 breaking cleanup where symbol-level migration had stabilized. | Crosswalk YAML and import-boundary allowlists updated in the same PR as renames. |
 
 **Internal** private names, benchmark JSON keys, and git branch names may lag M2;
-they must be gone before M3. Module renames are **M4**, not mixed into M1/M2.
+they must be gone before M3. Module renames are **M4** and were deliberately
+deferred until the breaking-removal cleanup rather than mixed into M1/M2.
 
 #### Class and function aliases (required pattern)
 
@@ -180,7 +181,7 @@ release/breaking-change phase.
 Aligned with **#401** (narrower top-level surfaces):
 
 - Packages **must** document **discoverable public module paths** for the Arrow
-  path (e.g. `frtb_rrao.arrow_handoff` today; `frtb_rrao.arrow_batch` after M4)
+  path (e.g. `frtb_rrao.arrow_batch` today; `frtb_rrao.arrow_batch` after M4)
   in README / PUBLIC_API / package `AGENTS.md`.
 - Packages **may** re-export stable tabular or summary entrypoints from
   `__init__.py` **only when those symbols are already part of the package's
@@ -236,7 +237,8 @@ drift.
 | `normalized_handoff_hash` | `normalized_arrow_table_hash` |
 | `normalize_arrow_table` | unchanged |
 | `validate_arrow_table` | unchanged |
-| `frtb_common.handoff` | optional M4: `frtb_common.arrow_table` or `arrow_ingest` |
+| `frtb_common.arrow_table` | unchanged canonical table-normalization module |
+| `frtb_common.handoff_schema` | `frtb_common.arrow_table_schema` |
 
 ### `frtb-common` (composition)
 
@@ -244,21 +246,21 @@ drift.
 |---------|--------|
 | `ComponentResultHandoff` | `ComponentCapitalSummary` (canonical class) |
 | `ComponentHandoffError` | `ComponentSummaryError` |
-| `frtb_common.component_handoff` | optional M4: `frtb_common.component_summary` |
+| `frtb_common.component_handoff` | `frtb_common.component_summary` |
 
 ### Per-package (tabular) — pattern
 
 | Current | Target |
 |---------|--------|
 | `build_<entity>_batch_from_handoff` | `build_<entity>_batch_from_arrow` |
-| `packages/*/src/*_*/arrow_handoff.py` | `arrow_batch.py` (M4 only) |
+| `packages/*/src/*_*/arrow_handoff.py` | `arrow_batch.py` |
 
 ### Per-package (composition) — pattern
 
 | Current | Target |
 |---------|--------|
 | `to_orchestration_handoff` | `to_component_summary` |
-| `packages/*/src/*_*/handoff.py` | optional M4 rename; not required for M1/M2 |
+| `packages/*/src/*_*/handoff.py` | `component_summary.py` |
 
 ### Orchestration
 
@@ -266,7 +268,8 @@ drift.
 |---------|--------|
 | `sbm_handoff`, `drc_handoff`, `rrao_handoff` | `sbm_summary`, `drc_summary`, `rrao_summary` |
 | `CvaResultHandoff` | `CvaCapitalSummary` |
-| `frtb_orchestration/cva_handoff.py` | optional M4: `cva_summary.py` |
+| `frtb_orchestration/cva_handoff.py` | `cva_summary.py` |
+| `ManifestHandoffRoute`, `ManifestHandoffValidation`, `handoffs` | `ManifestInputTableRoute`, `ManifestInputTableValidation`, `input_tables` |
 
 ## Implementation sequencing
 
@@ -280,8 +283,8 @@ names are ergonomic.
 | **1 — first PR (M1)** | `frtb-common` canonical types/functions with deprecated aliases; one **pilot package** (RRAO or DRC): `build_*_batch_from_arrow`, `to_component_summary`, tests and package docs using new terms only. No file renames. No SBM root export expansion. |
 | **2 (M1)** | Remaining packages: function/type aliases and docs; stay within each package's **existing** public export contract and #401 allowlist. |
 | **3 (M2)** | In-repo call sites, `DeprecationWarning`, orchestration keyword aliases (`sbm_summary=` with deprecated `sbm_handoff=`), ARCHITECTURE.md, handoff-vocabulary CI guard. |
-| **4 (M3)** | `release/*` removal of deprecated public names. |
-| **5 (M4, optional)** | Module/file renames, benchmark `schema_version` bumps, crosswalk path updates, kernel import allowlist basenames. |
+| **4 (M3)** | Removal of deprecated public names through the ADR 0015 breaking-cleanup vehicle. |
+| **5 (M4)** | Module/file renames, benchmark `schema_version` review, crosswalk path updates, kernel import allowlist basenames. The issue #475 decision was **go** because M3 already forced a broad public-doc and import-boundary sweep, so finishing module paths in the same branch avoided another churn cycle. |
 
 ## Consequences
 

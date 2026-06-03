@@ -12,7 +12,7 @@
 
 The package is importable and exposes `calculate_sbm_capital` for supported
 Basel MAR21 delta, vega, and curvature canonical inputs. Row-wise,
-package-owned batch, and Arrow handoff paths are available for the supported
+package-owned batch, and Arrow batch paths are available for the supported
 matrix. Unsupported profiles and unmapped sub-features fail closed.
 
 ## Package-Local Documentation

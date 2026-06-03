@@ -218,7 +218,7 @@ def _write_suite_artifacts(artifact_dir: Path) -> None:
         },
     )
     _write_json(
-        artifact_dir / "frtb-ima-arrow-handoff.json",
+        artifact_dir / "frtb-ima-arrow-batch.json",
         {
             "summary": {
                 "timings_seconds": {
@@ -268,7 +268,7 @@ def _write_suite_artifacts(artifact_dir: Path) -> None:
                 "timings_seconds": {
                     "wall_clock": 4.0,
                     "arrow_table_construction": 0.5,
-                    "handoff_normalization": 0.5,
+                    "arrow_normalization": 0.5,
                     "batch_construction": 0.5,
                     "batch_calculation": 1.0,
                 },
@@ -299,7 +299,7 @@ def _write_suite_artifacts(artifact_dir: Path) -> None:
                 "batch_positions_per_second": 3000.0,
                 "arrow_positions_per_second": 3000.0,
                 "arrow_table_seconds": 0.5,
-                "arrow_handoff_seconds": 0.5,
+                "arrow_batch_seconds": 0.5,
                 "arrow_calculate_seconds": 1.0,
             },
             "memory": {"peak_traced_bytes": 100},

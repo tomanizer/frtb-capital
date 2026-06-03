@@ -16,9 +16,10 @@ ALLOWED_RUNTIME_FILENAMES = frozenset(
         "adapters.py",
         "arrow.py",
         "arrow_conversion.py",
-        "arrow_handoff.py",
+        "arrow_batch.py",
+        "arrow_table.py",
+        "component_summary.py",
         "crif.py",
-        "handoff.py",
         "io.py",
         "tabular.py",
     }
@@ -28,7 +29,6 @@ ALLOWED_RUNTIME_DIRS = frozenset(
     {
         "adapter",
         "adapters",
-        "handoff",
         "io",
         "tabular",
     }
@@ -36,7 +36,7 @@ ALLOWED_RUNTIME_DIRS = frozenset(
 
 ALLOWED_RUNTIME_RELATIVE_PATHS = frozenset(
     {
-        "frtb_common/handoff_schema.py",
+        "frtb_common/arrow_table_schema.py",
         "frtb_orchestration/manifest.py",
     }
 )
@@ -50,7 +50,6 @@ APPROVED_IO_PACKAGE_SRC_ROOTS = frozenset(
 ALLOWED_RUNTIME_SUFFIXES = (
     "_adapter.py",
     "_adapters.py",
-    "_handoff.py",
     "_io.py",
 )
 
@@ -66,7 +65,7 @@ def main() -> NoReturn:
     parser = argparse.ArgumentParser(
         description=(
             "Check package runtime modules for banned pandas/polars/pyarrow imports outside "
-            "explicit adapter and handoff boundaries."
+            "explicit adapter, Arrow, and IO boundaries."
         )
     )
     parser.add_argument(
@@ -80,7 +79,7 @@ def main() -> NoReturn:
     repo_root = args.repo_root.resolve()
     violations = check_repo(repo_root)
     if violations:
-        print("Banned dataframe/Arrow imports found outside adapter and handoff boundaries:")
+        print("Banned dataframe/Arrow imports found outside adapter, Arrow, and IO boundaries:")
         for violation in violations:
             display_path = violation.path.relative_to(repo_root)
             print(f"- {display_path}:{violation.line_number} imports {violation.imported_root!r}")
@@ -97,7 +96,7 @@ def check_repo(repo_root: Path) -> tuple[ImportViolation, ...]:
         if _is_approved_io_package_src_root(src_root, repo_root):
             continue
         for path in sorted(src_root.rglob("*.py")):
-            if _is_allowed_runtime_handoff_path(path, src_root):
+            if _is_allowed_runtime_arrow_path(path, src_root):
                 continue
             violations.extend(_banned_imports_in_file(path))
     return tuple(violations)
@@ -107,7 +106,7 @@ def _is_approved_io_package_src_root(src_root: Path, repo_root: Path) -> bool:
     return src_root.relative_to(repo_root) in APPROVED_IO_PACKAGE_SRC_ROOTS
 
 
-def _is_allowed_runtime_handoff_path(path: Path, src_root: Path) -> bool:
+def _is_allowed_runtime_arrow_path(path: Path, src_root: Path) -> bool:
     relative = path.relative_to(src_root)
     if relative.as_posix() in ALLOWED_RUNTIME_RELATIVE_PATHS:
         return True

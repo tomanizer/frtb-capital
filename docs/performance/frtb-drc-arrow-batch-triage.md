@@ -72,7 +72,7 @@ path.
 
 ## Issue #316 Conversion and Batch Check
 
-The issue #316 changes reduce Arrow handoff conversion overhead for DRC numeric,
+The issue #316 changes reduce Arrow batch conversion overhead for DRC numeric,
 boolean, dictionary-encoded text, and chunked columns. Required `float64`
 columns now use Arrow-to-NumPy views where the Arrow buffer permits it; nullable
 optional floats use an explicit null-to-`NaN` policy; and optional booleans use

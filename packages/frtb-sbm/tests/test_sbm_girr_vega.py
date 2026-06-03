@@ -32,7 +32,7 @@ from frtb_sbm import (
     weight_girr_vega_sensitivities,
     weight_girr_vega_sensitivity_batch,
 )
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     build_girr_vega_batch_from_arrow,
     calculate_sbm_capital_from_girr_vega_arrow,
     normalize_girr_vega_arrow_table,
@@ -249,7 +249,7 @@ def test_girr_vega_batch_rejects_context_scope_mismatch() -> None:
         calculate_sbm_capital_from_girr_vega_batch(batch, context=context)
 
 
-def test_girr_vega_arrow_handoff_rejects_missing_option_tenor() -> None:
+def test_girr_vega_arrow_batch_rejects_missing_option_tenor() -> None:
     table = sample_vega_arrow_table(sample_vega_sensitivities()).drop(["option_tenor"])
 
     with pytest.raises(ValueError, match="option_tenor"):
@@ -257,9 +257,9 @@ def test_girr_vega_arrow_handoff_rejects_missing_option_tenor() -> None:
 
 
 def test_girr_vega_handoff_builder_does_not_construct_row_dataclasses() -> None:
-    import frtb_sbm.arrow_handoff as arrow_handoff
+    import frtb_sbm.arrow_batch as arrow_batch
 
-    source = inspect.getsource(arrow_handoff)
+    source = inspect.getsource(arrow_batch)
 
     assert "SbmSensitivity(" not in source
     assert "from frtb_sbm.data_models import SbmSensitivity" not in source

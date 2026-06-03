@@ -16,11 +16,11 @@ from frtb_sbm import (
     SbmSourceLineage,
     calculate_sbm_capital,
 )
+from frtb_sbm.component_summary import to_component_summary
 from frtb_sbm.csr_sec_ctp_reference_data import (
     CSR_SEC_CTP_DECOMPOSITION_EVIDENCE_FLAG,
     CSR_SEC_CTP_DECOMPOSITION_REQUIRED_FLAG,
 )
-from frtb_sbm.handoff import to_component_summary
 
 
 def sample_lineage(row_id: str = "row-001") -> SbmSourceLineage:

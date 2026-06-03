@@ -23,7 +23,7 @@ from frtb_drc import (
     input_snapshot_hash,
     validate_reconciliation,
 )
-from frtb_drc.arrow_handoff import (
+from frtb_drc.arrow_batch import (
     build_drc_ctp_batch_from_arrow,
     build_drc_nonsec_batch_from_arrow,
     build_drc_securitisation_non_ctp_batch_from_arrow,
@@ -93,7 +93,7 @@ def test_drc_batch_supports_basel_nonsec_profile() -> None:
     validate_reconciliation(calculation.result)
 
 
-def test_drc_arrow_handoff_batch_matches_nonsec_v2_row_capital() -> None:
+def test_drc_arrow_batch_batch_matches_nonsec_v2_row_capital() -> None:
     fixture = load_drc_nonsec_v2_fixture()
     row_result = calculate_drc_capital(fixture.positions, context=fixture.context)
     source_hash = source_content_hash("synthetic drc nonsec source")
@@ -130,7 +130,7 @@ def test_drc_arrow_handoff_batch_matches_nonsec_v2_row_capital() -> None:
     assert batch_gross_by_id == pytest.approx(row_gross_by_id)
 
 
-def test_drc_arrow_handoff_batch_matches_securitisation_non_ctp_row_capital() -> None:
+def test_drc_arrow_batch_batch_matches_securitisation_non_ctp_row_capital() -> None:
     fixture = _load_fixture("drc_sec_nonctp_v1")
     row_result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
     handoff = normalize_drc_securitisation_non_ctp_arrow_table(
@@ -180,7 +180,7 @@ def test_drc_securitisation_non_ctp_batch_applies_fair_value_cap_evidence() -> N
     validate_reconciliation(calculation.result)
 
 
-def test_drc_arrow_handoff_batch_matches_ctp_row_capital() -> None:
+def test_drc_arrow_batch_batch_matches_ctp_row_capital() -> None:
     fixture = _load_fixture("drc_ctp_v1")
     row_result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
     handoff = normalize_drc_ctp_arrow_table(
@@ -205,7 +205,7 @@ def test_drc_arrow_handoff_batch_matches_ctp_row_capital() -> None:
     assert "US_NPR_210_D_3_IV_D" in calculation.result.citations
 
 
-def test_drc_arrow_handoff_uses_zero_copy_float64_columns_when_possible() -> None:
+def test_drc_arrow_batch_uses_zero_copy_float64_columns_when_possible() -> None:
     fixture = load_drc_nonsec_v2_fixture()
     handoff = normalize_drc_nonsec_arrow_table(_arrow_table(fixture.positions))
 
@@ -220,7 +220,7 @@ def test_drc_arrow_handoff_uses_zero_copy_float64_columns_when_possible() -> Non
     )
 
 
-def test_drc_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
+def test_drc_arrow_batch_handles_chunked_dictionary_text_columns() -> None:
     fixture = load_drc_nonsec_v2_fixture()
     table = pa.concat_tables(
         [

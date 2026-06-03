@@ -8,7 +8,7 @@ Use this fragment when adding or refreshing a package `PUBLIC_API.md`.
 
 | Tier | Client input | Package path | Notes |
 | --- | --- | --- | --- |
-| 1 - Arrow/Parquet handoff | Tables matching `*_ARROW_COLUMN_SPECS` | `normalize_*_arrow_table` -> `build_*_batch_from_handoff` -> `calculate_*_from_batch` | Recommended production path. |
+| 1 - Arrow/Parquet input table | Tables matching `*_ARROW_COLUMN_SPECS` | `normalize_*_arrow_table` -> `build_*_batch_from_arrow` -> `calculate_*_from_batch` | Recommended production path. |
 | 2 - CRIF/vendor rows | Iterable mapping rows | `adapt_crif_records` / `adapt_*_records` -> Tier 1 or Tier 3 | Use when upstream already emits vendor or CRIF-shaped rows. |
 | 3 - Canonical dataclasses | Package row dataclasses | `calculate_*_capital` | Notebooks, tests, fixtures, and small books only. |
 
@@ -17,7 +17,7 @@ Use this fragment when adding or refreshing a package `PUBLIC_API.md`.
 - Package identity and `PACKAGE_METADATA`.
 - Tier 3 row entrypoints and canonical dataclasses.
 - Tier 1 batch entrypoints.
-- Handoff column spec symbols.
+- Input table column spec symbols.
 - Normalize functions.
 - Optional CRIF or vendor adapters.
 - Supported regulatory profiles and explicit fail-closed paths.
@@ -25,9 +25,9 @@ Use this fragment when adding or refreshing a package `PUBLIC_API.md`.
 - Audit, hashing, attribution, and replay entrypoints.
 - Submodule-only symbols clients must not treat as stable contracts.
 
-### Handoff column summary
+### Input Table Column Summary
 
-Include a compact table for every public handoff spec:
+Include a compact table for every public input table spec:
 
 | Column | Required | Logical type | Null policy | Notes |
 | --- | --- | --- | --- | --- |
@@ -40,5 +40,5 @@ client-facing summary, not a replacement for generated machine-readable schemas.
 - Suite guide: [`docs/CLIENT_INTEGRATION.md`](../../CLIENT_INTEGRATION.md)
 - Reference data matrix:
   [#422](https://github.com/tomanizer/frtb-capital/issues/422)
-- Schema exports: [`docs/schemas/handoff/`](../../schemas/handoff/)
-- Validation harness: `scripts/validate_client_handoff.py`
+- Schema exports: [`docs/schemas/input_table/`](../../schemas/input_table/)
+- Validation harness: `scripts/validate_client_input_table.py`

@@ -106,22 +106,22 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
     )
     ba_arrow_table = _measure(
         lambda: (
-            pa.table(_counterparty_handoff_columns(counterparties)),
-            pa.table(_netting_set_handoff_columns(netting_sets)),
+            pa.table(_counterparty_arrow_columns(counterparties)),
+            pa.table(_netting_set_arrow_columns(netting_sets)),
         )
     )
     counterparty_table, netting_set_table = ba_arrow_table.value
-    ba_arrow_handoff = _measure(
+    ba_arrow_batch = _measure(
         lambda: (
             normalize_cva_counterparty_arrow_table(counterparty_table),
             normalize_cva_netting_set_arrow_table(netting_set_table),
         )
     )
-    counterparty_handoff, netting_set_handoff = ba_arrow_handoff.value
+    counterparty_arrow_table, netting_set_arrow_table = ba_arrow_batch.value
     arrow_ba_build = _measure(
         lambda: (
-            build_cva_counterparty_batch_from_arrow(counterparty_handoff),
-            build_cva_netting_set_batch_from_arrow(netting_set_handoff),
+            build_cva_counterparty_batch_from_arrow(counterparty_arrow_table),
+            build_cva_netting_set_batch_from_arrow(netting_set_arrow_table),
         )
     )
     arrow_counterparties, arrow_netting_sets = arrow_ba_build.value
@@ -153,12 +153,12 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
             sensitivities=column_sa_build.value,
         )
     )
-    sensitivity_table = _measure(lambda: pa.table(_sensitivity_handoff_columns(sensitivities)))
-    sensitivity_handoff = _measure(
+    sensitivity_table = _measure(lambda: pa.table(_sensitivity_arrow_columns(sensitivities)))
+    sensitivity_arrow_table = _measure(
         lambda: normalize_sa_cva_sensitivity_arrow_table(sensitivity_table.value)
     )
     arrow_sa_build = _measure(
-        lambda: build_sa_cva_sensitivity_batch_from_arrow(sensitivity_handoff.value)
+        lambda: build_sa_cva_sensitivity_batch_from_arrow(sensitivity_arrow_table.value)
     )
     arrow_sa = _measure(
         lambda: calculate_cva_capital_from_batches(
@@ -167,11 +167,11 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
         )
     )
     ba_arrow_parse_seconds = ba_arrow_table.seconds
-    ba_arrow_adapt_seconds = ba_arrow_handoff.seconds
+    ba_arrow_adapt_seconds = ba_arrow_batch.seconds
     ba_arrow_build_seconds = arrow_ba_build.seconds
     ba_arrow_calculate_seconds = arrow_ba.seconds
     sa_arrow_parse_seconds = sensitivity_table.seconds
-    sa_arrow_adapt_seconds = sensitivity_handoff.seconds
+    sa_arrow_adapt_seconds = sensitivity_arrow_table.seconds
     sa_arrow_build_seconds = arrow_sa_build.seconds
     sa_arrow_calculate_seconds = arrow_sa.seconds
     parse_seconds = ba_arrow_parse_seconds + sa_arrow_parse_seconds
@@ -228,11 +228,11 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
             ),
             "tracemalloc_peak_bytes": max(
                 ba_arrow_table.peak_bytes,
-                ba_arrow_handoff.peak_bytes,
+                ba_arrow_batch.peak_bytes,
                 arrow_ba_build.peak_bytes,
                 arrow_ba.peak_bytes,
                 sensitivity_table.peak_bytes,
-                sensitivity_handoff.peak_bytes,
+                sensitivity_arrow_table.peak_bytes,
                 arrow_sa_build.peak_bytes,
                 arrow_sa.peak_bytes,
             ),
@@ -242,14 +242,14 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
             "ba_column_build_seconds": column_ba_build.seconds,
             "ba_column_calculate_seconds": column_ba.seconds,
             "ba_arrow_table_seconds": ba_arrow_table.seconds,
-            "ba_arrow_handoff_seconds": ba_arrow_handoff.seconds,
+            "ba_arrow_batch_seconds": ba_arrow_batch.seconds,
             "ba_arrow_build_seconds": arrow_ba_build.seconds,
             "ba_arrow_calculate_seconds": arrow_ba.seconds,
             "sa_row_calculate_seconds": row_sa.seconds,
             "sa_column_build_seconds": column_sa_build.seconds,
             "sa_column_calculate_seconds": column_sa.seconds,
             "sa_arrow_table_seconds": sensitivity_table.seconds,
-            "sa_arrow_handoff_seconds": sensitivity_handoff.seconds,
+            "sa_arrow_batch_seconds": sensitivity_arrow_table.seconds,
             "sa_arrow_build_seconds": arrow_sa_build.seconds,
             "sa_arrow_calculate_seconds": arrow_sa.seconds,
         },
@@ -258,14 +258,14 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
             "ba_column_build_peak_bytes": column_ba_build.peak_bytes,
             "ba_column_calculate_peak_bytes": column_ba.peak_bytes,
             "ba_arrow_table_peak_bytes": ba_arrow_table.peak_bytes,
-            "ba_arrow_handoff_peak_bytes": ba_arrow_handoff.peak_bytes,
+            "ba_arrow_batch_peak_bytes": ba_arrow_batch.peak_bytes,
             "ba_arrow_build_peak_bytes": arrow_ba_build.peak_bytes,
             "ba_arrow_calculate_peak_bytes": arrow_ba.peak_bytes,
             "sa_row_peak_bytes": row_sa.peak_bytes,
             "sa_column_build_peak_bytes": column_sa_build.peak_bytes,
             "sa_column_calculate_peak_bytes": column_sa.peak_bytes,
             "sa_arrow_table_peak_bytes": sensitivity_table.peak_bytes,
-            "sa_arrow_handoff_peak_bytes": sensitivity_handoff.peak_bytes,
+            "sa_arrow_batch_peak_bytes": sensitivity_arrow_table.peak_bytes,
             "sa_arrow_build_peak_bytes": arrow_sa_build.peak_bytes,
             "sa_arrow_calculate_peak_bytes": arrow_sa.peak_bytes,
         },
@@ -428,7 +428,7 @@ def _lineage(source_file: str, source_row_id: str) -> CvaSourceLineage:
 
 
 def _counterparty_columns(counterparties: tuple[CvaCounterparty, ...]) -> dict[str, Any]:
-    payload = _counterparty_handoff_columns(counterparties)
+    payload = _counterparty_arrow_columns(counterparties)
     return {
         "counterparty_ids": payload["counterparty_id"],
         "desk_ids": payload["desk_id"],
@@ -444,7 +444,7 @@ def _counterparty_columns(counterparties: tuple[CvaCounterparty, ...]) -> dict[s
 
 
 def _netting_set_columns(netting_sets: tuple[CvaNettingSet, ...]) -> dict[str, Any]:
-    payload = _netting_set_handoff_columns(netting_sets)
+    payload = _netting_set_arrow_columns(netting_sets)
     return {
         "netting_set_ids": payload["netting_set_id"],
         "counterparty_ids": payload["counterparty_id"],
@@ -491,7 +491,7 @@ def _sensitivity_columns(sensitivities: tuple[SaCvaSensitivity, ...]) -> dict[st
     }
 
 
-def _sensitivity_handoff_columns(
+def _sensitivity_arrow_columns(
     sensitivities: tuple[SaCvaSensitivity, ...],
 ) -> dict[str, object]:
     return {
@@ -521,7 +521,7 @@ def _sensitivity_handoff_columns(
     }
 
 
-def _counterparty_handoff_columns(
+def _counterparty_arrow_columns(
     counterparties: tuple[CvaCounterparty, ...],
 ) -> dict[str, object]:
     return {
@@ -545,7 +545,7 @@ def _counterparty_handoff_columns(
     }
 
 
-def _netting_set_handoff_columns(netting_sets: tuple[CvaNettingSet, ...]) -> dict[str, object]:
+def _netting_set_arrow_columns(netting_sets: tuple[CvaNettingSet, ...]) -> dict[str, object]:
     return {
         "netting_set_id": [item.netting_set_id for item in netting_sets],
         "counterparty_id": [item.counterparty_id for item in netting_sets],

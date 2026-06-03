@@ -14,7 +14,7 @@ from frtb_common import (
     validate_arrow_table,
 )
 
-from scripts.export_handoff_schema import main as export_schema_main
+from scripts.export_arrow_schema import main as export_schema_main
 
 
 def test_column_spec_json_schema_extensions_are_present() -> None:
@@ -60,25 +60,25 @@ def test_arrow_schema_round_trip_accepts_validation() -> None:
     assert schema.field("is_active").nullable is True
 
 
-def test_golden_handoff_schema_files_match_public_specs() -> None:
+def test_golden_input_table_schema_files_match_public_specs() -> None:
     import frtb_drc
     import frtb_rrao
     import frtb_sbm
 
     cases = (
         (
-            "docs/schemas/handoff/frtb_rrao.positions.schema.json",
-            frtb_rrao.RRAO_HANDOFF_COLUMN_SPECS,
+            "docs/schemas/input_table/frtb_rrao.positions.schema.json",
+            frtb_rrao.RRAO_ARROW_COLUMN_SPECS,
             "frtb_rrao.positions",
         ),
         (
-            "docs/schemas/handoff/frtb_drc.nonsec.schema.json",
-            frtb_drc.DRC_NONSEC_HANDOFF_COLUMN_SPECS,
+            "docs/schemas/input_table/frtb_drc.nonsec.schema.json",
+            frtb_drc.DRC_NONSEC_ARROW_COLUMN_SPECS,
             "frtb_drc.nonsec",
         ),
         (
-            "docs/schemas/handoff/frtb_sbm.girr_delta.schema.json",
-            frtb_sbm.GIRR_DELTA_HANDOFF_COLUMN_SPECS,
+            "docs/schemas/input_table/frtb_sbm.girr_delta.schema.json",
+            frtb_sbm.GIRR_DELTA_ARROW_COLUMN_SPECS,
             "frtb_sbm.girr_delta",
         ),
     )
@@ -87,7 +87,7 @@ def test_golden_handoff_schema_files_match_public_specs() -> None:
         assert json.loads(_repo_root().joinpath(path).read_text()) == expected
 
 
-def test_export_handoff_schema_cli_writes_arrow_schema_json(tmp_path: Path) -> None:
+def test_export_arrow_schema_cli_writes_arrow_schema_json(tmp_path: Path) -> None:
     output = tmp_path / "rrao.arrow-schema.json"
 
     assert (
@@ -96,7 +96,7 @@ def test_export_handoff_schema_cli_writes_arrow_schema_json(tmp_path: Path) -> N
                 "--package",
                 "frtb_rrao",
                 "--spec",
-                "RRAO_HANDOFF_COLUMN_SPECS",
+                "RRAO_ARROW_COLUMN_SPECS",
                 "--format",
                 "arrow",
                 "--output",

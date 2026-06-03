@@ -1,4 +1,4 @@
-"""Orchestration handoff projection for public ``DrcCapitalResult`` records.
+"""Component summary projection for public ``DrcCapitalResult`` records.
 
 ``frtb-orchestration`` consumes only the shared
 ``frtb_common.ComponentCapitalSummary`` shape, so this adapter is the single
@@ -7,15 +7,13 @@ stable bridge from the rich DRC result to suite aggregation.
 
 from __future__ import annotations
 
-import warnings
-
 from frtb_common import ComponentCapitalSummary, StandardisedComponent
 
 from frtb_drc.data_models import DrcCapitalResult
 
 
 def to_component_summary(result: DrcCapitalResult) -> ComponentCapitalSummary:
-    """Return the shared orchestration handoff view for one DRC capital result."""
+    """Return the shared component summary view for one DRC capital result."""
 
     return ComponentCapitalSummary(
         component=StandardisedComponent.DRC,
@@ -35,15 +33,4 @@ def to_component_summary(result: DrcCapitalResult) -> ComponentCapitalSummary:
     )
 
 
-def to_orchestration_handoff(result: DrcCapitalResult) -> ComponentCapitalSummary:
-    """Deprecated alias for :func:`to_component_summary`."""
-
-    warnings.warn(
-        "to_orchestration_handoff is deprecated; use to_component_summary",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return to_component_summary(result)
-
-
-__all__ = ["to_component_summary", "to_orchestration_handoff"]
+__all__ = ["to_component_summary"]

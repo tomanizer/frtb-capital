@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate client Arrow/Parquet/CSV handoff files without running capital."""
+"""Validate client Arrow/Parquet/CSV input table files without running capital."""
 
 from __future__ import annotations
 
@@ -22,13 +22,17 @@ from frtb_common import (
     source_content_hash,
 )
 
-from scripts.client_handoff_registry import empty_table_for_specs, resolve_handoff_entry
+from scripts.client_input_table_registry import empty_table_for_specs, resolve_input_table_entry
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--package", required=True, help="Package import name, e.g. frtb_drc")
-    parser.add_argument("--handoff", required=True, help="Registered handoff id, e.g. nonsec")
+    parser.add_argument(
+        "--input-table",
+        required=True,
+        help="Registered input table id, e.g. nonsec",
+    )
     parser.add_argument(
         "--input",
         required=True,
@@ -43,16 +47,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    return validate_client_handoff(args.package, args.handoff, args.input, args.output_dir)
+    return validate_client_input_table(args.package, args.input_table, args.input, args.output_dir)
 
 
-def validate_client_handoff(
+def validate_client_input_table(
     package: str,
-    handoff_id: str,
+    input_table_id: str,
     input_path: Path,
     output_dir: Path,
 ) -> int:
-    entry = resolve_handoff_entry(package, handoff_id)
+    entry = resolve_input_table_entry(package, input_table_id)
     output_dir.mkdir(parents=True, exist_ok=True)
     source_hash = source_content_hash(input_path.read_bytes())
     table = _load_table(input_path)
@@ -60,16 +64,16 @@ def validate_client_handoff(
     batch_built = False
 
     try:
-        handoff = entry.normalize(table, source_hash=source_hash)
+        input_table = entry.normalize(table, source_hash=source_hash)
     except Exception as exc:
         diagnostics.append(
             AdapterDiagnostic(
-                code="HANDOFF_NORMALIZATION_ERROR",
+                code="INPUT_TABLE_NORMALIZATION_ERROR",
                 message=str(exc),
                 severity=DiagnosticSeverity.ERROR,
             )
         )
-        handoff = NormalizedArrowTable(
+        input_table = NormalizedArrowTable(
             accepted=empty_table_for_specs(entry.column_specs),
             column_specs=entry.column_specs,
             rejected=table,
@@ -77,28 +81,28 @@ def validate_client_handoff(
             source_hash=source_hash,
         )
     else:
-        diagnostics.extend(handoff.diagnostics)
+        diagnostics.extend(input_table.diagnostics)
         if entry.build_batch is not None:
             try:
-                entry.build_batch(handoff)
+                entry.build_batch(input_table)
                 batch_built = True
             except Exception as exc:
                 diagnostics.append(
                     AdapterDiagnostic(
-                        code="HANDOFF_BATCH_BUILD_ERROR",
+                        code="INPUT_TABLE_BATCH_BUILD_ERROR",
                         message=str(exc),
                         severity=DiagnosticSeverity.ERROR,
                     )
                 )
-                handoff = NormalizedArrowTable(
-                    accepted=handoff.accepted,
-                    column_specs=handoff.column_specs,
-                    row_id_column=handoff.row_id_column,
-                    rejected=handoff.rejected,
+                input_table = NormalizedArrowTable(
+                    accepted=input_table.accepted,
+                    column_specs=input_table.column_specs,
+                    row_id_column=input_table.row_id_column,
+                    rejected=input_table.rejected,
                     diagnostics=tuple(diagnostics),
-                    metadata=handoff.metadata,
-                    source_hash=handoff.source_hash,
-                    require_unique_row_ids=handoff.require_unique_row_ids,
+                    metadata=input_table.metadata,
+                    source_hash=input_table.source_hash,
+                    require_unique_row_ids=input_table.require_unique_row_ids,
                 )
 
     sorted_diagnostics = sorted(
@@ -112,15 +116,15 @@ def validate_client_handoff(
     _write_outputs(
         output_dir=output_dir,
         package=package,
-        handoff_id=handoff_id,
-        handoff=handoff,
+        input_table_id=input_table_id,
+        input_table=input_table,
         diagnostics=sorted_diagnostics,
         batch_built=batch_built,
     )
     has_errors = any(
         item["severity"] == DiagnosticSeverity.ERROR.value for item in sorted_diagnostics
     )
-    rejected_rows = handoff.rejected.num_rows if handoff.rejected is not None else 0
+    rejected_rows = input_table.rejected.num_rows if input_table.rejected is not None else 0
     return 1 if has_errors or rejected_rows else 0
 
 
@@ -144,30 +148,30 @@ def _write_outputs(
     *,
     output_dir: Path,
     package: str,
-    handoff_id: str,
-    handoff: NormalizedArrowTable,
+    input_table_id: str,
+    input_table: NormalizedArrowTable,
     diagnostics: list[dict[str, object]],
     batch_built: bool,
 ) -> None:
-    pq.write_table(handoff.accepted, output_dir / "accepted.parquet")
+    pq.write_table(input_table.accepted, output_dir / "accepted.parquet")
     rejected_rows = 0
-    if handoff.rejected is not None:
-        rejected_rows = handoff.rejected.num_rows
+    if input_table.rejected is not None:
+        rejected_rows = input_table.rejected.num_rows
         if rejected_rows:
-            pq.write_table(handoff.rejected, output_dir / "rejected.parquet")
+            pq.write_table(input_table.rejected, output_dir / "rejected.parquet")
     (output_dir / "diagnostics.json").write_text(
         json.dumps(diagnostics, indent=2, sort_keys=True) + "\n"
     )
     summary = {
-        "accepted_rows": handoff.accepted.num_rows,
+        "accepted_rows": input_table.accepted.num_rows,
         "batch_built": batch_built,
-        "handoff_hash": normalized_arrow_table_hash(handoff),
-        "handoff_id": handoff_id,
-        "input_hash": handoff.source_hash,
+        "input_table_hash": normalized_arrow_table_hash(input_table),
+        "input_table_id": input_table_id,
+        "input_hash": input_table.source_hash,
         "package": package,
         "package_version": _package_version(package),
         "rejected_rows": rejected_rows,
-        "source_hash": handoff.source_hash,
+        "source_hash": input_table.source_hash,
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export machine-readable schemas from public handoff ColumnSpec tuples."""
+"""Export machine-readable schemas from public input table ColumnSpec tuples."""
 
 from __future__ import annotations
 

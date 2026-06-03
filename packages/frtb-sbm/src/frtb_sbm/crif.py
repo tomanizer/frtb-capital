@@ -28,7 +28,7 @@ from frtb_common import (
     normalize_crif_records,
 )
 
-from frtb_sbm.arrow_handoff import normalize_girr_delta_arrow_table
+from frtb_sbm.arrow_batch import normalize_girr_delta_arrow_table
 from frtb_sbm.csr_nonsec_reference_data import CSR_BOND_RISK_FACTOR, CSR_CDS_RISK_FACTOR
 from frtb_sbm.csr_sec_nonctp_reference_data import (
     CSR_SEC_BOND_RISK_FACTOR,
@@ -296,7 +296,7 @@ def normalize_girr_delta_crif_records(
     sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize CRIF-like row dictionaries into the GIRR delta Arrow handoff."""
+    """Normalize CRIF-like row dictionaries into the GIRR delta Arrow table."""
 
     if not isinstance(records, Sequence) or isinstance(records, str | bytes):
         raise SbmInputError("records must be a sequence of mapping rows", field="records")
@@ -332,7 +332,7 @@ def normalize_girr_delta_crif_arrow_table(
     sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a CRIF-like Arrow table into the GIRR delta Arrow handoff."""
+    """Normalize a CRIF-like Arrow table into the GIRR delta Arrow table."""
 
     crif_handoff = normalize_crif_arrow_table(
         table,

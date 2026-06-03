@@ -1,4 +1,4 @@
-"""Synthetic SBM notebook data and Arrow handoff helpers."""
+"""Synthetic SBM notebook data and Arrow batch helpers."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from frtb_sbm import (
     SbmSignConvention,
     SbmSourceLineage,
 )
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     normalize_commodity_curvature_arrow_table,
     normalize_commodity_delta_arrow_table,
     normalize_commodity_vega_arrow_table,
@@ -354,10 +354,10 @@ def arrow_table(sensitivities: Iterable[SbmSensitivity]) -> pa.Table:
     return pa.table(columns)
 
 
-def arrow_handoffs_for_sensitivities(
+def arrow_tables_for_sensitivities(
     sensitivities: Iterable[SbmSensitivity],
 ) -> tuple[NormalizedArrowTable, ...]:
-    """Group synthetic rows by path and normalise each group to an Arrow handoff."""
+    """Group synthetic rows by path and normalise each group to an Arrow batch."""
 
     grouped: dict[PathKey, list[SbmSensitivity]] = defaultdict(list)
     for sensitivity in sensitivities:

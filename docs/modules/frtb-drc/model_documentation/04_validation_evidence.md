@@ -8,7 +8,7 @@
 | `packages/frtb-drc/tests/test_drc_nonsec_v2_fixture.py` | Larger non-securitisation coverage | Replays the v2 synthetic fixture deterministically and checks expected bucket coverage. |
 | `packages/frtb-drc/tests/fixtures/drc_sec_nonctp_v1/` | U.S. NPR 2.0 securitisation non-CTP | Hand-checked same-tranche, risk-weight, fair-value cap, HBR, and category evidence. |
 | `packages/frtb-drc/tests/fixtures/drc_ctp_v1/` | U.S. NPR 2.0 CTP | Cross-tranche replication, CTP HBR, bucket recognition, and category total evidence. |
-| `packages/frtb-drc/tests/fixtures/handoff/` | Arrow handoff boundary | Minimal class-specific handoffs round-trip through package-owned batches. |
+| `packages/frtb-drc/tests/fixtures/handoff/` | Arrow batch boundary | Minimal class-specific handoffs round-trip through package-owned batches. |
 
 ## Unit And Reconciliation Tests
 

@@ -34,7 +34,7 @@ from frtb_cva import (
     normalize_cva_netting_set_arrow_table,
     validate_cva_result_reconciliation,
 )
-from frtb_cva.arrow_handoff import (
+from frtb_cva.arrow_batch import (
     build_sa_cva_sensitivity_batch_from_arrow,
     normalize_sa_cva_sensitivity_arrow_table,
 )
@@ -69,7 +69,7 @@ def test_ba_cva_batch_matches_row_fixture_cases() -> None:
         )
 
 
-def test_ba_cva_arrow_handoff_matches_row_fixture_case() -> None:
+def test_ba_cva_arrow_batch_matches_row_fixture_case() -> None:
     loader = _load_fixture_module(BA_FIXTURE_DIR / "loader.py")
     context = loader.load_fixture_context()
     case_id, counterparties, netting_sets = loader.load_fixture_cases()[0]
@@ -162,7 +162,7 @@ def test_sa_cva_batch_matches_row_fixture_cases() -> None:
         assert batch_calculation.accepted_hedge_dataclasses_materialized == 0
 
 
-def test_sa_cva_arrow_handoff_matches_row_fixture_case() -> None:
+def test_sa_cva_arrow_batch_matches_row_fixture_case() -> None:
     loader = _load_fixture_module(SA_FIXTURE_DIR / "loader.py")
     context = loader.load_fixture_context()
     case_id, sensitivities, hedges = loader.load_fixture_cases()[0]
@@ -195,7 +195,7 @@ def test_sa_cva_arrow_handoff_matches_row_fixture_case() -> None:
     assert sensitivity_batch.handoff_hash is not None
 
 
-def test_cva_arrow_handoff_reuses_float64_buffers_where_safe() -> None:
+def test_cva_arrow_batch_reuses_float64_buffers_where_safe() -> None:
     netting_set_table = pa.table(
         {
             "netting_set_id": ["ns-1"],
@@ -277,7 +277,7 @@ def test_cva_arrow_handoff_reuses_float64_buffers_where_safe() -> None:
     assert not sensitivity_batch.amounts.flags.writeable
 
 
-def test_cva_arrow_handoff_decodes_chunked_dictionary_text_columns() -> None:
+def test_cva_arrow_batch_decodes_chunked_dictionary_text_columns() -> None:
     sector = pa.chunked_array(
         [
             pa.DictionaryArray.from_arrays(

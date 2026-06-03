@@ -94,7 +94,7 @@ def test_summary_exposes_budgetable_split_metrics_and_hashes() -> None:
                 "accepted_row_dataclasses_materialized": 0,
                 "timings_seconds": {
                     "synthetic_arrow_table_construction": 0.1,
-                    "handoff_normalization": 0.2,
+                    "arrow_normalization": 0.2,
                     "batch_construction": 0.3,
                     "weighting_factor_grid_aggregation_and_result": 0.4,
                     "audit_result_materialization": 0.5,

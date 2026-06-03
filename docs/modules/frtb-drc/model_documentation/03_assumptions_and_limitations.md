@@ -8,7 +8,7 @@ The current capital-producing scope is:
   paths;
 - Basel MAR22 non-securitisation row/batch paths using MAR22.12,
   MAR22.15-MAR22.18, MAR22.22, and MAR22.24;
-- class-specific Arrow handoffs for non-securitisation, securitisation non-CTP,
+- class-specific Arrow batches for non-securitisation, securitisation non-CTP,
   and CTP under ADR 0023.
 
 ## Required Evidence Inputs

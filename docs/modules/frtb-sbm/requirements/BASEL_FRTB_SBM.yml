@@ -32,7 +32,7 @@ requirements:
     status: partial
     modules: [src/frtb_sbm/risk_classes]
     tests: [tests/test_sbm_support_matrix.py, tests/risk_classes/test_sbm_fx.py, tests/risk_classes/test_equity.py, tests/risk_classes/test_commodity.py, tests/risk_classes/test_csr_nonsec.py, tests/risk_classes/test_csr_sec_nonctp.py, tests/risk_classes/test_csr_sec_ctp.py]
-    notes: GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP delta, vega, and curvature are implemented under BASEL_MAR21 with row, batch, and Arrow handoff paths.
+    notes: GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP delta, vega, and curvature are implemented under BASEL_MAR21 with row, batch, and Arrow batch paths.
   - id: SBM-WS-001
     title: Weighted sensitivity calculation
     source: Basel MAR21 risk-weight provisions; U.S. NPR 2.0 section V.A.7.a step three
@@ -60,14 +60,14 @@ requirements:
     status: implemented
     modules: [src/frtb_sbm/curvature.py]
     tests: [tests/test_curvature.py, tests/test_sbm_curvature_batch_arrow.py, tests/test_sbm_portfolio_batch_dispatcher.py]
-    notes: Curvature capital is implemented across supported BASEL_MAR21 SBM risk classes, including explicit MAR21.98 FX scalar marking, row/batch parity, and Arrow handoff coverage.
+    notes: Curvature capital is implemented across supported BASEL_MAR21 SBM risk classes, including explicit MAR21.98 FX scalar marking, row/batch parity, and Arrow batch coverage.
   - id: SBM-CRIF-001
     title: CRIF-to-canonical mapping
     source: ISDA CRIF field convention; implementation support requirement
     status: implemented
     modules: [src/frtb_sbm/crif.py]
     tests: [tests/test_sbm_crif.py]
-    notes: Row-dict CRIF-to-canonical mapping covers supported BASEL_MAR21 delta, vega, and curvature paths with auditable rejects. GIRR delta also has a CRIF-to-Arrow handoff. Calculation kernels do not depend on CSV or dataframe libraries.
+    notes: Row-dict CRIF-to-canonical mapping covers supported BASEL_MAR21 delta, vega, and curvature paths with auditable rejects. GIRR delta also has a CRIF-to-Arrow batch. Calculation kernels do not depend on CSV or dataframe libraries.
   - id: SBM-AUDIT-001
     title: Audit and Euler-compatible reports
     source: Basel MAR21 component traceability by formula

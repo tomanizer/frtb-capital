@@ -7,7 +7,7 @@
 Phase 1 (#151) and follow-on vectorisation work deliver cited BASEL_MAR21
 delta, vega, and curvature capital slices for GIRR, FX, equity, commodity, CSR
 non-securitisation, CSR securitisation non-CTP, and CSR securitisation CTP.
-Row-wise, package-owned batch, and Arrow handoff entrypoints exist for these
+Row-wise, package-owned batch, and Arrow batch entrypoints exist for these
 supported paths; unsupported sub-features still fail closed.
 
 `PACKAGE_METADATA.validation_status` is `PENDING`: fixture packs are synthetic

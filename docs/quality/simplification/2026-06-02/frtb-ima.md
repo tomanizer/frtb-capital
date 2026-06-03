@@ -13,7 +13,7 @@ RRAO, CVA, SA composition, or firm aggregation responsibilities.
 | `stress_periods.py` | 760 | Stress-period selection and audit output. |
 | `backtesting.py` | 757 | Backtesting traces and validation. |
 | `nmrf.py` | 743 | NMRF classification and SES logic. |
-| `arrow_handoff.py` | 688 | Arrow conversion boundary. |
+| `arrow_batch.py` | 688 | Arrow conversion boundary. |
 | `capital_run_fixture.py` | 615 | Synthetic fixture and file-hash support. |
 | `nmrf_valuation_run.py` | 627 | NMRF valuation artifact validation. |
 | `nmrf_method_selection.py` | 550 | NMRF method-selection policy. |

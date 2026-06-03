@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-import warnings
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any, cast
 
@@ -12,8 +11,8 @@ import numpy.typing as npt
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.compute as pc  # type: ignore[import-untyped]
 
-import frtb_common.handoff as _handoff
-from frtb_common.handoff import (
+import frtb_common.arrow_table as _arrow_table
+from frtb_common.arrow_table import (
     ColumnSpec,
     NormalizedTableError,
     NullPolicy,
@@ -24,7 +23,6 @@ from frtb_common.handoff import (
 
 ErrorFactory = Callable[[str, str | None], Exception]
 ArrowColumnArray = npt.NDArray[Any]
-HandoffColumnArray = ArrowColumnArray
 
 
 def arrow_object_array(column: pa.ChunkedArray) -> npt.NDArray[np.object_]:
@@ -130,7 +128,7 @@ def read_arrow_columns(
         raise error("table must be a pyarrow.Table", None)
     try:
         column_specs = validate_column_specs(specs)
-        _handoff._validate_unique_column_names(table)
+        _arrow_table._validate_unique_column_names(table)
     except NormalizedTableError as exc:
         raise error(str(exc), None) from exc
 
@@ -146,23 +144,6 @@ def read_arrow_columns(
             error=error,
         )
     return columns
-
-
-def read_handoff_columns(
-    table: pa.Table,
-    specs: Sequence[ColumnSpec],
-    *,
-    error: ErrorFactory,
-    null_defaults: Mapping[str, object] | None = None,
-) -> dict[str, ArrowColumnArray]:
-    """Deprecated alias for :func:`read_arrow_columns`."""
-
-    warnings.warn(
-        "read_handoff_columns is deprecated; use read_arrow_columns",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return read_arrow_columns(table, specs, error=error, null_defaults=null_defaults)
 
 
 def _read_arrow_column(
@@ -186,7 +167,7 @@ def _read_arrow_column(
 
     column = table.column(column_name)
     try:
-        _handoff._validate_column_policy(spec, column)
+        _arrow_table._validate_column_policy(spec, column)
         values = _read_typed_arrow_column(column, spec)
     except (NormalizedTableError, pa.ArrowException) as exc:
         raise error(str(exc), spec.name) from exc
@@ -348,5 +329,4 @@ __all__ = [
     "arrow_float64_array_with_nulls",
     "arrow_object_array",
     "read_arrow_columns",
-    "read_handoff_columns",
 ]

@@ -38,7 +38,7 @@ from frtb_sbm import (
     validate_girr_curvature_batch,
     weight_girr_curvature_sensitivities,
 )
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     build_girr_curvature_batch_from_arrow,
     normalize_girr_curvature_arrow_table,
 )
@@ -330,10 +330,10 @@ def test_validate_girr_curvature_batch_and_support_gate_accept_curvature() -> No
     )
 
 
-def test_girr_curvature_arrow_handoff_path_does_not_materialize_sensitivity_rows() -> None:
-    import frtb_sbm.arrow_handoff as arrow_handoff
+def test_girr_curvature_arrow_batch_path_does_not_materialize_sensitivity_rows() -> None:
+    import frtb_sbm.arrow_batch as arrow_batch
 
-    source = inspect.getsource(arrow_handoff)
+    source = inspect.getsource(arrow_batch)
 
     assert "SbmSensitivity(" not in source
     assert "from frtb_sbm.data_models import SbmSensitivity" not in source

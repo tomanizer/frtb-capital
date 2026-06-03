@@ -5,7 +5,7 @@ from pathlib import Path
 from scripts.ci import check_adr0033_vocabulary as guard
 
 
-def test_public_handoff_symbol_guard_allows_deprecated_aliases(tmp_path: Path) -> None:
+def test_public_handoff_symbol_guard_reports_old_aliases(tmp_path: Path) -> None:
     source_root = tmp_path / "packages" / "pkg" / "src" / "pkg"
     source_root.mkdir(parents=True)
     (source_root / "module.py").write_text(
@@ -21,7 +21,12 @@ def build_rrao_batch_from_arrow(value):
         encoding="utf-8",
     )
 
-    assert guard.public_handoff_symbol_findings(tmp_path / "packages") == ()
+    findings = guard.public_handoff_symbol_findings(tmp_path / "packages")
+
+    assert [finding.symbol for finding in findings] == [
+        "RRAO_HANDOFF_COLUMN_SPECS",
+        "build_rrao_batch_from_handoff",
+    ]
 
 
 def test_public_handoff_symbol_guard_reports_new_public_names(tmp_path: Path) -> None:

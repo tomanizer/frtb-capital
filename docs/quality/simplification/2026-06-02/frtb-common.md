@@ -2,7 +2,7 @@
 
 ## Scope
 
-`frtb-common` owns shared primitives, package-neutral Arrow handoff mechanics,
+`frtb-common` owns shared primitives, package-neutral Arrow batch mechanics,
 CRIF normalization, status objects, serialization, and regulatory citation test
 helpers. It must not carry capital-component regulatory semantics.
 
@@ -11,13 +11,13 @@ helpers. It must not carry capital-component regulatory semantics.
 | Module | Lines | Notes |
 | --- | ---: | --- |
 | `frtb_common.crif` | 1211 | Largest shared module; owns CRIF normalization mechanics. |
-| `frtb_common.handoff` | 438 | Arrow-backed handoff primitives and hashing. |
+| `frtb_common.arrow_table` | 438 | Arrow-backed handoff primitives and hashing. |
 | `frtb_common.regulatory.policy_citations` | 239 | Test utility for citation coverage. |
-| `frtb_common.component_handoff` | 118 | Standardised component handoff contract. |
+| `frtb_common.component_summary` | 118 | Standardised component handoff contract. |
 
 ## Duplicated code
 
-- `frtb_common.handoff.normalized_arrow_table_hash` already implements stable JSON
+- `frtb_common.arrow_table.normalized_arrow_table_hash` already implements stable JSON
   payload hashing, while component packages reimplement `_hash_payload` and
   input-hash helpers.
 - CRIF normalization mechanics exist here, but component CRIF adapters still

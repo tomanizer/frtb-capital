@@ -82,7 +82,7 @@ sources:
     url: "https://www.isda.org/a/oNTE6/Tech-ISDA-Standard-Initial-Margin-Model.pdf"
     section_hint: "Adapter mapping inspiration only; not a regulatory source."
     status: adapter_reference
-    reuse_note: "Adapter reference for row-dict CRIF-to-canonical mapping and the GIRR delta CRIF-to-Arrow handoff; calculation kernels must not depend on CRIF."
+    reuse_note: "Adapter reference for row-dict CRIF-to-canonical mapping and the GIRR delta CRIF-to-Arrow batch; calculation kernels must not depend on CRIF."
     module_paths:
       - src/frtb_sbm/crif.py
     requirement_ids:

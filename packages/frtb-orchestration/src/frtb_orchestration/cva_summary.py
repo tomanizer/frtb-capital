@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-import warnings
 from dataclasses import dataclass
 from datetime import date
 
@@ -84,17 +83,6 @@ def recognise_cva_summary(result: object) -> CvaCapitalSummary:
     )
 
 
-def recognise_cva_result(result: object) -> CvaCapitalSummary:
-    """Deprecated alias for :func:`recognise_cva_summary`."""
-
-    warnings.warn(
-        "recognise_cva_result is deprecated; use recognise_cva_summary",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return recognise_cva_summary(result)
-
-
 def _required_text_attr(result: object, field: str, *, component: str) -> str:
     if not hasattr(result, field):
         raise OrchestrationInputError(
@@ -165,12 +153,7 @@ def _text_tuple_attr(result: object, field: str, *, component: str) -> tuple[str
     return tuple(str(item) for item in value)
 
 
-CvaResultHandoff = CvaCapitalSummary
-
-
 __all__ = [
     "CvaCapitalSummary",
-    "CvaResultHandoff",
-    "recognise_cva_result",
     "recognise_cva_summary",
 ]

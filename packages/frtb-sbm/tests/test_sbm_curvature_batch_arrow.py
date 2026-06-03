@@ -35,7 +35,7 @@ from frtb_sbm import (
     calculate_sbm_capital_from_girr_curvature_batch,
     input_hash_for_sensitivities,
 )
-from frtb_sbm.arrow_handoff import (
+from frtb_sbm.arrow_batch import (
     build_commodity_curvature_batch_from_arrow,
     build_csr_nonsec_curvature_batch_from_arrow,
     build_csr_sec_ctp_curvature_batch_from_arrow,

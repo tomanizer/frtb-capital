@@ -26,10 +26,15 @@ def test_kernel_import_boundary_reports_banned_runtime_import(tmp_path: Path) ->
     assert violations[0].imported_root == "pyarrow"
 
 
-def test_kernel_import_boundary_allows_handoff_and_adapter_imports(tmp_path: Path) -> None:
+def test_kernel_import_boundary_allows_arrow_and_adapter_imports(tmp_path: Path) -> None:
     _write_module(
         tmp_path,
-        "packages/frtb-common/src/frtb_common/handoff.py",
+        "packages/frtb-common/src/frtb_common/arrow_table.py",
+        "import pyarrow as pa\n",
+    )
+    _write_module(
+        tmp_path,
+        "packages/frtb-common/src/frtb_common/component_summary.py",
         "import pyarrow as pa\n",
     )
     _write_module(
@@ -54,7 +59,7 @@ def test_kernel_import_boundary_allows_handoff_and_adapter_imports(tmp_path: Pat
     )
     _write_module(
         tmp_path,
-        "packages/frtb-common/src/frtb_common/handoff_schema.py",
+        "packages/frtb-common/src/frtb_common/arrow_table_schema.py",
         "import pyarrow as pa\n",
     )
     _write_module(

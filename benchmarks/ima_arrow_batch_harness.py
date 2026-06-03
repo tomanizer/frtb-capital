@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Benchmark IMA Arrow-backed scenario metadata and RFET handoffs."""
+"""Benchmark IMA Arrow-backed scenario metadata and RFET batches."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ from frtb_ima import (
     normalize_ima_scenario_metadata_arrow_table,
 )
 
-DEFAULT_OUTPUT = Path("dist/benchmarks/frtb-ima-arrow-handoff.json")
+DEFAULT_OUTPUT = Path("dist/benchmarks/frtb-ima-arrow-batch.json")
 DEFAULT_SCENARIO_COUNT = 10_000
 DEFAULT_RISK_FACTOR_COUNT = 100
 DEFAULT_OBSERVATIONS_PER_FACTOR = 260
@@ -46,7 +46,7 @@ T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class IMAArrowHandoffBenchmarkConfig:
+class IMAArrowBatchBenchmarkConfig:
     scenario_count: int = DEFAULT_SCENARIO_COUNT
     risk_factor_count: int = DEFAULT_RISK_FACTOR_COUNT
     observations_per_factor: int = DEFAULT_OBSERVATIONS_PER_FACTOR
@@ -72,31 +72,31 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run_benchmark(config: IMAArrowHandoffBenchmarkConfig) -> dict[str, object]:
+def run_benchmark(config: IMAArrowBatchBenchmarkConfig) -> dict[str, object]:
     _validate_config(config)
     tracemalloc.start()
     wall_started = time.perf_counter()
 
     scenario_table = _timed(lambda: build_scenario_metadata_table(config))
-    scenario_handoff = _timed(
+    scenario_arrow_table = _timed(
         lambda: normalize_ima_scenario_metadata_arrow_table(
             scenario_table.value,
             source_hash=source_content_hash("synthetic ima scenario metadata benchmark"),
         )
     )
     scenario_batch = _timed(
-        lambda: build_scenario_metadata_batch_from_arrow(scenario_handoff.value)
+        lambda: build_scenario_metadata_batch_from_arrow(scenario_arrow_table.value)
     )
     scenario_rows = _timed(lambda: scenario_batch.value.to_metadata())
 
     rfet_table = _timed(lambda: build_rfet_observation_table(config))
-    rfet_handoff = _timed(
+    rfet_arrow_table = _timed(
         lambda: normalize_ima_rfet_observation_arrow_table(
             rfet_table.value,
             source_hash=source_content_hash("synthetic ima rfet observation benchmark"),
         )
     )
-    rfet_batch = _timed(lambda: build_rfet_observation_batch_from_arrow(rfet_handoff.value))
+    rfet_batch = _timed(lambda: build_rfet_observation_batch_from_arrow(rfet_arrow_table.value))
     risk_factor = _risk_factor()
     policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
     rfet_batch_assessment = _timed(
@@ -134,12 +134,12 @@ def run_benchmark(config: IMAArrowHandoffBenchmarkConfig) -> dict[str, object]:
     batch_assessment_hash = _hash_json(rfet_batch_assessment.value.as_dict())
     row_assessment_hash = _hash_json(rfet_row_assessment.value.as_dict())
     parse_seconds = scenario_table.seconds + rfet_table.seconds
-    adapt_seconds = scenario_handoff.seconds + rfet_handoff.seconds
+    adapt_seconds = scenario_arrow_table.seconds + rfet_arrow_table.seconds
     build_seconds = scenario_batch.seconds + rfet_batch.seconds
     calculate_seconds = rfet_batch_assessment.seconds
 
     return {
-        "schema_version": "frtb_ima_arrow_handoff_benchmark_v1",
+        "schema_version": "frtb_ima_arrow_batch_benchmark_v1",
         "generated_at": datetime.now(UTC).isoformat(),
         "environment": {
             "python_version": platform.python_version(),
@@ -197,7 +197,7 @@ def write_report(report: dict[str, object], output: Path) -> None:
 def main() -> int:
     args = parse_args()
     report = run_benchmark(
-        IMAArrowHandoffBenchmarkConfig(
+        IMAArrowBatchBenchmarkConfig(
             scenario_count=args.scenario_count,
             risk_factor_count=args.risk_factor_count,
             observations_per_factor=args.observations_per_factor,
@@ -214,7 +214,7 @@ def _timed(callback: Callable[[], T]) -> TimedResult[T]:
     return TimedResult(value=value, seconds=time.perf_counter() - started)
 
 
-def _validate_config(config: IMAArrowHandoffBenchmarkConfig) -> None:
+def _validate_config(config: IMAArrowBatchBenchmarkConfig) -> None:
     if config.scenario_count <= 0:
         raise ValueError("scenario_count must be positive")
     if config.risk_factor_count <= 0:
@@ -223,7 +223,7 @@ def _validate_config(config: IMAArrowHandoffBenchmarkConfig) -> None:
         raise ValueError("observations_per_factor must be positive")
 
 
-def build_scenario_metadata_table(config: IMAArrowHandoffBenchmarkConfig) -> pa.Table:
+def build_scenario_metadata_table(config: IMAArrowBatchBenchmarkConfig) -> pa.Table:
     start_date = date(1990, 1, 1)
     return pa.table(
         {
@@ -236,13 +236,13 @@ def build_scenario_metadata_table(config: IMAArrowHandoffBenchmarkConfig) -> pa.
             ).dictionary_encode(),
             "calibrationWindow": ["2007-2009"] * config.scenario_count,
             "source": ["synthetic-ima-benchmark"] * config.scenario_count,
-            "provenanceJson": ['{"benchmark":"ima-arrow-handoff"}'] * config.scenario_count,
+            "provenanceJson": ['{"benchmark":"ima-arrow-batch"}'] * config.scenario_count,
             "sourceRowId": [f"scenario-row-{index:07d}" for index in range(config.scenario_count)],
         }
     )
 
 
-def build_rfet_observation_table(config: IMAArrowHandoffBenchmarkConfig) -> pa.Table:
+def build_rfet_observation_table(config: IMAArrowBatchBenchmarkConfig) -> pa.Table:
     rows = [
         _rfet_row(factor_index, observation_index, config)
         for factor_index in range(config.risk_factor_count)
@@ -260,7 +260,7 @@ def build_rfet_observation_table(config: IMAArrowHandoffBenchmarkConfig) -> pa.T
 
 
 def build_row_observations(
-    config: IMAArrowHandoffBenchmarkConfig,
+    config: IMAArrowBatchBenchmarkConfig,
 ) -> tuple[RealPriceObservation, ...]:
     return tuple(
         RealPriceObservation(
@@ -278,7 +278,7 @@ def build_row_observations(
 def _rfet_row(
     factor_index: int,
     observation_index: int,
-    config: IMAArrowHandoffBenchmarkConfig,
+    config: IMAArrowBatchBenchmarkConfig,
 ) -> dict[str, object]:
     risk_factor_name = TARGET_RISK_FACTOR if factor_index == 0 else f"USD_SWAP_{factor_index:04d}"
     return {

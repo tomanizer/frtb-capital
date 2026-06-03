@@ -16,7 +16,7 @@ package.
 | Scenario cube | NumPy `.npz` artifacts / `ScenarioCube` arrays | ES, LHA, IMCC, NMRF, PLA, and backtesting numerical kernels. |
 | Tabular handoff | Arrow tables matching IMA handoff specs | Scenario metadata, RFET observations, and capital-run input manifest lineage. |
 
-Do not put scenario P&L vectors into Arrow handoff for capital kernels. Scenario
+Do not put scenario P&L vectors into Arrow batch for capital kernels. Scenario
 vectors remain dense NumPy arrays so expected shortfall, liquidity-horizon
 adjustment, IMCC, NMRF, PLA, and backtesting kernels stay NumPy-native.
 
@@ -36,7 +36,7 @@ APIs and tests. It is not the production hot path for high-volume metadata.
 | Path | Input | Entry point | Use |
 | --- | --- | --- | --- |
 | Row path | `RealPriceObservation` dataclasses | `assess_rfet_evidence` | Compatibility, notebooks, and small evidence sets. |
-| Batch path | `RFETObservationBatch` from Arrow handoff | `assess_rfet_observation_batch` | Recommended high-volume RFET evidence path. |
+| Batch path | `RFETObservationBatch` from Arrow batch | `assess_rfet_observation_batch` | Recommended high-volume RFET evidence path. |
 
 The batch path preserves the same RFET decision semantics while avoiding one
 accepted `RealPriceObservation` dataclass per row on the hot path. It may still
@@ -74,7 +74,7 @@ The following remain upstream responsibilities:
 
 ## References
 
-- [`docs/performance/frtb-ima-arrow-handoff-triage.md`](../../performance/frtb-ima-arrow-handoff-triage.md)
+- [`docs/performance/frtb-ima-arrow-batch-triage.md`](../../performance/frtb-ima-arrow-batch-triage.md)
 - [`docs/decisions/0023-arrow-tabular-handoff-boundary.md`](../../decisions/0023-arrow-tabular-handoff-boundary.md)
 - [`docs/decisions/0011-core-runtime-dependency-policy.md`](../../decisions/0011-core-runtime-dependency-policy.md)
 - [`packages/frtb-ima/docs/DATASET_CONTRACT.md`](../../../packages/frtb-ima/docs/DATASET_CONTRACT.md)

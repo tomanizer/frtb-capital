@@ -103,7 +103,7 @@ Batch construction improved for each benchmarked handoff path:
 ## Supported High-Volume Entrypoints
 
 Use the public Arrow normalizers and handoff/batch entrypoints in
-`frtb_sbm.arrow_handoff` for migrated high-volume inputs. The supported
+`frtb_sbm.arrow_batch` for migrated high-volume inputs. The supported
 BASEL_MAR21 capital handoffs cover delta, vega, and curvature for GIRR, FX,
 equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP. The portfolio
 dispatcher accepts multiple normalized handoffs and groups them by
