@@ -24,7 +24,8 @@ head branches. That setting deletes feature branches after merge without
 weakening protection on `main`.
 
 `quality-control` includes package layering checks, the kernel import-boundary
-check for dataframe and Arrow runtimes, import smoke tests, and package maturity
+check for dataframe and Arrow runtimes, the simplification drift audit for
+low-value wrapper/helper surface area, import smoke tests, and package maturity
 evidence checks.
 
 ## Signing and attestation policy
