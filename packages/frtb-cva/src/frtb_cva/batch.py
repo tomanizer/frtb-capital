@@ -106,7 +106,6 @@ ArrayInput = npt.NDArray[Any]
 ColumnInput = Sequence[object] | ArrayInput
 NullableColumnInput = Sequence[object | None] | ArrayInput
 EnumT = TypeVar("EnumT", bound=StrEnum)
-ArrayScalarT = TypeVar("ArrayScalarT", bound=np.generic)
 
 
 @dataclass(frozen=True)
@@ -2202,7 +2201,7 @@ def _require_optional_lengths(row_count: int, **columns: Sized | None) -> None:
 
 
 def _required_text_array(values: ColumnInput, field: str, *, copy: bool) -> ObjectArray:
-    return _object_array([_required_text(value, field) for value in values], copy=copy)
+    return _batch_arrays.object_array([_required_text(value, field) for value in values], copy=copy)
 
 
 def _optional_text_array(
@@ -2212,8 +2211,8 @@ def _optional_text_array(
     copy: bool,
 ) -> ObjectArray:
     if values is None:
-        return _object_array([None] * row_count, copy=copy)
-    return _object_array([_optional_text(value) for value in values], copy=copy)
+        return _batch_arrays.object_array([None] * row_count, copy=copy)
+    return _batch_arrays.object_array([_optional_text(value) for value in values], copy=copy)
 
 
 def _enum_array(
@@ -2223,7 +2222,9 @@ def _enum_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    return _object_array([_enum_value(value, enum_type, field) for value in values], copy=copy)
+    return _batch_arrays.object_array(
+        [_enum_value(value, enum_type, field) for value in values], copy=copy
+    )
 
 
 def _optional_enum_array(
@@ -2235,8 +2236,8 @@ def _optional_enum_array(
     copy: bool,
 ) -> ObjectArray:
     if values is None:
-        return _object_array([None] * row_count, copy=copy)
-    return _object_array(
+        return _batch_arrays.object_array([None] * row_count, copy=copy)
+    return _batch_arrays.object_array(
         [_optional_enum_value(value, enum_type, field) for value in values], copy=copy
     )
 
@@ -2246,7 +2247,7 @@ def _float_array(values: ColumnInput, field: str, *, copy: bool) -> FloatArray:
     if fast_array is not None:
         return fast_array
     array = np.asarray([_finite_float(value, field) for value in values], dtype=np.float64)
-    return _readonly_array(array, copy=copy)
+    return _batch_arrays.readonly_array(array, copy=copy)
 
 
 def _normalised_ead_array(
@@ -2292,7 +2293,7 @@ def _optional_float_array(
         return fast_array
     else:
         array = np.asarray([_optional_float(value) for value in values], dtype=np.float64)
-    return _readonly_array(array, copy=copy)
+    return _batch_arrays.readonly_array(array, copy=copy)
 
 
 def _bool_array(
@@ -2324,18 +2325,6 @@ def _float_array_from_numpy(
         )
     except _batch_arrays.BatchArrayCoercionError as exc:
         raise CvaInputError(str(exc), field=exc.field or field) from exc
-
-
-def _object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
-    return _batch_arrays.object_array(values, copy=copy)
-
-
-def _readonly_array(
-    array: npt.NDArray[ArrayScalarT],
-    *,
-    copy: bool,
-) -> npt.NDArray[ArrayScalarT]:
-    return _batch_arrays.readonly_array(array, copy=copy)
 
 
 def _required_text(value: object, field: str, record_id: str = "") -> str:
@@ -2459,63 +2448,63 @@ def _sorted_indices(values: ObjectArray) -> list[int]:
 
 def _empty_counterparty_batch() -> CvaCounterpartyBatch:
     return CvaCounterpartyBatch(
-        counterparty_ids=_object_array([], copy=True),
-        desk_ids=_object_array([], copy=True),
-        legal_entities=_object_array([], copy=True),
-        sectors=_object_array([], copy=True),
-        credit_qualities=_object_array([], copy=True),
-        regions=_object_array([], copy=True),
-        source_row_ids=_object_array([], copy=True),
-        lineage_source_systems=_object_array([], copy=True),
-        lineage_source_files=_object_array([], copy=True),
-        lineage_source_row_ids=_object_array([], copy=True),
+        counterparty_ids=_batch_arrays.object_array([], copy=True),
+        desk_ids=_batch_arrays.object_array([], copy=True),
+        legal_entities=_batch_arrays.object_array([], copy=True),
+        sectors=_batch_arrays.object_array([], copy=True),
+        credit_qualities=_batch_arrays.object_array([], copy=True),
+        regions=_batch_arrays.object_array([], copy=True),
+        source_row_ids=_batch_arrays.object_array([], copy=True),
+        lineage_source_systems=_batch_arrays.object_array([], copy=True),
+        lineage_source_files=_batch_arrays.object_array([], copy=True),
+        lineage_source_row_ids=_batch_arrays.object_array([], copy=True),
         source_column_maps=(),
     )
 
 
 def _empty_netting_set_batch() -> CvaNettingSetBatch:
     return CvaNettingSetBatch(
-        netting_set_ids=_object_array([], copy=True),
-        counterparty_ids=_object_array([], copy=True),
+        netting_set_ids=_batch_arrays.object_array([], copy=True),
+        counterparty_ids=_batch_arrays.object_array([], copy=True),
         eads=_empty_float_array(),
         effective_maturities=_empty_float_array(),
         discount_factors=_empty_float_array(),
-        currencies=_object_array([], copy=True),
-        sign_conventions=_object_array([], copy=True),
+        currencies=_batch_arrays.object_array([], copy=True),
+        sign_conventions=_batch_arrays.object_array([], copy=True),
         uses_imm_eads=_empty_bool_array(),
-        source_row_ids=_object_array([], copy=True),
+        source_row_ids=_batch_arrays.object_array([], copy=True),
         carved_out_to_ba_cva=_empty_bool_array(),
         discount_factor_explicit=_empty_bool_array(),
-        lineage_source_systems=_object_array([], copy=True),
-        lineage_source_files=_object_array([], copy=True),
-        lineage_source_row_ids=_object_array([], copy=True),
+        lineage_source_systems=_batch_arrays.object_array([], copy=True),
+        lineage_source_files=_batch_arrays.object_array([], copy=True),
+        lineage_source_row_ids=_batch_arrays.object_array([], copy=True),
         source_column_maps=(),
     )
 
 
 def _empty_hedge_batch() -> CvaHedgeBatch:
     return CvaHedgeBatch(
-        hedge_ids=_object_array([], copy=True),
-        source_row_ids=_object_array([], copy=True),
-        counterparty_ids=_object_array([], copy=True),
-        hedge_types=_object_array([], copy=True),
+        hedge_ids=_batch_arrays.object_array([], copy=True),
+        source_row_ids=_batch_arrays.object_array([], copy=True),
+        counterparty_ids=_batch_arrays.object_array([], copy=True),
+        hedge_types=_batch_arrays.object_array([], copy=True),
         notionals=_empty_float_array(),
         remaining_maturities=_empty_float_array(),
         discount_factors=_empty_float_array(),
-        reference_sectors=_object_array([], copy=True),
-        reference_credit_qualities=_object_array([], copy=True),
-        reference_regions=_object_array([], copy=True),
-        reference_relations=_object_array([], copy=True),
-        eligibilities=_object_array([], copy=True),
+        reference_sectors=_batch_arrays.object_array([], copy=True),
+        reference_credit_qualities=_batch_arrays.object_array([], copy=True),
+        reference_regions=_batch_arrays.object_array([], copy=True),
+        reference_relations=_batch_arrays.object_array([], copy=True),
+        eligibilities=_batch_arrays.object_array([], copy=True),
         is_internal=_empty_bool_array(),
         discount_factor_explicit=_empty_bool_array(),
-        internal_desk_counterparty_ids=_object_array([], copy=True),
-        sa_cva_risk_classes=_object_array([], copy=True),
-        eligibility_evidence_ids=_object_array([], copy=True),
-        rejection_reasons=_object_array([], copy=True),
-        lineage_source_systems=_object_array([], copy=True),
-        lineage_source_files=_object_array([], copy=True),
-        lineage_source_row_ids=_object_array([], copy=True),
+        internal_desk_counterparty_ids=_batch_arrays.object_array([], copy=True),
+        sa_cva_risk_classes=_batch_arrays.object_array([], copy=True),
+        eligibility_evidence_ids=_batch_arrays.object_array([], copy=True),
+        rejection_reasons=_batch_arrays.object_array([], copy=True),
+        lineage_source_systems=_batch_arrays.object_array([], copy=True),
+        lineage_source_files=_batch_arrays.object_array([], copy=True),
+        lineage_source_row_ids=_batch_arrays.object_array([], copy=True),
         source_column_maps=(),
     )
 
@@ -2593,7 +2582,7 @@ def _subset_hedges(batch: CvaHedgeBatch, indices: list[int]) -> CvaHedgeBatch:
 
 
 def _take_object(values: ObjectArray, indices: list[int]) -> ObjectArray:
-    return _object_array([values[index] for index in indices], copy=True)
+    return _batch_arrays.object_array([values[index] for index in indices], copy=True)
 
 
 def _take_float(values: FloatArray, indices: list[int]) -> FloatArray:
