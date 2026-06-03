@@ -17,6 +17,16 @@ def test_rrao_batch_column_helpers_report_length_and_required_text_errors() -> N
         columns._required_text_array([None], "position_id", copy=True)
 
 
+def test_rrao_batch_column_helpers_report_sorted_duplicate_position_id() -> None:
+    values = np.asarray(["pos-b", "pos-a", "pos-b", "pos-a"], dtype=object)
+
+    with pytest.raises(RraoInputError, match="duplicate position id") as exc_info:
+        columns._require_unique(values)
+
+    assert exc_info.value.field == "position_id"
+    assert exc_info.value.position_id == "pos-a"
+
+
 def test_rrao_batch_column_helpers_report_numeric_errors() -> None:
     with pytest.raises(RraoInputError, match="numeric"):
         columns._required_float_array([None], "gross_effective_notional", copy=True)

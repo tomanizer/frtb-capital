@@ -29,10 +29,16 @@ def _require_lengths(row_count: int, **columns: ColumnInput) -> None:
 
 
 def _require_unique(values: ObjectArray) -> None:
-    unique_values, counts = np.unique(values, return_counts=True)
-    duplicate_mask = counts > 1
-    if bool(np.any(duplicate_mask)):
-        duplicate = str(unique_values[np.nonzero(duplicate_mask)[0][0]])
+    seen: set[str] = set()
+    duplicate: str | None = None
+    for value in values:
+        text = cast(str, value)
+        if text in seen:
+            if duplicate is None or text < duplicate:
+                duplicate = text
+        else:
+            seen.add(text)
+    if duplicate is not None:
         raise RraoInputError(
             "duplicate position id",
             field="position_id",
