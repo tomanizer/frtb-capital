@@ -18,27 +18,31 @@ SUPPORTED_PROFILES = {
     "partial_runtime",
     "scaffolded",
     "orchestration_partial",
+    "result_store_partial",
     "shared",
 }
-SUPPORTED_COMPONENT_TYPES = {"capital", "orchestration", "shared"}
+SUPPORTED_COMPONENT_TYPES = {"capital", "orchestration", "result_store", "shared"}
 
 EXPECTED_IMPLEMENTATION_STATUS = {
     "implemented": ImplementationStatus.IMPLEMENTED,
     "partial_runtime": ImplementationStatus.PARTIAL,
     "scaffolded": ImplementationStatus.SCAFFOLDED,
     "orchestration_partial": ImplementationStatus.PARTIAL,
+    "result_store_partial": ImplementationStatus.PARTIAL,
 }
 EXPECTED_VALIDATION_STATUS = {
     "implemented": ValidationStatus.AVAILABLE,
     "partial_runtime": ValidationStatus.PENDING,
     "scaffolded": ValidationStatus.NOT_STARTED,
     "orchestration_partial": ValidationStatus.PENDING,
+    "result_store_partial": ValidationStatus.PENDING,
 }
 REQUIRED_TEST_IDS = {
     "implemented": {"public-api"},
     "partial_runtime": {"public-api", "unsupported-runtime-paths"},
     "scaffolded": {"scaffold-boundary"},
     "orchestration_partial": {"orchestration-boundary"},
+    "result_store_partial": {"public-api", "duckdb-parquet"},
     "shared": {"regulatory-helpers"},
 }
 
@@ -323,6 +327,7 @@ def _entry_requirement_failures(entry: PackageEntry, *, root: Path) -> list[str]
         "partial_runtime": _partial_runtime_failures,
         "scaffolded": _scaffolded_failures,
         "orchestration_partial": _orchestration_partial_failures,
+        "result_store_partial": _result_store_partial_failures,
         "shared": _shared_failures,
     }
     check = profile_checks.get(entry.maturity)
@@ -343,11 +348,14 @@ def _basic_registry_failures(entry: PackageEntry, *, root: Path) -> list[str]:
         failures.append("package-path")
     if not (root / entry.module_docs).exists():
         failures.append("module-docs")
-    if entry.component_type in {"capital", "orchestration"}:
+    if entry.component_type in {"capital", "orchestration", "result_store"}:
         if entry.metadata_object is None:
             failures.append("metadata-object")
+    if entry.component_type in {"capital", "orchestration"}:
         if entry.calculation_entrypoint is None:
             failures.append("calculation-entrypoint")
+    if entry.component_type == "result_store" and entry.calculation_entrypoint is not None:
+        failures.append("result-store-no-calculation-entrypoint")
     if entry.component_type == "shared" and entry.metadata_object is not None:
         failures.append("shared-no-metadata-object")
 
@@ -477,6 +485,23 @@ def _orchestration_partial_failures(entry: PackageEntry, *, root: Path) -> list[
         failures.append("tests-directory")
     if not list(tests_dir.glob("test_*orchestration*.py")):
         failures.append("orchestration-tests")
+    return failures
+
+
+def _result_store_partial_failures(entry: PackageEntry, *, root: Path) -> list[str]:
+    failures = _common_package_file_failures(entry, root=root)
+    tests_dir = root / entry.path / "tests"
+    if not tests_dir.is_dir():
+        failures.append("tests-directory")
+    if not list(tests_dir.glob("test_*public_api*.py")):
+        failures.append("public-api-tests")
+    if not list(tests_dir.glob("test_*duckdb*parquet*.py")):
+        failures.append("duckdb-parquet-tests")
+    if not (root / entry.module_docs / "ARCHITECTURE_AND_DATA_DESIGN.md").exists():
+        failures.append("architecture-data-design")
+    if not (root / entry.module_docs / "PUBLIC_API.md").exists():
+        failures.append("public-api-docs")
+    failures.extend(_source_root_failures(entry, root=root))
     return failures
 
 

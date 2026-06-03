@@ -91,6 +91,24 @@ id = "orchestration-boundary"
 path = "packages/frtb-orchestration/tests/test_orchestration_scaffold.py"
 
 [[packages]]
+package = "frtb-result-store"
+import_name = "frtb_result_store"
+path = "packages/frtb-result-store"
+module_docs = "docs/modules/frtb-result-store"
+maturity = "result_store_partial"
+component_type = "result_store"
+metadata_object = "frtb_result_store:PACKAGE_METADATA"
+notes = "Storage and serving infrastructure; not a capital calculation package."
+
+[[packages.required_tests]]
+id = "public-api"
+path = "packages/frtb-result-store/tests/test_result_store_public_api.py"
+
+[[packages.required_tests]]
+id = "duckdb-parquet"
+path = "packages/frtb-result-store/tests/test_duckdb_parquet_store.py"
+
+[[packages]]
 package = "frtb-rrao"
 import_name = "frtb_rrao"
 path = "packages/frtb-rrao"

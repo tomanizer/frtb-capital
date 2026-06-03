@@ -7,6 +7,7 @@ CAPITAL_IMPORTS = {
     "frtb_cva",
     "frtb_drc",
     "frtb_ima",
+    "frtb_result_store",
     "frtb_rrao",
     "frtb_sbm",
 }
@@ -55,3 +56,14 @@ def test_common_does_not_import_capital_packages() -> None:
         imported_capital_modules.update(imported_top_level_modules(path) & CAPITAL_IMPORTS)
 
     assert imported_capital_modules == set()
+
+
+def test_result_store_does_not_import_capital_or_orchestration_packages() -> None:
+    src_root = REPO_ROOT / "packages" / "frtb-result-store" / "src"
+    assert src_root.is_dir(), f"Source directory not found: {src_root}"
+    forbidden_imports = CAPITAL_IMPORTS - {"frtb_result_store"}
+    imported_forbidden_modules: set[str] = set()
+    for path in src_root.rglob("*.py"):
+        imported_forbidden_modules.update(imported_top_level_modules(path) & forbidden_imports)
+
+    assert imported_forbidden_modules == set()

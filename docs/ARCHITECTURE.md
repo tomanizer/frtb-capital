@@ -3,8 +3,8 @@
 ## Suite overview
 
 `frtb-capital` is a workspace of FRTB market-risk capital calculation packages.
-The structure covers IMA, the three Standardised Approach components, CVA, and
-a suite-level aggregator, with a shared foundation package. Today,
+The structure covers IMA, the three Standardised Approach components, CVA, a
+suite-level aggregator, a result store, and a shared foundation package. Today,
 `packages/frtb-ima` contains the migrated IMA implementation, `frtb-rrao`
 contains an implemented canonical-input RRAO path, `frtb-drc` contains a
 partial non-securitisation DRC runtime path, `frtb-sbm` has GIRR delta/vega,
@@ -12,7 +12,9 @@ FX/equity/commodity/CSR delta/vega, and row-wise curvature capital implemented
 under BASEL_MAR21, and `frtb-cva` has reduced/full BA-CVA plus supported
 SA-CVA delta/vega and mixed carve-out paths implemented. Orchestration composes
 SA arithmetic from shared component handoffs and prepares CVA summaries; full
-top-of-house suite aggregation still fails explicitly.
+top-of-house suite aggregation still fails explicitly. `frtb-result-store`
+persists completed run evidence, drilldown graphs, artifacts, lineage, and
+attribution records.
 
 The Standardised Approach is a composed regulatory approach, not a standalone
 package. In this suite, `frtb-sbm`, `frtb-drc`, and `frtb-rrao` together produce
@@ -30,6 +32,11 @@ reference overlays.
 ## Dependency graph
 
 ```
+                         ┌────────────────────────┐
+                         │   frtb-result-store    │
+                         │ DuckDB/Parquet serving │
+                         └───────────┬────────────┘
+                                     │
                          ┌────────────────────────┐
                          │   frtb-orchestration   │
                          │ aggregation + fallback │
@@ -50,7 +57,7 @@ reference overlays.
                               └───────────┘
 ```
 
-**Allowed imports:** `frtb-*` capital components may import from `frtb-common`. `frtb-orchestration` is the only package allowed to depend on multiple capital components, but current runtime modules consume shared handoffs or structural summaries and must not import sibling package internals. **No other cross-package imports are allowed.** The root `import-linter` layers contract (`make import-lint`, part of `make quality-control`) enforces this graph in CI, and orchestration tests add a stricter runtime import guard.
+**Allowed imports:** `frtb-*` capital components may import from `frtb-common`. `frtb-orchestration` is the only package allowed to depend on multiple capital components, but current runtime modules consume shared handoffs or structural summaries and must not import sibling package internals. `frtb-result-store` sits above orchestration and capital packages so future public adapters can serialize suite results, but capital packages and orchestration must not import storage. **No other cross-package imports are allowed.** The root `import-linter` layers contract (`make import-lint`, part of `make quality-control`) enforces this graph in CI, and orchestration tests add a stricter runtime import guard.
 
 ## Package responsibilities
 
@@ -163,6 +170,18 @@ record non-IMA-eligible desks as routed to the SA fallback stack from structural
 eligibility signals. `recognise_cva_result` prepares a CVA result summary for
 future top-of-house aggregation. Runtime source does not import sibling capital
 packages or private batch internals.
+
+### `frtb-result-store` — Result storage and serving
+
+Stores completed FRTB run evidence for analytics and reporting. Inputs are
+public result contracts, capital graph nodes, scalar measures, artifact
+references, lineage, and attribution rows. Outputs are DuckDB-queryable Parquet
+tables and FRTB-specific query methods for run lists, capital trees, node
+measures, drillthrough artifact references, lineage, and attribution.
+
+Status: partial result-store backend. The first implementation is append-only
+local DuckDB/Parquet. S3 Parquet and DuckLake are reserved backend modes. The
+package does not calculate capital and must not be imported by capital kernels.
 
 ## Why a monorepo
 

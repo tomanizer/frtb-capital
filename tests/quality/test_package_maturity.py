@@ -49,6 +49,16 @@ def test_valid_registry_loads_and_all_profiles_pass(tmp_path: Path, monkeypatch)
         ),
         _make_package(
             tmp_path,
+            package="qc-result-store",
+            import_name="qc_result_store",
+            profile="result_store_partial",
+            implementation="PARTIAL",
+            validation="PENDING",
+            required_tests=("public-api", "duckdb-parquet"),
+            component_type="result_store",
+        ),
+        _make_package(
+            tmp_path,
             package="qc-common",
             import_name="qc_common",
             profile="shared",
@@ -69,6 +79,7 @@ def test_valid_registry_loads_and_all_profiles_pass(tmp_path: Path, monkeypatch)
         "qc-partial",
         "qc-scaffold",
         "qc-orchestration",
+        "qc-result-store",
         "qc-common",
     ]
     assert all(result.passed for result in results)
@@ -437,6 +448,9 @@ def _make_package(
         (source_dir / "py.typed").write_text("", encoding="utf-8")
         (source_dir / "regulatory").mkdir()
         (source_dir / "regulatory/policy_citations.py").write_text("", encoding="utf-8")
+    elif profile == "result_store_partial":
+        for filename in ("ARCHITECTURE_AND_DATA_DESIGN.md", "PUBLIC_API.md"):
+            (module_docs / filename).write_text("result-store evidence\n", encoding="utf-8")
 
     _write_import_module(
         root,
@@ -460,6 +474,10 @@ def _test_path(package_dir: Path, import_name: str, profile: str, test_id: str) 
         return package_dir / "tests/test_drc_public_api.py"
     if profile == "orchestration_partial":
         return package_dir / "tests/test_orchestration_scaffold.py"
+    if profile == "result_store_partial":
+        if test_id == "duckdb-parquet":
+            return package_dir / "tests/test_duckdb_parquet_store.py"
+        return package_dir / "tests/test_result_store_public_api.py"
     if profile == "scaffolded":
         return package_dir / "tests" / f"test_{import_name.removeprefix('frtb_')}_scaffold.py"
     if profile == "implemented":
@@ -516,9 +534,10 @@ def _registry_entry(
         f'component_type = "{component_type}"',
     ]
     if component_type != "shared":
+        lines.append(f'metadata_object = "{import_name}:PACKAGE_METADATA"')
+    if component_type in {"capital", "orchestration"}:
         lines.extend(
             [
-                f'metadata_object = "{import_name}:PACKAGE_METADATA"',
                 f'calculation_entrypoint = "{import_name}:calculate_capital"',
             ]
         )

@@ -41,6 +41,12 @@ ALLOWED_RUNTIME_RELATIVE_PATHS = frozenset(
     }
 )
 
+APPROVED_IO_PACKAGE_SRC_ROOTS = frozenset(
+    {
+        Path("packages/frtb-result-store/src"),
+    }
+)
+
 ALLOWED_RUNTIME_SUFFIXES = (
     "_adapter.py",
     "_adapters.py",
@@ -88,11 +94,17 @@ def check_repo(repo_root: Path) -> tuple[ImportViolation, ...]:
     package_src_roots = sorted(repo_root.glob("packages/*/src"))
     violations: list[ImportViolation] = []
     for src_root in package_src_roots:
+        if _is_approved_io_package_src_root(src_root, repo_root):
+            continue
         for path in sorted(src_root.rglob("*.py")):
             if _is_allowed_runtime_handoff_path(path, src_root):
                 continue
             violations.extend(_banned_imports_in_file(path))
     return tuple(violations)
+
+
+def _is_approved_io_package_src_root(src_root: Path, repo_root: Path) -> bool:
+    return src_root.relative_to(repo_root) in APPROVED_IO_PACKAGE_SRC_ROOTS
 
 
 def _is_allowed_runtime_handoff_path(path: Path, src_root: Path) -> bool:

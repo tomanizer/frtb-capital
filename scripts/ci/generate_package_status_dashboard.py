@@ -158,6 +158,7 @@ def render_dashboard(*, root: Path = ROOT) -> str:
             "| `implemented` | Deterministic public calculation path with validation evidence |",
             "| `partial_runtime` | Supported runtime slice with explicit fail-closed paths |",
             "| `orchestration_partial` | Suite handoff contracts without full aggregation |",
+            "| `result_store_partial` | Storage contracts with a local DuckDB/Parquet backend |",
             "| `shared` | Shared library, not a capital component |",
             "",
             "Outputs from this suite are prototype model-validation evidence, not final",
