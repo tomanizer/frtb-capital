@@ -13,25 +13,30 @@ from pathlib import Path
 from frtb_common.hashing import stable_json_dumps
 
 from frtb_result_store.io import DuckDbParquetResultStore
+from frtb_result_store.model import ResultStoreContractError
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _parser()
     args = parser.parse_args(argv)
     store = DuckDbParquetResultStore(args.root)
-    if args.command == "inspect":
-        return _emit(store.inspect())
-    if args.command == "list-runs":
-        return _emit({"runs": [_run_payload(store, run.run_id) for run in store.list_runs()]})
-    if args.command == "refresh-catalog":
-        store.refresh_catalog()
-        return _emit({"refreshed": True, "catalog_path": str(store.catalog_path)})
-    if args.command == "export-run":
-        return _emit(store.export_run(args.run_id, args.output_path, overwrite=args.overwrite))
-    if args.command == "validate-store":
-        result = store.validate_store()
-        _emit(result)
-        return 0 if getattr(result, "ok", False) else 1
+    try:
+        if args.command == "inspect":
+            return _emit(store.inspect())
+        if args.command == "list-runs":
+            return _emit({"runs": [_run_payload(store, run.run_id) for run in store.list_runs()]})
+        if args.command == "refresh-catalog":
+            store.refresh_catalog()
+            return _emit({"refreshed": True, "catalog_path": str(store.catalog_path)})
+        if args.command == "export-run":
+            return _emit(store.export_run(args.run_id, args.output_path, overwrite=args.overwrite))
+        if args.command == "validate-store":
+            result = store.validate_store()
+            _emit(result)
+            return 0 if getattr(result, "ok", False) else 1
+    except ResultStoreContractError as exc:
+        sys.stderr.write(f"Error: {exc}\n")
+        return 1
     parser.error(f"unknown command: {args.command}")
     return 2
 

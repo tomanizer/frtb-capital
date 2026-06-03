@@ -255,8 +255,7 @@ def _sha256(path: Path) -> str:
 
 def _artifact_physical_path(store: DuckDbParquetResultStore, artifact: ArtifactRef) -> Path | None:
     if artifact.uri is None:
-        path = _artifact_path_from_id(store, artifact)
-        return path if path.exists() else None
+        return _artifact_path_from_id(store, artifact)
     parsed = urlparse(artifact.uri)
     if parsed.scheme == "file":
         return Path(unquote(parsed.path))

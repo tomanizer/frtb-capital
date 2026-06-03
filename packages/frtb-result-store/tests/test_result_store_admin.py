@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, date, datetime
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, unquote, urlparse
 
 import pyarrow as pa
 import pytest
@@ -58,6 +58,17 @@ def test_export_run_writes_manifest_parquet_artifacts_and_checksums(tmp_path: Pa
     assert all("catalog.duckdb" not in path for path in exported_files)
 
 
+def test_validate_store_reports_missing_artifact_parquet(tmp_path: Path) -> None:
+    store, run = _store_with_artifact(tmp_path, "run-missing-artifact")
+    artifact = store.artifact_refs(run.run_id)[0]
+    Path(unquote(urlparse(artifact.uri).path)).unlink()
+
+    result = store.validate_store()
+
+    assert result.ok is False
+    assert result.errors == (f"missing artifact parquet for {run.run_id}: {artifact.artifact_id}",)
+
+
 def test_admin_cli_inspects_lists_refreshes_exports_and_validates(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -96,6 +107,19 @@ def test_admin_cli_inspects_lists_refreshes_exports_and_validates(
     invalid_payload = json.loads(capsys.readouterr().out)
     assert invalid_payload["ok"] is False
     assert invalid_payload["errors"] == [f"missing mart parquet for {run.run_id}: capital_summary"]
+
+
+def test_admin_cli_reports_contract_errors_without_traceback(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    store, _run = _store_with_artifact(tmp_path, "run-cli-error")
+
+    assert result_store_cli_main(("export-run", str(store.root), "missing-run", str(tmp_path))) == 1
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "Error: run does not exist: missing-run\n"
 
 
 def _store_with_artifact(
