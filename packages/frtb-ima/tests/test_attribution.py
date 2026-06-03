@@ -26,8 +26,7 @@ def test_desk_contributions_reconcile_standard_path() -> None:
     assert all(item.input_hash == record.inputs_hash for item in contributions)
     assert all(item.profile_hash == record.policy_hash for item in contributions)
     assert all(
-        item.reconciliation_status is ReconciliationStatus.RECONCILED
-        for item in contributions
+        item.reconciliation_status is ReconciliationStatus.RECONCILED for item in contributions
     )
     assert all(item.method is AttributionMethod.ANALYTICAL_EULER for item in contributions)
 
@@ -54,8 +53,7 @@ def test_desk_contributions_use_capital_breakdown_when_present() -> None:
     ]
     assert _total(contributions) == pytest.approx(140.0)
     assert all(
-        item.reconciliation_status is ReconciliationStatus.RECONCILED
-        for item in contributions
+        item.reconciliation_status is ReconciliationStatus.RECONCILED for item in contributions
     )
 
 
@@ -90,8 +88,7 @@ def test_desk_contributions_report_unreconciled_without_floor_branch() -> None:
     assert _total(contributions) == pytest.approx(140.0)
     assert contributions[-1].category == "IMA_RC_RESIDUAL"
     assert all(
-        item.reconciliation_status is ReconciliationStatus.UNRECONCILED
-        for item in contributions
+        item.reconciliation_status is ReconciliationStatus.UNRECONCILED for item in contributions
     )
 
 
