@@ -1,23 +1,33 @@
 ---
 name: frtb-ci-babysit
 description: >-
-  Babysit an frtb-capital PR from push to merge-ready: stabilise CI, incorporate
-  bot reviews when available (Gemini, Copilot, Cursor Bugbot fallbacks), skip
-  unavailable reviewers, run a final quality subagent audit.
+  Babysit an frtb-capital PR from push to merge-ready: classify required CI,
+  stabilise CI, gate PR template, resolve review threads, incorporate bot reviews
+  when available, run final quality audit.
 when-to-use: >-
   Use when asked to babysit, watch, or fix a frtb-capital PR, monitor CI until
-  green, incorporate bot review feedback, or runs /frtb-ci-babysit.
-argument-hint: "[<pr-number>] [--agent <name>]"
+  green, incorporate bot review feedback, resolve PR conversations, or runs
+  /frtb-ci-babysit.
+argument-hint: "[<pr-number>] [--agent <name>] [--ci-only | --skip-reviews | --reviews-only]"
 allowed-tools: Shell, Read, Grep, Glob, Write, StrReplace, Task
 ---
 
 # FRTB CI babysit
 
-Babysit an `frtb-capital` pull request from push through merge-readiness. Four
-sequential phases; complete each before advancing.
+Babysit an `frtb-capital` pull request from push through merge-readiness. Phases
+run in order; complete each before advancing unless a mode flag skips phases.
 
 Read `AGENTS.md`, `CLAUDE.md`, and `.grok/skills/frtb-capital/SKILL.md` before
 editing code.
+
+**Reference files** (read when the step points to them):
+
+| File | Use |
+| --- | --- |
+| `references/ci-job-matrix.md` | Step 0.5 — which CI jobs must pass |
+| `references/pr-template-gate.md` | Step 0.6 — PR body / ADR 0015 gates |
+| `references/conversations.md` | Phase 3.5 — consider and resolve all threads |
+| `references/qc-failures.md` | Phase 1 — `quality-control` failures |
 
 ## Cross-agent entrypoints
 
@@ -34,15 +44,18 @@ editing code.
 | Input | Meaning |
 | --- | --- |
 | `<pr-number>` | Optional. If omitted, use `gh pr view` on the current branch. |
-| `--agent <name>` | Worktree agent id (`BABYSITTER`) for worktrees and fallback review selection: `grok`, `claude`, `codex`, `cursor`, or `copilot`. Default: infer from context or `grok`. |
+| `--agent <name>` | Worktree agent id (`BABYSITTER`): `grok`, `claude`, `codex`, `cursor`, `copilot`. Default: infer or `grok`. |
+| `--ci-only` | Phases 0 → 0.5 → 0.6 → 1 only; skip 2, 3, 3.5, 4. Report CI + template + thread counts. |
+| `--skip-reviews` | Skip Phases 2–3 (still run 3.5 unless `--ci-only`). Use for docs-only or when user requests no bot wait. |
+| `--reviews-only` | Phases 0, 2, 3, 3.5 only (assume CI already green). Re-validate SHA; run 1 if checks fail. |
 
 Requires `gh` authenticated for the repository and a compliant agent worktree for
 commits.
 
 Record `BABYSITTER` from `--agent` or context. Fallback reviews must use a
 **different** reviewer than `BABYSITTER` (do not trigger Cursor Bugbot if
-`BABYSITTER=cursor`; do not use the Phase 4 subagent as a substitute for Phase 2
-when Gemini/Copilot could still run — Phase 4 remains the final gate).
+`BABYSITTER=cursor`; Phase 4 subagent is not a substitute for Phase 2 when Gemini
+could still run).
 
 ---
 
@@ -51,13 +64,14 @@ when Gemini/Copilot could still run — Phase 4 remains the final gate).
 **Success criteria:** `PR` exported; worktree guard passed; baseline recorded.
 
 ```bash
-# Optional: gh pr checkout <N> first if user supplied a PR number
 gh pr view ${PR:-} --json number,title,headRefName,baseRefName,isDraft,mergeable,state
 export PR=$(gh pr view ${PR:-} --json number --jq .number)
+export HEAD_SHA=$(gh pr view $PR --json headRefOid -q .headRefOid)
 ```
 
-If no PR exists for the current branch, stop and ask the user. Set `$PR` once;
-do not re-derive it later.
+If no PR exists for the current branch, stop and ask the user. Set `$PR` and
+`HEAD_SHA` once per “review generation”; refresh `HEAD_SHA` after every push (see
+**SHA discipline**).
 
 Worktree compliance (required before any edit):
 
@@ -72,8 +86,57 @@ make agent-new AGENT=<agent> TASK=ci-babysit
 # cd to printed worktree; gh pr checkout $PR if needed
 ```
 
-Record: PR number, head SHA, draft state, base branch, CI run count, unresolved
-human review thread count, and `BABYSITTER`.
+If `mergeable` is `CONFLICTING`, stop: report conflict; do not babysit until the
+author rebases or merges base. Offer to resolve only if the user explicitly asks.
+
+Record: PR number, `HEAD_SHA`, draft state, base branch, CI run count, unresolved
+review thread count, `BABYSITTER`, and mode flags.
+
+### SHA discipline
+
+After **every** `git push` to the PR branch:
+
+1. `export HEAD_SHA=$(gh pr view $PR --json headRefOid -q .headRefOid)`
+2. If SHA changed since the start of Phase 2, 3, or 4, **re-run Phase 1** until
+   required jobs are green for the new SHA.
+3. Bot reviews tied to the old SHA are stale; re-run Phase 2/3 only if not skipped.
+
+Cap fix loops: **at most 3** push/fix cycles in Phase 1 and **at most 3** in
+Phase 4. On the 4th failure, stop and report with logs and thread state.
+
+---
+
+## Step 0.5 — Classify changed paths
+
+**Success criteria:** `REQUIRED_JOBS` list derived; docs-only fast path flag set.
+
+```bash
+python3 scripts/ci/classify_changed_paths.py
+```
+
+Parse `changes_code`, `changes_docs`, `changes_dependency`, `changes_notebooks`,
+`changes_examples`, `changes_workflow` from stdout. Build `REQUIRED_JOBS` per
+`references/ci-job-matrix.md`.
+
+Set `DOCS_ONLY_FAST_PATH=true` when `changes_code=false`, `changes_docs=true`,
+and `changes_workflow=false`.
+
+When `DOCS_ONLY_FAST_PATH` and user did not pass `--skip-reviews`, default to
+skipping Phases 2–3 (record reason in the final report).
+
+---
+
+## Step 0.6 — PR template gate
+
+**Success criteria:** Template sections satisfied or blockers listed.
+
+Follow `references/pr-template-gate.md`. Fix PR body via `gh pr edit $PR --body-file`
+when the babysitter can correct omissions (checkboxes, `Closes #N`, verification).
+
+Unresolved template blockers are **merge blockers** (especially missing `Closes #N`
+when the PR claims to close issues, or version bumps on non-`release/*` branches).
+
+Re-run this step after the last push before merge-ready.
 
 ---
 
@@ -91,7 +154,7 @@ Match any of:
 - `24 hour`
 - `rate limit` / `quota exceeded`
 - `not available` (in a Gemini/Code Assist context)
-- No Gemini review after **5 minutes** from first green CI on the current SHA
+- No Gemini review after **5 minutes** from first green CI on the current `HEAD_SHA`
 
 ### Copilot unavailable (skip Phase 3)
 
@@ -119,8 +182,11 @@ When a phase is skipped, record `SKIPPED: <phase> — <reason>` in the final rep
 
 ## Phase 1 — CI stabilisation
 
-**Success criteria:** All required checks for this PR are `success`; acceptable
-checks are explicitly `skipped` per the table below.
+**Success criteria:** Every job in `REQUIRED_JOBS` is `success`; acceptable skips
+documented in `references/ci-job-matrix.md`.
+
+Skip this phase when `--reviews-only` and all `REQUIRED_JOBS` are already green on
+`HEAD_SHA`; on any failure, run Phase 1 fully.
 
 ### Monitor
 
@@ -128,66 +194,36 @@ checks are explicitly `skipped` per the table below.
 gh pr checks $PR --watch
 ```
 
-Prefer the aggregate `ci-required` check when present. On failure, inspect logs:
+Prefer aggregate `ci-required` when present. On failure:
 
 ```bash
 gh run view <run-id> --log-failed
 ```
 
-### Required jobs (current `.github/workflows/ci.yml`)
-
-| Job | When it must pass on PRs | Notes |
-| --- | --- | --- |
-| `quality-control` | Always | Never skipped; includes maturity and drift gates. |
-| `version-bump-guard` | Always | Fails if non-`release/*` PR bumps versions. |
-| `uv-lock-guard` | Always | Fails if `uv.lock` changes without dependency-spec changes. |
-| `ci-required` | Always | Aggregates child job results. |
-| `lint` | When `changes.code` | Includes `format-check` step inside lint. |
-| `typecheck` | When `changes.code` | |
-| `build` | When `changes.code` | |
-| `test (3.11)` | When `changes.code` | Only PR Python test job. |
-| `docs` | When `changes.docs` | Runs `make docs-check`. |
-| `dependency-audit` | When `changes.dependency` | |
-| `sbom` | When `changes.dependency` | |
-| `examples` | When `changes.examples` | |
-| `notebooks` | When `changes.notebooks` | |
-
-**Skipped on pull requests (expected, not failures):**
-
-| Job | Why |
-| --- | --- |
-| `test (3.12)`, `test (3.13)` | `test-compat` runs only on `schedule` and `workflow_dispatch`, not on PRs. |
-
-Do not treat skipped `test-compat` matrix jobs on a PR as a defect.
-
-### Failure handling
-
-1. Read the failed job log in full.
-2. Classify: **branch-related** (fix locally), **flaky/infra** (`gh run rerun <run-id> --failed`), or **ambiguous** (one diagnosis pass first).
-3. Avoid pushing CI fixes on top of unaddressed review threads when the fix will
-   invalidate bot reviews — order fixes deliberately.
+Use `references/qc-failures.md` for `quality-control` failures.
 
 ### Local validation
 
+Narrow commands per Step 0.5 / `references/ci-job-matrix.md`:
+
 ```bash
 make agent-guard
-make ci-local-fast                # lint + format + typecheck + tests
-make ci-local                     # + coverage + build
-make quality-control              # import smoke + maturity + drift reports
+# docs-only: make docs-check
+# code: make ci-local-fast or make ci-local; then make quality-control when QC failed on CI
 ```
 
-On maturity failures, inspect `dist/quality/package-maturity.json` after
-`make maturity-check` or download the `package-maturity` CI artifact.
-
-Repeat until required jobs are green.
+Repeat until `REQUIRED_JOBS` are green (max **3** fix loops). Refresh `HEAD_SHA` after
+each push.
 
 ---
 
 ## Phase 2 — External code review (Gemini or fallbacks)
 
+**Skip when:** `--ci-only`, `--skip-reviews`, or `DOCS_ONLY_FAST_PATH` (default).
+
 **Success criteria:** One external review path completed (incorporated or
-documented skip), or all paths skipped with explicit reasons; CI green on the
-current SHA before Phase 3/4.
+documented skip), or all paths skipped with explicit reasons; CI green on `HEAD_SHA`
+before Phase 3/4.
 
 Track `PHASE2_STATUS`: `gemini` | `cursor-bugbot` | `pr-comment-review` | `skipped`.
 
@@ -215,111 +251,94 @@ gh pr view $PR --json reviews --jq '
 ### 2b — Fallback reviews (Gemini unavailable only)
 
 Try each path below **in order**. Stop at the first path that produces actionable
-review content (inline comments or a review body with findings). Do not use the
-babysitting agent as the “external” reviewer.
+review content. Do not use the babysitting agent as the “external” reviewer.
 
 #### Fallback 1 — Cursor Bugbot (preferred GitHub trigger)
 
-Skip this fallback when `BABYSITTER=cursor`.
+Skip when `BABYSITTER=cursor`.
 
-Post a **new top-level** PR comment (not a reply in a thread):
+Post a **new top-level** PR comment:
 
 ```bash
 gh pr comment $PR --body "@cursoragent review"
 ```
 
-Use exactly that text for this repository. If Bugbot does not respond within the
-poll window, retry once with `cursor review` or `bugbot run` (alternate triggers
-in [Cursor Bugbot docs](https://cursor.com/docs/bugbot)) before moving to
-Fallback 2.
+If Bugbot does not respond within the poll window, retry once with `cursor review`
+or `bugbot run` before Fallback 2.
 
-Poll up to **5 minutes** (recheck every **30–60 seconds**) for:
+Poll up to **5 minutes** (recheck every **30–60 seconds**) for Bugbot check or
+`cursor` / `bugbot` review comments.
 
-- `Cursor Bugbot` check on the PR, or
-- review/comments from `cursor[bot]`, `cursor`, or `bugbot` logins.
-
-```bash
-gh pr checks $PR
-gh pr view $PR --json reviews,comments
-```
-
-If findings arrive: triage like Gemini. Set `PHASE2_STATUS=cursor-bugbot`. Go to **2d**.
+If findings arrive: triage. Set `PHASE2_STATUS=cursor-bugbot`. Go to **2d**.
 
 #### Fallback 2 — Non-author PR review comment
 
-Skip when no suitable reviewer remains (e.g. only `BABYSITTER` is available).
-
-Spawn a **read-only** subagent (not `BABYSITTER` labeled the same as the PR author
-agent if avoidable). Brief it to review `gh pr diff $PR` against `CLAUDE.md`
-checklist items 1–6 (same scope as Phase 4). Post the summary on the PR:
-
-```bash
-gh pr diff $PR > /tmp/frtb-babysit-${PR}.diff
-gh pr review $PR --comment --body-file /tmp/frtb-babysit-review-${PR}.md
-```
-
-Set `PHASE2_STATUS=pr-comment-review`. Go to **2d**.
+Spawn a read-only subagent (not `BABYSITTER`). Post summary via `gh pr review $PR
+--comment --body-file ...`. Set `PHASE2_STATUS=pr-comment-review`. Go to **2d**.
 
 #### Fallback 3 — Skip external review
 
-If fallbacks fail or time out, set `PHASE2_STATUS=skipped` with reason
-(`cursor not installed`, `bugbot timeout`, `no alternate reviewer`). Continue —
-Phase 4 subagent audit still runs.
+Set `PHASE2_STATUS=skipped` with reason. Phase 4 still runs.
 
 ### 2c — Incorporate findings
 
-For any non-skipped path: apply valid fixes, validate locally, push, confirm CI green.
+Apply valid fixes, validate locally (narrow per 0.5), push, refresh `HEAD_SHA`, re-run
+Phase 1 if SHA changed.
 
 ### 2d — Mark PR ready (for Copilot when available)
 
-If the PR is still a draft **and** Copilot is not pre-flagged unavailable (Phase 3a):
+If draft and Copilot not pre-flagged unavailable:
 
 ```bash
 gh pr ready $PR
 ```
 
-If Copilot is already known unavailable, you may still `gh pr ready` so humans can
-review, but skip waiting in Phase 3.
-
 ---
 
 ## Phase 3 — Copilot review (optional)
 
-**Success criteria:** Copilot triaged, or phase **skipped** with documented reason;
-CI green on current SHA.
+**Skip when:** `--ci-only`, `--skip-reviews`, `DOCS_ONLY_FAST_PATH`, or Copilot unavailable.
+
+**Success criteria:** Copilot triaged, or **skipped** with reason; CI green on `HEAD_SHA`.
 
 ### 3a — Availability
 
-Before waiting, scan PR comments/reviews for **Copilot unavailable** patterns.
-If matched: `COPILOT_STATUS=skipped` and jump to Phase 4.
-
-Copilot reviews: author login matches `copilot` or `github-copilot`.
-
-```bash
-REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
-gh api "repos/$REPO/pulls/$PR/comments" \
-  --jq '[.[] | select(.user.login | ascii_downcase | test("copilot"))]'
-```
+Scan for **Copilot unavailable** patterns before waiting. If matched:
+`COPILOT_STATUS=skipped` → Phase 3.5.
 
 ### 3b — Wait and incorporate
 
-Only when Copilot is expected to be available:
+Wait up to **5 minutes** after `gh pr ready` (recheck every **30–60 seconds**).
+On credit/quota messages: skip. Triage findings; push; refresh SHA; re-run Phase 1 if needed.
 
-- Wait up to **5 minutes** after `gh pr ready` for Copilot review or inline comments
-  (recheck every **30–60 seconds**).
-- If credit/quota messages appear during the wait: `COPILOT_STATUS=skipped`.
-- Otherwise triage findings like Phase 2; push fixes; confirm CI green.
+---
 
-If Copilot never arrives and no availability message explains it, skip with
-`COPILOT_STATUS=skipped — timeout` and continue.
+## Phase 3.5 — Review conversations (consider and resolve)
+
+**Skip when:** `--ci-only` only. Run after Phases 2–3, or after Phase 1 when reviews
+were skipped. **Run again** after the last fix push.
+
+**Success criteria:** **Zero unresolved review threads**; every thread considered.
+
+Follow `references/conversations.md` in full:
+
+1. List all unresolved threads (GraphQL query in reference).
+2. Scan top-level issue comments for actionable human requests.
+3. For **each** thread: consider → act (fix or reply) → resolve when addressed or
+   explicitly declined with a posted reply.
+4. Do not resolve human threads without a reply.
+
+Report: threads considered, resolved, deferred (with issue/ADR cite).
 
 ---
 
 ## Phase 4 — Final audit (subagent)
 
-**Success criteria:** Subagent returns explicit **PASS**; otherwise fix, push, re-run.
+**Skip when:** `--ci-only`.
 
-Spawn a read-only reviewer subagent with this brief:
+**Success criteria:** Subagent returns **PASS**; CI green on `HEAD_SHA`; max **3** loops.
+
+Spawn a read-only reviewer subagent:
 
 > Audit PR #$PR on `frtb-capital` before merge-ready.
 >
@@ -334,7 +353,8 @@ Spawn a read-only reviewer subagent with this brief:
 >
 > Verdict: **PASS** or **FAIL** with a numbered finding list.
 
-On **FAIL**: apply fixes, push, green CI, re-audit. On **PASS**: continue to output.
+On **FAIL**: fix, push, refresh `HEAD_SHA`, Phase 1 if needed, Phase 3.5, re-audit.
+On **PASS**: run Step 0.6 and Phase 3.5 once more, then final output.
 
 ---
 
@@ -343,21 +363,25 @@ On **FAIL**: apply fixes, push, green CI, re-audit. On **PASS**: continue to out
 Report must include:
 
 - PR URL and number
-- Head SHA at completion
-- CI conclusion per required job (list skipped jobs explicitly)
+- `HEAD_SHA` at completion
+- `REQUIRED_JOBS` and per-job CI conclusion (skipped jobs explicit)
+- Step 0.6 template gate: pass or blockers
 - **Phase 2:** `PHASE2_STATUS` and skip/fallback reasons
 - **Phase 3:** `COPILOT_STATUS` (`completed` or `skipped` + reason)
-- Unresolved **human** thread count
-- Draft state (must be `false` for merge-ready)
+- **Phase 3.5:** threads considered / resolved / open (open must be 0 for merge-ready)
+- Draft state (`false` for merge-ready)
 - `mergeable` from `gh pr view`
-- Subagent verdict (Phase 4)
+- Subagent verdict (Phase 4) or `N/A` for `--ci-only`
+- Mode flags used
+- Fix loop counts (Phase 1 / Phase 4)
 - `git status --short`
 
-**Merge-ready when:** required CI green, not draft, no unresolved human threads,
-subagent **PASS**, mergeability not `CONFLICTING`.
+**Merge-ready when:** all `REQUIRED_JOBS` green, Step 0.6 pass, not draft,
+**zero unresolved review threads**, subagent **PASS** (unless `--ci-only`),
+`mergeable` not `CONFLICTING`.
 
-Skipped Gemini/Copilot/fallback reviews are **not** merge blockers when documented;
-the Phase 4 subagent audit remains required.
+Skipped Gemini/Copilot/fallback reviews are not merge blockers when documented;
+Phase 4 subagent audit remains required unless `--ci-only`.
 
 ---
 
