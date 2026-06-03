@@ -206,6 +206,15 @@ def test_artifact_drillthrough_pages_and_downloads_local_parquet(tmp_path: Path)
     assert second_page["next_offset"] is None
     assert [row["source_row_id"] for row in second_page["rows"]] == ["row-2", "row-3"]
 
+    comma_filter = client.get(
+        f"/runs/{run.run_id}/artifacts/{artifact.artifact_id}/page",
+        params={
+            "columns": "source_row_id",
+            "filter": "risk_factor_set_id=set,2",
+        },
+    ).json()
+    assert comma_filter["rows"] == [{"source_row_id": "row-3"}]
+
     bad_column = client.get(
         f"/runs/{run.run_id}/artifacts/{artifact.artifact_id}/page",
         params={"columns": "missing_column"},
@@ -221,6 +230,28 @@ def test_artifact_drillthrough_pages_and_downloads_local_parquet(tmp_path: Path)
     assert download.status_code == 200
     assert download.headers["content-type"] == "application/vnd.apache.parquet"
     assert download.content.startswith(b"PAR1")
+
+
+def test_artifact_download_rejects_local_file_outside_store_root(tmp_path: Path) -> None:
+    run = _run("US_NPR_2_0", None, None)
+    outside = tmp_path / "outside.parquet"
+    outside.write_bytes(b"PAR1")
+    external_artifact = ArtifactRef(
+        run_id=run.run_id,
+        artifact_id="outside-store-root",
+        component=FrtbComponent.IMA,
+        artifact_type=ArtifactType.OTHER,
+        uri=outside.resolve().as_uri(),
+        format="parquet",
+        row_count=0,
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    store.write_bundle(_bundle(run, artifacts=(*_artifacts(run), external_artifact)))
+    client = TestClient(create_result_store_app(store))
+
+    response = client.get(f"/runs/{run.run_id}/artifacts/outside-store-root/download")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "artifact file not found: outside-store-root"
 
 
 def _run(
@@ -243,13 +274,18 @@ def _run(
     )
 
 
-def _bundle(run: CalculationRun, *, baseline_run_id: str | None = None) -> ResultBundle:
+def _bundle(
+    run: CalculationRun,
+    *,
+    baseline_run_id: str | None = None,
+    artifacts: tuple[ArtifactRef, ...] | None = None,
+) -> ResultBundle:
     return ResultBundle(
         run=run,
         nodes=_nodes(run),
         edges=_edges(run),
         measures=_measures(run),
-        artifacts=_artifacts(run),
+        artifacts=_artifacts(run) if artifacts is None else artifacts,
         lineage=_lineage(run),
         attributions=_attributions(run),
         movement_results=_movement_results(run, baseline_run_id),
@@ -294,7 +330,7 @@ def _ima_pnl_table(schema: pa.Schema, run_id: str) -> pa.Table:
             "book_id": ["rates-core", "rates-core", "rates-core"],
             "position_id": ["pos-1", "pos-2", "pos-3"],
             "risk_factor_id": ["rf-1", "rf-2", "rf-3"],
-            "risk_factor_set_id": [None, "set-1", "set-1"],
+            "risk_factor_set_id": [None, "set-1", "set,2"],
             "scenario_id": ["scenario-1", "scenario-2", "scenario-3"],
             "observation_date": [date(2026, 6, 1), date(2026, 6, 2), date(2026, 6, 3)],
             "liquidity_horizon": [10, 20, 40],

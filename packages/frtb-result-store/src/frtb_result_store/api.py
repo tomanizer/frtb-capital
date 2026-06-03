@@ -8,13 +8,16 @@ from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Protocol, cast
-from urllib.parse import unquote, urlparse
 
 from frtb_common import jsonable
 
+from frtb_result_store.api_artifacts import (
+    artifact_download_path,
+    artifact_page_payload,
+    require_artifact_ref,
+)
 from frtb_result_store.io import DuckDbParquetResultStore, ResultStoreConfig
 from frtb_result_store.model import (
-    ArtifactRef,
     ArtifactType,
     CalculationRun,
     CapitalAttributionRecord,
@@ -244,8 +247,8 @@ def _register_artifact_routes(
         offset: int = query(default=0, ge=0),
     ) -> dict[str, object]:
         _require_run(result_store, run_id, http_exception_type)
-        ref = _require_artifact_ref(result_store, run_id, artifact_id, http_exception_type)
-        return _artifact_page_payload(
+        ref = require_artifact_ref(result_store, run_id, artifact_id, http_exception_type)
+        return artifact_page_payload(
             result_store,
             ref,
             columns=columns,
@@ -253,6 +256,7 @@ def _register_artifact_routes(
             limit=limit,
             offset=offset,
             http_exception_type=http_exception_type,
+            to_jsonable=_to_jsonable,
         )
 
     @app.get(
@@ -262,15 +266,14 @@ def _register_artifact_routes(
     )
     def artifact_download(run_id: str, artifact_id: str) -> object:
         _require_run(result_store, run_id, http_exception_type)
-        ref = _require_artifact_ref(result_store, run_id, artifact_id, http_exception_type)
-        path = _artifact_file_path(result_store, ref)
+        ref = require_artifact_ref(result_store, run_id, artifact_id, http_exception_type)
+        path = artifact_download_path(result_store, ref, http_exception_type)
         if path is None:
             return {
                 "artifact": _to_jsonable(ref),
                 "mode": "s3_uri_handoff",
                 "uri": ref.uri,
             }
-        _require_existing_parquet(path, ref, http_exception_type)
         return file_response_type(
             path,
             media_type="application/vnd.apache.parquet",
@@ -332,217 +335,6 @@ def _find_node(nodes: Sequence[CapitalNode], node_id: str) -> CapitalNode | None
         if node.node_id == node_id:
             return node
     return None
-
-
-def _require_artifact_ref(
-    store: DuckDbParquetResultStore,
-    run_id: str,
-    artifact_id: str,
-    http_exception_type: type[Exception],
-) -> ArtifactRef:
-    for ref in store.artifact_refs(run_id):
-        if ref.artifact_id == artifact_id:
-            return ref
-    raise http_exception_type(  # type: ignore[call-arg]
-        status_code=404,
-        detail=f"artifact not found: {artifact_id}",
-    )
-
-
-def _artifact_page_payload(
-    store: DuckDbParquetResultStore,
-    ref: ArtifactRef,
-    *,
-    columns: Sequence[str] | None,
-    filters: Sequence[str] | None,
-    limit: int,
-    offset: int,
-    http_exception_type: type[Exception],
-) -> dict[str, object]:
-    path = _artifact_file_path(store, ref)
-    if path is None:
-        return {
-            "artifact": _to_jsonable(ref),
-            "mode": "s3_uri_handoff",
-            "uri": ref.uri,
-            "limit": limit,
-            "offset": offset,
-            "returned": 0,
-            "filtered_row_count": None,
-            "next_offset": None,
-            "columns": [],
-            "filters": {},
-            "rows": [],
-        }
-    _require_existing_parquet(path, ref, http_exception_type)
-    page = _read_parquet_page(
-        path,
-        columns=columns,
-        filters=filters,
-        limit=limit,
-        offset=offset,
-        http_exception_type=http_exception_type,
-    )
-    page_rows = cast(list[dict[str, object]], page["rows"])
-    return {
-        "artifact": _to_jsonable(ref),
-        "mode": "local_parquet",
-        "limit": limit,
-        "offset": offset,
-        "returned": len(page_rows),
-        "row_count": ref.row_count,
-        **page,
-    }
-
-
-def _artifact_file_path(store: DuckDbParquetResultStore, ref: ArtifactRef) -> Path | None:
-    parsed = urlparse(ref.uri)
-    if parsed.scheme == "file":
-        return Path(unquote(parsed.path))
-    if parsed.scheme == "":
-        return Path(ref.uri)
-    if parsed.scheme != "s3":
-        return None
-    root_uri = getattr(store, "root_uri", None)
-    root = getattr(store, "root", None)
-    if not isinstance(root_uri, str) or not isinstance(root, Path):
-        return None
-    prefix = f"{root_uri}/"
-    if not ref.uri.startswith(prefix):
-        return None
-    return root / unquote(ref.uri.removeprefix(prefix))
-
-
-def _require_existing_parquet(
-    path: Path,
-    ref: ArtifactRef,
-    http_exception_type: type[Exception],
-) -> None:
-    if path.suffix != ".parquet" or not path.is_file():
-        raise http_exception_type(  # type: ignore[call-arg]
-            status_code=404,
-            detail=f"artifact file not found: {ref.artifact_id}",
-        )
-
-
-def _read_parquet_page(
-    path: Path,
-    *,
-    columns: Sequence[str] | None,
-    filters: Sequence[str] | None,
-    limit: int,
-    offset: int,
-    http_exception_type: type[Exception],
-) -> dict[str, object]:
-    import duckdb
-
-    relation = f"read_parquet({_sql_literal(str(path))})"
-    with duckdb.connect(database=":memory:") as connection:
-        available_columns = _artifact_columns(connection, relation)
-        selected_columns = _selected_columns(columns, available_columns, http_exception_type)
-        where_sql, filter_values, filter_payload = _filter_clause(
-            filters,
-            available_columns,
-            http_exception_type,
-        )
-        order_by = ", ".join(_quote_identifier(column) for column in available_columns)
-        count_sql = f"SELECT count(*) FROM {relation}{where_sql}"
-        count_row = connection.execute(count_sql, filter_values).fetchone()
-        filtered_row_count = 0 if count_row is None else int(count_row[0])
-        select_sql = ", ".join(_quote_identifier(column) for column in selected_columns)
-        rows = connection.execute(
-            (
-                f"SELECT {select_sql} FROM {relation}{where_sql} "
-                f"ORDER BY {order_by} LIMIT ? OFFSET ?"
-            ),
-            (*filter_values, limit, offset),
-        ).fetchall()
-    next_offset = offset + len(rows)
-    return {
-        "columns": selected_columns,
-        "filters": filter_payload,
-        "filtered_row_count": filtered_row_count,
-        "next_offset": next_offset if next_offset < filtered_row_count else None,
-        "rows": [
-            {column: _to_jsonable(value) for column, value in zip(selected_columns, row)}
-            for row in rows
-        ],
-    }
-
-
-def _artifact_columns(connection: Any, relation: str) -> list[str]:
-    rows = connection.execute(f"DESCRIBE SELECT * FROM {relation}").fetchall()
-    return [str(row[0]) for row in rows]
-
-
-def _selected_columns(
-    columns: Sequence[str] | None,
-    available_columns: Sequence[str],
-    http_exception_type: type[Exception],
-) -> list[str]:
-    requested = _flatten_query_values(columns)
-    if not requested:
-        return list(available_columns)
-    _validate_columns(requested, available_columns, http_exception_type)
-    return requested
-
-
-def _filter_clause(
-    filters: Sequence[str] | None,
-    available_columns: Sequence[str],
-    http_exception_type: type[Exception],
-) -> tuple[str, tuple[str, ...], dict[str, str]]:
-    parsed = _parse_filters(filters, http_exception_type)
-    if not parsed:
-        return "", (), {}
-    _validate_columns(tuple(parsed), available_columns, http_exception_type)
-    predicates = " AND ".join(f"{_quote_identifier(column)} = ?" for column in parsed)
-    return f" WHERE {predicates}", tuple(parsed.values()), dict(parsed)
-
-
-def _parse_filters(
-    filters: Sequence[str] | None,
-    http_exception_type: type[Exception],
-) -> dict[str, str]:
-    parsed: dict[str, str] = {}
-    for item in _flatten_query_values(filters):
-        column, separator, value = item.partition("=")
-        if not column or not separator:
-            raise http_exception_type(  # type: ignore[call-arg]
-                status_code=422,
-                detail="artifact filters must use column=value syntax",
-            )
-        parsed[column.strip()] = value.strip()
-    return parsed
-
-
-def _flatten_query_values(values: Sequence[str] | None) -> list[str]:
-    flattened: list[str] = []
-    for value in values or ():
-        flattened.extend(part.strip() for part in value.split(",") if part.strip())
-    return list(dict.fromkeys(flattened))
-
-
-def _validate_columns(
-    columns: Sequence[str],
-    available_columns: Sequence[str],
-    http_exception_type: type[Exception],
-) -> None:
-    available = set(available_columns)
-    unknown = sorted(column for column in columns if column not in available)
-    if unknown:
-        raise http_exception_type(  # type: ignore[call-arg]
-            status_code=422,
-            detail=f"unknown artifact column(s): {', '.join(unknown)}",
-        )
-
-
-def _quote_identifier(identifier: str) -> str:
-    return '"' + identifier.replace('"', '""') + '"'
-
-
-def _sql_literal(value: str) -> str:
-    return "'" + value.replace("'", "''") + "'"
 
 
 def _run_payload(store: DuckDbParquetResultStore, run: CalculationRun) -> dict[str, object]:
