@@ -1,0 +1,81 @@
+# frtb-drc public API
+
+This document defines the stable client integration surface for `frtb_drc`.
+DRC supports three class-specific handoff paths: non-securitisation,
+securitisation non-CTP, and correlation trading portfolio (CTP). Mixed risk
+classes must be split into class-specific batches before calculation; batch
+entrypoints fail closed when incompatible classes are mixed.
+
+Outputs are not final regulatory capital. U.S. NPR 2.0 content is proposed-rule
+comparison material.
+
+## Stable surface
+
+| Category | Symbols | Rationale |
+| --- | --- | --- |
+| Identity | `PACKAGE_METADATA`, `__version__` | Workspace discovery and status reporting. |
+| Row capital (Tier 3) | `calculate_drc_capital`, `DrcPosition`, `DrcCalculationContext`, `DrcCapitalResult`, `DrcRiskClass`, `DrcInstrumentType`, `DefaultDirection`, `DrcSeniority`, `CreditQuality`, `DrcSourceLineage` | Small books, tests, notebooks, and fixture workflows. |
+| Batch capital (Tier 1) | `DrcPositionBatch`, `DrcBatchCapitalCalculation`, `build_drc_nonsec_batch_from_handoff`, `build_drc_securitisation_non_ctp_batch_from_handoff`, `build_drc_ctp_batch_from_handoff`, `build_drc_*_batch_from_columns`, `calculate_drc_capital_from_batch`, `input_hash_for_drc_batch` | Production path from normalized Arrow handoffs to package-owned NumPy batches. |
+| Handoff specs | `DRC_NONSEC_HANDOFF_COLUMN_SPECS`, `DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS`, `DRC_CTP_HANDOFF_COLUMN_SPECS` | Client schema alignment and generated schema export. |
+| Normalize | `normalize_drc_nonsec_arrow_table`, `normalize_drc_securitisation_non_ctp_arrow_table`, `normalize_drc_ctp_arrow_table` | Ingress from raw Arrow tables to `NormalizedTabularHandoff`. |
+| Reference overlays | `DrcCalculationContext`, `DrcFxRate`, `DrcRiskWeightEvidence`, `DrcFairValueCapEvidence` | Run-scoped FX rates, securitisation risk weights, fair-value cap evidence, and offset groups. |
+| Audit and attribution | `validate_reconciliation`, `calculate_drc_attribution`, `validate_attribution_reconciliation`, `to_orchestration_handoff` | Replay, reconciliation, attribution, and SA orchestration handoff. |
+| Errors | `DrcInputError` | Public fail-closed input error carrying field context. |
+
+Reference overlays are documented in
+[`docs/CLIENT_REFERENCE_DATA.md`](../../CLIENT_REFERENCE_DATA.md). The
+high-volume batch boundary is summarized in
+[`docs/performance/frtb-drc-arrow-batch-triage.md`](../../performance/frtb-drc-arrow-batch-triage.md).
+
+## Client integration
+
+| Tier | Client input | DRC path | Notes |
+| --- | --- | --- | --- |
+| 1 - Arrow/Parquet handoff | One class-specific table per DRC class | `normalize_drc_*_arrow_table` -> `build_drc_*_batch_from_handoff` -> `calculate_drc_capital_from_batch` | Recommended production path. |
+| 2 - Vendor rows | Client ETL maps vendor rows to the DRC handoff contract | Tier 1 | No package-neutral CRIF path is exposed for all DRC classes. |
+| 3 - Canonical dataclasses | `tuple[DrcPosition, ...]` plus `DrcCalculationContext` | `calculate_drc_capital` | Small books, tests, and notebooks. |
+
+## Handoff paths
+
+| DRC class | Handoff spec | Normalizer | Builder | Context requirements |
+| --- | --- | --- | --- | --- |
+| Non-securitisation | `DRC_NONSEC_HANDOFF_COLUMN_SPECS` | `normalize_drc_nonsec_arrow_table` | `build_drc_nonsec_batch_from_handoff` | `DrcCalculationContext` with run id, calculation date, base currency, and profile id; FX rates required for non-base-currency rows. |
+| Securitisation non-CTP | `DRC_SECURITISATION_NON_CTP_HANDOFF_COLUMN_SPECS` | `normalize_drc_securitisation_non_ctp_arrow_table` | `build_drc_securitisation_non_ctp_batch_from_handoff` | Position-id keyed `securitisation_non_ctp_risk_weights`; evidence, fair-value cap, and offset-group maps where required by the run. |
+| CTP | `DRC_CTP_HANDOFF_COLUMN_SPECS` | `normalize_drc_ctp_arrow_table` | `build_drc_ctp_batch_from_handoff` | Position-id keyed `ctp_risk_weights`, `ctp_risk_weight_evidence`, and `ctp_offset_groups` where needed for offset treatment. |
+
+## Handoff column summary
+
+The Python `ColumnSpec` tuples are the source of truth. DRC class-specific specs
+share the same canonical columns, with securitisation non-CTP and CTP relaxing
+some issuer, seniority, and credit-quality requirements where the class does not
+use them.
+
+| Column family | Required | Notes |
+| --- | --- | --- |
+| Identity and lineage | Required | `position_id`, `source_row_id`, desk, legal entity, lineage source system, and lineage source file. |
+| Class and instrument | Required | `risk_class`, `instrument_type`, `default_direction`. The handoff table must contain only one DRC class. |
+| Issuer/tranche/index keys | Class-specific | `issuer_id`, `tranche_id`, and `index_series_id` identify obligors, securitisation tranches, and index tranches. |
+| Bucket and credit attributes | Class-specific | `bucket_key`, `seniority`, and `credit_quality`; securitisation and CTP risk weights are run-scoped context maps. |
+| Amounts and maturity | Required | `notional`, optional `market_value`, optional `cumulative_pnl`, `maturity_years`, `currency`, and optional `lgd_override`. |
+| Flags | Optional | `is_defaulted`, `is_gse`, `is_pse`, `is_covered_bond`. |
+| Citations | Optional | `citation_ids` carries comma-separated regulatory citation identifiers into audit records. |
+
+## Reference-overlay rule
+
+Client overlays take precedence only through fields exposed on
+`DrcCalculationContext`. The package validates missing and unused map entries:
+mandatory position-id keyed risk weights, stale fair-value cap evidence, missing
+FX rates, and unsupported decomposition evidence fail closed rather than
+defaulting to zero capital.
+
+## Submodule-only surface
+
+Clients should not depend on:
+
+- private batch and validation helpers in `frtb_drc.batch`;
+- low-level netting helper modules;
+- private identifier normalization helpers;
+- internal risk-weight evidence hashing helpers.
+
+Tests may import submodule helpers for coverage. Client integrations should use
+the top-level symbols listed here.
