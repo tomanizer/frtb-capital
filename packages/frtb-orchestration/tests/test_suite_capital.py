@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 from frtb_common import (
@@ -580,6 +580,70 @@ def test_recognise_ima_summary_prefers_direct_field_names_over_aliases() -> None
     assert summary.calculation_date == _CALC_DATE
     assert summary.profile_id == "ECB_CRR3"
     assert summary.input_hash == _INPUT_HASH
+
+
+def test_recognise_ima_summary_normalizes_datetime_date_fields() -> None:
+    @dataclass
+    class DatetimeShape:
+        run_id: str = "datetime-run"
+        calculation_date: datetime = datetime(2026, 3, 31, 12, 30)
+        base_currency: str = "USD"
+        profile_id: str = "PRA_UK_CRR"
+        total_ima_capital: float = 300.0
+        policy_hash: str = _POLICY_HASH
+        input_hash: str = _INPUT_HASH
+        citations: tuple[str, ...] = ("MAR31.25",)
+
+    summary = recognise_ima_summary(DatetimeShape())
+
+    assert summary.calculation_date == _CALC_DATE
+    assert type(summary.calculation_date) is date
+
+
+def test_calculate_suite_capital_accepts_datetime_equivalent_ima_date() -> None:
+    ima = synthetic_ima_summary(calculation_date=datetime(2026, 3, 31, 12, 30))
+
+    result = calculate_suite_capital(
+        ima_summary=ima,
+        sa_result=synthetic_sa_result(),
+        cva_summary=synthetic_cva_summary(),
+    )
+
+    assert result.calculation_date == _CALC_DATE
+
+
+def test_recognise_ima_summary_preserves_single_text_citation() -> None:
+    @dataclass
+    class SingleTextCitationShape:
+        run_id: str = "single-citation-run"
+        calculation_date: date = _CALC_DATE
+        base_currency: str = "USD"
+        profile_id: str = "PRA_UK_CRR"
+        total_ima_capital: float = 300.0
+        policy_hash: str = _POLICY_HASH
+        input_hash: str = _INPUT_HASH
+        citations: str = "MAR31.25"
+
+    summary = recognise_ima_summary(SingleTextCitationShape())
+
+    assert summary.citations == ("MAR31.25",)
+
+
+def test_recognise_ima_summary_rejects_non_iterable_desk_records_cleanly() -> None:
+    @dataclass
+    class BadDeskRecordsShape:
+        run_id: str = "bad-desk-records-run"
+        calculation_date: date = _CALC_DATE
+        base_currency: str = "USD"
+        profile_id: str = "PRA_UK_CRR"
+        total_ima_capital: float = 300.0
+        policy_hash: str = _POLICY_HASH
+        input_hash: str = _INPUT_HASH
+        desk_records: int = 1
+        citations: tuple[str, ...] = ("MAR31.25",)
+
+    with pytest.raises(OrchestrationInputError, match="desk_records must be an iterable"):
+        recognise_ima_summary(BadDeskRecordsShape())
 
 
 def test_recognise_ima_summary_rejects_missing_required_field() -> None:
