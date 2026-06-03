@@ -1,7 +1,7 @@
 {
   "files": {
     "expected_outputs.json": {
-      "sha256": "ad0191789d27f36423ee06fda08dea52cf1b6ce3f69d44319d3385cbb5a15f2e"
+      "sha256": "b07d8cd639cc2542930c968b7b5d217808a5449cbaf7346fd64e30cfa9a57756"
     },
     "positions.json": {
       "sha256": "92ae03378def76b6200a7867fdf8ec263d19ef03de0b16f62aee251d725404ee"
