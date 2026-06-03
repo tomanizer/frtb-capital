@@ -24,11 +24,18 @@ Run from a compliant agent worktree:
 
 ```bash
 python3 scripts/agent_worktree.py guard
+uv run python scripts/ci/check_simplification_drift.py
 find packages -path '*/src/*' -name '*.py' -print | xargs wc -l | sort -nr
 rg "def _hash_payload|def .*input_hash|def .*policy_hash|sha256|json\\.dumps|is_reconciled|def _object_array_from_arrow|def _object_array_from_column|def _required_text_array|def _readonly_array|def _required_text\\(" packages/*/src -n
 rg "TODO|FIXME|placeholder|storage-only|unused|working[[:space:]]+assumption|NotImplemented|not implemented|accepted_row_dataclasses_materialized" packages/*/src packages/*/tests -n
 rg "from frtb_(ima|sbm|drc|rrao|cva)|import frtb_(ima|sbm|drc|rrao|cva)" packages/*/src -n
 ```
+
+`make quality-control` runs `check_simplification_drift.py` on every PR. Run it
+directly before and after changing batch column coercion, Arrow handoff readers,
+or wrapper/helper modules. If a flagged wrapper is intentionally retained, add
+an inline `# simplify-audit: keep - <reason>` marker next to the wrapper so the
+justification survives refactors.
 
 Also run an AST-based duplicate-function scan when possible. Exact duplicate
 private helpers are stronger evidence than similar names alone.
