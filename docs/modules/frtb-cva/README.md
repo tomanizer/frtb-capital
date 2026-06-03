@@ -24,6 +24,7 @@ unsupported and fail closed via explicit errors.
 
 ## Planning Documents
 
+- [AUDIT-IMP-005 design — profile/method coverage and MAR50.9](DESIGN_AUDIT_IMP_005.md)
 - [Product requirements](PRD.md)
 - [Detailed requirements](DETAILED_REQUIREMENTS.md)
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
