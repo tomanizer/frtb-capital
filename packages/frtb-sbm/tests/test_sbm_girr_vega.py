@@ -33,8 +33,8 @@ from frtb_sbm import (
     weight_girr_vega_sensitivity_batch,
 )
 from frtb_sbm.arrow_handoff import (
-    build_girr_vega_batch_from_handoff,
-    calculate_sbm_capital_from_girr_vega_handoff,
+    build_girr_vega_batch_from_arrow,
+    calculate_sbm_capital_from_girr_vega_arrow,
     normalize_girr_vega_arrow_table,
 )
 
@@ -204,9 +204,9 @@ def test_girr_vega_batch_and_handoff_match_row_capital() -> None:
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_girr_vega_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_girr_vega_batch_from_handoff(handoff)
+    arrow_batch = build_girr_vega_batch_from_arrow(handoff)
     batch_result = calculate_sbm_capital_from_girr_vega_batch(arrow_batch, context=context)
-    handoff_result = calculate_sbm_capital_from_girr_vega_handoff(handoff, context=context)
+    handoff_result = calculate_sbm_capital_from_girr_vega_arrow(handoff, context=context)
 
     assert row_batch.input_hash == input_hash_for_sensitivities(sensitivities)
     assert arrow_batch.input_hash == row_batch.input_hash

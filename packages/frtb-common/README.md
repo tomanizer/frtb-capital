@@ -24,8 +24,8 @@ Current contents:
   - deterministic source, Arrow table, and normalized handoff hashes;
   - dictionary-code extraction and deterministic Arrow table sorting helpers;
   - schema export helpers in `frtb_common.handoff_schema`:
-    `column_spec_to_json_schema`, `handoff_specs_to_json_schema`, and
-    `handoff_specs_to_arrow_schema`.
+    `column_spec_to_json_schema`, `column_specs_to_json_schema`, and
+    `column_specs_to_arrow_schema`.
 - CRIF-to-Arrow normalization helpers:
   - package-neutral CRIF column discovery, alias normalization, and primitive
     coercion;

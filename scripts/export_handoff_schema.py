@@ -12,8 +12,8 @@ from pathlib import Path
 from frtb_common import (
     ColumnSpec,
     arrow_schema_to_dict,
-    handoff_specs_to_arrow_schema,
-    handoff_specs_to_json_schema,
+    column_specs_to_arrow_schema,
+    column_specs_to_json_schema,
 )
 
 
@@ -36,13 +36,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     module = importlib.import_module(args.module or args.package)
     specs = _load_specs(module, args.spec)
     if args.format == "json-schema":
-        payload = handoff_specs_to_json_schema(
+        payload = column_specs_to_json_schema(
             specs,
             title=args.title or f"{args.package}.{args.spec}",
             description=args.description,
         )
     else:
-        payload = arrow_schema_to_dict(handoff_specs_to_arrow_schema(specs))
+        payload = arrow_schema_to_dict(column_specs_to_arrow_schema(specs))
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")

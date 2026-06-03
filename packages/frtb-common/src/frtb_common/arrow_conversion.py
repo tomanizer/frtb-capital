@@ -1,8 +1,9 @@
-"""Package-neutral Arrow-to-NumPy conversion helpers for handoff adapters."""
+"""Package-neutral Arrow-to-NumPy conversion helpers for Arrow adapters."""
 
 from __future__ import annotations
 
 import math
+import warnings
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any, cast
 
@@ -14,15 +15,16 @@ import pyarrow.compute as pc  # type: ignore[import-untyped]
 import frtb_common.handoff as _handoff
 from frtb_common.handoff import (
     ColumnSpec,
+    NormalizedTableError,
     NullPolicy,
-    TabularHandoffError,
     TabularLogicalType,
     resolve_column_name,
     validate_column_specs,
 )
 
 ErrorFactory = Callable[[str, str | None], Exception]
-HandoffColumnArray = npt.NDArray[Any]
+ArrowColumnArray = npt.NDArray[Any]
+HandoffColumnArray = ArrowColumnArray
 
 
 def arrow_object_array(column: pa.ChunkedArray) -> npt.NDArray[np.object_]:
@@ -86,7 +88,7 @@ def arrow_bool_array(
         try:
             array = cast(pa.Array, pc.cast(array, pa.bool_()))
         except (pa.ArrowInvalid, TypeError, ValueError) as exc:
-            raise TabularHandoffError(f"{field} must be boolean") from exc
+            raise NormalizedTableError(f"{field} must be boolean") from exc
     values = pc.fill_null(array, pa.scalar(null_value, type=pa.bool_())).to_numpy(
         zero_copy_only=False
     )
@@ -112,14 +114,14 @@ def arrow_bool_or_object_array(
     return _object_array_from_arrow_array(array, null_value=null_value)
 
 
-def read_handoff_columns(
+def read_arrow_columns(
     table: pa.Table,
     specs: Sequence[ColumnSpec],
     *,
     error: ErrorFactory,
     null_defaults: Mapping[str, object] | None = None,
-) -> dict[str, HandoffColumnArray]:
-    """Read declared Arrow handoff columns into read-only NumPy arrays.
+) -> dict[str, ArrowColumnArray]:
+    """Read declared Arrow columns into read-only NumPy arrays.
 
     ``null_defaults`` restores originally-null Arrow positions to package-specific values.
     """
@@ -129,12 +131,12 @@ def read_handoff_columns(
     try:
         column_specs = validate_column_specs(specs)
         _handoff._validate_unique_column_names(table)
-    except TabularHandoffError as exc:
+    except NormalizedTableError as exc:
         raise error(str(exc), None) from exc
 
-    columns: dict[str, HandoffColumnArray] = {}
+    columns: dict[str, ArrowColumnArray] = {}
     for spec in column_specs:
-        columns.update(_read_handoff_column(table, spec, error=error))
+        columns.update(_read_arrow_column(table, spec, error=error))
     if null_defaults:
         columns = _restore_null_defaults(
             table,
@@ -146,18 +148,35 @@ def read_handoff_columns(
     return columns
 
 
-def _read_handoff_column(
+def read_handoff_columns(
+    table: pa.Table,
+    specs: Sequence[ColumnSpec],
+    *,
+    error: ErrorFactory,
+    null_defaults: Mapping[str, object] | None = None,
+) -> dict[str, ArrowColumnArray]:
+    """Deprecated alias for :func:`read_arrow_columns`."""
+
+    warnings.warn(
+        "read_handoff_columns is deprecated; use read_arrow_columns",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return read_arrow_columns(table, specs, error=error, null_defaults=null_defaults)
+
+
+def _read_arrow_column(
     table: pa.Table,
     spec: ColumnSpec,
     *,
     error: ErrorFactory,
-) -> dict[str, HandoffColumnArray]:
+) -> dict[str, ArrowColumnArray]:
     if spec.logical_type is TabularLogicalType.UNKNOWN:
         raise error(f"Column {spec.name!r} has unknown logical_type", spec.name)
 
     try:
         column_name = resolve_column_name(table, spec)
-    except TabularHandoffError as exc:
+    except NormalizedTableError as exc:
         raise error(str(exc), spec.name) from exc
 
     if column_name is None:
@@ -169,7 +188,7 @@ def _read_handoff_column(
     try:
         _handoff._validate_column_policy(spec, column)
         values = _read_typed_handoff_column(column, spec)
-    except (TabularHandoffError, pa.ArrowException) as exc:
+    except (NormalizedTableError, pa.ArrowException) as exc:
         raise error(str(exc), spec.name) from exc
 
     values.setflags(write=False)
@@ -179,7 +198,7 @@ def _read_handoff_column(
 def _read_typed_handoff_column(
     column: pa.ChunkedArray,
     spec: ColumnSpec,
-) -> HandoffColumnArray:
+) -> ArrowColumnArray:
     match spec.logical_type:
         case (
             TabularLogicalType.STRING
@@ -195,7 +214,7 @@ def _read_typed_handoff_column(
         case TabularLogicalType.BOOLEAN:
             return arrow_bool_array(column, field=spec.name)
         case _:
-            raise TabularHandoffError(
+            raise NormalizedTableError(
                 f"Column {spec.name!r} has unsupported logical_type {spec.logical_type.value!r}"
             )
 
@@ -203,11 +222,11 @@ def _read_typed_handoff_column(
 def _restore_null_defaults(
     table: pa.Table,
     specs: Sequence[ColumnSpec],
-    columns: dict[str, HandoffColumnArray],
+    columns: dict[str, ArrowColumnArray],
     null_defaults: Mapping[str, object],
     *,
     error: ErrorFactory,
-) -> dict[str, HandoffColumnArray]:
+) -> dict[str, ArrowColumnArray]:
     specs_by_name = {spec.name: spec for spec in specs}
     restored = dict(columns)
     for field, default in null_defaults.items():
@@ -225,23 +244,23 @@ def _restore_null_defaults(
             if not column.null_count:
                 continue
             restored[field] = _restore_column_null_default(column, values, default, field=field)
-        except (TabularHandoffError, pa.ArrowException, TypeError, ValueError) as exc:
+        except (NormalizedTableError, pa.ArrowException, TypeError, ValueError) as exc:
             raise error(str(exc), field) from exc
     return restored
 
 
 def _restore_column_null_default(
     column: pa.ChunkedArray,
-    values: HandoffColumnArray,
+    values: ArrowColumnArray,
     default: object,
     *,
     field: str,
-) -> HandoffColumnArray:
+) -> ArrowColumnArray:
     array = _single_arrow_array(column)
     valid = np.asarray(array.is_valid().to_numpy(zero_copy_only=False), dtype=np.bool_)
     restored = np.asarray(values, dtype=object).copy()
     if restored.shape != valid.shape:
-        raise TabularHandoffError(f"{field} length must match accepted row count")
+        raise NormalizedTableError(f"{field} length must match accepted row count")
     restored[~valid] = default
     restored.setflags(write=False)
     return restored
@@ -262,7 +281,7 @@ def _float64_array_from_arrow_column(
     try:
         return cast(pa.Array, pc.cast(array, pa.float64()))
     except (pa.ArrowInvalid, TypeError, ValueError) as exc:
-        raise TabularHandoffError(f"{field} must be numeric") from exc
+        raise NormalizedTableError(f"{field} must be numeric") from exc
 
 
 def _object_array_from_arrow_array(
@@ -328,5 +347,6 @@ __all__ = [
     "arrow_float64_array",
     "arrow_float64_array_with_nulls",
     "arrow_object_array",
+    "read_arrow_columns",
     "read_handoff_columns",
 ]

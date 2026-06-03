@@ -7,7 +7,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import pyarrow as pa
 import pytest
-from frtb_common import normalized_handoff_hash, source_content_hash
+from frtb_common import normalized_arrow_table_hash, source_content_hash
 
 from frtb_ima import (
     BusinessCalendar,
@@ -22,8 +22,8 @@ from frtb_ima import (
     ScenarioSetType,
     assess_rfet_evidence,
     assess_rfet_observation_batch,
-    build_rfet_observation_batch_from_handoff,
-    build_scenario_metadata_batch_from_handoff,
+    build_rfet_observation_batch_from_arrow,
+    build_scenario_metadata_batch_from_arrow,
     get_policy,
     input_hash_for_rfet_observation_batch,
     input_hash_for_scenario_metadata_batch,
@@ -67,7 +67,7 @@ def test_scenario_metadata_arrow_handoff_builds_columnar_batch_with_lineage() ->
         metadata={"desk": "Rates"},
         source_hash=source_hash,
     )
-    batch = build_scenario_metadata_batch_from_handoff(handoff)
+    batch = build_scenario_metadata_batch_from_arrow(handoff)
     metadata = batch.to_metadata()
 
     assert handoff.accepted.column_names == [
@@ -81,7 +81,7 @@ def test_scenario_metadata_arrow_handoff_builds_columnar_batch_with_lineage() ->
     ]
     assert batch.scenario_count == 2
     assert batch.source_hash == source_hash
-    assert batch.handoff_hash == normalized_handoff_hash(handoff)
+    assert batch.handoff_hash == normalized_arrow_table_hash(handoff)
     assert batch.input_hash == input_hash_for_scenario_metadata_batch(batch)
     assert not batch.scenario_ids.flags.writeable
     assert metadata[0].scenario_id == "stress-00001"
@@ -99,7 +99,7 @@ def test_scenario_metadata_arrow_handoff_defaults_optional_columns() -> None:
         )
     )
 
-    batch = build_scenario_metadata_batch_from_handoff(handoff)
+    batch = build_scenario_metadata_batch_from_arrow(handoff)
     metadata = batch.to_metadata()
 
     assert batch.scenario_sets.tolist() == [ScenarioSetType.CURRENT.value]
@@ -122,7 +122,7 @@ def test_scenario_metadata_arrow_handoff_restores_null_optional_strings() -> Non
         )
     )
 
-    batch = build_scenario_metadata_batch_from_handoff(handoff)
+    batch = build_scenario_metadata_batch_from_arrow(handoff)
 
     assert batch.scenario_sets.tolist() == [
         ScenarioSetType.CURRENT.value,
@@ -145,7 +145,7 @@ def test_scenario_metadata_arrow_handoff_rejects_invalid_provenance_json() -> No
     )
 
     with pytest.raises(ValueError, match="provenance_json contains invalid JSON"):
-        build_scenario_metadata_batch_from_handoff(handoff)
+        build_scenario_metadata_batch_from_arrow(handoff)
 
 
 def test_rfet_observation_arrow_handoff_assesses_without_row_materialization() -> None:
@@ -155,7 +155,7 @@ def test_rfet_observation_arrow_handoff_assesses_without_row_materialization() -
         _rfet_observation_table(),
         source_hash=source_content_hash("ima rfet observations"),
     )
-    batch = build_rfet_observation_batch_from_handoff(handoff)
+    batch = build_rfet_observation_batch_from_arrow(handoff)
 
     batch_result = assess_rfet_observation_batch(
         risk_factor,
@@ -179,7 +179,7 @@ def test_rfet_observation_arrow_handoff_assesses_without_row_materialization() -
 
     assert batch.observation_count == 25
     assert batch.source_hash == handoff.source_hash
-    assert batch.handoff_hash == normalized_handoff_hash(handoff)
+    assert batch.handoff_hash == normalized_arrow_table_hash(handoff)
     assert batch.input_hash == input_hash_for_rfet_observation_batch(batch)
     assert batch_result.as_dict() == row_result.as_dict()
 
@@ -209,7 +209,7 @@ def test_rfet_observation_arrow_handoff_normalizes_nulls_and_scalar_fallbacks() 
         )
     )
 
-    batch = build_rfet_observation_batch_from_handoff(handoff)
+    batch = build_rfet_observation_batch_from_arrow(handoff)
     observation = batch.to_observations()[0]
 
     assert batch.sources.tolist() == ["", "VENDOR_A", ""]
@@ -228,7 +228,7 @@ def test_rfet_observation_arrow_handoff_defaults_optional_columns() -> None:
         )
     )
 
-    batch = build_rfet_observation_batch_from_handoff(handoff)
+    batch = build_rfet_observation_batch_from_arrow(handoff)
 
     assert batch.sources.tolist() == [""]
     assert batch.vendor_ids.tolist() == [""]
@@ -237,11 +237,11 @@ def test_rfet_observation_arrow_handoff_defaults_optional_columns() -> None:
 
 
 def test_arrow_handoff_batch_builders_reject_wrong_handoff_type() -> None:
-    with pytest.raises(ValueError, match="NormalizedTabularHandoff"):
-        build_scenario_metadata_batch_from_handoff(object())  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="NormalizedArrowTable"):
+        build_scenario_metadata_batch_from_arrow(object())  # type: ignore[arg-type]
 
-    with pytest.raises(ValueError, match="NormalizedTabularHandoff"):
-        build_rfet_observation_batch_from_handoff(object())  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="NormalizedArrowTable"):
+        build_rfet_observation_batch_from_arrow(object())  # type: ignore[arg-type]
 
 
 def test_rfet_observation_batch_rejects_empty_risk_factor_names() -> None:
@@ -255,7 +255,7 @@ def test_rfet_observation_batch_rejects_empty_risk_factor_names() -> None:
     )
 
     with pytest.raises(ValueError, match="risk_factor_names"):
-        build_rfet_observation_batch_from_handoff(handoff)
+        build_rfet_observation_batch_from_arrow(handoff)
 
 
 def test_rfet_observation_batch_rejects_empty_batches() -> None:
@@ -269,14 +269,14 @@ def test_rfet_observation_batch_rejects_empty_batches() -> None:
     )
 
     with pytest.raises(ValueError, match="must be non-empty"):
-        build_rfet_observation_batch_from_handoff(handoff)
+        build_rfet_observation_batch_from_arrow(handoff)
 
 
 def test_rfet_observation_batch_matches_row_path_for_exclusion_branches() -> None:
     risk_factor = _risk_factor()
     policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
     handoff = normalize_ima_rfet_observation_arrow_table(_rfet_exclusion_table())
-    batch = build_rfet_observation_batch_from_handoff(handoff)
+    batch = build_rfet_observation_batch_from_arrow(handoff)
 
     batch_result = assess_rfet_observation_batch(
         risk_factor,
@@ -325,7 +325,7 @@ def test_rfet_observation_batch_matches_row_path_for_calendar_and_new_issuance()
             }
         )
     )
-    batch = build_rfet_observation_batch_from_handoff(handoff)
+    batch = build_rfet_observation_batch_from_arrow(handoff)
 
     batch_result = assess_rfet_observation_batch(
         risk_factor,
@@ -374,7 +374,7 @@ def test_rfet_observation_batch_matches_row_path_for_representativeness_evidence
             }
         )
     )
-    batch = build_rfet_observation_batch_from_handoff(handoff)
+    batch = build_rfet_observation_batch_from_arrow(handoff)
 
     batch_result = assess_rfet_observation_batch(
         risk_factor,

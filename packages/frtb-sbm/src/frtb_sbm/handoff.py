@@ -4,26 +4,28 @@ Regulatory traceability:
     SBM-FUNC-021, SBM-DEC-007 — package-level results consumed by orchestration.
 
 ``frtb-orchestration`` consumes only the shared
-``frtb_common.ComponentResultHandoff`` shape, so this adapter is the single
+``frtb_common.ComponentCapitalSummary`` shape, so this adapter is the single
 stable bridge from the rich SBM result to suite aggregation.
 """
 
 from __future__ import annotations
 
-from frtb_common import ComponentResultHandoff, StandardisedComponent
+import warnings
+
+from frtb_common import ComponentCapitalSummary, StandardisedComponent
 
 from frtb_sbm.data_models import SbmCapitalResult, SbmUnsupportedFeature
 from frtb_sbm.validation import SbmInputError
 
 
-def to_orchestration_handoff(result: SbmCapitalResult) -> ComponentResultHandoff:
+def to_component_summary(result: SbmCapitalResult) -> ComponentCapitalSummary:
     """Return the shared orchestration handoff view for one SBM capital result."""
 
     if result.run_context is None:
         raise SbmInputError("SbmCapitalResult.run_context is required for orchestration handoff")
     reconciliation = result.reconciliation
     citations = tuple(dict.fromkeys(reconciliation.citation_ids)) if reconciliation else ()
-    return ComponentResultHandoff(
+    return ComponentCapitalSummary(
         component=StandardisedComponent.SBM,
         package_name="frtb-sbm",
         run_id=result.run_context.run_id,
@@ -49,7 +51,19 @@ def unsupported_features_from_result(
     return result.unsupported_features
 
 
+def to_orchestration_handoff(result: SbmCapitalResult) -> ComponentCapitalSummary:
+    """Deprecated alias for :func:`to_component_summary`."""
+
+    warnings.warn(
+        "to_orchestration_handoff is deprecated; use to_component_summary",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return to_component_summary(result)
+
+
 __all__ = [
+    "to_component_summary",
     "to_orchestration_handoff",
     "unsupported_features_from_result",
 ]

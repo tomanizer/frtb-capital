@@ -30,7 +30,7 @@ ARROW_CONVERSION_FUNCTIONS = frozenset(
         "arrow_float64_array",
         "arrow_float64_array_with_nulls",
         "arrow_object_array",
-        "read_handoff_columns",
+        "read_arrow_columns",
     }
 )
 PASS_THROUGH_TARGETS = {
@@ -337,7 +337,7 @@ def _stale_arrow_converter_finding(
         subject=node.name,
         reason=(
             "private Arrow-to-array converter name matches the stale per-package decoder pattern; "
-            "use `frtb_common.arrow_conversion` or `read_handoff_columns`"
+            "use `frtb_common.arrow_conversion` or `read_arrow_columns`"
         ),
     )
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -10,12 +11,12 @@ import pyarrow as pa  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
-    NormalizedTabularHandoff,
+    NormalizedArrowTable,
     NullPolicy,
     TabularLogicalType,
     normalize_arrow_table,
-    normalized_handoff_hash,
-    read_handoff_columns,
+    normalized_arrow_table_hash,
+    read_arrow_columns,
 )
 
 from frtb_rrao.batch import RraoPositionBatch, build_rrao_batch_from_columns
@@ -23,7 +24,7 @@ from frtb_rrao.validation import RraoInputError
 
 HandoffColumnArray = npt.NDArray[Any]
 
-RRAO_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
+RRAO_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("position_id", aliases=("positionId",), logical_type=TabularLogicalType.STRING),
     ColumnSpec("source_row_id", aliases=("sourceRowId",), logical_type=TabularLogicalType.STRING),
     ColumnSpec("desk_id", aliases=("deskId",), logical_type=TabularLogicalType.STRING),
@@ -236,6 +237,7 @@ RRAO_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         null_policy=NullPolicy.ALLOW,
     ),
 )
+RRAO_HANDOFF_COLUMN_SPECS = RRAO_ARROW_COLUMN_SPECS
 
 
 _RRAO_BATCH_COLUMN_ARGS: Mapping[str, str] = {
@@ -302,7 +304,7 @@ def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
         raise RuntimeError("RRAO handoff specs must declare logical_type: " + ", ".join(unknown))
 
 
-_ensure_explicit_logical_types(RRAO_HANDOFF_COLUMN_SPECS)
+_ensure_explicit_logical_types(RRAO_ARROW_COLUMN_SPECS)
 
 
 def normalize_rrao_arrow_table(
@@ -312,12 +314,12 @@ def normalize_rrao_arrow_table(
     metadata: Mapping[str, str] | None = None,
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     """Normalize a raw Arrow table to the RRAO handoff contract."""
 
     return normalize_arrow_table(
         table,
-        column_specs=RRAO_HANDOFF_COLUMN_SPECS,
+        column_specs=RRAO_ARROW_COLUMN_SPECS,
         rejected=rejected,
         diagnostics=diagnostics,
         metadata={} if metadata is None else metadata,
@@ -326,17 +328,17 @@ def normalize_rrao_arrow_table(
     )
 
 
-def build_rrao_batch_from_handoff(
-    handoff: NormalizedTabularHandoff,
+def build_rrao_batch_from_arrow(
+    handoff: NormalizedArrowTable,
 ) -> RraoPositionBatch:
     """Build an RRAO-owned residual-risk batch from a normalized Arrow handoff."""
 
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise RraoInputError("handoff must be NormalizedTabularHandoff", field="handoff")
+    if not isinstance(handoff, NormalizedArrowTable):
+        raise RraoInputError("handoff must be NormalizedArrowTable", field="handoff")
     table = handoff.accepted
-    columns = read_handoff_columns(
+    columns = read_arrow_columns(
         table,
-        RRAO_HANDOFF_COLUMN_SPECS,
+        RRAO_ARROW_COLUMN_SPECS,
         error=_rrao_error,
         null_defaults=_RRAO_NULL_DEFAULTS,
     )
@@ -347,10 +349,21 @@ def build_rrao_batch_from_handoff(
         lineage_present=[True] * table.num_rows,
         citations=_citations_column(columns.get("citations")),
         source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
+        handoff_hash=normalized_arrow_table_hash(handoff),
         diagnostics=diagnostics,
         copy_arrays=False,
     )
+
+
+def build_rrao_batch_from_handoff(handoff: NormalizedArrowTable) -> RraoPositionBatch:
+    """Deprecated alias for :func:`build_rrao_batch_from_arrow`."""
+
+    warnings.warn(
+        "build_rrao_batch_from_handoff is deprecated; use build_rrao_batch_from_arrow",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return build_rrao_batch_from_arrow(handoff)
 
 
 def _rrao_batch_column_kwargs(columns: Mapping[str, object]) -> dict[str, Any]:
@@ -388,7 +401,9 @@ def _citations_column(values: HandoffColumnArray | None) -> tuple[tuple[str, ...
 
 
 __all__ = [
+    "RRAO_ARROW_COLUMN_SPECS",
     "RRAO_HANDOFF_COLUMN_SPECS",
+    "build_rrao_batch_from_arrow",
     "build_rrao_batch_from_handoff",
     "normalize_rrao_arrow_table",
 ]

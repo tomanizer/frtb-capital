@@ -9,11 +9,11 @@ from types import MappingProxyType
 
 import pyarrow as pa  # type: ignore[import-untyped]
 from frtb_common import (
-    ComponentResultHandoff,
-    NormalizedTabularHandoff,
+    ComponentCapitalSummary,
+    NormalizedArrowTable,
     StandardisedComponent,
     arrow_table_content_hash,
-    normalized_handoff_hash,
+    normalized_arrow_table_hash,
 )
 
 from frtb_orchestration.standardised import (
@@ -33,17 +33,18 @@ CVA_NETTING_SET_HANDOFF = "cva.netting_set"
 CVA_HEDGE_HANDOFF = "cva.hedge"
 CVA_SA_SENSITIVITY_HANDOFF = "cva.sa_sensitivity"
 
-STANDARDISED_REQUIRED_HANDOFF_KEYS = (
+STANDARDISED_REQUIRED_INPUT_TABLE_KEYS = (
     SBM_GIRR_DELTA_HANDOFF,
     DRC_NONSEC_HANDOFF,
     RRAO_POSITIONS_HANDOFF,
 )
+STANDARDISED_REQUIRED_HANDOFF_KEYS = STANDARDISED_REQUIRED_INPUT_TABLE_KEYS
 
 
-NormalizeCallable = Callable[..., NormalizedTabularHandoff]
-BuildBatchCallable = Callable[[NormalizedTabularHandoff], object]
+NormalizeCallable = Callable[..., NormalizedArrowTable]
+BuildBatchCallable = Callable[[NormalizedArrowTable], object]
 CalculateBatchCallable = Callable[..., object]
-ToComponentHandoffCallable = Callable[[object], ComponentResultHandoff]
+ToComponentSummaryCallable = Callable[[object], ComponentCapitalSummary]
 
 
 @dataclass(frozen=True)
@@ -88,7 +89,7 @@ class ManifestHandoffRoute:
     normalize: NormalizeCallable
     build_batch: BuildBatchCallable | None = None
     calculate_batch: CalculateBatchCallable | None = None
-    to_component_handoff: ToComponentHandoffCallable | None = None
+    to_component_summary: ToComponentSummaryCallable | None = None
     context_attr: str | None = None
 
     def __post_init__(self) -> None:
@@ -158,14 +159,14 @@ class SaManifestRunResult:
     """Result of running validation and available SA component routes."""
 
     validation: ManifestValidationResult
-    component_handoffs: tuple[ComponentResultHandoff, ...] = ()
+    component_summaries: tuple[ComponentCapitalSummary, ...] = ()
     standardised_result: StandardisedApproachCapitalResult | None = None
     orchestration_error: str | None = None
 
     def as_dict(self) -> dict[str, object]:
         return {
-            "component_handoffs": [
-                _component_result_handoff_as_dict(handoff) for handoff in self.component_handoffs
+            "component_summaries": [
+                _component_summary_as_dict(summary) for summary in self.component_summaries
             ],
             "orchestration_error": self.orchestration_error,
             "standardised_result": None
@@ -179,7 +180,7 @@ def validate_capital_run_manifest(
     manifest: CapitalRunManifest,
     *,
     routes: Mapping[str, ManifestHandoffRoute],
-    required_handoff_keys: Sequence[str] = STANDARDISED_REQUIRED_HANDOFF_KEYS,
+    required_handoff_keys: Sequence[str] = STANDARDISED_REQUIRED_INPUT_TABLE_KEYS,
 ) -> ManifestValidationResult:
     """Validate manifest handoff tables without calculating capital."""
 
@@ -222,7 +223,7 @@ def run_standardised_approach_from_manifest(
     manifest: CapitalRunManifest,
     *,
     routes: Mapping[str, ManifestHandoffRoute],
-    required_handoff_keys: Sequence[str] = STANDARDISED_REQUIRED_HANDOFF_KEYS,
+    required_handoff_keys: Sequence[str] = STANDARDISED_REQUIRED_INPUT_TABLE_KEYS,
 ) -> SaManifestRunResult:
     """Validate, route available SA handoffs, and compose SA capital if complete."""
 
@@ -231,12 +232,12 @@ def run_standardised_approach_from_manifest(
         routes=routes,
         required_handoff_keys=required_handoff_keys,
     )
-    component_handoffs: list[ComponentResultHandoff] = []
+    component_summaries: list[ComponentCapitalSummary] = []
     orchestration_error: str | None = None
 
     for logical_name in sorted(manifest.handoffs):
         route = routes.get(logical_name)
-        if route is None or route.calculate_batch is None or route.to_component_handoff is None:
+        if route is None or route.calculate_batch is None or route.to_component_summary is None:
             continue
         try:
             source_hash = arrow_table_content_hash(manifest.handoffs[logical_name])
@@ -251,16 +252,16 @@ def run_standardised_approach_from_manifest(
                 )
             calculation = route.calculate_batch(batch, context=context)
             result = getattr(calculation, "result", calculation)
-            component_handoffs.append(route.to_component_handoff(result))
+            component_summaries.append(route.to_component_summary(result))
         except Exception as exc:
             orchestration_error = f"{logical_name}: {exc}"
 
     if orchestration_error is None:
         try:
             standardised = compose_standardised_approach_capital(
-                sbm_handoff=_component_handoff(component_handoffs, StandardisedComponent.SBM),
-                drc_handoff=_component_handoff(component_handoffs, StandardisedComponent.DRC),
-                rrao_handoff=_component_handoff(component_handoffs, StandardisedComponent.RRAO),
+                sbm_summary=_component_summary(component_summaries, StandardisedComponent.SBM),
+                drc_summary=_component_summary(component_summaries, StandardisedComponent.DRC),
+                rrao_summary=_component_summary(component_summaries, StandardisedComponent.RRAO),
                 run_id=manifest.run_id,
             )
         except Exception as exc:
@@ -271,7 +272,7 @@ def run_standardised_approach_from_manifest(
 
     return SaManifestRunResult(
         validation=validation,
-        component_handoffs=tuple(component_handoffs),
+        component_summaries=tuple(component_summaries),
         standardised_result=standardised,
         orchestration_error=orchestration_error,
     )
@@ -308,41 +309,41 @@ def _validate_one_handoff(
         rejected_row_count=0 if handoff.rejected is None else handoff.rejected.num_rows,
         diagnostics=tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics),
         source_hash=source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
+        handoff_hash=normalized_arrow_table_hash(handoff),
     )
 
 
-def _component_handoff(
-    handoffs: Sequence[ComponentResultHandoff],
+def _component_summary(
+    summaries: Sequence[ComponentCapitalSummary],
     component: StandardisedComponent,
-) -> ComponentResultHandoff | None:
-    matches = tuple(handoff for handoff in handoffs if handoff.component is component)
+) -> ComponentCapitalSummary | None:
+    matches = tuple(summary for summary in summaries if summary.component is component)
     if not matches:
         return None
     if len(matches) > 1:
         raise OrchestrationInputError(
-            f"multiple {component.value} component handoffs were produced",
-            field="component_handoffs",
+            f"multiple {component.value} component summaries were produced",
+            field="component_summaries",
         )
     return matches[0]
 
 
-def _component_result_handoff_as_dict(handoff: ComponentResultHandoff) -> dict[str, object]:
+def _component_summary_as_dict(summary: ComponentCapitalSummary) -> dict[str, object]:
     return {
-        "base_currency": handoff.base_currency,
-        "calculation_date": handoff.calculation_date.isoformat(),
-        "citations": list(handoff.citations),
-        "component": handoff.component.value,
-        "excluded_line_count": handoff.excluded_line_count,
-        "input_hash": handoff.input_hash,
-        "line_count": handoff.line_count,
-        "package_name": handoff.package_name,
-        "profile_hash": handoff.profile_hash,
-        "profile_id": handoff.profile_id,
-        "run_id": handoff.run_id,
-        "subtotal_count": handoff.subtotal_count,
-        "total_capital": handoff.total_capital,
-        "warnings": list(handoff.warnings),
+        "base_currency": summary.base_currency,
+        "calculation_date": summary.calculation_date.isoformat(),
+        "citations": list(summary.citations),
+        "component": summary.component.value,
+        "excluded_line_count": summary.excluded_line_count,
+        "input_hash": summary.input_hash,
+        "line_count": summary.line_count,
+        "package_name": summary.package_name,
+        "profile_hash": summary.profile_hash,
+        "profile_id": summary.profile_id,
+        "run_id": summary.run_id,
+        "subtotal_count": summary.subtotal_count,
+        "total_capital": summary.total_capital,
+        "warnings": list(summary.warnings),
     }
 
 
@@ -423,6 +424,7 @@ __all__ = [
     "RRAO_POSITIONS_HANDOFF",
     "SBM_GIRR_DELTA_HANDOFF",
     "STANDARDISED_REQUIRED_HANDOFF_KEYS",
+    "STANDARDISED_REQUIRED_INPUT_TABLE_KEYS",
     "CapitalRunManifest",
     "ManifestHandoffRoute",
     "ManifestHandoffValidation",

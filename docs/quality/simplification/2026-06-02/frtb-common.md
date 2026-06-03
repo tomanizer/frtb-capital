@@ -17,7 +17,7 @@ helpers. It must not carry capital-component regulatory semantics.
 
 ## Duplicated code
 
-- `frtb_common.handoff.normalized_handoff_hash` already implements stable JSON
+- `frtb_common.handoff.normalized_arrow_table_hash` already implements stable JSON
   payload hashing, while component packages reimplement `_hash_payload` and
   input-hash helpers.
 - CRIF normalization mechanics exist here, but component CRIF adapters still

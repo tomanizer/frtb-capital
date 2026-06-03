@@ -22,9 +22,9 @@ from frtb_common.handoff import (
     AdapterDiagnostic,
     ColumnSpec,
     DiagnosticSeverity,
-    NormalizedTabularHandoff,
+    NormalizedArrowTable,
+    NormalizedTableError,
     NullPolicy,
-    TabularHandoffError,
     TabularLogicalType,
     arrow_table_content_hash,
 )
@@ -70,7 +70,7 @@ class CrifColumnSpec:
         for alias in aliases:
             _validate_non_empty(alias, f"alias for {self.name!r}")
         if len(set(aliases)) != len(aliases):
-            raise TabularHandoffError(f"CRIF column spec {self.name!r} repeats an alias")
+            raise NormalizedTableError(f"CRIF column spec {self.name!r} repeats an alias")
         object.__setattr__(self, "aliases", aliases)
 
     def as_column_spec(self) -> ColumnSpec:
@@ -94,9 +94,9 @@ class CrifRiskTypeMapping:
     def __post_init__(self) -> None:
         values = tuple(_normalise_risk_type(value) for value in self.source_values)
         if not values:
-            raise TabularHandoffError("CRIF risk-type mapping requires at least one value")
+            raise NormalizedTableError("CRIF risk-type mapping requires at least one value")
         if len(set(values)) != len(values):
-            raise TabularHandoffError("CRIF risk-type mapping repeats a source value")
+            raise NormalizedTableError("CRIF risk-type mapping repeats a source value")
         frozen_outputs = MappingProxyType(dict(self.output_values))
         for key in frozen_outputs:
             _validate_non_empty(key, "CRIF risk-type output column")
@@ -132,7 +132,7 @@ def _stringify_record_value(value: object | None) -> str | None:
 
 def _validate_non_empty(value: str, label: str) -> None:
     if not isinstance(value, str) or not value.strip():
-        raise TabularHandoffError(f"{label} must be a non-empty string")
+        raise NormalizedTableError(f"{label} must be a non-empty string")
 
 
 DEFAULT_CRIF_COLUMN_SPECS: tuple[CrifColumnSpec, ...] = (
@@ -186,10 +186,10 @@ def crif_records_to_arrow_table(records: Sequence[Mapping[str, object]]) -> pa.T
     rows = tuple(records)
     for index, record in enumerate(rows):
         if not isinstance(record, Mapping):
-            raise TabularHandoffError(f"CRIF record at index {index} must be a mapping")
+            raise NormalizedTableError(f"CRIF record at index {index} must be a mapping")
         for key in record:
             if not isinstance(key, str) or not key.strip():
-                raise TabularHandoffError(
+                raise NormalizedTableError(
                     f"CRIF record at index {index} contains a non-string or blank field name"
                 )
 
@@ -212,7 +212,7 @@ def normalize_crif_records(
     source_file: str = "crif.csv",
     metadata: Mapping[str, str] | None = None,
     source_hash: str | None = None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     """Normalize CRIF-like mapping rows into an Arrow handoff."""
 
     table = crif_records_to_arrow_table(records)
@@ -240,7 +240,7 @@ def normalize_crif_arrow_table(
     source_file: str = "crif.csv",
     metadata: Mapping[str, str] | None = None,
     source_hash: str | None = None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     """Normalize a CRIF-like Arrow table with package-provided risk mappings."""
 
     if not isinstance(table, pa.Table):
@@ -344,7 +344,7 @@ def normalize_crif_arrow_table(
     if metadata is not None:
         handoff_metadata.update(metadata)
 
-    return NormalizedTabularHandoff(
+    return NormalizedArrowTable(
         accepted=accepted_table,
         column_specs=_handoff_column_specs(accepted_table, specs, mapping_outputs),
         row_id_column=CRIF_SOURCE_ROW_ID_COLUMN,
@@ -362,7 +362,7 @@ def resolve_crif_column_name(table: pa.Table, aliases: Sequence[str]) -> str | N
     if not isinstance(table, pa.Table):
         raise TypeError("table must be a pyarrow.Table")
     if not aliases:
-        raise TabularHandoffError("at least one CRIF alias is required")
+        raise NormalizedTableError("at least one CRIF alias is required")
     by_key: dict[str, list[str]] = {}
     for column_name in table.column_names:
         by_key.setdefault(_column_key(column_name), []).append(column_name)
@@ -371,7 +371,7 @@ def resolve_crif_column_name(table: pa.Table, aliases: Sequence[str]) -> str | N
         matches.extend(by_key.get(_column_key(alias), ()))
     unique_matches = tuple(dict.fromkeys(matches))
     if len(unique_matches) > 1:
-        raise TabularHandoffError(
+        raise NormalizedTableError(
             f"CRIF aliases {tuple(aliases)!r} match multiple input columns: {unique_matches!r}"
         )
     return unique_matches[0] if unique_matches else None
@@ -390,7 +390,7 @@ def _validate_crif_column_specs(
     seen_targets: set[str] = set()
     for spec in specs:
         if spec.name in seen_targets:
-            raise TabularHandoffError(f"Duplicate CRIF target column {spec.name!r}")
+            raise NormalizedTableError(f"Duplicate CRIF target column {spec.name!r}")
         seen_targets.add(spec.name)
     return specs
 
@@ -402,7 +402,7 @@ def _risk_mapping_by_type(
     for mapping in risk_type_mappings:
         for source_value in mapping.source_values:
             if source_value in by_type:
-                raise TabularHandoffError(
+                raise NormalizedTableError(
                     f"CRIF RiskType {source_value!r} appears in multiple mappings"
                 )
             by_type[source_value] = mapping.output_values
@@ -446,7 +446,7 @@ def _normalize_crif_arrow_table_static_mapping(
     source_file: str,
     metadata: Mapping[str, str] | None,
     source_hash: str | None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     row_count = table.num_rows
     normalized_columns: dict[str, pa.Array] = {}
     row_error_by_index: dict[int, AdapterDiagnostic] = {}
@@ -533,7 +533,7 @@ def _normalize_crif_arrow_table_static_mapping(
     if metadata is not None:
         handoff_metadata.update(metadata)
 
-    return NormalizedTabularHandoff(
+    return NormalizedArrowTable(
         accepted=accepted_table,
         column_specs=_handoff_column_specs(accepted_table, specs, mapping_outputs),
         row_id_column=CRIF_SOURCE_ROW_ID_COLUMN,
@@ -965,7 +965,7 @@ def _coerce_column(
         try:
             candidate = spec.default if value is None and spec.default is not None else value
             coerced.append(_coerce_value(candidate, spec))
-        except TabularHandoffError as exc:
+        except NormalizedTableError as exc:
             coerced.append(None)
             row_errors[row_index].append(
                 _diagnostic(
@@ -985,7 +985,7 @@ def _coerce_column(
 def _coerce_value(value: object | None, spec: CrifColumnSpec) -> object | None:
     if value is None:
         if spec.required:
-            raise TabularHandoffError(f"CRIF field {spec.name!r} is required")
+            raise NormalizedTableError(f"CRIF field {spec.name!r} is required")
         return None
     if spec.logical_type is TabularLogicalType.FLOAT:
         return _coerce_float(value, spec)
@@ -996,7 +996,7 @@ def _coerce_value(value: object | None, spec: CrifColumnSpec) -> object | None:
     text = str(value).strip()
     if not text:
         if spec.required:
-            raise TabularHandoffError(f"CRIF field {spec.name!r} is required")
+            raise NormalizedTableError(f"CRIF field {spec.name!r} is required")
         return None
     return text
 
@@ -1005,14 +1005,14 @@ def _coerce_float(value: object, spec: CrifColumnSpec) -> float | None:
     text = str(value).strip()
     if not text:
         if spec.required:
-            raise TabularHandoffError(f"CRIF field {spec.name!r} is required")
+            raise NormalizedTableError(f"CRIF field {spec.name!r} is required")
         return None
     try:
         float_value = float(text)
     except (TypeError, ValueError) as exc:
-        raise TabularHandoffError(f"CRIF field {spec.name!r} must be numeric") from exc
+        raise NormalizedTableError(f"CRIF field {spec.name!r} must be numeric") from exc
     if not math.isfinite(float_value):
-        raise TabularHandoffError(f"CRIF field {spec.name!r} must be finite")
+        raise NormalizedTableError(f"CRIF field {spec.name!r} must be finite")
     return float_value
 
 
@@ -1020,25 +1020,25 @@ def _coerce_integer(value: object, spec: CrifColumnSpec) -> int | None:
     text = str(value).strip()
     if not text:
         if spec.required:
-            raise TabularHandoffError(f"CRIF field {spec.name!r} is required")
+            raise NormalizedTableError(f"CRIF field {spec.name!r} is required")
         return None
     try:
         return int(text)
     except (TypeError, ValueError) as exc:
-        raise TabularHandoffError(f"CRIF field {spec.name!r} must be an integer") from exc
+        raise NormalizedTableError(f"CRIF field {spec.name!r} must be an integer") from exc
 
 
 def _coerce_boolean(value: object, spec: CrifColumnSpec) -> bool | None:
     text = str(value).strip().lower()
     if not text:
         if spec.required:
-            raise TabularHandoffError(f"CRIF field {spec.name!r} is required")
+            raise NormalizedTableError(f"CRIF field {spec.name!r} is required")
         return None
     if text in {"1", "true", "yes", "y"}:
         return True
     if text in {"0", "false", "no", "n"}:
         return False
-    raise TabularHandoffError(f"CRIF field {spec.name!r} must be boolean")
+    raise NormalizedTableError(f"CRIF field {spec.name!r} must be boolean")
 
 
 def _source_row_ids(values: Sequence[object | None] | None, row_count: int) -> list[str]:
@@ -1110,7 +1110,7 @@ def _mapping_output_logical_type(
     if all(isinstance(value, float) for value in non_null_values):
         for value in non_null_values:
             if not math.isfinite(cast(float, value)):
-                raise TabularHandoffError("CRIF mapping output float values must be finite")
+                raise NormalizedTableError("CRIF mapping output float values must be finite")
         return TabularLogicalType.FLOAT
     return default
 

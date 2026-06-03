@@ -11,7 +11,7 @@ MUTATION_DIST := dist/mutation
 
 .PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
 .PHONY: test test-no-cov test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording
-.PHONY: import-lint kernel-import-boundary simplification-drift import-smoke maturity-check drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
+.PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
 .PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-handoff-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
@@ -73,6 +73,9 @@ import-lint:
 kernel-import-boundary:
 	uv run python scripts/ci/check_kernel_import_boundary.py
 
+adr0033-vocabulary:
+	uv run python scripts/ci/check_adr0033_vocabulary.py
+
 simplification-drift:
 	uv run python scripts/ci/check_simplification_drift.py
 
@@ -124,7 +127,7 @@ drift-reports: drift-report changed-code-report test-value-report dead-code-repo
 drift-baseline:
 	uv run python scripts/ci/check_code_drift.py --update-baseline
 
-quality-control: import-lint kernel-import-boundary simplification-drift import-smoke maturity-check drift-reports
+quality-control: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check drift-reports
 
 regulatory-corpus:
 	python3 tools/regulatory/lint_regulatory_corpus.py

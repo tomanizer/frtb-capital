@@ -130,7 +130,7 @@ The batch builders reject:
 - invalid qualified-index routing or look-through-required rows;
 - ambiguous booleans or non-finite numeric values.
 
-Rejected rows and adapter diagnostics remain in the `NormalizedTabularHandoff`
+Rejected rows and adapter diagnostics remain in the `NormalizedArrowTable`
 and are copied into the package-owned batch diagnostics.
 
 ## Why Not Dataframe Kernels

@@ -9,8 +9,8 @@ from frtb_common import (
     NullPolicy,
     TabularLogicalType,
     column_spec_to_json_schema,
-    handoff_specs_to_arrow_schema,
-    handoff_specs_to_json_schema,
+    column_specs_to_arrow_schema,
+    column_specs_to_json_schema,
     validate_arrow_table,
 )
 
@@ -45,7 +45,7 @@ def test_arrow_schema_round_trip_accepts_validation() -> None:
             null_policy=NullPolicy.ALLOW,
         ),
     )
-    schema = handoff_specs_to_arrow_schema(specs)
+    schema = column_specs_to_arrow_schema(specs)
     table = pa.Table.from_arrays(
         [
             pa.array(["r1"], type=schema.field("row_id").type),
@@ -83,7 +83,7 @@ def test_golden_handoff_schema_files_match_public_specs() -> None:
         ),
     )
     for path, specs, title in cases:
-        expected = handoff_specs_to_json_schema(specs, title=title)
+        expected = column_specs_to_json_schema(specs, title=title)
         assert json.loads(_repo_root().joinpath(path).read_text()) == expected
 
 

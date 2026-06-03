@@ -11,7 +11,7 @@ from frtb_cva import (
     CvaSector,
     calculate_cva_capital,
 )
-from frtb_orchestration import OrchestrationInputError, recognise_cva_result
+from frtb_orchestration import OrchestrationInputError, recognise_cva_summary
 
 
 def test_orchestration_recognises_public_cva_result() -> None:
@@ -45,13 +45,13 @@ def test_orchestration_recognises_public_cva_result() -> None:
         method=CvaMethod.BA_CVA_REDUCED,
     )
     result = calculate_cva_capital(context, (counterparty,), (netting_set,))
-    handoff = recognise_cva_result(result)
-    assert handoff.package_name == "frtb-cva"
-    assert handoff.total_cva_capital == result.total_cva_capital
-    assert handoff.ba_cva_reduced_total == result.ba_cva_reduced.k_reduced
-    assert handoff.method == result.method.value
+    summary = recognise_cva_summary(result)
+    assert summary.package_name == "frtb-cva"
+    assert summary.total_cva_capital == result.total_cva_capital
+    assert summary.ba_cva_reduced_total == result.ba_cva_reduced.k_reduced
+    assert summary.method == result.method.value
 
 
-def test_cva_handoff_rejects_invalid_shape() -> None:
+def test_cva_summary_rejects_invalid_shape() -> None:
     with pytest.raises(OrchestrationInputError, match="missing required field"):
-        recognise_cva_result(object())
+        recognise_cva_summary(object())

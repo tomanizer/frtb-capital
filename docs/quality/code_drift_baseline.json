@@ -274,9 +274,9 @@
       "path": "packages/frtb-ima/tests/test_stress_periods.py"
     },
     "packages/frtb-result-store/tests/test_duckdb_parquet_store.py:_bundle": {
-      "end_line": 770,
+      "end_line": 775,
       "key": "packages/frtb-result-store/tests/test_duckdb_parquet_store.py:_bundle",
-      "line": 648,
+      "line": 653,
       "lines": 123,
       "name": "_bundle",
       "path": "packages/frtb-result-store/tests/test_duckdb_parquet_store.py"
@@ -460,15 +460,15 @@
   },
   "metrics": {
     "drift_marker_matches": 31,
-    "duplicate_function_groups": 36,
-    "duplicate_function_instances": 57,
+    "duplicate_function_groups": 37,
+    "duplicate_function_instances": 59,
     "large_function_count": 57,
     "other_python_loc": 5401,
-    "python_files": 447,
-    "script_python_loc": 5054,
-    "source_python_loc": 59630,
-    "test_python_loc": 38577,
-    "total_python_loc": 108662
+    "python_files": 450,
+    "script_python_loc": 5163,
+    "source_python_loc": 60093,
+    "test_python_loc": 38706,
+    "total_python_loc": 109363
   },
   "oversized_files": {
     "packages/frtb-common/src/frtb_common/crif.py": {
@@ -485,6 +485,11 @@
       "limit": 600,
       "lines": 601,
       "role": "other"
+    },
+    "packages/frtb-cva/src/frtb_cva/arrow_handoff.py": {
+      "limit": 600,
+      "lines": 665,
+      "role": "source"
     },
     "packages/frtb-cva/src/frtb_cva/batch.py": {
       "limit": 600,
@@ -553,7 +558,7 @@
     },
     "packages/frtb-ima/src/frtb_ima/arrow_handoff.py": {
       "limit": 600,
-      "lines": 775,
+      "lines": 838,
       "role": "source"
     },
     "packages/frtb-ima/src/frtb_ima/backtesting.py": {
@@ -591,9 +596,14 @@
       "lines": 823,
       "role": "test"
     },
+    "packages/frtb-orchestration/src/frtb_orchestration/standardised.py": {
+      "limit": 600,
+      "lines": 625,
+      "role": "source"
+    },
     "packages/frtb-result-store/src/frtb_result_store/io.py": {
       "limit": 600,
-      "lines": 1615,
+      "lines": 1625,
       "role": "source"
     },
     "packages/frtb-result-store/src/frtb_result_store/model.py": {
@@ -603,7 +613,7 @@
     },
     "packages/frtb-result-store/tests/test_duckdb_parquet_store.py": {
       "limit": 800,
-      "lines": 848,
+      "lines": 853,
       "role": "test"
     },
     "packages/frtb-rrao/scripts/generate_fixture.py": {
@@ -633,7 +643,7 @@
     },
     "packages/frtb-sbm/src/frtb_sbm/__init__.py": {
       "limit": 600,
-      "lines": 661,
+      "lines": 674,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/aggregation.py": {
@@ -643,7 +653,7 @@
     },
     "packages/frtb-sbm/src/frtb_sbm/arrow_handoff.py": {
       "limit": 600,
-      "lines": 1680,
+      "lines": 1721,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/batch.py": {

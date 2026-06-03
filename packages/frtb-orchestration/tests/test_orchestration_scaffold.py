@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 from frtb_common import (
-    ComponentHandoffError,
-    ComponentResultHandoff,
+    ComponentCapitalSummary,
+    ComponentSummaryError,
     ImplementationStatus,
     NotImplementedCapitalComponentError,
     StandardisedComponent,
@@ -24,7 +24,7 @@ from frtb_drc import (
     DrcSourceLineage,
     calculate_drc_capital,
 )
-from frtb_drc import to_orchestration_handoff as drc_to_orchestration_handoff
+from frtb_drc import to_component_summary as drc_to_component_summary
 from frtb_ima import DeskEligibilityStatus
 from frtb_orchestration import (
     PACKAGE_METADATA,
@@ -45,7 +45,7 @@ from frtb_rrao import (
     RraoSourceLineage,
     calculate_rrao_capital,
 )
-from frtb_rrao import to_orchestration_handoff as rrao_to_orchestration_handoff
+from frtb_rrao import to_component_summary as rrao_to_component_summary
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = ROOT / "src" / "frtb_orchestration"
@@ -67,9 +67,9 @@ def test_suite_capital_aggregation_fails_explicitly() -> None:
 def test_rrao_adapter_produces_shared_handoff() -> None:
     result = sample_rrao_result()
 
-    handoff = rrao_to_orchestration_handoff(result)
+    handoff = rrao_to_component_summary(result)
 
-    assert isinstance(handoff, ComponentResultHandoff)
+    assert isinstance(handoff, ComponentCapitalSummary)
     assert handoff.component is StandardisedComponent.RRAO
     assert handoff.package_name == "frtb-rrao"
     assert handoff.run_id == "orchestration-rrao-run"
@@ -89,9 +89,9 @@ def test_rrao_adapter_produces_shared_handoff() -> None:
 def test_drc_adapter_produces_shared_handoff() -> None:
     result = sample_drc_result()
 
-    handoff = drc_to_orchestration_handoff(result)
+    handoff = drc_to_component_summary(result)
 
-    assert isinstance(handoff, ComponentResultHandoff)
+    assert isinstance(handoff, ComponentCapitalSummary)
     assert handoff.component is StandardisedComponent.DRC
     assert handoff.package_name == "frtb-drc"
     assert handoff.run_id == "orchestration-drc-run"
@@ -104,28 +104,28 @@ def test_drc_adapter_produces_shared_handoff() -> None:
 
 
 def test_component_handoff_rejects_invalid_total() -> None:
-    with pytest.raises(ComponentHandoffError, match="total_capital must be finite"):
+    with pytest.raises(ComponentSummaryError, match="total_capital must be finite"):
         sbm_handoff(total_capital=float("inf"))
 
 
 def test_standardised_approach_aggregation_requires_missing_component_outputs() -> None:
-    rrao = rrao_to_orchestration_handoff(sample_rrao_result())
+    rrao = rrao_to_component_summary(sample_rrao_result())
 
     with pytest.raises(NotImplementedCapitalComponentError, match="SBM, DRC"):
-        compose_standardised_approach_capital(rrao_handoff=rrao)
+        compose_standardised_approach_capital(rrao_summary=rrao)
 
 
 def test_standardised_approach_aggregation_sums_components() -> None:
     rrao_result = sample_rrao_result()
     drc_result = sample_drc_result()
-    rrao = rrao_to_orchestration_handoff(rrao_result)  # US_NPR_2_0
-    drc = drc_to_orchestration_handoff(drc_result)  # US_NPR_2_0
+    rrao = rrao_to_component_summary(rrao_result)  # US_NPR_2_0
+    drc = drc_to_component_summary(drc_result)  # US_NPR_2_0
     sbm = sbm_handoff(profile_id="US_NPR_2_0")
 
     result = compose_standardised_approach_capital(
-        sbm_handoff=sbm,
-        drc_handoff=drc,
-        rrao_handoff=rrao,
+        sbm_summary=sbm,
+        drc_summary=drc,
+        rrao_summary=rrao,
         run_id="sa-composed-run",
     )
 
@@ -164,13 +164,13 @@ def test_sa_aggregation_accepts_supported_jurisdiction_families(
     family: str,
 ) -> None:
     result = compose_standardised_approach_capital(
-        sbm_handoff=component_handoff(
+        sbm_summary=component_handoff(
             StandardisedComponent.SBM, profile_id=sbm_profile, total=10.0
         ),
-        drc_handoff=component_handoff(
+        drc_summary=component_handoff(
             StandardisedComponent.DRC, profile_id=drc_profile, total=20.0
         ),
-        rrao_handoff=component_handoff(
+        rrao_summary=component_handoff(
             StandardisedComponent.RRAO, profile_id=rrao_profile, total=30.0
         ),
     )
@@ -181,9 +181,9 @@ def test_sa_aggregation_accepts_supported_jurisdiction_families(
 
 def test_sa_aggregation_records_non_ima_desk_fallback_routes() -> None:
     result = compose_standardised_approach_capital(
-        sbm_handoff=sbm_handoff(profile_id="US_NPR_2_0"),
-        drc_handoff=drc_to_orchestration_handoff(sample_drc_result()),
-        rrao_handoff=rrao_to_orchestration_handoff(sample_rrao_result()),
+        sbm_summary=sbm_handoff(profile_id="US_NPR_2_0"),
+        drc_summary=drc_to_component_summary(sample_drc_result()),
+        rrao_summary=rrao_to_component_summary(sample_rrao_result()),
         ima_desk_eligibility={
             "desk-zeta": DeskEligibilityStatus.SA_FALLBACK,
             "desk-alpha": "SA_FALLBACK",
@@ -214,9 +214,9 @@ def test_sa_aggregation_records_non_ima_desk_fallback_routes() -> None:
 def test_sa_aggregation_rejects_invalid_run_id() -> None:
     with pytest.raises(OrchestrationInputError, match="run_id"):
         compose_standardised_approach_capital(
-            sbm_handoff=sbm_handoff(profile_id="US_NPR_2_0"),
-            drc_handoff=drc_to_orchestration_handoff(sample_drc_result()),
-            rrao_handoff=rrao_to_orchestration_handoff(sample_rrao_result()),
+            sbm_summary=sbm_handoff(profile_id="US_NPR_2_0"),
+            drc_summary=drc_to_component_summary(sample_drc_result()),
+            rrao_summary=rrao_to_component_summary(sample_rrao_result()),
             run_id="",
         )
 
@@ -224,9 +224,9 @@ def test_sa_aggregation_rejects_invalid_run_id() -> None:
 def test_sa_aggregation_rejects_unknown_ima_eligibility_status() -> None:
     with pytest.raises(OrchestrationInputError, match="unsupported eligibility status"):
         compose_standardised_approach_capital(
-            sbm_handoff=sbm_handoff(profile_id="US_NPR_2_0"),
-            drc_handoff=drc_to_orchestration_handoff(sample_drc_result()),
-            rrao_handoff=rrao_to_orchestration_handoff(sample_rrao_result()),
+            sbm_summary=sbm_handoff(profile_id="US_NPR_2_0"),
+            drc_summary=drc_to_component_summary(sample_drc_result()),
+            rrao_summary=rrao_to_component_summary(sample_rrao_result()),
             ima_desk_eligibility={"desk-1": "REMEDIATION"},
         )
 
@@ -234,18 +234,18 @@ def test_sa_aggregation_rejects_unknown_ima_eligibility_status() -> None:
 def test_sa_aggregation_rejects_mixed_base_currencies() -> None:
     with pytest.raises(OrchestrationInputError, match="base_currency"):
         compose_standardised_approach_capital(
-            sbm_handoff=sbm_handoff(profile_id="US_NPR_2_0", base_currency="EUR"),
-            drc_handoff=drc_to_orchestration_handoff(sample_drc_result()),
-            rrao_handoff=rrao_to_orchestration_handoff(sample_rrao_result()),
+            sbm_summary=sbm_handoff(profile_id="US_NPR_2_0", base_currency="EUR"),
+            drc_summary=drc_to_component_summary(sample_drc_result()),
+            rrao_summary=rrao_to_component_summary(sample_rrao_result()),
         )
 
 
 def test_sa_aggregation_rejects_negative_component_capital() -> None:
     with pytest.raises(OrchestrationInputError, match="non-negative"):
         compose_standardised_approach_capital(
-            sbm_handoff=sbm_handoff(profile_id="US_NPR_2_0", total_capital=-1.0),
-            drc_handoff=drc_to_orchestration_handoff(sample_drc_result()),
-            rrao_handoff=rrao_to_orchestration_handoff(sample_rrao_result()),
+            sbm_summary=sbm_handoff(profile_id="US_NPR_2_0", total_capital=-1.0),
+            drc_summary=drc_to_component_summary(sample_drc_result()),
+            rrao_summary=rrao_to_component_summary(sample_rrao_result()),
         )
 
 
@@ -268,9 +268,9 @@ def test_standardised_fallback_route_validates_fixed_route_invariants() -> None:
 
 def test_standardised_result_validates_reconciliation_invariants() -> None:
     result = compose_standardised_approach_capital(
-        sbm_handoff=sbm_handoff(profile_id="US_NPR_2_0"),
-        drc_handoff=drc_to_orchestration_handoff(sample_drc_result()),
-        rrao_handoff=rrao_to_orchestration_handoff(sample_rrao_result()),
+        sbm_summary=sbm_handoff(profile_id="US_NPR_2_0"),
+        drc_summary=drc_to_component_summary(sample_drc_result()),
+        rrao_summary=rrao_to_component_summary(sample_rrao_result()),
     )
 
     with pytest.raises(OrchestrationInputError, match="reconcile"):
@@ -340,44 +340,44 @@ def test_standardised_component_subtotal_validates_audit_fields() -> None:
 
 def test_sa_composition_rejects_mixed_jurisdiction_profiles() -> None:
     """ADR 0022: SA components from different jurisdiction families must be rejected."""
-    rrao = rrao_to_orchestration_handoff(sample_rrao_result())  # US_NPR_2_0
-    drc = drc_to_orchestration_handoff(sample_drc_result())  # US_NPR_2_0
+    rrao = rrao_to_component_summary(sample_rrao_result())  # US_NPR_2_0
+    drc = drc_to_component_summary(sample_drc_result())  # US_NPR_2_0
     sbm = sbm_handoff(profile_id="BASEL_MAR21")  # different family -- must be rejected
 
     with pytest.raises(OrchestrationInputError, match="mixed profiles"):
         compose_standardised_approach_capital(
-            sbm_handoff=sbm,
-            drc_handoff=drc,
-            rrao_handoff=rrao,
+            sbm_summary=sbm,
+            drc_summary=drc,
+            rrao_summary=rrao,
         )
 
 
 def test_sa_composition_rejects_unknown_profile_id() -> None:
     """Unrecognised profile_id must fail closed rather than silently pass."""
-    rrao = rrao_to_orchestration_handoff(sample_rrao_result())
+    rrao = rrao_to_component_summary(sample_rrao_result())
     sbm = sbm_handoff(profile_id="UNKNOWN_PROFILE_XYZ")
 
     with pytest.raises(OrchestrationInputError, match="not recognised as a known SA jurisdiction"):
-        compose_standardised_approach_capital(sbm_handoff=sbm, rrao_handoff=rrao)
+        compose_standardised_approach_capital(sbm_summary=sbm, rrao_summary=rrao)
 
 
 def test_sa_composition_accepts_consistent_basel_family() -> None:
     """RRAO BASEL_MAR23 and SBM BASEL_MAR21 are the same jurisdiction family (ADR 0022)."""
-    rrao_basel = rrao_to_orchestration_handoff(
+    rrao_basel = rrao_to_component_summary(
         sample_rrao_result(profile=RraoRegulatoryProfile.BASEL_MAR23)
     )
     sbm = sbm_handoff(profile_id="BASEL_MAR21")  # same BASEL family as RRAO -- passes guard
 
     # Jurisdiction guard passes; aggregation fails because DRC is still missing.
     with pytest.raises(NotImplementedCapitalComponentError, match="DRC"):
-        compose_standardised_approach_capital(sbm_handoff=sbm, rrao_handoff=rrao_basel)
+        compose_standardised_approach_capital(sbm_summary=sbm, rrao_summary=rrao_basel)
 
 
 def test_compose_rejects_handoff_in_wrong_component_slot() -> None:
-    rrao = rrao_to_orchestration_handoff(sample_rrao_result())
+    rrao = rrao_to_component_summary(sample_rrao_result())
 
     with pytest.raises(OrchestrationInputError, match="SBM was expected"):
-        compose_standardised_approach_capital(sbm_handoff=rrao)
+        compose_standardised_approach_capital(sbm_summary=rrao)
 
 
 def test_orchestration_runtime_does_not_import_sibling_packages() -> None:
@@ -427,7 +427,7 @@ def sbm_handoff(
     profile_id: str = "US_NPR_2_0",
     total_capital: float = 42.0,
     base_currency: str = "USD",
-) -> ComponentResultHandoff:
+) -> ComponentCapitalSummary:
     """Build a synthetic SBM handoff directly on the shared public contract.
 
     SBM capital is only implemented for BASEL_MAR21, so non-Basel jurisdiction
@@ -454,8 +454,8 @@ def component_handoff(
     run_id: str | None = None,
     base_currency: str = "USD",
     citations: tuple[str, ...] = ("component-citation",),
-) -> ComponentResultHandoff:
-    return ComponentResultHandoff(
+) -> ComponentCapitalSummary:
+    return ComponentCapitalSummary(
         component=component,
         package_name=package_name or f"frtb-{component.value.lower()}",
         run_id=run_id or f"orchestration-{component.value.lower()}-run",

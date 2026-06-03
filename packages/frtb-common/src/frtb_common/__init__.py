@@ -7,15 +7,15 @@ from frtb_common.arrow_conversion import (
     arrow_float64_array,
     arrow_float64_array_with_nulls,
     arrow_object_array,
+    read_arrow_columns,
     read_handoff_columns,
 )
-from frtb_common.attribution import (
-    AttributionMethod,
-    CapitalContribution,
-)
+from frtb_common.attribution import AttributionMethod, CapitalContribution
 from frtb_common.component_handoff import (
+    ComponentCapitalSummary,
     ComponentHandoffError,
     ComponentResultHandoff,
+    ComponentSummaryError,
     StandardisedComponent,
 )
 from frtb_common.crif import (
@@ -39,6 +39,8 @@ from frtb_common.handoff import (
     ColumnSpec,
     DiagnosticSeverity,
     DictionaryPolicy,
+    NormalizedArrowTable,
+    NormalizedTableError,
     NormalizedTabularHandoff,
     NullPolicy,
     TabularHandoffError,
@@ -47,6 +49,7 @@ from frtb_common.handoff import (
     dictionary_code_chunks,
     dictionary_code_column,
     normalize_arrow_table,
+    normalized_arrow_table_hash,
     normalized_handoff_hash,
     resolve_column_name,
     sort_table_by_columns,
@@ -57,6 +60,8 @@ from frtb_common.handoff import (
 from frtb_common.handoff_schema import (
     arrow_schema_to_dict,
     column_spec_to_json_schema,
+    column_specs_to_arrow_schema,
+    column_specs_to_json_schema,
     handoff_specs_to_arrow_schema,
     handoff_specs_to_json_schema,
 )
@@ -91,8 +96,10 @@ __all__ = [
     "CapitalContribution",
     "ChunkPolicy",
     "ColumnSpec",
+    "ComponentCapitalSummary",
     "ComponentHandoffError",
     "ComponentResultHandoff",
+    "ComponentSummaryError",
     "CrifColumnSpec",
     "CrifRiskTypeMapper",
     "CrifRiskTypeMapping",
@@ -100,6 +107,8 @@ __all__ = [
     "DictionaryPolicy",
     "ImplementationStatus",
     "MissingRegulatoryCitationsError",
+    "NormalizedArrowTable",
+    "NormalizedTableError",
     "NormalizedTabularHandoff",
     "NotImplementedCapitalComponentError",
     "NullPolicy",
@@ -118,6 +127,8 @@ __all__ = [
     "arrow_table_content_hash",
     "assert_policy_has_regulatory_citations",
     "column_spec_to_json_schema",
+    "column_specs_to_arrow_schema",
+    "column_specs_to_json_schema",
     "crif_records_to_arrow_table",
     "dictionary_code_chunks",
     "dictionary_code_column",
@@ -129,7 +140,9 @@ __all__ = [
     "normalize_arrow_table",
     "normalize_crif_arrow_table",
     "normalize_crif_records",
+    "normalized_arrow_table_hash",
     "normalized_handoff_hash",
+    "read_arrow_columns",
     "read_handoff_columns",
     "require_sha256_hex",
     "resolve_column_name",

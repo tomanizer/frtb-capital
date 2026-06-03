@@ -27,9 +27,9 @@ from frtb_drc import (
     DrcRiskClass,
     DrcSeniority,
     DrcSourceLineage,
-    build_drc_ctp_batch_from_handoff,
-    build_drc_nonsec_batch_from_handoff,
-    build_drc_securitisation_non_ctp_batch_from_handoff,
+    build_drc_ctp_batch_from_arrow,
+    build_drc_nonsec_batch_from_arrow,
+    build_drc_securitisation_non_ctp_batch_from_arrow,
     calculate_drc_capital,
     calculate_drc_capital_from_batch,
     normalize_drc_ctp_arrow_table,
@@ -90,7 +90,7 @@ def run_benchmark(config: DrcBenchmarkConfig) -> dict[str, object]:
             source_hash=source_content_hash("synthetic drc batch benchmark"),
         )
     )
-    batch = _timed(lambda: build_drc_nonsec_batch_from_handoff(handoff.value))
+    batch = _timed(lambda: build_drc_nonsec_batch_from_arrow(handoff.value))
     batch_result = _timed(
         lambda: calculate_drc_capital_from_batch(batch.value, context=_context(config))
     )
@@ -250,7 +250,7 @@ def _run_securitisation_non_ctp_case(config: DrcBenchmarkConfig) -> dict[str, ob
         securitisation_non_ctp_risk_weights={position.position_id: 0.2 for position in positions},
     )
     row_result = calculate_drc_capital(positions, context=context)
-    batch = build_drc_securitisation_non_ctp_batch_from_handoff(
+    batch = build_drc_securitisation_non_ctp_batch_from_arrow(
         normalize_drc_securitisation_non_ctp_arrow_table(
             _arrow_table_from_positions(positions),
             source_hash=source_content_hash("synthetic drc sec non-ctp benchmark"),
@@ -279,7 +279,7 @@ def _run_ctp_case(config: DrcBenchmarkConfig) -> dict[str, object]:
         ctp_risk_weights={position.position_id: 0.2 for position in positions},
     )
     row_result = calculate_drc_capital(positions, context=context)
-    batch = build_drc_ctp_batch_from_handoff(
+    batch = build_drc_ctp_batch_from_arrow(
         normalize_drc_ctp_arrow_table(
             _arrow_table_from_positions(positions),
             source_hash=source_content_hash("synthetic drc ctp benchmark"),

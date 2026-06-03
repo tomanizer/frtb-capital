@@ -1,8 +1,8 @@
 """Standardised Approach component composition.
 
 Orchestration owns SA composition but never imports component packages. It
-consumes the shared :class:`frtb_common.ComponentResultHandoff` shape that each
-SA component projects via its own ``to_orchestration_handoff`` adapter. This
+consumes the shared :class:`frtb_common.ComponentCapitalSummary` shape that each
+SA component projects via its own ``to_component_summary`` adapter. This
 keeps orchestration decoupled from component-internal result fields and avoids
 any sibling capital-package import.
 """
@@ -10,12 +10,13 @@ any sibling capital-package import.
 from __future__ import annotations
 
 import math
+import warnings
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 
 from frtb_common import (
-    ComponentResultHandoff,
+    ComponentCapitalSummary,
     NotImplementedCapitalComponentError,
     StandardisedComponent,
 )
@@ -40,7 +41,7 @@ _SA_FALLBACK_REASON_CODE = "ima_desk_not_model_eligible"
 
 
 class OrchestrationInputError(ValueError):
-    """Raised when a component handoff cannot be consumed by orchestration."""
+    """Raised when a component summary cannot be consumed by orchestration."""
 
     def __init__(self, message: str, *, field: str = "") -> None:
         self.field = field
@@ -49,7 +50,7 @@ class OrchestrationInputError(ValueError):
 
 @dataclass(frozen=True)
 class StandardisedComponentSubtotal:
-    """Audit-ready subtotal contributed by one SA component handoff."""
+    """Audit-ready subtotal contributed by one SA component summary."""
 
     component: StandardisedComponent
     package_name: str
@@ -83,19 +84,30 @@ class StandardisedComponentSubtotal:
         _require_non_negative_int(self.subtotal_count, "subtotal_count")
 
     @classmethod
-    def from_handoff(cls, handoff: ComponentResultHandoff) -> StandardisedComponentSubtotal:
+    def from_summary(cls, summary: ComponentCapitalSummary) -> StandardisedComponentSubtotal:
         return cls(
-            component=handoff.component,
-            package_name=handoff.package_name,
-            run_id=handoff.run_id,
-            profile_id=handoff.profile_id,
-            profile_hash=handoff.profile_hash,
-            input_hash=handoff.input_hash,
-            total_capital=handoff.total_capital,
-            line_count=handoff.line_count,
-            excluded_line_count=handoff.excluded_line_count,
-            subtotal_count=handoff.subtotal_count,
+            component=summary.component,
+            package_name=summary.package_name,
+            run_id=summary.run_id,
+            profile_id=summary.profile_id,
+            profile_hash=summary.profile_hash,
+            input_hash=summary.input_hash,
+            total_capital=summary.total_capital,
+            line_count=summary.line_count,
+            excluded_line_count=summary.excluded_line_count,
+            subtotal_count=summary.subtotal_count,
         )
+
+    @classmethod
+    def from_handoff(cls, handoff: ComponentCapitalSummary) -> StandardisedComponentSubtotal:
+        """Deprecated alias for :meth:`from_summary`."""
+
+        warnings.warn(
+            "StandardisedComponentSubtotal.from_handoff is deprecated; use from_summary",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.from_summary(handoff)
 
     def as_dict(self) -> dict[str, object]:
         """Return a deterministic audit payload for this component subtotal."""
@@ -219,16 +231,19 @@ class StandardisedApproachCapitalResult:
 
 def compose_standardised_approach_capital(
     *,
-    sbm_handoff: ComponentResultHandoff | None = None,
-    drc_handoff: ComponentResultHandoff | None = None,
-    rrao_handoff: ComponentResultHandoff | None = None,
+    sbm_summary: ComponentCapitalSummary | None = None,
+    drc_summary: ComponentCapitalSummary | None = None,
+    rrao_summary: ComponentCapitalSummary | None = None,
+    sbm_handoff: ComponentCapitalSummary | None = None,
+    drc_handoff: ComponentCapitalSummary | None = None,
+    rrao_handoff: ComponentCapitalSummary | None = None,
     ima_desk_eligibility: Mapping[str, object] | None = None,
     run_id: str | None = None,
 ) -> StandardisedApproachCapitalResult:
-    """Compose Standardised Approach capital from SBM, DRC, and RRAO handoffs.
+    """Compose Standardised Approach capital from SBM, DRC, and RRAO summaries.
 
-    Each argument is the shared ``ComponentResultHandoff`` produced by the
-    owning package's ``to_orchestration_handoff`` adapter. The function validates
+    Each argument is the shared ``ComponentCapitalSummary`` produced by the
+    owning package's ``to_component_summary`` adapter. The function validates
     component slots, regulatory jurisdiction family (ADR 0022), calculation
     date, and base currency before applying the additive SA formula:
     ``SBM + DRC + RRAO``.
@@ -239,59 +254,36 @@ def compose_standardised_approach_capital(
     without importing ``frtb_ima``.
     """
 
-    _require_component(rrao_handoff, StandardisedComponent.RRAO, "rrao_handoff")
-    _require_component(drc_handoff, StandardisedComponent.DRC, "drc_handoff")
-    _require_component(sbm_handoff, StandardisedComponent.SBM, "sbm_handoff")
-
-    handoffs = [
-        handoff for handoff in (rrao_handoff, drc_handoff, sbm_handoff) if handoff is not None
-    ]
-    _assert_consistent_jurisdiction(handoffs)
-
-    missing = _missing_standardised_components(
+    required_summaries = _resolve_required_standardised_summaries(
+        sbm_summary=sbm_summary,
+        drc_summary=drc_summary,
+        rrao_summary=rrao_summary,
         sbm_handoff=sbm_handoff,
         drc_handoff=drc_handoff,
         rrao_handoff=rrao_handoff,
     )
-    if missing:
-        raise NotImplementedCapitalComponentError(
-            component="frtb-orchestration",
-            feature=(
-                "standardised approach aggregation; missing required component "
-                f"outputs: {', '.join(component.value for component in missing)}"
-            ),
-        )
-
-    assert sbm_handoff is not None
-    assert drc_handoff is not None
-    assert rrao_handoff is not None
-    required_handoffs = (sbm_handoff, drc_handoff, rrao_handoff)
-    _assert_consistent_run_context(required_handoffs)
-    for handoff in required_handoffs:
-        _assert_non_negative_component_capital(handoff)
-
-    total_capital = math.fsum(handoff.total_capital for handoff in required_handoffs)
+    total_capital = math.fsum(summary.total_capital for summary in required_summaries)
     if not math.isfinite(total_capital):
         raise OrchestrationInputError(
             "SA total capital must be finite after component aggregation",
             field="total_capital",
         )
 
-    jurisdiction_family = _jurisdiction_family(required_handoffs[0])
+    jurisdiction_family = _jurisdiction_family(required_summaries[0])
     component_subtotals = tuple(
-        StandardisedComponentSubtotal.from_handoff(handoff) for handoff in required_handoffs
+        StandardisedComponentSubtotal.from_summary(summary) for summary in required_summaries
     )
     fallback_routes = _normalise_fallback_routes(ima_desk_eligibility)
     citations = _unique_texts(
-        citation for handoff in required_handoffs for citation in handoff.citations
+        citation for summary in required_summaries for citation in summary.citations
     )
     warnings = _unique_texts(
-        warning for handoff in required_handoffs for warning in handoff.warnings
+        warning for summary in required_summaries for warning in summary.warnings
     )
     return StandardisedApproachCapitalResult(
-        run_id=_normalise_result_run_id(run_id, required_handoffs),
-        calculation_date=required_handoffs[0].calculation_date,
-        base_currency=required_handoffs[0].base_currency,
+        run_id=_normalise_result_run_id(run_id, required_summaries),
+        calculation_date=required_summaries[0].calculation_date,
+        base_currency=required_summaries[0].base_currency,
         jurisdiction_family=jurisdiction_family,
         total_capital=total_capital,
         component_subtotals=component_subtotals,
@@ -314,27 +306,117 @@ def standardised_jurisdiction_family(profile_id: str) -> str:
     return family
 
 
+def _resolve_required_standardised_summaries(
+    *,
+    sbm_summary: ComponentCapitalSummary | None,
+    drc_summary: ComponentCapitalSummary | None,
+    rrao_summary: ComponentCapitalSummary | None,
+    sbm_handoff: ComponentCapitalSummary | None,
+    drc_handoff: ComponentCapitalSummary | None,
+    rrao_handoff: ComponentCapitalSummary | None,
+) -> tuple[ComponentCapitalSummary, ComponentCapitalSummary, ComponentCapitalSummary]:
+    sbm_summary, drc_summary, rrao_summary = _coalesce_standardised_summaries(
+        sbm_summary=sbm_summary,
+        drc_summary=drc_summary,
+        rrao_summary=rrao_summary,
+        sbm_handoff=sbm_handoff,
+        drc_handoff=drc_handoff,
+        rrao_handoff=rrao_handoff,
+    )
+    _require_component(rrao_summary, StandardisedComponent.RRAO, "rrao_summary")
+    _require_component(drc_summary, StandardisedComponent.DRC, "drc_summary")
+    _require_component(sbm_summary, StandardisedComponent.SBM, "sbm_summary")
+
+    summaries = [
+        summary for summary in (rrao_summary, drc_summary, sbm_summary) if summary is not None
+    ]
+    _assert_consistent_jurisdiction(summaries)
+    missing = _missing_standardised_components(
+        sbm_summary=sbm_summary,
+        drc_summary=drc_summary,
+        rrao_summary=rrao_summary,
+    )
+    if missing:
+        raise NotImplementedCapitalComponentError(
+            component="frtb-orchestration",
+            feature=(
+                "standardised approach aggregation; missing required component "
+                f"outputs: {', '.join(component.value for component in missing)}"
+            ),
+        )
+
+    assert sbm_summary is not None
+    assert drc_summary is not None
+    assert rrao_summary is not None
+    required_summaries = (sbm_summary, drc_summary, rrao_summary)
+    _assert_consistent_run_context(required_summaries)
+    for summary in required_summaries:
+        _assert_non_negative_component_capital(summary)
+    return required_summaries
+
+
 def _require_component(
-    handoff: ComponentResultHandoff | None,
+    summary: ComponentCapitalSummary | None,
     expected: StandardisedComponent,
     param_name: str,
 ) -> None:
-    if handoff is None:
+    if summary is None:
         return
-    if not isinstance(handoff, ComponentResultHandoff):
+    if not isinstance(summary, ComponentCapitalSummary):
         raise OrchestrationInputError(
-            f"{param_name} must be a frtb_common.ComponentResultHandoff",
+            f"{param_name} must be a frtb_common.ComponentCapitalSummary",
             field=param_name,
         )
-    if handoff.component is not expected:
+    if summary.component is not expected:
         raise OrchestrationInputError(
-            f"{param_name} carries a {handoff.component.value} handoff but "
+            f"{param_name} carries a {summary.component.value} summary but "
             f"{expected.value} was expected",
             field=param_name,
         )
 
 
-def _assert_consistent_jurisdiction(handoffs: Sequence[ComponentResultHandoff]) -> None:
+def _coalesce_summary_keyword(
+    new_name: str,
+    new_value: ComponentCapitalSummary | None,
+    old_name: str,
+    old_value: ComponentCapitalSummary | None,
+) -> ComponentCapitalSummary | None:
+    if old_value is None:
+        return new_value
+    if new_value is not None:
+        raise OrchestrationInputError(
+            f"{new_name} and deprecated {old_name} cannot both be supplied",
+            field=new_name,
+        )
+    warnings.warn(
+        f"{old_name} is deprecated; use {new_name}",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+    return old_value
+
+
+def _coalesce_standardised_summaries(
+    *,
+    sbm_summary: ComponentCapitalSummary | None,
+    drc_summary: ComponentCapitalSummary | None,
+    rrao_summary: ComponentCapitalSummary | None,
+    sbm_handoff: ComponentCapitalSummary | None,
+    drc_handoff: ComponentCapitalSummary | None,
+    rrao_handoff: ComponentCapitalSummary | None,
+) -> tuple[
+    ComponentCapitalSummary | None,
+    ComponentCapitalSummary | None,
+    ComponentCapitalSummary | None,
+]:
+    return (
+        _coalesce_summary_keyword("sbm_summary", sbm_summary, "sbm_handoff", sbm_handoff),
+        _coalesce_summary_keyword("drc_summary", drc_summary, "drc_handoff", drc_handoff),
+        _coalesce_summary_keyword("rrao_summary", rrao_summary, "rrao_handoff", rrao_handoff),
+    )
+
+
+def _assert_consistent_jurisdiction(handoffs: Sequence[ComponentCapitalSummary]) -> None:
     """Raise OrchestrationInputError when supplied components span multiple jurisdictions."""
 
     families: dict[StandardisedComponent, tuple[str, str]] = {}
@@ -359,21 +441,21 @@ def _assert_consistent_jurisdiction(handoffs: Sequence[ComponentResultHandoff]) 
 
 def _missing_standardised_components(
     *,
-    sbm_handoff: ComponentResultHandoff | None,
-    drc_handoff: ComponentResultHandoff | None,
-    rrao_handoff: ComponentResultHandoff | None,
+    sbm_summary: ComponentCapitalSummary | None,
+    drc_summary: ComponentCapitalSummary | None,
+    rrao_summary: ComponentCapitalSummary | None,
 ) -> tuple[StandardisedComponent, ...]:
     missing: list[StandardisedComponent] = []
-    if sbm_handoff is None:
+    if sbm_summary is None:
         missing.append(StandardisedComponent.SBM)
-    if drc_handoff is None:
+    if drc_summary is None:
         missing.append(StandardisedComponent.DRC)
-    if rrao_handoff is None:
+    if rrao_summary is None:
         missing.append(StandardisedComponent.RRAO)
     return tuple(missing)
 
 
-def _jurisdiction_family(handoff: ComponentResultHandoff) -> str:
+def _jurisdiction_family(handoff: ComponentCapitalSummary) -> str:
     try:
         return standardised_jurisdiction_family(handoff.profile_id)
     except OrchestrationInputError as exc:
@@ -384,7 +466,7 @@ def _jurisdiction_family(handoff: ComponentResultHandoff) -> str:
         ) from exc
 
 
-def _assert_consistent_run_context(handoffs: Sequence[ComponentResultHandoff]) -> None:
+def _assert_consistent_run_context(handoffs: Sequence[ComponentCapitalSummary]) -> None:
     calculation_dates = {handoff.calculation_date for handoff in handoffs}
     if len(calculation_dates) > 1:
         detail = _context_detail(handoffs, "calculation_date")
@@ -403,7 +485,7 @@ def _assert_consistent_run_context(handoffs: Sequence[ComponentResultHandoff]) -
         )
 
 
-def _assert_non_negative_component_capital(handoff: ComponentResultHandoff) -> None:
+def _assert_non_negative_component_capital(handoff: ComponentCapitalSummary) -> None:
     if handoff.total_capital < 0.0:
         raise OrchestrationInputError(
             f"{handoff.component.value} total_capital must be non-negative for SA composition",
@@ -413,7 +495,7 @@ def _assert_non_negative_component_capital(handoff: ComponentResultHandoff) -> N
 
 def _normalise_result_run_id(
     run_id: str | None,
-    handoffs: Sequence[ComponentResultHandoff],
+    handoffs: Sequence[ComponentCapitalSummary],
 ) -> str:
     if run_id is None:
         return _default_sa_run_id(handoffs)
@@ -421,14 +503,14 @@ def _normalise_result_run_id(
     return run_id
 
 
-def _context_detail(handoffs: Sequence[ComponentResultHandoff], field: str) -> str:
+def _context_detail(handoffs: Sequence[ComponentCapitalSummary], field: str) -> str:
     return ", ".join(
         f"{handoff.component.value}={getattr(handoff, field)!r}"
         for handoff in sorted(handoffs, key=lambda item: item.component)
     )
 
 
-def _default_sa_run_id(handoffs: Sequence[ComponentResultHandoff]) -> str:
+def _default_sa_run_id(handoffs: Sequence[ComponentCapitalSummary]) -> str:
     return "sa:" + ":".join(handoff.run_id for handoff in handoffs)
 
 

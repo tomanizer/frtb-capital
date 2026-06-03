@@ -10,7 +10,9 @@ from frtb_rrao.allocation import (
     validate_rrao_allocation_report,
 )
 from frtb_rrao.arrow_handoff import (
+    RRAO_ARROW_COLUMN_SPECS,
     RRAO_HANDOFF_COLUMN_SPECS,
+    build_rrao_batch_from_arrow,
     build_rrao_batch_from_handoff,
     normalize_rrao_arrow_table,
 )
@@ -57,7 +59,7 @@ from frtb_rrao.data_models import (
     RraoSourceLineage,
     RraoSubtotal,
 )
-from frtb_rrao.handoff import to_orchestration_handoff
+from frtb_rrao.handoff import to_component_summary, to_orchestration_handoff
 from frtb_rrao.regimes import (
     RraoRuleProfile,
     get_rrao_rule_profile,
@@ -70,6 +72,7 @@ from frtb_rrao.validation import (
 
 __all__ = [
     "PACKAGE_METADATA",
+    "RRAO_ARROW_COLUMN_SPECS",
     "RRAO_HANDOFF_COLUMN_SPECS",
     "SUPPORTED_RRAO_ALLOCATION_DIMENSIONS",
     "RraoAdapterResult",
@@ -104,6 +107,7 @@ __all__ = [
     "adapt_rrao_records",
     "build_rrao_allocation_report",
     "build_rrao_allocation_reports",
+    "build_rrao_batch_from_arrow",
     "build_rrao_batch_from_columns",
     "build_rrao_batch_from_handoff",
     "build_rrao_batch_from_positions",
@@ -118,6 +122,7 @@ __all__ = [
     "resolve_rrao_allocation_dimension",
     "serialize_rrao_allocation_report",
     "serialize_rrao_result",
+    "to_component_summary",
     "to_orchestration_handoff",
     "validate_rrao_allocation_report",
     "validate_rrao_positions",

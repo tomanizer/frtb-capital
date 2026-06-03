@@ -27,12 +27,12 @@ from frtb_sbm import (
     weight_csr_sec_ctp_delta_sensitivity_batch,
 )
 from frtb_sbm.arrow_handoff import (
-    build_csr_nonsec_delta_batch_from_handoff,
-    build_csr_sec_ctp_delta_batch_from_handoff,
-    build_csr_sec_nonctp_delta_batch_from_handoff,
-    calculate_sbm_capital_from_csr_nonsec_delta_handoff,
-    calculate_sbm_capital_from_csr_sec_ctp_delta_handoff,
-    calculate_sbm_capital_from_csr_sec_nonctp_delta_handoff,
+    build_csr_nonsec_delta_batch_from_arrow,
+    build_csr_sec_ctp_delta_batch_from_arrow,
+    build_csr_sec_nonctp_delta_batch_from_arrow,
+    calculate_sbm_capital_from_csr_nonsec_delta_arrow,
+    calculate_sbm_capital_from_csr_sec_ctp_delta_arrow,
+    calculate_sbm_capital_from_csr_sec_nonctp_delta_arrow,
     normalize_csr_nonsec_delta_arrow_table,
     normalize_csr_sec_ctp_delta_arrow_table,
     normalize_csr_sec_nonctp_delta_arrow_table,
@@ -256,12 +256,12 @@ def test_csr_nonsec_delta_batch_and_handoff_match_row_capital() -> None:
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_csr_nonsec_delta_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_csr_nonsec_delta_batch_from_handoff(handoff)
+    arrow_batch = build_csr_nonsec_delta_batch_from_arrow(handoff)
     batch_result = calculate_sbm_capital_from_csr_nonsec_delta_batch(
         arrow_batch,
         context=context,
     )
-    handoff_result = calculate_sbm_capital_from_csr_nonsec_delta_handoff(
+    handoff_result = calculate_sbm_capital_from_csr_nonsec_delta_arrow(
         handoff,
         context=context,
     )
@@ -286,12 +286,12 @@ def test_csr_sec_nonctp_delta_batch_and_handoff_match_row_capital() -> None:
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_csr_sec_nonctp_delta_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_csr_sec_nonctp_delta_batch_from_handoff(handoff)
+    arrow_batch = build_csr_sec_nonctp_delta_batch_from_arrow(handoff)
     batch_result = calculate_sbm_capital_from_csr_sec_nonctp_delta_batch(
         arrow_batch,
         context=context,
     )
-    handoff_result = calculate_sbm_capital_from_csr_sec_nonctp_delta_handoff(
+    handoff_result = calculate_sbm_capital_from_csr_sec_nonctp_delta_arrow(
         handoff,
         context=context,
     )
@@ -313,12 +313,12 @@ def test_csr_sec_ctp_delta_batch_and_handoff_match_row_capital() -> None:
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_csr_sec_ctp_delta_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_csr_sec_ctp_delta_batch_from_handoff(handoff)
+    arrow_batch = build_csr_sec_ctp_delta_batch_from_arrow(handoff)
     batch_result = calculate_sbm_capital_from_csr_sec_ctp_delta_batch(
         arrow_batch,
         context=context,
     )
-    handoff_result = calculate_sbm_capital_from_csr_sec_ctp_delta_handoff(
+    handoff_result = calculate_sbm_capital_from_csr_sec_ctp_delta_arrow(
         handoff,
         context=context,
     )

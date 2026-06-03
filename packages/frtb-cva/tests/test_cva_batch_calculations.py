@@ -19,14 +19,14 @@ from frtb_cva import (
     CvaSector,
     HedgeEligibility,
     HedgeReferenceRelation,
+    build_cva_counterparty_batch_from_arrow,
     build_cva_counterparty_batch_from_columns,
-    build_cva_counterparty_batch_from_handoff,
+    build_cva_hedge_batch_from_arrow,
     build_cva_hedge_batch_from_columns,
-    build_cva_hedge_batch_from_handoff,
+    build_cva_netting_set_batch_from_arrow,
     build_cva_netting_set_batch_from_columns,
-    build_cva_netting_set_batch_from_handoff,
+    build_sa_cva_sensitivity_batch_from_arrow,
     build_sa_cva_sensitivity_batch_from_columns,
-    build_sa_cva_sensitivity_batch_from_handoff,
     calculate_cva_capital_from_batches,
     calculate_full_portfolio,
     calculate_reduced_portfolio,
@@ -605,14 +605,14 @@ def test_sa_cva_no_eligible_sensitivities() -> None:
 
 
 def test_arrow_handoff_wrong_instance_rejections() -> None:
-    with pytest.raises(CvaInputError, match="handoff must be NormalizedTabularHandoff"):
-        build_cva_counterparty_batch_from_handoff(object())  # type: ignore[arg-type]
-    with pytest.raises(CvaInputError, match="handoff must be NormalizedTabularHandoff"):
-        build_cva_netting_set_batch_from_handoff(object())  # type: ignore[arg-type]
-    with pytest.raises(CvaInputError, match="handoff must be NormalizedTabularHandoff"):
-        build_cva_hedge_batch_from_handoff(object())  # type: ignore[arg-type]
-    with pytest.raises(CvaInputError, match="handoff must be NormalizedTabularHandoff"):
-        build_sa_cva_sensitivity_batch_from_handoff(object())  # type: ignore[arg-type]
+    with pytest.raises(CvaInputError, match="handoff must be NormalizedArrowTable"):
+        build_cva_counterparty_batch_from_arrow(object())  # type: ignore[arg-type]
+    with pytest.raises(CvaInputError, match="handoff must be NormalizedArrowTable"):
+        build_cva_netting_set_batch_from_arrow(object())  # type: ignore[arg-type]
+    with pytest.raises(CvaInputError, match="handoff must be NormalizedArrowTable"):
+        build_cva_hedge_batch_from_arrow(object())  # type: ignore[arg-type]
+    with pytest.raises(CvaInputError, match="handoff must be NormalizedArrowTable"):
+        build_sa_cva_sensitivity_batch_from_arrow(object())  # type: ignore[arg-type]
 
 
 def test_arrow_handoff_chunked_dictionary_and_arrays() -> None:
@@ -635,7 +635,7 @@ def test_arrow_handoff_chunked_dictionary_and_arrays() -> None:
         }
     )
     handoff = normalize_cva_netting_set_arrow_table(table)
-    batch = build_cva_netting_set_batch_from_handoff(handoff)
+    batch = build_cva_netting_set_batch_from_arrow(handoff)
     assert batch.eads[0] == 100000.0
 
     # Test dictionary / integer array conversions in arrow_handoff.py
@@ -661,7 +661,7 @@ def test_arrow_handoff_chunked_dictionary_and_arrays() -> None:
     assert handoff_bad.rejected is rejected_table
     assert len(handoff_bad.rejected) == 1
 
-    batch_bad = build_cva_netting_set_batch_from_handoff(handoff_bad)
+    batch_bad = build_cva_netting_set_batch_from_arrow(handoff_bad)
     assert not batch_bad.uses_imm_eads[0]
 
 

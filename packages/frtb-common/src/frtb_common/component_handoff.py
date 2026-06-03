@@ -1,8 +1,8 @@
-"""Shared standardised-component orchestration handoff contract.
+"""Shared standardised-component summary contract.
 
 Each Standardised Approach component package (`frtb-sbm`, `frtb-drc`,
 `frtb-rrao`) projects its rich public capital result down to this small, stable
-shape via its own ``to_orchestration_handoff`` adapter. ``frtb-orchestration``
+shape via its own ``to_component_summary`` adapter. ``frtb-orchestration``
 consumes only this shape, so it never couples to component-internal result
 fields and no component package needs to depend on orchestration.
 
@@ -19,14 +19,16 @@ from datetime import date
 from enum import StrEnum
 
 __all__ = [
+    "ComponentCapitalSummary",
     "ComponentHandoffError",
     "ComponentResultHandoff",
+    "ComponentSummaryError",
     "StandardisedComponent",
 ]
 
 
-class ComponentHandoffError(ValueError):
-    """Raised when a component handoff violates the shared contract."""
+class ComponentSummaryError(ValueError):
+    """Raised when a component summary violates the shared contract."""
 
     def __init__(self, message: str, *, field: str = "") -> None:
         self.field = field
@@ -42,7 +44,7 @@ class StandardisedComponent(StrEnum):
 
 
 @dataclass(frozen=True)
-class ComponentResultHandoff:
+class ComponentCapitalSummary:
     """Stable, package-neutral view of one SA component capital result.
 
     Sign convention: ``total_capital`` is a non-negative capital charge in
@@ -72,13 +74,13 @@ class ComponentResultHandoff:
 
     def __post_init__(self) -> None:
         if not isinstance(self.component, StandardisedComponent):
-            raise ComponentHandoffError(
+            raise ComponentSummaryError(
                 "component must be a StandardisedComponent", field="component"
             )
         _require_non_empty_text(self.package_name, "package_name")
         _require_non_empty_text(self.run_id, "run_id")
         if not isinstance(self.calculation_date, date):
-            raise ComponentHandoffError("calculation_date must be a date", field="calculation_date")
+            raise ComponentSummaryError("calculation_date must be a date", field="calculation_date")
         _require_non_empty_text(self.base_currency, "base_currency")
         _require_non_empty_text(self.profile_id, "profile_id")
         _require_non_empty_text(self.profile_hash, "profile_hash")
@@ -95,24 +97,28 @@ class ComponentResultHandoff:
 
 def _require_non_empty_text(value: object, field: str) -> None:
     if not isinstance(value, str) or not value:
-        raise ComponentHandoffError(f"{field} must be non-empty text", field=field)
+        raise ComponentSummaryError(f"{field} must be non-empty text", field=field)
 
 
 def _require_finite_number(value: object, field: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ComponentHandoffError(f"{field} must be numeric", field=field)
+        raise ComponentSummaryError(f"{field} must be numeric", field=field)
     number = float(value)
     if not math.isfinite(number):
-        raise ComponentHandoffError(f"{field} must be finite", field=field)
+        raise ComponentSummaryError(f"{field} must be finite", field=field)
     return number
 
 
 def _require_non_negative_int(value: object, field: str) -> None:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-        raise ComponentHandoffError(f"{field} must be a non-negative integer", field=field)
+        raise ComponentSummaryError(f"{field} must be a non-negative integer", field=field)
 
 
 def _require_text_tuple(value: object, field: str) -> tuple[str, ...]:
     if not isinstance(value, tuple) or not all(isinstance(item, str) for item in value):
-        raise ComponentHandoffError(f"{field} must be a tuple of text values", field=field)
+        raise ComponentSummaryError(f"{field} must be a tuple of text values", field=field)
     return value
+
+
+ComponentHandoffError = ComponentSummaryError
+ComponentResultHandoff = ComponentCapitalSummary

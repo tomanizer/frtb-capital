@@ -100,7 +100,7 @@ is produced.
 
 High-volume tabular lineage can enter the package through
 `normalize_ima_input_manifest_arrow_table(...)` and
-`build_capital_run_input_manifest_from_handoff(...)`. This Arrow handoff is for
+`build_capital_run_input_manifest_from_arrow(...)`. This Arrow handoff is for
 artifact-lineage rows only: it carries artifact identity, source system/version,
 extraction timestamp, as-of date, counts, checksum, sign convention, validation
 status, optional validation messages, optional row metadata, and optional source

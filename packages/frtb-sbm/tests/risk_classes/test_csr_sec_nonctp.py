@@ -20,7 +20,7 @@ from frtb_sbm.csr_sec_ctp_reference_data import (
     CSR_SEC_CTP_DECOMPOSITION_EVIDENCE_FLAG,
     CSR_SEC_CTP_DECOMPOSITION_REQUIRED_FLAG,
 )
-from frtb_sbm.handoff import to_orchestration_handoff
+from frtb_sbm.handoff import to_component_summary
 
 
 def sample_lineage(row_id: str = "row-001") -> SbmSourceLineage:
@@ -161,7 +161,7 @@ def test_orchestration_handoff_view_exposes_shared_contract() -> None:
         (sample_nonctp_sensitivity(),),
         context=sample_context(),
     )
-    handoff = to_orchestration_handoff(result)
+    handoff = to_component_summary(result)
 
     assert handoff.component is StandardisedComponent.SBM
     assert handoff.package_name == "frtb-sbm"
@@ -178,4 +178,4 @@ def test_orchestration_handoff_requires_run_context() -> None:
     without_context = replace(result, run_context=None)
 
     with pytest.raises(SbmInputError, match="run_context is required"):
-        to_orchestration_handoff(without_context)
+        to_component_summary(without_context)

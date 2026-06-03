@@ -70,6 +70,6 @@ future artifact.
 - [ADR 0012: Capital impact and attribution readiness](../../decisions/0012-capital-impact-attribution.md)
 - [ADR 0027: DRC CTP row path](../../decisions/0027-drc-ctp-row-path.md)
 - [ADR 0028: DRC securitisation non-CTP row path](../../decisions/0028-drc-securitisation-non-ctp-row-path.md)
-- [ADR 0029: DRC securitisation and CTP risk-weight evidence contract](../../decisions/0029-drc-securitisation-risk-weight-evidence.md)
+- [ADR 0036: DRC securitisation and CTP risk-weight evidence contract](../../decisions/0036-drc-securitisation-risk-weight-evidence.md)
 - [ADR 0030: DRC securitisation fair-value cap evidence](../../decisions/0030-drc-securitisation-fair-value-cap-evidence.md)
 - [ADR 0031: DRC attribution method contract](../../decisions/0031-drc-attribution-method-contract.md)

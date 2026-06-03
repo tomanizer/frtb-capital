@@ -8,7 +8,7 @@ Use this fragment when adding or refreshing a package `PUBLIC_API.md`.
 
 | Tier | Client input | Package path | Notes |
 | --- | --- | --- | --- |
-| 1 - Arrow/Parquet handoff | Tables matching `*_HANDOFF_COLUMN_SPECS` | `normalize_*_arrow_table` -> `build_*_batch_from_handoff` -> `calculate_*_from_batch` | Recommended production path. |
+| 1 - Arrow/Parquet handoff | Tables matching `*_ARROW_COLUMN_SPECS` | `normalize_*_arrow_table` -> `build_*_batch_from_handoff` -> `calculate_*_from_batch` | Recommended production path. |
 | 2 - CRIF/vendor rows | Iterable mapping rows | `adapt_crif_records` / `adapt_*_records` -> Tier 1 or Tier 3 | Use when upstream already emits vendor or CRIF-shaped rows. |
 | 3 - Canonical dataclasses | Package row dataclasses | `calculate_*_capital` | Notebooks, tests, fixtures, and small books only. |
 

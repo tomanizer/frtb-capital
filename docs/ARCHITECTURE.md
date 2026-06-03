@@ -75,8 +75,8 @@ Shared primitives used by every capital component:
   content/handoff hashes.
 - Package-neutral CRIF-to-Arrow normalization in `frtb_common.crif`, with
   package-supplied RiskType mappings or callbacks.
-- `ComponentResultHandoff` — the shared standardised-component orchestration
-  handoff contract (with `StandardisedComponent` and `ComponentHandoffError`).
+- `ComponentCapitalSummary` — the shared standardised-component orchestration
+  handoff contract (with `StandardisedComponent` and `ComponentSummaryError`).
   See [`decisions/0029-unified-standardised-component-handoff-contract.md`](decisions/0029-unified-standardised-component-handoff-contract.md).
 - `jsonable` serialization for common domain values.
 - `assert_policy_has_regulatory_citations` and
@@ -163,7 +163,7 @@ cross-component floors and add-ons and produces consolidated audit records.
 
 Status: partial. Top-of-house suite aggregation still raises explicit
 unimplemented-component errors. `compose_standardised_approach_capital`
-validates shared `frtb_common.ComponentResultHandoff` inputs for SBM, DRC, and
+validates shared `frtb_common.ComponentCapitalSummary` inputs for SBM, DRC, and
 RRAO, enforces ADR 0022 jurisdiction-family consistency plus calculation-date
 and base-currency consistency, then returns the additive SA result. It can also
 record non-IMA-eligible desks as routed to the SA fallback stack from structural

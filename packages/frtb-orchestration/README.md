@@ -24,14 +24,14 @@ Current runtime support is deliberately narrow:
   available public component handoff APIs into component result handoffs, and
   records any fail-closed aggregation error explicitly in `SaManifestRunResult`;
 - `compose_standardised_approach_capital` accepts the shared
-  `frtb_common.ComponentResultHandoff` shape for SBM, DRC, and RRAO, validates
+  `frtb_common.ComponentCapitalSummary` shape for SBM, DRC, and RRAO, validates
   that each handoff is in the expected component slot, applies the ADR 0022
   jurisdiction-family guard, checks calculation date and base currency
   consistency, and returns the additive SA result `SBM + DRC + RRAO`;
 - non-IMA-eligible desks can be passed through the structural
   `ima_desk_eligibility` mapping and are recorded as routed to the Standardised
   Approach fallback stack;
-- each SA component owns its own `to_orchestration_handoff` projection into
+- each SA component owns its own `to_component_summary` projection into
   that shared contract;
 - `recognise_cva_result` summarizes the public CVA result shape into
   `CvaResultHandoff` for future top-of-house aggregation, outside SA

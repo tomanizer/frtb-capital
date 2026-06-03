@@ -29,8 +29,8 @@ from frtb_ima import (
     ScenarioSetType,
     assess_rfet_evidence,
     assess_rfet_observation_batch,
-    build_rfet_observation_batch_from_handoff,
-    build_scenario_metadata_batch_from_handoff,
+    build_rfet_observation_batch_from_arrow,
+    build_scenario_metadata_batch_from_arrow,
     get_policy,
     normalize_ima_rfet_observation_arrow_table,
     normalize_ima_scenario_metadata_arrow_table,
@@ -85,7 +85,7 @@ def run_benchmark(config: IMAArrowHandoffBenchmarkConfig) -> dict[str, object]:
         )
     )
     scenario_batch = _timed(
-        lambda: build_scenario_metadata_batch_from_handoff(scenario_handoff.value)
+        lambda: build_scenario_metadata_batch_from_arrow(scenario_handoff.value)
     )
     scenario_rows = _timed(lambda: scenario_batch.value.to_metadata())
 
@@ -96,7 +96,7 @@ def run_benchmark(config: IMAArrowHandoffBenchmarkConfig) -> dict[str, object]:
             source_hash=source_content_hash("synthetic ima rfet observation benchmark"),
         )
     )
-    rfet_batch = _timed(lambda: build_rfet_observation_batch_from_handoff(rfet_handoff.value))
+    rfet_batch = _timed(lambda: build_rfet_observation_batch_from_arrow(rfet_handoff.value))
     risk_factor = _risk_factor()
     policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
     rfet_batch_assessment = _timed(

@@ -19,11 +19,11 @@ from frtb_sbm import (
 )
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
 from frtb_sbm.arrow_handoff import (
-    calculate_sbm_capital_from_commodity_delta_handoff,
-    calculate_sbm_capital_from_csr_nonsec_delta_handoff,
-    calculate_sbm_capital_from_equity_delta_handoff,
-    calculate_sbm_capital_from_fx_delta_handoff,
-    calculate_sbm_capital_from_girr_vega_handoff,
+    calculate_sbm_capital_from_commodity_delta_arrow,
+    calculate_sbm_capital_from_csr_nonsec_delta_arrow,
+    calculate_sbm_capital_from_equity_delta_arrow,
+    calculate_sbm_capital_from_fx_delta_arrow,
+    calculate_sbm_capital_from_girr_vega_arrow,
     normalize_commodity_delta_arrow_table,
     normalize_csr_nonsec_delta_arrow_table,
     normalize_equity_delta_arrow_table,
@@ -136,7 +136,7 @@ def test_girr_vega_arrow_batch_phase_benchmark(
     ingestion_elapsed = time.perf_counter() - ingestion_started
 
     compute_started = time.perf_counter()
-    result = calculate_sbm_capital_from_girr_vega_handoff(handoff, context=context)
+    result = calculate_sbm_capital_from_girr_vega_arrow(handoff, context=context)
     compute_elapsed = time.perf_counter() - compute_started
 
     record_property("girr_vega_raw_row_count", row_count)
@@ -159,19 +159,19 @@ def test_non_credit_delta_arrow_batch_phase_benchmark(
             "fx",
             _large_fx_delta_arrow_table(240),
             normalize_fx_delta_arrow_table,
-            calculate_sbm_capital_from_fx_delta_handoff,
+            calculate_sbm_capital_from_fx_delta_arrow,
         ),
         (
             "equity",
             _large_equity_delta_arrow_table(240),
             normalize_equity_delta_arrow_table,
-            calculate_sbm_capital_from_equity_delta_handoff,
+            calculate_sbm_capital_from_equity_delta_arrow,
         ),
         (
             "commodity",
             _large_commodity_delta_arrow_table(240),
             normalize_commodity_delta_arrow_table,
-            calculate_sbm_capital_from_commodity_delta_handoff,
+            calculate_sbm_capital_from_commodity_delta_arrow,
         ),
     )
     for label, table, normalizer, calculator in cases:
@@ -220,7 +220,7 @@ def test_csr_delta_arrow_batch_phase_benchmark(
     ingestion_elapsed = time.perf_counter() - ingestion_started
 
     compute_started = time.perf_counter()
-    result = calculate_sbm_capital_from_csr_nonsec_delta_handoff(handoff, context=context)
+    result = calculate_sbm_capital_from_csr_nonsec_delta_arrow(handoff, context=context)
     compute_elapsed = time.perf_counter() - compute_started
 
     record_property("csr_nonsec_delta_raw_row_count", row_count)

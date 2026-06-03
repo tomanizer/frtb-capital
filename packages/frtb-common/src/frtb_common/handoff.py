@@ -1,4 +1,4 @@
-"""Arrow-backed normalized tabular handoff primitives.
+"""Arrow-backed normalized table primitives.
 
 This module owns package-neutral ingestion mechanics only. Capital packages own
 their regulatory meanings, package-specific batches, and NumPy kernel inputs.
@@ -7,6 +7,7 @@ their regulatory meanings, package-specific batches, and NumPy kernel inputs.
 from __future__ import annotations
 
 import hashlib
+import warnings
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -23,8 +24,8 @@ DEFAULT_ROW_ID_COLUMN = "row_id"
 SortDirection = Literal["ascending", "descending"]
 
 
-class TabularHandoffError(ValueError):
-    """Raised when a normalized tabular handoff violates shared invariants."""
+class NormalizedTableError(ValueError):
+    """Raised when a normalized Arrow table violates shared invariants."""
 
 
 class DiagnosticSeverity(StrEnum):
@@ -74,7 +75,7 @@ class DictionaryPolicy(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class ColumnSpec:
-    """Package-neutral column declaration for a normalized Arrow handoff."""
+    """Package-neutral column declaration for a normalized Arrow table."""
 
     name: str
     aliases: tuple[str, ...] = ()
@@ -90,9 +91,9 @@ class ColumnSpec:
         for alias in aliases:
             _validate_non_empty_name(alias, f"alias for {self.name!r}")
         if len(set(aliases)) != len(aliases):
-            raise TabularHandoffError(f"Column spec {self.name!r} repeats an alias")
+            raise NormalizedTableError(f"Column spec {self.name!r} repeats an alias")
         if self.name in aliases:
-            raise TabularHandoffError(f"Column spec {self.name!r} aliases itself")
+            raise NormalizedTableError(f"Column spec {self.name!r} aliases itself")
         object.__setattr__(self, "aliases", aliases)
 
     def as_dict(self) -> dict[str, object]:
@@ -140,7 +141,7 @@ class AdapterDiagnostic:
 
 
 @dataclass(frozen=True, slots=True)
-class NormalizedTabularHandoff:
+class NormalizedArrowTable:
     """Accepted/rejected Arrow tables and diagnostics after adapter normalization."""
 
     accepted: pa.Table
@@ -184,13 +185,13 @@ def normalize_arrow_table(
     metadata: Mapping[str, str] | None = None,
     source_hash: str | None = None,
     require_unique_row_ids: bool = False,
-) -> NormalizedTabularHandoff:
-    """Normalize aliases to canonical names and validate a handoff table."""
+) -> NormalizedArrowTable:
+    """Normalize aliases to canonical names and validate an Arrow table."""
 
     _require_table(table, "table")
     specs = validate_column_specs(column_specs)
     accepted = _rename_alias_columns(table, specs)
-    return NormalizedTabularHandoff(
+    return NormalizedArrowTable(
         accepted=accepted,
         column_specs=specs,
         row_id_column=row_id_column,
@@ -230,7 +231,7 @@ def validate_column_specs(column_specs: Sequence[ColumnSpec]) -> tuple[ColumnSpe
         for candidate in (spec.name, *spec.aliases):
             previous = seen.get(candidate)
             if previous is not None:
-                raise TabularHandoffError(
+                raise NormalizedTableError(
                     f"Column identifier {candidate!r} is used by both {previous!r} "
                     f"and {spec.name!r}"
                 )
@@ -244,7 +245,7 @@ def resolve_column_name(table: pa.Table, spec: ColumnSpec) -> str | None:
     _require_table(table, "table")
     matches = _matching_column_names(table, spec)
     if len(matches) > 1:
-        raise TabularHandoffError(
+        raise NormalizedTableError(
             f"Column spec {spec.name!r} matches multiple input columns: {matches!r}"
         )
     if not matches:
@@ -256,7 +257,7 @@ def dictionary_code_chunks(column: pa.ChunkedArray) -> tuple[pa.Array, ...]:
     """Return dictionary index arrays for a dictionary-encoded Arrow column."""
 
     if not _is_dictionary_column(column):
-        raise TabularHandoffError("Column is not dictionary encoded")
+        raise NormalizedTableError("Column is not dictionary encoded")
     code_chunks: list[pa.Array] = []
     for chunk in column.chunks:
         dictionary_chunk = cast(pa.DictionaryArray, chunk)
@@ -284,7 +285,7 @@ def sort_table_by_columns(
     for column_name in column_names:
         _require_existing_column(table, column_name)
     if direction not in {"ascending", "descending"}:
-        raise TabularHandoffError(f"Unsupported sort direction: {direction!r}")
+        raise NormalizedTableError(f"Unsupported sort direction: {direction!r}")
     if not column_names:
         return table
     sort_keys = [(column_name, direction) for column_name in column_names]
@@ -309,24 +310,35 @@ def arrow_table_content_hash(table: pa.Table) -> str:
     return hashlib.sha256(sink.getvalue().to_pybytes()).hexdigest()
 
 
-def normalized_handoff_hash(handoff: NormalizedTabularHandoff) -> str:
-    """Return a deterministic hash for a normalized handoff envelope."""
+def normalized_arrow_table_hash(table: NormalizedArrowTable) -> str:
+    """Return a deterministic hash for a normalized Arrow table envelope."""
 
     rejected_hash = None
-    if handoff.rejected is not None:
-        rejected_hash = arrow_table_content_hash(handoff.rejected)
+    if table.rejected is not None:
+        rejected_hash = arrow_table_content_hash(table.rejected)
 
     payload: dict[str, object] = {
-        "accepted_hash": arrow_table_content_hash(handoff.accepted),
-        "column_specs": [spec.as_dict() for spec in handoff.column_specs],
-        "diagnostics": [diagnostic.as_dict() for diagnostic in handoff.diagnostics],
-        "metadata": dict(sorted(handoff.metadata.items())),
+        "accepted_hash": arrow_table_content_hash(table.accepted),
+        "column_specs": [spec.as_dict() for spec in table.column_specs],
+        "diagnostics": [diagnostic.as_dict() for diagnostic in table.diagnostics],
+        "metadata": dict(sorted(table.metadata.items())),
         "rejected_hash": rejected_hash,
-        "require_unique_row_ids": handoff.require_unique_row_ids,
-        "row_id_column": handoff.row_id_column,
-        "source_hash": handoff.source_hash,
+        "require_unique_row_ids": table.require_unique_row_ids,
+        "row_id_column": table.row_id_column,
+        "source_hash": table.source_hash,
     }
     return stable_json_hash(payload)
+
+
+def normalized_handoff_hash(handoff: NormalizedArrowTable) -> str:
+    """Deprecated alias for :func:`normalized_arrow_table_hash`."""
+
+    warnings.warn(
+        "normalized_handoff_hash is deprecated; use normalized_arrow_table_hash",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return normalized_arrow_table_hash(handoff)
 
 
 def _validate_arrow_table(
@@ -341,7 +353,7 @@ def _validate_arrow_table(
         column = _column_for_canonical_spec(table, spec)
         if column is None:
             if spec.required:
-                raise TabularHandoffError(f"Required column {spec.name!r} is missing")
+                raise NormalizedTableError(f"Required column {spec.name!r} is missing")
             continue
         _validate_column_policy(spec, column)
 
@@ -353,15 +365,15 @@ def _validate_arrow_table(
 
 def _validate_column_policy(spec: ColumnSpec, column: pa.ChunkedArray) -> None:
     if spec.null_policy is NullPolicy.FORBID and column.null_count:
-        raise TabularHandoffError(f"Column {spec.name!r} contains nulls")
+        raise NormalizedTableError(f"Column {spec.name!r} contains nulls")
     if spec.chunk_policy is ChunkPolicy.FORBID and column.num_chunks > 1:
-        raise TabularHandoffError(f"Column {spec.name!r} contains multiple chunks")
+        raise NormalizedTableError(f"Column {spec.name!r} contains multiple chunks")
 
     is_dictionary = _is_dictionary_column(column)
     if spec.dictionary_policy is DictionaryPolicy.FORBID and is_dictionary:
-        raise TabularHandoffError(f"Column {spec.name!r} is dictionary encoded")
+        raise NormalizedTableError(f"Column {spec.name!r} is dictionary encoded")
     if spec.dictionary_policy is DictionaryPolicy.REQUIRE and not is_dictionary:
-        raise TabularHandoffError(f"Column {spec.name!r} is not dictionary encoded")
+        raise NormalizedTableError(f"Column {spec.name!r} is not dictionary encoded")
 
 
 def _rename_alias_columns(table: pa.Table, column_specs: tuple[ColumnSpec, ...]) -> pa.Table:
@@ -379,7 +391,7 @@ def _rename_alias_columns(table: pa.Table, column_specs: tuple[ColumnSpec, ...])
         rename_by_source.get(column_name, column_name) for column_name in table.column_names
     ]
     if len(set(normalized_names)) != len(normalized_names):
-        raise TabularHandoffError("Alias normalization would produce duplicate column names")
+        raise NormalizedTableError("Alias normalization would produce duplicate column names")
     return table.rename_columns(normalized_names)
 
 
@@ -396,16 +408,16 @@ def _column_for_canonical_spec(table: pa.Table, spec: ColumnSpec) -> pa.ChunkedA
 
 def _validate_unique_column_names(table: pa.Table) -> None:
     if len(set(table.column_names)) != len(table.column_names):
-        raise TabularHandoffError("Arrow table contains duplicate column names")
+        raise NormalizedTableError("Arrow table contains duplicate column names")
 
 
 def _validate_unique_row_ids(table: pa.Table, row_id_column: str) -> None:
     column = table.column(row_id_column)
     if column.null_count:
-        raise TabularHandoffError(f"Row id column {row_id_column!r} contains nulls")
+        raise NormalizedTableError(f"Row id column {row_id_column!r} contains nulls")
     distinct = pc.count_distinct(column, mode="only_valid").as_py()
     if cast(int, distinct) != table.num_rows:
-        raise TabularHandoffError(f"Row id column {row_id_column!r} contains duplicates")
+        raise NormalizedTableError(f"Row id column {row_id_column!r} contains duplicates")
 
 
 def _is_dictionary_column(column: pa.ChunkedArray) -> bool:
@@ -415,7 +427,7 @@ def _is_dictionary_column(column: pa.ChunkedArray) -> bool:
 def _require_existing_column(table: pa.Table, column_name: str) -> None:
     _validate_non_empty_name(column_name, "column name")
     if column_name not in table.column_names:
-        raise TabularHandoffError(f"Column {column_name!r} is missing")
+        raise NormalizedTableError(f"Column {column_name!r} is missing")
 
 
 def _require_table(value: object, name: str) -> None:
@@ -427,12 +439,16 @@ def _freeze_metadata(metadata: Mapping[str, str]) -> Mapping[str, str]:
     frozen = dict(metadata)
     for key, value in frozen.items():
         if not isinstance(key, str) or not key:
-            raise TabularHandoffError("Metadata keys must be non-empty strings")
+            raise NormalizedTableError("Metadata keys must be non-empty strings")
         if not isinstance(value, str):
-            raise TabularHandoffError(f"Metadata value for {key!r} must be a string")
+            raise NormalizedTableError(f"Metadata value for {key!r} must be a string")
     return MappingProxyType(frozen)
 
 
 def _validate_non_empty_name(value: str, label: str) -> None:
     if not isinstance(value, str) or not value:
-        raise TabularHandoffError(f"{label} must be a non-empty string")
+        raise NormalizedTableError(f"{label} must be a non-empty string")
+
+
+TabularHandoffError = NormalizedTableError
+NormalizedTabularHandoff = NormalizedArrowTable

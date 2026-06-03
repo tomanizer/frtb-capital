@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -9,12 +10,12 @@ import pyarrow as pa  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
-    NormalizedTabularHandoff,
+    NormalizedArrowTable,
     NullPolicy,
     TabularLogicalType,
     normalize_arrow_table,
-    normalized_handoff_hash,
-    read_handoff_columns,
+    normalized_arrow_table_hash,
+    read_arrow_columns,
 )
 
 from frtb_cva.batch import (
@@ -29,7 +30,7 @@ from frtb_cva.batch import (
 )
 from frtb_cva.validation import CvaInputError
 
-CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
+CVA_COUNTERPARTY_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec(
         "counterparty_id",
         aliases=("counterpartyId", "CounterpartyID"),
@@ -70,7 +71,7 @@ CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ),
 )
 
-CVA_NETTING_SET_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
+CVA_NETTING_SET_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec(
         "netting_set_id",
         aliases=("nettingSetId", "NettingSetID"),
@@ -133,7 +134,7 @@ CVA_NETTING_SET_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ),
 )
 
-CVA_HEDGE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
+CVA_HEDGE_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("hedge_id", aliases=("hedgeId", "HedgeID"), logical_type=TabularLogicalType.STRING),
     ColumnSpec(
         "source_row_id",
@@ -223,7 +224,7 @@ CVA_HEDGE_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ),
 )
 
-SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
+SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec(
         "sensitivity_id",
         aliases=("sensitivityId", "SensitivityID", "RiskFactorID"),
@@ -327,6 +328,10 @@ SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         null_policy=NullPolicy.ALLOW,
     ),
 )
+CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS = CVA_COUNTERPARTY_ARROW_COLUMN_SPECS
+CVA_NETTING_SET_HANDOFF_COLUMN_SPECS = CVA_NETTING_SET_ARROW_COLUMN_SPECS
+CVA_HEDGE_HANDOFF_COLUMN_SPECS = CVA_HEDGE_ARROW_COLUMN_SPECS
+SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS = SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS
 
 
 _CVA_COUNTERPARTY_BATCH_COLUMN_ARGS: Mapping[str, str] = {
@@ -420,10 +425,10 @@ def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
 
 
 _ensure_explicit_logical_types(
-    CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS,
-    CVA_NETTING_SET_HANDOFF_COLUMN_SPECS,
-    CVA_HEDGE_HANDOFF_COLUMN_SPECS,
-    SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS,
+    CVA_COUNTERPARTY_ARROW_COLUMN_SPECS,
+    CVA_NETTING_SET_ARROW_COLUMN_SPECS,
+    CVA_HEDGE_ARROW_COLUMN_SPECS,
+    SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS,
 )
 
 
@@ -434,9 +439,9 @@ def normalize_cva_counterparty_arrow_table(
     metadata: Mapping[str, str] | None = None,
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     return _normalize(
-        table, CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
+        table, CVA_COUNTERPARTY_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
     )
 
 
@@ -447,9 +452,9 @@ def normalize_cva_netting_set_arrow_table(
     metadata: Mapping[str, str] | None = None,
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     return _normalize(
-        table, CVA_NETTING_SET_HANDOFF_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
+        table, CVA_NETTING_SET_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
     )
 
 
@@ -460,9 +465,9 @@ def normalize_cva_hedge_arrow_table(
     metadata: Mapping[str, str] | None = None,
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     return _normalize(
-        table, CVA_HEDGE_HANDOFF_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
+        table, CVA_HEDGE_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
     )
 
 
@@ -473,76 +478,129 @@ def normalize_sa_cva_sensitivity_arrow_table(
     metadata: Mapping[str, str] | None = None,
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     return _normalize(
-        table, SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
+        table, SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
     )
 
 
-def build_cva_counterparty_batch_from_handoff(
-    handoff: NormalizedTabularHandoff,
+def build_cva_counterparty_batch_from_arrow(
+    handoff: NormalizedArrowTable,
 ) -> CvaCounterpartyBatch:
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise CvaInputError("handoff must be NormalizedTabularHandoff", field="handoff")
+    if not isinstance(handoff, NormalizedArrowTable):
+        raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
     table = handoff.accepted
-    columns = read_handoff_columns(table, CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS, error=_cva_error)
+    columns = read_arrow_columns(table, CVA_COUNTERPARTY_ARROW_COLUMN_SPECS, error=_cva_error)
     return build_cva_counterparty_batch_from_columns(
         **_cva_batch_column_kwargs(columns, _CVA_COUNTERPARTY_BATCH_COLUMN_ARGS),
         source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
+        handoff_hash=normalized_arrow_table_hash(handoff),
         diagnostics=_diagnostics(handoff),
         copy_arrays=False,
     )
 
 
-def build_cva_netting_set_batch_from_handoff(
-    handoff: NormalizedTabularHandoff,
+def build_cva_netting_set_batch_from_arrow(
+    handoff: NormalizedArrowTable,
 ) -> CvaNettingSetBatch:
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise CvaInputError("handoff must be NormalizedTabularHandoff", field="handoff")
+    if not isinstance(handoff, NormalizedArrowTable):
+        raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
     table = handoff.accepted
-    columns = read_handoff_columns(table, CVA_NETTING_SET_HANDOFF_COLUMN_SPECS, error=_cva_error)
+    columns = read_arrow_columns(table, CVA_NETTING_SET_ARROW_COLUMN_SPECS, error=_cva_error)
     return build_cva_netting_set_batch_from_columns(
         **_cva_batch_column_kwargs(columns, _CVA_NETTING_SET_BATCH_COLUMN_ARGS),
         source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
+        handoff_hash=normalized_arrow_table_hash(handoff),
         diagnostics=_diagnostics(handoff),
         copy_arrays=False,
     )
 
 
-def build_cva_hedge_batch_from_handoff(handoff: NormalizedTabularHandoff) -> CvaHedgeBatch:
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise CvaInputError("handoff must be NormalizedTabularHandoff", field="handoff")
+def build_cva_hedge_batch_from_arrow(handoff: NormalizedArrowTable) -> CvaHedgeBatch:
+    if not isinstance(handoff, NormalizedArrowTable):
+        raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
     table = handoff.accepted
-    columns = read_handoff_columns(table, CVA_HEDGE_HANDOFF_COLUMN_SPECS, error=_cva_error)
+    columns = read_arrow_columns(table, CVA_HEDGE_ARROW_COLUMN_SPECS, error=_cva_error)
     return build_cva_hedge_batch_from_columns(
         **_cva_batch_column_kwargs(columns, _CVA_HEDGE_BATCH_COLUMN_ARGS),
         source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
+        handoff_hash=normalized_arrow_table_hash(handoff),
         diagnostics=_diagnostics(handoff),
         copy_arrays=False,
     )
 
 
-def build_sa_cva_sensitivity_batch_from_handoff(
-    handoff: NormalizedTabularHandoff,
+def build_sa_cva_sensitivity_batch_from_arrow(
+    handoff: NormalizedArrowTable,
 ) -> SaCvaSensitivityBatch:
-    if not isinstance(handoff, NormalizedTabularHandoff):
-        raise CvaInputError("handoff must be NormalizedTabularHandoff", field="handoff")
+    if not isinstance(handoff, NormalizedArrowTable):
+        raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
     table = handoff.accepted
-    columns = read_handoff_columns(
+    columns = read_arrow_columns(
         table,
-        SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS,
+        SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS,
         error=_cva_error,
     )
     return build_sa_cva_sensitivity_batch_from_columns(
         **_cva_batch_column_kwargs(columns, _SA_CVA_SENSITIVITY_BATCH_COLUMN_ARGS),
         source_hash=handoff.source_hash,
-        handoff_hash=normalized_handoff_hash(handoff),
+        handoff_hash=normalized_arrow_table_hash(handoff),
         diagnostics=_diagnostics(handoff),
         copy_arrays=False,
     )
+
+
+def build_cva_counterparty_batch_from_handoff(
+    handoff: NormalizedArrowTable,
+) -> CvaCounterpartyBatch:
+    """Deprecated alias for :func:`build_cva_counterparty_batch_from_arrow`."""
+
+    warnings.warn(
+        "build_cva_counterparty_batch_from_handoff is deprecated; "
+        "use build_cva_counterparty_batch_from_arrow",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return build_cva_counterparty_batch_from_arrow(handoff)
+
+
+def build_cva_netting_set_batch_from_handoff(
+    handoff: NormalizedArrowTable,
+) -> CvaNettingSetBatch:
+    """Deprecated alias for :func:`build_cva_netting_set_batch_from_arrow`."""
+
+    warnings.warn(
+        "build_cva_netting_set_batch_from_handoff is deprecated; "
+        "use build_cva_netting_set_batch_from_arrow",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return build_cva_netting_set_batch_from_arrow(handoff)
+
+
+def build_cva_hedge_batch_from_handoff(handoff: NormalizedArrowTable) -> CvaHedgeBatch:
+    """Deprecated alias for :func:`build_cva_hedge_batch_from_arrow`."""
+
+    warnings.warn(
+        "build_cva_hedge_batch_from_handoff is deprecated; use build_cva_hedge_batch_from_arrow",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return build_cva_hedge_batch_from_arrow(handoff)
+
+
+def build_sa_cva_sensitivity_batch_from_handoff(
+    handoff: NormalizedArrowTable,
+) -> SaCvaSensitivityBatch:
+    """Deprecated alias for :func:`build_sa_cva_sensitivity_batch_from_arrow`."""
+
+    warnings.warn(
+        "build_sa_cva_sensitivity_batch_from_handoff is deprecated; "
+        "use build_sa_cva_sensitivity_batch_from_arrow",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return build_sa_cva_sensitivity_batch_from_arrow(handoff)
 
 
 def _normalize(
@@ -552,7 +610,7 @@ def _normalize(
     metadata: Mapping[str, str] | None,
     rejected: pa.Table | None,
     source_hash: str | None,
-) -> NormalizedTabularHandoff:
+) -> NormalizedArrowTable:
     return normalize_arrow_table(
         table,
         column_specs=column_specs,
@@ -579,18 +637,26 @@ def _cva_error(message: str, field: str | None) -> CvaInputError:
     return CvaInputError(message, field="" if field is None else field)
 
 
-def _diagnostics(handoff: NormalizedTabularHandoff) -> tuple[Mapping[str, object], ...]:
+def _diagnostics(handoff: NormalizedArrowTable) -> tuple[Mapping[str, object], ...]:
     return tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
 
 
 __all__ = [
+    "CVA_COUNTERPARTY_ARROW_COLUMN_SPECS",
     "CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS",
+    "CVA_HEDGE_ARROW_COLUMN_SPECS",
     "CVA_HEDGE_HANDOFF_COLUMN_SPECS",
+    "CVA_NETTING_SET_ARROW_COLUMN_SPECS",
     "CVA_NETTING_SET_HANDOFF_COLUMN_SPECS",
+    "SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS",
     "SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS",
+    "build_cva_counterparty_batch_from_arrow",
     "build_cva_counterparty_batch_from_handoff",
+    "build_cva_hedge_batch_from_arrow",
     "build_cva_hedge_batch_from_handoff",
+    "build_cva_netting_set_batch_from_arrow",
     "build_cva_netting_set_batch_from_handoff",
+    "build_sa_cva_sensitivity_batch_from_arrow",
     "build_sa_cva_sensitivity_batch_from_handoff",
     "normalize_cva_counterparty_arrow_table",
     "normalize_cva_hedge_arrow_table",

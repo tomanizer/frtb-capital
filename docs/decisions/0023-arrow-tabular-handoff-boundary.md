@@ -6,6 +6,12 @@ Date: 2026-06-01
 
 Accepted
 
+Vocabulary note: ADR 0033 supersedes this ADR's public "handoff" wording with
+the canonical Arrow ingest vocabulary (`NormalizedArrowTable`,
+`normalized_arrow_table_hash`, `build_*_batch_from_arrow`, and
+`*_ARROW_COLUMN_SPECS`). The Arrow boundary and kernel import policy in this ADR
+are unchanged.
+
 ## Context
 
 The suite needs a high-volume ingestion and handoff path for sensitivities,

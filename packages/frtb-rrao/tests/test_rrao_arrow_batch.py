@@ -11,7 +11,7 @@ import frtb_common.arrow_conversion as arrow_conversion_module
 import numpy as np
 import pyarrow as pa
 import pytest
-from frtb_common import AdapterDiagnostic, NormalizedTabularHandoff, source_content_hash
+from frtb_common import AdapterDiagnostic, NormalizedArrowTable, source_content_hash
 
 from frtb_rrao import (
     RraoCalculationContext,
@@ -33,7 +33,7 @@ from frtb_rrao import (
     validate_rrao_result_reconciliation,
 )
 from frtb_rrao.arrow_handoff import (
-    build_rrao_batch_from_handoff,
+    build_rrao_batch_from_arrow,
     normalize_rrao_arrow_table,
 )
 from frtb_rrao.batch import build_rrao_batch_from_columns, build_rrao_batch_from_positions
@@ -78,7 +78,7 @@ def test_rrao_arrow_handoff_batch_matches_v1_row_capital() -> None:
     source_hash = source_content_hash("synthetic rrao source")
     handoff = normalize_rrao_arrow_table(_arrow_table(positions), source_hash=source_hash)
 
-    batch = build_rrao_batch_from_handoff(handoff)
+    batch = build_rrao_batch_from_arrow(handoff)
     calculation = calculate_rrao_capital_from_batch(batch, context=context)
 
     validate_rrao_result_reconciliation(calculation.result)
@@ -103,7 +103,7 @@ def test_rrao_arrow_handoff_uses_zero_copy_float64_columns_when_possible() -> No
     positions = loader.load_fixture_positions()
     handoff = normalize_rrao_arrow_table(_arrow_table(positions))
 
-    batch = build_rrao_batch_from_handoff(handoff)
+    batch = build_rrao_batch_from_arrow(handoff)
 
     gross_notional_view = (
         handoff.accepted.column("gross_effective_notional").chunk(0).to_numpy(zero_copy_only=True)
@@ -126,26 +126,26 @@ def test_rrao_handoff_wraps_arrow_object_conversion_errors(
     monkeypatch.setattr(arrow_conversion_module, "arrow_object_array", fail_arrow_object_array)
 
     with pytest.raises(RraoInputError, match=r"forced conversion failure .*position_id") as exc:
-        build_rrao_batch_from_handoff(handoff)
+        build_rrao_batch_from_arrow(handoff)
 
     assert exc.value.field == "position_id"
     assert isinstance(exc.value.__cause__, pa.ArrowInvalid)
 
 
 def test_rrao_handoff_reader_reports_package_errors_for_required_columns() -> None:
-    missing_position = NormalizedTabularHandoff(accepted=pa.table({}))
+    missing_position = NormalizedArrowTable(accepted=pa.table({}))
 
     with pytest.raises(RraoInputError, match=r"position_id") as missing_exc:
-        build_rrao_batch_from_handoff(missing_position)
+        build_rrao_batch_from_arrow(missing_position)
 
     assert missing_exc.value.field == "position_id"
 
-    missing_notional = NormalizedTabularHandoff(
+    missing_notional = NormalizedArrowTable(
         accepted=_arrow_table((_investment_fund_position(),)).drop(["gross_effective_notional"])
     )
 
     with pytest.raises(RraoInputError, match=r"gross_effective_notional") as notional_exc:
-        build_rrao_batch_from_handoff(missing_notional)
+        build_rrao_batch_from_arrow(missing_notional)
 
     assert notional_exc.value.field == "gross_effective_notional"
 
@@ -155,10 +155,10 @@ def test_rrao_handoff_reader_reports_package_errors_for_required_columns() -> No
         "gross_effective_notional",
         pa.array([None], type=pa.float64()),
     )
-    null_notional = NormalizedTabularHandoff(accepted=null_notional_table)
+    null_notional = NormalizedArrowTable(accepted=null_notional_table)
 
     with pytest.raises(RraoInputError, match=r"gross_effective_notional") as null_exc:
-        build_rrao_batch_from_handoff(null_notional)
+        build_rrao_batch_from_arrow(null_notional)
 
     assert null_exc.value.field == "gross_effective_notional"
 
@@ -175,7 +175,7 @@ def test_rrao_handoff_reader_wraps_optional_float_cast_errors() -> None:
         RraoInputError,
         match=r"investment_fund_gross_effective_notional",
     ) as exc:
-        build_rrao_batch_from_handoff(NormalizedTabularHandoff(accepted=table))
+        build_rrao_batch_from_arrow(NormalizedArrowTable(accepted=table))
 
     assert exc.value.field == "investment_fund_gross_effective_notional"
 
@@ -198,7 +198,7 @@ def test_rrao_handoff_reader_wraps_optional_float_fill_errors(
         RraoInputError,
         match=r"investment_fund_gross_effective_notional",
     ) as exc:
-        build_rrao_batch_from_handoff(NormalizedTabularHandoff(accepted=table))
+        build_rrao_batch_from_arrow(NormalizedArrowTable(accepted=table))
 
     assert exc.value.field == "investment_fund_gross_effective_notional"
 
@@ -218,7 +218,7 @@ def test_rrao_handoff_reader_wraps_optional_bool_fill_errors(
     monkeypatch.setattr(arrow_conversion_module.pc, "fill_null", fail_fill_null)
 
     with pytest.raises(RraoInputError, match=r"is_ctp_hedge") as exc:
-        build_rrao_batch_from_handoff(normalize_rrao_arrow_table(table))
+        build_rrao_batch_from_arrow(normalize_rrao_arrow_table(table))
 
     assert exc.value.field == "is_ctp_hedge"
 
@@ -248,7 +248,7 @@ def test_rrao_arrow_handoff_handles_chunked_dictionary_text_columns() -> None:
     )
     column_batch = build_rrao_batch_from_columns(**payload)
 
-    arrow_batch = build_rrao_batch_from_handoff(normalize_rrao_arrow_table(table))
+    arrow_batch = build_rrao_batch_from_arrow(normalize_rrao_arrow_table(table))
 
     assert table.column("evidence_type").num_chunks == 2
     assert pa.types.is_dictionary(table.column("evidence_type").type)
@@ -268,7 +268,7 @@ def test_rrao_arrow_handoff_batch_matches_investment_fund_row_capital() -> None:
     context = _sample_context()
     row_result = calculate_rrao_capital((position,), context=context)
 
-    batch = build_rrao_batch_from_handoff(normalize_rrao_arrow_table(_arrow_table((position,))))
+    batch = build_rrao_batch_from_arrow(normalize_rrao_arrow_table(_arrow_table((position,))))
     calculation = calculate_rrao_capital_from_batch(batch, context=context)
 
     assert calculation.accepted_row_dataclasses_materialized == 0
@@ -286,7 +286,7 @@ def test_rrao_arrow_handoff_defaults_nullable_fund_mandate_flag_to_true() -> Non
         pa.array([None], type=pa.bool_()),
     )
 
-    batch = build_rrao_batch_from_handoff(normalize_rrao_arrow_table(table))
+    batch = build_rrao_batch_from_arrow(normalize_rrao_arrow_table(table))
     calculation = calculate_rrao_capital_from_batch(batch, context=_sample_context())
 
     assert batch.investment_fund_mandate_allows_rrao_exposures.tolist() == [True]
@@ -312,7 +312,7 @@ def test_rrao_arrow_handoff_preserves_bool_strings_for_batch_parser() -> None:
         }
     )
 
-    batch = build_rrao_batch_from_handoff(normalize_rrao_arrow_table(table))
+    batch = build_rrao_batch_from_arrow(normalize_rrao_arrow_table(table))
 
     assert batch.is_ctp_hedges.tolist() == [False]
     assert batch.is_investment_fund_exposures.tolist() == [False]
@@ -402,7 +402,7 @@ def test_rrao_handoff_preserves_diagnostics_for_rejected_rows() -> None:
         rejected=rejected,
     )
 
-    batch = build_rrao_batch_from_handoff(handoff)
+    batch = build_rrao_batch_from_arrow(handoff)
 
     assert batch.diagnostics == (diagnostic.as_dict(),)
 
@@ -415,7 +415,7 @@ def test_rrao_handoff_rejects_opaque_nested_payload_without_row_fallback() -> No
     handoff = normalize_rrao_arrow_table(table)
 
     with pytest.raises(RraoInputError, match="unsupported nested payload"):
-        build_rrao_batch_from_handoff(handoff)
+        build_rrao_batch_from_arrow(handoff)
 
 
 def test_rrao_column_batch_rejects_partial_investment_fund_linkage() -> None:
@@ -446,15 +446,15 @@ def test_rrao_handoff_builds_from_required_columns_only() -> None:
         }
     )
 
-    batch = build_rrao_batch_from_handoff(normalize_rrao_arrow_table(table))
+    batch = build_rrao_batch_from_arrow(normalize_rrao_arrow_table(table))
 
     assert batch.row_count == 2
     assert batch.citations == ((), ())
 
 
 def test_rrao_batch_rejects_wrong_handoff_type() -> None:
-    with pytest.raises(RraoInputError, match="handoff must be NormalizedTabularHandoff"):
-        build_rrao_batch_from_handoff(object())  # type: ignore[arg-type]
+    with pytest.raises(RraoInputError, match="handoff must be NormalizedArrowTable"):
+        build_rrao_batch_from_arrow(object())  # type: ignore[arg-type]
 
 
 def test_rrao_batch_rejects_empty_columns() -> None:

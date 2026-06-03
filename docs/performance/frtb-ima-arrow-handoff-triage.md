@@ -30,10 +30,10 @@ upstream table or file
 The #319 implementation adds:
 
 - `normalize_ima_scenario_metadata_arrow_table`
-- `build_scenario_metadata_batch_from_handoff`
+- `build_scenario_metadata_batch_from_arrow`
 - `ScenarioMetadataBatch`
 - `normalize_ima_rfet_observation_arrow_table`
-- `build_rfet_observation_batch_from_handoff`
+- `build_rfet_observation_batch_from_arrow`
 - `RFETObservationBatch`
 - `assess_rfet_observation_batch`
 

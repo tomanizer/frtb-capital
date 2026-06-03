@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from frtb_common import ComponentResultHandoff, StandardisedComponent
+from frtb_common import ComponentCapitalSummary, StandardisedComponent
 
 from frtb_rrao import (
     RraoCalculationContext,
@@ -14,7 +14,7 @@ from frtb_rrao import (
     RraoRegulatoryProfile,
     RraoSourceLineage,
     calculate_rrao_capital,
-    to_orchestration_handoff,
+    to_component_summary,
 )
 
 
@@ -48,12 +48,12 @@ def _sample_result():
     )
 
 
-def test_to_orchestration_handoff_projects_shared_contract() -> None:
+def test_to_component_summary_projects_shared_contract() -> None:
     result = _sample_result()
 
-    handoff = to_orchestration_handoff(result)
+    handoff = to_component_summary(result)
 
-    assert isinstance(handoff, ComponentResultHandoff)
+    assert isinstance(handoff, ComponentCapitalSummary)
     assert handoff.component is StandardisedComponent.RRAO
     assert handoff.package_name == "frtb-rrao"
     assert handoff.run_id == "rrao-run"

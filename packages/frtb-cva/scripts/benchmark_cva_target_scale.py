@@ -30,12 +30,12 @@ from frtb_cva import (
     SaCvaRiskMeasure,
     SaCvaSensitivity,
     SensitivityTag,
+    build_cva_counterparty_batch_from_arrow,
     build_cva_counterparty_batch_from_columns,
-    build_cva_counterparty_batch_from_handoff,
+    build_cva_netting_set_batch_from_arrow,
     build_cva_netting_set_batch_from_columns,
-    build_cva_netting_set_batch_from_handoff,
+    build_sa_cva_sensitivity_batch_from_arrow,
     build_sa_cva_sensitivity_batch_from_columns,
-    build_sa_cva_sensitivity_batch_from_handoff,
     calculate_cva_capital,
     calculate_cva_capital_from_batches,
     normalize_cva_counterparty_arrow_table,
@@ -120,8 +120,8 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
     counterparty_handoff, netting_set_handoff = ba_arrow_handoff.value
     arrow_ba_build = _measure(
         lambda: (
-            build_cva_counterparty_batch_from_handoff(counterparty_handoff),
-            build_cva_netting_set_batch_from_handoff(netting_set_handoff),
+            build_cva_counterparty_batch_from_arrow(counterparty_handoff),
+            build_cva_netting_set_batch_from_arrow(netting_set_handoff),
         )
     )
     arrow_counterparties, arrow_netting_sets = arrow_ba_build.value
@@ -158,7 +158,7 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
         lambda: normalize_sa_cva_sensitivity_arrow_table(sensitivity_table.value)
     )
     arrow_sa_build = _measure(
-        lambda: build_sa_cva_sensitivity_batch_from_handoff(sensitivity_handoff.value)
+        lambda: build_sa_cva_sensitivity_batch_from_arrow(sensitivity_handoff.value)
     )
     arrow_sa = _measure(
         lambda: calculate_cva_capital_from_batches(

@@ -6,7 +6,7 @@ from datetime import date
 
 import pyarrow as pa
 import pytest
-from frtb_common import NormalizedTabularHandoff, UnsupportedRegulatoryFeatureError
+from frtb_common import NormalizedArrowTable, UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
     SbmCalculationContext,
     SbmInputError,
@@ -22,8 +22,8 @@ from frtb_sbm import (
     input_hash_for_sensitivities,
 )
 from frtb_sbm.arrow_handoff import (
-    build_fx_delta_batch_from_handoff,
-    calculate_sbm_portfolio_capital_from_handoffs,
+    build_fx_delta_batch_from_arrow,
+    calculate_sbm_portfolio_capital_from_arrow_tables,
     normalize_commodity_curvature_arrow_table,
     normalize_commodity_delta_arrow_table,
     normalize_commodity_vega_arrow_table,
@@ -47,7 +47,7 @@ from frtb_sbm.arrow_handoff import (
     normalize_girr_vega_arrow_table,
 )
 
-NormalizeFn = Callable[..., NormalizedTabularHandoff]
+NormalizeFn = Callable[..., NormalizedArrowTable]
 Path = tuple[SbmRiskClass, SbmRiskMeasure]
 
 SUPPORTED_PATHS: tuple[Path, ...] = (
@@ -119,7 +119,7 @@ def test_portfolio_handoff_dispatcher_matches_row_api_for_supported_paths() -> N
     )
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
-    calculation = calculate_sbm_portfolio_capital_from_handoffs(handoffs, context=context)
+    calculation = calculate_sbm_portfolio_capital_from_arrow_tables(handoffs, context=context)
 
     assert calculation.accepted_row_dataclasses_materialized == 0
     assert {item.batch_count for item in calculation.path_diagnostics} == {1}
@@ -146,8 +146,8 @@ def test_batch_dispatcher_concatenates_split_same_path_batches_before_capital() 
     )
     handoff_1 = normalize_fx_delta_arrow_table(arrow_table((sensitivities[0],)))
     handoff_2 = normalize_fx_delta_arrow_table(arrow_table((sensitivities[1],)))
-    batch_1 = build_fx_delta_batch_from_handoff(handoff_1)
-    batch_2 = build_fx_delta_batch_from_handoff(handoff_2)
+    batch_1 = build_fx_delta_batch_from_arrow(handoff_1)
+    batch_2 = build_fx_delta_batch_from_arrow(handoff_2)
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     calculation = calculate_sbm_portfolio_capital_from_batches((batch_1, batch_2), context=context)
@@ -191,7 +191,7 @@ def test_handoff_dispatcher_rejects_mixed_path_handoff() -> None:
         SbmInputError,
         match="handoff 1 must be homogeneous by risk_class and risk_measure",
     ):
-        calculate_sbm_portfolio_capital_from_handoffs((handoff,), context=context)
+        calculate_sbm_portfolio_capital_from_arrow_tables((handoff,), context=context)
 
 
 def test_batch_dispatcher_reports_batch_field_for_invalid_batch_inputs() -> None:
@@ -227,7 +227,7 @@ def test_batch_dispatcher_fails_closed_for_unsupported_profile() -> None:
     )
 
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile is unsupported"):
-        calculate_sbm_portfolio_capital_from_handoffs((handoff,), context=context)
+        calculate_sbm_portfolio_capital_from_arrow_tables((handoff,), context=context)
 
 
 def sample_context() -> SbmCalculationContext:

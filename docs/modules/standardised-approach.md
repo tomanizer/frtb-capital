@@ -24,7 +24,7 @@ SA capital = SBM capital + DRC capital + RRAO capital
 ```
 
 Current orchestration validates supplied SBM, DRC, and RRAO
-`frtb_common.ComponentResultHandoff` records for component slot,
+`frtb_common.ComponentCapitalSummary` records for component slot,
 jurisdiction-family, calculation-date, and base-currency consistency, then
 returns the composed additive SA result with component subtotals, citations,
 warnings, and any IMA fallback desk routes.
@@ -41,7 +41,7 @@ places:
 
 - `frtb-common`: package-neutral status metadata, explicit unsupported-feature
   errors, Arrow/CRIF handoff mechanics, JSON serialization helpers, regulatory
-  citation test helpers, and the `ComponentResultHandoff` /
+  citation test helpers, and the `ComponentCapitalSummary` /
   `StandardisedComponent` contract used by SA component projection adapters.
 - Component packages: `frtb-sbm`, `frtb-drc`, and `frtb-rrao` own their
   canonical inputs, calculation kernels, fixtures, and component audit records.
@@ -60,8 +60,8 @@ Current delivery should keep the component boundaries visible:
    have an ADR-backed contract.
 2. Keep SBM, DRC, and RRAO canonical inputs, kernels, fixtures, and audit
    records inside their owning packages.
-3. Project each SA component result to `frtb_common.ComponentResultHandoff`
-   through package-owned `to_orchestration_handoff` adapters.
+3. Project each SA component result to `frtb_common.ComponentCapitalSummary`
+   through package-owned `to_component_summary` adapters.
 4. Let `frtb-orchestration` consume only those neutral handoffs when composing
    SA capital and routing IMA fallback.
 

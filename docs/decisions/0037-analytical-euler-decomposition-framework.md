@@ -1,4 +1,4 @@
-# 32. Analytical Euler decomposition framework
+# 37. Analytical Euler decomposition framework
 
 Date: 2026-06-02
 

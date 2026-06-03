@@ -7,7 +7,7 @@ from datetime import date
 import numpy as np
 import pyarrow as pa
 import pytest
-from frtb_common import TabularHandoffError, UnsupportedRegulatoryFeatureError
+from frtb_common import NormalizedTableError, UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
     CURVATURE_CAPITAL_REQUIREMENT_ID,
     FX_CURVATURE_SCALAR_1_5_FLAG,
@@ -39,7 +39,7 @@ from frtb_sbm import (
     weight_girr_curvature_sensitivities,
 )
 from frtb_sbm.arrow_handoff import (
-    build_girr_curvature_batch_from_handoff,
+    build_girr_curvature_batch_from_arrow,
     normalize_girr_curvature_arrow_table,
 )
 
@@ -216,7 +216,7 @@ def test_girr_curvature_batch_and_handoff_preserve_separate_shock_arrays() -> No
     row_batch = build_girr_curvature_batch_from_sensitivities(sensitivities)
     handoff = normalize_girr_curvature_arrow_table(sample_curvature_arrow_table(sensitivities))
 
-    arrow_batch = build_girr_curvature_batch_from_handoff(handoff)
+    arrow_batch = build_girr_curvature_batch_from_arrow(handoff)
 
     assert arrow_batch.input_hash == row_batch.input_hash
     assert arrow_batch.input_hash == input_hash_for_sensitivities(sensitivities)
@@ -247,7 +247,7 @@ def test_girr_curvature_branch_selection_from_batch_matches_row_helper() -> None
         ),
         sample_curvature_sensitivity(),
     )
-    batch = build_girr_curvature_batch_from_handoff(
+    batch = build_girr_curvature_batch_from_arrow(
         normalize_girr_curvature_arrow_table(sample_curvature_arrow_table(sensitivities))
     )
 
@@ -271,7 +271,7 @@ def test_girr_curvature_handoff_rejects_missing_shock_column() -> None:
         ["up_shock_amount"]
     )
 
-    with pytest.raises(TabularHandoffError, match="Required column 'up_shock_amount'"):
+    with pytest.raises(NormalizedTableError, match="Required column 'up_shock_amount'"):
         normalize_girr_curvature_arrow_table(table)
 
 
@@ -282,7 +282,7 @@ def test_girr_curvature_handoff_rejects_null_shock_column() -> None:
         pa.array([None], type=pa.float64()),
     )
 
-    with pytest.raises(TabularHandoffError, match="Column 'down_shock_amount' contains nulls"):
+    with pytest.raises(NormalizedTableError, match="Column 'down_shock_amount' contains nulls"):
         normalize_girr_curvature_arrow_table(table)
 
 
@@ -306,11 +306,11 @@ def test_girr_curvature_batch_build_rejects_bad_shock_values(
     handoff = normalize_girr_curvature_arrow_table(table)
 
     with pytest.raises(SbmInputError, match=expected):
-        build_girr_curvature_batch_from_handoff(handoff)
+        build_girr_curvature_batch_from_arrow(handoff)
 
 
 def test_validate_girr_curvature_batch_and_support_gate_accept_curvature() -> None:
-    batch = build_girr_curvature_batch_from_handoff(
+    batch = build_girr_curvature_batch_from_arrow(
         normalize_girr_curvature_arrow_table(
             sample_curvature_arrow_table((sample_curvature_sensitivity(),))
         )

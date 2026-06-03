@@ -1,8 +1,9 @@
-"""CVA component handoff contracts (separate from SA composition)."""
+"""CVA capital summary contracts (separate from SA composition)."""
 
 from __future__ import annotations
 
 import math
+import warnings
 from dataclasses import dataclass
 from datetime import date
 
@@ -10,7 +11,7 @@ from frtb_orchestration.standardised import OrchestrationInputError
 
 
 @dataclass(frozen=True)
-class CvaResultHandoff:
+class CvaCapitalSummary:
     """CVA result summary for top-of-house aggregation."""
 
     package_name: str
@@ -31,8 +32,8 @@ class CvaResultHandoff:
     warnings: tuple[str, ...] = ()
 
 
-def recognise_cva_result(result: object) -> CvaResultHandoff:
-    """Return the orchestration handoff view for a public CVA result shape."""
+def recognise_cva_summary(result: object) -> CvaCapitalSummary:
+    """Return the orchestration summary view for a public CVA result shape."""
 
     method = _required_text_attr(result, "method", component="CVA")
     ba_cva_reduced = _optional_object_attr(result, "ba_cva_reduced", component="CVA")
@@ -61,7 +62,7 @@ def recognise_cva_result(result: object) -> CvaResultHandoff:
             for item in sa_cva_risk_class_capitals
         )
 
-    return CvaResultHandoff(
+    return CvaCapitalSummary(
         package_name="frtb-cva",
         run_id=_required_text_attr(result, "run_id", component="CVA"),
         calculation_date=_required_date_attr(result, "calculation_date", component="CVA"),
@@ -81,6 +82,17 @@ def recognise_cva_result(result: object) -> CvaResultHandoff:
         citations=_text_tuple_attr(result, "citations", component="CVA"),
         warnings=_text_tuple_attr(result, "warnings", component="CVA"),
     )
+
+
+def recognise_cva_result(result: object) -> CvaCapitalSummary:
+    """Deprecated alias for :func:`recognise_cva_summary`."""
+
+    warnings.warn(
+        "recognise_cva_result is deprecated; use recognise_cva_summary",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return recognise_cva_summary(result)
 
 
 def _required_text_attr(result: object, field: str, *, component: str) -> str:
@@ -153,4 +165,12 @@ def _text_tuple_attr(result: object, field: str, *, component: str) -> tuple[str
     return tuple(str(item) for item in value)
 
 
-__all__ = ["CvaResultHandoff", "recognise_cva_result"]
+CvaResultHandoff = CvaCapitalSummary
+
+
+__all__ = [
+    "CvaCapitalSummary",
+    "CvaResultHandoff",
+    "recognise_cva_result",
+    "recognise_cva_summary",
+]

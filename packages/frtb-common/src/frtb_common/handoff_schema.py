@@ -1,15 +1,16 @@
-"""Schema export helpers for tabular handoff ``ColumnSpec`` contracts."""
+"""Schema export helpers for normalized Arrow ``ColumnSpec`` contracts."""
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 
 import pyarrow as pa  # type: ignore[import-untyped]
 
 from frtb_common.handoff import (
     ColumnSpec,
+    NormalizedTableError,
     NullPolicy,
-    TabularHandoffError,
     TabularLogicalType,
     validate_column_specs,
 )
@@ -29,13 +30,13 @@ def column_spec_to_json_schema(spec: ColumnSpec) -> dict[str, object]:
     }
 
 
-def handoff_specs_to_json_schema(
+def column_specs_to_json_schema(
     specs: Sequence[ColumnSpec],
     *,
     title: str,
     description: str | None = None,
 ) -> dict[str, object]:
-    """Return a deterministic JSON Schema document for a handoff spec tuple."""
+    """Return a deterministic JSON Schema document for a column spec tuple."""
 
     validated = validate_column_specs(specs)
     schema: dict[str, object] = {
@@ -52,8 +53,8 @@ def handoff_specs_to_json_schema(
     return schema
 
 
-def handoff_specs_to_arrow_schema(specs: Sequence[ColumnSpec]) -> pa.Schema:
-    """Return a PyArrow schema matching the handoff column specs."""
+def column_specs_to_arrow_schema(specs: Sequence[ColumnSpec]) -> pa.Schema:
+    """Return a PyArrow schema matching the column specs."""
 
     validated = validate_column_specs(specs)
     return pa.schema(
@@ -95,6 +96,33 @@ def arrow_schema_to_dict(schema: pa.Schema) -> dict[str, object]:
     return {"fields": fields}
 
 
+def handoff_specs_to_json_schema(
+    specs: Sequence[ColumnSpec],
+    *,
+    title: str,
+    description: str | None = None,
+) -> dict[str, object]:
+    """Deprecated alias for :func:`column_specs_to_json_schema`."""
+
+    warnings.warn(
+        "handoff_specs_to_json_schema is deprecated; use column_specs_to_json_schema",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return column_specs_to_json_schema(specs, title=title, description=description)
+
+
+def handoff_specs_to_arrow_schema(specs: Sequence[ColumnSpec]) -> pa.Schema:
+    """Deprecated alias for :func:`column_specs_to_arrow_schema`."""
+
+    warnings.warn(
+        "handoff_specs_to_arrow_schema is deprecated; use column_specs_to_arrow_schema",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return column_specs_to_arrow_schema(specs)
+
+
 def _json_type_for_logical_type(logical_type: TabularLogicalType) -> dict[str, object]:
     mapping: dict[TabularLogicalType, dict[str, object]] = {
         TabularLogicalType.BOOLEAN: {"type": "boolean"},
@@ -110,7 +138,7 @@ def _json_type_for_logical_type(logical_type: TabularLogicalType) -> dict[str, o
     try:
         return dict(mapping[logical_type])
     except KeyError as exc:
-        raise TabularHandoffError(
+        raise NormalizedTableError(
             f"Cannot export schema for unknown logical type {logical_type!r}"
         ) from exc
 
@@ -130,7 +158,7 @@ def _arrow_type_for_logical_type(logical_type: TabularLogicalType) -> pa.DataTyp
     try:
         return mapping[logical_type]
     except KeyError as exc:
-        raise TabularHandoffError(
+        raise NormalizedTableError(
             f"Cannot export Arrow schema for unknown logical type {logical_type!r}"
         ) from exc
 
@@ -138,6 +166,8 @@ def _arrow_type_for_logical_type(logical_type: TabularLogicalType) -> pa.DataTyp
 __all__ = [
     "arrow_schema_to_dict",
     "column_spec_to_json_schema",
+    "column_specs_to_arrow_schema",
+    "column_specs_to_json_schema",
     "handoff_specs_to_arrow_schema",
     "handoff_specs_to_json_schema",
 ]

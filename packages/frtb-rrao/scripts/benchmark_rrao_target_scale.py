@@ -25,8 +25,8 @@ from frtb_rrao import (
     RraoPosition,
     RraoRegulatoryProfile,
     RraoSourceLineage,
+    build_rrao_batch_from_arrow,
     build_rrao_batch_from_columns,
-    build_rrao_batch_from_handoff,
     calculate_rrao_capital,
     calculate_rrao_capital_from_batch,
     normalize_rrao_arrow_table,
@@ -165,7 +165,7 @@ def run_benchmark(config: RraoBenchmarkConfig) -> dict[str, object]:
     arrow_table_seconds = time.perf_counter() - arrow_table_started
 
     arrow_handoff_started = time.perf_counter()
-    arrow_batch = build_rrao_batch_from_handoff(normalize_rrao_arrow_table(arrow_table))
+    arrow_batch = build_rrao_batch_from_arrow(normalize_rrao_arrow_table(arrow_table))
     arrow_handoff_seconds = time.perf_counter() - arrow_handoff_started
 
     arrow_calculate_started = time.perf_counter()
