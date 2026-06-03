@@ -17,9 +17,18 @@ Current runtime support is deliberately narrow:
   movement explanations;
 - `CapitalAttributionRecord` rows compatible with
   `frtb_common.CapitalContribution`;
-- manifest-gated local Parquet files queried through independent DuckDB
+- manifest-gated local and S3-layout Parquet files queried through independent DuckDB
   connections.
 
-S3 Parquet and DuckLake are explicit backend modes but reserved for later
-implementation. Artifact URIs may already point at object storage, while this
-first backend owns local result-store Parquet files.
+S3 Parquet mode accepts an `s3://bucket[/prefix]` root and keeps the same
+logical `parquet/`, `artifacts/`, and `manifests/` layout as local mode. Runs
+are still discovered only from committed run manifests, so staged or orphaned
+objects remain invisible to readers. Local integration tests and development
+can use `ResultStoreConfig(..., backend=StorageBackend.S3_PARQUET,
+s3_mock_root=...)`; artifact refs and manifest paths retain the logical
+`s3://` URI while Parquet bytes are written to the mock root. DuckDB `httpfs`
+and S3 credentials are configured only through `duckdb_extensions`,
+`duckdb_install_extensions`, and `duckdb_settings`; the package does not
+hard-code credentials.
+
+DuckLake remains an explicit reserved backend mode.

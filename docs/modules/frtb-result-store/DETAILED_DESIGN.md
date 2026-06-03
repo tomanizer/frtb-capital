@@ -117,6 +117,14 @@ based. S3 has no atomic multi-object rename, so the local and S3 backends share
 the same manifest-led commit protocol: stage objects first, write the manifest
 last, and garbage-collect abandoned staging objects separately.
 
+The executable S3 integration path accepts an explicit local mock root for
+tests and development. The writer stores bytes under the mock root while run
+manifests and generated artifact references retain the logical `s3://` URI.
+DuckDB extension loading, optional extension installation, and S3/httpfs
+settings are supplied through `ResultStoreConfig`; credentials are not embedded
+in code or manifests. Operators can call `cleanup_orphaned_staging()` to remove
+abandoned `_staging/` prefixes that never received a committed manifest.
+
 ## Run Identity
 
 The store generates `run_id` deterministically from a canonical JSON payload:

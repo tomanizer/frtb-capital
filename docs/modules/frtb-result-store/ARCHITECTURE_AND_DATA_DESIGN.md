@@ -32,10 +32,12 @@ orphaned Parquet files without a manifest. DuckDB queries run over committed
 Parquet files through independent connections. `catalog.duckdb` is derived
 convenience state and can be rebuilt.
 
-S3 Parquet and DuckLake are reserved backend modes. The domain model already
-stores artifact URIs, so IMA P&L vectors, ES tail observations, SBM
-sensitivities, DRC JTD tables, CVA exposures, and attribution vectors can live
-outside the scalar serving rows.
+S3 Parquet mode uses the same logical layout under an `s3://` root and the
+same manifest-as-commit-marker reader contract as local mode. Local integration
+tests and development use an explicit mock root, so readers and writers
+exercise the S3 layout without hard-coded credentials. DuckDB object-store
+access is configured through extension and setting hooks such as `httpfs`.
+DuckLake remains a reserved backend mode.
 
 ## Data model
 

@@ -5,15 +5,17 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 import time
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, cast
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, urlparse
 
 import duckdb
 import pyarrow as pa  # type: ignore[import-untyped]
@@ -51,6 +53,7 @@ from frtb_result_store.artifacts import (
     RequiredArtifactExpectation,
     StagedArtifact,
     artifact_expectations_for_requests,
+    artifact_schema_for,
     stage_artifact_write,
     validate_artifact_ref_targets,
     validate_required_artifacts,
@@ -165,40 +168,97 @@ class ResultStoreCompatibilityError(ResultStoreContractError):
 class ResultStoreConfig:
     """Concrete storage settings for the first result-store backend."""
 
-    root: Path
+    root: Path | str
     backend: StorageBackend = StorageBackend.LOCAL_PARQUET
     catalog_filename: str = "catalog.duckdb"
+    s3_mock_root: Path | str | None = None
+    duckdb_extensions: tuple[str, ...] = ()
+    duckdb_install_extensions: bool = False
+    duckdb_settings: Mapping[str, str | int | float | bool] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "backend", StorageBackend(self.backend))
-        if not isinstance(self.root, Path):
-            object.__setattr__(self, "root", Path(self.root))
         if not self.catalog_filename:
             raise ResultStoreContractError(
                 "catalog_filename must be non-empty text",
                 field="catalog_filename",
             )
+        if not isinstance(self.duckdb_install_extensions, bool):
+            raise ResultStoreContractError(
+                "duckdb_install_extensions must be boolean",
+                field="duckdb_install_extensions",
+            )
+        object.__setattr__(
+            self,
+            "duckdb_extensions",
+            tuple(
+                _validated_duckdb_name(extension, "duckdb_extensions")
+                for extension in self.duckdb_extensions
+            ),
+        )
+        object.__setattr__(
+            self,
+            "duckdb_settings",
+            MappingProxyType(
+                {
+                    _validated_duckdb_name(name, "duckdb_settings"): value
+                    for name, value in self.duckdb_settings.items()
+                }
+            ),
+        )
+        if self.backend is StorageBackend.S3_PARQUET:
+            object.__setattr__(self, "root", _normalize_s3_uri(self.root))
+            if self.s3_mock_root is None:
+                raise ResultStoreContractError(
+                    "s3_parquet backend requires s3_mock_root for local mock read/write",
+                    field="s3_mock_root",
+                )
+            object.__setattr__(self, "s3_mock_root", Path(self.s3_mock_root))
+            return
+        if isinstance(self.root, str) and self.root.startswith("s3://"):
+            raise ResultStoreContractError(
+                "s3:// roots require the s3_parquet backend",
+                field="root",
+            )
+        if not isinstance(self.root, Path):
+            object.__setattr__(self, "root", Path(self.root))
+        if self.s3_mock_root is not None:
+            raise ResultStoreContractError(
+                "s3_mock_root is only valid for s3_parquet backend",
+                field="s3_mock_root",
+            )
 
 
 class DuckDbParquetResultStore:
-    """Append-only local Parquet store queried through DuckDB.
+    """Append-only Parquet store queried through DuckDB.
 
-    The executable first slice writes one Parquet file per run per table under
-    ``root/parquet``. A run is visible only after its manifest has been written.
-    The DuckDB catalog is derived and rebuildable; query methods use independent
-    in-memory DuckDB connections over committed Parquet files.
+    Local mode writes one Parquet file per run per table under ``root/parquet``.
+    S3 mode keeps the same logical layout under an ``s3://`` root and uses an
+    explicit local mock root for deterministic integration tests. A run is
+    visible only after its manifest has been written.
     """
 
-    def __init__(self, config: ResultStoreConfig | Path) -> None:
+    def __init__(self, config: ResultStoreConfig | Path | str) -> None:
         if isinstance(config, Path):
             config = ResultStoreConfig(root=config)
+        elif isinstance(config, str):
+            config = ResultStoreConfig(root=config)
         self.config = config
-        if self.config.backend is not StorageBackend.LOCAL_PARQUET:
+        if self.config.backend is StorageBackend.DUCKLAKE:
             raise ResultStoreContractError(
                 f"{self.config.backend.value} backend is reserved for a later implementation",
                 field="backend",
             )
-        self.root = self.config.root.resolve()
+        if self.config.backend is StorageBackend.S3_PARQUET:
+            root_uri = cast(str, self.config.root)
+            self.root_uri = root_uri
+            self.root = _s3_mock_physical_root(
+                root_uri,
+                cast(Path, self.config.s3_mock_root),
+            )
+        else:
+            self.root = cast(Path, self.config.root).resolve()
+            self.root_uri = self.root.as_uri()
         self.parquet_root = self.root / "parquet"
         self.artifact_root = self.root / "artifacts"
         self.manifest_root = self.root / "manifests"
@@ -366,14 +426,12 @@ class DuckDbParquetResultStore:
             final_path = self._run_table_path(table_name, run_id)
             if final_path.exists():
                 raise ResultStoreWriteError(f"run table already exists: {table_name}/{run_id}")
-            final_path.parent.mkdir(parents=True, exist_ok=True)
-            (staging_dir / f"{table_name}.parquet").rename(final_path)
+            self._publish_staged_file(staging_dir / f"{table_name}.parquet", final_path)
             moved_paths.append(final_path)
         status_path = self._status_event_path(run_id, status_event_id)
         if status_path.exists():
             raise ResultStoreWriteError(f"status event already exists: {status_event_id}")
-        status_path.parent.mkdir(parents=True, exist_ok=True)
-        (staging_dir / "run_status_events.parquet").rename(status_path)
+        self._publish_staged_file(staging_dir / "run_status_events.parquet", status_path)
         moved_paths.append(status_path)
         return tuple(moved_paths)
 
@@ -383,8 +441,7 @@ class DuckDbParquetResultStore:
             final_path = self._mart_path(mart_name, run_id)
             if final_path.exists():
                 raise ResultStoreWriteError(f"mart already exists: {mart_name}/{run_id}")
-            final_path.parent.mkdir(parents=True, exist_ok=True)
-            (staging_dir / "marts" / f"{mart_name}.parquet").rename(final_path)
+            self._publish_staged_file(staging_dir / "marts" / f"{mart_name}.parquet", final_path)
             moved_paths.append(final_path)
         return tuple(moved_paths)
 
@@ -412,6 +469,7 @@ class DuckDbParquetResultStore:
                 request=request,
                 staging_dir=staging_dir,
                 final_root=self.artifact_root,
+                final_uri=self._artifact_uri(bundle.run.run_id, request),
             )
             for request in artifact_requests
         )
@@ -424,10 +482,35 @@ class DuckDbParquetResultStore:
         for artifact in staged_artifacts:
             if artifact.final_path.exists():
                 raise ResultStoreWriteError(f"artifact already exists: {artifact.ref.artifact_id}")
-            artifact.final_path.parent.mkdir(parents=True, exist_ok=True)
-            artifact.staged_path.rename(artifact.final_path)
+            self._publish_staged_file(artifact.staged_path, artifact.final_path)
             moved_paths.append(artifact.final_path)
         return tuple(moved_paths)
+
+    def _publish_staged_file(self, staged_path: Path, final_path: Path) -> None:
+        final_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.config.backend is StorageBackend.S3_PARQUET:
+            try:
+                shutil.copy2(staged_path, final_path)
+                staged_path.unlink()
+            except Exception:
+                final_path.unlink(missing_ok=True)
+                raise
+            return
+        staged_path.rename(final_path)
+
+    def _artifact_uri(self, run_id: str, request: ArtifactWriteRequest) -> str | None:
+        if self.config.backend is not StorageBackend.S3_PARQUET:
+            return None
+        entry = artifact_schema_for(request.schema_id)
+        artifact_id = _artifact_id_for_request(run_id, request, entry.schema_fingerprint)
+        final_path = (
+            self.artifact_root
+            / f"artifact_type={ArtifactType(request.artifact_type).value}"
+            / f"run_id={_safe_run_id(run_id)}"
+            / f"artifact_id={_safe_run_id(artifact_id)}"
+            / "data.parquet"
+        )
+        return self._path_uri(final_path)
 
     def run_exists(self, run_id: str) -> bool:
         """Return whether a run has already been written."""
@@ -891,6 +974,27 @@ class DuckDbParquetResultStore:
         with suppress(Exception):
             self.refresh_catalog()
 
+    def cleanup_orphaned_staging(self, *, run_id: str | None = None) -> tuple[str, ...]:
+        """Remove abandoned staging directories that are not committed manifests."""
+
+        staging_root = self.root / "_staging"
+        if not staging_root.exists():
+            return ()
+        if run_id is not None:
+            path = staging_root / _safe_run_id(run_id)
+            if not path.exists():
+                return ()
+            shutil.rmtree(path)
+            return (run_id,)
+        removed: list[str] = []
+        for path in sorted(staging_root.iterdir()):
+            if not path.is_dir():
+                continue
+            shutil.rmtree(path)
+            if not path.exists():
+                removed.append(unquote(path.name))
+        return tuple(removed)
+
     def resolve_run_id_prefix(self, prefix: str) -> str | None:
         """Resolve a unique full run id from a display prefix.
 
@@ -945,6 +1049,12 @@ class DuckDbParquetResultStore:
             "result_store_schema_version": RESULT_STORE_SCHEMA_VERSION,
             "writer_version": __version__,
             "backend": self.config.backend.value,
+            "root_uri": self.root_uri,
+            "paths": {
+                "parquet": self._path_uri(self.parquet_root),
+                "artifacts": self._path_uri(self.artifact_root),
+                "manifests": self._path_uri(self.manifest_root),
+            },
             "run_id": bundle.run.run_id,
             "run_group_id": bundle.run.run_group_id,
             "as_of_date": bundle.run.as_of_date.isoformat(),
@@ -976,10 +1086,15 @@ class DuckDbParquetResultStore:
             stable_json_dumps(manifest) + "\n",
             encoding="utf-8",
         )
-        try:
-            os.link(staged_manifest_path, manifest_path)
-        except FileExistsError as exc:
-            raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}") from exc
+        if manifest_path.exists():
+            raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}")
+        if self.config.backend is StorageBackend.S3_PARQUET:
+            self._publish_staged_file(staged_manifest_path, manifest_path)
+        else:
+            try:
+                os.link(staged_manifest_path, manifest_path)
+            except FileExistsError as exc:
+                raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}") from exc
         staged_manifest_path.unlink(missing_ok=True)
 
     def _fetchall(
@@ -1085,10 +1200,22 @@ class DuckDbParquetResultStore:
             con.close()
 
     def _connect_catalog(self) -> Any:
-        return duckdb.connect(str(self.catalog_path))
+        con = duckdb.connect(str(self.catalog_path))
+        self._configure_duckdb(con)
+        return con
 
     def _connect_query(self) -> Any:
-        return duckdb.connect()
+        con = duckdb.connect()
+        self._configure_duckdb(con)
+        return con
+
+    def _configure_duckdb(self, con: Any) -> None:
+        for extension in self.config.duckdb_extensions:
+            if self.config.duckdb_install_extensions:
+                con.execute(f"INSTALL {extension}")
+            con.execute(f"LOAD {extension}")
+        for name, value in self.config.duckdb_settings.items():
+            con.execute(f"SET {name} = {_duckdb_literal(value)}")
 
     def _run_table_path(self, table_name: str, run_id: str) -> Path:
         if table_name not in RUN_TABLE_NAMES:
@@ -1124,6 +1251,12 @@ class DuckDbParquetResultStore:
 
     def _manifest_path(self, run_id: str) -> Path:
         return self.manifest_root / _safe_run_id(run_id) / "run_manifest.json"
+
+    def _path_uri(self, path: Path) -> str:
+        if self.config.backend is not StorageBackend.S3_PARQUET:
+            return path.resolve().as_uri()
+        relative = path.relative_to(self.root).as_posix()
+        return f"{self.root_uri}/{relative}"
 
     def _committed_run_ids(self) -> tuple[str, ...]:
         return tuple(
@@ -1663,6 +1796,86 @@ def _json_object_list(value: object) -> tuple[Mapping[str, object], ...]:
     if not isinstance(parsed, list) or not all(isinstance(item, dict) for item in parsed):
         raise ResultStoreContractError("JSON field must decode to a list of objects")
     return tuple(parsed)
+
+
+_DUCKDB_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _normalize_s3_uri(root: Path | str) -> str:
+    if not isinstance(root, str):
+        raise ResultStoreContractError(
+            "s3_parquet root must be an s3:// URI string",
+            field="root",
+        )
+    parsed = urlparse(root)
+    if parsed.scheme != "s3" or not parsed.netloc:
+        raise ResultStoreContractError(
+            "s3_parquet root must be an s3://bucket[/prefix] URI",
+            field="root",
+        )
+    if unquote(parsed.netloc) in {".", ".."}:
+        raise ResultStoreContractError(
+            "s3_parquet root path must not contain relative components",
+            field="root",
+        )
+    if parsed.query or parsed.fragment:
+        raise ResultStoreContractError(
+            "s3_parquet root must not include query or fragment",
+            field="root",
+        )
+    raw_parts = [part for part in parsed.path.split("/") if part]
+    decoded_parts = [unquote(part) for part in raw_parts]
+    if any(part in {".", ".."} for part in decoded_parts):
+        raise ResultStoreContractError(
+            "s3_parquet root path must not contain relative components",
+            field="root",
+        )
+    path = "/".join(raw_parts)
+    return f"s3://{parsed.netloc}" + (f"/{path}" if path else "")
+
+
+def _s3_mock_physical_root(root_uri: str, mock_root: Path) -> Path:
+    parsed = urlparse(root_uri)
+    path_parts = [unquote(part) for part in parsed.path.split("/") if part]
+    return mock_root.resolve().joinpath(parsed.netloc, *path_parts)
+
+
+def _validated_duckdb_name(value: str, field: str) -> str:
+    if not isinstance(value, str) or not _DUCKDB_NAME_RE.fullmatch(value):
+        raise ResultStoreContractError(
+            f"{field} entries must be DuckDB setting or extension names",
+            field=field,
+        )
+    return value
+
+
+def _duckdb_literal(value: str | int | float | bool) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int | float):
+        return str(value)
+    if isinstance(value, str):
+        return _sql_literal(value)
+    raise ResultStoreContractError(
+        "duckdb setting values must be string, number, or boolean",
+        field="duckdb_settings",
+    )
+
+
+def _artifact_id_for_request(
+    run_id: str,
+    request: ArtifactWriteRequest,
+    schema_fingerprint: str,
+) -> str:
+    artifact_type = ArtifactType(request.artifact_type)
+    payload = {
+        "run_id": run_id,
+        "artifact_id_hint": request.artifact_id_hint,
+        "artifact_type": artifact_type.value,
+        "schema_fingerprint": schema_fingerprint,
+        "partition_values": dict(request.partition_values),
+    }
+    return f"{artifact_type.value}:{stable_json_hash(payload)}"
 
 
 def _safe_run_id(run_id: str) -> str:

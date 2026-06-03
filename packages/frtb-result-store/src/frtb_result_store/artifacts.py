@@ -294,6 +294,7 @@ def stage_artifact_write(
     request: ArtifactWriteRequest,
     staging_dir: Path,
     final_root: Path,
+    final_uri: str | None = None,
 ) -> StagedArtifact:
     """Validate and stage one artifact without materializing all chunks."""
 
@@ -326,7 +327,7 @@ def stage_artifact_write(
             artifact_id=artifact_id,
             component=request.component,
             artifact_type=request.artifact_type,
-            uri=final_path.resolve().as_uri(),
+            uri=final_uri if final_uri is not None else final_path.resolve().as_uri(),
             format="parquet",
             row_count=row_count,
             schema_fingerprint=entry.schema_fingerprint,

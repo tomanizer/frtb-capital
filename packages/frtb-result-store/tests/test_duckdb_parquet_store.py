@@ -4,7 +4,7 @@ import json
 import shutil
 from datetime import UTC, date, datetime
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import quote, unquote, urlparse
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -558,6 +558,121 @@ def test_reserved_backends_fail_closed(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="reserved for a later implementation"):
         DuckDbParquetResultStore(config)
+
+
+def test_s3_parquet_backend_uses_manifest_gated_logical_layout(tmp_path: Path) -> None:
+    run = _run_with_id("s3/run/2026-06-03")
+    schema = artifact_schema_for("ima.pnl_vector.v1")
+    request = ArtifactWriteRequest(
+        artifact_id_hint="ima-desk-a-pnl",
+        artifact_type=ArtifactType.IMA_PNL_VECTOR,
+        component=FrtbComponent.IMA,
+        schema_id=schema.schema_id,
+        chunks=_ima_pnl_chunks(schema.arrow_schema, run.run_id),
+        partition_values={
+            "desk_id": "rates",
+            "portfolio_id": "rates-options",
+            "book_id": "rates-core",
+        },
+        metadata={"source": "s3-mock-test"},
+    )
+    config = ResultStoreConfig(
+        root="s3://frtb-results/prod",
+        backend=StorageBackend.S3_PARQUET,
+        s3_mock_root=tmp_path / "mock-s3",
+        duckdb_settings={"threads": 1},
+    )
+    store = DuckDbParquetResultStore(config)
+    bundle = _bundle(run)
+
+    store.write_bundle(bundle, artifact_requests=(request,))
+
+    assert store.root == (tmp_path / "mock-s3" / "frtb-results" / "prod").resolve()
+    assert store.root_uri == "s3://frtb-results/prod"
+    assert store.get_run(run.run_id) == run
+    assert store.capital_summary(run.run_id)[0].total_capital == 42.0
+    manifest = json.loads(store._manifest_path(run.run_id).read_text(encoding="utf-8"))
+    assert manifest["backend"] == StorageBackend.S3_PARQUET.value
+    assert manifest["root_uri"] == "s3://frtb-results/prod"
+    assert manifest["paths"] == {
+        "parquet": "s3://frtb-results/prod/parquet",
+        "artifacts": "s3://frtb-results/prod/artifacts",
+        "manifests": "s3://frtb-results/prod/manifests",
+    }
+    generated = next(
+        ref
+        for ref in store.artifact_refs(run.run_id, artifact_type=ArtifactType.IMA_PNL_VECTOR)
+        if ref.metadata.get("source") == "s3-mock-test"
+    )
+    assert generated.uri.startswith(
+        "s3://frtb-results/prod/artifacts/"
+        "artifact_type=IMA_PNL_VECTOR/run_id=s3%2Frun%2F2026-06-03/"
+    )
+    artifact_paths = tuple(
+        store.artifact_root.glob("artifact_type=IMA_PNL_VECTOR/run_id=*/artifact_id=*/data.parquet")
+    )
+    assert len(artifact_paths) == 1
+    assert pq.ParquetFile(artifact_paths[0]).metadata.row_group(0).column(0).compression == "ZSTD"
+
+
+def test_s3_parquet_readers_ignore_orphaned_objects_without_manifest(tmp_path: Path) -> None:
+    run = _run_with_id("orphan/s3/run")
+    store = DuckDbParquetResultStore(
+        ResultStoreConfig(
+            root="s3://frtb-results/prod",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+    )
+    orphan_path = store._run_table_path("runs", run.run_id)
+    orphan_path.parent.mkdir(parents=True)
+    pq.write_table(pa.table({"run_id": [run.run_id]}), orphan_path)
+    staging_path = store.root / "_staging" / quote(run.run_id, safe="")
+    staging_path.mkdir(parents=True)
+    (staging_path / "runs.parquet").write_bytes(b"staged")
+
+    assert store.run_exists(run.run_id) is False
+    assert store.list_runs() == ()
+    assert store.get_run(run.run_id) is None
+    assert store.cleanup_orphaned_staging() == (run.run_id,)
+    assert not staging_path.exists()
+
+
+def test_s3_parquet_config_requires_uri_and_explicit_mock_root(tmp_path: Path) -> None:
+    with pytest.raises(ResultStoreContractError, match="requires s3_mock_root"):
+        ResultStoreConfig(root="s3://frtb-results/prod", backend=StorageBackend.S3_PARQUET)
+    with pytest.raises(ResultStoreContractError, match="s3:// roots require"):
+        ResultStoreConfig(root="s3://frtb-results/prod")
+    with pytest.raises(ResultStoreContractError, match="s3:// URI string"):
+        ResultStoreConfig(
+            root=tmp_path / "result-store",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+    with pytest.raises(ResultStoreContractError, match="relative components"):
+        ResultStoreConfig(
+            root="s3://frtb-results/prod/../other",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+    with pytest.raises(ResultStoreContractError, match="relative components"):
+        ResultStoreConfig(
+            root="s3://frtb-results/prod/%2E%2E/other",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+    with pytest.raises(ResultStoreContractError, match="relative components"):
+        ResultStoreConfig(
+            root="s3://../prod",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
+    with pytest.raises(ResultStoreContractError, match="relative components"):
+        ResultStoreConfig(
+            root="s3://%2E/prod",
+            backend=StorageBackend.S3_PARQUET,
+            s3_mock_root=tmp_path / "mock-s3",
+        )
 
 
 def test_malformed_stored_values_raise_contract_errors() -> None:
