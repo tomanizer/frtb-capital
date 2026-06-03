@@ -30,7 +30,11 @@ from frtb_orchestration.manifest import (
     run_standardised_approach_from_manifest,
     validate_capital_run_manifest,
 )
-from frtb_orchestration.scaffold import PACKAGE_METADATA, calculate_suite_capital
+from frtb_orchestration.scaffold import (
+    PACKAGE_METADATA,
+    aggregate_suite_attribution,
+    calculate_suite_capital,
+)
 from frtb_orchestration.standardised import (
     OrchestrationInputError,
     StandardisedApproachCapitalResult,
@@ -39,7 +43,11 @@ from frtb_orchestration.standardised import (
     compose_standardised_approach_capital,
     standardised_jurisdiction_family,
 )
-from frtb_orchestration.suite import SuiteCapitalResult, suite_jurisdiction_family
+from frtb_orchestration.suite import (
+    SuiteAttributionResult,
+    SuiteCapitalResult,
+    suite_jurisdiction_family,
+)
 
 __all__ = [
     "CVA_COUNTERPARTY_INPUT_TABLE",
@@ -66,8 +74,10 @@ __all__ = [
     "StandardisedComponent",
     "StandardisedComponentSubtotal",
     "StandardisedFallbackRoute",
+    "SuiteAttributionResult",
     "SuiteCapitalResult",
     "__version__",
+    "aggregate_suite_attribution",
     "calculate_suite_capital",
     "compose_standardised_approach_capital",
     "recognise_cva_summary",
