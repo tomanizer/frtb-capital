@@ -15,12 +15,14 @@ from frtb_drc import (
     DrcFairValueCapEvidence,
     DrcFxRate,
     DrcInputError,
+    DrcRiskWeightEvidence,
     DrcSourceLineage,
     calculate_drc_capital,
     calculate_drc_capital_from_batch,
     fair_value_cap_evidence_by_position,
     input_hash_for_drc_batch,
     input_snapshot_hash,
+    risk_weight_evidence_by_position,
     validate_reconciliation,
 )
 from frtb_drc.arrow_batch import (
@@ -153,6 +155,41 @@ def test_drc_arrow_batch_batch_matches_securitisation_non_ctp_row_capital() -> N
         row_result.categories[0].bucket_results
     )
     assert "US_NPR_210_C_3_III" in calculation.result.citations
+
+
+def test_drc_arrow_batch_matches_basel_securitisation_non_ctp_row_capital() -> None:
+    fixture = _load_fixture("drc_basel_sec_nonctp_v1")
+    expected = json.loads(
+        (
+            Path(__file__).resolve().parent
+            / "fixtures"
+            / "drc_basel_sec_nonctp_v1"
+            / "expected_outputs.json"
+        ).read_text(encoding="utf-8")
+    )
+    row_result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
+    handoff = normalize_drc_securitisation_non_ctp_arrow_table(
+        _arrow_table(fixture["positions"]),
+        source_hash=source_content_hash("synthetic drc basel sec non-ctp source"),
+    )
+
+    batch = build_drc_securitisation_non_ctp_batch_from_arrow(handoff)
+    calculation = calculate_drc_capital_from_batch(batch, context=fixture["context"])
+
+    validate_reconciliation(calculation.result)
+    assert calculation.result.profile_id == BASEL_MAR22_PROFILE_ID
+    assert calculation.accepted_row_dataclasses_materialized == 0
+    assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
+    assert calculation.result.total_drc == pytest.approx(expected["total_drc"])
+    assert _net_outputs(calculation.result.net_jtds) == _net_outputs(row_result.net_jtds)
+    assert _bucket_outputs(calculation.result.categories[0].bucket_results) == _bucket_outputs(
+        row_result.categories[0].bucket_results
+    )
+    assert len(calculation.result.risk_weight_evidence) == 4
+    assert len(calculation.result.fair_value_cap_evidence) == 1
+    assert "BASEL_MAR22_34" in calculation.result.citations
+    assert "BASEL_MAR22_35" in calculation.result.citations
+    assert not any(citation.startswith("US_NPR") for citation in calculation.result.citations)
 
 
 def test_drc_securitisation_non_ctp_batch_applies_fair_value_cap_evidence() -> None:
@@ -642,9 +679,66 @@ def _load_fixture(fixture_name: str) -> dict[str, Any]:
                 {},
             ),
             ctp_risk_weights=context_raw.get("ctp_risk_weights", {}),
+            securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                _risk_weight_evidence_from_dict(raw)
+                for raw in context_raw.get("securitisation_non_ctp_risk_weight_evidence", ())
+            ),
+            securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+                _fair_value_cap_evidence_from_dict(raw)
+                for raw in context_raw.get("securitisation_non_ctp_fair_value_cap_evidence", ())
+            ),
             ctp_offset_groups=context_raw.get("ctp_offset_groups", {}),
         ),
     }
+
+
+def _risk_weight_evidence_from_dict(raw: dict[str, Any]) -> DrcRiskWeightEvidence:
+    lineage = raw["lineage"]
+    return DrcRiskWeightEvidence(
+        position_id=raw["position_id"],
+        risk_class=raw["risk_class"],
+        source_profile_id=raw["source_profile_id"],
+        source_table=raw["source_table"],
+        source_method=raw["source_method"],
+        effective_risk_weight=float(raw["effective_risk_weight"]),
+        as_of_date=date.fromisoformat(raw["as_of_date"]),
+        source_id=raw["source_id"],
+        lineage=DrcSourceLineage(
+            source_system=lineage["source_system"],
+            source_file=lineage["source_file"],
+            source_row_id=lineage["source_row_id"],
+            source_column_map=dict(lineage.get("source_column_map") or {}),
+        ),
+        citation_ids=tuple(raw["citation_ids"]),
+        is_stale=bool(raw.get("is_stale", False)),
+        validation_flags=tuple(raw.get("validation_flags", ())),
+    )
+
+
+def _fair_value_cap_evidence_from_dict(raw: dict[str, Any]) -> DrcFairValueCapEvidence:
+    lineage = raw["lineage"]
+    return DrcFairValueCapEvidence(
+        position_id=raw["position_id"],
+        source_profile_id=raw["source_profile_id"],
+        eligible=bool(raw["eligible"]),
+        fair_value_cap_amount=(
+            None
+            if raw.get("fair_value_cap_amount") is None
+            else float(raw["fair_value_cap_amount"])
+        ),
+        eligibility_reason=raw["eligibility_reason"],
+        as_of_date=date.fromisoformat(raw["as_of_date"]),
+        source_id=raw["source_id"],
+        lineage=DrcSourceLineage(
+            source_system=lineage["source_system"],
+            source_file=lineage["source_file"],
+            source_row_id=lineage["source_row_id"],
+            source_column_map=dict(lineage.get("source_column_map") or {}),
+        ),
+        citation_ids=tuple(raw["citation_ids"]),
+        is_stale=bool(raw.get("is_stale", False)),
+        validation_flags=tuple(raw.get("validation_flags", ())),
+    )
 
 
 def _fair_value_cap_evidence(

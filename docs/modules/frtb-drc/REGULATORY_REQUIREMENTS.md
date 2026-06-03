@@ -139,15 +139,18 @@ Implementation status: U.S. NPR 2.0 non-securitisation, securitisation
 non-CTP, and CTP paths are implemented for row and batch APIs. Basel MAR22
 non-securitisation reference data and row/batch calculation are implemented
 for MAR22.12, MAR22.15-MAR22.18, MAR22.22, and MAR22.24. Basel MAR22
-securitisation non-CTP and CTP fail closed pending MAR22.34/MAR22.42
+securitisation non-CTP row and batch paths are implemented for MAR22.27-MAR22.35
+with MAR22.31 bucket mappings, MAR22.34 typed banking-book securitisation
+risk-weight evidence, MAR22.34 profile-controlled fair-value cap evidence, and
+MAR22.35 category aggregation. Basel MAR22 CTP fails closed pending MAR22.42
 banking-book securitisation mappings and internal decomposition contracts. U.S.
 NPR 2.0 securitisation non-CTP and CTP paths can consume typed
 `DrcRiskWeightEvidence` records carrying source profile, source table, source
-method, effective risk weight, lineage, and citations. U.S. NPR 2.0
-securitisation non-CTP can also consume typed `DrcFairValueCapEvidence` under
-the profile control anchored to proposed section `__.210(c)(3)(iii)` and Basel
-MAR22.34. EU CRR3 and UK PRA profiles are known but fail closed pending Article
-325w / PRA PS1/26 rulebook mappings.
+method, effective risk weight, lineage, and citations. U.S. NPR 2.0 and Basel
+MAR22 securitisation non-CTP can also consume typed `DrcFairValueCapEvidence`
+under profile controls anchored to proposed section `__.210(c)(3)(iii)` and
+Basel MAR22.34. EU CRR3 and UK PRA profiles are known but fail closed pending
+Article 325w / PRA PS1/26 rulebook mappings.
 
 ### DRC-REQ-007: Hedge Benefit Ratio and Bucket Capital
 

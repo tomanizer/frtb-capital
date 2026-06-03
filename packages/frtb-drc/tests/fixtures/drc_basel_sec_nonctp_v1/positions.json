@@ -1,0 +1,261 @@
+{
+  "context": {
+    "base_currency": "USD",
+    "calculation_date": "2026-05-29",
+    "profile_id": "BASEL_MAR22",
+    "run_id": "run-drc-basel-sec-nonctp-v1",
+    "securitisation_non_ctp_fair_value_cap_evidence": [
+      {
+        "as_of_date": "2026-05-29",
+        "citation_ids": [
+          "BASEL_MAR22_34"
+        ],
+        "eligible": true,
+        "eligibility_reason": "synthetic cash securitisation fair-value cap eligible under MAR22.34",
+        "fair_value_cap_amount": 90.0,
+        "lineage": {
+          "source_column_map": {
+            "fair_value_cap_amount": "fair_value_cap_amount"
+          },
+          "source_file": "drc_basel_sec_nonctp_caps_v1.csv",
+          "source_row_id": "cap-long-rmbs-a",
+          "source_system": "synthetic-risk-weight-engine"
+        },
+        "position_id": "long-rmbs-a",
+        "source_id": "cap-long-rmbs-a",
+        "source_profile_id": "BASEL_MAR22",
+        "validation_flags": []
+      }
+    ],
+    "securitisation_non_ctp_risk_weight_evidence": [
+      {
+        "as_of_date": "2026-05-29",
+        "citation_ids": [
+          "BASEL_MAR22_34"
+        ],
+        "effective_risk_weight": 0.2,
+        "lineage": {
+          "source_column_map": {
+            "effective_risk_weight": "risk_weight"
+          },
+          "source_file": "drc_basel_sec_nonctp_risk_weights_v1.csv",
+          "source_row_id": "rw-long-clo-mezz",
+          "source_system": "synthetic-risk-weight-engine"
+        },
+        "position_id": "long-clo-mezz",
+        "risk_class": "SECURITISATION_NON_CTP",
+        "source_id": "rw-long-clo-mezz",
+        "source_method": "upstream-banking-book-securitisation",
+        "source_profile_id": "BASEL_MAR22",
+        "source_table": "BASEL_MAR22_BANKING_BOOK_SECURITISATION_RW",
+        "validation_flags": []
+      },
+      {
+        "as_of_date": "2026-05-29",
+        "citation_ids": [
+          "BASEL_MAR22_34"
+        ],
+        "effective_risk_weight": 0.2,
+        "lineage": {
+          "source_column_map": {
+            "effective_risk_weight": "risk_weight"
+          },
+          "source_file": "drc_basel_sec_nonctp_risk_weights_v1.csv",
+          "source_row_id": "rw-short-clo-mezz",
+          "source_system": "synthetic-risk-weight-engine"
+        },
+        "position_id": "short-clo-mezz",
+        "risk_class": "SECURITISATION_NON_CTP",
+        "source_id": "rw-short-clo-mezz",
+        "source_method": "upstream-banking-book-securitisation",
+        "source_profile_id": "BASEL_MAR22",
+        "source_table": "BASEL_MAR22_BANKING_BOOK_SECURITISATION_RW",
+        "validation_flags": []
+      },
+      {
+        "as_of_date": "2026-05-29",
+        "citation_ids": [
+          "BASEL_MAR22_34"
+        ],
+        "effective_risk_weight": 0.05,
+        "lineage": {
+          "source_column_map": {
+            "effective_risk_weight": "risk_weight"
+          },
+          "source_file": "drc_basel_sec_nonctp_risk_weights_v1.csv",
+          "source_row_id": "rw-long-rmbs-a",
+          "source_system": "synthetic-risk-weight-engine"
+        },
+        "position_id": "long-rmbs-a",
+        "risk_class": "SECURITISATION_NON_CTP",
+        "source_id": "rw-long-rmbs-a",
+        "source_method": "upstream-banking-book-securitisation",
+        "source_profile_id": "BASEL_MAR22",
+        "source_table": "BASEL_MAR22_BANKING_BOOK_SECURITISATION_RW",
+        "validation_flags": []
+      },
+      {
+        "as_of_date": "2026-05-29",
+        "citation_ids": [
+          "BASEL_MAR22_34"
+        ],
+        "effective_risk_weight": 0.05,
+        "lineage": {
+          "source_column_map": {
+            "effective_risk_weight": "risk_weight"
+          },
+          "source_file": "drc_basel_sec_nonctp_risk_weights_v1.csv",
+          "source_row_id": "rw-short-rmbs-a",
+          "source_system": "synthetic-risk-weight-engine"
+        },
+        "position_id": "short-rmbs-a",
+        "risk_class": "SECURITISATION_NON_CTP",
+        "source_id": "rw-short-rmbs-a",
+        "source_method": "upstream-banking-book-securitisation",
+        "source_profile_id": "BASEL_MAR22",
+        "source_table": "BASEL_MAR22_BANKING_BOOK_SECURITISATION_RW",
+        "validation_flags": []
+      }
+    ]
+  },
+  "fixture_id": "drc_basel_sec_nonctp_v1",
+  "positions": [
+    {
+      "bucket_key": "SEC_CLO_NORTH_AMERICA",
+      "citation_ids": [
+        "BASEL_MAR22_27",
+        "BASEL_MAR22_31",
+        "BASEL_MAR22_34"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "LONG",
+      "desk_id": "sec-desk",
+      "index_series_id": null,
+      "instrument_type": "SECURITISATION_TRANCHE",
+      "issuer_id": "clo-2026-1",
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_basel_sec_nonctp_v1.csv",
+        "source_row_id": "row-long-clo-mezz",
+        "source_system": "synthetic"
+      },
+      "market_value": 100.0,
+      "maturity_years": 1.0,
+      "notional": 100.0,
+      "position_id": "long-clo-mezz",
+      "risk_class": "SECURITISATION_NON_CTP",
+      "seniority": null,
+      "source_row_id": "row-long-clo-mezz",
+      "tranche_id": "mezz"
+    },
+    {
+      "bucket_key": "SEC_CLO_NORTH_AMERICA",
+      "citation_ids": [
+        "BASEL_MAR22_27",
+        "BASEL_MAR22_29",
+        "BASEL_MAR22_34"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "SHORT",
+      "desk_id": "sec-desk",
+      "index_series_id": null,
+      "instrument_type": "SECURITISATION_TRANCHE",
+      "issuer_id": "clo-2026-1",
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_basel_sec_nonctp_v1.csv",
+        "source_row_id": "row-short-clo-mezz",
+        "source_system": "synthetic"
+      },
+      "market_value": 40.0,
+      "maturity_years": 0.5,
+      "notional": 40.0,
+      "position_id": "short-clo-mezz",
+      "risk_class": "SECURITISATION_NON_CTP",
+      "seniority": null,
+      "source_row_id": "row-short-clo-mezz",
+      "tranche_id": "mezz"
+    },
+    {
+      "bucket_key": "SEC_RMBS_EUROPE",
+      "citation_ids": [
+        "BASEL_MAR22_27",
+        "BASEL_MAR22_31",
+        "BASEL_MAR22_34"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "LONG",
+      "desk_id": "sec-desk",
+      "index_series_id": null,
+      "instrument_type": "SECURITISATION_TRANCHE",
+      "issuer_id": "rmbs-2026-1",
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_basel_sec_nonctp_v1.csv",
+        "source_row_id": "row-long-rmbs-a",
+        "source_system": "synthetic"
+      },
+      "market_value": 100.0,
+      "maturity_years": 1.0,
+      "notional": 100.0,
+      "position_id": "long-rmbs-a",
+      "risk_class": "SECURITISATION_NON_CTP",
+      "seniority": null,
+      "source_row_id": "row-long-rmbs-a",
+      "tranche_id": "a"
+    },
+    {
+      "bucket_key": "SEC_RMBS_EUROPE",
+      "citation_ids": [
+        "BASEL_MAR22_27",
+        "BASEL_MAR22_29",
+        "BASEL_MAR22_34"
+      ],
+      "credit_quality": null,
+      "cumulative_pnl": null,
+      "currency": "USD",
+      "default_direction": "SHORT",
+      "desk_id": "sec-desk",
+      "index_series_id": null,
+      "instrument_type": "SECURITISATION_TRANCHE",
+      "issuer_id": "rmbs-2026-2",
+      "legal_entity": "bank-na",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_basel_sec_nonctp_v1.csv",
+        "source_row_id": "row-short-rmbs-a",
+        "source_system": "synthetic"
+      },
+      "market_value": 60.0,
+      "maturity_years": 1.0,
+      "notional": 60.0,
+      "position_id": "short-rmbs-a",
+      "risk_class": "SECURITISATION_NON_CTP",
+      "seniority": null,
+      "source_row_id": "row-short-rmbs-a",
+      "tranche_id": "a"
+    }
+  ],
+  "schema_version": "drc_basel_sec_nonctp_fixture_v1"
+}

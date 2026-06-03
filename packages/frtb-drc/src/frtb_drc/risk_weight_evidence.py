@@ -16,6 +16,7 @@ from frtb_drc.data_models import (
     DrcRiskClass,
     DrcRiskWeightEvidence,
 )
+from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, get_rule_profile
 from frtb_drc.validation import DrcInputError
 
 
@@ -65,6 +66,12 @@ def effective_risk_weights(
     raw_field_name, raw_weights = _context_raw_weights(context, risk_class=risk_class)
     evidence_field_name, evidence = _context_evidence(context, risk_class=risk_class)
     result: dict[str, float] = {}
+    if raw_weights and context.profile_id != US_NPR_2_0_PROFILE_ID:
+        raise DrcInputError(
+            f"{raw_field_name} legacy float maps are only supported for "
+            f"{US_NPR_2_0_PROFILE_ID}; provide typed risk-weight evidence for "
+            f"profile {context.profile_id}"
+        )
     for position_id, risk_weight in raw_weights.items():
         key = _require_text(position_id, f"{raw_field_name} position_id")
         result[key] = _require_finite_non_negative(
@@ -155,6 +162,12 @@ def _validate_evidence_record(
     if DrcRiskClass(record.risk_class) != risk_class:
         raise DrcInputError(f"{field_name}[{position_id!r}] has wrong risk_class")
     _require_text(record.source_profile_id, f"{field_name}[{position_id!r}].source_profile_id")
+    if record.source_profile_id != context.profile_id:
+        raise DrcInputError(
+            f"{field_name}[{position_id!r}].source_profile_id "
+            f"{record.source_profile_id!r} does not match context profile_id "
+            f"{context.profile_id!r}"
+        )
     _require_text(record.source_table, f"{field_name}[{position_id!r}].source_table")
     _require_text(record.source_method, f"{field_name}[{position_id!r}].source_method")
     _require_text(record.source_id, f"{field_name}[{position_id!r}].source_id")
@@ -171,8 +184,14 @@ def _validate_evidence_record(
     )
     if not record.citation_ids:
         raise DrcInputError(f"{field_name}[{position_id!r}].citation_ids must be non-empty")
+    profile_citations = set(get_rule_profile(context.profile_id).citations)
     for citation_id in record.citation_ids:
-        _require_text(citation_id, f"{field_name}[{position_id!r}].citation_ids")
+        citation = _require_text(citation_id, f"{field_name}[{position_id!r}].citation_ids")
+        if citation not in profile_citations:
+            raise DrcInputError(
+                f"{field_name}[{position_id!r}].citation_ids contains citation "
+                f"{citation!r} outside profile {context.profile_id}"
+            )
 
 
 def _validate_lineage(record: DrcRiskWeightEvidence, *, field_name: str) -> None:

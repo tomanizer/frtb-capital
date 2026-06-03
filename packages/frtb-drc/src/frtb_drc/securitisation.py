@@ -63,6 +63,18 @@ _BUCKET_CITATIONS = (
 _HBR_CITATIONS = ("US_NPR_210_A_2_IV_A", "US_NPR_210_C_3_III", "BASEL_MAR22_33")
 _CATEGORY_CITATIONS = ("US_NPR_210_C_3_IV", "BASEL_MAR22_35")
 _FAIR_VALUE_CAP_CITATIONS = ("US_NPR_210_C_3_III", "BASEL_MAR22_34")
+_BASEL_MAR22_PROFILE_ID = "BASEL_MAR22"
+_BASEL_GROSS_CITATIONS = ("BASEL_MAR22_27",)
+_BASEL_NETTING_CITATIONS = ("BASEL_MAR22_28", "BASEL_MAR22_29", "BASEL_MAR22_30")
+_BASEL_BUCKET_CITATIONS = (
+    "BASEL_MAR22_31",
+    "BASEL_MAR22_32",
+    "BASEL_MAR22_33",
+    "BASEL_MAR22_34",
+)
+_BASEL_HBR_CITATIONS = ("BASEL_MAR22_33",)
+_BASEL_CATEGORY_CITATIONS = ("BASEL_MAR22_35",)
+_BASEL_FAIR_VALUE_CAP_CITATIONS = ("BASEL_MAR22_34",)
 
 
 @dataclass(frozen=True)
@@ -112,7 +124,7 @@ def calculate_securitisation_non_ctp_drc(
             gross_jtds=(),
             maturity_scaled_jtds=(),
             net_jtds=(),
-            category=_zero_securitisation_non_ctp_category(),
+            category=_zero_securitisation_non_ctp_category(profile_id=profile_id),
         )
     _validate_securitisation_non_ctp_context(records, context=context)
     gross_jtds = tuple(
@@ -208,7 +220,9 @@ def calculate_securitisation_non_ctp_gross_jtd(
         notional=abs(position.notional),
         pnl_component=0.0,
         gross_jtd=gross_jtd,
-        citations=merge_citations((*_GROSS_CITATIONS, *citations, *position.citation_ids)),
+        citations=merge_citations(
+            (*_gross_citations(profile_id), *citations, *position.citation_ids)
+        ),
         branch_metadata=branch_metadata,
     )
 
@@ -229,13 +243,17 @@ def calculate_securitisation_non_ctp_net_jtds(
         key = (exposure.gross_jtd.bucket_key, exposure.offset_group)
         grouped.setdefault(key, []).append(exposure)
 
-    rejected_by_bucket = _rejected_securitisation_non_ctp_offsets(records)
+    rejected_by_bucket = _rejected_securitisation_non_ctp_offsets(
+        records,
+        profile_id=profile_id,
+    )
     net_records: list[NetJtd] = []
     for key in sorted(grouped):
         record = _net_securitisation_non_ctp_group(
             key,
             grouped[key],
             rejected_offsets=rejected_by_bucket.get(key[0], ()),
+            profile_id=profile_id,
         )
         if record is not None:
             net_records.append(record)
@@ -253,7 +271,7 @@ def calculate_securitisation_non_ctp_category_drc(
     ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
     records = tuple(inputs)
     if not records:
-        return _zero_securitisation_non_ctp_category()
+        return _zero_securitisation_non_ctp_category(profile_id=profile_id)
 
     grouped: dict[str, list[SecuritisationNonCtpCapitalInput]] = {}
     for record in records:
@@ -282,7 +300,7 @@ def calculate_securitisation_non_ctp_category_drc(
                     "securitisation non-CTP category DRC is the simple sum of "
                     "bucket-level requirements"
                 ),
-                citations=_CATEGORY_CITATIONS,
+                citations=_category_citations(profile_id),
             ),
         ),
     )
@@ -420,6 +438,7 @@ def _securitisation_non_ctp_hbr(
     records: tuple[SecuritisationNonCtpCapitalInput, ...],
     *,
     bucket_key: str,
+    profile_id: str,
 ) -> HedgeBenefitRatio:
     net_jtds = tuple(record.net_jtd for record in records)
     aggregate_long = sum(
@@ -446,7 +465,7 @@ def _securitisation_non_ctp_hbr(
                     "securitisation non-CTP aggregate net long and net short "
                     "default exposures are both zero"
                 ),
-                citations=_HBR_CITATIONS,
+                citations=_hbr_citations(profile_id),
             ),
         )
     else:
@@ -458,7 +477,7 @@ def _securitisation_non_ctp_hbr(
         aggregate_net_short=aggregate_short,
         denominator=denominator,
         ratio=ratio,
-        citations=_HBR_CITATIONS,
+        citations=_hbr_citations(profile_id),
         branch_metadata=branch_metadata,
     )
 
@@ -488,7 +507,11 @@ def _securitisation_non_ctp_bucket_drc(
             weighted_short += weighted_amount
         net_jtd_ids.append(net_jtd.net_jtd_id)
 
-    hbr = _securitisation_non_ctp_hbr(tuple(records), bucket_key=bucket_key)
+    hbr = _securitisation_non_ctp_hbr(
+        tuple(records),
+        bucket_key=bucket_key,
+        profile_id=profile_id,
+    )
     unfloored_capital = weighted_long - hbr.ratio * weighted_short
     floor_applied = unfloored_capital < 0.0
     capital = max(unfloored_capital, 0.0)
@@ -501,7 +524,7 @@ def _securitisation_non_ctp_bucket_drc(
                 source_id=bucket_key,
                 selected=True,
                 reason="securitisation non-CTP bucket DRC is floored at zero",
-                citations=("US_NPR_210_C_3_III", "BASEL_MAR22_33"),
+                citations=_hbr_citations(profile_id),
             ),
         )
 
@@ -515,7 +538,7 @@ def _securitisation_non_ctp_bucket_drc(
         capital=capital,
         floor_applied=floor_applied,
         net_jtd_ids=tuple(net_jtd_ids),
-        citations=merge_citations((*_BUCKET_CITATIONS, bucket_definition.citation_id)),
+        citations=merge_citations((*_bucket_citations(profile_id), bucket_definition.citation_id)),
         branch_metadata=branch_metadata,
     )
 
@@ -525,6 +548,7 @@ def _net_securitisation_non_ctp_group(
     exposures: list[SecuritisationNonCtpNettingInput],
     *,
     rejected_offsets: tuple[RejectedOffset, ...],
+    profile_id: str,
 ) -> NetJtd | None:
     bucket_key, group_key = key
     gross_long = sum(
@@ -581,7 +605,7 @@ def _net_securitisation_non_ctp_group(
                     "securitisation non-CTP netting used same-pool/same-tranche "
                     "identity or explicit replication-group evidence"
                 ),
-                citations=_NETTING_CITATIONS,
+                citations=_netting_citations(profile_id),
             ),
         ),
     )
@@ -589,6 +613,8 @@ def _net_securitisation_non_ctp_group(
 
 def _rejected_securitisation_non_ctp_offsets(
     exposures: tuple[SecuritisationNonCtpNettingInput, ...],
+    *,
+    profile_id: str,
 ) -> dict[str, tuple[RejectedOffset, ...]]:
     grouped: dict[str, list[SecuritisationNonCtpNettingInput]] = {}
     for exposure in exposures:
@@ -618,7 +644,7 @@ def _rejected_securitisation_non_ctp_offsets(
             sequence=sequence,
             representative=_representative_scaled_jtd_id,
             reason_code="SEC_NON_CTP_OFFSET_REQUIRES_SAME_POOL_TRANCHE_OR_REPLICATION",
-            citations=_NETTING_CITATIONS,
+            citations=_netting_citations(profile_id),
         )
         if rejected:
             rejected_by_bucket[bucket_key] = tuple(rejected)
@@ -652,7 +678,10 @@ def _validate_securitisation_non_ctp_net_jtd(net_jtd: NetJtd, *, bucket_key: str
     require_finite_non_negative(net_jtd.net_amount, f"net JTD amount {net_jtd.net_jtd_id}")
 
 
-def _zero_securitisation_non_ctp_category() -> CategoryDrc:
+def _zero_securitisation_non_ctp_category(
+    *,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
+) -> CategoryDrc:
     return CategoryDrc(
         category_id="category-drc-securitisation-non-ctp",
         risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
@@ -665,7 +694,7 @@ def _zero_securitisation_non_ctp_category() -> CategoryDrc:
                 source_id=DrcRiskClass.SECURITISATION_NON_CTP.value,
                 selected=True,
                 reason="all supported securitisation non-CTP net JTD records are zero",
-                citations=_CATEGORY_CITATIONS,
+                citations=_category_citations(profile_id),
             ),
         ),
     )
@@ -743,7 +772,7 @@ def _fair_value_capped_gross_jtd(
                         "securitisation non-CTP gross default exposure used market value; "
                         "no fair-value cap evidence was supplied"
                     ),
-                    citations=_GROSS_CITATIONS,
+                    citations=_gross_citations(profile_id),
                 ),
             ),
             (),
@@ -752,7 +781,7 @@ def _fair_value_capped_gross_jtd(
         raise DrcInputError(
             f"securitisation non-CTP fair-value cap is not supported for profile {profile_id}"
         )
-    citations = merge_citations((*_FAIR_VALUE_CAP_CITATIONS, *evidence.citation_ids))
+    citations = merge_citations((*_fair_value_cap_citations(profile_id), *evidence.citation_ids))
     if not evidence.eligible:
         return (
             market_value,
@@ -821,6 +850,42 @@ def _fair_value_capped_gross_jtd(
         ),
         citations,
     )
+
+
+def _gross_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == _BASEL_MAR22_PROFILE_ID:
+        return _BASEL_GROSS_CITATIONS
+    return _GROSS_CITATIONS
+
+
+def _netting_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == _BASEL_MAR22_PROFILE_ID:
+        return _BASEL_NETTING_CITATIONS
+    return _NETTING_CITATIONS
+
+
+def _bucket_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == _BASEL_MAR22_PROFILE_ID:
+        return _BASEL_BUCKET_CITATIONS
+    return _BUCKET_CITATIONS
+
+
+def _hbr_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == _BASEL_MAR22_PROFILE_ID:
+        return _BASEL_HBR_CITATIONS
+    return _HBR_CITATIONS
+
+
+def _category_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == _BASEL_MAR22_PROFILE_ID:
+        return _BASEL_CATEGORY_CITATIONS
+    return _CATEGORY_CITATIONS
+
+
+def _fair_value_cap_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == _BASEL_MAR22_PROFILE_ID:
+        return _BASEL_FAIR_VALUE_CAP_CITATIONS
+    return _FAIR_VALUE_CAP_CITATIONS
 
 
 __all__ = [

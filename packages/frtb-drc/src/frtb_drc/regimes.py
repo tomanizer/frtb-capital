@@ -89,6 +89,32 @@ class DrcRuleProfile:
         }
 
 
+@dataclass(frozen=True)
+class DrcProfileSupportCell:
+    """One profile/risk-class support inventory cell."""
+
+    profile_id: str
+    risk_class: DrcRiskClass
+    status: str
+    reason: str
+    citation_ids: tuple[str, ...]
+    next_step: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "risk_class", DrcRiskClass(self.risk_class))
+        object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "profile_id": self.profile_id,
+            "risk_class": self.risk_class.value,
+            "status": self.status,
+            "reason": self.reason,
+            "citation_ids": self.citation_ids,
+            "next_step": self.next_step,
+        }
+
+
 US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
     "BASEL_MAR22_11": DrcCitation(
         citation_id="BASEL_MAR22_11",
@@ -468,7 +494,15 @@ BASEL_MAR22_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.bis.org/basel_framework/chapter/MAR/22.htm",
         note="Non-securitisation default-risk capital equals the sum of bucket-level requirements.",
     ),
+    "BASEL_MAR22_27": US_NPR_2_0_CITATIONS["BASEL_MAR22_27"],
+    "BASEL_MAR22_28": US_NPR_2_0_CITATIONS["BASEL_MAR22_28"],
+    "BASEL_MAR22_29": US_NPR_2_0_CITATIONS["BASEL_MAR22_29"],
+    "BASEL_MAR22_30": US_NPR_2_0_CITATIONS["BASEL_MAR22_30"],
+    "BASEL_MAR22_31": US_NPR_2_0_CITATIONS["BASEL_MAR22_31"],
+    "BASEL_MAR22_32": US_NPR_2_0_CITATIONS["BASEL_MAR22_32"],
+    "BASEL_MAR22_33": US_NPR_2_0_CITATIONS["BASEL_MAR22_33"],
     "BASEL_MAR22_34": US_NPR_2_0_CITATIONS["BASEL_MAR22_34"],
+    "BASEL_MAR22_35": US_NPR_2_0_CITATIONS["BASEL_MAR22_35"],
     "BASEL_MAR22_42": DrcCitation(
         citation_id="BASEL_MAR22_42",
         source_id="BASEL_MAR22",
@@ -524,6 +558,17 @@ def ensure_risk_class_supported(profile: DrcRuleProfile, risk_class: DrcRiskClas
         return
     reason = profile.unsupported_features.get(risk_class, "risk class is not supported")
     raise UnsupportedRegulatoryFeatureError(f"frtb-drc does not support {reason}")
+
+
+def drc_profile_support_matrix() -> tuple[DrcProfileSupportCell, ...]:
+    """Return the current DRC profile/risk-class support matrix."""
+
+    cells: list[DrcProfileSupportCell] = []
+    for profile_id in _PROFILE_ORDER:
+        profile = get_rule_profile(profile_id)
+        for risk_class in _RISK_CLASS_ORDER:
+            cells.append(_profile_support_cell(profile, risk_class))
+    return tuple(cells)
 
 
 def profile_content_hash(profile: DrcRuleProfile) -> str:
@@ -599,14 +644,16 @@ _BASEL_MAR22_PROFILE = DrcRuleProfile(
     publication_date=date(2020, 3, 27),
     effective_date=date(2023, 1, 1),
     status="standard",
-    supported_risk_classes=frozenset({DrcRiskClass.NON_SECURITISATION}),
+    supported_risk_classes=frozenset(
+        {
+            DrcRiskClass.NON_SECURITISATION,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+        }
+    ),
     citations=BASEL_MAR22_CITATIONS,
+    securitisation_non_ctp_fair_value_cap_allowed=True,
+    securitisation_non_ctp_fair_value_cap_citation_ids=("BASEL_MAR22_34",),
     unsupported_features={
-        DrcRiskClass.SECURITISATION_NON_CTP: (
-            "BASEL_MAR22 securitisation non-CTP because MAR22.34 banking-book "
-            "securitisation risk-weight derivation and fair-value cap evidence are "
-            "not implemented"
-        ),
         DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
             "BASEL_MAR22 CTP because MAR22.42 banking-book securitisation risk-weight "
             "lineage and CTP decomposition evidence are not implemented"
@@ -672,3 +719,131 @@ _PROFILES: Mapping[str, DrcRuleProfile] = MappingProxyType(
         _US_NPR_2_0_PROFILE.profile_id: _US_NPR_2_0_PROFILE,
     }
 )
+
+_PROFILE_ORDER = (
+    US_NPR_2_0_PROFILE_ID,
+    BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
+)
+_RISK_CLASS_ORDER = tuple(DrcRiskClass)
+
+_SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str, ...], str]] = (
+    MappingProxyType(
+        {
+            (
+                US_NPR_2_0_PROFILE_ID,
+                DrcRiskClass.NON_SECURITISATION,
+            ): (
+                "U.S. NPR 2.0 non-securitisation row and batch capital supported.",
+                (
+                    "US_NPR_210_B_1_IV",
+                    "US_NPR_210_A_2_III",
+                    "US_NPR_210_B_2",
+                    "US_NPR_210_B_3_I",
+                    "US_NPR_210_B_3_II",
+                    "US_NPR_210_B_3_III",
+                ),
+                "Maintain fixture hashes and attribution compatibility.",
+            ),
+            (
+                US_NPR_2_0_PROFILE_ID,
+                DrcRiskClass.SECURITISATION_NON_CTP,
+            ): (
+                "U.S. NPR 2.0 securitisation non-CTP row and batch capital supported.",
+                (
+                    "US_NPR_210_C_1",
+                    "US_NPR_210_C_2",
+                    "US_NPR_210_C_3_I_II",
+                    "US_NPR_210_C_3_III",
+                    "US_NPR_210_C_3_IV",
+                    "BASEL_MAR22_34",
+                ),
+                "Maintain typed evidence and legacy compatibility coverage.",
+            ),
+            (
+                US_NPR_2_0_PROFILE_ID,
+                DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ): (
+                "U.S. NPR 2.0 CTP row and batch capital supported.",
+                (
+                    "US_NPR_210_D_1",
+                    "US_NPR_210_D_2",
+                    "US_NPR_210_D_3_I_III",
+                    "US_NPR_210_D_3_IV",
+                    "US_NPR_210_D_3_IV_D",
+                    "US_NPR_210_D_3_V",
+                ),
+                "Maintain CTP decomposition evidence coverage.",
+            ),
+            (
+                BASEL_MAR22_PROFILE_ID,
+                DrcRiskClass.NON_SECURITISATION,
+            ): (
+                "Basel MAR22 non-securitisation row and batch capital supported.",
+                (
+                    "BASEL_MAR22_11",
+                    "BASEL_MAR22_12",
+                    "BASEL_MAR22_15_18",
+                    "BASEL_MAR22_19",
+                    "BASEL_MAR22_22",
+                    "BASEL_MAR22_23",
+                    "BASEL_MAR22_24",
+                    "BASEL_MAR22_25",
+                    "BASEL_MAR22_26",
+                ),
+                "Maintain Basel non-securitisation fixture and batch coverage.",
+            ),
+            (
+                BASEL_MAR22_PROFILE_ID,
+                DrcRiskClass.SECURITISATION_NON_CTP,
+            ): (
+                (
+                    "Basel MAR22 securitisation non-CTP row and batch capital supported "
+                    "with typed MAR22.34 banking-book risk-weight evidence."
+                ),
+                (
+                    "BASEL_MAR22_27",
+                    "BASEL_MAR22_28",
+                    "BASEL_MAR22_29",
+                    "BASEL_MAR22_30",
+                    "BASEL_MAR22_31",
+                    "BASEL_MAR22_32",
+                    "BASEL_MAR22_33",
+                    "BASEL_MAR22_34",
+                    "BASEL_MAR22_35",
+                ),
+                "Maintain Basel-specific typed evidence fixtures.",
+            ),
+        }
+    )
+)
+
+
+def _profile_support_cell(
+    profile: DrcRuleProfile,
+    risk_class: DrcRiskClass,
+) -> DrcProfileSupportCell:
+    supported = risk_class in profile.supported_risk_classes
+    details = _SUPPORTED_CELL_DETAILS.get((profile.profile_id, risk_class))
+    if supported and details is not None:
+        reason, citations, next_step = details
+    elif supported:
+        reason = f"{profile.profile_id} {risk_class.value} is supported."
+        citations = tuple(sorted(profile.citations))
+        next_step = "Maintain committed tests and fixtures."
+    else:
+        reason = profile.unsupported_features.get(
+            risk_class,
+            f"{profile.profile_id} {risk_class.value} is unsupported until mapped.",
+        )
+        citations = tuple(sorted(profile.citations))
+        next_step = "Add cited profile-specific mappings and deterministic fixtures."
+    return DrcProfileSupportCell(
+        profile_id=profile.profile_id,
+        risk_class=risk_class,
+        status="SUPPORTED" if supported else "FAIL_CLOSED",
+        reason=reason,
+        citation_ids=citations,
+        next_step=next_step,
+    )
