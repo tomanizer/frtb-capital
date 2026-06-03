@@ -20,6 +20,79 @@ their owning submodule only and are not part of the v1 compatibility contract.
 | Classification/profile helpers | `classify_rrao_position`, `classify_rrao_positions`, `RraoRuleProfile`, `get_rrao_rule_profile`, `validate_rrao_positions` | Public validation, classification, and supported profile metadata. |
 | Errors | `RraoInputError` | Public fail-closed input error carrying field and position context. |
 
+## Client Integration
+
+RRAO is the template package for client-facing public API docs. The suite-level
+onboarding guide is [`docs/CLIENT_INTEGRATION.md`](../../CLIENT_INTEGRATION.md),
+and other package docs should copy the integration checklist in
+[`docs/modules/_templates/PUBLIC_API_INTEGRATION_SECTION.md`](../_templates/PUBLIC_API_INTEGRATION_SECTION.md).
+
+| Tier | Client input | RRAO path | Notes |
+| --- | --- | --- | --- |
+| 1 - Arrow/Parquet handoff | Position table matching `RRAO_HANDOFF_COLUMN_SPECS` | `normalize_rrao_arrow_table` -> `build_rrao_batch_from_handoff` -> `calculate_rrao_capital_from_batch` | Recommended production path. |
+| 2 - CRIF/FNet/vendor rows | Iterable mapping rows | `adapt_crif_records`, `adapt_fnet_records`, or `adapt_rrao_records` | Adapter path with explicit rejected rows and diagnostics. |
+| 3 - Canonical dataclasses | `tuple[RraoPosition, ...]` plus `RraoCalculationContext` | `calculate_rrao_capital` | Small books, tests, notebooks, and fixture workflows. |
+
+The machine-readable schema artifact for this contract is
+[`docs/schemas/handoff/frtb_rrao.positions.schema.json`](../../schemas/handoff/frtb_rrao.positions.schema.json),
+generated from `RRAO_HANDOFF_COLUMN_SPECS`.
+
+The validation harness is tracked by
+[#428](https://github.com/tomanizer/frtb-capital/issues/428). Expected RRAO
+usage:
+
+```bash
+uv run python scripts/validate_client_handoff.py \
+  --package frtb_rrao \
+  --handoff positions \
+  --input path/to/rrao_positions.parquet \
+  --output-dir dist/client-validation/rrao_positions/
+```
+
+### RRAO handoff column summary
+
+The source of truth is the Python `RRAO_HANDOFF_COLUMN_SPECS` tuple. This table
+summarizes the client-facing columns for onboarding and contract review.
+
+| Column | Required | Logical type | Null policy | Notes |
+| --- | --- | --- | --- | --- |
+| `position_id` | yes | `string` | `forbid` | Aliases: `positionId` |
+| `source_row_id` | yes | `string` | `forbid` | Aliases: `sourceRowId` |
+| `desk_id` | yes | `string` | `forbid` | Aliases: `deskId` |
+| `legal_entity` | yes | `string` | `forbid` | Aliases: `legalEntity` |
+| `gross_effective_notional` | yes | `float` | `forbid` | Aliases: `grossEffectiveNotional`, `gross_notional` |
+| `currency` | yes | `string` | `forbid` |  |
+| `evidence_type` | yes | `string` | `forbid` | Aliases: `evidenceType` |
+| `evidence_label` | yes | `string` | `forbid` | Aliases: `evidenceLabel` |
+| `classification_hint` | no | `string` | `allow` | Aliases: `classificationHint` |
+| `exclusion_reason` | no | `string` | `allow` | Aliases: `exclusionReason` |
+| `exclusion_evidence_id` | no | `string` | `allow` | Aliases: `exclusionEvidenceId`, `exclusionEvidenceID` |
+| `back_to_back_match_group_id` | no | `string` | `allow` | Aliases: `backToBackMatchGroupId`, `backToBackMatchGroupID` |
+| `back_to_back_matched_position_id` | no | `string` | `allow` | Aliases: `backToBackMatchedPositionId`, `backToBackMatchedPositionID` |
+| `supervisor_directive_id` | no | `string` | `allow` | Aliases: `supervisorDirectiveId`, `supervisorDirectiveID` |
+| `underlying_count` | no | `integer` | `allow` | Aliases: `underlyingCount` |
+| `is_path_dependent` | no | `boolean` | `allow` | Aliases: `isPathDependent` |
+| `has_maturity` | no | `boolean` | `allow` | Aliases: `hasMaturity` |
+| `has_strike_or_barrier` | no | `boolean` | `allow` | Aliases: `hasStrikeOrBarrier` |
+| `has_multiple_strikes_or_barriers` | no | `boolean` | `allow` | Aliases: `hasMultipleStrikesOrBarriers` |
+| `is_ctp_hedge` | no | `boolean` | `allow` | Aliases: `isCtpHedge` |
+| `is_investment_fund_exposure` | no | `boolean` | `allow` | Aliases: `isInvestmentFundExposure` |
+| `investment_fund_id` | no | `string` | `allow` | Aliases: `investmentFundId`, `fund_id`, `fundId` |
+| `investment_fund_section_205_method` | no | `string` | `allow` | Aliases: `investmentFundSection205Method`, `section_205_method` |
+| `investment_fund_included_exposure_type` | no | `string` | `allow` | Aliases: `investmentFundIncludedExposureType`, `included_exposure_type` |
+| `investment_fund_mandate_evidence_id` | no | `string` | `allow` | Aliases: `investmentFundMandateEvidenceId`, `mandate_evidence_id` |
+| `investment_fund_section_205_evidence_id` | no | `string` | `allow` | Aliases: `investmentFundSection205EvidenceId`, `section_205_evidence_id` |
+| `investment_fund_gross_effective_notional` | no | `float` | `allow` | Aliases: `investmentFundGrossEffectiveNotional`, `fund_gross_effective_notional` |
+| `investment_fund_included_exposure_ratio` | no | `float` | `allow` | Aliases: `investmentFundIncludedExposureRatio`, `included_exposure_ratio` |
+| `investment_fund_look_through_available` | no | `boolean` | `allow` | Aliases: `investmentFundLookThroughAvailable`, `look_through_available` |
+| `investment_fund_mandate_allows_rrao_exposures` | no | `boolean` | `allow` | Aliases: `investmentFundMandateAllowsRraoExposures`, `mandate_allows_rrao_exposures` |
+| `notional_source` | no | `string` | `allow` | Aliases: `notionalSource` |
+| `lineage_source_system` | yes | `string` | `forbid` | Aliases: `source_system`, `sourceSystem` |
+| `lineage_source_file` | yes | `string` | `forbid` | Aliases: `source_file`, `sourceFile` |
+| `lineage_source_row_id` | no | `string` | `allow` | Aliases: `lineageSourceRowId`, `sourceLineageRowId` |
+| `citations` | no | `string` | `allow` | Comma-separated citation identifiers carried into audit records. |
+| `unsupported_nested_payload` | no | `string` | `allow` | Compatibility rejection field; nested descriptors must be flattened before handoff. |
+
 ## Submodule-Only Surface
 
 The following remain intentionally submodule-only because they are implementation

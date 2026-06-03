@@ -94,7 +94,6 @@ ArrayInput = npt.NDArray[Any]
 ColumnInput = Sequence[object] | ArrayInput
 NullableColumnInput = Sequence[object | None] | ArrayInput
 EnumT = TypeVar("EnumT", bound=StrEnum)
-ArrayScalarT = TypeVar("ArrayScalarT", bound=np.generic)
 
 _FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
 _NETTING_CITATION = "US_NPR_210_B_2"
@@ -769,9 +768,18 @@ def calculate_drc_capital_from_batch(
     validate_reconciliation(result)
     return DrcBatchCapitalCalculation(
         result=result,
-        gross_jtd=_immutable_float_array(gross_jtd),
-        maturity_weights=_immutable_float_array(maturity_weights),
-        scaled_jtd=_immutable_float_array(scaled_jtd),
+        gross_jtd=_batch_arrays.readonly_array(
+            np.asarray(gross_jtd, dtype=np.float64).copy(),
+            copy=False,
+        ),
+        maturity_weights=_batch_arrays.readonly_array(
+            np.asarray(maturity_weights, dtype=np.float64).copy(),
+            copy=False,
+        ),
+        scaled_jtd=_batch_arrays.readonly_array(
+            np.asarray(scaled_jtd, dtype=np.float64).copy(),
+            copy=False,
+        ),
         accepted_row_dataclasses_materialized=0,
     )
 
@@ -939,12 +947,24 @@ def _convert_batch_to_base_currency(
         counts[currency] = int(np.count_nonzero(mask))
 
     conversions = fx_conversion_records(used_rates, counts)
-    converted_currencies = _object_array([context.base_currency] * batch.row_count, copy=True)
+    converted_currencies = _batch_arrays.object_array(
+        [context.base_currency] * batch.row_count,
+        copy=True,
+    )
     converted = replace(
         batch,
-        notionals=_immutable_float_array(batch.notionals * rates),
-        market_values=_immutable_float_array(batch.market_values * rates),
-        cumulative_pnls=_immutable_float_array(batch.cumulative_pnls * rates),
+        notionals=_batch_arrays.readonly_array(
+            np.asarray(batch.notionals * rates, dtype=np.float64).copy(),
+            copy=False,
+        ),
+        market_values=_batch_arrays.readonly_array(
+            np.asarray(batch.market_values * rates, dtype=np.float64).copy(),
+            copy=False,
+        ),
+        cumulative_pnls=_batch_arrays.readonly_array(
+            np.asarray(batch.cumulative_pnls * rates, dtype=np.float64).copy(),
+            copy=False,
+        ),
         currencies=converted_currencies,
         input_hash=input_hash_with_fx(batch.input_hash, conversions),
     )
@@ -1425,7 +1445,7 @@ def _securitisation_non_ctp_offset_groups(
         if tranche_id is None:
             raise DrcInputError(f"securitisation non-CTP position {position_id} has no tranche_id")
         groups.append(f"exact:pool:{pool_id}:tranche:{tranche_id}")
-    return _object_array(groups, copy=True)
+    return _batch_arrays.object_array(groups, copy=True)
 
 
 def _ctp_offset_groups(
@@ -1453,7 +1473,7 @@ def _ctp_offset_groups(
             groups.append(f"exact:tranche:{tranche_id}")
         else:
             raise DrcInputError(f"CTP position {position_id} has no offset identity")
-    return _object_array(groups, copy=True)
+    return _batch_arrays.object_array(groups, copy=True)
 
 
 def _net_group(
@@ -2096,7 +2116,10 @@ def _require_lengths(row_count: int, **columns: ColumnInput | NullableColumnInpu
 def _required_text_array(
     values: NullableColumnInput, field_name: str, *, copy: bool
 ) -> ObjectArray:
-    array = _object_array([_required_text(value, field_name) for value in values], copy=copy)
+    array = _batch_arrays.object_array(
+        [_required_text(value, field_name) for value in values],
+        copy=copy,
+    )
     return array
 
 
@@ -2107,8 +2130,8 @@ def _optional_text_array(
     copy: bool,
 ) -> ObjectArray:
     if values is None:
-        return _object_array([None] * row_count, copy=copy)
-    return _object_array([_optional_text(value) for value in values], copy=copy)
+        return _batch_arrays.object_array([None] * row_count, copy=copy)
+    return _batch_arrays.object_array([_optional_text(value) for value in values], copy=copy)
 
 
 def _text_array_with_default(
@@ -2119,8 +2142,11 @@ def _text_array_with_default(
     copy: bool,
 ) -> ObjectArray:
     if values is None:
-        return _object_array([default] * row_count, copy=copy)
-    return _object_array([_optional_text(value) or default for value in values], copy=copy)
+        return _batch_arrays.object_array([default] * row_count, copy=copy)
+    return _batch_arrays.object_array(
+        [_optional_text(value) or default for value in values],
+        copy=copy,
+    )
 
 
 def _enum_array(
@@ -2130,7 +2156,7 @@ def _enum_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    return _object_array(
+    return _batch_arrays.object_array(
         [_coerce_enum_value(value, enum_type, field_name) for value in values],
         copy=copy,
     )
@@ -2145,8 +2171,8 @@ def _nullable_enum_array(
     copy: bool,
 ) -> ObjectArray:
     if values is None:
-        return _object_array([None] * row_count, copy=copy)
-    return _object_array(
+        return _batch_arrays.object_array([None] * row_count, copy=copy)
+    return _batch_arrays.object_array(
         [
             None
             if _optional_text(value) is None
@@ -2162,7 +2188,7 @@ def _required_float_array(values: ColumnInput, field_name: str, *, copy: bool) -
     if fast_array is not None:
         return fast_array
     array = np.asarray([_required_float(value, field_name) for value in values], dtype=np.float64)
-    return _readonly_array(array, copy=copy)
+    return _batch_arrays.readonly_array(array, copy=copy)
 
 
 def _optional_float_array(
@@ -2177,7 +2203,7 @@ def _optional_float_array(
         return fast_array
     else:
         array = np.asarray([_optional_float(value) for value in values], dtype=np.float64)
-    return _readonly_array(array, copy=copy)
+    return _batch_arrays.readonly_array(array, copy=copy)
 
 
 def _bool_array(
@@ -2209,23 +2235,6 @@ def _float_array_from_numpy(
         )
     except _batch_arrays.BatchArrayCoercionError as exc:
         raise DrcInputError(str(exc)) from exc
-
-
-def _object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
-    return _batch_arrays.object_array(values, copy=copy)
-
-
-def _readonly_array(
-    array: npt.NDArray[ArrayScalarT],
-    *,
-    copy: bool,
-) -> npt.NDArray[ArrayScalarT]:
-    return _batch_arrays.readonly_array(array, copy=copy)
-
-
-def _immutable_float_array(values: FloatArray) -> FloatArray:
-    array = np.asarray(values, dtype=np.float64).copy()
-    return _readonly_array(array, copy=False)
 
 
 def _required_float(value: object, field_name: str) -> float:

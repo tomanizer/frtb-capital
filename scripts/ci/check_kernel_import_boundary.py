@@ -34,6 +34,13 @@ ALLOWED_RUNTIME_DIRS = frozenset(
     }
 )
 
+ALLOWED_RUNTIME_RELATIVE_PATHS = frozenset(
+    {
+        "frtb_common/handoff_schema.py",
+        "frtb_orchestration/manifest.py",
+    }
+)
+
 ALLOWED_RUNTIME_SUFFIXES = (
     "_adapter.py",
     "_adapters.py",
@@ -90,6 +97,8 @@ def check_repo(repo_root: Path) -> tuple[ImportViolation, ...]:
 
 def _is_allowed_runtime_handoff_path(path: Path, src_root: Path) -> bool:
     relative = path.relative_to(src_root)
+    if relative.as_posix() in ALLOWED_RUNTIME_RELATIVE_PATHS:
+        return True
     if path.name in ALLOWED_RUNTIME_FILENAMES:
         return True
     if path.name.endswith(ALLOWED_RUNTIME_SUFFIXES):

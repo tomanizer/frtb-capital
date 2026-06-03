@@ -52,6 +52,16 @@ def test_kernel_import_boundary_allows_handoff_and_adapter_imports(tmp_path: Pat
         "packages/frtb-sbm/src/frtb_sbm/aggregation.py",
         "from .pandas import local_helper\n",
     )
+    _write_module(
+        tmp_path,
+        "packages/frtb-common/src/frtb_common/handoff_schema.py",
+        "import pyarrow as pa\n",
+    )
+    _write_module(
+        tmp_path,
+        "packages/frtb-orchestration/src/frtb_orchestration/manifest.py",
+        "import pyarrow as pa\n",
+    )
 
     assert check_repo(tmp_path) == ()
 

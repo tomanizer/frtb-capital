@@ -12,6 +12,8 @@ run-level reconciliation with stable ids, citations, and branch metadata.
 The high-volume Arrow/batch API supports the same three DRC row classes through
 class-specific handoff builders. Accepted rows stay columnar on the fast path;
 only compact net-JTD, bucket, category, and result records are materialized.
+The stable client integration surface is documented in
+[`docs/modules/frtb-drc/PUBLIC_API.md`](../../docs/modules/frtb-drc/PUBLIC_API.md).
 
 Securitisation non-CTP and CTP risk weights and replication/decomposition offset
 evidence are supplied in `DrcCalculationContext` as run-scoped maps:

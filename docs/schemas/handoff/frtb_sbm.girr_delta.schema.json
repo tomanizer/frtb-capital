@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "amount": {
+      "type": "number",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "amount_currency": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "amountCurrency"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "bucket": {
+      "type": "string",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "desk_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "deskId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "down_shock_amount": {
+      "type": "number",
+      "x-frtb-aliases": [
+        "downShockAmount"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "legal_entity": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "legalEntity"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "lineage_source_file": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sourceFile",
+        "source_file"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "lineage_source_system": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sourceSystem",
+        "source_system"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "liquidity_horizon_days": {
+      "type": "integer",
+      "x-frtb-aliases": [
+        "liquidityHorizonDays"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "integer",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "maturity": {
+      "type": "string",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "option_tenor": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "optionTenor"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "position_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "positionId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "qualifier": {
+      "type": "string",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "risk_class": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "riskClass"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "risk_factor": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "riskFactor"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "risk_measure": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "riskMeasure"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "sensitivity_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sensitivityId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "sign_convention": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "signConvention"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "source_row_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sourceRowId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "tenor": {
+      "type": "string",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "up_shock_amount": {
+      "type": "number",
+      "x-frtb-aliases": [
+        "upShockAmount"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    }
+  },
+  "required": [
+    "sensitivity_id",
+    "source_row_id",
+    "desk_id",
+    "legal_entity",
+    "risk_class",
+    "risk_measure",
+    "bucket",
+    "risk_factor",
+    "amount",
+    "amount_currency",
+    "sign_convention",
+    "tenor",
+    "lineage_source_system",
+    "lineage_source_file"
+  ],
+  "title": "frtb_sbm.girr_delta",
+  "type": "object",
+  "x-frtb-column-order": [
+    "sensitivity_id",
+    "source_row_id",
+    "desk_id",
+    "legal_entity",
+    "risk_class",
+    "risk_measure",
+    "bucket",
+    "risk_factor",
+    "amount",
+    "amount_currency",
+    "sign_convention",
+    "tenor",
+    "lineage_source_system",
+    "lineage_source_file",
+    "position_id",
+    "qualifier",
+    "option_tenor",
+    "liquidity_horizon_days",
+    "maturity",
+    "up_shock_amount",
+    "down_shock_amount"
+  ]
+}
