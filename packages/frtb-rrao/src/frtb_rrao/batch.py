@@ -50,7 +50,6 @@ ArrayInput = npt.NDArray[Any]
 ColumnInput = Sequence[object] | ArrayInput
 NullableColumnInput = Sequence[object | None] | ArrayInput
 EnumT = TypeVar("EnumT", bound=StrEnum)
-ArrayScalarT = TypeVar("ArrayScalarT", bound=np.generic)
 
 
 @dataclass(frozen=True)
@@ -582,9 +581,18 @@ def calculate_rrao_capital_from_batch(
     validate_rrao_result_reconciliation(result)
     return RraoBatchCapitalCalculation(
         result=result,
-        classifications=_immutable_object_array(classifications),
-        risk_weights=_immutable_float_array(risk_weights),
-        add_ons=_immutable_float_array(add_ons),
+        classifications=_batch_arrays.readonly_array(
+            np.asarray(classifications, dtype=object).copy(),
+            copy=False,
+        ),
+        risk_weights=_batch_arrays.readonly_array(
+            np.asarray(risk_weights, dtype=np.float64).copy(),
+            copy=False,
+        ),
+        add_ons=_batch_arrays.readonly_array(
+            np.asarray(add_ons, dtype=np.float64).copy(),
+            copy=False,
+        ),
         accepted_row_dataclasses_materialized=0,
     )
 
@@ -1089,9 +1097,9 @@ def _decision_arrays_for_batch(
 
     _validate_hint_compatibility(batch, classifications, mask=hint_check_mask)
     return _RraoDecisionArrays(
-        classifications=_object_array(classifications, copy=False),
-        risk_weight_keys=_object_array(risk_weight_keys, copy=False),
-        reason_codes=_object_array(reason_codes, copy=False),
+        classifications=_batch_arrays.object_array(classifications, copy=False),
+        risk_weight_keys=_batch_arrays.object_array(risk_weight_keys, copy=False),
+        reason_codes=_batch_arrays.object_array(reason_codes, copy=False),
         decision_citations=tuple(citation_groups),
     )
 
@@ -1169,7 +1177,7 @@ def _risk_weight_arrays_for_decisions(
             field="risk_weight_key",
             position_id=cast(str, batch.position_ids[missing_index]),
         )
-    return _readonly_array(risk_weights, copy=False), tuple(risk_weight_citations)
+    return _batch_arrays.readonly_array(risk_weights, copy=False), tuple(risk_weight_citations)
 
 
 def _capital_line_from_decision(
@@ -1329,7 +1337,10 @@ def _required_text_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    return _object_array([_required_text(value, field_name) for value in values], copy=copy)
+    return _batch_arrays.object_array(
+        [_required_text(value, field_name) for value in values],
+        copy=copy,
+    )
 
 
 def _optional_text_array(
@@ -1339,8 +1350,8 @@ def _optional_text_array(
     copy: bool,
 ) -> ObjectArray:
     if values is None:
-        return _object_array([None] * row_count, copy=copy)
-    return _object_array([_optional_text(value) for value in values], copy=copy)
+        return _batch_arrays.object_array([None] * row_count, copy=copy)
+    return _batch_arrays.object_array([_optional_text(value) for value in values], copy=copy)
 
 
 def _text_array_with_default(
@@ -1351,8 +1362,11 @@ def _text_array_with_default(
     copy: bool,
 ) -> ObjectArray:
     if values is None:
-        return _object_array([default] * row_count, copy=copy)
-    return _object_array([_optional_text(value) or default for value in values], copy=copy)
+        return _batch_arrays.object_array([default] * row_count, copy=copy)
+    return _batch_arrays.object_array(
+        [_optional_text(value) or default for value in values],
+        copy=copy,
+    )
 
 
 def _enum_array(
@@ -1362,7 +1376,7 @@ def _enum_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    return _object_array(
+    return _batch_arrays.object_array(
         [_coerce_enum_value(value, enum_type, field_name) for value in values],
         copy=copy,
     )
@@ -1377,8 +1391,8 @@ def _optional_enum_array(
     copy: bool,
 ) -> ObjectArray:
     if values is None:
-        return _object_array([None] * row_count, copy=copy)
-    return _object_array(
+        return _batch_arrays.object_array([None] * row_count, copy=copy)
+    return _batch_arrays.object_array(
         [
             None
             if _optional_text(value) is None
@@ -1399,7 +1413,7 @@ def _required_float_array(
     if fast_array is not None:
         return fast_array
     array = np.asarray([_required_float(value, field_name) for value in values], dtype=np.float64)
-    return _readonly_array(array, copy=copy)
+    return _batch_arrays.readonly_array(array, copy=copy)
 
 
 def _optional_float_array(
@@ -1414,7 +1428,7 @@ def _optional_float_array(
         return fast_array
     else:
         array = np.asarray([_optional_float(value) for value in values], dtype=np.float64)
-    return _readonly_array(array, copy=copy)
+    return _batch_arrays.readonly_array(array, copy=copy)
 
 
 def _optional_int_array(
@@ -1424,8 +1438,8 @@ def _optional_int_array(
     copy: bool,
 ) -> ObjectArray:
     if values is None:
-        return _object_array([None] * row_count, copy=copy)
-    return _object_array([_optional_int(value) for value in values], copy=copy)
+        return _batch_arrays.object_array([None] * row_count, copy=copy)
+    return _batch_arrays.object_array([_optional_int(value) for value in values], copy=copy)
 
 
 def _bool_array(
@@ -1469,28 +1483,6 @@ def _float_array_from_numpy(
         )
     except _batch_arrays.BatchArrayCoercionError as exc:
         raise RraoInputError(str(exc)) from exc
-
-
-def _object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
-    return _batch_arrays.object_array(values, copy=copy)
-
-
-def _readonly_array(
-    array: npt.NDArray[ArrayScalarT],
-    *,
-    copy: bool,
-) -> npt.NDArray[ArrayScalarT]:
-    return _batch_arrays.readonly_array(array, copy=copy)
-
-
-def _immutable_object_array(values: ObjectArray) -> ObjectArray:
-    array = np.asarray(values, dtype=object).copy()
-    return _readonly_array(array, copy=False)
-
-
-def _immutable_float_array(values: FloatArray) -> FloatArray:
-    array = np.asarray(values, dtype=np.float64).copy()
-    return _readonly_array(array, copy=False)
 
 
 def _required_text(value: object | None, field_name: str) -> str:
