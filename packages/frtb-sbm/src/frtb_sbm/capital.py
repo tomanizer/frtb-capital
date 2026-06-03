@@ -155,6 +155,10 @@ _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS = {
     ),
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
 }
+_PROFILE_PORTFOLIO_SCENARIO_CITATIONS = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_7_scenario_selection",),
+    SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
+}
 _SBM_CAPITAL_PATH_ORDER = (
     (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
     (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
@@ -1377,9 +1381,12 @@ def _build_sbm_capital_result(
 
 
 def _portfolio_scenario_citations(profile_id: str) -> tuple[str, ...]:
-    if profile_id == SbmRegulatoryProfile.US_NPR_2_0.value:
-        return _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS[profile_id]
-    return ("basel_mar21_7_scenario_selection",)
+    try:
+        return _PROFILE_PORTFOLIO_SCENARIO_CITATIONS[profile_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"Portfolio scenario citations are unsupported for profile={profile_id}"
+        ) from exc
 
 
 def _calculate_girr_vega_risk_class_capital(

@@ -18,6 +18,7 @@ from frtb_sbm import (
     ensure_sbm_risk_class_measure_supported,
     ensure_sbm_run_supported,
 )
+from frtb_sbm.capital import _portfolio_scenario_citations
 
 
 def sample_lineage() -> SbmSourceLineage:
@@ -118,6 +119,17 @@ def test_ensure_sbm_capital_paths_supported_rejects_unsupported_npr_cell() -> No
             SbmRegulatoryProfile.US_NPR_2_0.value,
             (sensitivity,),
         )
+
+
+def test_portfolio_scenario_citations_do_not_fall_back_to_basel() -> None:
+    assert _portfolio_scenario_citations(SbmRegulatoryProfile.BASEL_MAR21.value) == (
+        "basel_mar21_7_scenario_selection",
+    )
+    assert _portfolio_scenario_citations(SbmRegulatoryProfile.US_NPR_2_0.value) == (
+        "us_npr_91_fr_14952_va7a_correlation_scenarios",
+    )
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile=EU_CRR3"):
+        _portfolio_scenario_citations(SbmRegulatoryProfile.EU_CRR3.value)
 
 
 def test_basel_fx_curvature_measure_is_supported() -> None:
