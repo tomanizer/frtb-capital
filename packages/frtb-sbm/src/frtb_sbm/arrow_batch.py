@@ -431,7 +431,7 @@ def normalize_girr_delta_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM GIRR delta batch contract."""
+    """Normalize a raw Arrow table to the SBM GIRR delta input table contract."""
 
     return normalize_arrow_table(
         table,
@@ -881,7 +881,7 @@ def normalize_csr_sec_ctp_vega_arrow_table(
 def build_girr_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned GIRR delta batch from a normalized Arrow batch."""
+    """Build an SBM-owned GIRR delta batch from a normalized Arrow table."""
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -893,7 +893,7 @@ def build_girr_delta_batch_from_arrow(
 def build_girr_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned GIRR vega batch from a normalized Arrow batch."""
+    """Build an SBM-owned GIRR vega batch from a normalized Arrow table."""
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -918,7 +918,7 @@ def build_girr_curvature_batch_from_arrow(
 def build_fx_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned FX curvature batch from a normalized Arrow batch."""
+    """Build an SBM-owned FX curvature batch from a normalized Arrow table."""
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -930,7 +930,7 @@ def build_fx_curvature_batch_from_arrow(
 def build_equity_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned equity curvature batch from a normalized Arrow batch."""
+    """Build an SBM-owned equity curvature batch from a normalized Arrow table."""
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -942,7 +942,7 @@ def build_equity_curvature_batch_from_arrow(
 def build_commodity_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned commodity curvature batch from a normalized Arrow batch."""
+    """Build an SBM-owned commodity curvature batch from a normalized Arrow table."""
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -954,7 +954,7 @@ def build_commodity_curvature_batch_from_arrow(
 def build_csr_nonsec_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR non-sec curvature batch from a normalized Arrow batch."""
+    """Build an SBM-owned CSR non-sec curvature batch from a normalized Arrow table."""
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -966,7 +966,7 @@ def build_csr_nonsec_curvature_batch_from_arrow(
 def build_csr_sec_nonctp_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR sec non-CTP curvature batch from a normalized Arrow batch."""
+    """Build an SBM-owned CSR sec non-CTP curvature batch from a normalized Arrow table."""
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -978,7 +978,7 @@ def build_csr_sec_nonctp_curvature_batch_from_arrow(
 def build_csr_sec_ctp_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR sec CTP curvature batch from a normalized Arrow batch."""
+    """Build an SBM-owned CSR sec CTP curvature batch from a normalized Arrow table."""
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -1011,7 +1011,7 @@ def _build_curvature_batch_from_arrow(
 def build_fx_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned FX delta batch from a normalized Arrow batch."""
+    """Build an SBM-owned FX delta batch from a normalized Arrow table."""
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1023,7 +1023,7 @@ def build_fx_delta_batch_from_arrow(
 def build_equity_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned equity delta batch from a normalized Arrow batch."""
+    """Build an SBM-owned equity delta batch from a normalized Arrow table."""
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1035,7 +1035,7 @@ def build_equity_delta_batch_from_arrow(
 def build_commodity_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned commodity delta batch from a normalized Arrow batch."""
+    """Build an SBM-owned commodity delta batch from a normalized Arrow table."""
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1047,7 +1047,7 @@ def build_commodity_delta_batch_from_arrow(
 def build_csr_nonsec_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR non-securitisation delta batch from an Arrow batch."""
+    """Build an SBM-owned CSR non-securitisation delta batch from an Arrow table."""
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1059,7 +1059,7 @@ def build_csr_nonsec_delta_batch_from_arrow(
 def build_csr_sec_nonctp_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR securitisation non-CTP delta batch from an Arrow batch."""
+    """Build an SBM-owned CSR securitisation non-CTP delta batch from an Arrow table."""
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1071,7 +1071,7 @@ def build_csr_sec_nonctp_delta_batch_from_arrow(
 def build_csr_sec_ctp_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR securitisation CTP delta batch from an Arrow batch."""
+    """Build an SBM-owned CSR securitisation CTP delta batch from an Arrow table."""
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1083,7 +1083,7 @@ def build_csr_sec_ctp_delta_batch_from_arrow(
 def build_fx_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned FX vega batch from a normalized Arrow batch."""
+    """Build an SBM-owned FX vega batch from a normalized Arrow table."""
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1095,7 +1095,7 @@ def build_fx_vega_batch_from_arrow(
 def build_equity_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned equity vega batch from a normalized Arrow batch."""
+    """Build an SBM-owned equity vega batch from a normalized Arrow table."""
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1107,7 +1107,7 @@ def build_equity_vega_batch_from_arrow(
 def build_commodity_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned commodity vega batch from a normalized Arrow batch."""
+    """Build an SBM-owned commodity vega batch from a normalized Arrow table."""
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1119,7 +1119,7 @@ def build_commodity_vega_batch_from_arrow(
 def build_csr_nonsec_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR non-securitisation vega batch from an Arrow batch."""
+    """Build an SBM-owned CSR non-securitisation vega batch from an Arrow table."""
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1131,7 +1131,7 @@ def build_csr_nonsec_vega_batch_from_arrow(
 def build_csr_sec_nonctp_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR securitisation non-CTP vega batch from an Arrow batch."""
+    """Build an SBM-owned CSR securitisation non-CTP vega batch from an Arrow table."""
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1143,7 +1143,7 @@ def build_csr_sec_nonctp_vega_batch_from_arrow(
 def build_csr_sec_ctp_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR securitisation CTP vega batch from an Arrow batch."""
+    """Build an SBM-owned CSR securitisation CTP vega batch from an Arrow table."""
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1203,7 +1203,7 @@ def calculate_sbm_capital_from_girr_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized GIRR delta Arrow batch."""
+    """Calculate SBM capital from a normalized GIRR delta Arrow table."""
 
     batch = build_girr_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_girr_delta_batch(batch, context=context)
@@ -1214,7 +1214,7 @@ def calculate_sbm_capital_from_girr_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized GIRR vega Arrow batch."""
+    """Calculate SBM capital from a normalized GIRR vega Arrow table."""
 
     batch = build_girr_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_girr_vega_batch(batch, context=context)
@@ -1225,7 +1225,7 @@ def calculate_sbm_capital_from_girr_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized GIRR curvature Arrow batch."""
+    """Calculate SBM capital from a normalized GIRR curvature Arrow table."""
 
     batch = build_girr_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_girr_curvature_batch(batch, context=context)
@@ -1236,7 +1236,7 @@ def calculate_sbm_capital_from_fx_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized FX delta Arrow batch."""
+    """Calculate SBM capital from a normalized FX delta Arrow table."""
 
     batch = build_fx_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_fx_delta_batch(batch, context=context)
@@ -1247,7 +1247,7 @@ def calculate_sbm_capital_from_equity_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized equity delta Arrow batch."""
+    """Calculate SBM capital from a normalized equity delta Arrow table."""
 
     batch = build_equity_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_equity_delta_batch(batch, context=context)
@@ -1258,7 +1258,7 @@ def calculate_sbm_capital_from_commodity_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized commodity delta Arrow batch."""
+    """Calculate SBM capital from a normalized commodity delta Arrow table."""
 
     batch = build_commodity_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_commodity_delta_batch(batch, context=context)
@@ -1269,7 +1269,7 @@ def calculate_sbm_capital_from_csr_nonsec_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR non-sec delta Arrow batch."""
+    """Calculate SBM capital from a normalized CSR non-sec delta Arrow table."""
 
     batch = build_csr_nonsec_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_nonsec_delta_batch(batch, context=context)
@@ -1280,7 +1280,7 @@ def calculate_sbm_capital_from_csr_sec_nonctp_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec non-CTP delta Arrow batch."""
+    """Calculate SBM capital from a normalized CSR sec non-CTP delta Arrow table."""
 
     batch = build_csr_sec_nonctp_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_nonctp_delta_batch(batch, context=context)
@@ -1291,7 +1291,7 @@ def calculate_sbm_capital_from_csr_sec_ctp_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec CTP delta Arrow batch."""
+    """Calculate SBM capital from a normalized CSR sec CTP delta Arrow table."""
 
     batch = build_csr_sec_ctp_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_ctp_delta_batch(batch, context=context)
@@ -1302,7 +1302,7 @@ def calculate_sbm_capital_from_fx_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized FX vega Arrow batch."""
+    """Calculate SBM capital from a normalized FX vega Arrow table."""
 
     batch = build_fx_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_fx_vega_batch(batch, context=context)
@@ -1313,7 +1313,7 @@ def calculate_sbm_capital_from_equity_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized equity vega Arrow batch."""
+    """Calculate SBM capital from a normalized equity vega Arrow table."""
 
     batch = build_equity_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_equity_vega_batch(batch, context=context)
@@ -1324,7 +1324,7 @@ def calculate_sbm_capital_from_commodity_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized commodity vega Arrow batch."""
+    """Calculate SBM capital from a normalized commodity vega Arrow table."""
 
     batch = build_commodity_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_commodity_vega_batch(batch, context=context)
@@ -1335,7 +1335,7 @@ def calculate_sbm_capital_from_csr_nonsec_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR non-sec vega Arrow batch."""
+    """Calculate SBM capital from a normalized CSR non-sec vega Arrow table."""
 
     batch = build_csr_nonsec_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_nonsec_vega_batch(batch, context=context)
@@ -1346,7 +1346,7 @@ def calculate_sbm_capital_from_csr_sec_nonctp_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec non-CTP vega Arrow batch."""
+    """Calculate SBM capital from a normalized CSR sec non-CTP vega Arrow table."""
 
     batch = build_csr_sec_nonctp_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_nonctp_vega_batch(batch, context=context)
@@ -1357,7 +1357,7 @@ def calculate_sbm_capital_from_csr_sec_ctp_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec CTP vega Arrow batch."""
+    """Calculate SBM capital from a normalized CSR sec CTP vega Arrow table."""
 
     batch = build_csr_sec_ctp_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_ctp_vega_batch(batch, context=context)
@@ -1368,7 +1368,7 @@ def calculate_sbm_capital_from_fx_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized FX curvature Arrow batch."""
+    """Calculate SBM capital from a normalized FX curvature Arrow table."""
 
     batch = build_fx_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_fx_curvature_batch(batch, context=context)
@@ -1379,7 +1379,7 @@ def calculate_sbm_capital_from_equity_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized equity curvature Arrow batch."""
+    """Calculate SBM capital from a normalized equity curvature Arrow table."""
 
     batch = build_equity_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_equity_curvature_batch(batch, context=context)
@@ -1390,7 +1390,7 @@ def calculate_sbm_capital_from_commodity_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized commodity curvature Arrow batch."""
+    """Calculate SBM capital from a normalized commodity curvature Arrow table."""
 
     batch = build_commodity_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_commodity_curvature_batch(batch, context=context)
@@ -1401,7 +1401,7 @@ def calculate_sbm_capital_from_csr_nonsec_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR non-sec curvature Arrow batch."""
+    """Calculate SBM capital from a normalized CSR non-sec curvature Arrow table."""
 
     batch = build_csr_nonsec_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_nonsec_curvature_batch(batch, context=context)
@@ -1412,7 +1412,7 @@ def calculate_sbm_capital_from_csr_sec_nonctp_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec non-CTP curvature Arrow batch."""
+    """Calculate SBM capital from a normalized CSR sec non-CTP curvature Arrow table."""
 
     batch = build_csr_sec_nonctp_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch(batch, context=context)
@@ -1423,7 +1423,7 @@ def calculate_sbm_capital_from_csr_sec_ctp_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec CTP curvature Arrow batch."""
+    """Calculate SBM capital from a normalized CSR sec CTP curvature Arrow table."""
 
     batch = build_csr_sec_ctp_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_ctp_curvature_batch(batch, context=context)
@@ -1459,13 +1459,17 @@ def _coerce_arrow_table_sequence(arrow_tables: object) -> tuple[NormalizedArrowT
         candidates: tuple[object, ...] = tuple(arrow_tables)  # type: ignore[arg-type]
     except TypeError as exc:
         raise SbmInputError(
-            "arrow_tables must be an iterable of NormalizedArrowTable objects"
+            "arrow_tables must be an iterable of NormalizedArrowTable objects",
+            field="arrow_tables",
         ) from exc
     if not candidates:
         raise SbmInputError("arrow_tables must not be empty", field="arrow_tables")
     for candidate in candidates:
         if not isinstance(candidate, NormalizedArrowTable):
-            raise SbmInputError("arrow_tables must contain only NormalizedArrowTable objects")
+            raise SbmInputError(
+                "arrow_tables must contain only NormalizedArrowTable objects",
+                field="arrow_tables",
+            )
     return cast(tuple[NormalizedArrowTable, ...], candidates)
 
 

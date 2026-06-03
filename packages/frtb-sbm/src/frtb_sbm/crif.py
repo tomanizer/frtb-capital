@@ -296,7 +296,7 @@ def normalize_girr_delta_crif_records(
     sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize CRIF-like row dictionaries into the GIRR delta Arrow batch."""
+    """Normalize CRIF-like row dictionaries into the GIRR delta Arrow table."""
 
     if not isinstance(records, Sequence) or isinstance(records, str | bytes):
         raise SbmInputError("records must be a sequence of mapping rows", field="records")
@@ -332,7 +332,7 @@ def normalize_girr_delta_crif_arrow_table(
     sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a CRIF-like Arrow table into the GIRR delta Arrow batch."""
+    """Normalize a CRIF-like Arrow table into the GIRR delta Arrow table."""
 
     crif_handoff = normalize_crif_arrow_table(
         table,

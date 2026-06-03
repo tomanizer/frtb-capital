@@ -236,7 +236,7 @@ def normalize_drc_nonsec_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the DRC non-securitisation batch contract."""
+    """Normalize a raw Arrow table to the DRC non-securitisation input table contract."""
 
     return normalize_arrow_table(
         table,
@@ -257,7 +257,7 @@ def normalize_drc_securitisation_non_ctp_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the DRC securitisation non-CTP batch contract."""
+    """Normalize a raw Arrow table to the DRC securitisation non-CTP input table contract."""
 
     return normalize_arrow_table(
         table,
@@ -278,7 +278,7 @@ def normalize_drc_ctp_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the DRC CTP batch contract."""
+    """Normalize a raw Arrow table to the DRC CTP input table contract."""
 
     return normalize_arrow_table(
         table,
@@ -294,7 +294,7 @@ def normalize_drc_ctp_arrow_table(
 def build_drc_nonsec_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> DrcPositionBatch:
-    """Build a DRC-owned non-securitisation batch from a normalized Arrow batch."""
+    """Build a DRC-owned non-securitisation batch from a normalized Arrow table."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise DrcInputError("handoff must be NormalizedArrowTable")
@@ -315,7 +315,7 @@ def build_drc_nonsec_batch_from_arrow(
 def build_drc_securitisation_non_ctp_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> DrcPositionBatch:
-    """Build a DRC-owned securitisation non-CTP batch from a normalized Arrow batch."""
+    """Build a DRC-owned securitisation non-CTP batch from a normalized Arrow table."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise DrcInputError("handoff must be NormalizedArrowTable")
@@ -340,7 +340,7 @@ def build_drc_securitisation_non_ctp_batch_from_arrow(
 def build_drc_ctp_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> DrcPositionBatch:
-    """Build a DRC-owned CTP batch from a normalized Arrow batch."""
+    """Build a DRC-owned CTP batch from a normalized Arrow table."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise DrcInputError("handoff must be NormalizedArrowTable")

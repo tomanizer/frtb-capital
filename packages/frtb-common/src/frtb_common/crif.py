@@ -213,7 +213,7 @@ def normalize_crif_records(
     metadata: Mapping[str, str] | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize CRIF-like mapping rows into an Arrow batch."""
+    """Normalize CRIF-like mapping rows into an Arrow table."""
 
     table = crif_records_to_arrow_table(records)
     return normalize_crif_arrow_table(

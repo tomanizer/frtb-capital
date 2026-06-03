@@ -320,7 +320,7 @@ def normalize_ima_scenario_metadata_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize an Arrow scenario metadata table for IMA scenario-axis batches."""
+    """Normalize an Arrow scenario metadata table for IMA scenario-axis tables."""
 
     return normalize_arrow_table(
         table,
@@ -341,7 +341,7 @@ def normalize_ima_rfet_observation_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize an Arrow real-price observation table for RFET batches."""
+    """Normalize an Arrow real-price observation table for RFET input tables."""
 
     return normalize_arrow_table(
         table,
@@ -357,7 +357,7 @@ def normalize_ima_rfet_observation_arrow_table(
 def build_scenario_metadata_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> ScenarioMetadataBatch:
-    """Build a columnar IMA scenario metadata batch from a normalized Arrow batch."""
+    """Build a columnar IMA scenario metadata batch from a normalized Arrow table."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise ValueError("handoff must be NormalizedArrowTable")
@@ -379,7 +379,7 @@ def build_scenario_metadata_batch_from_arrow(
 def build_rfet_observation_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> RFETObservationBatch:
-    """Build a columnar RFET observation batch from a normalized Arrow batch."""
+    """Build a columnar RFET observation batch from a normalized Arrow table."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise ValueError("handoff must be NormalizedArrowTable")
@@ -407,7 +407,7 @@ def build_capital_run_input_manifest_from_arrow(
     schema_version: str | None = None,
     metadata: Mapping[str, str] | None = None,
 ) -> CapitalRunInputManifest:
-    """Build an IMA capital-run input manifest from a normalized Arrow batch."""
+    """Build an IMA capital-run input manifest from a normalized Arrow table."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise ValueError("handoff must be NormalizedArrowTable")

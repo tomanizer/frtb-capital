@@ -311,7 +311,7 @@ def normalize_rrao_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the RRAO batch contract."""
+    """Normalize a raw Arrow table to the RRAO input table contract."""
 
     return normalize_arrow_table(
         table,
@@ -327,7 +327,7 @@ def normalize_rrao_arrow_table(
 def build_rrao_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> RraoPositionBatch:
-    """Build an RRAO-owned residual-risk batch from a normalized Arrow batch."""
+    """Build an RRAO-owned residual-risk batch from a normalized Arrow table."""
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise RraoInputError("handoff must be NormalizedArrowTable", field="handoff")
