@@ -50,8 +50,9 @@ external table / CRIF / file
 For per-package integration surfaces, see
 [SBM PUBLIC_API.md](modules/frtb-sbm/PUBLIC_API.md) and
 [DRC PUBLIC_API.md](modules/frtb-drc/PUBLIC_API.md), plus
+[CVA PUBLIC_API.md](modules/frtb-cva/PUBLIC_API.md), plus
 [RRAO PUBLIC_API.md](modules/frtb-rrao/PUBLIC_API.md). Additional package public
-API docs are delivered by [#426](https://github.com/tomanizer/frtb-capital/issues/426) and
+API docs are delivered by
 [#427](https://github.com/tomanizer/frtb-capital/issues/427).
 
 ## Standardised Approach run flow
