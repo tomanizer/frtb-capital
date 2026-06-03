@@ -3,8 +3,8 @@
 Standardised Approach residual risk add-on component.
 
 The package is importable and exposes a public canonical-input calculation
-boundary for supported Basel MAR23, U.S. NPR 2.0, and EU CRR3 comparison
-profile slices. Unsupported profiles and unsupported evidence paths fail
+boundary for supported Basel MAR23, U.S. NPR 2.0, EU CRR3 comparison, and
+PRA_UK_CRR profile slices. Unsupported profiles and unsupported evidence paths fail
 explicitly; the package must not emit zero or placeholder capital for
 unsupported scope.
 
@@ -21,8 +21,11 @@ match evidence and remain visible as zero-capital audit lines.
 
 The EU CRR3 comparison profile maps Delegated Regulation (EU) 2022/2328
 Article 1 exotic underlyings, Article 2 Annex instruments, and Article 3
-non-presumptive risks for canonical inputs. PRA UK CRR remains unsupported
-until package-local source mapping and fixtures are added.
+non-presumptive risks for canonical inputs.
+
+The PRA_UK_CRR profile maps UK CRR Article 325u and UK retained Delegated
+Regulation (EU) 2022/2328 with legislation.gov.uk citations and `rrao_pra`
+fixture replay. Investment-fund inclusion remains fail-closed for PRA, as for EU.
 
 Planning documents:
 

@@ -353,7 +353,6 @@ def build_nmrf_valuation_spec(
     notes: str = "",
 ) -> NMRFValuationSpec:
     """Build one upstream valuation spec from a method-selection instruction."""
-    policy.require_supported("type_a_type_b_nmrf_taxonomy")
     if not isinstance(instruction, NMRFValuationInstruction):
         raise TypeError("instruction must be an NMRFValuationInstruction")
 

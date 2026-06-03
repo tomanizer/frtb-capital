@@ -19,7 +19,7 @@ from frtb_ima.data_models import (
     RealPriceObservation,
     RiskClass,
 )
-from frtb_ima.regimes import RegulatoryRegime, UnsupportedRegulatoryFeature, get_policy
+from frtb_ima.regimes import RegulatoryRegime, get_policy
 from frtb_ima.rfet_evidence import (
     RFETExclusionReason,
     assess_rfet_evidence,
@@ -401,10 +401,10 @@ def test_prorated_required_observation_count_rejects_future_issue_date() -> None
         )
 
 
-def test_ecb_policy_rejects_type_a_type_b_evidence_assessment() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeature, match="type_a_type_b"):
-        assess_rfet_evidence(
-            _risk_factor(),
-            _evidence(_observations(24)),
-            get_policy(RegulatoryRegime.ECB_CRR3),
-        )
+def test_ecb_policy_assesses_rfet_evidence_without_type_a_type_b_taxonomy() -> None:
+    result = assess_rfet_evidence(
+        _risk_factor(),
+        _evidence(_observations(24)),
+        get_policy(RegulatoryRegime.ECB_CRR3),
+    )
+    assert result.modellability_status is ModellabilityStatus.MODELLABLE

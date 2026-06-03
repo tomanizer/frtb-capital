@@ -1,0 +1,90 @@
+{
+  "backtesting": {
+    "model_eligible": true,
+    "window_size": 250,
+    "levels": {
+      "0.975": {
+        "apl_exceptions": 0,
+        "hpl_exceptions": 0,
+        "level_passed": true
+      },
+      "0.99": {
+        "apl_exceptions": 0,
+        "hpl_exceptions": 0,
+        "level_passed": true
+      }
+    }
+  },
+  "capital": {
+    "binding_term": "AVERAGE"
+  },
+  "classifications": {
+    "COMM_BASIS_RF": "MODELLABLE",
+    "EM_EQUITY": "MODELLABLE",
+    "EURUSD_FX": "MODELLABLE",
+    "EUR_SWAP_10Y": "MODELLABLE",
+    "EXOTIC_RF": "TYPE_B_NMRF",
+    "HY_CREDIT_SPD": "TYPE_A_NMRF",
+    "IG_CREDIT_SPD": "MODELLABLE",
+    "SPX_EQUITY": "MODELLABLE",
+    "USD_LIBOR_3M": "MODELLABLE",
+    "WTI_CRUDE": "MODELLABLE"
+  },
+  "nmrf_methods": {
+    "HY_CREDIT_SPD": "DIRECT",
+    "EXOTIC_RF": "FULL_REVALUATION"
+  },
+  "pla": {
+    "zone": "GREEN",
+    "window_size": 250
+  },
+  "reconciliation": {
+    "passed": true,
+    "failed_item_count": 0,
+    "artifact_count": 2
+  },
+  "scalars": {
+    "imcc": {
+      "value": 60320.42862242148,
+      "rtol": 1e-09,
+      "atol": 1e-09
+    },
+    "unconstrained_lha_es": {
+      "value": 44437.89831484905,
+      "rtol": 1e-09,
+      "atol": 1e-09
+    },
+    "constrained_lha_es": {
+      "value": 76202.95892999391,
+      "rtol": 1e-09,
+      "atol": 1e-09
+    },
+    "total_ses": {
+      "value": 5631.0723411367535,
+      "rtol": 1e-09,
+      "atol": 1e-09
+    },
+    "pla_ks_statistic": {
+      "value": 0.028000000000000025,
+      "rtol": 1e-09,
+      "atol": 1e-09
+    },
+    "models_based_capital": {
+      "value": 98938.75600960068,
+      "rtol": 1e-09,
+      "atol": 1e-09
+    },
+    "supervisory_multiplier": {
+      "value": 1.5,
+      "rtol": 1e-09,
+      "atol": 1e-09
+    }
+  },
+  "selected_stress_periods": {
+    "COMMODITY": "commodity-20240716-20250630-expected-shortfall",
+    "CSR": "csr-20240716-20250630-expected-shortfall",
+    "EQUITY": "equity-20240716-20250630-expected-shortfall",
+    "FX": "fx-20240716-20250630-expected-shortfall",
+    "GIRR": "girr-20240716-20250630-expected-shortfall"
+  }
+}

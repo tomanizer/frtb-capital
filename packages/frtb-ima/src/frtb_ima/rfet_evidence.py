@@ -319,7 +319,6 @@ def assess_rfet_observation_batch(
     the excluded observation details.
     """
 
-    policy.require_supported("type_a_type_b_nmrf_taxonomy")
     if type(as_of_date) is not date:
         raise TypeError("as_of_date must be a datetime.date")
     if not isinstance(qualitative_pass, bool):
@@ -668,7 +667,6 @@ def assess_rfet_evidence(
     - evidence must match the risk factor's bucket or explicit representativeness checks;
     - source lineage is required by default.
     """
-    policy.require_supported("type_a_type_b_nmrf_taxonomy")
     if risk_factor.name != evidence.risk_factor_name:
         raise ValueError("risk_factor and evidence names must match")
 

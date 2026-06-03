@@ -16,6 +16,8 @@ ALLOWED_URL_PREFIXES = (
     "https://www.occ.gov/",
     "https://eur-lex.europa.eu/",
     "https://www.eba.europa.eu/",
+    "https://www.legislation.gov.uk/",
+    "https://www.bankofengland.co.uk/",
     "https://github.com/frtb-net/FRTB/",
 )
 

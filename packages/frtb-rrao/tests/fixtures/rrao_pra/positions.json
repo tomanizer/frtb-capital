@@ -1,0 +1,55 @@
+{
+  "context": {
+    "run_id": "rrao-pra-fixture",
+    "calculation_date": "2026-03-31",
+    "base_currency": "GBP",
+    "profile": "PRA_UK_CRR"
+  },
+  "positions": [
+    {
+      "position_id": "pra-exotic-future-realised-volatility",
+      "source_row_id": "pra-row-001",
+      "desk_id": "pra-trading",
+      "legal_entity": "PRA-LE-001",
+      "gross_effective_notional": 1000000.0,
+      "currency": "GBP",
+      "evidence_type": "EXOTIC_UNDERLYING",
+      "evidence_label": "future realised volatility underlying",
+      "classification_hint": "EXOTIC"
+    },
+    {
+      "position_id": "pra-path-dependent-option",
+      "source_row_id": "pra-row-002",
+      "desk_id": "pra-trading",
+      "legal_entity": "PRA-LE-001",
+      "gross_effective_notional": 2000000.0,
+      "currency": "GBP",
+      "evidence_type": "PATH_DEPENDENT_OPTION",
+      "evidence_label": "path-dependent option from UK retained RTS Annex",
+      "classification_hint": "OTHER_RESIDUAL_RISK"
+    },
+    {
+      "position_id": "pra-index-option-correlation",
+      "source_row_id": "pra-row-003",
+      "desk_id": "pra-trading",
+      "legal_entity": "PRA-LE-001",
+      "gross_effective_notional": 3000000.0,
+      "currency": "GBP",
+      "evidence_type": "EXPLICIT_EXCLUSION",
+      "evidence_label": "Article 3 index option correlation risk only",
+      "classification_hint": "EXCLUDED",
+      "exclusion_reason": "EU_ARTICLE_3_INDEX_OPTION_CORRELATION",
+      "exclusion_evidence_id": "article-3-index-option-correlation-pra-001"
+    }
+  ],
+  "expected": {
+    "total_rrao": 12000.0,
+    "included_position_ids": [
+      "pra-exotic-future-realised-volatility",
+      "pra-path-dependent-option"
+    ],
+    "excluded_position_ids": [
+      "pra-index-option-correlation"
+    ]
+  }
+}

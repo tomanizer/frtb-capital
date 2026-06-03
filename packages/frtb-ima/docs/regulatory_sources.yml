@@ -217,28 +217,60 @@ sources:
     requirements:
       - NPR-MR-POLICY-001
 
-  - id: pra_market_risk_internal_models_index
+  - id: uk_crr_article_325be_rfet
     family: PRA_UK_CRR
     jurisdiction: UK
-    title: "Bank of England / PRA market risk internal models approach index"
-    url: "https://www.bankofengland.co.uk/prudential-regulation/prudential-and-resolution-policy-index/banking/market-risk-internal-models-approach"
-    section_hint: "PRA market risk internal models index and links to UK CRR/PRA materials"
-    status: placeholder_reference
-    reuse_note: "Link-only placeholder. PRA-specific source mapping remains incomplete."
+    title: "UK CRR Article 325be risk-factor eligibility test"
+    url: "https://www.legislation.gov.uk/eur/2013/575/part/8/crossheading/risk-factor-eligibility-test"
+    section_hint: "Article 325be modellability and real-price observation requirements"
+    status: mapped_and_cited
+    reuse_note: "UK onshored CRR RFET articles mapped to rfet_evidence.py for PRA_UK_CRR profile runs."
     modules:
+      - src/frtb_ima/rfet_evidence.py
       - src/frtb_ima/regimes.py
     requirements:
-      - NPR-MR-POLICY-001
+      - NPR-MR-RFET-001
+      - NPR-MR-RFET-002
 
-  - id: pra_basel_3_1_final_rules
+  - id: uk_retained_dr_2022_2060_rfet
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "UK retained Delegated Regulation (EU) 2022/2060 risk-factor modellability RTS"
+    url: "https://www.legislation.gov.uk/eur/2022/2060"
+    section_hint: "Observation-period and representativeness detail; package keeps eu_rfet_rts_detail unsupported"
+    status: mapped_and_cited
+    reuse_note: "Core RFET counting uses Article 325be thresholds; detailed RTS vendor rules remain unsupported."
+    modules:
+      - src/frtb_ima/rfet_evidence.py
+      - src/frtb_ima/regimes.py
+    requirements:
+      - NPR-MR-RFET-002
+
+  - id: uk_crr_article_325bk_nmrf
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "UK CRR Article 325bk stress scenario risk measure"
+    url: "https://www.legislation.gov.uk/eur/2013/575/part/8/crossheading/stress-scenario-risk-measure"
+    section_hint: "Article 325bk NMRF stress capital for non-modellable risk factors"
+    status: mapped_and_cited
+    reuse_note: "PRA_UK_CRR uses BASEL_EU_NMRF routing and zero-correlation SES aggregation across NMRF statuses."
+    modules:
+      - src/frtb_ima/nmrf.py
+      - src/frtb_ima/nmrf_method_selection.py
+      - src/frtb_ima/nmrf_valuation_run.py
+    requirements:
+      - NPR-MR-NMRF-002
+
+  - id: pra_ps1_26_basel_3_1_final_rules
     family: PRA_UK_CRR
     jurisdiction: UK
     title: "PRA PS1/26, Implementation of Basel 3.1: Final rules"
-    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement."
-    section_hint: "PRA Basel 3.1 final-rule context for future UK profile mapping"
-    status: placeholder_reference
-    reuse_note: "Link-only placeholder. PRA-specific source mapping remains incomplete."
+    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement"
+    section_hint: "Chapter 3 market risk; SS13/13 market risk supervisory statement context"
+    status: mapped_and_cited
+    reuse_note: "Suite source register anchor for PRA_UK_CRR policy parameters and tests/fixtures/ima_pra replay."
     modules:
       - src/frtb_ima/regimes.py
+      - tests/fixtures/ima_pra/
     requirements:
       - NPR-MR-POLICY-001

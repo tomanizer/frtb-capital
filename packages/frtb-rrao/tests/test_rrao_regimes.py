@@ -4,7 +4,6 @@ import re
 from datetime import date
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_rrao import (
     RraoClassification,
@@ -71,15 +70,19 @@ def test_profile_content_hash_is_deterministic_and_profile_specific() -> None:
     assert eu_profile.content_hash != us_profile.content_hash
 
 
-@pytest.mark.parametrize(
-    "profile",
-    [RraoRegulatoryProfile.PRA_UK_CRR],
-)
-def test_unsupported_profiles_fail_before_calculation(profile: RraoRegulatoryProfile) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        resolve_rrao_profile(profile)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        get_rrao_rule_profile(profile)
+def test_get_rrao_rule_profile_returns_supported_pra_profile() -> None:
+    profile = get_rrao_rule_profile(RraoRegulatoryProfile.PRA_UK_CRR)
+
+    assert profile.profile is RraoRegulatoryProfile.PRA_UK_CRR
+    assert profile.regulator == "PRA / UK CRR"
+    assert profile.publication_date == date(2026, 1, 20)
+    assert profile.effective_date == date(2027, 1, 1)
+    assert RraoClassification.EXOTIC in profile.supported_classifications
+    assert RraoEvidenceType.PATH_DEPENDENT_OPTION in profile.supported_evidence_types
+    assert RraoExclusionReason.EU_ARTICLE_3_INDEX_OPTION_CORRELATION in (
+        profile.supported_exclusions
+    )
+    assert "uk_rts_2022_2328_article_1" in profile.citation_ids
 
 
 def test_unknown_profile_fails_as_input_error() -> None:
