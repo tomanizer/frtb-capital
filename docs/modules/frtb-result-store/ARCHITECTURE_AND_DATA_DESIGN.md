@@ -26,8 +26,11 @@ result-store-root/
     capital_attributions/
 ```
 
-Each table receives one Parquet file per immutable `run_id`. DuckDB views are
-created over the Parquet table directories for analyst and API query paths.
+Each table receives one Parquet file per immutable `run_id`. A run becomes
+visible only when its `run_manifest.json` exists; readers ignore staged or
+orphaned Parquet files without a manifest. DuckDB queries run over committed
+Parquet files through independent connections. `catalog.duckdb` is derived
+convenience state and can be rebuilt.
 
 S3 Parquet and DuckLake are reserved backend modes. The domain model already
 stores artifact URIs, so IMA P&L vectors, ES tail observations, SBM

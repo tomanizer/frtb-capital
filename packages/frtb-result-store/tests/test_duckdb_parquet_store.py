@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -20,9 +21,11 @@ from frtb_result_store import (
     NodeType,
     ResultBundle,
     ResultStoreConfig,
+    ResultStoreContractError,
     ResultStoreWriteError,
     StorageBackend,
 )
+from frtb_result_store.io import _float_value, _int_value, _json_mapping, _json_text_tuple
 
 
 def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> None:
@@ -71,6 +74,70 @@ def test_store_is_append_only_by_run_id(tmp_path: Path) -> None:
         store.write_bundle(bundle)
 
 
+def test_failed_manifest_write_rolls_back_moved_run_files(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    bundle = _bundle()
+
+    def fail_manifest(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("manifest failure")
+
+    monkeypatch.setattr(store, "_write_manifest", fail_manifest)
+
+    with pytest.raises(RuntimeError, match="manifest failure"):
+        store.write_bundle(bundle)
+
+    assert not store.run_exists(bundle.run.run_id)
+    assert store.list_runs() == ()
+    for table_name in (
+        "runs",
+        "capital_nodes",
+        "capital_edges",
+        "capital_measures",
+        "artifact_refs",
+        "lineage_refs",
+        "capital_attributions",
+    ):
+        assert not store._run_table_path(table_name, bundle.run.run_id).exists()
+
+    monkeypatch.undo()
+    store.write_bundle(bundle)
+    assert store.get_run(bundle.run.run_id) == bundle.run
+
+
+def test_unmanifested_parquet_files_are_invisible_to_readers(tmp_path: Path) -> None:
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    bundle = _bundle()
+    store.write_bundle(bundle)
+    shutil.rmtree(tmp_path / "result-store" / "manifests")
+
+    assert not store.run_exists(bundle.run.run_id)
+    assert store.list_runs() == ()
+    assert store.get_run(bundle.run.run_id) is None
+    assert store.capital_tree(bundle.run.run_id) == ()
+    assert store.artifact_refs(bundle.run.run_id) == ()
+
+
+def test_catalog_refresh_failure_does_not_fail_manifested_commit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    bundle = _bundle()
+
+    def fail_catalog() -> None:
+        raise RuntimeError("catalog locked")
+
+    monkeypatch.setattr(store, "refresh_catalog", fail_catalog)
+
+    store.write_bundle(bundle)
+
+    assert store.run_exists(bundle.run.run_id)
+    assert store.get_run(bundle.run.run_id) == bundle.run
+
+
 def test_reserved_backends_fail_closed(tmp_path: Path) -> None:
     config = ResultStoreConfig(
         root=tmp_path / "result-store",
@@ -79,6 +146,17 @@ def test_reserved_backends_fail_closed(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="reserved for a later implementation"):
         DuckDbParquetResultStore(config)
+
+
+def test_malformed_stored_values_raise_contract_errors() -> None:
+    with pytest.raises(ResultStoreContractError, match="malformed JSON object"):
+        _json_mapping("{")
+    with pytest.raises(ResultStoreContractError, match="malformed JSON text list"):
+        _json_text_tuple("{")
+    with pytest.raises(ResultStoreContractError, match="invalid numeric value"):
+        _float_value("not-a-number")
+    with pytest.raises(ResultStoreContractError, match="invalid integer value"):
+        _int_value("not-an-integer")
 
 
 def _bundle() -> ResultBundle:

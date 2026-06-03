@@ -67,6 +67,46 @@ def test_result_bundle_validates_graph_references() -> None:
         ResultBundle(run=run, nodes=(root,), edges=(missing_child,))
 
 
+def test_result_bundle_reports_duplicate_node_ids_deterministically() -> None:
+    run = _run()
+    nodes = (
+        CapitalNode(
+            run_id=run.run_id,
+            node_id="z-duplicate",
+            node_type=NodeType.ROOT,
+            component=FrtbComponent.TOP_OF_HOUSE,
+            label="Z duplicate 1",
+        ),
+        CapitalNode(
+            run_id=run.run_id,
+            node_id="a-duplicate",
+            node_type=NodeType.COMPONENT,
+            component=FrtbComponent.IMA,
+            label="A duplicate 1",
+        ),
+        CapitalNode(
+            run_id=run.run_id,
+            node_id="z-duplicate",
+            node_type=NodeType.COMPONENT,
+            component=FrtbComponent.SBM,
+            label="Z duplicate 2",
+        ),
+        CapitalNode(
+            run_id=run.run_id,
+            node_id="a-duplicate",
+            node_type=NodeType.COMPONENT,
+            component=FrtbComponent.DRC,
+            label="A duplicate 2",
+        ),
+    )
+
+    with pytest.raises(
+        ResultStoreContractError,
+        match="duplicate node ids: a-duplicate, z-duplicate",
+    ):
+        ResultBundle(run=run, nodes=nodes)
+
+
 def test_attribution_record_reuses_common_capital_contribution_contract() -> None:
     contribution = CapitalContribution(
         contribution_id="alloc-girr-usd-5y",

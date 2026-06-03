@@ -5,12 +5,13 @@ from __future__ import annotations
 import json
 import shutil
 from collections.abc import Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 import duckdb
 import pyarrow as pa  # type: ignore[import-untyped]
@@ -81,9 +82,9 @@ class DuckDbParquetResultStore:
     """Append-only local Parquet store queried through DuckDB.
 
     The executable first slice writes one Parquet file per run per table under
-    ``root/parquet`` and keeps a DuckDB catalog with views over those files.
-    Artifact references may point to local paths or object-store URIs, but this
-    writer only owns local result-store Parquet files.
+    ``root/parquet``. A run is visible only after its manifest has been written.
+    The DuckDB catalog is derived and rebuildable; query methods use independent
+    in-memory DuckDB connections over committed Parquet files.
     """
 
     def __init__(self, config: ResultStoreConfig | Path) -> None:
@@ -108,42 +109,50 @@ class DuckDbParquetResultStore:
         hard error; corrections must be represented by a new calculation run.
         """
 
-        if self.run_exists(bundle.run.run_id):
+        run_id = bundle.run.run_id
+        if self.run_exists(run_id):
             raise ResultStoreWriteError(f"run already exists: {bundle.run.run_id}")
 
         rows_by_table = _rows_for_bundle(bundle)
-        safe_run_id = _safe_run_id(bundle.run.run_id)
+        safe_run_id = _safe_run_id(run_id)
         staging_dir = self.root / "_staging" / safe_run_id
         if staging_dir.exists():
             shutil.rmtree(staging_dir)
+        self._remove_orphaned_run_files(run_id)
         staging_dir.mkdir(parents=True)
 
+        moved_paths: list[Path] = []
         try:
             for table_name in TABLE_NAMES:
                 table = _arrow_table(rows_by_table[table_name], _TABLE_SCHEMAS[table_name])
                 pq.write_table(table, staging_dir / f"{table_name}.parquet")
 
             for table_name in TABLE_NAMES:
-                final_path = self._run_table_path(table_name, bundle.run.run_id)
+                final_path = self._run_table_path(table_name, run_id)
                 if final_path.exists():
-                    raise ResultStoreWriteError(
-                        f"run table already exists: {table_name}/{bundle.run.run_id}"
-                    )
+                    raise ResultStoreWriteError(f"run table already exists: {table_name}/{run_id}")
                 final_path.parent.mkdir(parents=True, exist_ok=True)
                 (staging_dir / f"{table_name}.parquet").rename(final_path)
+                moved_paths.append(final_path)
 
             self._write_manifest(bundle, rows_by_table)
-            self.refresh_catalog()
         except Exception:
+            for path in moved_paths:
+                path.unlink(missing_ok=True)
             shutil.rmtree(staging_dir, ignore_errors=True)
             raise
         finally:
             shutil.rmtree(staging_dir, ignore_errors=True)
 
+        # The catalog is derived convenience state. A refresh failure must not
+        # turn a fully manifested run into a failed append.
+        with suppress(Exception):
+            self.refresh_catalog()
+
     def run_exists(self, run_id: str) -> bool:
         """Return whether a run has already been written."""
 
-        return self._run_table_path("runs", run_id).exists()
+        return self._manifest_path(run_id).exists()
 
     def list_runs(self) -> tuple[CalculationRun, ...]:
         """Return stored calculation runs ordered by business date and run id."""
@@ -163,6 +172,8 @@ class DuckDbParquetResultStore:
     def get_run(self, run_id: str) -> CalculationRun | None:
         """Return a stored run by id, or ``None`` when absent."""
 
+        if not self.run_exists(run_id):
+            return None
         rows = self._fetchall(
             "runs",
             """
@@ -179,6 +190,8 @@ class DuckDbParquetResultStore:
     def capital_tree(self, run_id: str) -> tuple[CapitalNode, ...]:
         """Return all capital graph nodes for one run."""
 
+        if not self.run_exists(run_id):
+            return ()
         rows = self._fetchall(
             "capital_nodes",
             """
@@ -196,6 +209,8 @@ class DuckDbParquetResultStore:
     def child_nodes(self, run_id: str, parent_node_id: str) -> tuple[CapitalNode, ...]:
         """Return direct child nodes in graph order."""
 
+        if not self.run_exists(run_id):
+            return ()
         if not self._has_table_files("capital_nodes") or not self._has_table_files("capital_edges"):
             return ()
         rows = self._fetch_custom(
@@ -221,6 +236,8 @@ class DuckDbParquetResultStore:
     def edges(self, run_id: str) -> tuple[CapitalEdge, ...]:
         """Return graph edges for one run."""
 
+        if not self.run_exists(run_id):
+            return ()
         rows = self._fetchall(
             "capital_edges",
             """
@@ -237,6 +254,8 @@ class DuckDbParquetResultStore:
     def measures_for_node(self, run_id: str, node_id: str) -> tuple[CapitalMeasure, ...]:
         """Return scalar measures attached to one node."""
 
+        if not self.run_exists(run_id):
+            return ()
         rows = self._fetchall(
             "capital_measures",
             """
@@ -258,6 +277,8 @@ class DuckDbParquetResultStore:
     ) -> tuple[ArtifactRef, ...]:
         """Return large-artifact references for a run."""
 
+        if not self.run_exists(run_id):
+            return ()
         if artifact_type is None:
             rows = self._fetchall(
                 "artifact_refs",
@@ -292,6 +313,8 @@ class DuckDbParquetResultStore:
     ) -> tuple[CapitalAttributionRecord, ...]:
         """Return attribution rows attached to one capital node."""
 
+        if not self.run_exists(run_id):
+            return ()
         rows = self._fetchall(
             "capital_attributions",
             """
@@ -309,6 +332,8 @@ class DuckDbParquetResultStore:
     def lineage_for_result(self, run_id: str, result_id: str) -> tuple[LineageRef, ...]:
         """Return lineage references for a stored result object."""
 
+        if not self.run_exists(run_id):
+            return ()
         rows = self._fetchall(
             "lineage_refs",
             """
@@ -325,7 +350,7 @@ class DuckDbParquetResultStore:
     def refresh_catalog(self) -> None:
         """Create or replace DuckDB views over the Parquet result tables."""
 
-        con = self._connect()
+        con = self._connect_catalog()
         try:
             for table_name in TABLE_NAMES:
                 if self._has_table_files(table_name):
@@ -341,8 +366,10 @@ class DuckDbParquetResultStore:
         bundle: ResultBundle,
         rows_by_table: Mapping[str, Sequence[Mapping[str, object]]],
     ) -> None:
-        manifest_dir = self.manifest_root / _safe_run_id(bundle.run.run_id)
-        manifest_dir.mkdir(parents=True, exist_ok=False)
+        manifest_dir = self._manifest_path(bundle.run.run_id).parent
+        manifest_dir.mkdir(parents=True, exist_ok=True)
+        manifest_path = self._manifest_path(bundle.run.run_id)
+        temp_manifest_path = manifest_path.with_suffix(".json.tmp")
         manifest = {
             "schema_version": RESULT_STORE_SCHEMA_VERSION,
             "backend": self.config.backend.value,
@@ -351,10 +378,11 @@ class DuckDbParquetResultStore:
             "regime_id": bundle.run.regime_id,
             "tables": {table_name: len(rows_by_table[table_name]) for table_name in TABLE_NAMES},
         }
-        (manifest_dir / "run_manifest.json").write_text(
+        temp_manifest_path.write_text(
             stable_json_dumps(manifest) + "\n",
             encoding="utf-8",
         )
+        temp_manifest_path.replace(manifest_path)
 
     def _fetchall(
         self,
@@ -372,15 +400,18 @@ class DuckDbParquetResultStore:
         sql: str,
         parameters: Sequence[object] = (),
     ) -> tuple[tuple[object, ...], ...]:
-        con = self._connect()
+        con = self._connect_query()
         try:
             raw_rows = con.execute(sql, parameters).fetchall()
             return tuple(tuple(row) for row in raw_rows)
         finally:
             con.close()
 
-    def _connect(self) -> Any:
+    def _connect_catalog(self) -> Any:
         return duckdb.connect(str(self.catalog_path))
+
+    def _connect_query(self) -> Any:
+        return duckdb.connect()
 
     def _run_table_path(self, table_name: str, run_id: str) -> Path:
         if table_name not in TABLE_NAMES:
@@ -388,11 +419,34 @@ class DuckDbParquetResultStore:
         return self.parquet_root / table_name / f"{_safe_run_id(run_id)}.parquet"
 
     def _has_table_files(self, table_name: str) -> bool:
-        return any((self.parquet_root / table_name).glob("*.parquet"))
+        return bool(self._table_files(table_name))
 
     def _parquet_relation(self, table_name: str) -> str:
-        glob_path = self.parquet_root / table_name / "*.parquet"
-        return f"read_parquet({_sql_literal(str(glob_path))}, union_by_name = true)"
+        file_paths = ", ".join(_sql_literal(str(path)) for path in self._table_files(table_name))
+        return f"read_parquet([{file_paths}], union_by_name = true)"
+
+    def _manifest_path(self, run_id: str) -> Path:
+        return self.manifest_root / _safe_run_id(run_id) / "run_manifest.json"
+
+    def _committed_run_ids(self) -> tuple[str, ...]:
+        return tuple(
+            sorted(
+                unquote(path.parent.name) for path in self.manifest_root.glob("*/run_manifest.json")
+            )
+        )
+
+    def _table_files(self, table_name: str) -> tuple[Path, ...]:
+        if table_name not in TABLE_NAMES:
+            raise ResultStoreContractError(f"unknown table: {table_name}", field="table_name")
+        return tuple(
+            path
+            for run_id in self._committed_run_ids()
+            if (path := self._run_table_path(table_name, run_id)).exists()
+        )
+
+    def _remove_orphaned_run_files(self, run_id: str) -> None:
+        for table_name in TABLE_NAMES:
+            self._run_table_path(table_name, run_id).unlink(missing_ok=True)
 
 
 def _rows_for_bundle(bundle: ResultBundle) -> dict[str, list[dict[str, object]]]:
@@ -630,18 +684,24 @@ def _attribution_from_row(row: Sequence[object]) -> CapitalAttributionRecord:
 
 
 def _metadata_json(metadata: Mapping[str, object]) -> str:
-    return stable_json_dumps(dict(metadata))
+    return str(stable_json_dumps(dict(metadata)))
 
 
 def _json_mapping(value: object) -> Mapping[str, object]:
-    parsed = json.loads(str(value))
+    try:
+        parsed = json.loads(str(value))
+    except json.JSONDecodeError as exc:
+        raise ResultStoreContractError(f"malformed JSON object: {exc}") from exc
     if not isinstance(parsed, dict):
         raise ResultStoreContractError("JSON field must decode to an object")
     return parsed
 
 
 def _json_text_tuple(value: object) -> tuple[str, ...]:
-    parsed = json.loads(str(value))
+    try:
+        parsed = json.loads(str(value))
+    except json.JSONDecodeError as exc:
+        raise ResultStoreContractError(f"malformed JSON text list: {exc}") from exc
     if not isinstance(parsed, list) or not all(isinstance(item, str) for item in parsed):
         raise ResultStoreContractError("JSON field must decode to a list of strings")
     return tuple(parsed)
@@ -663,7 +723,10 @@ def _float_value(value: object) -> float:
     if isinstance(value, bool):
         raise ResultStoreContractError("numeric field must not be boolean")
     if isinstance(value, int | float | str):
-        return float(value)
+        try:
+            return float(value)
+        except ValueError as exc:
+            raise ResultStoreContractError(f"invalid numeric value: {value}") from exc
     raise ResultStoreContractError("numeric field must be int, float, or numeric text")
 
 
@@ -675,7 +738,10 @@ def _int_value(value: object) -> int:
     if isinstance(value, float) and value.is_integer():
         return int(value)
     if isinstance(value, str):
-        return int(value)
+        try:
+            return int(value)
+        except ValueError as exc:
+            raise ResultStoreContractError(f"invalid integer value: {value}") from exc
     raise ResultStoreContractError("integer field must be int or integer text")
 
 

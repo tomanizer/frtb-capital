@@ -17,7 +17,8 @@ Current runtime support is deliberately narrow:
   movement explanations;
 - `CapitalAttributionRecord` rows compatible with
   `frtb_common.CapitalContribution`;
-- local Parquet files queried through DuckDB views.
+- manifest-gated local Parquet files queried through independent DuckDB
+  connections.
 
 S3 Parquet and DuckLake are explicit backend modes but reserved for later
 implementation. Artifact URIs may already point at object storage, while this

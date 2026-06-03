@@ -404,7 +404,14 @@ class ResultBundle:
 
         run_id = self.run.run_id
         node_ids = [node.node_id for node in self.nodes]
-        duplicate_nodes = sorted({node_id for node_id in node_ids if node_ids.count(node_id) > 1})
+        seen_node_ids: set[str] = set()
+        duplicate_node_ids: set[str] = set()
+        for node_id in node_ids:
+            if node_id in seen_node_ids:
+                duplicate_node_ids.add(node_id)
+            else:
+                seen_node_ids.add(node_id)
+        duplicate_nodes = sorted(duplicate_node_ids)
         if duplicate_nodes:
             raise ResultStoreContractError(
                 f"duplicate node ids: {', '.join(duplicate_nodes)}",
