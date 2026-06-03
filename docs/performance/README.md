@@ -26,7 +26,7 @@ report as an artifact; it is not a pull-request gate.
 SLA. Use it to spot order-of-magnitude regressions and refresh it when hardware,
 Python, NumPy, or benchmark dimensions change.
 
-## FRTB-IMA Arrow Handoffs
+## FRTB-IMA Arrow Batch
 
 Run the IMA Arrow batch benchmark from the workspace root:
 
@@ -34,7 +34,7 @@ Run the IMA Arrow batch benchmark from the workspace root:
 make ima-arrow-batch-benchmark
 ```
 
-The benchmark covers the Arrow -> normalized handoff -> immutable batch path for
+The benchmark covers the Arrow -> normalized table -> immutable batch path for
 scenario metadata and RFET real-price observations. It records parse, adapt,
 build, and RFET assessment timings, compares RFET row and batch assessment
 hashes, and hard-gates accepted-row dataclass materialization at zero on the
