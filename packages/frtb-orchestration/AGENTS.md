@@ -9,7 +9,7 @@ before editing this package.
 
 ## Current status
 
-The package has partial orchestration contracts:
+The package implements orchestration contracts end to end:
 
 - SA composition consumes `frtb_common.ComponentCapitalSummary` from package-owned
   SBM, DRC, and RRAO adapters, validates component slots and jurisdiction
@@ -17,10 +17,10 @@ The package has partial orchestration contracts:
   `SBM + DRC + RRAO` result.
 - IMA fallback route recording accepts structural desk eligibility signals and
   records `SA_FALLBACK` desks as routed to the Standardised Approach stack.
-- CVA has a structural `CvaCapitalSummary` projection for future top-of-house
-  aggregation.
-- `calculate_suite_capital` still fails explicitly until full suite aggregation
-  lands.
+- `recognise_cva_summary` and `recognise_ima_summary` project public component
+  results into `CvaCapitalSummary` and `ImaCapitalSummary`.
+- `calculate_suite_capital` aggregates `IMA + SA + CVA` with cross-component
+  date, currency, and jurisdiction-family validation (ADR 0039).
 
 ## Rules
 
@@ -28,6 +28,7 @@ The package has partial orchestration contracts:
   runtime source must not import sibling capital packages unless a future ADR
   changes the boundary.
 - Owns SA composition from `frtb-sbm + frtb-drc + frtb-rrao`.
+- Owns top-of-house suite aggregation from component summaries.
 - Owns fallback routing when IMA eligibility fails.
 - Do not emit successful placeholder capital.
 - Do not reach into private component batch modules; consume public input_table or

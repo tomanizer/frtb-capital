@@ -1,59 +1,55 @@
 # Documentation Audit
 
-Date: 2026-05-28
+Date: 2026-06-03
 
 ## Scope
 
 This audit checks whether repository documentation reflects the current
-`frtb-capital` monorepo after the migration from the historical
-`tomanizer/FRTB-IMA` repository.
+`frtb-capital` monorepo structure, package maturity, and public integration
+surfaces. It supersedes the 2026-05-28 migration audit, which addressed the
+historical `tomanizer/FRTB-IMA` repository move.
 
-## Current Structure
+## Current structure
 
-- Root repository: `tomanizer/frtb-capital`
-- Implemented package: `packages/frtb-ima`
-- Shared package: `packages/frtb-common`
-- Standardised Approach component packages: `packages/frtb-sbm`,
-  `packages/frtb-drc`, and `packages/frtb-rrao`
-- CVA package: `packages/frtb-cva`
-- Suite orchestration package: `packages/frtb-orchestration`
-- Root CI: `.github/workflows/ci.yml`
-- Package-local IMA docs: `packages/frtb-ima/docs/`
-- Suite-level ADRs: `docs/decisions/`
-- Suite-level module documentation home: `docs/modules/`
-- IMA model documentation pack:
-  `docs/modules/frtb-ima/model_documentation/`
+| Package | Maturity | Primary doc home |
+| --- | --- | --- |
+| `frtb-common` | `shared` | `packages/frtb-common/README.md`, `docs/modules/frtb-common/` |
+| `frtb-ima` | `implemented` | `packages/frtb-ima/`, `docs/modules/frtb-ima/` |
+| `frtb-sbm` | `partial_runtime` | `packages/frtb-sbm/`, `docs/modules/frtb-sbm/` |
+| `frtb-drc` | `partial_runtime` | `packages/frtb-drc/`, `docs/modules/frtb-drc/` |
+| `frtb-rrao` | `implemented` | `packages/frtb-rrao/`, `docs/modules/frtb-rrao/` |
+| `frtb-cva` | `partial_runtime` | `packages/frtb-cva/`, `docs/modules/frtb-cva/` |
+| `frtb-orchestration` | `orchestration_implemented` | `docs/modules/frtb-orchestration/` (canonical), `packages/frtb-orchestration/README.md` |
+| `frtb-result-store` | `result_store_partial` | `packages/frtb-result-store/`, `docs/modules/frtb-result-store/` |
 
-## Findings Addressed
+Authoritative implementation status: [`docs/quality/package_maturity.toml`](quality/package_maturity.toml)
+and the generated [`docs/quality/PACKAGE_STATUS.md`](quality/PACKAGE_STATUS.md).
 
-- Replaced standalone IMA repository language with package-in-monorepo language.
-- Updated SBM, DRC, RRAO, and CVA references from separate repositories to
-  sibling workspace packages.
-- Pointed root documentation navigation at the current IMA regulatory docs
-  instead of non-existent root regulatory docs.
-- Clarified that `frtb-common`, SBM, DRC, RRAO, CVA, and orchestration are
-  workspace packages rather than missing directories. Their implementation
-  status is now maintained in `docs/quality/package_maturity.toml` and
-  `docs/quality/PACKAGE_STATUS.md`.
-- Added the missing `packages/frtb-ima/CHANGELOG.md` placeholder required by
-  package versioning guidance.
-- Added a suite-level `docs/modules/` home for module documentation and moved
-  the IMA model pack under `docs/modules/frtb-ima/model_documentation/`.
-- Corrected security documentation that previously claimed configured
-  Dependabot and vulnerability scans before audit-followup work implements
-  them.
+## Findings addressed (2026-06-03)
 
-## Residual Follow-Ups
+- Aligned `packages/frtb-orchestration/README.md`, `AGENTS.md`, and `CLAUDE.md`
+  with implemented `calculate_suite_capital` and module documentation.
+- Added [ADR 0039](decisions/0039-orchestration-suite-capital-aggregation.md) and
+  updated ADR 0018 / ADR 0032 cross-references for suite aggregation.
+- Refreshed `docs/ARCHITECTURE.md` SBM and orchestration status sections.
+- Removed stale “scaffolded sibling packages” language from IMA agent and
+  regulatory assumption docs.
+- Expanded `packages/frtb-drc/README.md` and added `docs/modules/frtb-ima/PUBLIC_API.md`.
+- Synced `docs/modules/frtb-rrao/PUBLIC_API.md` with PRA_UK_CRR and
+  `to_component_summary`.
+- Added `packages/frtb-result-store/CLAUDE.md` and updated root `CLAUDE.md`
+  workspace structure.
+- Corrected the SBM summary line in `docs/modules/README.md`.
 
-- Current package maturity and validation-pack evidence are tracked in
-  [quality/package_maturity.toml](quality/package_maturity.toml),
-  [quality/PACKAGE_STATUS.md](quality/PACKAGE_STATUS.md), and
-  [VALIDATION_PACK.md](VALIDATION_PACK.md). This 2026-05-28 audit is retained
-  as historical migration evidence.
-- `tomanizer/frtb-capital#2`: dependency pinning and supply-chain hygiene.
-- `tomanizer/frtb-capital#3`: governance file completion, including PR
-  templates if desired.
-- `tomanizer/frtb-capital#8`: regulatory thresholds and citations in policy
-  configuration.
+## Residual follow-ups
+
+- Promote a suite-level audit-record home from `frtb_ima.audit` when an ADR
+  extracts shared audit types into `frtb-common`.
+- Add `docs/modules/frtb-orchestration/PUBLIC_API.md` if orchestration exports
+  grow beyond summary-handoff symbols.
+- Keep model-documentation packs aligned when partial-runtime packages add new
+  cited paths (see [`docs/modules/MODEL_DOCUMENTATION_PROMOTION_PLAN.md`](modules/MODEL_DOCUMENTATION_PROMOTION_PLAN.md)).
+- Manifest-driven end-to-end suite runs from a single `CapitalRunManifest` may
+  need additional client examples beyond component summary handoffs.
 
 This audit did not change calculation code.

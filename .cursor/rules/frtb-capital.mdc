@@ -54,3 +54,10 @@ For IMA work, read `packages/frtb-ima/AGENTS.md` and
 For PR babysitting, read and follow `.grok/skills/frtb-ci-babysit/SKILL.md`.
 Requires `gh`. Use `make agent-new AGENT=cursor TASK=<task-name>` when the
 worktree guard fails.
+
+For documentation audits across all packages, read and follow:
+
+- `.grok/skills/frtb-doc-audit/SKILL.md`
+- `.grok/skills/frtb-doc-audit/references/audit-checklist.md`
+
+Use `make agent-new AGENT=cursor TASK=<task-name>` when the worktree guard fails.

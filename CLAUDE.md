@@ -45,13 +45,14 @@ Be honest and critical when reviewing code produced by Codex or other automated 
 ```
 frtb-capital/
 ├── packages/
-│   ├── frtb-common/         # shared primitives (scaffolded)
-│   ├── frtb-ima/            # Internal Models Approach (migrated)
-│   ├── frtb-sbm/            # Standardized Approach SBM component (scaffolded)
-│   ├── frtb-drc/            # Standardized Approach DRC component (scaffolded)
-│   ├── frtb-rrao/           # Standardized Approach RRAO component (scaffolded)
-│   ├── frtb-cva/            # Credit Valuation Adjustment (scaffolded)
-│   └── frtb-orchestration/  # suite-level aggregation (scaffolded)
+│   ├── frtb-common/         # shared primitives
+│   ├── frtb-ima/            # Internal Models Approach (implemented)
+│   ├── frtb-sbm/            # Standardized Approach SBM (partial runtime)
+│   ├── frtb-drc/            # Standardized Approach DRC (partial runtime)
+│   ├── frtb-rrao/           # Standardized Approach RRAO (implemented)
+│   ├── frtb-cva/            # Credit Valuation Adjustment (partial runtime)
+│   ├── frtb-orchestration/  # suite-level aggregation (implemented)
+│   └── frtb-result-store/   # DuckDB/Parquet evidence store (partial)
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── decisions/           # suite-wide ADRs
@@ -132,6 +133,18 @@ When asked to babysit a pull request through CI and bot reviews, read and execut
 - [`.grok/skills/frtb-ci-babysit/SKILL.md`](.grok/skills/frtb-ci-babysit/SKILL.md)
 
 Or run `/frtb-ci-babysit` ([`.claude/commands/frtb-ci-babysit.md`](.claude/commands/frtb-ci-babysit.md)).
+
+## Documentation audits
+
+When asked to audit or align package documentation across the suite, read and
+execute:
+
+- [`.grok/skills/frtb-doc-audit/SKILL.md`](.grok/skills/frtb-doc-audit/SKILL.md)
+- [`.grok/skills/frtb-doc-audit/references/audit-checklist.md`](.grok/skills/frtb-doc-audit/references/audit-checklist.md)
+
+Or run the Claude command `/frtb-doc-audit` (wrapper:
+[`.claude/commands/frtb-doc-audit.md`](.claude/commands/frtb-doc-audit.md)).
+Use `make agent-new AGENT=claude TASK=<task-name>` when the worktree guard fails.
 
 ---
 

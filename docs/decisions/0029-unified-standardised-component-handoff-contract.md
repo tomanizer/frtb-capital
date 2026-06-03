@@ -77,9 +77,11 @@ this ADR only fixes the contract those milestones build on.
 - Orchestration runtime imports no sibling capital package. The runtime
   import-guard test is extended to also forbid `frtb_ima`, so future IMA handoff
   recognition stays structural rather than importing IMA internals.
-- **No numerical outputs change.** `compose_standardised_approach_capital` still
-  fails closed before SA aggregation arithmetic, and `calculate_suite_capital`
-  still raises an explicit unimplemented-component error.
+- **No numerical outputs change** from the handoff rename alone. SA aggregation
+  arithmetic is delivered in
+  [ADR 0032](0032-orchestration-sa-arithmetic-and-fallback-routing.md); suite
+  aggregation is delivered in
+  [ADR 0039](0039-orchestration-suite-capital-aggregation.md).
 
 ## References
 

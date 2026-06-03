@@ -9,15 +9,18 @@ details in this ADR are superseded by
 [ADR 0029](0029-unified-standardised-component-handoff-contract.md).
 The statements that SA aggregation arithmetic and IMA fallback routing are
 unavailable are superseded by
-[ADR 0032](0032-orchestration-sa-arithmetic-and-fallback-routing.md).
+[ADR 0032](0032-orchestration-sa-arithmetic-and-fallback-routing.md). Firm-level
+`calculate_suite_capital` is superseded by
+[ADR 0039](0039-orchestration-suite-capital-aggregation.md).
 
 ## Context
 
 `frtb-orchestration` is intentionally partial, but the suite identity depends
 on top-of-house aggregation across IMA, Standardised Approach components, and
 CVA. Component packages expose deterministic public results with audit metadata.
-Current orchestration validates shared SA handoffs and CVA result summaries, but
-SA aggregation arithmetic and `calculate_suite_capital` still fail closed.
+At M1 acceptance, orchestration validated shared SA handoffs and CVA result
+summaries, but SA aggregation arithmetic and `calculate_suite_capital` failed
+closed. ADR 0032 and ADR 0039 now govern those paths (see Status).
 
 Without an explicit contract milestone, orchestration work risks ad hoc
 integration or sibling-package imports that violate the monorepo boundary
@@ -43,11 +46,12 @@ are stable.
 ### M1 behaviour
 
 - **SA composition** is `SBM + DRC + RRAO` with explicit subtotals and citations
-  carried through `ComponentResultHandoff` records. The current runtime
-  validates component slots and ADR 0022 jurisdiction-family consistency, then
-  raises `NotImplementedCapitalComponentError` before aggregation arithmetic.
-  No silent zero-capital substitution is allowed when a component raises
-  unsupported-feature errors.
+  carried through `ComponentResultHandoff` records. Under M1-only orchestration,
+  the runtime validated component slots and ADR 0022 jurisdiction-family
+  consistency, then raised `NotImplementedCapitalComponentError` before
+  aggregation arithmetic. ADR 0032 delivers SA arithmetic; ADR 0039 delivers
+  firm-level `calculate_suite_capital`. No silent zero-capital substitution is
+  allowed when a component raises unsupported-feature errors.
 - **Unsupported component paths fail closed** at the component boundary.
   Orchestration does not catch and replace them with approximate totals.
 - **Attribution / Euler decomposition** follows ADR 0012: exact Euler is valid
@@ -57,9 +61,10 @@ are stable.
   stack using the same handoff contracts; M1 only requires eligibility signals
   to be preserved on IMA results.
 
-### M2 (deferred)
+### M2 (delivered — ADR 0039)
 
-- `calculate_suite_capital` end-to-end aggregation across IMA, SA, and CVA.
+- `calculate_suite_capital` end-to-end aggregation across IMA, SA, and CVA from
+  component summaries.
 - Cross-component floors/add-ons and consolidated audit log emission.
 - Explicit desk-level fallback routing tests.
 

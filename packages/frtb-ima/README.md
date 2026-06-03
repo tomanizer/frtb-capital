@@ -26,6 +26,8 @@ capital inputs, and can select stress windows from supplied historical loss
 series, but it does not source raw market data, price trades, run
 SBM/DRC/RRAO/CVA capital, compose SA totals, or produce final regulatory
 submissions.
+The stable top-level import surface is documented in
+[`docs/modules/frtb-ima/PUBLIC_API.md`](../../docs/modules/frtb-ima/PUBLIC_API.md).
 Client delivery is documented in
 [`docs/modules/frtb-ima/CLIENT_DELIVERY.md`](../../docs/modules/frtb-ima/CLIENT_DELIVERY.md),
 including the split between dense NumPy scenario artifacts and Arrow tabular
@@ -112,30 +114,41 @@ Backtesting exception counts
 
 ## Package layout
 
+Representative modules under `packages/frtb-ima/src/frtb_ima/` (see
+[`docs/modules/frtb-ima/PUBLIC_API.md`](../../docs/modules/frtb-ima/PUBLIC_API.md)
+for the full top-level export contract):
+
 ```
-packages/frtb-ima/src/frtb_ima/
-    data_models.py          Enums and dataclasses
-    data_contracts.py       Validated run inputs and scenario cubes
-    expected_shortfall.py   ES calculation
-    lha_builder.py          Scenario cube to nested LH vector builder
-    liquidity_horizon.py    LHA ES from nested vectors
+    data_models.py              Enums and dataclasses
+    data_contracts.py           Validated run inputs and scenario cubes
+    scenario.py                 Scenario cube construction
+    scenario_validation.py      Scenario input validation
+    expected_shortfall.py       ES calculation
+    lha_builder.py              Scenario cube to nested LH vector builder
+    liquidity_horizon.py        LHA ES from nested vectors
     liquidity_horizon_mapping.py Regulatory risk-factor category to LH table
-    reduced_set.py          Indirect-approach reduced-set diagnostics
-    stress_periods.py       Vectorized stress-window selection by risk class
-    regimes.py              Regulatory policy profiles and run context
-    rfet.py                 RFET modellability classification
-    rfet_evidence.py        RFET evidence assessment and audit trail
-    nmrf_method_selection.py NMRF stress-method evidence and selector
-    nmrf_stress_spec.py     NMRF upstream valuation-run specifications
-    nmrf_valuation_run.py   NMRF valuation-run reconciliation
-    nmrf.py                 NMRF stress artifacts, routing, and SES aggregation
-    imcc.py                 IMCC unconstrained / constrained with audit decomposition
-    pla.py                  PLA KS/Spearman metrics and policy-window diagnostics
-    backtesting.py          Exception counting and optional dated traces
-    capital.py              Models-based capital assembly
-    logging.py              JSON logging formatter and structured fields
-    audit.py                Desk/run audit records and NDJSON serialization
-    demo_data.py            Synthetic demo data
+    reduced_set.py              Indirect-approach reduced-set diagnostics
+    stress_periods.py           Vectorized stress-window selection by risk class
+    regimes.py                  Regulatory policy profiles and run context
+    rfet.py                     RFET modellability classification
+    rfet_evidence.py            RFET evidence assessment and audit trail
+    nmrf_method_selection.py    NMRF stress-method evidence and selector
+    nmrf_stress_spec.py         NMRF upstream valuation-run specifications
+    nmrf_valuation_run.py       NMRF valuation-run reconciliation
+    nmrf.py                     NMRF stress artifacts, routing, and SES aggregation
+    imcc.py                     IMCC unconstrained / constrained with audit decomposition
+    pla.py                      PLA KS/Spearman metrics and policy-window diagnostics
+    backtesting.py              Exception counting and optional dated traces
+    capital.py                  Models-based capital assembly
+    input_manifest.py           Capital-run input manifest contracts
+    arrow_batch.py              Arrow manifest and RFET/scenario-metadata batches
+    replay.py                   Deterministic replay helpers
+    calendar.py                 Business-day calendar helpers
+    capital_run_fixture.py      Committed synthetic capital-run fixture loader
+    audit.py                    Desk/run audit records and NDJSON serialization
+    audit_inputs.py             Audit input normalization helpers
+    logging.py                  JSON logging formatter and structured fields
+    demo_data.py                Synthetic demo data
 ```
 
 ## Key design decisions

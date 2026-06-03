@@ -123,6 +123,21 @@ Requires `gh` and a compliant worktree (`python3 scripts/agent_worktree.py guard
 Use `make agent-new AGENT=codex TASK=<task>` (or `claude`, `cursor`, `copilot`,
 `grok`) when the guard fails.
 
+## Documentation audits
+
+When asked to audit package documentation, check whether docs match code, or
+fix stale README/agent/architecture text, follow the shared workflow (all agents,
+all worktree names):
+
+- [`.grok/skills/frtb-doc-audit/SKILL.md`](.grok/skills/frtb-doc-audit/SKILL.md)
+- [`.grok/skills/frtb-doc-audit/references/audit-checklist.md`](.grok/skills/frtb-doc-audit/references/audit-checklist.md)
+
+Grok: `/frtb-doc-audit` or `/frtb-doc-audit --report-only`. Claude Code:
+`/frtb-doc-audit` (see [`.claude/commands/frtb-doc-audit.md`](.claude/commands/frtb-doc-audit.md)).
+
+Use `--agent codex` (or `claude`, `cursor`, `copilot`) in the skill when creating
+a worktree. Documentation-only PRs do not bump package versions (ADR 0015).
+
 ## Review focus
 
 When reviewing or changing code, focus on:

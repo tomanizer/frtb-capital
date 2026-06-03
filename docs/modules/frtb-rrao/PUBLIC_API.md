@@ -9,11 +9,12 @@ their owning submodule only and are not part of the v1 compatibility contract.
 | Category | Top-level symbols | Rationale |
 | --- | --- | --- |
 | Package identity | `__version__`, `PACKAGE_METADATA` | Workspace package discovery and status reporting. |
-| Calculation entry point | `calculate_rrao_capital` | Primary supported RRAO run API for canonical Basel MAR23, U.S. NPR 2.0, and EU CRR3 comparison inputs. |
+| Calculation entry point | `calculate_rrao_capital` | Primary supported RRAO run API for canonical Basel MAR23, U.S. NPR 2.0, EU CRR3 comparison, and PRA_UK_CRR inputs. |
 | Core data contracts | `RraoPosition`, `RraoBackToBackMatch`, `RraoCalculationContext`, `RraoCapitalResult`, `RraoCapitalLine`, `RraoSubtotal`, `RraoSourceLineage`, `RraoCitation`, `RraoClassificationDecision` | Public input, output, lineage, audit, and classification records. |
 | Enums | `RraoClassification`, `RraoEvidenceType`, `RraoExclusionReason`, `RraoRegulatoryProfile`, `RraoInvestmentFundMethod`, `RraoInvestmentFundExposureType`, `RraoAllocationDimension` | Stable wire values used by inputs, audit payloads, adapters, and allocation reports. |
 | Investment-fund data | `RraoInvestmentFundDescriptor` | Public descriptor for U.S. NPR 2.0 proposed section `__.205(e)(3)(iii)` and `__.211(a)(3)` inclusion. |
 | Audit helpers | `serialize_rrao_result`, `input_hash_for_positions`, `validate_rrao_result_reconciliation` | Deterministic replay and reconciliation support for public results. |
+| SA orchestration handoff | `to_component_summary` | Projects `RraoCapitalResult` onto `frtb_common.ComponentCapitalSummary` for `compose_standardised_approach_capital`. |
 | Batch and Arrow input_table helpers | `RRAO_ARROW_COLUMN_SPECS`, `RraoPositionBatch`, `RraoBatchCapitalCalculation`, `build_rrao_batch_from_columns`, `build_rrao_batch_from_positions`, `build_rrao_batch_from_arrow`, `calculate_rrao_capital_from_batch`, `input_hash_for_rrao_batch`, `normalize_rrao_arrow_table` | High-volume canonical column and Arrow input_table paths that preserve the same supported-profile capital semantics without accepted-row dataclass materialisation. |
 | Allocation reports | `RraoAllocationBucket`, `RraoAllocationReport`, `SUPPORTED_RRAO_ALLOCATION_DIMENSIONS`, `build_rrao_allocation_report`, `build_rrao_allocation_reports`, `resolve_rrao_allocation_dimension`, `serialize_rrao_allocation_report`, `validate_rrao_allocation_report` | Additive line, desk, legal-entity, and evidence-type explain outputs. |
 | Optional adapters | `RraoAdapterResult`, `RraoAdapterWarning`, `RraoRejectedRow`, `adapt_rrao_records`, `adapt_crif_records`, `adapt_fnet_records` | Standard-library adapters from supported CRIF/FNet-shaped rows to canonical inputs. |
