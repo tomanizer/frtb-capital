@@ -38,7 +38,7 @@ Use this document in two directions:
 | U.S. NPR 2.0 | Federal Register 91 FR 14952, March 27, 2026. Section V.A.7.b and proposed section `__.211` define proposed U.S. residual-risk coverage, exclusions, gross effective notional, and add-on percentages. | Implemented for supported canonical inputs; proposed-rule material only. |
 | EU CRR / CRR3 | Regulation (EU) No 575/2013 Article 325u and Commission Delegated Regulation (EU) 2022/2328 Articles 1-3 and Annex. | Implemented for supported comparison-profile canonical inputs. |
 | EBA RTS background | EBA residual risk add-on RTS page. | Background only; not an independent calculation source. |
-| UK CRR / PRA | UK CRR Article 325u and UK retained DR 2022/2328; PRA PS1/26 anchor. | `mapped_and_cited` for `PRA_UK_CRR` canonical inputs; investment-fund paths fail closed. See [`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md). |
+| UK CRR / PRA | UK CRR Article 325u and UK retained DR 2022/2328; PRA PS1/26 anchor. | `mapped_and_cited` for `PRA_UK_CRR` canonical inputs; investment-fund paths fail closed. See [`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../../docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md). |
 | Public implementation references | `frtb-net/FRTB` `SA_RRAO_Calc.py` and FNet format documentation. | Adapter and explain-shape inspiration only; not regulatory sources. |
 
 Use `docs/regulatory_sources.yml` for topic-level links and review notes.
@@ -96,7 +96,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 
 | Profile | Runtime status | Planning status |
 | --- | --- | --- |
-| `PRA_UK_CRR` | supported canonical-input slice | UK CRR Article 325u and retained DR 2022/2328 mapping with `rrao_pra` fixtures; see [`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md). |
+| `PRA_UK_CRR` | supported canonical-input slice | UK CRR Article 325u and retained DR 2022/2328 mapping with `rrao_pra` fixtures; see [`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../../docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md). |
 
 ## Module docstring convention
 

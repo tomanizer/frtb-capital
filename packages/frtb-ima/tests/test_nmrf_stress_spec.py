@@ -22,7 +22,7 @@ from frtb_ima.nmrf_stress_spec import (
     required_liquidity_horizons_from_valuation_specs,
     required_methods_from_valuation_specs,
 )
-from frtb_ima.regimes import RegulatoryRegime, UnsupportedRegulatoryFeature, get_policy
+from frtb_ima.regimes import RegulatoryRegime, get_policy
 
 CONFIDENCE_LEVEL = 0.975
 

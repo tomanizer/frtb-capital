@@ -19,7 +19,7 @@ from frtb_ima.nmrf_method_selection import (
     select_nmrf_methods,
     selection_input_from_method_evidence,
 )
-from frtb_ima.regimes import RegulatoryRegime, UnsupportedRegulatoryFeature, get_policy
+from frtb_ima.regimes import RegulatoryRegime, get_policy
 
 
 def _base_input(**overrides: object) -> NMRFMethodSelectionInput:

@@ -42,7 +42,7 @@ From regulation to code:
 ## Status taxonomy
 
 Canonical UK/PRA profile coordination:
-[`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md).
+[`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../../docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md).
 
 | Status | Meaning in `frtb-ima` |
 | --- | --- |

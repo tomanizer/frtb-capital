@@ -186,7 +186,7 @@ sources:
     family: PRA_UK_CRR
     jurisdiction: UK
     title: "PRA PS1/26, Implementation of Basel 3.1: Final rules"
-    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement."
+    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement"
     section_hint: "PRA Basel 3.1 final-rule profile anchor and effective-date context"
     status: mapped_and_cited
     reuse_note: "Policy-statement anchor cited alongside UK CRR Article 325u mechanics; not a substitute for legislation.gov.uk legal text."

@@ -5,7 +5,6 @@ from dataclasses import FrozenInstanceError
 from datetime import date
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_rrao import (
     RraoCalculationContext,

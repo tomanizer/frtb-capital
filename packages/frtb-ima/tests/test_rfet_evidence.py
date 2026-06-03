@@ -19,7 +19,7 @@ from frtb_ima.data_models import (
     RealPriceObservation,
     RiskClass,
 )
-from frtb_ima.regimes import RegulatoryRegime, UnsupportedRegulatoryFeature, get_policy
+from frtb_ima.regimes import RegulatoryRegime, get_policy
 from frtb_ima.rfet_evidence import (
     RFETExclusionReason,
     assess_rfet_evidence,

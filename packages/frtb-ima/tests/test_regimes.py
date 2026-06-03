@@ -20,7 +20,11 @@ from frtb_ima.data_models import (
 from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall
 from frtb_ima.imcc import imcc, imcc_for_policy
 from frtb_ima.liquidity_horizon import lha_es_from_vectors
-from frtb_ima.nmrf import aggregate_ses, aggregate_ses_for_policy, route_nmrf_classifications_for_capital
+from frtb_ima.nmrf import (
+    aggregate_ses,
+    aggregate_ses_for_policy,
+    route_nmrf_classifications_for_capital,
+)
 from frtb_ima.pla import pla_assessment, pla_assessment_for_policy
 from frtb_ima.regimes import (
     CalculationContext,
