@@ -15,6 +15,7 @@ from frtb_drc import (
     DrcInputError,
     DrcRiskClass,
     DrcRuleProfile,
+    drc_profile_support_matrix,
     ensure_risk_class_supported,
     get_rule_profile,
     profile_content_hash,
@@ -33,14 +34,21 @@ def test_us_npr_profile_supports_row_drc_risk_classes() -> None:
     assert "BASEL_MAR22_34" in profile.securitisation_non_ctp_fair_value_cap_citation_ids
 
 
-def test_basel_profile_supports_nonsec_and_fails_other_risk_classes() -> None:
+def test_basel_profile_supports_nonsec_and_securitisation_non_ctp() -> None:
     profile = get_rule_profile(BASEL_MAR22_PROFILE_ID)
 
-    assert profile.supported_risk_classes == frozenset({DrcRiskClass.NON_SECURITISATION})
+    assert profile.supported_risk_classes == frozenset(
+        {
+            DrcRiskClass.NON_SECURITISATION,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+        }
+    )
     assert "BASEL_MAR22_24" in profile.citations
+    assert "BASEL_MAR22_34" in profile.citations
+    assert profile.securitisation_non_ctp_fair_value_cap_allowed is True
+    assert profile.securitisation_non_ctp_fair_value_cap_citation_ids == ("BASEL_MAR22_34",)
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=r"MAR22\.34"):
-        ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
+    ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
     with pytest.raises(UnsupportedRegulatoryFeatureError, match=r"MAR22\.42"):
         ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
@@ -79,6 +87,19 @@ def test_supported_risk_class_passes_gate() -> None:
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
     ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
+
+
+def test_profile_support_matrix_marks_basel_securitisation_non_ctp_supported() -> None:
+    cells = {(cell.profile_id, cell.risk_class): cell for cell in drc_profile_support_matrix()}
+
+    basel_sec = cells[(BASEL_MAR22_PROFILE_ID, DrcRiskClass.SECURITISATION_NON_CTP)]
+    basel_ctp = cells[(BASEL_MAR22_PROFILE_ID, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)]
+
+    assert basel_sec.status == "SUPPORTED"
+    assert "BASEL_MAR22_34" in basel_sec.citation_ids
+    assert basel_sec.next_step == "Maintain Basel-specific typed evidence fixtures."
+    assert basel_ctp.status == "FAIL_CLOSED"
+    assert "BASEL_MAR22_42" in basel_ctp.citation_ids
 
 
 def test_unknown_profile_is_input_error() -> None:
