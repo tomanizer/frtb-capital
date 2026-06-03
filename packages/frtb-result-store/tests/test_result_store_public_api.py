@@ -58,14 +58,17 @@ def test_top_level_import_does_not_load_duckdb_backend() -> None:
         [
             sys.executable,
             "-c",
-            "import frtb_result_store, sys; print('duckdb' in sys.modules)",
+            (
+                "import frtb_result_store, sys; "
+                "print('duckdb' in sys.modules, 'fastapi' in sys.modules)"
+            ),
         ],
         check=True,
         capture_output=True,
         text=True,
     )
 
-    assert result.stdout.strip() == "False"
+    assert result.stdout.strip() == "False False"
 
 
 def test_canonical_run_identity_uses_full_stable_digest() -> None:

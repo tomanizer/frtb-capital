@@ -67,6 +67,7 @@ from frtb_result_store.model import (
 )
 
 if TYPE_CHECKING:
+    from frtb_result_store.api import create_result_store_app
     from frtb_result_store.io import (
         DuckDbParquetResultStore,
         ResultStoreCompatibilityError,
@@ -134,6 +135,7 @@ __all__ = [
     "canonical_run_identity_payload",
     "capital_node_from_spec",
     "capital_node_identity_payload",
+    "create_result_store_app",
     "default_hierarchy_definition",
     "generate_capital_node_id",
     "generate_hierarchy_node_id",
@@ -149,11 +151,16 @@ _BACKEND_EXPORTS = frozenset(
         "ResultStoreWriteError",
     }
 )
+_API_EXPORTS = frozenset({"create_result_store_app"})
 
 
 def __getattr__(name: str) -> object:
-    """Lazily expose backend classes without making core import require DuckDB."""
+    """Lazily expose optional services without loading their dependencies."""
 
+    if name in _API_EXPORTS:
+        exports = _load_api_exports()
+        globals().update(exports)
+        return exports[name]
     if name not in _BACKEND_EXPORTS:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     exports = _load_backend_exports()
@@ -182,3 +189,16 @@ def _load_backend_exports() -> dict[str, object]:
         "ResultStoreConfig": ResultStoreConfig,
         "ResultStoreWriteError": ResultStoreWriteError,
     }
+
+
+def _load_api_exports() -> dict[str, object]:
+    try:
+        from frtb_result_store.api import create_result_store_app
+    except ModuleNotFoundError as exc:
+        if exc.name == "fastapi":
+            raise ModuleNotFoundError(
+                "FastAPI service requires the optional 'api' extra; install "
+                "frtb-result-store[api] to use create_result_store_app."
+            ) from exc
+        raise
+    return {"create_result_store_app": create_result_store_app}

@@ -17,8 +17,9 @@ Current runtime support is deliberately narrow:
   movement explanations;
 - `CapitalAttributionRecord` rows compatible with
   `frtb_common.CapitalContribution`;
-- manifest-gated local and S3-layout Parquet files queried through independent DuckDB
-  connections.
+- manifest-gated local and S3-layout Parquet files queried through independent
+  DuckDB connections;
+- optional read-only FastAPI service via `frtb-result-store[api]`.
 
 S3 Parquet mode accepts an `s3://bucket[/prefix]` root and keeps the same
 logical `parquet/`, `artifacts/`, and `manifests/` layout as local mode. Runs
@@ -32,3 +33,8 @@ and S3 credentials are configured only through `duckdb_extensions`,
 hard-code credentials.
 
 DuckLake remains an explicit reserved backend mode.
+
+The FastAPI service is created with `create_result_store_app(...)`. It exposes
+FRTB-specific read endpoints for runs, run groups, capital trees, measures,
+artifacts, attribution, lineage, events, movements, and regime comparison. It
+does not expose write endpoints or generic raw table-dump routes.
