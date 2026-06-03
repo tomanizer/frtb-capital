@@ -102,6 +102,40 @@ def test_profile_support_matrix_marks_basel_securitisation_non_ctp_supported() -
     assert "BASEL_MAR22_42" in basel_ctp.citation_ids
 
 
+def test_profile_support_matrix_covers_every_known_profile_path() -> None:
+    cells = drc_profile_support_matrix()
+    expected = {
+        (profile_id, risk_class)
+        for profile_id in (
+            US_NPR_2_0_PROFILE_ID,
+            BASEL_MAR22_PROFILE_ID,
+            EU_CRR3_PROFILE_ID,
+            PRA_UK_CRR_PROFILE_ID,
+        )
+        for risk_class in DrcRiskClass
+    }
+
+    assert {(cell.profile_id, cell.risk_class) for cell in cells} == expected
+    for cell in cells:
+        profile = get_rule_profile(cell.profile_id)
+        assert cell.status in {"SUPPORTED", "FAIL_CLOSED"}
+        assert cell.reason
+        assert cell.citation_ids
+        assert cell.next_step
+        if cell.status == "SUPPORTED":
+            ensure_risk_class_supported(profile, cell.risk_class)
+        else:
+            with pytest.raises(UnsupportedRegulatoryFeatureError):
+                ensure_risk_class_supported(profile, cell.risk_class)
+
+
+def test_profile_support_matrix_cells_are_json_serialisable() -> None:
+    payload = tuple(cell.as_dict() for cell in drc_profile_support_matrix())
+
+    assert payload[0]["profile_id"] == US_NPR_2_0_PROFILE_ID
+    json.dumps(payload, sort_keys=True)
+
+
 def test_unknown_profile_is_input_error() -> None:
     with pytest.raises(DrcInputError, match="unknown DRC rule profile"):
         get_rule_profile("UNKNOWN")
