@@ -182,10 +182,26 @@ contracts are still required before SA-CVA and full BA-CVA capital paths.
 | `EU_CRR3_CVA` | Fail closed | Articles 382–386 mapping deferred |
 | `UK_PRA_CVA` | Fail closed | Crosswalk placeholder only today |
 
+### CVA-DEC-012: MAR50.9 materiality-threshold alternative remains unsupported
+
+**Decision:** Do not implement the MAR50.9 100% CCR capital alternative in the
+current audit-improvement slice. Keep explicit fail-closed behaviour and document
+the blocker as upstream CCR capital boundary plus orchestration scope.
+
+**Reason:** MAR50.9 substitutes CCR capital for BA/SA-CVA; `frtb-cva` does not
+own CCR calculation. Implementing without a cited CCR input contract would violate
+package-boundary and attribution rules (ADR 0012).
+
+**Implication:** `materiality_threshold_elected=True` must never produce CVA
+capital. Future work requires an ADR, orchestration handoff, and deterministic
+fixtures. Full design: [DESIGN_AUDIT_IMP_005.md](DESIGN_AUDIT_IMP_005.md).
+
+Basel anchor: MAR50.9.
+
 ## Open items for later ADRs
 
 - Moving generic citation/profile identity types to `frtb-common`.
 - Extracting shared SA-CVA aggregation primitives if SBM and CVA convergence is
   justified without sibling imports.
-- Materiality-threshold 100% CCR alternative (MAR50.9) if orchestration needs a
-  supported path beyond fail-closed gates.
+- MAR50.9 capital path only after CCR input contract and orchestration ADR (see
+  CVA-DEC-012).
