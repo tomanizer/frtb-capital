@@ -4,11 +4,22 @@ Guidance for Codex and other coding agents working in this workspace. Package-sp
 
 ## Agent workspace policy
 
-The protected main clone is `~/Documents/Projects/frtb-capital`. Keep it on
-`main` and synced to `origin/main`; do not edit, commit, or switch branches in
-that clone. All normal agent work must happen in a worktree under
-`~/Documents/Projects/frtb-capital-worktrees/<agent>/<task>` on a branch named
-`<agent>/<task>`.
+The protected main clone is the local checkout that owns the `main` worktree.
+Keep it on `main` and synced to `origin/main`; do not edit, commit, or switch
+branches in that clone. By default, normal agent work happens in a sibling
+worktree root named `<protected-main-dir>-worktrees`, using paths like
+`<worktree-root>/<agent>/<task>` on a branch named `<agent>/<task>`.
+
+The worktree helper discovers the protected main clone from Git's worktree
+metadata. If local policy needs an explicit path, set repo-local Git config:
+
+```bash
+git config --local frtb.agentMainClone /path/to/frtb-capital
+git config --local frtb.agentWorktreeRoot /path/to/frtb-capital-worktrees
+```
+
+`FRTB_AGENT_MAIN_CLONE` and `FRTB_AGENT_WORKTREE_ROOT` may be used for
+environment-specific overrides.
 
 Before editing, run `python3 scripts/agent_worktree.py guard` from the current
 checkout. If it fails, create a compliant worktree with

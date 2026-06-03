@@ -1,5 +1,10 @@
 # AGENTS.md — Codex guidance for FRTB-IMA
 
+Follow the suite-level portable worktree policy in
+[`../../AGENTS.md`](../../AGENTS.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 ## Project identity
 
 This package is the migrated IMA component inside the `frtb-capital` monorepo.

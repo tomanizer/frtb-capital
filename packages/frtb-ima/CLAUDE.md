@@ -3,6 +3,11 @@
 This file provides package-level guidance to Claude Code (claude.ai/code) when
 working with `packages/frtb-ima` inside the `frtb-capital` monorepo.
 
+Follow the suite-level portable worktree policy in
+[`../../CLAUDE.md`](../../CLAUDE.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 ---
 
 ## Role

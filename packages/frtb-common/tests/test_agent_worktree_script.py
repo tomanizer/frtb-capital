@@ -99,6 +99,68 @@ def test_create_worktree_tracks_existing_remote_branch(
     ]
 
 
+def test_policy_paths_discover_main_worktree_and_sibling_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    agent_worktree = load_agent_worktree()
+    main_clone = tmp_path / "frtb-capital"
+    current = tmp_path / "frtb-capital-worktrees" / "codex" / "task"
+    main_clone.mkdir()
+    current.mkdir(parents=True)
+
+    monkeypatch.setattr(agent_worktree, "resolve_repo_root", lambda path: current)
+    monkeypatch.setattr(
+        agent_worktree,
+        "parse_worktrees",
+        lambda path: [
+            agent_worktree.Worktree(main_clone, "refs/heads/main", False),
+            agent_worktree.Worktree(current, "refs/heads/codex/task", False),
+        ],
+    )
+    monkeypatch.delenv(agent_worktree.ENV_MAIN_CLONE, raising=False)
+    monkeypatch.delenv(agent_worktree.ENV_WORKTREE_ROOT, raising=False)
+    monkeypatch.setattr(agent_worktree, "git_optional_output", lambda args, cwd: "")
+
+    args = Namespace(main_clone=None, worktree_root=None)
+
+    agent_worktree.resolve_policy_paths(args, cwd=current)
+
+    assert args.main_clone == main_clone.resolve()
+    assert args.worktree_root == (tmp_path / "frtb-capital-worktrees").resolve()
+
+
+def test_policy_paths_prefer_environment_over_git_config(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    agent_worktree = load_agent_worktree()
+    env_main = tmp_path / "env-main"
+    env_root = tmp_path / "env-worktrees"
+    config_main = tmp_path / "config-main"
+    config_root = tmp_path / "config-worktrees"
+
+    monkeypatch.setenv(agent_worktree.ENV_MAIN_CLONE, str(env_main))
+    monkeypatch.setenv(agent_worktree.ENV_WORKTREE_ROOT, str(env_root))
+
+    def fake_git_optional_output(args: list[str], cwd: Path) -> str:
+        key = args[-1]
+        if key == agent_worktree.CONFIG_MAIN_CLONE:
+            return str(config_main)
+        if key == agent_worktree.CONFIG_WORKTREE_ROOT:
+            return str(config_root)
+        return ""
+
+    monkeypatch.setattr(agent_worktree, "git_optional_output", fake_git_optional_output)
+
+    args = Namespace(main_clone=None, worktree_root=None)
+
+    agent_worktree.resolve_policy_paths(args, cwd=tmp_path)
+
+    assert args.main_clone == env_main.resolve()
+    assert args.worktree_root == env_root.resolve()
+
+
 def test_create_worktree_requires_exact_agent_task_path(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

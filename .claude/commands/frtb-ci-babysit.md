@@ -254,6 +254,7 @@ subagent audit PASS, and mergeability not `CONFLICTING`.
 ## Worktree policy
 
 All commits must happen from a compliant agent worktree, not from the
-protected main clone at `~/Documents/Projects/frtb-capital`. If
-`python3 scripts/agent_worktree.py guard` fails, create a new worktree with
-`make agent-new AGENT=claude TASK=<task>` and move there before editing.
+protected main clone discovered by `scripts/agent_worktree.py`. If
+`python3 scripts/agent_worktree.py guard` fails, create a new worktree under
+the resolved standard worktree root with `make agent-new AGENT=claude
+TASK=<task>` and move there before editing.

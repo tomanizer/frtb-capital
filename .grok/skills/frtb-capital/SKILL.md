@@ -9,6 +9,7 @@ Before changing code, read:
 
 - `AGENTS.md`
 - `CLAUDE.md`
+- `docs/AGENT_WORKTREE_POLICY.md`
 - The relevant package-level `AGENTS.md` and `CLAUDE.md`
 
 Grok Build also reads the `AGENTS.md` and `CLAUDE.md` instruction families
@@ -16,6 +17,9 @@ directly; this skill is a short repo-specific reminder and entrypoint.
 
 ## Working Rules
 
+- Run `python3 scripts/agent_worktree.py guard` before editing. If it fails,
+  create a worktree under the resolved standard worktree root with
+  `make agent-new AGENT=grok TASK=<task-name>`.
 - Respect package boundaries. Capital packages must not import sibling capital
   packages; shared types belong in `frtb-common`.
 - Keep suite aggregation in `frtb-orchestration`.
