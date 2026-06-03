@@ -709,9 +709,10 @@ class DuckDbParquetResultStore:
         rows = self._fetchall(
             "capital_attributions",
             """
-            SELECT run_id, node_id, attribution_id, target_type, target_id, source_level,
-                   method, category, bucket_key, base_amount, marginal_multiplier,
-                   contribution, residual, unsupported_reason, artifact_id, metadata_json
+            SELECT run_id, node_id, attribution_id, target_type, target_id, source_id,
+                   source_level, method, category, bucket_key, base_amount,
+                   marginal_multiplier, contribution, residual, unsupported_reason,
+                   artifact_id, metadata_json
             FROM {table}
             WHERE run_id = ? AND node_id = ?
             ORDER BY attribution_id
@@ -1378,6 +1379,7 @@ def _attribution_row(attribution: CapitalAttributionRecord) -> dict[str, object]
         "attribution_id": attribution.attribution_id,
         "target_type": attribution.target_type,
         "target_id": attribution.target_id,
+        "source_id": attribution.source_id,
         "source_level": attribution.source_level,
         "method": _stored_value(attribution.method),
         "category": attribution.category,
@@ -1600,21 +1602,21 @@ def _attribution_from_row(row: Sequence[object]) -> CapitalAttributionRecord:
         run_id=str(row[0]),
         node_id=str(row[1]),
         contribution_id=str(row[2]),
-        source_id=str(row[4]),
-        source_level=str(row[5]),
-        method=AttributionMethod(str(row[6])),
-        category=str(row[7]),
-        bucket_key=_optional_text(row[8]),
-        base_amount=_float_value(row[9]),
-        marginal_multiplier=_optional_float(row[10]),
-        contribution=_optional_float(row[11]),
-        residual=_float_value(row[12]),
-        reason=str(row[13]),
+        source_id=str(row[5]),
+        source_level=str(row[6]),
+        method=AttributionMethod(str(row[7])),
+        category=str(row[8]),
+        bucket_key=_optional_text(row[9]),
+        base_amount=_float_value(row[10]),
+        marginal_multiplier=_optional_float(row[11]),
+        contribution=_optional_float(row[12]),
+        residual=_float_value(row[13]),
+        reason=str(row[14]),
         target_type=str(row[3]),
         target_id=str(row[4]),
-        unsupported_reason=str(row[13]),
-        artifact_id=_optional_text(row[14]),
-        metadata=_json_mapping(row[15]),
+        unsupported_reason=str(row[14]),
+        artifact_id=_optional_text(row[15]),
+        metadata=_json_mapping(row[16]),
     )
 
 
@@ -1850,6 +1852,7 @@ _TABLE_SCHEMAS: dict[str, Any] = {
             ("attribution_id", pa.string()),
             ("target_type", pa.string()),
             ("target_id", pa.string()),
+            ("source_id", pa.string()),
             ("source_level", pa.string()),
             ("method", pa.string()),
             ("category", pa.string()),

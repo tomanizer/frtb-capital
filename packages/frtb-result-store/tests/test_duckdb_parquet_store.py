@@ -812,6 +812,41 @@ def test_store_persists_regime_over_regime_movement_results(
     assert summary[0].delta_amount == 3.0
 
 
+def test_store_preserves_distinct_attribution_source_and_target(
+    tmp_path: Path,
+) -> None:
+    run = _run_with_id("run-attribution-target-override")
+    attribution = CapitalAttributionRecord.from_contribution(
+        run_id=run.run_id,
+        node_id="total",
+        contribution=CapitalContribution(
+            contribution_id="residual-total",
+            source_id="residual-total-source",
+            source_level="RESIDUAL_BRANCH",
+            bucket_key=None,
+            category="RESIDUAL",
+            base_amount=1.0,
+            marginal_multiplier=None,
+            contribution=None,
+            method="RESIDUAL",
+            residual=1.0,
+            reason="Non-homogeneous branch held as residual.",
+        ),
+        target_type="UNSUPPORTED_BRANCH",
+        target_id="unsupported-total-target",
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(_bundle(run, attributions=(attribution,)))
+
+    stored = store.attributions_for_node(run.run_id, "total")[0]
+    assert stored.source_id == "residual-total-source"
+    assert stored.source_level == "RESIDUAL_BRANCH"
+    assert stored.target_type == "UNSUPPORTED_BRANCH"
+    assert stored.target_id == "unsupported-total-target"
+    assert stored.unsupported_reason == "Non-homogeneous branch held as residual."
+
+
 def test_incompatible_run_fails_closed_without_blocking_other_runs(tmp_path: Path) -> None:
     store = DuckDbParquetResultStore(tmp_path / "result-store")
     incompatible_run = _run_with_id("run-incompatible")
@@ -841,6 +876,7 @@ def _bundle(
     *,
     artifacts: tuple[ArtifactRef, ...] | None = None,
     input_manifests: tuple[InputSnapshotManifest, ...] = (),
+    attributions: tuple[CapitalAttributionRecord, ...] | None = None,
     movement_results: tuple[MovementResult, ...] = (),
     events: tuple[ResultEvent, ...] = (),
     telemetry: tuple[RunTelemetry, ...] = (),
@@ -922,7 +958,7 @@ def _bundle(
             source_id="snapshot-001",
         ),
     )
-    attributions = (
+    default_attributions = (
         CapitalAttributionRecord.from_contribution(
             run_id=run.run_id,
             node_id="sbm-girr-usd",
@@ -940,6 +976,7 @@ def _bundle(
             artifact_id="sbm-sensitivity-table",
         ),
     )
+    attributions = default_attributions if attributions is None else attributions
     return ResultBundle(
         run=run,
         nodes=nodes,
