@@ -71,7 +71,11 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
         assert row in traceability
 
     for profile in NON_BASEL_PROFILES:
-        assert f"| `{profile.value}` | unsupported fail-closed | planned" in traceability
+        assert f"| `{profile.value}` | unsupported fail-closed" in traceability
 
     for issue_number in ("#160", "#161", "#166", "#169", "#226", "#244"):
         assert issue_number in traceability
+
+    assert "NON_BASEL_PROFILE_DESIGN.md" in traceability
+    assert "NON_BASEL_PROFILE_REQUIREMENTS.md" in traceability
+    assert "SBM-NBP-020" in traceability

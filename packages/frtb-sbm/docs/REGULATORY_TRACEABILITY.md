@@ -86,11 +86,21 @@ outputs are not final regulatory capital.
 
 ## Non-Basel profile boundary
 
+Design and normative requirements for expanding comparison profiles:
+[`docs/modules/frtb-sbm/NON_BASEL_PROFILE_DESIGN.md`](../../../docs/modules/frtb-sbm/NON_BASEL_PROFILE_DESIGN.md)
+and
+[`docs/modules/frtb-sbm/NON_BASEL_PROFILE_REQUIREMENTS.md`](../../../docs/modules/frtb-sbm/NON_BASEL_PROFILE_REQUIREMENTS.md).
+
 | Profile | Current runtime status | Planning status |
 | --- | --- | --- |
-| `US_NPR_2_0` | unsupported fail-closed | planned comparison profile; proposed-rule material only. |
-| `EU_CRR3` | unsupported fail-closed | planned comparison profile. |
-| `PRA_UK_CRR` | unsupported fail-closed | planned comparison profile. |
+| `US_NPR_2_0` | unsupported fail-closed (0 / 21 cells) | planned; first target cell: GIRR delta (91 FR 14952, section V.A.7.a). |
+| `EU_CRR3` | unsupported fail-closed (0 / 21 cells) | planned after article-level mapping (Regulation (EU) 2024/1623, Arts. 325e-325az). |
+| `PRA_UK_CRR` | unsupported fail-closed (0 / 21 cells) | blocked pending PRA/UK CRR SBM source mapping (see SBM-NBP-020). |
+
+Until a cell is implemented, every risk-class and measure combination for
+non-Basel profiles remains unsupported fail-closed. Basel MAR21 sub-features that
+are unsupported within `BASEL_MAR21` (for example equity repo vega/curvature)
+are documented in the BASEL matrix above, not as non-Basel backlog.
 
 ## Closed-issue audit
 
