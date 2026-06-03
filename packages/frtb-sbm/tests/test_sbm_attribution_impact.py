@@ -6,6 +6,7 @@ import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
     SbmCalculationContext,
+    SbmCapitalResult,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
@@ -60,7 +61,7 @@ def test_impact_request_fails_closed() -> None:
         ensure_sbm_impact_unsupported(baseline, candidate)
 
 
-def _sample_result(*, run_id: str = "sbm-run", amount: float = 1_000_000.0):
+def _sample_result(*, run_id: str = "sbm-run", amount: float = 1_000_000.0) -> SbmCapitalResult:
     sensitivity = SbmSensitivity(
         sensitivity_id=f"{run_id}-eur-1y",
         source_row_id=f"{run_id}-row-001",
