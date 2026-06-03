@@ -274,9 +274,9 @@
       "path": "packages/frtb-ima/tests/test_stress_periods.py"
     },
     "packages/frtb-result-store/tests/test_duckdb_parquet_store.py:_bundle": {
-      "end_line": 553,
+      "end_line": 566,
       "key": "packages/frtb-result-store/tests/test_duckdb_parquet_store.py:_bundle",
-      "line": 430,
+      "line": 443,
       "lines": 124,
       "name": "_bundle",
       "path": "packages/frtb-result-store/tests/test_duckdb_parquet_store.py"
@@ -464,11 +464,11 @@
     "duplicate_function_instances": 57,
     "large_function_count": 57,
     "other_python_loc": 5401,
-    "python_files": 443,
+    "python_files": 444,
     "script_python_loc": 5054,
-    "source_python_loc": 58825,
-    "test_python_loc": 38263,
-    "total_python_loc": 107543
+    "source_python_loc": 58830,
+    "test_python_loc": 38373,
+    "total_python_loc": 107658
   },
   "oversized_files": {
     "packages/frtb-common/src/frtb_common/crif.py": {

@@ -34,33 +34,33 @@ capital or supervisory approval.
 | --- | --- | --- |
 | `frtb-ima` | `docs/modules/frtb-ima/model_documentation/` | Complete reference pack |
 | `frtb-rrao` | validation docs + module README | Strong validation evidence; formal pack promotion optional |
-| `frtb-drc` | `docs/modules/frtb-drc/model_documentation/` | **Started** — intended-use section added in this follow-up |
-| `frtb-cva` | planning docs only | Gap checklist below |
-| `frtb-sbm` | planning docs only | Gap checklist below |
+| `frtb-drc` | `docs/modules/frtb-drc/model_documentation/` | Complete partial-runtime pack for current supported paths |
+| `frtb-cva` | `docs/modules/frtb-cva/model_documentation/` | Complete partial-runtime pack for current supported paths |
+| `frtb-sbm` | `docs/modules/frtb-sbm/model_documentation/` | Complete partial-runtime pack for current supported paths |
 
 ## Gap checklist — DRC
 
 - [x] `00_intended_use.md` — non-securitisation scope and fail-closed securitisation paths
-- [ ] `01_conceptual_soundness.md` — JTD, HBR, bucket/category aggregation citations
-- [ ] `02_derivation.md` — gross JTD, maturity scaling, netting walkthrough
-- [ ] `03_assumptions_and_limitations.md` — securitisation non-CTP/CTP unsupported
-- [ ] `04_validation_evidence.md` — golden fixtures and reconciliation tests
-- [ ] `05_monitoring_plan.md` — drift checks on fixture hashes and public API
-- [ ] `06_change_history.md` — ADR-linked material changes
+- [x] `01_conceptual_soundness.md` — JTD, HBR, bucket/category aggregation citations
+- [x] `02_derivation.md` — gross JTD, maturity scaling, netting walkthrough
+- [x] `03_assumptions_and_limitations.md` — securitisation non-CTP/CTP unsupported
+- [x] `04_validation_evidence.md` — golden fixtures and reconciliation tests
+- [x] `05_monitoring_plan.md` — drift checks on fixture hashes and public API
+- [x] `06_change_history.md` — ADR-linked material changes
 
 ## Gap checklist — CVA
 
-- [ ] Intended use differentiating Reduced BA-CVA vs SA-CVA GIRR delta scope
-- [ ] Conceptual soundness for MAR50.14 portfolio formula and SA-CVA bucket aggregation
-- [ ] Explicit unsupported hedge-recognition and non-GIRR SA-CVA classes
-- [ ] Fixture workflow references (`test_sa_cva_fixture_workflow.py`, BA-CVA tests)
+- [x] Intended use differentiating Reduced BA-CVA vs SA-CVA scope
+- [x] Conceptual soundness for MAR50.14 portfolio formula and SA-CVA bucket aggregation
+- [x] Explicit unsupported hedge-recognition and unsupported runtime paths
+- [x] Fixture workflow references (`test_cva_sa_cva_fixture_workflow.py`, BA-CVA tests)
 
 ## Gap checklist — SBM
 
-- [ ] Intended use for implemented delta/vega/row-wise curvature slices vs pending high-volume curvature handoffs
-- [ ] Per risk-class scope matrix aligned with `package_maturity.toml`
-- [ ] Unsupported CSR securitisation fail-closed behaviour
-- [ ] Benchmark and fixture evidence for implemented slices
+- [x] Intended use for implemented delta/vega/row-wise, batch, and Arrow curvature slices
+- [x] Per risk-class scope matrix aligned with `package_maturity.toml`
+- [x] Unsupported SBM sub-feature and profile fail-closed behaviour
+- [x] Benchmark and fixture evidence for implemented slices
 
 ## Maturity gate interaction
 
