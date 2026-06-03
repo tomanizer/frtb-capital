@@ -28,8 +28,6 @@ before capital is emitted.
 
 The following paths remain unsupported and fail closed:
 
-- Basel MAR22 securitisation non-CTP pending MAR22.34 banking-book
-  securitisation risk-weight mappings;
 - Basel MAR22 CTP pending MAR22.42 decomposition and risk-weight mappings;
 - EU CRR3 DRC paths pending Article 325w and related CQS/RTS mappings;
 - PRA UK CRR DRC paths pending PRA PS1/26 Chapter 3 and Appendix 1 mappings;

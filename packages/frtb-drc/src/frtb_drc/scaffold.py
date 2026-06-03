@@ -38,7 +38,12 @@ from frtb_drc.gross_jtd import calculate_gross_jtds
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.reference_data import get_risk_weight_rule
-from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.regimes import (
+    BASEL_MAR22_PROFILE_ID,
+    DrcRuleProfile,
+    ensure_risk_class_supported,
+    get_rule_profile,
+)
 from frtb_drc.risk_weight_evidence import effective_risk_weights, used_risk_weight_evidence
 from frtb_drc.securitisation import (
     calculate_securitisation_non_ctp_drc,
@@ -162,6 +167,7 @@ def calculate_drc_capital(
             scaled_jtds=scaled_jtds,
             net_jtds=net_jtds,
             categories=category_results,
+            profile_id=profile.profile_id,
         ),
         warnings=(),
         branch_metadata=(
@@ -349,20 +355,30 @@ def _collect_citations(
     scaled_jtds: tuple[MaturityScaledJtd, ...],
     net_jtds: tuple[NetJtd, ...],
     categories: tuple[CategoryDrc, ...],
+    profile_id: str,
 ) -> tuple[str, ...]:
-    citation_ids = {"US_NPR_210_SCOPE"}
-    if any(
-        DrcRiskClass(record.risk_class) == DrcRiskClass.NON_SECURITISATION for record in net_jtds
+    citation_ids: set[str] = set()
+    if profile_id != BASEL_MAR22_PROFILE_ID:
+        citation_ids.add("US_NPR_210_SCOPE")
+    if (
+        any(
+            DrcRiskClass(record.risk_class) == DrcRiskClass.NON_SECURITISATION
+            for record in net_jtds
+        )
+        and profile_id != BASEL_MAR22_PROFILE_ID
     ):
         citation_ids.add("US_NPR_210_B_2")
     if any(
         DrcRiskClass(record.risk_class) == DrcRiskClass.SECURITISATION_NON_CTP
         for record in net_jtds
     ):
-        citation_ids.add("US_NPR_210_C_2")
-    if any(
-        DrcRiskClass(record.risk_class) == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
-        for record in net_jtds
+        citation_ids.update(_securitisation_non_ctp_public_api_citations(profile_id))
+    if (
+        any(
+            DrcRiskClass(record.risk_class) == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
+            for record in net_jtds
+        )
+        and profile_id != BASEL_MAR22_PROFILE_ID
     ):
         citation_ids.add("US_NPR_210_D_2")
     for gross_jtd in gross_jtds:
@@ -477,7 +493,7 @@ def _run_branch_metadata(
                     "using run-scoped banking-book securitisation risk-weight "
                     "evidence; Euler attribution is not calculated"
                 ),
-                citations=("US_NPR_210_C_1", "US_NPR_210_C_2", "US_NPR_210_C_3_IV"),
+                citations=_securitisation_non_ctp_public_api_citations(profile_id),
             )
         )
     if DrcRiskClass.CORRELATION_TRADING_PORTFOLIO in risk_classes:
@@ -496,3 +512,15 @@ def _run_branch_metadata(
             )
         )
     return tuple(branches)
+
+
+def _securitisation_non_ctp_public_api_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return (
+            "BASEL_MAR22_27",
+            "BASEL_MAR22_28",
+            "BASEL_MAR22_29",
+            "BASEL_MAR22_30",
+            "BASEL_MAR22_35",
+        )
+    return ("US_NPR_210_C_1", "US_NPR_210_C_2", "US_NPR_210_C_3_IV")

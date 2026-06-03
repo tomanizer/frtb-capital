@@ -93,6 +93,7 @@ from frtb_drc.securitisation import (
     calculate_securitisation_non_ctp_category_drc,
 )
 from frtb_drc.validation import (
+    BASEL_MAR22_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     DrcInputError,
     chargeable_non_securitisation_bucket_keys,
@@ -120,6 +121,22 @@ _SEC_NON_CTP_BATCH_CITATIONS = (
     "US_NPR_210_C_3_I_II",
     "US_NPR_210_C_3_III",
     "US_NPR_210_C_3_IV",
+    "BASEL_MAR22_31",
+    "BASEL_MAR22_32",
+    "BASEL_MAR22_33",
+    "BASEL_MAR22_34",
+    "BASEL_MAR22_35",
+)
+_BASEL_SEC_NON_CTP_GROSS_CITATIONS = ("BASEL_MAR22_27",)
+_BASEL_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS = ("BASEL_MAR22_34",)
+_BASEL_SEC_NON_CTP_NETTING_CITATIONS = (
+    "BASEL_MAR22_28",
+    "BASEL_MAR22_29",
+    "BASEL_MAR22_30",
+)
+_BASEL_SEC_NON_CTP_BATCH_CITATIONS = (
+    *_BASEL_SEC_NON_CTP_GROSS_CITATIONS,
+    *_BASEL_SEC_NON_CTP_NETTING_CITATIONS,
     "BASEL_MAR22_31",
     "BASEL_MAR22_32",
     "BASEL_MAR22_33",
@@ -663,7 +680,7 @@ def calculate_drc_capital_from_batch(
             profile_id=profile.profile_id,
         )
         formula_citations = (
-            *_SEC_NON_CTP_BATCH_CITATIONS,
+            *_sec_non_ctp_batch_citations(profile.profile_id),
             *_batch_fair_value_cap_citations(calculation_batch, context=context),
             maturity_citation,
         )
@@ -714,6 +731,7 @@ def calculate_drc_capital_from_batch(
             net_jtds=net_jtds,
             formula_citations=formula_citations,
             fx_citations=fx_citation_ids(fx_conversions),
+            profile_id=profile.profile_id,
         ),
         warnings=(),
         branch_metadata=(
@@ -726,7 +744,7 @@ def calculate_drc_capital_from_batch(
                     f"batch API executed supported {risk_class.value} path; "
                     "attribution records are calculated on API-compatible net JTDs"
                 ),
-                citations=("US_NPR_210_SCOPE",),
+                citations=_batch_api_citations(profile.profile_id, risk_class),
             ),
             *_fair_value_cap_branch_metadata_for_batch(
                 calculation_batch,
@@ -1267,7 +1285,7 @@ def _calculate_securitisation_non_ctp_net_jtds_from_arrays(
             "or explicit replication-group evidence"
         ),
         rejected_reason_code="SEC_NON_CTP_OFFSET_REQUIRES_SAME_POOL_TRANCHE_OR_REPLICATION",
-        netting_citations=_SEC_NON_CTP_NETTING_CITATIONS,
+        netting_citations=_sec_non_ctp_netting_citations(context.profile_id),
     )
 
 
@@ -1804,13 +1822,12 @@ def _collect_batch_citations(
     category: CategoryDrc,
     net_jtds: tuple[NetJtd, ...],
     formula_citations: tuple[str, ...],
+    profile_id: str,
     fx_citations: tuple[str, ...] = (),
 ) -> tuple[str, ...]:
-    citation_ids = {
-        "US_NPR_210_SCOPE",
-        *formula_citations,
-        *fx_citations,
-    }
+    citation_ids = {*formula_citations, *fx_citations}
+    if profile_id != BASEL_MAR22_PROFILE_ID:
+        citation_ids.add("US_NPR_210_SCOPE")
     for group in batch.citation_ids:
         citation_ids.update(group)
     citation_ids.update(_branch_citations(category.branch_metadata))
@@ -1824,6 +1841,14 @@ def _collect_batch_citations(
         for rejected_offset in net_jtd.rejected_offsets:
             citation_ids.update(rejected_offset.citations)
     return tuple(sorted(citation_ids))
+
+
+def _batch_api_citations(profile_id: str, risk_class: DrcRiskClass) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID and risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
+        return _BASEL_SEC_NON_CTP_BATCH_CITATIONS
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return ()
+    return ("US_NPR_210_SCOPE",)
 
 
 def _context_input_hash_for_batch(
@@ -1948,7 +1973,7 @@ def _batch_fair_value_cap_citations(
             cast(str, position_id)
         )
         if evidence is not None:
-            citation_ids.update(_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS)
+            citation_ids.update(_sec_non_ctp_fair_value_cap_citations(context.profile_id))
             citation_ids.update(evidence.citation_ids)
     return tuple(sorted(citation_ids))
 
@@ -1975,7 +2000,7 @@ def _fair_value_cap_branch_metadata_for_batch(
                     "batch securitisation non-CTP gross default exposure used market value; "
                     "no fair-value cap evidence was supplied"
                 ),
-                citations=_SEC_NON_CTP_GROSS_CITATIONS,
+                citations=_sec_non_ctp_gross_citations(context.profile_id),
             ),
         )
     for index in _sorted_indices(batch):
@@ -1992,11 +2017,18 @@ def _fair_value_cap_branch_metadata_for_batch(
                         "batch securitisation non-CTP position used market value; "
                         "no fair-value cap evidence was supplied"
                     ),
-                    citations=_SEC_NON_CTP_GROSS_CITATIONS,
+                    citations=_sec_non_ctp_gross_citations(context.profile_id),
                 )
             )
             continue
-        citations = tuple(sorted({*_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS, *record.citation_ids}))
+        citations = tuple(
+            sorted(
+                {
+                    *_sec_non_ctp_fair_value_cap_citations(context.profile_id),
+                    *record.citation_ids,
+                }
+            )
+        )
         if not record.eligible:
             branch_type = BranchType.NORMAL
             reason = (
@@ -2030,6 +2062,30 @@ def _fair_value_cap_branch_metadata_for_batch(
             )
         )
     return tuple(branches)
+
+
+def _sec_non_ctp_gross_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_SEC_NON_CTP_GROSS_CITATIONS
+    return _SEC_NON_CTP_GROSS_CITATIONS
+
+
+def _sec_non_ctp_fair_value_cap_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS
+    return _SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS
+
+
+def _sec_non_ctp_netting_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_SEC_NON_CTP_NETTING_CITATIONS
+    return _SEC_NON_CTP_NETTING_CITATIONS
+
+
+def _sec_non_ctp_batch_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_SEC_NON_CTP_BATCH_CITATIONS
+    return _SEC_NON_CTP_BATCH_CITATIONS
 
 
 def _branch_citations(branches: tuple[BranchMetadata, ...]) -> set[str]:

@@ -76,7 +76,9 @@ citation ids, attribution-ready lineage, branch metadata, and
 unsupported-feature or fallback status where applicable.
 Implemented U.S. NPR 2.0 securitisation non-CTP and CTP paths consume cited
 upstream risk-weight evidence rather than deriving banking-book securitisation
-weights internally. Basel MAR22 securitisation non-CTP and CTP, EU CRR3, and
+weights internally. Basel MAR22 securitisation non-CTP consumes cited MAR22.34
+typed risk-weight evidence and fair-value cap evidence rather than deriving
+banking-book securitisation weights internally. Basel MAR22 CTP, EU CRR3, and
 PRA UK CRR paths fail closed until their cited rule mappings and fixtures are
 complete.
 

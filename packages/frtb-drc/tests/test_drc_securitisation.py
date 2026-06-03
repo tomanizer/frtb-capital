@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 from frtb_drc import (
+    BASEL_MAR22_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     DefaultDirection,
     DrcCalculationContext,
@@ -286,7 +287,7 @@ def test_securitisation_non_ctp_uncited_evidence_fails_closed() -> None:
 
 
 def test_securitisation_non_ctp_fixture_matches_hand_checked_expected() -> None:
-    fixture = _load_securitisation_fixture()
+    fixture = _load_securitisation_fixture("drc_sec_nonctp_v1")
 
     result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
     expected = fixture["expected"]
@@ -310,6 +311,223 @@ def test_securitisation_non_ctp_fixture_matches_hand_checked_expected() -> None:
         "SEC_NON_CTP_OFFSET_REQUIRES_SAME_POOL_TRANCHE_OR_REPLICATION"
     }
     validate_reconciliation(result)
+
+
+def test_basel_securitisation_non_ctp_fixture_matches_hand_checked_expected() -> None:
+    fixture = _load_securitisation_fixture("drc_basel_sec_nonctp_v1")
+
+    result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
+    expected = fixture["expected"]
+    buckets = {bucket.bucket_key: bucket for bucket in result.categories[0].bucket_results}
+
+    assert result.profile_id == BASEL_MAR22_PROFILE_ID
+    assert result.input_count == expected["input_count"]
+    assert result.total_drc == pytest.approx(expected["total_drc"])
+    assert result.categories[0].risk_class is DrcRiskClass.SECURITISATION_NON_CTP
+    assert result.categories[0].capital == pytest.approx(expected["category_capital"])
+    assert buckets["SEC_CLO_NORTH_AMERICA"].capital == pytest.approx(
+        expected["buckets"]["SEC_CLO_NORTH_AMERICA"]
+    )
+    assert buckets["SEC_RMBS_EUROPE"].capital == pytest.approx(
+        expected["buckets"]["SEC_RMBS_EUROPE"]
+    )
+    assert buckets["SEC_RMBS_EUROPE"].hbr.ratio == pytest.approx(expected["rmbs_hbr"])
+    gross_by_position = {record.position_id: record.gross_jtd for record in result.gross_jtds}
+    assert gross_by_position["long-rmbs-a"] == pytest.approx(
+        expected["fair_value_capped_gross_jtd"]
+    )
+    assert len(result.risk_weight_evidence) == 4
+    assert len(result.fair_value_cap_evidence) == 1
+    assert "BASEL_MAR22_34" in result.citations
+    assert "BASEL_MAR22_35" in result.citations
+    assert not any(citation.startswith("US_NPR") for citation in result.citations)
+    validate_reconciliation(result)
+
+
+def test_basel_securitisation_non_ctp_rejects_legacy_raw_weight_map() -> None:
+    position = _sec_position("basel-legacy-raw", DefaultDirection.LONG, market_value=100.0)
+
+    with pytest.raises(DrcInputError, match="legacy float maps"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                profile_id=BASEL_MAR22_PROFILE_ID,
+                securitisation_non_ctp_risk_weights={position.position_id: 0.2},
+            ),
+        )
+
+
+def test_basel_securitisation_non_ctp_rejects_us_profile_evidence() -> None:
+    position = _sec_position("basel-us-evidence", DefaultDirection.LONG, market_value=100.0)
+    evidence = _risk_weight_evidence(position, risk_weight=0.2)
+
+    with pytest.raises(DrcInputError, match="does not match context profile_id"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                profile_id=BASEL_MAR22_PROFILE_ID,
+                securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                    (evidence,)
+                ),
+            ),
+        )
+
+
+def test_basel_securitisation_non_ctp_rejects_wrong_profile_citation() -> None:
+    position = _sec_position("basel-us-citation", DefaultDirection.LONG, market_value=100.0)
+    evidence = _risk_weight_evidence(
+        position,
+        risk_weight=0.2,
+        source_profile_id=BASEL_MAR22_PROFILE_ID,
+        citation_ids=("US_NPR_210_C_3_III",),
+    )
+
+    with pytest.raises(DrcInputError, match="outside profile BASEL_MAR22"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                profile_id=BASEL_MAR22_PROFILE_ID,
+                securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                    (evidence,)
+                ),
+            ),
+        )
+
+
+def test_basel_securitisation_non_ctp_future_dated_evidence_fails_closed() -> None:
+    position = _sec_position("basel-future-evidence", DefaultDirection.LONG, market_value=100.0)
+    evidence = _risk_weight_evidence(
+        position,
+        risk_weight=0.2,
+        source_profile_id=BASEL_MAR22_PROFILE_ID,
+        as_of_date=date(2026, 5, 30),
+        citation_ids=("BASEL_MAR22_34",),
+    )
+
+    with pytest.raises(DrcInputError, match="must not be after calculation_date"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                profile_id=BASEL_MAR22_PROFILE_ID,
+                securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                    (evidence,)
+                ),
+            ),
+        )
+
+
+def test_basel_securitisation_non_ctp_wrong_risk_class_evidence_fails_closed() -> None:
+    position = _sec_position("basel-wrong-risk-class", DefaultDirection.LONG, market_value=100.0)
+    evidence = _risk_weight_evidence(
+        position,
+        risk_weight=0.2,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        source_profile_id=BASEL_MAR22_PROFILE_ID,
+        citation_ids=("BASEL_MAR22_34",),
+    )
+
+    with pytest.raises(DrcInputError, match="wrong risk_class"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                profile_id=BASEL_MAR22_PROFILE_ID,
+                securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                    (evidence,)
+                ),
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    ("risk_weight", "message"),
+    [
+        (float("inf"), "finite"),
+        (-0.01, "non-negative"),
+    ],
+)
+def test_basel_securitisation_non_ctp_non_finite_or_negative_evidence_fails_closed(
+    risk_weight: float,
+    message: str,
+) -> None:
+    position = _sec_position("basel-bad-weight", DefaultDirection.LONG, market_value=100.0)
+    evidence = _risk_weight_evidence(
+        position,
+        risk_weight=risk_weight,
+        source_profile_id=BASEL_MAR22_PROFILE_ID,
+        citation_ids=("BASEL_MAR22_34",),
+    )
+
+    with pytest.raises(DrcInputError, match=message):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                profile_id=BASEL_MAR22_PROFILE_ID,
+                securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                    (evidence,)
+                ),
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    ("is_stale", "citation_ids", "message"),
+    [
+        (True, ("BASEL_MAR22_34",), "is stale"),
+        (False, (), "citation_ids must be non-empty"),
+    ],
+)
+def test_basel_securitisation_non_ctp_stale_or_uncited_evidence_fails_closed(
+    is_stale: bool,
+    citation_ids: tuple[str, ...],
+    message: str,
+) -> None:
+    position = _sec_position("basel-stale-uncited", DefaultDirection.LONG, market_value=100.0)
+    evidence = _risk_weight_evidence(
+        position,
+        risk_weight=0.2,
+        source_profile_id=BASEL_MAR22_PROFILE_ID,
+        citation_ids=citation_ids,
+        is_stale=is_stale,
+    )
+
+    with pytest.raises(DrcInputError, match=message):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                profile_id=BASEL_MAR22_PROFILE_ID,
+                securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                    (evidence,)
+                ),
+            ),
+        )
+
+
+def test_basel_securitisation_non_ctp_unused_evidence_fails_closed() -> None:
+    position = _sec_position("basel-used-evidence", DefaultDirection.LONG, market_value=100.0)
+    unused = _sec_position("basel-unused-evidence", DefaultDirection.LONG, market_value=100.0)
+    used_evidence = _risk_weight_evidence(
+        position,
+        risk_weight=0.2,
+        source_profile_id=BASEL_MAR22_PROFILE_ID,
+        citation_ids=("BASEL_MAR22_34",),
+    )
+    unused_evidence = _risk_weight_evidence(
+        unused,
+        risk_weight=0.2,
+        source_profile_id=BASEL_MAR22_PROFILE_ID,
+        citation_ids=("BASEL_MAR22_34",),
+    )
+
+    with pytest.raises(DrcInputError, match="contains unused"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                profile_id=BASEL_MAR22_PROFILE_ID,
+                securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+                    (used_evidence, unused_evidence)
+                ),
+            ),
+        )
 
 
 def test_securitisation_non_ctp_exact_pool_and_tranche_offsets_across_maturity() -> None:
@@ -519,6 +737,7 @@ def test_profile_supports_securitisation_non_ctp() -> None:
 
 def _context(
     *,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
     securitisation_non_ctp_risk_weights: dict[str, float] | None = None,
     securitisation_non_ctp_risk_weight_evidence: (dict[str, DrcRiskWeightEvidence] | None) = None,
     securitisation_non_ctp_fair_value_cap_evidence: (
@@ -530,7 +749,7 @@ def _context(
         run_id="run-sec-non-ctp",
         calculation_date=date(2026, 5, 29),
         base_currency="USD",
-        profile_id=US_NPR_2_0_PROFILE_ID,
+        profile_id=profile_id,
         securitisation_non_ctp_risk_weights={}
         if securitisation_non_ctp_risk_weights is None
         else securitisation_non_ctp_risk_weights,
@@ -589,18 +808,25 @@ def _risk_weight_evidence(
     position: DrcPosition,
     *,
     risk_weight: float,
+    risk_class: DrcRiskClass = DrcRiskClass.SECURITISATION_NON_CTP,
+    source_profile_id: str = US_NPR_2_0_PROFILE_ID,
     source_id: str = "rw-source",
+    as_of_date: date = date(2026, 5, 29),
     is_stale: bool = False,
     citation_ids: tuple[str, ...] = ("US_NPR_210_C_3_III",),
 ) -> DrcRiskWeightEvidence:
     return DrcRiskWeightEvidence(
         position_id=position.position_id,
-        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
-        source_profile_id=US_NPR_2_0_PROFILE_ID,
-        source_table="US_NPR_SECURITISATION_RW",
+        risk_class=risk_class,
+        source_profile_id=source_profile_id,
+        source_table=(
+            "BASEL_MAR22_BANKING_BOOK_SECURITISATION_RW"
+            if source_profile_id == BASEL_MAR22_PROFILE_ID
+            else "US_NPR_SECURITISATION_RW"
+        ),
         source_method="upstream-banking-book-securitisation",
         effective_risk_weight=risk_weight,
-        as_of_date=date(2026, 5, 29),
+        as_of_date=as_of_date,
         source_id=source_id,
         lineage=DrcSourceLineage(
             source_system="synthetic-risk-weight-engine",
@@ -617,6 +843,7 @@ def _fair_value_cap_evidence(
     position: DrcPosition,
     *,
     fair_value_cap_amount: float | None,
+    source_profile_id: str = US_NPR_2_0_PROFILE_ID,
     eligible: bool = True,
     eligibility_reason: str = "synthetic cash securitisation cap eligible",
     source_id: str = "fair-value-cap-source",
@@ -625,7 +852,7 @@ def _fair_value_cap_evidence(
 ) -> DrcFairValueCapEvidence:
     return DrcFairValueCapEvidence(
         position_id=position.position_id,
-        source_profile_id=US_NPR_2_0_PROFILE_ID,
+        source_profile_id=source_profile_id,
         eligible=eligible,
         fair_value_cap_amount=fair_value_cap_amount,
         eligibility_reason=eligibility_reason,
@@ -642,8 +869,8 @@ def _fair_value_cap_evidence(
     )
 
 
-def _load_securitisation_fixture() -> dict[str, Any]:
-    fixture_dir = Path(__file__).resolve().parent / "fixtures" / "drc_sec_nonctp_v1"
+def _load_securitisation_fixture(fixture_name: str) -> dict[str, Any]:
+    fixture_dir = Path(__file__).resolve().parent / "fixtures" / fixture_name
     payload = json.loads((fixture_dir / "positions.json").read_text(encoding="utf-8"))
     expected = json.loads((fixture_dir / "expected_outputs.json").read_text(encoding="utf-8"))
     context_raw = payload["context"]
@@ -653,9 +880,69 @@ def _load_securitisation_fixture() -> dict[str, Any]:
         calculation_date=date.fromisoformat(context_raw["calculation_date"]),
         base_currency=context_raw["base_currency"],
         profile_id=context_raw["profile_id"],
-        securitisation_non_ctp_risk_weights=context_raw["securitisation_non_ctp_risk_weights"],
+        securitisation_non_ctp_risk_weights=context_raw.get(
+            "securitisation_non_ctp_risk_weights",
+            {},
+        ),
+        securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+            _risk_weight_evidence_from_dict(raw)
+            for raw in context_raw.get("securitisation_non_ctp_risk_weight_evidence", ())
+        ),
+        securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
+            _fair_value_cap_evidence_from_dict(raw)
+            for raw in context_raw.get("securitisation_non_ctp_fair_value_cap_evidence", ())
+        ),
     )
     return {"positions": positions, "context": context, "expected": expected}
+
+
+def _risk_weight_evidence_from_dict(raw: dict[str, Any]) -> DrcRiskWeightEvidence:
+    lineage = raw["lineage"]
+    return DrcRiskWeightEvidence(
+        position_id=raw["position_id"],
+        risk_class=raw["risk_class"],
+        source_profile_id=raw["source_profile_id"],
+        source_table=raw["source_table"],
+        source_method=raw["source_method"],
+        effective_risk_weight=float(raw["effective_risk_weight"]),
+        as_of_date=date.fromisoformat(raw["as_of_date"]),
+        source_id=raw["source_id"],
+        lineage=DrcSourceLineage(
+            source_system=lineage["source_system"],
+            source_file=lineage["source_file"],
+            source_row_id=lineage["source_row_id"],
+            source_column_map=dict(lineage.get("source_column_map") or {}),
+        ),
+        citation_ids=tuple(raw["citation_ids"]),
+        is_stale=bool(raw.get("is_stale", False)),
+        validation_flags=tuple(raw.get("validation_flags", ())),
+    )
+
+
+def _fair_value_cap_evidence_from_dict(raw: dict[str, Any]) -> DrcFairValueCapEvidence:
+    lineage = raw["lineage"]
+    return DrcFairValueCapEvidence(
+        position_id=raw["position_id"],
+        source_profile_id=raw["source_profile_id"],
+        eligible=bool(raw["eligible"]),
+        fair_value_cap_amount=(
+            None
+            if raw.get("fair_value_cap_amount") is None
+            else float(raw["fair_value_cap_amount"])
+        ),
+        eligibility_reason=raw["eligibility_reason"],
+        as_of_date=date.fromisoformat(raw["as_of_date"]),
+        source_id=raw["source_id"],
+        lineage=DrcSourceLineage(
+            source_system=lineage["source_system"],
+            source_file=lineage["source_file"],
+            source_row_id=lineage["source_row_id"],
+            source_column_map=dict(lineage.get("source_column_map") or {}),
+        ),
+        citation_ids=tuple(raw["citation_ids"]),
+        is_stale=bool(raw.get("is_stale", False)),
+        validation_flags=tuple(raw.get("validation_flags", ())),
+    )
 
 
 def _position_from_dict(raw: dict[str, Any]) -> DrcPosition:
