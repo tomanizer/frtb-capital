@@ -5,7 +5,6 @@ from dataclasses import FrozenInstanceError
 from datetime import date
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_rrao import (
     RraoCalculationContext,
@@ -216,18 +215,21 @@ def test_calculate_rrao_capital_validates_context_shape() -> None:
             calculate_rrao_capital((position,), context=context)
 
 
-def test_calculate_rrao_capital_fails_closed_for_unsupported_profiles() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        calculate_rrao_capital(
-            (
-                sample_position(
-                    position_id="exotic-001",
-                    source_row_id="row-001",
-                    gross_effective_notional=1_000_000.0,
-                    evidence_type=RraoEvidenceType.EXOTIC_UNDERLYING,
-                    evidence_label="weather derivative",
-                    classification_hint=RraoClassification.EXOTIC,
-                ),
+def test_calculate_rrao_capital_supports_pra_profile() -> None:
+    result = calculate_rrao_capital(
+        (
+            sample_position(
+                position_id="exotic-001",
+                source_row_id="row-001",
+                gross_effective_notional=1_000_000.0,
+                evidence_type=RraoEvidenceType.EXOTIC_UNDERLYING,
+                evidence_label="weather derivative",
+                classification_hint=RraoClassification.EXOTIC,
             ),
-            context=sample_context(RraoRegulatoryProfile.PRA_UK_CRR),
-        )
+        ),
+        context=sample_context(RraoRegulatoryProfile.PRA_UK_CRR),
+    )
+
+    assert result.profile_id == "PRA_UK_CRR"
+    assert result.total_rrao == 10_000.0
+    assert result.lines[0].reason_code == "PRA_UK_CRR_EXOTIC_UNDERLYING"

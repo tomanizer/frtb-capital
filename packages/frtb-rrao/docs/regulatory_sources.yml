@@ -140,6 +140,75 @@ sources:
     requirement_ids:
       - RRAO-FUNC-009
 
+  - id: uk_crr_article_325u_rrao
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "UK CRR, Article 325u residual risk add-on"
+    url: "https://www.legislation.gov.uk/eur/2013/575/part/8/crossheading/residual-risk-add-on"
+    section_hint: "Article 325u scope, add-on rates, and exemptions for the PRA_UK_CRR profile."
+    status: mapped_and_cited
+    reuse_note: "legislation.gov.uk link-only reference for implemented UK RRAO profile mapping."
+    module_paths:
+      - src/frtb_rrao/data_models.py
+      - src/frtb_rrao/validation.py
+      - src/frtb_rrao/regimes.py
+      - src/frtb_rrao/reference_data.py
+      - src/frtb_rrao/classification.py
+      - src/frtb_rrao/capital.py
+      - tests/test_rrao_pra_profile.py
+    requirement_ids:
+      - RRAO-FUNC-004
+      - RRAO-FUNC-009
+
+  - id: uk_retained_dr_2022_2328_rrao
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "UK retained Commission Delegated Regulation (EU) 2022/2328 on residual risk add-on"
+    url: "https://www.legislation.gov.uk/eur/2022/2328"
+    section_hint: "Articles 1-3 and Annex specify exotic underlyings, residual-risk instruments, and non-presumptive risks."
+    status: mapped_and_cited
+    reuse_note: "legislation.gov.uk link-only reference for implemented UK RRAO profile mapping."
+    module_paths:
+      - src/frtb_rrao/data_models.py
+      - src/frtb_rrao/validation.py
+      - src/frtb_rrao/regimes.py
+      - src/frtb_rrao/reference_data.py
+      - src/frtb_rrao/classification.py
+      - src/frtb_rrao/capital.py
+      - tests/test_rrao_pra_profile.py
+      - tests/fixtures/rrao_pra/positions.json
+    requirement_ids:
+      - RRAO-FUNC-004
+      - RRAO-FUNC-005
+      - RRAO-FUNC-009
+
+  - id: pra_rrao_basel_3_1_final_rules
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "PRA PS1/26, Implementation of Basel 3.1: Final rules"
+    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement"
+    section_hint: "PRA Basel 3.1 final-rule profile anchor and effective-date context"
+    status: mapped_and_cited
+    reuse_note: "Policy-statement anchor cited alongside UK CRR Article 325u mechanics; not a substitute for legislation.gov.uk legal text."
+    module_paths:
+      - src/frtb_rrao/regimes.py
+      - src/frtb_rrao/reference_data.py
+    requirement_ids:
+      - RRAO-FUNC-009
+
+  - id: pra_rrao_market_risk_index
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "Bank of England / PRA market risk residual-risk materials index"
+    url: "https://www.bankofengland.co.uk/prudential-regulation/prudential-and-resolution-policy-index/banking/market-risk-internal-models-approach"
+    section_hint: "PRA market-risk policy index for supervisory context"
+    status: background_reference
+    reuse_note: "Background index only; cite UK CRR and retained RTS entries for capital behavior."
+    module_paths:
+      - src/frtb_rrao/regimes.py
+    requirement_ids:
+      - RRAO-FUNC-009
+
   - id: github_frtb_net_rrao_reference
     family: IMPLEMENTATION_REFERENCE
     jurisdiction: NON_REGULATORY

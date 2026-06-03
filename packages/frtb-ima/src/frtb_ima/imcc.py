@@ -353,6 +353,7 @@ def imcc_for_policy(
     desk_id: str | None = None,
 ) -> float:
     """Compute IMCC using ES confidence level, LHA weights, and blend from policy."""
+    policy.require_capital_runtime_supported()
     result = imcc_breakdown(
         all_risk_class_vectors,
         per_risk_class_vectors,
@@ -374,6 +375,7 @@ def imcc_breakdown_for_policy(
     desk_id: str | None = None,
 ) -> IMCCResult:
     """Compute decomposed IMCC using ES confidence, LHA weights, and blend policy."""
+    policy.require_capital_runtime_supported()
     result = imcc_breakdown(
         all_risk_class_vectors,
         per_risk_class_vectors,

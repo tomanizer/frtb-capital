@@ -22,7 +22,7 @@ from frtb_ima.nmrf_stress_spec import (
     required_liquidity_horizons_from_valuation_specs,
     required_methods_from_valuation_specs,
 )
-from frtb_ima.regimes import RegulatoryRegime, UnsupportedRegulatoryFeature, get_policy
+from frtb_ima.regimes import RegulatoryRegime, get_policy
 
 CONFIDENCE_LEVEL = 0.975
 
@@ -500,21 +500,21 @@ def test_bulk_spec_builder_rejects_duplicate_instructions() -> None:
         )
 
 
-def test_spec_builder_rejects_unsupported_ecb_type_a_type_b_policy() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeature, match="type_a_type_b"):
-        build_nmrf_valuation_spec(
-            _instruction(),
-            RiskClass.CSR,
-            _stress_period(),
-            get_policy(RegulatoryRegime.ECB_CRR3),
-            direct_shock=NMRFDirectShockSpec(
-                shock_size=350.0,
-                shock_unit="spread_bps",
-                direction=NMRFShockDirection.UP,
-                calibration_source="synthetic",
-                confidence_level=CONFIDENCE_LEVEL,
-            ),
-        )
+def test_spec_builder_supports_ecb_profile_without_type_a_type_b_taxonomy_gate() -> None:
+    spec = build_nmrf_valuation_spec(
+        _instruction(),
+        RiskClass.CSR,
+        _stress_period(),
+        get_policy(RegulatoryRegime.ECB_CRR3),
+        direct_shock=NMRFDirectShockSpec(
+            shock_size=350.0,
+            shock_unit="spread_bps",
+            direction=NMRFShockDirection.UP,
+            calibration_source="synthetic",
+            confidence_level=CONFIDENCE_LEVEL,
+        ),
+    )
+    assert spec.risk_factor_name == "HY_CREDIT_SPD"
 
 
 def test_linear_sensitivity_is_not_a_valuation_run_spec() -> None:

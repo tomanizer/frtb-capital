@@ -35,6 +35,11 @@ class RegulatoryRegime(StrEnum):
     PRA_UK_CRR = "PRA_UK_CRR"
 
 
+# Profile-level capital runtime guard. See docs/regulatory/profiles/
+# pra-uk-crr-source-mapping-status.md.
+PRA_UK_CRR_CAPITAL_RUNTIME_FEATURE = "pra_uk_crr_capital_runtime"
+
+
 class NMRFTaxonomyMode(StrEnum):
     """How the policy labels non-modellable risk-factor treatment."""
 
@@ -188,9 +193,47 @@ REGULATORY_PARAMETER_CITATIONS: Mapping[str, str] = MappingProxyType(
     }
 )
 
+PRA_UK_CRR_PARAMETER_CITATIONS: Mapping[str, str] = MappingProxyType(
+    {
+        **dict(REGULATORY_PARAMETER_CITATIONS),
+        "es_confidence_level": "UK CRR Article 325bc(1); Basel MAR33.4",
+        "imcc_unconstrained_weight": "UK CRR Article 325bb; Basel MAR33.15",
+        "rfet_short_lh_threshold": (
+            "UK CRR Article 325be; UK retained Delegated Regulation (EU) 2022/2060"
+        ),
+        "rfet_long_lh_threshold": (
+            "UK CRR Article 325be; UK retained Delegated Regulation (EU) 2022/2060"
+        ),
+        "rfet_short_lh_max_days": "UK CRR Article 325be; UK retained DR 2022/2060",
+        "rfet_lookback_days": "UK CRR Article 325be; UK retained DR 2022/2060",
+        "pla_green_threshold": (
+            "UK CRR Article 325bg; UK retained Delegated Regulation (EU) 2022/2059 Article 5(2)"
+        ),
+        "pla_amber_threshold": (
+            "UK CRR Article 325bg; UK retained Delegated Regulation (EU) 2022/2059 Article 5(2)"
+        ),
+        "pla_spearman_green_threshold": (
+            "UK CRR Article 325bg; UK retained Delegated Regulation (EU) 2022/2059 Article 5(2)"
+        ),
+        "pla_spearman_amber_threshold": (
+            "UK CRR Article 325bg; UK retained Delegated Regulation (EU) 2022/2059 Article 5(2)"
+        ),
+        "pla_window_days": "UK CRR Article 325bg; UK retained DR 2022/2059",
+        "backtesting_window_days": "UK CRR Article 325bf; UK retained DR 2022/2059",
+        "stress_period_window_observations": "UK CRR Article 325bc; Basel MAR33.5",
+        "supervisory_multiplier_schedule": (
+            "Basel MAR99 Table 2; PRA PS1/26 Chapter 3 market-risk context"
+        ),
+    }
+)
+
 
 def _default_parameter_citations() -> Mapping[str, str]:
     return REGULATORY_PARAMETER_CITATIONS
+
+
+def _pra_parameter_citations() -> Mapping[str, str]:
+    return PRA_UK_CRR_PARAMETER_CITATIONS
 
 
 _SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -318,6 +361,19 @@ class RegulatoryPolicy:
                 feature.source_topic,
             )
 
+    def require_capital_runtime_supported(self) -> None:
+        """Raise if this profile must not produce IMA capital without source mapping."""
+        self.require_supported(PRA_UK_CRR_CAPITAL_RUNTIME_FEATURE)
+
+    @property
+    def uses_type_a_type_b_taxonomy(self) -> bool:
+        """Whether the profile uses U.S. NPR Type A / Type B NMRF labels."""
+        return self.nmrf_taxonomy_mode == NMRFTaxonomyMode.TYPE_A_TYPE_B
+
+    def require_type_a_type_b_taxonomy(self) -> None:
+        """Raise when Type A / Type B NMRF mechanics are not active for this profile."""
+        self.require_supported("type_a_type_b_nmrf_taxonomy")
+
 
 @dataclass(frozen=True)
 class CalculationContext:
@@ -375,6 +431,7 @@ def _pra_uk_crr_policy() -> RegulatoryPolicy:
         regime=RegulatoryRegime.PRA_UK_CRR,
         nmrf_taxonomy_mode=NMRFTaxonomyMode.BASEL_EU_NMRF,
         pla_metrics_required=PLAMetricsRequired.KS_AND_SPEARMAN,
+        cited_by=_pra_parameter_citations(),
         unsupported_features=(
             UnsupportedFeature(
                 feature_name="eu_rfet_rts_detail",

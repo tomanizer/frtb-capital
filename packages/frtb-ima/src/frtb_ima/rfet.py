@@ -204,7 +204,7 @@ def classify_risk_factor_for_policy(
     Type A / Type B NMRF taxonomy. EU and UK profiles currently raise an
     explicit unsupported-feature error rather than returning misleading labels.
     """
-    policy.require_supported("type_a_type_b_nmrf_taxonomy")
+    policy.require_type_a_type_b_taxonomy()
     return classify_risk_factor(
         risk_factor,
         observations,

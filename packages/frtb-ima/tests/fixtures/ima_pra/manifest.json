@@ -1,0 +1,64 @@
+{
+  "files": {
+    "nmrf_artifacts.npz": {
+      "sha256": "ceda8d8cc9a62c45fff500c54e686e73ded9d135c2785f4aed7f74431e11f31b"
+    },
+    "nmrf_evidence.json": {
+      "sha256": "329d7b77757bacef6fef860481b3455536bc7c43519ffe7c425ca60fe1fbd4fb"
+    },
+    "pla_bt_vectors.npz": {
+      "sha256": "1f321c70d16bcc9978b3d4025520bfbdbafe4d0774022fe4d3b24b76c49cfcbd"
+    },
+    "rfet_observations.csv": {
+      "sha256": "ab87611be21065d2b05e9f1c143237de9289190ef9ab06eb1a79aaecd132770e"
+    },
+    "risk_factors.csv": {
+      "sha256": "b7d6421158bcbb5ba80f4795daf5a0440041cf8a26e6b6377f2029274c786bbd"
+    },
+    "scenario_cube.npz": {
+      "sha256": "b9b4026711d2e079aa34ef020c0476ef20ab2076568a2faeeb427531abb1851e"
+    },
+    "scenario_metadata.csv": {
+      "sha256": "ac374e54f9ae5caa08bdeceff8003ef7da171fea3b923b7e5ff7f34eb8e08e93"
+    },
+    "stress_histories.npz": {
+      "sha256": "62ae96aad9d95a97add363caefccf34827ab52a12cd4260ff212e8679c48bd9a"
+    },
+    "stress_history_metadata.csv": {
+      "sha256": "9fa8b0111e974a9bcdca12bcc9a09f1855260a500aaac54c201698d7a8614dfa"
+    },
+    "params.json": {
+      "sha256": "184832cb01a20c0ac862a7062154cca3dcf5f88e2393aebb191e58df3c2f7ffb"
+    },
+    "expected_outputs.json": {
+      "sha256": "f53d733b6a40b830702f1dee7fc91ffc182f97da88080830197a6ba3bafa5cf2"
+    }
+  },
+  "generator": "issue-512 pra fixture bootstrap",
+  "generator_command": "uv run python bootstrap for tests/fixtures/ima_pra",
+  "generator_version": "1",
+  "schema_version": "capital_run_fixture_v1",
+  "seed": 42,
+  "sign_conventions": {
+    "nmrf_artifacts.npz": {
+      "*_losses": "positive_loss",
+      "*_scenario_ids": "not_applicable"
+    },
+    "pla_bt_vectors.npz": {
+      "apl": "positive_profit",
+      "hpl": "positive_profit",
+      "observation_dates": "not_applicable",
+      "rtpl": "positive_profit",
+      "var_975": "positive_magnitude",
+      "var_99": "positive_magnitude"
+    },
+    "scenario_cube.npz": {
+      "cube": "positive_loss"
+    },
+    "stress_histories.npz": {
+      "*_dates": "not_applicable",
+      "*_losses": "positive_loss",
+      "*_scenario_ids": "not_applicable"
+    }
+  }
+}

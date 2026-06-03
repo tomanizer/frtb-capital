@@ -223,6 +223,7 @@ def models_based_capital_for_policy(
         raise IMAIneligibleError(
             f"models-based capital requires IMA eligibility; desk eligibility is {status.value}"
         )
+    policy.require_capital_runtime_supported()
 
     result = models_based_capital(
         imcc_t_minus_1=imcc_t_minus_1,

@@ -68,8 +68,24 @@ uses the following documented modelling basis:
 
 The regulation defines expected shortfall as a tail risk measure but does not
 prescribe the finite-sample interpolation method for this prototype. The Fed
-NPR 2.0, ECB CRR3, and PRA UK CRR policy profiles therefore use
-`ESEstimator.WEIGHTED_INTERPOLATED` by default. This estimator includes the
+NPR 2.0 and ECB CRR3 policy profiles use `ESEstimator.WEIGHTED_INTERPOLATED` by
+default. The `PRA_UK_CRR` profile uses the same estimator for the committed
+`tests/fixtures/ima_pra` replay pack.
+
+## PRA UK CRR profile assumptions
+
+1. RFET observation thresholds follow UK CRR Article 325be and the retained EU
+   modellability RTS article structure cited in `PRA_UK_CRR_PARAMETER_CITATIONS`.
+2. NMRF capital routing uses `NMRFTaxonomyMode.BASEL_EU_NMRF`: modellable factors
+   feed IMCC; internal `TYPE_A_NMRF` / `TYPE_B_NMRF` labels remain RFET bookkeeping
+   only and both feed SES without the U.S. Type A IMCC inclusion rule.
+3. NMRF SES aggregation applies zero-correlation root-sum-squares across all NMRF
+   SES values (UK CRR Article 325bk comparison mechanics; not the U.S. Type B
+   rho 0.36 formula).
+4. PLA uses KS and Spearman with thresholds from UK retained Delegated Regulation
+   (EU) 2022/2059 Article 5(2) until PRA-specific divergences are documented.
+5. `pra_specific_calibration` and `eu_rfet_rts_detail` remain explicit unsupported
+   features on the policy object. This estimator includes the
 worst `floor(n * (1 - alpha))` scenarios fully and applies the remaining
 fractional tail mass to the next scenario. `ESEstimator.DISCRETE_CEIL` remains
 available as an explicit compatibility estimator for closed-form tests and

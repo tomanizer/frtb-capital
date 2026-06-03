@@ -28,7 +28,7 @@ Use this document in two directions:
 | Partial | Some documentation, data contract, or helper exists, but the end-to-end behavior is not complete. |
 | Implemented | Tested code produces the cited behavior for supported inputs. |
 | Excluded | The behavior belongs outside `frtb-rrao`, usually in upstream systems or suite orchestration. |
-| Unsupported | The package must fail explicitly until the profile or feature has cited rules and deterministic tests. |
+| Unsupported fail-closed | The package must raise `UnsupportedRegulatoryFeatureError` until the profile or feature has cited rules and deterministic tests. |
 
 ## Source register
 
@@ -38,6 +38,7 @@ Use this document in two directions:
 | U.S. NPR 2.0 | Federal Register 91 FR 14952, March 27, 2026. Section V.A.7.b and proposed section `__.211` define proposed U.S. residual-risk coverage, exclusions, gross effective notional, and add-on percentages. | Implemented for supported canonical inputs; proposed-rule material only. |
 | EU CRR / CRR3 | Regulation (EU) No 575/2013 Article 325u and Commission Delegated Regulation (EU) 2022/2328 Articles 1-3 and Annex. | Implemented for supported comparison-profile canonical inputs. |
 | EBA RTS background | EBA residual risk add-on RTS page. | Background only; not an independent calculation source. |
+| UK CRR / PRA | UK CRR Article 325u and UK retained DR 2022/2328; PRA PS1/26 anchor. | `mapped_and_cited` for `PRA_UK_CRR` canonical inputs; investment-fund paths fail closed. See [`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../../docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md). |
 | Public implementation references | `frtb-net/FRTB` `SA_RRAO_Calc.py` and FNet format documentation. | Adapter and explain-shape inspiration only; not regulatory sources. |
 
 Use `docs/regulatory_sources.yml` for topic-level links and review notes.
@@ -68,7 +69,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `__init__.py` | Stable package export boundary. | MAR20.4 SA component context. | Section V.A.7.b package-scope context. | Article 325u comparison context. | Implemented narrow v1 public surface for calculation, public dataclasses/enums, audit helpers, and allocation helpers. |
 | `data_models.py` | Frozen input, context, classification, investment-fund descriptor, capital-line, subtotal, result, allocation-report, citation, and lineage dataclasses. | MAR23.1-MAR23.8. | Proposed section `__.205(e)(3)(iii)` and `__.211(a)`-`__.211(c)`. | Article 325u; Delegated Regulation 2022/2328 Articles 1-3 and Annex. | Implemented as public data contracts; no classification or capital logic. |
 | `validation.py` | Input invariants, gross effective notional checks, duplicate identity checks, lineage checks, investment-fund linkage checks, and explicit package input errors. | MAR23.8 gross notional mechanics. | Proposed section `__.205(e)(3)(iii)` fund linkage and `__.211(c)(2)` gross effective notional. | Article 325u comparison only. | Implemented for canonical input validation; profile support is enforced in `regimes.py`. |
-| `regimes.py` | Rule-profile identity, support declarations, profile status, unsupported-profile guardrails, and deterministic profile hash. | MAR23 profile for Basel RRAO mechanics. | Proposed section `__.211` U.S. profile. | Article 325u and Delegated Regulation 2022/2328 EU profile. | Implemented for Basel MAR23, U.S. NPR 2.0, and EU CRR3 profile lookup; PRA fails closed. |
+| `regimes.py` | Rule-profile identity, support declarations, profile status, unsupported-profile guardrails, and deterministic profile hash. | MAR23 profile for Basel RRAO mechanics. | Proposed section `__.211` U.S. profile. | Article 325u and Delegated Regulation 2022/2328 EU profile; UK CRR Article 325u PRA profile. | Implemented for Basel MAR23, U.S. NPR 2.0, EU CRR3, and PRA_UK_CRR profile lookup. |
 | `reference_data.py` | Risk weights, evidence categories, investment-fund inclusion rules, exclusion reason tables, and citation ids. | MAR23.2-MAR23.8. | Proposed section `__.205(e)(3)(iii)` and `__.211(a)`-`__.211(c)`. | Article 325u and Delegated Regulation 2022/2328 Articles 1-3 and Annex. | Implemented cited lookup tables for Basel MAR23, U.S. NPR 2.0, and EU CRR3 comparison canonical inputs. |
 | `numeric.py` | Shared reconciliation tolerance helpers for audit and allocation checks. | MAR23.8 additive mechanics. | Proposed section `__.211(c)` line-capital mechanics. | Article 325u(3) comparison mechanics. | Implemented documented floating-point tolerance and excluded-line zero-add-on checks. |
 | `classification.py` | Cited classification, investment-fund inclusion, and exclusion decisions for canonical positions. | MAR23.2-MAR23.7. | Proposed section `__.205(e)(3)(iii)` and `__.211(a)`-`__.211(b)`. | Delegated Regulation 2022/2328 Articles 1-3 and Annex. | Implemented for Basel MAR23, U.S. NPR 2.0, and EU CRR3 canonical evidence. |
@@ -76,7 +77,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `audit.py` | Result serialization, input/profile hashes, and line/subtotal reconciliation. | MAR23 calculation auditability context. | Proposed section `__.211(c)` line add-ons and reporting notional source. | Article 325u comparison context. | Implemented deterministic result serialization, input hashing, and reconciliation checks. |
 | `allocation.py` | Additive allocation reports by line, desk, legal entity, and evidence type with reconciliation checks. | MAR23.8 additive line-capital explain context. | Proposed section `__.211(c)` line add-ons and reporting notional source. | Article 325u(3) comparison mechanics. | Implemented additive report helpers; unsupported dimensions and non-additive allocation paths fail explicitly. |
 | `crif.py` | Optional CRIF/FNet-shaped adapter into canonical `RraoPosition` records with lineage, warnings, and rejected rows. | MAR23 risk-type mapping context only. | Proposed section `__.211` canonical field mapping context. | Article 325u comparison mapping context. | Implemented as a standard-library adapter only; not imported by calculation kernels. |
-| `tests/fixtures/rrao_v1/`, `tests/fixtures/rrao_eu/` | Synthetic examples for source-cited classification, exclusions, invalid evidence, and deterministic replay. | MAR23.2-MAR23.8. | Proposed section `__.211(a)`-`__.211(c)`. | Delegated Regulation 2022/2328 Articles 1-3 and Annex. | Implemented for supported U.S. NPR 2.0 fixture coverage and EU CRR3 comparison fixture coverage. |
+| `tests/fixtures/rrao_v1/`, `tests/fixtures/rrao_eu/`, `tests/fixtures/rrao_pra/` | Synthetic examples for source-cited classification, exclusions, invalid evidence, and deterministic replay. | MAR23.2-MAR23.8. | Proposed section `__.211(a)`-`__.211(c)`. | Delegated Regulation 2022/2328 Articles 1-3 and Annex; UK retained DR 2022/2328 for PRA profile. | Implemented for supported U.S. NPR 2.0, EU CRR3, and PRA_UK_CRR fixture coverage. |
 
 ## Regulation to code
 
@@ -90,6 +91,12 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | Exclusions and non-presumptive zero records | MAR23.4-MAR23.7. | Proposed section `__.211(b)`. | Article 325u(4) and Delegated Regulation 2022/2328 Article 3. | `data_models.py`, `validation.py`, `classification.py`, `capital.py`, `scaffold.py`. | Implemented for supported cited exclusions, exact back-to-back match groups, EU Article 3 non-presumptive records, and auditable zero-capital result lines. |
 | Gross effective notional and risk weights | MAR23.8. | Proposed section `__.211(c)(1)`-`__.211(c)(2)`. | Article 325u(3). | `validation.py`, `reference_data.py`, `capital.py`, `audit.py`, `scaffold.py`. | Implemented for supported U.S./Basel canonical inputs and EU CRR3 comparison canonical inputs. |
 | Public GitHub adapter shapes | Not a regulatory source. | Not a regulatory source. | Not a regulatory source. | `crif.py`. | Implemented as adapter inspiration only; never overrides cited classification evidence. |
+
+## PRA UK CRR profile boundary
+
+| Profile | Runtime status | Planning status |
+| --- | --- | --- |
+| `PRA_UK_CRR` | supported canonical-input slice | UK CRR Article 325u and retained DR 2022/2328 mapping with `rrao_pra` fixtures; see [`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../../docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md). |
 
 ## Module docstring convention
 

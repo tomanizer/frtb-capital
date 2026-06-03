@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_rrao import (
     RraoClassification,
@@ -140,6 +139,15 @@ def test_classification_hint_conflict_fails() -> None:
         )
 
 
-def test_unsupported_profiles_fail_before_classification() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        classify_rrao_position(sample_position(), profile=RraoRegulatoryProfile.PRA_UK_CRR)
+def test_pra_profile_classifies_exotic_evidence() -> None:
+    result = classify_rrao_position(
+        sample_position(
+            evidence_type=RraoEvidenceType.EXOTIC_UNDERLYING,
+            evidence_label="weather derivative",
+            classification_hint=RraoClassification.EXOTIC,
+        ),
+        profile=RraoRegulatoryProfile.PRA_UK_CRR,
+    )
+
+    assert result.classification == RraoClassification.EXOTIC
+    assert result.reason_code == "PRA_UK_CRR_EXOTIC_UNDERLYING"

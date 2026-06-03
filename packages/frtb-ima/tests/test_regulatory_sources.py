@@ -14,6 +14,7 @@ ALLOWED_URL_PREFIXES = (
     "https://eur-lex.europa.eu/",
     "https://www.eba.europa.eu/",
     "https://www.bankofengland.co.uk/",
+    "https://www.legislation.gov.uk/",
 )
 
 

@@ -428,7 +428,6 @@ def select_nmrf_method(
       * stepwise when direct is not robust or a grid/path is required;
       * max-loss fallback only when explicitly allowed.
     """
-    policy.require_supported("type_a_type_b_nmrf_taxonomy")
     if not selection_input.is_nmrf:
         raise NMRFMethodSelectionError("NMRF method selection requires TYPE_A_NMRF or TYPE_B_NMRF")
 
