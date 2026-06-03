@@ -131,7 +131,7 @@ substitute for the owning package's `*CapitalResult`.
 | SA summary error | `ComponentSummaryError` | Replaces `ComponentHandoffError`. |
 | SA projection | `to_component_summary(result)` | Replaces `to_orchestration_handoff`. |
 | Orchestration parameters | `sbm_summary`, `drc_summary`, `rrao_summary` | Replaces `sbm_handoff`, `drc_handoff`, `rrao_handoff`. |
-| CVA suite contract | `CvaCapitalSummary` | Replaces `CvaResultHandoff` in orchestration. |
+| CVA suite contract | `CvaCapitalSummary` | Replaces `CvaResultHandoff` in orchestration. **Recognition contract only** — CVA is not an SA composition slot (`StandardisedComponent`); orchestration validates and aggregates CVA totals separately from SBM/DRC/RRAO summaries. |
 | CVA recognition | `to_cva_summary(result)` or `recognise_cva_summary` | Replaces `recognise_cva_result` when a typed adapter lands in `frtb-cva`; until then, orchestration may keep one recognise helper with a deprecated alias. |
 
 **Prohibited on the composition path:** `arrow`, `batch`, `normalize_*_arrow_table`,
@@ -182,21 +182,28 @@ Aligned with **#401** (narrower top-level surfaces):
   the first migration tranche; the pilot validates ergonomics first.
 
 SBM may retain `calculate_sbm_capital_from_*_arrow` as **optional convenience**
-wrappers (batch + calculate in one call) when renamed from `*_handoff`, provided
-each wrapper documents that it is sugar over `build_*_batch_from_arrow` +
-`calculate_sbm_capital_from_*_batch`. New code should prefer the two-step
-pipeline.
+wrappers (batch + calculate in one call) when renamed from `*_handoff`. The
+`*_arrow` suffix marks the **input type** (`NormalizedArrowTable` or `pa.Table`),
+not a third pipeline variant: each wrapper must document that it is sugar over
+`build_*_batch_from_arrow` + `calculate_sbm_capital_from_*_batch`. Do not add
+`*_handoff` or `*_batch` convenience names alongside `*_arrow`; new code should
+prefer the two-step normalize → batch → calculate pipeline.
 
 ### 5. Future CI guard (migration-lintable)
 
-After M1 lands in `frtb-common`, add a quality-control check (exact script TBD)
-that **fails on new public symbols** matching `handoff` / `Handoff` outside:
+After M1 lands in `frtb-common`, add quality-control checks (exact scripts TBD):
 
-- deprecated alias definitions explicitly listed in an allowlist file;
-- `docs/decisions/` historical ADR filenames and titles;
-- changelog fragments describing deprecation.
+1. **Handoff vocabulary** — fail on **new public symbols** matching `handoff` /
+   `Handoff` outside deprecated alias allowlists, historical ADR filenames and
+   titles under `docs/decisions/`, and changelog fragments describing
+   deprecation.
+2. **ADR filename prefixes** — fail when two or more files under
+   `docs/decisions/` share the same four-digit numeric prefix (e.g. two `0032-*`
+   files). This is a trivial uniqueness scan and would have caught the pre-merge
+   0032 collision that led to this ADR taking number **0033**.
 
-The check does not rewrite existing symbols until M3; it prevents new drift.
+Neither check rewrites existing symbols or filenames until M3; they prevent new
+drift.
 
 ### 6. Relationship to prior ADRs
 
