@@ -237,6 +237,22 @@ def test_capital_impact_delta_mismatch_raises() -> None:
         )
 
 
+def test_capital_impact_delta_tolerance_scales_with_notional() -> None:
+    impact = CapitalImpact(
+        baseline_run_id="run-A",
+        candidate_run_id="run-B",
+        component="frtb_sbm",
+        baseline_total=1_000_000_000.0,
+        candidate_total=1_000_000_050.0,
+        delta=50.0001,
+        method=ImpactMethod.FINITE_DIFFERENCE,
+        baseline_input_hash="abc123",
+        candidate_input_hash="def456",
+    )
+
+    assert impact.delta == pytest.approx(50.0001)
+
+
 def test_capital_impact_method_coercion() -> None:
     impact = CapitalImpact(
         baseline_run_id="run-A",

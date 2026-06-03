@@ -42,11 +42,12 @@ class CapitalImpact:
 
         coerced = _coerce_enum(self.method, ImpactMethod, "method")
         object.__setattr__(self, "method", coerced)
-        expected = round(self.candidate_total - self.baseline_total, 12)
-        if abs(self.delta - expected) > 1e-9:
+        expected = self.candidate_total - self.baseline_total
+        tol = 1e-12 * max(abs(self.baseline_total), abs(self.candidate_total), 1.0)
+        if abs(self.delta - expected) > tol:
             raise ValueError(
                 f"delta {self.delta!r} does not equal candidate_total - baseline_total "
-                f"({expected!r})"
+                f"({expected!r}) within tolerance {tol:.2e}"
             )
 
     def as_dict(self) -> dict[str, object]:
