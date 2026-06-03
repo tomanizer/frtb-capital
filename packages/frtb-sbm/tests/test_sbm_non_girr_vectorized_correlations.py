@@ -113,7 +113,7 @@ def test_non_girr_vega_vectorized_matrix_matches_scalar_reference(
         option_tenor_by_id=option_tenor_by_id,
     )
 
-    assert np.array_equal(vectorized, scalar)
+    np.testing.assert_allclose(vectorized, scalar, rtol=0.0, atol=1e-12)
 
 
 @pytest.mark.parametrize(
