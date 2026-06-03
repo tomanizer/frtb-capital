@@ -50,3 +50,7 @@ Regulatory and audit rules:
 
 For IMA work, read `packages/frtb-ima/AGENTS.md` and
 `packages/frtb-ima/CLAUDE.md` before editing IMA code.
+
+For PR babysitting, read and follow `.grok/skills/frtb-ci-babysit/SKILL.md`.
+Requires `gh`. Use `make agent-new AGENT=cursor TASK=<task-name>` when the
+worktree guard fails.

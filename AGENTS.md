@@ -109,6 +109,20 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
   review or merge, and do not bypass the check without a documented governance
   reason.
 
+## CI babysit
+
+When asked to babysit, watch, or bring a PR to merge-ready (CI green, Gemini and
+Copilot feedback, final audit), follow:
+
+- [`.grok/skills/frtb-ci-babysit/SKILL.md`](.grok/skills/frtb-ci-babysit/SKILL.md)
+
+Grok: `/frtb-ci-babysit`. Claude Code: `/frtb-ci-babysit` →
+[`.claude/commands/frtb-ci-babysit.md`](.claude/commands/frtb-ci-babysit.md).
+
+Requires `gh` and a compliant worktree (`python3 scripts/agent_worktree.py guard`).
+Use `make agent-new AGENT=codex TASK=<task>` (or `claude`, `cursor`, `copilot`,
+`grok`) when the guard fails.
+
 ## Review focus
 
 When reviewing or changing code, focus on:

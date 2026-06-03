@@ -125,6 +125,16 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md). Any change that alters numerical outpu
 
 ---
 
+## CI babysit
+
+When asked to babysit a pull request through CI and bot reviews, read and execute:
+
+- [`.grok/skills/frtb-ci-babysit/SKILL.md`](.grok/skills/frtb-ci-babysit/SKILL.md)
+
+Or run `/frtb-ci-babysit` ([`.claude/commands/frtb-ci-babysit.md`](.claude/commands/frtb-ci-babysit.md)).
+
+---
+
 ## Commands
 
 ```bash
