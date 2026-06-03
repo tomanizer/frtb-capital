@@ -7,8 +7,8 @@ from frtb_common.hashing import stable_json_hash
 
 __all__ = ["MART_NAMES", "MART_SCHEMAS", "mart_schema_fingerprint"]
 
-MART_SCHEMA_VERSION = 1
-MART_NAMES = ("capital_summary", "capital_tree", "component_breakdown")
+MART_SCHEMA_VERSION = 2
+MART_NAMES = ("capital_summary", "capital_tree", "component_breakdown", "movement_summary")
 MART_SCHEMAS: dict[str, pa.Schema] = {
     "capital_summary": pa.schema(
         [
@@ -55,6 +55,23 @@ MART_SCHEMAS: dict[str, pa.Schema] = {
             ("currency", pa.string()),
             ("node_count", pa.int64()),
             ("measure_count", pa.int64()),
+        ]
+    ),
+    "movement_summary": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("baseline_run_id", pa.string()),
+            ("movement_id", pa.string()),
+            ("node_id", pa.string()),
+            ("movement_type", pa.string()),
+            ("from_amount", pa.float64()),
+            ("to_amount", pa.float64()),
+            ("delta_amount", pa.float64()),
+            ("base_currency", pa.string()),
+            ("driver_type", pa.string()),
+            ("driver_id", pa.string()),
+            ("attribution_method", pa.string()),
+            ("artifact_id", pa.string()),
         ]
     ),
 }
