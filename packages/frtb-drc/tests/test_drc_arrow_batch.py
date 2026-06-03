@@ -9,9 +9,11 @@ from typing import Any, cast
 import numpy as np
 import pyarrow as pa
 import pytest
-from frtb_common import source_content_hash
+from frtb_common import UnsupportedRegulatoryFeatureError, source_content_hash
 from frtb_drc import (
     BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     DrcFairValueCapEvidence,
     DrcFxRate,
     DrcInputError,
@@ -240,6 +242,86 @@ def test_drc_arrow_batch_batch_matches_ctp_row_capital() -> None:
         row_result.categories[0].bucket_results
     )
     assert "US_NPR_210_D_3_IV_D" in calculation.result.citations
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "normalize", "build_batch", "profile_id", "expected"),
+    [
+        (
+            "drc_ctp_v1",
+            normalize_drc_ctp_arrow_table,
+            build_drc_ctp_batch_from_arrow,
+            BASEL_MAR22_PROFILE_ID,
+            r"MAR22\.42",
+        ),
+        (
+            "drc_nonsec_v1",
+            normalize_drc_nonsec_arrow_table,
+            build_drc_nonsec_batch_from_arrow,
+            EU_CRR3_PROFILE_ID,
+            EU_CRR3_PROFILE_ID,
+        ),
+        (
+            "drc_sec_nonctp_v1",
+            normalize_drc_securitisation_non_ctp_arrow_table,
+            build_drc_securitisation_non_ctp_batch_from_arrow,
+            EU_CRR3_PROFILE_ID,
+            EU_CRR3_PROFILE_ID,
+        ),
+        (
+            "drc_ctp_v1",
+            normalize_drc_ctp_arrow_table,
+            build_drc_ctp_batch_from_arrow,
+            EU_CRR3_PROFILE_ID,
+            EU_CRR3_PROFILE_ID,
+        ),
+        (
+            "drc_nonsec_v1",
+            normalize_drc_nonsec_arrow_table,
+            build_drc_nonsec_batch_from_arrow,
+            PRA_UK_CRR_PROFILE_ID,
+            PRA_UK_CRR_PROFILE_ID,
+        ),
+        (
+            "drc_sec_nonctp_v1",
+            normalize_drc_securitisation_non_ctp_arrow_table,
+            build_drc_securitisation_non_ctp_batch_from_arrow,
+            PRA_UK_CRR_PROFILE_ID,
+            PRA_UK_CRR_PROFILE_ID,
+        ),
+        (
+            "drc_ctp_v1",
+            normalize_drc_ctp_arrow_table,
+            build_drc_ctp_batch_from_arrow,
+            PRA_UK_CRR_PROFILE_ID,
+            PRA_UK_CRR_PROFILE_ID,
+        ),
+    ],
+)
+def test_arrow_batch_calculation_fails_closed_for_unsupported_profile_paths(
+    fixture_name: str,
+    normalize: Any,
+    build_batch: Any,
+    profile_id: str,
+    expected: str,
+) -> None:
+    fixture = _load_fixture(fixture_name)
+    handoff = normalize(_arrow_table(fixture["positions"]))
+    batch = build_batch(handoff)
+    context = replace(
+        fixture["context"],
+        profile_id=profile_id,
+        securitisation_non_ctp_risk_weights={},
+        securitisation_non_ctp_risk_weight_evidence={},
+        securitisation_non_ctp_fair_value_cap_evidence={},
+        securitisation_non_ctp_offset_groups={},
+        ctp_risk_weights={},
+        ctp_risk_weight_evidence={},
+        ctp_offset_groups={},
+    )
+
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match=expected):
+        calculate_drc_capital_from_batch(batch, context=context)
 
 
 def test_drc_arrow_batch_uses_zero_copy_float64_columns_when_possible() -> None:

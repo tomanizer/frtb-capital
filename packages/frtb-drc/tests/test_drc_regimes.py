@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 from datetime import date
+from pathlib import Path
 from typing import cast
 
 import pytest
@@ -102,6 +103,58 @@ def test_profile_support_matrix_marks_basel_securitisation_non_ctp_supported() -
     assert "BASEL_MAR22_42" in basel_ctp.citation_ids
 
 
+def test_profile_support_matrix_covers_every_known_profile_path() -> None:
+    cells = drc_profile_support_matrix()
+    expected = {
+        (profile_id, risk_class)
+        for profile_id in (
+            US_NPR_2_0_PROFILE_ID,
+            BASEL_MAR22_PROFILE_ID,
+            EU_CRR3_PROFILE_ID,
+            PRA_UK_CRR_PROFILE_ID,
+        )
+        for risk_class in DrcRiskClass
+    }
+
+    assert {(cell.profile_id, cell.risk_class) for cell in cells} == expected
+    for cell in cells:
+        profile = get_rule_profile(cell.profile_id)
+        assert cell.status in {"SUPPORTED", "FAIL_CLOSED"}
+        assert cell.reason
+        assert cell.citation_ids
+        assert cell.next_step
+        if cell.status == "SUPPORTED":
+            ensure_risk_class_supported(profile, cell.risk_class)
+        else:
+            with pytest.raises(UnsupportedRegulatoryFeatureError):
+                ensure_risk_class_supported(profile, cell.risk_class)
+
+
+def test_profile_support_matrix_cells_are_json_serialisable() -> None:
+    payload = tuple(cell.as_dict() for cell in drc_profile_support_matrix())
+
+    assert payload[0]["profile_id"] == US_NPR_2_0_PROFILE_ID
+    json.dumps(payload, sort_keys=True)
+
+
+def test_profile_support_matrix_doc_matches_public_api() -> None:
+    docs_path = (
+        Path(__file__).resolve().parents[3] / "docs/modules/frtb-drc/PROFILE_SUPPORT_MATRIX.md"
+    )
+    documented = _profile_support_doc_rows(docs_path)
+    actual = {
+        (cell.profile_id, cell.risk_class.value): {
+            "status": cell.status,
+            "reason": cell.reason,
+            "citation_ids": cell.citation_ids,
+            "next_step": cell.next_step,
+        }
+        for cell in drc_profile_support_matrix()
+    }
+
+    assert documented == actual
+
+
 def test_unknown_profile_is_input_error() -> None:
     with pytest.raises(DrcInputError, match="unknown DRC rule profile"):
         get_rule_profile("UNKNOWN")
@@ -112,6 +165,26 @@ def test_profile_hash_is_deterministic_sha256() -> None:
 
     assert profile.content_hash == profile_content_hash(profile)
     assert re.fullmatch(r"[0-9a-f]{64}", profile.content_hash)
+
+
+def _profile_support_doc_rows(path: Path) -> dict[tuple[str, str], dict[str, object]]:
+    rows: dict[tuple[str, str], dict[str, object]] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("| `"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        profile_id, risk_class, status, reason, citation_ids, next_step = cells
+        rows[(_unquote(profile_id), _unquote(risk_class))] = {
+            "status": _unquote(status),
+            "reason": reason,
+            "citation_ids": tuple(_unquote(item.strip()) for item in citation_ids.split(",")),
+            "next_step": next_step,
+        }
+    return rows
+
+
+def _unquote(value: str) -> str:
+    return value.removeprefix("`").removesuffix("`")
 
 
 def test_profile_hash_changes_when_reference_data_payload_changes(
