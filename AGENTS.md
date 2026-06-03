@@ -72,6 +72,10 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
 - Run `make agent-guard` and `make quality-control` before pushing any branch
   that changes package code, package metadata, model documentation, regulatory
   traceability, CI controls, or repository governance files.
+- Run `make drift-check`, `make changed-code-check`, `make test-value-check`,
+  and `make dead-code-check` before committing substantial generated or
+  refactoring changes. If the code-drift baseline must grow, update it with
+  `make drift-baseline` and make the baseline diff explicit in the PR.
 - For substantive package changes, run make ci-local (or at minimum
   make check) before push. Use Python 3.11 locally (via .python-version)
   so results match CI; newer interpreters can fail fixture hash gates such as

@@ -197,6 +197,8 @@ def calculate_sbm_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
                     reporting_currency=context.reporting_currency,
+                    pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+                    pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
                 )
             )
         elif risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.DELTA:
@@ -1001,11 +1003,14 @@ def _calculate_sbm_capital_from_curvature_batch(
         label=label,
     )
     rule_profile = get_sbm_rule_profile(context.profile_id)
+    run_controls = context.run_controls or SbmRunControls()
     risk_class = calculate_curvature_risk_class_capital_from_batch(
         batch,
         profile_id=rule_profile.profile_id,
         reporting_currency=context.reporting_currency,
         expected_risk_class=expected_risk_class,
+        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
+        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
     )
     return _build_sbm_capital_result(
         (risk_class,),

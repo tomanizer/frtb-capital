@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "bucket_key": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "bucketKey"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "citation_ids": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "citationIds"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "credit_quality": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "creditQuality"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "cumulative_pnl": {
+      "type": "number",
+      "x-frtb-aliases": [
+        "cumulativePnL",
+        "cumulativePnl"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "currency": {
+      "type": "string",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "default_direction": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "defaultDirection"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "desk_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "deskId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "index_series_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "indexSeriesId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "instrument_type": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "instrumentType"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "is_covered_bond": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "isCoveredBond"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "is_defaulted": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "isDefaulted"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "is_gse": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "isGse"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "is_pse": {
+      "type": "boolean",
+      "x-frtb-aliases": [
+        "isPse"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "boolean",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "issuer_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "issuerId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "legal_entity": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "legalEntity"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "lgd_override": {
+      "type": "number",
+      "x-frtb-aliases": [
+        "lgdOverride"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "lineage_source_file": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sourceFile",
+        "source_file"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "lineage_source_system": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sourceSystem",
+        "source_system"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "market_value": {
+      "type": "number",
+      "x-frtb-aliases": [
+        "marketValue"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "maturity_years": {
+      "type": "number",
+      "x-frtb-aliases": [
+        "maturityYears"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "notional": {
+      "type": "number",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "position_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "positionId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "risk_class": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "riskClass"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "seniority": {
+      "type": "string",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "source_row_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sourceRowId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "tranche_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "trancheId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    }
+  },
+  "required": [
+    "position_id",
+    "source_row_id",
+    "desk_id",
+    "legal_entity",
+    "risk_class",
+    "instrument_type",
+    "default_direction",
+    "issuer_id",
+    "bucket_key",
+    "seniority",
+    "credit_quality",
+    "notional",
+    "maturity_years",
+    "currency",
+    "lineage_source_system",
+    "lineage_source_file"
+  ],
+  "title": "frtb_drc.nonsec",
+  "type": "object",
+  "x-frtb-column-order": [
+    "position_id",
+    "source_row_id",
+    "desk_id",
+    "legal_entity",
+    "risk_class",
+    "instrument_type",
+    "default_direction",
+    "issuer_id",
+    "tranche_id",
+    "index_series_id",
+    "bucket_key",
+    "seniority",
+    "credit_quality",
+    "notional",
+    "market_value",
+    "cumulative_pnl",
+    "maturity_years",
+    "currency",
+    "lgd_override",
+    "is_defaulted",
+    "is_gse",
+    "is_pse",
+    "is_covered_bond",
+    "lineage_source_system",
+    "lineage_source_file",
+    "citation_ids"
+  ]
+}

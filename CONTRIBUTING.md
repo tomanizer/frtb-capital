@@ -21,8 +21,12 @@ Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). The repo pins
 3. Make the change in a single package where possible. Cross-package model
    changes require an ADR.
 4. Run `make check` until green.
-5. Add a changelog fragment if the change is user-visible (see below).
-6. Open a PR. The PR template will prompt for:
+5. For larger code changes, run `make drift-check`, `make changed-code-check`,
+   `make test-value-check`, and `make dead-code-check` before committing. If the
+   branch intentionally increases the code-drift baseline, run
+   `make drift-baseline` and include that baseline diff for review.
+6. Add a changelog fragment if the change is user-visible (see below).
+7. Open a PR. The PR template will prompt for:
    - Affected package(s).
    - Whether the change is material under
      [ADR 0005](docs/decisions/0005-material-change-policy.md).

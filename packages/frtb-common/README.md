@@ -22,7 +22,10 @@ Current contents:
   - `NormalizedTabularHandoff` for accepted/rejected Arrow tables, adapter
     diagnostics, row id column naming, metadata, and source hashes;
   - deterministic source, Arrow table, and normalized handoff hashes;
-  - dictionary-code extraction and deterministic Arrow table sorting helpers.
+  - dictionary-code extraction and deterministic Arrow table sorting helpers;
+  - schema export helpers in `frtb_common.handoff_schema`:
+    `column_spec_to_json_schema`, `handoff_specs_to_json_schema`, and
+    `handoff_specs_to_arrow_schema`.
 - CRIF-to-Arrow normalization helpers:
   - package-neutral CRIF column discovery, alias normalization, and primitive
     coercion;
@@ -48,3 +51,20 @@ extracts those contracts into `frtb-common`.
 under [ADR 0023](../../docs/decisions/0023-arrow-tabular-handoff-boundary.md).
 Capital kernels continue to receive package-owned typed inputs and NumPy arrays
 under [ADR 0011](../../docs/decisions/0011-core-runtime-dependency-policy.md).
+
+## Handoff schema export
+
+Clients can generate JSON Schema or Arrow schema descriptions from public
+`ColumnSpec` tuples without importing component packages from `frtb-common`:
+
+```bash
+uv run python scripts/export_handoff_schema.py \
+  --package frtb_drc \
+  --spec DRC_NONSEC_HANDOFF_COLUMN_SPECS \
+  --format json-schema \
+  --output dist/schemas/drc_nonsec.handoff.schema.json
+```
+
+The library functions live in `frtb_common.handoff_schema`; the CLI dynamically
+imports the requested package or module so dependency direction remains
+package-neutral.
