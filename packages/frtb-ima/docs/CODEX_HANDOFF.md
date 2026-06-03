@@ -13,7 +13,8 @@ assembly layer in `tomanizer/frtb-capital`, under `packages/frtb-ima`.
 
 This package is the IMA model-eligible desk capital path only.
 
-**SBM, DRC, RRAO, and CVA are scaffolded sibling packages in this monorepo.** Do
+**SBM, DRC, RRAO, and CVA are separate capital-component packages in this monorepo
+(partial or implemented runtime paths).** Do
 not add sensitivities-based method, default risk charge, residual risk add-on,
 CVA capital, SA-composition, fallback capital, firm-level consolidation, or
 legal-entity aggregation to this package. The handoff contract from

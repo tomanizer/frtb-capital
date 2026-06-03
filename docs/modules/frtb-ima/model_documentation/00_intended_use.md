@@ -55,8 +55,8 @@ or trading-book boundary decisions.
 
 ## Out Of Scope
 
-The following are outside this package and belong to scaffolded sibling packages or
-upstream systems:
+The following are outside this package and belong to other capital-component
+packages (partial or implemented runtime paths) or upstream systems:
 
 - SBM, Default Risk Charge, residual risk add-on, CVA, and fallback capital;
   SA fallback is owned by orchestration as the composed SBM + DRC + RRAO stack;

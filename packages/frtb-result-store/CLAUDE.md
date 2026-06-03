@@ -1,5 +1,10 @@
 # CLAUDE.md — frtb-result-store
 
+Follow the suite-level portable worktree policy in
+[`../../AGENTS.md`](../../AGENTS.md) and
+[`../../docs/AGENT_WORKTREE_POLICY.md`](../../docs/AGENT_WORKTREE_POLICY.md)
+before editing this package.
+
 Review `frtb-result-store` as storage and serving infrastructure only.
 
 Reject capital formulae, sibling capital-package imports in storage paths, or
