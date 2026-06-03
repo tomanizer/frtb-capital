@@ -6,13 +6,13 @@
 
 - Package directory: `packages/frtb-drc`
 - Import name: `frtb_drc`
-- Implementation status: partial runtime; supported U.S. NPR 2.0 row/batch paths and Basel MAR22 non-securitisation row/batch paths
+- Implementation status: partial runtime; supported U.S. NPR 2.0 row/batch paths and Basel MAR22 non-securitisation plus securitisation non-CTP row/batch paths
 - Validation status: pending
 
 The package is importable and exposes `calculate_drc_capital` for supported
 U.S. NPR 2.0 non-securitisation, securitisation non-CTP, and CTP canonical
-inputs, plus Basel MAR22 non-securitisation canonical inputs. The current
-runtime covers gross JTD, maturity scaling,
+inputs, plus Basel MAR22 non-securitisation and securitisation non-CTP
+canonical inputs. The current runtime covers gross JTD, maturity scaling,
 seniority-aware non-securitisation netting, securitisation same-tranche and
 replication-group netting, CTP replication-group netting, hedge benefit ratio,
 bucket/category capital, reconciliation, attribution records, and audit
@@ -21,10 +21,13 @@ The Arrow/batch API now has class-specific fast paths for non-securitisation,
 securitisation non-CTP, and CTP inputs, with accepted rows kept columnar and
 without row-dataclass fallback.
 Known profiles are `US_NPR_2_0`, `BASEL_MAR22`, `EU_CRR3`, and
-`PRA_UK_CRR`. Basel MAR22 securitisation non-CTP and CTP paths fail closed
-until MAR22.34/MAR22.42 banking-book securitisation mappings are implemented.
-EU CRR3 and UK PRA profiles are known identities but fail closed for all DRC
-risk classes until Article 325w / PRA PS1/26 rulebook mappings are implemented.
+`PRA_UK_CRR`. Basel MAR22 securitisation non-CTP is supported through cited
+MAR22.31-MAR22.35 bucket, risk-weight evidence, fair-value cap, HBR, and
+category aggregation contracts. Basel MAR22 CTP fails closed until MAR22.42
+banking-book securitisation mappings and decomposition contracts are
+implemented. EU CRR3 and UK PRA profiles are known identities but fail closed
+for all DRC risk classes until Article 325w / PRA PS1/26 rulebook mappings are
+implemented.
 Securitisation non-CTP and CTP sub-scope without supplied risk weights or
 explicit replication evidence also fails closed.
 
@@ -32,10 +35,10 @@ Securitisation non-CTP and CTP risk weights can be supplied through typed
 `DrcRiskWeightEvidence` records on `DrcCalculationContext`. Those records carry
 position id, source profile, source table, source method, effective risk
 weight, as-of date, source lineage, citation ids, and stale/validation flags.
-The legacy raw float maps remain available as low-level compatibility inputs,
-but typed evidence is the audit-ready production contract. Used evidence is
-included in `DrcCapitalResult.risk_weight_evidence` and the deterministic input
-hash.
+The legacy raw float maps remain available as low-level compatibility inputs
+for `US_NPR_2_0`; other profiles, including `BASEL_MAR22`, require typed
+evidence. Used evidence is included in `DrcCapitalResult.risk_weight_evidence`
+and the deterministic input hash.
 
 Securitisation non-CTP fair-value cap handling is profile-controlled and only
 uses typed `DrcFairValueCapEvidence` records. Missing cap evidence leaves market
@@ -60,6 +63,7 @@ future artifact.
 - [Detailed implementation requirements](DETAILED_REQUIREMENTS.md)
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
 - [Decisions and implementation plan](DECISIONS_AND_PLAN.md)
+- [Profile support matrix](PROFILE_SUPPORT_MATRIX.md)
 - [Workable issue breakdown](ISSUE_BREAKDOWN.md)
 - [Workable requirements](requirements/BASEL_FRTB_DRC.yml)
 - [Model documentation — intended use](model_documentation/00_intended_use.md)
