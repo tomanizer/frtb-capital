@@ -48,12 +48,11 @@ external table / CRIF / file
 | IMA | Dense scenario P&L cube plus tabular scenario metadata, RFET observations, and input manifest rows | `IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS`, `IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS`, `IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS` | Arrow tables normalize/build for metadata and RFET evidence; dense NumPy arrays feed ES, LHA, IMCC, and NMRF kernels | Implemented public IMA path for deterministic fixtures; unsupported profile behaviour remains explicit | [IMA Arrow handoff triage](performance/frtb-ima-arrow-handoff-triage.md) |
 
 For per-package integration surfaces, see
-[SBM PUBLIC_API.md](modules/frtb-sbm/PUBLIC_API.md) and
-[DRC PUBLIC_API.md](modules/frtb-drc/PUBLIC_API.md), plus
-[CVA PUBLIC_API.md](modules/frtb-cva/PUBLIC_API.md), plus
-[RRAO PUBLIC_API.md](modules/frtb-rrao/PUBLIC_API.md). Additional package public
-API docs are delivered by
-[#427](https://github.com/tomanizer/frtb-capital/issues/427).
+[SBM PUBLIC_API.md](modules/frtb-sbm/PUBLIC_API.md),
+[DRC PUBLIC_API.md](modules/frtb-drc/PUBLIC_API.md),
+[CVA PUBLIC_API.md](modules/frtb-cva/PUBLIC_API.md),
+[RRAO PUBLIC_API.md](modules/frtb-rrao/PUBLIC_API.md), and
+[IMA CLIENT_DELIVERY.md](modules/frtb-ima/CLIENT_DELIVERY.md).
 
 ## Standardised Approach run flow
 
