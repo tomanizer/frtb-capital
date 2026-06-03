@@ -66,6 +66,8 @@ The hooks block commits and pushes when:
 - the current branch is `main`;
 - the worktree is outside `~/Documents/Projects/frtb-capital-worktrees`;
 - the first branch component does not match the first worktree path component;
+- the branch worsens the versioned code-drift baseline or changed-code
+  complexity checks enforced by `scripts/ci/check_code_drift.py`;
 - a push targets `refs/heads/main`.
 
 The hooks cannot prevent an editor from modifying files in the protected main

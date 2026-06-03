@@ -11,7 +11,7 @@ MUTATION_DIST := dist/mutation
 
 .PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
 .PHONY: test test-no-cov test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording
-.PHONY: import-lint kernel-import-boundary simplification-drift import-smoke maturity-check quality-control build
+.PHONY: import-lint kernel-import-boundary simplification-drift import-smoke maturity-check drift-check changed-code-check test-value-check dead-code-check drift-baseline quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
 .PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-handoff-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
@@ -83,7 +83,26 @@ maturity-check:
 	mkdir -p dist/quality
 	uv run python scripts/ci/check_package_maturity.py --json-output dist/quality/package-maturity.json
 
-quality-control: import-lint kernel-import-boundary simplification-drift import-smoke maturity-check
+drift-check:
+	mkdir -p dist/quality
+	uv run python scripts/ci/check_code_drift.py --json-output dist/quality/code-drift-report.json
+
+changed-code-check:
+	mkdir -p dist/quality
+	uv run python scripts/ci/check_code_drift.py --changed --json-output dist/quality/changed-code-report.json
+
+test-value-check:
+	mkdir -p dist/quality
+	uv run python scripts/ci/check_test_value.py --json-output dist/quality/test-value-report.json
+
+dead-code-check:
+	mkdir -p dist/quality
+	uv run python scripts/ci/check_dead_code.py --json-output dist/quality/dead-code-report.json
+
+drift-baseline:
+	uv run python scripts/ci/check_code_drift.py --update-baseline
+
+quality-control: import-lint kernel-import-boundary simplification-drift import-smoke maturity-check drift-check changed-code-check test-value-check dead-code-check
 
 regulatory-corpus:
 	python3 tools/regulatory/lint_regulatory_corpus.py

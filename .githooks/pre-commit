@@ -8,3 +8,7 @@ if ! command -v "$1" >/dev/null 2>&1; then
 fi
 
 "$@" scripts/agent_worktree.py guard --quiet
+"$@" scripts/ci/check_code_drift.py --quiet
+"$@" scripts/ci/check_code_drift.py --changed --quiet
+"$@" scripts/ci/check_test_value.py --quiet
+"$@" scripts/ci/check_dead_code.py --quiet
