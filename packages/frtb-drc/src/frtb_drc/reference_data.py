@@ -462,6 +462,18 @@ _SECURITISATION_BUCKET_DEFINITIONS: dict[tuple[str, str], BucketDefinition] = {
     )
     for bucket_key in chargeable_securitisation_non_ctp_bucket_keys()
 }
+_SECURITISATION_BUCKET_DEFINITIONS.update(
+    {
+        (BASEL_MAR22_PROFILE_ID, bucket_key): BucketDefinition(
+            bucket_key=bucket_key,
+            bucket_type=DrcBucketType.SECURITISATION_ASSET_REGION,
+            risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+            citation_id="BASEL_MAR22_31",
+            description=_securitisation_bucket_description(bucket_key),
+        )
+        for bucket_key in chargeable_securitisation_non_ctp_bucket_keys()
+    }
+)
 
 _BUCKET_DEFINITIONS: Mapping[tuple[str, str], BucketDefinition] = MappingProxyType(
     {

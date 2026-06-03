@@ -7,7 +7,8 @@ classes must be split into class-specific batches before calculation; batch
 entrypoints fail closed when incompatible classes are mixed.
 
 Outputs are not final regulatory capital. U.S. NPR 2.0 content is proposed-rule
-comparison material.
+comparison material. Basel MAR22 profile support is paragraph-scoped and
+documented in [PROFILE_SUPPORT_MATRIX.md](PROFILE_SUPPORT_MATRIX.md).
 
 ## Stable surface
 
@@ -19,6 +20,7 @@ comparison material.
 | Handoff specs | `DRC_NONSEC_ARROW_COLUMN_SPECS`, `DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS`, `DRC_CTP_ARROW_COLUMN_SPECS` | Client schema alignment and generated schema export. |
 | Normalize | `normalize_drc_nonsec_arrow_table`, `normalize_drc_securitisation_non_ctp_arrow_table`, `normalize_drc_ctp_arrow_table` | Ingress from raw Arrow tables to `NormalizedArrowTable`. |
 | Reference overlays | `DrcCalculationContext`, `DrcFxRate`, `DrcRiskWeightEvidence`, `DrcFairValueCapEvidence` | Run-scoped FX rates, securitisation risk weights, fair-value cap evidence, and offset groups. |
+| Profile support | `drc_profile_support_matrix`, `DrcProfileSupportCell`, `get_rule_profile`, `ensure_risk_class_supported` | Runtime-readable support and fail-closed profile contract. |
 | Audit and attribution | `validate_reconciliation`, `calculate_drc_attribution`, `validate_attribution_reconciliation`, `to_component_summary` | Replay, reconciliation, attribution, and SA orchestration handoff. |
 | Errors | `DrcInputError` | Public fail-closed input error carrying field context. |
 
@@ -40,7 +42,7 @@ high-volume batch boundary is summarized in
 | DRC class | Arrow spec | Normalizer | Builder | Context requirements |
 | --- | --- | --- | --- | --- |
 | Non-securitisation | `DRC_NONSEC_ARROW_COLUMN_SPECS` | `normalize_drc_nonsec_arrow_table` | `build_drc_nonsec_batch_from_arrow` | `DrcCalculationContext` with run id, calculation date, base currency, and profile id; FX rates required for non-base-currency rows. |
-| Securitisation non-CTP | `DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_securitisation_non_ctp_arrow_table` | `build_drc_securitisation_non_ctp_batch_from_arrow` | Position-id keyed `securitisation_non_ctp_risk_weights`; evidence, fair-value cap, and offset-group maps where required by the run. |
+| Securitisation non-CTP | `DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_securitisation_non_ctp_arrow_table` | `build_drc_securitisation_non_ctp_batch_from_arrow` | `US_NPR_2_0` accepts position-id keyed `securitisation_non_ctp_risk_weights` or typed evidence; `BASEL_MAR22` requires typed `DrcRiskWeightEvidence`. Fair-value cap and offset-group maps are used where supplied and profile-supported. |
 | CTP | `DRC_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_ctp_arrow_table` | `build_drc_ctp_batch_from_arrow` | Position-id keyed `ctp_risk_weights`, `ctp_risk_weight_evidence`, and `ctp_offset_groups` where needed for offset treatment. |
 
 ## Arrow Column Summary

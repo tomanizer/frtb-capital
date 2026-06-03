@@ -1,5 +1,7 @@
 """Standardised Approach default risk charge component."""
 
+from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
+
 from frtb_drc._version import __version__
 from frtb_drc.arrow_batch import (
     DRC_CTP_ARROW_COLUMN_SPECS,
@@ -48,7 +50,6 @@ from frtb_drc.ctp import (
     validate_ctp_context,
 )
 from frtb_drc.data_models import (
-    AttributionMethod,
     BranchMetadata,
     BranchType,
     BucketDrc,
@@ -57,7 +58,6 @@ from frtb_drc.data_models import (
     DefaultDirection,
     DrcBucketType,
     DrcCalculationContext,
-    DrcCapitalContribution,
     DrcCapitalResult,
     DrcCitation,
     DrcFairValueCapEvidence,
@@ -97,7 +97,9 @@ from frtb_drc.regimes import (
     EU_CRR3_PROFILE_ID,
     PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
+    DrcProfileSupportCell,
     DrcRuleProfile,
+    drc_profile_support_matrix,
     ensure_risk_class_supported,
     get_rule_profile,
     profile_content_hash,
@@ -130,6 +132,7 @@ __all__ = [
     "BranchType",
     "BucketDefinition",
     "BucketDrc",
+    "CapitalContribution",
     "CapitalInput",
     "CategoryDrc",
     "CreditQuality",
@@ -140,7 +143,6 @@ __all__ = [
     "DrcBatchCapitalCalculation",
     "DrcBucketType",
     "DrcCalculationContext",
-    "DrcCapitalContribution",
     "DrcCapitalResult",
     "DrcCitation",
     "DrcFairValueCapEvidence",
@@ -150,6 +152,7 @@ __all__ = [
     "DrcInstrumentType",
     "DrcPosition",
     "DrcPositionBatch",
+    "DrcProfileSupportCell",
     "DrcRiskClass",
     "DrcRiskWeightEvidence",
     "DrcRuleProfile",
@@ -162,6 +165,7 @@ __all__ = [
     "MaturityScaledJtd",
     "NetJtd",
     "NettingInput",
+    "ReconciliationStatus",
     "RejectedOffset",
     "RiskWeightRule",
     "SecuritisationNonCtpCalculation",
@@ -193,6 +197,7 @@ __all__ = [
     "calculate_securitisation_non_ctp_drc",
     "calculate_securitisation_non_ctp_gross_jtd",
     "calculate_securitisation_non_ctp_net_jtds",
+    "drc_profile_support_matrix",
     "ensure_risk_class_supported",
     "fair_value_cap_evidence_by_position",
     "get_bucket_definition",
