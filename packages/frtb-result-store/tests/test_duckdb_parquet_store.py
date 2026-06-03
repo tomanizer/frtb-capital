@@ -9,6 +9,12 @@ from urllib.parse import quote, unquote, urlparse
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
+from fixtures.result_store_bundle import (
+    default_artifacts,
+    ima_pnl_chunks,
+    run_with_id,
+    sample_bundle,
+)
 from frtb_common import AttributionMethod, CapitalContribution
 from frtb_result_store import (
     ArtifactRef,
@@ -17,8 +23,6 @@ from frtb_result_store import (
     CalculationRun,
     CapitalAttributionRecord,
     CapitalEdge,
-    CapitalMeasure,
-    CapitalNode,
     CapitalNodeFamily,
     CapitalNodeSpec,
     CapitalSummaryRow,
@@ -26,7 +30,6 @@ from frtb_result_store import (
     EdgeType,
     FrtbComponent,
     InputSnapshotManifest,
-    LineageRef,
     MovementResult,
     MovementSummaryRow,
     NodeType,
@@ -51,19 +54,27 @@ from frtb_result_store import (
     default_hierarchy_definition,
     generate_run_group_id,
 )
-from frtb_result_store.io import (
-    _float_value,
-    _hierarchy_level_from_mapping,
-    _hierarchy_path_item_from_mapping,
-    _int_value,
-    _json_mapping,
-    _json_text_tuple,
+from frtb_result_store._row_codecs import (
+    float_value as _float_value,
+)
+from frtb_result_store._row_codecs import (
+    int_value as _int_value,
+)
+from frtb_result_store._row_codecs import (
+    json_mapping as _json_mapping,
+)
+from frtb_result_store._row_codecs import (
+    json_text_tuple as _json_text_tuple,
 )
 from frtb_result_store.mart_schemas import MART_NAMES
+from frtb_result_store.store_row_io import (
+    _hierarchy_level_from_mapping,
+    _hierarchy_path_item_from_mapping,
+)
 
 
 def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> None:
-    bundle = _bundle()
+    bundle = sample_bundle()
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
     store.write_bundle(bundle)
@@ -125,7 +136,7 @@ def test_duckdb_parquet_store_resolves_relative_root(
 def test_store_round_trips_hierarchy_definition_nodes_and_standard_graph(
     tmp_path: Path,
 ) -> None:
-    run = _run_with_id("run-with-hierarchy")
+    run = run_with_id("run-with-hierarchy")
     definition = default_hierarchy_definition(created_at=run.created_at)
     hierarchy_nodes = build_hierarchy_nodes(
         definition,
@@ -203,7 +214,7 @@ def test_store_round_trips_hierarchy_definition_nodes_and_standard_graph(
 
 
 def test_write_bundle_streams_strict_ima_pnl_artifact_chunks(tmp_path: Path) -> None:
-    run = _run_with_id("run-with-artifact")
+    run = run_with_id("run-with-artifact")
     tail_artifact = ArtifactRef(
         run_id=run.run_id,
         artifact_id="ima-tail-observations",
@@ -213,14 +224,14 @@ def test_write_bundle_streams_strict_ima_pnl_artifact_chunks(tmp_path: Path) -> 
         format="parquet",
         row_count=3,
     )
-    bundle = _bundle(run, artifacts=(*_default_artifacts(run), tail_artifact))
+    bundle = sample_bundle(run, artifacts=(*default_artifacts(run), tail_artifact))
     schema = artifact_schema_for("ima.pnl_vector.v1")
     request = ArtifactWriteRequest(
         artifact_id_hint="ima-desk-a-pnl",
         artifact_type=ArtifactType.IMA_PNL_VECTOR,
         component="IMA",
         schema_id=schema.schema_id,
-        chunks=_ima_pnl_chunks(schema.arrow_schema, run.run_id),
+        chunks=ima_pnl_chunks(schema.arrow_schema, run.run_id),
         partition_values={
             "desk_id": "rates",
             "portfolio_id": "rates-options",
@@ -262,25 +273,25 @@ def test_write_bundle_streams_strict_ima_pnl_artifact_chunks(tmp_path: Path) -> 
 
 
 def test_missing_required_artifact_rejects_before_manifest_commit(tmp_path: Path) -> None:
-    run = _run_with_id("run-missing-required-artifact")
+    run = run_with_id("run-missing-required-artifact")
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
     with pytest.raises(ResultStoreContractError, match="missing required artifacts"):
-        store.write_bundle(_bundle(run, artifacts=()))
+        store.write_bundle(sample_bundle(run, artifacts=()))
 
     assert not store.run_exists(run.run_id)
     assert store.list_runs() == ()
 
 
 def test_declared_conditional_artifact_expectation_requires_evidence(tmp_path: Path) -> None:
-    run = _run_with_id("run-missing-conditional-artifact")
+    run = run_with_id("run-missing-conditional-artifact")
     schema = artifact_schema_for("ima.pnl_vector.v1")
     request = ArtifactWriteRequest(
         artifact_id_hint="ima-desk-a-pnl",
         artifact_type=ArtifactType.IMA_PNL_VECTOR,
         component="IMA",
         schema_id=schema.schema_id,
-        chunks=_ima_pnl_chunks(schema.arrow_schema, run.run_id),
+        chunks=ima_pnl_chunks(schema.arrow_schema, run.run_id),
         partition_values={
             "desk_id": "rates",
             "portfolio_id": "rates-options",
@@ -299,7 +310,7 @@ def test_declared_conditional_artifact_expectation_requires_evidence(tmp_path: P
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
     with pytest.raises(ResultStoreContractError, match="IMA_ES_TAIL_EVIDENCE"):
-        store.write_bundle(_bundle(run), artifact_requests=(request,))
+        store.write_bundle(sample_bundle(run), artifact_requests=(request,))
 
     assert not store.run_exists(run.run_id)
     assert not (
@@ -308,7 +319,7 @@ def test_declared_conditional_artifact_expectation_requires_evidence(tmp_path: P
 
 
 def test_invalid_local_artifact_ref_rejects_commit(tmp_path: Path) -> None:
-    run = _run_with_id("run-invalid-artifact-ref")
+    run = run_with_id("run-invalid-artifact-ref")
     invalid_artifact = ArtifactRef(
         run_id=run.run_id,
         artifact_id="missing-local-artifact",
@@ -321,26 +332,28 @@ def test_invalid_local_artifact_ref_rejects_commit(tmp_path: Path) -> None:
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
     with pytest.raises(ResultStoreContractError, match="missing local file"):
-        store.write_bundle(_bundle(run, artifacts=(*_default_artifacts(run), invalid_artifact)))
+        store.write_bundle(
+            sample_bundle(run, artifacts=(*default_artifacts(run), invalid_artifact))
+        )
 
     assert not store.run_exists(run.run_id)
 
 
 def test_abandoned_staging_is_cleaned_before_successful_commit(tmp_path: Path) -> None:
-    run = _run_with_id("run-abandoned-staging")
+    run = run_with_id("run-abandoned-staging")
     store = DuckDbParquetResultStore(tmp_path / "result-store")
     stale_staging = tmp_path / "result-store" / "_staging" / "run-abandoned-staging"
     stale_staging.mkdir(parents=True)
     (stale_staging / "orphan.parquet").write_text("stale", encoding="utf-8")
 
-    store.write_bundle(_bundle(run))
+    store.write_bundle(sample_bundle(run))
 
     assert store.run_exists(run.run_id)
     assert not stale_staging.exists()
 
 
 def test_artifact_schema_mismatch_fails_before_manifest_commit(tmp_path: Path) -> None:
-    run = _run_with_id("run-with-bad-artifact")
+    run = run_with_id("run-with-bad-artifact")
     schema = artifact_schema_for("ima.pnl_vector.v1")
     bad_chunk = pa.Table.from_pylist(
         [{"run_id": run.run_id, "desk_id": "rates"}],
@@ -361,7 +374,7 @@ def test_artifact_schema_mismatch_fails_before_manifest_commit(tmp_path: Path) -
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
     with pytest.raises(ResultStoreContractError, match="artifact chunk schema"):
-        store.write_bundle(_bundle(run), artifact_requests=(request,))
+        store.write_bundle(sample_bundle(run), artifact_requests=(request,))
 
     assert not store.run_exists(run.run_id)
     assert store.artifact_refs(run.run_id) == ()
@@ -390,7 +403,7 @@ def test_store_persists_canonical_identity_payloads_and_status_history(tmp_path:
         run_group_id=generate_run_group_id(group_payload),
         run_group_identity_payload=group_payload,
     )
-    bundle = _bundle(run)
+    bundle = sample_bundle(run)
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
     store.write_bundle(bundle)
@@ -427,7 +440,7 @@ def test_store_persists_canonical_identity_payloads_and_status_history(tmp_path:
 
 def test_status_transitions_are_append_only_and_ordered(tmp_path: Path) -> None:
     store = DuckDbParquetResultStore(tmp_path / "result-store")
-    bundle = _bundle()
+    bundle = sample_bundle()
     store.write_bundle(bundle)
 
     with pytest.raises(ResultStoreWriteError, match="status transition expected"):
@@ -460,10 +473,10 @@ def test_status_transitions_are_append_only_and_ordered(tmp_path: Path) -> None:
 
 def test_run_id_prefix_lookup_fails_closed_when_ambiguous(tmp_path: Path) -> None:
     store = DuckDbParquetResultStore(tmp_path / "result-store")
-    first_run = _run_with_id("abcdef" + ("0" * 58))
-    second_run = _run_with_id("abc123" + ("1" * 58))
-    store.write_bundle(_bundle(first_run))
-    store.write_bundle(_bundle(second_run))
+    first_run = run_with_id("abcdef" + ("0" * 58))
+    second_run = run_with_id("abc123" + ("1" * 58))
+    store.write_bundle(sample_bundle(first_run))
+    store.write_bundle(sample_bundle(second_run))
 
     assert store.resolve_run_id_prefix("abcdef") == first_run.run_id
     assert store.resolve_run_id_prefix("missing") is None
@@ -473,7 +486,7 @@ def test_run_id_prefix_lookup_fails_closed_when_ambiguous(tmp_path: Path) -> Non
 
 def test_store_is_append_only_by_run_id(tmp_path: Path) -> None:
     store = DuckDbParquetResultStore(tmp_path / "result-store")
-    bundle = _bundle()
+    bundle = sample_bundle()
 
     store.write_bundle(bundle)
 
@@ -486,7 +499,7 @@ def test_failed_manifest_write_rolls_back_moved_run_files(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = DuckDbParquetResultStore(tmp_path / "result-store")
-    bundle = _bundle()
+    bundle = sample_bundle()
 
     def fail_manifest(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("manifest failure")
@@ -522,7 +535,7 @@ def test_failed_manifest_write_rolls_back_moved_run_files(
 
 def test_unmanifested_parquet_files_are_invisible_to_readers(tmp_path: Path) -> None:
     store = DuckDbParquetResultStore(tmp_path / "result-store")
-    bundle = _bundle()
+    bundle = sample_bundle()
     store.write_bundle(bundle)
     shutil.rmtree(tmp_path / "result-store" / "manifests")
 
@@ -538,7 +551,7 @@ def test_catalog_refresh_failure_does_not_fail_manifested_commit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = DuckDbParquetResultStore(tmp_path / "result-store")
-    bundle = _bundle()
+    bundle = sample_bundle()
 
     def fail_catalog() -> None:
         raise RuntimeError("catalog locked")
@@ -562,14 +575,14 @@ def test_reserved_backends_fail_closed(tmp_path: Path) -> None:
 
 
 def test_s3_parquet_backend_uses_manifest_gated_logical_layout(tmp_path: Path) -> None:
-    run = _run_with_id("s3/run/2026-06-03")
+    run = run_with_id("s3/run/2026-06-03")
     schema = artifact_schema_for("ima.pnl_vector.v1")
     request = ArtifactWriteRequest(
         artifact_id_hint="ima-desk-a-pnl",
         artifact_type=ArtifactType.IMA_PNL_VECTOR,
         component=FrtbComponent.IMA,
         schema_id=schema.schema_id,
-        chunks=_ima_pnl_chunks(schema.arrow_schema, run.run_id),
+        chunks=ima_pnl_chunks(schema.arrow_schema, run.run_id),
         partition_values={
             "desk_id": "rates",
             "portfolio_id": "rates-options",
@@ -584,7 +597,7 @@ def test_s3_parquet_backend_uses_manifest_gated_logical_layout(tmp_path: Path) -
         duckdb_settings={"threads": 1},
     )
     store = DuckDbParquetResultStore(config)
-    bundle = _bundle(run)
+    bundle = sample_bundle(run)
 
     store.write_bundle(bundle, artifact_requests=(request,))
 
@@ -617,7 +630,7 @@ def test_s3_parquet_backend_uses_manifest_gated_logical_layout(tmp_path: Path) -
 
 
 def test_s3_parquet_readers_ignore_orphaned_objects_without_manifest(tmp_path: Path) -> None:
-    run = _run_with_id("orphan/s3/run")
+    run = run_with_id("orphan/s3/run")
     store = DuckDbParquetResultStore(
         ResultStoreConfig(
             root="s3://frtb-results/prod",
@@ -694,7 +707,7 @@ def test_malformed_stored_values_raise_contract_errors() -> None:
 def test_store_persists_input_events_telemetry_and_manifest_fingerprints(
     tmp_path: Path,
 ) -> None:
-    run = _run_with_id("run-with-events")
+    run = run_with_id("run-with-events")
     input_manifest = InputSnapshotManifest(
         run_id=run.run_id,
         input_snapshot_id=run.input_snapshot_id,
@@ -729,7 +742,7 @@ def test_store_persists_input_events_telemetry_and_manifest_fingerprints(
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
     store.write_bundle(
-        _bundle(
+        sample_bundle(
             run,
             input_manifests=(input_manifest,),
             events=(event,),
@@ -756,7 +769,7 @@ def test_store_persists_input_events_telemetry_and_manifest_fingerprints(
 
 
 def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path) -> None:
-    bundle = _bundle()
+    bundle = sample_bundle()
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
     store.write_bundle(bundle)
@@ -823,7 +836,7 @@ def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path
 
 
 def test_mart_generation_rejects_cyclic_capital_tree(tmp_path: Path) -> None:
-    bundle = _bundle()
+    bundle = sample_bundle()
     cyclic_bundle = ResultBundle(
         run=bundle.run,
         nodes=bundle.nodes,
@@ -852,7 +865,7 @@ def test_mart_generation_rejects_cyclic_capital_tree(tmp_path: Path) -> None:
 def test_store_persists_day_over_day_movement_results_and_summary_mart(
     tmp_path: Path,
 ) -> None:
-    run = _run_with_id("run-dod-current")
+    run = run_with_id("run-dod-current")
     baseline_run_id = "run-dod-baseline"
     movement = MovementResult(
         run_id=run.run_id,
@@ -872,7 +885,7 @@ def test_store_persists_day_over_day_movement_results_and_summary_mart(
     )
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
-    store.write_bundle(_bundle(run, movement_results=(movement,)))
+    store.write_bundle(sample_bundle(run, movement_results=(movement,)))
 
     assert store.movement_results(run.run_id) == (movement,)
     assert store.movement_results(run.run_id, baseline_run_id=baseline_run_id) == (movement,)
@@ -900,7 +913,7 @@ def test_store_persists_day_over_day_movement_results_and_summary_mart(
 def test_store_persists_regime_over_regime_movement_results(
     tmp_path: Path,
 ) -> None:
-    run = _run_with_id("run-us-npr-current")
+    run = run_with_id("run-us-npr-current")
     movement = MovementResult(
         run_id=run.run_id,
         baseline_run_id="run-basel-baseline",
@@ -920,7 +933,7 @@ def test_store_persists_regime_over_regime_movement_results(
     )
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
-    store.write_bundle(_bundle(run, movement_results=(movement,)))
+    store.write_bundle(sample_bundle(run, movement_results=(movement,)))
 
     assert store.movement_results(run.run_id, node_id="sbm-girr-usd") == (movement,)
     summary = store.movement_summary(run.run_id, node_id="sbm-girr-usd")
@@ -934,7 +947,7 @@ def test_store_persists_regime_over_regime_movement_results(
 def test_store_preserves_distinct_attribution_source_and_target(
     tmp_path: Path,
 ) -> None:
-    run = _run_with_id("run-attribution-target-override")
+    run = run_with_id("run-attribution-target-override")
     attribution = CapitalAttributionRecord.from_contribution(
         run_id=run.run_id,
         node_id="total",
@@ -956,7 +969,7 @@ def test_store_preserves_distinct_attribution_source_and_target(
     )
     store = DuckDbParquetResultStore(tmp_path / "result-store")
 
-    store.write_bundle(_bundle(run, attributions=(attribution,)))
+    store.write_bundle(sample_bundle(run, attributions=(attribution,)))
 
     stored = store.attributions_for_node(run.run_id, "total")[0]
     assert stored.source_id == "residual-total-source"
@@ -968,10 +981,10 @@ def test_store_preserves_distinct_attribution_source_and_target(
 
 def test_incompatible_run_fails_closed_without_blocking_other_runs(tmp_path: Path) -> None:
     store = DuckDbParquetResultStore(tmp_path / "result-store")
-    incompatible_run = _run_with_id("run-incompatible")
-    compatible_run = _run_with_id("run-compatible")
-    store.write_bundle(_bundle(incompatible_run))
-    store.write_bundle(_bundle(compatible_run))
+    incompatible_run = run_with_id("run-incompatible")
+    compatible_run = run_with_id("run-compatible")
+    store.write_bundle(sample_bundle(incompatible_run))
+    store.write_bundle(sample_bundle(compatible_run))
     manifest_path = store._manifest_path(incompatible_run.run_id)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["result_store_schema_version"] = 999
@@ -988,239 +1001,3 @@ def test_incompatible_run_fails_closed_without_blocking_other_runs(tmp_path: Pat
     with pytest.raises(ResultStoreCompatibilityError, match="malformed run manifest JSON"):
         store.get_run(incompatible_run.run_id)
     assert [run.run_id for run in store.list_runs()] == [compatible_run.run_id]
-
-
-def _bundle(
-    run: CalculationRun | None = None,
-    *,
-    artifacts: tuple[ArtifactRef, ...] | None = None,
-    input_manifests: tuple[InputSnapshotManifest, ...] = (),
-    attributions: tuple[CapitalAttributionRecord, ...] | None = None,
-    movement_results: tuple[MovementResult, ...] = (),
-    events: tuple[ResultEvent, ...] = (),
-    telemetry: tuple[RunTelemetry, ...] = (),
-) -> ResultBundle:
-    if run is None:
-        run = _run_with_id("frtb/run/2026-06-03")
-    nodes = (
-        CapitalNode(
-            run_id=run.run_id,
-            node_id="total",
-            node_type=NodeType.ROOT,
-            component=FrtbComponent.TOP_OF_HOUSE,
-            label="Total capital",
-            sort_key=0,
-        ),
-        CapitalNode(
-            run_id=run.run_id,
-            node_id="ima-book-rates-core",
-            node_type=NodeType.BOOK,
-            component=FrtbComponent.IMA,
-            label="IMA rates core book",
-            desk_id="rates",
-            portfolio_id="rates-options",
-            book_id="rates-core",
-            calculation_branch="IMA_ES_PLUS_SES",
-            regulatory_rule_id="US_NPR_325.207",
-            sort_key=1,
-        ),
-        CapitalNode(
-            run_id=run.run_id,
-            node_id="sa",
-            node_type=NodeType.COMPONENT,
-            component=FrtbComponent.STANDARDISED_APPROACH,
-            label="Standardised Approach",
-            sort_key=2,
-        ),
-        CapitalNode(
-            run_id=run.run_id,
-            node_id="sbm-girr-usd",
-            node_type=NodeType.BUCKET,
-            component=FrtbComponent.SBM,
-            label="SBM GIRR USD",
-            risk_class="GIRR",
-            bucket="USD",
-            regulatory_rule_id="MAR21.4",
-            sort_key=3,
-        ),
-    )
-    edges = (
-        CapitalEdge(
-            run_id=run.run_id,
-            parent_node_id="total",
-            child_node_id="ima-book-rates-core",
-            edge_type=EdgeType.AGGREGATES,
-            sort_key=1,
-        ),
-        CapitalEdge(
-            run_id=run.run_id,
-            parent_node_id="total",
-            child_node_id="sa",
-            edge_type=EdgeType.AGGREGATES,
-            sort_key=2,
-        ),
-        CapitalEdge(
-            run_id=run.run_id,
-            parent_node_id="sa",
-            child_node_id="sbm-girr-usd",
-            edge_type=EdgeType.DRILLDOWN,
-            sort_key=3,
-        ),
-    )
-    measures = _default_measures(run)
-    artifacts = _default_artifacts(run) if artifacts is None else artifacts
-    lineage = (
-        LineageRef(
-            run_id=run.run_id,
-            result_id="total",
-            source_type="input_snapshot",
-            source_id="snapshot-001",
-        ),
-    )
-    default_attributions = (
-        CapitalAttributionRecord.from_contribution(
-            run_id=run.run_id,
-            node_id="sbm-girr-usd",
-            contribution=CapitalContribution(
-                contribution_id="sbm-girr-usd-5y",
-                source_id="sensitivity-girr-usd-5y",
-                source_level="SENSITIVITY",
-                bucket_key="GIRR:USD",
-                category="SBM_DELTA",
-                base_amount=25.0,
-                marginal_multiplier=0.3,
-                contribution=7.5,
-                method="ANALYTICAL_EULER",
-            ),
-            artifact_id="sbm-sensitivity-table",
-        ),
-    )
-    attributions = default_attributions if attributions is None else attributions
-    return ResultBundle(
-        run=run,
-        nodes=nodes,
-        edges=edges,
-        measures=measures,
-        artifacts=artifacts,
-        input_manifests=input_manifests,
-        lineage=lineage,
-        attributions=attributions,
-        movement_results=movement_results,
-        events=events,
-        telemetry=telemetry,
-    )
-
-
-def _default_artifacts(run: CalculationRun) -> tuple[ArtifactRef, ...]:
-    return (
-        ArtifactRef(
-            run_id=run.run_id,
-            artifact_id="ima-pnl-vector",
-            component=FrtbComponent.IMA,
-            artifact_type=ArtifactType.IMA_PNL_VECTOR,
-            uri="s3://frtb-results/ima-pnl-vector.parquet",
-            format="parquet",
-            row_count=1,
-            partition_keys=("desk_id", "portfolio_id", "book_id"),
-        ),
-        ArtifactRef(
-            run_id=run.run_id,
-            artifact_id="sbm-sensitivity-table",
-            component=FrtbComponent.SBM,
-            artifact_type=ArtifactType.SBM_SENSITIVITY_TABLE,
-            uri="s3://frtb-results/sbm-sensitivity-table.parquet",
-            format="parquet",
-            row_count=1,
-        ),
-    )
-
-
-def _default_measures(run: CalculationRun) -> tuple[CapitalMeasure, ...]:
-    return (
-        CapitalMeasure(
-            run_id=run.run_id,
-            node_id="total",
-            measure_name="capital",
-            amount=42.0,
-            currency="USD",
-            regulatory_rule_id="US_NPR_325.201",
-        ),
-        CapitalMeasure(
-            run_id=run.run_id,
-            node_id="ima-book-rates-core",
-            measure_name="capital",
-            amount=17.0,
-            currency="USD",
-            regulatory_rule_id="US_NPR_325.207",
-        ),
-        CapitalMeasure(
-            run_id=run.run_id,
-            node_id="sa",
-            measure_name="capital",
-            amount=25.0,
-            currency="USD",
-            regulatory_rule_id="US_NPR_325.204",
-        ),
-        CapitalMeasure(
-            run_id=run.run_id,
-            node_id="sbm-girr-usd",
-            measure_name="capital",
-            amount=25.0,
-            currency="USD",
-            regulatory_rule_id="MAR21.4",
-        ),
-    )
-
-
-def _ima_pnl_chunks(schema: pa.Schema, run_id: str) -> tuple[pa.Table, pa.Table]:
-    rows = [
-        {
-            "run_id": run_id,
-            "desk_id": "rates",
-            "portfolio_id": "rates-options",
-            "book_id": "rates-core",
-            "position_id": "pos-001",
-            "risk_factor_id": "rf-girr-usd-5y",
-            "risk_factor_set_id": None,
-            "scenario_id": "s-001",
-            "observation_date": date(2026, 6, 1),
-            "liquidity_horizon": 20,
-            "pnl_amount": 1.25,
-            "currency": "USD",
-            "tail_flag": False,
-            "source_row_id": "row-001",
-        },
-        {
-            "run_id": run_id,
-            "desk_id": "rates",
-            "portfolio_id": "rates-options",
-            "book_id": "rates-core",
-            "position_id": "pos-002",
-            "risk_factor_id": "rf-girr-usd-10y",
-            "risk_factor_set_id": "girr-usd",
-            "scenario_id": "s-002",
-            "observation_date": date(2026, 6, 2),
-            "liquidity_horizon": 40,
-            "pnl_amount": -0.5,
-            "currency": "USD",
-            "tail_flag": True,
-            "source_row_id": "row-002",
-        },
-    ]
-    return tuple(pa.Table.from_pylist([row], schema=schema) for row in rows)
-
-
-def _run_with_id(run_id: str) -> CalculationRun:
-    return CalculationRun(
-        run_id=run_id,
-        as_of_date=date(2026, 6, 3),
-        regime_id="US_NPR_2_0",
-        base_currency="USD",
-        input_snapshot_id="snapshot-001",
-        calculation_scope="FIRM",
-        engine_version="frtb-suite-0.1",
-        code_version="abc123",
-        calculation_policy_id="policy-us-npr",
-        created_at=datetime(2026, 6, 3, 12, 0, tzinfo=UTC),
-        metadata={"purpose": "analyst-dashboard-fixture"},
-    )
