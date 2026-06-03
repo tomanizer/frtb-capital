@@ -4,13 +4,16 @@ from dataclasses import replace
 from datetime import date
 
 import pytest
+from frtb_common.attribution import (
+    AttributionMethod,
+    CapitalContribution,
+    ReconciliationStatus,
+)
 from frtb_drc import (
     US_NPR_2_0_PROFILE_ID,
-    AttributionMethod,
     CreditQuality,
     DefaultDirection,
     DrcCalculationContext,
-    DrcCapitalContribution,
     DrcCapitalResult,
     DrcInputError,
     DrcInstrumentType,
@@ -47,6 +50,11 @@ def test_nonsec_long_only_attribution_is_analytical_and_reconciles() -> None:
     assert record.base_amount == pytest.approx(75.0)
     assert record.contribution == pytest.approx(result.total_drc)
     assert record.residual == 0.0
+    assert record.reconciliation_status is ReconciliationStatus.RECONCILED
+    assert record.input_hash == result.input_hash
+    assert record.profile_hash == result.profile_hash
+    assert record.input_hash != ""
+    assert record.profile_hash != ""
     validate_attribution_reconciliation(result)
 
 
@@ -68,6 +76,9 @@ def test_nonsec_hedged_attribution_allocates_long_and_short_net_jtds() -> None:
     assert {record.source_level for record in analytical} == {"net_jtd"}
     assert all(record.bucket_key == "CORPORATE" for record in analytical)
     assert any((record.contribution or 0.0) < 0.0 for record in analytical)
+    assert all(
+        record.reconciliation_status is ReconciliationStatus.RECONCILED for record in analytical
+    )
     _assert_reconciles(result.attribution_records, result.total_drc)
     validate_attribution_reconciliation(result)
 
@@ -110,6 +121,7 @@ def test_securitisation_bucket_floor_emits_unsupported_attribution_record() -> N
     assert unsupported[0].source_level == "bucket"
     assert unsupported[0].bucket_key == "SEC_RMBS_EUROPE"
     assert "bucket floor" in unsupported[0].reason
+    assert unsupported[0].reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
     _assert_reconciles(result.attribution_records, result.total_drc)
     validate_attribution_reconciliation(result)
 
@@ -134,6 +146,7 @@ def test_securitisation_non_ctp_attribution_is_analytical_when_branch_is_stable(
         AttributionMethod.ANALYTICAL_EULER
     }
     assert result.attribution_records[0].contribution == pytest.approx(20.0)
+    assert result.attribution_records[0].reconciliation_status is ReconciliationStatus.RECONCILED
     _assert_reconciles(result.attribution_records, result.total_drc)
 
 
@@ -167,6 +180,9 @@ def test_ctp_attribution_respects_positive_and_negative_bucket_recognition() -> 
         pytest.approx(-2.5),
         pytest.approx(17.5),
     ]
+    assert all(
+        record.reconciliation_status is ReconciliationStatus.RECONCILED for record in records
+    )
     _assert_reconciles(records, result.total_drc)
 
 
@@ -190,6 +206,7 @@ def test_missing_net_risk_weight_lineage_returns_unsupported_record() -> None:
     assert records[0].source_level == "bucket"
     assert records[0].residual == pytest.approx(result.total_drc)
     assert "risk weight lineage" in records[0].reason
+    assert records[0].reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
     _assert_reconciles(records, result.total_drc)
 
 
@@ -217,6 +234,7 @@ def test_missing_net_jtd_record_returns_unsupported_record() -> None:
     assert records[0].source_level == "bucket"
     assert records[0].residual == pytest.approx(result.total_drc)
     assert "net JTD record is missing" in records[0].reason
+    assert records[0].reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
     _assert_reconciles(records, result.total_drc)
 
 
@@ -285,21 +303,61 @@ def test_attribution_reconciliation_uses_compensated_float_summation() -> None:
     validate_attribution_reconciliation(result)
 
 
+def test_attribution_records_carry_input_and_profile_hashes() -> None:
+    """input_hash and profile_hash are propagated from DrcCapitalResult into every record."""
+    result = calculate_drc_capital(
+        (
+            _nonsec_position(
+                "hash-check",
+                DefaultDirection.LONG,
+                100.0,
+                issuer_id="issuer-hash-check",
+            ),
+        ),
+        context=_context(),
+    )
+
+    assert result.input_hash != ""
+    assert result.profile_hash != ""
+    for record in result.attribution_records:
+        assert record.input_hash == result.input_hash
+        assert record.profile_hash == result.profile_hash
+
+
+def test_residual_and_unsupported_records_have_partial_residual_status() -> None:
+    """Records emitted for missing risk-weight lineage carry PARTIAL_RESIDUAL status."""
+    result = calculate_drc_capital(
+        (
+            _nonsec_position(
+                "residual-check",
+                DefaultDirection.LONG,
+                100.0,
+                issuer_id="issuer-residual-check",
+            ),
+        ),
+        context=_context(),
+    )
+    records = calculate_drc_attribution(result, risk_weights_by_position={})
+    for r in records:
+        if r.method is not AttributionMethod.ANALYTICAL_EULER:
+            assert r.reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
+
+
 def _assert_reconciles(
-    records: tuple[DrcCapitalContribution, ...],
+    records: tuple[CapitalContribution, ...],
     total_drc: float,
 ) -> None:
     total = sum((record.contribution or 0.0) + record.residual for record in records)
     assert total == pytest.approx(total_drc)
 
 
-def _contribution(source_id: str, *, contribution: float) -> DrcCapitalContribution:
-    return DrcCapitalContribution(
+def _contribution(source_id: str, *, contribution: float) -> CapitalContribution:
+    return CapitalContribution(
         contribution_id=f"attr-{source_id}",
         source_id=source_id,
         source_level="net_jtd",
         bucket_key="CORPORATE",
-        category=DrcRiskClass.NON_SECURITISATION,
+        category=str(DrcRiskClass.NON_SECURITISATION),
         base_amount=0.0,
         marginal_multiplier=0.0,
         contribution=contribution,

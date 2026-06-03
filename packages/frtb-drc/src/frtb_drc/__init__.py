@@ -1,5 +1,7 @@
 """Standardised Approach default risk charge component."""
 
+from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
+
 from frtb_drc._version import __version__
 from frtb_drc.arrow_batch import (
     DRC_CTP_ARROW_COLUMN_SPECS,
@@ -48,7 +50,6 @@ from frtb_drc.ctp import (
     validate_ctp_context,
 )
 from frtb_drc.data_models import (
-    AttributionMethod,
     BranchMetadata,
     BranchType,
     BucketDrc,
@@ -57,7 +58,6 @@ from frtb_drc.data_models import (
     DefaultDirection,
     DrcBucketType,
     DrcCalculationContext,
-    DrcCapitalContribution,
     DrcCapitalResult,
     DrcCitation,
     DrcFairValueCapEvidence,
@@ -132,6 +132,7 @@ __all__ = [
     "BranchType",
     "BucketDefinition",
     "BucketDrc",
+    "CapitalContribution",
     "CapitalInput",
     "CategoryDrc",
     "CreditQuality",
@@ -142,7 +143,6 @@ __all__ = [
     "DrcBatchCapitalCalculation",
     "DrcBucketType",
     "DrcCalculationContext",
-    "DrcCapitalContribution",
     "DrcCapitalResult",
     "DrcCitation",
     "DrcFairValueCapEvidence",
@@ -165,6 +165,7 @@ __all__ = [
     "MaturityScaledJtd",
     "NetJtd",
     "NettingInput",
+    "ReconciliationStatus",
     "RejectedOffset",
     "RiskWeightRule",
     "SecuritisationNonCtpCalculation",

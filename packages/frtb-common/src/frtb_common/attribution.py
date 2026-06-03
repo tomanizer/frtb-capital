@@ -17,6 +17,19 @@ class AttributionMethod(StrEnum):
     UNSUPPORTED = "UNSUPPORTED"
 
 
+class ReconciliationStatus(StrEnum):
+    """Reconciliation state for a set of contribution records at one aggregation level.
+
+    A set is RECONCILED when ``sum(contribution) + sum(residual) == capital``
+    within ε = 1e-6 (relative to total capital).
+    """
+
+    RECONCILED = "RECONCILED"
+    PARTIAL_RESIDUAL = "PARTIAL_RESIDUAL"
+    UNRECONCILED = "UNRECONCILED"
+    UNKNOWN = "UNKNOWN"
+
+
 EnumT = TypeVar("EnumT", bound=StrEnum)
 
 
@@ -37,6 +50,11 @@ class CapitalContribution:
     Sign convention: ``base_amount`` and ``contribution`` are non-negative for
     positive capital charges, or signed according to the default-risk direction
     specified in the underlying component.
+
+    Audit fields (``citations``, ``input_hash``, ``profile_hash``,
+    ``reconciliation_status``) default to empty / UNKNOWN so existing callers
+    are unaffected.  Packages are encouraged to populate them for full
+    traceability; see ADR 0038.
     """
 
     contribution_id: str
@@ -50,14 +68,18 @@ class CapitalContribution:
     method: AttributionMethod | str
     residual: float = 0.0
     reason: str = ""
+    citations: tuple[str, ...] = ()
+    input_hash: str = ""
+    profile_hash: str = ""
+    reconciliation_status: ReconciliationStatus | str = ReconciliationStatus.UNKNOWN
 
     def __post_init__(self) -> None:
         coerced_method = _coerce_enum(self.method, AttributionMethod, "method")
-        object.__setattr__(
-            self,
-            "method",
-            coerced_method,
+        object.__setattr__(self, "method", coerced_method)
+        coerced_status = _coerce_enum(
+            self.reconciliation_status, ReconciliationStatus, "reconciliation_status"
         )
+        object.__setattr__(self, "reconciliation_status", coerced_status)
         if coerced_method == AttributionMethod.ANALYTICAL_EULER:
             if self.marginal_multiplier is None:
                 raise ValueError(

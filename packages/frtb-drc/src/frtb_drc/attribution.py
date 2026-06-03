@@ -5,14 +5,14 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 
+from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
+
 from frtb_drc._identifiers import slug_path as _slug
 from frtb_drc.data_models import (
-    AttributionMethod,
     BranchType,
     BucketDrc,
     CategoryDrc,
     DefaultDirection,
-    DrcCapitalContribution,
     DrcCapitalResult,
     DrcRiskClass,
     NetJtd,
@@ -27,11 +27,31 @@ def calculate_drc_attribution(
     *,
     risk_weights_by_position: Mapping[str, float],
     tolerance: float = _TOLERANCE,
-) -> tuple[DrcCapitalContribution, ...]:
-    """Calculate deterministic DRC attribution records without changing capital."""
+    input_hash: str = "",
+    profile_hash: str = "",
+) -> tuple[CapitalContribution, ...]:
+    """Calculate deterministic DRC attribution records without changing capital.
+
+    Parameters
+    ----------
+    result:
+        A fully populated ``DrcCapitalResult`` from a completed calculation run.
+    risk_weights_by_position:
+        Position-level risk weights used to decompose bucket capital via
+        analytical Euler attribution.
+    tolerance:
+        Absolute tolerance for the reconciliation check.
+    input_hash:
+        Hash of the canonical input snapshot to carry into each
+        ``CapitalContribution`` record for downstream audit traceability.
+        Pass ``result.input_hash`` when available.
+    profile_hash:
+        Hash of the rule profile used in the calculation.
+        Pass ``result.profile_hash`` when available.
+    """
 
     net_by_id = {record.net_jtd_id: record for record in result.net_jtds}
-    records: list[DrcCapitalContribution] = []
+    records: list[CapitalContribution] = []
     for category in result.categories:
         records.extend(
             _category_contributions(
@@ -39,6 +59,8 @@ def calculate_drc_attribution(
                 net_by_id=net_by_id,
                 risk_weights_by_position=risk_weights_by_position,
                 tolerance=tolerance,
+                input_hash=input_hash,
+                profile_hash=profile_hash,
             )
         )
     validate_attribution_reconciliation(result, tuple(records), tolerance=tolerance)
@@ -47,7 +69,7 @@ def calculate_drc_attribution(
 
 def validate_attribution_reconciliation(
     result: DrcCapitalResult,
-    records: tuple[DrcCapitalContribution, ...] | None = None,
+    records: tuple[CapitalContribution, ...] | None = None,
     *,
     tolerance: float = _TOLERANCE,
 ) -> None:
@@ -67,7 +89,9 @@ def _category_contributions(
     net_by_id: Mapping[str, NetJtd],
     risk_weights_by_position: Mapping[str, float],
     tolerance: float,
-) -> tuple[DrcCapitalContribution, ...]:
+    input_hash: str,
+    profile_hash: str,
+) -> tuple[CapitalContribution, ...]:
     risk_class = DrcRiskClass(category.risk_class)
     if _has_branch(category, BranchType.FLOOR):
         return (
@@ -78,6 +102,8 @@ def _category_contributions(
                 category=risk_class,
                 residual=category.capital,
                 reason="category floor makes exact Euler attribution unsupported",
+                input_hash=input_hash,
+                profile_hash=profile_hash,
             ),
         )
     if not category.bucket_results:
@@ -89,11 +115,13 @@ def _category_contributions(
                 category=risk_class,
                 residual=category.capital,
                 reason="empty category capital residual",
+                input_hash=input_hash,
+                profile_hash=profile_hash,
             ),
         )
 
     bucket_factors = _bucket_category_factors(category)
-    records: list[DrcCapitalContribution] = []
+    records: list[CapitalContribution] = []
     category_contribution = 0.0
     category_weighted_short = sum(
         factor * item.weighted_short
@@ -112,6 +140,8 @@ def _category_contributions(
             weighted_short_factor=weighted_short_factor,
             net_by_id=net_by_id,
             risk_weights_by_position=risk_weights_by_position,
+            input_hash=input_hash,
+            profile_hash=profile_hash,
         )
         records.extend(bucket_records)
         category_contribution += _record_sum(bucket_records)
@@ -126,6 +156,8 @@ def _category_contributions(
                 category=risk_class,
                 residual=residual,
                 reason=("category residual reconciles analytical contribution records to capital"),
+                input_hash=input_hash,
+                profile_hash=profile_hash,
             )
         )
     return tuple(records)
@@ -139,7 +171,9 @@ def _bucket_contributions(
     weighted_short_factor: float,
     net_by_id: Mapping[str, NetJtd],
     risk_weights_by_position: Mapping[str, float],
-) -> tuple[DrcCapitalContribution, ...]:
+    input_hash: str,
+    profile_hash: str,
+) -> tuple[CapitalContribution, ...]:
     if bucket.floor_applied or _has_branch(bucket, BranchType.FLOOR):
         return (
             _unsupported_record(
@@ -149,6 +183,9 @@ def _bucket_contributions(
                 category=category,
                 residual=category_factor * bucket.capital,
                 reason="bucket floor makes exact Euler attribution unsupported",
+                citations=bucket.citations,
+                input_hash=input_hash,
+                profile_hash=profile_hash,
             ),
         )
     if bucket.hbr.denominator == 0.0 or _has_branch(bucket.hbr, BranchType.ZERO_DENOMINATOR):
@@ -160,13 +197,16 @@ def _bucket_contributions(
                 category=category,
                 residual=category_factor * bucket.capital,
                 reason="zero HBR denominator makes exact Euler attribution unsupported",
+                citations=bucket.citations,
+                input_hash=input_hash,
+                profile_hash=profile_hash,
             ),
         )
 
     aggregate_long = bucket.hbr.aggregate_net_long
     aggregate_short = bucket.hbr.aggregate_net_short
     denominator_sq = bucket.hbr.denominator * bucket.hbr.denominator
-    records: list[DrcCapitalContribution] = []
+    records: list[CapitalContribution] = []
     for net_jtd_id in bucket.net_jtd_ids:
         net_jtd = net_by_id.get(net_jtd_id)
         if net_jtd is None:
@@ -178,6 +218,9 @@ def _bucket_contributions(
                     category=category,
                     residual=category_factor * bucket.capital,
                     reason="net JTD record is missing; exact Euler attribution is unsupported",
+                    citations=bucket.citations,
+                    input_hash=input_hash,
+                    profile_hash=profile_hash,
                 ),
             )
         risk_weight = _net_risk_weight(net_jtd, risk_weights_by_position)
@@ -193,6 +236,9 @@ def _bucket_contributions(
                         "net JTD risk weight lineage is not unique; exact Euler "
                         "attribution is unsupported"
                     ),
+                    citations=bucket.citations,
+                    input_hash=input_hash,
+                    profile_hash=profile_hash,
                 ),
             )
         if DefaultDirection(net_jtd.net_direction) == DefaultDirection.LONG:
@@ -203,17 +249,21 @@ def _bucket_contributions(
             multiplier -= category_factor * bucket.hbr.ratio * risk_weight
         contribution = net_jtd.net_amount * multiplier
         records.append(
-            DrcCapitalContribution(
+            CapitalContribution(
                 contribution_id=f"attr-{_slug(net_jtd.net_jtd_id)}",
                 source_id=net_jtd.net_jtd_id,
                 source_level="net_jtd",
                 bucket_key=bucket.bucket_key,
-                category=category,
+                category=str(category),
                 base_amount=net_jtd.net_amount,
                 marginal_multiplier=multiplier,
                 contribution=contribution,
                 method=AttributionMethod.ANALYTICAL_EULER,
                 reason="analytical Euler over stable DRC bucket/category branch",
+                citations=bucket.citations,
+                input_hash=input_hash,
+                profile_hash=profile_hash,
+                reconciliation_status=ReconciliationStatus.RECONCILED,
             )
         )
     return tuple(records)
@@ -258,19 +308,26 @@ def _unsupported_record(
     category: DrcRiskClass,
     residual: float,
     reason: str,
-) -> DrcCapitalContribution:
-    return DrcCapitalContribution(
+    citations: tuple[str, ...] = (),
+    input_hash: str = "",
+    profile_hash: str = "",
+) -> CapitalContribution:
+    return CapitalContribution(
         contribution_id=f"attr-unsupported-{_slug(source_id)}",
         source_id=source_id,
         source_level=source_level,
         bucket_key=bucket_key,
-        category=category,
+        category=str(category),
         base_amount=0.0,
         marginal_multiplier=None,
         contribution=None,
         method=AttributionMethod.UNSUPPORTED,
         residual=residual,
         reason=reason,
+        citations=citations,
+        input_hash=input_hash,
+        profile_hash=profile_hash,
+        reconciliation_status=ReconciliationStatus.PARTIAL_RESIDUAL,
     )
 
 
@@ -282,23 +339,30 @@ def _residual_record(
     category: DrcRiskClass,
     residual: float,
     reason: str,
-) -> DrcCapitalContribution:
-    return DrcCapitalContribution(
+    citations: tuple[str, ...] = (),
+    input_hash: str = "",
+    profile_hash: str = "",
+) -> CapitalContribution:
+    return CapitalContribution(
         contribution_id=f"attr-residual-{_slug(source_id)}",
         source_id=source_id,
         source_level=source_level,
         bucket_key=bucket_key,
-        category=category,
+        category=str(category),
         base_amount=0.0,
         marginal_multiplier=None,
         contribution=None,
         method=AttributionMethod.RESIDUAL,
         residual=residual,
         reason=reason,
+        citations=citations,
+        input_hash=input_hash,
+        profile_hash=profile_hash,
+        reconciliation_status=ReconciliationStatus.PARTIAL_RESIDUAL,
     )
 
 
-def _record_sum(records: tuple[DrcCapitalContribution, ...]) -> float:
+def _record_sum(records: tuple[CapitalContribution, ...]) -> float:
     return math.fsum((record.contribution or 0.0) + record.residual for record in records)
 
 
