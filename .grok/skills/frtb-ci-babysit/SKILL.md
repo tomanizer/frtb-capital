@@ -91,7 +91,7 @@ Match any of:
 - `24 hour`
 - `rate limit` / `quota exceeded`
 - `not available` (in a Gemini/Code Assist context)
-- No Gemini review after **45 minutes** from first green CI on the current SHA
+- No Gemini review after **5 minutes** from first green CI on the current SHA
 
 ### Copilot unavailable (skip Phase 3)
 
@@ -209,8 +209,8 @@ gh pr view $PR --json reviews --jq '
 - If a review arrives: triage findings (fix + validate, or document false positives).
   Set `PHASE2_STATUS=gemini`. Go to **2d**.
 - If PR text matches **Gemini unavailable** patterns: skip Gemini. Go to **2b**.
-- If **45 minutes** elapse with no Gemini review and no availability error: treat as
-  unavailable; go to **2b**.
+- If **5 minutes** elapse with no Gemini review and no availability error: treat as
+  unavailable; go to **2b**. Recheck every **30–60 seconds** during the window.
 
 ### 2b — Fallback reviews (Gemini unavailable only)
 
@@ -233,7 +233,7 @@ poll window, retry once with `cursor review` or `bugbot run` (alternate triggers
 in [Cursor Bugbot docs](https://cursor.com/docs/bugbot)) before moving to
 Fallback 2.
 
-Poll up to **45 minutes** for:
+Poll up to **5 minutes** (recheck every **30–60 seconds**) for:
 
 - `Cursor Bugbot` check on the PR, or
 - review/comments from `cursor[bot]`, `cursor`, or `bugbot` logins.
@@ -305,7 +305,8 @@ gh api "repos/$REPO/pulls/$PR/comments" \
 
 Only when Copilot is expected to be available:
 
-- Wait up to **45 minutes** after `gh pr ready` for Copilot review or inline comments.
+- Wait up to **5 minutes** after `gh pr ready` for Copilot review or inline comments
+  (recheck every **30–60 seconds**).
 - If credit/quota messages appear during the wait: `COPILOT_STATUS=skipped`.
 - Otherwise triage findings like Phase 2; push fixes; confirm CI green.
 
