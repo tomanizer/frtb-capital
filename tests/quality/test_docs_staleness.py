@@ -55,3 +55,58 @@ def test_docs_staleness_flags_generic_prototype_wording(tmp_path: Path, monkeypa
     findings = staleness.scan_current_docs()
 
     assert [finding.rule for finding in findings] == ["generic-prototype-wording"]
+
+
+def test_docs_staleness_scans_top_level_docs_readme(tmp_path: Path, monkeypatch) -> None:
+    repo_root = tmp_path / "repo"
+    docs = repo_root / "docs"
+    docs.mkdir(parents=True)
+    current_doc = docs / "README.md"
+    current_doc.write_text(
+        "This validation-pack page will add future docs.\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(staleness, "ROOT", repo_root)
+
+    findings = staleness.scan_current_docs()
+
+    assert [finding.rule for finding in findings] == ["future-docs-needed"]
+
+
+def test_docs_staleness_future_docs_rule_is_order_independent(
+    tmp_path: Path, monkeypatch
+) -> None:
+    repo_root = tmp_path / "repo"
+    docs = repo_root / "docs"
+    docs.mkdir(parents=True)
+    current_doc = docs / "VALIDATION_PACK.md"
+    current_doc.write_text(
+        "We need to add future docs for this package.\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(staleness, "ROOT", repo_root)
+
+    findings = staleness.scan_current_docs()
+
+    assert [finding.rule for finding in findings] == ["future-docs-needed"]
+
+
+def test_docs_staleness_flags_plural_placeholder_wording(
+    tmp_path: Path, monkeypatch
+) -> None:
+    repo_root = tmp_path / "repo"
+    docs = repo_root / "docs" / "modules"
+    docs.mkdir(parents=True)
+    current_doc = docs / "README.md"
+    current_doc.write_text(
+        "These placeholders still describe current package status.\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(staleness, "ROOT", repo_root)
+
+    findings = staleness.scan_current_docs()
+
+    assert [finding.rule for finding in findings] == ["placeholder-without-status"]

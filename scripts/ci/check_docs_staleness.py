@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 CURRENT_DOC_GLOBS = (
+    "docs/README.md",
     "docs/VALIDATION_PACK.md",
     "docs/modules/README.md",
     "docs/modules/*/README.md",
@@ -62,8 +63,9 @@ STALE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "future-docs-needed",
         re.compile(
-            r"\b(future docs?|future documentation|validation-pack pages?)\b.*\b"
-            r"(need|needs|should|must|will)\b.*\b(add|added|create|created|exist)",
+            r"^(?=.*\b(?:future docs?|future documentation|validation-pack pages?)\b)"
+            r"(?=.*\b(?:need|needs|should|must|will)\b)"
+            r"(?=.*\b(?:add|added|create|created|exist)\b)",
             re.IGNORECASE,
         ),
     ),
@@ -85,7 +87,7 @@ STALE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
 )
 
-PLACEHOLDER_PATTERN = re.compile(r"\bplaceholder\b", re.IGNORECASE)
+PLACEHOLDER_PATTERN = re.compile(r"\bplaceholders?\b", re.IGNORECASE)
 
 
 def _is_allowlisted(path: Path) -> bool:
