@@ -16,6 +16,7 @@ from types import MappingProxyType
 from typing import TypeVar
 
 from frtb_common import AttributionMethod, CapitalContribution
+from frtb_common.hashing import stable_json_hash
 
 __all__ = [
     "ArtifactRef",
@@ -31,7 +32,13 @@ __all__ = [
     "NodeType",
     "ResultBundle",
     "ResultStoreContractError",
+    "RunStatus",
+    "RunStatusEvent",
     "StorageBackend",
+    "canonical_run_group_identity_payload",
+    "canonical_run_identity_payload",
+    "generate_run_group_id",
+    "generate_run_id",
 ]
 
 
@@ -105,7 +112,101 @@ class ArtifactType(StrEnum):
     OTHER = "OTHER"
 
 
+class RunStatus(StrEnum):
+    """Append-only lifecycle status for a committed calculation run."""
+
+    CANDIDATE = "CANDIDATE"
+    VALIDATED = "VALIDATED"
+    OFFICIAL = "OFFICIAL"
+    SUPERSEDED = "SUPERSEDED"
+    REJECTED = "REJECTED"
+
+
 EnumT = TypeVar("EnumT", bound=StrEnum)
+
+
+def canonical_run_identity_payload(
+    *,
+    as_of_date: date,
+    regime_id: str,
+    calculation_scope: str,
+    input_snapshot_id: str,
+    calculation_policy_id: str,
+    engine_version: str,
+    code_version: str,
+) -> Mapping[str, object]:
+    """Return the canonical payload used to derive a run storage id."""
+
+    _require_plain_date(as_of_date, "as_of_date")
+    for field_name, value in (
+        ("regime_id", regime_id),
+        ("calculation_scope", calculation_scope),
+        ("input_snapshot_id", input_snapshot_id),
+        ("calculation_policy_id", calculation_policy_id),
+        ("engine_version", engine_version),
+        ("code_version", code_version),
+    ):
+        _require_non_empty_text(value, field_name)
+    return MappingProxyType(
+        {
+            "as_of_date": as_of_date.isoformat(),
+            "regime_id": regime_id,
+            "calculation_scope": calculation_scope,
+            "input_snapshot_id": input_snapshot_id,
+            "calculation_policy_id": calculation_policy_id,
+            "engine_version": engine_version,
+            "code_version": code_version,
+        }
+    )
+
+
+def canonical_run_group_identity_payload(
+    *,
+    as_of_date: date,
+    calculation_scope: str,
+    input_snapshot_id: str,
+    calculation_policy_group_id: str,
+    engine_version: str,
+    code_version: str,
+    group_purpose: str,
+) -> Mapping[str, object]:
+    """Return the canonical payload used to link comparable regime runs."""
+
+    _require_plain_date(as_of_date, "as_of_date")
+    for field_name, value in (
+        ("calculation_scope", calculation_scope),
+        ("input_snapshot_id", input_snapshot_id),
+        ("calculation_policy_group_id", calculation_policy_group_id),
+        ("engine_version", engine_version),
+        ("code_version", code_version),
+        ("group_purpose", group_purpose),
+    ):
+        _require_non_empty_text(value, field_name)
+    return MappingProxyType(
+        {
+            "as_of_date": as_of_date.isoformat(),
+            "calculation_scope": calculation_scope,
+            "input_snapshot_id": input_snapshot_id,
+            "calculation_policy_group_id": calculation_policy_group_id,
+            "engine_version": engine_version,
+            "code_version": code_version,
+            "group_purpose": group_purpose,
+        }
+    )
+
+
+def generate_run_id(identity_payload: Mapping[str, object]) -> str:
+    """Generate the full deterministic storage id for a run identity payload."""
+
+    _require_mapping(identity_payload, "identity_payload")
+    return stable_json_hash(identity_payload)
+
+
+def generate_run_group_id(identity_payload: Mapping[str, object]) -> str:
+    """Generate the full deterministic storage id for a run-group payload."""
+
+    _require_mapping(identity_payload, "run_group_identity_payload")
+    return stable_json_hash(identity_payload)
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,6 +223,9 @@ class CalculationRun:
     code_version: str
     calculation_policy_id: str
     created_at: datetime
+    run_group_id: str | None = None
+    identity_payload: Mapping[str, object] = field(default_factory=dict)
+    run_group_identity_payload: Mapping[str, object] = field(default_factory=dict)
     metadata: Mapping[str, object] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -138,7 +242,144 @@ class CalculationRun:
             raise ResultStoreContractError("created_at must be a datetime", field="created_at")
         if self.created_at.tzinfo is None:
             raise ResultStoreContractError("created_at must be timezone-aware", field="created_at")
+        _validate_optional_text(self.run_group_id, "run_group_id")
+        _freeze_mapping(self, "identity_payload", self.identity_payload)
+        _freeze_mapping(self, "run_group_identity_payload", self.run_group_identity_payload)
+        if self.identity_payload:
+            expected_run_id = generate_run_id(self.identity_payload)
+            if self.run_id != expected_run_id:
+                raise ResultStoreContractError(
+                    "run_id does not match canonical identity payload",
+                    field="run_id",
+                )
+        if self.run_group_identity_payload:
+            expected_group_id = generate_run_group_id(self.run_group_identity_payload)
+            if self.run_group_id != expected_group_id:
+                raise ResultStoreContractError(
+                    "run_group_id does not match canonical group identity payload",
+                    field="run_group_id",
+                )
         _freeze_metadata(self, self.metadata)
+
+    @classmethod
+    def from_identity(
+        cls,
+        *,
+        as_of_date: date,
+        regime_id: str,
+        base_currency: str,
+        input_snapshot_id: str,
+        calculation_scope: str,
+        engine_version: str,
+        code_version: str,
+        calculation_policy_id: str,
+        created_at: datetime,
+        run_group_id: str | None = None,
+        run_group_identity_payload: Mapping[str, object] | None = None,
+        metadata: Mapping[str, object] | None = None,
+    ) -> CalculationRun:
+        """Create a run whose storage id is generated from canonical identity."""
+
+        if run_group_id is None and run_group_identity_payload:
+            run_group_id = generate_run_group_id(run_group_identity_payload)
+        identity_payload = canonical_run_identity_payload(
+            as_of_date=as_of_date,
+            regime_id=regime_id,
+            calculation_scope=calculation_scope,
+            input_snapshot_id=input_snapshot_id,
+            calculation_policy_id=calculation_policy_id,
+            engine_version=engine_version,
+            code_version=code_version,
+        )
+        return cls(
+            run_id=generate_run_id(identity_payload),
+            as_of_date=as_of_date,
+            regime_id=regime_id,
+            base_currency=base_currency,
+            input_snapshot_id=input_snapshot_id,
+            calculation_scope=calculation_scope,
+            engine_version=engine_version,
+            code_version=code_version,
+            calculation_policy_id=calculation_policy_id,
+            created_at=created_at,
+            run_group_id=run_group_id,
+            identity_payload=identity_payload,
+            run_group_identity_payload=(
+                {} if run_group_identity_payload is None else run_group_identity_payload
+            ),
+            metadata={} if metadata is None else metadata,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class RunStatusEvent:
+    """Append-only lifecycle transition for a committed run."""
+
+    event_id: str
+    run_id: str
+    from_status: RunStatus | str | None
+    to_status: RunStatus | str
+    event_time: datetime
+    actor: str
+    reason_code: str
+    reason_text: str
+    external_evidence_ref: str | None = None
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.event_id, "event_id")
+        _require_non_empty_text(self.run_id, "run_id")
+        if self.from_status is not None:
+            object.__setattr__(
+                self,
+                "from_status",
+                _coerce_enum(self.from_status, RunStatus, "from_status"),
+            )
+        object.__setattr__(self, "to_status", _coerce_enum(self.to_status, RunStatus, "to_status"))
+        if not isinstance(self.event_time, datetime):
+            raise ResultStoreContractError("event_time must be a datetime", field="event_time")
+        if self.event_time.tzinfo is None:
+            raise ResultStoreContractError("event_time must be timezone-aware", field="event_time")
+        _require_non_empty_text(self.actor, "actor")
+        _require_non_empty_text(self.reason_code, "reason_code")
+        _require_non_empty_text(self.reason_text, "reason_text")
+        _validate_optional_text(self.external_evidence_ref, "external_evidence_ref")
+
+    @classmethod
+    def transition(
+        cls,
+        *,
+        run_id: str,
+        from_status: RunStatus | str | None,
+        to_status: RunStatus | str,
+        event_time: datetime,
+        actor: str,
+        reason_code: str,
+        reason_text: str,
+        external_evidence_ref: str | None = None,
+    ) -> RunStatusEvent:
+        """Create a transition with a deterministic event id."""
+
+        payload = {
+            "run_id": run_id,
+            "from_status": None if from_status is None else RunStatus(from_status).value,
+            "to_status": RunStatus(to_status).value,
+            "event_time": event_time.isoformat(),
+            "actor": actor,
+            "reason_code": reason_code,
+            "reason_text": reason_text,
+            "external_evidence_ref": external_evidence_ref,
+        }
+        return cls(
+            event_id=stable_json_hash(payload),
+            run_id=run_id,
+            from_status=from_status,
+            to_status=to_status,
+            event_time=event_time,
+            actor=actor,
+            reason_code=reason_code,
+            reason_text=reason_text,
+            external_evidence_ref=external_evidence_ref,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -470,6 +711,11 @@ def _require_non_empty_text(value: object, field: str) -> None:
         raise ResultStoreContractError(f"{field} must be non-empty text", field=field)
 
 
+def _require_mapping(value: object, field: str) -> None:
+    if not isinstance(value, Mapping):
+        raise ResultStoreContractError(f"{field} must be a mapping", field=field)
+
+
 def _validate_optional_text(value: object, field: str) -> None:
     if value is not None and (not isinstance(value, str) or not value):
         raise ResultStoreContractError(f"{field} must be non-empty text when set", field=field)
@@ -522,3 +768,9 @@ def _freeze_metadata(instance: object, metadata: Mapping[str, object]) -> None:
     if not isinstance(metadata, Mapping):
         raise ResultStoreContractError("metadata must be a mapping", field="metadata")
     object.__setattr__(instance, "metadata", MappingProxyType(dict(metadata)))
+
+
+def _freeze_mapping(instance: object, field_name: str, value: Mapping[str, object]) -> None:
+    if not isinstance(value, Mapping):
+        raise ResultStoreContractError(f"{field_name} must be a mapping", field=field_name)
+    object.__setattr__(instance, field_name, MappingProxyType(dict(value)))

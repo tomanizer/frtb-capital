@@ -22,6 +22,12 @@ from frtb_result_store import (
     NodeType,
     ResultBundle,
     ResultStoreContractError,
+    RunStatus,
+    RunStatusEvent,
+    canonical_run_group_identity_payload,
+    canonical_run_identity_payload,
+    generate_run_group_id,
+    generate_run_id,
 )
 
 
@@ -46,6 +52,135 @@ def test_top_level_import_does_not_load_duckdb_backend() -> None:
     )
 
     assert result.stdout.strip() == "False"
+
+
+def test_canonical_run_identity_uses_full_stable_digest() -> None:
+    payload = canonical_run_identity_payload(
+        as_of_date=date(2026, 6, 3),
+        regime_id="US_NPR_2_0",
+        calculation_scope="FIRM",
+        input_snapshot_id="snapshot-001",
+        calculation_policy_id="policy-us-npr",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+    )
+    same_payload = canonical_run_identity_payload(
+        as_of_date=date(2026, 6, 3),
+        regime_id="US_NPR_2_0",
+        calculation_scope="FIRM",
+        input_snapshot_id="snapshot-001",
+        calculation_policy_id="policy-us-npr",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+    )
+    different_regime = canonical_run_identity_payload(
+        as_of_date=date(2026, 6, 3),
+        regime_id="EU_CRR3",
+        calculation_scope="FIRM",
+        input_snapshot_id="snapshot-001",
+        calculation_policy_id="policy-eu-crr3",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+    )
+    different_snapshot = canonical_run_identity_payload(
+        as_of_date=date(2026, 6, 3),
+        regime_id="US_NPR_2_0",
+        calculation_scope="FIRM",
+        input_snapshot_id="snapshot-002",
+        calculation_policy_id="policy-us-npr",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+    )
+
+    run_id = generate_run_id(payload)
+
+    assert run_id == generate_run_id(same_payload)
+    assert len(run_id) == 64
+    assert run_id != generate_run_id(different_regime)
+    assert run_id != generate_run_id(different_snapshot)
+
+
+def test_run_group_identity_links_comparable_regime_runs() -> None:
+    group_payload = canonical_run_group_identity_payload(
+        as_of_date=date(2026, 6, 3),
+        calculation_scope="FIRM",
+        input_snapshot_id="snapshot-001",
+        calculation_policy_group_id="global-policy-comparison",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+        group_purpose="regime-comparison",
+    )
+    group_id = generate_run_group_id(group_payload)
+    us_run = CalculationRun.from_identity(
+        as_of_date=date(2026, 6, 3),
+        regime_id="US_NPR_2_0",
+        base_currency="USD",
+        input_snapshot_id="snapshot-001",
+        calculation_scope="FIRM",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+        calculation_policy_id="policy-us-npr",
+        created_at=datetime(2026, 6, 3, 12, 0, tzinfo=UTC),
+        run_group_id=group_id,
+        run_group_identity_payload=group_payload,
+    )
+    eu_run = CalculationRun.from_identity(
+        as_of_date=date(2026, 6, 3),
+        regime_id="EU_CRR3",
+        base_currency="USD",
+        input_snapshot_id="snapshot-001",
+        calculation_scope="FIRM",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+        calculation_policy_id="policy-eu-crr3",
+        created_at=datetime(2026, 6, 3, 12, 1, tzinfo=UTC),
+        run_group_identity_payload=group_payload,
+    )
+
+    assert us_run.run_group_id == eu_run.run_group_id
+    assert us_run.run_id != eu_run.run_id
+
+
+def test_run_identity_rejects_mismatched_canonical_payload() -> None:
+    payload = canonical_run_identity_payload(
+        as_of_date=date(2026, 6, 3),
+        regime_id="US_NPR_2_0",
+        calculation_scope="FIRM",
+        input_snapshot_id="snapshot-001",
+        calculation_policy_id="policy-us-npr",
+        engine_version="frtb-suite-0.1",
+        code_version="abc123",
+    )
+
+    with pytest.raises(ResultStoreContractError, match="run_id does not match"):
+        CalculationRun(
+            run_id="not-the-generated-id",
+            as_of_date=date(2026, 6, 3),
+            regime_id="US_NPR_2_0",
+            base_currency="USD",
+            input_snapshot_id="snapshot-001",
+            calculation_scope="FIRM",
+            engine_version="frtb-suite-0.1",
+            code_version="abc123",
+            calculation_policy_id="policy-us-npr",
+            created_at=datetime(2026, 6, 3, 12, 0, tzinfo=UTC),
+            identity_payload=payload,
+        )
+
+
+def test_status_event_requires_valid_transition_payload() -> None:
+    event = RunStatusEvent.transition(
+        run_id="run-001",
+        from_status=None,
+        to_status=RunStatus.CANDIDATE,
+        event_time=datetime(2026, 6, 3, 12, 0, tzinfo=UTC),
+        actor="result-store",
+        reason_code="RUN_COMMITTED",
+        reason_text="Run committed",
+    )
+
+    assert len(event.event_id) == 64
+    assert event.to_status is RunStatus.CANDIDATE
 
 
 def test_result_bundle_validates_graph_references() -> None:

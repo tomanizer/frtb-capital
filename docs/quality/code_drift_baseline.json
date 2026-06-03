@@ -273,6 +273,14 @@
       "name": "test_selection_result_validates_candidate_mapping",
       "path": "packages/frtb-ima/tests/test_stress_periods.py"
     },
+    "packages/frtb-result-store/tests/test_duckdb_parquet_store.py:_bundle": {
+      "end_line": 398,
+      "key": "packages/frtb-result-store/tests/test_duckdb_parquet_store.py:_bundle",
+      "line": 275,
+      "lines": 124,
+      "name": "_bundle",
+      "path": "packages/frtb-result-store/tests/test_duckdb_parquet_store.py"
+    },
     "packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py:run_benchmark": {
       "end_line": 253,
       "key": "packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py:run_benchmark",
@@ -454,13 +462,13 @@
     "drift_marker_matches": 31,
     "duplicate_function_groups": 36,
     "duplicate_function_instances": 57,
-    "large_function_count": 56,
+    "large_function_count": 57,
     "other_python_loc": 5401,
-    "python_files": 433,
-    "script_python_loc": 5023,
-    "source_python_loc": 55805,
-    "test_python_loc": 37080,
-    "total_python_loc": 103309
+    "python_files": 439,
+    "script_python_loc": 5054,
+    "source_python_loc": 57500,
+    "test_python_loc": 37741,
+    "total_python_loc": 105696
   },
   "oversized_files": {
     "packages/frtb-common/src/frtb_common/crif.py": {
@@ -583,6 +591,16 @@
       "lines": 823,
       "role": "test"
     },
+    "packages/frtb-result-store/src/frtb_result_store/io.py": {
+      "limit": 600,
+      "lines": 1059,
+      "role": "source"
+    },
+    "packages/frtb-result-store/src/frtb_result_store/model.py": {
+      "limit": 600,
+      "lines": 774,
+      "role": "source"
+    },
     "packages/frtb-rrao/scripts/generate_fixture.py": {
       "limit": 600,
       "lines": 626,
@@ -670,7 +688,7 @@
     },
     "scripts/ci/check_package_maturity.py": {
       "limit": 500,
-      "lines": 584,
+      "lines": 609,
       "role": "script"
     },
     "scripts/ci/check_simplification_drift.py": {
