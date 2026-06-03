@@ -27,3 +27,8 @@ Follow those files as the source of truth. In particular:
 
 For IMA work, read `packages/frtb-ima/AGENTS.md` and
 `packages/frtb-ima/CLAUDE.md` before editing IMA code.
+
+For PR babysitting (CI stabilisation, Gemini/Copilot review incorporation, final
+audit), read and follow `.grok/skills/frtb-ci-babysit/SKILL.md`. Use
+`make agent-new AGENT=copilot TASK=<task-name>` when the worktree guard fails.
+Requires the `gh` CLI.

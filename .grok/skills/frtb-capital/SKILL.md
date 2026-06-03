@@ -35,3 +35,6 @@ directly; this skill is a short repo-specific reminder and entrypoint.
 
 For IMA work, read `packages/frtb-ima/AGENTS.md` and
 `packages/frtb-ima/CLAUDE.md` before editing IMA code.
+
+For PR babysitting, use `/frtb-ci-babysit` or
+`.grok/skills/frtb-ci-babysit/SKILL.md`.
