@@ -7,6 +7,12 @@ plane. It is not the full plane design. It covers only what must land in a
 single reviewable PR: a package maturity registry, an import smoke check, a
 maturity evidence check, Make targets, a CI job, and unit tests.
 
+This is a historical implementation requirement record, not the current package
+status registry. Current package maturity, metadata objects, entrypoints, and
+required evidence are maintained in
+[`package_maturity.toml`](package_maturity.toml) and the generated
+[`PACKAGE_STATUS.md`](PACKAGE_STATUS.md).
+
 Follow-on controls — regulatory scanner, diff-sensitive evidence routing, AI
 advisory review, reusable agent skills — are listed in
 [Follow-on controls](#follow-on-controls) with explicit phases, dependencies,
@@ -15,9 +21,10 @@ phase requires its own spec before implementation begins.
 
 ---
 
-## Current repo facts
+## First-PR baseline facts
 
-The requirements below are based on `origin/main` after PR #130:
+The first implementation requirements below were based on `origin/main` after
+PR #130:
 
 - all workspace packages import successfully when the locked workspace is
   synced;
@@ -26,11 +33,16 @@ The requirements below are based on `origin/main` after PR #130:
   RRAO v1 evidence;
 - `frtb-drc` has a partial non-securitisation runtime path and is marked
   `PARTIAL` / `PENDING`;
-- `frtb-sbm` and `frtb-cva` are scaffolded packages that intentionally fail
-  calculation entry points;
-- `frtb-orchestration` is a partial suite-level aggregation boundary, not a full
-  model package;
+- `frtb-sbm` and `frtb-cva` were scaffolded packages that intentionally failed
+  calculation entry points at that milestone;
+- `frtb-orchestration` was a partial suite-level aggregation boundary, not a
+  full model package;
 - `frtb-common` is a shared library, not a capital component.
+
+Current `origin/main` has since promoted `frtb-sbm`, `frtb-drc`, and `frtb-cva`
+to `partial_runtime`, `frtb-orchestration` to `orchestration_implemented`, and
+`frtb-result-store` to `result_store_partial`; consult the registry files linked
+above for authoritative live status.
 
 ---
 
@@ -65,7 +77,7 @@ The first PR must not add:
 
 ## Maturity profiles
 
-The maturity registry must use these profile names:
+The first implementation PR used these profile names:
 
 | Profile | Packages | Meaning |
 | --- | --- | --- |
@@ -75,8 +87,10 @@ The maturity registry must use these profile names:
 | `orchestration_partial` | `frtb-orchestration` | Suite coordination package with partial aggregation contracts. |
 | `shared` | `frtb-common` | Shared library used by capital packages. |
 
-The checker must fail for unknown profile names. Profile names must be stable
-because CI, docs, and future agent instructions will refer to them.
+The current checker also supports later profiles such as
+`orchestration_implemented` and `result_store_partial`. The checker must fail
+for unknown profile names. Profile names must be stable because CI, docs, and
+future agent instructions refer to them.
 
 ---
 
@@ -106,7 +120,7 @@ id = "public-api"
 path = "packages/frtb-rrao/tests/test_public_api.py"
 ```
 
-Required fields for every package:
+Required fields for every package in the first implementation registry:
 
 - `package`: distribution/package directory name;
 - `import_name`: Python import root;
@@ -114,6 +128,9 @@ Required fields for every package:
 - `module_docs`: module documentation root, where applicable;
 - `maturity`: one of the supported profile names;
 - `component_type`: `capital`, `orchestration`, or `shared`.
+
+Later registry versions may add component types such as `result_store`; the
+current accepted set is enforced by `scripts/ci/check_package_maturity.py`.
 
 Optional fields:
 
@@ -260,6 +277,8 @@ and validate:
   - `partial_runtime` → `PARTIAL`;
   - `scaffolded` → `SCAFFOLDED`;
   - `orchestration_partial` → `PARTIAL`;
+  - later profiles use the mapping encoded in
+    `scripts/ci/check_package_maturity.py`;
 - validation-status expectations are consistent:
   - `implemented` must be `AVAILABLE`;
   - `scaffolded` must be `NOT_STARTED`;
@@ -320,7 +339,7 @@ acceptable evidence.
 
 ### `scaffolded`
 
-Required for `frtb-sbm` and `frtb-cva`:
+Required for `frtb-sbm` and `frtb-cva` at the first implementation milestone:
 
 - package imports successfully;
 - package `README.md`;
@@ -337,7 +356,7 @@ Required for `frtb-sbm` and `frtb-cva`:
 
 ### `orchestration_partial`
 
-Required for `frtb-orchestration`:
+Required for `frtb-orchestration` at the first implementation milestone:
 
 - package imports successfully;
 - package `README.md`;
@@ -591,8 +610,8 @@ logs.
 
 Define the rules for flipping a package maturity in the registry:
 
-- An ADR entry is required for any promotion (`scaffolded` → `partial_runtime`
-  → `implemented`).
+- An ADR entry is required for any promotion, such as `scaffolded` →
+  `partial_runtime` → `implemented`.
 - The ADR must reference the evidence files that justify the promotion.
 - A CODEOWNERS rule restricting `docs/quality/package_maturity.toml` to
   designated reviewers may be added when the registry feeds external or

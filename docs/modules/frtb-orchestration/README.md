@@ -31,6 +31,10 @@ packages. It owns the cross-component boundary and implements:
 
 ## Public API
 
+The stable top-level integration surface is defined in
+[PUBLIC_API.md](PUBLIC_API.md). The examples below show the primary suite
+capital workflow.
+
 ### `calculate_suite_capital`
 
 ```python
