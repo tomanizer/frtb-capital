@@ -1,7 +1,7 @@
 """Tests for unified CapitalContribution primitives."""
 
 import pytest
-from frtb_common.attribution import AttributionMethod, CapitalContribution
+from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
 
 
 def test_capital_contribution_creation() -> None:
@@ -28,6 +28,11 @@ def test_capital_contribution_creation() -> None:
     assert contrib.method == AttributionMethod.ANALYTICAL_EULER
     assert contrib.residual == 0.0
     assert contrib.reason == "analytical Euler"
+    # new audit fields default to empty / UNKNOWN
+    assert contrib.citations == ()
+    assert contrib.input_hash == ""
+    assert contrib.profile_hash == ""
+    assert contrib.reconciliation_status == ReconciliationStatus.UNKNOWN
 
     d = contrib.as_dict()
     assert d["contribution_id"] == "contrib-1"
@@ -41,6 +46,10 @@ def test_capital_contribution_creation() -> None:
     assert d["method"] == "ANALYTICAL_EULER"
     assert d["residual"] == 0.0
     assert d["reason"] == "analytical Euler"
+    assert d["citations"] == []
+    assert d["input_hash"] == ""
+    assert d["profile_hash"] == ""
+    assert d["reconciliation_status"] == "UNKNOWN"
 
 
 def test_capital_contribution_method_coercion() -> None:
@@ -109,3 +118,31 @@ def test_capital_contribution_analytical_euler_validation() -> None:
             contribution=None,
             method=AttributionMethod.ANALYTICAL_EULER,
         )
+
+
+def test_capital_contribution_audit_fields() -> None:
+    contrib = CapitalContribution(
+        contribution_id="contrib-1",
+        source_id="pos-1",
+        source_level="position",
+        bucket_key=None,
+        category="GIRR",
+        base_amount=100.0,
+        marginal_multiplier=1.0,
+        contribution=100.0,
+        method=AttributionMethod.ANALYTICAL_EULER,
+        citations=("CRE52.4", "CRE52.5"),
+        input_hash="abc123",
+        profile_hash="def456",
+        reconciliation_status=ReconciliationStatus.RECONCILED,
+    )
+    assert contrib.citations == ("CRE52.4", "CRE52.5")
+    assert contrib.input_hash == "abc123"
+    assert contrib.profile_hash == "def456"
+    assert contrib.reconciliation_status == ReconciliationStatus.RECONCILED
+
+    d = contrib.as_dict()
+    assert d["citations"] == ["CRE52.4", "CRE52.5"]
+    assert d["input_hash"] == "abc123"
+    assert d["profile_hash"] == "def456"
+    assert d["reconciliation_status"] == "RECONCILED"
