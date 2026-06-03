@@ -48,7 +48,7 @@ class ArtifactSchemaEntry:
 
     def __post_init__(self) -> None:
         _require_non_empty_text(self.schema_id, "schema_id")
-        object.__setattr__(self, "artifact_type", ArtifactType(self.artifact_type))
+        object.__setattr__(self, "artifact_type", _coerce_artifact_type(self.artifact_type))
         if not isinstance(self.schema_version, int) or self.schema_version < 1:
             raise ResultStoreContractError(
                 "schema_version must be a positive integer",
@@ -82,8 +82,8 @@ class RequiredArtifactExpectation:
     reason: str
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "component", FrtbComponent(self.component))
-        object.__setattr__(self, "artifact_type", ArtifactType(self.artifact_type))
+        object.__setattr__(self, "component", _coerce_component(self.component))
+        object.__setattr__(self, "artifact_type", _coerce_artifact_type(self.artifact_type))
         _require_non_empty_text(self.trigger_name, "trigger_name")
         if not isinstance(self.required, bool):
             raise ResultStoreContractError("required must be boolean", field="required")
@@ -106,8 +106,8 @@ class ArtifactWriteRequest:
 
     def __post_init__(self) -> None:
         _require_non_empty_text(self.artifact_id_hint, "artifact_id_hint")
-        object.__setattr__(self, "artifact_type", ArtifactType(self.artifact_type))
-        object.__setattr__(self, "component", FrtbComponent(self.component))
+        object.__setattr__(self, "artifact_type", _coerce_artifact_type(self.artifact_type))
+        object.__setattr__(self, "component", _coerce_component(self.component))
         _require_non_empty_text(self.schema_id, "schema_id")
         if not isinstance(self.partition_values, Mapping):
             raise ResultStoreContractError("partition_values must be a mapping")
@@ -135,46 +135,56 @@ def _require_non_empty_text(value: object, field: str) -> None:
         raise ResultStoreContractError(f"{field} must be non-empty text", field=field)
 
 
+def _coerce_artifact_type(value: ArtifactType | str) -> ArtifactType:
+    try:
+        return ArtifactType(value)
+    except ValueError as exc:
+        raise ResultStoreContractError(
+            f"invalid artifact_type: {value}",
+            field="artifact_type",
+        ) from exc
+
+
+def _coerce_component(value: FrtbComponent | str) -> FrtbComponent:
+    try:
+        return FrtbComponent(value)
+    except ValueError as exc:
+        raise ResultStoreContractError(
+            f"invalid component: {value}",
+            field="component",
+        ) from exc
+
+
+_IMA_PNL_VECTOR_FIELDS = (
+    ("run_id", pa.string(), False),
+    ("desk_id", pa.string(), False),
+    ("portfolio_id", pa.string(), False),
+    ("book_id", pa.string(), False),
+    ("position_id", pa.string(), False),
+    ("risk_factor_id", pa.string(), False),
+    ("risk_factor_set_id", pa.string(), True),
+    ("scenario_id", pa.string(), False),
+    ("observation_date", pa.date32(), False),
+    ("liquidity_horizon", pa.int32(), False),
+    ("pnl_amount", pa.float64(), False),
+    ("currency", pa.string(), False),
+    ("tail_flag", pa.bool_(), False),
+    ("source_row_id", pa.string(), False),
+)
+
 ARTIFACT_SCHEMA_REGISTRY: Mapping[str, ArtifactSchemaEntry] = MappingProxyType(
     {
         IMA_PNL_VECTOR_SCHEMA_ID: ArtifactSchemaEntry(
             schema_id=IMA_PNL_VECTOR_SCHEMA_ID,
             artifact_type=ArtifactType.IMA_PNL_VECTOR,
             schema_version=1,
-            arrow_schema=pa.schema(
-                [
-                    ("run_id", pa.string(), False),
-                    ("desk_id", pa.string(), False),
-                    ("portfolio_id", pa.string(), False),
-                    ("book_id", pa.string(), False),
-                    ("position_id", pa.string(), False),
-                    ("risk_factor_id", pa.string(), False),
-                    ("risk_factor_set_id", pa.string(), True),
-                    ("scenario_id", pa.string(), False),
-                    ("observation_date", pa.date32(), False),
-                    ("liquidity_horizon", pa.int32(), False),
-                    ("pnl_amount", pa.float64(), False),
-                    ("currency", pa.string(), False),
-                    ("tail_flag", pa.bool_(), False),
-                    ("source_row_id", pa.string(), False),
-                ]
+            arrow_schema=pa.schema(_IMA_PNL_VECTOR_FIELDS),
+            required_columns=tuple(
+                name for name, _, nullable in _IMA_PNL_VECTOR_FIELDS if not nullable
             ),
-            required_columns=(
-                "run_id",
-                "desk_id",
-                "portfolio_id",
-                "book_id",
-                "position_id",
-                "risk_factor_id",
-                "scenario_id",
-                "observation_date",
-                "liquidity_horizon",
-                "pnl_amount",
-                "currency",
-                "tail_flag",
-                "source_row_id",
+            nullable_columns=tuple(
+                name for name, _, nullable in _IMA_PNL_VECTOR_FIELDS if nullable
             ),
-            nullable_columns=("risk_factor_set_id",),
             partition_columns=("desk_id", "portfolio_id", "book_id"),
         )
     }

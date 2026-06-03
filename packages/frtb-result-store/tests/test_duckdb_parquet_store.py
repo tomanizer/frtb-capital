@@ -87,6 +87,19 @@ def test_duckdb_parquet_store_round_trips_frtb_result_bundle(tmp_path: Path) -> 
     assert (tmp_path / "result-store/catalog.duckdb").exists()
 
 
+def test_duckdb_parquet_store_resolves_relative_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    store = DuckDbParquetResultStore(Path("result-store"))
+
+    assert store.root == (tmp_path / "result-store").resolve()
+    assert store.parquet_root == store.root / "parquet"
+    assert store.artifact_root == store.root / "artifacts"
+    assert store.catalog_path == store.root / "catalog.duckdb"
+
+
 def test_store_round_trips_hierarchy_definition_nodes_and_standard_graph(
     tmp_path: Path,
 ) -> None:

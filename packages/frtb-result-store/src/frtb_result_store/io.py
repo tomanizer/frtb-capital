@@ -110,7 +110,7 @@ class DuckDbParquetResultStore:
                 f"{self.config.backend.value} backend is reserved for a later implementation",
                 field="backend",
             )
-        self.root = self.config.root
+        self.root = self.config.root.resolve()
         self.parquet_root = self.root / "parquet"
         self.artifact_root = self.root / "artifacts"
         self.manifest_root = self.root / "manifests"

@@ -13,6 +13,7 @@ from frtb_common import (
 from frtb_result_store import (
     PACKAGE_METADATA,
     ArtifactRef,
+    ArtifactSchemaEntry,
     ArtifactType,
     ArtifactWriteRequest,
     CalculationRun,
@@ -635,6 +636,31 @@ def test_artifact_schema_registry_and_expectation_contracts() -> None:
         "source_row_id",
     ]
     assert request.conditional_expectations == (expectation,)
+    with pytest.raises(ResultStoreContractError, match="invalid artifact_type"):
+        ArtifactSchemaEntry(
+            schema_id="bad-artifact-type",
+            artifact_type="UNKNOWN",
+            schema_version=1,
+            arrow_schema=schema.arrow_schema,
+            required_columns=tuple(schema.arrow_schema.names),
+        )
+    with pytest.raises(ResultStoreContractError, match="invalid component"):
+        RequiredArtifactExpectation(
+            component="UNKNOWN",
+            artifact_type=ArtifactType.IMA_TAIL_OBSERVATION,
+            trigger_name="IMA_ES_TAIL_EVIDENCE",
+            required=True,
+            reason="ES tail evidence declared by writer",
+        )
+    with pytest.raises(ResultStoreContractError, match="invalid artifact_type"):
+        ArtifactWriteRequest(
+            artifact_id_hint="ima-pnl",
+            artifact_type="UNKNOWN",
+            component="IMA",
+            schema_id=schema.schema_id,
+            chunks=(),
+            partition_values={},
+        )
     with pytest.raises(ResultStoreContractError, match="unknown artifact schema"):
         artifact_schema_for("missing.schema")
 
