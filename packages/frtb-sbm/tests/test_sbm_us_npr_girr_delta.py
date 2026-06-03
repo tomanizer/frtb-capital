@@ -150,4 +150,3 @@ def _contains_basel_citation(payload: object) -> bool:
     if isinstance(payload, list):
         return any(_contains_basel_citation(value) for value in payload)
     return isinstance(payload, str) and payload.startswith("basel_")
-

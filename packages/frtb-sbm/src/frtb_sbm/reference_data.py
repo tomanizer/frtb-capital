@@ -1485,9 +1485,7 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
         payload.update(
             {
                 "girr_vega_parameters": {
-                    "liquidity_horizon_days": PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS[
-                        resolved
-                    ],
+                    "liquidity_horizon_days": PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS[resolved],
                     "risk_weight_factor": GIRR_VEGA_RISK_WEIGHT_FACTOR,
                     "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
                     "intra_bucket_constant": GIRR_VEGA_INTRA_BUCKET_CONSTANT,

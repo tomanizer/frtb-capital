@@ -88,4 +88,3 @@ def _sensitivity_from_payload(payload: dict[str, Any]) -> SbmSensitivity:
 def _load_json(name: str) -> Any:
     with (FIXTURE_DIR / name).open(encoding="utf-8") as handle:
         return json.load(handle)
-

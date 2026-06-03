@@ -153,9 +153,7 @@ _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS = {
         "basel_mar21_6_correlation_scenarios",
         "basel_mar21_7_scenario_selection",
     ),
-    SbmRegulatoryProfile.US_NPR_2_0.value: (
-        "us_npr_91_fr_14952_va7a_correlation_scenarios",
-    ),
+    SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
 }
 _SBM_CAPITAL_PATH_ORDER = (
     (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
