@@ -47,10 +47,10 @@ external table / CRIF / file
 | CVA | Multi-table delivery: counterparties, netting sets, hedges, and SA-CVA sensitivities | `CVA_COUNTERPARTY_HANDOFF_COLUMN_SPECS`, `CVA_NETTING_SET_HANDOFF_COLUMN_SPECS`, `CVA_HEDGE_HANDOFF_COLUMN_SPECS`, `SA_CVA_SENSITIVITY_HANDOFF_COLUMN_SPECS` | `normalize_cva_*_arrow_table` -> `build_*_batch_from_handoff` -> BA-CVA or SA-CVA batch calculators | Reduced and full BA-CVA plus supported SA-CVA delta and vega risk-class paths; unsupported materiality and comparison paths fail closed | [CVA Arrow batch triage](performance/frtb-cva-arrow-batch-triage.md) |
 | IMA | Dense scenario P&L cube plus tabular scenario metadata, RFET observations, and input manifest rows | `IMA_SCENARIO_METADATA_HANDOFF_COLUMN_SPECS`, `IMA_RFET_OBSERVATION_HANDOFF_COLUMN_SPECS`, `IMA_INPUT_MANIFEST_HANDOFF_COLUMN_SPECS` | Arrow tables normalize/build for metadata and RFET evidence; dense NumPy arrays feed ES, LHA, IMCC, and NMRF kernels | Implemented public IMA path for deterministic fixtures; unsupported profile behaviour remains explicit | [IMA Arrow handoff triage](performance/frtb-ima-arrow-handoff-triage.md) |
 
-For the per-package documentation template, see
+For per-package integration surfaces, see
+[SBM PUBLIC_API.md](modules/frtb-sbm/PUBLIC_API.md) and
 [RRAO PUBLIC_API.md](modules/frtb-rrao/PUBLIC_API.md). Additional package public
-API docs are delivered by [#424](https://github.com/tomanizer/frtb-capital/issues/424),
-[#425](https://github.com/tomanizer/frtb-capital/issues/425),
+API docs are delivered by [#425](https://github.com/tomanizer/frtb-capital/issues/425),
 [#426](https://github.com/tomanizer/frtb-capital/issues/426), and
 [#427](https://github.com/tomanizer/frtb-capital/issues/427).
 
