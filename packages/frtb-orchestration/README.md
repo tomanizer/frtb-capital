@@ -1,42 +1,56 @@
 # frtb-orchestration
 
-Partial package for suite-level capital aggregation.
+Suite-level capital aggregation for the `frtb-capital` workspace.
 
 `frtb-orchestration` is the only package allowed to depend on multiple capital
-component packages. It owns the suite boundary that will compose IMA, SBM, DRC,
-RRAO, and CVA outputs, including the SA total from
-`frtb-sbm + frtb-drc + frtb-rrao`.
-
-The package does not calculate suite capital yet. Top-of-house aggregation
-raises `NotImplementedCapitalComponentError` from `frtb-common`; it must not
+component packages. It composes Standardised Approach capital from
+`frtb-sbm + frtb-drc + frtb-rrao`, prepares IMA and CVA summaries for
+top-of-house use, and aggregates `IMA + SA + CVA` through
+`calculate_suite_capital`. Unsupported paths fail closed; the package must not
 emit zero or placeholder capital.
 
-Current runtime support is deliberately narrow:
+Outputs are prototype engineering evidence, not final regulatory capital.
 
-- `CapitalRunManifest` accepts a client run id, calculation date, profile id,
-  base currency, explicit Arrow input tables, package-owned calculation
-  contexts, optional reference attachments, and run metadata;
-- `validate_capital_run_manifest` validates registered input table routes with the
-  public package normalizers, reports accepted and rejected rows, diagnostics,
-  source hashes, normalized input table hashes, missing required input tables, and ADR
-  0022 jurisdiction-family consistency before any capital calculation;
-- `run_standardised_approach_from_manifest` validates the manifest, routes
-  available public component input table APIs into component result summaries, and
-  records any fail-closed aggregation error explicitly in `SaManifestRunResult`;
-- `compose_standardised_approach_capital` accepts the shared
-  `frtb_common.ComponentCapitalSummary` shape for SBM, DRC, and RRAO, validates
-  that each summary is in the expected component slot, applies the ADR 0022
-  jurisdiction-family guard, checks calculation date and base currency
-  consistency, and returns the additive SA result `SBM + DRC + RRAO`;
-- non-IMA-eligible desks can be passed through the structural
-  `ima_desk_eligibility` mapping and are recorded as routed to the Standardised
-  Approach fallback stack;
-- each SA component owns its own `to_component_summary` projection into
-  that shared contract;
-- `recognise_cva_summary` summarizes the public CVA result shape into
-  `CvaCapitalSummary` for future top-of-house aggregation, outside SA
-  composition;
-- `calculate_suite_capital` remains explicitly unimplemented.
+## Documentation
+
+| Document | Purpose |
+| --- | --- |
+| [Module README](../../docs/modules/frtb-orchestration/README.md) | Public API, validation evidence, limitations, Arrow boundary |
+| [ADR 0039](../../docs/decisions/0039-orchestration-suite-capital-aggregation.md) | Top-of-house suite aggregation decision |
+| [ADR 0032](../../docs/decisions/0032-orchestration-sa-arithmetic-and-fallback-routing.md) | SA arithmetic and IMA fallback route recording |
+| [ADR 0022](../../docs/decisions/0022-sa-jurisdiction-profile-consistency-guard.md) | Jurisdiction-family guard |
+
+## Runtime support
+
+- `compose_standardised_approach_capital` — additive `SBM + DRC + RRAO` from
+  `frtb_common.ComponentCapitalSummary` handoffs with ADR 0022 guards.
+- `calculate_suite_capital` — additive `IMA + SA + CVA` from
+  `ImaCapitalSummary`, `StandardisedApproachCapitalResult`, and
+  `CvaCapitalSummary`.
+- `recognise_ima_summary` / `recognise_cva_summary` — duck-typed summary
+  projection from public component result shapes.
+- `CapitalRunManifest`, `validate_capital_run_manifest`, and
+  `run_standardised_approach_from_manifest` — manifest validation and SA routing
+  from explicit Arrow input tables.
+- Structural IMA desk eligibility recording for SA fallback routing.
+
+## Public API
+
+```python
+from frtb_orchestration import (
+    ImaCapitalSummary,
+    SuiteCapitalResult,
+    calculate_suite_capital,
+    compose_standardised_approach_capital,
+    recognise_cva_summary,
+    recognise_ima_summary,
+)
+```
+
+See [`docs/modules/frtb-orchestration/README.md`](../../docs/modules/frtb-orchestration/README.md)
+for examples, jurisdiction-family rules, and integration limits.
+
+## Manifest input tables
 
 Manifest v1 uses explicit logical names rather than opaque payloads:
 
@@ -55,7 +69,11 @@ Manifest v1 uses explicit logical names rather than opaque payloads:
 Clients supply `pa.Table` objects to the manifest. File IO, path expansion, and
 client delivery-pack validation stay outside this runtime package.
 
+## Boundaries
+
 Runtime modules must not import capital sibling packages or private batch
 internals. Package-local tests may use concrete component fixtures to verify
-that public adapters and result shapes remain compatible with the orchestration
+that public adapters and result shapes remain compatible with orchestration
 contracts.
+
+See `AGENTS.md` for package boundary rules.

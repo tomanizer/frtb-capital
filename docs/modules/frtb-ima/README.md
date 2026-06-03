@@ -14,6 +14,7 @@ and implemented sibling component modules: `frtb-sbm`, `frtb-drc`,
 
 | Document | Purpose |
 | --- | --- |
+| [Public API](PUBLIC_API.md) | Stable top-level import surface and client integration tiers. |
 | [Regulatory requirements](REGULATORY_REQUIREMENTS.md) | Suite-level pointer to the package-local IMA regulatory evidence. |
 | [PRD](PRD.md) | Product requirements and maintainability boundary for the implemented IMA package. |
 | [Model documentation pack](model_documentation/README.md) | Intended use, conceptual soundness, derivation, limitations, sensitivity analysis, monitoring, and change history. |

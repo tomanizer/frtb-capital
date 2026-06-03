@@ -6,15 +6,15 @@
 The structure covers IMA, the three Standardised Approach components, CVA, a
 suite-level aggregator, a result store, and a shared foundation package. Today,
 `packages/frtb-ima` contains the migrated IMA implementation, `frtb-rrao`
-contains an implemented canonical-input RRAO path, `frtb-drc` contains a
-partial non-securitisation DRC runtime path, `frtb-sbm` has GIRR delta/vega,
-FX/equity/commodity/CSR delta/vega, and row-wise curvature capital implemented
-under BASEL_MAR21, and `frtb-cva` has reduced/full BA-CVA plus supported
-SA-CVA delta/vega and mixed carve-out paths implemented. Orchestration composes
-SA arithmetic from shared component handoffs and prepares CVA summaries; full
-top-of-house suite aggregation still fails explicitly. `frtb-result-store`
-persists completed run evidence, drilldown graphs, artifacts, lineage, and
-attribution records.
+contains an implemented canonical-input RRAO path, `frtb-drc` contains partial
+runtime for cited NPR and Basel MAR22 DRC paths, `frtb-sbm` implements cited
+BASEL_MAR21 delta, vega, and curvature across all seven SBM risk classes with
+row, batch, and Arrow entrypoints, and `frtb-cva` has reduced/full BA-CVA plus
+supported SA-CVA delta/vega and mixed carve-out paths implemented.
+Orchestration composes SA arithmetic from shared component handoffs, prepares
+IMA and CVA summaries, and aggregates `IMA + SA + CVA` through
+`calculate_suite_capital` (ADR 0039). `frtb-result-store` persists completed
+run evidence, drilldown graphs, artifacts, lineage, and attribution records.
 
 The Standardised Approach is a composed regulatory approach, not a standalone
 package. In this suite, `frtb-sbm`, `frtb-drc`, and `frtb-rrao` together produce
@@ -112,12 +112,13 @@ Inputs: canonical or CRIF-mapped sensitivities by risk class, bucket, tenor, and
 risk measure. Outputs: SBM capital, risk-class totals, correlation-scenario
 selection, and audit breakdowns.
 
-Status: partial runtime. GIRR delta/vega, FX/equity/commodity/CSR delta/vega,
-and row-wise curvature capital are implemented under BASEL_MAR21. Public
-high-volume Arrow/batch capital entrypoints cover delta and GIRR vega; non-GIRR
-vega and curvature capital remain row-wise. GIRR curvature has a validation-only
-Arrow batch. Public entry point: `calculate_sbm_capital`. Unsupported paths
-fail closed; no silent zero-capital placeholders.
+Status: partial runtime. Cited BASEL_MAR21 delta, vega, and curvature paths are
+implemented under audit for GIRR, FX, equity, commodity, CSR non-sec, CSR sec
+non-CTP, and CSR sec CTP. Row-wise, package-owned batch, and Arrow batch
+entrypoints exist for supported paths. `US_NPR_2_0` produces capital for GIRR
+delta only; other comparison profiles fail closed until cited. Public entry
+point: `calculate_sbm_capital`. Unsupported paths fail closed; no silent
+zero-capital placeholders.
 
 ### `frtb-drc` — Default Risk Charge
 
@@ -161,15 +162,18 @@ For SA, it owns the composed `SBM + DRC + RRAO` total. For IMA fallback, it
 routes non-IMA-eligible desks to the SA component stack. It also applies
 cross-component floors and add-ons and produces consolidated audit records.
 
-Status: partial. Top-of-house suite aggregation still raises explicit
-unimplemented-component errors. `compose_standardised_approach_capital`
+Status: orchestration implemented for SA composition, IMA and CVA summary
+handoffs, and top-of-house aggregation. `compose_standardised_approach_capital`
 validates shared `frtb_common.ComponentCapitalSummary` inputs for SBM, DRC, and
 RRAO, enforces ADR 0022 jurisdiction-family consistency plus calculation-date
-and base-currency consistency, then returns the additive SA result. It can also
-record non-IMA-eligible desks as routed to the SA fallback stack from structural
-eligibility signals. `recognise_cva_summary` prepares a CVA result summary for
-future top-of-house aggregation. Runtime source does not import sibling capital
-packages or private batch internals.
+and base-currency consistency, then returns the additive SA result.
+`calculate_suite_capital` aggregates `ImaCapitalSummary`,
+`StandardisedApproachCapitalResult`, and `CvaCapitalSummary` with the same
+run-context and jurisdiction-family guards (ADR 0039). Orchestration can record
+non-IMA-eligible desks as routed to the SA fallback stack from structural
+eligibility signals. Runtime source does not import sibling capital packages or
+private batch internals. Manifest-driven end-to-end suite runs may still evolve
+without changing the summary-handoff composition contract.
 
 ### `frtb-result-store` — Result storage and serving
 

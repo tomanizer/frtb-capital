@@ -43,8 +43,9 @@ recorded as routed to `STANDARDISED_APPROACH` with reason code
 `ima_desk_not_model_eligible`. Desks marked `IMA_ELIGIBLE` are not routed.
 Unknown eligibility statuses fail closed.
 
-`calculate_suite_capital` remains out of scope and continues to raise
-`NotImplementedCapitalComponentError`.
+Top-of-house `calculate_suite_capital` is implemented in
+[ADR 0039](0039-orchestration-suite-capital-aggregation.md). This ADR does not
+define that aggregation step.
 
 ## Consequences
 

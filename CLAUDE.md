@@ -45,13 +45,14 @@ Be honest and critical when reviewing code produced by Codex or other automated 
 ```
 frtb-capital/
 ├── packages/
-│   ├── frtb-common/         # shared primitives (scaffolded)
-│   ├── frtb-ima/            # Internal Models Approach (migrated)
-│   ├── frtb-sbm/            # Standardized Approach SBM component (scaffolded)
-│   ├── frtb-drc/            # Standardized Approach DRC component (scaffolded)
-│   ├── frtb-rrao/           # Standardized Approach RRAO component (scaffolded)
-│   ├── frtb-cva/            # Credit Valuation Adjustment (scaffolded)
-│   └── frtb-orchestration/  # suite-level aggregation (scaffolded)
+│   ├── frtb-common/         # shared primitives
+│   ├── frtb-ima/            # Internal Models Approach (implemented)
+│   ├── frtb-sbm/            # Standardized Approach SBM (partial runtime)
+│   ├── frtb-drc/            # Standardized Approach DRC (partial runtime)
+│   ├── frtb-rrao/           # Standardized Approach RRAO (implemented)
+│   ├── frtb-cva/            # Credit Valuation Adjustment (partial runtime)
+│   ├── frtb-orchestration/  # suite-level aggregation (implemented)
+│   └── frtb-result-store/   # DuckDB/Parquet evidence store (partial)
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── decisions/           # suite-wide ADRs

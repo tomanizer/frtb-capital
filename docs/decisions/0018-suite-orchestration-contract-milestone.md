@@ -9,7 +9,9 @@ details in this ADR are superseded by
 [ADR 0029](0029-unified-standardised-component-handoff-contract.md).
 The statements that SA aggregation arithmetic and IMA fallback routing are
 unavailable are superseded by
-[ADR 0032](0032-orchestration-sa-arithmetic-and-fallback-routing.md).
+[ADR 0032](0032-orchestration-sa-arithmetic-and-fallback-routing.md). Firm-level
+`calculate_suite_capital` is superseded by
+[ADR 0039](0039-orchestration-suite-capital-aggregation.md).
 
 ## Context
 
@@ -57,9 +59,10 @@ are stable.
   stack using the same handoff contracts; M1 only requires eligibility signals
   to be preserved on IMA results.
 
-### M2 (deferred)
+### M2 (delivered — ADR 0039)
 
-- `calculate_suite_capital` end-to-end aggregation across IMA, SA, and CVA.
+- `calculate_suite_capital` end-to-end aggregation across IMA, SA, and CVA from
+  component summaries.
 - Cross-component floors/add-ons and consolidated audit log emission.
 - Explicit desk-level fallback routing tests.
 

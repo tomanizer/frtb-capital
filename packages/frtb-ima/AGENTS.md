@@ -15,10 +15,11 @@ The goal is not production regulatory compliance. The goal is to create a transp
 ## Scope boundary
 
 This package covers the IMA model-eligible desk capital path only. **SBM, DRC,
-RRAO, and CVA are scaffolded sibling packages in this monorepo**; do not add
-those calculations here. SA fallback is an orchestration concern that composes
-SBM, DRC, and RRAO. The handoff contract from this package is a desk-level
-capital result and eligibility signal; aggregation across desks is an
+RRAO, and CVA are sibling capital packages in this monorepo** with their own
+partial or implemented runtime paths; do not add those calculations here. SA
+fallback is an orchestration concern that composes SBM, DRC, and RRAO. The
+handoff contract from this package is a desk-level capital result and
+eligibility signal; suite aggregation across IMA, SA, and CVA is an
 orchestration-layer concern outside `packages/frtb-ima`.
 
 ## Regulatory caution
