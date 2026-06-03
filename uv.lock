@@ -1059,6 +1059,9 @@ api = [
     { name = "fastapi" },
     { name = "uvicorn" },
 ]
+cli = [
+    { name = "duckdb" },
+]
 duckdb = [
     { name = "duckdb" },
 ]
@@ -1069,6 +1072,7 @@ otel = [
 [package.metadata]
 requires-dist = [
     { name = "duckdb", marker = "extra == 'api'", specifier = ">=1.4,<2" },
+    { name = "duckdb", marker = "extra == 'cli'", specifier = ">=1.4,<2" },
     { name = "duckdb", marker = "extra == 'duckdb'", specifier = ">=1.4,<2" },
     { name = "fastapi", marker = "extra == 'api'", specifier = ">=0.115,<1" },
     { name = "frtb-common", editable = "packages/frtb-common" },
@@ -1076,7 +1080,7 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=23.0.1,<24" },
     { name = "uvicorn", marker = "extra == 'api'", specifier = ">=0.34,<1" },
 ]
-provides-extras = ["api", "duckdb", "otel"]
+provides-extras = ["api", "cli", "duckdb", "otel"]
 
 [[package]]
 name = "frtb-rrao"

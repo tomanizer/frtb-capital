@@ -19,6 +19,8 @@ Current runtime support is deliberately narrow:
   `frtb_common.CapitalContribution`;
 - manifest-gated local and S3-layout Parquet files queried through independent
   DuckDB connections;
+- best-effort read-only SQL helper and admin CLI for inspection, disposable
+  catalog refresh, validation, and one-way run export;
 - optional read-only FastAPI service via `frtb-result-store[api]`.
 
 S3 Parquet mode accepts an `s3://bucket[/prefix]` root and keeps the same
@@ -33,6 +35,27 @@ and S3 credentials are configured only through `duckdb_extensions`,
 hard-code credentials.
 
 DuckLake remains an explicit reserved backend mode.
+
+`catalog.duckdb` is derived convenience state over committed Parquet files. It
+can be deleted and rebuilt with `DuckDbParquetResultStore.refresh_catalog()` or
+`frtb-result-store refresh-catalog <root>`; it is not durable evidence and is
+excluded from exports. `DuckDbParquetResultStore.read_only_connection()` opens
+that derived catalog with DuckDB read-only mode after refreshing it when needed.
+
+The admin CLI emits JSON for each command:
+
+```text
+frtb-result-store inspect <root>
+frtb-result-store list-runs <root>
+frtb-result-store refresh-catalog <root>
+frtb-result-store export-run <root> <run-id> <output-path>
+frtb-result-store validate-store <root>
+```
+
+`export-run` writes a one-way evidence bundle containing `run_manifest.json`,
+`parquet/base/`, `parquet/marts/`, copied local or mock-S3 artifact Parquet under
+`parquet/artifacts/`, and `checksums.json`. Import, approval, and lifecycle
+workflow commands are intentionally not provided.
 
 The FastAPI service is created with `create_result_store_app(...)`. It exposes
 FRTB-specific read endpoints for runs, run groups, capital trees, measures,

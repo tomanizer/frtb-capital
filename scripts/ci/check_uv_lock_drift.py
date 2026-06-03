@@ -1,8 +1,8 @@
 """Guard: fail if uv.lock changed without a corresponding dependency-spec change.
 
 Per ADR 0015, uv.lock should only change in a PR when the PR itself modifies
-dependency specifications (project.dependencies, dependency-groups, or
-tool.uv.sources).  A stale or gratuitous lock regeneration causes merge
+dependency specifications (project.dependencies, project.optional-dependencies,
+dependency-groups, or tool.uv.sources).  A stale or gratuitous lock regeneration causes merge
 conflicts for every concurrent PR and should be caught before merge.
 
 Release branches (release/*) are exempt because they intentionally bump
@@ -66,11 +66,15 @@ def _dependency_spec_snapshot(content: bytes) -> tuple[Any, ...]:
     data = tomllib.loads(content.decode())
     project = data.get("project") or {}
     deps = tuple(project.get("dependencies") or ())
+    optional_deps_raw = project.get("optional-dependencies") or {}
+    optional_deps = tuple(
+        (extra, tuple(sorted(specs))) for extra, specs in sorted(optional_deps_raw.items())
+    )
     groups_raw = data.get("dependency-groups") or {}
     groups = tuple((group, tuple(sorted(specs))) for group, specs in sorted(groups_raw.items()))
     uv_tool = (data.get("tool") or {}).get("uv") or {}
     sources = _normalize_sources(uv_tool.get("sources"))
-    return (deps, groups, sources)
+    return (deps, optional_deps, groups, sources)
 
 
 def _dep_spec_changed(base: str, path: str) -> bool:
@@ -122,8 +126,8 @@ def main() -> int:
             "uv-lock-guard: uv.lock changed but no dependency specifications changed\n"
             "\n"
             "Per ADR 0015, uv.lock should only be regenerated when this PR\n"
-            "modifies [project.dependencies], [dependency-groups], or\n"
-            "[tool.uv.sources] in a pyproject.toml.  Gratuitous lock\n"
+            "modifies [project.dependencies], [project.optional-dependencies],\n"
+            "[dependency-groups], or [tool.uv.sources] in a pyproject.toml.  Gratuitous lock\n"
             "regeneration causes merge conflicts for concurrent PRs.\n"
             "\n"
             "To fix: restore uv.lock to its base state with:\n"

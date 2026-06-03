@@ -1031,6 +1031,26 @@ class DuckDbParquetResultStore:
         finally:
             con.close()
 
+    def read_only_connection(self) -> Any:
+        from frtb_result_store.admin import read_only_connection
+
+        return read_only_connection(self)
+
+    def inspect(self) -> object:
+        from frtb_result_store.admin import inspect_store
+
+        return inspect_store(self)
+
+    def validate_store(self) -> object:
+        from frtb_result_store.admin import validate_store
+
+        return validate_store(self)
+
+    def export_run(self, run_id: str, output_path: Path | str, *, overwrite: bool = False) -> Any:
+        from frtb_result_store.admin import export_run
+
+        return export_run(self, run_id, output_path, overwrite=overwrite)
+
     def _write_manifest(
         self,
         bundle: ResultBundle,
