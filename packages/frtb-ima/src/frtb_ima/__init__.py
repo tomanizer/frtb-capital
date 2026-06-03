@@ -21,6 +21,7 @@ from frtb_ima.arrow_batch import (
     normalize_ima_rfet_observation_arrow_table,
     normalize_ima_scenario_metadata_arrow_table,
 )
+from frtb_ima.attribution import desk_contributions
 from frtb_ima.audit import (
     CapitalRunAuditLog,
     DeskAuditRecord,
@@ -349,6 +350,7 @@ __all__ = [
     "complete_nmrf_valuation_run",
     "compute_inputs_hash",
     "configure_json_logging",
+    "desk_contributions",
     "desk_eligibility_from_results",
     "get_policy",
     "imcc_breakdown",
