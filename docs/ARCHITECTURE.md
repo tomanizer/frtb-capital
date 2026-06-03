@@ -23,6 +23,9 @@ For client onboarding and upstream system integration, start with
 [`CLIENT_INTEGRATION.md`](CLIENT_INTEGRATION.md). It defines the recommended
 Arrow/Parquet handoff tier, component ingress symbols, run-context fields,
 lineage hashes, and rejection semantics.
+Use [`CLIENT_REFERENCE_DATA.md`](CLIENT_REFERENCE_DATA.md) to decide which
+canonical fields come from client feeds, package rule tables, or run-scoped
+reference overlays.
 
 ## Dependency graph
 

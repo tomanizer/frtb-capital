@@ -158,10 +158,9 @@ uv run python scripts/validate_client_handoff.py \
 
 ## Reference data and manifests
 
-Reference-data responsibilities are documented in the client reference-data
-matrix delivered by
-[#422](https://github.com/tomanizer/frtb-capital/issues/422). Runtime manifest
-ingress is tracked by
+Reference-data responsibilities are documented in the
+[client reference-data attachment matrix](CLIENT_REFERENCE_DATA.md). Runtime
+manifest ingress is tracked by
 [#429](https://github.com/tomanizer/frtb-capital/issues/429). The intended
 manifest convention is to name every table explicitly, for example
 `drc.nonsec`, `drc.securitisation_non_ctp`, `drc.ctp`, `rrao.positions`,
