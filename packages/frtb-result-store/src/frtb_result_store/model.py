@@ -36,13 +36,19 @@ __all__ = [
     "HierarchyDefinition",
     "HierarchyLevel",
     "HierarchyNode",
+    "InputSnapshotManifest",
     "LineageRef",
     "NodeType",
     "ResultBundle",
+    "ResultEvent",
+    "ResultEventSeverity",
+    "ResultEventType",
     "ResultStoreContractError",
     "RunStatus",
     "RunStatusEvent",
+    "RunTelemetry",
     "StorageBackend",
+    "TelemetryPhase",
     "canonical_run_group_identity_payload",
     "canonical_run_identity_payload",
     "generate_run_group_id",
@@ -128,6 +134,35 @@ class RunStatus(StrEnum):
     OFFICIAL = "OFFICIAL"
     SUPERSEDED = "SUPERSEDED"
     REJECTED = "REJECTED"
+
+
+class ResultEventSeverity(StrEnum):
+    """Severity for non-lifecycle result events."""
+
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+
+
+class ResultEventType(StrEnum):
+    """Non-lifecycle event categories emitted by callers or store validation."""
+
+    DATA_QUALITY = "DATA_QUALITY"
+    CALCULATION_WARNING = "CALCULATION_WARNING"
+    UNSUPPORTED_FEATURE = "UNSUPPORTED_FEATURE"
+    SCHEMA_WARNING = "SCHEMA_WARNING"
+    STORE_WRITE_WARNING = "STORE_WRITE_WARNING"
+    VALIDATION_WARNING = "VALIDATION_WARNING"
+
+
+class TelemetryPhase(StrEnum):
+    """Compact persisted telemetry phases."""
+
+    BASE_TABLE_WRITE = "BASE_TABLE_WRITE"
+    ARTIFACT_WRITE = "ARTIFACT_WRITE"
+    MART_GENERATION = "MART_GENERATION"
+    CATALOG_REFRESH = "CATALOG_REFRESH"
+    EXPORT = "EXPORT"
 
 
 class CapitalNodeFamily(StrEnum):
@@ -835,6 +870,118 @@ class CapitalAttributionRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class InputSnapshotManifest:
+    """Compact evidence for an upstream input snapshot used by a run."""
+
+    run_id: str
+    input_snapshot_id: str
+    input_snapshot_hash: str
+    as_of_date: date
+    source_system: str
+    handoff_key: str
+    row_count: int
+    accepted_row_count: int
+    rejected_row_count: int
+    source_uri: str | None = None
+    source_hash: str | None = None
+    schema_fingerprint: str | None = None
+    metadata: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        _require_non_empty_text(self.input_snapshot_id, "input_snapshot_id")
+        _require_non_empty_text(self.input_snapshot_hash, "input_snapshot_hash")
+        _require_plain_date(self.as_of_date, "as_of_date")
+        _require_non_empty_text(self.source_system, "source_system")
+        _require_non_empty_text(self.handoff_key, "handoff_key")
+        for field_name in ("row_count", "accepted_row_count", "rejected_row_count"):
+            _require_non_negative_int(getattr(self, field_name), field_name)
+        for field_name in ("source_uri", "source_hash", "schema_fingerprint"):
+            _validate_optional_text(getattr(self, field_name), field_name)
+        _freeze_metadata(self, self.metadata)
+
+
+@dataclass(frozen=True, slots=True)
+class ResultEvent:
+    """Non-lifecycle event emitted for a stored run."""
+
+    event_id: str
+    run_id: str
+    event_time: datetime
+    severity: ResultEventSeverity | str
+    event_type: ResultEventType | str
+    message: str
+    component: FrtbComponent | str | None = None
+    suggested_status: RunStatus | str | None = None
+    metadata: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.event_id, "event_id")
+        _require_non_empty_text(self.run_id, "run_id")
+        if not isinstance(self.event_time, datetime) or self.event_time.tzinfo is None:
+            raise ResultStoreContractError(
+                "event_time must be timezone-aware datetime",
+                field="event_time",
+            )
+        object.__setattr__(
+            self, "severity", _coerce_enum(self.severity, ResultEventSeverity, "severity")
+        )
+        object.__setattr__(
+            self, "event_type", _coerce_enum(self.event_type, ResultEventType, "event_type")
+        )
+        _require_non_empty_text(self.message, "message")
+        if self.component is not None:
+            object.__setattr__(
+                self, "component", _coerce_enum(self.component, FrtbComponent, "component")
+            )
+        if self.suggested_status is not None:
+            object.__setattr__(
+                self,
+                "suggested_status",
+                _coerce_enum(self.suggested_status, RunStatus, "suggested_status"),
+            )
+        _freeze_metadata(self, self.metadata)
+
+
+@dataclass(frozen=True, slots=True)
+class RunTelemetry:
+    """Compact persisted telemetry for one run phase."""
+
+    run_id: str
+    phase: TelemetryPhase | str
+    duration_ms: float
+    created_at: datetime
+    trace_id: str | None = None
+    span_id: str | None = None
+    row_count: int | None = None
+    byte_count: int | None = None
+    artifact_id: str | None = None
+    mart_name: str | None = None
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        object.__setattr__(self, "phase", _coerce_enum(self.phase, TelemetryPhase, "phase"))
+        object.__setattr__(
+            self,
+            "duration_ms",
+            _require_finite_number(self.duration_ms, "duration_ms"),
+        )
+        if self.duration_ms < 0:
+            raise ResultStoreContractError("duration_ms must be non-negative", field="duration_ms")
+        if not isinstance(self.created_at, datetime) or self.created_at.tzinfo is None:
+            raise ResultStoreContractError(
+                "created_at must be timezone-aware datetime",
+                field="created_at",
+            )
+        for field_name in ("trace_id", "span_id", "artifact_id", "mart_name"):
+            _validate_optional_text(getattr(self, field_name), field_name)
+        for field_name in ("row_count", "byte_count"):
+            value = getattr(self, field_name)
+            if value is not None:
+                _require_non_negative_int(value, field_name)
+
+
+@dataclass(frozen=True, slots=True)
 class ResultBundle:
     """Complete append-only payload for one FRTB result-store run."""
 
@@ -845,8 +992,11 @@ class ResultBundle:
     edges: tuple[CapitalEdge, ...] = ()
     measures: tuple[CapitalMeasure, ...] = ()
     artifacts: tuple[ArtifactRef, ...] = ()
+    input_manifests: tuple[InputSnapshotManifest, ...] = ()
     lineage: tuple[LineageRef, ...] = ()
     attributions: tuple[CapitalAttributionRecord, ...] = ()
+    events: tuple[ResultEvent, ...] = ()
+    telemetry: tuple[RunTelemetry, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.run, CalculationRun):
@@ -876,9 +1026,15 @@ class ResultBundle:
         _validate_bundle_measures(self.measures, run_id, known_nodes)
         for artifact in self.artifacts:
             _require_run_id(artifact.run_id, run_id, "artifacts")
+        for manifest in self.input_manifests:
+            _require_run_id(manifest.run_id, run_id, "input_manifests")
         for lineage in self.lineage:
             _require_run_id(lineage.run_id, run_id, "lineage")
         _validate_bundle_attributions(self.attributions, run_id, known_nodes)
+        for event in self.events:
+            _require_run_id(event.run_id, run_id, "events")
+        for telemetry in self.telemetry:
+            _require_run_id(telemetry.run_id, run_id, "telemetry")
 
 
 def _coerce_enum(value: EnumT | str, enum_type: type[EnumT], field_name: str) -> EnumT:
@@ -1002,8 +1158,11 @@ def _tuple_bundle_sequences(bundle: ResultBundle) -> None:
         "edges",
         "measures",
         "artifacts",
+        "input_manifests",
         "lineage",
         "attributions",
+        "events",
+        "telemetry",
     ):
         object.__setattr__(bundle, field_name, tuple(getattr(bundle, field_name)))
 

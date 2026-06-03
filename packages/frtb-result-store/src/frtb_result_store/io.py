@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
+import time
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import date, datetime
-from enum import StrEnum
 from pathlib import Path
 from typing import Any, cast
 from urllib.parse import quote, unquote
@@ -18,8 +19,33 @@ import duckdb
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 from frtb_common import AttributionMethod
-from frtb_common.hashing import stable_json_dumps
+from frtb_common.hashing import stable_json_dumps, stable_json_hash
 
+from frtb_result_store._row_codecs import (
+    float_value as _float_value,
+)
+from frtb_result_store._row_codecs import (
+    int_value as _int_value,
+)
+from frtb_result_store._row_codecs import (
+    json_mapping as _json_mapping,
+)
+from frtb_result_store._row_codecs import (
+    json_text_tuple as _json_text_tuple,
+)
+from frtb_result_store._row_codecs import (
+    metadata_json as _metadata_json,
+)
+from frtb_result_store._row_codecs import (
+    optional_float as _optional_float,
+)
+from frtb_result_store._row_codecs import (
+    optional_text as _optional_text,
+)
+from frtb_result_store._row_codecs import (
+    stored_value as _stored_value,
+)
+from frtb_result_store._version import __version__
 from frtb_result_store.artifacts import (
     ArtifactWriteRequest,
     RequiredArtifactExpectation,
@@ -42,23 +68,54 @@ from frtb_result_store.model import (
     HierarchyDefinition,
     HierarchyLevel,
     HierarchyNode,
+    InputSnapshotManifest,
     LineageRef,
     NodeType,
     ResultBundle,
+    ResultEvent,
+    ResultEventSeverity,
     ResultStoreContractError,
     RunStatus,
     RunStatusEvent,
+    RunTelemetry,
     StorageBackend,
+)
+from frtb_result_store.observability import current_trace_ids, result_store_span
+from frtb_result_store.run_metadata_io import (
+    artifact_byte_count as _artifact_byte_count,
+)
+from frtb_result_store.run_metadata_io import (
+    generated_telemetry_rows as _generated_telemetry_rows,
+)
+from frtb_result_store.run_metadata_io import (
+    input_manifest_from_row as _input_manifest_from_row,
+)
+from frtb_result_store.run_metadata_io import (
+    input_manifest_row as _input_manifest_row,
+)
+from frtb_result_store.run_metadata_io import (
+    result_event_from_row as _result_event_from_row,
+)
+from frtb_result_store.run_metadata_io import (
+    result_event_row as _result_event_row,
+)
+from frtb_result_store.run_metadata_io import (
+    telemetry_from_row as _telemetry_from_row,
+)
+from frtb_result_store.run_metadata_io import (
+    telemetry_row as _telemetry_row,
 )
 
 __all__ = [
     "DuckDbParquetResultStore",
+    "ResultStoreCompatibilityError",
     "ResultStoreConfig",
     "ResultStoreWriteError",
 ]
 
 
 RESULT_STORE_SCHEMA_VERSION = 1
+_LOGGER = logging.getLogger(__name__)
 RUN_TABLE_NAMES = (
     "runs",
     "hierarchy_definitions",
@@ -68,8 +125,11 @@ RUN_TABLE_NAMES = (
     "capital_measures",
     "artifact_refs",
     "artifact_expectations",
+    "input_snapshot_manifests",
     "lineage_refs",
     "capital_attributions",
+    "result_events",
+    "run_telemetry",
 )
 EVENT_TABLE_NAMES = ("run_status_events",)
 TABLE_NAMES = RUN_TABLE_NAMES + EVENT_TABLE_NAMES
@@ -77,6 +137,10 @@ TABLE_NAMES = RUN_TABLE_NAMES + EVENT_TABLE_NAMES
 
 class ResultStoreWriteError(RuntimeError):
     """Raised when a result bundle cannot be written append-only."""
+
+
+class ResultStoreCompatibilityError(ResultStoreContractError):
+    """Raised when one committed run is incompatible with this reader."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,44 +214,26 @@ class DuckDbParquetResultStore:
 
         moved_paths: list[Path] = []
         staged_artifacts: tuple[StagedArtifact, ...] = ()
+        span_attributes = {
+            "frtb.run_id": run_id,
+            "frtb.regime_id": bundle.run.regime_id,
+            "frtb.as_of_date": bundle.run.as_of_date.isoformat(),
+        }
         try:
-            staged_artifacts = self._stage_artifact_requests(
-                bundle,
-                artifact_requests,
-                staging_dir,
-            )
-            artifact_expectations = artifact_expectations_for_requests(artifact_requests)
-            generated_artifacts = tuple(artifact.ref for artifact in staged_artifacts)
-            committed_artifacts = tuple(bundle.artifacts) + generated_artifacts
-            validate_required_artifacts(bundle.nodes, committed_artifacts, artifact_expectations)
-            rows_by_table = _rows_for_bundle(
-                bundle,
-                artifact_refs=generated_artifacts,
-                artifact_expectations=artifact_expectations,
-            )
-            for table_name in RUN_TABLE_NAMES:
-                table = _arrow_table(rows_by_table[table_name], _TABLE_SCHEMAS[table_name])
-                pq.write_table(table, staging_dir / f"{table_name}.parquet")
+            with result_store_span("frtb_result_store.write_bundle", span_attributes):
+                rows_by_table, staged_artifacts, committed_artifacts = self._write_staged_tables(
+                    bundle,
+                    artifact_requests,
+                    staging_dir,
+                )
             pq.write_table(
                 _arrow_table(status_rows, _TABLE_SCHEMAS["run_status_events"]),
                 staging_dir / "run_status_events.parquet",
             )
 
-            for table_name in RUN_TABLE_NAMES:
-                final_path = self._run_table_path(table_name, run_id)
-                if final_path.exists():
-                    raise ResultStoreWriteError(f"run table already exists: {table_name}/{run_id}")
-                final_path.parent.mkdir(parents=True, exist_ok=True)
-                (staging_dir / f"{table_name}.parquet").rename(final_path)
-                moved_paths.append(final_path)
-            status_path = self._status_event_path(run_id, initial_status_event.event_id)
-            if status_path.exists():
-                raise ResultStoreWriteError(
-                    f"status event already exists: {initial_status_event.event_id}"
-                )
-            status_path.parent.mkdir(parents=True, exist_ok=True)
-            (staging_dir / "run_status_events.parquet").rename(status_path)
-            moved_paths.append(status_path)
+            moved_paths.extend(
+                self._move_staged_run_tables(run_id, initial_status_event.event_id, staging_dir)
+            )
             moved_paths.extend(self._move_staged_artifacts(staged_artifacts))
             validate_artifact_ref_targets(committed_artifacts)
 
@@ -207,8 +253,93 @@ class DuckDbParquetResultStore:
 
         # The catalog is derived convenience state. A refresh failure must not
         # turn a fully manifested run into a failed append.
-        with suppress(Exception):
-            self.refresh_catalog()
+        self._refresh_catalog_after_commit(span_attributes)
+
+    def _write_staged_tables(
+        self,
+        bundle: ResultBundle,
+        artifact_requests: Sequence[ArtifactWriteRequest],
+        staging_dir: Path,
+    ) -> tuple[
+        dict[str, list[dict[str, object]]],
+        tuple[StagedArtifact, ...],
+        tuple[ArtifactRef, ...],
+    ]:
+        artifact_started = time.perf_counter()
+        staged_artifacts = self._stage_artifact_requests(
+            bundle,
+            artifact_requests,
+            staging_dir,
+        )
+        artifact_duration_ms = _elapsed_ms(artifact_started)
+        artifact_expectations = artifact_expectations_for_requests(artifact_requests)
+        generated_artifacts = tuple(artifact.ref for artifact in staged_artifacts)
+        committed_artifacts = tuple(bundle.artifacts) + generated_artifacts
+        validate_required_artifacts(bundle.nodes, committed_artifacts, artifact_expectations)
+        rows_by_table = _rows_for_bundle(
+            bundle,
+            artifact_refs=generated_artifacts,
+            artifact_expectations=artifact_expectations,
+        )
+        base_started = time.perf_counter()
+        for table_name in RUN_TABLE_NAMES:
+            if table_name == "run_telemetry":
+                continue
+            table = _arrow_table(rows_by_table[table_name], _TABLE_SCHEMAS[table_name])
+            pq.write_table(table, staging_dir / f"{table_name}.parquet")
+        rows_by_table["run_telemetry"].extend(
+            _generated_telemetry_rows(
+                bundle=bundle,
+                artifact_duration_ms=artifact_duration_ms,
+                artifact_count=len(staged_artifacts),
+                artifact_byte_count=_artifact_byte_count(staged_artifacts),
+                base_duration_ms=_elapsed_ms(base_started),
+                base_row_count=sum(
+                    len(rows)
+                    for table_name, rows in rows_by_table.items()
+                    if table_name != "run_telemetry"
+                ),
+            )
+        )
+        pq.write_table(
+            _arrow_table(rows_by_table["run_telemetry"], _TABLE_SCHEMAS["run_telemetry"]),
+            staging_dir / "run_telemetry.parquet",
+        )
+        return rows_by_table, staged_artifacts, committed_artifacts
+
+    def _move_staged_run_tables(
+        self,
+        run_id: str,
+        status_event_id: str,
+        staging_dir: Path,
+    ) -> tuple[Path, ...]:
+        moved_paths: list[Path] = []
+        for table_name in RUN_TABLE_NAMES:
+            final_path = self._run_table_path(table_name, run_id)
+            if final_path.exists():
+                raise ResultStoreWriteError(f"run table already exists: {table_name}/{run_id}")
+            final_path.parent.mkdir(parents=True, exist_ok=True)
+            (staging_dir / f"{table_name}.parquet").rename(final_path)
+            moved_paths.append(final_path)
+        status_path = self._status_event_path(run_id, status_event_id)
+        if status_path.exists():
+            raise ResultStoreWriteError(f"status event already exists: {status_event_id}")
+        status_path.parent.mkdir(parents=True, exist_ok=True)
+        (staging_dir / "run_status_events.parquet").rename(status_path)
+        moved_paths.append(status_path)
+        return tuple(moved_paths)
+
+    def _refresh_catalog_after_commit(self, span_attributes: Mapping[str, object]) -> None:
+        with result_store_span("frtb_result_store.refresh_catalog", span_attributes):
+            try:
+                self.refresh_catalog()
+            except Exception:
+                trace_id, span_id = current_trace_ids()
+                _LOGGER.warning(
+                    "result-store catalog refresh failed after committed run",
+                    extra={"trace_id": trace_id, "span_id": span_id},
+                    exc_info=True,
+                )
 
     def _stage_artifact_requests(
         self,
@@ -258,7 +389,7 @@ class DuckDbParquetResultStore:
             ORDER BY as_of_date, run_id
             """,
         )
-        return tuple(_run_from_row(row) for row in rows)
+        return tuple(_run_from_row(row) for row in rows if self._is_run_compatible(str(row[0])))
 
     def get_run(self, run_id: str) -> CalculationRun | None:
         """Return a stored run by id, or ``None`` when absent."""
@@ -340,6 +471,7 @@ class DuckDbParquetResultStore:
 
         if not self.run_exists(run_id):
             return ()
+        self._ensure_run_compatible(run_id)
         if not self._has_table_files("capital_nodes") or not self._has_table_files("capital_edges"):
             return ()
         rows = self._fetch_custom(
@@ -476,6 +608,71 @@ class DuckDbParquetResultStore:
         )
         return tuple(_lineage_from_row(row) for row in rows)
 
+    def input_snapshot_manifests(self, run_id: str) -> tuple[InputSnapshotManifest, ...]:
+        """Return compact input snapshot evidence rows for a run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetchall(
+            "input_snapshot_manifests",
+            """
+            SELECT run_id, input_snapshot_id, input_snapshot_hash, as_of_date, source_system,
+                   handoff_key, row_count, accepted_row_count, rejected_row_count, source_uri,
+                   source_hash, schema_fingerprint, metadata_json
+            FROM {table}
+            WHERE run_id = ?
+            ORDER BY input_snapshot_id, handoff_key
+            """,
+            (run_id,),
+        )
+        return tuple(_input_manifest_from_row(row) for row in rows)
+
+    def result_events(self, run_id: str) -> tuple[ResultEvent, ...]:
+        """Return non-lifecycle result events for one committed run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetchall(
+            "result_events",
+            """
+            SELECT event_id, run_id, event_time, severity, event_type, message,
+                   component, suggested_status, metadata_json
+            FROM {table}
+            WHERE run_id = ?
+            ORDER BY event_time, event_id
+            """,
+            (run_id,),
+        )
+        return tuple(_result_event_from_row(row) for row in rows)
+
+    def suggested_status(self, run_id: str) -> RunStatus | None:
+        """Return advisory status from result events without changing lifecycle."""
+
+        if not self.run_exists(run_id):
+            return None
+        events = self.result_events(run_id)
+        if any(event.severity is ResultEventSeverity.ERROR for event in events):
+            return RunStatus.REJECTED
+        return RunStatus.VALIDATED
+
+    def run_telemetry(self, run_id: str) -> tuple[RunTelemetry, ...]:
+        """Return compact persisted telemetry rows for a run."""
+
+        if not self.run_exists(run_id):
+            return ()
+        rows = self._fetchall(
+            "run_telemetry",
+            """
+            SELECT run_id, phase, duration_ms, created_at, trace_id, span_id,
+                   row_count, byte_count, artifact_id, mart_name
+            FROM {table}
+            WHERE run_id = ?
+            ORDER BY created_at, phase, artifact_id NULLS FIRST, mart_name NULLS FIRST
+            """,
+            (run_id,),
+        )
+        return tuple(_telemetry_from_row(row) for row in rows)
+
     def status_history(self, run_id: str) -> tuple[RunStatusEvent, ...]:
         """Return append-only lifecycle events for one committed run."""
 
@@ -574,6 +771,8 @@ class DuckDbParquetResultStore:
         staged_manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest = {
             "schema_version": RESULT_STORE_SCHEMA_VERSION,
+            "result_store_schema_version": RESULT_STORE_SCHEMA_VERSION,
+            "writer_version": __version__,
             "backend": self.config.backend.value,
             "run_id": bundle.run.run_id,
             "run_group_id": bundle.run.run_group_id,
@@ -585,6 +784,11 @@ class DuckDbParquetResultStore:
                 **{table_name: len(rows_by_table[table_name]) for table_name in RUN_TABLE_NAMES},
                 "run_status_events": len(status_rows),
             },
+            "base_table_schema_fingerprints": {
+                table_name: _table_schema_fingerprint(table_name)
+                for table_name in TABLE_NAMES
+                if table_name in _TABLE_SCHEMAS
+            },
             "artifact_schema_fingerprints": sorted(
                 {
                     str(row["schema_fingerprint"])
@@ -592,6 +796,7 @@ class DuckDbParquetResultStore:
                     if row["schema_fingerprint"] is not None
                 }
             ),
+            "mart_schema_fingerprints": {},
         }
         staged_manifest_path.write_text(
             stable_json_dumps(manifest) + "\n",
@@ -611,8 +816,60 @@ class DuckDbParquetResultStore:
     ) -> tuple[tuple[object, ...], ...]:
         if not self._has_table_files(table_name):
             return ()
+        if parameters and isinstance(parameters[0], str) and self.run_exists(parameters[0]):
+            self._ensure_run_compatible(parameters[0])
         sql = sql_template.format(table=self._parquet_relation(table_name))
         return self._fetch_custom(sql, parameters)
+
+    def _ensure_run_compatible(self, run_id: str) -> None:
+        errors = self._manifest_compatibility_errors(run_id)
+        if errors:
+            raise ResultStoreCompatibilityError(
+                f"incompatible result-store run {run_id}: {'; '.join(errors)}",
+                field="run_id",
+            )
+
+    def _is_run_compatible(self, run_id: str) -> bool:
+        try:
+            return not self._manifest_compatibility_errors(run_id)
+        except ResultStoreCompatibilityError:
+            return False
+
+    def _manifest_compatibility_errors(self, run_id: str) -> tuple[str, ...]:
+        manifest = self._read_manifest(run_id)
+        version = manifest.get("result_store_schema_version", manifest.get("schema_version"))
+        errors: list[str] = []
+        if version != RESULT_STORE_SCHEMA_VERSION:
+            errors.append(f"schema version {version!r} != {RESULT_STORE_SCHEMA_VERSION}")
+        fingerprints = manifest.get("base_table_schema_fingerprints")
+        if not isinstance(fingerprints, dict):
+            errors.append("missing base table schema fingerprints")
+            return tuple(errors)
+        for table_name, fingerprint in fingerprints.items():
+            if table_name in _TABLE_SCHEMAS and fingerprint != _table_schema_fingerprint(
+                table_name
+            ):
+                errors.append(f"{table_name} schema fingerprint mismatch")
+        return tuple(errors)
+
+    def _read_manifest(self, run_id: str) -> Mapping[str, object]:
+        try:
+            manifest_text = self._manifest_path(run_id).read_text(encoding="utf-8")
+        except FileNotFoundError as exc:
+            raise ResultStoreCompatibilityError(
+                f"run manifest not found: {run_id}",
+                field="run_id",
+            ) from exc
+        try:
+            loaded = json.loads(manifest_text)
+        except json.JSONDecodeError as exc:
+            raise ResultStoreCompatibilityError(
+                f"malformed run manifest JSON: {exc}",
+                field="run_id",
+            ) from exc
+        if not isinstance(loaded, dict):
+            raise ResultStoreCompatibilityError("run manifest must be a JSON object")
+        return cast(Mapping[str, object], loaded)
 
     def _fetch_custom(
         self,
@@ -721,10 +978,15 @@ def _rows_for_bundle(
             _artifact_expectation_row(bundle.run.run_id, expectation)
             for expectation in artifact_expectations
         ],
+        "input_snapshot_manifests": [
+            _input_manifest_row(manifest) for manifest in bundle.input_manifests
+        ],
         "lineage_refs": [_lineage_row(lineage) for lineage in bundle.lineage],
         "capital_attributions": [
             _attribution_row(attribution) for attribution in bundle.attributions
         ],
+        "result_events": [_result_event_row(event) for event in bundle.events],
+        "run_telemetry": [_telemetry_row(telemetry) for telemetry in bundle.telemetry],
     }
 
 
@@ -899,6 +1161,10 @@ def _attribution_row(attribution: CapitalAttributionRecord) -> dict[str, object]
         "reason": attribution.reason,
         "metadata_json": _metadata_json(attribution.metadata),
     }
+
+
+def _elapsed_ms(started_at: float) -> float:
+    return (time.perf_counter() - started_at) * 1000.0
 
 
 def _initial_status_event(run: CalculationRun) -> RunStatusEvent:
@@ -1112,30 +1378,6 @@ def _status_event_from_row(row: Sequence[object]) -> RunStatusEvent:
     )
 
 
-def _metadata_json(metadata: Mapping[str, object]) -> str:
-    return str(stable_json_dumps(dict(metadata)))
-
-
-def _json_mapping(value: object) -> Mapping[str, object]:
-    try:
-        parsed = json.loads(str(value))
-    except json.JSONDecodeError as exc:
-        raise ResultStoreContractError(f"malformed JSON object: {exc}") from exc
-    if not isinstance(parsed, dict):
-        raise ResultStoreContractError("JSON field must decode to an object")
-    return parsed
-
-
-def _json_text_tuple(value: object) -> tuple[str, ...]:
-    try:
-        parsed = json.loads(str(value))
-    except json.JSONDecodeError as exc:
-        raise ResultStoreContractError(f"malformed JSON text list: {exc}") from exc
-    if not isinstance(parsed, list) or not all(isinstance(item, str) for item in parsed):
-        raise ResultStoreContractError("JSON field must decode to a list of strings")
-    return tuple(parsed)
-
-
 def _json_object_list(value: object) -> tuple[Mapping[str, object], ...]:
     try:
         parsed = json.loads(str(value))
@@ -1144,50 +1386,6 @@ def _json_object_list(value: object) -> tuple[Mapping[str, object], ...]:
     if not isinstance(parsed, list) or not all(isinstance(item, dict) for item in parsed):
         raise ResultStoreContractError("JSON field must decode to a list of objects")
     return tuple(parsed)
-
-
-def _optional_text(value: object) -> str | None:
-    if value is None:
-        return None
-    return str(value)
-
-
-def _optional_float(value: object) -> float | None:
-    if value is None:
-        return None
-    return _float_value(value)
-
-
-def _float_value(value: object) -> float:
-    if isinstance(value, bool):
-        raise ResultStoreContractError("numeric field must not be boolean")
-    if isinstance(value, int | float | str):
-        try:
-            return float(value)
-        except ValueError as exc:
-            raise ResultStoreContractError(f"invalid numeric value: {value}") from exc
-    raise ResultStoreContractError("numeric field must be int, float, or numeric text")
-
-
-def _int_value(value: object) -> int:
-    if isinstance(value, bool):
-        raise ResultStoreContractError("integer field must not be boolean")
-    if isinstance(value, int):
-        return value
-    if isinstance(value, float) and value.is_integer():
-        return int(value)
-    if isinstance(value, str):
-        try:
-            return int(value)
-        except ValueError as exc:
-            raise ResultStoreContractError(f"invalid integer value: {value}") from exc
-    raise ResultStoreContractError("integer field must be int or integer text")
-
-
-def _stored_value(value: StrEnum | str) -> str:
-    if isinstance(value, StrEnum):
-        return value.value
-    return value
 
 
 def _safe_run_id(run_id: str) -> str:
@@ -1208,6 +1406,19 @@ def _view_name(table_name: str) -> str:
 
 def _arrow_table(rows: Sequence[Mapping[str, object]], schema: Any) -> Any:
     return pa.Table.from_pylist(list(rows), schema=schema)
+
+
+def _table_schema_fingerprint(table_name: str) -> str:
+    schema = _TABLE_SCHEMAS[table_name]
+    return stable_json_hash(
+        {
+            "table_name": table_name,
+            "fields": [
+                {"name": field.name, "type": str(field.type), "nullable": field.nullable}
+                for field in schema
+            ],
+        }
+    )
 
 
 _TABLE_SCHEMAS: dict[str, Any] = {
@@ -1325,6 +1536,23 @@ _TABLE_SCHEMAS: dict[str, Any] = {
             ("reason", pa.string()),
         ]
     ),
+    "input_snapshot_manifests": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("input_snapshot_id", pa.string()),
+            ("input_snapshot_hash", pa.string()),
+            ("as_of_date", pa.string()),
+            ("source_system", pa.string()),
+            ("handoff_key", pa.string()),
+            ("row_count", pa.int64()),
+            ("accepted_row_count", pa.int64()),
+            ("rejected_row_count", pa.int64()),
+            ("source_uri", pa.string()),
+            ("source_hash", pa.string()),
+            ("schema_fingerprint", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
     "lineage_refs": pa.schema(
         [
             ("run_id", pa.string()),
@@ -1352,6 +1580,33 @@ _TABLE_SCHEMAS: dict[str, Any] = {
             ("residual", pa.float64()),
             ("reason", pa.string()),
             ("metadata_json", pa.string()),
+        ]
+    ),
+    "result_events": pa.schema(
+        [
+            ("event_id", pa.string()),
+            ("run_id", pa.string()),
+            ("event_time", pa.string()),
+            ("severity", pa.string()),
+            ("event_type", pa.string()),
+            ("message", pa.string()),
+            ("component", pa.string()),
+            ("suggested_status", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "run_telemetry": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("phase", pa.string()),
+            ("duration_ms", pa.float64()),
+            ("created_at", pa.string()),
+            ("trace_id", pa.string()),
+            ("span_id", pa.string()),
+            ("row_count", pa.int64()),
+            ("byte_count", pa.int64()),
+            ("artifact_id", pa.string()),
+            ("mart_name", pa.string()),
         ]
     ),
     "run_status_events": pa.schema(
