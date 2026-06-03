@@ -173,6 +173,24 @@ def test_eu_reference_data_contains_rts_annex_and_article_3_mappings() -> None:
             0.0,
             RraoClassification.EXCLUDED,
         ),
+        (
+            RraoRegulatoryProfile.PRA_UK_CRR,
+            "EXOTIC_1_PERCENT",
+            0.01,
+            RraoClassification.EXOTIC,
+        ),
+        (
+            RraoRegulatoryProfile.PRA_UK_CRR,
+            "OTHER_0_1_PERCENT",
+            0.001,
+            RraoClassification.OTHER_RESIDUAL_RISK,
+        ),
+        (
+            RraoRegulatoryProfile.PRA_UK_CRR,
+            "NON_PRESUMPTIVE_0_PERCENT",
+            0.0,
+            RraoClassification.EXCLUDED,
+        ),
     ],
 )
 def test_risk_weight_lookup(
@@ -193,6 +211,9 @@ def test_missing_risk_weight_lookup_fails_deterministically() -> None:
         risk_weight_rule_for(RraoRegulatoryProfile.US_NPR_2_0, "NOT_A_RULE")
 
 
-def test_unsupported_profile_reference_data_fails_closed() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        citations_for_profile(RraoRegulatoryProfile.PRA_UK_CRR)
+def test_pra_profile_reference_data_is_mapped() -> None:
+    citations = citations_for_profile(RraoRegulatoryProfile.PRA_UK_CRR)
+
+    assert "uk_crr_325u_3_a" in citations
+    assert "uk_rts_2022_2328_article_1" in citations
+    assert citations["uk_crr_325u_3_a"].url.startswith("https://www.legislation.gov.uk/")

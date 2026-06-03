@@ -28,7 +28,7 @@ requirements:
     test_refs:
       - packages/frtb-ima/tests/
     coverage_status: implemented_with_policy_profile_deltas
-    notes: "Keep separate regime parameters for Basel, EU, PRA, and US profiles."
+    notes: "Keep separate regime parameters for Basel, EU, PRA, and US profiles. PRA_UK_CRR capital runtime is unsupported_fail_closed; see docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md."
 
   - id: IMA-PLA-001
     topic: P&L attribution test

@@ -2,6 +2,7 @@ schema_version: 1
 regime_id: PRA_BASEL_3_1_2027_2028
 jurisdiction: UK
 status: final_rule
+profile_mapping_status: docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md
 primary_sources:
   - uk_pra_ps1_26_basel_3_1_final_rules
   - uk_pra_cp17_25_market_risk_adjustments

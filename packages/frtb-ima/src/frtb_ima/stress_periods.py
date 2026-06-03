@@ -550,6 +550,7 @@ def select_stress_periods_for_policy(
     """Select stress periods using the run-level policy confidence level."""
     if not isinstance(policy, RegulatoryPolicy):
         raise TypeError("policy must be a RegulatoryPolicy")
+    policy.require_capital_runtime_supported()
     result = select_stress_periods_by_risk_class(
         histories,
         as_of_date=as_of_date,

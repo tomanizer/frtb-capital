@@ -20,7 +20,7 @@ from frtb_ima.data_models import (
 from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall
 from frtb_ima.imcc import imcc, imcc_for_policy
 from frtb_ima.liquidity_horizon import lha_es_from_vectors
-from frtb_ima.nmrf import aggregate_ses, aggregate_ses_for_policy
+from frtb_ima.nmrf import aggregate_ses, aggregate_ses_for_policy, route_nmrf_classifications_for_capital
 from frtb_ima.pla import pla_assessment, pla_assessment_for_policy
 from frtb_ima.regimes import (
     CalculationContext,
@@ -179,6 +179,14 @@ def test_regulatory_policy_numeric_fields_have_citations_or_documented_allowlist
         assert field_name in assumptions_doc
 
 
+def test_pra_policy_uses_uk_crr_citations() -> None:
+    policy = get_policy(RegulatoryRegime.PRA_UK_CRR)
+
+    assert policy.unsupported_feature("pra_uk_crr_capital_runtime") is None
+    assert "UK CRR Article 325be" in policy.cited_by["rfet_short_lh_threshold"]
+    assert policy.pla_metrics_required == PLAMetricsRequired.KS_AND_SPEARMAN
+
+
 def test_ecb_profile_requires_ks_and_spearman_pla() -> None:
     policy = get_policy(RegulatoryRegime.ECB_CRR3)
 
@@ -224,8 +232,15 @@ def test_type_a_type_b_taxonomy_is_fed_only_until_explicitly_supported() -> None
             as_of_date=AS_OF,
             policy=ecb,
         )
-    with pytest.raises(UnsupportedRegulatoryFeature, match="type_a_type_b"):
-        aggregate_ses_for_policy([1.0], [2.0], ecb)
+    ecb_routing = route_nmrf_classifications_for_capital(
+        {
+            "MOD": ModellabilityStatus.MODELLABLE,
+            "NMRF_A": ModellabilityStatus.TYPE_A_NMRF,
+        },
+        ecb,
+    )
+    assert ecb_routing.imcc_risk_factors == ("MOD",)
+    assert ecb_routing.ses_risk_factors == ("NMRF_A",)
 
 
 def test_calculation_context_selects_policy_without_changing_low_level_semantics() -> None:
@@ -257,6 +272,8 @@ def test_traceability_docs_name_every_regime() -> None:
     text = doc.read_text()
     for regime in RegulatoryRegime:
         assert regime.value in text
+    assert "PRA_UK_CRR" in text
+    assert "tests/fixtures/ima_pra" in text
 
 
 def _contains_numeric(value: object) -> bool:

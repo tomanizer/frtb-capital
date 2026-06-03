@@ -39,6 +39,19 @@ From regulation to code:
 3. Open the listed prototype entry points and their tests.
 4. Check the coverage status before treating a calculation as implemented.
 
+## Status taxonomy
+
+Canonical UK/PRA profile coordination:
+[`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md).
+
+| Status | Meaning in `frtb-ima` |
+| --- | --- |
+| Implemented | Tested code produces the cited behavior for supported inputs under the default Fed NPR profile or an explicitly supported comparison slice. |
+| Partial comparison profile | Policy parameters and selected metrics (for example EU/PRA PLA mechanics) are exposed with documented gaps; not a complete jurisdictional own-funds calculator. |
+| `placeholder_reference` | Link-only source manifest entry without section-level UK mapping. |
+| Unsupported fail-closed | Capital-producing `*_for_policy` entrypoints raise `UnsupportedRegulatoryFeatureError` until UK mapping and fixtures exist. |
+| Out of scope | Deliberately deferred beyond the package boundary (SBM/DRC/RRAO stack, approvals, consolidation). |
+
 ## Source register
 
 | Source family | Primary references used by this prototype | Status in this project |
@@ -47,7 +60,7 @@ From regulation to code:
 | U.S. NPR 2.0 | Federal Register, 91 FR 14952, March 27, 2026, *Regulatory Capital Rule: Category I and II Banking Organizations, Banking Organizations With Significant Trading Activity, and Optional Adoption for Other Banking Organizations*. | Proposed-rule material only. Outputs are not final U.S. regulatory capital. |
 | EU CRR / CRR3 | Regulation (EU) No 575/2013 as amended by CRR2 and CRR3, especially Articles 325ba, 325bb, 325bc, 325bd, 325be, 325bf, 325bg, and 325bk. | EU comparison framework. The code does not implement a full CRR own-funds requirement. |
 | EU RTS / EBA | Commission Delegated Regulation (EU) 2022/2059 for backtesting and P&L attribution technical details; Commission Delegated Regulation (EU) 2022/2060 for risk-factor modellability; EBA final draft RTS updates under CRR3. | Used to identify documentation gaps and EU-specific refinements, not fully implemented. |
-| UK CRR / PRA | UK CRR and PRA rulebook market-risk implementation. | Separate profile placeholder. PRA-specific deltas are not source-mapped or formally calibrated yet. |
+| UK CRR / PRA | UK CRR and PRA rulebook market-risk implementation. | `placeholder_reference` in the source manifest; `unsupported_fail_closed` for IMA capital runtime. PRA-specific deltas are not source-mapped or formally calibrated yet. |
 
 Use `docs/regulatory_sources.yml` for topic-level links and section hints.
 
@@ -92,7 +105,7 @@ material, not final U.S. regulatory capital.
 | --- | --- | --- | --- | --- |
 | Fed NPR 2.0 | `FED_NPR_2_0` | Default profile; most complete. | 97.5% ES with weighted interpolated tail estimation, 10/20/40/60/120 LHA weights, 50/50 IMCC blend, RFET count thresholds with optional exact business-calendar windows, stress-period selection from supplied historical risk-class loss series, Type A / Type B NMRF taxonomy, NMRF method evidence, valuation-run specifications and artifact reconciliation, Type A zero-correlation SES aggregation, Type B rho 0.36, KS-only PLA over a 250-business-day policy window, 97.5%/99.0% backtesting gates with 30/12 exception limits, Basel-style multiplier schedule. | Final U.S. rule calibration, supervisory overrides, raw market-data sourcing, formal stress-period approval governance, SBM/DRC/RRAO fallback stack, firm consolidation. |
 | ECB CRR3 | `ECB_CRR3` | Partial profile with honest gaps. | Basel/FRTB ES, LHA, IMCC, backtesting, and NMRF concepts share the same prototype mechanics where terminology aligns. EU/PRA PLA computes both KS and Spearman and applies the worse joint zone. | Full EU RFET RTS details, vendor/data-pooling rules, and EU-specific own-funds assembly are explicitly unsupported. Type A / Type B labels are not treated as native EU terminology. |
-| PRA UK CRR | `PRA_UK_CRR` | Separate UK/PRA profile placeholder. | Initially uses Basel/UK-CRR-like default numeric assumptions where no PRA-specific delta has been mapped, including EU/PRA-style KS plus Spearman PLA as a comparison parameter. | PRA-specific calibration, source mapping, RFET deltas, and any divergence from ECB/EU rules are explicitly unsupported until documented. |
+| PRA UK CRR | `PRA_UK_CRR` | Partial profile with `mapped_and_cited` RFET/NMRF slice and `tests/fixtures/ima_pra` replay. | UK CRR Articles 325be and 325bk with retained DR 2022/2059/2060 PLA thresholds; BASEL_EU_NMRF capital routing (modellable factors in IMCC, NMRF statuses in SES only). | `pra_specific_calibration`, `eu_rfet_rts_detail`, and U.S. Type A / Type B taxonomy remain unsupported. |
 
 ## Code to regulation
 
@@ -129,7 +142,7 @@ material, not final U.S. regulatory capital.
 | `input_manifest.py` | Production-style input lineage manifest with artifact source system/version, extraction timestamp, schema version, checksum, sign convention, counts, validation status, and fixture-manifest mapping. | MAR31-MAR33 input lineage, completeness, and model governance concepts. | Proposed market-risk governance, reproducibility, and audit-trail basis. | CRR internal-model governance comparison concepts. | Does not connect to enterprise data-quality platforms, object stores, or persistent storage. |
 | `arrow_batch.py` | Arrow-backed tabular handoff for capital-run input-manifest artifact lineage. | MAR31-MAR33 input lineage, completeness, and model governance concepts. | Proposed market-risk governance, reproducibility, and audit-trail basis. | CRR internal-model governance comparison concepts. | Accepts tabular manifest evidence only; scenario cubes and scenario-vector kernels remain NumPy-native and upstream risk-engine outputs remain outside this adapter. |
 | `audit.py` | Desk-level audit records, run audit collection, optional input-lineage summaries, NDJSON serialization, and deterministic Markdown report rendering. | MAR31-MAR33 input/output traceability concepts. | Proposed reporting, governance, and audit-trail basis. | CRR internal-model governance comparison concepts. | Serialisable post-run artifacts and prototype report only; no final regulatory disclosure template, streaming large-run writer, Parquet, or DuckDB backend. |
-| `capital_run_fixture.py` | Importable loader and checksum verifier for the committed synthetic capital-run fixture used by validation packs, notebooks, tests, and replay. | MAR31-MAR33 input lineage and reproducibility concepts. | Proposed market-risk governance and audit-trail basis. | CRR internal-model governance comparison concepts. | Synthetic fixture support only; not a proprietary input adapter or market-data sourcing layer. |
+| `capital_run_fixture.py` | Importable loader and checksum verifier for the committed synthetic capital-run fixture used by validation packs, notebooks, tests, and replay. | MAR31-MAR33 input lineage and reproducibility concepts. | Proposed market-risk governance and audit-trail basis. | CRR internal-model governance comparison concepts. | Synthetic fixture support for `tests/fixtures/capital_run_v1` and `tests/fixtures/ima_pra`; not a proprietary input adapter or market-data sourcing layer. |
 | `replay.py` | Dependency-free replay CLI that recomputes the committed fixture capital run from input artifacts and compares identity, hashes, scalar outputs, and categorical outputs against audit NDJSON. | MAR31-MAR33 model governance, reproducibility, and audit-trail concepts. | Proposed market-risk governance, reproducibility, and audit-trail basis. | CRR internal-model governance comparison concepts. | Supports the committed synthetic fixture first; no remote object storage, proprietary bank input adapters, or cryptographic signing. |
 | `demo_data.py` | Synthetic risk factors, observations, scenario vectors, P&L, and VaR series for examples. | Not a regulatory method; supports demonstrations of MAR31-MAR33 concepts. | Not a regulatory method; supports NPR-style examples. | Not a regulatory method; supports CRR/FRTB examples. | Fabricated data only; not evidence, not market data, not calibration. |
 
@@ -199,9 +212,11 @@ When adding or changing a calculation module:
   source/vendor lineage, data-pooling metadata, representativeness evidence, and
   date-normalisation checks as package-level evidence contracts, but does not
   connect to vendor systems or perform legal/vendor-contract review.
-- PRA-specific market-risk source mapping is not complete. `PRA_UK_CRR` is a
+- PRA-specific market-risk source mapping remains partial. `PRA_UK_CRR` is a
   separate profile so future UK/PRA deltas do not silently fall back to ECB
-  behavior where the rules diverge.
+  behavior where the rules diverge. RFET/NMRF capital for supported synthetic
+  inputs is replay-tested under `tests/fixtures/ima_pra`; remaining gaps are
+  listed as explicit unsupported features on the policy object.
 - The prototype does not implement SBM, default risk charge, residual risk
   add-on, fallback capital, redesignation add-ons, legal-entity consolidation,
   formal model approval, or supervisor override processes.

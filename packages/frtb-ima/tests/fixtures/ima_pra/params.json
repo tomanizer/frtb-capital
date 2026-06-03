@@ -1,0 +1,41 @@
+{
+  "as_of_date": "2025-06-30",
+  "backtesting_window_days": 250,
+  "desk_id": "rates-credit-demo",
+  "es_confidence_level": 0.975,
+  "es_estimator": "WEIGHTED_INTERPOLATED",
+  "generator_version": "1",
+  "imcc_unconstrained_weight": 0.5,
+  "lha_weights": [
+    {
+      "liquidity_horizon": 10,
+      "weight": 1.0
+    },
+    {
+      "liquidity_horizon": 20,
+      "weight": 1.0
+    },
+    {
+      "liquidity_horizon": 40,
+      "weight": 2.0
+    },
+    {
+      "liquidity_horizon": 60,
+      "weight": 2.0
+    },
+    {
+      "liquidity_horizon": 120,
+      "weight": 6.0
+    }
+  ],
+  "pla_window_days": 250,
+  "regime": "PRA_UK_CRR",
+  "rfet_long_lh_threshold": 16,
+  "rfet_lookback_days": 365,
+  "rfet_short_lh_threshold": 24,
+  "run_id": "ima-pra-v1",
+  "schema_version": "capital_run_fixture_v1",
+  "seed": 42,
+  "stress_period_minimum_observations": 250,
+  "stress_period_window_observations": 250
+}

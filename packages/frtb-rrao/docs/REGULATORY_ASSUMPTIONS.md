@@ -124,7 +124,7 @@ lines. Differences outside those budgets fail reconciliation.
 | Basel MAR23 | Supported for v1 canonical-input mechanics. | Profile covers MAR23.2-MAR23.8 mechanics and exclusions. |
 | U.S. NPR 2.0 | Supported for v1 canonical-input mechanics. | Proposed-rule material from section V.A.7.b and proposed section `__.211`; not final U.S. regulatory capital. |
 | EU Article 325u / Delegated Regulation 2022/2328 | Supported comparison profile for canonical-input mechanics. | The package maps Article 1 exotic underlyings, Article 2 Annex instruments, Article 3 non-presumptive risks, Article 325u(3) weights, and Article 325u(4) listed/clearable/perfectly offsetting exemptions. |
-| PRA UK CRR | Unsupported. | No package-local PRA RRAO source mapping exists yet. |
+| PRA UK CRR | Supported for v1 canonical-input mechanics. | The package maps UK CRR Article 325u and UK retained DR 2022/2328 with UK-specific citation ids; investment-fund paths remain fail-closed like EU. See `docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`. |
 
 ## Public implementation references
 

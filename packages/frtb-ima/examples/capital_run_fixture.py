@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from frtb_ima.capital_run_fixture import (
     DEFAULT_CAPITAL_RUN_V1_ROOT,
+    DEFAULT_IMA_PRA_FIXTURE_ROOT,
     NMRF_ARTIFACT_SOURCE,
     CapitalRunFixture,
     _verify_manifest_checksums,
@@ -11,6 +12,7 @@ from frtb_ima.capital_run_fixture import (
     classifications_from_fixture,
     load_capital_run_fixture,
     load_capital_run_v1_fixture,
+    load_capital_run_pra_fixture,
     nmrf_artifacts_from_fixture,
     nmrf_direct_shocks_from_fixture,
     nmrf_full_revaluations_from_fixture,
@@ -23,6 +25,7 @@ from frtb_ima.capital_run_fixture import (
 
 __all__ = [
     "DEFAULT_CAPITAL_RUN_V1_ROOT",
+    "DEFAULT_IMA_PRA_FIXTURE_ROOT",
     "NMRF_ARTIFACT_SOURCE",
     "CapitalRunFixture",
     "_verify_manifest_checksums",
@@ -30,6 +33,7 @@ __all__ = [
     "classifications_from_fixture",
     "load_capital_run_fixture",
     "load_capital_run_v1_fixture",
+    "load_capital_run_pra_fixture",
     "nmrf_artifacts_from_fixture",
     "nmrf_direct_shocks_from_fixture",
     "nmrf_full_revaluations_from_fixture",

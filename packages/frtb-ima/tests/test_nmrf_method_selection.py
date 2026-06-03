@@ -156,12 +156,16 @@ def test_method_selection_input_validates_required_types() -> None:
         _base_input(liquidity_horizon=20)
 
 
-def test_selector_does_not_use_fed_type_a_type_b_taxonomy_for_ecb_profile() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeature, match="type_a_type_b"):
-        select_nmrf_method(
-            _base_input(direct_method_available=True, direct_shock_well_defined=True),
-            get_policy(RegulatoryRegime.ECB_CRR3),
-        )
+def test_selector_supports_ecb_nmrf_without_type_a_type_b_taxonomy_gate() -> None:
+    decision = select_nmrf_method(
+        _base_input(
+            direct_method_available=True,
+            direct_shock_well_defined=True,
+            direct_robust=True,
+        ),
+        get_policy(RegulatoryRegime.ECB_CRR3),
+    )
+    assert decision.method is NMRFStressMethod.DIRECT
 
 
 def test_direct_robustness_assessment_passes_within_threshold() -> None:

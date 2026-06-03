@@ -338,6 +338,7 @@ def select_reduced_risk_factor_set_for_policy(
     desk_id: str | None = None,
 ) -> ReducedSetSelectionResult:
     """Select a reduced risk-factor set using policy defaults."""
+    policy.require_capital_runtime_supported()
     result = select_reduced_risk_factor_set(
         full_current_lha_es,
         risk_factor_contributions,
@@ -371,6 +372,7 @@ def reduced_set_variation_explained_for_policy(
     desk_id: str | None = None,
 ) -> ReducedSetCoverageResult:
     """Assess reduced-set variation explained using policy defaults."""
+    policy.require_capital_runtime_supported()
     result = reduced_set_variation_explained(
         full_current_lha_es,
         reduced_current_lha_es,
