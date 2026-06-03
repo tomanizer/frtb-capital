@@ -31,7 +31,7 @@ Python, NumPy, or benchmark dimensions change.
 Run the IMA Arrow batch benchmark from the workspace root:
 
 ```bash
-make ima-arrow-handoff-benchmark
+make ima-arrow-batch-benchmark
 ```
 
 The benchmark covers the Arrow -> normalized handoff -> immutable batch path for

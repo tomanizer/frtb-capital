@@ -7,7 +7,7 @@ budgets used by `scripts/ci/check_benchmark_budgets.py`.
 
 ```bash
 make benchmark              # IMA target-scale JSON -> dist/benchmarks/frtb-ima-target-scale.json
-make ima-arrow-handoff-benchmark # IMA Arrow batch JSON -> dist/benchmarks/frtb-ima-arrow-batch.json
+make ima-arrow-batch-benchmark # IMA Arrow batch JSON -> dist/benchmarks/frtb-ima-arrow-batch.json
 make sbm-benchmark          # SBM Arrow/batch JSON -> dist/benchmarks/frtb-sbm-batch-arrow.json
 make drc-benchmark          # DRC Arrow/batch JSON -> dist/benchmarks/frtb-drc-batch-arrow.json
 make rrao-benchmark         # RRAO target-scale JSON -> dist/benchmarks/frtb-rrao-target-scale.json
