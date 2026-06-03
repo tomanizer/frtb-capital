@@ -81,7 +81,7 @@ package = "frtb-orchestration"
 import_name = "frtb_orchestration"
 path = "packages/frtb-orchestration"
 module_docs = "docs/modules/frtb-orchestration"
-maturity = "orchestration_partial"
+maturity = "orchestration_implemented"
 component_type = "orchestration"
 metadata_object = "frtb_orchestration:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_orchestration:calculate_suite_capital"
@@ -89,6 +89,10 @@ calculation_entrypoint = "frtb_orchestration:calculate_suite_capital"
 [[packages.required_tests]]
 id = "orchestration-boundary"
 path = "packages/frtb-orchestration/tests/test_orchestration_scaffold.py"
+
+[[packages.required_tests]]
+id = "suite-capital-end-to-end"
+path = "packages/frtb-orchestration/tests/test_suite_capital.py"
 
 [[packages]]
 package = "frtb-result-store"
