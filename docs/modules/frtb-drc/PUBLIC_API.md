@@ -33,9 +33,12 @@ high-volume batch boundary is summarized in
 
 | Tier | Client input | DRC path | Notes |
 | --- | --- | --- | --- |
-| 1 - Arrow/Parquet table | One class-specific table per DRC class | `normalize_drc_*_arrow_table` -> `build_drc_*_batch_from_arrow` -> `calculate_drc_capital_from_batch` | Recommended production path. |
+| 1 - Arrow/Parquet table | One class-specific table per DRC class | `normalize_drc_*_arrow_table` -> `build_drc_*_batch_from_arrow` -> `calculate_drc_capital_from_batch` | Recommended production path **per risk class**; mixed classes in one table fail closed. |
 | 2 - Vendor rows | Client ETL maps vendor rows to the DRC Arrow contract | Tier 1 | No package-neutral CRIF path is exposed for all DRC classes. |
-| 3 - Canonical dataclasses | `tuple[DrcPosition, ...]` plus `DrcCalculationContext` | `calculate_drc_capital` | Small books, tests, and notebooks. |
+| 3 - Canonical dataclasses | `tuple[DrcPosition, ...]` plus `DrcCalculationContext` | `calculate_drc_capital` | Multi-class books in **one** result, tests, and notebooks. |
+
+See [`packages/frtb-drc/docs/PACKAGE_JOURNEY.md`](../../../packages/frtb-drc/docs/PACKAGE_JOURNEY.md)
+for row-vs-batch semantics and SA handoff when more than one DRC class is in scope.
 
 ## Arrow Paths
 
