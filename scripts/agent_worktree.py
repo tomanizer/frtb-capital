@@ -533,8 +533,12 @@ def build_parser() -> argparse.ArgumentParser:
     ensure_parser.add_argument("--agent", required=True, help="agent name, for example codex")
     ensure_parser.add_argument("task", nargs="?", help="task slug, for example drc-scenarios")
     ensure_parser.add_argument("--branch", help="branch name; must start with <agent>/")
-    ensure_parser.add_argument("--path", type=Path, help="explicit worktree path under the agent root")
-    ensure_parser.add_argument("--no-sync", action="store_true", help="skip sync-main before creating")
+    ensure_parser.add_argument(
+        "--path", type=Path, help="explicit worktree path under the agent root"
+    )
+    ensure_parser.add_argument(
+        "--no-sync", action="store_true", help="skip sync-main before creating"
+    )
     ensure_parser.add_argument("--quiet", action="store_true")
     ensure_parser.set_defaults(func=ensure)
 
