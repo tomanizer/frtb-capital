@@ -9,6 +9,8 @@ semantics and calculation batches.
 Current contents:
 
 - explicit unsupported/unimplemented exception types;
+- shared attribution and impact contracts:
+  [`ATTRIBUTION.md`](ATTRIBUTION.md);
 - immutable package metadata for package status;
 - implementation and validation status enums;
 - package-neutral standardised-component summaries:

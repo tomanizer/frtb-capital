@@ -20,6 +20,8 @@ A Python prototype demonstrating how an existing risk engine can generate 10-day
 - Fed NPR PLA Kolmogorov-Smirnov statistic and EU/PRA Spearman comparison metric
 - Backtesting exception counts at 97.5% and 99.0% VaR levels
 - Structured JSON logging, NDJSON audit records, and Markdown audit reports
+- Desk-level attribution projection:
+  [`ATTRIBUTION.md`](ATTRIBUTION.md)
 
 The current boundary is intentional: the package assembles and validates
 capital inputs, and can select stress windows from supplied historical loss

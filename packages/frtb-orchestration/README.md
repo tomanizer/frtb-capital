@@ -16,6 +16,7 @@ Outputs are prototype engineering evidence, not final regulatory capital.
 | Document | Purpose |
 | --- | --- |
 | [Module README](../../docs/modules/frtb-orchestration/README.md) | Package status, examples, validation evidence, limitations, Arrow boundary |
+| [ATTRIBUTION.md](ATTRIBUTION.md) | Suite attribution aggregation, component bundle rules, and residual behavior |
 | [PUBLIC_API.md](../../docs/modules/frtb-orchestration/PUBLIC_API.md) | Stable top-level exports, suite handoffs, manifest table keys, and unsupported paths |
 | [ADR 0039](../../docs/decisions/0039-orchestration-suite-capital-aggregation.md) | Top-of-house suite aggregation decision |
 | [ADR 0032](../../docs/decisions/0032-orchestration-sa-arithmetic-and-fallback-routing.md) | SA arithmetic and IMA fallback route recording |

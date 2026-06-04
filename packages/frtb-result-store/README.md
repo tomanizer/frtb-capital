@@ -7,6 +7,9 @@ scalar measures, lineage references, attribution records, and large-artifact
 references. It is storage and serving infrastructure only; capital formulae
 remain in the IMA, SBM, DRC, RRAO, CVA, and orchestration packages.
 
+Attribution storage behavior and limitations are documented in
+[`ATTRIBUTION.md`](ATTRIBUTION.md).
+
 Current runtime support is deliberately narrow:
 
 - append-only `CalculationRun` bundles;

@@ -23,6 +23,9 @@ classes fail closed with `UnsupportedRegulatoryFeatureError` or `CvaInputError`.
 **Integration journey (Arrow → capital → attribution → suite/store):**
 [`docs/PACKAGE_JOURNEY.md`](docs/PACKAGE_JOURNEY.md)
 
+Capital attribution method, inputs, supported grains, and limitations are
+documented in [`ATTRIBUTION.md`](ATTRIBUTION.md).
+
 The stable client integration surface is documented in
 [`docs/modules/frtb-cva/PUBLIC_API.md`](../../docs/modules/frtb-cva/PUBLIC_API.md).
 
