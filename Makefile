@@ -10,7 +10,7 @@ COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_rrao
 MUTATION_DIST := dist/mutation
 
 .PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
-.PHONY: test test-no-cov test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording docs-staleness
+.PHONY: test test-no-cov test-changed test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording docs-staleness
 .PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
 .PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
@@ -45,6 +45,9 @@ test:
 
 test-no-cov:
 	uv run pytest packages
+
+test-changed:
+	uv run python scripts/ci/select_pytest_targets.py --run
 
 test-partial-runtime-coverage:
 	mkdir -p dist/coverage

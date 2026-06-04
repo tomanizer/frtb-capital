@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -34,6 +35,7 @@ def test_docs_only_pr_does_not_force_heavy_ci() -> None:
         "full": False,
         "docs": True,
         "code": False,
+        "test": False,
         "dependency": False,
         "notebooks": False,
         "examples": False,
@@ -45,6 +47,7 @@ def test_dependency_change_runs_code_and_dependency_checks() -> None:
     outputs = classify({"uv.lock"})
 
     assert outputs["code"] is True
+    assert outputs["test"] is True
     assert outputs["dependency"] is True
     assert outputs["docs"] is False
     assert outputs["notebooks"] is True
@@ -58,6 +61,7 @@ def test_workflow_change_runs_full_ci_surface() -> None:
         "full": False,
         "docs": True,
         "code": True,
+        "test": True,
         "dependency": True,
         "notebooks": True,
         "examples": True,
@@ -72,8 +76,44 @@ def test_push_runs_full_ci_surface() -> None:
         "full": True,
         "docs": True,
         "code": True,
+        "test": True,
         "dependency": True,
         "notebooks": True,
         "examples": True,
         "workflow": False,
     }
+
+
+def test_agent_instruction_pr_skips_runtime_tests() -> None:
+    outputs = classify({".github/copilot-instructions.md"})
+
+    assert outputs["code"] is True
+    assert outputs["docs"] is True
+    assert outputs["test"] is False
+
+
+def test_root_test_fixture_pr_runs_runtime_tests() -> None:
+    outputs = classify({"tests/fixtures/example.json"})
+
+    assert outputs["test"] is True
+
+
+def test_diff_name_only_falls_back_when_shallow_checkout_lacks_merge_base(
+    monkeypatch,
+) -> None:
+    classifier = load_classifier()
+    calls: list[list[str]] = []
+
+    def fake_git_lines(args: list[str]) -> list[str]:
+        calls.append(args)
+        if args == ["diff", "--name-only", "base-sha...HEAD"]:
+            raise subprocess.CalledProcessError(128, ["git", *args])
+        return ["packages/frtb-sbm/src/frtb_sbm/capital.py"]
+
+    monkeypatch.setattr(classifier, "_git_lines", fake_git_lines)
+
+    assert classifier._diff_name_only("base-sha") == ["packages/frtb-sbm/src/frtb_sbm/capital.py"]
+    assert calls == [
+        ["diff", "--name-only", "base-sha...HEAD"],
+        ["diff", "--name-only", "base-sha", "HEAD"],
+    ]

@@ -25,6 +25,7 @@ jobs:
       examples: ${{ steps.classify.outputs.examples }}
       full: ${{ steps.classify.outputs.full }}
       notebooks: ${{ steps.classify.outputs.notebooks }}
+      test: ${{ steps.classify.outputs.test }}
       workflow: ${{ steps.classify.outputs.workflow }}
 
     steps:
@@ -166,7 +167,7 @@ jobs:
   test:
     name: test (3.11)
     needs: changes
-    if: ${{ github.event_name != 'schedule' && needs.changes.outputs.code == 'true' }}
+    if: ${{ github.event_name != 'schedule' && needs.changes.outputs.test == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -192,7 +193,14 @@ jobs:
       - name: Sync workspace
         run: uv sync --locked --python 3.11
 
+      - name: Test pull request changes
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          HYPOTHESIS_PROFILE: ci
+        run: make test-changed
+
       - name: Test with coverage
+        if: ${{ github.event_name != 'pull_request' }}
         env:
           HYPOTHESIS_PROFILE: ci
         run: make test
