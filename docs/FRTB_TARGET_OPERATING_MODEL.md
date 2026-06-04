@@ -22,7 +22,7 @@ flagged inline as **[OPEN]**.
 
 | # | Decision area | Choice | Primary impact |
 | --- | --- | --- | --- |
-| 1 | **Jurisdiction** | **US (NPR)** | `US_NPR` regime profiles; FFIEC-style return; US DRC bucket taxonomy (ADRs 0024–0028) authoritative |
+| 1 | **Jurisdiction** | **US (NPR)** | `FED_NPR_2_0` (frtb-ima) / `US_NPR_2_0` (SA & CVA) regime profiles; FFIEC-style return; US DRC bucket taxonomy (ADRs 0024–0028) authoritative |
 | 2 | **IMA scope** | **IMA + SA from day one** | PLA, backtesting, NMRF/SES, stress periods, desk eligibility all in the go-live critical path |
 | 3 | **Run cadence** | **Daily T+1 batch** | One official run on prior close; intraday is estimate-only |
 | 4 | **Org topology** | **Centralised Risk Analytics** | Single team operates the run, owns reconciliation & attribution suite-wide |
@@ -37,7 +37,7 @@ flagged inline as **[OPEN]**.
 
 | # | Decision area | Choice | Primary impact |
 | --- | --- | --- | --- |
-| 11 | **RFET thresholds** | **Configurable per regime** | Obs count, max gap, window, bucketing are `US_NPR` profile parameters; US/Basel/conservative variants coexist |
+| 11 | **RFET thresholds** | **Configurable per regime** | Obs count, max gap, window, bucketing are `FED_NPR_2_0` (IMA) profile parameters; US/Basel/conservative variants coexist |
 | 12 | **Observation sourcing** | **Internal-primary** | Internal observability DB is system-of-record for real price observations; vendor pools fill gaps |
 | 13 | **Desk eligibility** | **Market Risk (2LOD) decides directly** | No separate board; eligibility called straight off the library traffic-light |
 | 14 | **Run SLA / DR** | **Best-effort, no fallback** | Correctness over cadence; a late feed slips the run rather than substituting stale numbers |
@@ -47,6 +47,13 @@ flagged inline as **[OPEN]**.
 | 18 | **Retention** | **7-year WORM, full lineage** | Every capital-of-record run write-once for 7 years with input lineage + hashes |
 | 19 | **Access / SoD** | **Role-based, environment-gated** | Prod config locked to release train; only the IT scheduler triggers official prod runs; humans read-only in prod |
 | 20 | **Conditional-use cap** | **Time-boxed** | Conditional use granted for a fixed window; unclosed findings revert the component to a conservative SA fallback |
+
+> **Regime-profile identifiers.** "US NPR" is the prose shorthand used throughout
+> this document. The implemented profile **enum identifiers differ by package**:
+> `frtb-ima` uses `RegulatoryRegime.FED_NPR_2_0` (with `ECB_CRR3` and `PRA_UK_CRR`
+> for the EU/UK variants); the Standardised-Approach and CVA packages (`frtb-sbm`,
+> `frtb-drc`, `frtb-cva`) use `US_NPR_2_0` (with `BASEL_MAR21`). Where this document
+> names a code identifier it uses the package-correct enum value.
 
 ---
 
@@ -258,11 +265,11 @@ flowchart LR
 | Activity | Owner | Library touchpoint |
 | --- | --- | --- |
 | Desk boundary & IMA-eligibility policy | Risk + FO | `DeskEligibilityStatus`, two-state guard (ADR 0009) |
-| Jurisdiction/regime profile selection (BASEL_MAR21, US_NPR, EU) | Quant + Risk | `regimes.py` per package; profile guards (ADR 0022) |
+| Jurisdiction/regime profile selection (`FED_NPR_2_0`/`ECB_CRR3`/`PRA_UK_CRR` in frtb-ima; `US_NPR_2_0`/`BASEL_MAR21` in SA & CVA) | Quant + Risk | `regimes.py` per package; profile guards (ADR 0022) |
 | Reference data load (buckets, weights, correlations) | Risk Analytics | package `*_reference_data.py` rule tables |
 | RFET observation-feed onboarding (vendor pools + internal observability DB) | Market/Risk Data + IT | RFET evidence input specs (see §4.4) |
 | Reduced-data-set selection (modellable factors w/ stress history) | Quant + Market/Risk Data | ES stress-scaling inputs |
-| Stress-period & NMRF stress spec; Type A/B classification rules | Quant | `frtb_ima.stress_periods`, `nmrf_stress_spec`, `nmrf_method_selection` |
+| Stress-period & NMRF stress spec; Type A/B classification rules | Quant | `frtb_ima.stress_periods`, `frtb_ima.nmrf_stress_spec`; Type A/B via `frtb_ima.nmrf.route_nmrf_classifications_for_capital` + `NMRFTaxonomyMode` |
 | Input contract onboarding (column specs, hashing) | IT + Risk Analytics | `*_ARROW_COLUMN_SPECS`, CRIF normalization |
 
 ### 4.2 Live (daily, typically T+1 batch)
@@ -309,7 +316,7 @@ sequenceDiagram
 | US FRTB regulatory return (FFIEC) | Monthly / quarterly | Finance |
 
 > **Change management (decisions 10, 16).** Methodology and regime-profile changes
-> (new ADRs, weight/correlation updates, `US_NPR` profile changes) are bundled
+> (new ADRs, weight/correlation updates, US-NPR profile changes) are bundled
 > onto a **quarterly scheduled release train**. Each change runs **one month in
 > parallel against the incumbent** before cutover so the capital impact is
 > attributable (ADR 0012 / 0038) and reviewable by MRM and Finance. Regulatory-
@@ -364,8 +371,8 @@ flowchart TB
 | 1. Observation sourcing | Real price observations gathered per risk factor (date, price, source). Vendors supply pooled industry observations; the internal observability DB supplies the bank's own executed trades and committed quotes. | **Vendor RPO pools + internal observability DB** (not the risk engine) | **Market/Risk Data function** curates; quality-owned in 2LOD |
 | 2. RFET (modellability) | Count observations over the window and check the maximum gap against the US-NPR criteria; a risk factor (or bucket) passes or fails. | Curated observations | **`frtb-capital`** (`frtb_ima.rfet_evidence`) runs the test; Risk Analytics operates it |
 | 3. NMRF derivation | Every risk factor that **fails** RFET is non-modellable ⇒ an NMRF. This follows *mechanically* from RFET — there is no separate "is it an NMRF" decision. | RFET output | **`frtb-capital`** derives the set automatically |
-| 4. NMRF classification (Type A vs B) | *This* is where judgment enters. Idiosyncratic credit/equity NMRFs that meet the criteria are **Type A** (aggregated assuming **zero correlation**, ADR 0006); all others are **Type B** (prescribed correlation). | Risk-factor taxonomy + idiosyncratic-eligibility flags | **Quant** sets the classification methodology; **`frtb-capital`** applies it (`nmrf_method_selection`) |
-| 5. SES | Each NMRF gets a stress-scenario shock, a liquidity horizon, and is aggregated into the Stressed Expected Shortfall add-on. | Stress-period calibration spec | **`frtb-capital`** (`nmrf_stress_spec`, `stress_periods`); **Quant** owns the calibration |
+| 4. NMRF classification (Type A vs B) | *This* is where judgment enters. Idiosyncratic credit/equity NMRFs that meet the criteria are **Type A** (aggregated assuming **zero correlation**, ADR 0006); all others are **Type B** (prescribed correlation). | Risk-factor taxonomy + idiosyncratic-eligibility flags | **Quant** sets the classification methodology; **`frtb-capital`** applies it (`frtb_ima.nmrf.route_nmrf_classifications_for_capital`, `NMRFTaxonomyMode`) |
+| 5. SES | Each NMRF gets a stress-scenario shock, a liquidity horizon, and is aggregated into the Stressed Expected Shortfall add-on. | Stress-period calibration spec | **`frtb-capital`** — calibration via `frtb_ima.nmrf_stress_spec` / `stress_periods`, SES aggregation via `frtb_ima.nmrf.calculate_nmrf_capital_for_policy` / `aggregate_ses_breakdown_for_policy`; **Quant** owns the calibration |
 | 6. Reduced data set | The ES stress scaling (`ES = ES_{R,S} · ES_{F,C} / ES_{R,C}`) needs a **reduced set of modellable risk factors** with long enough history for the stress period (must capture ≥ the regulatory share of full ES). This is a *data-availability selection among modellable factors* — related to, but distinct from, RFET. | Long-history market data | **Market/Risk Data** maintains the history; **Quant** selects the reduced set; **`frtb-capital`** computes the ratios |
 | 7. PLA | The risk engine supplies **HPL** (hypothetical, full-reval P&L) and **RTPL** (risk-theoretical P&L). The library runs the **regulatory PLA test** — Spearman correlation and the KS statistic — and assigns the green/amber/red zone. | **Risk engine HPL/RTPL vectors** | **`frtb-capital`** (`frtb_ima.pla`) runs the test using regulator methodology; Quant owns the vectors |
 | 8. Backtesting & eligibility | Backtesting exceptions are counted from the P&L-vs-VaR vectors; combined with the PLA zone they drive **desk IMA eligibility**. A red desk falls back to SA (ADR 0009, 0032). | Risk engine P&L vectors | **`frtb-capital`** (`frtb_ima.backtesting`) computes; **Market Risk (2LOD)** owns the eligibility decision |
@@ -394,7 +401,7 @@ the curation, completeness, and vendor-gap reconciliation are owned by the
 
 **Thresholds (decision 11 — configurable per regime).** The RFET observation
 count, maximum gap, observation window, and bucketing approach are **parameters of
-the regime profile**, not hard-coded. The `US_NPR` profile carries the US figures;
+the regime profile**, not hard-coded. The `FED_NPR_2_0` profile carries the US figures;
 a Basel and an internal-conservative variant coexist and are selected at config
 time. The exact US-NPR threshold values and the Type A/B idiosyncratic-NMRF
 criteria still need to be pinned against the rule text — tracked as O9 below.
@@ -506,7 +513,7 @@ flowchart LR
 
 This TOM targets the **US NPR** as the binding regime (decision 1); the Basel MAR
 references below are the conceptual lineage, but the authoritative numbers come
-from the US final rule and the library's `US_NPR` profiles (DRC bucket taxonomy
+from the US final rule and the library's `US_NPR_2_0` profiles (DRC bucket taxonomy
 and risk weights per ADRs 0024–0028).
 
 | Requirement | Source (Basel lineage → US NPR) | Where it lands in this TOM |
@@ -656,7 +663,7 @@ that round-1 raised. Status of the round-2 register:
 
 ### Genuinely-open items for round 3
 
-1. **O9 — US-NPR numeric calibration.** Pin the exact `US_NPR` RFET thresholds and
+1. **O9 — US-NPR numeric calibration.** Pin the exact `FED_NPR_2_0` RFET thresholds and
    the Type A/B idiosyncratic-NMRF criteria against the final-rule text. This is a
    regulatory-sourcing task (Quant + regulatory traceability + MRM), not an
    organisational decision.
