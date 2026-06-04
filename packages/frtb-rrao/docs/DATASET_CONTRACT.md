@@ -135,40 +135,45 @@ not `pyarrow.Table` objects.
 
 RRAO position tables carry:
 
-- position id,
-- source row id,
-- desk id,
-- legal entity,
-- gross effective notional,
-- currency,
-- evidence type,
-- evidence label,
-- lineage source system and file.
+- position id: `position_id`,
+- source row id: `source_row_id`,
+- desk id: `desk_id`,
+- legal entity: `legal_entity`,
+- gross effective notional: `gross_effective_notional`,
+- currency: `currency`,
+- evidence type: `evidence_type`,
+- evidence label: `evidence_label`,
+- lineage source system and file: `lineage_source_system`,
+  `lineage_source_file`.
 
 Optional classification and exclusion evidence includes:
 
-- classification hint,
-- exclusion reason,
-- exclusion evidence id,
-- back-to-back match group id,
-- back-to-back matched position id,
-- supervisor directive id,
-- underlying count,
+- classification hint: `classification_hint`,
+- exclusion reason: `exclusion_reason`,
+- exclusion evidence id: `exclusion_evidence_id`,
+- back-to-back match group id: `back_to_back_match_group_id`,
+- back-to-back matched position id: `back_to_back_matched_position_id`,
+- supervisor directive id: `supervisor_directive_id`,
+- underlying count: `underlying_count`,
 - path-dependence, maturity, strike/barrier, multiple-strike/barrier, and CTP
-  hedge flags,
-- comma-separated citation identifiers.
+  hedge flags: `is_path_dependent`, `has_maturity`,
+  `has_strike_or_barrier`, `has_multiple_strikes_or_barriers`,
+  `is_ctp_hedge`,
+- comma-separated citation identifiers: `citations`.
 
 Optional investment-fund evidence includes:
 
-- investment fund id,
-- section 205 method,
-- included exposure type,
-- mandate evidence id,
-- section 205 evidence id,
-- investment-fund gross effective notional,
-- included exposure ratio,
-- look-through-available flag,
-- mandate-allows-RRAO-exposures flag.
+- investment fund id: `investment_fund_id`,
+- section 205 method: `investment_fund_section_205_method`,
+- included exposure type: `investment_fund_included_exposure_type`,
+- mandate evidence id: `investment_fund_mandate_evidence_id`,
+- section 205 evidence id: `investment_fund_section_205_evidence_id`,
+- investment-fund gross effective notional:
+  `investment_fund_gross_effective_notional`,
+- included exposure ratio: `investment_fund_included_exposure_ratio`,
+- look-through-available flag: `investment_fund_look_through_available`,
+- mandate-allows-RRAO-exposures flag:
+  `investment_fund_mandate_allows_rrao_exposures`.
 
 Nested descriptor objects are not accepted in the Arrow table. Inputs that use
 `unsupported_nested_payload`, `investment_fund_descriptor`,
