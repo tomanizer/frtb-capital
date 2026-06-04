@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -97,3 +98,17 @@ def test_cwd_watchdog_ignores_unrelated_main_branch(monkeypatch) -> None:
     warning = hook.warning_for({"cwd": "/Users/thomas/Projects/other-repo"})
 
     assert warning == ""
+
+
+def test_hook_entrypoints_reject_invalid_json(monkeypatch, capsys) -> None:
+    for name in (
+        "protect-main-worktree.py",
+        "create-agent-worktree.py",
+        "claude-cwd-watchdog.py",
+    ):
+        hook = load_hook(name)
+        monkeypatch.setattr(sys, "stdin", io.StringIO(""))
+
+        assert hook.main() == 1
+
+        assert "Invalid JSON payload" in capsys.readouterr().err

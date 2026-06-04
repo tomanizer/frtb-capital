@@ -51,8 +51,22 @@ def _requested_task(payload: dict[str, Any]) -> str:
     return "claude-session"
 
 
+def _load_payload() -> dict[str, Any] | None:
+    try:
+        payload = json.load(sys.stdin)
+    except ValueError:
+        sys.stderr.write("Error: Invalid JSON payload on stdin\n")
+        return None
+    if not isinstance(payload, dict):
+        sys.stderr.write("Error: Invalid JSON payload on stdin\n")
+        return None
+    return payload
+
+
 def main() -> int:
-    payload = json.load(sys.stdin)
+    payload = _load_payload()
+    if payload is None:
+        return 1
     task = _requested_task(payload)
     target = WORKTREE_ROOT / "claude" / task
 

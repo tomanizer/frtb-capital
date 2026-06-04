@@ -112,8 +112,22 @@ def decision_for(payload: dict[str, Any]) -> tuple[bool, str]:
     return True, ""
 
 
+def _load_payload() -> dict[str, Any] | None:
+    try:
+        payload = json.load(sys.stdin)
+    except ValueError:
+        sys.stderr.write("Error: Invalid JSON payload on stdin\n")
+        return None
+    if not isinstance(payload, dict):
+        sys.stderr.write("Error: Invalid JSON payload on stdin\n")
+        return None
+    return payload
+
+
 def main() -> int:
-    payload = json.load(sys.stdin)
+    payload = _load_payload()
+    if payload is None:
+        return 1
     allowed, reason = decision_for(payload)
     if allowed:
         return 0
