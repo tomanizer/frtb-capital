@@ -34,7 +34,7 @@ high-volume batch boundary is summarized in
 | Tier | Client input | DRC path | Notes |
 | --- | --- | --- | --- |
 | 1 - Arrow/Parquet table | One class-specific table per DRC class | `normalize_drc_*_arrow_table` -> `build_drc_*_batch_from_arrow` -> `calculate_drc_capital_from_batch` | Recommended production path **per risk class**; mixed classes in one table fail closed. |
-| 2 - Vendor rows | Client ETL maps vendor rows to the DRC Arrow contract | Tier 1 | No package-neutral CRIF path is exposed for all DRC classes. |
+| 2 - CRIF/vendor rows | `adapt_drc_crif_rows` maps source rows to canonical positions, rejected diagnostics, or class-specific Arrow tables | `DrcCrifAdapterResult.to_arrow_tables()` -> Tier 1, or `positions` -> Tier 3 | Ingress helper only; not a capital kernel and not a source of securitisation/CTP risk-weight overlays. |
 | 3 - Canonical dataclasses | `tuple[DrcPosition, ...]` plus `DrcCalculationContext` | `calculate_drc_capital` | Multi-class books in **one** result, tests, and notebooks. |
 
 See [`packages/frtb-drc/docs/PACKAGE_JOURNEY.md`](../../../packages/frtb-drc/docs/PACKAGE_JOURNEY.md)
@@ -47,6 +47,22 @@ for row-vs-batch semantics and SA handoff when more than one DRC class is in sco
 | Non-securitisation | `DRC_NONSEC_ARROW_COLUMN_SPECS` | `normalize_drc_nonsec_arrow_table` | `build_drc_nonsec_batch_from_arrow(..., profile_id=...)` | `DrcCalculationContext` with run id, calculation date, base currency, and profile id; builder `profile_id` must match the calculation context for non-default profiles; FX rates required for non-base-currency rows. |
 | Securitisation non-CTP | `DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_securitisation_non_ctp_arrow_table` | `build_drc_securitisation_non_ctp_batch_from_arrow` | `US_NPR_2_0` accepts position-id keyed `securitisation_non_ctp_risk_weights` or typed evidence; `BASEL_MAR22` requires typed `DrcRiskWeightEvidence`. Fair-value cap and offset-group maps are used where supplied and profile-supported. |
 | CTP | `DRC_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_ctp_arrow_table` | `build_drc_ctp_batch_from_arrow` | Position-id keyed `ctp_risk_weights`, `ctp_risk_weight_evidence`, and `ctp_offset_groups` where needed for offset treatment. |
+
+## CRIF / Vendor Ingress
+
+`adapt_drc_crif_rows` is a package-owned adapter boundary for CRIF or
+vendor-shaped default-risk rows represented as mappings. It returns
+`DrcCrifAdapterResult`, whose `positions` are canonical `DrcPosition` records
+and whose `rejected_rows` are deterministic `DrcRejectedCrifRow` diagnostics.
+`DrcCrifDirectionStrategy` makes the source sign convention explicit:
+`EXPLICIT_FIELD`, `SIGNED_NOTIONAL`, or `SIGNED_MARKET_VALUE`.
+
+`drc_crif_result_to_arrow_tables` and
+`DrcCrifAdapterResult.to_arrow_tables()` produce one `NormalizedArrowTable`
+per accepted risk class. The adapter preserves source column lineage in
+`DrcSourceLineage.source_column_map` and rejected-row diagnostics in the handoff
+envelope. It does not import dataframe libraries and does not fill missing
+securitisation or CTP risk-weight evidence.
 
 ## Arrow Column Summary
 

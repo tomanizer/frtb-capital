@@ -37,8 +37,9 @@ that the capital layer already consumes:
 
 Vendor rows are not the canonical regression fixture schema. Client ETL should
 map vendor feeds into the DRC-native Arrow table contract or frozen dataclasses
-before capital calculation. The package does not expose a package-neutral CRIF
-path for all DRC classes.
+before capital calculation. The package also exposes `adapt_drc_crif_rows` as a
+DRC-owned CRIF/vendor ingress helper that returns canonical positions,
+class-specific Arrow handoffs, or deterministic rejected-row diagnostics.
 
 ## Files
 
@@ -233,7 +234,8 @@ from accounting signs. The key conventions are:
 
 Do not flip signs inside fixture loaders or batch builders to make a test pass.
 If a vendor feed uses a different sign convention, normalize it in client ETL or
-adapter code and keep the DRC-native fixture/batch contract explicit.
+call `adapt_drc_crif_rows` with an explicit `DrcCrifDirectionStrategy`.
+Ambiguous or zero signs are rejected before capital calculation.
 
 ## Golden Outputs
 

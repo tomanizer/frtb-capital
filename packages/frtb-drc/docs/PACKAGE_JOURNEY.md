@@ -15,7 +15,7 @@ Related references:
 - Arrow/batch performance: [`docs/performance/frtb-drc-arrow-batch-triage.md`](../../../docs/performance/frtb-drc-arrow-batch-triage.md)
 - Run-scoped overlays: [`docs/CLIENT_REFERENCE_DATA.md`](../../../docs/CLIENT_REFERENCE_DATA.md)
 - Attribution policy: [ADR 0012](../../../docs/decisions/0012-capital-impact-attribution.md), [ADR 0031](../../../docs/decisions/0031-drc-attribution-method-contract.md)
-- Arrow handoff boundary: [ADR 0023](../../../docs/decisions/0023-arrow-tabular-handoff-boundary.md)
+- Arrow table boundary: [ADR 0023](../../../docs/decisions/0023-arrow-tabular-handoff-boundary.md)
 - SA composition vocabulary: [ADR 0033](../../../docs/decisions/0033-arrow-batch-and-component-summary-vocabulary.md)
 
 ---
@@ -61,7 +61,7 @@ The package does **not** import orchestration, SBM, RRAO, or the result store.
 | Tier | Typical client input | Entry path | Best for |
 | --- | --- | --- | --- |
 | **1 — Arrow / Parquet** | One **class-specific** table per DRC risk class | `normalize_drc_*_arrow_table` → `build_drc_*_batch_from_arrow` → `calculate_drc_capital_from_batch` | Production volume per class (three tables for a full desk) |
-| **2 — Vendor / ETL rows** | Client maps vendor rows to the DRC Arrow contract | Tier 1 after client-side normalization | **No** package-neutral CRIF adapter is exposed for DRC (unlike RRAO/SBM) |
+| **2 — CRIF / vendor rows** | `adapt_drc_crif_rows` maps source rows to canonical rows, rejected diagnostics, or class-specific Arrow tables | `DrcCrifAdapterResult.to_arrow_tables()` → Tier 1, or `positions` → Tier 3 | Ingress helper only; securitisation/CTP risk-weight overlays still come from context evidence |
 | **3 — Canonical rows** | `tuple[DrcPosition, ...]` | `calculate_drc_capital` | Multi-class books, tests, notebooks, suite demos |
 
 Tier 1 is the recommended **per-class** production path. Tier 3 is the recommended path
@@ -333,7 +333,7 @@ When reviewing module READMEs or planning docs against this journey:
 | Mixed risk classes | Row API **allows**; batch API **rejects** | Text that implies one Arrow table may contain all DRC classes for `calculate_drc_capital_from_batch` |
 | Attribution | Always computed in both capital entrypoints | Wording that sounds like a separate backward pass through the calculator |
 | Batch audit payload | Empty `gross_jtds` / `input_positions` on batch results | Assuming batch and row results carry identical evidence depth |
-| Vendor ingress | Client ETL → Arrow contract only | Expecting a package `adapt_crif_records` helper |
+| Vendor ingress | `adapt_drc_crif_rows` → canonical positions or class-specific Arrow tables | Treating the adapter as a capital kernel or source of missing securitisation/CTP risk-weight evidence |
 | EU / PRA profiles | Known IDs, **fail closed** for all classes | Any prose implying comparison-profile capital is already produced |
 | Basel CTP | Supported on `BASEL_MAR22` with typed MAR22.42 risk-weight evidence | Tables that list CTP as unsupported under Basel |
 
