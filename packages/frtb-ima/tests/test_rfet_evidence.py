@@ -254,9 +254,7 @@ def test_rfet_qualitative_stage_isolates_representativeness_controls() -> None:
 
     assert qualitative.qualitative_pass is True
     assert qualitative.bucket_representative is False
-    assert [item.methodology for item in qualitative.representativeness] == [
-        "curve-node-proximity"
-    ]
+    assert [item.methodology for item in qualitative.representativeness] == ["curve-node-proximity"]
 
 
 def test_rfet_quantitative_stage_records_window_and_dedup_exclusions() -> None:
