@@ -21,10 +21,13 @@ git config --local frtb.agentWorktreeRoot /path/to/frtb-capital-worktrees
 `FRTB_AGENT_MAIN_CLONE` and `FRTB_AGENT_WORKTREE_ROOT` may be used for
 environment-specific overrides.
 
-Before editing, run `python3 scripts/agent_worktree.py guard` from the current
-checkout. If it fails, create a compliant worktree with
-`make agent-new AGENT=codex TASK=<task-name>` and move there. Use
-`make agent-sync-main` to fast-forward the protected main clone and
+Before editing, run `make agent-ensure AGENT=<agent> TASK=<task-name>` from any
+checkout of this repo (including the protected main clone). The command passes
+when already in a compliant worktree; otherwise it creates or reuses
+`<worktree-root>/<agent>/<task>` and prints `next: cd ...` — **change directory
+there before changing files**. Equivalent:
+`python3 scripts/agent_worktree.py ensure --agent <agent> <task-name>`.
+Use `make agent-sync-main` to fast-forward the protected main clone and
 `make agent-worktrees` to list existing worktrees. See
 [`docs/AGENT_WORKTREE_POLICY.md`](docs/AGENT_WORKTREE_POLICY.md).
 
@@ -119,9 +122,9 @@ Copilot feedback, final audit), follow:
 Grok: `/frtb-ci-babysit`. Claude Code: `/frtb-ci-babysit` →
 [`.claude/commands/frtb-ci-babysit.md`](.claude/commands/frtb-ci-babysit.md).
 
-Requires `gh` and a compliant worktree (`python3 scripts/agent_worktree.py guard`).
-Use `make agent-new AGENT=codex TASK=<task>` (or `claude`, `cursor`, `copilot`,
-`grok`) when the guard fails.
+Requires `gh` and a compliant worktree (`make agent-ensure AGENT=<agent> TASK=<task>`).
+Use `grok`, `claude`, `codex`, `cursor`, or `copilot` as the agent id; `cd` to the
+printed worktree before editing.
 
 ## Documentation audits
 
