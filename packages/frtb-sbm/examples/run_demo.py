@@ -23,7 +23,6 @@ from datetime import date
 from frtb_sbm import (
     SbmCalculationContext,
     SbmCapitalResult,
-    SbmInputError,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
@@ -301,7 +300,10 @@ def main() -> None:
     print("\nDemo complete.")
     print("See tests/fixtures/*/loader.py for more fixture-based examples.")
     print("See tests/test_sbm_public_api.py and batch/arrow tests for construction patterns.")
-    print("Supported under BASEL_MAR21 profile (GIRR/EQUITY/FX/COMMODITY/CSR delta/vega + curvature).")
+    print(
+        "Supported under BASEL_MAR21 profile "
+        "(GIRR/EQUITY/FX/COMMODITY/CSR delta/vega + curvature)."
+    )
 
 
 if __name__ == "__main__":

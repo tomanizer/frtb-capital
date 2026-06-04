@@ -29,18 +29,19 @@ from pathlib import Path
 # This mirrors the pattern used inside the package's own test fixture loaders.
 sys.path.insert(0, str(Path(__file__).parent))
 
+from rrao_fixture import (
+    PROFILE_US_NPR,
+    load_context,
+    load_expected_outputs,
+    load_positions,
+)
+
 from frtb_rrao import (
     RraoCalculationContext,
     RraoRegulatoryProfile,
     calculate_rrao_capital,
 )
-from rrao_fixture import (
-    load_context,
-    load_expected_outputs,
-    load_positions,
-    PROFILE_BASEL,
-    PROFILE_US_NPR,
-)
+
 
 def run_for_profile(profile: RraoRegulatoryProfile, label: str) -> None:
     print(f"\n=== RRAO demo — {label} ===")
@@ -68,7 +69,9 @@ def run_for_profile(profile: RraoRegulatoryProfile, label: str) -> None:
     # Show a couple of capital lines
     for line in list(result.lines)[:3]:
         print(f"    {line.classification.value} ({line.evidence_type.value}): "
-              f"notional={line.gross_effective_notional:,.0f} rw={line.risk_weight} add_on={line.add_on:,.0f}")
+              f"notional={line.gross_effective_notional:,.0f} "
+              f"rw={line.risk_weight} add_on={line.add_on:,.0f}"
+        )
 
     expected = load_expected_outputs()
     if label == "US NPR 2.0":
