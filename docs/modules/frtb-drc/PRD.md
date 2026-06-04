@@ -54,7 +54,7 @@ capital breakdowns.
 | `capital.py` | Hedge benefit ratio, bucket capital, category aggregation. |
 | `attribution.py` | Analytical Euler, residual, and unsupported attribution over capital audit records. |
 | `impact.py` | Future baseline-vs-candidate capital delta analysis. |
-| `crif.py` | CRIF-to-canonical mapping. |
+| `crif.py` | Future optional CRIF-to-canonical mapping; no package-neutral DRC CRIF adapter is exposed today. |
 | `audit.py` | Serialisable audit records and reconciliation helpers. |
 | `regimes.py` | Policy selection and unsupported-feature declarations. |
 
@@ -67,9 +67,11 @@ currency, source row id, and sign convention explicitly. CRIF or vendor-shaped
 records must be mapped before calculation starts.
 
 Risk weights, maturity-scaling rules, hedge-benefit rules, bucket definitions,
-and securitisation/CTP switches come from a versioned rule profile supplied
-through `frtb-common`. Calculation kernels receive typed inputs and profile
-data; they do not reach into external data sources or global regime constants.
+and securitisation/CTP switches come from versioned package-local rule profiles
+in `frtb_drc.regimes`. Shared primitives stay in `frtb-common`; any future
+extraction of generic rule-profile machinery requires a cross-cutting ADR.
+Calculation kernels receive typed inputs and profile data; they do not reach
+into external data sources or global regime constants.
 
 Results must expose gross JTD, net JTD, hedge-benefit ratio, bucket/category
 capital, total DRC, rule profile id and hash, input snapshot hash, source

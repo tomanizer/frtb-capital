@@ -132,9 +132,12 @@ breakdowns.
 
 Status: partial runtime. The public API supports cited non-securitisation,
 securitisation non-CTP, and CTP row paths with gross JTD, maturity scaling,
-netting, bucket capital, reconciliation, and audit lineage. Securitisation
-non-CTP and CTP risk weights and replication/decomposition evidence are
-run-scoped inputs; missing evidence fails closed.
+netting, bucket capital, reconciliation, and audit lineage, plus homogeneous
+class-specific Arrow/batch fast paths. U.S. NPR 2.0 covers all three classes;
+Basel MAR22 covers non-securitisation and securitisation non-CTP, while Basel
+MAR22 CTP, EU CRR3, and PRA UK CRR fail closed until cited mappings land.
+Securitisation non-CTP and CTP risk weights and replication/decomposition
+evidence are run-scoped inputs; missing evidence fails closed.
 
 ### `frtb-rrao` — Residual Risk Add-On
 
