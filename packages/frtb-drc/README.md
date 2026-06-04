@@ -19,13 +19,17 @@ placeholder capital.
 | Basel MAR22 CTP | Fail-closed until cited contracts land |
 | EU CRR3 / PRA_UK_CRR | Fail-closed profile identities |
 
-Outputs are prototype engineering evidence, not final regulatory capital.
+Outputs are engineering and validation evidence, not final regulatory capital.
 `PACKAGE_METADATA.validation_status` remains `PENDING`.
+
+**Integration journey (Arrow per class → capital → attribution → SA/suite/store):**
+[`docs/PACKAGE_JOURNEY.md`](docs/PACKAGE_JOURNEY.md)
 
 ## Documentation
 
 | Document | Purpose |
 | --- | --- |
+| [PACKAGE_JOURNEY.md](docs/PACKAGE_JOURNEY.md) | End-to-end client flow, row vs batch semantics, profile/class routing, orchestration boundaries |
 | [PUBLIC_API.md](../../docs/modules/frtb-drc/PUBLIC_API.md) | Stable client integration surface and Arrow paths |
 | [PROFILE_SUPPORT_MATRIX.md](../../docs/modules/frtb-drc/PROFILE_SUPPORT_MATRIX.md) | Profile and risk-class support status |
 | [Module README](../../docs/modules/frtb-drc/README.md) | Planning pack, model documentation, requirements |

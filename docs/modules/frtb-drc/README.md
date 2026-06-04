@@ -17,9 +17,10 @@ seniority-aware non-securitisation netting, securitisation same-tranche and
 replication-group netting, CTP replication-group netting, hedge benefit ratio,
 bucket/category capital, reconciliation, attribution records, and audit
 lineage.
-The Arrow/batch API now has class-specific fast paths for non-securitisation,
-securitisation non-CTP, and CTP inputs, with accepted rows kept columnar and
-without row-dataclass fallback.
+The Arrow/batch API has class-specific fast paths for non-securitisation,
+securitisation non-CTP, and CTP inputs (one homogeneous `risk_class` per batch).
+`calculate_drc_capital` accepts mixed risk classes in one row call; batch entrypoints
+fail closed when classes are mixed.
 Known profiles are `US_NPR_2_0`, `BASEL_MAR22`, `EU_CRR3`, and
 `PRA_UK_CRR`. Basel MAR22 securitisation non-CTP is supported through cited
 MAR22.31-MAR22.35 bucket, risk-weight evidence, fair-value cap, HBR, and
@@ -55,6 +56,12 @@ non-unique risk-weight lineage, and unsupported branch shapes emit
 `UNSUPPORTED` or `RESIDUAL` records that reconcile to total DRC without changing
 the capital number. Baseline-vs-candidate impact analysis remains a separate
 future artifact.
+
+## Integration journey
+
+Code-first end-to-end flow (row multi-class vs per-class batch, automatic attribution,
+batch audit boundaries, SA handoff):
+[`packages/frtb-drc/docs/PACKAGE_JOURNEY.md`](../../../packages/frtb-drc/docs/PACKAGE_JOURNEY.md).
 
 ## Planning Documents
 
