@@ -13,23 +13,34 @@ from frtb_cva import attribute_cva_capital, project_cva_attribution
 ```
 
 `attribute_cva_capital(result)` returns a package-local `CvaAttributionResult`.
-`project_cva_attribution(attribution, result)` maps analytical contribution
-records to the shared `frtb_common.CapitalContribution` shape and populates
-`input_hash`, `profile_hash`, and reconciliation status from the capital result.
+`project_cva_attribution(attribution, result)` maps standalone explain rows,
+unsupported-branch markers, and residual records to the shared
+`frtb_common.CapitalContribution` shape. Projection populates `input_hash`,
+`profile_hash`, citations, reasons, and reconciliation status from the capital
+result.
 
 ## Method
 
 For BA-CVA methods, netting-set standalone capital lines are emitted as
-`analytical_euler` contributions on the stable standalone branch.
+`standalone` explain contributions on the stable standalone branch. Reduced
+portfolio square-root aggregation, full BA-CVA hedged square-root aggregation,
+and the beta floor are not represented as exact Euler records.
 
 For SA-CVA, bucket capital `K_b` is allocated evenly across retained
-`sensitivity_ids` in that bucket and labelled as `analytical_euler` in the
-package-local result. The risk-class square-root aggregation remains explicitly
-unsupported, so these records should be read as bucket-level allocated
-contributions, not an exact derivative through the full SA-CVA aggregation.
+`sensitivity_ids` in that bucket and labelled as `standalone_allocated` in the
+package-local result. The allocation explains retained bucket capital only. It
+is not an exact derivative through the risk-class square-root aggregation or the
+SA-CVA multiplier.
 
-Projected shared records use `AttributionMethod.ANALYTICAL_EULER` with
-`base_amount=amount`, `marginal_multiplier=1.0`, and `contribution=amount`.
+Projected shared records use:
+
+- `AttributionMethod.STANDALONE` for BA netting-set standalone lines and SA
+  bucket allocations, with `contribution=amount` and
+  `marginal_multiplier=None`.
+- `AttributionMethod.UNSUPPORTED` for nonlinear CVA branches that are visible
+  but not allocated as exact Euler.
+- `AttributionMethod.RESIDUAL` for the reconciliation gap between total CVA
+  capital and the standalone/allocated explain rows.
 
 ## Unsupported Branches
 
@@ -41,7 +52,12 @@ The package-local result reports unsupported nonlinear branches, including:
 - `sa_cva_risk_class_sqrt:<risk_class>`
 
 When unsupported branches are present, `CvaAttributionResult.reconciled` is
-false and projected records carry `ReconciliationStatus.UNRECONCILED`.
+false. Projected records carry `ReconciliationStatus.PARTIAL_RESIDUAL` and
+reconcile to `CvaCapitalResult.total_cva_capital` through:
+
+```text
+sum(record.contribution or 0) + sum(record.residual)
+```
 
 ## Inputs Used
 
@@ -59,15 +75,18 @@ Attribution consumes:
 
 - BA-CVA stable branch: netting set standalone capital.
 - SA-CVA bucket allocation: retained sensitivity id inside a risk-class bucket.
-- Unsupported branches: method/risk-class branch labels in the package-local
-  result.
+- Unsupported branches: shared `UNSUPPORTED` records with stable branch ids and
+  reasons.
+- Residual: one shared `RESIDUAL` record when the standalone/allocated rows do
+  not sum to total CVA capital.
 
 ## Limitations
 
 - SA-CVA risk-class square-root aggregation, BA-CVA hedged square-root
   aggregation, and beta floor effects are not forced into exact Euler records.
-- The projected shared records do not currently emit separate shared
-  `UNSUPPORTED` records for the package-local unsupported branch list.
+- Unsupported records mark method limitations and cite the relevant branch; they
+  do not allocate nonlinear capital by themselves. The reconciliation amount is
+  carried by the residual record.
 - Unsupported CVA methods, unsupported future profiles or profile cells, and
   MAR50.9 materiality-threshold alternatives fail before attribution can run.
 - Finite-difference impact is implemented separately in `impact.py` and is not

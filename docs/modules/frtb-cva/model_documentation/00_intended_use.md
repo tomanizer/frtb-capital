@@ -26,9 +26,18 @@ The current partial runtime supports:
 capital-producing profiles under audit. ECB shorthand routes to `EU_CRR3_CVA`;
 there is no separate ECB runtime profile.
 
+## Promotion Boundary
+
+`frtb-cva` can be promoted for the package-owned calculation kernel once
+validation evidence is sufficient for the supported paths above. Promotion does
+not require implementing MAR50.9 or analogous simplified CCR-substitution
+alternatives, because those alternatives substitute external CCR capital and
+orchestration method election for CVA capital formulas owned by this package.
+
 ## Out Of Scope
 
 - MAR50.9 materiality-threshold 100% CCR alternative;
+- analogous simplified CCR-substitution alternatives in non-Basel profiles;
 - regulatory approval workflow for SA-CVA use;
 - exposure simulation and sensitivity generation under MAR50.31-MAR50.36;
 - live hedge execution, hedge accounting, or desk governance;

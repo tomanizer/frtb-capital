@@ -1,10 +1,11 @@
 """
-Analytical Euler attribution for supported CVA branches (ADR 0012).
+CVA capital attribution projection helpers (ADR 0012, ADR 0038).
 
 The :func:`project_cva_attribution` helper projects a
 :class:`CvaAttributionResult` to a tuple of
-:class:`~frtb_common.attribution.CapitalContribution` records, populating
-the full audit fields defined by ADR 0038.
+:class:`~frtb_common.attribution.CapitalContribution` records, including
+explicit unsupported-branch and residual records when CVA nonlinear aggregation
+cannot be represented as exact analytical Euler decomposition.
 """
 
 from __future__ import annotations
@@ -42,7 +43,7 @@ class CvaAttributionResult:
 
 
 def attribute_cva_capital(result: CvaCapitalResult) -> CvaAttributionResult:
-    """Return analytical contributions where the branch is stable and linear."""
+    """Return standalone explain amounts and explicit unsupported CVA branches."""
 
     contributions: list[CvaAttributionContribution] = []
     unsupported: list[str] = []
@@ -55,13 +56,13 @@ def attribute_cva_capital(result: CvaCapitalResult) -> CvaAttributionResult:
                     CvaAttributionContribution(
                         contribution_id=line.netting_set_id,
                         amount=line.standalone_capital,
-                        method="analytical_euler",
+                        method="standalone",
                         branch="ba_cva_standalone_linear",
                         residual=0.0,
                         citations=line.citations,
                     )
                 )
-        if result.method is CvaMethod.BA_CVA_REDUCED and result.ba_cva_reduced is not None:
+        if result.ba_cva_reduced is not None:
             unsupported.append("ba_cva_reduced_portfolio_sqrt")
         if result.method is CvaMethod.BA_CVA_FULL and result.ba_cva_full is not None:
             unsupported.extend(("ba_cva_hedged_sqrt", "ba_cva_beta_floor"))
@@ -74,7 +75,7 @@ def attribute_cva_capital(result: CvaCapitalResult) -> CvaAttributionResult:
                         CvaAttributionContribution(
                             contribution_id=sensitivity_id,
                             amount=bucket.k_b / max(len(bucket.sensitivity_ids), 1),
-                            method="analytical_euler",
+                            method="standalone_allocated",
                             branch="sa_cva_bucket_allocated",
                             residual=0.0,
                             citations=bucket.citations,
@@ -103,27 +104,23 @@ def project_cva_attribution(
 ) -> tuple[CapitalContribution, ...]:
     """Project a :class:`CvaAttributionResult` to suite-wide attribution records.
 
-    Each :class:`CvaAttributionContribution` is mapped to a
-    :class:`~frtb_common.attribution.CapitalContribution`, with the following
-    audit fields populated from *capital_result* (ADR 0038):
-
-    * ``input_hash`` — from :attr:`CvaCapitalResult.input_hash`
-    * ``profile_hash`` — from :attr:`CvaCapitalResult.profile_hash`
-    * ``reconciliation_status`` — :attr:`ReconciliationStatus.RECONCILED` when
-      :attr:`CvaAttributionResult.reconciled` is ``True``, otherwise
-      :attr:`ReconciliationStatus.UNRECONCILED`
-
-    The :attr:`~frtb_common.attribution.CapitalContribution.marginal_multiplier`
-    is set to ``1.0`` and
-    :attr:`~frtb_common.attribution.CapitalContribution.contribution` equals
-    ``amount`` for all analytical-Euler contributions.  Residual is forwarded
-    unchanged.
+    Standalone explain rows are projected as
+    :attr:`AttributionMethod.STANDALONE`. Unsupported nonlinear branches are
+    projected as :attr:`AttributionMethod.UNSUPPORTED`, and any gap between the
+    explain rows and :attr:`CvaAttributionResult.total_capital` is projected as
+    a single :attr:`AttributionMethod.RESIDUAL` row. The projected set therefore
+    reconciles through ``sum(contribution) + sum(residual)`` even when exact
+    Euler decomposition is not valid for a CVA branch.
     """
-    reconciliation_status = (
-        ReconciliationStatus.RECONCILED if result.reconciled else ReconciliationStatus.UNRECONCILED
-    )
     input_hash = capital_result.input_hash
     profile_hash = capital_result.profile_hash
+    has_residual = not is_reconciled(result.residual, 0.0)
+    has_unsupported = bool(result.unsupported_branches)
+    reconciliation_status = (
+        ReconciliationStatus.PARTIAL_RESIDUAL
+        if has_residual or has_unsupported
+        else ReconciliationStatus.RECONCILED
+    )
 
     projected: list[CapitalContribution] = []
     for contrib in result.contributions:
@@ -135,17 +132,112 @@ def project_cva_attribution(
                 bucket_key=contrib.branch,
                 category=contrib.method,
                 base_amount=contrib.amount,
-                marginal_multiplier=1.0,
+                marginal_multiplier=None,
                 contribution=contrib.amount,
-                method=AttributionMethod.ANALYTICAL_EULER,
+                method=AttributionMethod.STANDALONE,
                 residual=contrib.residual,
+                reason=_standalone_reason(contrib.branch),
                 citations=contrib.citations,
                 input_hash=input_hash,
                 profile_hash=profile_hash,
                 reconciliation_status=reconciliation_status,
             )
         )
+
+    for branch in result.unsupported_branches:
+        projected.append(
+            CapitalContribution(
+                contribution_id=f"cva-unsupported-{_stable_record_id(branch)}",
+                source_id=capital_result.run_id,
+                source_level="unsupported_branch",
+                bucket_key=branch,
+                category="cva_unsupported_branch",
+                base_amount=0.0,
+                marginal_multiplier=None,
+                contribution=None,
+                method=AttributionMethod.UNSUPPORTED,
+                residual=0.0,
+                reason=_unsupported_branch_reason(branch),
+                citations=_branch_citations(branch, capital_result),
+                input_hash=input_hash,
+                profile_hash=profile_hash,
+                reconciliation_status=reconciliation_status,
+            )
+        )
+
+    if has_residual:
+        projected.append(
+            CapitalContribution(
+                contribution_id=f"cva-residual-{capital_result.run_id}",
+                source_id=capital_result.run_id,
+                source_level="frtb_cva",
+                bucket_key="cva_residual",
+                category="cva_attribution_residual",
+                base_amount=0.0,
+                marginal_multiplier=None,
+                contribution=None,
+                method=AttributionMethod.RESIDUAL,
+                residual=result.residual,
+                reason=_residual_reason(result.unsupported_branches),
+                citations=capital_result.citations,
+                input_hash=input_hash,
+                profile_hash=profile_hash,
+                reconciliation_status=reconciliation_status,
+            )
+        )
+
     return tuple(projected)
+
+
+def _standalone_reason(branch: str) -> str:
+    if branch == "sa_cva_bucket_allocated":
+        return (
+            "SA-CVA bucket K_b allocated across retained sensitivity ids; "
+            "not exact Euler through risk-class aggregation."
+        )
+    return "BA-CVA standalone explain amount; not exact Euler through portfolio aggregation."
+
+
+def _unsupported_branch_reason(branch: str) -> str:
+    if branch == "ba_cva_reduced_portfolio_sqrt":
+        return "Reduced BA-CVA portfolio square-root aggregation is not projected as exact Euler."
+    if branch == "ba_cva_hedged_sqrt":
+        return "Full BA-CVA hedged square-root aggregation is not projected as exact Euler."
+    if branch == "ba_cva_beta_floor":
+        return "Full BA-CVA beta floor branch is not projected as exact Euler."
+    if branch.startswith("sa_cva_risk_class_sqrt:"):
+        risk_class = branch.split(":", maxsplit=1)[1]
+        return (
+            f"SA-CVA {risk_class} risk-class square-root aggregation is not projected "
+            "as exact Euler."
+        )
+    return f"CVA branch {branch} is not projected as exact Euler."
+
+
+def _residual_reason(unsupported_branches: tuple[str, ...]) -> str:
+    if unsupported_branches:
+        return (
+            "Residual between CVA capital and standalone/allocated explain rows from "
+            f"unsupported nonlinear branches: {', '.join(unsupported_branches)}."
+        )
+    return "Residual between CVA capital and standalone/allocated explain rows."
+
+
+def _branch_citations(branch: str, capital_result: CvaCapitalResult) -> tuple[str, ...]:
+    if branch == "ba_cva_reduced_portfolio_sqrt" and capital_result.ba_cva_reduced is not None:
+        return capital_result.ba_cva_reduced.citations
+    if branch in {"ba_cva_hedged_sqrt", "ba_cva_beta_floor"} and capital_result.ba_cva_full:
+        return capital_result.ba_cva_full.citations
+    if branch.startswith("sa_cva_risk_class_sqrt:") and capital_result.sa_cva_risk_class_capitals:
+        risk_class = branch.split(":", maxsplit=1)[1]
+        for risk_class_capital in capital_result.sa_cva_risk_class_capitals:
+            if risk_class_capital.risk_class.value == risk_class:
+                return risk_class_capital.citations
+    return capital_result.citations
+
+
+def _stable_record_id(value: str) -> str:
+    return "".join(char.lower() if char.isalnum() else "-" for char in value).strip("-")
 
 
 __all__ = [

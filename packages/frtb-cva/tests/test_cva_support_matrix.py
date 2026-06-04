@@ -23,6 +23,10 @@ from frtb_cva import (
     resolve_calculation_method,
 )
 from frtb_cva.sa_cva import _SUPPORTED_PATHS
+from frtb_cva.support_matrix import (
+    EXPOSURE_SENSITIVITY_GENERATION_POLICY,
+    SA_CVA_APPROVAL_GOVERNANCE_POLICY,
+)
 from frtb_cva.validation import CvaInputError
 
 
@@ -108,6 +112,39 @@ def test_mar50_9_materiality_policy_unsupported() -> None:
         resolve_calculation_method(context)
 
 
+def test_support_matrix_uses_every_status_taxonomy_value() -> None:
+    statuses = {cell.status for cell in cva_profile_support_matrix()}
+    assert statuses == {
+        CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT,
+        CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED,
+        CvaSupportStatus.REGULATORY_ABSENCE,
+        CvaSupportStatus.OUT_OF_SCOPE,
+    }
+
+
+@pytest.mark.parametrize("profile", list(CvaRegulatoryProfile))
+def test_package_boundary_policies_are_out_of_scope(profile: CvaRegulatoryProfile) -> None:
+    matrix = cva_profile_support_matrix()
+    approval = next(
+        cell
+        for cell in matrix
+        if cell.profile is profile and cell.method == SA_CVA_APPROVAL_GOVERNANCE_POLICY
+    )
+    generation = next(
+        cell
+        for cell in matrix
+        if cell.profile is profile and cell.method == EXPOSURE_SENSITIVITY_GENERATION_POLICY
+    )
+
+    assert approval.status is CvaSupportStatus.OUT_OF_SCOPE
+    assert approval.blocker == "supervisory_approval_boundary"
+    assert approval.method not in {method.value for method in CvaMethod}
+
+    assert generation.status is CvaSupportStatus.OUT_OF_SCOPE
+    assert generation.blocker == "upstream_exposure_sensitivity_boundary"
+    assert generation.method not in {method.value for method in CvaMethod}
+
+
 def test_traceability_lists_all_basel_sa_rows() -> None:
     traceability = (
         Path(__file__).resolve().parents[1] / "docs" / "REGULATORY_TRACEABILITY.md"
@@ -116,3 +153,13 @@ def test_traceability_lists_all_basel_sa_rows() -> None:
         CvaRegulatoryProfile.BASEL_MAR50_2020
     ):
         assert f"`{risk_class.value}` | `{risk_measure.value}`" in traceability
+
+
+def test_traceability_documents_boundary_status_taxonomy() -> None:
+    traceability = (
+        Path(__file__).resolve().parents[1] / "docs" / "REGULATORY_TRACEABILITY.md"
+    ).read_text()
+    for status in CvaSupportStatus:
+        assert f"`{status.value}`" in traceability
+    assert SA_CVA_APPROVAL_GOVERNANCE_POLICY in traceability
+    assert EXPOSURE_SENSITIVITY_GENERATION_POLICY in traceability
