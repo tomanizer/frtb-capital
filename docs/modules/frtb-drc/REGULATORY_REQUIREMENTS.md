@@ -14,7 +14,8 @@ advice and not a final regulatory capital interpretation.
 | Basel Framework MAR20 | https://www.bis.org/basel_framework/chapter/MAR/20.htm | Standardised approach structure; SA is SBM plus DRC plus RRAO, MAR20.4. |
 | Basel Framework MAR22 | https://www.bis.org/basel_framework/chapter/MAR/22.htm | Default risk capital main concepts, JTD, netting, hedge benefit ratio, non-securitisation, securitisation non-CTP, and CTP treatment, MAR22.1-MAR22.47. |
 | U.S. NPR 2.0, 91 FR 14952 | https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959 | Proposed market risk framework, section V.A.9 Default Risk Capital Requirement, pages around 15067-15072. |
-| CRR3 | https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng | EU comparison for alternative standardised approach default risk charge, CRR market-risk provisions including Article 325w and related articles. |
+| CRR3 | https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng | EU comparison for alternative standardised approach default risk charge, including Article 325w gross JTD/LGD, Article 325x netting and maturity, and Article 325y non-securitisation bucket/risk-weight/HBR/category mechanics. |
+| Commission Implementing Regulation (EU) 2016/1799 | https://eur-lex.europa.eu/eli/reg_impl/2016/1799/oj/eng | ECAI credit assessment to credit quality step mapping used by CRR Standardised Approach credit-quality categories referenced by Article 325y(6). |
 | EBA RTS on gross jump-to-default amounts | https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-3 | EU technical reference for gross JTD amount methodology. |
 | Local reference implementation | External `extract_cva` capital navigator, DRC component | Implementation inspiration for CRIF mappings, risk-weight tables, DRC risk-class split, and Euler/audit breakdowns; not included in this repository. |
 
@@ -125,7 +126,9 @@ Basel source: MAR22.15-MAR22.18. U.S. source: section V.A.9.a.
 Provide regime-specific risk-weight tables:
 
 - Basel MAR22.24 letter-rating table including unrated and defaulted treatment;
-- CRR CQS mapping table for EU comparison;
+- CRR3 Article 325y(1)-(2) CQS risk-weight table and Article 325y(6) CQS
+  assignment, with ECAI mapping evidence from Commission Implementing
+  Regulation (EU) 2016/1799 Article 19 and Annex III;
 - U.S. NPR IG/SG/SSG and bucket mapping for non-U.S. sovereigns, PSE/GSE debt,
   corporates, and defaulted exposures;
 - securitisation tranche risk weights by attachment/detachment or mapped
@@ -150,8 +153,11 @@ securitisation non-CTP and CTP paths can consume typed
 method, effective risk weight, lineage, and citations. U.S. NPR 2.0 and Basel
 MAR22 securitisation non-CTP can also consume typed `DrcFairValueCapEvidence`
 under profile controls anchored to proposed section `__.210(c)(3)(iii)` and
-Basel MAR22.34. EU CRR3 and UK PRA profiles are known but fail closed pending
-Article 325w / PRA PS1/26 rulebook mappings.
+Basel MAR22.34. EU CRR3 non-securitisation row and batch paths are implemented
+with Article 325w gross JTD/LGD, Article 325x netting and maturity weighting,
+Article 325y bucket/risk-weight/HBR/category mechanics, and ECAI-to-CQS mapping
+evidence. EU CRR3 securitisation non-CTP, EU CRR3 CTP, and UK PRA profiles
+remain fail closed pending profile-specific mappings.
 
 ### DRC-REQ-007: Hedge Benefit Ratio and Bucket Capital
 

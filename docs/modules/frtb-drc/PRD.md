@@ -83,7 +83,9 @@ weights internally. Basel MAR22 securitisation non-CTP consumes cited MAR22.34
 typed risk-weight evidence and fair-value cap evidence rather than deriving
 banking-book securitisation weights internally. Basel MAR22 CTP consumes cited
 MAR22.42 typed risk-weight and decomposition evidence rather than deriving
-banking-book securitisation weights internally. EU CRR3 and PRA UK CRR paths
+banking-book securitisation weights internally. EU CRR3 non-securitisation is
+implemented with Article 325w, Article 325x, Article 325y, and ECAI/CQS mapping
+evidence. EU CRR3 securitisation non-CTP, EU CRR3 CTP, and PRA UK CRR paths
 fail closed until their cited rule mappings and fixtures are complete.
 
 ## Delivery Slices

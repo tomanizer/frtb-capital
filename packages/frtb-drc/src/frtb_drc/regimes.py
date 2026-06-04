@@ -521,8 +521,78 @@ EU_CRR3_CITATIONS: dict[str, DrcCitation] = {
         paragraph="Article 325w",
         url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
         note=(
-            "EU default-risk charge gross JTD anchor; runtime profile remains "
-            "fail-closed until EU CQS and RTS mappings are implemented."
+            "EU default-risk charge gross JTD amounts for non-securitisations, "
+            "including LGD seniority treatment."
+        ),
+    ),
+    "EU_CRR3_ARTICLE_325X": DrcCitation(
+        citation_id="EU_CRR3_ARTICLE_325X",
+        source_id="EU_CRR3_2024_1623",
+        paragraph="Article 325x(1)-(5)",
+        url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
+        note=(
+            "EU non-securitisation net JTD offsetting, maturity weighting, and "
+            "zero-net combined debt/equity derivative treatment."
+        ),
+    ),
+    "EU_CRR3_ARTICLE_325Y_1_2": DrcCitation(
+        citation_id="EU_CRR3_ARTICLE_325Y_1_2",
+        source_id="EU_CRR3_2024_1623",
+        paragraph="Article 325y(1)-(2)",
+        url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
+        note=(
+            "EU non-securitisation default-risk bucket own funds requirement "
+            "and Article 325y risk-weight table by credit quality category."
+        ),
+    ),
+    "EU_CRR3_ARTICLE_325Y_3_5": DrcCitation(
+        citation_id="EU_CRR3_ARTICLE_325Y_3_5",
+        source_id="EU_CRR3_2024_1623",
+        paragraph="Article 325y(3)-(5)",
+        url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
+        note=(
+            "EU non-securitisation bucket-level hedge benefit ratio, bucket "
+            "capital formula, and category aggregation."
+        ),
+    ),
+    "EU_CRR3_ARTICLE_325Y_6": DrcCitation(
+        citation_id="EU_CRR3_ARTICLE_325Y_6",
+        source_id="EU_CRR3_2024_1623",
+        paragraph="Article 325y(6)",
+        url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
+        note=(
+            "EU credit quality category assignment follows the Standardised "
+            "Approach for credit risk in Title II, Chapter 2."
+        ),
+    ),
+    "EU_CRR3_ECAI_CQS_MAPPING": DrcCitation(
+        citation_id="EU_CRR3_ECAI_CQS_MAPPING",
+        source_id="EU_2016_1799_ECAI_CQS",
+        paragraph="Commission Implementing Regulation (EU) 2016/1799, Article 19 and Annex III",
+        url="https://eur-lex.europa.eu/eli/reg_impl/2016/1799/oj/eng",
+        note=(
+            "EU ECAI credit assessment to credit quality step mapping used by "
+            "the Standardised Approach credit-quality categories referenced by Article 325y(6)."
+        ),
+    ),
+    "EU_CRR3_ARTICLES_325Z_325AA": DrcCitation(
+        citation_id="EU_CRR3_ARTICLES_325Z_325AA",
+        source_id="EU_CRR3_2024_1623",
+        paragraph="Articles 325z and 325aa",
+        url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
+        note=(
+            "EU securitisation non-CTP DRC article range; runtime path remains "
+            "fail-closed until profile-specific mappings are implemented."
+        ),
+    ),
+    "EU_CRR3_ARTICLES_325AB_325AD": DrcCitation(
+        citation_id="EU_CRR3_ARTICLES_325AB_325AD",
+        source_id="EU_CRR3_2024_1623",
+        paragraph="Articles 325ab to 325ad",
+        url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
+        note=(
+            "EU CTP DRC article range; runtime path remains fail-closed until "
+            "profile-specific mappings are implemented."
         ),
     ),
 }
@@ -661,20 +731,16 @@ _EU_CRR3_PROFILE = DrcRuleProfile(
     version="Regulation (EU) 2024/1623",
     publication_date=date(2024, 5, 31),
     effective_date=None,
-    status="final_rule_mapping_pending",
-    supported_risk_classes=frozenset(),
+    status="partial_nonsec_supported",
+    supported_risk_classes=frozenset({DrcRiskClass.NON_SECURITISATION}),
     citations=EU_CRR3_CITATIONS,
     unsupported_features={
-        DrcRiskClass.NON_SECURITISATION: (
-            "EU_CRR3 non-securitisation DRC because Article 325w and related CQS/RTS "
-            "mapping have not been implemented"
-        ),
         DrcRiskClass.SECURITISATION_NON_CTP: (
-            "EU_CRR3 securitisation non-CTP DRC because Article 325w and related "
+            "EU_CRR3 securitisation non-CTP DRC because Articles 325z and 325aa and related "
             "banking-book securitisation mappings have not been implemented"
         ),
         DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
-            "EU_CRR3 CTP DRC because Article 325w and related CTP mappings have not "
+            "EU_CRR3 CTP DRC because Articles 325ab to 325ad and related CTP mappings have not "
             "been implemented"
         ),
     },
@@ -828,6 +894,21 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
                     "BASEL_MAR22_45",
                 ),
                 "Maintain Basel-specific CTP typed evidence fixtures.",
+            ),
+            (
+                EU_CRR3_PROFILE_ID,
+                DrcRiskClass.NON_SECURITISATION,
+            ): (
+                "EU CRR3 non-securitisation row and batch capital supported.",
+                (
+                    "EU_CRR3_ARTICLE_325W",
+                    "EU_CRR3_ARTICLE_325X",
+                    "EU_CRR3_ARTICLE_325Y_1_2",
+                    "EU_CRR3_ARTICLE_325Y_3_5",
+                    "EU_CRR3_ARTICLE_325Y_6",
+                    "EU_CRR3_ECAI_CQS_MAPPING",
+                ),
+                "Maintain EU CRR3 non-securitisation fixture and CQS mapping evidence.",
             ),
         }
     )

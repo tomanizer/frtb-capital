@@ -12,10 +12,18 @@ from frtb_drc.data_models import (
     GrossJtd,
 )
 from frtb_drc.reference_data import get_lgd_rule
-from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.regimes import (
+    BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    US_NPR_2_0_PROFILE_ID,
+    ensure_risk_class_supported,
+    get_rule_profile,
+)
 from frtb_drc.validation import DrcInputError, validate_position, validate_positions
 
-_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
+_US_NPR_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
+_BASEL_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
+_EU_CRR3_FORMULA_CITATIONS = ("EU_CRR3_ARTICLE_325W",)
 
 
 def calculate_gross_jtd(
@@ -63,7 +71,11 @@ def calculate_gross_jtd(
         notional=abs(position.notional),
         pnl_component=pnl_component,
         gross_jtd=gross_jtd,
-        citations=(*_FORMULA_CITATIONS, lgd_rule.citation_id, *position.citation_ids),
+        citations=(
+            *_gross_jtd_formula_citations(profile.profile_id),
+            lgd_rule.citation_id,
+            *position.citation_ids,
+        ),
     )
 
 
@@ -103,3 +115,11 @@ def _issuer_or_tranche_key(position: DrcPosition) -> str:
     if position.tranche_id is not None:
         return position.tranche_id
     raise DrcInputError("issuer_id or tranche_id is required for gross JTD")
+
+
+def _gross_jtd_formula_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_FORMULA_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_FORMULA_CITATIONS
+    return _US_NPR_FORMULA_CITATIONS

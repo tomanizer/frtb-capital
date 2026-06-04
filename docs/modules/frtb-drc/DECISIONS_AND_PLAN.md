@@ -17,7 +17,9 @@ securitisation non-CTP and CTP row/batch slices are now implemented with cited
 upstream evidence contracts. Basel MAR22 non-securitisation and securitisation
 non-CTP row/batch slices are implemented with cited profile-specific mappings.
 Basel MAR22 CTP row/batch slices are implemented with typed MAR22.42
-risk-weight and decomposition evidence. EU CRR3 and PRA UK CRR remain
+risk-weight and decomposition evidence. EU CRR3 non-securitisation row/batch is
+implemented with Article 325w, Article 325x, Article 325y, and ECAI/CQS mapping
+evidence. EU CRR3 securitisation non-CTP, EU CRR3 CTP, and PRA UK CRR remain
 fail-closed until profile-specific mappings and tests are implemented.
 
 ### DRC-DEC-002: Keep data contracts package-local initially
@@ -119,7 +121,8 @@ implemented for row and batch APIs using typed risk-weight evidence, explicit
 replication evidence, and deterministic tests. U.S. NPR 2.0 securitisation
 non-CTP also supports profile-controlled fair-value cap evidence. Basel MAR22
 securitisation non-CTP is implemented with typed MAR22.34 evidence. Basel
-MAR22 CTP is implemented with typed MAR22.42 evidence. EU CRR3 and PRA UK CRR
+MAR22 CTP is implemented with typed MAR22.42 evidence. EU CRR3 non-securitisation
+is implemented; EU CRR3 securitisation non-CTP, EU CRR3 CTP, and PRA UK CRR
 paths still fail closed.
 
 ## Implementation sequence
@@ -176,7 +179,8 @@ core DRC mechanics.
 The current partial runtime also includes U.S. NPR 2.0 securitisation non-CTP
 and CTP row/batch paths, Basel MAR22 non-securitisation row/batch paths,
 Basel MAR22 securitisation non-CTP and CTP row/batch paths, Arrow/batch fast
-paths, and attribution records. Remaining gaps are deliberate: EU CRR3, PRA UK
+paths, EU CRR3 non-securitisation row/batch paths, and attribution records.
+Remaining gaps are deliberate: EU CRR3 securitisation non-CTP and CTP, PRA UK
 CRR, internal banking-book securitisation risk-weight derivation, and
 baseline-vs-candidate impact analysis remain outside the current implemented
 scope.

@@ -44,11 +44,14 @@ Supported profile coverage is:
   risk-weight evidence, MAR22.34 fair-value cap evidence, and MAR22.35
   category aggregation; CTP row and batch paths using MAR22.36-MAR22.45 and
   typed MAR22.42 banking-book securitisation risk-weight evidence.
+- `EU_CRR3`: non-securitisation row and batch paths using Article 325w
+  gross JTD/LGD, Article 325x netting and maturity weighting, Article 325y
+  bucket/risk-weight/HBR/category mechanics, and ECAI/CQS mapping evidence.
 
 Known fail-closed profile paths are:
 
-- `EU_CRR3` for all DRC risk classes, pending Article 325w and related CQS/RTS
-  mappings.
+- `EU_CRR3` securitisation non-CTP and CTP, pending Articles 325z-325ad and
+  related securitisation/CTP mappings.
 - `PRA_UK_CRR` for all DRC risk classes, pending PRA PS1/26 Chapter 3 and
   Appendix 1 rulebook paragraph mappings.
 

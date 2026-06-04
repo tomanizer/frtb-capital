@@ -451,7 +451,7 @@ calculation. Current fail-closed examples:
 
 - Basel securitisation non-CTP risk weights not mapped;
 - Basel CTP decomposition not mapped;
-- CRR3 Article 325w inputs missing;
+- CRR3 securitisation non-CTP and CTP mappings missing;
 - PRA UK CRR rulebook mappings missing;
 - explicit LGD override not allowed by selected profile;
 - unsupported product type or bucket assignment.
