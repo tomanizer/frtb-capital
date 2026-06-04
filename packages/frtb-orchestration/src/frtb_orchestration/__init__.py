@@ -33,6 +33,7 @@ from frtb_orchestration.manifest import (
 from frtb_orchestration.scaffold import (
     PACKAGE_METADATA,
     aggregate_suite_attribution,
+    build_suite_attribution_report,
     calculate_suite_capital,
 )
 from frtb_orchestration.standardised import (
@@ -44,6 +45,8 @@ from frtb_orchestration.standardised import (
     standardised_jurisdiction_family,
 )
 from frtb_orchestration.suite import (
+    SuiteAttributionComponentReport,
+    SuiteAttributionReport,
     SuiteAttributionResult,
     SuiteCapitalResult,
     suite_jurisdiction_family,
@@ -74,10 +77,13 @@ __all__ = [
     "StandardisedComponent",
     "StandardisedComponentSubtotal",
     "StandardisedFallbackRoute",
+    "SuiteAttributionComponentReport",
+    "SuiteAttributionReport",
     "SuiteAttributionResult",
     "SuiteCapitalResult",
     "__version__",
     "aggregate_suite_attribution",
+    "build_suite_attribution_report",
     "calculate_suite_capital",
     "compose_standardised_approach_capital",
     "recognise_cva_summary",

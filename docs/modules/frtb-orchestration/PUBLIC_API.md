@@ -13,7 +13,7 @@ capital.
 | Category | Symbols | Rationale |
 | --- | --- | --- |
 | Identity | `PACKAGE_METADATA`, `__version__` | Workspace discovery and maturity reporting. |
-| Suite capital | `calculate_suite_capital`, `SuiteCapitalResult`, `SuiteAttributionResult`, `aggregate_suite_attribution` | Top-of-house additive `IMA + SA + CVA` aggregation and attribution-ready branch reporting. |
+| Suite capital | `calculate_suite_capital`, `SuiteCapitalResult`, `SuiteAttributionResult`, `SuiteAttributionReport`, `SuiteAttributionComponentReport`, `aggregate_suite_attribution`, `build_suite_attribution_report` | Top-of-house additive `IMA + SA + CVA` aggregation and attribution-ready branch reporting. |
 | SA composition | `compose_standardised_approach_capital`, `StandardisedApproachCapitalResult`, `StandardisedComponentSubtotal`, `StandardisedFallbackRoute`, `ComponentCapitalSummary`, `StandardisedComponent` | Composes SBM, DRC, and RRAO public component summaries into Standardised Approach capital. |
 | IMA handoff | `ImaCapitalSummary`, `recognise_ima_summary` | Direct or duck-typed summary handoff from IMA audit-log-shaped outputs. |
 | CVA handoff | `CvaCapitalSummary`, `recognise_cva_summary` | Direct or duck-typed summary handoff from public CVA capital results. |
@@ -42,6 +42,23 @@ All component inputs must share the same calculation date, base currency, and
 regulatory jurisdiction family. Mixed-family inputs raise
 `OrchestrationInputError`; orchestration does not emit synthetic zero-capital
 fallback results for incompatible inputs.
+
+## Suite attribution reports
+
+`aggregate_suite_attribution` is the low-level suite attribution validator. It
+preserves incoming `ComponentContributionBundle` records unchanged and emits one
+suite residual record.
+
+`build_suite_attribution_report` wraps that result in a deterministic
+`SuiteAttributionReport` for clients and notebooks. It supports both complete
+component sets:
+
+- top level: `frtb_ima`, `frtb_sa`, `frtb_cva`;
+- decomposed SA: `frtb_ima`, `frtb_sbm`, `frtb_drc`, `frtb_rrao`, `frtb_cva`.
+
+Partial, duplicate, or component-total-mismatched bundles raise
+`OrchestrationInputError`. Report payloads include reconciliation status and
+the suite residual reason, and `as_dict()` is JSON-serialisable.
 
 ## Standardised Approach composition
 
