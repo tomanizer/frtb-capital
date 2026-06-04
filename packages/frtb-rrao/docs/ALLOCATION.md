@@ -23,6 +23,11 @@ capital is the existing line add-on from Basel MAR23.8, proposed U.S. section
 lines remain visible in allocation buckets with zero add-on, so line counts and
 source position ids reconcile to the public result.
 
+`calculate_rrao_attribution` projects the same supported report dimensions to
+shared `CapitalContribution` records using `AttributionMethod.STANDALONE`.
+`build_rrao_contribution_bundle` emits the canonical line-level
+`ComponentContributionBundle(component="frtb_rrao", ...)` for orchestration.
+
 Every report validates that:
 
 - bucket add-ons sum to `allocated_rrao`;

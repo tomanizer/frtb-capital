@@ -14,6 +14,11 @@ from frtb_rrao.arrow_batch import (
     build_rrao_batch_from_arrow,
     normalize_rrao_arrow_table,
 )
+from frtb_rrao.attribution import (
+    build_rrao_contribution_bundle,
+    calculate_rrao_attribution,
+    rrao_allocation_report_to_contributions,
+)
 from frtb_rrao.audit import (
     input_hash_for_positions,
     serialize_rrao_result,
@@ -107,6 +112,8 @@ __all__ = [
     "build_rrao_batch_from_arrow",
     "build_rrao_batch_from_columns",
     "build_rrao_batch_from_positions",
+    "build_rrao_contribution_bundle",
+    "calculate_rrao_attribution",
     "calculate_rrao_capital",
     "calculate_rrao_capital_from_batch",
     "classify_rrao_position",
@@ -116,6 +123,7 @@ __all__ = [
     "input_hash_for_rrao_batch",
     "normalize_rrao_arrow_table",
     "resolve_rrao_allocation_dimension",
+    "rrao_allocation_report_to_contributions",
     "serialize_rrao_allocation_report",
     "serialize_rrao_result",
     "to_component_summary",

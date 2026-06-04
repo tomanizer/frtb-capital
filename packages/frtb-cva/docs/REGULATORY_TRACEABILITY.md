@@ -18,6 +18,15 @@ Companion source manifest: [`regulatory_sources.yml`](regulatory_sources.yml).
 | Implemented | Tested code produces cited behaviour for supported inputs. |
 | Unsupported | Fail closed until profile or feature has cited rules and fixtures. |
 
+Runtime support-matrix rows use lower-case status values:
+
+| Runtime status | Meaning |
+| --- | --- |
+| `implemented_under_audit` | Capital-producing path with cited runtime code and package-local tests. |
+| `unsupported_fail_closed` | Requested path is recognised but raises before capital is produced. |
+| `regulatory_absence` | No capital path is defined by the cited rule text. |
+| `out_of_scope` | Boundary item belongs to upstream systems, governance, or orchestration rather than the CVA capital kernel. |
+
 ## Delivered slice (implemented modules)
 
 | Module | Responsibility | Basel reference | Status |
@@ -57,7 +66,9 @@ capital-producing under audit for the Basel-aligned BA-CVA, SA-CVA, and mixed
 carve-out methods. MAR50.9 / simplified CCR-substitution alternatives still
 fail closed before capital calculation. Non-Basel profiles use profile-owned
 citations and content hashes; ECB shorthand is normalised to `EU_CRR3_CVA`, not
-a separate runtime profile.
+a separate runtime profile. SA-CVA supervisory approval workflow and exposure /
+sensitivity generation are out of scope package-boundary rows for every
+supported profile.
 
 | Profile | Method or policy | Status | Citation | Blocker |
 | --- | --- | --- | --- | --- |
@@ -72,6 +83,8 @@ a separate runtime profile.
 | `EU_CRR3_CVA` | materiality / simplified CCR substitution | `unsupported_fail_closed` | Regulation (EU) 2024/1623 Article 385 | CCR input and orchestration boundary |
 | `UK_PRA_CVA` | all CVA methods | `implemented_under_audit` | PRA PS1/26; PRA Rulebook CVA Risk Part | none |
 | `UK_PRA_CVA` | materiality / alternative approach | `unsupported_fail_closed` | PRA Rulebook CVA Risk Part AA-CVA provisions | CCR input and orchestration boundary |
+| all supported profiles | `SA_CVA_APPROVAL_GOVERNANCE_WORKFLOW` | `out_of_scope` | profile-specific SA-CVA approval sources | supervisory approval boundary |
+| all supported profiles | `EXPOSURE_SIMULATION_AND_SENSITIVITY_GENERATION` | `out_of_scope` | profile-specific CVA exposure and sensitivity sources | upstream exposure/sensitivity boundary |
 
 ## BASEL_MAR50_2020 SA-CVA risk-class support matrix
 
@@ -90,8 +103,12 @@ a separate runtime profile.
 | `REFERENCE_CREDIT_SPREAD` | `DELTA` | `implemented_under_audit` | MAR50.50, MAR50.66-MAR50.69 | none |
 | `REFERENCE_CREDIT_SPREAD` | `VEGA` | `implemented_under_audit` | MAR50.50, MAR50.66-MAR50.69 | none |
 
-## Unsupported in the delivered slice
+## Unsupported and out of scope in the delivered slice
 
-- Materiality-threshold alternative (MAR50.9)
-- CCS vega capital, because MAR50.45 and MAR50.63 define CCS delta but no CCS
-  vega path
+- `unsupported_fail_closed`: materiality-threshold alternative (MAR50.9).
+- `unsupported_fail_closed`: analogous simplified CCR-substitution alternatives
+  in non-Basel profiles.
+- `regulatory_absence`: CCS vega capital, because MAR50.45 and MAR50.63 define
+  CCS delta but no CCS vega path.
+- `out_of_scope`: SA-CVA approval or governance workflow.
+- `out_of_scope`: exposure simulation and CVA sensitivity generation.

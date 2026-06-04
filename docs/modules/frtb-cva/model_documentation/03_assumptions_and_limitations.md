@@ -10,16 +10,34 @@ profiles are comparison profiles with profile-owned citations and hashes; U.S.
 NPR 2.0 remains proposed-rule material, and ECB shorthand routes to
 `EU_CRR3_CVA`.
 
-## Unsupported Scope
+This is the implemented-scope candidate for package maturity promotion. The
+promotion boundary is limited to package-owned CVA capital mechanics and
+handoff/audit helpers. It excludes CCR-substitution alternatives, supervisory
+approval workflow, legal interpretation, production source-data controls, and
+final regulatory capital reporting.
+
+## Fail-Closed Unsupported Scope
 
 The following paths fail closed:
 
 - MAR50.9 materiality-threshold 100% CCR alternative;
 - analogous simplified CCR-substitution alternatives in non-Basel profiles;
-- regulatory approval or governance workflow for SA-CVA use;
-- exposure simulation and sensitivity generation under MAR50.31-MAR50.36;
 - CCS vega capital, because MAR50.45 and MAR50.63 define CCS delta but no CCS
   vega capital path.
+
+The maturity promotion can proceed without implementing MAR50.9 or analogous
+CCR-substitution alternatives if those alternatives remain explicit
+`unsupported_fail_closed` support-matrix rows. Implementing them later requires
+a separate ADR for the upstream CCR capital input contract and orchestration
+method election.
+
+## Out-Of-Scope Boundaries
+
+The support matrix marks the following package-boundary items as `out_of_scope`,
+not as capital-producing methods:
+
+- regulatory approval or governance workflow for SA-CVA use;
+- exposure simulation and sensitivity generation under MAR50.31-MAR50.36.
 
 ## Input Boundaries
 

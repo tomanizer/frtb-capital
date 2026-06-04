@@ -22,10 +22,10 @@ on:
       - "benchmarks/**"
       - "packages/**/scripts/benchmark_*.py"
       - "scripts/benchmark_target_scale.py"
+      - "scripts/ci/run_benchmark_suite.py"
       - "scripts/ci/check_benchmark_budgets.py"
       - "docs/quality/benchmark_budgets.toml"
       - ".github/workflows/benchmark.yml"
-      - "Makefile"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

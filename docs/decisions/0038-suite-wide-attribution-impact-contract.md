@@ -146,6 +146,7 @@ the method categorisation established in ADR 0037.
 | Condition | Required method |
 |---|---|
 | Capital function positively homogeneous degree 1 in the source-level input; branch uniquely identified; no active floor or cap; denominator non-zero | `ANALYTICAL_EULER` |
+| Additive or standalone line charge already explains the selected capital amount without differentiating through a nonlinear aggregation | `STANDALONE` |
 | Active floor, cap, or min/max branch alters the effective derivative of the input dimension | `UNSUPPORTED` with signed `residual` carrying the unattributed amount |
 | Zero denominator prevents the Euler derivative | `UNSUPPORTED` with reason |
 | Input dimension crosses a bucket boundary or eligibility threshold between scenarios | `UNSUPPORTED` with reason |

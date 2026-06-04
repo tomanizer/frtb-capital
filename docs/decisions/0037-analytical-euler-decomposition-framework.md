@@ -46,6 +46,7 @@ Furthermore, we need to define the treatment for SBM curvature capital aggregati
 
 3. **Method Categorization**:
    - `ANALYTICAL_EULER`: For stable, differentiable branches (including SBM correlation matrices and linear curvature shock directions when ADR 0038's method-selection rules permit them).
+   - `STANDALONE`: For additive or standalone capital lines that are meaningful explain amounts without claiming a marginal derivative through a nonlinear aggregation.
    - `RESIDUAL`: For reconciling remaining category-level capital where exact analytical allocation is not applicable.
    - `UNSUPPORTED`: For non-differentiable branches (active floors, zero denominators). The capital is allocated to `residual` to ensure 100% exact numerical reconciliation.
 
