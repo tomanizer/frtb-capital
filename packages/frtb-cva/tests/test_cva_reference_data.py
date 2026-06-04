@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import frtb_cva.reference_data as reference_data
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_cva import (
@@ -127,6 +128,23 @@ def test_non_basel_profile_reference_payloads_are_profile_specific(
 def test_non_basel_profile_citation_mapping_fails_when_unmapped() -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="unmapped"):
         profile_citation_id("basel_mar50_999", CvaRegulatoryProfile.EU_CRR3_CVA)
+
+
+def test_profile_citation_mapping_fails_when_profile_map_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        reference_data,
+        "PROFILE_CITATION_ID_MAP",
+        {
+            profile: citation_map
+            for profile, citation_map in reference_data.PROFILE_CITATION_ID_MAP.items()
+            if profile is not CvaRegulatoryProfile.EU_CRR3_CVA
+        },
+    )
+
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="no citation map defined"):
+        profile_citation_id("basel_mar50_16", CvaRegulatoryProfile.EU_CRR3_CVA)
 
 
 def test_eu_crr3_profile_citations_include_article_381_scope() -> None:

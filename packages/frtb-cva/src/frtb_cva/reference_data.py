@@ -383,7 +383,11 @@ def profile_citation_id(
         return citation_id
     if resolved is CvaRegulatoryProfile.BASEL_MAR50_2020:
         return citation_id
-    citation_map = PROFILE_CITATION_ID_MAP[resolved]
+    citation_map = PROFILE_CITATION_ID_MAP.get(resolved)
+    if citation_map is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"CVA profile {resolved.value} has no citation map defined."
+        )
     try:
         return citation_map[citation_id]
     except KeyError as exc:
