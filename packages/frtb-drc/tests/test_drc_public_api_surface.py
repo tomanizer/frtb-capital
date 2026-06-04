@@ -25,6 +25,13 @@ ADAPTER_SURFACE = (
     "adapt_drc_crif_rows",
     "drc_crif_result_to_arrow_tables",
 )
+IMPACT_SURFACE = (
+    "DrcImpactAnalysis",
+    "DrcImpactMethod",
+    "DrcImpactRecord",
+    "calculate_drc_impact",
+    "validate_drc_impact_reconciliation",
+)
 
 
 def test_documented_handoff_surface_is_top_level_importable() -> None:
@@ -40,6 +47,15 @@ def test_documented_adapter_surface_is_top_level_importable() -> None:
     exported = set(frtb_drc.__all__)
     documented = _public_api_doc()
     for name in ADAPTER_SURFACE:
+        assert name in exported
+        assert hasattr(frtb_drc, name)
+        assert f"`{name}`" in documented
+
+
+def test_documented_impact_surface_is_top_level_importable() -> None:
+    exported = set(frtb_drc.__all__)
+    documented = _public_api_doc()
+    for name in IMPACT_SURFACE:
         assert name in exported
         assert hasattr(frtb_drc, name)
         assert f"`{name}`" in documented
@@ -76,7 +92,7 @@ def test_minimal_handoff_fixtures_round_trip_to_batches() -> None:
 
 
 def test_top_level_public_api_surface_remains_bounded() -> None:
-    assert len(frtb_drc.__all__) < 135
+    assert len(frtb_drc.__all__) < 140
 
 
 def _public_api_doc() -> str:

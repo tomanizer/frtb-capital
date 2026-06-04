@@ -40,8 +40,9 @@ capital breakdowns.
 8. Synthetic fixtures covering long/short offsetting, LGD categories, defaulted
    positions, securitisation tranche cases, and CTP aggregation.
 9. Attribution records for stable analytical Euler contribution with explicit
-   residual or unsupported records, plus audit lineage for future
-   baseline-vs-candidate impact assessment.
+   residual or unsupported records.
+10. Baseline-vs-candidate impact analysis for change control over two
+    compatible DRC capital results.
 
 ## Architecture
 
@@ -53,7 +54,7 @@ capital breakdowns.
 | `netting.py` | Issuer/tranche netting and maturity scaling. |
 | `capital.py` | Hedge benefit ratio, bucket capital, category aggregation. |
 | `attribution.py` | Analytical Euler, residual, and unsupported attribution over capital audit records. |
-| `impact.py` | Future baseline-vs-candidate capital delta analysis. |
+| `impact.py` | Baseline-vs-candidate capital delta analysis for change-control reporting; not a capital kernel. |
 | `crif.py` | Optional CRIF/vendor ingress mapping to canonical DRC positions, class-specific Arrow handoffs, and rejected-row diagnostics. |
 | `audit.py` | Serialisable audit records and reconciliation helpers. |
 | `regimes.py` | Policy selection and unsupported-feature declarations. |
@@ -105,8 +106,8 @@ fail closed until their cited rule mappings and fixtures are complete.
 7. **Run-level result and suite integration**: public API, examples, audit
    report, orchestration contract.
 8. **Attribution and impact**: analytical Euler contribution where supported,
-   explicit fallback or unsupported states, and reconciliation tests are
-   implemented; baseline-vs-candidate capital deltas remain future work.
+   explicit fallback or unsupported states, baseline-vs-candidate capital
+   deltas, and reconciliation tests are implemented.
 
 ## Acceptance Criteria
 

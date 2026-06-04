@@ -55,8 +55,11 @@ input hash.
 branches use `ANALYTICAL_EULER`; floors, zero HBR denominators, missing or
 non-unique risk-weight lineage, and unsupported branch shapes emit
 `UNSUPPORTED` or `RESIDUAL` records that reconcile to total DRC without changing
-the capital number. Baseline-vs-candidate impact analysis remains a separate
-future artifact.
+the capital number. `calculate_drc_impact` provides separate
+baseline-vs-candidate change-control analysis over two compatible
+`DrcCapitalResult` objects; it labels stable branch deltas, unsupported branch
+changes, and residual impact without treating impact records as regulatory
+capital calculations.
 
 ## Boundary Flow
 
@@ -109,5 +112,7 @@ batch audit boundaries, SA handoff):
 - [ADR 0036: DRC securitisation and CTP risk-weight evidence contract](../../decisions/0036-drc-securitisation-risk-weight-evidence.md)
 - [ADR 0030: DRC securitisation fair-value cap evidence](../../decisions/0030-drc-securitisation-fair-value-cap-evidence.md)
 - [ADR 0031: DRC attribution method contract](../../decisions/0031-drc-attribution-method-contract.md)
+- [ADR 0038: Suite-wide attribution and impact contract](../../decisions/0038-suite-wide-attribution-impact-contract.md)
 - [ADR 0041: DRC EU CRR3 non-securitisation profile slice](../../decisions/0041-drc-eu-crr3-nonsec-profile.md)
 - [ADR 0042: DRC CRIF/vendor ingress adapter boundary](../../decisions/0042-drc-crif-vendor-ingress-boundary.md)
+- [ADR 0044: DRC baseline impact analysis](../../decisions/0044-drc-baseline-impact-analysis.md)

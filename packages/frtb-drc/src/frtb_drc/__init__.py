@@ -103,6 +103,13 @@ from frtb_drc.data_models import (
 )
 from frtb_drc.fair_value_cap import fair_value_cap_evidence_by_position
 from frtb_drc.gross_jtd import calculate_gross_jtd, calculate_gross_jtds
+from frtb_drc.impact import (
+    DrcImpactAnalysis,
+    DrcImpactMethod,
+    DrcImpactRecord,
+    calculate_drc_impact,
+    validate_drc_impact_reconciliation,
+)
 from frtb_drc.maturity import calculate_maturity_weight, scale_gross_jtd, scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.reference_data import (
@@ -180,6 +187,9 @@ __all__ = [
     "DrcFairValueCapEvidence",
     "DrcFxConversion",
     "DrcFxRate",
+    "DrcImpactAnalysis",
+    "DrcImpactMethod",
+    "DrcImpactRecord",
     "DrcInputError",
     "DrcInstrumentType",
     "DrcPosition",
@@ -226,6 +236,7 @@ __all__ = [
     "calculate_drc_attribution",
     "calculate_drc_capital",
     "calculate_drc_capital_from_batch",
+    "calculate_drc_impact",
     "calculate_gross_jtd",
     "calculate_gross_jtds",
     "calculate_hedge_benefit_ratio",
@@ -270,6 +281,7 @@ __all__ = [
     "top_drc_attribution_summaries",
     "validate_attribution_reconciliation",
     "validate_ctp_context",
+    "validate_drc_impact_reconciliation",
     "validate_position",
     "validate_positions",
     "validate_reconciliation",

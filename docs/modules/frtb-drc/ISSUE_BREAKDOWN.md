@@ -359,15 +359,15 @@ scale.
 
 ## Issue 17: Add attribution and impact assessment
 
-**Goal:** Add analytical attribution now and keep change-impact outputs as a
-separate later slice after core DRC is stable.
+**Goal:** Add analytical attribution and keep change-impact outputs separate
+from the capital kernel.
 
 **Scope:**
 
 - Implement `attribution.py` for analytical Euler contribution on supported
   stable DRC branches.
-- Implement `impact.py` for baseline-vs-candidate capital deltas in a later
-  issue.
+- Implement `impact.py` for baseline-vs-candidate capital deltas as a separate
+  change-control analysis boundary.
 - Reconcile contribution records to bucket, category, and total DRC where the
   active branch permits exact reconciliation.
 - Label finite-difference impact separately from analytical marginal
@@ -380,8 +380,7 @@ separate later slice after core DRC is stable.
   fixtures.
 - Unsupported formulas, branch changes, floors, and zero denominators report
   explicit method/residual metadata.
-- Capital totals do not change when attribution is emitted or impact is later
-  requested.
+- Capital totals do not change when attribution or impact is requested.
 
-**Tests/checks to add with this issue:** `tests/test_drc_attribution.py`.
-Future impact work should add `tests/test_drc_impact.py`.
+**Tests/checks to add with this issue:** `tests/test_drc_attribution.py`,
+`tests/test_drc_impact.py`.
