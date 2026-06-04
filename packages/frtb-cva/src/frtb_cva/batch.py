@@ -78,6 +78,8 @@ from frtb_cva.reference_data import (
     ba_cva_rho,
     ba_cva_risk_weight,
     compute_non_imm_discount_factor,
+    profile_citation_id,
+    profile_citation_ids,
     resolve_netting_set_discount_factor,
 )
 from frtb_cva.regimes import get_cva_rule_profile
@@ -1032,7 +1034,10 @@ def calculate_cva_capital_from_batches(
     if ba_cva_full is not None:
         citations = _merge_citations(citations, ba_cva_full.citations)
     if ba_cva_reduced is not None:
-        citations = _collect_ba_citations(ba_cva_reduced.citations, ba_cva_netting_set_lines)
+        citations = _merge_citations(
+            citations,
+            _collect_ba_citations(ba_cva_reduced.citations, ba_cva_netting_set_lines),
+        )
     if sa_cva_risk_class_capitals:
         citations = _merge_citations(
             citations,
@@ -1132,7 +1137,10 @@ def calculate_reduced_portfolio_from_batches(
                 sector=sector,
                 credit_quality=credit_quality,
                 region=cast(str, counterparties.regions[counterparty_index]),
-                citations=_unique_citations(rw_citation, "basel_mar50_15"),
+                citations=_unique_citations(
+                    rw_citation,
+                    profile_citation_id("basel_mar50_15", profile),
+                ),
             )
         )
 
@@ -1161,7 +1169,7 @@ def calculate_reduced_portfolio_from_batches(
             rho_citation,
             discount_citation,
             alpha_citation,
-            "basel_mar50_14",
+            profile_citation_id("basel_mar50_14", profile),
         ),
     )
 
@@ -1195,7 +1203,7 @@ def calculate_full_portfolio_from_batches(
     hedge_lines: list[BaCvaHedgeRecognitionLine] = []
 
     for hedge_index in _sorted_indices(hedge_batch.hedge_ids):
-        decision = _assess_ba_cva_hedge_eligibility(hedge_batch, hedge_index)
+        decision = _assess_ba_cva_hedge_eligibility(hedge_batch, hedge_index, profile=profile)
         counterparty_id = cast(str, hedge_batch.counterparty_ids[hedge_index])
         hedge_type = BaCvaHedgeType(cast(str, hedge_batch.hedge_types[hedge_index]))
         reference_relation = HedgeReferenceRelation(
@@ -1230,7 +1238,11 @@ def calculate_full_portfolio_from_batches(
             profile=profile,
         )
         risk_weight, rw_citation = _hedge_risk_weight(hedge_batch, hedge_index, profile=profile)
-        discount_factor, df_citation, _ = _hedge_discount_factor(hedge_batch, hedge_index)
+        discount_factor, df_citation, _ = _hedge_discount_factor(
+            hedge_batch,
+            hedge_index,
+            profile=profile,
+        )
         weighted_notional = (
             risk_weight
             * float(hedge_batch.remaining_maturities[hedge_index])
@@ -1253,10 +1265,11 @@ def calculate_full_portfolio_from_batches(
                     index_contribution=weighted_notional,
                     reason_code=decision.reason_code,
                     citations=_unique_citations(
+                        *decision.citations,
                         rhc_citation,
                         rw_citation,
                         df_citation,
-                        "basel_mar50_24",
+                        profile_citation_id("basel_mar50_24", profile),
                     ),
                 )
             )
@@ -1281,10 +1294,11 @@ def calculate_full_portfolio_from_batches(
                 index_contribution=0.0,
                 reason_code=decision.reason_code,
                 citations=_unique_citations(
+                    *decision.citations,
                     rhc_citation,
                     rw_citation,
                     df_citation,
-                    "basel_mar50_23",
+                    profile_citation_id("basel_mar50_23", profile),
                 ),
             )
         )
@@ -1327,9 +1341,11 @@ def calculate_full_portfolio_from_batches(
             rho_citation,
             discount_citation,
             beta_citation,
-            "basel_mar50_17",
-            "basel_mar50_20",
-            "basel_mar50_21",
+            *profile_citation_ids(
+                ("basel_mar50_17", "basel_mar50_20", "basel_mar50_21"),
+                profile,
+            ),
+            *(citation for line in hedge_lines for citation in line.citations),
         ),
     )
 
@@ -1349,7 +1365,7 @@ def calculate_sa_cva_capital_from_batch(
         raise CvaInputError("SA-CVA requires at least one sensitivity", field="sensitivities")
     grouped = _group_sa_cva_indices_by_path(sensitivities)
     hedge_batch = hedges or _empty_hedge_batch()
-    eligible_hedges = _eligible_sa_cva_hedge_ids(hedge_batch)
+    eligible_hedges = _eligible_sa_cva_hedge_ids(hedge_batch, profile=profile)
     results: list[SaCvaRiskClassCapital] = []
     for risk_class, risk_measure in sorted(grouped, key=str):
         indices = grouped[(risk_class, risk_measure)]
@@ -1772,7 +1788,12 @@ def _netting_set_line_from_batch(
     )
 
 
-def _assess_sa_cva_hedge_eligibility(batch: CvaHedgeBatch, index: int) -> HedgeEligibilityDecision:
+def _assess_sa_cva_hedge_eligibility(
+    batch: CvaHedgeBatch,
+    index: int,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> HedgeEligibilityDecision:
     hedge_id = cast(str, batch.hedge_ids[index])
     eligibility = HedgeEligibility(cast(str, batch.eligibilities[index]))
     sa_risk_class = (
@@ -1787,7 +1808,7 @@ def _assess_sa_cva_hedge_eligibility(batch: CvaHedgeBatch, index: int) -> HedgeE
             sa_cva_risk_class=sa_risk_class,
             reason_code=cast(str | None, batch.rejection_reasons[index])
             or "hedge_marked_ineligible",
-            citations=("basel_mar50_37",),
+            citations=profile_citation_ids(("basel_mar50_37",), profile),
         )
     if eligibility is HedgeEligibility.EXCLUDED:
         return HedgeEligibilityDecision(
@@ -1795,7 +1816,7 @@ def _assess_sa_cva_hedge_eligibility(batch: CvaHedgeBatch, index: int) -> HedgeE
             eligibility=HedgeEligibility.EXCLUDED,
             sa_cva_risk_class=sa_risk_class,
             reason_code="hedge_excluded_from_sa_cva",
-            citations=("basel_mar50_39",),
+            citations=profile_citation_ids(("basel_mar50_39",), profile),
         )
     if bool(batch.is_internal[index]) and not batch.eligibility_evidence_ids[index]:
         return HedgeEligibilityDecision(
@@ -1803,18 +1824,23 @@ def _assess_sa_cva_hedge_eligibility(batch: CvaHedgeBatch, index: int) -> HedgeE
             eligibility=HedgeEligibility.INELIGIBLE,
             sa_cva_risk_class=sa_risk_class,
             reason_code="internal_hedge_missing_back_to_back_evidence",
-            citations=("basel_mar50_11", "basel_mar50_39"),
+            citations=profile_citation_ids(("basel_mar50_11", "basel_mar50_39"), profile),
         )
     return HedgeEligibilityDecision(
         hedge_id=hedge_id,
         eligibility=HedgeEligibility.ELIGIBLE,
         sa_cva_risk_class=sa_risk_class,
         reason_code="eligible_whole_transaction_hedge",
-        citations=("basel_mar50_37", "basel_mar50_38"),
+        citations=profile_citation_ids(("basel_mar50_37", "basel_mar50_38"), profile),
     )
 
 
-def _assess_ba_cva_hedge_eligibility(batch: CvaHedgeBatch, index: int) -> HedgeEligibilityDecision:
+def _assess_ba_cva_hedge_eligibility(
+    batch: CvaHedgeBatch,
+    index: int,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> HedgeEligibilityDecision:
     hedge_type = BaCvaHedgeType(cast(str, batch.hedge_types[index]))
     hedge_id = cast(str, batch.hedge_ids[index])
     if hedge_type not in {
@@ -1827,9 +1853,9 @@ def _assess_ba_cva_hedge_eligibility(batch: CvaHedgeBatch, index: int) -> HedgeE
             eligibility=HedgeEligibility.INELIGIBLE,
             sa_cva_risk_class=None,
             reason_code="instrument_type_not_eligible_for_ba_cva",
-            citations=("basel_mar50_18",),
+            citations=profile_citation_ids(("basel_mar50_18",), profile),
         )
-    sa_decision = _assess_sa_cva_hedge_eligibility(batch, index)
+    sa_decision = _assess_sa_cva_hedge_eligibility(batch, index, profile=profile)
     if sa_decision.eligibility is not HedgeEligibility.ELIGIBLE:
         return replace(sa_decision, eligibility=HedgeEligibility.INELIGIBLE)
     return HedgeEligibilityDecision(
@@ -1837,24 +1863,39 @@ def _assess_ba_cva_hedge_eligibility(batch: CvaHedgeBatch, index: int) -> HedgeE
         eligibility=HedgeEligibility.ELIGIBLE,
         sa_cva_risk_class=sa_decision.sa_cva_risk_class,
         reason_code="eligible_ba_cva_credit_spread_hedge",
-        citations=("basel_mar50_18", "basel_mar50_19", "basel_mar50_37"),
+        citations=profile_citation_ids(
+            ("basel_mar50_18", "basel_mar50_19", "basel_mar50_37"),
+            profile,
+        ),
     )
 
 
-def _eligible_sa_cva_hedge_ids(batch: CvaHedgeBatch) -> frozenset[str]:
+def _eligible_sa_cva_hedge_ids(
+    batch: CvaHedgeBatch,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> frozenset[str]:
     eligible: set[str] = set()
     for index in range(batch.row_count):
-        if _assess_sa_cva_hedge_eligibility(batch, index).eligibility is HedgeEligibility.ELIGIBLE:
+        if (
+            _assess_sa_cva_hedge_eligibility(batch, index, profile=profile).eligibility
+            is HedgeEligibility.ELIGIBLE
+        ):
             eligible.add(cast(str, batch.hedge_ids[index]))
     return frozenset(eligible)
 
 
-def _hedge_discount_factor(batch: CvaHedgeBatch, index: int) -> tuple[float, str, bool]:
+def _hedge_discount_factor(
+    batch: CvaHedgeBatch,
+    index: int,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> tuple[float, str, bool]:
     discount_factor = float(batch.discount_factors[index])
     if bool(batch.discount_factor_explicit[index]) or discount_factor != 1.0:
-        return discount_factor, "basel_mar50_23", True
+        return discount_factor, profile_citation_id("basel_mar50_23", profile), True
     calculated, citation = compute_non_imm_discount_factor(float(batch.remaining_maturities[index]))
-    return calculated, citation, False
+    return calculated, profile_citation_id(citation, profile), False
 
 
 def _hedge_risk_weight(

@@ -12,6 +12,7 @@ from frtb_cva.data_models import (
     SaCvaRiskClass,
     SaCvaSensitivity,
 )
+from frtb_cva.reference_data import profile_citation_id
 from frtb_cva.sa_cva_reference_data import (
     CCS_QUALIFIED_INDEX_BUCKET,
     CCS_SINGLE_NAME_BUCKETS,
@@ -34,7 +35,6 @@ def resolve_sa_cva_bucket(
 ) -> tuple[str, tuple[str, ...]]:
     """Return the effective bucket id and citation ids for one sensitivity row."""
 
-    _ = profile
     bucket = sensitivity.bucket_id
     if sensitivity.index_treatment is SaCvaIndexTreatment.LOOK_THROUGH_REQUIRED:
         raise CvaInputError(
@@ -44,13 +44,13 @@ def resolve_sa_cva_bucket(
         )
 
     if sensitivity.risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD:
-        return _resolve_ccs_bucket(sensitivity, bucket)
+        return _resolve_ccs_bucket(sensitivity, bucket, profile=profile)
 
     if sensitivity.risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD:
-        return _resolve_rcs_bucket(sensitivity, bucket)
+        return _resolve_rcs_bucket(sensitivity, bucket, profile=profile)
 
     if sensitivity.risk_class is SaCvaRiskClass.EQUITY:
-        return _resolve_equity_bucket(sensitivity, bucket)
+        return _resolve_equity_bucket(sensitivity, bucket, profile=profile)
 
     if sensitivity.index_treatment is not None:
         raise CvaInputError(
@@ -61,7 +61,12 @@ def resolve_sa_cva_bucket(
     return bucket, ()
 
 
-def _resolve_ccs_bucket(sensitivity: SaCvaSensitivity, bucket: str) -> tuple[str, tuple[str, ...]]:
+def _resolve_ccs_bucket(
+    sensitivity: SaCvaSensitivity,
+    bucket: str,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> tuple[str, tuple[str, ...]]:
     if bucket not in _CCS_INDEX_BUCKETS and sensitivity.index_treatment is not None:
         raise CvaInputError(
             f"CCS bucket {bucket} does not support qualified-index treatment",
@@ -84,10 +89,18 @@ def _resolve_ccs_bucket(sensitivity: SaCvaSensitivity, bucket: str) -> tuple[str
             record_id=sensitivity.sensitivity_id,
         )
     remapped = _sector_concentration_bucket(sensitivity, default_bucket=bucket)
-    return remapped, ("basel_mar50_50", "basel_mar50_63")
+    return remapped, (
+        profile_citation_id("basel_mar50_50", profile),
+        profile_citation_id("basel_mar50_63", profile),
+    )
 
 
-def _resolve_rcs_bucket(sensitivity: SaCvaSensitivity, bucket: str) -> tuple[str, tuple[str, ...]]:
+def _resolve_rcs_bucket(
+    sensitivity: SaCvaSensitivity,
+    bucket: str,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> tuple[str, tuple[str, ...]]:
     if bucket == "8":
         if sensitivity.index_treatment is not SaCvaIndexTreatment.QUALIFIED_INDEX:
             raise CvaInputError(
@@ -96,7 +109,7 @@ def _resolve_rcs_bucket(sensitivity: SaCvaSensitivity, bucket: str) -> tuple[str
                 record_id=sensitivity.sensitivity_id,
             )
         remapped = _sector_concentration_bucket(sensitivity, default_bucket=bucket)
-        return remapped, ("basel_mar50_50",)
+        return remapped, (profile_citation_id("basel_mar50_50", profile),)
     if sensitivity.index_treatment is SaCvaIndexTreatment.QUALIFIED_INDEX:
         raise CvaInputError(
             "RCS qualified index must use bucket 8",
@@ -109,6 +122,8 @@ def _resolve_rcs_bucket(sensitivity: SaCvaSensitivity, bucket: str) -> tuple[str
 def _resolve_equity_bucket(
     sensitivity: SaCvaSensitivity,
     bucket: str,
+    *,
+    profile: CvaRegulatoryProfile | str,
 ) -> tuple[str, tuple[str, ...]]:
     if bucket in EQUITY_QUALIFIED_INDEX_BUCKETS:
         if sensitivity.index_treatment is not SaCvaIndexTreatment.QUALIFIED_INDEX:
@@ -117,7 +132,10 @@ def _resolve_equity_bucket(
                 field="index_treatment",
                 record_id=sensitivity.sensitivity_id,
             )
-        return bucket, ("basel_mar50_50", "basel_mar50_72")
+        return bucket, (
+            profile_citation_id("basel_mar50_50", profile),
+            profile_citation_id("basel_mar50_72", profile),
+        )
     if sensitivity.index_treatment is SaCvaIndexTreatment.QUALIFIED_INDEX:
         raise CvaInputError(
             "qualified equity index must use buckets 12 or 13",

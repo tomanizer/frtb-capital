@@ -2,17 +2,20 @@
 
 ## Implemented Scope
 
-The package is partial runtime for `BASEL_MAR50_2020` only. It supports reduced
-and full BA-CVA, supported SA-CVA delta/vega risk classes, mixed carve-out,
-qualified-index routing where metadata is supplied, and package-owned batch and
-Arrow batches.
+The package is partial runtime for `BASEL_MAR50_2020`, `US_NPR20_VB`,
+`EU_CRR3_CVA`, and `UK_PRA_CVA`. It supports reduced and full BA-CVA, supported
+SA-CVA delta/vega risk classes, mixed carve-out, qualified-index routing where
+metadata is supplied, and package-owned batch and Arrow batches. Non-Basel
+profiles are comparison profiles with profile-owned citations and hashes; U.S.
+NPR 2.0 remains proposed-rule material, and ECB shorthand routes to
+`EU_CRR3_CVA`.
 
 ## Unsupported Scope
 
 The following paths fail closed:
 
 - MAR50.9 materiality-threshold 100% CCR alternative;
-- U.S. NPR 2.0, EU CRR3, and PRA UK CRR comparison profiles;
+- analogous simplified CCR-substitution alternatives in non-Basel profiles;
 - regulatory approval or governance workflow for SA-CVA use;
 - exposure simulation and sensitivity generation under MAR50.31-MAR50.36;
 - CCS vega capital, because MAR50.45 and MAR50.63 define CCS delta but no CCS

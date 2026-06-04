@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_cva import (
+    CvaMethod,
     CvaRegulatoryProfile,
     get_cva_rule_profile,
     profile_content_hash,
@@ -24,13 +24,25 @@ def test_profile_hash_is_deterministic() -> None:
 
 
 @pytest.mark.parametrize(
-    "profile",
+    ("profile", "expected_citation_id"),
     [
-        CvaRegulatoryProfile.US_NPR20_VB,
-        CvaRegulatoryProfile.EU_CRR3_CVA,
-        CvaRegulatoryProfile.UK_PRA_CVA,
+        (CvaRegulatoryProfile.US_NPR20_VB, "us_npr20_vb_ba_cva"),
+        (CvaRegulatoryProfile.EU_CRR3_CVA, "eu_crr3_article_384"),
+        (CvaRegulatoryProfile.UK_PRA_CVA, "uk_pra_cva_risk_ba"),
     ],
 )
-def test_unsupported_profiles_fail_before_calculation(profile: CvaRegulatoryProfile) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError):
-        resolve_cva_profile(profile)
+def test_non_basel_profiles_are_supported_with_profile_citations(
+    profile: CvaRegulatoryProfile,
+    expected_citation_id: str,
+) -> None:
+    assert resolve_cva_profile(profile) is profile
+    rule_profile = get_cva_rule_profile(profile)
+    assert rule_profile.profile is profile
+    assert rule_profile.supported_methods == frozenset(CvaMethod)
+    assert expected_citation_id in rule_profile.citation_ids
+    assert rule_profile.content_hash == profile_content_hash(profile)
+
+
+def test_profile_hashes_are_profile_specific() -> None:
+    hashes = {profile: profile_content_hash(profile) for profile in CvaRegulatoryProfile}
+    assert len(set(hashes.values())) == len(CvaRegulatoryProfile)

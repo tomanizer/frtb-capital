@@ -21,8 +21,9 @@ the value of the counterparty-facing portfolio before default.
 
 ## Basel MAR50 core requirements
 
-Basel MAR50 is the package's current capital-producing profile. The main
-requirements are:
+Basel MAR50 is the package's calibration anchor. The non-Basel profiles use
+profile-owned citations and hashes for comparison runs over the same implemented
+BA-CVA, SA-CVA, and mixed-method mechanics. The main requirements are:
 
 - **Scope and methods:** covered derivative and material fair-valued SFT
   transactions form a standalone CVA portfolio with eligible CVA hedges
@@ -54,9 +55,9 @@ requirements are:
 | Variant | Status | What differs or needs mapping |
 | --- | --- | --- |
 | Basel MAR50 / BCBS d507 | Implemented under audit as `BASEL_MAR50_2020`. | This is the reference profile for reduced BA-CVA, full BA-CVA, SA-CVA, mixed carve-out, qualified-index routing, attribution, impact, and audit evidence. |
-| U.S. NPR 2.0 / 91 FR 14952 section V.B | Comparison profile only, fail closed as `US_NPR20_VB`. | The March 27, 2026 NPR proposes CVA risk requirements for covered U.S. banking organizations, including covered positions, CVA hedges, internal CVA risk transfers, and a standardized measure for CVA risk. It is proposed-rule material and needs a section-by-section profile crosswalk, fixtures, and final-rule review before any capital-producing path. |
-| EU CRR3 / Regulation (EU) 2024/1623 | Comparison profile only, fail closed as `EU_CRR3_CVA`. | EU implementation is through amended CRR provisions, especially Articles 382-386 and related EBA technical standards. ECB-supervised firms apply the EU CRR framework; the package does not treat ECB supervision as a separate CVA formula. EU exclusions, SFT scope, eligible hedges, and approach permissions need their own article-level mapping. |
-| UK PRA Basel 3.1 / PS1/26 and CP16/22 | Comparison profile only, fail closed as `UK_PRA_CVA`. | PRA PS1/26 finalises Basel 3.1 rules effective from 1 January 2027. The PRA framework introduces AA-CVA, BA-CVA, and SA-CVA and removes internal models for CVA capital. UK rulebook references, AA-CVA, permissions, reporting, and disclosure differences are not implemented. |
+| U.S. NPR 2.0 / 91 FR 14952 section V.B | Implemented under audit as `US_NPR20_VB`. | The March 27, 2026 NPR proposes CVA risk requirements for covered U.S. banking organizations, including covered positions, CVA hedges, internal CVA risk transfers, and a standardized measure for CVA risk. It is proposed-rule comparison material, not final U.S. regulatory capital. |
+| EU CRR3 / Regulation (EU) 2024/1623 | Implemented under audit as `EU_CRR3_CVA`. | EU implementation is through amended CRR provisions, especially Articles 381-386 and inserted Articles 383a-383z. ECB-supervised firms apply the EU CRR framework; the package does not treat ECB supervision as a separate CVA formula. |
+| UK PRA Basel 3.1 / PS1/26 and PRA Rulebook | Implemented under audit as `UK_PRA_CVA`. | PRA PS1/26 finalises Basel 3.1 rules effective from 1 January 2027. The profile crosswalk references the PRA Rulebook CVA Risk Part for BA-CVA, SA-CVA, AA-CVA context, and hedge treatment. |
 
 ## How `frtb-cva` implements the regulation
 
@@ -82,9 +83,8 @@ Implemented Basel paths:
 
 ## Known gaps
 
-- `US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA` fail closed until comparison
-  profiles have paragraph/article-level mappings and fixtures.
-- MAR50.9 materiality-threshold alternative is unsupported because it requires
+- MAR50.9 materiality-threshold alternative and analogous simplified
+  CCR-substitution approaches are unsupported because they require
   CCR capital inputs and orchestration outside this package.
 - Counterparty-credit-spread vega is a regulatory absence under Basel MAR50 and
   fails explicitly.

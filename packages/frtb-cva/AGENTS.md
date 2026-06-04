@@ -20,8 +20,10 @@ before editing this package.
 - Optional CRIF adapter (`crif.py`), attribution (`attribution.py`), and impact
   (`impact.py`) without changing capital totals.
 
-Comparison profiles and the MAR50.9 materiality-threshold alternative remain
-unsupported and must fail closed.
+`US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA` are capital-producing
+comparison profiles under audit with profile-owned citations and hashes.
+MAR50.9 and analogous CCR-substitution alternatives remain unsupported and
+must fail closed.
 
 ## Rules
 
