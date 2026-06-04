@@ -20,6 +20,25 @@ from frtb_common import (
     StandardisedComponent,
 )
 
+from frtb_orchestration._validation import (
+    OrchestrationInputError,
+)
+from frtb_orchestration._validation import (
+    require_non_empty_text as _require_non_empty_text,
+)
+from frtb_orchestration._validation import (
+    require_non_negative_finite_number as _require_non_negative_finite_number,
+)
+from frtb_orchestration._validation import (
+    require_non_negative_int as _require_non_negative_int,
+)
+from frtb_orchestration._validation import (
+    require_text_tuple as _require_text_tuple,
+)
+from frtb_orchestration._validation import (
+    require_tuple_of as _require_tuple_of,
+)
+
 # Maps every known SA component profile_id to a jurisdiction family.
 # Components from different families must never be composed into a single SA charge.
 # Basel note: SBM uses "BASEL_MAR21", RRAO uses "BASEL_MAR23", and DRC would use
@@ -37,14 +56,6 @@ _IMA_ELIGIBLE = "IMA_ELIGIBLE"
 _SA_FALLBACK = "SA_FALLBACK"
 _STANDARDISED_APPROACH_ROUTE = "STANDARDISED_APPROACH"
 _SA_FALLBACK_REASON_CODE = "ima_desk_not_model_eligible"
-
-
-class OrchestrationInputError(ValueError):
-    """Raised when a component summary cannot be consumed by orchestration."""
-
-    def __init__(self, message: str, *, field: str = "") -> None:
-        self.field = field
-        super().__init__(message)
 
 
 @dataclass(frozen=True)
@@ -490,40 +501,6 @@ def _eligibility_status_value(raw_status: object) -> str:
 
 def _unique_texts(values: Iterable[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(values))
-
-
-def _require_non_empty_text(value: object, field: str) -> None:
-    if not isinstance(value, str) or not value:
-        raise OrchestrationInputError(f"{field} must be non-empty text", field=field)
-
-
-def _require_non_negative_finite_number(value: object, field: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise OrchestrationInputError(f"{field} must be numeric", field=field)
-    number = float(value)
-    if not math.isfinite(number):
-        raise OrchestrationInputError(f"{field} must be finite", field=field)
-    if number < 0.0:
-        raise OrchestrationInputError(f"{field} must be non-negative", field=field)
-    return number
-
-
-def _require_non_negative_int(value: object, field: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-        raise OrchestrationInputError(f"{field} must be a non-negative integer", field=field)
-
-
-def _require_text_tuple(value: object, field: str) -> None:
-    if not isinstance(value, tuple) or not all(isinstance(item, str) for item in value):
-        raise OrchestrationInputError(f"{field} must be a tuple of text values", field=field)
-
-
-def _require_tuple_of(value: object, expected_type: type[object], field: str) -> None:
-    if not isinstance(value, tuple) or not all(isinstance(item, expected_type) for item in value):
-        raise OrchestrationInputError(
-            f"{field} must be a tuple of {expected_type.__name__} values",
-            field=field,
-        )
 
 
 def _require_component_subtotal_set(
