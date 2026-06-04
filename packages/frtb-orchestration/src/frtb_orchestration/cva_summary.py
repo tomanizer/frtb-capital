@@ -48,7 +48,17 @@ class CvaCapitalSummary:
 
 
 def recognise_cva_summary(result: object) -> CvaCapitalSummary:
-    """Return the orchestration summary view for a public CVA result shape."""
+    """Return the orchestration summary view for a public CVA result shape.
+    Parameters
+    ----------
+    result : object
+        Result.
+
+    Returns
+    -------
+    CvaCapitalSummary
+        Result of the operation.
+    """
 
     method = _required_text_attr(result, "method", component="CVA")
     ba_cva_reduced = _optional_object_attr(result, "ba_cva_reduced", component="CVA")

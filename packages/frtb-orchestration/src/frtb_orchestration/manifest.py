@@ -183,7 +183,21 @@ def validate_capital_run_manifest(
     routes: Mapping[str, ManifestInputTableRoute],
     required_input_table_keys: Sequence[str] = STANDARDISED_REQUIRED_INPUT_TABLE_KEYS,
 ) -> ManifestValidationResult:
-    """Validate manifest input tables without calculating capital."""
+    """Validate manifest input tables without calculating capital.
+    Parameters
+    ----------
+    manifest : CapitalRunManifest
+        Manifest.
+    routes : Mapping[str, ManifestInputTableRoute]
+        Routes.
+    required_input_table_keys : Sequence[str], optional
+        Required input table keys.
+
+    Returns
+    -------
+    ManifestValidationResult
+        Result of the operation.
+    """
 
     validations: list[ManifestInputTableValidation] = []
     errors: list[str] = []
@@ -226,7 +240,21 @@ def run_standardised_approach_from_manifest(
     routes: Mapping[str, ManifestInputTableRoute],
     required_input_table_keys: Sequence[str] = STANDARDISED_REQUIRED_INPUT_TABLE_KEYS,
 ) -> SaManifestRunResult:
-    """Validate, route available SA input tables, and compose SA capital if complete."""
+    """Validate, route available SA input tables, and compose SA capital if complete.
+    Parameters
+    ----------
+    manifest : CapitalRunManifest
+        Manifest.
+    routes : Mapping[str, ManifestInputTableRoute]
+        Routes.
+    required_input_table_keys : Sequence[str], optional
+        Required input table keys.
+
+    Returns
+    -------
+    SaManifestRunResult
+        Result of the operation.
+    """
 
     validation = validate_capital_run_manifest(
         manifest,

@@ -2,12 +2,12 @@
   "description": "Runtime package docstring inventory report.",
   "metrics": {
     "findings_by_rule": {
-      "MISSING_PARAMETERS_SECTION": 480,
+      "MISSING_PARAMETERS_SECTION": 470,
       "MISSING_PUBLIC_DOCSTRING": 71,
-      "MISSING_RETURNS_SECTION": 492
+      "MISSING_RETURNS_SECTION": 473
     },
     "packages_with_findings": 5,
-    "total_findings": 1043
+    "total_findings": 1014
   },
   "packages": {
     "frtb-drc": {
@@ -115,7 +115,7 @@
       ]
     },
     "frtb-orchestration": {
-      "finding_count": 68,
+      "finding_count": 39,
       "findings": [
         {
           "line": 41,
@@ -163,25 +163,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 27,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "suite_jurisdiction_family",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/_suite_validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 27,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "suite_jurisdiction_family",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/_suite_validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 47,
+          "line": 57,
           "message": "Public function is missing a docstring.",
           "object_name": "assert_consistent_calculation_date",
           "object_type": "function",
@@ -190,7 +172,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 65,
+          "line": 75,
           "message": "Public function is missing a docstring.",
           "object_name": "assert_consistent_base_currency",
           "object_type": "function",
@@ -199,7 +181,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 80,
+          "line": 90,
           "message": "Public function is missing a docstring.",
           "object_name": "assert_consistent_jurisdiction_family",
           "object_type": "function",
@@ -208,7 +190,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 104,
+          "line": 114,
           "message": "Public function is missing a docstring.",
           "object_name": "default_suite_run_id",
           "object_type": "function",
@@ -217,7 +199,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 112,
+          "line": 122,
           "message": "Public function is missing a docstring.",
           "object_name": "as_date",
           "object_type": "function",
@@ -325,51 +307,6 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 50,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "recognise_cva_summary",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/cva_summary.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 50,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "recognise_cva_summary",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/cva_summary.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 64,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ImaCapitalSummary.as_dict",
-          "object_type": "method",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/ima_summary.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 83,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "recognise_ima_summary",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/ima_summary.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 83,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "recognise_ima_summary",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/ima_summary.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 118,
           "message": "Public method is missing a docstring.",
           "object_name": "ManifestInputTableValidation.as_dict",
@@ -406,42 +343,6 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 180,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_capital_run_manifest",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/manifest.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 180,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_capital_run_manifest",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/manifest.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 223,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "run_standardised_approach_from_manifest",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/manifest.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 223,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "run_standardised_approach_from_manifest",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/manifest.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 97,
           "message": "Public method is missing a docstring.",
           "object_name": "StandardisedComponentSubtotal.from_summary",
@@ -449,168 +350,6 @@
           "package": "frtb-orchestration",
           "path": "packages/frtb-orchestration/src/frtb_orchestration/standardised.py",
           "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 111,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StandardisedComponentSubtotal.as_dict",
-          "object_type": "method",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/standardised.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 151,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StandardisedFallbackRoute.as_dict",
-          "object_type": "method",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/standardised.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 215,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StandardisedApproachCapitalResult.as_dict",
-          "object_type": "method",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/standardised.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 231,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "compose_standardised_approach_capital",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/standardised.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 231,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "compose_standardised_approach_capital",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/standardised.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 289,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "standardised_jurisdiction_family",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/standardised.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 289,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "standardised_jurisdiction_family",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/standardised.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 121,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "SuiteAttributionResult.as_dict",
-          "object_type": "method",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 157,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "SuiteAttributionComponentReport.as_dict",
-          "object_type": "method",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 224,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "SuiteAttributionReport.contribution_records",
-          "object_type": "method",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 234,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "SuiteAttributionReport.as_dict",
-          "object_type": "method",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 343,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "SuiteCapitalResult.as_dict",
-          "object_type": "method",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 366,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "calculate_suite_capital",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 366,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "calculate_suite_capital",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 455,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "aggregate_suite_attribution",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 455,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "aggregate_suite_attribution",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 523,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_suite_attribution_report",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 523,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_suite_attribution_report",
-          "object_type": "function",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
-          "rule": "MISSING_RETURNS_SECTION"
         },
         {
           "line": 39,

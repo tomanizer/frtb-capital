@@ -109,7 +109,12 @@ class StandardisedComponentSubtotal:
         )
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic audit payload for this component subtotal."""
+        """Return a deterministic audit payload for this component subtotal.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
 
         return {
             "component": self.component.value,
@@ -149,7 +154,12 @@ class StandardisedFallbackRoute:
         _require_non_empty_text(self.reason_code, "reason_code")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic audit payload for this fallback route."""
+        """Return a deterministic audit payload for this fallback route.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
 
         return {
             "desk_id": self.desk_id,
@@ -213,7 +223,12 @@ class StandardisedApproachCapitalResult:
         _require_text_tuple(self.warnings, "warnings")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic audit payload for the composed SA result."""
+        """Return a deterministic audit payload for the composed SA result.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
 
         return {
             "run_id": self.run_id,
@@ -248,6 +263,23 @@ def compose_standardised_approach_capital(
     values such as ``"IMA_ELIGIBLE"`` or ``"SA_FALLBACK"``. Desks marked
     ``SA_FALLBACK`` are recorded as routed to the Standardised Approach stack
     without importing ``frtb_ima``.
+    Parameters
+    ----------
+    sbm_summary : ComponentCapitalSummary | None, optional
+        Sbm summary.
+    drc_summary : ComponentCapitalSummary | None, optional
+        Drc summary.
+    rrao_summary : ComponentCapitalSummary | None, optional
+        Rrao summary.
+    ima_desk_eligibility : Mapping[str, object] | None, optional
+        Ima desk eligibility.
+    run_id : str | None, optional
+        Run id.
+
+    Returns
+    -------
+    StandardisedApproachCapitalResult
+        Result of the operation.
     """
 
     required_summaries = _resolve_required_standardised_summaries(
@@ -287,7 +319,17 @@ def compose_standardised_approach_capital(
 
 
 def standardised_jurisdiction_family(profile_id: str) -> str:
-    """Return the ADR 0022 SA jurisdiction family for a public profile id."""
+    """Return the ADR 0022 SA jurisdiction family for a public profile id.
+    Parameters
+    ----------
+    profile_id : str
+        Profile id.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     _require_non_empty_text(profile_id, "profile_id")
     family = _SA_JURISDICTION_FAMILY.get(profile_id)
