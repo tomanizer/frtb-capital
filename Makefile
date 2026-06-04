@@ -28,7 +28,7 @@ ci-local-fast: docs-check lint format-check typecheck test-no-cov
 
 ci-local-full: ci-local audit-deps sbom examples-check notebooks-check
 
-ci-local-pr: test-changed quality-control changed-code-check test-value-check dead-code-check
+ci-local-pr: lint format-check test-changed import-lint kernel-import-boundary adr0033-vocabulary simplification-drift docs-staleness import-smoke maturity-check changed-code-check test-value-check dead-code-check
 
 ci-local-governance: ci-local-full quality-control
 
