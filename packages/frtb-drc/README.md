@@ -53,3 +53,32 @@ risk weights, incomplete fair-value cap evidence, unsupported decomposition
 evidence, and unmapped profiles fail closed.
 
 See `AGENTS.md` for package boundary rules.
+
+## End-to-end examples
+
+See `examples/run_demo.py` for a self-contained quick-start that:
+
+- Loads the committed 40-position non-securitisation v2 fixture (exercises every
+  material mechanic: gross JTD tiers, maturity ladder, accepted/rejected netting
+  by seniority rank, HBR, P&L flooring, defaulted LGD=100% override).
+- Calls the public `calculate_drc_capital`.
+- Prints total/category/bucket capital + rejected offsets (for attribution).
+- Shows a minimal raw `DrcPosition(...)` construction so you can see the exact
+  fields an upstream system must provide.
+
+```bash
+uv run python packages/frtb-drc/examples/run_demo.py
+```
+
+The fixture loader + golden expected outputs live under `tests/fixtures/drc_nonsec_v2/`
+(manifest + positions.json + expected_outputs.json). The source generator is
+`src/frtb_drc/demo_data.py`.
+
+For step-by-step regulatory mechanics with visuals, run the notebooks/:
+
+- 00_validation_map.ipynb
+- 01_gross_jtd.ipynb ... 05_category_capital.ipynb
+
+See `docs/REGULATORY_TRACEABILITY.md`, `docs/REGULATORY_ASSUMPTIONS.md`, and
+`docs/regulatory_sources.yml` (plus the modules/ planning pack) for citations
+and scope. The package also supports Arrow/batch handoff for high-volume paths.
