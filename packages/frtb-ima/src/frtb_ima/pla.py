@@ -38,6 +38,9 @@ import numpy.typing as npt
 
 from frtb_ima._array_utils import finite_1d_float_array
 from frtb_ima._observation_utils import (
+    select_recent_observation_window as _select_recent_observation_window,
+)
+from frtb_ima._observation_utils import (
     validate_observation_dates as _validate_observation_dates,
 )
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
@@ -446,27 +449,13 @@ def pla_assessment_for_policy_with_diagnostics(
     end_index_exclusive = available_observations
     hpl_w = hpl_arr[start_index:end_index_exclusive]
     rtpl_w = rtpl_arr[start_index:end_index_exclusive]
-    dates_w = dates[start_index:end_index_exclusive] if dates is not None else None
-    calendar_source = ""
-    calendar_version = ""
-    calendar_basis = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
-    official_holiday_count = 0
-    missing_business_dates: tuple[date, ...] = ()
-    if calendar is not None:
-        if dates is None:
-            raise ValueError("observation_dates are required when calendar is supplied")
-        calendar_window = calendar.most_recent_business_days(
-            window_size,
-            as_of_date=dates[-1],
-        )
-        assert dates_w is not None
-        if tuple(dates_w) != calendar_window.business_dates:
-            raise ValueError("PLA window dates must match the supplied business calendar")
-        calendar_source = calendar_window.calendar_source
-        calendar_version = calendar_window.calendar_version
-        calendar_basis = calendar_window.basis.value
-        official_holiday_count = calendar_window.official_holiday_count
-        missing_business_dates = calendar_window.missing_business_dates
+    date_window = _select_recent_observation_window(
+        dates,
+        window_size,
+        calendar=calendar,
+        validation_label="PLA",
+    )
+    dates_w = date_window.observation_dates
 
     pla = pla_assessment(
         hpl_w,
@@ -494,11 +483,11 @@ def pla_assessment_for_policy_with_diagnostics(
             end_index_exclusive=end_index_exclusive,
             start_date=dates_w[0] if dates_w else None,
             end_date=dates_w[-1] if dates_w else None,
-            calendar_source=calendar_source,
-            calendar_version=calendar_version,
-            calendar_basis=calendar_basis,
-            official_holiday_count=official_holiday_count,
-            missing_business_dates=missing_business_dates,
+            calendar_source=date_window.calendar_source,
+            calendar_version=date_window.calendar_version,
+            calendar_basis=date_window.calendar_basis,
+            official_holiday_count=date_window.official_holiday_count,
+            missing_business_dates=date_window.missing_business_dates,
         ),
         spearman=spearman_result,
         zone_labels=policy.pla_zone_labels,

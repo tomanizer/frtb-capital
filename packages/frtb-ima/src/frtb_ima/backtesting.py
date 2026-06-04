@@ -37,6 +37,9 @@ import numpy.typing as npt
 
 from frtb_ima._array_utils import finite_1d_float_array as _as_finite_1d_array
 from frtb_ima._observation_utils import (
+    select_recent_observation_window as _select_recent_observation_window,
+)
+from frtb_ima._observation_utils import (
     validate_observation_dates as _validate_observation_dates,
 )
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
@@ -511,27 +514,13 @@ def trading_desk_backtest_trace(
     apl_w = apl_arr[-window_size:]
     hpl_w = hpl_arr[-window_size:]
     holiday_w = holiday_arr[-window_size:] if holiday_arr is not None else None
-    dates_w = dates[-window_size:] if dates is not None else None
-    calendar_source = ""
-    calendar_version = ""
-    calendar_basis = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
-    official_holiday_count = 0
-    missing_business_dates: tuple[date, ...] = ()
-    if calendar is not None:
-        if dates is None:
-            raise ValueError("observation_dates are required when calendar is supplied")
-        calendar_window = calendar.most_recent_business_days(
-            window_size,
-            as_of_date=dates[-1],
-        )
-        assert dates_w is not None
-        if tuple(dates_w) != calendar_window.business_dates:
-            raise ValueError("backtesting window dates must match the supplied business calendar")
-        calendar_source = calendar_window.calendar_source
-        calendar_version = calendar_window.calendar_version
-        calendar_basis = calendar_window.basis.value
-        official_holiday_count = calendar_window.official_holiday_count
-        missing_business_dates = calendar_window.missing_business_dates
+    date_window = _select_recent_observation_window(
+        dates,
+        window_size,
+        calendar=calendar,
+        validation_label="backtesting",
+    )
+    dates_w = date_window.observation_dates
 
     level_results: list[BacktestLevelResult] = []
     level_traces: list[BacktestLevelTrace] = []
@@ -605,11 +594,11 @@ def trading_desk_backtest_trace(
         levels=tuple(level_results),
         window_size=window_size,
         model_eligible=all(result.level_passed for result in level_results),
-        calendar_source=calendar_source,
-        calendar_version=calendar_version,
-        calendar_basis=calendar_basis,
-        official_holiday_count=official_holiday_count,
-        missing_business_dates=missing_business_dates,
+        calendar_source=date_window.calendar_source,
+        calendar_version=date_window.calendar_version,
+        calendar_basis=date_window.calendar_basis,
+        official_holiday_count=date_window.official_holiday_count,
+        missing_business_dates=date_window.missing_business_dates,
     )
     return TradingDeskBacktestTraceResult(
         result=result,

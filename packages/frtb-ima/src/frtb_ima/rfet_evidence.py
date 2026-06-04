@@ -269,6 +269,41 @@ class RFETObservationBatch:
         return tuple(_observation_at(self, index) for index in range(self.observation_count))
 
 
+@dataclass(frozen=True)
+class _RFETObservationWindow:
+    lookback_start: date
+    lookback_end: date
+    lookback_basis: str
+    calendar_source: str
+    calendar_version: str
+    official_holiday_count: int
+    missing_business_dates: tuple[date, ...]
+    business_dates: frozenset[date] | None
+    official_holidays: frozenset[date]
+
+
+@dataclass(frozen=True)
+class _RFETRequiredObservations:
+    base_required: int
+    required: int
+    new_issuance_prorated: bool
+
+
+@dataclass(frozen=True)
+class _RFETQualitativeStage:
+    qualitative_pass: bool
+    bucket_representative: bool
+    representativeness: tuple[RFETRepresentativenessEvidence, ...]
+
+
+@dataclass(frozen=True)
+class _RFETQuantitativeStage:
+    eligible_dates: tuple[date, ...]
+    eligible_sources: frozenset[str]
+    eligible_vendors: tuple[str, ...]
+    exclusions: tuple[RFETObservationExclusion, ...]
+
+
 def input_hash_for_rfet_observation_batch(batch: RFETObservationBatch) -> str:
     """Return a stable audit hash for a columnar RFET observation batch."""
 
@@ -541,15 +576,6 @@ def prorated_required_observation_count(
     return max(1, min(base_required_observations, prorated))
 
 
-def _legacy_bucket_representative(
-    risk_factor: RiskFactorDefinition,
-    evidence: RFETEvidence,
-) -> bool:
-    if risk_factor.bucket is None:
-        return True
-    return evidence.bucket_id == risk_factor.bucket.bucket_id
-
-
 def _representativeness_result(
     risk_factor: RiskFactorDefinition,
     evidence: RFETEvidence,
@@ -644,6 +670,167 @@ def _status_from_tests(
     return ModellabilityStatus.TYPE_A_NMRF
 
 
+def _rfet_observation_window(
+    as_of_date: date,
+    policy: RegulatoryPolicy,
+    *,
+    calendar: BusinessCalendar | None = None,
+    shifted_start_date: date | None = None,
+    shifted_end_date: date | None = None,
+    shift_reason: str = "",
+) -> _RFETObservationWindow:
+    if calendar is None:
+        return _RFETObservationWindow(
+            lookback_start=as_of_date - timedelta(days=policy.rfet_lookback_days),
+            lookback_end=as_of_date,
+            lookback_basis=ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value,
+            calendar_source="",
+            calendar_version="",
+            official_holiday_count=0,
+            missing_business_dates=(),
+            business_dates=None,
+            official_holidays=frozenset(),
+        )
+
+    window = calendar.exact_twelve_month_window(
+        as_of_date,
+        shifted_start_date=shifted_start_date,
+        shifted_end_date=shifted_end_date,
+        shift_reason=shift_reason,
+    )
+    return _RFETObservationWindow(
+        lookback_start=window.start_date,
+        lookback_end=window.end_date,
+        lookback_basis=window.basis.value,
+        calendar_source=window.calendar_source,
+        calendar_version=window.calendar_version,
+        official_holiday_count=window.official_holiday_count,
+        missing_business_dates=window.missing_business_dates,
+        business_dates=frozenset(window.business_dates),
+        official_holidays=frozenset(window.official_holidays),
+    )
+
+
+def _rfet_required_observations(
+    risk_factor: RiskFactorDefinition,
+    evidence: RFETEvidence,
+    policy: RegulatoryPolicy,
+    window: _RFETObservationWindow,
+    *,
+    issue_date: date | None = None,
+    allow_new_issuance_prorating: bool = False,
+) -> _RFETRequiredObservations:
+    base_required = base_required_observation_count(risk_factor, policy)
+    new_issuance = evidence.new_issuance
+    effective_issue_date = new_issuance.issue_date if new_issuance is not None else issue_date
+    prorating_approved = (
+        new_issuance is not None and new_issuance.prorating_approved
+    ) or allow_new_issuance_prorating
+    if effective_issue_date is None or not prorating_approved:
+        return _RFETRequiredObservations(
+            base_required=base_required,
+            required=base_required,
+            new_issuance_prorated=False,
+        )
+
+    required = prorated_required_observation_count(
+        base_required,
+        lookback_start=window.lookback_start,
+        as_of_date=evidence.as_of_date,
+        issue_date=effective_issue_date,
+    )
+    return _RFETRequiredObservations(
+        base_required=base_required,
+        required=required,
+        new_issuance_prorated=required != base_required,
+    )
+
+
+def _rfet_qualitative_stage(
+    risk_factor: RiskFactorDefinition,
+    evidence: RFETEvidence,
+) -> _RFETQualitativeStage:
+    bucket_representative, representativeness = _representativeness_result(
+        risk_factor,
+        evidence,
+    )
+    return _RFETQualitativeStage(
+        qualitative_pass=evidence.qualitative_pass,
+        bucket_representative=bucket_representative,
+        representativeness=representativeness,
+    )
+
+
+def _rfet_quantitative_stage(
+    evidence: RFETEvidence,
+    window: _RFETObservationWindow,
+    qualitative: _RFETQualitativeStage,
+    *,
+    require_source: bool = True,
+) -> _RFETQuantitativeStage:
+    seen_dates: set[date] = set()
+    seen_lineage_keys: set[tuple[object, ...]] = set()
+    eligible_dates: list[date] = []
+    eligible_sources: set[str] = set()
+    eligible_vendors: list[str] = []
+    exclusions: list[RFETObservationExclusion] = []
+
+    for observation in sorted(evidence.observations, key=lambda obs: obs.observation_date):
+        reason: RFETExclusionReason | None = None
+        lineage_key = _lineage_key(observation)
+        if observation.observation_date > evidence.as_of_date:
+            reason = RFETExclusionReason.FUTURE_OBSERVATION
+        elif (
+            observation.observation_date < window.lookback_start
+            or observation.observation_date > window.lookback_end
+        ):
+            reason = RFETExclusionReason.OUTSIDE_LOOKBACK
+        elif observation.observation_date in window.official_holidays:
+            reason = RFETExclusionReason.OFFICIAL_HOLIDAY
+        elif (
+            window.business_dates is not None
+            and observation.observation_date not in window.business_dates
+        ):
+            reason = RFETExclusionReason.NON_BUSINESS_DATE
+        elif require_source and not observation.source:
+            reason = RFETExclusionReason.MISSING_SOURCE
+        elif not observation.verifiable:
+            reason = RFETExclusionReason.UNVERIFIABLE_PRICE
+        elif _requires_date_normalization_evidence(observation):
+            reason = RFETExclusionReason.MISSING_DATE_NORMALIZATION_EVIDENCE
+        elif not _has_vendor_audit_evidence(observation, evidence):
+            reason = RFETExclusionReason.MISSING_VENDOR_AUDIT_EVIDENCE
+        elif not qualitative.bucket_representative:
+            reason = (
+                RFETExclusionReason.NON_REPRESENTATIVE_EVIDENCE
+                if qualitative.representativeness
+                else RFETExclusionReason.NON_REPRESENTATIVE_BUCKET
+            )
+        elif lineage_key in seen_lineage_keys:
+            reason = RFETExclusionReason.DUPLICATE_SOURCE_VENDOR
+        elif observation.observation_date in seen_dates:
+            reason = RFETExclusionReason.DUPLICATE_DATE
+
+        if reason is not None:
+            exclusions.append(RFETObservationExclusion(observation, reason))
+            continue
+
+        seen_lineage_keys.add(lineage_key)
+        seen_dates.add(observation.observation_date)
+        eligible_dates.append(observation.observation_date)
+        if observation.source:
+            eligible_sources.add(observation.source)
+        if observation.vendor_id:
+            eligible_vendors.append(observation.vendor_id)
+
+    return _RFETQuantitativeStage(
+        eligible_dates=tuple(eligible_dates),
+        eligible_sources=frozenset(eligible_sources),
+        eligible_vendors=tuple(eligible_vendors),
+        exclusions=tuple(exclusions),
+    )
+
+
 def assess_rfet_evidence(
     risk_factor: RiskFactorDefinition,
     evidence: RFETEvidence,
@@ -670,155 +857,70 @@ def assess_rfet_evidence(
     if risk_factor.name != evidence.risk_factor_name:
         raise ValueError("risk_factor and evidence names must match")
 
-    if calendar is None:
-        lookback_start = evidence.as_of_date - timedelta(days=policy.rfet_lookback_days)
-        lookback_end = evidence.as_of_date
-        lookback_basis = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
-        calendar_source = ""
-        calendar_version = ""
-        official_holiday_count = 0
-        missing_business_dates: tuple[date, ...] = ()
-        business_dates: set[date] | None = None
-        official_holidays: set[date] = set()
-    else:
-        window = calendar.exact_twelve_month_window(
-            evidence.as_of_date,
-            shifted_start_date=shifted_start_date,
-            shifted_end_date=shifted_end_date,
-            shift_reason=shift_reason,
-        )
-        lookback_start = window.start_date
-        lookback_end = window.end_date
-        lookback_basis = window.basis.value
-        calendar_source = window.calendar_source
-        calendar_version = window.calendar_version
-        official_holiday_count = window.official_holiday_count
-        missing_business_dates = window.missing_business_dates
-        business_dates = set(window.business_dates)
-        official_holidays = set(window.official_holidays)
-    base_required = base_required_observation_count(risk_factor, policy)
-    new_issuance_prorated = False
-    required = base_required
-    new_issuance = evidence.new_issuance
-    effective_issue_date = issue_date
-    if new_issuance is not None:
-        effective_issue_date = new_issuance.issue_date
-    if (
-        new_issuance is not None
-        and new_issuance.prorating_approved
-        and effective_issue_date is not None
-    ):
-        required = prorated_required_observation_count(
-            base_required,
-            lookback_start=lookback_start,
-            as_of_date=evidence.as_of_date,
-            issue_date=effective_issue_date,
-        )
-        new_issuance_prorated = required != base_required
-    elif effective_issue_date is not None and allow_new_issuance_prorating:
-        required = prorated_required_observation_count(
-            base_required,
-            lookback_start=lookback_start,
-            as_of_date=evidence.as_of_date,
-            issue_date=effective_issue_date,
-        )
-        new_issuance_prorated = required != base_required
-
-    bucket_representative, representativeness = _representativeness_result(
+    window = _rfet_observation_window(
+        evidence.as_of_date,
+        policy,
+        calendar=calendar,
+        shifted_start_date=shifted_start_date,
+        shifted_end_date=shifted_end_date,
+        shift_reason=shift_reason,
+    )
+    required_observations = _rfet_required_observations(
         risk_factor,
         evidence,
+        policy,
+        window,
+        issue_date=issue_date,
+        allow_new_issuance_prorating=allow_new_issuance_prorating,
     )
-    seen_dates: set[date] = set()
-    seen_lineage_keys: set[tuple[object, ...]] = set()
-    eligible_dates: list[date] = []
-    eligible_sources: set[str] = set()
-    eligible_vendors: list[str] = []
-    exclusions: list[RFETObservationExclusion] = []
+    qualitative = _rfet_qualitative_stage(risk_factor, evidence)
+    quantitative = _rfet_quantitative_stage(
+        evidence,
+        window,
+        qualitative,
+        require_source=require_source,
+    )
 
-    for observation in sorted(evidence.observations, key=lambda obs: obs.observation_date):
-        reason: RFETExclusionReason | None = None
-        lineage_key = _lineage_key(observation)
-        if observation.observation_date > evidence.as_of_date:
-            reason = RFETExclusionReason.FUTURE_OBSERVATION
-        elif (
-            observation.observation_date < lookback_start
-            or observation.observation_date > lookback_end
-        ):
-            reason = RFETExclusionReason.OUTSIDE_LOOKBACK
-        elif observation.observation_date in official_holidays:
-            reason = RFETExclusionReason.OFFICIAL_HOLIDAY
-        elif business_dates is not None and observation.observation_date not in business_dates:
-            reason = RFETExclusionReason.NON_BUSINESS_DATE
-        elif require_source and not observation.source:
-            reason = RFETExclusionReason.MISSING_SOURCE
-        elif not observation.verifiable:
-            reason = RFETExclusionReason.UNVERIFIABLE_PRICE
-        elif _requires_date_normalization_evidence(observation):
-            reason = RFETExclusionReason.MISSING_DATE_NORMALIZATION_EVIDENCE
-        elif not _has_vendor_audit_evidence(observation, evidence):
-            reason = RFETExclusionReason.MISSING_VENDOR_AUDIT_EVIDENCE
-        elif not bucket_representative:
-            reason = (
-                RFETExclusionReason.NON_REPRESENTATIVE_EVIDENCE
-                if representativeness
-                else RFETExclusionReason.NON_REPRESENTATIVE_BUCKET
-            )
-        elif lineage_key in seen_lineage_keys:
-            reason = RFETExclusionReason.DUPLICATE_SOURCE_VENDOR
-        elif observation.observation_date in seen_dates:
-            reason = RFETExclusionReason.DUPLICATE_DATE
-
-        if reason is not None:
-            exclusions.append(RFETObservationExclusion(observation, reason))
-            continue
-
-        seen_lineage_keys.add(lineage_key)
-        seen_dates.add(observation.observation_date)
-        eligible_dates.append(observation.observation_date)
-        if observation.source:
-            eligible_sources.add(observation.source)
-        if observation.vendor_id:
-            eligible_vendors.append(observation.vendor_id)
-
-    eligible_count = len(eligible_dates)
-    quantitative_pass = eligible_count >= required
-    status = _status_from_tests(evidence.qualitative_pass, quantitative_pass)
+    eligible_count = len(quantitative.eligible_dates)
+    quantitative_pass = eligible_count >= required_observations.required
+    status = _status_from_tests(qualitative.qualitative_pass, quantitative_pass)
 
     return RFETEvidenceAssessment(
         risk_factor_name=risk_factor.name,
         as_of_date=evidence.as_of_date,
-        lookback_start=lookback_start,
-        base_required_observations=base_required,
-        required_observations=required,
+        lookback_start=window.lookback_start,
+        base_required_observations=required_observations.base_required,
+        required_observations=required_observations.required,
         eligible_observation_count=eligible_count,
-        eligible_observation_dates=tuple(eligible_dates),
-        source_count=len(eligible_sources),
-        qualitative_pass=evidence.qualitative_pass,
+        eligible_observation_dates=quantitative.eligible_dates,
+        source_count=len(quantitative.eligible_sources),
+        qualitative_pass=qualitative.qualitative_pass,
         quantitative_pass=quantitative_pass,
-        bucket_representative=bucket_representative,
-        new_issuance_prorated=new_issuance_prorated,
+        bucket_representative=qualitative.bucket_representative,
+        new_issuance_prorated=required_observations.new_issuance_prorated,
         modellability_status=status,
-        lookback_basis=lookback_basis,
-        calendar_source=calendar_source,
-        calendar_version=calendar_version,
-        official_holiday_count=official_holiday_count,
-        missing_business_dates=missing_business_dates,
+        lookback_basis=window.lookback_basis,
+        calendar_source=window.calendar_source,
+        calendar_version=window.calendar_version,
+        official_holiday_count=window.official_holiday_count,
+        missing_business_dates=window.missing_business_dates,
         shift_reason=shift_reason
-        if lookback_basis == ObservationWindowBasis.SHIFTED_TWELVE_MONTH_BUSINESS_CALENDAR.value
+        if window.lookback_basis
+        == ObservationWindowBasis.SHIFTED_TWELVE_MONTH_BUSINESS_CALENDAR.value
         else "",
         source_counts=_count_pairs(observation.source for observation in evidence.observations),
-        vendor_counts=_count_pairs(eligible_vendors),
-        exclusion_counts=_exclusion_count_pairs(exclusions),
+        vendor_counts=_count_pairs(quantitative.eligible_vendors),
+        exclusion_counts=_exclusion_count_pairs(quantitative.exclusions),
         bucket_counts=_count_pairs(
             item
             for item in (
                 evidence.bucket_id,
-                *(representative.bucket_id for representative in representativeness),
+                *(representative.bucket_id for representative in qualitative.representativeness),
             )
             if item
         ),
         representative_methodology_counts=_count_pairs(
-            representative.methodology for representative in representativeness
+            representative.methodology for representative in qualitative.representativeness
         ),
         data_pool_count=len(evidence.data_pools),
         vendor_audit_evidence_count=len(
@@ -834,8 +936,8 @@ def assess_rfet_evidence(
                 if item
             }
         ),
-        new_issuance_policy_basis=_new_issuance_policy_basis(new_issuance),
-        exclusions=tuple(exclusions),
+        new_issuance_policy_basis=_new_issuance_policy_basis(evidence.new_issuance),
+        exclusions=quantitative.exclusions,
     )
 
 
