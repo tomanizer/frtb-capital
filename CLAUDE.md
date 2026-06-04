@@ -146,6 +146,18 @@ Or run the Claude command `/frtb-doc-audit` (wrapper:
 [`.claude/commands/frtb-doc-audit.md`](.claude/commands/frtb-doc-audit.md)).
 Use `make agent-new AGENT=claude TASK=<task-name>` when the worktree guard fails.
 
+## Simplification audits
+
+When asked to audit code maintainability (complexity, wrappers, duplication),
+read and execute:
+
+- [`.grok/skills/frtb-simplify-audit/SKILL.md`](.grok/skills/frtb-simplify-audit/SKILL.md)
+- [`docs/quality/simplification/rubric.md`](docs/quality/simplification/rubric.md)
+- [`docs/quality/simplification/2026-06-04/`](docs/quality/simplification/2026-06-04/) (latest suite run)
+
+Or run `/frtb-simplify-audit` ([`.claude/commands/frtb-simplify-audit.md`](.claude/commands/frtb-simplify-audit.md)).
+Default is audit-only; implementation refactors are one package per PR.
+
 ---
 
 ## Commands
