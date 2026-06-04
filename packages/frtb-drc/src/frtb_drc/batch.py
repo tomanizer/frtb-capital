@@ -221,6 +221,13 @@ class DrcPositionBatch:
 
     @property
     def row_count(self) -> int:
+        """Number of positions carried by the batch.
+
+        Returns
+        -------
+        int
+            Length of the ``position_ids`` column.
+        """
         return int(self.position_ids.shape[0])
 
 
@@ -243,11 +250,28 @@ def build_drc_nonsec_batch_from_positions(
     diagnostics: Sequence[Mapping[str, object]] = (),
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> DrcPositionBatch:
-    """
-    Build a DRC batch from existing canonical position rows.
+    """Build a DRC batch from existing canonical position rows.
 
-    This is a compatibility bridge for callers that already hold dataclasses.
-    High-volume adapters should build from handoffs or columns.
+    Compatibility bridge for callers that already hold dataclasses; adapters
+    should prefer column or Arrow handoff builders at volume.
+
+    Parameters
+    ----------
+    positions : iterable of DrcPosition
+        Validated canonical position rows to materialise into arrays.
+    source_hash : str, optional
+        Precomputed source digest for the input rows.
+    handoff_hash : str, optional
+        Normalised handoff digest when positions originate from an adapter.
+    diagnostics : sequence of mapping, optional
+        Adapter diagnostics to attach to the batch envelope.
+    profile_id : str, optional
+        Active DRC rule profile identifier (default US NPR 2.0).
+
+    Returns
+    -------
+    DrcPositionBatch
+        Columnar non-securitisation batch with deterministic ``input_hash``.
     """
 
     validated = _sorted_positions(validate_positions(positions, profile_id=profile_id))
@@ -349,7 +373,35 @@ def build_drc_nonsec_batch_from_columns(
     _expected_risk_class: DrcRiskClass = DrcRiskClass.NON_SECURITISATION,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> DrcPositionBatch:
-    """Build a validated non-securitisation DRC batch from columnar inputs."""
+    """Build a validated non-securitisation DRC batch from columnar inputs.
+
+    Parameters
+    ----------
+    position_ids, source_row_ids, desk_ids, legal_entities, risk_classes,
+    instrument_types, default_directions, bucket_keys, notionals,
+    maturity_years, currencies :
+        Required per-position column inputs aligned in length.
+    issuer_ids, tranche_ids, index_series_ids, seniorities, credit_qualities,
+    market_values, cumulative_pnls, lgd_overrides, is_defaulted, is_gse,
+    is_pse, is_covered_bond, lineage_source_systems, lineage_source_files,
+    lineage_present, source_column_maps, citation_ids :
+        Optional per-position columns (see function signature).
+    source_hash, handoff_hash :
+        Optional source and handoff digests for audit metadata.
+    diagnostics :
+        Optional adapter diagnostics attached to the batch.
+    copy_arrays :
+        When ``True``, copy inputs before freezing arrays.
+    _expected_risk_class :
+        Internal risk-class guard for specialised builders.
+    profile_id :
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    DrcPositionBatch
+        Validated batch with ``input_hash`` populated.
+    """
 
     row_count = len(position_ids)
     if row_count == 0:
@@ -505,7 +557,22 @@ def build_drc_securitisation_non_ctp_batch_from_columns(
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
 ) -> DrcPositionBatch:
-    """Build a validated securitisation non-CTP DRC batch from columnar inputs."""
+    """Build a validated securitisation non-CTP DRC batch from columnar inputs.
+
+    Parameters
+    ----------
+    position_ids, source_row_ids, desk_ids, legal_entities, risk_classes,
+    instrument_types, default_directions, bucket_keys, notionals,
+    maturity_years, currencies :
+        Required per-position column inputs (see signature for optional columns).
+    source_hash, handoff_hash, diagnostics, copy_arrays :
+        Optional audit metadata and array copy behaviour.
+
+    Returns
+    -------
+    DrcPositionBatch
+        Securitisation non-CTP batch delegated to the shared column builder.
+    """
 
     return build_drc_nonsec_batch_from_columns(
         position_ids=position_ids,
@@ -580,7 +647,22 @@ def build_drc_ctp_batch_from_columns(
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
 ) -> DrcPositionBatch:
-    """Build a validated CTP DRC batch from columnar inputs."""
+    """Build a validated CTP DRC batch from columnar inputs.
+
+    Parameters
+    ----------
+    position_ids, source_row_ids, desk_ids, legal_entities, risk_classes,
+    instrument_types, default_directions, bucket_keys, notionals,
+    maturity_years, currencies :
+        Required per-position column inputs (see signature for optional columns).
+    source_hash, handoff_hash, diagnostics, copy_arrays :
+        Optional audit metadata and array copy behaviour.
+
+    Returns
+    -------
+    DrcPositionBatch
+        Correlation-trading-portfolio batch delegated to the shared column builder.
+    """
 
     return build_drc_nonsec_batch_from_columns(
         position_ids=position_ids,
@@ -620,7 +702,18 @@ def build_drc_ctp_batch_from_columns(
 
 
 def input_hash_for_drc_batch(batch: DrcPositionBatch) -> str:
-    """Hash canonical DRC batch inputs in deterministic position-id order."""
+    """Hash canonical DRC batch inputs in deterministic position-id order.
+
+    Parameters
+    ----------
+    batch : DrcPositionBatch
+        Columnar batch whose fields are serialised in sorted position order.
+
+    Returns
+    -------
+    str
+        Lowercase SHA-256 hex digest of the canonical payload.
+    """
 
     payload = [_position_payload(batch, index) for index in _sorted_indices(batch)]
     return _hash_payload(payload)
@@ -631,7 +724,20 @@ def calculate_drc_capital_from_batch(
     *,
     context: DrcCalculationContext,
 ) -> DrcBatchCapitalCalculation:
-    """Calculate supported DRC capital from a columnar batch."""
+    """Calculate supported DRC capital from a columnar batch.
+
+    Parameters
+    ----------
+    batch : DrcPositionBatch
+        Validated position batch for the active risk class.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+
+    Returns
+    -------
+    DrcBatchCapitalCalculation
+        Capital result plus array intermediates for audit replay.
+    """
 
     if not isinstance(batch, DrcPositionBatch):
         raise DrcInputError("batch must be DrcPositionBatch")

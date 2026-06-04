@@ -122,6 +122,13 @@ class DrcCitation:
     note: str = ""
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -142,6 +149,13 @@ class DrcSourceLineage:
         )
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -161,6 +175,13 @@ class DrcFxRate:
         object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -181,6 +202,13 @@ class DrcFxConversion:
         object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -211,6 +239,13 @@ class DrcRiskWeightEvidence:
         object.__setattr__(self, "validation_flags", tuple(self.validation_flags))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -235,6 +270,13 @@ class DrcFairValueCapEvidence:
         object.__setattr__(self, "validation_flags", tuple(self.validation_flags))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -301,6 +343,13 @@ class DrcCalculationContext:
         )
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -324,6 +373,13 @@ class BranchMetadata:
         object.__setattr__(self, "citations", tuple(self.citations))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -388,6 +444,13 @@ class DrcPosition:
         object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -424,6 +487,13 @@ class GrossJtd:
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -447,6 +517,13 @@ class MaturityScaledJtd:
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -464,6 +541,13 @@ class RejectedOffset:
         object.__setattr__(self, "citations", tuple(self.citations))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -505,6 +589,13 @@ class NetJtd:
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -526,6 +617,13 @@ class HedgeBenefitRatio:
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -556,6 +654,13 @@ class BucketDrc:
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -581,6 +686,13 @@ class CategoryDrc:
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)
 
 
@@ -632,4 +744,11 @@ class DrcCapitalResult:
         object.__setattr__(self, "attribution_records", tuple(self.attribution_records))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the package ``_as_dict`` helper.
+        """
         return _as_dict(self)

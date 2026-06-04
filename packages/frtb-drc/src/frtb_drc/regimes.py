@@ -55,6 +55,13 @@ class DrcRuleProfile:
             object.__setattr__(self, "content_hash", profile_content_hash(self))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable rule profile record.
+
+        Returns
+        -------
+        dict[str, object]
+            Profile metadata, citations, and support flags for audit export.
+        """
         return {
             "profile_id": self.profile_id,
             "regulator": self.regulator,
@@ -104,6 +111,13 @@ class DrcProfileSupportCell:
         object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable support-matrix cell.
+
+        Returns
+        -------
+        dict[str, object]
+            Profile, risk class, status, and citation metadata for the cell.
+        """
         return {
             "profile_id": self.profile_id,
             "risk_class": self.risk_class.value,

@@ -2,16 +2,16 @@
   "description": "Runtime package docstring inventory report.",
   "metrics": {
     "findings_by_rule": {
-      "MISSING_PARAMETERS_SECTION": 716,
-      "MISSING_PUBLIC_DOCSTRING": 101,
-      "MISSING_RETURNS_SECTION": 825
+      "MISSING_PARAMETERS_SECTION": 710,
+      "MISSING_PUBLIC_DOCSTRING": 81,
+      "MISSING_RETURNS_SECTION": 819
     },
     "packages_with_findings": 6,
-    "total_findings": 1642
+    "total_findings": 1610
   },
   "packages": {
     "frtb-drc": {
-      "finding_count": 193,
+      "finding_count": 161,
       "findings": [
         {
           "line": 6,
@@ -437,123 +437,6 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 223,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcPositionBatch.row_count",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 238,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_drc_nonsec_batch_from_positions",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 238,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_drc_nonsec_batch_from_positions",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 315,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_drc_nonsec_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 315,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_drc_nonsec_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 473,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_drc_securitisation_non_ctp_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 473,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_drc_securitisation_non_ctp_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 548,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_drc_ctp_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 548,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_drc_ctp_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 622,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "input_hash_for_drc_batch",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 622,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "input_hash_for_drc_batch",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 629,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "calculate_drc_capital_from_batch",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 629,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "calculate_drc_capital_from_batch",
-          "object_type": "function",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 58,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_hedge_benefit_ratio",
@@ -723,159 +606,6 @@
           "package": "frtb-drc",
           "path": "packages/frtb-drc/src/frtb_drc/ctp.py",
           "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 124,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcCitation.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 144,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcSourceLineage.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 163,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcFxRate.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 183,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcFxConversion.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 213,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcRiskWeightEvidence.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 237,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcFairValueCapEvidence.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 303,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcCalculationContext.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 326,
-          "message": "Public method is missing a docstring.",
-          "object_name": "BranchMetadata.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 390,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcPosition.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 426,
-          "message": "Public method is missing a docstring.",
-          "object_name": "GrossJtd.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 449,
-          "message": "Public method is missing a docstring.",
-          "object_name": "MaturityScaledJtd.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 466,
-          "message": "Public method is missing a docstring.",
-          "object_name": "RejectedOffset.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 507,
-          "message": "Public method is missing a docstring.",
-          "object_name": "NetJtd.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 528,
-          "message": "Public method is missing a docstring.",
-          "object_name": "HedgeBenefitRatio.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 558,
-          "message": "Public method is missing a docstring.",
-          "object_name": "BucketDrc.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 583,
-          "message": "Public method is missing a docstring.",
-          "object_name": "CategoryDrc.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 634,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcCapitalResult.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
           "line": 46,
@@ -1373,25 +1103,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 57,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcRuleProfile.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/regimes.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 106,
-          "message": "Public method is missing a docstring.",
-          "object_name": "DrcProfileSupportCell.as_dict",
-          "object_type": "method",
-          "package": "frtb-drc",
-          "path": "packages/frtb-drc/src/frtb_drc/regimes.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 614,
+          "line": 628,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "get_rule_profile",
           "object_type": "function",
@@ -1400,7 +1112,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 614,
+          "line": 628,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "get_rule_profile",
           "object_type": "function",
@@ -1409,7 +1121,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 623,
+          "line": 637,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ensure_risk_class_supported",
           "object_type": "function",
@@ -1418,7 +1130,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 632,
+          "line": 646,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "drc_profile_support_matrix",
           "object_type": "function",
@@ -1427,7 +1139,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 643,
+          "line": 657,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "profile_content_hash",
           "object_type": "function",
@@ -1436,7 +1148,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 643,
+          "line": 657,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "profile_content_hash",
           "object_type": "function",
