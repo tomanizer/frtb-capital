@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from frtb_result_store.marts import (
     capital_summary_from_row,
@@ -131,6 +131,67 @@ class StoreMartQueryMixin:
             LIMIT ?
             """,
             (run_id, limit),
+        )
+        return _dict_rows(columns, rows)
+
+    def residual_attribution_records(
+        self: Any,
+        run_id: str,
+        *,
+        node_id: str | None = None,
+    ) -> tuple[dict[str, object], ...]:
+        """Return persisted residual attribution projection rows for one run."""
+
+        return cast(
+            tuple[dict[str, object], ...],
+            self._attribution_projection_rows(
+                "residual_attribution",
+                run_id,
+                node_id=node_id,
+            ),
+        )
+
+    def unsupported_attribution_records(
+        self: Any,
+        run_id: str,
+        *,
+        node_id: str | None = None,
+    ) -> tuple[dict[str, object], ...]:
+        """Return persisted unsupported attribution projection rows for one run."""
+
+        return cast(
+            tuple[dict[str, object], ...],
+            self._attribution_projection_rows(
+                "unsupported_attribution",
+                run_id,
+                node_id=node_id,
+            ),
+        )
+
+    def _attribution_projection_rows(
+        self: Any,
+        mart_name: str,
+        run_id: str,
+        *,
+        node_id: str | None = None,
+    ) -> tuple[dict[str, object], ...]:
+        if not self.run_exists(run_id):
+            return ()
+        where_clause = "WHERE run_id = ?"
+        parameters: tuple[object, ...] = (run_id,)
+        if node_id is not None:
+            where_clause += " AND node_id = ?"
+            parameters = (run_id, node_id)
+        columns = _mart_columns(mart_name)
+        rows = self._fetch_mart(
+            mart_name,
+            f"""
+            SELECT {", ".join(columns)}
+            FROM {{mart}}
+            {where_clause}
+            ORDER BY rank
+            """,
+            parameters,
         )
         return _dict_rows(columns, rows)
 

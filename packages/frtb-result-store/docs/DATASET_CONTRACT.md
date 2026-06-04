@@ -243,6 +243,8 @@ Dashboard marts are derived from committed bundle content. Current marts are:
 - `capital_summary`
 - `capital_tree`
 - `top_contributors`
+- `residual_attribution`
+- `unsupported_attribution`
 - `movement_summary`
 - `regime_comparison`
 - `component_breakdown`
@@ -254,6 +256,10 @@ Dashboard marts are derived from committed bundle content. Current marts are:
 
 Mart schemas and fingerprints are defined in `frtb_result_store.mart_schemas`.
 Marts support dashboard queries but do not replace base evidence tables.
+Attribution explain marts are storage-only projections over
+`CapitalAttributionRecord`; they expose producer-owned `contribution`,
+`residual`, `method`, `source_id`, `source_level`, `target_id`, and
+`unsupported_reason` fields and do not calculate attribution.
 
 ## API And Export Boundary
 

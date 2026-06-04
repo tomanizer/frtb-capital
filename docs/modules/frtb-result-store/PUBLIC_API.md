@@ -27,8 +27,8 @@ runs = store.list_runs()
 ```
 
 The API is FRTB-specific. Consumers should query capital trees, node measures,
-artifact references, lineage, and attribution records rather than treating the
-store as a generic table dump.
+artifact references, lineage, attribution records, and attribution explain
+projections rather than treating the store as a generic table dump.
 
 `DuckDbParquetResultStore.refresh_catalog()` rebuilds `catalog.duckdb` as
 derived state over committed Parquet. `read_only_connection()` opens that
@@ -53,8 +53,16 @@ workflow management are out of scope for the CLI.
 
 The optional FastAPI service is available through the `api` extra. It exposes
 read-only domain endpoints for runs, run groups, capital trees, artifacts,
+attribution, top contributor attribution, residual attribution, unsupported
 attribution, lineage, events, movements, and regime comparison. Artifact
 drillthrough is served through deterministic paged Parquet reads with optional
 column selection and simple equality filters, plus local Parquet download or
 S3 URI handoff. The service does not share the writer catalog or expose generic
 raw table dumps.
+
+Attribution projection helpers and endpoints are storage-only:
+`top_contributors`, `residual_attribution_records`, and
+`unsupported_attribution_records` expose fields already present on
+`CapitalAttributionRecord`, including `contribution`, `residual`, `method`,
+`source_id`, `source_level`, `target_id`, and `unsupported_reason`. They do not
+implement capital or attribution formulae.

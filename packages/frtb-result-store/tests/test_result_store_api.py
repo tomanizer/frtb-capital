@@ -126,6 +126,8 @@ def test_top_contributors_api_validates_limit(tmp_path: Path) -> None:
 
     contributors = client.get(f"/runs/{run.run_id}/top-contributors").json()["contributors"]
     assert contributors[0]["attribution_id"] == "ima-desk"
+    assert contributors[0]["source_id"] == "desk-rates"
+    assert contributors[0]["unsupported_reason"] == ""
     assert (
         client.get(f"/runs/{run.run_id}/top-contributors", params={"limit": 0}).status_code == 422
     )
@@ -133,6 +135,76 @@ def test_top_contributors_api_validates_limit(tmp_path: Path) -> None:
         client.get(f"/runs/{run.run_id}/top-contributors", params={"limit": 1001}).status_code
         == 422
     )
+
+
+def test_attribution_explain_projection_api_serves_residual_and_unsupported(
+    tmp_path: Path,
+) -> None:
+    run = _run("US_NPR_2_0", None, None)
+    attributions = (
+        *_attributions(run),
+        CapitalAttributionRecord.from_contribution(
+            run_id=run.run_id,
+            node_id="total",
+            contribution=CapitalContribution(
+                contribution_id="suite-residual",
+                source_id="suite-residual-source",
+                source_level="RESIDUAL_BRANCH",
+                bucket_key=None,
+                category="SUITE_RESIDUAL",
+                base_amount=1.75,
+                marginal_multiplier=None,
+                contribution=None,
+                method=AttributionMethod.RESIDUAL,
+                residual=1.75,
+                reason="Suite branch retained as residual.",
+            ),
+            target_type="RESIDUAL_BRANCH",
+            target_id="suite-residual-target",
+        ),
+        CapitalAttributionRecord.from_contribution(
+            run_id=run.run_id,
+            node_id="ima",
+            contribution=CapitalContribution(
+                contribution_id="unsupported-nmrf",
+                source_id="nmrf-branch",
+                source_level="UNSUPPORTED_BRANCH",
+                bucket_key="NMRF",
+                category="UNSUPPORTED_NMRF",
+                base_amount=0.5,
+                marginal_multiplier=None,
+                contribution=None,
+                method=AttributionMethod.UNSUPPORTED,
+                residual=0.5,
+                reason="NMRF fallback is unsupported for exact Euler.",
+            ),
+            target_type="UNSUPPORTED_BRANCH",
+            target_id="nmrf-branch-target",
+        ),
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    store.write_bundle(_bundle(run, attributions=attributions))
+    client = TestClient(create_result_store_app(store))
+
+    residual = client.get(f"/runs/{run.run_id}/attribution/residual").json()["residual_records"]
+    assert [row["attribution_id"] for row in residual] == ["suite-residual", "unsupported-nmrf"]
+    assert residual[0]["contribution"] is None
+    assert residual[0]["residual"] == 1.75
+    assert residual[0]["method"] == "RESIDUAL"
+    assert residual[0]["source_level"] == "RESIDUAL_BRANCH"
+    assert residual[0]["target_id"] == "suite-residual-target"
+    assert residual[0]["unsupported_reason"] == "Suite branch retained as residual."
+
+    unsupported = client.get(
+        f"/runs/{run.run_id}/attribution/unsupported",
+        params={"node_id": "ima"},
+    ).json()["unsupported_records"]
+    assert len(unsupported) == 1
+    assert unsupported[0]["attribution_id"] == "unsupported-nmrf"
+    assert unsupported[0]["source_id"] == "nmrf-branch"
+    assert unsupported[0]["method"] == "UNSUPPORTED"
+    assert unsupported[0]["target_id"] == "nmrf-branch-target"
+    assert "unsupported for exact Euler" in unsupported[0]["unsupported_reason"]
 
 
 def test_result_store_api_is_read_only_and_has_domain_openapi_tags(tmp_path: Path) -> None:
@@ -299,6 +371,7 @@ def _bundle(
     *,
     baseline_run_id: str | None = None,
     artifacts: tuple[ArtifactRef, ...] | None = None,
+    attributions: tuple[CapitalAttributionRecord, ...] | None = None,
 ) -> ResultBundle:
     return ResultBundle(
         run=run,
@@ -307,7 +380,7 @@ def _bundle(
         measures=_measures(run),
         artifacts=_artifacts(run) if artifacts is None else artifacts,
         lineage=_lineage(run),
-        attributions=_attributions(run),
+        attributions=_attributions(run) if attributions is None else attributions,
         movement_results=_movement_results(run, baseline_run_id),
         events=_events(run),
     )

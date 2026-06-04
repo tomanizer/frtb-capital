@@ -545,6 +545,7 @@ node_id
 attribution_id
 target_type
 target_id
+source_id
 source_level
 method
 category
@@ -561,6 +562,13 @@ metadata_json
 `frtb_common.CapitalContribution` remains the shared contribution DTO. The
 result store extends storage rows with node, target, artifact, and lifecycle
 context.
+
+Attribution marts and API projections are read-only views over these stored
+rows. `top_contributors`, `residual_attribution`, and
+`unsupported_attribution` expose contribution, residual, method, source level,
+source id, target id, and unsupported reason for analyst drillthrough. They do
+not implement Euler, finite-difference, standalone, or residual attribution
+formulae; producers own those methods.
 
 Projection from `CapitalContribution` is explicit:
 
@@ -660,9 +668,11 @@ Initial implementation order:
 2. `capital_tree`
 3. `component_breakdown`
 4. `top_contributors`
-5. `movement_summary`
-6. `regime_comparison`
-7. component-specific marts
+5. `residual_attribution`
+6. `unsupported_attribution`
+7. `movement_summary`
+8. `regime_comparison`
+9. component-specific marts
 
 Full first-pass mart set:
 
@@ -670,6 +680,8 @@ Full first-pass mart set:
 capital_summary
 capital_tree
 top_contributors
+residual_attribution
+unsupported_attribution
 movement_summary
 regime_comparison
 component_breakdown
@@ -807,6 +819,9 @@ measures_for_node(...)
 artifact_refs(...)
 artifact_page(...)
 attributions_for_node(...)
+top_contributors(...)
+residual_attribution_records(...)
+unsupported_attribution_records(...)
 lineage_for_result(...)
 events_for_run(...)
 movement_summary(...)
@@ -826,6 +841,9 @@ GET /runs
 GET /run-groups
 GET /runs/{run_id}
 GET /runs/{run_id}/capital-tree
+GET /runs/{run_id}/top-contributors
+GET /runs/{run_id}/attribution/residual
+GET /runs/{run_id}/attribution/unsupported
 GET /runs/{run_id}/nodes/{node_id}
 GET /runs/{run_id}/nodes/{node_id}/children
 GET /runs/{run_id}/nodes/{node_id}/measures

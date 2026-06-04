@@ -61,10 +61,10 @@ frtb-result-store validate-store <root>
 workflow commands are intentionally not provided.
 
 First-pass persisted marts are generated for `capital_summary`, `capital_tree`,
-`top_contributors`, `movement_summary`, `regime_comparison`,
-`component_breakdown`, `ima_desk_dashboard`, `sbm_bucket_ladder`,
-`drc_issuer_contributors`, `cva_counterparty_contributors`, and
-`rrao_exposure_summary`. The package test
+`top_contributors`, `residual_attribution`, `unsupported_attribution`,
+`movement_summary`, `regime_comparison`, `component_breakdown`,
+`ima_desk_dashboard`, `sbm_bucket_ladder`, `drc_issuer_contributors`,
+`cva_counterparty_contributors`, and `rrao_exposure_summary`. The package test
 `test_representative_dashboard_query_latency_fixture` records representative
 latency envelopes for local synthetic data: summary, capital tree, and
 top-contributor mart reads are expected below 250 ms, while artifact first-page
@@ -75,8 +75,9 @@ fixture.
 
 The FastAPI service is created with `create_result_store_app(...)`. It exposes
 FRTB-specific read endpoints for runs, run groups, capital trees, measures,
-artifacts, attribution, lineage, events, movements, and regime comparison. It
-also supports artifact drillthrough with deterministic Parquet-backed pages:
+artifacts, attribution, attribution explain projections, lineage, events,
+movements, and regime comparison. It also supports artifact drillthrough with
+deterministic Parquet-backed pages:
 `GET /runs/{run_id}/artifacts/{artifact_id}/page` accepts `limit`, `offset`,
 repeated or comma-separated `columns`, and repeated `filter=column=value`
 parameters. `GET /runs/{run_id}/artifacts/{artifact_id}/download` serves local
