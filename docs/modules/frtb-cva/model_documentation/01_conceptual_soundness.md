@@ -22,7 +22,7 @@ bucket aggregation mechanics.
 
 ## Suitability
 
-The formulas are suitable for the supported partial-runtime scope because they
+The formulas are suitable for the implemented package-owned scope because they
 preserve the key MAR50 capital drivers: BA-CVA counterparty aggregation,
 eligible-hedge treatment, SA-CVA weighted sensitivities, intra-bucket and
 inter-bucket aggregation, and method routing. Unsupported future profiles,

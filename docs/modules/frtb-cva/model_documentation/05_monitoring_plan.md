@@ -11,6 +11,10 @@ Before pushing CVA package-code, documentation, or traceability changes, run:
 - `make drift-check` and `make test-value-check` when fixture values or hashes
   change.
 
+`make package-status-dashboard` must stay clean whenever
+`docs/quality/package_maturity.toml`, package metadata, or required-test
+evidence changes.
+
 ## Drift Controls
 
 Monitor these evidence points:
@@ -20,14 +24,25 @@ Monitor these evidence points:
 - public API and unsupported-feature tests;
 - row, batch, and Arrow batch parity;
 - property tests for hedge benefit and aggregation behavior;
+- audit serialization, replay, input hashes, and reconciliation invariants;
 - regulatory crosswalk entries under `docs/regulatory/crosswalk/frtb-cva.yml`.
 
 ## Review Triggers
 
-Open a documentation update, ADR, or explicit traceability update when:
+Open a documentation update, ADR, explicit traceability update, and focused
+revalidation plan when:
 
 - a new CVA profile becomes capital-producing;
 - MAR50.9 or another unsupported method is implemented;
+- a non-Basel comparison profile diverges numerically from the shared
+  Basel-aligned mechanics;
 - risk-weight, correlation, hedge, or qualified-index behavior changes;
 - result fields or audit metadata change;
-- fixture or comparator baselines are replaced.
+- fixture, comparator, profile-hash, source-manifest, or crosswalk baselines are
+  replaced;
+- production monitoring evidence is introduced as a package-owned validation
+  artifact.
+
+Changes to bank source-data controls, legal interpretation, supervisory
+approval, and production monitoring remain outside `frtb-cva` unless a future
+ADR moves those responsibilities into the package.

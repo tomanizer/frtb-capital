@@ -18,7 +18,7 @@ package = "frtb-cva"
 import_name = "frtb_cva"
 path = "packages/frtb-cva"
 module_docs = "docs/modules/frtb-cva"
-maturity = "partial_runtime"
+maturity = "implemented"
 component_type = "capital"
 metadata_object = "frtb_cva:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_cva:calculate_cva_capital"
@@ -38,6 +38,30 @@ path = "packages/frtb-cva/tests/test_cva_support_matrix.py"
 [[packages.required_tests]]
 id = "sa-cva-fixture-workflow"
 path = "packages/frtb-cva/tests/test_cva_sa_cva_fixture_workflow.py"
+
+[[packages.required_tests]]
+id = "ba-cva-fixture-workflow"
+path = "packages/frtb-cva/tests/test_cva_ba_cva_fixture_workflow.py"
+
+[[packages.required_tests]]
+id = "arrow-batch-parity"
+path = "packages/frtb-cva/tests/test_cva_arrow_batch.py"
+
+[[packages.required_tests]]
+id = "audit-records"
+path = "packages/frtb-cva/tests/test_cva_audit.py"
+
+[[packages.required_tests]]
+id = "replay-evidence"
+path = "packages/frtb-cva/tests/test_cva_replay.py"
+
+[[packages.required_tests]]
+id = "profile-comparison-runs"
+path = "packages/frtb-cva/tests/test_cva_unsupported_features.py"
+
+[[packages.required_tests]]
+id = "implemented-guardrails"
+path = "packages/frtb-cva/tests/test_cva_implemented_guardrails.py"
 
 [[packages.required_tests]]
 id = "properties"

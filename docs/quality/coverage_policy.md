@@ -5,7 +5,7 @@
 The implemented-package calculation-quality gate is a 90% line-coverage floor
 for every top-level module under each package marked `implemented` in
 `docs/quality/package_maturity.toml`. The current implemented packages are
-`frtb-ima` and `frtb-rrao`.
+`frtb-ima`, `frtb-cva`, and `frtb-rrao`.
 
 `demo_data.py` is excluded where present because it is demonstration plumbing
 and is not part of the calculation coverage gate.
@@ -39,7 +39,6 @@ stay tied to stable public runtime slices.
 | Package | Ready roots | Gate status |
 | --- | --- | --- |
 | `frtb-drc` | `packages/frtb-drc/src/frtb_drc` non-securitisation path | report-only; enforce when securitisation scope or maturity promotion lands |
-| `frtb-cva` | Reduced BA-CVA and SA-CVA GIRR delta modules | report-only |
 | `frtb-sbm` | Implemented delta/vega risk-class modules | report-only until curvature aggregation scope is stable |
 
 Report-only coverage uses the same 90% floor metric but does not fail CI.

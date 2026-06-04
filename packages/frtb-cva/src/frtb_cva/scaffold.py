@@ -12,6 +12,6 @@ PACKAGE_METADATA = CapitalComponentMetadata(
     package_name="frtb-cva",
     import_name="frtb_cva",
     component_name="Credit Valuation Adjustment capital",
-    implementation_status=ImplementationStatus.PARTIAL,
-    validation_status=ValidationStatus.PENDING,
+    implementation_status=ImplementationStatus.IMPLEMENTED,
+    validation_status=ValidationStatus.AVAILABLE,
 )

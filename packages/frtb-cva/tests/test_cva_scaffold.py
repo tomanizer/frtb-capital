@@ -1,7 +1,8 @@
 from datetime import date
+from pathlib import Path
 
 import pytest
-from frtb_common import ImplementationStatus
+from frtb_common import ImplementationStatus, ValidationStatus
 from frtb_cva import (
     PACKAGE_METADATA,
     CreditQuality,
@@ -25,11 +26,19 @@ def _lineage(row_id: str) -> CvaSourceLineage:
     )
 
 
-def test_cva_package_imports_with_partial_status() -> None:
+def test_cva_package_imports_with_implemented_status() -> None:
     assert isinstance(__version__, str)
     assert PACKAGE_METADATA.package_name == "frtb-cva"
     assert PACKAGE_METADATA.import_name == "frtb_cva"
-    assert PACKAGE_METADATA.implementation_status is ImplementationStatus.PARTIAL
+    assert PACKAGE_METADATA.implementation_status is ImplementationStatus.IMPLEMENTED
+    assert PACKAGE_METADATA.validation_status is ValidationStatus.AVAILABLE
+
+
+def test_cva_status_docs_match_package_metadata() -> None:
+    module_readme = Path(__file__).resolve().parents[3] / "docs/modules/frtb-cva/README.md"
+    text = module_readme.read_text(encoding="utf-8")
+    assert f"Implementation status: {PACKAGE_METADATA.implementation_status.value}" in text
+    assert f"Validation status: {PACKAGE_METADATA.validation_status.value}" in text
 
 
 def test_reduced_ba_cva_produces_capital_result() -> None:

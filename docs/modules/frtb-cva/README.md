@@ -6,8 +6,8 @@
 
 - Package directory: `packages/frtb-cva`
 - Import name: `frtb_cva`
-- Implementation status: partial runtime
-- Validation status: pending
+- Implementation status: implemented
+- Validation status: available
 
 Supported public paths:
 

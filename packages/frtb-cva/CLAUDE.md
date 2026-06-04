@@ -32,6 +32,7 @@ Review `frtb-cva` as the owner of CVA capital only.
 ## Unsupported (fail closed)
 
 - MAR50.9 materiality-threshold alternative.
-- U.S., EU, and UK comparison profiles.
+- U.S., EU, and UK simplified CCR-substitution / alternative-approach
+  elections that are outside the package-owned CVA capital kernel.
 
 See [`docs/REGULATORY_TRACEABILITY.md`](docs/REGULATORY_TRACEABILITY.md).

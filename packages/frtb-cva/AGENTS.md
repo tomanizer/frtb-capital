@@ -9,7 +9,7 @@ before editing this package.
 
 ## Current status
 
-**Partial implementation.** The delivered slice supports:
+**Implemented package-owned scope.** The delivered slice supports:
 
 - Reduced and full BA-CVA (`BA_CVA_REDUCED`, `BA_CVA_FULL`) per MAR50.14–26.
 - SA-CVA across all six delta risk classes and five vega risk classes per

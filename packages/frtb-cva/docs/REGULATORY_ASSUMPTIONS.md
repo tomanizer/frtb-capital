@@ -6,12 +6,12 @@ For a plain-language summary, see
 code/regulation map, see [`REGULATORY_TRACEABILITY.md`](REGULATORY_TRACEABILITY.md).
 For link-only source metadata, see [`regulatory_sources.yml`](regulatory_sources.yml).
 
-`frtb-cva` delivers a partial runtime slice for reduced BA-CVA, full BA-CVA,
-SA-CVA, mixed carve-out, qualified-index routing, attribution, impact, adapter,
-batch, and audit paths under cited Basel MAR50 mechanics, with U.S. NPR 2.0,
-EU CRR3, and UK PRA comparison profiles carrying their own citations and
-profile hashes. No document or test in this package should describe outputs as
-final regulatory capital.
+`frtb-cva` delivers the package-owned implemented scope for reduced BA-CVA, full
+BA-CVA, SA-CVA, mixed carve-out, qualified-index routing, attribution, impact,
+adapter, batch, and audit paths under cited Basel MAR50 mechanics, with U.S.
+NPR 2.0, EU CRR3, and UK PRA comparison profiles carrying their own citations
+and profile hashes. No document or test in this package should describe outputs
+as final regulatory capital.
 
 ## Phase basis
 

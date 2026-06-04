@@ -11,7 +11,7 @@ data, approve SA-CVA use, or perform firm-level capital aggregation.
 
 ## Supported Scope
 
-The current partial runtime supports:
+The current implemented package-owned runtime supports:
 
 - reduced BA-CVA and full BA-CVA under MAR50.14-MAR50.26;
 - SA-CVA delta and vega risk-class capital across the implemented Basel MAR50
@@ -26,13 +26,16 @@ The current partial runtime supports:
 capital-producing profiles under audit. ECB shorthand routes to `EU_CRR3_CVA`;
 there is no separate ECB runtime profile.
 
-## Promotion Boundary
+## Validation Boundary
 
-`frtb-cva` can be promoted for the package-owned calculation kernel once
-validation evidence is sufficient for the supported paths above. Promotion does
-not require implementing MAR50.9 or analogous simplified CCR-substitution
-alternatives, because those alternatives substitute external CCR capital and
-orchestration method election for CVA capital formulas owned by this package.
+`frtb-cva` has validation evidence for the package-owned calculation kernel and
+public handoff/audit helpers for the supported paths above. That validation
+status does not approve production source data, legal interpretation,
+supervisory SA-CVA approval, production monitoring, or final regulatory capital
+reporting. It also does not require implementing MAR50.9 or analogous simplified
+CCR-substitution alternatives, because those alternatives substitute external
+CCR capital and orchestration method election for CVA capital formulas owned by
+this package.
 
 ## Out Of Scope
 

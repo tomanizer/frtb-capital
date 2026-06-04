@@ -6,7 +6,7 @@ BRANCH ?= main
 LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts scripts tests tools
 MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/implemented-packages.json
-COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_rrao
+COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_cva --cov=frtb_rrao
 MUTATION_DIST := dist/mutation
 
 .PHONY: check ci-local ci-local-fast ci-local-full
@@ -61,8 +61,8 @@ test-changed:
 
 test-partial-runtime-coverage:
 	mkdir -p dist/coverage
-	uv run pytest packages/frtb-drc packages/frtb-cva packages/frtb-sbm \
-		--cov=frtb_drc --cov=frtb_cva --cov=frtb_sbm \
+	uv run pytest packages/frtb-drc packages/frtb-sbm \
+		--cov=frtb_drc --cov=frtb_sbm \
 		--cov-report=json:dist/coverage/partial-runtime.json
 	uv run python scripts/ci/check_module_coverage.py dist/coverage/partial-runtime.json \
 		--maturity partial_runtime --report-only
