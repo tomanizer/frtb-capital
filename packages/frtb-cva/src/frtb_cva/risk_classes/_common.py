@@ -30,7 +30,7 @@ def calculate_risk_class_capital(
 
     validated = validate_sa_cva_sensitivities(sensitivities)
     validated_hedges = validate_cva_hedges(hedges)
-    eligible_ids = eligible_sa_cva_hedge_ids(validated_hedges)
+    eligible_ids = eligible_sa_cva_hedge_ids(validated_hedges, profile=profile)
     weighted = sort_weighted_sensitivities(
         compute_weighted_sensitivities(
             validated,

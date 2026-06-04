@@ -951,7 +951,7 @@ requires-dist = [
 
 [[package]]
 name = "frtb-cva"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/frtb-cva" }
 dependencies = [
     { name = "frtb-common" },

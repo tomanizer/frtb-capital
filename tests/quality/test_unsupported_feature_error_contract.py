@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
-from frtb_cva import CvaMethod, CvaRegulatoryProfile, ensure_cva_profile_method_supported
+from frtb_cva import CvaRegulatoryProfile
+from frtb_cva.reference_data import profile_citation_id
 from frtb_ima.regimes import RegulatoryRegime, get_policy
 
 
@@ -12,9 +13,6 @@ def test_ima_unsupported_feature_uses_shared_base() -> None:
         policy.require_supported("type_a_type_b_nmrf_taxonomy")
 
 
-def test_cva_unsupported_profile_uses_shared_base() -> None:
+def test_cva_unmapped_profile_citation_uses_shared_base() -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR20_VB"):
-        ensure_cva_profile_method_supported(
-            CvaRegulatoryProfile.US_NPR20_VB,
-            CvaMethod.BA_CVA_REDUCED,
-        )
+        profile_citation_id("basel_mar50_999", CvaRegulatoryProfile.US_NPR20_VB)

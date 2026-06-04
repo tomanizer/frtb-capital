@@ -163,7 +163,10 @@ def calculate_cva_capital(
     if ba_cva_full is not None:
         citations = _merge_citations(citations, ba_cva_full.citations)
     if ba_cva_reduced is not None:
-        citations = _collect_citations(ba_cva_reduced.citations, ba_cva_netting_set_lines)
+        citations = _merge_citations(
+            citations,
+            _collect_citations(ba_cva_reduced.citations, ba_cva_netting_set_lines),
+        )
     if sa_cva_risk_class_capitals:
         sa_citations = [
             citation

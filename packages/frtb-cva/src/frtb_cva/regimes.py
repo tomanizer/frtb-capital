@@ -7,8 +7,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from frtb_common import UnsupportedRegulatoryFeatureError
-
 from frtb_cva._payloads import hash_payload as _hash_payload
 from frtb_cva.data_models import CvaMethod, CvaRegulatoryProfile, SaCvaRiskClass
 from frtb_cva.reference_data import citations_for_profile, profile_reference_payload
@@ -39,22 +37,30 @@ SUPPORTED_PROFILE_METADATA: dict[CvaRegulatoryProfile, dict[str, object]] = {
         "status": "supported_ba_cva_reduced_and_sa_cva_risk_classes",
         "effective_date": None,
     },
+    CvaRegulatoryProfile.US_NPR20_VB: {
+        "regulator": "U.S. banking agencies",
+        "version": "U.S. NPR 2.0 91 FR 14952 section V.B comparison profile",
+        "publication_date": date(2026, 3, 27),
+        "status": "supported_proposed_rule_comparison_profile",
+        "effective_date": None,
+    },
+    CvaRegulatoryProfile.EU_CRR3_CVA: {
+        "regulator": "European Union CRR3",
+        "version": "Regulation (EU) 2024/1623 CVA risk comparison profile",
+        "publication_date": date(2024, 5, 31),
+        "status": "supported_crr3_comparison_profile",
+        "effective_date": None,
+    },
+    CvaRegulatoryProfile.UK_PRA_CVA: {
+        "regulator": "Prudential Regulation Authority",
+        "version": "PRA PS1/26 Basel 3.1 CVA risk comparison profile",
+        "publication_date": date(2026, 1, 20),
+        "status": "supported_pra_comparison_profile",
+        "effective_date": date(2027, 1, 1),
+    },
 }
 
-UNSUPPORTED_PROFILE_REASONS: dict[CvaRegulatoryProfile, str] = {
-    CvaRegulatoryProfile.US_NPR20_VB: (
-        "CVA profile US_NPR20_VB is unsupported until U.S. NPR 2.0 proposed section mapping "
-        "and fixtures are added."
-    ),
-    CvaRegulatoryProfile.EU_CRR3_CVA: (
-        "CVA profile EU_CRR3_CVA is unsupported until Articles 382-386 mapping "
-        "and fixtures are added."
-    ),
-    CvaRegulatoryProfile.UK_PRA_CVA: (
-        "CVA profile UK_PRA_CVA is unsupported until UK-specific source mapping "
-        "and fixtures are added."
-    ),
-}
+UNSUPPORTED_PROFILE_REASONS: dict[CvaRegulatoryProfile, str] = {}
 
 _BASEL_SUPPORTED_METHODS = frozenset(CvaMethod)
 _BASEL_SUPPORTED_SA_CVA_RISK_CLASSES = frozenset(SaCvaRiskClass)
@@ -98,9 +104,9 @@ def resolve_cva_profile(profile: CvaRegulatoryProfile | str) -> CvaRegulatoryPro
             field="profile",
         ) from exc
 
-    if resolved in UNSUPPORTED_PROFILE_REASONS:
-        raise UnsupportedRegulatoryFeatureError(UNSUPPORTED_PROFILE_REASONS[resolved])
     if resolved not in SUPPORTED_PROFILE_METADATA:
+        from frtb_common import UnsupportedRegulatoryFeatureError
+
         raise UnsupportedRegulatoryFeatureError(
             f"CVA profile {resolved.value} has no supported metadata."
         )

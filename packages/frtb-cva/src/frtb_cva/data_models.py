@@ -100,7 +100,7 @@ class SaCvaIndexTreatment(StrEnum):
 
 
 class CvaRegulatoryProfile(StrEnum):
-    """Supported and planned CVA rule-profile identifiers."""
+    """Supported CVA rule-profile identifiers."""
 
     BASEL_MAR50_2020 = "BASEL_MAR50_2020"
     US_NPR20_VB = "US_NPR20_VB"

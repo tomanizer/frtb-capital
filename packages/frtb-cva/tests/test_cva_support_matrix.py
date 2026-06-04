@@ -8,12 +8,14 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_cva import (
     CvaCalculationContext,
     CvaMethod,
+    CvaProfileSupportStatus,
     CvaRegulatoryProfile,
     CvaSupportStatus,
     SaCvaRiskClass,
     SaCvaRiskMeasure,
     cva_capital_supported_methods,
     cva_profile_support_matrix,
+    cva_profile_support_status,
     cva_sa_cva_supported_paths,
     ensure_cva_profile_method_supported,
     ensure_cva_sa_cva_path_supported,
@@ -45,27 +47,35 @@ def test_basel_sa_paths_match_sa_cva_module() -> None:
         CvaRegulatoryProfile.UK_PRA_CVA,
     ],
 )
-def test_comparison_profiles_empty_support(profile: CvaRegulatoryProfile) -> None:
-    assert cva_capital_supported_methods(profile) == frozenset()
-    assert cva_sa_cva_supported_paths(profile) == frozenset()
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=profile.value):
-        ensure_cva_profile_method_supported(profile, CvaMethod.BA_CVA_REDUCED)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=profile.value):
+def test_non_basel_profiles_support_basel_aligned_methods_and_paths(
+    profile: CvaRegulatoryProfile,
+) -> None:
+    assert cva_profile_support_status(profile) is CvaProfileSupportStatus.CAPITAL_PRODUCING
+    assert cva_capital_supported_methods(profile) == frozenset(CvaMethod)
+    assert cva_sa_cva_supported_paths(profile) == frozenset(_SUPPORTED_PATHS)
+    ensure_cva_profile_method_supported(profile, CvaMethod.BA_CVA_REDUCED)
+    ensure_cva_sa_cva_path_supported(
+        profile,
+        SaCvaRiskClass.GIRR,
+        SaCvaRiskMeasure.DELTA,
+    )
+    with pytest.raises(CvaInputError, match="CCS vega"):
         ensure_cva_sa_cva_path_supported(
             profile,
-            SaCvaRiskClass.GIRR,
-            SaCvaRiskMeasure.DELTA,
+            SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+            SaCvaRiskMeasure.VEGA,
         )
 
 
-def test_ccs_vega_matrix_row_is_regulatory_absence() -> None:
+@pytest.mark.parametrize("profile", list(CvaRegulatoryProfile))
+def test_ccs_vega_matrix_row_is_regulatory_absence(profile: CvaRegulatoryProfile) -> None:
     cells = {
         (cell.profile, cell.method, cell.risk_class, cell.risk_measure): cell
         for cell in cva_profile_support_matrix()
     }
     cell = cells[
         (
-            CvaRegulatoryProfile.BASEL_MAR50_2020,
+            profile,
             CvaMethod.SA_CVA.value,
             SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
             SaCvaRiskMeasure.VEGA,
@@ -75,7 +85,7 @@ def test_ccs_vega_matrix_row_is_regulatory_absence() -> None:
     assert cell.blocker == "regulatory_absence"
     with pytest.raises(CvaInputError, match="CCS vega"):
         ensure_cva_sa_cva_path_supported(
-            CvaRegulatoryProfile.BASEL_MAR50_2020,
+            profile,
             SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
             SaCvaRiskMeasure.VEGA,
         )
@@ -83,9 +93,10 @@ def test_ccs_vega_matrix_row_is_regulatory_absence() -> None:
 
 def test_mar50_9_materiality_policy_unsupported() -> None:
     cells = [cell for cell in cva_profile_support_matrix() if cell.method.startswith("MAR50.9")]
-    assert len(cells) == 1
-    assert cells[0].status is CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED
-    assert cells[0].blocker == "ccr_boundary"
+    assert len(cells) == len(CvaRegulatoryProfile)
+    assert {cell.profile for cell in cells} == set(CvaRegulatoryProfile)
+    assert all(cell.status is CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED for cell in cells)
+    assert all(cell.blocker == "ccr_boundary" for cell in cells)
     context = CvaCalculationContext(
         run_id="run-mar50-9",
         calculation_date=date(2026, 5, 31),

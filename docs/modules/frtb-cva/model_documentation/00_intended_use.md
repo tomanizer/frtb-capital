@@ -2,11 +2,12 @@
 
 ## Model Purpose
 
-`frtb-cva` calculates Credit Valuation Adjustment capital for supported Basel
-MAR50 CVA paths from prepared counterparty, netting-set, hedge, and sensitivity
-inputs. It is an ex-post capital component; it does not simulate exposures,
-price derivatives, source market data, approve SA-CVA use, or perform
-firm-level capital aggregation.
+`frtb-cva` calculates Credit Valuation Adjustment capital for supported CVA paths
+from prepared counterparty, netting-set, hedge, and sensitivity inputs. Basel
+MAR50 is the calibration anchor; U.S. NPR 2.0, EU CRR3, and UK PRA comparison
+profiles carry their own citations and profile hashes. It is an ex-post capital
+component; it does not simulate exposures, price derivatives, source market
+data, approve SA-CVA use, or perform firm-level capital aggregation.
 
 ## Supported Scope
 
@@ -21,8 +22,9 @@ The current partial runtime supports:
 - CRIF, Arrow/batch, attribution, impact, audit, and replay helpers that do not
   change capital totals.
 
-`BASEL_MAR50_2020` is the capital-producing profile. U.S. NPR 2.0, EU CRR3,
-and PRA UK CRR comparison profiles remain unsupported runtime paths.
+`BASEL_MAR50_2020`, `US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA` are
+capital-producing profiles under audit. ECB shorthand routes to `EU_CRR3_CVA`;
+there is no separate ECB runtime profile.
 
 ## Out Of Scope
 

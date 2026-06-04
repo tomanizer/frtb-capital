@@ -7,8 +7,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from frtb_common import UnsupportedRegulatoryFeatureError
-
 from frtb_cva._unsupported import MAR50_9_MATERIALITY_POLICY, MAR50_9_UNSUPPORTED_MESSAGE
 from frtb_cva.data_models import (
     CvaMethod,
@@ -16,7 +14,6 @@ from frtb_cva.data_models import (
     SaCvaRiskClass,
     SaCvaRiskMeasure,
 )
-from frtb_cva.regimes import UNSUPPORTED_PROFILE_REASONS
 from frtb_cva.sa_cva import _SUPPORTED_PATHS
 from frtb_cva.validation import CvaInputError
 
@@ -51,9 +48,9 @@ class CvaSupportCell:
     risk_measure: SaCvaRiskMeasure | None = None
 
 
-_BASEL_PROFILE = CvaRegulatoryProfile.BASEL_MAR50_2020
-_COMPARISON_PROFILES = frozenset(
+_SUPPORTED_PROFILES = frozenset(
     {
+        CvaRegulatoryProfile.BASEL_MAR50_2020,
         CvaRegulatoryProfile.US_NPR20_VB,
         CvaRegulatoryProfile.EU_CRR3_CVA,
         CvaRegulatoryProfile.UK_PRA_CVA,
@@ -73,7 +70,7 @@ def cva_profile_support_status(
     """Return the capital-producing status for a known CVA profile."""
 
     resolved = _resolve_profile_id(profile)
-    if resolved is _BASEL_PROFILE:
+    if resolved in _SUPPORTED_PROFILES:
         return CvaProfileSupportStatus.CAPITAL_PRODUCING
     return CvaProfileSupportStatus.COMPARISON_FAIL_CLOSED
 
@@ -82,7 +79,7 @@ def cva_capital_supported_methods(profile: CvaRegulatoryProfile | str) -> frozen
     """Return supported CVA methods for a profile without falling back to Basel."""
 
     resolved = _resolve_profile_id(profile)
-    if resolved is _BASEL_PROFILE:
+    if resolved in _SUPPORTED_PROFILES:
         return _BASEL_SUPPORTED_METHODS
     return frozenset()
 
@@ -93,7 +90,7 @@ def cva_sa_cva_supported_paths(
     """Return supported SA-CVA risk-class and measure paths for a profile."""
 
     resolved = _resolve_profile_id(profile)
-    if resolved is _BASEL_PROFILE:
+    if resolved in _SUPPORTED_PROFILES:
         return _BASEL_SUPPORTED_SA_PATHS
     return frozenset()
 
@@ -108,8 +105,8 @@ def ensure_cva_profile_method_supported(
     resolved_method = _resolve_method_id(method)
     if resolved_method in cva_capital_supported_methods(resolved):
         return
-    if resolved in UNSUPPORTED_PROFILE_REASONS:
-        raise UnsupportedRegulatoryFeatureError(UNSUPPORTED_PROFILE_REASONS[resolved])
+    from frtb_common import UnsupportedRegulatoryFeatureError
+
     raise UnsupportedRegulatoryFeatureError(
         f"CVA method {resolved_method.value} is unsupported for profile {resolved.value}."
     )
@@ -128,11 +125,9 @@ def ensure_cva_sa_cva_path_supported(
     path = (resolved_risk_class, resolved_risk_measure)
     if path in cva_sa_cva_supported_paths(resolved):
         return
-    if resolved in UNSUPPORTED_PROFILE_REASONS:
-        raise UnsupportedRegulatoryFeatureError(UNSUPPORTED_PROFILE_REASONS[resolved])
     if path == _CCS_VEGA_PATH:
         raise CvaInputError(
-            "CCS vega capital is not permitted under MAR50.45 and MAR50.63",
+            "CCS vega capital is not permitted for the selected CVA profile",
             field="sensitivities",
         )
     raise CvaInputError(
@@ -145,45 +140,19 @@ def cva_profile_support_matrix() -> tuple[CvaSupportCell, ...]:
     """Return the current CVA support matrix."""
 
     rows: list[CvaSupportCell] = []
-    rows.extend(_basel_method_rows())
-    rows.extend(_basel_sa_path_rows())
-    rows.append(
-        CvaSupportCell(
-            profile=_BASEL_PROFILE,
-            method=CvaMethod.SA_CVA.value,
-            risk_class=_CCS_VEGA_PATH[0],
-            risk_measure=_CCS_VEGA_PATH[1],
-            status=CvaSupportStatus.REGULATORY_ABSENCE,
-            citation="Basel MAR50.45; Basel MAR50.63",
-            blocker="regulatory_absence",
-            tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
-        )
-    )
-    rows.append(
-        CvaSupportCell(
-            profile=_BASEL_PROFILE,
-            method=MAR50_9_MATERIALITY_POLICY,
-            status=CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED,
-            citation="Basel MAR50.9",
-            blocker="ccr_boundary",
-            tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
-        )
-    )
-    for profile in sorted(_COMPARISON_PROFILES, key=lambda item: item.value):
-        rows.extend(_comparison_profile_rows(profile))
+    for profile in sorted(_SUPPORTED_PROFILES, key=lambda item: item.value):
+        rows.extend(_method_rows(profile))
+        rows.extend(_sa_path_rows(profile))
+        rows.append(_ccs_vega_row(profile))
+        rows.append(_materiality_row(profile))
     return tuple(rows)
 
 
-def _basel_method_rows() -> tuple[CvaSupportCell, ...]:
-    citations = {
-        CvaMethod.BA_CVA_REDUCED: "Basel MAR50.14-MAR50.16",
-        CvaMethod.BA_CVA_FULL: "Basel MAR50.17-MAR50.26",
-        CvaMethod.SA_CVA: "Basel MAR50.42-MAR50.77",
-        CvaMethod.MIXED_CARVE_OUT: "Basel MAR50.8",
-    }
+def _method_rows(profile: CvaRegulatoryProfile) -> tuple[CvaSupportCell, ...]:
+    citations = _method_citations(profile)
     return tuple(
         CvaSupportCell(
-            profile=_BASEL_PROFILE,
+            profile=profile,
             method=method.value,
             status=CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT,
             citation=citations[method],
@@ -194,15 +163,40 @@ def _basel_method_rows() -> tuple[CvaSupportCell, ...]:
     )
 
 
-def _basel_sa_path_rows() -> tuple[CvaSupportCell, ...]:
+def _method_citations(profile: CvaRegulatoryProfile) -> dict[CvaMethod, str]:
+    if profile is CvaRegulatoryProfile.BASEL_MAR50_2020:
+        return {
+            CvaMethod.BA_CVA_REDUCED: "Basel MAR50.14-MAR50.16",
+            CvaMethod.BA_CVA_FULL: "Basel MAR50.17-MAR50.26",
+            CvaMethod.SA_CVA: "Basel MAR50.42-MAR50.77",
+            CvaMethod.MIXED_CARVE_OUT: "Basel MAR50.8",
+        }
+    if profile is CvaRegulatoryProfile.US_NPR20_VB:
+        return {method: "U.S. NPR 2.0 91 FR 14952 section V.B" for method in CvaMethod}
+    if profile is CvaRegulatoryProfile.EU_CRR3_CVA:
+        return {
+            CvaMethod.BA_CVA_REDUCED: "Regulation (EU) 2024/1623 Article 384",
+            CvaMethod.BA_CVA_FULL: "Regulation (EU) 2024/1623 Article 384",
+            CvaMethod.SA_CVA: "Regulation (EU) 2024/1623 Articles 383-383z",
+            CvaMethod.MIXED_CARVE_OUT: "Regulation (EU) 2024/1623 Article 382",
+        }
+    return {
+        CvaMethod.BA_CVA_REDUCED: "PRA PS1/26; PRA Rulebook CVA Risk Part BA-CVA",
+        CvaMethod.BA_CVA_FULL: "PRA PS1/26; PRA Rulebook CVA Risk Part BA-CVA",
+        CvaMethod.SA_CVA: "PRA PS1/26; PRA Rulebook CVA Risk Part SA-CVA",
+        CvaMethod.MIXED_CARVE_OUT: "PRA PS1/26; PRA Rulebook CVA Risk Part",
+    }
+
+
+def _sa_path_rows(profile: CvaRegulatoryProfile) -> tuple[CvaSupportCell, ...]:
     return tuple(
         CvaSupportCell(
-            profile=_BASEL_PROFILE,
+            profile=profile,
             method=CvaMethod.SA_CVA.value,
             risk_class=risk_class,
             risk_measure=risk_measure,
             status=CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT,
-            citation="Basel MAR50.42-MAR50.77",
+            citation=_sa_path_citation(profile),
             blocker="none",
             tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
         )
@@ -210,26 +204,58 @@ def _basel_sa_path_rows() -> tuple[CvaSupportCell, ...]:
     )
 
 
-def _comparison_profile_rows(profile: CvaRegulatoryProfile) -> tuple[CvaSupportCell, ...]:
-    return tuple(
-        CvaSupportCell(
-            profile=profile,
-            method=method.value,
-            status=CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED,
-            citation=_comparison_profile_citation(profile),
-            blocker="comparison_profile",
-            tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
-        )
-        for method in sorted(CvaMethod, key=lambda item: item.value)
-    )
-
-
-def _comparison_profile_citation(profile: CvaRegulatoryProfile) -> str:
+def _sa_path_citation(profile: CvaRegulatoryProfile) -> str:
+    if profile is CvaRegulatoryProfile.BASEL_MAR50_2020:
+        return "Basel MAR50.42-MAR50.77"
     if profile is CvaRegulatoryProfile.US_NPR20_VB:
         return "U.S. NPR 2.0 91 FR 14952 section V.B"
     if profile is CvaRegulatoryProfile.EU_CRR3_CVA:
-        return "Regulation (EU) 2024/1623 Articles 382-386"
-    return "PRA PS1/26; PRA CP16/22"
+        return "Regulation (EU) 2024/1623 Articles 383-383z"
+    return "PRA PS1/26; PRA Rulebook CVA Risk Part SA-CVA"
+
+
+def _ccs_vega_row(profile: CvaRegulatoryProfile) -> CvaSupportCell:
+    return CvaSupportCell(
+        profile=profile,
+        method=CvaMethod.SA_CVA.value,
+        risk_class=_CCS_VEGA_PATH[0],
+        risk_measure=_CCS_VEGA_PATH[1],
+        status=CvaSupportStatus.REGULATORY_ABSENCE,
+        citation=_ccs_vega_citation(profile),
+        blocker="regulatory_absence",
+        tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
+    )
+
+
+def _ccs_vega_citation(profile: CvaRegulatoryProfile) -> str:
+    if profile is CvaRegulatoryProfile.BASEL_MAR50_2020:
+        return "Basel MAR50.45; Basel MAR50.63"
+    if profile is CvaRegulatoryProfile.US_NPR20_VB:
+        return "U.S. NPR 2.0 91 FR 14952 section V.B"
+    if profile is CvaRegulatoryProfile.EU_CRR3_CVA:
+        return "Regulation (EU) 2024/1623 Articles 383-383z"
+    return "PRA PS1/26; PRA Rulebook CVA Risk Part SA-CVA"
+
+
+def _materiality_row(profile: CvaRegulatoryProfile) -> CvaSupportCell:
+    return CvaSupportCell(
+        profile=profile,
+        method=MAR50_9_MATERIALITY_POLICY,
+        status=CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED,
+        citation=_materiality_citation(profile),
+        blocker="ccr_boundary",
+        tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
+    )
+
+
+def _materiality_citation(profile: CvaRegulatoryProfile) -> str:
+    if profile is CvaRegulatoryProfile.BASEL_MAR50_2020:
+        return "Basel MAR50.9"
+    if profile is CvaRegulatoryProfile.US_NPR20_VB:
+        return "U.S. NPR 2.0 91 FR 14952 section V.B"
+    if profile is CvaRegulatoryProfile.EU_CRR3_CVA:
+        return "Regulation (EU) 2024/1623 Article 385"
+    return "PRA PS1/26; PRA Rulebook CVA Risk Part AA-CVA"
 
 
 def _resolve_profile_id(profile: CvaRegulatoryProfile | str) -> CvaRegulatoryProfile:

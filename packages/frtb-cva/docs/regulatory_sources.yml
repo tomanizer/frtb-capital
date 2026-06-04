@@ -16,20 +16,25 @@ sources:
   - id: us_npr20_91fr14952
     title: U.S. NPR 2.0 91 FR 14952
     url: https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
-    status: unsupported
-    notes: Planned comparison profile US_NPR20_VB.
+    status: partial
+    notes: Supported proposed-rule comparison profile US_NPR20_VB with section V.B citation crosswalk; outputs are not final U.S. regulatory capital.
   - id: eu_crr3_2024_1623
     title: CRR3 Regulation (EU) 2024/1623
     url: https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
-    status: unsupported
-    notes: Planned comparison profile EU_CRR3_CVA.
+    status: partial
+    notes: Supported EU_CRR3_CVA comparison profile for Articles 381-386 and inserted SA-CVA Articles 383a-383z; ECB shorthand routes to this profile.
+  - id: uk_pra_cva_risk_part
+    title: PRA2026/1 — PRA Rulebook CRR Firms Instrument 2026
+    url: https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf
+    status: partial
+    notes: Legal instrument source for the UK_PRA_CVA profile's CVA Risk Part BA-CVA, SA-CVA, AA-CVA context, and hedge treatment crosswalk.
   - id: uk_pra_ps1_26
     title: PRA PS1/26 — Implementation of Basel 3.1 final rules
     url: https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement
-    status: unsupported
-    notes: Planned comparison profile UK_PRA_CVA.
+    status: partial
+    notes: Supported UK_PRA_CVA comparison profile with PRA Rulebook CVA Risk Part crosswalk and 1 January 2027 effective-date metadata.
   - id: uk_pra_cp16_22_cva
     title: PRA CP16/22 Chapter 7 — credit valuation adjustment and counterparty credit risk
     url: https://www.bankofengland.co.uk/prudential-regulation/publication/2022/november/implementation-of-the-basel-3-1-standards/credit-valuation-adjustment
-    status: unsupported
-    notes: Source context for UK PRA CVA profile mapping.
+    status: partial
+    notes: Historical consultation context for UK PRA CVA profile mapping.
