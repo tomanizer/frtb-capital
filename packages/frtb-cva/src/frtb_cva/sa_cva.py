@@ -57,27 +57,27 @@ def calculate_sa_cva_capital(
 ) -> tuple[SaCvaRiskClassCapital, ...]:
     """Calculate supported SA-CVA risk-class totals per MAR50.42-MAR50.45.
 
-Parameters
-----------
-sensitivities :
-    Raw SA-CVA sensitivities prior to weighting.
+    Parameters
+    ----------
+    sensitivities :
+        Raw SA-CVA sensitivities prior to weighting.
 
-hedges, optional :
-    Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+    hedges, optional :
+        Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
 
-m_cva, optional :
-    SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
+    m_cva, optional :
+        SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
 
-reporting_currency, optional :
-    Input for ``calculate_sa_cva_capital`` used in the CVA capital path.
+    reporting_currency, optional :
+        Input for ``calculate_sa_cva_capital`` used in the CVA capital path.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[SaCvaRiskClassCapital, ...]
-    Result of ``calculate_sa_cva_capital`` for audit and downstream aggregation."""
+    Returns
+    -------
+    tuple[SaCvaRiskClassCapital, ...]
+        Result of ``calculate_sa_cva_capital`` for audit and downstream aggregation."""
 
     validated_m_cva = validate_m_cva_multiplier(m_cva)
     if not sensitivities:
@@ -238,21 +238,21 @@ def sa_cva_aggregation_config(
 ) -> SaCvaAggregationConfig:
     """Return the cited aggregation config for audit reconciliation.
 
-Parameters
-----------
-risk_class :
-    SA-CVA risk class driving aggregation configuration.
+    Parameters
+    ----------
+    risk_class :
+        SA-CVA risk class driving aggregation configuration.
 
-risk_measure :
-    SA-CVA risk measure (delta or vega) for the aggregation path.
+    risk_measure :
+        SA-CVA risk measure (delta or vega) for the aggregation path.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-SaCvaAggregationConfig
-    Result of ``sa_cva_aggregation_config`` for audit and downstream aggregation."""
+    Returns
+    -------
+    SaCvaAggregationConfig
+        Result of ``sa_cva_aggregation_config`` for audit and downstream aggregation."""
 
     from frtb_cva.aggregation import (
         girr_delta_aggregation_config,

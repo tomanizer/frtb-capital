@@ -378,18 +378,18 @@ def profile_citation_id(
 ) -> str:
     """Return the active profile's citation id for a Basel-aligned rule cell.
 
-Parameters
-----------
-citation_id :
-    Basel-aligned citation cell key mapped through the active profile.
+    Parameters
+    ----------
+    citation_id :
+        Basel-aligned citation cell key mapped through the active profile.
 
-profile :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-str
-    Active profile citation id mapped from the Basel-aligned cell key."""
+    Returns
+    -------
+    str
+        Active profile citation id mapped from the Basel-aligned cell key."""
 
     resolved = _resolve_supported_profile(profile)
     if citation_id in PROFILE_CITATIONS[resolved]:
@@ -415,18 +415,18 @@ def profile_citation_ids(
 ) -> tuple[str, ...]:
     """Map citation ids to the active profile and preserve first-seen order.
 
-Parameters
-----------
-citation_ids :
-    Basel-aligned citation cell keys mapped in first-seen order.
+    Parameters
+    ----------
+    citation_ids :
+        Basel-aligned citation cell keys mapped in first-seen order.
 
-profile :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[str, ...]
-    Profile-mapped citation ids preserving first-seen order."""
+    Returns
+    -------
+    tuple[str, ...]
+        Profile-mapped citation ids preserving first-seen order."""
 
     mapped: list[str] = []
     seen: set[str] = set()
@@ -443,15 +443,15 @@ def citations_for_profile(
 ) -> dict[str, CvaCitation]:
     """Return citations for a supported CVA profile.
 
-Parameters
-----------
-profile :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-dict[str, CvaCitation]
-    Citation registry for the resolved supported profile."""
+    Returns
+    -------
+    dict[str, CvaCitation]
+        Citation registry for the resolved supported profile."""
 
     resolved = _resolve_supported_profile(profile)
     return dict(PROFILE_CITATIONS[resolved])
@@ -465,21 +465,21 @@ def ba_cva_risk_weight(
 ) -> tuple[float, str]:
     """Return the cited BA-CVA Table 1 risk weight and citation id.
 
-Parameters
-----------
-sector :
-    Counterparty sector bucket for BA-CVA Table 1 risk weights.
+    Parameters
+    ----------
+    sector :
+        Counterparty sector bucket for BA-CVA Table 1 risk weights.
 
-credit_quality :
-    Counterparty credit-quality bucket for BA-CVA Table 1.
+    credit_quality :
+        Counterparty credit-quality bucket for BA-CVA Table 1.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Regulatory scalar and the profile-specific citation id for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     resolved_sector = _resolve_sector(sector)
@@ -498,15 +498,15 @@ def ba_cva_alpha(
 ) -> tuple[float, str]:
     """Return the cited BA-CVA supervisory multiplier alpha.
 
-Parameters
-----------
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Result of ``ba_cva_alpha`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Result of ``ba_cva_alpha`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_ALPHA, profile_citation_id("basel_mar50_15", resolved_profile)
@@ -517,15 +517,15 @@ def ba_cva_beta(
 ) -> tuple[float, str]:
     """Return the cited full BA-CVA floor beta.
 
-Parameters
-----------
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Result of ``ba_cva_beta`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Result of ``ba_cva_beta`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_BETA, profile_citation_id("basel_mar50_20", resolved_profile)
@@ -538,18 +538,18 @@ def ba_cva_hedge_counterparty_correlation(
 ) -> tuple[float, str]:
     """Return Table 2 hedge-counterparty correlation r_hc (MAR50.26).
 
-Parameters
-----------
-relation :
-    Hedge-to-reference relation for Table 2 counterparty correlation (MAR50.26).
+    Parameters
+    ----------
+    relation :
+        Hedge-to-reference relation for Table 2 counterparty correlation (MAR50.26).
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Result of ``ba_cva_hedge_counterparty_correlation`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Result of ``ba_cva_hedge_counterparty_correlation`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     if relation not in _HEDGE_REFERENCE_CORRELATIONS:
@@ -569,15 +569,15 @@ def ba_cva_index_risk_weight_scalar(
 ) -> tuple[float, str]:
     """Return the cited index hedge diversification scalar (MAR50.24(4)).
 
-Parameters
-----------
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Result of ``ba_cva_index_risk_weight_scalar`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Result of ``ba_cva_index_risk_weight_scalar`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_INDEX_RW_SCALAR, profile_citation_id("basel_mar50_24", resolved_profile)
@@ -588,15 +588,15 @@ def ba_cva_rho(
 ) -> tuple[float, str]:
     """Return the cited BA-CVA portfolio correlation rho.
 
-Parameters
-----------
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Result of ``ba_cva_rho`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Result of ``ba_cva_rho`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_RHO, profile_citation_id("basel_mar50_14", resolved_profile)
@@ -607,15 +607,15 @@ def ba_cva_discount_scalar(
 ) -> tuple[float, str]:
     """Return the cited reduced BA-CVA discount scalar D_BA-CVA.
 
-Parameters
-----------
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Result of ``ba_cva_discount_scalar`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Result of ``ba_cva_discount_scalar`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return D_BA_CVA, profile_citation_id("basel_mar50_14", resolved_profile)
@@ -624,15 +624,15 @@ tuple[float, str]
 def compute_non_imm_discount_factor(maturity: float) -> tuple[float, str]:
     """Return the cited non-IMM discount factor for effective maturity M.
 
-Parameters
-----------
-maturity :
-    Instrument maturity used for non-IMM discount-factor approximation.
+    Parameters
+    ----------
+    maturity :
+        Instrument maturity used for non-IMM discount-factor approximation.
 
-Returns
--------
-tuple[float, str]
-    Regulatory scalar and the profile-specific citation id for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     maturity_value = float(maturity)
     if maturity_value <= 0.0:
@@ -654,32 +654,32 @@ def resolve_netting_set_discount_factor(
 ) -> tuple[float, str, bool]:
     """Return discount factor, citation id, and whether the supplied value was used.
 
-When ``discount_factor_explicit=True`` the caller signals that the supplied
-value should be used verbatim, even when it equals 1.0.  Without this flag
-the sentinel-equals-1.0 pattern would silently override a legitimately
-supplied discount factor of 1.0 with the computed non-IMM formula.
+    When ``discount_factor_explicit=True`` the caller signals that the supplied
+    value should be used verbatim, even when it equals 1.0.  Without this flag
+    the sentinel-equals-1.0 pattern would silently override a legitimately
+    supplied discount factor of 1.0 with the computed non-IMM formula.
 
-Parameters
-----------
-uses_imm_ead :
-    Input for ``resolve_netting_set_discount_factor`` used in the CVA capital path.
+    Parameters
+    ----------
+    uses_imm_ead :
+        Input for ``resolve_netting_set_discount_factor`` used in the CVA capital path.
 
-effective_maturity :
-    Input for ``resolve_netting_set_discount_factor`` used in the CVA capital path.
+    effective_maturity :
+        Input for ``resolve_netting_set_discount_factor`` used in the CVA capital path.
 
-supplied_discount_factor :
-    Input for ``resolve_netting_set_discount_factor`` used in the CVA capital path.
+    supplied_discount_factor :
+        Input for ``resolve_netting_set_discount_factor`` used in the CVA capital path.
 
-discount_factor_explicit, optional :
-    Input for ``resolve_netting_set_discount_factor`` used in the CVA capital path.
+    discount_factor_explicit, optional :
+        Input for ``resolve_netting_set_discount_factor`` used in the CVA capital path.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str, bool]
-    Result of ``resolve_netting_set_discount_factor`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str, bool]
+        Result of ``resolve_netting_set_discount_factor`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     if uses_imm_ead:
@@ -701,18 +701,18 @@ def girr_delta_risk_weight_rule(
 ) -> SaCvaGirrDeltaRiskWeightRule:
     """Return the cited SA-CVA GIRR delta risk-weight rule for a tenor.
 
-Parameters
-----------
-tenor :
-    GIRR delta tenor label for risk-weight and correlation lookup.
+    Parameters
+    ----------
+    tenor :
+        GIRR delta tenor label for risk-weight and correlation lookup.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-SaCvaGirrDeltaRiskWeightRule
-    Result of ``girr_delta_risk_weight_rule`` for audit replay."""
+    Returns
+    -------
+    SaCvaGirrDeltaRiskWeightRule
+        Result of ``girr_delta_risk_weight_rule`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     normalised = _require_text(tenor, "tenor")
@@ -743,18 +743,18 @@ def girr_delta_risk_weight(
 ) -> tuple[float, str]:
     """Return the cited SA-CVA GIRR delta risk weight and citation id.
 
-Parameters
-----------
-tenor :
-    GIRR delta tenor label for risk-weight and correlation lookup.
+    Parameters
+    ----------
+    tenor :
+        GIRR delta tenor label for risk-weight and correlation lookup.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Result of ``girr_delta_risk_weight`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Result of ``girr_delta_risk_weight`` for audit replay."""
 
     rule = girr_delta_risk_weight_rule(tenor, profile=profile)
     return rule.risk_weight, rule.citation_id
@@ -768,21 +768,21 @@ def girr_delta_intra_bucket_correlation(
 ) -> tuple[float, str]:
     """Return the cited SA-CVA GIRR delta intra-bucket correlation.
 
-Parameters
-----------
-tenor1 :
-    Input for ``girr_delta_intra_bucket_correlation`` used in the CVA capital path.
+    Parameters
+    ----------
+    tenor1 :
+        Input for ``girr_delta_intra_bucket_correlation`` used in the CVA capital path.
 
-tenor2 :
-    Input for ``girr_delta_intra_bucket_correlation`` used in the CVA capital path.
+    tenor2 :
+        Input for ``girr_delta_intra_bucket_correlation`` used in the CVA capital path.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Result of ``girr_delta_intra_bucket_correlation`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Result of ``girr_delta_intra_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     normalised_tenor1 = _require_text(tenor1, "tenor1")
@@ -811,15 +811,15 @@ def girr_inter_bucket_correlation(
 ) -> tuple[float, str]:
     """Return the cited SA-CVA GIRR cross-bucket correlation gamma_bc.
 
-Parameters
-----------
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Result of ``girr_inter_bucket_correlation`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Result of ``girr_inter_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return GIRR_INTER_BUCKET_CORRELATION, profile_citation_id(
@@ -831,10 +831,10 @@ tuple[float, str]
 def girr_specified_currencies() -> frozenset[str]:
     """Return the cited SA-CVA GIRR specified currency bucket set.
 
-Returns
--------
-frozenset[str]
-    Result of ``girr_specified_currencies`` for audit replay."""
+    Returns
+    -------
+    frozenset[str]
+        Result of ``girr_specified_currencies`` for audit replay."""
 
     return GIRR_SPECIFIED_CURRENCIES
 
@@ -842,18 +842,18 @@ frozenset[str]
 def girr_is_specified_currency(currency: str, *, reporting_currency: str) -> bool:
     """Return whether a currency uses specified-currency GIRR delta tables.
 
-Parameters
-----------
-currency :
-    GIRR currency code evaluated against specified-currency lists.
+    Parameters
+    ----------
+    currency :
+        GIRR currency code evaluated against specified-currency lists.
 
-reporting_currency :
-    Input for ``girr_is_specified_currency`` used in the CVA capital path.
+    reporting_currency :
+        Input for ``girr_is_specified_currency`` used in the CVA capital path.
 
-Returns
--------
-bool
-    Result of ``girr_is_specified_currency`` for audit replay."""
+    Returns
+    -------
+    bool
+        Result of ``girr_is_specified_currency`` for audit replay."""
 
     normalised = _require_text(currency, "currency").upper()
     reporting = _require_text(reporting_currency, "reporting_currency").upper()
@@ -867,15 +867,15 @@ def girr_other_currency_risk_weight_scalar(
 ) -> tuple[float, str]:
     """Return the cited MAR50.57 scalar for non-specified GIRR currency buckets.
 
-Parameters
-----------
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[float, str]
-    Result of ``girr_other_currency_risk_weight_scalar`` for audit replay."""
+    Returns
+    -------
+    tuple[float, str]
+        Result of ``girr_other_currency_risk_weight_scalar`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR, profile_citation_id(
@@ -889,15 +889,15 @@ def girr_delta_tenors(
 ) -> tuple[str, ...]:
     """Return the cited SA-CVA GIRR delta tenor labels.
 
-Parameters
-----------
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[str, ...]
-    Result of ``girr_delta_tenors`` for audit replay."""
+    Returns
+    -------
+    tuple[str, ...]
+        Result of ``girr_delta_tenors`` for audit replay."""
 
     _resolve_supported_profile(profile)
     return tuple(tenor_definition.tenor for tenor_definition in BASEL_GIRR_TENORS)
@@ -910,18 +910,18 @@ def girr_tenor_definition(
 ) -> SaCvaGirrTenorDefinition:
     """Return the cited SA-CVA GIRR tenor definition.
 
-Parameters
-----------
-tenor :
-    GIRR delta tenor label for risk-weight and correlation lookup.
+    Parameters
+    ----------
+    tenor :
+        GIRR delta tenor label for risk-weight and correlation lookup.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-SaCvaGirrTenorDefinition
-    Result of ``girr_tenor_definition`` for audit replay."""
+    Returns
+    -------
+    SaCvaGirrTenorDefinition
+        Result of ``girr_tenor_definition`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     normalised = _require_text(tenor, "tenor")
@@ -941,15 +941,15 @@ SaCvaGirrTenorDefinition
 def profile_reference_payload(profile: CvaRegulatoryProfile | str) -> dict[str, object]:
     """Return a deterministic, JSON-serialisable payload for profile hashing.
 
-Parameters
-----------
-profile :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-dict[str, object]
-    Result of ``profile_reference_payload`` for audit replay."""
+    Returns
+    -------
+    dict[str, object]
+        Result of ``profile_reference_payload`` for audit replay."""
 
     resolved = _resolve_supported_profile(profile)
     from frtb_cva.sa_cva_reference_data import sa_cva_reference_payload

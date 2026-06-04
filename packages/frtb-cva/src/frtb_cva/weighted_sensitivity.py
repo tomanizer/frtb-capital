@@ -135,27 +135,27 @@ def compute_weighted_sensitivities(
 ) -> tuple[SaCvaWeightedSensitivity, ...]:
     """Convert canonical sensitivities into cited weighted sensitivity records.
 
-Parameters
-----------
-sensitivities :
-    Raw SA-CVA sensitivities prior to weighting.
+    Parameters
+    ----------
+    sensitivities :
+        Raw SA-CVA sensitivities prior to weighting.
 
-hedges, optional :
-    Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+    hedges, optional :
+        Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
 
-eligible_hedge_ids, optional :
-    Stable identifiers for eligible hedge recorded on results.
+    eligible_hedge_ids, optional :
+        Stable identifiers for eligible hedge recorded on results.
 
-reporting_currency, optional :
-    Input for ``compute_weighted_sensitivities`` used in the CVA capital path.
+    reporting_currency, optional :
+        Input for ``compute_weighted_sensitivities`` used in the CVA capital path.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-tuple[SaCvaWeightedSensitivity, ...]
-    Result of ``compute_weighted_sensitivities`` for audit and downstream aggregation."""
+    Returns
+    -------
+    tuple[SaCvaWeightedSensitivity, ...]
+        Result of ``compute_weighted_sensitivities`` for audit and downstream aggregation."""
 
     if not sensitivities:
         return ()
@@ -611,15 +611,15 @@ def sort_weighted_sensitivities(
 ) -> tuple[SaCvaWeightedSensitivity, ...]:
     """Return weighted sensitivities in deterministic order.
 
-Parameters
-----------
-weighted_sensitivities :
-    Net and hedge-weighted SA-CVA sensitivities validated for bucket aggregation.
+    Parameters
+    ----------
+    weighted_sensitivities :
+        Net and hedge-weighted SA-CVA sensitivities validated for bucket aggregation.
 
-Returns
--------
-tuple[SaCvaWeightedSensitivity, ...]
-    Result of ``sort_weighted_sensitivities`` for audit and downstream aggregation."""
+    Returns
+    -------
+    tuple[SaCvaWeightedSensitivity, ...]
+        Result of ``sort_weighted_sensitivities`` for audit and downstream aggregation."""
 
     return tuple(
         sorted(

@@ -19,26 +19,26 @@ def assess_cva_capital_impact(
 ) -> CapitalImpact:
     """Return the capital delta between two results (finite-difference method).
 
-The returned :class:`~frtb_common.impact.CapitalImpact` carries:
+    The returned :class:`~frtb_common.impact.CapitalImpact` carries:
 
-* ``component = "frtb_cva"``
-* ``method = ImpactMethod.FINITE_DIFFERENCE``
-* ``baseline_input_hash`` / ``candidate_input_hash`` from the respective
-  :attr:`CvaCapitalResult.input_hash` fields.
-* ``baseline_profile_hash`` / ``candidate_profile_hash`` from the
-  respective :attr:`CvaCapitalResult.profile_hash` fields.
+    * ``component = "frtb_cva"``
+    * ``method = ImpactMethod.FINITE_DIFFERENCE``
+    * ``baseline_input_hash`` / ``candidate_input_hash`` from the respective
+      :attr:`CvaCapitalResult.input_hash` fields.
+    * ``baseline_profile_hash`` / ``candidate_profile_hash`` from the
+      respective :attr:`CvaCapitalResult.profile_hash` fields.
 
-    Parameters
-    ----------
-    baseline : CvaCapitalResult
-        Reference CVA capital result for the impact comparison.
-    candidate : CvaCapitalResult
-        Candidate CVA capital result whose delta is measured.
+        Parameters
+        ----------
+        baseline : CvaCapitalResult
+            Reference CVA capital result for the impact comparison.
+        candidate : CvaCapitalResult
+            Candidate CVA capital result whose delta is measured.
 
-    Returns
-    -------
-    CapitalImpact
-        Finite-difference impact record with input and profile hashes for both runs.
+        Returns
+        -------
+        CapitalImpact
+            Finite-difference impact record with input and profile hashes for both runs.
     """
     return CapitalImpact(
         baseline_run_id=baseline.run_id,

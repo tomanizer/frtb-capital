@@ -35,18 +35,18 @@ def assess_hedge_eligibility(
 ) -> HedgeEligibilityDecision:
     """Return an explicit eligibility decision without applying capital benefit.
 
-Parameters
-----------
-hedge :
-    Input for ``assess_hedge_eligibility`` used in the CVA capital path.
+    Parameters
+    ----------
+    hedge :
+        Input for ``assess_hedge_eligibility`` used in the CVA capital path.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-HedgeEligibilityDecision
-    Result of ``assess_hedge_eligibility`` for audit and downstream aggregation."""
+    Returns
+    -------
+    HedgeEligibilityDecision
+        Result of ``assess_hedge_eligibility`` for audit and downstream aggregation."""
 
     if hedge.eligibility is HedgeEligibility.INELIGIBLE:
         return HedgeEligibilityDecision(
@@ -107,18 +107,18 @@ def assess_ba_cva_hedge_eligibility(
 ) -> HedgeEligibilityDecision:
     """Return BA-CVA hedge eligibility for full BA-CVA recognition (MAR50.18-MAR50.19).
 
-Parameters
-----------
-hedge :
-    Input for ``assess_ba_cva_hedge_eligibility`` used in the CVA capital path.
+    Parameters
+    ----------
+    hedge :
+        Input for ``assess_ba_cva_hedge_eligibility`` used in the CVA capital path.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-HedgeEligibilityDecision
-    Result of ``assess_ba_cva_hedge_eligibility`` for audit and downstream aggregation."""
+    Returns
+    -------
+    HedgeEligibilityDecision
+        Result of ``assess_ba_cva_hedge_eligibility`` for audit and downstream aggregation."""
 
     if hedge.hedge_type not in _BA_CVA_ELIGIBLE_TYPES:
         return HedgeEligibilityDecision(
@@ -158,18 +158,18 @@ def eligible_sa_cva_hedge_ids(
 ) -> frozenset[str]:
     """Return hedge ids eligible to contribute SA-CVA hedge sensitivities.
 
-Parameters
-----------
-hedges :
-    Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+    Parameters
+    ----------
+    hedges :
+        Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-frozenset[str]
-    Result of ``eligible_sa_cva_hedge_ids`` for audit and downstream aggregation."""
+    Returns
+    -------
+    frozenset[str]
+        Result of ``eligible_sa_cva_hedge_ids`` for audit and downstream aggregation."""
 
     eligible: set[str] = set()
     for hedge in hedges:

@@ -69,15 +69,15 @@ _BASEL_SUPPORTED_SA_CVA_RISK_CLASSES = frozenset(SaCvaRiskClass)
 def get_cva_rule_profile(profile: CvaRegulatoryProfile | str) -> CvaRuleProfile:
     """Return supported CVA profile metadata or fail closed.
 
-Parameters
-----------
-profile :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-CvaRuleProfile
-    Result of ``get_cva_rule_profile`` for audit and downstream aggregation."""
+    Returns
+    -------
+    CvaRuleProfile
+        Result of ``get_cva_rule_profile`` for audit and downstream aggregation."""
 
     resolved = resolve_cva_profile(profile)
     metadata = SUPPORTED_PROFILE_METADATA[resolved]
@@ -106,15 +106,15 @@ CvaRuleProfile
 def resolve_cva_profile(profile: CvaRegulatoryProfile | str) -> CvaRegulatoryProfile:
     """Normalise and reject unsupported CVA profiles.
 
-Parameters
-----------
-profile :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-CvaRegulatoryProfile
-    Result of ``resolve_cva_profile`` for audit and downstream aggregation."""
+    Returns
+    -------
+    CvaRegulatoryProfile
+        Result of ``resolve_cva_profile`` for audit and downstream aggregation."""
 
     try:
         resolved = CvaRegulatoryProfile(profile)
@@ -136,15 +136,15 @@ CvaRegulatoryProfile
 def profile_content_hash(profile: CvaRegulatoryProfile | str) -> str:
     """Return the deterministic content hash for a supported profile.
 
-Parameters
-----------
-profile :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    Parameters
+    ----------
+    profile :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-str
-    Result of ``profile_content_hash`` for audit and downstream aggregation."""
+    Returns
+    -------
+    str
+        Result of ``profile_content_hash`` for audit and downstream aggregation."""
 
     return get_cva_rule_profile(profile).content_hash
 

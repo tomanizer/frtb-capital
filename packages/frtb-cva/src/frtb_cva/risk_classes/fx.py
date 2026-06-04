@@ -70,27 +70,27 @@ def calculate_fx_delta_capital(
 ) -> SaCvaRiskClassCapital:
     """Calculate SA-CVA FX delta capital per MAR50.59-MAR50.61.
 
-Parameters
-----------
-sensitivities :
-    Raw SA-CVA sensitivities prior to weighting.
+    Parameters
+    ----------
+    sensitivities :
+        Raw SA-CVA sensitivities prior to weighting.
 
-hedges, optional :
-    Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+    hedges, optional :
+        Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
 
-m_cva, optional :
-    SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
+    m_cva, optional :
+        SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
 
-reporting_currency, optional :
-    Input for ``calculate_fx_delta_capital`` used in the CVA capital path.
+    reporting_currency, optional :
+        Input for ``calculate_fx_delta_capital`` used in the CVA capital path.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-SaCvaRiskClassCapital
-    Result of ``calculate_fx_delta_capital`` for audit and downstream aggregation."""
+    Returns
+    -------
+    SaCvaRiskClassCapital
+        Result of ``calculate_fx_delta_capital`` for audit and downstream aggregation."""
 
     if not sensitivities:
         raise CvaInputError("FX delta requires at least one sensitivity", field="sensitivities")
@@ -114,27 +114,27 @@ def calculate_fx_vega_capital(
 ) -> SaCvaRiskClassCapital:
     """Calculate SA-CVA FX vega capital per MAR50.62.
 
-Parameters
-----------
-sensitivities :
-    Raw SA-CVA sensitivities prior to weighting.
+    Parameters
+    ----------
+    sensitivities :
+        Raw SA-CVA sensitivities prior to weighting.
 
-hedges, optional :
-    Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+    hedges, optional :
+        Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
 
-m_cva, optional :
-    SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
+    m_cva, optional :
+        SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
 
-reporting_currency, optional :
-    Input for ``calculate_fx_vega_capital`` used in the CVA capital path.
+    reporting_currency, optional :
+        Input for ``calculate_fx_vega_capital`` used in the CVA capital path.
 
-profile, optional :
-    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
-Returns
--------
-SaCvaRiskClassCapital
-    Result of ``calculate_fx_vega_capital`` for audit and downstream aggregation."""
+    Returns
+    -------
+    SaCvaRiskClassCapital
+        Result of ``calculate_fx_vega_capital`` for audit and downstream aggregation."""
 
     if not sensitivities:
         raise CvaInputError("FX vega requires at least one sensitivity", field="sensitivities")
