@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import count
 
-from frtb_common import jsonable
-
 from frtb_drc._citations import merge_citations
+from frtb_drc._hashing import hash_payload
 from frtb_drc._identifiers import slug_path
 from frtb_drc._netting_helpers import (
     bounded_rejected_group_offsets,
@@ -352,11 +349,7 @@ def securitisation_non_ctp_context_input_hash(
             if position_id in context.securitisation_non_ctp_offset_groups
         },
     }
-    encoded = bytes(
-        json.dumps(jsonable(payload), sort_keys=True, separators=(",", ":")),
-        "utf-8",
-    )
-    return hashlib.sha256(encoded).hexdigest()
+    return hash_payload(payload)
 
 
 def validate_securitisation_non_ctp_context(context: DrcCalculationContext) -> None:
