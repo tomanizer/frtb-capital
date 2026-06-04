@@ -141,8 +141,10 @@ _BASEL_SEC_NON_CTP_BATCH_CITATIONS = (
     "BASEL_MAR22_34",
     "BASEL_MAR22_35",
 )
-_CTP_GROSS_CITATIONS = ("US_NPR_210_D_1", "BASEL_MAR22_36", "BASEL_MAR22_37")
-_CTP_NETTING_CITATIONS = ("US_NPR_210_D_2", "BASEL_MAR22_39")
+_CTP_GROSS_CITATIONS = ("US_NPR_210_D_1",)
+_BASEL_CTP_GROSS_CITATIONS = ("BASEL_MAR22_36", "BASEL_MAR22_37")
+_CTP_NETTING_CITATIONS = ("US_NPR_210_D_2",)
+_BASEL_CTP_NETTING_CITATIONS = ("BASEL_MAR22_39",)
 _CTP_BATCH_CITATIONS = (
     *_CTP_GROSS_CITATIONS,
     *_CTP_NETTING_CITATIONS,
@@ -150,8 +152,13 @@ _CTP_BATCH_CITATIONS = (
     "US_NPR_210_D_3_IV",
     "US_NPR_210_D_3_IV_D",
     "US_NPR_210_D_3_V",
+)
+_BASEL_CTP_BATCH_CITATIONS = (
+    *_BASEL_CTP_GROSS_CITATIONS,
+    *_BASEL_CTP_NETTING_CITATIONS,
     "BASEL_MAR22_40",
     "BASEL_MAR22_41",
+    "BASEL_MAR22_42",
     "BASEL_MAR22_44",
     "BASEL_MAR22_45",
 )
@@ -703,7 +710,7 @@ def calculate_drc_capital_from_batch(
             ),
         )
         category = calculate_ctp_category_drc(ctp_capital_inputs, profile_id=profile.profile_id)
-        formula_citations = (*_CTP_BATCH_CITATIONS, maturity_citation)
+        formula_citations = (*_ctp_batch_citations(profile.profile_id), maturity_citation)
     else:  # pragma: no cover - _batch_risk_class only returns known enum values.
         raise DrcInputError(f"unsupported DRC batch risk_class: {risk_class.value}")
 
@@ -1307,7 +1314,7 @@ def _calculate_ctp_net_jtds_from_arrays(
             "CTP netting used exact exposure identity or explicit replication group evidence"
         ),
         rejected_reason_code="CTP_OFFSET_REQUIRES_EXACT_MATCH_OR_EXPLICIT_REPLICATION",
-        netting_citations=_CTP_NETTING_CITATIONS,
+        netting_citations=_ctp_netting_citations(context.profile_id),
     )
 
 
@@ -1844,6 +1851,11 @@ def _collect_batch_citations(
 def _batch_api_citations(profile_id: str, risk_class: DrcRiskClass) -> tuple[str, ...]:
     if profile_id == BASEL_MAR22_PROFILE_ID and risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
         return _BASEL_SEC_NON_CTP_BATCH_CITATIONS
+    if (
+        profile_id == BASEL_MAR22_PROFILE_ID
+        and risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
+    ):
+        return _BASEL_CTP_BATCH_CITATIONS
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return ()
     return ("US_NPR_210_SCOPE",)
@@ -2084,6 +2096,18 @@ def _sec_non_ctp_batch_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_SEC_NON_CTP_BATCH_CITATIONS
     return _SEC_NON_CTP_BATCH_CITATIONS
+
+
+def _ctp_netting_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_CTP_NETTING_CITATIONS
+    return _CTP_NETTING_CITATIONS
+
+
+def _ctp_batch_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_CTP_BATCH_CITATIONS
+    return _CTP_BATCH_CITATIONS
 
 
 def _branch_citations(branches: tuple[BranchMetadata, ...]) -> set[str]:

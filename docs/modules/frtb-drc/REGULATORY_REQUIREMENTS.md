@@ -142,9 +142,10 @@ for MAR22.12, MAR22.15-MAR22.18, MAR22.22, and MAR22.24. Basel MAR22
 securitisation non-CTP row and batch paths are implemented for MAR22.27-MAR22.35
 with MAR22.31 bucket mappings, MAR22.34 typed banking-book securitisation
 risk-weight evidence, MAR22.34 profile-controlled fair-value cap evidence, and
-MAR22.35 category aggregation. Basel MAR22 CTP fails closed pending MAR22.42
-banking-book securitisation mappings and internal decomposition contracts. U.S.
-NPR 2.0 securitisation non-CTP and CTP paths can consume typed
+MAR22.35 category aggregation. Basel MAR22 CTP row and batch paths are
+implemented for MAR22.36-MAR22.45 with typed MAR22.42 banking-book
+securitisation risk-weight and decomposition evidence. U.S. NPR 2.0
+securitisation non-CTP and CTP paths can consume typed
 `DrcRiskWeightEvidence` records carrying source profile, source table, source
 method, effective risk weight, lineage, and citations. U.S. NPR 2.0 and Basel
 MAR22 securitisation non-CTP can also consume typed `DrcFairValueCapEvidence`

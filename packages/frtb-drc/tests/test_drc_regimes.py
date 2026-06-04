@@ -35,13 +35,14 @@ def test_us_npr_profile_supports_row_drc_risk_classes() -> None:
     assert "BASEL_MAR22_34" in profile.securitisation_non_ctp_fair_value_cap_citation_ids
 
 
-def test_basel_profile_supports_nonsec_and_securitisation_non_ctp() -> None:
+def test_basel_profile_supports_nonsec_securitisation_non_ctp_and_ctp() -> None:
     profile = get_rule_profile(BASEL_MAR22_PROFILE_ID)
 
     assert profile.supported_risk_classes == frozenset(
         {
             DrcRiskClass.NON_SECURITISATION,
             DrcRiskClass.SECURITISATION_NON_CTP,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         }
     )
     assert "BASEL_MAR22_24" in profile.citations
@@ -50,8 +51,7 @@ def test_basel_profile_supports_nonsec_and_securitisation_non_ctp() -> None:
     assert profile.securitisation_non_ctp_fair_value_cap_citation_ids == ("BASEL_MAR22_34",)
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
     ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=r"MAR22\.42"):
-        ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
+    ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
 @pytest.mark.parametrize("profile_id", [EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID])
@@ -90,7 +90,7 @@ def test_supported_risk_class_passes_gate() -> None:
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
-def test_profile_support_matrix_marks_basel_securitisation_non_ctp_supported() -> None:
+def test_profile_support_matrix_marks_basel_securitisation_and_ctp_supported() -> None:
     cells = {(cell.profile_id, cell.risk_class): cell for cell in drc_profile_support_matrix()}
 
     basel_sec = cells[(BASEL_MAR22_PROFILE_ID, DrcRiskClass.SECURITISATION_NON_CTP)]
@@ -99,8 +99,9 @@ def test_profile_support_matrix_marks_basel_securitisation_non_ctp_supported() -
     assert basel_sec.status == "SUPPORTED"
     assert "BASEL_MAR22_34" in basel_sec.citation_ids
     assert basel_sec.next_step == "Maintain Basel-specific typed evidence fixtures."
-    assert basel_ctp.status == "FAIL_CLOSED"
+    assert basel_ctp.status == "SUPPORTED"
     assert "BASEL_MAR22_42" in basel_ctp.citation_ids
+    assert basel_ctp.next_step == "Maintain Basel-specific CTP typed evidence fixtures."
 
 
 def test_profile_support_matrix_covers_every_known_profile_path() -> None:

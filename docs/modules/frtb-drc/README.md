@@ -6,13 +6,12 @@
 
 - Package directory: `packages/frtb-drc`
 - Import name: `frtb_drc`
-- Implementation status: partial runtime; supported U.S. NPR 2.0 row/batch paths and Basel MAR22 non-securitisation plus securitisation non-CTP row/batch paths
+- Implementation status: partial runtime; supported U.S. NPR 2.0 and Basel MAR22 row/batch paths for non-securitisation, securitisation non-CTP, and CTP
 - Validation status: pending
 
 The package is importable and exposes `calculate_drc_capital` for supported
-U.S. NPR 2.0 non-securitisation, securitisation non-CTP, and CTP canonical
-inputs, plus Basel MAR22 non-securitisation and securitisation non-CTP
-canonical inputs. The current runtime covers gross JTD, maturity scaling,
+U.S. NPR 2.0 and Basel MAR22 non-securitisation, securitisation non-CTP, and
+CTP canonical inputs. The current runtime covers gross JTD, maturity scaling,
 seniority-aware non-securitisation netting, securitisation same-tranche and
 replication-group netting, CTP replication-group netting, hedge benefit ratio,
 bucket/category capital, reconciliation, attribution records, and audit
@@ -24,11 +23,11 @@ fail closed when classes are mixed.
 Known profiles are `US_NPR_2_0`, `BASEL_MAR22`, `EU_CRR3`, and
 `PRA_UK_CRR`. Basel MAR22 securitisation non-CTP is supported through cited
 MAR22.31-MAR22.35 bucket, risk-weight evidence, fair-value cap, HBR, and
-category aggregation contracts. Basel MAR22 CTP fails closed until MAR22.42
-banking-book securitisation mappings and decomposition contracts are
-implemented. EU CRR3 and UK PRA profiles are known identities but fail closed
-for all DRC risk classes until Article 325w / PRA PS1/26 rulebook mappings are
-implemented.
+category aggregation contracts. Basel MAR22 CTP is supported through cited
+MAR22.36-MAR22.45 CTP contracts and typed MAR22.42 banking-book
+securitisation risk-weight evidence. EU CRR3 and UK PRA profiles are known
+identities but fail closed for all DRC risk classes until Article 325w / PRA
+PS1/26 rulebook mappings are implemented.
 Securitisation non-CTP and CTP sub-scope without supplied risk weights or
 explicit replication evidence also fails closed.
 

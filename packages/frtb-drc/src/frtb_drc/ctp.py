@@ -30,25 +30,37 @@ from frtb_drc.data_models import (
     RejectedOffset,
 )
 from frtb_drc.maturity import scale_gross_jtds
-from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.regimes import (
+    BASEL_MAR22_PROFILE_ID,
+    US_NPR_2_0_PROFILE_ID,
+    ensure_risk_class_supported,
+    get_rule_profile,
+)
 from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
     risk_weight_evidence_hash_payload,
 )
 from frtb_drc.validation import DrcInputError, validate_position
 
-_GROSS_CITATIONS = ("US_NPR_210_D_1", "BASEL_MAR22_36", "BASEL_MAR22_37")
-_NETTING_CITATIONS = ("US_NPR_210_D_2", "BASEL_MAR22_39")
-_BUCKET_CITATIONS = (
+_US_NPR_GROSS_CITATIONS = ("US_NPR_210_D_1",)
+_BASEL_GROSS_CITATIONS = ("BASEL_MAR22_36", "BASEL_MAR22_37")
+_US_NPR_NETTING_CITATIONS = ("US_NPR_210_D_2",)
+_BASEL_NETTING_CITATIONS = ("BASEL_MAR22_39",)
+_US_NPR_BUCKET_CITATIONS = (
     "US_NPR_210_D_3_I_III",
     "US_NPR_210_D_3_IV",
     "US_NPR_210_D_3_IV_D",
+)
+_BASEL_BUCKET_CITATIONS = (
     "BASEL_MAR22_40",
     "BASEL_MAR22_41",
+    "BASEL_MAR22_42",
     "BASEL_MAR22_44",
 )
-_HBR_CITATIONS = ("US_NPR_210_D_3_IV", "BASEL_MAR22_44")
-_CATEGORY_CITATIONS = ("US_NPR_210_D_3_V", "BASEL_MAR22_45")
+_US_NPR_HBR_CITATIONS = ("US_NPR_210_D_3_IV",)
+_BASEL_HBR_CITATIONS = ("BASEL_MAR22_44",)
+_US_NPR_CATEGORY_CITATIONS = ("US_NPR_210_D_3_V",)
+_BASEL_CATEGORY_CITATIONS = ("BASEL_MAR22_45",)
 
 
 @dataclass(frozen=True)
@@ -98,7 +110,7 @@ def calculate_ctp_drc(
             gross_jtds=(),
             maturity_scaled_jtds=(),
             net_jtds=(),
-            category=_zero_ctp_category(),
+            category=_zero_ctp_category(profile_id=profile_id),
         )
     _validate_ctp_context(records, context=context)
     gross_jtds = tuple(
@@ -175,7 +187,7 @@ def calculate_ctp_gross_jtd(
         notional=abs(position.notional),
         pnl_component=0.0,
         gross_jtd=abs(position.market_value),
-        citations=merge_citations((*_GROSS_CITATIONS, *position.citation_ids)),
+        citations=merge_citations((*_ctp_gross_citations(profile_id), *position.citation_ids)),
     )
 
 
@@ -195,11 +207,14 @@ def calculate_ctp_net_jtds(
         key = (exposure.gross_jtd.bucket_key, exposure.offset_group)
         grouped.setdefault(key, []).append(exposure)
 
-    rejected_by_bucket = _rejected_ctp_offsets(records)
+    rejected_by_bucket = _rejected_ctp_offsets(records, profile_id=profile_id)
     net_records: list[NetJtd] = []
     for key in sorted(grouped):
         record = _net_ctp_group(
-            key, grouped[key], rejected_offsets=rejected_by_bucket.get(key[0], ())
+            key,
+            grouped[key],
+            rejected_offsets=rejected_by_bucket.get(key[0], ()),
+            profile_id=profile_id,
         )
         if record is not None:
             net_records.append(record)
@@ -217,15 +232,20 @@ def calculate_ctp_category_drc(
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
     records = tuple(inputs)
     if not records:
-        return _zero_ctp_category()
+        return _zero_ctp_category(profile_id=profile_id)
 
-    hbr = _ctp_hbr(records)
+    hbr = _ctp_hbr(records, profile_id=profile_id)
     grouped: dict[str, list[CtpCapitalInput]] = {}
     for record in records:
         grouped.setdefault(record.net_jtd.bucket_key, []).append(record)
 
     bucket_results = tuple(
-        _ctp_bucket_drc(bucket_key=bucket_key, records=grouped[bucket_key], hbr=hbr)
+        _ctp_bucket_drc(
+            bucket_key=bucket_key,
+            records=grouped[bucket_key],
+            hbr=hbr,
+            profile_id=profile_id,
+        )
         for bucket_key in sorted(grouped)
     )
     aggregated = sum(
@@ -243,7 +263,7 @@ def calculate_ctp_category_drc(
                 "CTP category aggregates positive bucket DRC at 100 percent and "
                 "negative bucket DRC at 50 percent"
             ),
-            citations=_CATEGORY_CITATIONS,
+            citations=_ctp_category_citations(profile_id),
         ),
     )
     if floor_applied:
@@ -255,7 +275,7 @@ def calculate_ctp_category_drc(
                 source_id=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO.value,
                 selected=True,
                 reason="CTP category DRC is floored at zero after cross-index aggregation",
-                citations=_CATEGORY_CITATIONS,
+                citations=_ctp_category_citations(profile_id),
             ),
         )
 
@@ -370,7 +390,7 @@ def _ctp_capital_inputs(
     return tuple(inputs)
 
 
-def _ctp_hbr(records: tuple[CtpCapitalInput, ...]) -> HedgeBenefitRatio:
+def _ctp_hbr(records: tuple[CtpCapitalInput, ...], *, profile_id: str) -> HedgeBenefitRatio:
     net_jtds = tuple(record.net_jtd for record in records)
     aggregate_long = sum(
         record.net_amount
@@ -393,7 +413,7 @@ def _ctp_hbr(records: tuple[CtpCapitalInput, ...]) -> HedgeBenefitRatio:
                 source_id=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO.value,
                 selected=True,
                 reason="CTP aggregate net long and net short default exposures are both zero",
-                citations=_HBR_CITATIONS,
+                citations=_ctp_hbr_citations(profile_id),
             ),
         )
     else:
@@ -405,7 +425,7 @@ def _ctp_hbr(records: tuple[CtpCapitalInput, ...]) -> HedgeBenefitRatio:
         aggregate_net_short=aggregate_short,
         denominator=denominator,
         ratio=ratio,
-        citations=_HBR_CITATIONS,
+        citations=_ctp_hbr_citations(profile_id),
         branch_metadata=branch_metadata,
     )
 
@@ -415,6 +435,7 @@ def _ctp_bucket_drc(
     bucket_key: str,
     records: list[CtpCapitalInput],
     hbr: HedgeBenefitRatio,
+    profile_id: str,
 ) -> BucketDrc:
     weighted_long = 0.0
     weighted_short = 0.0
@@ -449,7 +470,7 @@ def _ctp_bucket_drc(
         capital=bucket_capital,
         floor_applied=False,
         net_jtd_ids=tuple(net_jtd_ids),
-        citations=_BUCKET_CITATIONS,
+        citations=_ctp_bucket_citations(profile_id),
         branch_metadata=(
             BranchMetadata(
                 branch_id=f"bucket-ctp-no-floor-{slug_path(bucket_key)}",
@@ -457,7 +478,7 @@ def _ctp_bucket_drc(
                 source_id=bucket_key,
                 selected=True,
                 reason="CTP bucket DRC is not floored at zero",
-                citations=("US_NPR_210_D_3_IV", "BASEL_MAR22_44"),
+                citations=_ctp_hbr_citations(profile_id),
             ),
         ),
     )
@@ -468,6 +489,7 @@ def _net_ctp_group(
     exposures: list[CtpNettingInput],
     *,
     rejected_offsets: tuple[RejectedOffset, ...],
+    profile_id: str,
 ) -> NetJtd | None:
     bucket_key, group_key = key
     gross_long = sum(
@@ -523,7 +545,7 @@ def _net_ctp_group(
                     "CTP netting used exact exposure identity or explicit replication "
                     "group evidence"
                 ),
-                citations=_NETTING_CITATIONS,
+                citations=_ctp_netting_citations(profile_id),
             ),
         ),
     )
@@ -531,6 +553,8 @@ def _net_ctp_group(
 
 def _rejected_ctp_offsets(
     exposures: tuple[CtpNettingInput, ...],
+    *,
+    profile_id: str,
 ) -> dict[str, tuple[RejectedOffset, ...]]:
     grouped: dict[str, list[CtpNettingInput]] = {}
     for exposure in exposures:
@@ -560,7 +584,7 @@ def _rejected_ctp_offsets(
             sequence=sequence,
             representative=_representative_scaled_jtd_id,
             reason_code="CTP_OFFSET_REQUIRES_EXACT_MATCH_OR_EXPLICIT_REPLICATION",
-            citations=_NETTING_CITATIONS,
+            citations=_ctp_netting_citations(profile_id),
         )
         if rejected:
             rejected_by_bucket[bucket_key] = tuple(rejected)
@@ -591,7 +615,7 @@ def _validate_ctp_net_jtd(net_jtd: NetJtd, *, bucket_key: str) -> None:
     require_finite_non_negative(net_jtd.net_amount, f"net JTD amount {net_jtd.net_jtd_id}")
 
 
-def _zero_ctp_category() -> CategoryDrc:
+def _zero_ctp_category(*, profile_id: str = US_NPR_2_0_PROFILE_ID) -> CategoryDrc:
     return CategoryDrc(
         category_id="category-drc-ctp",
         risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
@@ -604,10 +628,40 @@ def _zero_ctp_category() -> CategoryDrc:
                 source_id=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO.value,
                 selected=True,
                 reason="all supported CTP net JTD records are zero",
-                citations=_CATEGORY_CITATIONS,
+                citations=_ctp_category_citations(profile_id),
             ),
         ),
     )
+
+
+def _ctp_gross_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_GROSS_CITATIONS
+    return _US_NPR_GROSS_CITATIONS
+
+
+def _ctp_netting_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_NETTING_CITATIONS
+    return _US_NPR_NETTING_CITATIONS
+
+
+def _ctp_bucket_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_BUCKET_CITATIONS
+    return _US_NPR_BUCKET_CITATIONS
+
+
+def _ctp_hbr_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_HBR_CITATIONS
+    return _US_NPR_HBR_CITATIONS
+
+
+def _ctp_category_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_CATEGORY_CITATIONS
+    return _US_NPR_CATEGORY_CITATIONS
 
 
 def _offset_group(position: DrcPosition, *, context: DrcCalculationContext) -> str:

@@ -7,16 +7,15 @@ suite.
 
 The package exposes `calculate_drc_capital` for supported U.S. NPR 2.0
 non-securitisation, securitisation non-CTP, and correlation trading portfolio
-(CTP) paths, plus cited Basel MAR22 non-securitisation and securitisation
-non-CTP paths. EU CRR3 and PRA_UK_CRR profile identities are known but fail
-closed until cited mappings exist. Unsupported scope must not emit zero or
+(CTP) paths, plus cited Basel MAR22 non-securitisation, securitisation
+non-CTP, and CTP paths. EU CRR3 and PRA_UK_CRR profile identities are known but
+fail closed until cited mappings exist. Unsupported scope must not emit zero or
 placeholder capital.
 
 | Area | Status |
 | --- | --- |
 | U.S. NPR 2.0 non-sec / sec non-CTP / CTP | Implemented row and Arrow batch paths |
-| Basel MAR22 non-sec / sec non-CTP | Implemented row and Arrow batch paths |
-| Basel MAR22 CTP | Fail-closed until cited contracts land |
+| Basel MAR22 non-sec / sec non-CTP / CTP | Implemented row and Arrow batch paths; securitisation and CTP require typed risk-weight evidence |
 | EU CRR3 / PRA_UK_CRR | Fail-closed profile identities |
 
 Outputs are engineering and validation evidence, not final regulatory capital.

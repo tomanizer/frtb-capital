@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 from frtb_drc import (
+    BASEL_MAR22_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     DefaultDirection,
     DrcCalculationContext,
@@ -71,6 +72,65 @@ def test_ctp_consumes_cited_risk_weight_evidence() -> None:
     assert result.risk_weight_evidence[0].source_method == "upstream-ctp-securitisation"
 
 
+def test_basel_ctp_consumes_cited_risk_weight_evidence_without_us_citations() -> None:
+    position = replace(
+        _ctp_position(
+            "basel-long-evidence",
+            DefaultDirection.LONG,
+            market_value=125.0,
+            bucket_key="CDX_NA_IG",
+            index_series_id="CDX.NA.IG.S18",
+            tranche_id="10-15",
+        ),
+        citation_ids=("BASEL_MAR22_36", "BASEL_MAR22_42"),
+    )
+    evidence = _risk_weight_evidence(
+        position,
+        risk_weight=0.2,
+        source_profile_id=BASEL_MAR22_PROFILE_ID,
+        source_table="BASEL_MAR22_CTP_BANKING_BOOK_SECURITISATION_RW",
+        source_method="upstream-basel-ctp-decomposition",
+        citation_ids=("BASEL_MAR22_42",),
+    )
+
+    result = calculate_drc_capital(
+        (position,),
+        context=_context(
+            profile_id=BASEL_MAR22_PROFILE_ID,
+            ctp_risk_weight_evidence=risk_weight_evidence_by_position((evidence,)),
+        ),
+    )
+
+    assert result.total_drc == pytest.approx(25.0)
+    assert result.risk_weight_evidence == (evidence,)
+    assert "BASEL_MAR22_42" in result.citations
+    assert "BASEL_MAR22_45" in result.citations
+    assert not any(citation.startswith("US_NPR") for citation in result.citations)
+
+
+def test_basel_ctp_rejects_legacy_float_risk_weight_map() -> None:
+    position = replace(
+        _ctp_position(
+            "basel-legacy-weight",
+            DefaultDirection.LONG,
+            market_value=125.0,
+            bucket_key="CDX_NA_IG",
+            index_series_id="CDX.NA.IG.S18",
+            tranche_id="10-15",
+        ),
+        citation_ids=("BASEL_MAR22_36", "BASEL_MAR22_42"),
+    )
+
+    with pytest.raises(DrcInputError, match="legacy float maps are only supported"):
+        calculate_drc_capital(
+            (position,),
+            context=_context(
+                profile_id=BASEL_MAR22_PROFILE_ID,
+                ctp_risk_weights={position.position_id: 0.2},
+            ),
+        )
+
+
 def test_ctp_stale_evidence_fails_closed() -> None:
     position = _ctp_position(
         "stale-evidence",
@@ -108,6 +168,24 @@ def test_ctp_fixture_cross_tranche_replication_matches_hand_checked_expected() -
         branch.branch_id == "category-ctp-cross-index-aggregation"
         for branch in result.categories[0].branch_metadata
     )
+    validate_reconciliation(result)
+
+
+def test_basel_ctp_fixture_cross_tranche_replication_matches_hand_checked_expected() -> None:
+    fixture = _load_basel_ctp_fixture()
+
+    result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
+    expected = fixture["expected"]
+    buckets = {bucket.bucket_key: bucket for bucket in result.categories[0].bucket_results}
+
+    assert result.input_count == expected["input_count"]
+    assert result.total_drc == pytest.approx(expected["total_drc"])
+    assert result.categories[0].capital == pytest.approx(expected["category_capital"])
+    assert buckets["CDX_NA_IG"].capital == pytest.approx(expected["buckets"]["CDX_NA_IG"])
+    assert buckets["CDX_HY"].capital == pytest.approx(expected["buckets"]["CDX_HY"])
+    assert len(result.risk_weight_evidence) == result.input_count
+    assert "BASEL_MAR22_42" in result.citations
+    assert not any(citation.startswith("US_NPR") for citation in result.citations)
     validate_reconciliation(result)
 
 
@@ -247,6 +325,7 @@ def test_ctp_net_group_rejects_mixed_risk_weights() -> None:
 
 def _context(
     *,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
     ctp_risk_weights: dict[str, float] | None = None,
     ctp_risk_weight_evidence: dict[str, DrcRiskWeightEvidence] | None = None,
     ctp_offset_groups: dict[str, str] | None = None,
@@ -255,7 +334,7 @@ def _context(
         run_id="run-ctp",
         calculation_date=date(2026, 5, 29),
         base_currency="USD",
-        profile_id=US_NPR_2_0_PROFILE_ID,
+        profile_id=profile_id,
         ctp_risk_weights={} if ctp_risk_weights is None else ctp_risk_weights,
         ctp_risk_weight_evidence={}
         if ctp_risk_weight_evidence is None
@@ -310,14 +389,18 @@ def _risk_weight_evidence(
     position: DrcPosition,
     *,
     risk_weight: float,
+    source_profile_id: str = US_NPR_2_0_PROFILE_ID,
+    source_table: str = "US_NPR_CTP_RW",
+    source_method: str = "upstream-ctp-securitisation",
+    citation_ids: tuple[str, ...] = ("US_NPR_210_D_3_IV_D",),
     is_stale: bool = False,
 ) -> DrcRiskWeightEvidence:
     return DrcRiskWeightEvidence(
         position_id=position.position_id,
         risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
-        source_profile_id=US_NPR_2_0_PROFILE_ID,
-        source_table="US_NPR_CTP_RW",
-        source_method="upstream-ctp-securitisation",
+        source_profile_id=source_profile_id,
+        source_table=source_table,
+        source_method=source_method,
         effective_risk_weight=risk_weight,
         as_of_date=date(2026, 5, 29),
         source_id="ctp-rw-source",
@@ -327,13 +410,21 @@ def _risk_weight_evidence(
             source_row_id=f"rw-{position.position_id}",
             source_column_map={"effective_risk_weight": "risk_weight"},
         ),
-        citation_ids=("US_NPR_210_D_3_IV_D",),
+        citation_ids=citation_ids,
         is_stale=is_stale,
     )
 
 
 def _load_ctp_fixture() -> dict[str, Any]:
-    fixture_dir = Path(__file__).resolve().parent / "fixtures" / "drc_ctp_v1"
+    return _load_ctp_fixture_named("drc_ctp_v1")
+
+
+def _load_basel_ctp_fixture() -> dict[str, Any]:
+    return _load_ctp_fixture_named("drc_basel_ctp_v1")
+
+
+def _load_ctp_fixture_named(fixture_name: str) -> dict[str, Any]:
+    fixture_dir = Path(__file__).resolve().parent / "fixtures" / fixture_name
     payload = json.loads((fixture_dir / "positions.json").read_text(encoding="utf-8"))
     expected = json.loads((fixture_dir / "expected_outputs.json").read_text(encoding="utf-8"))
     context_raw = payload["context"]
@@ -343,10 +434,37 @@ def _load_ctp_fixture() -> dict[str, Any]:
         calculation_date=date.fromisoformat(context_raw["calculation_date"]),
         base_currency=context_raw["base_currency"],
         profile_id=context_raw["profile_id"],
-        ctp_risk_weights=context_raw["ctp_risk_weights"],
-        ctp_offset_groups=context_raw["ctp_offset_groups"],
+        ctp_risk_weights=context_raw.get("ctp_risk_weights", {}),
+        ctp_risk_weight_evidence=risk_weight_evidence_by_position(
+            _risk_weight_evidence_from_dict(raw)
+            for raw in context_raw.get("ctp_risk_weight_evidence", ())
+        ),
+        ctp_offset_groups=context_raw.get("ctp_offset_groups", {}),
     )
     return {"positions": positions, "context": context, "expected": expected}
+
+
+def _risk_weight_evidence_from_dict(raw: dict[str, Any]) -> DrcRiskWeightEvidence:
+    lineage = raw["lineage"]
+    return DrcRiskWeightEvidence(
+        position_id=raw["position_id"],
+        risk_class=raw["risk_class"],
+        source_profile_id=raw["source_profile_id"],
+        source_table=raw["source_table"],
+        source_method=raw["source_method"],
+        effective_risk_weight=float(raw["effective_risk_weight"]),
+        as_of_date=date.fromisoformat(raw["as_of_date"]),
+        source_id=raw["source_id"],
+        lineage=DrcSourceLineage(
+            source_system=lineage["source_system"],
+            source_file=lineage["source_file"],
+            source_row_id=lineage["source_row_id"],
+            source_column_map=dict(lineage.get("source_column_map") or {}),
+        ),
+        citation_ids=tuple(raw["citation_ids"]),
+        is_stale=bool(raw.get("is_stale", False)),
+        validation_flags=tuple(raw.get("validation_flags", ())),
+    )
 
 
 def _position_from_dict(raw: dict[str, Any]) -> DrcPosition:

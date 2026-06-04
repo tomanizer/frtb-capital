@@ -16,6 +16,8 @@ The committed fixture packs are:
   with typed MAR22.34 risk-weight evidence and fair-value cap evidence.
 - `drc_ctp_v1/`: static U.S. NPR 2.0 CTP cases with replicated tranche and
   index-offset treatment.
+- `drc_basel_ctp_v1/`: static Basel MAR22 CTP cases with typed MAR22.42
+  risk-weight evidence and replicated tranche/index-offset treatment.
 - `handoff/`: minimal Parquet tables for the package Arrow handoff path.
 
 ## Boundary
@@ -73,6 +75,13 @@ path for all DRC classes.
   offset-group inputs.
 - `expected_outputs.json`: expected total and selected outputs.
 - `README.md`: hand-checked CTP HBR and bucket-capital calculation.
+
+`packages/frtb-drc/tests/fixtures/drc_basel_ctp_v1/` contains:
+
+- `positions.json`: static Basel MAR22 CTP positions, context, typed MAR22.42
+  risk-weight evidence, and offset-group inputs.
+- `expected_outputs.json`: expected total and selected outputs.
+- `README.md`: fixture intent and MAR22.42 evidence boundary.
 
 `packages/frtb-drc/tests/fixtures/handoff/` contains minimal Parquet examples
 for the three public Arrow table families:
@@ -196,7 +205,7 @@ synthetic capital:
 - missing FX rates for non-base-currency rows,
 - missing securitisation non-CTP risk weights or typed evidence,
 - stale or incomplete fair-value cap evidence,
-- missing CTP risk weights or offset groups where required,
+- missing CTP risk weights, typed evidence, or offset groups where required,
 - unsupported profile/risk-class combinations,
 - unsupported decomposition evidence.
 
