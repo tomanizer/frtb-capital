@@ -77,7 +77,7 @@ def cva_profile_support_status(
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -96,7 +96,7 @@ def cva_capital_supported_methods(profile: CvaRegulatoryProfile | str) -> frozen
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -117,7 +117,7 @@ def cva_sa_cva_supported_paths(
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -139,7 +139,7 @@ def ensure_cva_profile_method_supported(
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 method :
     Requested CVA calculation method (BA-CVA, SA-CVA, or mixed carve-out)."""
@@ -165,7 +165,7 @@ def ensure_cva_sa_cva_path_supported(
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 risk_class :
     SA-CVA risk class driving aggregation configuration.

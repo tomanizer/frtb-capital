@@ -85,7 +85,7 @@ reporting_currency, optional :
     Input for ``calculate_fx_delta_capital`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -129,7 +129,7 @@ reporting_currency, optional :
     Input for ``calculate_fx_vega_capital`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------

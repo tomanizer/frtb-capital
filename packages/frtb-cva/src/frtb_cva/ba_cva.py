@@ -54,7 +54,7 @@ counterparty :
     Input for ``calculate_netting_set_standalone`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -120,7 +120,7 @@ netting_sets :
     Input for ``calculate_counterparty_standalone`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -198,7 +198,7 @@ netting_sets :
     Input for ``calculate_reduced_portfolio`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -317,7 +317,7 @@ hedges, optional :
     Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------

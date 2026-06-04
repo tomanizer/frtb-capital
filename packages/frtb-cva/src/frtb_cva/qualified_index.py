@@ -41,7 +41,7 @@ sensitivity :
     Single SA-CVA sensitivity row prior to weighting.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------

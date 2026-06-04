@@ -72,7 +72,7 @@ def get_cva_rule_profile(profile: CvaRegulatoryProfile | str) -> CvaRuleProfile:
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -109,7 +109,7 @@ def resolve_cva_profile(profile: CvaRegulatoryProfile | str) -> CvaRegulatoryPro
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -139,7 +139,7 @@ def profile_content_hash(profile: CvaRegulatoryProfile | str) -> str:
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------

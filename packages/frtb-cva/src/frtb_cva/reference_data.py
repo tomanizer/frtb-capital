@@ -384,7 +384,7 @@ citation_id :
     Basel-aligned citation cell key mapped through the active profile.
 
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -421,7 +421,7 @@ citation_ids :
     Basel-aligned citation cell keys mapped in first-seen order.
 
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -446,7 +446,7 @@ def citations_for_profile(
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
@@ -474,12 +474,12 @@ credit_quality :
     Counterparty credit-quality bucket for BA-CVA Table 1.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``ba_cva_risk_weight`` for audit and downstream aggregation."""
+    Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     resolved_sector = _resolve_sector(sector)
@@ -501,12 +501,12 @@ def ba_cva_alpha(
 Parameters
 ----------
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``ba_cva_alpha`` for audit and downstream aggregation."""
+    Result of ``ba_cva_alpha`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_ALPHA, profile_citation_id("basel_mar50_15", resolved_profile)
@@ -520,12 +520,12 @@ def ba_cva_beta(
 Parameters
 ----------
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``ba_cva_beta`` for audit and downstream aggregation."""
+    Result of ``ba_cva_beta`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_BETA, profile_citation_id("basel_mar50_20", resolved_profile)
@@ -544,12 +544,12 @@ relation :
     Hedge-to-reference relation for Table 2 counterparty correlation (MAR50.26).
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``ba_cva_hedge_counterparty_correlation`` for audit and downstream aggregation."""
+    Result of ``ba_cva_hedge_counterparty_correlation`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     if relation not in _HEDGE_REFERENCE_CORRELATIONS:
@@ -572,12 +572,12 @@ def ba_cva_index_risk_weight_scalar(
 Parameters
 ----------
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``ba_cva_index_risk_weight_scalar`` for audit and downstream aggregation."""
+    Result of ``ba_cva_index_risk_weight_scalar`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_INDEX_RW_SCALAR, profile_citation_id("basel_mar50_24", resolved_profile)
@@ -591,12 +591,12 @@ def ba_cva_rho(
 Parameters
 ----------
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``ba_cva_rho`` for audit and downstream aggregation."""
+    Result of ``ba_cva_rho`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_RHO, profile_citation_id("basel_mar50_14", resolved_profile)
@@ -610,12 +610,12 @@ def ba_cva_discount_scalar(
 Parameters
 ----------
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``ba_cva_discount_scalar`` for audit and downstream aggregation."""
+    Result of ``ba_cva_discount_scalar`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return D_BA_CVA, profile_citation_id("basel_mar50_14", resolved_profile)
@@ -632,7 +632,7 @@ maturity :
 Returns
 -------
 tuple[float, str]
-    Result of ``compute_non_imm_discount_factor`` for audit and downstream aggregation."""
+    Regulatory scalar and the profile-specific citation id for audit replay."""
 
     maturity_value = float(maturity)
     if maturity_value <= 0.0:
@@ -674,12 +674,12 @@ discount_factor_explicit, optional :
     Input for ``resolve_netting_set_discount_factor`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str, bool]
-    Result of ``resolve_netting_set_discount_factor`` for audit and downstream aggregation."""
+    Result of ``resolve_netting_set_discount_factor`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     if uses_imm_ead:
@@ -707,12 +707,12 @@ tenor :
     GIRR delta tenor label for risk-weight and correlation lookup.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 SaCvaGirrDeltaRiskWeightRule
-    Result of ``girr_delta_risk_weight_rule`` for audit and downstream aggregation."""
+    Result of ``girr_delta_risk_weight_rule`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     normalised = _require_text(tenor, "tenor")
@@ -749,12 +749,12 @@ tenor :
     GIRR delta tenor label for risk-weight and correlation lookup.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``girr_delta_risk_weight`` for audit and downstream aggregation."""
+    Result of ``girr_delta_risk_weight`` for audit replay."""
 
     rule = girr_delta_risk_weight_rule(tenor, profile=profile)
     return rule.risk_weight, rule.citation_id
@@ -777,12 +777,12 @@ tenor2 :
     Input for ``girr_delta_intra_bucket_correlation`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``girr_delta_intra_bucket_correlation`` for audit and downstream aggregation."""
+    Result of ``girr_delta_intra_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     normalised_tenor1 = _require_text(tenor1, "tenor1")
@@ -814,12 +814,12 @@ def girr_inter_bucket_correlation(
 Parameters
 ----------
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``girr_inter_bucket_correlation`` for audit and downstream aggregation."""
+    Result of ``girr_inter_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return GIRR_INTER_BUCKET_CORRELATION, profile_citation_id(
@@ -834,7 +834,7 @@ def girr_specified_currencies() -> frozenset[str]:
 Returns
 -------
 frozenset[str]
-    Result of ``girr_specified_currencies`` for audit and downstream aggregation."""
+    Result of ``girr_specified_currencies`` for audit replay."""
 
     return GIRR_SPECIFIED_CURRENCIES
 
@@ -853,7 +853,7 @@ reporting_currency :
 Returns
 -------
 bool
-    Result of ``girr_is_specified_currency`` for audit and downstream aggregation."""
+    Result of ``girr_is_specified_currency`` for audit replay."""
 
     normalised = _require_text(currency, "currency").upper()
     reporting = _require_text(reporting_currency, "reporting_currency").upper()
@@ -870,12 +870,12 @@ def girr_other_currency_risk_weight_scalar(
 Parameters
 ----------
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``girr_other_currency_risk_weight_scalar`` for audit and downstream aggregation."""
+    Result of ``girr_other_currency_risk_weight_scalar`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR, profile_citation_id(
@@ -892,12 +892,12 @@ def girr_delta_tenors(
 Parameters
 ----------
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[str, ...]
-    Result of ``girr_delta_tenors`` for audit and downstream aggregation."""
+    Result of ``girr_delta_tenors`` for audit replay."""
 
     _resolve_supported_profile(profile)
     return tuple(tenor_definition.tenor for tenor_definition in BASEL_GIRR_TENORS)
@@ -916,12 +916,12 @@ tenor :
     GIRR delta tenor label for risk-weight and correlation lookup.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 SaCvaGirrTenorDefinition
-    Result of ``girr_tenor_definition`` for audit and downstream aggregation."""
+    Result of ``girr_tenor_definition`` for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     normalised = _require_text(tenor, "tenor")
@@ -944,12 +944,12 @@ def profile_reference_payload(profile: CvaRegulatoryProfile | str) -> dict[str, 
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 dict[str, object]
-    Result of ``profile_reference_payload`` for audit and downstream aggregation."""
+    Result of ``profile_reference_payload`` for audit replay."""
 
     resolved = _resolve_supported_profile(profile)
     from frtb_cva.sa_cva_reference_data import sa_cva_reference_payload

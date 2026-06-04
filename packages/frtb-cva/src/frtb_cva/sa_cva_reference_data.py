@@ -296,12 +296,12 @@ def fx_delta_risk_weight(
 Parameters
 ----------
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``fx_delta_risk_weight`` for audit and downstream aggregation."""
+    Result of ``fx_delta_risk_weight`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     return FX_DELTA_RISK_WEIGHT, _cite("basel_mar50_61", resolved_profile)
@@ -315,12 +315,12 @@ def fx_inter_bucket_correlation(
 Parameters
 ----------
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``fx_inter_bucket_correlation`` for audit and downstream aggregation."""
+    Result of ``fx_inter_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     return FX_INTER_BUCKET_CORRELATION, _cite("basel_mar50_60", resolved_profile)
@@ -347,12 +347,12 @@ rw_scalar, optional :
     Input for ``sa_cva_vega_risk_weight`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``sa_cva_vega_risk_weight`` for audit and downstream aggregation."""
+    Result of ``sa_cva_vega_risk_weight`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     if volatility_input < 0:
@@ -377,12 +377,12 @@ factor2 :
     Input for ``girr_vega_intra_bucket_correlation`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``girr_vega_intra_bucket_correlation`` for audit and downstream aggregation."""
+    Result of ``girr_vega_intra_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     if factor1 == factor2:
@@ -413,12 +413,12 @@ credit_quality :
     Counterparty credit-quality bucket for BA-CVA Table 1.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``ccs_delta_risk_weight`` for audit and downstream aggregation."""
+    Result of ``ccs_delta_risk_weight`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
@@ -449,12 +449,12 @@ bucket2 :
     Input for ``ccs_inter_bucket_correlation`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``ccs_inter_bucket_correlation`` for audit and downstream aggregation."""
+    Result of ``ccs_inter_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     return _symmetric_gamma_lookup(CCS_GAMMA_BC, bucket1, bucket2), _cite(
@@ -488,12 +488,12 @@ same_tenor :
     Input for ``ccs_delta_intra_bucket_correlation`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``ccs_delta_intra_bucket_correlation`` for audit and downstream aggregation."""
+    Result of ``ccs_delta_intra_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     if same_entity:
@@ -522,12 +522,12 @@ bucket_id :
     SA-CVA bucket identifier stored on the bucket capital result.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``rcs_delta_risk_weight`` for audit and downstream aggregation."""
+    Result of ``rcs_delta_risk_weight`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
@@ -553,12 +553,12 @@ bucket2 :
     Input for ``rcs_inter_bucket_correlation`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``rcs_inter_bucket_correlation`` for audit and downstream aggregation."""
+    Result of ``rcs_inter_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     left = _normalise_bucket(bucket1)
@@ -591,12 +591,12 @@ bucket_id :
     SA-CVA bucket identifier stored on the bucket capital result.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``equity_delta_risk_weight`` for audit and downstream aggregation."""
+    Result of ``equity_delta_risk_weight`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
@@ -618,12 +618,12 @@ bucket_id :
     SA-CVA bucket identifier stored on the bucket capital result.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``equity_vega_rw_scalar`` for audit and downstream aggregation."""
+    Result of ``equity_vega_rw_scalar`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
@@ -649,12 +649,12 @@ bucket2 :
     Input for ``equity_inter_bucket_correlation`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``equity_inter_bucket_correlation`` for audit and downstream aggregation."""
+    Result of ``equity_inter_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     left = _normalise_bucket(bucket1)
@@ -682,12 +682,12 @@ bucket_id :
     SA-CVA bucket identifier stored on the bucket capital result.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``commodity_delta_risk_weight`` for audit and downstream aggregation."""
+    Result of ``commodity_delta_risk_weight`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
@@ -716,12 +716,12 @@ bucket2 :
     Input for ``commodity_inter_bucket_correlation`` used in the CVA capital path.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[float, str]
-    Result of ``commodity_inter_bucket_correlation`` for audit and downstream aggregation."""
+    Result of ``commodity_inter_bucket_correlation`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     left = _normalise_bucket(bucket1)
@@ -748,12 +748,12 @@ credit_quality :
     Counterparty credit-quality bucket for BA-CVA Table 1.
 
 profile, optional :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 tuple[str, str]
-    Result of ``ccs_single_name_bucket_for_sector`` for audit and downstream aggregation."""
+    Result of ``ccs_single_name_bucket_for_sector`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     if sector is CvaSector.SOVEREIGN:
@@ -783,12 +783,12 @@ def sa_cva_reference_payload(profile: CvaRegulatoryProfile | str) -> dict[str, o
 Parameters
 ----------
 profile :
-    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+    Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
 
 Returns
 -------
 dict[str, object]
-    Result of ``sa_cva_reference_payload`` for audit and downstream aggregation."""
+    Result of ``sa_cva_reference_payload`` for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     return {
@@ -953,7 +953,7 @@ risk_factor_key :
 Returns
 -------
 tuple[str, CreditQuality, str | None]
-    Result of ``parse_ccs_entity_key`` for audit and downstream aggregation."""
+    Result of ``parse_ccs_entity_key`` for audit replay."""
 
     parts = risk_factor_key.split("|")
     if len(parts) < 2:
