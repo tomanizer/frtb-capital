@@ -23,6 +23,13 @@ git config --local frtb.agentWorktreeRoot /path/to/frtb-capital-worktrees
 `FRTB_AGENT_MAIN_CLONE` and `FRTB_AGENT_WORKTREE_ROOT` may be used for
 environment-specific overrides.
 
+On session start, check the current directory and branch before any write. If the
+current checkout is the protected main clone or the current branch is `main`,
+do not write files, do not use Claude's default `.claude/worktrees/...` checkout,
+and do not continue an edit from that location. First run
+`make agent-ensure AGENT=claude TASK=<task-name>`, then `cd` to the printed
+`<worktree-root>/claude/<task-name>` path before changing files.
+
 Before editing, run `make agent-ensure AGENT=claude TASK=<task-name>` from any
 checkout of this repo (including the protected main clone). The command passes
 when already in a compliant worktree; otherwise it creates or reuses
