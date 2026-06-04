@@ -321,10 +321,13 @@ anchors.
 
 ### DRC-FUNC-015: CRIF and adapter boundary
 
-`frtb-drc` may provide a CRIF-to-canonical adapter, but adapters must not be
-part of calculation kernels. Adapter output must be canonical `DrcPosition`
-records. The adapter must record source column names, source row ids, mapping
-warnings, and any regulatory field inferred from non-regulatory input labels.
+`frtb-drc` provides `adapt_drc_crif_rows` as a CRIF/vendor ingress adapter, but
+adapters must not be part of calculation kernels. Adapter output must be
+canonical `DrcPosition` records, class-specific Arrow handoffs, or deterministic
+rejected-row diagnostics. The adapter must record source column names, source
+row ids, mapping warnings, and any regulatory field inferred from
+non-regulatory input labels. It must require an explicit direction strategy and
+reject ambiguous signs before capital calculation.
 
 ### DRC-FUNC-016: Audit and replay
 

@@ -54,7 +54,7 @@ capital breakdowns.
 | `capital.py` | Hedge benefit ratio, bucket capital, category aggregation. |
 | `attribution.py` | Analytical Euler, residual, and unsupported attribution over capital audit records. |
 | `impact.py` | Future baseline-vs-candidate capital delta analysis. |
-| `crif.py` | Future optional CRIF-to-canonical mapping; no package-specific DRC CRIF adapter is exposed today. |
+| `crif.py` | Optional CRIF/vendor ingress mapping to canonical DRC positions, class-specific Arrow handoffs, and rejected-row diagnostics. |
 | `audit.py` | Serialisable audit records and reconciliation helpers. |
 | `regimes.py` | Policy selection and unsupported-feature declarations. |
 
