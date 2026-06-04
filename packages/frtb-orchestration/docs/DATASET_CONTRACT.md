@@ -209,7 +209,7 @@ Known SA families are:
 
 The suite-level family guard also recognises supported IMA, SA, and CVA profile
 strings. Mixed-family inputs raise `OrchestrationInputError`; orchestration does
-not emit placeholder zero capital for incompatible inputs.
+not emit synthetic zero capital for incompatible inputs.
 
 ## Sign Conventions
 
