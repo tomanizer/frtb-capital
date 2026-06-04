@@ -44,7 +44,7 @@ for row-vs-batch semantics and SA handoff when more than one DRC class is in sco
 
 | DRC class | Arrow spec | Normalizer | Builder | Context requirements |
 | --- | --- | --- | --- | --- |
-| Non-securitisation | `DRC_NONSEC_ARROW_COLUMN_SPECS` | `normalize_drc_nonsec_arrow_table` | `build_drc_nonsec_batch_from_arrow` | `DrcCalculationContext` with run id, calculation date, base currency, and profile id; FX rates required for non-base-currency rows. |
+| Non-securitisation | `DRC_NONSEC_ARROW_COLUMN_SPECS` | `normalize_drc_nonsec_arrow_table` | `build_drc_nonsec_batch_from_arrow(..., profile_id=...)` | `DrcCalculationContext` with run id, calculation date, base currency, and profile id; builder `profile_id` must match the calculation context for non-default profiles; FX rates required for non-base-currency rows. |
 | Securitisation non-CTP | `DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_securitisation_non_ctp_arrow_table` | `build_drc_securitisation_non_ctp_batch_from_arrow` | `US_NPR_2_0` accepts position-id keyed `securitisation_non_ctp_risk_weights` or typed evidence; `BASEL_MAR22` requires typed `DrcRiskWeightEvidence`. Fair-value cap and offset-group maps are used where supplied and profile-supported. |
 | CTP | `DRC_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_ctp_arrow_table` | `build_drc_ctp_batch_from_arrow` | Position-id keyed `ctp_risk_weights`, `ctp_risk_weight_evidence`, and `ctp_offset_groups` where needed for offset treatment. |
 

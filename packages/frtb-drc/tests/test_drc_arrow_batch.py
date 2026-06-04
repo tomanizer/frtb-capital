@@ -97,6 +97,47 @@ def test_drc_batch_supports_basel_nonsec_profile() -> None:
     validate_reconciliation(calculation.result)
 
 
+def test_drc_batch_supports_eu_crr3_nonsec_profile() -> None:
+    batch = build_drc_nonsec_batch_from_columns(
+        position_ids=["eu-long"],
+        source_row_ids=["row-eu-long"],
+        desk_ids=["desk-a"],
+        legal_entities=["bank-eu"],
+        risk_classes=["NON_SECURITISATION"],
+        instrument_types=["BOND"],
+        default_directions=["LONG"],
+        issuer_ids=["issuer-a"],
+        bucket_keys=["SOVEREIGN"],
+        seniorities=["SENIOR_DEBT"],
+        credit_qualities=["AA"],
+        notionals=[100.0],
+        market_values=[100.0],
+        cumulative_pnls=[0.0],
+        maturity_years=[1.0],
+        currencies=["EUR"],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["eu-batch.csv"],
+        citation_ids=[("EU_CRR3_ARTICLE_325W", "EU_CRR3_ECAI_CQS_MAPPING")],
+        profile_id=EU_CRR3_PROFILE_ID,
+    )
+    context = DrcCalculationContext(
+        run_id="run-eu-batch",
+        calculation_date=date(2026, 5, 29),
+        base_currency="EUR",
+        profile_id=EU_CRR3_PROFILE_ID,
+    )
+
+    calculation = calculate_drc_capital_from_batch(batch, context=context)
+
+    assert calculation.result.profile_id == EU_CRR3_PROFILE_ID
+    assert calculation.result.total_drc == pytest.approx(1.5)
+    assert "EU_CRR3_ARTICLE_325Y_1_2" in calculation.result.citations
+    assert "EU_CRR3_ECAI_CQS_MAPPING" in calculation.result.citations
+    assert not any(citation.startswith("US_NPR") for citation in calculation.result.citations)
+    assert not any(citation.startswith("BASEL_MAR22") for citation in calculation.result.citations)
+    validate_reconciliation(calculation.result)
+
+
 def test_drc_arrow_batch_batch_matches_nonsec_v2_row_capital() -> None:
     fixture = load_drc_nonsec_v2_fixture()
     row_result = calculate_drc_capital(fixture.positions, context=fixture.context)
@@ -270,13 +311,6 @@ def test_drc_basel_ctp_batch_matches_row_result_for_typed_evidence() -> None:
 @pytest.mark.parametrize(
     ("fixture_name", "normalize", "build_batch", "profile_id", "expected"),
     [
-        (
-            "drc_nonsec_v1",
-            normalize_drc_nonsec_arrow_table,
-            build_drc_nonsec_batch_from_arrow,
-            EU_CRR3_PROFILE_ID,
-            EU_CRR3_PROFILE_ID,
-        ),
         (
             "drc_sec_nonctp_v1",
             normalize_drc_securitisation_non_ctp_arrow_table,

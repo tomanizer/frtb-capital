@@ -16,10 +16,18 @@ from frtb_drc.data_models import (
     NetJtd,
     RejectedOffset,
 )
-from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.regimes import (
+    BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    US_NPR_2_0_PROFILE_ID,
+    ensure_risk_class_supported,
+    get_rule_profile,
+)
 from frtb_drc.validation import DrcInputError
 
-_NETTING_CITATION = "US_NPR_210_B_2"
+_US_NPR_NETTING_CITATION = "US_NPR_210_B_2"
+_BASEL_NETTING_CITATION = "BASEL_MAR22_19"
+_EU_CRR3_NETTING_CITATION = "EU_CRR3_ARTICLE_325X"
 
 _SENIORITY_RANK: dict[DrcSeniority, int] = {
     DrcSeniority.COVERED_BOND: 0,
@@ -65,8 +73,9 @@ def calculate_net_jtds(
         grouped.setdefault(key, []).append(exposure)
 
     net_records: list[NetJtd] = []
+    netting_citation = _netting_citation(profile.profile_id)
     for key in sorted(grouped):
-        net_records.extend(_net_group(key, grouped[key]))
+        net_records.extend(_net_group(key, grouped[key], netting_citation=netting_citation))
     return tuple(net_records)
 
 
@@ -83,7 +92,12 @@ def _validate_netting_input(exposure: NettingInput) -> None:
         raise DrcInputError("gross_jtd amount mismatch between gross and scaled JTD")
 
 
-def _net_group(key: tuple[str, str], exposures: list[NettingInput]) -> list[NetJtd]:
+def _net_group(
+    key: tuple[str, str],
+    exposures: list[NettingInput],
+    *,
+    netting_citation: str,
+) -> list[NetJtd]:
     bucket_key, issuer_key = key
     longs = _by_seniority(exposures, DefaultDirection.LONG)
     shorts = _by_seniority(exposures, DefaultDirection.SHORT)
@@ -98,9 +112,43 @@ def _net_group(key: tuple[str, str], exposures: list[NettingInput]) -> list[NetJ
         ]
         for seniority, items in shorts.items()
     }
-    rejected = _rejected_seniority_offsets(bucket_key, issuer_key, longs, shorts)
-    records: list[NetJtd] = []
+    rejected = _rejected_seniority_offsets(
+        bucket_key,
+        issuer_key,
+        longs,
+        shorts,
+        netting_citation=netting_citation,
+    )
+    records = _long_net_records(
+        bucket_key=bucket_key,
+        issuer_key=issuer_key,
+        longs=longs,
+        shorts=shorts,
+        short_states=short_states,
+        rejected=tuple(rejected),
+    )
+    records.extend(
+        _short_net_records(
+            bucket_key=bucket_key,
+            issuer_key=issuer_key,
+            shorts=shorts,
+            short_states=short_states,
+            rejected=tuple(rejected),
+        )
+    )
+    return records
 
+
+def _long_net_records(
+    *,
+    bucket_key: str,
+    issuer_key: str,
+    longs: dict[DrcSeniority, list[NettingInput]],
+    shorts: dict[DrcSeniority, list[NettingInput]],
+    short_states: dict[DrcSeniority, list[_ShortState]],
+    rejected: tuple[RejectedOffset, ...],
+) -> list[NetJtd]:
+    records: list[NetJtd] = []
     for seniority in sorted(longs, key=_seniority_rank):
         long_items = longs[seniority]
         scaled_long = sum(item.scaled_jtd.scaled_jtd for item in long_items)
@@ -142,10 +190,21 @@ def _net_group(key: tuple[str, str], exposures: list[NettingInput]) -> list[NetJ
                     scaled_short=used_short_scaled,
                     net_amount=net_amount,
                     source_items=(*long_items, *used_short_items),
-                    rejected_offsets=tuple(rejected),
+                    rejected_offsets=rejected,
                 )
             )
+    return records
 
+
+def _short_net_records(
+    *,
+    bucket_key: str,
+    issuer_key: str,
+    shorts: dict[DrcSeniority, list[NettingInput]],
+    short_states: dict[DrcSeniority, list[_ShortState]],
+    rejected: tuple[RejectedOffset, ...],
+) -> list[NetJtd]:
+    records: list[NetJtd] = []
     for seniority in sorted(shorts, key=_seniority_rank):
         remaining_states = [
             short_state
@@ -166,10 +225,9 @@ def _net_group(key: tuple[str, str], exposures: list[NettingInput]) -> list[NetJ
                 scaled_short=sum(short_state.remaining_scaled for short_state in remaining_states),
                 net_amount=sum(short_state.remaining_scaled for short_state in remaining_states),
                 source_items=tuple(short_state.item for short_state in remaining_states),
-                rejected_offsets=tuple(rejected),
+                rejected_offsets=rejected,
             )
         )
-
     return records
 
 
@@ -239,6 +297,8 @@ def _rejected_seniority_offsets(
     issuer_key: str,
     longs: dict[DrcSeniority, list[NettingInput]],
     shorts: dict[DrcSeniority, list[NettingInput]],
+    *,
+    netting_citation: str,
 ) -> tuple[RejectedOffset, ...]:
     rejected: list[RejectedOffset] = []
     sequence = count(1)
@@ -258,7 +318,7 @@ def _rejected_seniority_offsets(
                             long_source_id=long_item.scaled_jtd.scaled_jtd_id,
                             short_source_id=short_item.scaled_jtd.scaled_jtd_id,
                             reason_code="SHORT_HIGHER_SENIORITY_THAN_LONG",
-                            citations=(_NETTING_CITATION,),
+                            citations=(netting_citation,),
                         )
                     )
     return tuple(rejected)
@@ -273,3 +333,11 @@ def _seniority_rank(seniority: DrcSeniority) -> int:
         return _SENIORITY_RANK[seniority]
     except KeyError as exc:  # pragma: no cover - all enum values are mapped.
         raise DrcInputError(f"missing DRC seniority rank: {seniority.value}") from exc
+
+
+def _netting_citation(profile_id: str) -> str:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_NETTING_CITATION
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_NETTING_CITATION
+    return _US_NPR_NETTING_CITATION
