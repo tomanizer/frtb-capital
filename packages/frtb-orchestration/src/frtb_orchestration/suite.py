@@ -82,7 +82,7 @@ from frtb_orchestration.standardised import (
 
 @dataclass(frozen=True)
 class SuiteAttributionResult:
-    """Suite-level attribution report that preserves component bundles unchanged."""
+    """Validated suite attribution aggregate preserving component bundles unchanged."""
 
     run_id: str
     suite_total_capital: float

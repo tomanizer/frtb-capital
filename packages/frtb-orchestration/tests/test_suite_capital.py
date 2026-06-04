@@ -642,6 +642,8 @@ def test_build_suite_attribution_report_orders_decomposed_components_canonically
         "attr-frtb_rrao",
         "attr-frtb_cva",
     ]
+    original_by_component = {bundle.component: bundle.contributions[0] for bundle in bundles}
+    assert report.components[0].contributions[0] is original_by_component["frtb_ima"]
 
 
 def test_build_suite_attribution_report_surfaces_residual_reason() -> None:
