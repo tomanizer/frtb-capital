@@ -13,9 +13,17 @@ def _git_lines(args: list[str]) -> list[str]:
         ["git", *args],
         check=True,
         text=True,
+        encoding="utf-8",
         stdout=subprocess.PIPE,
     )
     return [line for line in result.stdout.splitlines() if line]
+
+
+def _diff_name_only(diff_base: str) -> list[str]:
+    try:
+        return _git_lines(["diff", "--name-only", f"{diff_base}...HEAD"])
+    except subprocess.CalledProcessError:
+        return _git_lines(["diff", "--name-only", diff_base, "HEAD"])
 
 
 def _changed_paths() -> tuple[str, set[str]]:
@@ -63,7 +71,7 @@ def _changed_paths() -> tuple[str, set[str]]:
         if exists.returncode != 0:
             subprocess.run(["git", "fetch", "origin", base_ref], check=True)
 
-    return event_name, set(_git_lines(["diff", "--name-only", f"{diff_base}...HEAD"]))
+    return event_name, set(_diff_name_only(diff_base))
 
 
 def _matches(path: str, prefixes: tuple[str, ...], suffixes: tuple[str, ...] = ()) -> bool:
@@ -79,12 +87,23 @@ def _is_agent_instruction_path(path: str) -> bool:
     )
 
 
+def _is_runtime_or_test_path(path: str) -> bool:
+    parts = Path(path).parts
+    return (
+        len(parts) >= 3
+        and parts[0] == "packages"
+        and not path.endswith((".md", ".yml", ".yaml", ".ipynb"))
+        and ("src" in parts or "tests" in parts or path.endswith("/pyproject.toml"))
+    )
+
+
 def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
     if event_name == "schedule":
         return {
             "full": False,
             "docs": False,
             "code": False,
+            "test": False,
             "dependency": True,
             "notebooks": False,
             "examples": False,
@@ -110,6 +129,13 @@ def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
         and not path.endswith((".md", ".yml", ".yaml", ".ipynb"))
         for path in paths
     ) or any(path in {"Makefile", "pyproject.toml", "uv.lock"} for path in paths)
+    test = any(
+        _is_runtime_or_test_path(path)
+        or (path.startswith("tests/") and not path.endswith((".md", ".yml", ".yaml", ".ipynb")))
+        or (path.startswith("scripts/") and path.endswith(".py"))
+        or path in {"Makefile", "pyproject.toml", "uv.lock"}
+        for path in paths
+    )
     docs = any(
         path.endswith((".md", ".yml", ".yaml"))
         or path.startswith(("docs/", ".github/PULL_REQUEST_TEMPLATE.md"))
@@ -137,6 +163,7 @@ def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
             "full": full,
             "docs": True,
             "code": True,
+            "test": True,
             "dependency": True,
             "notebooks": True,
             "examples": True,
@@ -147,6 +174,7 @@ def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
         "full": False,
         "docs": docs,
         "code": code or dependency or agent_instructions,
+        "test": test or dependency,
         "dependency": dependency,
         "notebooks": notebooks,
         "examples": examples,
