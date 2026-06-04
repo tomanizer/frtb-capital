@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import date
+
+from frtb_common import AttributionMethod
 
 from frtb_result_store._row_codecs import (
     float_value as _float_value,
@@ -60,6 +62,8 @@ def mart_rows_for_bundle(
         "capital_summary": [_capital_summary_row(bundle, lifecycle_status=lifecycle_status)],
         "capital_tree": _capital_tree_rows(bundle),
         "top_contributors": _top_contributor_rows(bundle),
+        "residual_attribution": _residual_attribution_rows(bundle),
+        "unsupported_attribution": _unsupported_attribution_rows(bundle),
         "movement_summary": _movement_summary_rows(bundle),
         "regime_comparison": [_regime_comparison_row(bundle, lifecycle_status=lifecycle_status)],
         "component_breakdown": _component_breakdown_rows(bundle),
@@ -307,12 +311,45 @@ def _movement_summary_row(movement: MovementResult) -> dict[str, object]:
 
 
 def _top_contributor_rows(bundle: ResultBundle) -> list[dict[str, object]]:
+    return _attribution_projection_rows(bundle, predicate=lambda _: True)
+
+
+def _residual_attribution_rows(bundle: ResultBundle) -> list[dict[str, object]]:
+    return _attribution_projection_rows(
+        bundle,
+        predicate=lambda attribution: (
+            AttributionMethod(attribution.method) is AttributionMethod.RESIDUAL
+            or attribution.residual != 0.0
+        ),
+    )
+
+
+def _unsupported_attribution_rows(bundle: ResultBundle) -> list[dict[str, object]]:
+    return _attribution_projection_rows(
+        bundle,
+        predicate=lambda attribution: (
+            AttributionMethod(attribution.method) is AttributionMethod.UNSUPPORTED
+        ),
+    )
+
+
+def _attribution_projection_rows(
+    bundle: ResultBundle,
+    *,
+    predicate: Callable[[CapitalAttributionRecord], bool],
+) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     component_by_node = {node.node_id: FrtbComponent(node.component) for node in bundle.nodes}
     for rank, attribution in enumerate(
         sorted(
-            bundle.attributions,
-            key=lambda item: (-abs(_contribution_amount(item)), item.node_id, item.attribution_id),
+            (item for item in bundle.attributions if predicate(item)),
+            key=lambda item: (
+                -abs(_attribution_amount(item)),
+                item.node_id,
+                item.source_level,
+                item.source_id,
+                item.attribution_id,
+            ),
         ),
         start=1,
     ):
@@ -327,13 +364,15 @@ def _top_contributor_rows(bundle: ResultBundle) -> list[dict[str, object]]:
                 "attribution_id": attribution.attribution_id,
                 "target_type": attribution.target_type,
                 "target_id": attribution.target_id,
+                "source_id": attribution.source_id,
                 "source_level": attribution.source_level,
                 "category": attribution.category,
                 "bucket_key": attribution.bucket_key,
                 "base_amount": attribution.base_amount,
-                "contribution": _contribution_amount(attribution),
+                "contribution": attribution.contribution,
                 "residual": attribution.residual,
                 "method": _stored_value(attribution.method),
+                "unsupported_reason": attribution.unsupported_reason,
                 "artifact_id": attribution.artifact_id,
             }
         )
@@ -537,9 +576,10 @@ def _artifact_id(
     return None
 
 
-def _contribution_amount(attribution: CapitalAttributionRecord) -> float:
-    contribution = attribution.contribution
-    return 0.0 if contribution is None else float(contribution)
+def _attribution_amount(attribution: CapitalAttributionRecord) -> float:
+    return (0.0 if attribution.contribution is None else float(attribution.contribution)) + float(
+        attribution.residual
+    )
 
 
 def _suggested_status(events: Sequence[ResultEvent]) -> RunStatus:

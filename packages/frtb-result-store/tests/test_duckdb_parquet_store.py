@@ -823,6 +823,8 @@ def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path
         "capital_summary": 1,
         "capital_tree": 4,
         "top_contributors": 1,
+        "residual_attribution": 0,
+        "unsupported_attribution": 0,
         "movement_summary": 0,
         "regime_comparison": 1,
         "component_breakdown": 3,
@@ -833,6 +835,106 @@ def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path
         "rrao_exposure_summary": 0,
     }
     assert sorted(manifest["mart_schema_fingerprints"]) == sorted(MART_NAMES)
+
+
+def test_store_persists_attribution_explain_projection_marts(tmp_path: Path) -> None:
+    run = run_with_id("run-attribution-explain-marts")
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(sample_bundle(run, attributions=_explain_attributions(run)))
+
+    contributors = store.top_contributors(run.run_id, limit=10)
+    assert [row["attribution_id"] for row in contributors] == [
+        "ima-euler-desk",
+        "suite-residual",
+        "unsupported-curvature",
+    ]
+    assert contributors[0]["source_id"] == "desk-rates"
+    assert contributors[0]["contribution"] == 4.0
+    assert contributors[0]["residual"] == 0.0
+    assert contributors[1]["contribution"] is None
+    assert contributors[1]["residual"] == -2.5
+    assert contributors[1]["method"] == "RESIDUAL"
+    assert contributors[1]["target_id"] == "suite-residual-target"
+    assert contributors[1]["unsupported_reason"] == "Suite branch held as residual."
+
+    residual_records = store.residual_attribution_records(run.run_id)
+    assert [row["attribution_id"] for row in residual_records] == [
+        "suite-residual",
+        "unsupported-curvature",
+    ]
+    assert residual_records[0]["source_level"] == "RESIDUAL_BRANCH"
+    assert residual_records[0]["unsupported_reason"] == "Suite branch held as residual."
+    assert store.residual_attribution_records(run.run_id, node_id="total") == (residual_records[0],)
+
+    unsupported_records = store.unsupported_attribution_records(run.run_id)
+    assert len(unsupported_records) == 1
+    assert unsupported_records[0]["attribution_id"] == "unsupported-curvature"
+    assert unsupported_records[0]["method"] == "UNSUPPORTED"
+    assert unsupported_records[0]["source_id"] == "curvature-selector"
+    assert unsupported_records[0]["target_id"] == "curvature-selector-target"
+    assert "unsupported for exact Euler" in str(unsupported_records[0]["unsupported_reason"])
+
+
+def _explain_attributions(run: CalculationRun) -> tuple[CapitalAttributionRecord, ...]:
+    return (
+        CapitalAttributionRecord.from_contribution(
+            run_id=run.run_id,
+            node_id="ima-book-rates-core",
+            contribution=CapitalContribution(
+                contribution_id="ima-euler-desk",
+                source_id="desk-rates",
+                source_level="DESK",
+                bucket_key=None,
+                category="IMA_DESK",
+                base_amount=4.0,
+                marginal_multiplier=1.0,
+                contribution=4.0,
+                method=AttributionMethod.ANALYTICAL_EULER,
+            ),
+            target_type="DESK",
+            target_id="desk-rates",
+            artifact_id="ima-pnl-vector",
+        ),
+        CapitalAttributionRecord.from_contribution(
+            run_id=run.run_id,
+            node_id="total",
+            contribution=CapitalContribution(
+                contribution_id="suite-residual",
+                source_id="suite-residual-source",
+                source_level="RESIDUAL_BRANCH",
+                bucket_key=None,
+                category="SUITE_RESIDUAL",
+                base_amount=2.5,
+                marginal_multiplier=None,
+                contribution=None,
+                method=AttributionMethod.RESIDUAL,
+                residual=-2.5,
+                reason="Suite branch held as residual.",
+            ),
+            target_type="RESIDUAL_BRANCH",
+            target_id="suite-residual-target",
+        ),
+        CapitalAttributionRecord.from_contribution(
+            run_id=run.run_id,
+            node_id="sbm-girr-usd",
+            contribution=CapitalContribution(
+                contribution_id="unsupported-curvature",
+                source_id="curvature-selector",
+                source_level="UNSUPPORTED_BRANCH",
+                bucket_key="GIRR",
+                category="UNSUPPORTED_CURVATURE",
+                base_amount=1.25,
+                marginal_multiplier=None,
+                contribution=None,
+                method=AttributionMethod.UNSUPPORTED,
+                residual=1.25,
+                reason="Curvature scenario selection is unsupported for exact Euler.",
+            ),
+            target_type="UNSUPPORTED_BRANCH",
+            target_id="curvature-selector-target",
+        ),
+    )
 
 
 def test_mart_generation_rejects_cyclic_capital_tree(tmp_path: Path) -> None:
