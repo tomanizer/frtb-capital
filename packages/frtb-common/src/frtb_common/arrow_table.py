@@ -96,7 +96,13 @@ class ColumnSpec:
         object.__setattr__(self, "aliases", aliases)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic, JSON-serialisable representation."""
+        """Return a deterministic, JSON-serialisable representation.
+
+        Returns
+        -------
+        dict[str, object]
+            Column spec fields with enum values exported as strings.
+        """
 
         return {
             "aliases": list(self.aliases),
@@ -128,7 +134,13 @@ class AdapterDiagnostic:
             _validate_non_empty_name(self.row_id, "diagnostic row id")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic, JSON-serialisable representation."""
+        """Return a deterministic, JSON-serialisable representation.
+
+        Returns
+        -------
+        dict[str, object]
+            Diagnostic fields with severity exported as a string value.
+        """
 
         return {
             "code": self.code,
@@ -185,7 +197,32 @@ def normalize_arrow_table(
     source_hash: str | None = None,
     require_unique_row_ids: bool = False,
 ) -> NormalizedArrowTable:
-    """Normalize aliases to canonical names and validate an Arrow table."""
+    """Normalize aliases to canonical names and validate an Arrow table.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Source Arrow table.
+    column_specs : sequence of ColumnSpec, optional
+        Declared column contracts applied during rename and validation.
+    row_id_column : str, optional
+        Canonical row identifier column name.
+    rejected : pyarrow.Table, optional
+        Companion rejected-row table for adapter envelopes.
+    diagnostics : sequence of AdapterDiagnostic, optional
+        Adapter diagnostics to attach to the envelope.
+    metadata : mapping, optional
+        Adapter metadata stored on the normalized envelope.
+    source_hash : str, optional
+        Precomputed source digest; otherwise derived from accepted contents.
+    require_unique_row_ids : bool, optional
+        Enforce uniqueness on *row_id_column* when set (default ``False``).
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Validated accepted/rejected envelope with canonical column names.
+    """
 
     _require_table(table, "table")
     specs = validate_column_specs(column_specs)
@@ -209,7 +246,19 @@ def validate_arrow_table(
     row_id_column: str | None = None,
     require_unique_row_ids: bool = False,
 ) -> None:
-    """Validate an already-normalized Arrow table against shared table rules."""
+    """Validate an already-normalized Arrow table against shared table rules.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Arrow table that already uses canonical column names.
+    column_specs : sequence of ColumnSpec, optional
+        Declared column contracts to validate.
+    row_id_column : str, optional
+        Canonical row identifier column name.
+    require_unique_row_ids : bool, optional
+        Enforce uniqueness on *row_id_column* when set (default ``False``).
+    """
 
     _require_table(table, "table")
     specs = validate_column_specs(column_specs)
@@ -222,7 +271,23 @@ def validate_arrow_table(
 
 
 def validate_column_specs(column_specs: Sequence[ColumnSpec]) -> tuple[ColumnSpec, ...]:
-    """Validate that canonical names and aliases are globally unambiguous."""
+    """Validate that canonical names and aliases are globally unambiguous.
+
+    Parameters
+    ----------
+    column_specs : sequence of ColumnSpec
+        Column declarations to validate.
+
+    Returns
+    -------
+    tuple of ColumnSpec
+        Frozen, validated column spec tuple.
+
+    Raises
+    ------
+    NormalizedTableError
+        When aliases collide across specs.
+    """
 
     specs = tuple(column_specs)
     seen: dict[str, str] = {}
@@ -239,7 +304,25 @@ def validate_column_specs(column_specs: Sequence[ColumnSpec]) -> tuple[ColumnSpe
 
 
 def resolve_column_name(table: pa.Table, spec: ColumnSpec) -> str | None:
-    """Resolve a canonical column name or alias in an Arrow table."""
+    """Resolve a canonical column name or alias in an Arrow table.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Source Arrow table.
+    spec : ColumnSpec
+        Column declaration whose canonical name or aliases are matched.
+
+    Returns
+    -------
+    str or None
+        Matching input column name, or ``None`` when no alias matches.
+
+    Raises
+    ------
+    NormalizedTableError
+        When multiple input columns match the same spec.
+    """
 
     _require_table(table, "table")
     matches = _matching_column_names(table, spec)
@@ -253,7 +336,23 @@ def resolve_column_name(table: pa.Table, spec: ColumnSpec) -> str | None:
 
 
 def dictionary_code_chunks(column: pa.ChunkedArray) -> tuple[pa.Array, ...]:
-    """Return dictionary index arrays for a dictionary-encoded Arrow column."""
+    """Return dictionary index arrays for a dictionary-encoded Arrow column.
+
+    Parameters
+    ----------
+    column : pyarrow.ChunkedArray
+        Dictionary-encoded Arrow column.
+
+    Returns
+    -------
+    tuple of pyarrow.Array
+        Index array for each chunk.
+
+    Raises
+    ------
+    NormalizedTableError
+        When *column* is not dictionary encoded.
+    """
 
     if not _is_dictionary_column(column):
         raise NormalizedTableError("Column is not dictionary encoded")
@@ -265,7 +364,20 @@ def dictionary_code_chunks(column: pa.ChunkedArray) -> tuple[pa.Array, ...]:
 
 
 def dictionary_code_column(table: pa.Table, column_name: str) -> pa.ChunkedArray:
-    """Return the dictionary index column for a table column."""
+    """Return the dictionary index column for a table column.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Source Arrow table.
+    column_name : str
+        Existing dictionary-encoded column name.
+
+    Returns
+    -------
+    pyarrow.ChunkedArray
+        Chunked dictionary index column.
+    """
 
     _require_table(table, "table")
     _require_existing_column(table, column_name)
@@ -278,7 +390,22 @@ def sort_table_by_columns(
     *,
     direction: SortDirection = "ascending",
 ) -> pa.Table:
-    """Return a table sorted by named columns with deterministic direction."""
+    """Return a table sorted by named columns with deterministic direction.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Source Arrow table.
+    column_names : sequence of str
+        Column names defining the sort key order.
+    direction : {"ascending", "descending"}, optional
+        Sort direction applied to every key column (default ``"ascending"``).
+
+    Returns
+    -------
+    pyarrow.Table
+        Sorted table, or the original table when *column_names* is empty.
+    """
 
     _require_table(table, "table")
     for column_name in column_names:
@@ -292,14 +419,36 @@ def sort_table_by_columns(
 
 
 def source_content_hash(source: bytes | str) -> str:
-    """Return a stable SHA-256 hash for source bytes or text."""
+    """Return a stable SHA-256 hash for source bytes or text.
+
+    Parameters
+    ----------
+    source : bytes or str
+        Raw source payload; text is UTF-8 encoded before hashing.
+
+    Returns
+    -------
+    str
+        Lowercase SHA-256 hex digest.
+    """
 
     source_bytes = bytes(source, "utf-8") if isinstance(source, str) else source
     return hashlib.sha256(source_bytes).hexdigest()
 
 
 def arrow_table_content_hash(table: pa.Table) -> str:
-    """Return a stable SHA-256 hash for Arrow table schema and contents."""
+    """Return a stable SHA-256 hash for Arrow table schema and contents.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Arrow table to canonicalise and hash.
+
+    Returns
+    -------
+    str
+        Lowercase SHA-256 hex digest of the IPC stream bytes.
+    """
 
     _require_table(table, "table")
     canonical = table.combine_chunks()
@@ -310,7 +459,18 @@ def arrow_table_content_hash(table: pa.Table) -> str:
 
 
 def normalized_arrow_table_hash(table: NormalizedArrowTable) -> str:
-    """Return a deterministic hash for a normalized Arrow table envelope."""
+    """Return a deterministic hash for a normalized Arrow table envelope.
+
+    Parameters
+    ----------
+    table : NormalizedArrowTable
+        Accepted/rejected adapter envelope to fingerprint.
+
+    Returns
+    -------
+    str
+        Lowercase SHA-256 hex digest of the stable JSON payload.
+    """
 
     rejected_hash = None
     if table.rejected is not None:

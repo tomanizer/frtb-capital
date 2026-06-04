@@ -34,7 +34,20 @@ def readonly_array(
     *,
     copy: bool,
 ) -> npt.NDArray[ArrayScalarT]:
-    """Return a read-only copy or view of an existing NumPy array."""
+    """Return a read-only copy or view of an existing NumPy array.
+
+    Parameters
+    ----------
+    array : ndarray
+        Source array to freeze.
+    copy : bool
+        When ``True``, materialise a copy before clearing write access.
+
+    Returns
+    -------
+    ndarray
+        Read-only array sharing or owning the underlying buffer.
+    """
 
     frozen = array.copy() if copy else array.view()
     frozen.setflags(write=False)
@@ -42,7 +55,20 @@ def readonly_array(
 
 
 def object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
-    """Return a read-only object array for nullable batch columns."""
+    """Return a read-only object array for nullable batch columns.
+
+    Parameters
+    ----------
+    values : sequence or ndarray
+        Column values, including ``None`` for missing entries.
+    copy : bool
+        When ``True`` and *values* is already an ndarray, copy before freezing.
+
+    Returns
+    -------
+    ObjectArray
+        One-dimensional read-only object dtype array.
+    """
 
     array = np.asarray(values, dtype=object)
     return readonly_array(array, copy=copy and array is values)
@@ -57,7 +83,28 @@ def float_array_from_numpy(
     require_1d: bool = True,
     require_finite: bool = True,
 ) -> FloatArray | None:
-    """Return a read-only float64 array when ``values`` is a numeric NumPy array."""
+    """Return a read-only float64 array when ``values`` is a numeric NumPy array.
+
+    Parameters
+    ----------
+    values : sequence or ndarray
+        Candidate numeric column input.
+    field : str
+        Field label used in coercion errors.
+    copy : bool
+        When ``True`` and coercion succeeds, copy before freezing.
+    allow_nan : bool
+        Whether NaN values are permitted when ``require_finite`` is ``False``.
+    require_1d : bool, optional
+        Require a one-dimensional ndarray (default ``True``).
+    require_finite : bool, optional
+        Reject non-finite values except optional NaNs (default ``True``).
+
+    Returns
+    -------
+    FloatArray or None
+        Read-only float64 array when *values* is numeric; otherwise ``None``.
+    """
 
     if not isinstance(values, np.ndarray) or values.dtype.kind not in {"f", "i", "u"}:
         return None
@@ -72,7 +119,23 @@ def float_array_from_numpy(
 
 
 def coerce_bool_value(value: object) -> bool:
-    """Coerce accepted scalar boolean spellings used by batch handoffs."""
+    """Coerce accepted scalar boolean spellings used by batch handoffs.
+
+    Parameters
+    ----------
+    value : object
+        Scalar boolean, numeric zero/one, or common text spellings.
+
+    Returns
+    -------
+    bool
+        Coerced boolean value.
+
+    Raises
+    ------
+    BatchArrayCoercionError
+        When *value* cannot be interpreted as a boolean.
+    """
 
     if isinstance(value, (bool, np.bool_)):
         return bool(value)
@@ -97,7 +160,24 @@ def bool_array(
     default: bool,
     copy: bool,
 ) -> BoolArray:
-    """Return a read-only boolean array with optional default filling."""
+    """Return a read-only boolean array with optional default filling.
+
+    Parameters
+    ----------
+    values : sequence, ndarray, or None
+        Column values; ``None`` fills the column with *default*.
+    row_count : int
+        Expected row count when *values* is ``None``.
+    default : bool
+        Value used for every row when *values* is ``None``.
+    copy : bool
+        When ``True`` and *values* is a boolean ndarray, copy before freezing.
+
+    Returns
+    -------
+    BoolArray
+        One-dimensional read-only boolean array of length *row_count*.
+    """
 
     if values is None:
         array = np.full(row_count, default, dtype=np.bool_)
@@ -116,7 +196,22 @@ def optional_bool_object_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    """Return a read-only object array for nullable boolean batch columns."""
+    """Return a read-only object array for nullable boolean batch columns.
+
+    Parameters
+    ----------
+    values : sequence, ndarray, or None
+        Column values with optional missing entries.
+    row_count : int
+        Expected row count when *values* is ``None``.
+    copy : bool
+        Forwarded to :func:`object_array` when materialising from sequences.
+
+    Returns
+    -------
+    ObjectArray
+        One-dimensional read-only object array of ``bool`` or ``None`` entries.
+    """
 
     if values is None:
         array = np.full(row_count, None, dtype=object)

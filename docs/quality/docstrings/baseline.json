@@ -2,715 +2,17 @@
   "description": "Runtime package docstring inventory report.",
   "metrics": {
     "findings_by_rule": {
-      "MISSING_PARAMETERS_SECTION": 853,
-      "MISSING_PUBLIC_DOCSTRING": 136,
-      "MISSING_RETURNS_SECTION": 958,
+      "MISSING_PARAMETERS_SECTION": 823,
+      "MISSING_PUBLIC_DOCSTRING": 134,
+      "MISSING_RETURNS_SECTION": 925,
       "TRIVIAL_DOCSTRING": 1
     },
-    "packages_with_findings": 8,
-    "total_findings": 1948
+    "packages_with_findings": 7,
+    "total_findings": 1883
   },
   "packages": {
-    "frtb-common": {
-      "finding_count": 77,
-      "findings": [
-        {
-          "line": 28,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "arrow_object_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 28,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "arrow_object_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 39,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "arrow_float64_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 39,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "arrow_float64_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 55,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "arrow_float64_array_with_nulls",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 55,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "arrow_float64_array_with_nulls",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 74,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "arrow_bool_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 74,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "arrow_bool_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 96,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "arrow_bool_or_object_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 96,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "arrow_bool_or_object_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 115,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "read_arrow_columns",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 115,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "read_arrow_columns",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_conversion.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 98,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ColumnSpec.as_dict",
-          "object_type": "method",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 130,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "AdapterDiagnostic.as_dict",
-          "object_type": "method",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 177,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalize_arrow_table",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 177,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalize_arrow_table",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 205,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_arrow_table",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 224,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_column_specs",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 224,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_column_specs",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 241,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "resolve_column_name",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 241,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "resolve_column_name",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 255,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "dictionary_code_chunks",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 255,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "dictionary_code_chunks",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 267,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "dictionary_code_column",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 267,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "dictionary_code_column",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 275,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "sort_table_by_columns",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 275,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "sort_table_by_columns",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 294,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "source_content_hash",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 294,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "source_content_hash",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 301,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "arrow_table_content_hash",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 301,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "arrow_table_content_hash",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 312,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalized_arrow_table_hash",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 312,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalized_arrow_table_hash",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 18,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "column_spec_to_json_schema",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table_schema.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 18,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "column_spec_to_json_schema",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table_schema.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 32,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "column_specs_to_json_schema",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table_schema.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 32,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "column_specs_to_json_schema",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table_schema.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 55,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "column_specs_to_arrow_schema",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table_schema.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 55,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "column_specs_to_arrow_schema",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table_schema.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 79,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "arrow_schema_to_dict",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table_schema.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 79,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "arrow_schema_to_dict",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/arrow_table_schema.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 91,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalContribution.as_dict",
-          "object_type": "method",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/attribution.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 32,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "readonly_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 32,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "readonly_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 44,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "object_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 44,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "object_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 51,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "float_array_from_numpy",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 51,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "float_array_from_numpy",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 74,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "coerce_bool_value",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 74,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "coerce_bool_value",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 93,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "bool_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 93,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "bool_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 113,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "optional_bool_object_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 113,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "optional_bool_object_array",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 47,
-          "message": "Public method is missing a docstring.",
-          "object_name": "ComponentContributionBundle.as_dict",
-          "object_type": "method",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/contribution_bundle.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 76,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CrifColumnSpec.as_column_spec",
-          "object_type": "method",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 183,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "crif_records_to_arrow_table",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 183,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "crif_records_to_arrow_table",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 204,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalize_crif_records",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 204,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalize_crif_records",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 232,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalize_crif_arrow_table",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 232,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalize_crif_arrow_table",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 359,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "resolve_crif_column_name",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 359,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "resolve_crif_column_name",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 380,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalise_crif_risk_type",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 380,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalise_crif_risk_type",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/crif.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 15,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "stable_json_dumps",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/hashing.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 15,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "stable_json_dumps",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/hashing.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 21,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "stable_json_hash",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/hashing.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 21,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "stable_json_hash",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/hashing.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 27,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "is_sha256_hex",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/hashing.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 27,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "is_sha256_hex",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/hashing.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 33,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "require_sha256_hex",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/hashing.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 33,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "require_sha256_hex",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/hashing.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 53,
-          "message": "Public method is missing a docstring.",
-          "object_name": "CapitalImpact.as_dict",
-          "object_type": "method",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/impact.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 13,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "jsonable",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/serialization.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 13,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "jsonable",
-          "object_type": "function",
-          "package": "frtb-common",
-          "path": "packages/frtb-common/src/frtb_common/serialization.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        }
-      ]
-    },
     "frtb-cva": {
-      "finding_count": 246,
+      "finding_count": 252,
       "findings": [
         {
           "line": 6,
@@ -902,7 +204,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 80,
+          "line": 82,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "aggregate_intra_bucket",
           "object_type": "function",
@@ -911,7 +213,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 80,
+          "line": 82,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "aggregate_intra_bucket",
           "object_type": "function",
@@ -920,7 +222,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 136,
+          "line": 137,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "aggregate_inter_bucket",
           "object_type": "function",
@@ -929,7 +231,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 136,
+          "line": 137,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "aggregate_inter_bucket",
           "object_type": "function",
@@ -938,7 +240,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 189,
+          "line": 192,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "aggregate_weighted_sensitivities",
           "object_type": "function",
@@ -947,7 +249,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 189,
+          "line": 192,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "aggregate_weighted_sensitivities",
           "object_type": "function",
@@ -956,7 +258,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 218,
+          "line": 221,
           "message": "Public function is missing a docstring.",
           "object_name": "uniform_inter_bucket_gamma",
           "object_type": "function",
@@ -965,7 +267,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 255,
+          "line": 258,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_delta_aggregation_config",
           "object_type": "function",
@@ -974,7 +276,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 255,
+          "line": 258,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_delta_aggregation_config",
           "object_type": "function",
@@ -983,7 +285,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 276,
+          "line": 282,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_vega_aggregation_config",
           "object_type": "function",
@@ -992,7 +294,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 276,
+          "line": 282,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_vega_aggregation_config",
           "object_type": "function",
@@ -1073,7 +375,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 44,
+          "line": 45,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "attribute_cva_capital",
           "object_type": "function",
@@ -1082,7 +384,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 44,
+          "line": 45,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "attribute_cva_capital",
           "object_type": "function",
@@ -1091,7 +393,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 100,
+          "line": 101,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "project_cva_attribution",
           "object_type": "function",
@@ -1100,7 +402,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 100,
+          "line": 101,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "project_cva_attribution",
           "object_type": "function",
@@ -1154,7 +456,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 38,
+          "line": 40,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_netting_set_standalone",
           "object_type": "function",
@@ -1163,7 +465,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 38,
+          "line": 40,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_netting_set_standalone",
           "object_type": "function",
@@ -1172,7 +474,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 88,
+          "line": 90,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_counterparty_standalone",
           "object_type": "function",
@@ -1181,7 +483,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 88,
+          "line": 90,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_counterparty_standalone",
           "object_type": "function",
@@ -1190,7 +492,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 147,
+          "line": 152,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_reduced_portfolio",
           "object_type": "function",
@@ -1199,7 +501,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 147,
+          "line": 152,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_reduced_portfolio",
           "object_type": "function",
@@ -1208,7 +510,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 242,
+          "line": 251,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_full_portfolio",
           "object_type": "function",
@@ -1217,7 +519,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 242,
+          "line": 251,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_full_portfolio",
           "object_type": "function",
@@ -1226,7 +528,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 143,
+          "line": 145,
           "message": "Public method is missing a docstring.",
           "object_name": "CvaCounterpartyBatch.row_count",
           "object_type": "method",
@@ -1235,7 +537,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 171,
+          "line": 173,
           "message": "Public method is missing a docstring.",
           "object_name": "CvaNettingSetBatch.row_count",
           "object_type": "method",
@@ -1244,7 +546,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 206,
+          "line": 208,
           "message": "Public method is missing a docstring.",
           "object_name": "CvaHedgeBatch.row_count",
           "object_type": "method",
@@ -1253,7 +555,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 241,
+          "line": 243,
           "message": "Public method is missing a docstring.",
           "object_name": "SaCvaSensitivityBatch.row_count",
           "object_type": "method",
@@ -1262,7 +564,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 256,
+          "line": 258,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_cva_counterparty_batch_from_counterparties",
           "object_type": "function",
@@ -1271,7 +573,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 256,
+          "line": 258,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_cva_counterparty_batch_from_counterparties",
           "object_type": "function",
@@ -1280,7 +582,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 295,
+          "line": 297,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_cva_netting_set_batch_from_netting_sets",
           "object_type": "function",
@@ -1289,7 +591,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 295,
+          "line": 297,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_cva_netting_set_batch_from_netting_sets",
           "object_type": "function",
@@ -1298,7 +600,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 342,
+          "line": 344,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_cva_hedge_batch_from_hedges",
           "object_type": "function",
@@ -1307,7 +609,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 342,
+          "line": 344,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_cva_hedge_batch_from_hedges",
           "object_type": "function",
@@ -1316,7 +618,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 393,
+          "line": 395,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_sa_cva_sensitivity_batch_from_sensitivities",
           "object_type": "function",
@@ -1325,7 +627,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 393,
+          "line": 395,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_sa_cva_sensitivity_batch_from_sensitivities",
           "object_type": "function",
@@ -1334,7 +636,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 451,
+          "line": 453,
           "message": "Public function is missing a docstring.",
           "object_name": "build_cva_counterparty_batch_from_columns",
           "object_type": "function",
@@ -1343,7 +645,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 527,
+          "line": 529,
           "message": "Public function is missing a docstring.",
           "object_name": "build_cva_netting_set_batch_from_columns",
           "object_type": "function",
@@ -1352,7 +654,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 635,
+          "line": 637,
           "message": "Public function is missing a docstring.",
           "object_name": "build_cva_hedge_batch_from_columns",
           "object_type": "function",
@@ -1361,7 +663,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 777,
+          "line": 779,
           "message": "Public function is missing a docstring.",
           "object_name": "build_sa_cva_sensitivity_batch_from_columns",
           "object_type": "function",
@@ -1370,7 +672,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 926,
+          "line": 928,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_cva_capital_from_batches",
           "object_type": "function",
@@ -1379,7 +681,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 926,
+          "line": 928,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_cva_capital_from_batches",
           "object_type": "function",
@@ -1388,7 +690,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 1072,
+          "line": 1077,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_reduced_portfolio_from_batches",
           "object_type": "function",
@@ -1397,7 +699,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 1072,
+          "line": 1077,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_reduced_portfolio_from_batches",
           "object_type": "function",
@@ -1406,7 +708,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 1169,
+          "line": 1177,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_full_portfolio_from_batches",
           "object_type": "function",
@@ -1415,7 +717,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 1169,
+          "line": 1177,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_full_portfolio_from_batches",
           "object_type": "function",
@@ -1424,7 +726,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 1337,
+          "line": 1353,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_sa_cva_capital_from_batch",
           "object_type": "function",
@@ -1433,7 +735,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 1337,
+          "line": 1353,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_sa_cva_capital_from_batch",
           "object_type": "function",
@@ -1442,7 +744,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 1376,
+          "line": 1392,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "input_hash_for_cva_batches",
           "object_type": "function",
@@ -1451,7 +753,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 1376,
+          "line": 1392,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "input_hash_for_cva_batches",
           "object_type": "function",
@@ -1541,7 +843,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 29,
+          "line": 31,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "assess_hedge_eligibility",
           "object_type": "function",
@@ -1550,7 +852,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 29,
+          "line": 31,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "assess_hedge_eligibility",
           "object_type": "function",
@@ -1559,7 +861,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 84,
+          "line": 90,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "assess_ba_cva_hedge_eligibility",
           "object_type": "function",
@@ -1568,7 +870,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 84,
+          "line": 90,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "assess_ba_cva_hedge_eligibility",
           "object_type": "function",
@@ -1577,7 +879,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 115,
+          "line": 128,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "eligible_sa_cva_hedge_ids",
           "object_type": "function",
@@ -1586,7 +888,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 115,
+          "line": 128,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "eligible_sa_cva_hedge_ids",
           "object_type": "function",
@@ -1631,7 +933,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 30,
+          "line": 31,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "resolve_sa_cva_bucket",
           "object_type": "function",
@@ -1640,7 +942,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 30,
+          "line": 31,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "resolve_sa_cva_bucket",
           "object_type": "function",
@@ -1649,7 +951,43 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 362,
+          "line": 375,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "profile_citation_id",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/reference_data.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 375,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "profile_citation_id",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/reference_data.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 399,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "profile_citation_ids",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/reference_data.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 399,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "profile_citation_ids",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/reference_data.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 415,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "citations_for_profile",
           "object_type": "function",
@@ -1658,7 +996,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 362,
+          "line": 415,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "citations_for_profile",
           "object_type": "function",
@@ -1667,7 +1005,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 371,
+          "line": 424,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ba_cva_risk_weight",
           "object_type": "function",
@@ -1676,7 +1014,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 371,
+          "line": 424,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ba_cva_risk_weight",
           "object_type": "function",
@@ -1685,7 +1023,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 391,
+          "line": 444,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ba_cva_alpha",
           "object_type": "function",
@@ -1694,7 +1032,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 391,
+          "line": 444,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ba_cva_alpha",
           "object_type": "function",
@@ -1703,7 +1041,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 400,
+          "line": 453,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ba_cva_beta",
           "object_type": "function",
@@ -1712,7 +1050,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 400,
+          "line": 453,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ba_cva_beta",
           "object_type": "function",
@@ -1721,7 +1059,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 409,
+          "line": 462,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ba_cva_hedge_counterparty_correlation",
           "object_type": "function",
@@ -1730,7 +1068,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 409,
+          "line": 462,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ba_cva_hedge_counterparty_correlation",
           "object_type": "function",
@@ -1739,7 +1077,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 425,
+          "line": 481,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ba_cva_index_risk_weight_scalar",
           "object_type": "function",
@@ -1748,7 +1086,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 425,
+          "line": 481,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ba_cva_index_risk_weight_scalar",
           "object_type": "function",
@@ -1757,7 +1095,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 435,
+          "line": 491,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ba_cva_rho",
           "object_type": "function",
@@ -1766,7 +1104,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 435,
+          "line": 491,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ba_cva_rho",
           "object_type": "function",
@@ -1775,7 +1113,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 444,
+          "line": 500,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ba_cva_discount_scalar",
           "object_type": "function",
@@ -1784,7 +1122,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 444,
+          "line": 500,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ba_cva_discount_scalar",
           "object_type": "function",
@@ -1793,7 +1131,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 453,
+          "line": 509,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "compute_non_imm_discount_factor",
           "object_type": "function",
@@ -1802,7 +1140,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 453,
+          "line": 509,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "compute_non_imm_discount_factor",
           "object_type": "function",
@@ -1811,7 +1149,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 466,
+          "line": 522,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "resolve_netting_set_discount_factor",
           "object_type": "function",
@@ -1820,7 +1158,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 466,
+          "line": 522,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "resolve_netting_set_discount_factor",
           "object_type": "function",
@@ -1829,7 +1167,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 491,
+          "line": 551,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_delta_risk_weight_rule",
           "object_type": "function",
@@ -1838,7 +1176,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 491,
+          "line": 551,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_delta_risk_weight_rule",
           "object_type": "function",
@@ -1847,7 +1185,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 516,
+          "line": 580,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_delta_risk_weight",
           "object_type": "function",
@@ -1856,7 +1194,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 516,
+          "line": 580,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_delta_risk_weight",
           "object_type": "function",
@@ -1865,7 +1203,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 527,
+          "line": 591,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_delta_intra_bucket_correlation",
           "object_type": "function",
@@ -1874,7 +1212,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 527,
+          "line": 591,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_delta_intra_bucket_correlation",
           "object_type": "function",
@@ -1883,7 +1221,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 554,
+          "line": 621,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_inter_bucket_correlation",
           "object_type": "function",
@@ -1892,7 +1230,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 554,
+          "line": 621,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_inter_bucket_correlation",
           "object_type": "function",
@@ -1901,7 +1239,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 563,
+          "line": 633,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_specified_currencies",
           "object_type": "function",
@@ -1910,7 +1248,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 569,
+          "line": 639,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_is_specified_currency",
           "object_type": "function",
@@ -1919,7 +1257,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 569,
+          "line": 639,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_is_specified_currency",
           "object_type": "function",
@@ -1928,7 +1266,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 579,
+          "line": 649,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_other_currency_risk_weight_scalar",
           "object_type": "function",
@@ -1937,7 +1275,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 579,
+          "line": 649,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_other_currency_risk_weight_scalar",
           "object_type": "function",
@@ -1946,7 +1284,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 588,
+          "line": 661,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_delta_tenors",
           "object_type": "function",
@@ -1955,7 +1293,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 588,
+          "line": 661,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_delta_tenors",
           "object_type": "function",
@@ -1964,7 +1302,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 597,
+          "line": 670,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_tenor_definition",
           "object_type": "function",
@@ -1973,7 +1311,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 597,
+          "line": 670,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_tenor_definition",
           "object_type": "function",
@@ -1982,7 +1320,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 615,
+          "line": 692,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "profile_reference_payload",
           "object_type": "function",
@@ -1991,7 +1329,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 615,
+          "line": 692,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "profile_reference_payload",
           "object_type": "function",
@@ -2000,7 +1338,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 63,
+          "line": 69,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "get_cva_rule_profile",
           "object_type": "function",
@@ -2009,7 +1347,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 63,
+          "line": 69,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "get_cva_rule_profile",
           "object_type": "function",
@@ -2018,7 +1356,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 90,
+          "line": 96,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "resolve_cva_profile",
           "object_type": "function",
@@ -2027,7 +1365,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 90,
+          "line": 96,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "resolve_cva_profile",
           "object_type": "function",
@@ -2036,7 +1374,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 110,
+          "line": 116,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "profile_content_hash",
           "object_type": "function",
@@ -2045,7 +1383,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 110,
+          "line": 116,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "profile_content_hash",
           "object_type": "function",
@@ -2072,7 +1410,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 98,
+          "line": 102,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_ccs_delta_capital",
           "object_type": "function",
@@ -2081,7 +1419,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 98,
+          "line": 102,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_ccs_delta_capital",
           "object_type": "function",
@@ -2090,7 +1428,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 50,
+          "line": 54,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_commodity_delta_capital",
           "object_type": "function",
@@ -2099,7 +1437,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 50,
+          "line": 54,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_commodity_delta_capital",
           "object_type": "function",
@@ -2108,7 +1446,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 75,
+          "line": 79,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_commodity_vega_capital",
           "object_type": "function",
@@ -2117,7 +1455,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 75,
+          "line": 79,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_commodity_vega_capital",
           "object_type": "function",
@@ -2126,7 +1464,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 51,
+          "line": 55,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_equity_delta_capital",
           "object_type": "function",
@@ -2135,7 +1473,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 51,
+          "line": 55,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_equity_delta_capital",
           "object_type": "function",
@@ -2144,7 +1482,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 73,
+          "line": 77,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_equity_vega_capital",
           "object_type": "function",
@@ -2153,7 +1491,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 73,
+          "line": 77,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_equity_vega_capital",
           "object_type": "function",
@@ -2162,7 +1500,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 56,
+          "line": 63,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_fx_delta_capital",
           "object_type": "function",
@@ -2171,7 +1509,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 56,
+          "line": 63,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_fx_delta_capital",
           "object_type": "function",
@@ -2180,7 +1518,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 78,
+          "line": 85,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_fx_vega_capital",
           "object_type": "function",
@@ -2189,7 +1527,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 78,
+          "line": 85,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_fx_vega_capital",
           "object_type": "function",
@@ -2234,7 +1572,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 50,
+          "line": 54,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_rcs_delta_capital",
           "object_type": "function",
@@ -2243,7 +1581,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 50,
+          "line": 54,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_rcs_delta_capital",
           "object_type": "function",
@@ -2252,7 +1590,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 72,
+          "line": 76,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_rcs_vega_capital",
           "object_type": "function",
@@ -2261,7 +1599,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 72,
+          "line": 76,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_rcs_vega_capital",
           "object_type": "function",
@@ -2306,7 +1644,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 285,
+          "line": 291,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "fx_delta_risk_weight",
           "object_type": "function",
@@ -2315,7 +1653,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 285,
+          "line": 291,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "fx_delta_risk_weight",
           "object_type": "function",
@@ -2324,7 +1662,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 294,
+          "line": 300,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "fx_inter_bucket_correlation",
           "object_type": "function",
@@ -2333,7 +1671,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 294,
+          "line": 300,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "fx_inter_bucket_correlation",
           "object_type": "function",
@@ -2342,7 +1680,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 303,
+          "line": 309,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "sa_cva_vega_risk_weight",
           "object_type": "function",
@@ -2351,7 +1689,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 303,
+          "line": 309,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "sa_cva_vega_risk_weight",
           "object_type": "function",
@@ -2360,7 +1698,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 318,
+          "line": 324,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "girr_vega_intra_bucket_correlation",
           "object_type": "function",
@@ -2369,7 +1707,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 318,
+          "line": 324,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "girr_vega_intra_bucket_correlation",
           "object_type": "function",
@@ -2378,7 +1716,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 338,
+          "line": 344,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ccs_delta_risk_weight",
           "object_type": "function",
@@ -2387,7 +1725,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 338,
+          "line": 344,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ccs_delta_risk_weight",
           "object_type": "function",
@@ -2396,7 +1734,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 358,
+          "line": 364,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ccs_inter_bucket_correlation",
           "object_type": "function",
@@ -2405,7 +1743,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 358,
+          "line": 364,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ccs_inter_bucket_correlation",
           "object_type": "function",
@@ -2414,7 +1752,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 370,
+          "line": 379,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ccs_delta_intra_bucket_correlation",
           "object_type": "function",
@@ -2423,7 +1761,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 370,
+          "line": 379,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ccs_delta_intra_bucket_correlation",
           "object_type": "function",
@@ -2432,7 +1770,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 394,
+          "line": 403,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "rcs_delta_risk_weight",
           "object_type": "function",
@@ -2441,7 +1779,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 394,
+          "line": 403,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "rcs_delta_risk_weight",
           "object_type": "function",
@@ -2450,7 +1788,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 408,
+          "line": 417,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "rcs_inter_bucket_correlation",
           "object_type": "function",
@@ -2459,7 +1797,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 408,
+          "line": 417,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "rcs_inter_bucket_correlation",
           "object_type": "function",
@@ -2468,7 +1806,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 434,
+          "line": 443,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "equity_delta_risk_weight",
           "object_type": "function",
@@ -2477,7 +1815,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 434,
+          "line": 443,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "equity_delta_risk_weight",
           "object_type": "function",
@@ -2486,7 +1824,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 448,
+          "line": 457,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "equity_vega_rw_scalar",
           "object_type": "function",
@@ -2495,7 +1833,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 448,
+          "line": 457,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "equity_vega_rw_scalar",
           "object_type": "function",
@@ -2504,7 +1842,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 462,
+          "line": 471,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "equity_inter_bucket_correlation",
           "object_type": "function",
@@ -2513,7 +1851,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 462,
+          "line": 471,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "equity_inter_bucket_correlation",
           "object_type": "function",
@@ -2522,7 +1860,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 483,
+          "line": 492,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "commodity_delta_risk_weight",
           "object_type": "function",
@@ -2531,7 +1869,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 483,
+          "line": 492,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "commodity_delta_risk_weight",
           "object_type": "function",
@@ -2540,7 +1878,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 500,
+          "line": 509,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "commodity_inter_bucket_correlation",
           "object_type": "function",
@@ -2549,7 +1887,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 500,
+          "line": 509,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "commodity_inter_bucket_correlation",
           "object_type": "function",
@@ -2558,7 +1896,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 516,
+          "line": 525,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ccs_single_name_bucket_for_sector",
           "object_type": "function",
@@ -2567,7 +1905,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 516,
+          "line": 525,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ccs_single_name_bucket_for_sector",
           "object_type": "function",
@@ -2576,7 +1914,25 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 559,
+          "line": 555,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "sa_cva_reference_payload",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/sa_cva_reference_data.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 555,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "sa_cva_reference_payload",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/sa_cva_reference_data.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 710,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "parse_ccs_entity_key",
           "object_type": "function",
@@ -2585,7 +1941,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 559,
+          "line": 710,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "parse_ccs_entity_key",
           "object_type": "function",
@@ -2648,7 +2004,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 70,
+          "line": 72,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "cva_profile_support_status",
           "object_type": "function",
@@ -2657,7 +2013,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 70,
+          "line": 72,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "cva_profile_support_status",
           "object_type": "function",
@@ -2666,7 +2022,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 81,
+          "line": 83,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "cva_capital_supported_methods",
           "object_type": "function",
@@ -2675,7 +2031,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 81,
+          "line": 83,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "cva_capital_supported_methods",
           "object_type": "function",
@@ -2684,7 +2040,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 90,
+          "line": 92,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "cva_sa_cva_supported_paths",
           "object_type": "function",
@@ -2693,7 +2049,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 90,
+          "line": 92,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "cva_sa_cva_supported_paths",
           "object_type": "function",
@@ -2702,7 +2058,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 101,
+          "line": 103,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ensure_cva_profile_method_supported",
           "object_type": "function",
@@ -2711,7 +2067,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 118,
+          "line": 120,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ensure_cva_sa_cva_path_supported",
           "object_type": "function",
@@ -2891,7 +2247,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 125,
+          "line": 128,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "compute_weighted_sensitivities",
           "object_type": "function",
@@ -2900,7 +2256,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 125,
+          "line": 128,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "compute_weighted_sensitivities",
           "object_type": "function",
@@ -2909,7 +2265,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 579,
+          "line": 587,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "sort_weighted_sensitivities",
           "object_type": "function",
@@ -2918,7 +2274,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 579,
+          "line": 587,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "sort_weighted_sensitivities",
           "object_type": "function",
@@ -3094,7 +2450,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 231,
+          "line": 232,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "normalize_drc_nonsec_arrow_table",
           "object_type": "function",
@@ -3103,7 +2459,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 231,
+          "line": 232,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "normalize_drc_nonsec_arrow_table",
           "object_type": "function",
@@ -3112,7 +2468,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 252,
+          "line": 253,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "normalize_drc_securitisation_non_ctp_arrow_table",
           "object_type": "function",
@@ -3121,7 +2477,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 252,
+          "line": 253,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "normalize_drc_securitisation_non_ctp_arrow_table",
           "object_type": "function",
@@ -3130,7 +2486,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 273,
+          "line": 274,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "normalize_drc_ctp_arrow_table",
           "object_type": "function",
@@ -3139,7 +2495,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 273,
+          "line": 274,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "normalize_drc_ctp_arrow_table",
           "object_type": "function",
@@ -3148,7 +2504,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 294,
+          "line": 295,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_drc_nonsec_batch_from_arrow",
           "object_type": "function",
@@ -3157,7 +2513,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 294,
+          "line": 295,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_drc_nonsec_batch_from_arrow",
           "object_type": "function",
@@ -3166,7 +2522,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 315,
+          "line": 319,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_drc_securitisation_non_ctp_batch_from_arrow",
           "object_type": "function",
@@ -3175,7 +2531,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 315,
+          "line": 319,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_drc_securitisation_non_ctp_batch_from_arrow",
           "object_type": "function",
@@ -3184,7 +2540,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 340,
+          "line": 344,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_drc_ctp_batch_from_arrow",
           "object_type": "function",
@@ -3193,7 +2549,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 340,
+          "line": 344,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_drc_ctp_batch_from_arrow",
           "object_type": "function",
@@ -3301,7 +2657,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 209,
+          "line": 223,
           "message": "Public method is missing a docstring.",
           "object_name": "DrcPositionBatch.row_count",
           "object_type": "method",
@@ -3310,7 +2666,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 224,
+          "line": 238,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_drc_nonsec_batch_from_positions",
           "object_type": "function",
@@ -3319,7 +2675,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 224,
+          "line": 238,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_drc_nonsec_batch_from_positions",
           "object_type": "function",
@@ -3328,7 +2684,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 301,
+          "line": 315,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_drc_nonsec_batch_from_columns",
           "object_type": "function",
@@ -3337,7 +2693,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 301,
+          "line": 315,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_drc_nonsec_batch_from_columns",
           "object_type": "function",
@@ -3346,7 +2702,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 459,
+          "line": 473,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_drc_securitisation_non_ctp_batch_from_columns",
           "object_type": "function",
@@ -3355,7 +2711,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 459,
+          "line": 473,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_drc_securitisation_non_ctp_batch_from_columns",
           "object_type": "function",
@@ -3364,7 +2720,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 534,
+          "line": 548,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "build_drc_ctp_batch_from_columns",
           "object_type": "function",
@@ -3373,7 +2729,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 534,
+          "line": 548,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "build_drc_ctp_batch_from_columns",
           "object_type": "function",
@@ -3382,7 +2738,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 608,
+          "line": 622,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "input_hash_for_drc_batch",
           "object_type": "function",
@@ -3391,7 +2747,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 608,
+          "line": 622,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "input_hash_for_drc_batch",
           "object_type": "function",
@@ -3400,7 +2756,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 615,
+          "line": 629,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_drc_capital_from_batch",
           "object_type": "function",
@@ -3409,7 +2765,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 615,
+          "line": 629,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_drc_capital_from_batch",
           "object_type": "function",
@@ -3418,7 +2774,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 46,
+          "line": 58,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_hedge_benefit_ratio",
           "object_type": "function",
@@ -3427,7 +2783,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 46,
+          "line": 58,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_hedge_benefit_ratio",
           "object_type": "function",
@@ -3436,7 +2792,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 95,
+          "line": 109,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_bucket_drc",
           "object_type": "function",
@@ -3445,7 +2801,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 95,
+          "line": 109,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_bucket_drc",
           "object_type": "function",
@@ -3454,7 +2810,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 169,
+          "line": 188,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_category_drc",
           "object_type": "function",
@@ -3463,7 +2819,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 169,
+          "line": 188,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_category_drc",
           "object_type": "function",
@@ -3490,7 +2846,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 85,
+          "line": 97,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_ctp_drc",
           "object_type": "function",
@@ -3499,7 +2855,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 85,
+          "line": 97,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_ctp_drc",
           "object_type": "function",
@@ -3508,7 +2864,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 149,
+          "line": 161,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_ctp_gross_jtd",
           "object_type": "function",
@@ -3517,7 +2873,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 149,
+          "line": 161,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_ctp_gross_jtd",
           "object_type": "function",
@@ -3526,7 +2882,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 182,
+          "line": 194,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_ctp_net_jtds",
           "object_type": "function",
@@ -3535,7 +2891,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 182,
+          "line": 194,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_ctp_net_jtds",
           "object_type": "function",
@@ -3544,7 +2900,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 209,
+          "line": 224,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_ctp_category_drc",
           "object_type": "function",
@@ -3553,7 +2909,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 209,
+          "line": 224,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_ctp_category_drc",
           "object_type": "function",
@@ -3562,7 +2918,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 271,
+          "line": 291,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ctp_context_input_hash",
           "object_type": "function",
@@ -3571,7 +2927,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 271,
+          "line": 291,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "ctp_context_input_hash",
           "object_type": "function",
@@ -3580,7 +2936,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 308,
+          "line": 328,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "validate_ctp_context",
           "object_type": "function",
@@ -3985,7 +3341,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 21,
+          "line": 29,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_gross_jtd",
           "object_type": "function",
@@ -3994,7 +3350,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 21,
+          "line": 29,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_gross_jtd",
           "object_type": "function",
@@ -4003,7 +3359,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 70,
+          "line": 82,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_gross_jtds",
           "object_type": "function",
@@ -4012,7 +3368,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 70,
+          "line": 82,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_gross_jtds",
           "object_type": "function",
@@ -4075,7 +3431,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 52,
+          "line": 60,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_net_jtds",
           "object_type": "function",
@@ -4084,7 +3440,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 52,
+          "line": 60,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_net_jtds",
           "object_type": "function",
@@ -4093,7 +3449,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 71,
+          "line": 72,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "get_lgd_rule",
           "object_type": "function",
@@ -4102,7 +3458,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 71,
+          "line": 72,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "get_lgd_rule",
           "object_type": "function",
@@ -4111,7 +3467,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 85,
+          "line": 86,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "get_maturity_policy",
           "object_type": "function",
@@ -4120,7 +3476,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 85,
+          "line": 86,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "get_maturity_policy",
           "object_type": "function",
@@ -4129,7 +3485,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 95,
+          "line": 96,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "get_bucket_definition",
           "object_type": "function",
@@ -4138,7 +3494,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 95,
+          "line": 96,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "get_bucket_definition",
           "object_type": "function",
@@ -4147,7 +3503,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 109,
+          "line": 110,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "get_risk_weight_rule",
           "object_type": "function",
@@ -4156,7 +3512,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 109,
+          "line": 110,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "get_risk_weight_rule",
           "object_type": "function",
@@ -4165,7 +3521,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 126,
+          "line": 127,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "iter_lgd_rules",
           "object_type": "function",
@@ -4174,7 +3530,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 126,
+          "line": 127,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "iter_lgd_rules",
           "object_type": "function",
@@ -4183,7 +3539,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 135,
+          "line": 136,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "iter_bucket_definitions",
           "object_type": "function",
@@ -4192,7 +3548,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 135,
+          "line": 136,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "iter_bucket_definitions",
           "object_type": "function",
@@ -4201,7 +3557,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 146,
+          "line": 147,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "iter_risk_weight_rules",
           "object_type": "function",
@@ -4210,7 +3566,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 146,
+          "line": 147,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "iter_risk_weight_rules",
           "object_type": "function",
@@ -4219,7 +3575,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 167,
+          "line": 168,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "profile_reference_data_payload",
           "object_type": "function",
@@ -4228,7 +3584,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 167,
+          "line": 168,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "profile_reference_data_payload",
           "object_type": "function",
@@ -4255,7 +3611,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 544,
+          "line": 614,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "get_rule_profile",
           "object_type": "function",
@@ -4264,7 +3620,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 544,
+          "line": 614,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "get_rule_profile",
           "object_type": "function",
@@ -4273,7 +3629,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 553,
+          "line": 623,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "ensure_risk_class_supported",
           "object_type": "function",
@@ -4282,7 +3638,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 562,
+          "line": 632,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "drc_profile_support_matrix",
           "object_type": "function",
@@ -4291,7 +3647,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 573,
+          "line": 643,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "profile_content_hash",
           "object_type": "function",
@@ -4300,7 +3656,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 573,
+          "line": 643,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "profile_content_hash",
           "object_type": "function",
@@ -4408,7 +3764,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 66,
+          "line": 73,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_drc_capital",
           "object_type": "function",
@@ -4417,7 +3773,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 66,
+          "line": 73,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_drc_capital",
           "object_type": "function",
@@ -10383,7 +9739,7 @@
       ]
     },
     "frtb-rrao": {
-      "finding_count": 137,
+      "finding_count": 143,
       "findings": [
         {
           "line": 6,
@@ -10995,6 +10351,60 @@
           "object_type": "function",
           "package": "frtb-rrao",
           "path": "packages/frtb-rrao/src/frtb_rrao/arrow_batch.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 36,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "calculate_rrao_attribution",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/attribution.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 36,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "calculate_rrao_attribution",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/attribution.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 61,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "rrao_allocation_report_to_contributions",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/attribution.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 61,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "rrao_allocation_report_to_contributions",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/attribution.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 91,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "build_rrao_contribution_bundle",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/attribution.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 91,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "build_rrao_contribution_bundle",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/attribution.py",
           "rule": "MISSING_RETURNS_SECTION"
         },
         {

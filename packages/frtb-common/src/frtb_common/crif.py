@@ -74,7 +74,13 @@ class CrifColumnSpec:
         object.__setattr__(self, "aliases", aliases)
 
     def as_column_spec(self) -> ColumnSpec:
-        """Return the generic handoff column declaration for this CRIF field."""
+        """Return the generic handoff column declaration for this CRIF field.
+
+        Returns
+        -------
+        ColumnSpec
+            Shared :class:`~frtb_common.arrow_table.ColumnSpec` with CRIF null policy.
+        """
 
         return ColumnSpec(
             self.name,
@@ -181,7 +187,18 @@ DEFAULT_CRIF_COLUMN_SPECS: tuple[CrifColumnSpec, ...] = (
 
 
 def crif_records_to_arrow_table(records: Sequence[Mapping[str, object]]) -> pa.Table:
-    """Return an Arrow table from mapping rows using deterministic column order."""
+    """Return an Arrow table from mapping rows using deterministic column order.
+
+    Parameters
+    ----------
+    records : sequence of mapping
+        CRIF-like rows with string field names and JSON-compatible values.
+
+    Returns
+    -------
+    pyarrow.Table
+        String-typed Arrow table with sorted union-of-keys column order.
+    """
 
     rows = tuple(records)
     for index, record in enumerate(rows):
@@ -213,7 +230,34 @@ def normalize_crif_records(
     metadata: Mapping[str, str] | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize CRIF-like mapping rows into an Arrow table."""
+    """Normalize CRIF-like mapping rows into an Arrow table.
+
+    Parameters
+    ----------
+    records : sequence of mapping
+        CRIF-like rows to materialise and normalise.
+    column_specs : sequence of CrifColumnSpec, optional
+        Target column contracts (default :data:`DEFAULT_CRIF_COLUMN_SPECS`).
+    risk_type_mappings : sequence of CrifRiskTypeMapping, optional
+        Static RiskType to output-column mappings.
+    risk_type_mapper : callable, optional
+        Callable mapper overriding static mappings when provided.
+    use_vectorized_static_mapping : bool, optional
+        Use the vectorised static mapping path when eligible (default ``True``).
+    source_system : str, optional
+        Adapter metadata source system label.
+    source_file : str, optional
+        Adapter metadata source file label.
+    metadata : mapping, optional
+        Additional adapter metadata merged into the envelope.
+    source_hash : str, optional
+        Precomputed source digest for the input rows.
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Accepted/rejected CRIF normalisation envelope.
+    """
 
     table = crif_records_to_arrow_table(records)
     return normalize_crif_arrow_table(
@@ -241,7 +285,34 @@ def normalize_crif_arrow_table(
     metadata: Mapping[str, str] | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a CRIF-like Arrow table with package-provided risk mappings."""
+    """Normalize a CRIF-like Arrow table with package-provided risk mappings.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        CRIF-like Arrow table to normalise.
+    column_specs : sequence of CrifColumnSpec, optional
+        Target column contracts (default :data:`DEFAULT_CRIF_COLUMN_SPECS`).
+    risk_type_mappings : sequence of CrifRiskTypeMapping, optional
+        Static RiskType to output-column mappings.
+    risk_type_mapper : callable, optional
+        Callable mapper overriding static mappings when provided.
+    use_vectorized_static_mapping : bool, optional
+        Use the vectorised static mapping path when eligible (default ``True``).
+    source_system : str, optional
+        Adapter metadata source system label.
+    source_file : str, optional
+        Adapter metadata source file label.
+    metadata : mapping, optional
+        Additional adapter metadata merged into the envelope.
+    source_hash : str, optional
+        Precomputed source digest; otherwise derived from *table*.
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Accepted/rejected CRIF normalisation envelope.
+    """
 
     if not isinstance(table, pa.Table):
         raise TypeError("table must be a pyarrow.Table")
@@ -357,7 +428,20 @@ def normalize_crif_arrow_table(
 
 
 def resolve_crif_column_name(table: pa.Table, aliases: Sequence[str]) -> str | None:
-    """Resolve a source column by CRIF aliases using case/spacing-insensitive matching."""
+    """Resolve a source column by CRIF aliases using case/spacing-insensitive matching.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Source CRIF-like Arrow table.
+    aliases : sequence of str
+        Candidate header aliases to match.
+
+    Returns
+    -------
+    str or None
+        Matching input column name, or ``None`` when no alias matches.
+    """
 
     if not isinstance(table, pa.Table):
         raise TypeError("table must be a pyarrow.Table")
@@ -378,7 +462,18 @@ def resolve_crif_column_name(table: pa.Table, aliases: Sequence[str]) -> str | N
 
 
 def normalise_crif_risk_type(value: object) -> str:
-    """Return the deterministic key used for CRIF RiskType mapping."""
+    """Return the deterministic key used for CRIF RiskType mapping.
+
+    Parameters
+    ----------
+    value : object
+        Raw RiskType cell value from a CRIF row or column.
+
+    Returns
+    -------
+    str
+        Uppercased, stripped RiskType key.
+    """
 
     return _normalise_risk_type(value)
 
