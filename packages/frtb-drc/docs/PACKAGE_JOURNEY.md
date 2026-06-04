@@ -286,8 +286,13 @@ for a single combined result.
 ```python
 from datetime import date
 
-from frtb_drc import BASEL_MAR22_PROFILE_ID, calculate_drc_capital, to_component_summary
-from frtb_drc.data_models import DrcCalculationContext, DrcPosition
+from frtb_drc import (
+    BASEL_MAR22_PROFILE_ID,
+    DrcCalculationContext,
+    DrcPosition,
+    calculate_drc_capital,
+    to_component_summary,
+)
 
 # positions = (...,)  # tuple of DrcPosition across NON_SEC, SEC_NON_CTP, CTP as needed
 context = DrcCalculationContext(
@@ -304,6 +309,12 @@ drc_summary = to_component_summary(result)
 ### Single-class Arrow path
 
 ```python
+from frtb_drc import (
+    build_drc_nonsec_batch_from_arrow,
+    calculate_drc_capital_from_batch,
+    normalize_drc_nonsec_arrow_table,
+)
+
 # nonsec_table = ...  # pyarrow.Table aligned to DRC_NONSEC_ARROW_COLUMN_SPECS
 handoff = normalize_drc_nonsec_arrow_table(nonsec_table)
 batch = build_drc_nonsec_batch_from_arrow(handoff)
