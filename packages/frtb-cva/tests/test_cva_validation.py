@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 
 import pytest
+from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_cva import (
     CreditQuality,
     CvaCounterparty,
@@ -341,7 +342,7 @@ def test_validate_calculation_context_errors() -> None:
             )
         )
 
-    with pytest.raises(CvaInputError, match="materiality-threshold alternative is unsupported"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match=r"MAR50\.9"):
         validate_calculation_context(
             CvaCalculationContext(
                 run_id="r1",

@@ -8,6 +8,9 @@ import math
 from enum import StrEnum
 from typing import Literal
 
+from frtb_common import UnsupportedRegulatoryFeatureError
+
+from frtb_cva._unsupported import MAR50_9_UNSUPPORTED_MESSAGE
 from frtb_cva.data_models import (
     BaCvaHedgeType,
     CvaCalculationContext,
@@ -208,10 +211,7 @@ def validate_calculation_context(context: object) -> CvaCalculationContext:
     if not isinstance(context.method, CvaMethod):
         raise CvaInputError("invalid CVA method", field="method")
     if context.materiality_threshold_elected:
-        raise CvaInputError(
-            "materiality-threshold alternative is unsupported in this slice",
-            field="materiality_threshold_elected",
-        )
+        raise UnsupportedRegulatoryFeatureError(MAR50_9_UNSUPPORTED_MESSAGE)
     for netting_set_id in context.carve_out_netting_set_ids:
         _require_text(netting_set_id, "carve_out_netting_set_ids")
     return context

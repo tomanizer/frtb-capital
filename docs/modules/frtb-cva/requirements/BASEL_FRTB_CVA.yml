@@ -55,6 +55,14 @@ requirements:
     modules: [src/frtb_cva/regimes.py, src/frtb_cva/scope.py]
     tests: [tests/test_cva_scope.py, tests/test_cva_mixed_method.py, tests/test_cva_unsupported_features.py]
     notes: BA-CVA default, SA-CVA approval, mixed carve-out, and materiality alternative fail-closed gate.
+  - id: CVA-MATRIX-001
+    title: CVA profile, method, and SA-CVA support matrix
+    detailed_ids: [CVA-FUNC-006, CVA-FUNC-027]
+    source: Basel MAR50.8-MAR50.9; MAR50.14-MAR50.26; MAR50.42-MAR50.77
+    status: implemented
+    modules: [src/frtb_cva/support_matrix.py]
+    tests: [tests/test_cva_support_matrix.py]
+    notes: Runtime-readable matrix separates Basel capital-producing cells, MAR50.9 fail-closed CCR-boundary status, CCS vega regulatory absence, and comparison-profile fail-closed cells.
   - id: CVA-HEDGE-001
     title: Eligible CVA hedge and internal transfer treatment
     detailed_ids: [CVA-FUNC-004, CVA-FUNC-007, CVA-BOUNDARY-006]

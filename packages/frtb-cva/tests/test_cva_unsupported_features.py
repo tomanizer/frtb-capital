@@ -21,8 +21,6 @@ def test_materiality_threshold_fails_at_public_api(
     sovereign_counterparty,
     sovereign_netting_set,
 ) -> None:
-    from frtb_cva import CvaInputError
-
     context = CvaCalculationContext(
         run_id=reduced_context.run_id,
         calculation_date=reduced_context.calculation_date,
@@ -31,7 +29,7 @@ def test_materiality_threshold_fails_at_public_api(
         method=CvaMethod.BA_CVA_REDUCED,
         materiality_threshold_elected=True,
     )
-    with pytest.raises(CvaInputError, match="materiality-threshold"):
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match=r"MAR50\.9"):
         calculate_cva_capital(context, (sovereign_counterparty,), (sovereign_netting_set,))
 
 

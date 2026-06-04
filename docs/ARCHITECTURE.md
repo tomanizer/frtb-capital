@@ -91,8 +91,10 @@ Status: shared library. It provides shared status metadata, explicit
 unsupported/unimplemented exception types, JSON-ready serialization, and
 regulatory citation helpers. It performs no capital calculation and carries no
 IMA, SBM, DRC, RRAO, or CVA regulatory semantics. The migrated IMA package still
-holds some calculation-specific abstractions inside `packages/frtb-ima`. Broader
-extraction is a separate ADR-backed workstream.
+holds calculation-specific abstractions inside `packages/frtb-ima`; its public
+`frtb_ima.regimes.UnsupportedRegulatoryFeatureError` import path remains
+available as a compatibility subclass of the shared
+`frtb_common.UnsupportedRegulatoryFeatureError`.
 
 ### `frtb-ima` — Internal Models Approach
 

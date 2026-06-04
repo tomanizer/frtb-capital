@@ -49,6 +49,41 @@ Companion source manifest: [`regulatory_sources.yml`](regulatory_sources.yml).
 
 July 2020 calibration revision notes: `m_CVA = 1.0`, `D_BA-CVA = 0.65`.
 
+## Profile x method support matrix
+
+Runtime source of truth: `frtb_cva.support_matrix.cva_profile_support_matrix`.
+Unsupported comparison profiles and MAR50.9 fail closed before capital
+calculation; no cell aliases U.S., EU, or UK profiles to Basel MAR50 reference
+data.
+
+| Profile | Method or policy | Status | Citation | Blocker |
+| --- | --- | --- | --- | --- |
+| `BASEL_MAR50_2020` | `BA_CVA_REDUCED` | `implemented_under_audit` | MAR50.14-MAR50.16 | none |
+| `BASEL_MAR50_2020` | `BA_CVA_FULL` | `implemented_under_audit` | MAR50.17-MAR50.26 | none |
+| `BASEL_MAR50_2020` | `SA_CVA` | `implemented_under_audit` | MAR50.42-MAR50.77 | none |
+| `BASEL_MAR50_2020` | `MIXED_CARVE_OUT` | `implemented_under_audit` | MAR50.8 | none |
+| `BASEL_MAR50_2020` | `MAR50.9_MATERIALITY_THRESHOLD_CCR` | `unsupported_fail_closed` | MAR50.9 | CCR input and orchestration boundary |
+| `US_NPR20_VB` | all CVA methods | `unsupported_fail_closed` | U.S. NPR 2.0 91 FR 14952 section V.B | comparison profile source mapping and fixtures |
+| `EU_CRR3_CVA` | all CVA methods | `unsupported_fail_closed` | Regulation (EU) 2024/1623 Articles 382-386 | comparison profile source mapping and fixtures |
+| `UK_PRA_CVA` | all CVA methods | `unsupported_fail_closed` | PRA PS1/26; PRA CP16/22 | UK-specific source mapping and fixtures |
+
+## BASEL_MAR50_2020 SA-CVA risk-class support matrix
+
+| Risk class | Measure | Status | Citation | Blocker |
+| --- | --- | --- | --- | --- |
+| `COMMODITY` | `DELTA` | `implemented_under_audit` | MAR50.74-MAR50.77 | none |
+| `COMMODITY` | `VEGA` | `implemented_under_audit` | MAR50.74-MAR50.77 | none |
+| `COUNTERPARTY_CREDIT_SPREAD` | `DELTA` | `implemented_under_audit` | MAR50.45, MAR50.50, MAR50.63-MAR50.65 | none |
+| `COUNTERPARTY_CREDIT_SPREAD` | `VEGA` | `regulatory_absence` | MAR50.45, MAR50.63 | CCS vega is not defined |
+| `EQUITY` | `DELTA` | `implemented_under_audit` | MAR50.70-MAR50.73 | none |
+| `EQUITY` | `VEGA` | `implemented_under_audit` | MAR50.70-MAR50.73 | none |
+| `FX` | `DELTA` | `implemented_under_audit` | MAR50.59-MAR50.62 | none |
+| `FX` | `VEGA` | `implemented_under_audit` | MAR50.59-MAR50.62 | none |
+| `GIRR` | `DELTA` | `implemented_under_audit` | MAR50.54-MAR50.58 | none |
+| `GIRR` | `VEGA` | `implemented_under_audit` | MAR50.54-MAR50.58 | none |
+| `REFERENCE_CREDIT_SPREAD` | `DELTA` | `implemented_under_audit` | MAR50.50, MAR50.66-MAR50.69 | none |
+| `REFERENCE_CREDIT_SPREAD` | `VEGA` | `implemented_under_audit` | MAR50.50, MAR50.66-MAR50.69 | none |
+
 ## Unsupported in the delivered slice
 
 - U.S., EU, and UK comparison CVA profiles

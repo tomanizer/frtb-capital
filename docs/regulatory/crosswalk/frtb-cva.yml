@@ -19,9 +19,11 @@ requirements:
     code_refs:
       - packages/frtb-cva/src/frtb_cva/scope.py
       - packages/frtb-cva/src/frtb_cva/regimes.py
+      - packages/frtb-cva/src/frtb_cva/support_matrix.py
     test_refs:
       - packages/frtb-cva/tests/test_cva_scope.py
       - packages/frtb-cva/tests/test_cva_regimes.py
+      - packages/frtb-cva/tests/test_cva_support_matrix.py
     coverage_status: implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
@@ -81,8 +83,10 @@ requirements:
       - us_npr20_91fr14952
     code_refs:
       - packages/frtb-cva/src/frtb_cva/regimes.py
+      - packages/frtb-cva/src/frtb_cva/support_matrix.py
     test_refs:
       - packages/frtb-cva/tests/test_cva_unsupported_features.py
+      - packages/frtb-cva/tests/test_cva_support_matrix.py
     coverage_status: not_implemented
     notes: Proposed U.S. section V.B mapping remains fail-closed until package-local profile rules and fixtures exist.
   - id: CVA-EU-001
@@ -93,8 +97,10 @@ requirements:
       - eba_rts_cva_sft
     code_refs:
       - packages/frtb-cva/src/frtb_cva/regimes.py
+      - packages/frtb-cva/src/frtb_cva/support_matrix.py
     test_refs:
       - packages/frtb-cva/tests/test_cva_unsupported_features.py
+      - packages/frtb-cva/tests/test_cva_support_matrix.py
     coverage_status: not_implemented
     notes: Fail closed until Articles 382-386 are mapped.
   - id: CVA-UK-001
@@ -105,7 +111,9 @@ requirements:
       - uk_pra_cp16_22_basel_3_1_consultation
     code_refs:
       - packages/frtb-cva/src/frtb_cva/regimes.py
+      - packages/frtb-cva/src/frtb_cva/support_matrix.py
     test_refs:
       - packages/frtb-cva/tests/test_cva_unsupported_features.py
+      - packages/frtb-cva/tests/test_cva_support_matrix.py
     coverage_status: not_implemented
     notes: Comparison profile only; Basel MAR50 is first implementation target.
