@@ -62,7 +62,19 @@ def calculate_net_jtds(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> tuple[NetJtd, ...]:
-    """Calculate non-securitisation net JTD records in stable group order."""
+    """Calculate non-securitisation net JTD records in stable group order.
+    Parameters
+    ----------
+    exposures : Iterable[NettingInput]
+        Exposures.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[NetJtd, ...]
+        Result of the operation.
+    """
 
     profile = get_rule_profile(profile_id)
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)

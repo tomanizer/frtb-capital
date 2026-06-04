@@ -100,7 +100,21 @@ def calculate_ctp_drc(
     context: DrcCalculationContext,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> CtpCalculation:
-    """Calculate the supported CTP DRC path for validated positions."""
+    """Calculate the supported CTP DRC path for validated positions.
+    Parameters
+    ----------
+    positions : Iterable[DrcPosition]
+        Canonical DRC position records.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    CtpCalculation
+        Result of the operation.
+    """
 
     profile = get_rule_profile(profile_id)
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
@@ -163,7 +177,19 @@ def calculate_ctp_gross_jtd(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> GrossJtd:
-    """Calculate CTP gross default exposure from market value."""
+    """Calculate CTP gross default exposure from market value.
+    Parameters
+    ----------
+    position : DrcPosition
+        Position.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    GrossJtd
+        Result of the operation.
+    """
 
     validate_position(position)
     profile = get_rule_profile(profile_id)
@@ -196,7 +222,19 @@ def calculate_ctp_net_jtds(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> tuple[NetJtd, ...]:
-    """Calculate CTP net default exposures in stable bucket/group order."""
+    """Calculate CTP net default exposures in stable bucket/group order.
+    Parameters
+    ----------
+    exposures : Iterable[CtpNettingInput]
+        Exposures.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[NetJtd, ...]
+        Result of the operation.
+    """
 
     profile = get_rule_profile(profile_id)
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
@@ -226,7 +264,19 @@ def calculate_ctp_category_drc(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> CategoryDrc:
-    """Calculate CTP category capital from CTP net JTD risk positions."""
+    """Calculate CTP category capital from CTP net JTD risk positions.
+    Parameters
+    ----------
+    inputs : Iterable[CtpCapitalInput]
+        Capital inputs pairing net JTD with credit quality.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    CategoryDrc
+        Result of the operation.
+    """
 
     profile = get_rule_profile(profile_id)
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
@@ -294,7 +344,21 @@ def ctp_context_input_hash(
     positions: Iterable[DrcPosition],
     context: DrcCalculationContext,
 ) -> str:
-    """Include CTP risk-weight and offset evidence in the input hash when CTP is present."""
+    """Include CTP risk-weight and offset evidence in the input hash when CTP is present.
+    Parameters
+    ----------
+    input_hash : str
+        Precomputed input digest before FX lineage.
+    positions : Iterable[DrcPosition]
+        Canonical DRC position records.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     records = tuple(
         position
@@ -326,7 +390,12 @@ def ctp_context_input_hash(
 
 
 def validate_ctp_context(context: DrcCalculationContext) -> None:
-    """Validate CTP context maps without requiring that CTP positions are present."""
+    """Validate CTP context maps without requiring that CTP positions are present.
+    Parameters
+    ----------
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    """
 
     effective_risk_weights(context, risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
     for position_id, offset_group in context.ctp_offset_groups.items():

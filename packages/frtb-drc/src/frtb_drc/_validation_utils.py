@@ -9,7 +9,19 @@ from frtb_drc.validation import DrcInputError
 
 
 def require_text(value: object | None, field_name: str) -> str:
-    """Return stripped non-empty text or raise a DRC input error."""
+    """Return stripped non-empty text or raise a DRC input error.
+    Parameters
+    ----------
+    value : object | None
+        Input value to validate.
+    field_name : str
+        Human-readable field label for error messages.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     text = optional_text(value)
     if text is None:
@@ -18,7 +30,17 @@ def require_text(value: object | None, field_name: str) -> str:
 
 
 def optional_text(value: object | None) -> str | None:
-    """Return stripped optional text, normalising blanks to None."""
+    """Return stripped optional text, normalising blanks to None.
+    Parameters
+    ----------
+    value : object | None
+        Input value to validate.
+
+    Returns
+    -------
+    str | None
+        Result of the operation.
+    """
 
     if value is None:
         return None
@@ -27,7 +49,19 @@ def optional_text(value: object | None) -> str | None:
 
 
 def require_finite_non_negative(value: object, field_name: str) -> float:
-    """Return a finite non-negative float or raise a DRC input error."""
+    """Return a finite non-negative float or raise a DRC input error.
+    Parameters
+    ----------
+    value : object
+        Input value to validate.
+    field_name : str
+        Human-readable field label for error messages.
+
+    Returns
+    -------
+    float
+        Result of the operation.
+    """
 
     try:
         result = float(cast(Any, value))

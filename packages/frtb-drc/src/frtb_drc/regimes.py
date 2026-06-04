@@ -626,7 +626,17 @@ PRA_UK_CRR_CITATIONS: dict[str, DrcCitation] = {
 
 
 def get_rule_profile(profile_id: str = US_NPR_2_0_PROFILE_ID) -> DrcRuleProfile:
-    """Return a DRC rule profile by id."""
+    """Return a DRC rule profile by id.
+    Parameters
+    ----------
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    DrcRuleProfile
+        Result of the operation.
+    """
 
     try:
         return _PROFILES[profile_id]
@@ -635,7 +645,14 @@ def get_rule_profile(profile_id: str = US_NPR_2_0_PROFILE_ID) -> DrcRuleProfile:
 
 
 def ensure_risk_class_supported(profile: DrcRuleProfile, risk_class: DrcRiskClass) -> None:
-    """Raise explicitly when a profile/risk-class path is unsupported."""
+    """Raise explicitly when a profile/risk-class path is unsupported.
+    Parameters
+    ----------
+    profile : DrcRuleProfile
+        Profile.
+    risk_class : DrcRiskClass
+        DRC risk class for profile support lookup.
+    """
 
     if risk_class in profile.supported_risk_classes:
         return
@@ -644,7 +661,12 @@ def ensure_risk_class_supported(profile: DrcRuleProfile, risk_class: DrcRiskClas
 
 
 def drc_profile_support_matrix() -> tuple[DrcProfileSupportCell, ...]:
-    """Return the current DRC profile/risk-class support matrix."""
+    """Return the current DRC profile/risk-class support matrix.
+    Returns
+    -------
+    tuple[DrcProfileSupportCell, ...]
+        Result of the operation.
+    """
 
     cells: list[DrcProfileSupportCell] = []
     for profile_id in _PROFILE_ORDER:
@@ -655,7 +677,17 @@ def drc_profile_support_matrix() -> tuple[DrcProfileSupportCell, ...]:
 
 
 def profile_content_hash(profile: DrcRuleProfile) -> str:
-    """Compute a deterministic hash from profile content, excluding the hash itself."""
+    """Compute a deterministic hash from profile content, excluding the hash itself.
+    Parameters
+    ----------
+    profile : DrcRuleProfile
+        Profile.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     payload = _profile_hash_payload(profile)
     return hash_payload(payload)

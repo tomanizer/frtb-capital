@@ -117,7 +117,21 @@ def calculate_securitisation_non_ctp_drc(
     context: DrcCalculationContext,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> SecuritisationNonCtpCalculation:
-    """Calculate supported securitisation non-CTP DRC for validated positions."""
+    """Calculate supported securitisation non-CTP DRC for validated positions.
+    Parameters
+    ----------
+    positions : Iterable[DrcPosition]
+        Canonical DRC position records.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    SecuritisationNonCtpCalculation
+        Result of the operation.
+    """
 
     profile = get_rule_profile(profile_id)
     ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
@@ -186,7 +200,21 @@ def calculate_securitisation_non_ctp_gross_jtd(
     context: DrcCalculationContext | None = None,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> GrossJtd:
-    """Calculate securitisation non-CTP gross default exposure from market value."""
+    """Calculate securitisation non-CTP gross default exposure from market value.
+    Parameters
+    ----------
+    position : DrcPosition
+        Position.
+    context : DrcCalculationContext | None, optional
+        Calculation context including profile, FX, and run metadata.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    GrossJtd
+        Result of the operation.
+    """
 
     validate_position(position)
     profile = get_rule_profile(profile_id)
@@ -235,7 +263,19 @@ def calculate_securitisation_non_ctp_net_jtds(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> tuple[NetJtd, ...]:
-    """Calculate securitisation non-CTP net default exposures in stable order."""
+    """Calculate securitisation non-CTP net default exposures in stable order.
+    Parameters
+    ----------
+    exposures : Iterable[SecuritisationNonCtpNettingInput]
+        Exposures.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[NetJtd, ...]
+        Result of the operation.
+    """
 
     profile = get_rule_profile(profile_id)
     ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
@@ -268,7 +308,19 @@ def calculate_securitisation_non_ctp_category_drc(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> CategoryDrc:
-    """Calculate securitisation non-CTP category capital from net JTD positions."""
+    """Calculate securitisation non-CTP category capital from net JTD positions.
+    Parameters
+    ----------
+    inputs : Iterable[SecuritisationNonCtpCapitalInput]
+        Capital inputs pairing net JTD with credit quality.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    CategoryDrc
+        Result of the operation.
+    """
 
     profile = get_rule_profile(profile_id)
     ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
@@ -315,7 +367,21 @@ def securitisation_non_ctp_context_input_hash(
     positions: Iterable[DrcPosition],
     context: DrcCalculationContext,
 ) -> str:
-    """Include securitisation non-CTP risk-weight and offset evidence in the input hash."""
+    """Include securitisation non-CTP risk-weight and offset evidence in the input hash.
+    Parameters
+    ----------
+    input_hash : str
+        Precomputed input digest before FX lineage.
+    positions : Iterable[DrcPosition]
+        Canonical DRC position records.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     records = tuple(
         position
@@ -353,7 +419,12 @@ def securitisation_non_ctp_context_input_hash(
 
 
 def validate_securitisation_non_ctp_context(context: DrcCalculationContext) -> None:
-    """Validate securitisation non-CTP context maps without requiring positions."""
+    """Validate securitisation non-CTP context maps without requiring positions.
+    Parameters
+    ----------
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    """
 
     effective_risk_weights(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
     validate_fair_value_cap_evidence(

@@ -96,7 +96,21 @@ def validate_position(
     citation_policy: str = _STRICT_CITATION_POLICY,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> DrcPosition:
-    """Validate one canonical DRC position and return it unchanged."""
+    """Validate one canonical DRC position and return it unchanged.
+    Parameters
+    ----------
+    position : DrcPosition
+        Position.
+    citation_policy : str, optional
+        Citation validation policy (strict by default).
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    DrcPosition
+        Result of the operation.
+    """
 
     _validate_citation_policy(citation_policy)
     _require_non_empty(position.position_id, "position_id")
@@ -145,7 +159,21 @@ def validate_positions(
     citation_policy: str = _STRICT_CITATION_POLICY,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> tuple[DrcPosition, ...]:
-    """Validate a deterministic collection of canonical DRC positions."""
+    """Validate a deterministic collection of canonical DRC positions.
+    Parameters
+    ----------
+    positions : Iterable[DrcPosition]
+        Canonical DRC position records.
+    citation_policy : str, optional
+        Citation validation policy (strict by default).
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[DrcPosition, ...]
+        Result of the operation.
+    """
 
     _validate_citation_policy(citation_policy)
     validated: list[DrcPosition] = []
@@ -165,7 +193,16 @@ def ensure_chargeable_credit_quality(
     position_id: str | None = None,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> None:
-    """Reject credit-quality values outside a profile's non-securitisation table."""
+    """Reject credit-quality values outside a profile's non-securitisation table.
+    Parameters
+    ----------
+    credit_quality : CreditQuality | str
+        Credit-quality bucket for risk-weight lookup.
+    position_id : str | None, optional
+        Position identifier for error context.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+    """
 
     quality = CreditQuality(credit_quality)
     allowed_qualities = _chargeable_non_securitisation_credit_qualities(profile_id)
@@ -184,13 +221,28 @@ def ensure_chargeable_credit_quality(
 def chargeable_non_securitisation_bucket_keys(
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> tuple[str, ...]:
-    """Return non-securitisation bucket keys with DRC weights for a profile."""
+    """Return non-securitisation bucket keys with DRC weights for a profile.
+    Parameters
+    ----------
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Result of the operation.
+    """
 
     return _chargeable_non_securitisation_bucket_keys(profile_id)
 
 
 def chargeable_securitisation_non_ctp_bucket_keys() -> tuple[str, ...]:
-    """Return U.S. NPR 2.0 securitisation non-CTP bucket keys."""
+    """Return U.S. NPR 2.0 securitisation non-CTP bucket keys.
+    Returns
+    -------
+    tuple[str, ...]
+        Result of the operation.
+    """
 
     return _CHARGEABLE_SEC_NONCTP_BUCKET_KEYS
 
@@ -201,7 +253,16 @@ def ensure_chargeable_non_securitisation_bucket(
     position_id: str | None = None,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> None:
-    """Reject invented or excluded non-securitisation bucket keys early."""
+    """Reject invented or excluded non-securitisation bucket keys early.
+    Parameters
+    ----------
+    bucket_key : str
+        DRC bucket key for the calculation scope.
+    position_id : str | None, optional
+        Position identifier for error context.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+    """
 
     allowed_bucket_keys = _chargeable_non_securitisation_bucket_keys(profile_id)
     if bucket_key in allowed_bucket_keys:
@@ -226,7 +287,14 @@ def ensure_chargeable_securitisation_non_ctp_bucket(
     *,
     position_id: str | None = None,
 ) -> None:
-    """Reject invented securitisation non-CTP bucket keys early."""
+    """Reject invented securitisation non-CTP bucket keys early.
+    Parameters
+    ----------
+    bucket_key : str
+        DRC bucket key for the calculation scope.
+    position_id : str | None, optional
+        Position identifier for error context.
+    """
 
     if bucket_key in _CHARGEABLE_SEC_NONCTP_BUCKET_KEYS:
         return

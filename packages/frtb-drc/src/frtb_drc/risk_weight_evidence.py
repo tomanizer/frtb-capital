@@ -25,7 +25,19 @@ def risk_weight_evidence_by_position(
     *,
     field_name: str = "risk_weight_evidence",
 ) -> dict[str, DrcRiskWeightEvidence]:
-    """Return evidence keyed by position id, rejecting duplicate records."""
+    """Return evidence keyed by position id, rejecting duplicate records.
+    Parameters
+    ----------
+    evidence : Iterable[DrcRiskWeightEvidence]
+        Risk-weight or fair-value-cap evidence records.
+    field_name : str, optional
+        Human-readable field label for error messages.
+
+    Returns
+    -------
+    dict[str, DrcRiskWeightEvidence]
+        Result of the operation.
+    """
 
     result: dict[str, DrcRiskWeightEvidence] = {}
     for record in evidence:
@@ -43,7 +55,14 @@ def validate_risk_weight_evidence(
     *,
     risk_class: DrcRiskClass,
 ) -> None:
-    """Validate all evidence records for one DRC risk class in a context."""
+    """Validate all evidence records for one DRC risk class in a context.
+    Parameters
+    ----------
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    risk_class : DrcRiskClass
+        Risk class.
+    """
 
     field_name, evidence = _context_evidence(context, risk_class=risk_class)
     for position_id, record in evidence.items():
@@ -61,7 +80,19 @@ def effective_risk_weights(
     *,
     risk_class: DrcRiskClass,
 ) -> dict[str, float]:
-    """Combine legacy float maps with typed evidence into one validated map."""
+    """Combine legacy float maps with typed evidence into one validated map.
+    Parameters
+    ----------
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    risk_class : DrcRiskClass
+        Risk class.
+
+    Returns
+    -------
+    dict[str, float]
+        Result of the operation.
+    """
 
     raw_field_name, raw_weights = _context_raw_weights(context, risk_class=risk_class)
     evidence_field_name, evidence = _context_evidence(context, risk_class=risk_class)
@@ -102,7 +133,21 @@ def used_risk_weight_evidence(
     *,
     risk_class: DrcRiskClass,
 ) -> tuple[DrcRiskWeightEvidence, ...]:
-    """Return typed evidence records used by the supplied positions."""
+    """Return typed evidence records used by the supplied positions.
+    Parameters
+    ----------
+    positions : Iterable[DrcPosition]
+        Canonical DRC position records.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    risk_class : DrcRiskClass
+        Risk class.
+
+    Returns
+    -------
+    tuple[DrcRiskWeightEvidence, ...]
+        Result of the operation.
+    """
 
     _field_name, evidence = _context_evidence(context, risk_class=risk_class)
     position_ids = tuple(
@@ -121,7 +166,21 @@ def used_risk_weight_evidence_for_position_ids(
     *,
     risk_class: DrcRiskClass,
 ) -> tuple[DrcRiskWeightEvidence, ...]:
-    """Return typed evidence records used by a columnar batch."""
+    """Return typed evidence records used by a columnar batch.
+    Parameters
+    ----------
+    position_ids : Iterable[str]
+        Position identifiers to filter evidence.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    risk_class : DrcRiskClass
+        Risk class.
+
+    Returns
+    -------
+    tuple[DrcRiskWeightEvidence, ...]
+        Result of the operation.
+    """
 
     _field_name, evidence = _context_evidence(context, risk_class=risk_class)
     return tuple(
@@ -137,7 +196,21 @@ def risk_weight_evidence_hash_payload(
     *,
     risk_class: DrcRiskClass,
 ) -> tuple[dict[str, object], ...]:
-    """Return stable JSON-ready evidence payload for hashing."""
+    """Return stable JSON-ready evidence payload for hashing.
+    Parameters
+    ----------
+    position_ids : Iterable[str]
+        Position identifiers to filter evidence.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    risk_class : DrcRiskClass
+        Risk class.
+
+    Returns
+    -------
+    tuple[dict[str, object], ...]
+        Result of the operation.
+    """
 
     return tuple(
         record.as_dict()

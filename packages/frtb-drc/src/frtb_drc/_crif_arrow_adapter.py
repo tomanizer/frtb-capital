@@ -27,7 +27,17 @@ from frtb_drc.data_models import (
 def drc_crif_result_to_arrow_tables(
     result: DrcCrifAdapterResult,
 ) -> Mapping[DrcRiskClass, NormalizedArrowTable]:
-    """Build class-specific normalized Arrow tables from accepted CRIF rows."""
+    """Build class-specific normalized Arrow tables from accepted CRIF rows.
+    Parameters
+    ----------
+    result : DrcCrifAdapterResult
+        DRC capital result to serialize or reconcile.
+
+    Returns
+    -------
+    Mapping[DrcRiskClass, NormalizedArrowTable]
+        Result of the operation.
+    """
 
     by_class: dict[DrcRiskClass, list[DrcPosition]] = {}
     for position in result.positions:

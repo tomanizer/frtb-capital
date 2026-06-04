@@ -61,7 +61,21 @@ def calculate_hedge_benefit_ratio(
     bucket_key: str,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> HedgeBenefitRatio:
-    """Calculate the bucket HBR from aggregate long and short net JTD."""
+    """Calculate the bucket HBR from aggregate long and short net JTD.
+    Parameters
+    ----------
+    net_jtds : Iterable[NetJtd]
+        Net JTD records within one bucket or category.
+    bucket_key : str
+        DRC bucket key for the calculation scope.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    HedgeBenefitRatio
+        Result of the operation.
+    """
 
     records = tuple(net_jtds)
     for record in records:
@@ -112,7 +126,21 @@ def calculate_bucket_drc(
     bucket_key: str | None = None,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> BucketDrc:
-    """Calculate non-securitisation DRC capital for one bucket."""
+    """Calculate non-securitisation DRC capital for one bucket.
+    Parameters
+    ----------
+    inputs : Iterable[CapitalInput]
+        Capital inputs pairing net JTD with credit quality.
+    bucket_key : str | None, optional
+        DRC bucket key for the calculation scope.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    BucketDrc
+        Result of the operation.
+    """
 
     profile = get_rule_profile(profile_id)
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
@@ -190,7 +218,19 @@ def calculate_category_drc(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> CategoryDrc:
-    """Calculate the non-securitisation category total from bucket DRC results."""
+    """Calculate the non-securitisation category total from bucket DRC results.
+    Parameters
+    ----------
+    inputs : Iterable[CapitalInput]
+        Capital inputs pairing net JTD with credit quality.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    CategoryDrc
+        Result of the operation.
+    """
 
     profile = get_rule_profile(profile_id)
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)

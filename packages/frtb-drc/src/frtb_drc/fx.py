@@ -23,7 +23,12 @@ from frtb_drc.validation import DrcInputError
 
 
 def validate_fx_rates(context: DrcCalculationContext) -> None:
-    """Validate explicit context FX rates without performing conversion."""
+    """Validate explicit context FX rates without performing conversion.
+    Parameters
+    ----------
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    """
 
     for currency, rate in context.fx_rates.items():
         currency_key = _require_text(currency, "fx_rates currency key")
@@ -44,7 +49,19 @@ def convert_positions_to_base_currency(
     *,
     context: DrcCalculationContext,
 ) -> tuple[tuple[DrcPosition, ...], tuple[DrcFxConversion, ...]]:
-    """Return calculation positions with monetary fields translated to base currency."""
+    """Return calculation positions with monetary fields translated to base currency.
+    Parameters
+    ----------
+    positions : Iterable[DrcPosition]
+        Canonical DRC position records.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+
+    Returns
+    -------
+    tuple[tuple[DrcPosition, ...], tuple[DrcFxConversion, ...]]
+        Result of the operation.
+    """
 
     converted: list[DrcPosition] = []
     used_rates: dict[str, DrcFxRate] = {}
@@ -71,7 +88,21 @@ def require_fx_rate(
     source_currency: str,
     position_id: str | None = None,
 ) -> DrcFxRate:
-    """Return a validated FX rate for one source currency or fail closed."""
+    """Return a validated FX rate for one source currency or fail closed.
+    Parameters
+    ----------
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    source_currency : str
+        Source currency code to translate from.
+    position_id : str | None, optional
+        Position identifier for error context.
+
+    Returns
+    -------
+    DrcFxRate
+        Result of the operation.
+    """
 
     try:
         rate = context.fx_rates[source_currency]
@@ -89,7 +120,19 @@ def fx_conversion_records(
     used_rates: Mapping[str, DrcFxRate],
     counts: Mapping[str, int],
 ) -> tuple[DrcFxConversion, ...]:
-    """Build stable per-currency FX conversion lineage records."""
+    """Build stable per-currency FX conversion lineage records.
+    Parameters
+    ----------
+    used_rates : Mapping[str, DrcFxRate]
+        FX rates applied during position conversion.
+    counts : Mapping[str, int]
+        Position counts per source currency.
+
+    Returns
+    -------
+    tuple[DrcFxConversion, ...]
+        Result of the operation.
+    """
 
     conversions: list[DrcFxConversion] = []
     for currency in sorted(used_rates):
@@ -110,7 +153,17 @@ def fx_conversion_records(
 
 
 def fx_branch_metadata(conversions: tuple[DrcFxConversion, ...]) -> tuple[BranchMetadata, ...]:
-    """Represent applied FX conversion choices in run-level branch metadata."""
+    """Represent applied FX conversion choices in run-level branch metadata.
+    Parameters
+    ----------
+    conversions : tuple[DrcFxConversion, ...]
+        Applied FX conversion lineage records.
+
+    Returns
+    -------
+    tuple[BranchMetadata, ...]
+        Result of the operation.
+    """
 
     return tuple(
         BranchMetadata(
@@ -134,7 +187,19 @@ def input_hash_with_fx(
     input_hash: str,
     conversions: tuple[DrcFxConversion, ...],
 ) -> str:
-    """Include FX-rate lineage in the run input hash when conversion is applied."""
+    """Include FX-rate lineage in the run input hash when conversion is applied.
+    Parameters
+    ----------
+    input_hash : str
+        Precomputed input digest before FX lineage.
+    conversions : tuple[DrcFxConversion, ...]
+        Applied FX conversion lineage records.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     if not conversions:
         return input_hash
@@ -146,7 +211,17 @@ def input_hash_with_fx(
 
 
 def fx_citation_ids(conversions: tuple[DrcFxConversion, ...]) -> tuple[str, ...]:
-    """Return sorted FX citation ids from applied conversion records."""
+    """Return sorted FX citation ids from applied conversion records.
+    Parameters
+    ----------
+    conversions : tuple[DrcFxConversion, ...]
+        Applied FX conversion lineage records.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Result of the operation.
+    """
 
     citation_ids: set[str] = set()
     for conversion in conversions:

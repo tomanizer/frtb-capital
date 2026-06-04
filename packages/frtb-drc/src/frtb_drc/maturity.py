@@ -16,7 +16,19 @@ def calculate_maturity_weight(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> tuple[float, bool, str]:
-    """Return maturity weight, floor flag, and citation id."""
+    """Return maturity weight, floor flag, and citation id.
+    Parameters
+    ----------
+    maturity_years : float
+        Remaining maturity in years.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[float, bool, str]
+        Result of the operation.
+    """
 
     if not math.isfinite(maturity_years):
         raise DrcInputError("maturity_years must be finite")
@@ -37,7 +49,21 @@ def scale_gross_jtd(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> MaturityScaledJtd:
-    """Apply maturity weighting to a gross JTD record."""
+    """Apply maturity weighting to a gross JTD record.
+    Parameters
+    ----------
+    gross_jtd : GrossJtd
+        Gross JTD record to scale.
+    maturity_years : float
+        Remaining maturity in years.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    MaturityScaledJtd
+        Result of the operation.
+    """
 
     weight, floor_applied, citation_id = calculate_maturity_weight(
         maturity_years,
@@ -76,7 +102,19 @@ def scale_gross_jtds(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> tuple[MaturityScaledJtd, ...]:
-    """Scale gross JTD records in input order."""
+    """Scale gross JTD records in input order.
+    Parameters
+    ----------
+    gross_jtds_with_maturity : Iterable[tuple[GrossJtd, float]]
+        Gross jtds with maturity.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[MaturityScaledJtd, ...]
+        Result of the operation.
+    """
 
     return tuple(
         scale_gross_jtd(gross_jtd, maturity_years, profile_id=profile_id)
