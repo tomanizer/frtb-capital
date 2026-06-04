@@ -15,7 +15,6 @@ Run with:
 
 from __future__ import annotations
 
-from dataclasses import replace
 from datetime import date
 
 from frtb_cva import (
@@ -53,7 +52,11 @@ def _lineage(source_row_id: str) -> CvaSourceLineage:
 
 
 def make_synthetic_counterparties(n: int = 5) -> tuple[CvaCounterparty, ...]:
-    sectors = [CvaSector.SOVEREIGN, CvaSector.FINANCIALS, CvaSector.BASIC_MATERIALS_ENERGY_INDUSTRIALS]
+    sectors = [
+        CvaSector.SOVEREIGN,
+        CvaSector.FINANCIALS,
+        CvaSector.BASIC_MATERIALS_ENERGY_INDUSTRIALS,
+    ]
     qualities = [CreditQuality.INVESTMENT_GRADE, CreditQuality.HIGH_YIELD]
     regions = ["EMEA", "AMER", "APAC"]
     return tuple(
@@ -204,7 +207,10 @@ def run_mixed_demo() -> CvaCapitalResult:
     sens = make_synthetic_sa_sensitivities()
     result = calculate_cva_capital(context, ctps, nss, sensitivities=sens)
     print(f"Total CVA capital (mixed): {result.total_cva_capital:,.2f}")
-    print(f"  Method components: {[ (m.method, m.total_capital) for m in result.method_components ]}")
+    print(
+        f"  Method components: "
+        f"{[(m.method, m.total_capital) for m in result.method_components]}"
+    )
     return result
 
 

@@ -39,7 +39,6 @@ from drc_nonsec_fixture import (
     load_drc_nonsec_v2_fixture,
     run_fixture_workflow,
 )
-
 from frtb_drc import (
     CreditQuality,
     DefaultDirection,
@@ -130,7 +129,10 @@ def run_fixture_demo() -> DrcCapitalResult:
     # attribution. Count any non-empty here for the demo summary.
     rejected_count = sum(len(nj.rejected_offsets) for nj in result.net_jtds)
     if rejected_count:
-        print(f"\n  Rejected offsets (across nets): {rejected_count} (see NetJtd.rejected_offsets + BranchMetadata)")
+        print(
+            f"\n  Rejected offsets (across nets): {rejected_count} "
+            "(see NetJtd.rejected_offsets + BranchMetadata)"
+        )
         for nj in result.net_jtds:
             if nj.rejected_offsets:
                 for ro in nj.rejected_offsets[:1]:
@@ -146,7 +148,10 @@ def run_fixture_demo() -> DrcCapitalResult:
 def run_raw_construction_demo() -> DrcCapitalResult:
     print("\n=== Minimal raw DrcPosition construction demo ===")
     pos = make_minimal_drc_position()
-    print(f"  Built position: {pos.position_id} issuer={pos.issuer_id} notional={pos.notional:,.0f}")
+    print(
+        f"  Built position: {pos.position_id} issuer={pos.issuer_id} "
+        f"notional={pos.notional:,.0f}"
+    )
 
     ctx = DrcCalculationContext(
         run_id="drc-demo-raw",
@@ -166,7 +171,10 @@ def main() -> None:
     print("FRTB DRC End-to-End Demo (synthetic non-securitisation book)")
     print("Prototype / illustration only. Not final regulatory capital.\n")
     print("See packages/frtb-drc/docs/ and REGULATORY_TRACEABILITY.md for citations.")
-    print("Securitisation and CTP paths explicitly fail closed (UnsupportedRegulatoryFeatureError).")
+    print(
+        "Securitisation and CTP paths explicitly fail closed "
+        "(UnsupportedRegulatoryFeatureError)."
+    )
 
     run_fixture_demo()
     run_raw_construction_demo()
