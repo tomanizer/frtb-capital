@@ -82,7 +82,17 @@ UNSUPPORTED_PROFILE_REASONS: dict[RraoRegulatoryProfile, str] = {}
 
 
 def get_rrao_rule_profile(profile: RraoRegulatoryProfile | str) -> RraoRuleProfile:
-    """Return supported RRAO profile metadata or fail closed."""
+    """Return supported RRAO profile metadata or fail closed.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+
+    Returns
+    -------
+    RraoRuleProfile
+        Result of the operation.
+    """
 
     resolved = resolve_rrao_profile(profile)
     metadata = SUPPORTED_PROFILE_METADATA[resolved]
@@ -113,7 +123,17 @@ def get_rrao_rule_profile(profile: RraoRegulatoryProfile | str) -> RraoRuleProfi
 
 
 def resolve_rrao_profile(profile: RraoRegulatoryProfile | str) -> RraoRegulatoryProfile:
-    """Normalise and reject unsupported RRAO profiles."""
+    """Normalise and reject unsupported RRAO profiles.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+
+    Returns
+    -------
+    RraoRegulatoryProfile
+        Result of the operation.
+    """
 
     try:
         resolved = RraoRegulatoryProfile(profile)
@@ -132,7 +152,17 @@ def resolve_rrao_profile(profile: RraoRegulatoryProfile | str) -> RraoRegulatory
 
 
 def profile_content_hash(profile: RraoRegulatoryProfile | str) -> str:
-    """Return the deterministic content hash for a supported profile."""
+    """Return the deterministic content hash for a supported profile.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     return get_rrao_rule_profile(profile).content_hash
 

@@ -141,11 +141,25 @@ def build_rrao_batch_from_positions(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> RraoPositionBatch:
-    """
-    Build an RRAO batch from existing canonical position rows.
+    """Build an RRAO batch from existing canonical position rows.
 
     This compatibility bridge is for callers that already hold dataclasses.
     High-volume adapters should build from Arrow batches or columns.
+    Parameters
+    ----------
+    positions : Iterable[RraoPosition]
+        Positions.
+    source_hash : str | None, optional
+        Source hash.
+    handoff_hash : str | None, optional
+        Handoff hash.
+    diagnostics : Sequence[Mapping[str, object]], optional
+        Diagnostics.
+
+    Returns
+    -------
+    RraoPositionBatch
+        Result of the operation.
     """
 
     validated = validate_rrao_positions(positions)
@@ -316,7 +330,97 @@ def build_rrao_batch_from_columns(
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
 ) -> RraoPositionBatch:
-    """Build a validated canonical RRAO batch from columnar inputs."""
+    """Build a validated canonical RRAO batch from columnar inputs.
+    Parameters
+    ----------
+    position_ids : ColumnInput
+        Position ids.
+    source_row_ids : ColumnInput
+        Source row ids.
+    desk_ids : ColumnInput
+        Desk ids.
+    legal_entities : ColumnInput
+        Legal entities.
+    gross_effective_notionals : ColumnInput
+        Gross effective notionals.
+    currencies : ColumnInput
+        Currencies.
+    evidence_types : ColumnInput
+        Evidence types.
+    evidence_labels : ColumnInput
+        Evidence labels.
+    classification_hints : NullableColumnInput | None, optional
+        Classification hints.
+    exclusion_reasons : NullableColumnInput | None, optional
+        Exclusion reasons.
+    exclusion_evidence_ids : NullableColumnInput | None, optional
+        Exclusion evidence ids.
+    back_to_back_match_group_ids : NullableColumnInput | None, optional
+        Back to back match group ids.
+    back_to_back_matched_position_ids : NullableColumnInput | None, optional
+        Back to back matched position ids.
+    supervisor_directive_ids : NullableColumnInput | None, optional
+        Supervisor directive ids.
+    underlying_counts : NullableColumnInput | None, optional
+        Underlying counts.
+    is_path_dependents : NullableColumnInput | None, optional
+        Is path dependents.
+    has_maturities : NullableColumnInput | None, optional
+        Has maturities.
+    has_strike_or_barriers : NullableColumnInput | None, optional
+        Has strike or barriers.
+    has_multiple_strikes_or_barriers : NullableColumnInput | None, optional
+        Has multiple strikes or barriers.
+    is_ctp_hedges : ColumnInput | None, optional
+        Is ctp hedges.
+    is_investment_fund_exposures : ColumnInput | None, optional
+        Is investment fund exposures.
+    investment_fund_ids : NullableColumnInput | None, optional
+        Investment fund ids.
+    investment_fund_section_205_methods : NullableColumnInput | None, optional
+        Investment fund section 205 methods.
+    investment_fund_included_exposure_types : NullableColumnInput | None, optional
+        Investment fund included exposure types.
+    investment_fund_mandate_evidence_ids : NullableColumnInput | None, optional
+        Investment fund mandate evidence ids.
+    investment_fund_section_205_evidence_ids : NullableColumnInput | None, optional
+        Investment fund section 205 evidence ids.
+    investment_fund_gross_effective_notionals : NullableColumnInput | None, optional
+        Investment fund gross effective notionals.
+    investment_fund_included_exposure_ratios : NullableColumnInput | None, optional
+        Investment fund included exposure ratios.
+    investment_fund_look_through_availables : ColumnInput | None, optional
+        Investment fund look through availables.
+    investment_fund_mandate_allows_rrao_exposures : ColumnInput | None, optional
+        Investment fund mandate allows rrao exposures.
+    notional_sources : ColumnInput | None, optional
+        Notional sources.
+    lineage_source_systems : ColumnInput | None, optional
+        Lineage source systems.
+    lineage_source_files : ColumnInput | None, optional
+        Lineage source files.
+    lineage_source_row_ids : ColumnInput | None, optional
+        Lineage source row ids.
+    lineage_present : ColumnInput | None, optional
+        Lineage present.
+    source_column_maps : Sequence[Sequence[tuple[str, str]]] | None, optional
+        Source column maps.
+    citations : Sequence[Sequence[str]] | None, optional
+        Citations.
+    source_hash : str | None, optional
+        Source hash.
+    handoff_hash : str | None, optional
+        Handoff hash.
+    diagnostics : Sequence[Mapping[str, object]], optional
+        Diagnostics.
+    copy_arrays : bool, optional
+        Copy arrays.
+
+    Returns
+    -------
+    RraoPositionBatch
+        Result of the operation.
+    """
 
     row_count = len(position_ids)
     if row_count == 0:
@@ -551,7 +655,17 @@ def build_rrao_batch_from_columns(
 
 
 def input_hash_for_rrao_batch(batch: RraoPositionBatch) -> str:
-    """Hash canonical RRAO batch inputs in deterministic input order."""
+    """Hash canonical RRAO batch inputs in deterministic input order.
+    Parameters
+    ----------
+    batch : RraoPositionBatch
+        Batch.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     return hash_position_payloads(
         _position_payload_for_hash(batch, index) for index in range(batch.row_count)
@@ -563,7 +677,19 @@ def calculate_rrao_capital_from_batch(
     *,
     context: RraoCalculationContext,
 ) -> RraoBatchCapitalCalculation:
-    """Calculate supported RRAO capital from a columnar batch."""
+    """Calculate supported RRAO capital from a columnar batch.
+    Parameters
+    ----------
+    batch : RraoPositionBatch
+        Batch.
+    context : RraoCalculationContext
+        Context.
+
+    Returns
+    -------
+    RraoBatchCapitalCalculation
+        Result of the operation.
+    """
 
     if not isinstance(batch, RraoPositionBatch):
         raise RraoInputError("batch must be RraoPositionBatch", field="batch")

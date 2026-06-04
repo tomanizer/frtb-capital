@@ -729,7 +729,17 @@ PROFILE_RISK_WEIGHT_RULES: dict[RraoRegulatoryProfile, tuple[RraoRiskWeightRule,
 def citations_for_profile(
     profile: RraoRegulatoryProfile | str,
 ) -> dict[str, RraoCitation]:
-    """Return citations for a supported RRAO profile."""
+    """Return citations for a supported RRAO profile.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+
+    Returns
+    -------
+    dict[str, RraoCitation]
+        Result of the operation.
+    """
 
     resolved = _resolve_supported_profile(profile)
     return dict(PROFILE_CITATIONS[resolved])
@@ -738,7 +748,17 @@ def citations_for_profile(
 def evidence_rules_for_profile(
     profile: RraoRegulatoryProfile | str,
 ) -> tuple[RraoEvidenceRule, ...]:
-    """Return supported evidence rules for a profile."""
+    """Return supported evidence rules for a profile.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+
+    Returns
+    -------
+    tuple[RraoEvidenceRule, ...]
+        Result of the operation.
+    """
 
     resolved = _resolve_supported_profile(profile)
     return PROFILE_EVIDENCE_RULES[resolved]
@@ -747,7 +767,17 @@ def evidence_rules_for_profile(
 def exclusion_rules_for_profile(
     profile: RraoRegulatoryProfile | str,
 ) -> tuple[RraoExclusionRule, ...]:
-    """Return supported exclusion rules for a profile."""
+    """Return supported exclusion rules for a profile.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+
+    Returns
+    -------
+    tuple[RraoExclusionRule, ...]
+        Result of the operation.
+    """
 
     resolved = _resolve_supported_profile(profile)
     return PROFILE_EXCLUSION_RULES[resolved]
@@ -756,7 +786,17 @@ def exclusion_rules_for_profile(
 def investment_fund_rules_for_profile(
     profile: RraoRegulatoryProfile | str,
 ) -> tuple[RraoInvestmentFundRule, ...]:
-    """Return supported investment-fund inclusion rules for a profile."""
+    """Return supported investment-fund inclusion rules for a profile.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+
+    Returns
+    -------
+    tuple[RraoInvestmentFundRule, ...]
+        Result of the operation.
+    """
 
     resolved = _resolve_supported_profile(profile)
     return PROFILE_INVESTMENT_FUND_RULES[resolved]
@@ -765,7 +805,17 @@ def investment_fund_rules_for_profile(
 def risk_weight_rules_for_profile(
     profile: RraoRegulatoryProfile | str,
 ) -> tuple[RraoRiskWeightRule, ...]:
-    """Return supported risk-weight rules for a profile."""
+    """Return supported risk-weight rules for a profile.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+
+    Returns
+    -------
+    tuple[RraoRiskWeightRule, ...]
+        Result of the operation.
+    """
 
     resolved = _resolve_supported_profile(profile)
     return PROFILE_RISK_WEIGHT_RULES[resolved]
@@ -775,7 +825,19 @@ def evidence_rule_for(
     profile: RraoRegulatoryProfile | str,
     evidence_type: RraoEvidenceType,
 ) -> RraoEvidenceRule:
-    """Return the profile rule for a classification evidence type."""
+    """Return the profile rule for a classification evidence type.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+    evidence_type : RraoEvidenceType
+        Evidence type.
+
+    Returns
+    -------
+    RraoEvidenceRule
+        Result of the operation.
+    """
 
     for rule in evidence_rules_for_profile(profile):
         if rule.evidence_type is evidence_type:
@@ -790,7 +852,19 @@ def exclusion_rule_for(
     profile: RraoRegulatoryProfile | str,
     exclusion_reason: RraoExclusionReason,
 ) -> RraoExclusionRule:
-    """Return the profile rule for an exclusion reason."""
+    """Return the profile rule for an exclusion reason.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+    exclusion_reason : RraoExclusionReason
+        Exclusion reason.
+
+    Returns
+    -------
+    RraoExclusionRule
+        Result of the operation.
+    """
 
     for rule in exclusion_rules_for_profile(profile):
         if rule.exclusion_reason is exclusion_reason:
@@ -805,7 +879,19 @@ def investment_fund_rule_for(
     profile: RraoRegulatoryProfile | str,
     included_exposure_type: RraoInvestmentFundExposureType,
 ) -> RraoInvestmentFundRule:
-    """Return the profile rule for an investment-fund included exposure type."""
+    """Return the profile rule for an investment-fund included exposure type.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+    included_exposure_type : RraoInvestmentFundExposureType
+        Included exposure type.
+
+    Returns
+    -------
+    RraoInvestmentFundRule
+        Result of the operation.
+    """
 
     for rule in investment_fund_rules_for_profile(profile):
         if rule.included_exposure_type is included_exposure_type:
@@ -820,7 +906,19 @@ def risk_weight_rule_for(
     profile: RraoRegulatoryProfile | str,
     risk_weight_key: str,
 ) -> RraoRiskWeightRule:
-    """Return the profile rule for a risk-weight key."""
+    """Return the profile rule for a risk-weight key.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+    risk_weight_key : str
+        Risk weight key.
+
+    Returns
+    -------
+    RraoRiskWeightRule
+        Result of the operation.
+    """
 
     for rule in risk_weight_rules_for_profile(profile):
         if rule.key == risk_weight_key:
@@ -829,7 +927,17 @@ def risk_weight_rule_for(
 
 
 def profile_reference_payload(profile: RraoRegulatoryProfile | str) -> dict[str, object]:
-    """Return a deterministic, JSON-serialisable payload for profile hashing."""
+    """Return a deterministic, JSON-serialisable payload for profile hashing.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile | str
+        Profile.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
 
     resolved = _resolve_supported_profile(profile)
     citations = citations_for_profile(resolved)

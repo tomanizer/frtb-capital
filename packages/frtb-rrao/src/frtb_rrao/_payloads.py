@@ -19,13 +19,33 @@ from frtb_rrao.data_models import (
 
 
 def hash_payload(payload: object) -> str:
-    """Return the package-standard deterministic payload hash."""
+    """Return the package-standard deterministic payload hash.
+    Parameters
+    ----------
+    payload : object
+        Payload.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     return stable_json_hash(payload)
 
 
 def hash_position_payloads(payloads: Iterable[dict[str, object]]) -> str:
-    """Return the package-standard hash for already-normalized position payloads."""
+    """Return the package-standard hash for already-normalized position payloads.
+    Parameters
+    ----------
+    payloads : Iterable[dict[str, object]]
+        Payloads.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     digest = hashlib.sha256()
     digest.update(b'{"positions":[')
@@ -41,7 +61,17 @@ def hash_position_payloads(payloads: Iterable[dict[str, object]]) -> str:
 
 
 def position_payload(position: RraoPosition) -> dict[str, object]:
-    """Return the deterministic audit payload for a canonical position."""
+    """Return the deterministic audit payload for a canonical position.
+    Parameters
+    ----------
+    position : RraoPosition
+        Position.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
 
     return position_payload_from_values(
         position_id=position.position_id,
@@ -112,7 +142,87 @@ def batch_position_payload(
     back_to_back_match_group_id: object,
     back_to_back_matched_position_id: object,
 ) -> dict[str, object]:
-    """Return the deterministic audit payload for a batch position row."""
+    """Return the deterministic audit payload for a batch position row.
+    Parameters
+    ----------
+    position_id : object
+        Position id.
+    source_row_id : object
+        Source row id.
+    desk_id : object
+        Desk id.
+    legal_entity : object
+        Legal entity.
+    gross_effective_notional : object
+        Gross effective notional.
+    currency : object
+        Currency.
+    evidence_type : object
+        Evidence type.
+    evidence_label : object
+        Evidence label.
+    lineage_source_system : object
+        Lineage source system.
+    lineage_source_file : object
+        Lineage source file.
+    lineage_source_row_id : object
+        Lineage source row id.
+    source_column_map : tuple[tuple[str, str], ...]
+        Source column map.
+    classification_hint : object
+        Classification hint.
+    exclusion_reason : object
+        Exclusion reason.
+    exclusion_evidence_id : object
+        Exclusion evidence id.
+    supervisor_directive_id : object
+        Supervisor directive id.
+    underlying_count : object
+        Underlying count.
+    is_path_dependent : object
+        Is path dependent.
+    has_maturity : object
+        Has maturity.
+    has_strike_or_barrier : object
+        Has strike or barrier.
+    has_multiple_strikes_or_barriers : object
+        Has multiple strikes or barriers.
+    is_ctp_hedge : object
+        Is ctp hedge.
+    is_investment_fund_exposure : object
+        Is investment fund exposure.
+    investment_fund_id : object
+        Investment fund id.
+    investment_fund_section_205_method : object
+        Investment fund section 205 method.
+    investment_fund_included_exposure_type : object
+        Investment fund included exposure type.
+    investment_fund_mandate_evidence_id : object
+        Investment fund mandate evidence id.
+    investment_fund_section_205_evidence_id : object
+        Investment fund section 205 evidence id.
+    investment_fund_gross_effective_notional : object
+        Investment fund gross effective notional.
+    investment_fund_included_exposure_ratio : object
+        Investment fund included exposure ratio.
+    investment_fund_look_through_available : object
+        Investment fund look through available.
+    investment_fund_mandate_allows_rrao_exposures : object
+        Investment fund mandate allows rrao exposures.
+    notional_source : object
+        Notional source.
+    citations : tuple[str, ...]
+        Citations.
+    back_to_back_match_group_id : object
+        Back to back match group id.
+    back_to_back_matched_position_id : object
+        Back to back matched position id.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
 
     return position_payload_from_values(
         position_id=position_id,
@@ -188,7 +298,63 @@ def position_payload_from_values(
     citations: tuple[str, ...],
     back_to_back_match: dict[str, object] | None,
 ) -> dict[str, object]:
-    """Return the shared position payload shape used by row and batch hashes."""
+    """Return the shared position payload shape used by row and batch hashes.
+    Parameters
+    ----------
+    position_id : object
+        Position id.
+    source_row_id : object
+        Source row id.
+    desk_id : object
+        Desk id.
+    legal_entity : object
+        Legal entity.
+    gross_effective_notional : object
+        Gross effective notional.
+    currency : object
+        Currency.
+    evidence_type : object
+        Evidence type.
+    evidence_label : object
+        Evidence label.
+    lineage : dict[str, object] | None
+        Lineage.
+    classification_hint : object
+        Classification hint.
+    exclusion_reason : object
+        Exclusion reason.
+    exclusion_evidence_id : object
+        Exclusion evidence id.
+    supervisor_directive_id : object
+        Supervisor directive id.
+    underlying_count : object
+        Underlying count.
+    is_path_dependent : object
+        Is path dependent.
+    has_maturity : object
+        Has maturity.
+    has_strike_or_barrier : object
+        Has strike or barrier.
+    has_multiple_strikes_or_barriers : object
+        Has multiple strikes or barriers.
+    is_ctp_hedge : object
+        Is ctp hedge.
+    is_investment_fund_exposure : object
+        Is investment fund exposure.
+    investment_fund_descriptor : dict[str, object] | None
+        Investment fund descriptor.
+    notional_source : object
+        Notional source.
+    citations : tuple[str, ...]
+        Citations.
+    back_to_back_match : dict[str, object] | None
+        Back to back match.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
 
     payload: dict[str, object] = {
         "position_id": position_id,
@@ -221,7 +387,17 @@ def position_payload_from_values(
 
 
 def lineage_payload(lineage: RraoSourceLineage | None) -> dict[str, object] | None:
-    """Return the deterministic payload for a source-lineage object."""
+    """Return the deterministic payload for a source-lineage object.
+    Parameters
+    ----------
+    lineage : RraoSourceLineage | None
+        Lineage.
+
+    Returns
+    -------
+    dict[str, object] | None
+        Result of the operation.
+    """
 
     if lineage is None:
         return None
@@ -240,7 +416,23 @@ def lineage_payload_from_values(
     source_row_id: object,
     source_column_map: tuple[tuple[str, str], ...],
 ) -> dict[str, object]:
-    """Return the deterministic payload for source-lineage scalar values."""
+    """Return the deterministic payload for source-lineage scalar values.
+    Parameters
+    ----------
+    source_system : object
+        Source system.
+    source_file : object
+        Source file.
+    source_row_id : object
+        Source row id.
+    source_column_map : tuple[tuple[str, str], ...]
+        Source column map.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
 
     return {
         "source_system": source_system,
@@ -253,7 +445,17 @@ def lineage_payload_from_values(
 def investment_fund_descriptor_payload(
     descriptor: RraoInvestmentFundDescriptor | None,
 ) -> dict[str, object] | None:
-    """Return the deterministic payload for an investment-fund descriptor."""
+    """Return the deterministic payload for an investment-fund descriptor.
+    Parameters
+    ----------
+    descriptor : RraoInvestmentFundDescriptor | None
+        Descriptor.
+
+    Returns
+    -------
+    dict[str, object] | None
+        Result of the operation.
+    """
 
     if descriptor is None:
         return None
@@ -284,7 +486,35 @@ def investment_fund_descriptor_payload_from_values(
     look_through_available: object,
     mandate_allows_rrao_exposures: object,
 ) -> dict[str, object] | None:
-    """Return the deterministic payload for investment-fund scalar values."""
+    """Return the deterministic payload for investment-fund scalar values.
+    Parameters
+    ----------
+    is_investment_fund_exposure : bool
+        Is investment fund exposure.
+    fund_id : object
+        Fund id.
+    section_205_method : object
+        Section 205 method.
+    included_exposure_type : object
+        Included exposure type.
+    mandate_evidence_id : object
+        Mandate evidence id.
+    section_205_evidence_id : object
+        Section 205 evidence id.
+    fund_gross_effective_notional : object
+        Fund gross effective notional.
+    included_exposure_ratio : object
+        Included exposure ratio.
+    look_through_available : object
+        Look through available.
+    mandate_allows_rrao_exposures : object
+        Mandate allows rrao exposures.
+
+    Returns
+    -------
+    dict[str, object] | None
+        Result of the operation.
+    """
 
     if not is_investment_fund_exposure:
         return None
@@ -302,7 +532,17 @@ def investment_fund_descriptor_payload_from_values(
 
 
 def back_to_back_match_payload(match: RraoBackToBackMatch | None) -> dict[str, object] | None:
-    """Return the deterministic payload for a back-to-back match object."""
+    """Return the deterministic payload for a back-to-back match object.
+    Parameters
+    ----------
+    match : RraoBackToBackMatch | None
+        Match.
+
+    Returns
+    -------
+    dict[str, object] | None
+        Result of the operation.
+    """
 
     if match is None:
         return None
@@ -317,7 +557,19 @@ def back_to_back_match_payload_from_values(
     match_group_id: object,
     matched_position_id: object,
 ) -> dict[str, object] | None:
-    """Return the deterministic payload for back-to-back match scalar values."""
+    """Return the deterministic payload for back-to-back match scalar values.
+    Parameters
+    ----------
+    match_group_id : object
+        Match group id.
+    matched_position_id : object
+        Matched position id.
+
+    Returns
+    -------
+    dict[str, object] | None
+        Result of the operation.
+    """
 
     if match_group_id is None:
         return None

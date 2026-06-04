@@ -72,13 +72,33 @@ NOTIONAL_RECONCILIATION_ABS_TOL = 1e-9
 
 
 def is_valid_underlying_count(value: object) -> bool:
-    """Return whether an optional underlying count is an integer count."""
+    """Return whether an optional underlying count is an integer count.
+    Parameters
+    ----------
+    value : object
+        Value.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return isinstance(value, int) and not isinstance(value, bool) and value >= 0
 
 
 def is_unsupported_classification_hint(value: object) -> bool:
-    """Return whether a classification hint names an unsupported path."""
+    """Return whether a classification hint names an unsupported path.
+    Parameters
+    ----------
+    value : object
+        Value.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return value == RraoClassification.UNSUPPORTED or value == RraoClassification.UNSUPPORTED.value
 
@@ -87,7 +107,19 @@ def supervisor_directive_required(
     evidence_type: RraoEvidenceType,
     classification_hint: RraoClassification | None,
 ) -> bool:
-    """Return whether supervisor directive evidence id is required."""
+    """Return whether supervisor directive evidence id is required.
+    Parameters
+    ----------
+    evidence_type : RraoEvidenceType
+        Evidence type.
+    classification_hint : RraoClassification | None
+        Classification hint.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return (
         evidence_type is RraoEvidenceType.SUPERVISOR_DIRECTIVE
@@ -99,7 +131,19 @@ def excluded_classification_requires_reason(
     classification_hint: RraoClassification | None,
     exclusion_reason: RraoExclusionReason | None,
 ) -> bool:
-    """Return whether an excluded hint is missing its exclusion reason."""
+    """Return whether an excluded hint is missing its exclusion reason.
+    Parameters
+    ----------
+    classification_hint : RraoClassification | None
+        Classification hint.
+    exclusion_reason : RraoExclusionReason | None
+        Exclusion reason.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return classification_hint is RraoClassification.EXCLUDED and exclusion_reason is None
 
@@ -108,7 +152,19 @@ def exclusion_reason_requires_explicit_evidence(
     exclusion_reason: RraoExclusionReason | None,
     evidence_type: RraoEvidenceType,
 ) -> bool:
-    """Return whether an exclusion reason is paired with the wrong evidence type."""
+    """Return whether an exclusion reason is paired with the wrong evidence type.
+    Parameters
+    ----------
+    exclusion_reason : RraoExclusionReason | None
+        Exclusion reason.
+    evidence_type : RraoEvidenceType
+        Evidence type.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return exclusion_reason is not None and evidence_type is not RraoEvidenceType.EXPLICIT_EXCLUSION
 
@@ -117,7 +173,19 @@ def explicit_exclusion_requires_reason(
     evidence_type: RraoEvidenceType,
     exclusion_reason: RraoExclusionReason | None,
 ) -> bool:
-    """Return whether explicit exclusion evidence is missing its exclusion reason."""
+    """Return whether explicit exclusion evidence is missing its exclusion reason.
+    Parameters
+    ----------
+    evidence_type : RraoEvidenceType
+        Evidence type.
+    exclusion_reason : RraoExclusionReason | None
+        Exclusion reason.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return evidence_type is RraoEvidenceType.EXPLICIT_EXCLUSION and exclusion_reason is None
 
@@ -126,7 +194,19 @@ def exact_back_to_back_requires_match(
     exclusion_reason: RraoExclusionReason | None,
     match_present: bool,
 ) -> bool:
-    """Return whether exact back-to-back evidence is missing its match object."""
+    """Return whether exact back-to-back evidence is missing its match object.
+    Parameters
+    ----------
+    exclusion_reason : RraoExclusionReason | None
+        Exclusion reason.
+    match_present : bool
+        Match present.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return (
         exclusion_reason is RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK and not match_present
@@ -137,7 +217,19 @@ def back_to_back_match_requires_exact_exclusion(
     exclusion_reason: RraoExclusionReason | None,
     match_present: bool,
 ) -> bool:
-    """Return whether match evidence appears outside the exact back-to-back exclusion."""
+    """Return whether match evidence appears outside the exact back-to-back exclusion.
+    Parameters
+    ----------
+    exclusion_reason : RraoExclusionReason | None
+        Exclusion reason.
+    match_present : bool
+        Match present.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return (
         match_present and exclusion_reason is not RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK
@@ -150,7 +242,21 @@ def investment_fund_path_required(
     evidence_type: RraoEvidenceType,
     descriptor_present: bool,
 ) -> bool:
-    """Return whether investment-fund validation rules apply."""
+    """Return whether investment-fund validation rules apply.
+    Parameters
+    ----------
+    is_investment_fund_exposure : bool
+        Is investment fund exposure.
+    evidence_type : RraoEvidenceType
+        Evidence type.
+    descriptor_present : bool
+        Descriptor present.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return (
         is_investment_fund_exposure
@@ -160,13 +266,33 @@ def investment_fund_path_required(
 
 
 def included_exposure_ratio_is_valid(ratio: float) -> bool:
-    """Return whether an investment-fund included-exposure ratio is in range."""
+    """Return whether an investment-fund included-exposure ratio is in range.
+    Parameters
+    ----------
+    ratio : float
+        Ratio.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return math.isfinite(ratio) and 0.0 < ratio <= 1.0
 
 
 def fund_gross_notional_is_positive(notional: float) -> bool:
-    """Return whether a fund gross effective notional is finite and positive."""
+    """Return whether a fund gross effective notional is finite and positive.
+    Parameters
+    ----------
+    notional : float
+        Notional.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return math.isfinite(notional) and notional > 0.0
 
@@ -176,7 +302,21 @@ def gross_notional_matches_included_fund_portion(
     fund_gross_effective_notional: float,
     included_exposure_ratio: float,
 ) -> bool:
-    """Return whether gross notional equals the cited included fund portion."""
+    """Return whether gross notional equals the cited included fund portion.
+    Parameters
+    ----------
+    gross_effective_notional : float
+        Gross effective notional.
+    fund_gross_effective_notional : float
+        Fund gross effective notional.
+    included_exposure_ratio : float
+        Included exposure ratio.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
 
     return math.isclose(
         gross_effective_notional,
