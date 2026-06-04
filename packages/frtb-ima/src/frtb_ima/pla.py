@@ -56,13 +56,20 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class PlaResult:
+    """KS-based PLA diagnostic result for one desk and observation window."""
+
     ks_statistic: float
     zone: str  # "GREEN", "AMBER", or "RED"
     n_hpl: int
     n_rtpl: int
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "ks_statistic": self.ks_statistic,
             "zone": self.zone,
@@ -73,13 +80,20 @@ class PlaResult:
 
 @dataclass(frozen=True)
 class SpearmanPlaResult:
+    """Spearman rank-correlation PLA diagnostic for EU/PRA comparison profiles."""
+
     spearman_correlation: float
     zone: str  # "GREEN", "AMBER", or "RED"
     n_hpl: int
     n_rtpl: int
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "spearman_correlation": self.spearman_correlation,
             "zone": self.zone,
@@ -106,7 +120,12 @@ class PlaWindowDiagnostics:
     missing_business_dates: tuple[date, ...] = ()
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "available_observations": self.available_observations,
             "minimum_history": self.minimum_history,
@@ -134,18 +153,33 @@ class PlaPolicyAssessmentResult:
 
     @property
     def ks_statistic(self) -> float:
-        """PLA KS statistic."""
+        """PLA KS statistic.
+        Returns
+        -------
+        float
+            Result of the operation.
+        """
         return self.pla.ks_statistic
 
     @property
     def zone(self) -> str:
-        """Policy PLA zone label."""
+        """Policy PLA zone label.
+        Returns
+        -------
+        str
+            Result of the operation.
+        """
         if self.spearman is None:
             return self.pla.zone
         return _worse_zone(self.pla.zone, self.spearman.zone, self.zone_labels)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "pla": self.pla.as_dict(),
             "spearman": self.spearman.as_dict() if self.spearman is not None else None,
@@ -188,8 +222,7 @@ def _validate_zone_labels(zone_labels: Sequence[str]) -> tuple[str, str, str]:
 
 
 def ks_statistic(hpl: FloatVector, rtpl: FloatVector) -> float:
-    """
-    Compute the two-sample Kolmogorov-Smirnov statistic between HPL and RTPL.
+    """Compute the two-sample Kolmogorov-Smirnov statistic between HPL and RTPL.
 
     KS = max|F_HPL(x) - F_RTPL(x)| over all x.
 
@@ -202,6 +235,17 @@ def ks_statistic(hpl: FloatVector, rtpl: FloatVector) -> float:
 
     Raises:
         ValueError: if either vector is empty.
+    Parameters
+    ----------
+    hpl : FloatVector
+        Hpl.
+    rtpl : FloatVector
+        Rtpl.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     return _ks_statistic_arrays(
         np.sort(_as_finite_1d_array(hpl, "hpl")),
@@ -244,8 +288,7 @@ def _average_ranks(arr: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
 
 
 def spearman_correlation(hpl: FloatVector, rtpl: FloatVector) -> float:
-    """
-    Compute Spearman rank correlation between HPL and RTPL vectors.
+    """Compute Spearman rank correlation between HPL and RTPL vectors.
 
     Args:
         hpl:  Hypothetical P&L vector (sign convention: positive = profit).
@@ -253,6 +296,17 @@ def spearman_correlation(hpl: FloatVector, rtpl: FloatVector) -> float:
 
     Returns:
         Pearson correlation of average ranks in [-1, 1].
+    Parameters
+    ----------
+    hpl : FloatVector
+        Hpl.
+    rtpl : FloatVector
+        Rtpl.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     hpl_arr = _as_finite_1d_array(hpl, "hpl")
     rtpl_arr = _as_finite_1d_array(rtpl, "rtpl")
@@ -278,8 +332,7 @@ def pla_assessment(
     amber_threshold: float,
     zone_labels: tuple[str, str, str] = DEFAULT_ZONE_LABELS,
 ) -> PlaResult:
-    """
-    Run PLA assessment and return the KS statistic with zone classification.
+    """Run PLA assessment and return the KS statistic with zone classification.
 
     Args:
         hpl:              Hypothetical P&L vector.
@@ -290,6 +343,23 @@ def pla_assessment(
 
     Returns:
         PlaResult with ks_statistic, zone, and vector lengths.
+    Parameters
+    ----------
+    hpl : FloatVector
+        Hpl.
+    rtpl : FloatVector
+        Rtpl.
+    green_threshold : float
+        Green threshold.
+    amber_threshold : float
+        Amber threshold.
+    zone_labels : tuple[str, str, str], optional
+        Zone labels.
+
+    Returns
+    -------
+    PlaResult
+        Result of the operation.
     """
     green_threshold = _validate_unit_threshold(green_threshold, "green_threshold")
     amber_threshold = _validate_unit_threshold(amber_threshold, "amber_threshold")
@@ -323,13 +393,29 @@ def spearman_pla_assessment(
     amber_threshold: float,
     zone_labels: tuple[str, str, str] = DEFAULT_ZONE_LABELS,
 ) -> SpearmanPlaResult:
-    """
-    Run PLA Spearman assessment and return rank correlation zone classification.
+    """Run PLA Spearman assessment and return rank correlation zone classification.
 
     Higher Spearman correlation is better:
         rho >= green_threshold -> GREEN
         rho >= amber_threshold -> AMBER
         otherwise -> RED
+    Parameters
+    ----------
+    hpl : FloatVector
+        Hpl.
+    rtpl : FloatVector
+        Rtpl.
+    green_threshold : float
+        Green threshold.
+    amber_threshold : float
+        Amber threshold.
+    zone_labels : tuple[str, str, str], optional
+        Zone labels.
+
+    Returns
+    -------
+    SpearmanPlaResult
+        Result of the operation.
     """
     green_threshold = _validate_unit_threshold(green_threshold, "green_threshold")
     amber_threshold = _validate_unit_threshold(amber_threshold, "amber_threshold")
@@ -378,12 +464,32 @@ def pla_assessment_for_policy(
     run_id: str | None = None,
     desk_id: str | None = None,
 ) -> PlaResult:
-    """
-    Run PLA using policy thresholds and required metrics.
+    """Run PLA using policy thresholds and required metrics.
 
     FED NPR 2.0 uses KS only. ECB/PRA profiles compute both KS and Spearman;
     the returned compatibility PlaResult carries the authoritative policy zone.
     Use pla_assessment_for_policy_with_diagnostics for the full decomposition.
+    Parameters
+    ----------
+    hpl : FloatVector
+        Hpl.
+    rtpl : FloatVector
+        Rtpl.
+    policy : RegulatoryPolicy
+        Policy.
+    observation_dates : Sequence[date] | None, optional
+        Observation dates.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+
+    Returns
+    -------
+    PlaResult
+        Result of the operation.
     """
     result = pla_assessment_for_policy_with_diagnostics(
         hpl,
@@ -414,12 +520,32 @@ def pla_assessment_for_policy_with_diagnostics(
     run_id: str | None = None,
     desk_id: str | None = None,
 ) -> PlaPolicyAssessmentResult:
-    """
-    Run policy PLA and return window diagnostics.
+    """Run policy PLA and return window diagnostics.
 
     Policy PLA requires HPL and RTPL to be aligned one-to-one before the most
     recent policy window is selected. Optional dates provide an auditable window
     start/end without introducing a full business-calendar dependency.
+    Parameters
+    ----------
+    hpl : FloatVector
+        Hpl.
+    rtpl : FloatVector
+        Rtpl.
+    policy : RegulatoryPolicy
+        Policy.
+    observation_dates : Sequence[date] | None, optional
+        Observation dates.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+
+    Returns
+    -------
+    PlaPolicyAssessmentResult
+        Result of the operation.
     """
     if policy.pla_window_days <= 0:
         raise ValueError(f"pla_window_days must be positive, got {policy.pla_window_days}")

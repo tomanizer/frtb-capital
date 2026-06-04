@@ -36,8 +36,7 @@ def expected_shortfall(
     alpha: float,
     estimator: ESEstimator,
 ) -> float:
-    """
-    Compute expected shortfall (average of tail losses beyond alpha quantile).
+    """Compute expected shortfall (average of tail losses beyond alpha quantile).
 
     Args:
         losses: Scenario loss values. Positive = loss, negative = gain.
@@ -50,6 +49,19 @@ def expected_shortfall(
 
     Raises:
         ValueError: on empty input or invalid alpha.
+    Parameters
+    ----------
+    losses : Sequence[float] | npt.NDArray[np.float64]
+        Losses.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
@@ -75,7 +87,21 @@ def expected_shortfall_from_sorted_losses_desc(
     alpha: float,
     estimator: ESEstimator,
 ) -> float:
-    """Compute ES from losses already sorted descending, worst losses first."""
+    """Compute ES from losses already sorted descending, worst losses first.
+    Parameters
+    ----------
+    sorted_losses_desc : Sequence[float] | npt.NDArray[np.float64]
+        Sorted losses desc.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+
+    Returns
+    -------
+    float
+        Result of the operation.
+    """
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
     estimator = ESEstimator(estimator)

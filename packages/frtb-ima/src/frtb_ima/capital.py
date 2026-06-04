@@ -59,7 +59,12 @@ class CapitalComponents:
     binding_term: str  # "SPOT" or "AVERAGE"
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "imcc_t_minus_1": self.imcc_t_minus_1,
             "ses_t_minus_1": self.ses_t_minus_1,
@@ -84,7 +89,12 @@ class PLAAddonResult:
     pla_addon: float
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "k_factor": self.k_factor,
             "standardized_green_amber": self.standardized_green_amber,
@@ -124,8 +134,7 @@ def models_based_capital(
     multiplier: float,
     pla_addon: float = 0.0,
 ) -> CapitalComponents:
-    """
-    Compute models-based capital for one approved desk.
+    """Compute models-based capital for one approved desk.
 
     Formula:
         MBC = max(
@@ -144,6 +153,25 @@ def models_based_capital(
 
     Returns:
         CapitalComponents with breakdown and binding term.
+    Parameters
+    ----------
+    imcc_t_minus_1 : float
+        Imcc t minus 1.
+    ses_t_minus_1 : float
+        Ses t minus 1.
+    imcc_60d_avg : float
+        Imcc 60d avg.
+    ses_60d_avg : float
+        Ses 60d avg.
+    multiplier : float
+        Multiplier.
+    pla_addon : float, optional
+        Pla addon.
+
+    Returns
+    -------
+    CapitalComponents
+        Result of the operation.
     """
     _validate_non_negative_finite(imcc_t_minus_1, "imcc_t_minus_1")
     _validate_non_negative_finite(ses_t_minus_1, "ses_t_minus_1")
@@ -188,6 +216,19 @@ def desk_eligibility_from_results(
 
     ``pla_zone_labels`` follows the same green, amber, red ordering used by
     ``RegulatoryPolicy.pla_zone_labels``.
+    Parameters
+    ----------
+    backtest_result : TradingDeskBacktestResult
+        Backtest result.
+    pla_zone : str
+        Pla zone.
+    pla_zone_labels : Sequence[str], optional
+        Pla zone labels.
+
+    Returns
+    -------
+    DeskEligibilityStatus
+        Result of the operation.
     """
     if not isinstance(backtest_result, TradingDeskBacktestResult):
         raise ValueError("backtest_result must be a TradingDeskBacktestResult")
@@ -213,7 +254,31 @@ def models_based_capital_for_policy(
     *,
     exception_count: int = 0,
 ) -> CapitalComponents:
-    """Guard and compute models-based capital for one IMA-eligible desk."""
+    """Guard and compute models-based capital for one IMA-eligible desk.
+    Parameters
+    ----------
+    desk_eligibility : DeskEligibilityStatus
+        Desk eligibility.
+    imcc_t_minus_1 : float
+        Imcc t minus 1.
+    ses_t_minus_1 : float
+        Ses t minus 1.
+    imcc_60d_avg : float
+        Imcc 60d avg.
+    ses_60d_avg : float
+        Ses 60d avg.
+    pla_addon : float
+        Pla addon.
+    policy : RegulatoryPolicy
+        Policy.
+    exception_count : int, optional
+        Exception count.
+
+    Returns
+    -------
+    CapitalComponents
+        Result of the operation.
+    """
     status = DeskEligibilityStatus(desk_eligibility)
     if not isinstance(policy, RegulatoryPolicy):
         raise ValueError("policy must be a RegulatoryPolicy")
@@ -253,8 +318,7 @@ def pla_addon(
     standardized_amber: float,
     ima_green_amber: float,
 ) -> PLAAddonResult:
-    """
-    Compute the NPR 2.0 PLA add-on for desks in the amber zone.
+    """Compute the NPR 2.0 PLA add-on for desks in the amber zone.
 
     Formula implemented from proposed Sec. __.213(c)(4):
 
@@ -268,6 +332,19 @@ def pla_addon(
             amber PLA zone.
         ima_green_amber: Models-based non-default capital for the same green
             or amber population before the PLA add-on.
+    Parameters
+    ----------
+    standardized_green_amber : float
+        Standardized green amber.
+    standardized_amber : float
+        Standardized amber.
+    ima_green_amber : float
+        Ima green amber.
+
+    Returns
+    -------
+    PLAAddonResult
+        Result of the operation.
     """
     _validate_non_negative_finite(
         standardized_green_amber,
@@ -304,8 +381,7 @@ def supervisory_multiplier(
     schedule: Sequence[tuple[int, float]],
     red_zone_multiplier: float,
 ) -> float:
-    """
-    Map backtesting exception count to supervisory multiplier.
+    """Map backtesting exception count to supervisory multiplier.
 
     Basel MAR99 Table 2 traffic-light multiplier schedule, used with the MAR32
     backtesting context:
@@ -318,6 +394,19 @@ def supervisory_multiplier(
         10+   exceptions: 2.00
 
     These are the Basel MAR99 Table 2 multipliers used by the policy schedule.
+    Parameters
+    ----------
+    exception_count : int
+        Exception count.
+    schedule : Sequence[tuple[int, float]]
+        Schedule.
+    red_zone_multiplier : float
+        Red zone multiplier.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     if not isinstance(exception_count, int):
         raise TypeError("exception_count must be an integer")
@@ -344,7 +433,19 @@ def supervisory_multiplier_for_policy(
     exception_count: int,
     policy: RegulatoryPolicy,
 ) -> float:
-    """Map exception count to multiplier using the policy schedule."""
+    """Map exception count to multiplier using the policy schedule.
+    Parameters
+    ----------
+    exception_count : int
+        Exception count.
+    policy : RegulatoryPolicy
+        Policy.
+
+    Returns
+    -------
+    float
+        Result of the operation.
+    """
     return supervisory_multiplier(
         exception_count,
         schedule=policy.supervisory_multiplier_schedule,

@@ -47,7 +47,12 @@ class ReducedSetCoverageResult:
     degenerate_full_series: bool
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "window_size": self.window_size,
             "minimum_history": self.minimum_history,
@@ -74,7 +79,12 @@ class ReducedSetSelectionStep:
     passed: bool
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "iteration": self.iteration,
             "added_factor": self.added_factor,
@@ -103,7 +113,12 @@ class ReducedSetSelectionResult:
     coverage_result: ReducedSetCoverageResult
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "selected_factor_names": list(self.selected_factor_names),
             "variation_explained": self.variation_explained,
@@ -157,14 +172,30 @@ def reduced_set_variation_explained(
     minimum_history: int | None = 60,
     threshold: float = 0.75,
 ) -> ReducedSetCoverageResult:
-    """
-    Assess whether the reduced set explains enough full-set ES variability.
+    """Assess whether the reduced set explains enough full-set ES variability.
 
     The statistic is the out-of-sample R-squared style measure:
 
         1 - sum((ES_full - ES_reduced)^2) / sum((ES_full - mean(ES_full))^2)
 
     over the most recent ``window`` observations.
+    Parameters
+    ----------
+    full_current_lha_es : FloatVector
+        Full current lha es.
+    reduced_current_lha_es : FloatVector
+        Reduced current lha es.
+    window : int, optional
+        Window.
+    minimum_history : int | None, optional
+        Minimum history.
+    threshold : float, optional
+        Threshold.
+
+    Returns
+    -------
+    ReducedSetCoverageResult
+        Result of the operation.
     """
     _validate_coverage_parameters(
         window=window,
@@ -223,8 +254,7 @@ def select_reduced_risk_factor_set(
     threshold: float = 0.75,
     minimum_factors: int = 1,
 ) -> ReducedSetSelectionResult:
-    """
-    Select a deterministic reduced risk-factor set from contribution series.
+    """Select a deterministic reduced risk-factor set from contribution series.
 
     Contributions must be aligned to ``full_current_lha_es`` and use the same
     sign convention: positive values are current-period LHA ES contributions.
@@ -232,6 +262,25 @@ def select_reduced_risk_factor_set(
     window, with factor name as the stable secondary key, then accumulates
     factors until the variation-explained threshold and minimum factor count are
     both satisfied.
+    Parameters
+    ----------
+    full_current_lha_es : FloatVector
+        Full current lha es.
+    risk_factor_contributions : Mapping[str, FloatVector]
+        Risk factor contributions.
+    window : int, optional
+        Window.
+    minimum_history : int | None, optional
+        Minimum history.
+    threshold : float, optional
+        Threshold.
+    minimum_factors : int, optional
+        Minimum factors.
+
+    Returns
+    -------
+    ReducedSetSelectionResult
+        Result of the operation.
     """
     _validate_coverage_parameters(
         window=window,
@@ -337,7 +386,25 @@ def select_reduced_risk_factor_set_for_policy(
     run_id: str | None = None,
     desk_id: str | None = None,
 ) -> ReducedSetSelectionResult:
-    """Select a reduced risk-factor set using policy defaults."""
+    """Select a reduced risk-factor set using policy defaults.
+    Parameters
+    ----------
+    full_current_lha_es : FloatVector
+        Full current lha es.
+    risk_factor_contributions : Mapping[str, FloatVector]
+        Risk factor contributions.
+    policy : RegulatoryPolicy
+        Policy.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+
+    Returns
+    -------
+    ReducedSetSelectionResult
+        Result of the operation.
+    """
     policy.require_capital_runtime_supported()
     result = select_reduced_risk_factor_set(
         full_current_lha_es,
@@ -371,7 +438,25 @@ def reduced_set_variation_explained_for_policy(
     run_id: str | None = None,
     desk_id: str | None = None,
 ) -> ReducedSetCoverageResult:
-    """Assess reduced-set variation explained using policy defaults."""
+    """Assess reduced-set variation explained using policy defaults.
+    Parameters
+    ----------
+    full_current_lha_es : FloatVector
+        Full current lha es.
+    reduced_current_lha_es : FloatVector
+        Reduced current lha es.
+    policy : RegulatoryPolicy
+        Policy.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+
+    Returns
+    -------
+    ReducedSetCoverageResult
+        Result of the operation.
+    """
     policy.require_capital_runtime_supported()
     result = reduced_set_variation_explained(
         full_current_lha_es,

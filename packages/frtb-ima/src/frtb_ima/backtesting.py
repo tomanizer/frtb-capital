@@ -65,7 +65,12 @@ class BacktestResult:
     window_size: int
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "apl_exceptions": self.apl_exceptions,
             "hpl_exceptions": self.hpl_exceptions,
@@ -89,7 +94,12 @@ class BacktestLevelResult:
     window_size: int
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "confidence_level": self.confidence_level,
             "apl_exceptions": self.apl_exceptions,
@@ -116,14 +126,29 @@ class TradingDeskBacktestResult:
     missing_business_dates: tuple[date, ...] = ()
 
     def level(self, confidence_level: float) -> BacktestLevelResult:
-        """Return the result for one configured VaR confidence level."""
+        """Return the result for one configured VaR confidence level.
+        Parameters
+        ----------
+        confidence_level : float
+            Confidence level.
+
+        Returns
+        -------
+        BacktestLevelResult
+            Result of the operation.
+        """
         for result in self.levels:
             if result.confidence_level == confidence_level:
                 return result
         raise KeyError(f"No backtesting result for confidence level {confidence_level}")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "window_size": self.window_size,
             "model_eligible": self.model_eligible,
@@ -152,7 +177,12 @@ class BacktestObservationTrace:
     hpl_reason: str
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "original_index": self.original_index,
             "observation_date": self.observation_date.isoformat()
@@ -178,11 +208,21 @@ class BacktestLevelTrace:
 
     @property
     def confidence_level(self) -> float:
-        """VaR confidence level for this trace."""
+        """VaR confidence level for this trace.
+        Returns
+        -------
+        float
+            Result of the operation.
+        """
         return self.result.confidence_level
 
     def exception_observations(self) -> tuple[BacktestObservationTrace, ...]:
-        """Return observations where either APL or HPL produced an exception."""
+        """Return observations where either APL or HPL produced an exception.
+        Returns
+        -------
+        tuple[BacktestObservationTrace, ...]
+            Result of the operation.
+        """
         return tuple(
             observation
             for observation in self.observations
@@ -190,7 +230,12 @@ class BacktestLevelTrace:
         )
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "result": self.result.as_dict(),
             "observations": [observation.as_dict() for observation in self.observations],
@@ -206,23 +251,48 @@ class TradingDeskBacktestTraceResult:
 
     @property
     def window_size(self) -> int:
-        """Number of observations used after policy windowing."""
+        """Number of observations used after policy windowing.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return self.result.window_size
 
     @property
     def model_eligible(self) -> bool:
-        """Whether every configured APL/HPL VaR level passed."""
+        """Whether every configured APL/HPL VaR level passed.
+        Returns
+        -------
+        bool
+            Result of the operation.
+        """
         return self.result.model_eligible
 
     def level(self, confidence_level: float) -> BacktestLevelTrace:
-        """Return the trace for one configured VaR confidence level."""
+        """Return the trace for one configured VaR confidence level.
+        Parameters
+        ----------
+        confidence_level : float
+            Confidence level.
+
+        Returns
+        -------
+        BacktestLevelTrace
+            Result of the operation.
+        """
         for trace in self.levels:
             if trace.confidence_level == confidence_level:
                 return trace
         raise KeyError(f"No backtesting trace for confidence level {confidence_level}")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "window_size": self.window_size,
             "model_eligible": self.model_eligible,
@@ -267,8 +337,7 @@ def count_exceptions(
     pnl: FloatVector,
     var_estimates: FloatVector,
 ) -> int:
-    """
-    Count observations where loss exceeds the VaR estimate.
+    """Count observations where loss exceeds the VaR estimate.
 
     Convention:
         pnl values:        positive = profit, negative = loss.
@@ -286,6 +355,17 @@ def count_exceptions(
 
     Raises:
         ValueError: if lengths differ or inputs are empty.
+    Parameters
+    ----------
+    pnl : FloatVector
+        Pnl.
+    var_estimates : FloatVector
+        Var estimates.
+
+    Returns
+    -------
+    int
+        Result of the operation.
     """
     pnl_arr = _as_finite_1d_array(pnl, "pnl")
     var_arr = _as_finite_1d_array(var_estimates, "var_estimates")
@@ -357,8 +437,7 @@ def backtest(
     window: int = 250,
     minimum_history: int | None = None,
 ) -> BacktestResult:
-    """
-    Run backtesting over the most recent `window` observations.
+    """Run backtesting over the most recent `window` observations.
 
     Args:
         apl:            Actual P&L series (positive = profit).
@@ -371,6 +450,23 @@ def backtest(
 
     Returns:
         BacktestResult with exception counts and zone classifications.
+    Parameters
+    ----------
+    apl : FloatVector
+        Apl.
+    hpl : FloatVector
+        Hpl.
+    var_estimates : FloatVector
+        Var estimates.
+    window : int, optional
+        Window.
+    minimum_history : int | None, optional
+        Minimum history.
+
+    Returns
+    -------
+    BacktestResult
+        Result of the operation.
     """
     if window <= 0:
         raise ValueError(f"window must be positive, got {window}")
@@ -422,8 +518,7 @@ def trading_desk_backtest(
     observation_dates: Sequence[date] | None = None,
     calendar: BusinessCalendar | None = None,
 ) -> TradingDeskBacktestResult:
-    """
-    Run NPR 2.0 trading-desk backtesting across VaR confidence levels.
+    """Run NPR 2.0 trading-desk backtesting across VaR confidence levels.
 
     The proposed rule requires separate exception counts for APL and HPL at
     both the 97.5th and 99.0th percentiles over the most recent 250 business
@@ -432,6 +527,33 @@ def trading_desk_backtest(
 
     Missing APL, HPL, or VaR values are counted as exceptions unless the
     corresponding day is marked as an official holiday.
+    Parameters
+    ----------
+    apl : FloatVector
+        Apl.
+    hpl : FloatVector
+        Hpl.
+    var_estimates_by_confidence : Mapping[float, FloatVector]
+        Var estimates by confidence.
+    window : int, optional
+        Window.
+    exception_limits : Sequence[tuple[float, int]], optional
+        Exception limits.
+    minimum_history : int | None, optional
+        Minimum history.
+    allow_prorated_thresholds : bool, optional
+        Allow prorated thresholds.
+    official_holiday_mask : BoolVector | None, optional
+        Official holiday mask.
+    observation_dates : Sequence[date] | None, optional
+        Observation dates.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+
+    Returns
+    -------
+    TradingDeskBacktestResult
+        Result of the operation.
     """
     return trading_desk_backtest_trace(
         apl,
@@ -459,12 +581,38 @@ def trading_desk_backtest_trace(
     observation_dates: Sequence[date] | None = None,
     calendar: BusinessCalendar | None = None,
 ) -> TradingDeskBacktestTraceResult:
-    """
-    Run NPR 2.0 trading-desk backtesting with per-observation audit traces.
+    """Run NPR 2.0 trading-desk backtesting with per-observation audit traces.
 
     Counts remain vectorized; the observation trace is built after the vector
     exception masks are computed so callers can review exact dates, values, and
     missing-data reasons.
+    Parameters
+    ----------
+    apl : FloatVector
+        Apl.
+    hpl : FloatVector
+        Hpl.
+    var_estimates_by_confidence : Mapping[float, FloatVector]
+        Var estimates by confidence.
+    window : int, optional
+        Window.
+    exception_limits : Sequence[tuple[float, int]], optional
+        Exception limits.
+    minimum_history : int | None, optional
+        Minimum history.
+    allow_prorated_thresholds : bool, optional
+        Allow prorated thresholds.
+    official_holiday_mask : BoolVector | None, optional
+        Official holiday mask.
+    observation_dates : Sequence[date] | None, optional
+        Observation dates.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+
+    Returns
+    -------
+    TradingDeskBacktestTraceResult
+        Result of the operation.
     """
     if window <= 0:
         raise ValueError(f"window must be positive, got {window}")
@@ -619,7 +767,35 @@ def trading_desk_backtest_for_policy(
     run_id: str | None = None,
     desk_id: str | None = None,
 ) -> TradingDeskBacktestResult:
-    """Run trading-desk backtesting using a policy's NPR 2.0 gate parameters."""
+    """Run trading-desk backtesting using a policy's NPR 2.0 gate parameters.
+    Parameters
+    ----------
+    apl : FloatVector
+        Apl.
+    hpl : FloatVector
+        Hpl.
+    var_estimates_by_confidence : Mapping[float, FloatVector]
+        Var estimates by confidence.
+    policy : RegulatoryPolicy
+        Policy.
+    allow_prorated_thresholds : bool, optional
+        Allow prorated thresholds.
+    official_holiday_mask : BoolVector | None, optional
+        Official holiday mask.
+    observation_dates : Sequence[date] | None, optional
+        Observation dates.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+
+    Returns
+    -------
+    TradingDeskBacktestResult
+        Result of the operation.
+    """
     result = trading_desk_backtest(
         apl,
         hpl,
@@ -649,7 +825,35 @@ def trading_desk_backtest_trace_for_policy(
     run_id: str | None = None,
     desk_id: str | None = None,
 ) -> TradingDeskBacktestTraceResult:
-    """Run policy backtesting and include per-observation exception traces."""
+    """Run policy backtesting and include per-observation exception traces.
+    Parameters
+    ----------
+    apl : FloatVector
+        Apl.
+    hpl : FloatVector
+        Hpl.
+    var_estimates_by_confidence : Mapping[float, FloatVector]
+        Var estimates by confidence.
+    policy : RegulatoryPolicy
+        Policy.
+    allow_prorated_thresholds : bool, optional
+        Allow prorated thresholds.
+    official_holiday_mask : BoolVector | None, optional
+        Official holiday mask.
+    observation_dates : Sequence[date] | None, optional
+        Observation dates.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+
+    Returns
+    -------
+    TradingDeskBacktestTraceResult
+        Result of the operation.
+    """
     result = trading_desk_backtest_trace(
         apl,
         hpl,
@@ -675,7 +879,27 @@ def backtest_for_policy(
     run_id: str | None = None,
     desk_id: str | None = None,
 ) -> BacktestResult:
-    """Run backtesting using a policy's window and minimum-history assumptions."""
+    """Run backtesting using a policy's window and minimum-history assumptions.
+    Parameters
+    ----------
+    apl : FloatVector
+        Apl.
+    hpl : FloatVector
+        Hpl.
+    var_estimates : FloatVector
+        Var estimates.
+    policy : RegulatoryPolicy
+        Policy.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+
+    Returns
+    -------
+    BacktestResult
+        Result of the operation.
+    """
     result = backtest(
         apl,
         hpl,
