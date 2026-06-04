@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 from collections.abc import Iterable, Mapping
 from typing import Any, cast
 
 import numpy as np
+from frtb_common import stable_json_hash
 
 from frtb_cva.data_models import (
     CvaCalculationContext,
@@ -25,8 +24,7 @@ from frtb_cva.validation import CvaInputError
 def hash_payload(payload: Mapping[str, object]) -> str:
     """Return the stable SHA-256 JSON hash used by CVA audit contracts."""
 
-    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return stable_json_hash(payload)
 
 
 def input_payload(
