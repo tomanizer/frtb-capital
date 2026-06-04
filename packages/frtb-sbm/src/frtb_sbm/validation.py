@@ -124,7 +124,18 @@ class SbmInputError(ValueError):
 
 
 def normalise_sensitivity_amount(value: float, *, sensitivity_id: str = "") -> float:
-    """Return a finite sensitivity amount."""
+    """Return a finite sensitivity amount.
+    Parameters
+    ----------
+    value : float
+        See signature.
+    sensitivity_id : str, optional
+        See signature.
+
+    Returns
+    -------
+    float
+    """
 
     return _finite_float(value, field="amount", sensitivity_id=sensitivity_id)
 
@@ -135,7 +146,20 @@ def normalise_currency_code(
     field: str = "amount_currency",
     sensitivity_id: str = "",
 ) -> str:
-    """Return an upper-case ISO-style currency code."""
+    """Return an upper-case ISO-style currency code.
+    Parameters
+    ----------
+    value : str
+        See signature.
+    field : str, optional
+        See signature.
+    sensitivity_id : str, optional
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     code = _require_text(value, field, sensitivity_id)
     normalised = code.upper()
@@ -149,19 +173,46 @@ def normalise_currency_code(
 
 
 def coerce_risk_class(value: SbmRiskClass | str) -> SbmRiskClass:
-    """Normalise a risk-class identifier to the canonical enum."""
+    """Normalise a risk-class identifier to the canonical enum.
+    Parameters
+    ----------
+    value : SbmRiskClass | str
+        See signature.
+
+    Returns
+    -------
+    SbmRiskClass
+    """
 
     return _coerce_enum(value, SbmRiskClass, "risk_class")
 
 
 def coerce_risk_measure(value: SbmRiskMeasure | str) -> SbmRiskMeasure:
-    """Normalise a risk-measure identifier to the canonical enum."""
+    """Normalise a risk-measure identifier to the canonical enum.
+    Parameters
+    ----------
+    value : SbmRiskMeasure | str
+        See signature.
+
+    Returns
+    -------
+    SbmRiskMeasure
+    """
 
     return _coerce_enum(value, SbmRiskMeasure, "risk_measure")
 
 
 def coerce_sign_convention(value: SbmSignConvention | str) -> SbmSignConvention:
-    """Normalise a sign-convention identifier to the canonical enum."""
+    """Normalise a sign-convention identifier to the canonical enum.
+    Parameters
+    ----------
+    value : SbmSignConvention | str
+        See signature.
+
+    Returns
+    -------
+    SbmSignConvention
+    """
 
     return _coerce_enum(value, SbmSignConvention, "sign_convention")
 
@@ -169,13 +220,31 @@ def coerce_sign_convention(value: SbmSignConvention | str) -> SbmSignConvention:
 def coerce_pairwise_evidence_mode(
     value: SbmPairwiseEvidenceMode | str,
 ) -> SbmPairwiseEvidenceMode:
-    """Normalise a pairwise evidence mode to the canonical enum."""
+    """Normalise a pairwise evidence mode to the canonical enum.
+    Parameters
+    ----------
+    value : SbmPairwiseEvidenceMode | str
+        See signature.
+
+    Returns
+    -------
+    SbmPairwiseEvidenceMode
+    """
 
     return _coerce_enum(value, SbmPairwiseEvidenceMode, "pairwise_evidence_mode")
 
 
 def sensitivity_sort_key(sensitivity: SbmSensitivity) -> tuple[str, str, str, str, str]:
-    """Return a deterministic ordering key for one sensitivity."""
+    """Return a deterministic ordering key for one sensitivity.
+    Parameters
+    ----------
+    sensitivity : SbmSensitivity
+        See signature.
+
+    Returns
+    -------
+    tuple[str, str, str, str, str]
+    """
 
     return (
         sensitivity.risk_class.value,
@@ -189,13 +258,31 @@ def sensitivity_sort_key(sensitivity: SbmSensitivity) -> tuple[str, str, str, st
 def sort_sensitivities_deterministic(
     sensitivities: Sequence[SbmSensitivity],
 ) -> tuple[SbmSensitivity, ...]:
-    """Return sensitivities in stable risk-class, bucket, and id order."""
+    """Return sensitivities in stable risk-class, bucket, and id order.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmSensitivity, ...]
+    """
 
     return tuple(sorted(sensitivities, key=sensitivity_sort_key))
 
 
 def validate_sbm_calculation_context(context: SbmCalculationContext) -> SbmCalculationContext:
-    """Validate run-level SBM context and return it unchanged."""
+    """Validate run-level SBM context and return it unchanged.
+    Parameters
+    ----------
+    context : SbmCalculationContext
+        See signature.
+
+    Returns
+    -------
+    SbmCalculationContext
+    """
 
     _require_text(context.run_id, "run_id")
     _require_text(context.profile_id, "profile_id")
@@ -235,7 +322,16 @@ def _validate_run_controls(controls: SbmRunControls | None) -> None:
 
 
 def validate_sbm_sensitivities(sensitivities: object) -> tuple[SbmSensitivity, ...]:
-    """Validate canonical SBM sensitivities and return them in input order."""
+    """Validate canonical SBM sensitivities and return them in input order.
+    Parameters
+    ----------
+    sensitivities : object
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmSensitivity, ...]
+    """
 
     if isinstance(sensitivities, SbmSensitivity):
         raise SbmInputError("sensitivities must be an iterable of SbmSensitivity objects")
@@ -257,7 +353,16 @@ def validate_sbm_sensitivities(sensitivities: object) -> tuple[SbmSensitivity, .
 
 
 def ensure_sbm_profile_known(profile_id: str) -> SbmRegulatoryProfile:
-    """Raise when a requested profile id is unknown."""
+    """Raise when a requested profile id is unknown.
+    Parameters
+    ----------
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    SbmRegulatoryProfile
+    """
 
     normalised = _require_text(profile_id, "profile_id")
     try:
@@ -273,7 +378,16 @@ def ensure_sbm_profile_known(profile_id: str) -> SbmRegulatoryProfile:
 def phase1_capital_supported_paths(
     profile_id: str,
 ) -> frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]:
-    """Return risk-class/measure paths supported for phase-1 capital on a profile."""
+    """Return risk-class/measure paths supported for phase-1 capital on a profile.
+    Parameters
+    ----------
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]
+    """
 
     profile = ensure_sbm_profile_known(profile_id)
     return _PHASE1_SUPPORTED.get(profile.value, frozenset())
@@ -323,7 +437,16 @@ def ensure_sbm_risk_class_measure_supported(
     risk_class: SbmRiskClass | str,
     risk_measure: SbmRiskMeasure | str,
 ) -> None:
-    """Raise explicitly when a profile/risk-class/measure path is unsupported."""
+    """Raise explicitly when a profile/risk-class/measure path is unsupported.
+    Parameters
+    ----------
+    profile_id : str
+        See signature.
+    risk_class : SbmRiskClass | str
+        See signature.
+    risk_measure : SbmRiskMeasure | str
+        See signature.
+    """
 
     profile = ensure_sbm_profile_known(profile_id)
     resolved_risk_class = coerce_risk_class(risk_class)
@@ -338,7 +461,14 @@ def ensure_sbm_capital_paths_supported(
     profile_id: str,
     sensitivities: Sequence[SbmSensitivity],
 ) -> None:
-    """Raise when profile or sensitivity paths are outside phase-1 capital support."""
+    """Raise when profile or sensitivity paths are outside phase-1 capital support.
+    Parameters
+    ----------
+    profile_id : str
+        See signature.
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    """
 
     profile = ensure_sbm_profile_known(profile_id)
     supported = phase1_capital_supported_paths(profile_id)
@@ -363,7 +493,14 @@ def ensure_sbm_run_supported(
     context: SbmCalculationContext,
     sensitivities: Sequence[SbmSensitivity],
 ) -> None:
-    """Validate run context scope against already-validated sensitivities."""
+    """Validate run context scope against already-validated sensitivities.
+    Parameters
+    ----------
+    context : SbmCalculationContext
+        See signature.
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    """
 
     validated_context = validate_sbm_calculation_context(context)
     scoped_desk_id = validated_context.desk_id.strip()

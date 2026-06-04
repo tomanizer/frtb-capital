@@ -60,7 +60,16 @@ from frtb_sbm.validation import SbmInputError, sort_sensitivities_deterministic
 
 
 def weighted_sensitivity_sort_key(item: WeightedSensitivity) -> tuple[str, str, str, str]:
-    """Return a deterministic ordering key for one weighted sensitivity."""
+    """Return a deterministic ordering key for one weighted sensitivity.
+    Parameters
+    ----------
+    item : WeightedSensitivity
+        See signature.
+
+    Returns
+    -------
+    tuple[str, str, str, str]
+    """
 
     return (
         item.risk_class.value,
@@ -73,7 +82,16 @@ def weighted_sensitivity_sort_key(item: WeightedSensitivity) -> tuple[str, str, 
 def sort_weighted_sensitivities_deterministic(
     weighted_sensitivities: Sequence[WeightedSensitivity],
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return weighted sensitivities in stable risk-class, bucket, and id order."""
+    """Return weighted sensitivities in stable risk-class, bucket, and id order.
+    Parameters
+    ----------
+    weighted_sensitivities : Sequence[WeightedSensitivity]
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     return tuple(sorted(weighted_sensitivities, key=weighted_sensitivity_sort_key))
 
@@ -84,7 +102,20 @@ def compute_weighted_sensitivities(
     profile_id: str,
     reporting_currency: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted sensitivities for supported profile paths."""
+    """Return cited weighted sensitivities for supported profile paths.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+    reporting_currency : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     if not sensitivities:
         return ()
@@ -155,7 +186,20 @@ def weight_girr_delta_sensitivities(
     profile_id: str,
     reporting_currency: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted GIRR delta sensitivities for a supported profile."""
+    """Return cited weighted GIRR delta sensitivities for a supported profile.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+    reporting_currency : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -203,7 +247,18 @@ def weight_girr_vega_sensitivities(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted GIRR vega sensitivities for a supported profile."""
+    """Return cited weighted GIRR vega sensitivities for a supported profile.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -256,7 +311,18 @@ def weight_girr_vega_sensitivity_batch(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted GIRR vega sensitivities from a package-owned batch."""
+    """Return cited weighted GIRR vega sensitivities from a package-owned batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -307,7 +373,18 @@ def weight_non_girr_vega_sensitivities(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted non-GIRR vega sensitivities for a supported profile."""
+    """Return cited weighted non-GIRR vega sensitivities for a supported profile.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     if not sensitivities:
         return ()
@@ -384,7 +461,18 @@ def weight_non_girr_vega_sensitivity_batch(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted non-GIRR vega sensitivities from a package-owned batch."""
+    """Return cited weighted non-GIRR vega sensitivities from a package-owned batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     risk_class = batch.risk_class
     if risk_class is SbmRiskClass.GIRR:
@@ -669,7 +757,20 @@ def weight_fx_delta_sensitivity_batch(
     profile_id: str,
     reporting_currency: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted FX delta sensitivities from a package-owned batch."""
+    """Return cited weighted FX delta sensitivities from a package-owned batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+    reporting_currency : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -722,7 +823,18 @@ def weight_equity_delta_sensitivity_batch(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted equity delta sensitivities from a package-owned batch."""
+    """Return cited weighted equity delta sensitivities from a package-owned batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -771,7 +883,18 @@ def weight_commodity_delta_sensitivity_batch(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted commodity delta sensitivities from a package-owned batch."""
+    """Return cited weighted commodity delta sensitivities from a package-owned batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -819,7 +942,18 @@ def weight_csr_nonsec_delta_sensitivity_batch(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted CSR non-securitisation delta sensitivities from a batch."""
+    """Return cited weighted CSR non-securitisation delta sensitivities from a batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -876,7 +1010,18 @@ def weight_csr_sec_nonctp_delta_sensitivity_batch(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted CSR securitisation non-CTP delta sensitivities from a batch."""
+    """Return cited weighted CSR securitisation non-CTP delta sensitivities from a batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     from frtb_sbm.csr_sec_nonctp_reference_data import (
         csr_sec_nonctp_delta_risk_weight,
@@ -938,7 +1083,18 @@ def weight_csr_sec_ctp_delta_sensitivity_batch(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted CSR securitisation CTP delta sensitivities from a batch."""
+    """Return cited weighted CSR securitisation CTP delta sensitivities from a batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     from frtb_sbm.csr_sec_ctp_reference_data import (
         csr_sec_ctp_delta_risk_weight,
@@ -1077,7 +1233,20 @@ def weight_fx_delta_sensitivities(
     profile_id: str,
     reporting_currency: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted FX delta sensitivities for a supported profile."""
+    """Return cited weighted FX delta sensitivities for a supported profile.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+    reporting_currency : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -1130,7 +1299,18 @@ def weight_equity_delta_sensitivities(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted equity delta sensitivities for a supported profile."""
+    """Return cited weighted equity delta sensitivities for a supported profile.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -1177,7 +1357,18 @@ def weight_commodity_delta_sensitivities(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted commodity delta sensitivities for a supported profile."""
+    """Return cited weighted commodity delta sensitivities for a supported profile.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -1223,7 +1414,18 @@ def weight_csr_nonsec_delta_sensitivities(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted CSR non-securitisation delta sensitivities."""
+    """Return cited weighted CSR non-securitisation delta sensitivities.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     ensure_profile_supports_risk_class_measure(
         profile_id,
@@ -1275,7 +1477,18 @@ def weight_csr_sec_nonctp_delta_sensitivities(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted CSR securitisation non-CTP delta sensitivities."""
+    """Return cited weighted CSR securitisation non-CTP delta sensitivities.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     from frtb_sbm.csr_sec_nonctp_reference_data import (
         csr_sec_nonctp_delta_risk_weight,
@@ -1332,7 +1545,18 @@ def weight_csr_sec_ctp_delta_sensitivities(
     *,
     profile_id: str,
 ) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted CSR securitisation CTP delta sensitivities."""
+    """Return cited weighted CSR securitisation CTP delta sensitivities.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[WeightedSensitivity, ...]
+    """
 
     from frtb_sbm.csr_sec_ctp_reference_data import (
         csr_sec_ctp_delta_risk_weight,

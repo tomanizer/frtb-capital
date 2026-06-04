@@ -45,7 +45,16 @@ def calculate_csr_sec_ctp_delta_risk_class_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Calculate cited CSR securitisation CTP delta risk-class capital."""
+    """Calculate cited CSR securitisation CTP delta risk-class capital.
+    Parameters
+    ----------
+    sensitivities, profile_id, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     batch = build_csr_sec_ctp_delta_batch_from_sensitivities(sensitivities)
     return calculate_csr_sec_ctp_delta_risk_class_capital_from_batch(
@@ -63,7 +72,16 @@ def calculate_csr_sec_ctp_delta_risk_class_capital_from_batch(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Calculate cited CSR securitisation CTP delta risk-class capital from a batch."""
+    """Calculate cited CSR securitisation CTP delta risk-class capital from a batch.
+    Parameters
+    ----------
+    batch, profile_id, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     weighted = weight_csr_sec_ctp_delta_sensitivity_batch(
         batch,
@@ -90,7 +108,17 @@ def aggregate_csr_sec_ctp_delta_measure_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Aggregate weighted CSR securitisation CTP delta sensitivities."""
+    """Aggregate weighted CSR securitisation CTP delta sensitivities.
+    Parameters
+    ----------
+    weighted, profile_id, name_by_id, tenor_by_id, risk_factor_by_id, pairwise_evidence_mode,
+    pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     grouped = group_weighted_sensitivities_by_bucket(weighted)
     intra_specs: list[IntraBucketScenarioSpec] = []
@@ -137,7 +165,16 @@ def build_csr_sec_ctp_delta_intra_bucket_correlation_matrix(
     tenor_by_id: Mapping[str, str],
     risk_factor_by_id: Mapping[str, str],
 ) -> npt.NDArray[np.float64]:
-    """Return the cited CSR securitisation CTP delta intra-bucket correlation matrix."""
+    """Return the cited CSR securitisation CTP delta intra-bucket correlation matrix.
+    Parameters
+    ----------
+    ordered, profile_id, bucket_id, name_by_id, tenor_by_id, risk_factor_by_id :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    npt.NDArray[np.float64]
+    """
 
     size = len(ordered)
     matrix = np.eye(size, dtype=np.float64)

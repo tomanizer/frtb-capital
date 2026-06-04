@@ -186,7 +186,18 @@ def parse_curvature_input(
     *,
     profile_id: str,
 ) -> CurvatureInput:
-    """Build a canonical curvature input from one validated CURVATURE sensitivity."""
+    """Build a canonical curvature input from one validated CURVATURE sensitivity.
+    Parameters
+    ----------
+    sensitivity : SbmSensitivity
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    CurvatureInput
+    """
 
     ensure_sbm_profile_known(profile_id)
     if sensitivity.risk_measure is not SbmRiskMeasure.CURVATURE:
@@ -226,7 +237,18 @@ def validate_curvature_sensitivities(
     *,
     profile_id: str,
 ) -> tuple[CurvatureInput, ...]:
-    """Validate curvature-only sensitivities and return canonical curvature inputs."""
+    """Validate curvature-only sensitivities and return canonical curvature inputs.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[CurvatureInput, ...]
+    """
 
     ensure_sbm_profile_known(profile_id)
     if not sensitivities:
@@ -246,7 +268,18 @@ def validate_curvature_sensitivities(
 
 
 def curvature_worst_branch(up_shock_amount: float, down_shock_amount: float) -> str:
-    """Return the profile-prescribed worst-side branch label for up/down shocks."""
+    """Return the profile-prescribed worst-side branch label for up/down shocks.
+    Parameters
+    ----------
+    up_shock_amount : float
+        See signature.
+    down_shock_amount : float
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     up = normalise_sensitivity_amount(up_shock_amount)
     down = normalise_sensitivity_amount(down_shock_amount)
@@ -256,7 +289,18 @@ def curvature_worst_branch(up_shock_amount: float, down_shock_amount: float) -> 
 
 
 def selected_curvature_shock_amount(up_shock_amount: float, down_shock_amount: float) -> float:
-    """Return the more negative up/down shock amount for curvature weighting."""
+    """Return the more negative up/down shock amount for curvature weighting.
+    Parameters
+    ----------
+    up_shock_amount : float
+        See signature.
+    down_shock_amount : float
+        See signature.
+
+    Returns
+    -------
+    float
+    """
 
     up = normalise_sensitivity_amount(up_shock_amount)
     down = normalise_sensitivity_amount(down_shock_amount)
@@ -269,7 +313,18 @@ def validate_girr_curvature_batch(
     *,
     profile_id: str,
 ) -> SbmSensitivityBatch:
-    """Validate a GIRR curvature batch and its separate MAR21.5 shock arrays."""
+    """Validate a GIRR curvature batch and its separate MAR21.5 shock arrays.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     _validate_and_get_girr_curvature_shocks(batch, profile_id=profile_id)
     return batch
@@ -282,7 +337,16 @@ def validate_curvature_batch(
     reporting_currency: str,
     expected_risk_class: SbmRiskClass | None = None,
 ) -> SbmSensitivityBatch:
-    """Validate a curvature batch without materialising row dataclasses."""
+    """Validate a curvature batch without materialising row dataclasses.
+    Parameters
+    ----------
+    batch, profile_id, reporting_currency, expected_risk_class :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     _validate_curvature_batch_for_capital(
         batch,
@@ -298,11 +362,20 @@ def select_girr_curvature_branches_from_batch(
     *,
     profile_id: str,
 ) -> tuple[CurvatureBranchRecord, ...]:
-    """
-    Return deterministic GIRR curvature branch records from batch columns.
+    """Return deterministic GIRR curvature branch records from batch columns.
 
     The returned records match the row-wise branch-selection rule while reading
     directly from the package-owned batch arrays.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[CurvatureBranchRecord, ...]
     """
 
     up_shocks, down_shocks = _validate_and_get_girr_curvature_shocks(
@@ -332,7 +405,18 @@ def select_curvature_branches_from_batch(
     *,
     profile_id: str,
 ) -> tuple[CurvatureBranchRecord, ...]:
-    """Return deterministic curvature branch records from batch columns."""
+    """Return deterministic curvature branch records from batch columns.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[CurvatureBranchRecord, ...]
+    """
 
     up_shocks, down_shocks = _validate_and_get_curvature_shocks(
         batch,
@@ -352,7 +436,20 @@ def weight_girr_curvature_sensitivities(
     profile_id: str,
     reporting_currency: str,
 ) -> tuple[tuple[WeightedSensitivity, ...], tuple[CurvatureBranchRecord, ...]]:
-    """Reject the obsolete row-wise weighted curvature shortcut."""
+    """Reject the obsolete row-wise weighted curvature shortcut.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+    reporting_currency : str
+        See signature.
+
+    Returns
+    -------
+    tuple[tuple[WeightedSensitivity, ...], tuple[CurvatureBranchRecord, ...]]
+    """
 
     del sensitivities, reporting_currency
     ensure_profile_supports_risk_class_measure(
@@ -375,7 +472,16 @@ def calculate_girr_curvature_risk_class_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Calculate cited GIRR curvature risk-class capital."""
+    """Calculate cited GIRR curvature risk-class capital.
+    Parameters
+    ----------
+    sensitivities, profile_id, reporting_currency, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     return _calculate_curvature_risk_class_capital(
         sensitivities,
@@ -395,7 +501,16 @@ def aggregate_girr_curvature_measure_capital(
     risk_factor_by_id: Mapping[str, str],
     curvature_branches: tuple[CurvatureBranchRecord, ...],
 ) -> RiskClassCapital:
-    """Reject weighted-input curvature aggregation because it loses CVR branch state."""
+    """Reject weighted-input curvature aggregation because it loses CVR branch state.
+    Parameters
+    ----------
+    weighted, profile_id, tenor_by_id, risk_factor_by_id, curvature_branches :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     del weighted, profile_id, tenor_by_id, risk_factor_by_id, curvature_branches
     raise UnsupportedRegulatoryFeatureError(
@@ -412,7 +527,16 @@ def calculate_curvature_risk_class_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Calculate cited curvature capital for supported risk classes."""
+    """Calculate cited curvature capital for supported risk classes.
+    Parameters
+    ----------
+    sensitivities, profile_id, reporting_currency, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     return _calculate_curvature_risk_class_capital(
         sensitivities,
@@ -432,7 +556,16 @@ def calculate_girr_curvature_risk_class_capital_from_batch(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Calculate cited GIRR curvature capital directly from a sensitivity batch."""
+    """Calculate cited GIRR curvature capital directly from a sensitivity batch.
+    Parameters
+    ----------
+    batch, profile_id, reporting_currency, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     return calculate_curvature_risk_class_capital_from_batch(
         batch,
@@ -453,7 +586,17 @@ def calculate_curvature_risk_class_capital_from_batch(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Calculate cited curvature capital directly from package-owned batch arrays."""
+    """Calculate cited curvature capital directly from package-owned batch arrays.
+    Parameters
+    ----------
+    batch, profile_id, reporting_currency, expected_risk_class, pairwise_evidence_mode,
+    pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     risk_class, up_shocks, down_shocks = _validate_curvature_batch_for_capital(
         batch,
@@ -531,7 +674,16 @@ def _calculate_curvature_risk_class_capital(
 
 
 def curvature_capital_unsupported_feature(profile_id: str) -> SbmUnsupportedFeature:
-    """Return structured metadata for unsupported curvature paths on a profile."""
+    """Return structured metadata for unsupported curvature paths on a profile.
+    Parameters
+    ----------
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    SbmUnsupportedFeature
+    """
 
     ensure_sbm_profile_known(profile_id)
     return SbmUnsupportedFeature(

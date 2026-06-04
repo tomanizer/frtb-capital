@@ -189,7 +189,18 @@ def calculate_sbm_capital(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate supported SBM capital for Basel MAR21 delta, vega, and curvature."""
+    """Calculate supported SBM capital for Basel MAR21 delta, vega, and curvature.
+    Parameters
+    ----------
+    sensitivities : object | None, optional
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     if sensitivities is None:
         raise SbmInputError("sensitivities are required", field="sensitivities")
@@ -330,13 +341,22 @@ def calculate_sbm_portfolio_capital_from_batches(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmBatchPortfolioCalculation:
-    """
-    Calculate portfolio-level SBM capital from package-owned columnar batches.
+    """Calculate portfolio-level SBM capital from package-owned columnar batches.
 
     The dispatcher groups batches by ``(risk_class, risk_measure)`` metadata and
     concatenates split batches for the same path before capital aggregation, so
     correlations are calculated over the full path population without accepted
     input-row dataclass materialization.
+    Parameters
+    ----------
+    batches : object | None, optional
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmBatchPortfolioCalculation
     """
 
     if batches is None:
@@ -395,7 +415,18 @@ def calculate_sbm_capital_from_girr_delta_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built GIRR delta sensitivity batch."""
+    """Calculate SBM capital for a pre-built GIRR delta sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     if context is None:
         raise SbmInputError("calculation context is required", field="context")
@@ -437,7 +468,18 @@ def calculate_sbm_capital_from_girr_vega_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built GIRR vega sensitivity batch."""
+    """Calculate SBM capital for a pre-built GIRR vega sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     if context is None:
         raise SbmInputError("calculation context is required", field="context")
@@ -478,7 +520,18 @@ def calculate_sbm_capital_from_girr_curvature_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built GIRR curvature sensitivity batch."""
+    """Calculate SBM capital for a pre-built GIRR curvature sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_curvature_batch(
         batch,
@@ -493,7 +546,18 @@ def calculate_sbm_capital_from_fx_delta_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built FX delta sensitivity batch."""
+    """Calculate SBM capital for a pre-built FX delta sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     if context is None:
         raise SbmInputError("calculation context is required", field="context")
@@ -540,7 +604,18 @@ def calculate_sbm_capital_from_equity_delta_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built equity delta sensitivity batch."""
+    """Calculate SBM capital for a pre-built equity delta sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     if context is None:
         raise SbmInputError("calculation context is required", field="context")
@@ -586,7 +661,18 @@ def calculate_sbm_capital_from_commodity_delta_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built commodity delta sensitivity batch."""
+    """Calculate SBM capital for a pre-built commodity delta sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     if context is None:
         raise SbmInputError("calculation context is required", field="context")
@@ -632,7 +718,18 @@ def calculate_sbm_capital_from_csr_nonsec_delta_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR non-securitisation delta batch."""
+    """Calculate SBM capital for a pre-built CSR non-securitisation delta batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     if context is None:
         raise SbmInputError("calculation context is required", field="context")
@@ -678,7 +775,18 @@ def calculate_sbm_capital_from_csr_sec_nonctp_delta_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation non-CTP delta batch."""
+    """Calculate SBM capital for a pre-built CSR securitisation non-CTP delta batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     if context is None:
         raise SbmInputError("calculation context is required", field="context")
@@ -724,7 +832,18 @@ def calculate_sbm_capital_from_csr_sec_ctp_delta_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation CTP delta batch."""
+    """Calculate SBM capital for a pre-built CSR securitisation CTP delta batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     if context is None:
         raise SbmInputError("calculation context is required", field="context")
@@ -770,7 +889,18 @@ def calculate_sbm_capital_from_fx_vega_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built FX vega sensitivity batch."""
+    """Calculate SBM capital for a pre-built FX vega sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_non_girr_vega_batch(
         batch,
@@ -785,7 +915,18 @@ def calculate_sbm_capital_from_equity_vega_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built equity vega sensitivity batch."""
+    """Calculate SBM capital for a pre-built equity vega sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_non_girr_vega_batch(
         batch,
@@ -800,7 +941,18 @@ def calculate_sbm_capital_from_commodity_vega_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built commodity vega sensitivity batch."""
+    """Calculate SBM capital for a pre-built commodity vega sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_non_girr_vega_batch(
         batch,
@@ -815,7 +967,18 @@ def calculate_sbm_capital_from_csr_nonsec_vega_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR non-securitisation vega batch."""
+    """Calculate SBM capital for a pre-built CSR non-securitisation vega batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_non_girr_vega_batch(
         batch,
@@ -830,7 +993,18 @@ def calculate_sbm_capital_from_csr_sec_nonctp_vega_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation non-CTP vega batch."""
+    """Calculate SBM capital for a pre-built CSR securitisation non-CTP vega batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_non_girr_vega_batch(
         batch,
@@ -845,7 +1019,18 @@ def calculate_sbm_capital_from_csr_sec_ctp_vega_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation CTP vega batch."""
+    """Calculate SBM capital for a pre-built CSR securitisation CTP vega batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_non_girr_vega_batch(
         batch,
@@ -860,7 +1045,18 @@ def calculate_sbm_capital_from_fx_curvature_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built FX curvature sensitivity batch."""
+    """Calculate SBM capital for a pre-built FX curvature sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_curvature_batch(
         batch,
@@ -875,7 +1071,18 @@ def calculate_sbm_capital_from_equity_curvature_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built equity curvature sensitivity batch."""
+    """Calculate SBM capital for a pre-built equity curvature sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_curvature_batch(
         batch,
@@ -890,7 +1097,18 @@ def calculate_sbm_capital_from_commodity_curvature_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built commodity curvature sensitivity batch."""
+    """Calculate SBM capital for a pre-built commodity curvature sensitivity batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_curvature_batch(
         batch,
@@ -905,7 +1123,18 @@ def calculate_sbm_capital_from_csr_nonsec_curvature_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR non-securitisation curvature batch."""
+    """Calculate SBM capital for a pre-built CSR non-securitisation curvature batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_curvature_batch(
         batch,
@@ -920,7 +1149,18 @@ def calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation non-CTP curvature batch."""
+    """Calculate SBM capital for a pre-built CSR securitisation non-CTP curvature batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_curvature_batch(
         batch,
@@ -935,7 +1175,18 @@ def calculate_sbm_capital_from_csr_sec_ctp_curvature_batch(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation CTP curvature batch."""
+    """Calculate SBM capital for a pre-built CSR securitisation CTP curvature batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     return _calculate_sbm_capital_from_curvature_batch(
         batch,

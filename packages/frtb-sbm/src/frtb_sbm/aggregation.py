@@ -124,11 +124,22 @@ def adjust_correlation_for_scenario(
     *,
     profile_id: SbmRegulatoryProfile | str = SbmRegulatoryProfile.BASEL_MAR21,
 ) -> float:
-    """
-    Apply MAR21.6 correlation-scenario adjustments to one parameter.
+    """Apply MAR21.6 correlation-scenario adjustments to one parameter.
 
     Delegates to profile-owned reference data so aggregation and lookup paths
     share one implementation.
+    Parameters
+    ----------
+    base_correlation : float
+        See signature.
+    scenario : SbmScenarioLabel
+        See signature.
+    profile_id : SbmRegulatoryProfile | str, optional
+        See signature.
+
+    Returns
+    -------
+    float
     """
     adjusted, _ = apply_correlation_scenario(
         profile_id,
@@ -144,7 +155,20 @@ def adjust_correlation_matrix_for_scenario(
     *,
     profile_id: SbmRegulatoryProfile | str = SbmRegulatoryProfile.BASEL_MAR21,
 ) -> npt.NDArray[np.float64]:
-    """Return a copy of ``base_matrix`` with off-diagonal entries scenario-adjusted."""
+    """Return a copy of ``base_matrix`` with off-diagonal entries scenario-adjusted.
+    Parameters
+    ----------
+    base_matrix : npt.NDArray[np.float64]
+        See signature.
+    scenario : SbmScenarioLabel
+        See signature.
+    profile_id : SbmRegulatoryProfile | str, optional
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.float64]
+    """
 
     matrix = np.array(base_matrix, dtype=np.float64, copy=True)
     if not np.all(np.isfinite(matrix)):
@@ -199,14 +223,23 @@ def aggregate_intra_bucket(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> IntraBucketAggregationResult:
-    """
-    Aggregate weighted sensitivities within one bucket (MAR21.4 step 4).
+    """Aggregate weighted sensitivities within one bucket (MAR21.4 step 4).
 
     Computes the signed bucket aggregate ``Sb = sum_k WS_k`` and bucket capital
     ``Kb = sqrt(max(0, sum_k sum_l rho_kl WS_k WS_l))``. When ``sb_correlation_floor``
     is supplied, ``Kb`` is additionally floored at ``abs(sb_correlation_floor * Sb)``.
     When ``curvature_absolute_floor`` is True, ``Kb`` is floored at ``sum_k |WS_k|``
     per MAR21.5(3).
+    Parameters
+    ----------
+    bucket_id, weighted_sensitivities, correlation_matrix, risk_class, risk_measure,
+    sb_correlation_floor, curvature_absolute_floor, citation_ids, pairwise_evidence_mode,
+    pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    IntraBucketAggregationResult
     """
     ordered = _sort_weighted_sensitivities(weighted_sensitivities)
     _validate_bucket_scope(bucket_id, ordered, risk_class, risk_measure)
@@ -275,12 +308,19 @@ def aggregate_inter_bucket(
     apply_scenario_adjustment: bool = True,
     citation_ids: tuple[str, ...] = _MAR21_INTER_BUCKET_CITATION,
 ) -> InterBucketScenarioResult:
-    """
-    Aggregate bucket-level positions across buckets for one scenario (MAR21.4 step 5).
+    """Aggregate bucket-level positions across buckets for one scenario (MAR21.4 step 5).
 
     Uses ``K^2 = sum_b Kb^2 + sum_b sum_c gamma_bc Sb Sc`` with ``gamma_bb = 0``.
     When the summed variance is negative, applies the alternative ``Sb`` specification
     from MAR21.4(5)(b).
+    Parameters
+    ----------
+    bucket_results, inter_bucket_correlations, scenario, apply_scenario_adjustment, citation_ids :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    InterBucketScenarioResult
     """
     buckets = [_as_bucket_capital(item) for item in bucket_results]
     if not buckets:
@@ -336,10 +376,17 @@ def select_max_correlation_scenario(
     branch_id: str | None = None,
     citation_ids: tuple[str, ...] = _MAR21_SCENARIO_SELECTION_CITATION,
 ) -> ScenarioSelectionResult:
-    """
-    Select the maximum risk-class capital across correlation scenarios.
+    """Select the maximum risk-class capital across correlation scenarios.
 
     GIRR delta capital uses the largest scenario total per MAR21.7(2).
+    Parameters
+    ----------
+    scenario_totals, risk_class, risk_measure, branch_id, citation_ids :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    ScenarioSelectionResult
     """
     if not scenario_totals:
         raise SbmInputError("scenario_totals must not be empty", field="scenario_totals")
@@ -496,13 +543,22 @@ def aggregate_risk_class_with_scenarios(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """
-    Evaluate low/medium/high scenarios with full intra- and inter-bucket recomputation.
+    """Evaluate low/medium/high scenarios with full intra- and inter-bucket recomputation.
 
     When ``IntraBucketScenarioSpec`` inputs are supplied, intra-bucket capital is
     recomputed under scenario-adjusted pairwise correlations per MAR21.6 before
     inter-bucket aggregation. Pre-aggregated ``BucketCapital`` inputs skip intra-bucket
     scenario recomputation and vary only inter-bucket correlations.
+    Parameters
+    ----------
+    bucket_inputs, inter_bucket_correlations, risk_class, risk_measure, scenarios,
+    apply_scenario_adjustment, citation_ids, intra_bucket_citation_ids, inter_bucket_citation_ids,
+    pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
     """
     if not bucket_inputs:
         raise SbmInputError("bucket_inputs must not be empty", field="bucket_inputs")
@@ -612,7 +668,16 @@ def aggregate_risk_class_with_scenarios(
 def group_weighted_sensitivities_by_bucket(
     weighted_sensitivities: Sequence[WeightedSensitivity],
 ) -> dict[tuple[SbmRiskClass, SbmRiskMeasure, str], tuple[WeightedSensitivity, ...]]:
-    """Group weighted sensitivities by risk class, measure, and bucket id."""
+    """Group weighted sensitivities by risk class, measure, and bucket id.
+    Parameters
+    ----------
+    weighted_sensitivities : Sequence[WeightedSensitivity]
+        See signature.
+
+    Returns
+    -------
+    dict[tuple[SbmRiskClass, SbmRiskMeasure, str], tuple[WeightedSensitivity, ...]]
+    """
     grouped: dict[tuple[SbmRiskClass, SbmRiskMeasure, str], list[WeightedSensitivity]] = {}
     for item in weighted_sensitivities:
         key = (item.risk_class, item.risk_measure, item.bucket)
@@ -694,7 +759,16 @@ def pairwise_correlation_audit_from_matrix(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str,
     pairwise_evidence_limit: int,
 ) -> tuple[tuple[PairwiseCorrelationRecord, ...], PairwiseCorrelationSummary]:
-    """Build pairwise correlation audit records honoring evidence mode controls."""
+    """Build pairwise correlation audit records honoring evidence mode controls.
+    Parameters
+    ----------
+    factor_ids, matrix, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    tuple[tuple[PairwiseCorrelationRecord, ...], PairwiseCorrelationSummary]
+    """
 
     mode = _coerce_pairwise_evidence_mode(pairwise_evidence_mode)
     size = len(factor_ids)
@@ -933,7 +1007,16 @@ def _scenario_rank(label: SbmScenarioLabel) -> int:
 def compute_portfolio_scenario_totals(
     risk_class_results: Sequence[RiskClassCapital],
 ) -> dict[SbmScenarioLabel, float]:
-    """Sum risk-class scenario totals across supported measures per MAR21.7."""
+    """Sum risk-class scenario totals across supported measures per MAR21.7.
+    Parameters
+    ----------
+    risk_class_results : Sequence[RiskClassCapital]
+        See signature.
+
+    Returns
+    -------
+    dict[SbmScenarioLabel, float]
+    """
 
     if not risk_class_results:
         raise SbmInputError(
@@ -968,12 +1051,23 @@ def select_portfolio_correlation_scenario(
     SbmScenarioLabel,
     SbmBranchMetadata,
 ]:
-    """
-    Apply MAR21.7 portfolio-level scenario selection across risk classes.
+    """Apply MAR21.7 portfolio-level scenario selection across risk classes.
 
     Sums delta, vega, and curvature capital by scenario across present risk
     classes, selects the largest portfolio total, and aligns each risk-class
     result to that scenario for reconciliation.
+    Parameters
+    ----------
+    risk_class_results : Sequence[RiskClassCapital]
+        See signature.
+    citation_ids : tuple[str, ...], optional
+        See signature.
+
+    Returns
+    -------
+    tuple[tuple[RiskClassCapital, ...], float, dict[SbmScenarioLabel, float],
+        SbmScenarioLabel, SbmBranchMetadata]
+        Aggregated capital result and branch metadata.
     """
     if not risk_class_results:
         raise SbmInputError(
@@ -1008,7 +1102,18 @@ def align_risk_class_to_scenario(
     risk_class_result: RiskClassCapital,
     scenario: SbmScenarioLabel,
 ) -> RiskClassCapital:
-    """Return a risk-class result whose selected buckets match ``scenario``."""
+    """Return a risk-class result whose selected buckets match ``scenario``.
+    Parameters
+    ----------
+    risk_class_result : RiskClassCapital
+        See signature.
+    scenario : SbmScenarioLabel
+        See signature.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     if risk_class_result.scenario_totals is None:
         raise SbmInputError(
