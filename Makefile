@@ -15,7 +15,7 @@ MUTATION_DIST := dist/mutation
 .PHONY: examples-check notebooks-check package-status-dashboard
 .PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
-.PHONY: validation-pack agent-setup agent-sync-main agent-new agent-guard
+.PHONY: validation-pack agent-setup agent-sync-main agent-new agent-ensure agent-guard
 .PHONY: agent-worktrees agent-doctor ima sa sbm drc rrao cva orchestration clean
 
 check: lint format-check typecheck test
@@ -224,6 +224,13 @@ agent-new:
 	@test -n "$(TASK)" || \
 		(echo "TASK is required, for example: make agent-new AGENT=codex TASK=drc-scenarios"; exit 1)
 	$(PYTHON_BIN) scripts/agent_worktree.py new --agent "$(AGENT)" "$(TASK)"
+
+agent-ensure:
+	@test -n "$(AGENT)" || \
+		(echo "AGENT is required, for example: make agent-ensure AGENT=grok TASK=drc-scenarios"; exit 1)
+	@test -n "$(TASK)" || \
+		(echo "TASK is required, for example: make agent-ensure AGENT=grok TASK=drc-scenarios"; exit 1)
+	$(PYTHON_BIN) scripts/agent_worktree.py ensure --agent "$(AGENT)" "$(TASK)"
 
 agent-guard:
 	$(PYTHON_BIN) scripts/agent_worktree.py guard

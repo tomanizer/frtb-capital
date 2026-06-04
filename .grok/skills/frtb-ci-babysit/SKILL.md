@@ -76,15 +76,12 @@ If no PR exists for the current branch, stop and ask the user. Set `$PR` and
 Worktree compliance (required before any edit):
 
 ```bash
-python3 scripts/agent_worktree.py guard
+make agent-ensure AGENT=<agent> TASK=ci-babysit
 ```
 
-On failure:
-
-```bash
-make agent-new AGENT=<agent> TASK=ci-babysit
-# cd to printed worktree; gh pr checkout $PR if needed
-```
+If not already in a compliant worktree, this creates or reuses one and prints
+`next: cd ...` — **change directory there before any edit**. Then `gh pr checkout $PR`
+if babysitting an existing PR.
 
 If `mergeable` is `CONFLICTING`, stop: report conflict; do not babysit until the
 author rebases or merges base. Offer to resolve only if the user explicitly asks.

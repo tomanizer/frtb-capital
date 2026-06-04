@@ -55,25 +55,30 @@ These settings are stored in the local Git config and must not be committed.
    make agent-sync-main
    ```
 
-2. Create a worktree from `origin/main`:
+2. Before any file edit, ensure a compliant agent worktree (from **any** clone,
+   including the protected main clone):
 
    ```bash
-   make agent-new AGENT=codex TASK=drc-scenarios
+   make agent-ensure AGENT=codex TASK=drc-scenarios
    ```
 
-3. Work only inside the printed worktree path.
+   - If already in `<worktree-root>/codex/drc-scenarios` on branch `codex/drc-scenarios`,
+     the command succeeds in place.
+   - Otherwise it creates the worktree (after `sync-main`) or tells you to reuse
+     an existing one and prints `next: cd ...`. **Agents must `cd` there before
+     editing.**
 
-4. Run the guard before editing if there is any doubt:
+3. Work only inside that worktree path for commits and pushes.
+
+4. Optional checks:
 
    ```bash
-   make agent-guard
-   ```
-
-5. List known worktrees:
-
-   ```bash
+   make agent-guard    # verify only; does not create a worktree
    make agent-worktrees
    ```
+
+`make agent-new` remains available when you explicitly want a fresh worktree
+without the ensure helper.
 
 ## Guardrails
 
