@@ -2,12 +2,12 @@
   "description": "Runtime package docstring inventory report.",
   "metrics": {
     "findings_by_rule": {
-      "MISSING_PARAMETERS_SECTION": 433,
+      "MISSING_PARAMETERS_SECTION": 414,
       "MISSING_PUBLIC_DOCSTRING": 71,
-      "MISSING_RETURNS_SECTION": 437
+      "MISSING_RETURNS_SECTION": 415
     },
     "packages_with_findings": 5,
-    "total_findings": 941
+    "total_findings": 900
   },
   "packages": {
     "frtb-drc": {
@@ -471,7 +471,7 @@
       ]
     },
     "frtb-result-store": {
-      "finding_count": 86,
+      "finding_count": 45,
       "findings": [
         {
           "line": 28,
@@ -573,33 +573,6 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 121,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "CapitalAttributionRecord.from_contribution",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_model_attribution.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 121,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalAttributionRecord.from_contribution",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_model_attribution.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 161,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalAttributionRecord.attribution_id",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_model_attribution.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 78,
           "message": "Public method returns a value but no NumPy Returns section.",
           "object_name": "HierarchyDefinition.leaf_dimension",
@@ -615,42 +588,6 @@
           "object_type": "method",
           "package": "frtb-result-store",
           "path": "packages/frtb-result-store/src/frtb_result_store/_model_mart_rows.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 89,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "CalculationRun.from_identity",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_model_run_records.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 89,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CalculationRun.from_identity",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_model_run_records.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 172,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "RunStatusEvent.transition",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_model_run_records.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 172,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "RunStatusEvent.transition",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_model_run_records.py",
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
@@ -780,52 +717,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 80,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ArtifactSchemaEntry.schema_fingerprint",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/artifacts.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 206,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "artifact_schema_for",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/artifacts.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 206,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "artifact_schema_for",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/artifacts.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 215,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "artifact_schema_fingerprint",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/artifacts.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 215,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "artifact_schema_fingerprint",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/artifacts.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 237,
+          "line": 262,
           "message": "Public function is missing a docstring.",
           "object_name": "artifact_expectations_for_requests",
           "object_type": "function",
@@ -834,7 +726,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 247,
+          "line": 272,
           "message": "Public function is missing a docstring.",
           "object_name": "validate_required_artifacts",
           "object_type": "function",
@@ -843,121 +735,13 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 279,
+          "line": 304,
           "message": "Public function is missing a docstring.",
           "object_name": "validate_artifact_ref_targets",
           "object_type": "function",
           "package": "frtb-result-store",
           "path": "packages/frtb-result-store/src/frtb_result_store/artifacts.py",
           "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 291,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "stage_artifact_write",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/artifacts.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 291,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "stage_artifact_write",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/artifacts.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 19,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_standard_capital_edges",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/capital_edges.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 19,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_standard_capital_edges",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/capital_edges.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 75,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "capital_node_identity_payload",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/capital_graph.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 75,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "capital_node_identity_payload",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/capital_graph.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 130,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "generate_capital_node_id",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/capital_graph.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 130,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "generate_capital_node_id",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/capital_graph.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 139,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "capital_node_from_spec",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/capital_graph.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 139,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "capital_node_from_spec",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/capital_graph.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 184,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_standard_capital_graph",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/capital_graph.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 184,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_standard_capital_graph",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/capital_graph.py",
-          "rule": "MISSING_RETURNS_SECTION"
         },
         {
           "line": 19,
@@ -967,60 +751,6 @@
           "package": "frtb-result-store",
           "path": "packages/frtb-result-store/src/frtb_result_store/cli.py",
           "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 35,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "default_hierarchy_definition",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/hierarchy.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 35,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "default_hierarchy_definition",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/hierarchy.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 48,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "generate_hierarchy_node_id",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/hierarchy.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 48,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "generate_hierarchy_node_id",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/hierarchy.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 70,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_hierarchy_nodes",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/hierarchy.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 70,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_hierarchy_nodes",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/hierarchy.py",
-          "rule": "MISSING_RETURNS_SECTION"
         },
         {
           "line": 222,
@@ -1075,105 +805,6 @@
           "package": "frtb-result-store",
           "path": "packages/frtb-result-store/src/frtb_result_store/marts.py",
           "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 18,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "canonical_run_identity_payload",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/model_identity.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 18,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "canonical_run_identity_payload",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/model_identity.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 53,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "canonical_run_group_identity_payload",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/model_identity.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 53,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "canonical_run_group_identity_payload",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/model_identity.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 88,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "generate_run_id",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/model_identity.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 88,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "generate_run_id",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/model_identity.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 95,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "generate_run_group_id",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/model_identity.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 95,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "generate_run_group_id",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/model_identity.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 20,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "result_store_span",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/observability.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 20,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "result_store_span",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/observability.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 34,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "current_trace_ids",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/observability.py",
-          "rule": "MISSING_RETURNS_SECTION"
         },
         {
           "line": 49,

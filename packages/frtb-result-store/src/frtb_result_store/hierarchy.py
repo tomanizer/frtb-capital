@@ -33,7 +33,17 @@ DEFAULT_HIERARCHY_LEVELS = (
 
 
 def default_hierarchy_definition(*, created_at: datetime) -> HierarchyDefinition:
-    """Return the default firm-to-book hierarchy definition."""
+    """Return the default firm-to-book hierarchy definition.
+    Parameters
+    ----------
+    created_at : datetime
+        Created at.
+
+    Returns
+    -------
+    HierarchyDefinition
+        Result of the operation.
+    """
 
     return HierarchyDefinition(
         hierarchy_id="default",
@@ -52,7 +62,23 @@ def generate_hierarchy_node_id(
     level_name: str,
     path: Sequence[tuple[str, object]],
 ) -> str:
-    """Generate a canonical hierarchy node id from a structured path payload."""
+    """Generate a canonical hierarchy node id from a structured path payload.
+    Parameters
+    ----------
+    hierarchy_id : str
+        Hierarchy id.
+    hierarchy_version : str
+        Hierarchy version.
+    level_name : str
+        Level name.
+    path : Sequence[tuple[str, object]]
+        Path.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     if not path:
         raise ResultStoreContractError("path must be non-empty", field="path")
@@ -73,7 +99,21 @@ def build_hierarchy_nodes(
     *,
     labels: Mapping[str, str] | None = None,
 ) -> tuple[HierarchyNode, ...]:
-    """Generate hierarchy nodes and parent links from business dimensions."""
+    """Generate hierarchy nodes and parent links from business dimensions.
+    Parameters
+    ----------
+    definition : HierarchyDefinition
+        Definition.
+    dimensions : Mapping[str, object]
+        Dimensions.
+    labels : Mapping[str, str] | None, optional
+        Labels.
+
+    Returns
+    -------
+    tuple[HierarchyNode, ...]
+        Result of the operation.
+    """
 
     if not isinstance(definition, HierarchyDefinition):
         raise ResultStoreContractError(

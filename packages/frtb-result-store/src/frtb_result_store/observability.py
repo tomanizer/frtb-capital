@@ -21,7 +21,19 @@ def result_store_span(
     name: str,
     attributes: Mapping[str, object],
 ) -> Iterator[None]:
-    """Start an OpenTelemetry span when the lightweight API is installed."""
+    """Start an OpenTelemetry span when the lightweight API is installed.
+    Parameters
+    ----------
+    name : str
+        Name.
+    attributes : Mapping[str, object]
+        Attributes.
+
+    Returns
+    -------
+    Iterator[None]
+        Result of the operation.
+    """
 
     if trace is None:
         yield
@@ -32,7 +44,12 @@ def result_store_span(
 
 
 def current_trace_ids() -> tuple[str | None, str | None]:
-    """Return current trace/span ids when a sampled OpenTelemetry span exists."""
+    """Return current trace/span ids when a sampled OpenTelemetry span exists.
+    Returns
+    -------
+    tuple[str | None, str | None]
+        Result of the operation.
+    """
 
     if trace is None:
         return None, None

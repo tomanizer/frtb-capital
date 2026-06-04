@@ -22,7 +22,21 @@ def build_standard_capital_edges(
     hierarchy_leaf_node_id: str,
     nodes: Sequence[CapitalNode],
 ) -> tuple[CapitalEdge, ...]:
-    """Generate the first-pass standard capital drilldown edges."""
+    """Generate the first-pass standard capital drilldown edges.
+    Parameters
+    ----------
+    run_id : str
+        Run id.
+    hierarchy_leaf_node_id : str
+        Hierarchy leaf node id.
+    nodes : Sequence[CapitalNode]
+        Nodes.
+
+    Returns
+    -------
+    tuple[CapitalEdge, ...]
+        Result of the operation.
+    """
 
     ordered_nodes = tuple(sorted(nodes, key=lambda node: (node.sort_key, node.node_id)))
     component_nodes, risk_class_nodes, bucket_nodes = _index_parent_nodes(ordered_nodes)

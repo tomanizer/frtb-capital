@@ -90,7 +90,45 @@ def capital_node_identity_payload(
     position_id: str | None = None,
     calculation_branch: str | None = None,
 ) -> Mapping[str, object]:
-    """Return the canonical ID payload for one FRTB capital node family."""
+    """Return the canonical ID payload for one FRTB capital node family.
+    Parameters
+    ----------
+    node_family : CapitalNodeFamily | str
+        Node family.
+    hierarchy_leaf_path : Sequence[tuple[str, object]]
+        Hierarchy leaf path.
+    component : FrtbComponent | str
+        Component.
+    risk_class : str | None, optional
+        Risk class.
+    risk_measure : str | None, optional
+        Risk measure.
+    bucket : str | None, optional
+        Bucket.
+    issuer_id : str | None, optional
+        Issuer id.
+    counterparty_id : str | None, optional
+        Counterparty id.
+    hedge_set_id : str | None, optional
+        Hedge set id.
+    residual_risk_type : str | None, optional
+        Residual risk type.
+    exposure_category : str | None, optional
+        Exposure category.
+    risk_factor_id : str | None, optional
+        Risk factor id.
+    risk_factor_set_id : str | None, optional
+        Risk factor set id.
+    position_id : str | None, optional
+        Position id.
+    calculation_branch : str | None, optional
+        Calculation branch.
+
+    Returns
+    -------
+    Mapping[str, object]
+        Result of the operation.
+    """
 
     family = _coerce_enum(node_family, CapitalNodeFamily, "node_family")
     component_value = _coerce_enum(component, FrtbComponent, "component").value
@@ -128,7 +166,17 @@ def capital_node_identity_payload(
 
 
 def generate_capital_node_id(identity_payload: Mapping[str, object]) -> str:
-    """Generate a canonical capital node storage id from an identity payload."""
+    """Generate a canonical capital node storage id from an identity payload.
+    Parameters
+    ----------
+    identity_payload : Mapping[str, object]
+        Identity payload.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     _require_mapping(identity_payload, "identity_payload")
     node_family = identity_payload.get("node_family")
@@ -143,7 +191,23 @@ def capital_node_from_spec(
     hierarchy_leaf_path: Sequence[tuple[str, object]],
     spec: CapitalNodeSpec,
 ) -> CapitalNode:
-    """Create a canonical ``CapitalNode`` under a resolved hierarchy leaf."""
+    """Create a canonical ``CapitalNode`` under a resolved hierarchy leaf.
+    Parameters
+    ----------
+    run_id : str
+        Run id.
+    hierarchy_leaf_node_id : str
+        Hierarchy leaf node id.
+    hierarchy_leaf_path : Sequence[tuple[str, object]]
+        Hierarchy leaf path.
+    spec : CapitalNodeSpec
+        Spec.
+
+    Returns
+    -------
+    CapitalNode
+        Result of the operation.
+    """
 
     node_family = CapitalNodeFamily(spec.node_family)
     component = FrtbComponent(spec.component)
@@ -189,7 +253,25 @@ def build_standard_capital_graph(
     specs: Sequence[CapitalNodeSpec],
     custom_edges: Sequence[CapitalEdge] = (),
 ) -> tuple[tuple[CapitalNode, ...], tuple[CapitalEdge, ...]]:
-    """Generate canonical capital nodes and standard edges under a hierarchy leaf."""
+    """Generate canonical capital nodes and standard edges under a hierarchy leaf.
+    Parameters
+    ----------
+    run_id : str
+        Run id.
+    hierarchy_leaf_node_id : str
+        Hierarchy leaf node id.
+    hierarchy_leaf_path : Sequence[tuple[str, object]]
+        Hierarchy leaf path.
+    specs : Sequence[CapitalNodeSpec]
+        Specs.
+    custom_edges : Sequence[CapitalEdge], optional
+        Custom edges.
+
+    Returns
+    -------
+    tuple[tuple[CapitalNode, ...], tuple[CapitalEdge, ...]]
+        Result of the operation.
+    """
 
     if custom_edges:
         raise ResultStoreContractError(

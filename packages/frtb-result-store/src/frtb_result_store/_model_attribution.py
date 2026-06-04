@@ -129,7 +129,29 @@ class CapitalAttributionRecord:
         artifact_id: str | None = None,
         metadata: Mapping[str, object] | None = None,
     ) -> CapitalAttributionRecord:
-        """Create a stored attribution record from the shared contribution DTO."""
+        """Create a stored attribution record from the shared contribution DTO.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        node_id : str
+            Node id.
+        contribution : CapitalContribution
+            Contribution.
+        target_type : str | None, optional
+            Target type.
+        target_id : str | None, optional
+            Target id.
+        artifact_id : str | None, optional
+            Artifact id.
+        metadata : Mapping[str, object] | None, optional
+            Metadata.
+
+        Returns
+        -------
+        CapitalAttributionRecord
+            Result of the operation.
+        """
 
         return cls(
             run_id=run_id,
@@ -159,6 +181,11 @@ class CapitalAttributionRecord:
 
     @property
     def attribution_id(self) -> str:
-        """Stable storage alias for the shared contribution identifier."""
+        """Stable storage alias for the shared contribution identifier.
+        Returns
+        -------
+        str
+            Result of the operation.
+        """
 
         return self.contribution_id
