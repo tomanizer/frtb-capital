@@ -2,12 +2,12 @@
   "description": "Runtime package docstring inventory report.",
   "metrics": {
     "findings_by_rule": {
-      "MISSING_PARAMETERS_SECTION": 631,
-      "MISSING_PUBLIC_DOCSTRING": 81,
-      "MISSING_RETURNS_SECTION": 748
+      "MISSING_PARAMETERS_SECTION": 583,
+      "MISSING_PUBLIC_DOCSTRING": 73,
+      "MISSING_RETURNS_SECTION": 681
     },
     "packages_with_findings": 6,
-    "total_findings": 1460
+    "total_findings": 1337
   },
   "packages": {
     "frtb-drc": {
@@ -115,395 +115,8 @@
       ]
     },
     "frtb-ima": {
-      "finding_count": 434,
+      "finding_count": 298,
       "findings": [
-        {
-          "line": 12,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "finite_1d_float_array",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_array_utils.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 12,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "finite_1d_float_array",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_array_utils.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 38,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "readonly_string_array",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_array_utils.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 38,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "readonly_string_array",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_array_utils.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 48,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "readonly_date_array",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_array_utils.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 48,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "readonly_date_array",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_array_utils.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 60,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_equal_lengths",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_array_utils.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 69,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "date_from_datetime64",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_array_utils.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 69,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "date_from_datetime64",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_array_utils.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 13,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "empty_mapping",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_mapping_utils.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 19,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "freeze_mapping",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_mapping_utils.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 19,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "freeze_mapping",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_mapping_utils.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 24,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_observation_dates",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_observation_utils.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 24,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_observation_dates",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_observation_utils.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 42,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "select_recent_observation_window",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_observation_utils.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 42,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "select_recent_observation_window",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/_observation_utils.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 294,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalize_ima_input_manifest_arrow_table",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 294,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalize_ima_input_manifest_arrow_table",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 315,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalize_ima_scenario_metadata_arrow_table",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 315,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalize_ima_scenario_metadata_arrow_table",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 336,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalize_ima_rfet_observation_arrow_table",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 336,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalize_ima_rfet_observation_arrow_table",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 357,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_scenario_metadata_batch_from_arrow",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 357,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_scenario_metadata_batch_from_arrow",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 379,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_rfet_observation_batch_from_arrow",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 379,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_rfet_observation_batch_from_arrow",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 402,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_capital_run_input_manifest_from_arrow",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 402,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_capital_run_input_manifest_from_arrow",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/arrow_batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 25,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "desk_contributions",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/attribution.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 25,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "desk_contributions",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/attribution.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 113,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "DeskAuditRecord.as_dict",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 139,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "DeskAuditRecord.to_json_line",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 210,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunAuditLog.desk_count",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 214,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunAuditLog.as_dict",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 232,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunAuditLog.to_ndjson",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 237,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "audit_records_to_ndjson",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 237,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "audit_records_to_ndjson",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 245,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "render_capital_run_audit_report",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 245,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "render_capital_run_audit_report",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 382,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "write_capital_run_audit_report",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 397,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "write_audit_records_ndjson",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 30,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "compute_inputs_hash",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit_inputs.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 30,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "compute_inputs_hash",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/audit_inputs.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
         {
           "line": 67,
           "message": "Public method returns a value but no NumPy Returns section.",
@@ -982,447 +595,6 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 89,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "load_capital_run_v1_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 94,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "load_capital_run_pra_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 99,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "load_capital_run_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 99,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "load_capital_run_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 140,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "policy_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 140,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "policy_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 152,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "as_of_date_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 152,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "as_of_date_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 157,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "rfet_assessments_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 157,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "rfet_assessments_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 173,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "classifications_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 173,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "classifications_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 185,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "nmrf_method_evidence_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 185,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "nmrf_method_evidence_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 220,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "nmrf_direct_shocks_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 220,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "nmrf_direct_shocks_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 242,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "nmrf_full_revaluations_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 242,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "nmrf_full_revaluations_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 265,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "nmrf_artifacts_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 265,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "nmrf_artifacts_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 291,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "observation_dates_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 291,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "observation_dates_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 299,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "run_capital_run_fixture_workflow",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 299,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "run_capital_run_fixture_workflow",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 215,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "RFETEvidence.observation_count",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 279,
-          "message": "Public method is missing a docstring.",
-          "object_name": "ScenarioCube.scenario_count",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 283,
-          "message": "Public method is missing a docstring.",
-          "object_name": "ScenarioCube.position_count",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 287,
-          "message": "Public method is missing a docstring.",
-          "object_name": "ScenarioCube.risk_factor_count",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 291,
-          "message": "Public method is missing a docstring.",
-          "object_name": "ScenarioCube.position_index",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 295,
-          "message": "Public method is missing a docstring.",
-          "object_name": "ScenarioCube.risk_factor_index",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 300,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ScenarioCube.total_scenario_pnl",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 304,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "ScenarioCube.pnl_for_positions",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 304,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ScenarioCube.pnl_for_positions",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 313,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "ScenarioCube.pnl_for_risk_factors",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 313,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ScenarioCube.pnl_for_risk_factors",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 373,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunResult.as_dict",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_contracts.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 20,
-          "message": "Public class is missing a docstring.",
-          "object_name": "RiskClass",
-          "object_type": "class",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 38,
-          "message": "Public class is missing a docstring.",
-          "object_name": "ModellabilityStatus",
-          "object_type": "class",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_models.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 119,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "ScenarioPnL.add_vector",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_models.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 119,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ScenarioPnL.add_vector",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_models.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 144,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "DeskCapitalResult.as_dict",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/data_models.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 45,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "make_observations",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/demo_data.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 45,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "make_observations",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/demo_data.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 75,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "make_scenario_pnl",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/demo_data.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 75,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "make_scenario_pnl",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/demo_data.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 124,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "aggregate_lh_vectors",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/demo_data.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 124,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "aggregate_lh_vectors",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/demo_data.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 173,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "make_pnl_series",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/demo_data.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 173,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "make_pnl_series",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/demo_data.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 34,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "expected_shortfall",
@@ -1726,114 +898,6 @@
           "object_type": "function",
           "package": "frtb-ima",
           "path": "packages/frtb-ima/src/frtb_ima/imcc.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 76,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "InputArtifactLineage.as_dict",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 126,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunInputManifest.artifact_count",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 131,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunInputManifest.manifest_hash",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 135,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "CapitalRunInputManifest.artifact",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 135,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunInputManifest.artifact",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 142,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "CapitalRunInputManifest.require_artifact",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 142,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunInputManifest.require_artifact",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 163,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunInputManifest.as_dict",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 175,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunInputManifest.manifest_hash_without_self_reference",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 186,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "CapitalRunInputManifest.compact_summary",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 203,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "capital_run_input_manifest_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 203,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "capital_run_input_manifest_from_fixture",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/input_manifest.py",
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
@@ -2185,51 +1249,6 @@
           "object_type": "function",
           "package": "frtb-ima",
           "path": "packages/frtb-ima/src/frtb_ima/liquidity_horizon_mapping.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 40,
-          "message": "Public method is missing a docstring.",
-          "object_name": "JSONFormatter.format",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/logging.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 64,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "calculation_log_extra",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/logging.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 64,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "calculation_log_extra",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/logging.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 83,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "configure_json_logging",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/logging.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 83,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "configure_json_logging",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/logging.py",
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
@@ -3376,123 +2395,6 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 262,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ModelVersion.as_dict",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/regimes.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 337,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "RegulatoryPolicy.policy_hash",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/regimes.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 347,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "RegulatoryPolicy.as_dict",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/regimes.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 351,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "RegulatoryPolicy.unsupported_feature",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/regimes.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 351,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "RegulatoryPolicy.unsupported_feature",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/regimes.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 358,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "RegulatoryPolicy.require_supported",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/regimes.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 373,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "RegulatoryPolicy.uses_type_a_type_b_taxonomy",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/regimes.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 393,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "get_policy",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/regimes.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 393,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "get_policy",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/regimes.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 54,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "replay_audit_file",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/replay.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 54,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "replay_audit_file",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/replay.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 116,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "main",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/replay.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 116,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "main",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/replay.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 61,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "count_eligible_observations",
@@ -3709,132 +2611,6 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 142,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ScenarioMetadataBatch.scenario_count",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 147,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ScenarioMetadataBatch.to_metadata",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 172,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "input_hash_for_scenario_metadata_batch",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 172,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "input_hash_for_scenario_metadata_batch",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 219,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ScenarioVector.scenario_ids",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 224,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ScenarioVector.scenario_dates",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 228,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "ScenarioVector.tolist",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 233,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "make_scenario_metadata",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 233,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "make_scenario_metadata",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 258,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_unique_scenarios",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 268,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_aligned_metadata",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 37,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "NestedLHValidationResult.as_dict",
-          "object_type": "method",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario_validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 69,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_nested_lh_vectors",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario_validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 69,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_nested_lh_vectors",
-          "object_type": "function",
-          "package": "frtb-ima",
-          "path": "packages/frtb-ima/src/frtb_ima/scenario_validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 105,
           "message": "Public method returns a value but no NumPy Returns section.",
           "object_name": "HistoricalStressSeries.observation_count",
@@ -4026,7 +2802,7 @@
       ]
     },
     "frtb-orchestration": {
-      "finding_count": 55,
+      "finding_count": 68,
       "findings": [
         {
           "line": 41,
@@ -4521,6 +3297,123 @@
           "object_type": "function",
           "package": "frtb-orchestration",
           "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 39,
+          "message": "Public method has parameters but no NumPy Parameters section.",
+          "object_name": "SuiteAttributionRecordSummary.from_record",
+          "object_type": "method",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 39,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "SuiteAttributionRecordSummary.from_record",
+          "object_type": "method",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 66,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "SuiteAttributionRecordSummary.as_dict",
+          "object_type": "method",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 99,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "SuiteAttributionGroupSummary.as_dict",
+          "object_type": "method",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 127,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "SuiteAttributionSummary.as_dict",
+          "object_type": "method",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 144,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "summarise_suite_attribution",
+          "object_type": "function",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 144,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "summarise_suite_attribution",
+          "object_type": "function",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 174,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "top_suite_attribution_contributors",
+          "object_type": "function",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 174,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "top_suite_attribution_contributors",
+          "object_type": "function",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 191,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "suite_attribution_residual_records",
+          "object_type": "function",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 191,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "suite_attribution_residual_records",
+          "object_type": "function",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 209,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "suite_attribution_unsupported_records",
+          "object_type": "function",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 209,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "suite_attribution_unsupported_records",
+          "object_type": "function",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite_attribution_summary.py",
           "rule": "MISSING_RETURNS_SECTION"
         }
       ]

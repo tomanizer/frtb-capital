@@ -35,7 +35,12 @@ class NestedLHValidationResult:
     nesting_evidence_checked: bool
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "horizons": [horizon.name for horizon in self.horizons],
             "scenario_count": self.scenario_count,
@@ -72,8 +77,7 @@ def validate_nested_lh_vectors(
     require_metadata: bool = False,
     nesting_evidence: Mapping[LiquidityHorizon, set[str]] | None = None,
 ) -> NestedLHValidationResult:
-    """
-    Validate nested liquidity-horizon scenario vectors.
+    """Validate nested liquidity-horizon scenario vectors.
 
     Args:
         lh_vectors: Mapping from liquidity-horizon cutoff to a ScenarioVector or
@@ -88,6 +92,19 @@ def validate_nested_lh_vectors(
 
     Raises:
         NestedLHValidationError: if structural validation fails.
+    Parameters
+    ----------
+    lh_vectors : Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]]
+        Lh vectors.
+    require_metadata : bool, optional
+        Require metadata.
+    nesting_evidence : Mapping[LiquidityHorizon, set[str]] | None, optional
+        Nesting evidence.
+
+    Returns
+    -------
+    NestedLHValidationResult
+        Result of the operation.
     """
     if not lh_vectors:
         raise NestedLHValidationError("lh_vectors must be non-empty")

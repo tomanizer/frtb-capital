@@ -47,11 +47,23 @@ def make_observations(
     well_observed_names: list[str],
     poorly_observed_names: list[str],
 ) -> list[RealPriceObservation]:
-    """
-    Generate synthetic real-price observations.
+    """Generate synthetic real-price observations.
 
     well_observed: >= 24 observations in past 12 months  -> quantitative pass
     poorly_observed: only 10 observations                -> quantitative fail
+    Parameters
+    ----------
+    as_of_date : date
+        As of date.
+    well_observed_names : list[str]
+        Well observed names.
+    poorly_observed_names : list[str]
+        Poorly observed names.
+
+    Returns
+    -------
+    list[RealPriceObservation]
+        Result of the operation.
     """
     obs: list[RealPriceObservation] = []
 
@@ -73,12 +85,22 @@ def make_observations(
 
 
 def make_scenario_pnl(desk: str, n_scenarios: int = 500) -> ScenarioPnL:
-    """
-    Generate a ScenarioPnL with plausible nested LH vectors.
+    """Generate a ScenarioPnL with plausible nested LH vectors.
 
     Strategy: simulate a base factor shock common to all scenarios, then
     add progressively larger shocks for risk factors with longer LH.
     Positive = loss convention.
+    Parameters
+    ----------
+    desk : str
+        Desk.
+    n_scenarios : int, optional
+        N scenarios.
+
+    Returns
+    -------
+    ScenarioPnL
+        Result of the operation.
     """
     spnl = ScenarioPnL(desk=desk)
 
@@ -127,12 +149,20 @@ def aggregate_lh_vectors(
     dict[LiquidityHorizon, list[float]],  # all-class aggregated
     dict[RiskClass, dict[LiquidityHorizon, list[float]]],  # per-class
 ]:
-    """
-    Aggregate scenario vectors for IMCC inputs.
+    """Aggregate scenario vectors for IMCC inputs.
 
     Returns:
         all_class:  LH -> summed vector across all risk classes
         per_class:  RiskClass -> LH -> vector
+    Parameters
+    ----------
+    spnl : ScenarioPnL
+        Spnl.
+
+    Returns
+    -------
+    tuple[dict[LiquidityHorizon, list[float]], dict[RiskClass, dict[LiquidityHorizon, list[float]]]]
+        Result of the operation.
     """
     import collections
 
@@ -171,13 +201,21 @@ def aggregate_lh_vectors(
 
 
 def make_pnl_series(n: int = 260) -> tuple[list[float], list[float], list[float]]:
-    """
-    Generate synthetic APL, HPL, and VaR series for backtesting / PLA.
+    """Generate synthetic APL, HPL, and VaR series for backtesting / PLA.
 
     Returns:
         (apl, hpl, var_estimates) — each of length n.
         P&L convention: positive = profit.
         VaR convention: positive magnitude.
+    Parameters
+    ----------
+    n : int, optional
+        N.
+
+    Returns
+    -------
+    tuple[list[float], list[float], list[float]]
+        Result of the operation.
     """
     # APL: actual — slightly fatter tails than HPL
     apl = RNG.normal(loc=50.0, scale=1_200.0, size=n).tolist()

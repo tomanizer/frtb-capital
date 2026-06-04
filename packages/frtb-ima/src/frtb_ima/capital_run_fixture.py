@@ -87,17 +87,37 @@ class CapitalRunFixture:
 
 
 def load_capital_run_v1_fixture() -> CapitalRunFixture:
-    """Load the repository's canonical capital-run v1 fixture."""
+    """Load the repository's canonical capital-run v1 fixture.
+    Returns
+    -------
+    CapitalRunFixture
+        Result of the operation.
+    """
     return load_capital_run_fixture(DEFAULT_CAPITAL_RUN_V1_ROOT)
 
 
 def load_capital_run_pra_fixture() -> CapitalRunFixture:
-    """Load the PRA UK CRR replay fixture (shared inputs, PRA policy outputs)."""
+    """Load the PRA UK CRR replay fixture (shared inputs, PRA policy outputs).
+    Returns
+    -------
+    CapitalRunFixture
+        Result of the operation.
+    """
     return load_capital_run_fixture(DEFAULT_IMA_PRA_FIXTURE_ROOT)
 
 
 def load_capital_run_fixture(root: Path) -> CapitalRunFixture:
-    """Load and validate a committed capital-run fixture."""
+    """Load and validate a committed capital-run fixture.
+    Parameters
+    ----------
+    root : Path
+        Root.
+
+    Returns
+    -------
+    CapitalRunFixture
+        Result of the operation.
+    """
     manifest = _read_json(root / "manifest.json")
     _verify_manifest_checksums(root, manifest)
     params = _read_json(root / "params.json")
@@ -138,7 +158,17 @@ def load_capital_run_fixture(root: Path) -> CapitalRunFixture:
 
 
 def policy_from_fixture(fixture: CapitalRunFixture) -> RegulatoryPolicy:
-    """Return the regulatory policy declared by a fixture's run parameters."""
+    """Return the regulatory policy declared by a fixture's run parameters.
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Fixture.
+
+    Returns
+    -------
+    RegulatoryPolicy
+        Result of the operation.
+    """
     policy = get_policy(RegulatoryRegime(str(fixture.params["regime"])))
     fixture_estimator = fixture.params.get("es_estimator")
     if fixture_estimator is not None and fixture_estimator != policy.es_estimator.value:
@@ -150,7 +180,17 @@ def policy_from_fixture(fixture: CapitalRunFixture) -> RegulatoryPolicy:
 
 
 def as_of_date_from_fixture(fixture: CapitalRunFixture) -> date:
-    """Return the fixture as-of date."""
+    """Return the fixture as-of date.
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Fixture.
+
+    Returns
+    -------
+    date
+        Result of the operation.
+    """
     return date.fromisoformat(str(fixture.params["as_of_date"]))
 
 
@@ -158,7 +198,19 @@ def rfet_assessments_from_fixture(
     fixture: CapitalRunFixture,
     policy: RegulatoryPolicy | None = None,
 ) -> dict[str, RFETEvidenceAssessment]:
-    """Assess all RFET evidence packages in fixture order."""
+    """Assess all RFET evidence packages in fixture order.
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Fixture.
+    policy : RegulatoryPolicy | None, optional
+        Policy.
+
+    Returns
+    -------
+    dict[str, RFETEvidenceAssessment]
+        Result of the operation.
+    """
     active_policy = policy if policy is not None else policy_from_fixture(fixture)
     return {
         risk_factor.name: assess_rfet_evidence(
@@ -174,7 +226,19 @@ def classifications_from_fixture(
     fixture: CapitalRunFixture,
     policy: RegulatoryPolicy | None = None,
 ) -> dict[str, ModellabilityStatus]:
-    """Return RFET classifications derived from the fixture evidence."""
+    """Return RFET classifications derived from the fixture evidence.
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Fixture.
+    policy : RegulatoryPolicy | None, optional
+        Policy.
+
+    Returns
+    -------
+    dict[str, ModellabilityStatus]
+        Result of the operation.
+    """
     assessments = rfet_assessments_from_fixture(fixture, policy)
     return {
         risk_factor_name: assessments[risk_factor_name].modellability_status
@@ -185,7 +249,17 @@ def classifications_from_fixture(
 def nmrf_method_evidence_from_fixture(
     fixture: CapitalRunFixture,
 ) -> dict[str, NMRFMethodEvidence]:
-    """Return auditable NMRF method evidence from the fixture JSON payload."""
+    """Return auditable NMRF method evidence from the fixture JSON payload.
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Fixture.
+
+    Returns
+    -------
+    dict[str, NMRFMethodEvidence]
+        Result of the operation.
+    """
     evidence_by_name: dict[str, NMRFMethodEvidence] = {}
     for risk_factor_name, raw in fixture.nmrf_evidence.items():
         if not isinstance(raw, Mapping):
@@ -220,7 +294,17 @@ def nmrf_method_evidence_from_fixture(
 def nmrf_direct_shocks_from_fixture(
     fixture: CapitalRunFixture,
 ) -> dict[str, NMRFDirectShockSpec]:
-    """Return direct shock specs declared by the fixture NMRF evidence."""
+    """Return direct shock specs declared by the fixture NMRF evidence.
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Fixture.
+
+    Returns
+    -------
+    dict[str, NMRFDirectShockSpec]
+        Result of the operation.
+    """
     result: dict[str, NMRFDirectShockSpec] = {}
     for risk_factor_name, raw in fixture.nmrf_evidence.items():
         if not isinstance(raw, Mapping):
@@ -242,7 +326,17 @@ def nmrf_direct_shocks_from_fixture(
 def nmrf_full_revaluations_from_fixture(
     fixture: CapitalRunFixture,
 ) -> dict[str, NMRFFullRevaluationSpec]:
-    """Return full-revaluation specs declared by the fixture NMRF evidence."""
+    """Return full-revaluation specs declared by the fixture NMRF evidence.
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Fixture.
+
+    Returns
+    -------
+    dict[str, NMRFFullRevaluationSpec]
+        Result of the operation.
+    """
     result: dict[str, NMRFFullRevaluationSpec] = {}
     for risk_factor_name, raw in fixture.nmrf_evidence.items():
         if not isinstance(raw, Mapping):
@@ -266,7 +360,19 @@ def nmrf_artifacts_from_fixture(
     fixture: CapitalRunFixture,
     specs: Sequence[NMRFValuationSpec],
 ) -> tuple[NMRFStressArtifact, ...]:
-    """Return committed upstream NMRF artifacts matched to valuation specs."""
+    """Return committed upstream NMRF artifacts matched to valuation specs.
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Fixture.
+    specs : Sequence[NMRFValuationSpec]
+        Specs.
+
+    Returns
+    -------
+    tuple[NMRFStressArtifact, ...]
+        Result of the operation.
+    """
     artifacts: list[NMRFStressArtifact] = []
     for spec in specs:
         risk_factor_name = spec.risk_factor_name
@@ -289,7 +395,17 @@ def nmrf_artifacts_from_fixture(
 
 
 def observation_dates_from_fixture(fixture: CapitalRunFixture) -> tuple[date, ...]:
-    """Return aligned PLA/backtesting observation dates from the fixture."""
+    """Return aligned PLA/backtesting observation dates from the fixture.
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Fixture.
+
+    Returns
+    -------
+    tuple[date, ...]
+        Result of the operation.
+    """
     return tuple(
         date.fromisoformat(_to_str(value))
         for value in fixture.pla_bt_vectors["observation_dates"].tolist()
@@ -297,7 +413,17 @@ def observation_dates_from_fixture(fixture: CapitalRunFixture) -> tuple[date, ..
 
 
 def run_capital_run_fixture_workflow(fixture: CapitalRunFixture) -> dict[str, object]:
-    """Run the committed fixture through the calculation workflow used by replay."""
+    """Run the committed fixture through the calculation workflow used by replay.
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Fixture.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
     policy = policy_from_fixture(fixture)
     as_of_date = as_of_date_from_fixture(fixture)
     run_id = str(fixture.params["run_id"])

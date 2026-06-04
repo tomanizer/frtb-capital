@@ -28,7 +28,18 @@ import numpy as np
 
 
 def compute_inputs_hash(**inputs: object) -> str:
-    """Return a SHA-256 digest over canonicalised calculation inputs."""
+    """Return a SHA-256 digest over canonicalised calculation inputs.
+
+    Parameters
+    ----------
+    **inputs : object
+        Named calculation inputs serialised in sorted key order.
+
+    Returns
+    -------
+    str
+        Lowercase SHA-256 hex digest of the canonical payload.
+    """
     payload = {
         "schema_version": "frtb_ima_inputs_hash_v1",
         "inputs": {key: _canonical_input(inputs[key]) for key in sorted(inputs)},

@@ -18,6 +18,8 @@ from types import MappingProxyType
 
 
 class RiskClass(StrEnum):
+    """IMA risk-class labels for desk and factor grouping."""
+
     GIRR = "GIRR"
     CSR = "CSR"
     EQUITY = "EQUITY"
@@ -36,6 +38,8 @@ class LiquidityHorizon(int, Enum):
 
 
 class ModellabilityStatus(StrEnum):
+    """RFET modellability classification for a risk factor."""
+
     MODELLABLE = "MODELLABLE"
     TYPE_A_NMRF = "TYPE_A_NMRF"  # passes qualitative, fails quantitative
     TYPE_B_NMRF = "TYPE_B_NMRF"  # fails qualitative (or not classified above)
@@ -122,7 +126,21 @@ class ScenarioPnL:
         lh_subset: LiquidityHorizon,
         losses: list[float],
     ) -> ScenarioPnL:
-        """Return a new instance with the supplied vector added."""
+        """Return a new instance with the supplied vector added.
+        Parameters
+        ----------
+        risk_class : RiskClass
+            Risk class.
+        lh_subset : LiquidityHorizon
+            Lh subset.
+        losses : list[float]
+            Losses.
+
+        Returns
+        -------
+        ScenarioPnL
+            Result of the operation.
+        """
         vectors = {existing_class: dict(lh_map) for existing_class, lh_map in self.vectors.items()}
         vectors.setdefault(risk_class, {})[lh_subset] = tuple(losses)
         return ScenarioPnL(desk=self.desk, vectors=vectors)
@@ -142,7 +160,12 @@ class DeskCapitalResult:
     notes: str = ""
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "desk": self.desk,
             "imcc": self.imcc,

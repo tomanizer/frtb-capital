@@ -111,7 +111,12 @@ class DeskAuditRecord:
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 
     def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable dictionary."""
+        """Return a JSON-serialisable dictionary.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "run_id": self.run_id,
             "desk_id": self.desk_id,
@@ -137,7 +142,12 @@ class DeskAuditRecord:
         }
 
     def to_json_line(self) -> str:
-        """Return this desk audit record as one NDJSON line."""
+        """Return this desk audit record as one NDJSON line.
+        Returns
+        -------
+        str
+            Result of the operation.
+        """
         return json.dumps(self.as_dict(), sort_keys=True, separators=(",", ":"))
 
 
@@ -208,11 +218,21 @@ class CapitalRunAuditLog:
 
     @property
     def desk_count(self) -> int:
-        """Number of desks in the audit log."""
+        """Number of desks in the audit log.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.desk_records)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable dictionary."""
+        """Return a JSON-serialisable dictionary.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "run_id": self.run_id,
             "regime": self.regime,
@@ -230,12 +250,27 @@ class CapitalRunAuditLog:
         }
 
     def to_ndjson(self) -> str:
-        """Return desk records as newline-delimited JSON."""
+        """Return desk records as newline-delimited JSON.
+        Returns
+        -------
+        str
+            Result of the operation.
+        """
         return audit_records_to_ndjson(self.desk_records)
 
 
 def audit_records_to_ndjson(records: Iterable[DeskAuditRecord]) -> str:
-    """Serialise desk audit records to newline-delimited JSON."""
+    """Serialise desk audit records to newline-delimited JSON.
+    Parameters
+    ----------
+    records : Iterable[DeskAuditRecord]
+        Records.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
     lines = [record.to_json_line() for record in records]
     if not lines:
         return ""
@@ -247,12 +282,22 @@ def render_capital_run_audit_report(
     *,
     title: str = "FRTB IMA Capital Run Audit Report",
 ) -> str:
-    """
-    Render a deterministic Markdown audit report for a capital run.
+    """Render a deterministic Markdown audit report for a capital run.
 
     This is an orchestration-layer report view over already-computed audit
     records. It does not recalculate capital and does not attempt to be a final
     regulatory disclosure template.
+    Parameters
+    ----------
+    log : CapitalRunAuditLog
+        Log.
+    title : str, optional
+        Title.
+
+    Returns
+    -------
+    str
+        Result of the operation.
     """
     lines: list[str] = [
         f"# {title}",
@@ -385,7 +430,16 @@ def write_capital_run_audit_report(
     *,
     title: str = "FRTB IMA Capital Run Audit Report",
 ) -> None:
-    """Write a deterministic Markdown audit report for a capital run."""
+    """Write a deterministic Markdown audit report for a capital run.
+    Parameters
+    ----------
+    log : CapitalRunAuditLog
+        Log.
+    path : str | Path
+        Path.
+    title : str, optional
+        Title.
+    """
     report_path = Path(path)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(
@@ -400,7 +454,16 @@ def write_audit_records_ndjson(
     *,
     append: bool = False,
 ) -> None:
-    """Write desk audit records to an NDJSON file."""
+    """Write desk audit records to an NDJSON file.
+    Parameters
+    ----------
+    records : Iterable[DeskAuditRecord]
+        Records.
+    path : str | Path
+        Path.
+    append : bool, optional
+        Append.
+    """
     mode = "a" if append else "w"
     with Path(path).open(mode, encoding="utf-8") as handle:
         handle.write(audit_records_to_ndjson(records))

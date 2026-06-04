@@ -33,6 +33,15 @@ def desk_contributions(record: DeskAuditRecord) -> tuple[CapitalContribution, ..
     to the desk total within ε = 1e-6. If a max/floor branch is indicated, the
     unattributed difference is emitted as an explicit residual with
     ``PARTIAL_RESIDUAL`` status.
+    Parameters
+    ----------
+    record : DeskAuditRecord
+        Record.
+
+    Returns
+    -------
+    tuple[CapitalContribution, ...]
+        Result of the operation.
     """
     total = _capital_total(record.capital)
     component_records = _component_records(record)

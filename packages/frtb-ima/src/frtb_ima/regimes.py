@@ -260,7 +260,12 @@ class ModelVersion:
             raise ValueError("description must be non-empty")
 
     def as_dict(self) -> dict[str, str]:
-        """Return a JSON-serialisable model identity dictionary."""
+        """Return a JSON-serialisable model identity dictionary.
+        Returns
+        -------
+        dict[str, str]
+            Result of the operation.
+        """
         return {
             "model_id": self.model_id,
             "version": self.version,
@@ -335,7 +340,12 @@ class RegulatoryPolicy:
 
     @property
     def policy_hash(self) -> str:
-        """Stable SHA-256 over this policy's canonical serialisation."""
+        """Stable SHA-256 over this policy's canonical serialisation.
+        Returns
+        -------
+        str
+            Result of the operation.
+        """
         payload = json.dumps(
             self.as_dict(),
             allow_nan=False,
@@ -345,18 +355,38 @@ class RegulatoryPolicy:
         return hashlib.sha256(bytes(payload, "utf-8")).hexdigest()
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic JSON-serialisable policy dictionary."""
+        """Return a deterministic JSON-serialisable policy dictionary.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {field.name: _policy_jsonable(getattr(self, field.name)) for field in fields(self)}
 
     def unsupported_feature(self, feature_name: str) -> UnsupportedFeature | None:
-        """Return an unsupported-feature descriptor by name, if present."""
+        """Return an unsupported-feature descriptor by name, if present.
+        Parameters
+        ----------
+        feature_name : str
+            Feature name.
+
+        Returns
+        -------
+        UnsupportedFeature | None
+            Result of the operation.
+        """
         for feature in self.unsupported_features:
             if feature.feature_name == feature_name:
                 return feature
         return None
 
     def require_supported(self, feature_name: str) -> None:
-        """Raise if this profile explicitly marks a feature as unsupported."""
+        """Raise if this profile explicitly marks a feature as unsupported.
+        Parameters
+        ----------
+        feature_name : str
+            Feature name.
+        """
         feature = self.unsupported_feature(feature_name)
         if feature is not None:
             raise UnsupportedRegulatoryFeature(
@@ -371,7 +401,12 @@ class RegulatoryPolicy:
 
     @property
     def uses_type_a_type_b_taxonomy(self) -> bool:
-        """Whether the profile uses U.S. NPR Type A / Type B NMRF labels."""
+        """Whether the profile uses U.S. NPR Type A / Type B NMRF labels.
+        Returns
+        -------
+        bool
+            Result of the operation.
+        """
         return self.nmrf_taxonomy_mode == NMRFTaxonomyMode.TYPE_A_TYPE_B
 
     def require_type_a_type_b_taxonomy(self) -> None:
@@ -391,7 +426,17 @@ class CalculationContext:
 
 
 def get_policy(regime: RegulatoryRegime = RegulatoryRegime.FED_NPR_2_0) -> RegulatoryPolicy:
-    """Return the immutable policy for a supported regulatory regime."""
+    """Return the immutable policy for a supported regulatory regime.
+    Parameters
+    ----------
+    regime : RegulatoryRegime, optional
+        Regime.
+
+    Returns
+    -------
+    RegulatoryPolicy
+        Result of the operation.
+    """
     if regime == RegulatoryRegime.FED_NPR_2_0:
         return _fed_npr_2_0_policy()
     if regime == RegulatoryRegime.ECB_CRR3:

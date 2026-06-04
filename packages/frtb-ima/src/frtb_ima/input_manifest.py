@@ -74,7 +74,12 @@ class InputArtifactLineage:
         object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable lineage record."""
+        """Return a serialisable lineage record.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "artifact_name": self.artifact_name,
             "artifact_type": self.artifact_type,
@@ -124,16 +129,36 @@ class CapitalRunInputManifest:
 
     @property
     def artifact_count(self) -> int:
-        """Number of lineage records in the manifest."""
+        """Number of lineage records in the manifest.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.artifacts)
 
     @property
     def manifest_hash(self) -> str:
-        """Stable SHA-256 digest over the manifest payload."""
+        """Stable SHA-256 digest over the manifest payload.
+        Returns
+        -------
+        str
+            Result of the operation.
+        """
         return self.manifest_hash_without_self_reference()
 
     def artifact(self, artifact_name: str) -> InputArtifactLineage:
-        """Return one artifact lineage record by name."""
+        """Return one artifact lineage record by name.
+        Parameters
+        ----------
+        artifact_name : str
+            Artifact name.
+
+        Returns
+        -------
+        InputArtifactLineage
+            Result of the operation.
+        """
         for artifact in self.artifacts:
             if artifact.artifact_name == artifact_name:
                 return artifact
@@ -148,7 +173,25 @@ class CapitalRunInputManifest:
         record_count: int | None = None,
         vector_count: int | None = None,
     ) -> InputArtifactLineage:
-        """Validate expected lineage controls for one artifact."""
+        """Validate expected lineage controls for one artifact.
+        Parameters
+        ----------
+        artifact_name : str
+            Artifact name.
+        checksum : str | None, optional
+            Checksum.
+        sign_convention : str | None, optional
+            Sign convention.
+        record_count : int | None, optional
+            Record count.
+        vector_count : int | None, optional
+            Vector count.
+
+        Returns
+        -------
+        InputArtifactLineage
+            Result of the operation.
+        """
         artifact = self.artifact(artifact_name)
         if checksum is not None and artifact.checksum != checksum:
             raise ValueError(f"checksum mismatch for {artifact_name}")
@@ -161,7 +204,12 @@ class CapitalRunInputManifest:
         return artifact
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable run manifest."""
+        """Return a serialisable run manifest.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "schema_version": self.schema_version,
             "run_id": self.run_id,
@@ -173,7 +221,12 @@ class CapitalRunInputManifest:
         }
 
     def manifest_hash_without_self_reference(self) -> str:
-        """Hash the manifest fields excluding the displayed hash field."""
+        """Hash the manifest fields excluding the displayed hash field.
+        Returns
+        -------
+        str
+            Result of the operation.
+        """
         payload = {
             "schema_version": self.schema_version,
             "run_id": self.run_id,
@@ -184,7 +237,12 @@ class CapitalRunInputManifest:
         return compute_inputs_hash(input_manifest=payload)
 
     def compact_summary(self) -> dict[str, object]:
-        """Return a compact summary suitable for audit reports."""
+        """Return a compact summary suitable for audit reports.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         failed = [
             artifact.artifact_name
             for artifact in self.artifacts
@@ -208,7 +266,25 @@ def capital_run_input_manifest_from_fixture(
     as_of_date: date,
     extraction_timestamp: datetime = datetime(1970, 1, 1, tzinfo=UTC),
 ) -> CapitalRunInputManifest:
-    """Map the committed synthetic fixture manifest into lineage records."""
+    """Map the committed synthetic fixture manifest into lineage records.
+    Parameters
+    ----------
+    fixture_root : str | Path
+        Fixture root.
+    fixture_manifest : Mapping[str, Any]
+        Fixture manifest.
+    run_id : str
+        Run id.
+    as_of_date : date
+        As of date.
+    extraction_timestamp : datetime, optional
+        Extraction timestamp.
+
+    Returns
+    -------
+    CapitalRunInputManifest
+        Result of the operation.
+    """
     root = Path(fixture_root)
     schema_version = str(fixture_manifest["schema_version"])
     source_version = str(fixture_manifest["generator_version"])
