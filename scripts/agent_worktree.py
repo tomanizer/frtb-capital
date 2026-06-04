@@ -298,6 +298,14 @@ def create_worktree(args: argparse.Namespace) -> int:
     return 0
 
 
+def find_worktree_at_path(main_clone: Path, path: Path) -> Worktree | None:
+    resolved = path.resolve()
+    for worktree in parse_worktrees(main_clone):
+        if worktree.path.resolve() == resolved:
+            return worktree
+    return None
+
+
 def guard(args: argparse.Namespace) -> int:
     current = resolve_repo_root(Path.cwd())
     main_clone = require_main_clone(args.main_clone)
@@ -340,12 +348,68 @@ def guard(args: argparse.Namespace) -> int:
                 print(f"- {failure}")
             print()
             print("Create a compliant worktree with:")
-            print("  make agent-new AGENT=<agent> TASK=<task-name>")
+            print("  make agent-ensure AGENT=<agent> TASK=<task-name>")
         return 1
 
     if not args.quiet:
         print(f"agent worktree guard passed: {current} on {branch}")
     return 0
+
+
+def ensure(args: argparse.Namespace) -> int:
+    """Use the current worktree when compliant; otherwise create or reuse one."""
+    resolve_policy_paths(args)
+    agent_raw = getattr(args, "agent", None)
+    if not agent_raw:
+        raise AgentWorktreeError("ensure requires --agent (for example: codex, claude, grok)")
+    task_source = (getattr(args, "task", None) or "").strip()
+    if not task_source:
+        raise AgentWorktreeError("ensure requires a task slug (for example: drc-package-journey)")
+
+    current = resolve_repo_root(Path.cwd())
+    guard_args = Namespace(
+        main_clone=args.main_clone,
+        worktree_root=args.worktree_root,
+        quiet=getattr(args, "quiet", False),
+    )
+    if guard(guard_args) == 0:
+        if not guard_args.quiet:
+            print(f"agent worktree ensure: already compliant at {current}")
+            print(f"branch: {current_branch(current)}")
+        return 0
+
+    main_clone = require_main_clone(args.main_clone)
+    agent = slugify(agent_raw, label="agent")
+    task = slugify(task_source.split("/", 1)[-1], label="task")
+    branch = getattr(args, "branch", None) or f"{agent}/{task}"
+    worktree_path = (getattr(args, "path", None) or args.worktree_root / agent / task).expanduser().resolve()
+
+    existing = find_worktree_at_path(main_clone, worktree_path)
+    if existing is not None:
+        if not getattr(args, "quiet", False):
+            print(f"agent worktree ensure: reuse existing worktree at {worktree_path}")
+            print(f"branch: {existing.branch}")
+            print(f"next: cd {worktree_path}")
+        return 0
+
+    if worktree_path.exists():
+        raise AgentWorktreeError(
+            f"worktree path exists but is not a registered git worktree: {worktree_path}; "
+            "remove it or choose a different task slug"
+        )
+
+    create_args = Namespace(
+        main_clone=args.main_clone,
+        worktree_root=args.worktree_root,
+        agent=agent,
+        task=task,
+        branch=branch,
+        path=getattr(args, "path", None),
+        no_sync=getattr(args, "no_sync", False),
+    )
+    if not getattr(args, "quiet", False):
+        print("agent worktree ensure: creating compliant worktree")
+    return create_worktree(create_args)
 
 
 def hooks_path_is_installed(main_clone: Path, hooks_path_raw: str) -> bool:
@@ -460,6 +524,18 @@ def build_parser() -> argparse.ArgumentParser:
     guard_parser = subparsers.add_parser("guard", help="verify current checkout is safe for edits")
     guard_parser.add_argument("--quiet", action="store_true")
     guard_parser.set_defaults(func=guard)
+
+    ensure_parser = subparsers.add_parser(
+        "ensure",
+        help="stay in a compliant worktree or create/reuse <worktree-root>/<agent>/<task>",
+    )
+    ensure_parser.add_argument("--agent", required=True, help="agent name, for example codex")
+    ensure_parser.add_argument("task", nargs="?", help="task slug, for example drc-scenarios")
+    ensure_parser.add_argument("--branch", help="branch name; must start with <agent>/")
+    ensure_parser.add_argument("--path", type=Path, help="explicit worktree path under the agent root")
+    ensure_parser.add_argument("--no-sync", action="store_true", help="skip sync-main before creating")
+    ensure_parser.add_argument("--quiet", action="store_true")
+    ensure_parser.set_defaults(func=ensure)
 
     list_parser = subparsers.add_parser("list", help="list known worktrees")
     list_parser.set_defaults(func=list_worktrees)
