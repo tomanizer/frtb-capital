@@ -27,7 +27,7 @@ planning documents as suite-specific build guidance.
 | --- | --- | --- |
 | 1 | [Basel MAR50](https://www.bis.org/basel_framework/chapter/MAR/50.htm) | CVA definitions, scope, BA-CVA, SA-CVA, eligible hedges, aggregation, multiplier, and risk-class tables. |
 | 1 | [U.S. NPR 2.0, 91 FR 14952](https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959) | Proposed U.S. CVA risk scope, CVA hedges, internal CVA risk transfers, and CVA measures, section V.B. |
-| 2 | [CRR3 Regulation (EU) 2024/1623](https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng) | EU comparison profile, CRR Articles 382–386 and related CVA provisions. |
+| 2 | [CRR3 Regulation (EU) 2024/1623](https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng) | EU comparison profile, CRR Articles 381–386 and related CVA provisions. |
 | 2 | [EBA RTS on CVA risk of SFTs](https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/market-counterparty-and-cva-risk/regulatory-technical-standards-cva-risk-securities-financing-transactions) | EU technical context for SFT CVA scope. |
 | 3 | Current repository CVA PRD and regulatory requirements | Product scope, architecture intent, delivery slices, package boundary within this suite. |
 | 3 | Existing IMA, DRC, RRAO, and SBM detailed requirements | Quality bar, traceability standard, fail-closed behaviour, audit/readiness expectations. |
@@ -660,8 +660,8 @@ The current Basel MAR50 partial-runtime slice is complete only when:
   MAR50.8;
 - qualified-index routing follows MAR50.50 where metadata is supplied;
 - results are frozen, serialisable, and carry rule-profile and input hashes;
-- U.S., EU, and UK comparison profiles and the MAR50.9 materiality-threshold
-  alternative fail explicitly;
+- U.S., EU, and UK comparison profiles carry profile-owned citations and
+  hashes; MAR50.9 and analogous CCR-substitution alternatives fail explicitly;
 - tests cover BA-CVA fixtures, SA-CVA fixtures and risk classes, invalid EAD,
   missing risk weights, missing maturity, unsupported paths, audit-hash
   stability, properties, comparator checks, and Arrow/batch parity.

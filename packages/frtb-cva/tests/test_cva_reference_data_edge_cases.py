@@ -5,7 +5,6 @@ import unittest.mock as mock
 import frtb_cva.reference_data as ref
 import frtb_cva.sa_cva_reference_data as sa_ref
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_cva.data_models import (
     CreditQuality,
     CvaRegulatoryProfile,
@@ -283,8 +282,9 @@ def test_ref_resolve_supported_profile_errors() -> None:
     with pytest.raises(CvaInputError, match="unknown CVA regulatory profile"):
         ref._resolve_supported_profile("INVALID")
 
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="is unsupported until mapped"):
-        ref._resolve_supported_profile(CvaRegulatoryProfile.US_NPR20_VB)
+    assert ref._resolve_supported_profile(CvaRegulatoryProfile.US_NPR20_VB) is (
+        CvaRegulatoryProfile.US_NPR20_VB
+    )
 
 
 def test_ref_resolve_sector_errors() -> None:

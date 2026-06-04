@@ -4,8 +4,9 @@ This document records the historical v1 implementation plan and current
 remaining boundaries. The Basel MAR50 partial-runtime path now includes reduced
 and full BA-CVA, supported SA-CVA delta/vega paths, mixed carve-out,
 qualified-index routing, adapters, attribution, impact, performance controls,
-and audit/replay evidence. U.S., EU, and UK comparison profiles and the MAR50.9
-materiality-threshold alternative remain fail-closed.
+and audit/replay evidence. U.S., EU, and UK comparison profiles are
+capital-producing under audit with profile-owned citations and hashes. MAR50.9
+and analogous CCR-substitution alternatives remain fail-closed.
 
 ## Decision log
 
@@ -23,8 +24,8 @@ alternative requests must raise explicit unsupported-feature errors until their
 slices land.
 
 **Current status:** Reduced BA-CVA, full BA-CVA, SA-CVA, and mixed carve-out
-slices have landed for supported Basel MAR50 inputs. MAR50.9 still fails
-closed.
+slices have landed for Basel MAR50 and the supported U.S. NPR, EU CRR3, and UK
+PRA comparison profiles. MAR50.9 still fails closed.
 
 Basel anchor: MAR50.13(2), MAR50.14–MAR50.16.
 
@@ -172,15 +173,18 @@ contracts are still required before SA-CVA and full BA-CVA capital paths.
 11. Implement full BA-CVA, qualified-index option, and mixed carve-out assembly.
 12. Add CRIF adapter, orchestration handoff, performance controls, and
     attribution/impact.
+13. Add U.S. NPR 2.0, EU CRR3, and UK PRA comparison profile citation maps,
+    deterministic profile hashes, support-matrix rows, and synthetic public API
+    runs.
 
 ## Profile roadmap
 
 | Profile id | Status in v1 | Notes |
 | --- | --- | --- |
 | `BASEL_MAR50_2020` | Capital-producing partial runtime | July 2020 calibration: `m_CVA = 1.0`, `D_BA-CVA = 0.65`; MAR50.9 remains unsupported. |
-| `US_NPR20_VB` | Fail closed | Requires proposed section map before implementation |
-| `EU_CRR3_CVA` | Fail closed | Articles 382–386 mapping deferred |
-| `UK_PRA_CVA` | Fail closed | Crosswalk placeholder only today |
+| `US_NPR20_VB` | Capital-producing comparison profile under audit | U.S. NPR 2.0 91 FR 14952 section V.B is proposed-rule material. |
+| `EU_CRR3_CVA` | Capital-producing comparison profile under audit | Regulation (EU) 2024/1623 Articles 381–386 and inserted Articles 383a–383z; ECB shorthand routes here. |
+| `UK_PRA_CVA` | Capital-producing comparison profile under audit | PRA PS1/26 and PRA Rulebook CVA Risk Part; effective-date metadata is 1 January 2027. |
 
 ### CVA-DEC-012: MAR50.9 materiality-threshold alternative remains unsupported
 

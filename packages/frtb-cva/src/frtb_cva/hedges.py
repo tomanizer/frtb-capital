@@ -9,9 +9,11 @@ from dataclasses import dataclass
 from frtb_cva.data_models import (
     BaCvaHedgeType,
     CvaHedge,
+    CvaRegulatoryProfile,
     HedgeEligibility,
     SaCvaRiskClass,
 )
+from frtb_cva.reference_data import profile_citation_ids
 from frtb_cva.validation import CvaInputError
 
 
@@ -26,7 +28,11 @@ class HedgeEligibilityDecision:
     citations: tuple[str, ...]
 
 
-def assess_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision:
+def assess_hedge_eligibility(
+    hedge: CvaHedge,
+    *,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> HedgeEligibilityDecision:
     """Return an explicit eligibility decision without applying capital benefit."""
 
     if hedge.eligibility is HedgeEligibility.INELIGIBLE:
@@ -35,7 +41,7 @@ def assess_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision:
             eligibility=HedgeEligibility.INELIGIBLE,
             sa_cva_risk_class=hedge.sa_cva_risk_class,
             reason_code=hedge.rejection_reason or "hedge_marked_ineligible",
-            citations=("basel_mar50_37",),
+            citations=profile_citation_ids(("basel_mar50_37",), profile),
         )
 
     if hedge.eligibility is HedgeEligibility.EXCLUDED:
@@ -44,7 +50,7 @@ def assess_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision:
             eligibility=HedgeEligibility.EXCLUDED,
             sa_cva_risk_class=hedge.sa_cva_risk_class,
             reason_code="hedge_excluded_from_sa_cva",
-            citations=("basel_mar50_39",),
+            citations=profile_citation_ids(("basel_mar50_39",), profile),
         )
 
     if hedge.is_internal and not hedge.eligibility_evidence_id:
@@ -53,7 +59,7 @@ def assess_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision:
             eligibility=HedgeEligibility.INELIGIBLE,
             sa_cva_risk_class=hedge.sa_cva_risk_class,
             reason_code="internal_hedge_missing_back_to_back_evidence",
-            citations=("basel_mar50_11", "basel_mar50_39"),
+            citations=profile_citation_ids(("basel_mar50_11", "basel_mar50_39"), profile),
         )
 
     if hedge.eligibility is HedgeEligibility.ELIGIBLE and not hedge.eligibility_evidence_id:
@@ -68,7 +74,7 @@ def assess_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision:
         eligibility=HedgeEligibility.ELIGIBLE,
         sa_cva_risk_class=hedge.sa_cva_risk_class,
         reason_code="eligible_whole_transaction_hedge",
-        citations=("basel_mar50_37", "basel_mar50_38"),
+        citations=profile_citation_ids(("basel_mar50_37", "basel_mar50_38"), profile),
     )
 
 
@@ -81,7 +87,11 @@ _BA_CVA_ELIGIBLE_TYPES = frozenset(
 )
 
 
-def assess_ba_cva_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision:
+def assess_ba_cva_hedge_eligibility(
+    hedge: CvaHedge,
+    *,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> HedgeEligibilityDecision:
     """Return BA-CVA hedge eligibility for full BA-CVA recognition (MAR50.18-MAR50.19)."""
 
     if hedge.hedge_type not in _BA_CVA_ELIGIBLE_TYPES:
@@ -90,10 +100,10 @@ def assess_ba_cva_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision
             eligibility=HedgeEligibility.INELIGIBLE,
             sa_cva_risk_class=hedge.sa_cva_risk_class,
             reason_code="instrument_type_not_eligible_for_ba_cva",
-            citations=("basel_mar50_18",),
+            citations=profile_citation_ids(("basel_mar50_18",), profile),
         )
 
-    sa_decision = assess_hedge_eligibility(hedge)
+    sa_decision = assess_hedge_eligibility(hedge, profile=profile)
     if sa_decision.eligibility is not HedgeEligibility.ELIGIBLE:
         return HedgeEligibilityDecision(
             hedge_id=hedge.hedge_id,
@@ -108,16 +118,23 @@ def assess_ba_cva_hedge_eligibility(hedge: CvaHedge) -> HedgeEligibilityDecision
         eligibility=HedgeEligibility.ELIGIBLE,
         sa_cva_risk_class=hedge.sa_cva_risk_class,
         reason_code="eligible_ba_cva_credit_spread_hedge",
-        citations=("basel_mar50_18", "basel_mar50_19", "basel_mar50_37"),
+        citations=profile_citation_ids(
+            ("basel_mar50_18", "basel_mar50_19", "basel_mar50_37"),
+            profile,
+        ),
     )
 
 
-def eligible_sa_cva_hedge_ids(hedges: tuple[CvaHedge, ...]) -> frozenset[str]:
+def eligible_sa_cva_hedge_ids(
+    hedges: tuple[CvaHedge, ...],
+    *,
+    profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
+) -> frozenset[str]:
     """Return hedge ids eligible to contribute SA-CVA hedge sensitivities."""
 
     eligible: set[str] = set()
     for hedge in hedges:
-        decision = assess_hedge_eligibility(hedge)
+        decision = assess_hedge_eligibility(hedge, profile=profile)
         if decision.eligibility is HedgeEligibility.ELIGIBLE:
             eligible.add(hedge.hedge_id)
     return frozenset(eligible)

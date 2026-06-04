@@ -22,6 +22,8 @@ from frtb_cva.data_models import (
 from frtb_cva.reference_data import (
     girr_delta_intra_bucket_correlation,
     girr_inter_bucket_correlation,
+    profile_citation_id,
+    profile_citation_ids,
 )
 from frtb_cva.sa_cva_reference_data import girr_vega_intra_bucket_correlation
 from frtb_cva.validation import CvaInputError, validate_m_cva_multiplier
@@ -86,7 +88,6 @@ def aggregate_intra_bucket(
 ) -> SaCvaBucketCapital:
     """Aggregate weighted sensitivities to bucket capital K_b."""
 
-    del profile  # reserved for future profile-specific aggregation branches
     if not weighted_sensitivities:
         raise CvaInputError("bucket requires at least one weighted sensitivity", field="bucket_id")
 
@@ -128,7 +129,7 @@ def aggregate_intra_bucket(
         k_b=k_b,
         s_b=s_b,
         sensitivity_ids=sensitivity_ids,
-        citations=config.intra_bucket_citations,
+        citations=profile_citation_ids(config.intra_bucket_citations, profile),
         branch_metadata=(("floor_applied", str(floor_applied)),),
     )
 
@@ -142,7 +143,6 @@ def aggregate_inter_bucket(
 ) -> SaCvaRiskClassCapital:
     """Aggregate bucket capitals to risk-class capital."""
 
-    del profile  # reserved for future profile-specific aggregation branches
     if not bucket_capitals:
         raise CvaInputError("risk class requires at least one bucket", field="bucket_capitals")
 
@@ -174,7 +174,10 @@ def aggregate_inter_bucket(
             cross_term += gamma_bc * bucket_sb[left_index] * bucket_sb[right_index]
     pre_multiplier = math.sqrt(max(sum_kb_squared + cross_term, 0.0))
     post_multiplier = validated_m_cva * pre_multiplier
-    citations = (*tuple(gamma_citations), "basel_mar50_53")
+    citations = profile_citation_ids(
+        (*tuple(gamma_citations), "basel_mar50_53"),
+        profile,
+    )
     return SaCvaRiskClassCapital(
         risk_class=config.risk_class,
         risk_measure=config.risk_measure,
@@ -269,7 +272,10 @@ def girr_delta_aggregation_config(
         risk_measure=SaCvaRiskMeasure.DELTA,
         intra_bucket_correlation=_intra,
         inter_bucket_gamma=uniform_inter_bucket_gamma(gamma_bc, gamma_citation),
-        intra_bucket_citations=("basel_mar50_53", "basel_mar50_56"),
+        intra_bucket_citations=(
+            profile_citation_id("basel_mar50_53", profile),
+            profile_citation_id("basel_mar50_56", profile),
+        ),
     )
 
 
@@ -283,12 +289,16 @@ def girr_vega_aggregation_config(
     ) -> tuple[float, str]:
         return _girr_vega_intra_correlation(left, right, profile=profile)
 
+    gamma_bc, gamma_citation = girr_inter_bucket_correlation(profile=profile)
     return SaCvaAggregationConfig(
         risk_class=SaCvaRiskClass.GIRR,
         risk_measure=SaCvaRiskMeasure.VEGA,
         intra_bucket_correlation=_intra,
-        inter_bucket_gamma=uniform_inter_bucket_gamma(0.5, "basel_mar50_55"),
-        intra_bucket_citations=("basel_mar50_53", "basel_mar50_58"),
+        inter_bucket_gamma=uniform_inter_bucket_gamma(gamma_bc, gamma_citation),
+        intra_bucket_citations=(
+            profile_citation_id("basel_mar50_53", profile),
+            profile_citation_id("basel_mar50_58", profile),
+        ),
     )
 
 

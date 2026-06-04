@@ -53,9 +53,12 @@ The Python `ColumnSpec` tuples are the source of truth.
 ## Unsupported paths
 
 The current package fails closed for unsupported methods and features including
-MAR50.9 materiality-threshold election, unsupported comparison profiles, and
-unsupported SA-CVA risk-class/measure combinations. Errors are raised through
-`CvaInputError` or the shared unsupported-feature error type where applicable.
+MAR50.9 materiality-threshold election, analogous simplified CCR-substitution
+alternatives, unmapped future profiles, and unsupported SA-CVA
+risk-class/measure combinations. `US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA`
+are supported comparison profiles with profile-owned citations and hashes; ECB
+shorthand routes to `EU_CRR3_CVA`. Errors are raised through `CvaInputError` or
+the shared unsupported-feature error type where applicable.
 
 ## Submodule-only surface
 

@@ -2,7 +2,9 @@
 
 Credit Valuation Adjustment capital for the `frtb-capital` suite.
 
-The package implements a **partial** Basel MAR50 slice:
+The package implements a **partial** CVA capital slice anchored to Basel MAR50,
+with profile-owned citations and hashes for U.S. NPR 2.0, EU CRR3, and UK PRA
+comparison profiles:
 
 - **Reduced BA-CVA** (MAR50.14-MAR50.16): stand-alone and portfolio aggregation
   with cited Table 1 risk weights, `alpha`, `rho`, and `D_BA-CVA`.
@@ -19,6 +21,8 @@ The package implements a **partial** Basel MAR50 slice:
 
 Public entry point: `calculate_cva_capital`. Unsupported methods and risk
 classes fail closed with `UnsupportedRegulatoryFeatureError` or `CvaInputError`.
+The `EU_CRR3_CVA` profile is also the runtime target for ECB shorthand; there is
+no separate ECB profile id.
 
 **Integration journey (Arrow → capital → attribution → suite/store):**
 [`docs/PACKAGE_JOURNEY.md`](docs/PACKAGE_JOURNEY.md)

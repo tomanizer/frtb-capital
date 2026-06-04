@@ -19,8 +19,10 @@ Supported public paths:
 - Optional CRIF adapter, Arrow/batch handoff, attribution, impact, audit, and
   replay helpers
 
-Comparison profiles and the MAR50.9 materiality-threshold alternative remain
-unsupported and fail closed via explicit errors.
+`US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA` are capital-producing
+comparison profiles under audit with profile-owned citations and hashes.
+MAR50.9 and analogous CCR-substitution alternatives remain unsupported and fail
+closed via explicit errors.
 
 ## Integration journey
 

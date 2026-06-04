@@ -25,5 +25,7 @@ bucket aggregation mechanics.
 The formulas are suitable for the supported partial-runtime scope because they
 preserve the key MAR50 capital drivers: BA-CVA counterparty aggregation,
 eligible-hedge treatment, SA-CVA weighted sensitivities, intra-bucket and
-inter-bucket aggregation, and method routing. Unsupported comparison profiles
-and MAR50.9 fail before capital is emitted.
+inter-bucket aggregation, and method routing. Unsupported future profiles,
+unmapped profile cells, MAR50.9, and analogous CCR-substitution alternatives
+fail before capital is emitted. The delivered U.S. NPR, EU CRR3, and UK PRA
+comparison profiles use profile-owned citation bundles and hashes.

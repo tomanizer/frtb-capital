@@ -22,6 +22,7 @@ from frtb_cva.reference_data import (
     girr_delta_risk_weight,
     girr_is_specified_currency,
     girr_other_currency_risk_weight_scalar,
+    profile_citation_id,
 )
 from frtb_cva.sa_cva_reference_data import (
     CCS_DELTA_TENORS,
@@ -71,7 +72,9 @@ def _group_sensitivity_amounts(
     grouped_ids: dict[SaCvaRiskFactorKey, list[str]] = defaultdict(list)
     grouped_volatility: dict[SaCvaRiskFactorKey, float | None] = {}
     hedge_ids = (
-        eligible_hedge_ids if eligible_hedge_ids is not None else eligible_sa_cva_hedge_ids(hedges)
+        eligible_hedge_ids
+        if eligible_hedge_ids is not None
+        else eligible_sa_cva_hedge_ids(hedges, profile=profile)
     )
 
     for sensitivity in sensitivities:
@@ -279,12 +282,13 @@ def _weight_girr_delta(
                 field="tenor",
             )
         base_risk_weight, citation_id = girr_delta_risk_weight(key.tenor, profile=profile)
-        citations: tuple[str, ...] = (citation_id, "basel_mar50_52")
+        netting_citation = profile_citation_id("basel_mar50_52", profile)
+        citations: tuple[str, ...] = (citation_id, netting_citation)
         risk_weight = base_risk_weight
         if not girr_is_specified_currency(key.bucket_id, reporting_currency=reporting_currency):
             scalar, scalar_citation = girr_other_currency_risk_weight_scalar(profile=profile)
             risk_weight = base_risk_weight * scalar
-            citations = (citation_id, scalar_citation, "basel_mar50_52")
+            citations = (citation_id, scalar_citation, netting_citation)
         weighted.append(
             _build_weighted_sensitivity(
                 key,
@@ -323,7 +327,7 @@ def _weight_girr_vega(
                 gross_cva=grouped_cva.get(key, 0.0),
                 gross_hedge=grouped_hedge.get(key, 0.0),
                 risk_weight=risk_weight,
-                citations=(citation_id, "basel_mar50_52"),
+                citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
             )
         )
@@ -354,7 +358,7 @@ def _weight_fx_delta(
                 gross_cva=grouped_cva.get(key, 0.0),
                 gross_hedge=grouped_hedge.get(key, 0.0),
                 risk_weight=risk_weight,
-                citations=(citation_id, "basel_mar50_52"),
+                citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
             )
         )
@@ -380,7 +384,7 @@ def _weight_fx_vega(
                 gross_cva=grouped_cva.get(key, 0.0),
                 gross_hedge=grouped_hedge.get(key, 0.0),
                 risk_weight=risk_weight,
-                citations=(citation_id, "basel_mar50_52"),
+                citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
             )
         )
@@ -414,7 +418,7 @@ def _weight_ccs_delta(
                 gross_cva=grouped_cva.get(key, 0.0),
                 gross_hedge=grouped_hedge.get(key, 0.0),
                 risk_weight=risk_weight,
-                citations=(citation_id, "basel_mar50_52"),
+                citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
             )
         )
@@ -438,7 +442,7 @@ def _weight_rcs_delta(
                 gross_cva=grouped_cva.get(key, 0.0),
                 gross_hedge=grouped_hedge.get(key, 0.0),
                 risk_weight=risk_weight,
-                citations=(citation_id, "basel_mar50_52"),
+                citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
             )
         )
@@ -464,7 +468,7 @@ def _weight_rcs_vega(
                 gross_cva=grouped_cva.get(key, 0.0),
                 gross_hedge=grouped_hedge.get(key, 0.0),
                 risk_weight=risk_weight,
-                citations=(citation_id, "basel_mar50_52"),
+                citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
             )
         )
@@ -488,7 +492,7 @@ def _weight_equity_delta(
                 gross_cva=grouped_cva.get(key, 0.0),
                 gross_hedge=grouped_hedge.get(key, 0.0),
                 risk_weight=risk_weight,
-                citations=(citation_id, "basel_mar50_52"),
+                citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
             )
         )
@@ -519,7 +523,11 @@ def _weight_equity_vega(
                 gross_cva=grouped_cva.get(key, 0.0),
                 gross_hedge=grouped_hedge.get(key, 0.0),
                 risk_weight=risk_weight,
-                citations=(citation_id, scalar_citation, "basel_mar50_52"),
+                citations=(
+                    citation_id,
+                    scalar_citation,
+                    profile_citation_id("basel_mar50_52", profile),
+                ),
                 grouped_ids=grouped_ids,
             )
         )
@@ -543,7 +551,7 @@ def _weight_commodity_delta(
                 gross_cva=grouped_cva.get(key, 0.0),
                 gross_hedge=grouped_hedge.get(key, 0.0),
                 risk_weight=risk_weight,
-                citations=(citation_id, "basel_mar50_52"),
+                citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
             )
         )
@@ -569,7 +577,7 @@ def _weight_commodity_vega(
                 gross_cva=grouped_cva.get(key, 0.0),
                 gross_hedge=grouped_hedge.get(key, 0.0),
                 risk_weight=risk_weight,
-                citations=(citation_id, "basel_mar50_52"),
+                citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
             )
         )

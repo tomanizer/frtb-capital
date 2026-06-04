@@ -68,8 +68,8 @@ Attribution consumes:
   aggregation, and beta floor effects are not forced into exact Euler records.
 - The projected shared records do not currently emit separate shared
   `UNSUPPORTED` records for the package-local unsupported branch list.
-- Unsupported CVA methods, comparison profiles, and MAR50.9 materiality
-  threshold alternatives fail before attribution can run.
+- Unsupported CVA methods, unsupported future profiles or profile cells, and
+  MAR50.9 materiality-threshold alternatives fail before attribution can run.
 - Finite-difference impact is implemented separately in `impact.py` and is not
   marginal attribution.
 

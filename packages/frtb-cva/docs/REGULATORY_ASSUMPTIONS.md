@@ -8,8 +8,10 @@ For link-only source metadata, see [`regulatory_sources.yml`](regulatory_sources
 
 `frtb-cva` delivers a partial runtime slice for reduced BA-CVA, full BA-CVA,
 SA-CVA, mixed carve-out, qualified-index routing, attribution, impact, adapter,
-batch, and audit paths under cited Basel MAR50 mechanics. No document or test in
-this package should describe outputs as final regulatory capital.
+batch, and audit paths under cited Basel MAR50 mechanics, with U.S. NPR 2.0,
+EU CRR3, and UK PRA comparison profiles carrying their own citations and
+profile hashes. No document or test in this package should describe outputs as
+final regulatory capital.
 
 ## Phase basis
 
@@ -26,14 +28,16 @@ The current capital-producing slices target canonical inputs for:
    portfolio and carved-out netting sets are calculated under BA-CVA.
 5. Basel MAR50.50 qualified-index routing for CCS, RCS, and equity where the
    input supplies the required metadata.
-6. Explicit fail-closed behavior for unsupported profiles, materiality
+6. Explicit fail-closed behavior for unsupported materiality
    alternative, undefined risk measures, incomplete hedge evidence, and
    unsupported method/input combinations.
 
-U.S. NPR 2.0 section V.B is proposed-rule material. EU CRR3 and UK PRA profiles
-are comparison hooks only. Any future jurisdiction-specific behavior must update
-citations, rule-profile metadata, fixtures, expected results, and support-matrix
-rows in the same PR that changes runtime behavior.
+U.S. NPR 2.0 section V.B is proposed-rule material. EU CRR3 is the runtime
+profile for EU/ECB shorthand. UK PRA support references PS1/26 and the PRA
+Rulebook CVA Risk Part effective from 1 January 2027. Any future
+jurisdiction-specific numeric divergence must update citations, rule-profile
+metadata, fixtures, expected results, and support-matrix rows in the same PR
+that changes runtime behavior.
 
 ## Upstream-input boundary
 
@@ -99,12 +103,13 @@ The runtime profile matrix is explicit:
 | Profile | Runtime status | Boundary |
 | --- | --- | --- |
 | `BASEL_MAR50_2020` | Capital-producing under audit | Basel MAR50 plus July 2020 d507 calibration. |
-| `US_NPR20_VB` | Unsupported fail-closed | Requires U.S. 91 FR 14952 section V.B crosswalk, proposed/final-rule distinction, fixtures, and profile hash evidence. |
-| `EU_CRR3_CVA` | Unsupported fail-closed | Requires Regulation (EU) 2024/1623 Articles 382-386 mapping, EBA technical-standard mapping where relevant, fixtures, and profile hash evidence. |
-| `UK_PRA_CVA` | Unsupported fail-closed | Requires PRA PS1/26 and rulebook crosswalk, AA-CVA treatment, reporting/permission mapping where relevant, fixtures, and profile hash evidence. |
+| `US_NPR20_VB` | Capital-producing comparison profile under audit | U.S. 91 FR 14952 section V.B profile-owned citation map; proposed-rule outputs are comparison evidence only. |
+| `EU_CRR3_CVA` | Capital-producing comparison profile under audit | Regulation (EU) 2024/1623 Articles 381-386 and inserted Articles 383a-383z; ECB shorthand routes to this profile. |
+| `UK_PRA_CVA` | Capital-producing comparison profile under audit | PRA PS1/26 and PRA Rulebook CVA Risk Part crosswalk; effective-date metadata is 1 January 2027. |
 
-No comparison profile aliases Basel reference data. Unsupported profiles must
-raise `UnsupportedRegulatoryFeatureError` before capital is calculated.
+No comparison profile emits Basel citation ids or a Basel profile hash. Unmapped
+future profiles must raise an explicit unsupported-feature error before capital
+is calculated.
 
 ## Fail-closed unsupported scope
 
