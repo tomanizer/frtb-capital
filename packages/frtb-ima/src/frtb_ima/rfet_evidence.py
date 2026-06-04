@@ -69,7 +69,12 @@ class RFETObservationExclusion:
     reason: RFETExclusionReason
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "observation": {
                 "risk_factor_name": self.observation.risk_factor_name,
@@ -119,7 +124,12 @@ class RFETEvidenceAssessment:
     exclusions: tuple[RFETObservationExclusion, ...] = ()
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "risk_factor_name": self.risk_factor_name,
             "as_of_date": self.as_of_date.isoformat(),
@@ -250,20 +260,38 @@ class RFETObservationBatch:
 
     @property
     def observation_count(self) -> int:
-        """Number of accepted RFET observation rows in the batch."""
+        """Number of accepted RFET observation rows in the batch.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
 
         return int(self.risk_factor_names.size)
 
     def indices_for_risk_factor(self, risk_factor_name: str) -> npt.NDArray[np.int_]:
-        """Return accepted row indices for one risk factor without materializing rows."""
+        """Return accepted row indices for one risk factor without materializing rows.
+        Parameters
+        ----------
+        risk_factor_name : str
+            Risk factor name.
+
+        Returns
+        -------
+        npt.NDArray[np.int_]
+            Result of the operation.
+        """
 
         return np.nonzero(self.risk_factor_names == risk_factor_name)[0]
 
     def to_observations(self) -> tuple[RealPriceObservation, ...]:
-        """
-        Materialize compatibility dataclasses in batch order.
+        """Materialize compatibility dataclasses in batch order.
 
         High-volume RFET assessment should use ``assess_rfet_observation_batch``.
+        Returns
+        -------
+        tuple[RealPriceObservation, ...]
+            Result of the operation.
         """
 
         return tuple(_observation_at(self, index) for index in range(self.observation_count))
@@ -305,7 +333,17 @@ class _RFETQuantitativeStage:
 
 
 def input_hash_for_rfet_observation_batch(batch: RFETObservationBatch) -> str:
-    """Return a stable audit hash for a columnar RFET observation batch."""
+    """Return a stable audit hash for a columnar RFET observation batch.
+    Parameters
+    ----------
+    batch : RFETObservationBatch
+        Batch.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     return compute_inputs_hash(
         risk_factor_names=batch.risk_factor_names,
@@ -345,13 +383,51 @@ def assess_rfet_observation_batch(
     shifted_end_date: date | None = None,
     shift_reason: str = "",
 ) -> RFETEvidenceAssessment:
-    """
-    Assess one risk factor's RFET observations from a columnar batch.
+    """Assess one risk factor's RFET observations from a columnar batch.
 
     The regulatory decision logic mirrors ``assess_rfet_evidence`` while
     avoiding accepted-row ``RealPriceObservation`` construction on the fast path.
     Excluded rows are materialized only because the existing audit result embeds
     the excluded observation details.
+    Parameters
+    ----------
+    risk_factor : RiskFactorDefinition
+        Risk factor.
+    observations : RFETObservationBatch
+        Observations.
+    policy : RegulatoryPolicy
+        Policy.
+    as_of_date : date
+        As of date.
+    qualitative_pass : bool
+        Qualitative pass.
+    bucket_id : str, optional
+        Bucket id.
+    representativeness : Sequence[RFETRepresentativenessEvidence], optional
+        Representativeness.
+    data_pools : Sequence[RFETDataPoolEvidence], optional
+        Data pools.
+    new_issuance : RFETNewIssuanceEvidence | None, optional
+        New issuance.
+    issue_date : date | None, optional
+        Issue date.
+    allow_new_issuance_prorating : bool, optional
+        Allow new issuance prorating.
+    require_source : bool, optional
+        Require source.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    shifted_start_date : date | None, optional
+        Shifted start date.
+    shifted_end_date : date | None, optional
+        Shifted end date.
+    shift_reason : str, optional
+        Shift reason.
+
+    Returns
+    -------
+    RFETEvidenceAssessment
+        Result of the operation.
     """
 
     if type(as_of_date) is not date:
@@ -545,7 +621,19 @@ def base_required_observation_count(
     risk_factor: RiskFactorDefinition,
     policy: RegulatoryPolicy,
 ) -> int:
-    """Return the policy RFET observation threshold for one risk factor."""
+    """Return the policy RFET observation threshold for one risk factor.
+    Parameters
+    ----------
+    risk_factor : RiskFactorDefinition
+        Risk factor.
+    policy : RegulatoryPolicy
+        Policy.
+
+    Returns
+    -------
+    int
+        Result of the operation.
+    """
     if risk_factor.liquidity_horizon.value <= policy.rfet_short_lh_max_days:
         return policy.rfet_short_lh_threshold
     return policy.rfet_long_lh_threshold
@@ -558,12 +646,26 @@ def prorated_required_observation_count(
     as_of_date: date,
     issue_date: date,
 ) -> int:
-    """
-    Prorate an RFET threshold for a new issuance.
+    """Prorate an RFET threshold for a new issuance.
 
     The proposal contemplates special treatment for new issuances. Production
     callers should provide ``RFETNewIssuanceEvidence`` on ``RFETEvidence`` so
     the assessment records the policy citation or modelling-choice rationale.
+    Parameters
+    ----------
+    base_required_observations : int
+        Base required observations.
+    lookback_start : date
+        Lookback start.
+    as_of_date : date
+        As of date.
+    issue_date : date
+        Issue date.
+
+    Returns
+    -------
+    int
+        Result of the operation.
     """
     if issue_date > as_of_date:
         raise ValueError("issue_date cannot be after as_of_date")
@@ -844,8 +946,7 @@ def assess_rfet_evidence(
     shifted_end_date: date | None = None,
     shift_reason: str = "",
 ) -> RFETEvidenceAssessment:
-    """
-    Assess real-price evidence for one risk factor under a policy.
+    """Assess real-price evidence for one risk factor under a policy.
 
     Counting rules implemented here:
     - observations must fall within the policy lookback window;
@@ -853,6 +954,33 @@ def assess_rfet_evidence(
     - at most one observation counts per calendar date;
     - evidence must match the risk factor's bucket or explicit representativeness checks;
     - source lineage is required by default.
+    Parameters
+    ----------
+    risk_factor : RiskFactorDefinition
+        Risk factor.
+    evidence : RFETEvidence
+        Evidence.
+    policy : RegulatoryPolicy
+        Policy.
+    issue_date : date | None, optional
+        Issue date.
+    allow_new_issuance_prorating : bool, optional
+        Allow new issuance prorating.
+    require_source : bool, optional
+        Require source.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    shifted_start_date : date | None, optional
+        Shifted start date.
+    shifted_end_date : date | None, optional
+        Shifted end date.
+    shift_reason : str, optional
+        Shift reason.
+
+    Returns
+    -------
+    RFETEvidenceAssessment
+        Result of the operation.
     """
     if risk_factor.name != evidence.risk_factor_name:
         raise ValueError("risk_factor and evidence names must match")

@@ -68,11 +68,33 @@ def count_eligible_observations(
     shifted_end_date: date | None = None,
     shift_reason: str = "",
 ) -> int:
-    """
-    Count unique-date real-price observations for a risk factor in prior 12 months.
+    """Count unique-date real-price observations for a risk factor in prior 12 months.
 
     One-count-per-date rule: at most one observation counts per calendar date,
     consistent with the Basel MAR31 RFET observation-counting concept.
+    Parameters
+    ----------
+    observations : Sequence[RealPriceObservation]
+        Observations.
+    risk_factor_name : str
+        Risk factor name.
+    as_of_date : date
+        As of date.
+    lookback_days : int, optional
+        Lookback days.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    shifted_start_date : date | None, optional
+        Shifted start date.
+    shifted_end_date : date | None, optional
+        Shifted end date.
+    shift_reason : str, optional
+        Shift reason.
+
+    Returns
+    -------
+    int
+        Result of the operation.
     """
     if calendar is None:
         if lookback_days <= 0:
@@ -117,7 +139,37 @@ def passes_quantitative_test(
     shifted_end_date: date | None = None,
     shift_reason: str = "",
 ) -> bool:
-    """Return True if the risk factor meets the quantitative real-price threshold."""
+    """Return True if the risk factor meets the quantitative real-price threshold.
+    Parameters
+    ----------
+    observations : Sequence[RealPriceObservation]
+        Observations.
+    risk_factor : RiskFactor
+        Risk factor.
+    as_of_date : date
+        As of date.
+    short_lh_threshold : int, optional
+        Short lh threshold.
+    long_lh_threshold : int, optional
+        Long lh threshold.
+    short_lh_max_days : int, optional
+        Short lh max days.
+    lookback_days : int, optional
+        Lookback days.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    shifted_start_date : date | None, optional
+        Shifted start date.
+    shifted_end_date : date | None, optional
+        Shifted end date.
+    shift_reason : str, optional
+        Shift reason.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
     count = count_eligible_observations(
         observations,
         risk_factor.name,
@@ -151,8 +203,7 @@ def classify_risk_factor(
     shifted_end_date: date | None = None,
     shift_reason: str = "",
 ) -> ModellabilityStatus:
-    """
-    Classify a risk factor as MODELLABLE, TYPE_A_NMRF, or TYPE_B_NMRF.
+    """Classify a risk factor as MODELLABLE, TYPE_A_NMRF, or TYPE_B_NMRF.
 
     Args:
         risk_factor:     The risk factor to classify.
@@ -163,6 +214,37 @@ def classify_risk_factor(
 
     Returns:
         ModellabilityStatus enum value.
+    Parameters
+    ----------
+    risk_factor : RiskFactor
+        Risk factor.
+    observations : Sequence[RealPriceObservation]
+        Observations.
+    qualitative_pass : bool
+        Qualitative pass.
+    as_of_date : date
+        As of date.
+    short_lh_threshold : int, optional
+        Short lh threshold.
+    long_lh_threshold : int, optional
+        Long lh threshold.
+    short_lh_max_days : int, optional
+        Short lh max days.
+    lookback_days : int, optional
+        Lookback days.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    shifted_start_date : date | None, optional
+        Shifted start date.
+    shifted_end_date : date | None, optional
+        Shifted end date.
+    shift_reason : str, optional
+        Shift reason.
+
+    Returns
+    -------
+    ModellabilityStatus
+        Result of the operation.
     """
     if not qualitative_pass:
         return ModellabilityStatus.TYPE_B_NMRF
@@ -197,12 +279,36 @@ def classify_risk_factor_for_policy(
     shifted_end_date: date | None = None,
     shift_reason: str = "",
 ) -> ModellabilityStatus:
-    """
-    Classify a risk factor using policy RFET parameters.
+    """Classify a risk factor using policy RFET parameters.
 
     This wrapper is intentionally limited to policies that support the U.S.
     Type A / Type B NMRF taxonomy. EU and UK profiles currently raise an
     explicit unsupported-feature error rather than returning misleading labels.
+    Parameters
+    ----------
+    risk_factor : RiskFactor
+        Risk factor.
+    observations : Sequence[RealPriceObservation]
+        Observations.
+    qualitative_pass : bool
+        Qualitative pass.
+    as_of_date : date
+        As of date.
+    policy : RegulatoryPolicy
+        Policy.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    shifted_start_date : date | None, optional
+        Shifted start date.
+    shifted_end_date : date | None, optional
+        Shifted end date.
+    shift_reason : str, optional
+        Shift reason.
+
+    Returns
+    -------
+    ModellabilityStatus
+        Result of the operation.
     """
     policy.require_type_a_type_b_taxonomy()
     return classify_risk_factor(

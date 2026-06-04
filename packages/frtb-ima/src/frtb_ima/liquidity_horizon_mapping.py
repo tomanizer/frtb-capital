@@ -67,7 +67,12 @@ class LiquidityHorizonMappingEntry:
     source_section: str = SOURCE_SECTION
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for traceability reports."""
+        """Return a serialisable dictionary for traceability reports.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "category": self.category.value,
             "risk_class": self.risk_class.value,
@@ -266,21 +271,46 @@ _ORDERED_HORIZONS = tuple(sorted(LiquidityHorizon, key=lambda item: item.value))
 
 
 def liquidity_horizon_mapping_table() -> tuple[LiquidityHorizonMappingEntry, ...]:
-    """Return the Fed NPR 2.0 / Basel liquidity-horizon mapping table."""
+    """Return the Fed NPR 2.0 / Basel liquidity-horizon mapping table.
+    Returns
+    -------
+    tuple[LiquidityHorizonMappingEntry, ...]
+        Result of the operation.
+    """
     return _MAPPING_TABLE
 
 
 def liquidity_horizon_mapping_entry(
     category: LiquidityHorizonCategory | str,
 ) -> LiquidityHorizonMappingEntry:
-    """Return the mapping entry for a caller-supplied regulatory category."""
+    """Return the mapping entry for a caller-supplied regulatory category.
+    Parameters
+    ----------
+    category : LiquidityHorizonCategory | str
+        Category.
+
+    Returns
+    -------
+    LiquidityHorizonMappingEntry
+        Result of the operation.
+    """
     return _ENTRY_BY_CATEGORY[_as_category(category)]
 
 
 def risk_class_for_liquidity_horizon_category(
     category: LiquidityHorizonCategory | str,
 ) -> RiskClass:
-    """Return the broad risk class for a regulatory LH mapping category."""
+    """Return the broad risk class for a regulatory LH mapping category.
+    Parameters
+    ----------
+    category : LiquidityHorizonCategory | str
+        Category.
+
+    Returns
+    -------
+    RiskClass
+        Result of the operation.
+    """
     return liquidity_horizon_mapping_entry(category).risk_class
 
 
@@ -289,12 +319,22 @@ def liquidity_horizon_for_category(
     *,
     maturity_days: int | None = None,
 ) -> LiquidityHorizon:
-    """
-    Return the minimum liquidity horizon for a regulatory category.
+    """Return the minimum liquidity horizon for a regulatory category.
 
     If ``maturity_days`` is supplied and shorter than the category floor, the
     U.S. NPR profile applies the short-maturity rule: use the next longer
     standard liquidity horizon from the position maturity.
+    Parameters
+    ----------
+    category : LiquidityHorizonCategory | str
+        Category.
+    maturity_days : int | None, optional
+        Maturity days.
+
+    Returns
+    -------
+    LiquidityHorizon
+        Result of the operation.
     """
     base_horizon = liquidity_horizon_mapping_entry(category).liquidity_horizon
     if maturity_days is None:
@@ -306,11 +346,21 @@ def liquidity_horizon_adjusted_for_maturity(
     liquidity_horizon: LiquidityHorizon | int,
     maturity_days: int,
 ) -> LiquidityHorizon:
-    """
-    Apply the short-maturity liquidity-horizon rule to an assigned category LH.
+    """Apply the short-maturity liquidity-horizon rule to an assigned category LH.
 
     When maturity is shorter than the category floor, the returned horizon is
     the next standard 10/20/40/60/120-day horizon equal to or longer than maturity.
+    Parameters
+    ----------
+    liquidity_horizon : LiquidityHorizon | int
+        Liquidity horizon.
+    maturity_days : int
+        Maturity days.
+
+    Returns
+    -------
+    LiquidityHorizon
+        Result of the operation.
     """
     base_horizon = _as_liquidity_horizon(liquidity_horizon)
     if maturity_days <= 0:
@@ -325,11 +375,21 @@ def liquidity_horizon_for_weighted_average(
     *,
     weights: Sequence[float] | None = None,
 ) -> LiquidityHorizon:
-    """
-    Return the minimum LH for credit/equity indices or similar instruments.
+    """Return the minimum LH for credit/equity indices or similar instruments.
 
     The returned value is the shortest standard liquidity horizon equal to or
     longer than the weighted average of the underlying liquidity horizons.
+    Parameters
+    ----------
+    underlying_horizons : Sequence[LiquidityHorizon | int]
+        Underlying horizons.
+    weights : Sequence[float] | None, optional
+        Weights.
+
+    Returns
+    -------
+    LiquidityHorizon
+        Result of the operation.
     """
     horizons = tuple(_as_liquidity_horizon(item) for item in underlying_horizons)
     if not horizons:
@@ -361,7 +421,21 @@ def is_fed_npr_specified_fx_pair(
     *,
     additional_currency_codes: Sequence[str] = (),
 ) -> bool:
-    """Return True when an FX pair is in the Fed NPR specified-currency set."""
+    """Return True when an FX pair is in the Fed NPR specified-currency set.
+    Parameters
+    ----------
+    base_currency : str
+        Base currency.
+    quote_currency : str
+        Quote currency.
+    additional_currency_codes : Sequence[str], optional
+        Additional currency codes.
+
+    Returns
+    -------
+    bool
+        Result of the operation.
+    """
     base = _normalise_currency_code(base_currency)
     quote = _normalise_currency_code(quote_currency)
     if base == quote:
@@ -379,7 +453,21 @@ def liquidity_horizon_for_fx_pair(
     *,
     additional_currency_codes: Sequence[str] = (),
 ) -> LiquidityHorizon:
-    """Return the FX rate liquidity horizon for a Fed NPR specified/other pair."""
+    """Return the FX rate liquidity horizon for a Fed NPR specified/other pair.
+    Parameters
+    ----------
+    base_currency : str
+        Base currency.
+    quote_currency : str
+        Quote currency.
+    additional_currency_codes : Sequence[str], optional
+        Additional currency codes.
+
+    Returns
+    -------
+    LiquidityHorizon
+        Result of the operation.
+    """
     if is_fed_npr_specified_fx_pair(
         base_currency,
         quote_currency,
