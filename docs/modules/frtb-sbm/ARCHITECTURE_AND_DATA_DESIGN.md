@@ -15,7 +15,7 @@ Upstream risk / sensitivity systems
     -> shared intra-bucket / inter-bucket aggregation engine
     -> risk-class capital by scenario + selected result
     -> SbmCapitalResult + audit / replay records
-    -> optional attribution and impact records later
+    -> optional attribution and impact records
     -> frtb-orchestration SA composition and suite aggregation
 ```
 
@@ -43,8 +43,8 @@ SA composition, or regulatory submission packaging.
 | `capital.py` | Public calculation entry point wiring validation, profiles, weighting, aggregation, scenario selection, and result assembly. |
 | `crif.py` | Optional CRIF-to-canonical mapping. No kernel imports. |
 | `audit.py` | Deterministic result serialization, input hash, profile hash, reconciliation, JSON/Markdown helpers. |
-| `attribution.py` | Future analytical Euler contribution support. Not required in the first slice. |
-| `impact.py` | Future baseline-vs-candidate capital deltas. Not required in the first slice. |
+| `attribution.py` | Analytical Euler contribution support for selected differentiable delta/vega branches, with explicit unsupported residual records for curvature, active floors, alternative `S_b`, missing detail, and incomplete pairwise evidence. |
+| `impact.py` | Baseline-vs-candidate finite-difference capital impact records. |
 | `fixtures.py` | Synthetic fixture builders for tests and examples. |
 
 ## Calculation flow
@@ -117,16 +117,17 @@ SA composition, or regulatory submission packaging.
    rejected inputs.
 5. Serialize deterministic audit records and return a frozen result.
 
-### Stage 8: Future attribution and impact
-
-This stage is reserved for later analytical explain work and is not required in
-the first capital-producing slice.
+### Stage 8: Attribution and impact
 
 1. Consume the audited capital graph.
-2. Calculate Euler-compatible contributions where the active branch permits it.
-3. Report finite-difference impact or unsupported attribution explicitly when
-   the formula is not differentiable on the active branch.
-4. Reconcile contribution totals to bucket, risk-class, and total SBM where
+2. Calculate analytical Euler contributions for selected differentiable delta
+   and vega branches.
+3. Report unsupported attribution explicitly when the formula is not
+   differentiable on the active branch or required audit evidence was not
+   retained.
+4. Report baseline-vs-candidate impact as finite difference, not marginal
+   contribution.
+5. Reconcile contribution totals to bucket, risk-class, and total SBM where
    supported.
 
 ## Proposed enums

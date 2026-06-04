@@ -17,6 +17,7 @@ BASEL_MAR21 slices.
 | Normalize | All `normalize_*_arrow_table` symbols listed below | Ingress from raw Arrow tables to `NormalizedArrowTable`. |
 | CRIF adapter (Tier 2) | `adapt_crif_records`, `normalize_girr_delta_crif_arrow_table` from `frtb_sbm.crif` | CRIF-shaped input compatibility with explicit rejected rows. |
 | Audit and replay | `serialize_sbm_result`, `input_hash_for_sensitivities`, `validate_sbm_result_reconciliation`, `to_component_summary` | Deterministic replay, reconciliation, and SA orchestration input_table. |
+| Attribution and impact | `calculate_sbm_attribution`, `calculate_sbm_capital_impact` | Shared `CapitalContribution` Euler projection for supported delta/vega branches and finite-difference baseline-vs-candidate impact. |
 | Errors and support guards | `SbmInputError`, `SbmUnsupportedFeature`, `ensure_sbm_run_supported`, `ensure_sbm_risk_class_measure_supported`, `phase1_capital_supported_paths` | Fail-closed unsupported profiles and input diagnostics. |
 
 The top-level surface is intentionally broader than RRAO because SBM exposes a
@@ -37,6 +38,15 @@ curvature paths, plus `US_NPR_2_0` for GIRR delta only, as described in
 [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).
 All other U.S. NPR 2.0 cells, and the EU CRR3 and PRA UK CRR comparison
 profiles, fail closed until separately implemented and cited.
+
+Attribution is supported after a capital run through
+`calculate_sbm_attribution(result)`. Delta and vega records use analytical Euler
+where the selected scenario retained complete pairwise correlation evidence and
+no active floor or alternative `S_b` branch is present. Curvature, active floors,
+alternative `S_b`, missing scenario detail, and incomplete pairwise evidence are
+reported as explicit unsupported residual records. `calculate_sbm_capital_impact`
+compares two capital results by finite difference and must not be interpreted as
+a marginal contribution.
 
 ## InputTable specs and normalizers
 

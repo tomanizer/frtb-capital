@@ -52,11 +52,16 @@ NORMALIZERS = (
     "normalize_csr_sec_ctp_curvature_arrow_table",
 )
 
+ATTRIBUTION_AND_IMPACT = (
+    "calculate_sbm_attribution",
+    "calculate_sbm_capital_impact",
+)
+
 
 def test_documented_handoff_surface_is_top_level_importable() -> None:
     exported = set(frtb_sbm.__all__)
     documented = _public_api_doc()
-    for name in (*HANDOFF_SPECS, *NORMALIZERS):
+    for name in (*HANDOFF_SPECS, *NORMALIZERS, *ATTRIBUTION_AND_IMPACT):
         assert name in exported
         assert hasattr(frtb_sbm, name)
         assert f"`{name}`" in documented

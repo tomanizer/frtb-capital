@@ -22,7 +22,8 @@
 - `test_sbm_fixture_workflow.py`, `test_sbm_audit.py`, and `test_sbm_replay.py`
   cover deterministic fixture replay and audit records.
 - `test_sbm_unsupported_features.py`, `test_sbm_support_matrix.py`, and
-  `test_sbm_attribution_impact.py` cover explicit unsupported behavior.
+  `test_sbm_attribution_impact.py` cover explicit unsupported behavior,
+  analytical Euler attribution reconciliation, and finite-difference impact.
 
 ## Benchmark Evidence
 
