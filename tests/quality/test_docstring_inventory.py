@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from scripts.ci import check_docstring_baseline as baseline
 from scripts.ci import check_docstring_inventory as inventory
 
 
@@ -319,3 +320,219 @@ def test_docstring_inventory_fail_on_findings_returns_nonzero(tmp_path: Path) ->
     )
 
     assert inventory.main(["--root", str(tmp_path), "--quiet", "--fail-on-findings"]) == 1
+
+
+def test_docstring_baseline_blocks_new_missing_public_docstrings(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    _base_package(tmp_path)
+    baseline_path = tmp_path / "docs" / "quality" / "docstrings" / "baseline.json"
+    _write(
+        tmp_path,
+        "packages/frtb-demo/src/frtb_demo/complete.py",
+        "\n".join(
+            [
+                '"""Complete module."""',
+                "",
+                "def calculate_capital():",
+                '    """Calculate capital from documented inputs."""',
+                "    return None",
+                "",
+            ]
+        ),
+    )
+    assert (
+        baseline.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline_path),
+                "--update-baseline",
+                "--quiet",
+            ]
+        )
+        == 0
+    )
+
+    _write(
+        tmp_path,
+        "packages/frtb-demo/src/frtb_demo/new_gap.py",
+        "\n".join(
+            [
+                '"""New module with an undocumented public API."""',
+                "",
+                "def calculate_gap():",
+                "    return None",
+                "",
+            ]
+        ),
+    )
+
+    assert (
+        baseline.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline_path),
+                "--quiet",
+            ]
+        )
+        == 1
+    )
+    assert "new hard-gated docstring gap" in capsys.readouterr().err
+
+
+def test_docstring_baseline_keeps_numpy_sections_report_only(
+    tmp_path: Path,
+) -> None:
+    _base_package(tmp_path)
+    baseline_path = tmp_path / "docs" / "quality" / "docstrings" / "baseline.json"
+    _write(
+        tmp_path,
+        "packages/frtb-demo/src/frtb_demo/sections.py",
+        "\n".join(
+            [
+                '"""Section module."""',
+                "",
+                "def calculate_capital():",
+                '    """Return a documented capital value.',
+                "",
+                "    Returns",
+                "    -------",
+                "    float",
+                "        Capital value.",
+                '    """',
+                "    return 1.0",
+                "",
+            ]
+        ),
+    )
+    assert (
+        baseline.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline_path),
+                "--update-baseline",
+                "--quiet",
+            ]
+        )
+        == 0
+    )
+
+    _write(
+        tmp_path,
+        "packages/frtb-demo/src/frtb_demo/sections.py",
+        "\n".join(
+            [
+                '"""Section module."""',
+                "",
+                "def calculate_capital(value: float) -> float:",
+                '    """Return a documented capital value."""',
+                "    return value",
+                "",
+            ]
+        ),
+    )
+
+    assert (
+        baseline.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline_path),
+                "--quiet",
+            ]
+        )
+        == 0
+    )
+
+
+def test_docstring_baseline_blocks_stale_hard_gaps(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    _base_package(tmp_path)
+    baseline_path = tmp_path / "docs" / "quality" / "docstrings" / "baseline.json"
+    _write(
+        tmp_path,
+        "packages/frtb-demo/src/frtb_demo/missing.py",
+        "\n".join(
+            [
+                "def calculate_gap():",
+                "    return None",
+                "",
+            ]
+        ),
+    )
+    assert (
+        baseline.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline_path),
+                "--update-baseline",
+                "--quiet",
+            ]
+        )
+        == 0
+    )
+
+    _write(
+        tmp_path,
+        "packages/frtb-demo/src/frtb_demo/missing.py",
+        "\n".join(
+            [
+                '"""Documented module."""',
+                "",
+                "def calculate_gap():",
+                '    """Provide the documented gap calculation."""',
+                "    return None",
+                "",
+            ]
+        ),
+    )
+
+    assert (
+        baseline.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline_path),
+                "--quiet",
+            ]
+        )
+        == 1
+    )
+    assert "stale hard-gated baseline entry" in capsys.readouterr().err
+
+
+def test_docstring_baseline_reports_malformed_baseline(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    _base_package(tmp_path)
+    baseline_path = tmp_path / "docs" / "quality" / "docstrings" / "baseline.json"
+    baseline_path.parent.mkdir(parents=True, exist_ok=True)
+    baseline_path.write_text('{"schema_version": 1, "packages": []}', encoding="utf-8")
+
+    assert (
+        baseline.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline_path),
+                "--quiet",
+            ]
+        )
+        == 1
+    )
+    assert "baseline packages must be a JSON object" in capsys.readouterr().err
