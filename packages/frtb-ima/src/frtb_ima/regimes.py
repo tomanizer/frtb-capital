@@ -23,6 +23,8 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Any
 
+from frtb_common import UnsupportedRegulatoryFeatureError as CommonUnsupportedRegulatoryFeatureError
+
 from frtb_ima.data_models import LiquidityHorizon
 from frtb_ima.expected_shortfall import ESEstimator
 
@@ -86,7 +88,9 @@ class UnsupportedFeature:
     notes: str
 
 
-class UnsupportedRegulatoryFeatureError(NotImplementedError):
+class UnsupportedRegulatoryFeatureError(
+    CommonUnsupportedRegulatoryFeatureError, NotImplementedError
+):
     """Raised when a policy asks for a regulatory feature not implemented yet."""
 
     def __init__(

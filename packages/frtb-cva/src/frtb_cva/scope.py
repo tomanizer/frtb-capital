@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_cva._unsupported import MAR50_9_UNSUPPORTED_MESSAGE
 from frtb_cva.data_models import (
     CvaCalculationContext,
     CvaCounterparty,
@@ -42,19 +43,10 @@ def resolve_calculation_method(
     ]
 
     if context.materiality_threshold_elected:
-        raise UnsupportedRegulatoryFeatureError(
-            "Materiality-threshold 100% CCR alternative (MAR50.9) is unsupported "
-            "in the delivered slice."
-        )
+        raise UnsupportedRegulatoryFeatureError(MAR50_9_UNSUPPORTED_MESSAGE)
 
     if context.method is CvaMethod.BA_CVA_FULL:
-        audit_metadata.append(("resolved_method", CvaMethod.BA_CVA_FULL.value))
-        return ScopeResolution(
-            method=CvaMethod.BA_CVA_FULL,
-            carve_out_netting_set_ids=context.carve_out_netting_set_ids,
-            audit_metadata=tuple(audit_metadata),
-            unsupported_flags=tuple(unsupported_flags),
-        )
+        return _resolved_scope(context, CvaMethod.BA_CVA_FULL, audit_metadata, unsupported_flags)
 
     if context.method is CvaMethod.SA_CVA:
         if not context.sa_cva_approved:
@@ -62,39 +54,29 @@ def resolve_calculation_method(
                 "SA-CVA requires sa_cva_approved=True in calculation context",
                 field="sa_cva_approved",
             )
-        audit_metadata.append(("resolved_method", CvaMethod.SA_CVA.value))
-        return ScopeResolution(
-            method=CvaMethod.SA_CVA,
-            carve_out_netting_set_ids=context.carve_out_netting_set_ids,
-            audit_metadata=tuple(audit_metadata),
-            unsupported_flags=tuple(unsupported_flags),
-        )
+        return _resolved_scope(context, CvaMethod.SA_CVA, audit_metadata, unsupported_flags)
 
     if context.method is CvaMethod.MIXED_CARVE_OUT:
-        if not context.sa_cva_approved:
-            raise CvaInputError(
-                "mixed carve-out requires sa_cva_approved=True in calculation context",
-                field="sa_cva_approved",
-            )
-        if not context.carve_out_netting_set_ids:
-            raise CvaInputError(
-                "mixed carve-out requires carve_out_netting_set_ids",
-                field="carve_out_netting_set_ids",
-            )
-        _validate_carve_out_ids(context.carve_out_netting_set_ids, netting_sets)
-        _validate_carve_out_evidence(context.carve_out_netting_set_ids, netting_sets)
-        audit_metadata.append(("resolved_method", CvaMethod.MIXED_CARVE_OUT.value))
-        return ScopeResolution(
-            method=CvaMethod.MIXED_CARVE_OUT,
-            carve_out_netting_set_ids=context.carve_out_netting_set_ids,
-            audit_metadata=tuple(audit_metadata),
-            unsupported_flags=tuple(unsupported_flags),
+        _validate_mixed_carve_out_context(context, netting_sets)
+        return _resolved_scope(
+            context,
+            CvaMethod.MIXED_CARVE_OUT,
+            audit_metadata,
+            unsupported_flags,
         )
 
     if context.carve_out_netting_set_ids:
         _validate_carve_out_ids(context.carve_out_netting_set_ids, netting_sets)
 
-    resolved_method = CvaMethod.BA_CVA_REDUCED
+    return _resolved_scope(context, CvaMethod.BA_CVA_REDUCED, audit_metadata, unsupported_flags)
+
+
+def _resolved_scope(
+    context: CvaCalculationContext,
+    resolved_method: CvaMethod,
+    audit_metadata: list[tuple[str, str]],
+    unsupported_flags: list[str],
+) -> ScopeResolution:
     audit_metadata.append(("resolved_method", resolved_method.value))
     return ScopeResolution(
         method=resolved_method,
@@ -102,6 +84,24 @@ def resolve_calculation_method(
         audit_metadata=tuple(audit_metadata),
         unsupported_flags=tuple(unsupported_flags),
     )
+
+
+def _validate_mixed_carve_out_context(
+    context: CvaCalculationContext,
+    netting_sets: tuple[CvaNettingSet, ...],
+) -> None:
+    if not context.sa_cva_approved:
+        raise CvaInputError(
+            "mixed carve-out requires sa_cva_approved=True in calculation context",
+            field="sa_cva_approved",
+        )
+    if not context.carve_out_netting_set_ids:
+        raise CvaInputError(
+            "mixed carve-out requires carve_out_netting_set_ids",
+            field="carve_out_netting_set_ids",
+        )
+    _validate_carve_out_ids(context.carve_out_netting_set_ids, netting_sets)
+    _validate_carve_out_evidence(context.carve_out_netting_set_ids, netting_sets)
 
 
 def validate_method_selection(
