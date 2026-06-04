@@ -52,3 +52,18 @@ Package-local regulatory documentation:
 - [Performance and replay controls](docs/PERFORMANCE.md)
 - [Allocation reports](docs/ALLOCATION.md)
 - [Mutation evidence](../../docs/quality/frtb-rrao/mutation_baseline.md)
+
+## End-to-end examples
+
+See `examples/run_demo.py` for a quick-start demo that loads the package's
+synthetic sample book fixture and exercises `calculate_rrao_capital` under
+US_NPR_2_0 and BASEL_MAR23 profiles, printing totals, exclusion counts, and
+capital lines.
+
+```bash
+uv run python packages/frtb-rrao/examples/run_demo.py
+```
+
+The `examples/rrao_fixture.py` provides the loader + expected outputs used by
+the demo. For deeper classification, allocation, and multi-profile walkthroughs
+see the notebooks/ (01-04) and `tests/test_fixture_workflow.py`.

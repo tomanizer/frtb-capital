@@ -133,3 +133,17 @@ from frtb_sbm.crif import adapt_crif_records, normalize_girr_delta_crif_arrow_ta
 ```
 
 See `AGENTS.md` for package boundary rules.
+
+## End-to-end examples
+
+See `examples/run_demo.py` for a self-contained synthetic demo that constructs
+`SbmSensitivity` lists (GIRR/Equity/FX/Commodity/CSR delta, GIRR vega, GIRR
+curvature) and calls `calculate_sbm_capital` under the BASEL_MAR21 profile,
+printing `SbmCapitalResult` totals and bucket breakdowns.
+
+```bash
+uv run python packages/frtb-sbm/examples/run_demo.py
+```
+
+See `tests/fixtures/*/loader.py` and the public API / batch / Arrow tests for
+additional construction and fixture-based workflow patterns.

@@ -81,3 +81,23 @@ that public adapters and result shapes remain compatible with orchestration
 contracts.
 
 See `AGENTS.md` for package boundary rules.
+
+## End-to-end examples
+
+See `examples/run_demo.py` for an illustration of the cross-component handoff
+boundary (the only package allowed to depend on multiple capital components):
+
+- Builds small real results using public APIs from `frtb-drc` and `frtb-rrao`
+  (plus a stand-in for the planned `frtb-sbm` result shape).
+- Exercises `recognise_drc_result`, `recognise_rrao_result`, `recognise_sbm_result`.
+- Calls `compose_standardised_approach_capital` (and `calculate_suite_capital`)
+  which fail closed with `NotImplementedCapitalComponentError` (or
+  `OrchestrationInputError` for jurisdiction family mismatches per ADR 0022).
+
+```bash
+uv run python packages/frtb-orchestration/examples/run_demo.py
+```
+
+See `tests/test_orchestration_scaffold.py` for the full set of handoff recogniser
+tests and sample builders. Once SA arithmetic is implemented this will produce
+the composed SA total (SBM + DRC + RRAO) plus suite aggregates.
