@@ -147,7 +147,7 @@ Hedge tables carry:
 - notional,
 - remaining maturity,
 - discount factor,
-- reference sector, credit quality, region, and relation,
+- reference sector, reference credit quality, reference region, and reference relation,
 - eligibility,
 - internal-hedge flag,
 - optional explicit-discount-factor flag,
