@@ -228,7 +228,7 @@ def _branch_citations(branch: str, capital_result: CvaCapitalResult) -> tuple[st
         return capital_result.ba_cva_reduced.citations
     if branch in {"ba_cva_hedged_sqrt", "ba_cva_beta_floor"} and capital_result.ba_cva_full:
         return capital_result.ba_cva_full.citations
-    if branch.startswith("sa_cva_risk_class_sqrt:"):
+    if branch.startswith("sa_cva_risk_class_sqrt:") and capital_result.sa_cva_risk_class_capitals:
         risk_class = branch.split(":", maxsplit=1)[1]
         for risk_class_capital in capital_result.sa_cva_risk_class_capitals:
             if risk_class_capital.risk_class.value == risk_class:
