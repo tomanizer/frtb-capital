@@ -348,6 +348,7 @@ context = RraoCalculationContext(
     profile=RraoRegulatoryProfile.BASEL_MAR23,
 )
 
+# positions_table = ...  # pyarrow.Table aligned to RRAO_ARROW_COLUMN_SPECS
 handoff = normalize_rrao_arrow_table(positions_table)
 batch = build_rrao_batch_from_arrow(handoff)
 calc = calculate_rrao_capital_from_batch(batch, context=context)
