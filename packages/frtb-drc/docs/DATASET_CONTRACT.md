@@ -191,7 +191,7 @@ the calculation context where required.
 Reference overlays take precedence only through fields exposed on
 `DrcCalculationContext`. The package validates missing and unused map entries.
 The following conditions fail closed rather than silently producing zero or
-placeholder capital:
+synthetic capital:
 
 - missing FX rates for non-base-currency rows,
 - missing securitisation non-CTP risk weights or typed evidence,
