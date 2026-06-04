@@ -9,7 +9,9 @@ COVERAGE_JSON := dist/coverage/implemented-packages.json
 COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_rrao
 MUTATION_DIST := dist/mutation
 
-.PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
+.PHONY: check ci-local ci-local-fast ci-local-full
+.PHONY: ci-local-pr ci-local-governance ci-local-performance ci-local-release
+.PHONY: lint format format-check typecheck
 .PHONY: test test-no-cov test-changed test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording docs-staleness
 .PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check docstring-inventory drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
@@ -25,6 +27,14 @@ ci-local: docs-check lint format-check typecheck test build
 ci-local-fast: docs-check lint format-check typecheck test-no-cov
 
 ci-local-full: ci-local audit-deps sbom examples-check notebooks-check
+
+ci-local-pr: lint format-check test-changed import-lint kernel-import-boundary adr0033-vocabulary simplification-drift docs-staleness import-smoke maturity-check changed-code-check test-value-check dead-code-check
+
+ci-local-governance: ci-local-full quality-control
+
+ci-local-performance: test-changed benchmark-suite benchmark-budget-check quality-control
+
+ci-local-release: ci-local-full quality-control test-partial-runtime-coverage benchmark-suite benchmark-budget-check
 
 lint:
 	uv run ruff check $(LINT_PATHS)
@@ -173,24 +183,25 @@ mutation-score-check:
 	uv run python scripts/ci/check_mutation_score.py --json-output $(MUTATION_DIST)/mutation-score.json
 
 benchmark:
-	uv run python scripts/benchmark_target_scale.py --output dist/benchmarks/frtb-ima-target-scale.json
+	uv run python scripts/ci/run_benchmark_suite.py ima-target-scale
 
 ima-arrow-batch-benchmark:
-	uv run python benchmarks/ima_arrow_batch_harness.py --output dist/benchmarks/frtb-ima-arrow-batch.json
+	uv run python scripts/ci/run_benchmark_suite.py ima-arrow-batch
 
 sbm-benchmark:
-	uv run python benchmarks/sbm_adapter_harness.py --output dist/benchmarks/frtb-sbm-batch-arrow.json
+	uv run python scripts/ci/run_benchmark_suite.py sbm
 
 drc-benchmark:
-	uv run python benchmarks/drc_adapter_harness.py --output dist/benchmarks/frtb-drc-batch-arrow.json
+	uv run python scripts/ci/run_benchmark_suite.py drc
 
 rrao-benchmark:
-	PYTHONPATH=packages/frtb-common/src:packages/frtb-rrao/src uv run python packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py --output dist/benchmarks/frtb-rrao-target-scale.json
+	uv run python scripts/ci/run_benchmark_suite.py rrao
 
 cva-benchmark:
-	PYTHONPATH=packages/frtb-common/src:packages/frtb-cva/src uv run python packages/frtb-cva/scripts/benchmark_cva_target_scale.py --output dist/benchmarks/frtb-cva-target-scale.json
+	uv run python scripts/ci/run_benchmark_suite.py cva
 
-benchmark-suite: benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark
+benchmark-suite:
+	uv run python scripts/ci/run_benchmark_suite.py
 
 benchmark-budget-check:
 	uv run python scripts/ci/check_benchmark_budgets.py
