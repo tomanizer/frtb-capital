@@ -23,6 +23,15 @@ from frtb_common.attribution import AttributionMethod, CapitalContribution, Reco
 from frtb_common.contribution_bundle import ComponentContributionBundle
 
 from frtb_orchestration._suite_attribution import (
+    DECOMPOSED_ATTRIBUTION_COMPONENTS as _DECOMPOSED_ATTRIBUTION_COMPONENTS,
+)
+from frtb_orchestration._suite_attribution import (
+    TOP_LEVEL_ATTRIBUTION_COMPONENTS as _TOP_LEVEL_ATTRIBUTION_COMPONENTS,
+)
+from frtb_orchestration._suite_attribution import (
+    canonical_component_label as _canonical_component_label,
+)
+from frtb_orchestration._suite_attribution import (
     canonical_standardised_component as _canonical_standardised_component,
 )
 from frtb_orchestration._suite_attribution import (
@@ -117,6 +126,123 @@ class SuiteAttributionResult:
             "suite_total_capital": self.suite_total_capital,
             "component_bundles": [bundle.as_dict() for bundle in self.component_bundles],
             "suite_residual": self.suite_residual.as_dict(),
+        }
+
+
+@dataclass(frozen=True)
+class SuiteAttributionComponentReport:
+    """Client-facing component section in a suite attribution report."""
+
+    component: str
+    component_total: float
+    component_input_hash: str
+    component_profile_hash: str
+    contributions: tuple[CapitalContribution, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "component",
+            _canonical_component_label(self.component, field="component"),
+        )
+        object.__setattr__(
+            self,
+            "component_total",
+            _require_non_negative_finite_number(self.component_total, "component_total"),
+        )
+        _require_non_empty_text(self.component_input_hash, "component_input_hash")
+        _require_non_empty_text(self.component_profile_hash, "component_profile_hash")
+        _require_tuple_of(self.contributions, CapitalContribution, "contributions")
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable component attribution section."""
+
+        return {
+            "component": self.component,
+            "component_total": self.component_total,
+            "component_input_hash": self.component_input_hash,
+            "component_profile_hash": self.component_profile_hash,
+            "contribution_count": len(self.contributions),
+            "contributions": [contribution.as_dict() for contribution in self.contributions],
+        }
+
+
+@dataclass(frozen=True)
+class SuiteAttributionReport:
+    """Deterministic suite-level explain report for clients and notebooks."""
+
+    run_id: str
+    suite_total_capital: float
+    component_set: tuple[str, ...]
+    components: tuple[SuiteAttributionComponentReport, ...]
+    suite_residual: CapitalContribution
+    reconciliation_status: ReconciliationStatus
+    residual_reason: str
+
+    def __post_init__(self) -> None:
+        _require_non_empty_text(self.run_id, "run_id")
+        object.__setattr__(
+            self,
+            "suite_total_capital",
+            _require_non_negative_finite_number(self.suite_total_capital, "suite_total_capital"),
+        )
+        _require_text_tuple(self.component_set, "component_set")
+        _require_tuple_of(self.components, SuiteAttributionComponentReport, "components")
+        if tuple(component.component for component in self.components) != self.component_set:
+            raise OrchestrationInputError(
+                "components must be ordered to match component_set",
+                field="components",
+            )
+        if not isinstance(self.suite_residual, CapitalContribution):
+            raise OrchestrationInputError(
+                "suite_residual must be a CapitalContribution", field="suite_residual"
+            )
+        if self.suite_residual.method != AttributionMethod.RESIDUAL:
+            raise OrchestrationInputError(
+                "suite_residual method must be RESIDUAL", field="suite_residual"
+            )
+        if not isinstance(self.reconciliation_status, ReconciliationStatus):
+            try:
+                object.__setattr__(
+                    self,
+                    "reconciliation_status",
+                    ReconciliationStatus(self.reconciliation_status),
+                )
+            except ValueError as exc:
+                raise OrchestrationInputError(
+                    "reconciliation_status must be a valid ReconciliationStatus",
+                    field="reconciliation_status",
+                ) from exc
+        _require_non_empty_text(self.residual_reason, "residual_reason")
+        if self.suite_residual.reconciliation_status != self.reconciliation_status:
+            raise OrchestrationInputError(
+                "reconciliation_status must match suite_residual reconciliation_status",
+                field="reconciliation_status",
+            )
+
+    @property
+    def contribution_records(self) -> tuple[CapitalContribution, ...]:
+        """Return component records followed by the suite residual record."""
+
+        component_records = tuple(
+            contribution
+            for component in self.components
+            for contribution in component.contributions
+        )
+        return (*component_records, self.suite_residual)
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a deterministic JSON-serialisable suite attribution report."""
+
+        return {
+            "run_id": self.run_id,
+            "suite_total_capital": self.suite_total_capital,
+            "component_set": list(self.component_set),
+            "reconciliation_status": self.reconciliation_status.value,
+            "residual_reason": self.residual_reason,
+            "components": [component.as_dict() for component in self.components],
+            "suite_residual": self.suite_residual.as_dict(),
+            "contribution_record_count": len(self.contribution_records),
         }
 
 
@@ -394,6 +520,52 @@ def aggregate_suite_attribution(
     )
 
 
+def build_suite_attribution_report(
+    *,
+    suite_result: SuiteCapitalResult,
+    component_bundles: tuple[ComponentContributionBundle, ...],
+    suite_total_capital: float | None = None,
+) -> SuiteAttributionReport:
+    """Build a deterministic client-facing suite attribution explain report.
+
+    The builder delegates validation and suite-residual construction to
+    :func:`aggregate_suite_attribution`. Component ``CapitalContribution``
+    records are exposed unchanged, while component sections are ordered to the
+    supported top-level or decomposed suite component set for stable notebook
+    and JSON output.
+    """
+
+    attribution = aggregate_suite_attribution(
+        suite_result=suite_result,
+        component_bundles=component_bundles,
+        suite_total_capital=suite_total_capital,
+    )
+    component_set = _canonical_component_set(attribution.component_bundles)
+    bundle_by_component = {
+        _canonical_component_label(bundle.component): bundle
+        for bundle in attribution.component_bundles
+    }
+    components = tuple(
+        SuiteAttributionComponentReport(
+            component=component,
+            component_total=bundle_by_component[component].component_total,
+            component_input_hash=bundle_by_component[component].component_input_hash,
+            component_profile_hash=bundle_by_component[component].component_profile_hash,
+            contributions=bundle_by_component[component].contributions,
+        )
+        for component in component_set
+    )
+    return SuiteAttributionReport(
+        run_id=attribution.run_id,
+        suite_total_capital=attribution.suite_total_capital,
+        component_set=component_set,
+        components=components,
+        suite_residual=attribution.suite_residual,
+        reconciliation_status=ReconciliationStatus(attribution.suite_residual.reconciliation_status),
+        residual_reason=attribution.suite_residual.reason,
+    )
+
+
 def _build_suite_capital_result(
     *,
     run_id: str,
@@ -457,10 +629,27 @@ def _cva_summary_as_dict(summary: CvaCapitalSummary) -> dict[str, object]:
     }
 
 
+def _canonical_component_set(
+    component_bundles: tuple[ComponentContributionBundle, ...],
+) -> tuple[str, ...]:
+    canonical_components = {
+        _canonical_component_label(bundle.component) for bundle in component_bundles
+    }
+    if canonical_components == set(_TOP_LEVEL_ATTRIBUTION_COMPONENTS):
+        return _TOP_LEVEL_ATTRIBUTION_COMPONENTS
+    if canonical_components == set(_DECOMPOSED_ATTRIBUTION_COMPONENTS):
+        return _DECOMPOSED_ATTRIBUTION_COMPONENTS
+    _require_supported_attribution_component_set(tuple(sorted(canonical_components)))
+    raise AssertionError("unreachable")
+
+
 __all__ = [
+    "SuiteAttributionComponentReport",
+    "SuiteAttributionReport",
     "SuiteAttributionResult",
     "SuiteCapitalResult",
     "aggregate_suite_attribution",
+    "build_suite_attribution_report",
     "calculate_suite_capital",
     "suite_jurisdiction_family",
 ]
