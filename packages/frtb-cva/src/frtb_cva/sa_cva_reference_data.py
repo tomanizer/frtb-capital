@@ -301,7 +301,7 @@ def fx_delta_risk_weight(
     Returns
     -------
     tuple[float, str]
-        Result of ``fx_delta_risk_weight`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     return FX_DELTA_RISK_WEIGHT, _cite("basel_mar50_61", resolved_profile)
@@ -320,7 +320,7 @@ def fx_inter_bucket_correlation(
     Returns
     -------
     tuple[float, str]
-        Result of ``fx_inter_bucket_correlation`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     return FX_INTER_BUCKET_CORRELATION, _cite("basel_mar50_60", resolved_profile)
@@ -352,7 +352,7 @@ def sa_cva_vega_risk_weight(
     Returns
     -------
     tuple[float, str]
-        Result of ``sa_cva_vega_risk_weight`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     if volatility_input < 0:
@@ -382,7 +382,7 @@ def girr_vega_intra_bucket_correlation(
     Returns
     -------
     tuple[float, str]
-        Result of ``girr_vega_intra_bucket_correlation`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     if factor1 == factor2:
@@ -418,7 +418,7 @@ def ccs_delta_risk_weight(
     Returns
     -------
     tuple[float, str]
-        Result of ``ccs_delta_risk_weight`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
@@ -454,7 +454,7 @@ def ccs_inter_bucket_correlation(
     Returns
     -------
     tuple[float, str]
-        Result of ``ccs_inter_bucket_correlation`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     return _symmetric_gamma_lookup(CCS_GAMMA_BC, bucket1, bucket2), _cite(
@@ -493,7 +493,7 @@ def ccs_delta_intra_bucket_correlation(
     Returns
     -------
     tuple[float, str]
-        Result of ``ccs_delta_intra_bucket_correlation`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     if same_entity:
@@ -527,7 +527,7 @@ def rcs_delta_risk_weight(
     Returns
     -------
     tuple[float, str]
-        Result of ``rcs_delta_risk_weight`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
@@ -558,7 +558,7 @@ def rcs_inter_bucket_correlation(
     Returns
     -------
     tuple[float, str]
-        Result of ``rcs_inter_bucket_correlation`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     left = _normalise_bucket(bucket1)
@@ -596,7 +596,7 @@ def equity_delta_risk_weight(
     Returns
     -------
     tuple[float, str]
-        Result of ``equity_delta_risk_weight`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
@@ -623,7 +623,7 @@ def equity_vega_rw_scalar(
     Returns
     -------
     tuple[float, str]
-        Result of ``equity_vega_rw_scalar`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
@@ -654,7 +654,7 @@ def equity_inter_bucket_correlation(
     Returns
     -------
     tuple[float, str]
-        Result of ``equity_inter_bucket_correlation`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     left = _normalise_bucket(bucket1)
@@ -687,7 +687,7 @@ def commodity_delta_risk_weight(
     Returns
     -------
     tuple[float, str]
-        Result of ``commodity_delta_risk_weight`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
@@ -721,7 +721,7 @@ def commodity_inter_bucket_correlation(
     Returns
     -------
     tuple[float, str]
-        Result of ``commodity_inter_bucket_correlation`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_profile(profile)
     left = _normalise_bucket(bucket1)

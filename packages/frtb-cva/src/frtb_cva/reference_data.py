@@ -506,7 +506,7 @@ def ba_cva_alpha(
     Returns
     -------
     tuple[float, str]
-        Result of ``ba_cva_alpha`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_ALPHA, profile_citation_id("basel_mar50_15", resolved_profile)
@@ -525,7 +525,7 @@ def ba_cva_beta(
     Returns
     -------
     tuple[float, str]
-        Result of ``ba_cva_beta`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_BETA, profile_citation_id("basel_mar50_20", resolved_profile)
@@ -549,7 +549,7 @@ def ba_cva_hedge_counterparty_correlation(
     Returns
     -------
     tuple[float, str]
-        Result of ``ba_cva_hedge_counterparty_correlation`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     if relation not in _HEDGE_REFERENCE_CORRELATIONS:
@@ -577,7 +577,7 @@ def ba_cva_index_risk_weight_scalar(
     Returns
     -------
     tuple[float, str]
-        Result of ``ba_cva_index_risk_weight_scalar`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_INDEX_RW_SCALAR, profile_citation_id("basel_mar50_24", resolved_profile)
@@ -596,7 +596,7 @@ def ba_cva_rho(
     Returns
     -------
     tuple[float, str]
-        Result of ``ba_cva_rho`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return BA_CVA_RHO, profile_citation_id("basel_mar50_14", resolved_profile)
@@ -615,7 +615,7 @@ def ba_cva_discount_scalar(
     Returns
     -------
     tuple[float, str]
-        Result of ``ba_cva_discount_scalar`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return D_BA_CVA, profile_citation_id("basel_mar50_14", resolved_profile)
@@ -754,7 +754,7 @@ def girr_delta_risk_weight(
     Returns
     -------
     tuple[float, str]
-        Result of ``girr_delta_risk_weight`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     rule = girr_delta_risk_weight_rule(tenor, profile=profile)
     return rule.risk_weight, rule.citation_id
@@ -782,7 +782,7 @@ def girr_delta_intra_bucket_correlation(
     Returns
     -------
     tuple[float, str]
-        Result of ``girr_delta_intra_bucket_correlation`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     normalised_tenor1 = _require_text(tenor1, "tenor1")
@@ -819,7 +819,7 @@ def girr_inter_bucket_correlation(
     Returns
     -------
     tuple[float, str]
-        Result of ``girr_inter_bucket_correlation`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return GIRR_INTER_BUCKET_CORRELATION, profile_citation_id(
@@ -875,7 +875,7 @@ def girr_other_currency_risk_weight_scalar(
     Returns
     -------
     tuple[float, str]
-        Result of ``girr_other_currency_risk_weight_scalar`` for audit replay."""
+        Regulatory scalar and the profile-specific citation id for audit replay."""
 
     resolved_profile = _resolve_supported_profile(profile)
     return GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR, profile_citation_id(
