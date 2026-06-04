@@ -239,6 +239,108 @@ def test_guard_rejects_nested_worktree_path(
     assert "worktree path must be <worktree-root>/<agent>/<task>" in capsys.readouterr().out
 
 
+def test_ensure_passes_when_guard_passes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    agent_worktree = load_agent_worktree()
+    main_clone = tmp_path / "frtb-capital"
+    current = tmp_path / "frtb-capital-worktrees" / "grok" / "task"
+    main_clone.mkdir()
+    current.mkdir(parents=True)
+
+    monkeypatch.setattr(agent_worktree, "resolve_policy_paths", lambda args, cwd=None: None)
+    monkeypatch.setattr(agent_worktree, "guard", lambda args: 0)
+    monkeypatch.setattr(agent_worktree, "resolve_repo_root", lambda path: current)
+    monkeypatch.setattr(agent_worktree, "current_branch", lambda path: "grok/task")
+
+    args = Namespace(
+        main_clone=main_clone,
+        worktree_root=tmp_path / "frtb-capital-worktrees",
+        agent="grok",
+        task="task",
+        quiet=False,
+    )
+
+    assert agent_worktree.ensure(args) == 0
+    assert "already compliant" in capsys.readouterr().out
+
+
+def test_ensure_reuses_existing_worktree_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    agent_worktree = load_agent_worktree()
+    main_clone = tmp_path / "frtb-capital"
+    worktree_root = tmp_path / "frtb-capital-worktrees"
+    worktree_path = worktree_root / "grok" / "task"
+    main_clone.mkdir()
+    worktree_path.mkdir(parents=True)
+
+    monkeypatch.setattr(agent_worktree, "resolve_policy_paths", lambda args, cwd=None: None)
+    monkeypatch.setattr(agent_worktree, "guard", lambda args: 1)
+    monkeypatch.setattr(agent_worktree, "require_main_clone", lambda path: main_clone)
+    monkeypatch.setattr(
+        agent_worktree,
+        "find_worktree_at_path",
+        lambda main, path: agent_worktree.Worktree(worktree_path, "refs/heads/grok/task", False),
+    )
+
+    args = Namespace(
+        main_clone=main_clone,
+        worktree_root=worktree_root,
+        agent="grok",
+        task="task",
+        quiet=False,
+    )
+
+    assert agent_worktree.ensure(args) == 0
+    output = capsys.readouterr().out
+    assert "reuse existing worktree" in output
+    assert f"next: cd {worktree_path.resolve()}" in output
+
+
+def test_ensure_creates_worktree_when_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    agent_worktree = load_agent_worktree()
+    main_clone = tmp_path / "frtb-capital"
+    worktree_root = tmp_path / "frtb-capital-worktrees"
+    main_clone.mkdir()
+    created: list[Namespace] = []
+
+    monkeypatch.setattr(agent_worktree, "resolve_policy_paths", lambda args, cwd=None: None)
+    monkeypatch.setattr(agent_worktree, "guard", lambda args: 1)
+    monkeypatch.setattr(agent_worktree, "require_main_clone", lambda path: main_clone)
+    monkeypatch.setattr(agent_worktree, "find_worktree_at_path", lambda main, path: None)
+
+    def fake_create(args: Namespace) -> int:
+        created.append(args)
+        return 0
+
+    monkeypatch.setattr(agent_worktree, "create_worktree", fake_create)
+
+    args = Namespace(
+        main_clone=main_clone,
+        worktree_root=worktree_root,
+        agent="grok",
+        task="new-task",
+        branch=None,
+        path=None,
+        no_sync=False,
+        quiet=True,
+    )
+
+    assert agent_worktree.ensure(args) == 0
+    assert len(created) == 1
+    assert created[0].agent == "grok"
+    assert created[0].task == "new-task"
+    assert created[0].branch == "grok/new-task"
+
+
 def test_doctor_accepts_absolute_hooks_path(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
