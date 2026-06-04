@@ -94,7 +94,17 @@ class RunExportResult:
 
 
 def inspect_store(store: DuckDbParquetResultStore) -> StoreInspection:
-    """Return an operator summary without relying on the DuckDB catalog."""
+    """Return an operator summary without relying on the DuckDB catalog.
+    Parameters
+    ----------
+    store : DuckDbParquetResultStore
+        Store.
+
+    Returns
+    -------
+    StoreInspection
+        Result of the operation.
+    """
 
     run_ids = _run_ids(store)
     return StoreInspection(
@@ -110,7 +120,17 @@ def inspect_store(store: DuckDbParquetResultStore) -> StoreInspection:
 
 
 def validate_store(store: DuckDbParquetResultStore) -> StoreValidationResult:
-    """Validate committed manifests and their required Parquet evidence."""
+    """Validate committed manifests and their required Parquet evidence.
+    Parameters
+    ----------
+    store : DuckDbParquetResultStore
+        Store.
+
+    Returns
+    -------
+    StoreValidationResult
+        Result of the operation.
+    """
 
     errors: list[str] = []
     for run_id in _run_ids(store):
@@ -143,6 +163,15 @@ def read_only_connection(store: DuckDbParquetResultStore) -> Any:
     The catalog is derived convenience state. If it is absent, this helper
     refreshes it first, then opens the database with DuckDB's read-only mode so
     writes fail on platforms where DuckDB enforces that flag.
+    Parameters
+    ----------
+    store : DuckDbParquetResultStore
+        Store.
+
+    Returns
+    -------
+    Any
+        Result of the operation.
     """
 
     if not store.catalog_path.exists():
@@ -159,7 +188,23 @@ def export_run(
     *,
     overwrite: bool = False,
 ) -> RunExportResult:
-    """Write one manifest-gated run export with SHA-256 checksums."""
+    """Write one manifest-gated run export with SHA-256 checksums.
+    Parameters
+    ----------
+    store : DuckDbParquetResultStore
+        Store.
+    run_id : str
+        Run id.
+    output_path : Path | str
+        Output path.
+    overwrite : bool, optional
+        Overwrite.
+
+    Returns
+    -------
+    RunExportResult
+        Result of the operation.
+    """
 
     if not store.run_exists(run_id):
         raise ResultStoreContractError(f"run does not exist: {run_id}", field="run_id")

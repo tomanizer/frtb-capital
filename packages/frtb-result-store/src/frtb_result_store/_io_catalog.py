@@ -24,7 +24,17 @@ from frtb_result_store.store_paths import (
 
 class StoreCatalogMixin:
     def cleanup_orphaned_staging(self: Any, *, run_id: str | None = None) -> tuple[str, ...]:
-        """Remove abandoned staging directories that are not committed manifests."""
+        """Remove abandoned staging directories that are not committed manifests.
+        Parameters
+        ----------
+        run_id : str | None, optional
+            Run id.
+
+        Returns
+        -------
+        tuple[str, ...]
+            Result of the operation.
+        """
 
         staging_root = self.root / "_staging"
         if not staging_root.exists():
@@ -48,6 +58,15 @@ class StoreCatalogMixin:
         """Resolve a unique full run id from a display prefix.
 
         Ambiguous prefixes fail closed instead of returning an arbitrary run.
+        Parameters
+        ----------
+        prefix : str
+            Prefix.
+
+        Returns
+        -------
+        str | None
+            Result of the operation.
         """
 
         if not prefix:

@@ -2,12 +2,12 @@
   "description": "Runtime package docstring inventory report.",
   "metrics": {
     "findings_by_rule": {
-      "MISSING_PARAMETERS_SECTION": 470,
+      "MISSING_PARAMETERS_SECTION": 433,
       "MISSING_PUBLIC_DOCSTRING": 71,
-      "MISSING_RETURNS_SECTION": 473
+      "MISSING_RETURNS_SECTION": 437
     },
     "packages_with_findings": 5,
-    "total_findings": 1014
+    "total_findings": 941
   },
   "packages": {
     "frtb-drc": {
@@ -471,7 +471,7 @@
       ]
     },
     "frtb-result-store": {
-      "finding_count": 159,
+      "finding_count": 86,
       "findings": [
         {
           "line": 28,
@@ -483,132 +483,6 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 29,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreCapitalQueryMixin.child_nodes",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 29,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreCapitalQueryMixin.child_nodes",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 57,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreCapitalQueryMixin.edges",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 57,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreCapitalQueryMixin.edges",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 75,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreCapitalQueryMixin.measures_for_node",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 75,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreCapitalQueryMixin.measures_for_node",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 93,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreCapitalQueryMixin.artifact_refs",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 93,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreCapitalQueryMixin.artifact_refs",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 130,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreCapitalQueryMixin.attributions_for_node",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 130,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreCapitalQueryMixin.attributions_for_node",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 154,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreCapitalQueryMixin.movement_results",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 154,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreCapitalQueryMixin.movement_results",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 187,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreCapitalQueryMixin.lineage_for_result",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 187,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreCapitalQueryMixin.lineage_for_result",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_capital_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 25,
           "message": "Public class is missing a docstring.",
           "object_name": "StoreCatalogMixin",
@@ -618,43 +492,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 26,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreCatalogMixin.cleanup_orphaned_staging",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_catalog.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 26,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreCatalogMixin.cleanup_orphaned_staging",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_catalog.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 47,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreCatalogMixin.resolve_run_id_prefix",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_catalog.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 47,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreCatalogMixin.resolve_run_id_prefix",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_catalog.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 83,
+          "line": 102,
           "message": "Public method is missing a docstring.",
           "object_name": "StoreCatalogMixin.read_only_connection",
           "object_type": "method",
@@ -663,7 +501,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 88,
+          "line": 107,
           "message": "Public method is missing a docstring.",
           "object_name": "StoreCatalogMixin.inspect",
           "object_type": "method",
@@ -672,7 +510,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 93,
+          "line": 112,
           "message": "Public method is missing a docstring.",
           "object_name": "StoreCatalogMixin.validate_store",
           "object_type": "method",
@@ -681,7 +519,7 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 98,
+          "line": 117,
           "message": "Public method is missing a docstring.",
           "object_name": "StoreCatalogMixin.export_run",
           "object_type": "method",
@@ -708,186 +546,6 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 25,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreMartQueryMixin.capital_tree",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 25,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreMartQueryMixin.capital_tree",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 30,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreMartQueryMixin.capital_summary",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 30,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreMartQueryMixin.capital_summary",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 49,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreMartQueryMixin.capital_tree_mart",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 49,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreMartQueryMixin.capital_tree_mart",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 69,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreMartQueryMixin.component_breakdown",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 69,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreMartQueryMixin.component_breakdown",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 86,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreMartQueryMixin.movement_summary",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 86,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreMartQueryMixin.movement_summary",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 115,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreMartQueryMixin.top_contributors",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 115,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreMartQueryMixin.top_contributors",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 137,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreMartQueryMixin.residual_attribution_records",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 137,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreMartQueryMixin.residual_attribution_records",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 154,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreMartQueryMixin.unsupported_attribution_records",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 154,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreMartQueryMixin.unsupported_attribution_records",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 198,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreMartQueryMixin.mart_rows",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 198,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreMartQueryMixin.mart_rows",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 216,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreMartQueryMixin.regime_comparison",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 216,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreMartQueryMixin.regime_comparison",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_mart_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 14,
           "message": "Public class is missing a docstring.",
           "object_name": "StoreQueryMixin",
@@ -906,213 +564,6 @@
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
-          "line": 32,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.run_exists",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 32,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.run_exists",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 37,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.list_runs",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 53,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.get_run",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 53,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.get_run",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 72,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.hierarchy_definition",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 72,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.hierarchy_definition",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 90,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.hierarchy_nodes",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 90,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.hierarchy_nodes",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 109,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.input_snapshot_manifests",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 109,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.input_snapshot_manifests",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 128,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.result_events",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 128,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.result_events",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 146,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.suggested_status",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 146,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.suggested_status",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 156,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.run_telemetry",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 156,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.run_telemetry",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 174,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.status_history",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 174,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.status_history",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 192,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.latest_status_event",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 192,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.latest_status_event",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 198,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreRunQueryMixin.latest_status",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 198,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "StoreRunQueryMixin.latest_status",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_run_queries.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 54,
           "message": "Public class is missing a docstring.",
           "object_name": "StoreWriteMixin",
@@ -1120,24 +571,6 @@
           "package": "frtb-result-store",
           "path": "packages/frtb-result-store/src/frtb_result_store/_io_write.py",
           "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 55,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreWriteMixin.write_bundle",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_write.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 302,
-          "message": "Public method has parameters but no NumPy Parameters section.",
-          "object_name": "StoreWriteMixin.append_status_event",
-          "object_type": "method",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/_io_write.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
           "line": 121,
@@ -1318,96 +751,6 @@
           "package": "frtb-result-store",
           "path": "packages/frtb-result-store/src/frtb_result_store/admin.py",
           "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 96,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "inspect_store",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/admin.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 96,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "inspect_store",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/admin.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 112,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_store",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/admin.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 112,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_store",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/admin.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 140,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "read_only_connection",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/admin.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 140,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "read_only_connection",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/admin.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 155,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "export_run",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/admin.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 155,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "export_run",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/admin.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 60,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "create_result_store_app",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/api.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 60,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "create_result_store_app",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/api.py",
-          "rule": "MISSING_RETURNS_SECTION"
         },
         {
           "line": 16,

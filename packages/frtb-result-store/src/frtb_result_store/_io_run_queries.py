@@ -30,12 +30,27 @@ from frtb_result_store.store_row_io import (
 
 class StoreRunQueryMixin:
     def run_exists(self: Any, run_id: str) -> bool:
-        """Return whether a run has already been written."""
+        """Return whether a run has already been written.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        bool
+            Result of the operation.
+        """
 
         return bool(self._manifest_path(run_id).exists())
 
     def list_runs(self: Any) -> tuple[CalculationRun, ...]:
-        """Return stored calculation runs ordered by business date and run id."""
+        """Return stored calculation runs ordered by business date and run id.
+        Returns
+        -------
+        tuple[CalculationRun, ...]
+            Result of the operation.
+        """
 
         rows = self._fetchall(
             "runs",
@@ -51,7 +66,17 @@ class StoreRunQueryMixin:
         return tuple(_run_from_row(row) for row in rows if self._is_run_compatible(str(row[0])))
 
     def get_run(self: Any, run_id: str) -> CalculationRun | None:
-        """Return a stored run by id, or ``None`` when absent."""
+        """Return a stored run by id, or ``None`` when absent.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        CalculationRun | None
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return None
@@ -70,7 +95,17 @@ class StoreRunQueryMixin:
         return None if not rows else _run_from_row(rows[0])
 
     def hierarchy_definition(self: Any, run_id: str) -> HierarchyDefinition | None:
-        """Return the hierarchy definition stored with a run, when present."""
+        """Return the hierarchy definition stored with a run, when present.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        HierarchyDefinition | None
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return None
@@ -88,7 +123,17 @@ class StoreRunQueryMixin:
         return None if not rows else _hierarchy_definition_from_row(rows[0])
 
     def hierarchy_nodes(self: Any, run_id: str) -> tuple[HierarchyNode, ...]:
-        """Return generated hierarchy nodes stored with a run."""
+        """Return generated hierarchy nodes stored with a run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        tuple[HierarchyNode, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -107,7 +152,17 @@ class StoreRunQueryMixin:
         return tuple(_hierarchy_node_from_row(row) for row in rows)
 
     def input_snapshot_manifests(self: Any, run_id: str) -> tuple[InputSnapshotManifest, ...]:
-        """Return compact input snapshot evidence rows for a run."""
+        """Return compact input snapshot evidence rows for a run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        tuple[InputSnapshotManifest, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -126,7 +181,17 @@ class StoreRunQueryMixin:
         return tuple(_input_manifest_from_row(row) for row in rows)
 
     def result_events(self: Any, run_id: str) -> tuple[ResultEvent, ...]:
-        """Return non-lifecycle result events for one committed run."""
+        """Return non-lifecycle result events for one committed run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        tuple[ResultEvent, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -144,7 +209,17 @@ class StoreRunQueryMixin:
         return tuple(_result_event_from_row(row) for row in rows)
 
     def suggested_status(self: Any, run_id: str) -> RunStatus | None:
-        """Return advisory status from result events without changing lifecycle."""
+        """Return advisory status from result events without changing lifecycle.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        RunStatus | None
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return None
@@ -154,7 +229,17 @@ class StoreRunQueryMixin:
         return RunStatus.VALIDATED
 
     def run_telemetry(self: Any, run_id: str) -> tuple[RunTelemetry, ...]:
-        """Return compact persisted telemetry rows for a run."""
+        """Return compact persisted telemetry rows for a run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        tuple[RunTelemetry, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -172,7 +257,17 @@ class StoreRunQueryMixin:
         return tuple(_telemetry_from_row(row) for row in rows)
 
     def status_history(self: Any, run_id: str) -> tuple[RunStatusEvent, ...]:
-        """Return append-only lifecycle events for one committed run."""
+        """Return append-only lifecycle events for one committed run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        tuple[RunStatusEvent, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -190,13 +285,33 @@ class StoreRunQueryMixin:
         return tuple(_status_event_from_row(row) for row in rows)
 
     def latest_status_event(self: Any, run_id: str) -> RunStatusEvent | None:
-        """Return the latest lifecycle event for a run, or ``None`` when absent."""
+        """Return the latest lifecycle event for a run, or ``None`` when absent.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        RunStatusEvent | None
+            Result of the operation.
+        """
 
         history = self.status_history(run_id)
         return None if not history else history[-1]
 
     def latest_status(self: Any, run_id: str) -> RunStatus | None:
-        """Return the latest lifecycle status for a run, or ``None`` when absent."""
+        """Return the latest lifecycle status for a run, or ``None`` when absent.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        RunStatus | None
+            Result of the operation.
+        """
 
         latest = self.latest_status_event(run_id)
         return None if latest is None else RunStatus(latest.to_status)
