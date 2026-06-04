@@ -63,6 +63,7 @@ from frtb_orchestration import (
     StandardisedApproachCapitalResult,
     SuiteAttributionReport,
     SuiteAttributionResult,
+    SuiteAttributionSummary,
     SuiteCapitalResult,
     aggregate_suite_attribution,
     build_suite_attribution_report,
@@ -70,7 +71,11 @@ from frtb_orchestration import (
     compose_standardised_approach_capital,
     recognise_cva_summary,
     recognise_ima_summary,
+    suite_attribution_residual_records,
+    suite_attribution_unsupported_records,
     suite_jurisdiction_family,
+    summarise_suite_attribution,
+    top_suite_attribution_contributors,
 )
 from frtb_rrao import (
     RraoCalculationContext,
@@ -288,6 +293,62 @@ def synthetic_contribution_bundle(
         component=component,
         contributions=(contribution,),
         component_total=component_total,
+        component_input_hash=f"input-hash-{component}",
+        component_profile_hash=f"profile-hash-{component}",
+    )
+
+
+def synthetic_attribution_record(
+    *,
+    contribution_id: str,
+    source_id: str,
+    source_level: str,
+    category: str,
+    contribution: float | None,
+    residual: float = 0.0,
+    method: AttributionMethod = AttributionMethod.ANALYTICAL_EULER,
+    reason: str = "",
+    bucket_key: str | None = None,
+) -> CapitalContribution:
+    return CapitalContribution(
+        contribution_id=contribution_id,
+        source_id=source_id,
+        source_level=source_level,
+        bucket_key=bucket_key,
+        category=category,
+        base_amount=(contribution or 0.0) + residual,
+        marginal_multiplier=1.0 if method == AttributionMethod.ANALYTICAL_EULER else None,
+        contribution=contribution,
+        method=method,
+        residual=residual,
+        reason=reason,
+        citations=("ADR 0038",),
+        input_hash=f"input-hash-{source_id}",
+        profile_hash=f"profile-hash-{source_id}",
+        reconciliation_status=(
+            ReconciliationStatus.PARTIAL_RESIDUAL
+            if method in {AttributionMethod.RESIDUAL, AttributionMethod.UNSUPPORTED}
+            or residual != 0.0
+            else ReconciliationStatus.RECONCILED
+        ),
+    )
+
+
+def synthetic_contribution_bundle_from_records(
+    component: str,
+    records: tuple[CapitalContribution, ...],
+    *,
+    component_total: float | None = None,
+) -> ComponentContributionBundle:
+    total = (
+        math.fsum((record.contribution or 0.0) + record.residual for record in records)
+        if component_total is None
+        else component_total
+    )
+    return ComponentContributionBundle(
+        component=component,
+        contributions=records,
+        component_total=total,
         component_input_hash=f"input-hash-{component}",
         component_profile_hash=f"profile-hash-{component}",
     )
@@ -694,6 +755,173 @@ def test_build_suite_attribution_report_rejects_partial_component_set() -> None:
 
     with pytest.raises(OrchestrationInputError, match="complete suite attribution"):
         build_suite_attribution_report(suite_result=suite, component_bundles=bundles)
+
+
+def test_summarise_suite_attribution_top_level_groups_include_drillthrough_ids() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    suite = calculate_suite_capital(ima_summary=ima, sa_result=sa, cva_summary=cva)
+    bundles = top_level_attribution_bundles(ima, sa, cva)
+    report = build_suite_attribution_report(suite_result=suite, component_bundles=bundles)
+
+    summary = summarise_suite_attribution(report, top_n=2)
+    payload = summary.as_dict()
+
+    assert isinstance(summary, SuiteAttributionSummary)
+    assert len(summary.top_contributors) == 2
+    assert {row.group_key for row in summary.contributors_by_component} == {
+        "frtb_ima",
+        "frtb_sa",
+        "frtb_cva",
+        "suite",
+    }
+    component_rows = {row.group_key: row for row in summary.contributors_by_component}
+    assert component_rows["frtb_ima"].contribution_ids == ("attr-frtb_ima",)
+    assert component_rows["frtb_ima"].source_ids == ("frtb_ima-source",)
+    source_level_rows = {row.group_key: row for row in summary.contributors_by_source_level}
+    assert source_level_rows["component"].record_count == 3
+    assert source_level_rows["suite"].contribution_ids == (report.suite_residual.contribution_id,)
+    json.dumps(payload, sort_keys=True)
+
+
+def test_top_suite_attribution_contributors_uses_stable_tie_sorting() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    suite = calculate_suite_capital(ima_summary=ima, sa_result=sa, cva_summary=cva)
+    ima_bundle = synthetic_contribution_bundle_from_records(
+        "frtb_ima",
+        (
+            synthetic_attribution_record(
+                contribution_id="ima-desk-b",
+                source_id="desk-b",
+                source_level="desk",
+                category="IMA_DESK",
+                contribution=50.0,
+            ),
+            synthetic_attribution_record(
+                contribution_id="ima-desk-a",
+                source_id="desk-a",
+                source_level="desk",
+                category="IMA_DESK",
+                contribution=50.0,
+            ),
+        ),
+    )
+    report = build_suite_attribution_report(
+        suite_result=suite,
+        component_bundles=(
+            ima_bundle,
+            synthetic_contribution_bundle("frtb_sa", sa.total_capital),
+            synthetic_contribution_bundle("frtb_cva", cva.total_cva_capital),
+        ),
+    )
+
+    rows = top_suite_attribution_contributors(report, top_n=10)
+    ima_rows = [row.contribution_id for row in rows if row.component == "frtb_ima"]
+
+    assert ima_rows == ["ima-desk-a", "ima-desk-b"]
+
+
+def test_suite_attribution_residual_records_include_zero_and_negative_residuals() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    suite = calculate_suite_capital(ima_summary=ima, sa_result=sa, cva_summary=cva)
+    bundles = top_level_attribution_bundles(ima, sa, cva)
+    zero_report = build_suite_attribution_report(suite_result=suite, component_bundles=bundles)
+    negative_report = build_suite_attribution_report(
+        suite_result=suite,
+        component_bundles=bundles,
+        suite_total_capital=suite.total_capital - 2.5,
+    )
+
+    zero_rows = suite_attribution_residual_records(zero_report)
+    negative_rows = suite_attribution_residual_records(negative_report)
+
+    assert len(zero_rows) == 1
+    assert zero_rows[0].component == "suite"
+    assert zero_rows[0].amount == pytest.approx(0.0)
+    assert negative_rows[0].component == "suite"
+    assert negative_rows[0].residual == pytest.approx(-2.5)
+    assert negative_rows[0].absolute_amount == pytest.approx(2.5)
+    assert negative_rows[0].reconciliation_status == ReconciliationStatus.PARTIAL_RESIDUAL
+
+
+def test_suite_attribution_unsupported_records_preserve_reason_and_ids() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    suite = calculate_suite_capital(ima_summary=ima, sa_result=sa, cva_summary=cva)
+    unsupported = synthetic_attribution_record(
+        contribution_id="sa-unsupported-curvature",
+        source_id="curvature-branch",
+        source_level="branch",
+        category="UNSUPPORTED_CURVATURE",
+        contribution=None,
+        residual=3.25,
+        method=AttributionMethod.UNSUPPORTED,
+        reason="component marks curvature scenario selection unsupported for exact Euler",
+        bucket_key="GIRR",
+    )
+    sa_supported = synthetic_attribution_record(
+        contribution_id="sa-supported",
+        source_id="sa-supported",
+        source_level="component",
+        category="SA_SUPPORTED",
+        contribution=sa.total_capital - 3.25,
+    )
+    report = build_suite_attribution_report(
+        suite_result=suite,
+        component_bundles=(
+            synthetic_contribution_bundle("frtb_ima", ima.total_ima_capital),
+            synthetic_contribution_bundle_from_records("frtb_sa", (sa_supported, unsupported)),
+            synthetic_contribution_bundle("frtb_cva", cva.total_cva_capital),
+        ),
+    )
+
+    rows = suite_attribution_unsupported_records(report)
+    summary = summarise_suite_attribution(report)
+
+    assert len(rows) == 1
+    assert rows[0].component == "frtb_sa"
+    assert rows[0].source_id == "curvature-branch"
+    assert rows[0].bucket_key == "GIRR"
+    assert rows[0].method == AttributionMethod.UNSUPPORTED
+    assert "unsupported for exact Euler" in rows[0].reason
+    assert summary.unsupported_records == rows
+    assert summary.unsupported_records[0].contribution_id == "sa-unsupported-curvature"
+
+
+def test_summarise_suite_attribution_supports_decomposed_component_sets() -> None:
+    ima = synthetic_ima_summary()
+    sa = synthetic_sa_result()
+    cva = synthetic_cva_summary()
+    suite = calculate_suite_capital(ima_summary=ima, sa_result=sa, cva_summary=cva)
+    report = build_suite_attribution_report(
+        suite_result=suite,
+        component_bundles=decomposed_attribution_bundles(ima, sa, cva),
+    )
+
+    summary = summarise_suite_attribution(report, top_n=20)
+
+    assert summary.component_set == (
+        "frtb_ima",
+        "frtb_sbm",
+        "frtb_drc",
+        "frtb_rrao",
+        "frtb_cva",
+    )
+    assert {row.group_key for row in summary.contributors_by_component} == {
+        "frtb_ima",
+        "frtb_sbm",
+        "frtb_drc",
+        "frtb_rrao",
+        "frtb_cva",
+        "suite",
+    }
+    assert {row.component for row in summary.top_contributors} >= {"frtb_sbm", "frtb_drc"}
 
 
 # ── Deterministic expected-output hash ───────────────────────────────────────
