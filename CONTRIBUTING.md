@@ -32,6 +32,16 @@ Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). The repo pins
      [ADR 0005](docs/decisions/0005-material-change-policy.md).
    - Link to ADR if material.
 
+### Documentation quality
+
+Runtime package modules and public APIs follow the repository documentation
+rules in [`docs/quality/documentation_rules.md`](docs/quality/documentation_rules.md).
+In short, modules under `packages/*/src` should explain their role and package
+boundary, public callables should have meaningful docstrings using NumPy-style
+sections where applicable, and private helpers need docstrings when they carry
+regulatory, audit, aggregation, unsupported-feature, or attribution behavior.
+Tiny obvious private helpers do not need prose solely to satisfy a metric.
+
 ### Closing issues via PR
 
 GitHub only closes issues that are explicitly named in the PR body with

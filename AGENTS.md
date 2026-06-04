@@ -62,6 +62,12 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
 - Add unit tests for every calculation.
 - Synthetic data only; no proprietary market data.
 - Favour clarity over cleverness.
+- Runtime package modules and public APIs must be documented according to
+  [`docs/quality/documentation_rules.md`](docs/quality/documentation_rules.md):
+  module docstrings explain file role and package boundary, public callable
+  docstrings use meaningful NumPy-style sections where applicable, and
+  domain-significant private helpers document regulatory, audit, aggregation,
+  unsupported-feature, or attribution behavior.
 - Cite regulatory paragraphs explicitly; do NOT use phrases like "working assumption" or "prototype" as a substitute for citation.
 - Preserve attribution readiness for every capital component: stable ids,
   deterministic grouping, intermediate audit records, and branch metadata must

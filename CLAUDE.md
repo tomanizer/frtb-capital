@@ -103,6 +103,12 @@ Enforced by `import-linter` via the root `[tool.importlinter]` layers contract
 - No mutable global state, no implicit I/O in calculation paths.
 - Sign conventions documented per module (use `frtb_common.SignConvention` once available).
 - Input validation with explicit `ValueError` / `TypeError` at every public boundary.
+- Runtime package modules and public APIs follow
+  [`docs/quality/documentation_rules.md`](docs/quality/documentation_rules.md):
+  module docstrings explain file role and package boundary, public callable
+  docstrings use meaningful NumPy-style sections where applicable, and
+  domain-significant private helpers document regulatory, audit, aggregation,
+  unsupported-feature, or attribution behavior.
 
 ### Versioning
 
