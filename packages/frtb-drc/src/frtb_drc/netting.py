@@ -125,7 +125,7 @@ def _net_group(
         longs=longs,
         shorts=shorts,
         short_states=short_states,
-        rejected=tuple(rejected),
+        rejected=rejected,
     )
     records.extend(
         _short_net_records(
@@ -133,7 +133,7 @@ def _net_group(
             issuer_key=issuer_key,
             shorts=shorts,
             short_states=short_states,
-            rejected=tuple(rejected),
+            rejected=rejected,
         )
     )
     return records
