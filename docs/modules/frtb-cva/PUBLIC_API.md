@@ -17,7 +17,7 @@ Outputs are not final regulatory capital.
 | Normalize | `normalize_cva_counterparty_arrow_table`, `normalize_cva_netting_set_arrow_table`, `normalize_cva_hedge_arrow_table`, `normalize_sa_cva_sensitivity_arrow_table` | Ingress from raw Arrow tables to `NormalizedArrowTable`. |
 | CRIF adapter (Tier 2) | `adapt_cva_records`, `CvaAdapterResult` | CRIF-shaped input compatibility where supported. |
 | Scope and unsupported features | `resolve_calculation_method`, `partition_mixed_method_inputs`, `validate_method_selection`, `CvaInputError` | Fail-closed method selection and unsupported feature diagnostics. |
-| Audit and impact | `serialize_cva_result`, `validate_cva_result_reconciliation`, `attribute_cva_capital`, `assess_cva_capital_impact` | Replay, reconciliation, attribution, and impact analysis. |
+| Audit and impact | `serialize_cva_result`, `validate_cva_result_reconciliation`, `attribute_cva_capital`, `project_cva_attribution`, `assess_cva_capital_impact` | Replay, reconciliation, shared attribution projection, and finite-difference impact analysis. |
 
 The high-volume batch boundary is summarized in
 [`docs/performance/frtb-cva-arrow-batch-triage.md`](../../performance/frtb-cva-arrow-batch-triage.md).
@@ -38,6 +38,24 @@ Clients must supply all tables required by the selected `CvaMethod`:
 | Full BA-CVA | Counterparty, netting-set, and hedge tables | None | Hedge eligibility metadata must be explicit. |
 | SA-CVA | SA-CVA sensitivity table | Hedge identifiers when sensitivity tag is `HDG` | Unsupported SA-CVA paths fail closed; GIRR delta requires tenor and vega requires volatility input. |
 | Mixed carve-out | SA-CVA sensitivity table plus BA-CVA carve-out netting-set context | Counterparty and netting-set tables for carved-out BA-CVA | Carve-out ids must match supplied netting sets. |
+
+## Attribution and impact
+
+`attribute_cva_capital` returns package-local standalone explain rows plus
+unsupported branch labels for nonlinear CVA aggregation. `project_cva_attribution`
+projects those rows into shared `CapitalContribution` records:
+
+- `AttributionMethod.STANDALONE` for BA-CVA netting-set standalone capital and
+  SA-CVA bucket allocations.
+- `AttributionMethod.UNSUPPORTED` for reduced BA-CVA portfolio square-root,
+  full BA-CVA hedged square-root, beta floor, and SA-CVA risk-class square-root
+  branches.
+- `AttributionMethod.RESIDUAL` for the reconciliation gap needed so projected
+  records sum to `CvaCapitalResult.total_cva_capital`.
+
+`assess_cva_capital_impact` is separate from attribution. It returns a shared
+`CapitalImpact` with finite-difference method metadata and does not imply exact
+Euler marginal decomposition.
 
 ## Arrow Column Summary
 
