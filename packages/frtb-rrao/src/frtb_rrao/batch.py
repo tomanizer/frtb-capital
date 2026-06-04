@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import cast
@@ -11,6 +10,7 @@ import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
 import numpy.typing as npt
 
+from frtb_rrao import _validation_rules as _vr
 from frtb_rrao._batch_columns import (
     BoolArray,
     ColumnInput,
@@ -618,12 +618,12 @@ def _validate_batch(batch: RraoPositionBatch) -> None:
         )
     if bool(np.any(batch.gross_effective_notionals < 0.0)):
         raise RraoInputError(
-            "gross effective notional must be non-negative",
+            _vr.GROSS_NOTIONAL_NON_NEGATIVE_MESSAGE,
             field="gross_effective_notional",
         )
     if bool(np.any(batch.classification_hints == RraoClassification.UNSUPPORTED.value)):
         raise RraoInputError(
-            "unsupported classification path",
+            _vr.UNSUPPORTED_CLASSIFICATION_MESSAGE,
             field="classification_hint",
             position_id=_position_id_at_first(
                 batch,
@@ -632,7 +632,7 @@ def _validate_batch(batch: RraoPositionBatch) -> None:
         )
     if bool(np.any(~batch.lineage_present)):
         raise RraoInputError(
-            "source lineage is required",
+            _vr.SOURCE_LINEAGE_REQUIRED_MESSAGE,
             field="lineage",
             position_id=_position_id_at_first(batch, ~batch.lineage_present),
         )
@@ -671,7 +671,7 @@ def _validate_evidence_requirements(batch: RraoPositionBatch) -> None:
     missing_exclusion_reason = excluded_hint_mask & (batch.exclusion_reasons == None)  # noqa: E711
     if bool(np.any(missing_exclusion_reason)):
         raise RraoInputError(
-            "excluded classification requires an exclusion reason",
+            _vr.EXCLUDED_CLASSIFICATION_REQUIRES_REASON_MESSAGE,
             field="exclusion_reason",
             position_id=_position_id_at_first(batch, missing_exclusion_reason),
         )
@@ -682,7 +682,7 @@ def _validate_evidence_requirements(batch: RraoPositionBatch) -> None:
     )
     if bool(np.any(wrong_exclusion_evidence)):
         raise RraoInputError(
-            "exclusion reason requires explicit exclusion evidence type",
+            _vr.EXCLUSION_REASON_REQUIRES_EXPLICIT_EVIDENCE_MESSAGE,
             field="evidence_type",
             position_id=_position_id_at_first(batch, wrong_exclusion_evidence),
         )
@@ -697,7 +697,7 @@ def _validate_evidence_requirements(batch: RraoPositionBatch) -> None:
     missing_reason_for_explicit = explicit_exclusion & (batch.exclusion_reasons == None)  # noqa: E711
     if bool(np.any(missing_reason_for_explicit)):
         raise RraoInputError(
-            "explicit exclusion evidence requires an exclusion reason",
+            _vr.EXPLICIT_EXCLUSION_REQUIRES_REASON_MESSAGE,
             field="exclusion_reason",
             position_id=_position_id_at_first(batch, missing_reason_for_explicit),
         )
@@ -717,14 +717,14 @@ def _validate_evidence_requirements(batch: RraoPositionBatch) -> None:
     missing_match = exact_back_to_back & ~match_present
     if bool(np.any(missing_match)):
         raise RraoInputError(
-            "exact back-to-back exclusion requires match evidence",
+            _vr.EXACT_BACK_TO_BACK_REQUIRES_MATCH_MESSAGE,
             field="back_to_back_match",
             position_id=_position_id_at_first(batch, missing_match),
         )
     invalid_match_context = match_present & ~exact_back_to_back
     if bool(np.any(invalid_match_context)):
         raise RraoInputError(
-            "back-to-back match evidence is only valid for exact back-to-back exclusions",
+            _vr.BACK_TO_BACK_ONLY_FOR_EXACT_EXCLUSION_MESSAGE,
             field="back_to_back_match",
             position_id=_position_id_at_first(batch, invalid_match_context),
         )
@@ -754,7 +754,7 @@ def _validate_back_to_back_match_groups(batch: RraoPositionBatch) -> None:
     if bool(np.any(self_matches)):
         index = int(match_indices[np.nonzero(self_matches)[0][0]])
         raise RraoInputError(
-            "back-to-back match must reference the opposite transaction",
+            _vr.BACK_TO_BACK_SELF_MATCH_MESSAGE,
             field="back_to_back_match.matched_position_id",
             position_id=cast(str, batch.position_ids[index]),
         )
@@ -766,7 +766,7 @@ def _validate_back_to_back_match_groups(batch: RraoPositionBatch) -> None:
     if bool(np.any(missing_matches)):
         index = int(match_indices[np.nonzero(missing_matches)[0][0]])
         raise RraoInputError(
-            "back-to-back matched position is missing from input",
+            _vr.BACK_TO_BACK_MISSING_MATCH_MESSAGE,
             field="back_to_back_match.matched_position_id",
             position_id=cast(str, batch.position_ids[index]),
         )
@@ -781,7 +781,7 @@ def _validate_back_to_back_match_groups(batch: RraoPositionBatch) -> None:
         matched_position_id = cast(str, batch.back_to_back_matched_position_ids[index])
         if matched_position_id not in positions_by_id:
             raise RraoInputError(
-                "back-to-back matched position must also carry back-to-back evidence",
+                _vr.BACK_TO_BACK_REQUIRES_EVIDENCED_COUNTERPART_MESSAGE,
                 field="back_to_back_match.matched_position_id",
                 position_id=cast(str, batch.position_ids[index]),
             )
@@ -809,36 +809,36 @@ def _validate_exact_back_to_back_pair(
     right_id = cast(str, batch.position_ids[right])
     if batch.back_to_back_matched_position_ids[left] != right_id:
         raise RraoInputError(
-            "back-to-back match group does not cross-reference the paired transaction",
+            _vr.BACK_TO_BACK_CROSS_REFERENCE_MESSAGE,
             field="back_to_back_match.matched_position_id",
             position_id=left_id,
         )
     if batch.back_to_back_matched_position_ids[right] != left_id:
         raise RraoInputError(
-            "back-to-back match group does not cross-reference the paired transaction",
+            _vr.BACK_TO_BACK_CROSS_REFERENCE_MESSAGE,
             field="back_to_back_match.matched_position_id",
             position_id=right_id,
         )
     if batch.exclusion_evidence_ids[left] != batch.exclusion_evidence_ids[right]:
         raise RraoInputError(
-            "exact back-to-back pair must share the same exclusion evidence id",
+            _vr.BACK_TO_BACK_SHARED_EVIDENCE_MESSAGE,
             field="exclusion_evidence_id",
             position_id=right_id,
         )
     if batch.currencies[left] != batch.currencies[right]:
         raise RraoInputError(
-            "exact back-to-back pair must have matching currency",
+            _vr.BACK_TO_BACK_MATCHING_CURRENCY_MESSAGE,
             field="currency",
             position_id=right_id,
         )
-    if not math.isclose(
+    if not np.isclose(
         float(batch.gross_effective_notionals[left]),
         float(batch.gross_effective_notionals[right]),
-        rel_tol=1e-12,
-        abs_tol=1e-9,
+        rtol=_vr.NOTIONAL_RECONCILIATION_REL_TOL,
+        atol=_vr.NOTIONAL_RECONCILIATION_ABS_TOL,
     ):
         raise RraoInputError(
-            "exact back-to-back pair must have matching gross effective notional",
+            _vr.BACK_TO_BACK_MATCHING_NOTIONAL_MESSAGE,
             field="gross_effective_notional",
             position_id=right_id,
         )
@@ -862,7 +862,7 @@ def _validate_investment_fund_fields(batch: RraoPositionBatch) -> None:
     missing_flag = is_fund_path & ~batch.is_investment_fund_exposures
     if bool(np.any(missing_flag)):
         raise RraoInputError(
-            "investment fund exposure flag is required",
+            _vr.INVESTMENT_FUND_FLAG_REQUIRED_MESSAGE,
             field="is_investment_fund_exposure",
             position_id=_position_id_at_first(batch, missing_flag),
         )
@@ -871,14 +871,14 @@ def _validate_investment_fund_fields(batch: RraoPositionBatch) -> None:
     )
     if bool(np.any(wrong_evidence)):
         raise RraoInputError(
-            "investment fund exposure requires investment-fund evidence type",
+            _vr.INVESTMENT_FUND_EVIDENCE_TYPE_REQUIRED_MESSAGE,
             field="evidence_type",
             position_id=_position_id_at_first(batch, wrong_evidence),
         )
     missing_descriptor = is_fund_path & ~descriptor_present
     if bool(np.any(missing_descriptor)):
         raise RraoInputError(
-            "investment fund descriptor is required",
+            _vr.INVESTMENT_FUND_DESCRIPTOR_REQUIRED_MESSAGE,
             field="investment_fund_descriptor",
             position_id=_position_id_at_first(batch, missing_descriptor),
         )
@@ -909,7 +909,7 @@ def _validate_investment_fund_fields(batch: RraoPositionBatch) -> None:
     )
     if bool(np.any(wrong_method)):
         raise RraoInputError(
-            "investment fund RRAO inclusion requires the __.205(e)(3)(iii) backstop method",
+            _vr.INVESTMENT_FUND_BACKSTOP_METHOD_REQUIRED_MESSAGE,
             field="investment_fund_descriptor.section_205_method",
             position_id=_position_id_at_first(batch, wrong_method),
         )
@@ -924,7 +924,7 @@ def _validate_investment_fund_fields(batch: RraoPositionBatch) -> None:
         )
     if bool(np.any(is_fund_path & batch.investment_fund_look_through_availables)):
         raise RraoInputError(
-            "investment fund RRAO inclusion requires a non-look-through portion",
+            _vr.INVESTMENT_FUND_NON_LOOK_THROUGH_MESSAGE,
             field="investment_fund_descriptor.look_through_available",
             position_id=_position_id_at_first(
                 batch,
@@ -934,21 +934,21 @@ def _validate_investment_fund_fields(batch: RraoPositionBatch) -> None:
     mandate_disallowed = is_fund_path & ~batch.investment_fund_mandate_allows_rrao_exposures
     if bool(np.any(mandate_disallowed)):
         raise RraoInputError(
-            "investment fund mandate evidence must permit RRAO exposure types",
+            _vr.INVESTMENT_FUND_MANDATE_ALLOWS_RRAO_MESSAGE,
             field="investment_fund_descriptor.mandate_allows_rrao_exposures",
             position_id=_position_id_at_first(batch, mandate_disallowed),
         )
     missing_fund_notional = is_fund_path & np.isnan(batch.investment_fund_gross_effective_notionals)
     if bool(np.any(missing_fund_notional)):
         raise RraoInputError(
-            "fund gross effective notional must be positive",
+            _vr.FUND_GROSS_NOTIONAL_POSITIVE_MESSAGE,
             field="investment_fund_descriptor.fund_gross_effective_notional",
             position_id=_position_id_at_first(batch, missing_fund_notional),
         )
     non_positive_fund = is_fund_path & (batch.investment_fund_gross_effective_notionals <= 0.0)
     if bool(np.any(non_positive_fund)):
         raise RraoInputError(
-            "fund gross effective notional must be positive",
+            _vr.FUND_GROSS_NOTIONAL_POSITIVE_MESSAGE,
             field="investment_fund_descriptor.fund_gross_effective_notional",
             position_id=_position_id_at_first(batch, non_positive_fund),
         )
@@ -956,7 +956,7 @@ def _validate_investment_fund_fields(batch: RraoPositionBatch) -> None:
     invalid_ratio = is_fund_path & (np.isnan(ratio) | (ratio <= 0.0) | (ratio > 1.0))
     if bool(np.any(invalid_ratio)):
         raise RraoInputError(
-            "included exposure ratio must be greater than zero and no more than one",
+            _vr.INCLUDED_EXPOSURE_RATIO_RANGE_MESSAGE,
             field="investment_fund_descriptor.included_exposure_ratio",
             position_id=_position_id_at_first(batch, invalid_ratio),
         )
@@ -964,12 +964,12 @@ def _validate_investment_fund_fields(batch: RraoPositionBatch) -> None:
     mismatch = is_fund_path & ~np.isclose(
         batch.gross_effective_notionals,
         expected_notionals,
-        rtol=1e-12,
-        atol=1e-9,
+        rtol=_vr.NOTIONAL_RECONCILIATION_REL_TOL,
+        atol=_vr.NOTIONAL_RECONCILIATION_ABS_TOL,
     )
     if bool(np.any(mismatch)):
         raise RraoInputError(
-            "gross effective notional must equal the cited investment-fund included portion",
+            _vr.GROSS_NOTIONAL_MATCHES_FUND_PORTION_MESSAGE,
             field="gross_effective_notional",
             position_id=_position_id_at_first(batch, mismatch),
         )

@@ -10,6 +10,10 @@ Regulatory traceability:
 from __future__ import annotations
 
 from frtb_rrao._citations import merged_citation_ids
+from frtb_rrao._validation_rules import (
+    EXCLUDED_CLASSIFICATION_REQUIRES_REASON_MESSAGE,
+    INVESTMENT_FUND_DESCRIPTOR_REQUIRED_MESSAGE,
+)
 from frtb_rrao.data_models import (
     RraoClassification,
     RraoClassificationDecision,
@@ -88,7 +92,7 @@ def _excluded_decision(
 ) -> RraoClassificationDecision:
     if position.exclusion_reason is None:
         raise RraoInputError(
-            "excluded classification requires an exclusion reason",
+            EXCLUDED_CLASSIFICATION_REQUIRES_REASON_MESSAGE,
             field="exclusion_reason",
             position_id=position.position_id,
         )
@@ -111,7 +115,7 @@ def _investment_fund_decision(
 ) -> RraoClassificationDecision:
     if position.investment_fund_descriptor is None:
         raise RraoInputError(
-            "investment fund descriptor is required",
+            INVESTMENT_FUND_DESCRIPTOR_REQUIRED_MESSAGE,
             field="investment_fund_descriptor",
             position_id=position.position_id,
         )
