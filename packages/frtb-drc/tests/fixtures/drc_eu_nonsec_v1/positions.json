@@ -1,0 +1,187 @@
+{
+  "context": {
+    "base_currency": "EUR",
+    "calculation_date": "2026-05-29",
+    "profile_id": "EU_CRR3",
+    "run_id": "run-drc-eu-nonsec-v1"
+  },
+  "fixture_id": "drc_eu_nonsec_v1",
+  "positions": [
+    {
+      "bucket_key": "CORPORATE",
+      "citation_ids": [
+        "EU_CRR3_ARTICLE_325W",
+        "EU_CRR3_ARTICLE_325Y_1_2",
+        "EU_CRR3_ARTICLE_325Y_6",
+        "EU_CRR3_ECAI_CQS_MAPPING"
+      ],
+      "credit_quality": "BBB",
+      "cumulative_pnl": 0.0,
+      "currency": "EUR",
+      "default_direction": "LONG",
+      "desk_id": "eu-drc-desk",
+      "index_series_id": null,
+      "instrument_type": "BOND",
+      "issuer_id": "issuer-alpha",
+      "legal_entity": "bank-eu",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_eu_nonsec_v1.csv",
+        "source_row_id": "row-eu-corp-alpha-long",
+        "source_system": "synthetic"
+      },
+      "market_value": 100.0,
+      "maturity_years": 1.0,
+      "notional": 100.0,
+      "position_id": "eu-corp-alpha-long",
+      "risk_class": "NON_SECURITISATION",
+      "seniority": "SENIOR_DEBT",
+      "source_row_id": "row-eu-corp-alpha-long",
+      "tranche_id": null
+    },
+    {
+      "bucket_key": "CORPORATE",
+      "citation_ids": [
+        "EU_CRR3_ARTICLE_325W",
+        "EU_CRR3_ARTICLE_325Y_1_2",
+        "EU_CRR3_ARTICLE_325Y_6",
+        "EU_CRR3_ECAI_CQS_MAPPING"
+      ],
+      "credit_quality": "BBB",
+      "cumulative_pnl": 0.0,
+      "currency": "EUR",
+      "default_direction": "SHORT",
+      "desk_id": "eu-drc-desk",
+      "index_series_id": null,
+      "instrument_type": "BOND",
+      "issuer_id": "issuer-alpha",
+      "legal_entity": "bank-eu",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_eu_nonsec_v1.csv",
+        "source_row_id": "row-eu-corp-alpha-short",
+        "source_system": "synthetic"
+      },
+      "market_value": 40.0,
+      "maturity_years": 1.0,
+      "notional": 40.0,
+      "position_id": "eu-corp-alpha-short",
+      "risk_class": "NON_SECURITISATION",
+      "seniority": "SENIOR_DEBT",
+      "source_row_id": "row-eu-corp-alpha-short",
+      "tranche_id": null
+    },
+    {
+      "bucket_key": "CORPORATE",
+      "citation_ids": [
+        "EU_CRR3_ARTICLE_325W",
+        "EU_CRR3_ARTICLE_325Y_1_2",
+        "EU_CRR3_ARTICLE_325Y_6",
+        "EU_CRR3_ECAI_CQS_MAPPING"
+      ],
+      "credit_quality": "BBB",
+      "cumulative_pnl": 0.0,
+      "currency": "EUR",
+      "default_direction": "SHORT",
+      "desk_id": "eu-drc-desk",
+      "index_series_id": null,
+      "instrument_type": "BOND",
+      "issuer_id": "issuer-beta",
+      "legal_entity": "bank-eu",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_eu_nonsec_v1.csv",
+        "source_row_id": "row-eu-corp-beta-short",
+        "source_system": "synthetic"
+      },
+      "market_value": 20.0,
+      "maturity_years": 1.0,
+      "notional": 20.0,
+      "position_id": "eu-corp-beta-short",
+      "risk_class": "NON_SECURITISATION",
+      "seniority": "SENIOR_DEBT",
+      "source_row_id": "row-eu-corp-beta-short",
+      "tranche_id": null
+    },
+    {
+      "bucket_key": "SOVEREIGN",
+      "citation_ids": [
+        "EU_CRR3_ARTICLE_325W",
+        "EU_CRR3_ARTICLE_325Y_1_2",
+        "EU_CRR3_ARTICLE_325Y_6",
+        "EU_CRR3_ECAI_CQS_MAPPING"
+      ],
+      "credit_quality": "AA",
+      "cumulative_pnl": 0.0,
+      "currency": "EUR",
+      "default_direction": "LONG",
+      "desk_id": "eu-drc-desk",
+      "index_series_id": null,
+      "instrument_type": "BOND",
+      "issuer_id": "sovereign-a",
+      "legal_entity": "bank-eu",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_eu_nonsec_v1.csv",
+        "source_row_id": "row-eu-sovereign-long",
+        "source_system": "synthetic"
+      },
+      "market_value": 100.0,
+      "maturity_years": 1.0,
+      "notional": 100.0,
+      "position_id": "eu-sovereign-long",
+      "risk_class": "NON_SECURITISATION",
+      "seniority": "SENIOR_DEBT",
+      "source_row_id": "row-eu-sovereign-long",
+      "tranche_id": null
+    },
+    {
+      "bucket_key": "LOCAL_GOVERNMENT_MUNICIPAL",
+      "citation_ids": [
+        "EU_CRR3_ARTICLE_325W",
+        "EU_CRR3_ARTICLE_325X",
+        "EU_CRR3_ARTICLE_325Y_1_2",
+        "EU_CRR3_ARTICLE_325Y_6",
+        "EU_CRR3_ECAI_CQS_MAPPING"
+      ],
+      "credit_quality": "A",
+      "cumulative_pnl": 0.0,
+      "currency": "EUR",
+      "default_direction": "LONG",
+      "desk_id": "eu-drc-desk",
+      "index_series_id": null,
+      "instrument_type": "BOND",
+      "issuer_id": "municipality-a",
+      "legal_entity": "bank-eu",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_eu_nonsec_v1.csv",
+        "source_row_id": "row-eu-muni-short-maturity",
+        "source_system": "synthetic"
+      },
+      "market_value": 80.0,
+      "maturity_years": 0.1,
+      "notional": 80.0,
+      "position_id": "eu-muni-short-maturity",
+      "risk_class": "NON_SECURITISATION",
+      "seniority": "SENIOR_DEBT",
+      "source_row_id": "row-eu-muni-short-maturity",
+      "tranche_id": null
+    }
+  ]
+}

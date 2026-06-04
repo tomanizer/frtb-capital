@@ -19,12 +19,24 @@ from frtb_drc.data_models import (
     NetJtd,
 )
 from frtb_drc.reference_data import get_bucket_definition, get_risk_weight_rule
-from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.regimes import (
+    BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    US_NPR_2_0_PROFILE_ID,
+    ensure_risk_class_supported,
+    get_rule_profile,
+)
 from frtb_drc.validation import DrcInputError
 
-_HBR_CITATION = "US_NPR_210_A_2_IV_A"
-_BUCKET_CAPITAL_CITATION = "US_NPR_210_A_2_IV_C"
-_CATEGORY_CITATION = "US_NPR_210_B_3_III"
+_US_NPR_HBR_CITATION = "US_NPR_210_A_2_IV_A"
+_US_NPR_BUCKET_CAPITAL_CITATION = "US_NPR_210_A_2_IV_C"
+_US_NPR_CATEGORY_CITATION = "US_NPR_210_B_3_III"
+_BASEL_HBR_CITATION = "BASEL_MAR22_23"
+_BASEL_BUCKET_CAPITAL_CITATION = "BASEL_MAR22_25"
+_BASEL_CATEGORY_CITATION = "BASEL_MAR22_26"
+_EU_CRR3_HBR_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
+_EU_CRR3_BUCKET_CAPITAL_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
+_EU_CRR3_CATEGORY_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
 
 
 @dataclass(frozen=True)
@@ -47,6 +59,7 @@ def calculate_hedge_benefit_ratio(
     net_jtds: Iterable[NetJtd],
     *,
     bucket_key: str,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> HedgeBenefitRatio:
     """Calculate the bucket HBR from aggregate long and short net JTD."""
 
@@ -64,6 +77,7 @@ def calculate_hedge_benefit_ratio(
         if DefaultDirection(record.net_direction) == DefaultDirection.SHORT
     )
     denominator = aggregate_long + aggregate_short
+    hbr_citation = _hbr_citation(profile_id)
     branch_metadata: tuple[BranchMetadata, ...] = ()
     if denominator == 0.0:
         ratio = 0.0
@@ -74,7 +88,7 @@ def calculate_hedge_benefit_ratio(
                 source_id=bucket_key,
                 selected=True,
                 reason="aggregate net long and net short default exposures are both zero",
-                citations=(_HBR_CITATION,),
+                citations=(hbr_citation,),
             ),
         )
     else:
@@ -87,7 +101,7 @@ def calculate_hedge_benefit_ratio(
         aggregate_net_short=aggregate_short,
         denominator=denominator,
         ratio=ratio,
-        citations=(_HBR_CITATION,),
+        citations=(hbr_citation,),
         branch_metadata=branch_metadata,
     )
 
@@ -115,7 +129,8 @@ def calculate_bucket_drc(
 
     weighted_long = 0.0
     weighted_short = 0.0
-    citation_ids = {_BUCKET_CAPITAL_CITATION, bucket_definition.citation_id}
+    bucket_capital_citation = _bucket_capital_citation(profile.profile_id)
+    citation_ids = {bucket_capital_citation, bucket_definition.citation_id}
     net_records: list[NetJtd] = []
     for capital_input in records:
         net_jtd = capital_input.net_jtd
@@ -134,7 +149,11 @@ def calculate_bucket_drc(
             weighted_short += weighted_amount
         net_records.append(net_jtd)
 
-    hbr = calculate_hedge_benefit_ratio(net_records, bucket_key=resolved_bucket)
+    hbr = calculate_hedge_benefit_ratio(
+        net_records,
+        bucket_key=resolved_bucket,
+        profile_id=profile.profile_id,
+    )
     unfloored_capital = weighted_long - hbr.ratio * weighted_short
     floor_applied = unfloored_capital < 0.0
     capital = max(unfloored_capital, 0.0)
@@ -147,7 +166,7 @@ def calculate_bucket_drc(
                 source_id=resolved_bucket,
                 selected=True,
                 reason="non-securitisation bucket DRC is floored at zero",
-                citations=(_BUCKET_CAPITAL_CITATION,),
+                citations=(bucket_capital_citation,),
             ),
         )
 
@@ -198,10 +217,34 @@ def calculate_category_drc(
                 source_id=DrcRiskClass.NON_SECURITISATION.value,
                 selected=True,
                 reason="non-securitisation category DRC is the sum of bucket requirements",
-                citations=(_CATEGORY_CITATION,),
+                citations=(_category_citation(profile.profile_id),),
             ),
         ),
     )
+
+
+def _hbr_citation(profile_id: str) -> str:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_HBR_CITATION
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_HBR_CITATION
+    return _US_NPR_HBR_CITATION
+
+
+def _bucket_capital_citation(profile_id: str) -> str:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_BUCKET_CAPITAL_CITATION
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_BUCKET_CAPITAL_CITATION
+    return _US_NPR_BUCKET_CAPITAL_CITATION
+
+
+def _category_citation(profile_id: str) -> str:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_CATEGORY_CITATION
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_CATEGORY_CITATION
+    return _US_NPR_CATEGORY_CITATION
 
 
 def _validate_net_jtd(net_jtd: NetJtd, *, bucket_key: str) -> None:

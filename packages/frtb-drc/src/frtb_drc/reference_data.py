@@ -25,6 +25,7 @@ from frtb_drc.validation import (
 
 US_NPR_2_0_PROFILE_ID = "US_NPR_2_0"
 BASEL_MAR22_PROFILE_ID = "BASEL_MAR22"
+EU_CRR3_PROFILE_ID = "EU_CRR3"
 
 
 @dataclass(frozen=True)
@@ -372,6 +373,56 @@ _LGD_RULES = MappingProxyType(
             citation_id="BASEL_MAR22_12",
             description="Instrument value is not linked to issuer recovery.",
         ),
+        (
+            EU_CRR3_PROFILE_ID,
+            DrcSeniority.EQUITY,
+            False,
+        ): LgdRule(
+            seniority=DrcSeniority.EQUITY,
+            lgd_rate=1.00,
+            citation_id="EU_CRR3_ARTICLE_325W",
+            description="Equity instruments.",
+        ),
+        (
+            EU_CRR3_PROFILE_ID,
+            DrcSeniority.NON_SENIOR_DEBT,
+            False,
+        ): LgdRule(
+            seniority=DrcSeniority.NON_SENIOR_DEBT,
+            lgd_rate=1.00,
+            citation_id="EU_CRR3_ARTICLE_325W",
+            description="Non-senior debt instruments.",
+        ),
+        (
+            EU_CRR3_PROFILE_ID,
+            DrcSeniority.SENIOR_DEBT,
+            False,
+        ): LgdRule(
+            seniority=DrcSeniority.SENIOR_DEBT,
+            lgd_rate=0.75,
+            citation_id="EU_CRR3_ARTICLE_325W",
+            description="Senior debt instruments.",
+        ),
+        (
+            EU_CRR3_PROFILE_ID,
+            DrcSeniority.COVERED_BOND,
+            False,
+        ): LgdRule(
+            seniority=DrcSeniority.COVERED_BOND,
+            lgd_rate=0.25,
+            citation_id="EU_CRR3_ARTICLE_325W",
+            description="Covered bonds.",
+        ),
+        (
+            EU_CRR3_PROFILE_ID,
+            DrcSeniority.NOT_RECOVERY_LINKED,
+            False,
+        ): LgdRule(
+            seniority=DrcSeniority.NOT_RECOVERY_LINKED,
+            lgd_rate=0.00,
+            citation_id="EU_CRR3_ARTICLE_325W",
+            description="Instrument value is not linked to issuer recovery.",
+        ),
     }
 )
 
@@ -388,6 +439,12 @@ _MATURITY_POLICIES: Mapping[str, MaturityPolicy] = MappingProxyType(
             floor_years=0.25,
             full_weight_years=1.0,
             citation_id="BASEL_MAR22_15_18",
+        ),
+        EU_CRR3_PROFILE_ID: MaturityPolicy(
+            profile_id=EU_CRR3_PROFILE_ID,
+            floor_years=0.25,
+            full_weight_years=1.0,
+            citation_id="EU_CRR3_ARTICLE_325X",
         ),
     }
 )
@@ -448,6 +505,27 @@ _NONSEC_BUCKET_DEFINITIONS: dict[tuple[str, str], BucketDefinition] = {
         bucket_type=DrcBucketType.LOCAL_GOVERNMENT_MUNICIPAL,
         risk_class=DrcRiskClass.NON_SECURITISATION,
         citation_id="BASEL_MAR22_22",
+        description="Local government and municipal exposures.",
+    ),
+    (EU_CRR3_PROFILE_ID, "CORPORATE"): BucketDefinition(
+        bucket_key="CORPORATE",
+        bucket_type=DrcBucketType.CORPORATE,
+        risk_class=DrcRiskClass.NON_SECURITISATION,
+        citation_id="EU_CRR3_ARTICLE_325Y_1_2",
+        description="Corporate exposures.",
+    ),
+    (EU_CRR3_PROFILE_ID, "SOVEREIGN"): BucketDefinition(
+        bucket_key="SOVEREIGN",
+        bucket_type=DrcBucketType.SOVEREIGN,
+        risk_class=DrcRiskClass.NON_SECURITISATION,
+        citation_id="EU_CRR3_ARTICLE_325Y_1_2",
+        description="Sovereign exposures.",
+    ),
+    (EU_CRR3_PROFILE_ID, "LOCAL_GOVERNMENT_MUNICIPAL"): BucketDefinition(
+        bucket_key="LOCAL_GOVERNMENT_MUNICIPAL",
+        bucket_type=DrcBucketType.LOCAL_GOVERNMENT_MUNICIPAL,
+        risk_class=DrcRiskClass.NON_SECURITISATION,
+        citation_id="EU_CRR3_ARTICLE_325Y_1_2",
         description="Local government and municipal exposures.",
     ),
 }
@@ -607,6 +685,20 @@ _RISK_WEIGHT_RULES = MappingProxyType(
                 credit_quality=credit_quality,
                 risk_weight=risk_weight,
                 citation_id="BASEL_MAR22_24",
+            )
+            for bucket_key in (
+                "CORPORATE",
+                "SOVEREIGN",
+                "LOCAL_GOVERNMENT_MUNICIPAL",
+            )
+            for credit_quality, risk_weight in _BASEL_MAR22_RISK_WEIGHT_VALUES.items()
+        },
+        **{
+            (EU_CRR3_PROFILE_ID, bucket_key, credit_quality): RiskWeightRule(
+                bucket_key=bucket_key,
+                credit_quality=credit_quality,
+                risk_weight=risk_weight,
+                citation_id="EU_CRR3_ARTICLE_325Y_1_2",
             )
             for bucket_key in (
                 "CORPORATE",

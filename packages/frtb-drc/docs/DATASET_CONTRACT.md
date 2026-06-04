@@ -11,6 +11,9 @@ The committed fixture packs are:
   JTD, maturity scaling, netting, HBR, bucket capital, and category capital.
 - `drc_nonsec_v2/`: generated U.S. NPR 2.0 non-securitisation integration
   fixture with manifest checksums and broader deterministic coverage.
+- `drc_eu_nonsec_v1/`: static EU CRR3 non-securitisation cases covering
+  Article 325w gross JTD/LGD, Article 325x netting and maturity weighting,
+  Article 325y HBR/risk weights, and ECAI/CQS mapping citations.
 - `drc_sec_nonctp_v1/`: static U.S. NPR 2.0 securitisation non-CTP cases.
 - `drc_basel_sec_nonctp_v1/`: static Basel MAR22 securitisation non-CTP cases
   with typed MAR22.34 risk-weight evidence and fair-value cap evidence.
@@ -54,6 +57,14 @@ path for all DRC classes.
   hash, result JSON hash, and stage-level breakdowns.
 - `manifest.json`: fixture id, schema version, and SHA-256 checksums for the
   generated files.
+
+`packages/frtb-drc/tests/fixtures/drc_eu_nonsec_v1/` contains:
+
+- `positions.json`: static EU CRR3 non-securitisation positions and context.
+- `expected_outputs.json`: selected deterministic outputs across gross JTD,
+  maturity weighting, net JTD, bucket capital, category capital, citation ids,
+  and total DRC.
+- `README.md`: case-level intent and CRR3/ECAI citation ids.
 
 `packages/frtb-drc/tests/fixtures/drc_sec_nonctp_v1/` contains:
 
@@ -142,7 +153,7 @@ batch builders:
 
 | DRC class | Normalize | Build batch |
 | --- | --- | --- |
-| Non-securitisation | `normalize_drc_nonsec_arrow_table(...)` | `build_drc_nonsec_batch_from_arrow(...)` |
+| Non-securitisation | `normalize_drc_nonsec_arrow_table(...)` | `build_drc_nonsec_batch_from_arrow(..., profile_id=...)` |
 | Securitisation non-CTP | `normalize_drc_securitisation_non_ctp_arrow_table(...)` | `build_drc_securitisation_non_ctp_batch_from_arrow(...)` |
 | CTP | `normalize_drc_ctp_arrow_table(...)` | `build_drc_ctp_batch_from_arrow(...)` |
 
