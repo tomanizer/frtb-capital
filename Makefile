@@ -11,7 +11,7 @@ MUTATION_DIST := dist/mutation
 
 .PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
 .PHONY: test test-no-cov test-changed test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording docs-staleness
-.PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
+.PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check docstring-inventory drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
 .PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
@@ -91,6 +91,11 @@ import-smoke:
 maturity-check:
 	mkdir -p dist/quality
 	uv run python scripts/ci/check_package_maturity.py --json-output dist/quality/package-maturity.json
+
+docstring-inventory:
+	mkdir -p dist/quality
+	uv run python scripts/ci/check_docstring_inventory.py --quiet --json-output dist/quality/docstring-inventory.json
+	@echo "docstring inventory written to dist/quality/docstring-inventory.json"
 
 drift-check:
 	mkdir -p dist/quality
