@@ -576,15 +576,6 @@ def prorated_required_observation_count(
     return max(1, min(base_required_observations, prorated))
 
 
-def _legacy_bucket_representative(
-    risk_factor: RiskFactorDefinition,
-    evidence: RFETEvidence,
-) -> bool:
-    if risk_factor.bucket is None:
-        return True
-    return evidence.bucket_id == risk_factor.bucket.bucket_id
-
-
 def _representativeness_result(
     risk_factor: RiskFactorDefinition,
     evidence: RFETEvidence,
