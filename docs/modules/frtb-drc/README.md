@@ -92,3 +92,4 @@ batch audit boundaries, SA handoff):
 - [ADR 0036: DRC securitisation and CTP risk-weight evidence contract](../../decisions/0036-drc-securitisation-risk-weight-evidence.md)
 - [ADR 0030: DRC securitisation fair-value cap evidence](../../decisions/0030-drc-securitisation-fair-value-cap-evidence.md)
 - [ADR 0031: DRC attribution method contract](../../decisions/0031-drc-attribution-method-contract.md)
+- [ADR 0041: DRC EU CRR3 non-securitisation profile slice](../../decisions/0041-drc-eu-crr3-nonsec-profile.md)
