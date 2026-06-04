@@ -22,77 +22,53 @@ from datetime import date
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
 from frtb_common.contribution_bundle import ComponentContributionBundle
 
+from frtb_orchestration._suite_attribution import (
+    canonical_standardised_component as _canonical_standardised_component,
+)
+from frtb_orchestration._suite_attribution import (
+    require_supported_attribution_component_set as _require_supported_attribution_component_set,
+)
+from frtb_orchestration._suite_attribution import (
+    validate_component_bundles as _validate_component_bundles,
+)
+from frtb_orchestration._suite_attribution import (
+    within_attribution_tolerance as _within_attribution_tolerance,
+)
+from frtb_orchestration._suite_validation import (
+    assert_consistent_base_currency as _assert_consistent_base_currency,
+)
+from frtb_orchestration._suite_validation import (
+    assert_consistent_calculation_date as _assert_consistent_calculation_date,
+)
+from frtb_orchestration._suite_validation import (
+    assert_consistent_jurisdiction_family as _assert_consistent_jurisdiction_family,
+)
+from frtb_orchestration._suite_validation import (
+    default_suite_run_id as _default_suite_run_id,
+)
+from frtb_orchestration._suite_validation import (
+    suite_jurisdiction_family,
+)
+from frtb_orchestration._validation import (
+    OrchestrationInputError,
+)
+from frtb_orchestration._validation import (
+    require_non_empty_text as _require_non_empty_text,
+)
+from frtb_orchestration._validation import (
+    require_non_negative_finite_number as _require_non_negative_finite_number,
+)
+from frtb_orchestration._validation import (
+    require_text_tuple as _require_text_tuple,
+)
+from frtb_orchestration._validation import (
+    require_tuple_of as _require_tuple_of,
+)
 from frtb_orchestration.cva_summary import CvaCapitalSummary
 from frtb_orchestration.ima_summary import ImaCapitalSummary
 from frtb_orchestration.standardised import (
-    OrchestrationInputError,
     StandardisedApproachCapitalResult,
 )
-
-# Suite-level jurisdiction family map. Extends the SA-internal _SA_JURISDICTION_FAMILY
-# table to cover IMA regime identifiers and CVA profile identifiers.
-# IMA: MAR31-MAR33 regime names; CVA: MAR50 profile names.
-_SUITE_PROFILE_FAMILY: dict[str, str] = {
-    # SA profiles (ADR 0022)
-    "BASEL_MAR21": "BASEL",
-    "BASEL_MAR22": "BASEL",
-    "BASEL_MAR23": "BASEL",
-    "US_NPR_2_0": "US_NPR",
-    "EU_CRR3": "EU_CRR3",
-    # IMA regimes (MAR31 / NPR 2.0 / CRR3)
-    "FED_NPR_2_0": "US_NPR",
-    "ECB_CRR3": "EU_CRR3",
-    "PRA_UK_CRR": "BASEL",
-    # CVA profiles (MAR50)
-    "BASEL_MAR50_2020": "BASEL",
-    "US_NPR20_VB": "US_NPR",
-    "EU_CRR3_CVA": "EU_CRR3",
-    "UK_PRA_CVA": "BASEL",
-}
-
-_ATTRIBUTION_RECONCILIATION_TOLERANCE = 1e-6
-
-_COMPONENT_LABEL_ALIASES: dict[str, str] = {
-    "ima": "frtb_ima",
-    "frtb_ima": "frtb_ima",
-    "frtb_ima_package": "frtb_ima",
-    "frtb_ima_component": "frtb_ima",
-    "sa": "frtb_sa",
-    "standardised": "frtb_sa",
-    "standardised_approach": "frtb_sa",
-    "frtb_sa": "frtb_sa",
-    "frtb_standardised": "frtb_sa",
-    "sbm": "frtb_sbm",
-    "frtb_sbm": "frtb_sbm",
-    "drc": "frtb_drc",
-    "frtb_drc": "frtb_drc",
-    "rrao": "frtb_rrao",
-    "frtb_rrao": "frtb_rrao",
-    "cva": "frtb_cva",
-    "frtb_cva": "frtb_cva",
-}
-
-_TOP_LEVEL_ATTRIBUTION_COMPONENTS = ("frtb_ima", "frtb_sa", "frtb_cva")
-_DECOMPOSED_ATTRIBUTION_COMPONENTS = (
-    "frtb_ima",
-    "frtb_sbm",
-    "frtb_drc",
-    "frtb_rrao",
-    "frtb_cva",
-)
-
-
-def suite_jurisdiction_family(profile_id: str) -> str:
-    """Return the suite-level jurisdiction family for a profile or regime id."""
-
-    family = _SUITE_PROFILE_FAMILY.get(profile_id)
-    if family is None:
-        raise OrchestrationInputError(
-            f"profile_id {profile_id!r} is not recognised as a known suite "
-            "jurisdiction profile; expected one of: " + ", ".join(sorted(_SUITE_PROFILE_FAMILY)),
-            field="profile_id",
-        )
-    return family
 
 
 @dataclass(frozen=True)
@@ -448,71 +424,6 @@ def _build_suite_capital_result(
     )
 
 
-def _assert_consistent_calculation_date(
-    ima: ImaCapitalSummary,
-    sa: StandardisedApproachCapitalResult,
-    cva: CvaCapitalSummary,
-) -> None:
-    ima_date = _as_date(ima.calculation_date)
-    sa_date = _as_date(sa.calculation_date)
-    cva_date = _as_date(cva.calculation_date)
-    dates = {ima_date, sa_date, cva_date}
-    if len(dates) > 1:
-        detail = f"IMA={ima_date.isoformat()}, SA={sa_date.isoformat()}, CVA={cva_date.isoformat()}"
-        raise OrchestrationInputError(
-            "all suite components must share the same calculation_date; "
-            f"mixed dates supplied: {detail}",
-            field="calculation_date",
-        )
-
-
-def _assert_consistent_base_currency(
-    ima: ImaCapitalSummary,
-    sa: StandardisedApproachCapitalResult,
-    cva: CvaCapitalSummary,
-) -> None:
-    currencies = {ima.base_currency, sa.base_currency, cva.base_currency}
-    if len(currencies) > 1:
-        detail = f"IMA={ima.base_currency!r}, SA={sa.base_currency!r}, CVA={cva.base_currency!r}"
-        raise OrchestrationInputError(
-            "all suite components must share the same base_currency; "
-            f"mixed currencies supplied: {detail}",
-            field="base_currency",
-        )
-
-
-def _assert_consistent_jurisdiction_family(
-    ima: ImaCapitalSummary,
-    sa: StandardisedApproachCapitalResult,
-    cva: CvaCapitalSummary,
-) -> str:
-    ima_family = suite_jurisdiction_family(ima.profile_id)
-    cva_family = suite_jurisdiction_family(cva.profile_id)
-    sa_family = sa.jurisdiction_family
-
-    families = {ima_family, sa_family, cva_family}
-    if len(families) > 1:
-        detail = (
-            f"IMA({ima.profile_id!r})={ima_family!r}, "
-            f"SA={sa_family!r}, "
-            f"CVA({cva.profile_id!r})={cva_family!r}"
-        )
-        raise OrchestrationInputError(
-            "all suite components must share the same regulatory jurisdiction family; "
-            f"mixed families supplied: {detail}",
-            field="profile_id",
-        )
-    return families.pop()
-
-
-def _default_suite_run_id(
-    ima: ImaCapitalSummary,
-    sa: StandardisedApproachCapitalResult,
-    cva: CvaCapitalSummary,
-) -> str:
-    return f"suite:{ima.run_id}:{sa.run_id}:{cva.run_id}"
-
-
 def _expected_component_capitals(result: SuiteCapitalResult) -> dict[str, float]:
     component_capitals = {
         "frtb_ima": result.ima_capital,
@@ -524,84 +435,6 @@ def _expected_component_capitals(result: SuiteCapitalResult) -> dict[str, float]
             subtotal.total_capital
         )
     return component_capitals
-
-
-def _validate_component_bundles(
-    component_bundles: tuple[ComponentContributionBundle, ...],
-    component_capitals: dict[str, float],
-) -> tuple[str, ...]:
-    canonical_components: list[str] = []
-    seen: set[str] = set()
-    for bundle in component_bundles:
-        component = _canonical_component_label(bundle.component)
-        if component in seen:
-            raise OrchestrationInputError(
-                f"duplicate contribution bundle for component {bundle.component!r}",
-                field="component_bundles",
-            )
-        expected_total = component_capitals.get(component)
-        if expected_total is None:
-            raise OrchestrationInputError(
-                f"component contribution bundle {bundle.component!r} is not recognised "
-                "for suite attribution",
-                field="component_bundles",
-            )
-        if not _within_attribution_tolerance(bundle.component_total, expected_total):
-            raise OrchestrationInputError(
-                f"component contribution bundle {bundle.component!r} has component_total "
-                f"{bundle.component_total:.6g}, expected {expected_total:.6g}",
-                field="component_bundles",
-            )
-        canonical_components.append(component)
-        seen.add(component)
-    return tuple(canonical_components)
-
-
-def _require_supported_attribution_component_set(canonical_components: tuple[str, ...]) -> None:
-    component_set = set(canonical_components)
-    allowed_sets = (
-        set(_TOP_LEVEL_ATTRIBUTION_COMPONENTS),
-        set(_DECOMPOSED_ATTRIBUTION_COMPONENTS),
-    )
-    if component_set not in allowed_sets:
-        expected = " or ".join(
-            ", ".join(components)
-            for components in (
-                _TOP_LEVEL_ATTRIBUTION_COMPONENTS,
-                _DECOMPOSED_ATTRIBUTION_COMPONENTS,
-            )
-        )
-        actual = ", ".join(sorted(component_set)) or "<empty>"
-        raise OrchestrationInputError(
-            "component_bundles must contain exactly one complete suite attribution "
-            f"component set; got {actual}, expected {expected}",
-            field="component_bundles",
-        )
-
-
-def _canonical_component_label(component: object, field: str = "component_bundles") -> str:
-    if not isinstance(component, str) or not component:
-        raise OrchestrationInputError(
-            f"{field} component must be non-empty text",
-            field=field,
-        )
-    normalised = component.strip().lower().replace("-", "_")
-    canonical = _COMPONENT_LABEL_ALIASES.get(normalised)
-    if canonical is None:
-        raise OrchestrationInputError(
-            f"{field} component {component!r} is not recognised",
-            field=field,
-        )
-    return canonical
-
-
-def _canonical_standardised_component(component: str) -> str:
-    return _canonical_component_label(component, field="component_subtotals")
-
-
-def _within_attribution_tolerance(actual: float, expected: float) -> bool:
-    tolerance = _ATTRIBUTION_RECONCILIATION_TOLERANCE * max(abs(expected), 1.0)
-    return abs(actual - expected) <= tolerance
 
 
 def _unique_texts(values: list[str]) -> tuple[str, ...]:
@@ -622,39 +455,6 @@ def _cva_summary_as_dict(summary: CvaCapitalSummary) -> dict[str, object]:
         "citations": list(summary.citations),
         "warnings": list(summary.warnings),
     }
-
-
-def _as_date(value: date) -> date:
-    return value.date() if hasattr(value, "date") else value
-
-
-def _require_non_empty_text(value: object, field: str) -> None:
-    if not isinstance(value, str) or not value:
-        raise OrchestrationInputError(f"{field} must be non-empty text", field=field)
-
-
-def _require_non_negative_finite_number(value: object, field: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise OrchestrationInputError(f"{field} must be numeric", field=field)
-    number = float(value)
-    if not math.isfinite(number):
-        raise OrchestrationInputError(f"{field} must be finite", field=field)
-    if number < 0.0:
-        raise OrchestrationInputError(f"{field} must be non-negative", field=field)
-    return number
-
-
-def _require_text_tuple(value: object, field: str) -> None:
-    if not isinstance(value, tuple) or not all(isinstance(item, str) for item in value):
-        raise OrchestrationInputError(f"{field} must be a tuple of text values", field=field)
-
-
-def _require_tuple_of(value: object, expected_type: type[object], field: str) -> None:
-    if not isinstance(value, tuple) or not all(isinstance(item, expected_type) for item in value):
-        raise OrchestrationInputError(
-            f"{field} must be a tuple of {expected_type.__name__} values",
-            field=field,
-        )
 
 
 __all__ = [

@@ -2,11 +2,27 @@
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from datetime import date
 
-from frtb_orchestration.standardised import OrchestrationInputError
+from frtb_orchestration._validation import (
+    optional_object_attr as _optional_object_attr,
+)
+from frtb_orchestration._validation import (
+    optional_sequence_attr as _optional_sequence_attr,
+)
+from frtb_orchestration._validation import (
+    required_date_attr as _required_date_attr,
+)
+from frtb_orchestration._validation import (
+    required_finite_number_attr as _required_finite_number_attr,
+)
+from frtb_orchestration._validation import (
+    required_text_attr as _required_text_attr,
+)
+from frtb_orchestration._validation import (
+    text_tuple_attr as _text_tuple_attr,
+)
 
 
 @dataclass(frozen=True)
@@ -81,76 +97,6 @@ def recognise_cva_summary(result: object) -> CvaCapitalSummary:
         citations=_text_tuple_attr(result, "citations", component="CVA"),
         warnings=_text_tuple_attr(result, "warnings", component="CVA"),
     )
-
-
-def _required_text_attr(result: object, field: str, *, component: str) -> str:
-    if not hasattr(result, field):
-        raise OrchestrationInputError(
-            f"{component} result missing required field {field}",
-            field=field,
-        )
-    value = getattr(result, field)
-    if not isinstance(value, str) or not value:
-        raise OrchestrationInputError(
-            f"{component} result field {field} must be a non-empty string",
-            field=field,
-        )
-    return value
-
-
-def _required_date_attr(result: object, field: str, *, component: str) -> date:
-    if not hasattr(result, field):
-        raise OrchestrationInputError(
-            f"{component} result missing required field {field}",
-            field=field,
-        )
-    value = getattr(result, field)
-    if not isinstance(value, date):
-        raise OrchestrationInputError(
-            f"{component} result field {field} must be a date",
-            field=field,
-        )
-    return value
-
-
-def _required_finite_number_attr(result: object, field: str, *, component: str) -> float:
-    if not hasattr(result, field):
-        raise OrchestrationInputError(
-            f"{component} result missing required field {field}",
-            field=field,
-        )
-    value = getattr(result, field)
-    if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
-        raise OrchestrationInputError(
-            f"{component} result field {field} must be a finite number",
-            field=field,
-        )
-    return float(value)
-
-
-def _optional_object_attr(result: object, field: str, *, component: str) -> object | None:
-    if not hasattr(result, field):
-        return None
-    val: object | None = getattr(result, field)
-    return val
-
-
-def _optional_sequence_attr(result: object, field: str, *, component: str) -> tuple[object, ...]:
-    if not hasattr(result, field):
-        return ()
-    value = getattr(result, field)
-    if value is None:
-        return ()
-    return tuple(value)
-
-
-def _text_tuple_attr(result: object, field: str, *, component: str) -> tuple[str, ...]:
-    if not hasattr(result, field):
-        return ()
-    value = getattr(result, field)
-    if value is None:
-        return ()
-    return tuple(str(item) for item in value)
 
 
 __all__ = [
