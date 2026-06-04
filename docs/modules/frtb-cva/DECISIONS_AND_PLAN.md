@@ -1,10 +1,10 @@
 # frtb-cva decisions and implementation plan
 
 This document records the historical v1 implementation plan and current
-remaining boundaries. The Basel MAR50 partial-runtime path now includes reduced
-and full BA-CVA, supported SA-CVA delta/vega paths, mixed carve-out,
-qualified-index routing, adapters, attribution, impact, performance controls,
-and audit/replay evidence. U.S., EU, and UK comparison profiles are
+remaining boundaries. The implemented Basel MAR50 package-owned scope now
+includes reduced and full BA-CVA, supported SA-CVA delta/vega paths, mixed
+carve-out, qualified-index routing, adapters, attribution, impact, performance
+controls, and audit/replay evidence. U.S., EU, and UK comparison profiles are
 capital-producing under audit with profile-owned citations and hashes. MAR50.9
 and analogous CCR-substitution alternatives remain fail-closed.
 
@@ -182,7 +182,7 @@ contracts are still required before SA-CVA and full BA-CVA capital paths.
 
 | Profile id | Status in v1 | Notes |
 | --- | --- | --- |
-| `BASEL_MAR50_2020` | Capital-producing partial runtime | July 2020 calibration: `m_CVA = 1.0`, `D_BA-CVA = 0.65`; MAR50.9 remains unsupported. |
+| `BASEL_MAR50_2020` | Capital-producing implemented package-owned scope | July 2020 calibration: `m_CVA = 1.0`, `D_BA-CVA = 0.65`; MAR50.9 remains unsupported. |
 | `US_NPR20_VB` | Capital-producing comparison profile under audit | U.S. NPR 2.0 91 FR 14952 section V.B is proposed-rule material. |
 | `EU_CRR3_CVA` | Capital-producing comparison profile under audit | Regulation (EU) 2024/1623 Articles 381–386 and inserted Articles 383a–383z; ECB shorthand routes here. |
 | `UK_PRA_CVA` | Capital-producing comparison profile under audit | PRA PS1/26 and PRA Rulebook CVA Risk Part; effective-date metadata is 1 January 2027. |
@@ -201,8 +201,8 @@ package-boundary and attribution rules (ADR 0012).
 capital. Future work requires an ADR, orchestration handoff, and deterministic
 fixtures. Package maturity promotion may proceed without implementing MAR50.9
 because the promoted scope is limited to package-owned BA-CVA, SA-CVA, mixed
-carve-out, profile, batch, and audit mechanics. Full design:
-[DESIGN_AUDIT_IMP_005.md](DESIGN_AUDIT_IMP_005.md).
+carve-out, profile, batch, and audit mechanics. ADR 0043 records that maturity
+promotion boundary. Full design: [DESIGN_AUDIT_IMP_005.md](DESIGN_AUDIT_IMP_005.md).
 
 Basel anchor: MAR50.9.
 

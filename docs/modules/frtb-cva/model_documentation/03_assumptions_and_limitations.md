@@ -2,16 +2,15 @@
 
 ## Implemented Scope
 
-The package is partial runtime for `BASEL_MAR50_2020`, `US_NPR20_VB`,
-`EU_CRR3_CVA`, and `UK_PRA_CVA`. It supports reduced and full BA-CVA, supported
-SA-CVA delta/vega risk classes, mixed carve-out, qualified-index routing where
-metadata is supplied, and package-owned batch and Arrow batches. Non-Basel
-profiles are comparison profiles with profile-owned citations and hashes; U.S.
-NPR 2.0 remains proposed-rule material, and ECB shorthand routes to
-`EU_CRR3_CVA`.
+The package-owned CVA calculation scope is implemented for `BASEL_MAR50_2020`,
+`US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA`. It supports reduced and full
+BA-CVA, supported SA-CVA delta/vega risk classes, mixed carve-out,
+qualified-index routing where metadata is supplied, and package-owned batch,
+Arrow, audit, replay, attribution, and impact helpers. Non-Basel profiles are
+comparison profiles with profile-owned citations and hashes; U.S. NPR 2.0
+remains proposed-rule material, and ECB shorthand routes to `EU_CRR3_CVA`.
 
-This is the implemented-scope candidate for package maturity promotion. The
-promotion boundary is limited to package-owned CVA capital mechanics and
+The validation status is available for package-owned CVA capital mechanics and
 handoff/audit helpers. It excludes CCR-substitution alternatives, supervisory
 approval workflow, legal interpretation, production source-data controls, and
 final regulatory capital reporting.
@@ -25,11 +24,10 @@ The following paths fail closed:
 - CCS vega capital, because MAR50.45 and MAR50.63 define CCS delta but no CCS
   vega capital path.
 
-The maturity promotion can proceed without implementing MAR50.9 or analogous
-CCR-substitution alternatives if those alternatives remain explicit
-`unsupported_fail_closed` support-matrix rows. Implementing them later requires
-a separate ADR for the upstream CCR capital input contract and orchestration
-method election.
+The implemented status does not include MAR50.9 or analogous CCR-substitution
+alternatives. Those paths remain explicit `unsupported_fail_closed`
+support-matrix rows. Implementing them later requires a separate ADR for the
+upstream CCR capital input contract and orchestration method election.
 
 ## Out-Of-Scope Boundaries
 
@@ -52,6 +50,6 @@ inputs, hedge eligibility, or qualified-index metadata.
 ## Validation Limits
 
 The evidence is deterministic and synthetic. It demonstrates reproducible
-calculation mechanics for supported inputs, but not production source-data
-quality, legal interpretation, supervisory approval, or final regulatory
-capital.
+package-owned calculation mechanics for supported inputs, but not production
+source-data quality, legal interpretation, supervisory approval, production
+monitoring, or final regulatory capital.

@@ -1,9 +1,9 @@
 # FRTB-CVA Model Documentation Pack
 
-This pack documents the current partial-runtime `frtb-cva` scope for model
-validation, engineering review, and audit planning. It complements the planning
-documents under `docs/modules/frtb-cva/` and package evidence under
-`packages/frtb-cva/docs/`.
+This pack documents the current implemented package-owned `frtb-cva` calculation
+scope for model validation, engineering review, and audit planning. It
+complements the planning documents under `docs/modules/frtb-cva/` and package
+evidence under `packages/frtb-cva/docs/`.
 
 Outputs are synthetic validation and engineering evidence for supported Basel
 MAR50 paths. They are not final regulatory capital.

@@ -20,12 +20,18 @@ Issue #568 extends this design by making `US_NPR20_VB`, `EU_CRR3_CVA`, and
 profile-owned citations and hashes. References to those profiles failing closed
 below describe the pre-#568 baseline.
 
+Issue #630 supersedes this design's maturity boundary by promoting the
+package-owned CVA calculation scope to `implemented` maturity with
+`ValidationStatus.AVAILABLE`. Production regulatory capital claims remain out
+of scope.
+
 ---
 
 ## 1. Problem statement
 
 The CVA audit ([#495](https://github.com/tomanizer/frtb-capital/issues/495)) found
-substantial Basel MAR50 coverage, but the package remains `partial_runtime` because:
+substantial Basel MAR50 coverage, but at that point the package remained
+`partial_runtime` because:
 
 1. **Comparison profiles** (`US_NPR20_VB`, `EU_CRR3_CVA`, `UK_PRA_CVA`) needed
    profile-owned citations, reference payloads, support-matrix rows, and
@@ -52,9 +58,10 @@ and replay hashes must remain unchanged.
 | G4 | No silent Basel calibration on U.S./EU/UK profiles | Profile-specific `reference_data` or fail closed |
 | G5 | `make quality-control` and all CVA tests pass | CI green |
 
-### Non-goals (this epic)
+### Non-goals (this historical epic)
 
-- Production regulatory capital claims or clearing `validation_status` from `PENDING`.
+- Production regulatory capital claims. Clearing `validation_status` from
+  `PENDING` was out of scope for AUDIT-IMP-005 and was handled later by #630.
 - Claiming final U.S./EU/UK regulatory capital beyond cited comparison-profile evidence.
 - CCR capital engine inside `frtb-cva` (MAR50.9 depends on external CCR totals).
 - Orchestration-level SA composition changes (`frtb-orchestration` stays out of scope unless ADR).

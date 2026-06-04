@@ -648,7 +648,7 @@ approved.
 
 ## Current implementation acceptance criteria
 
-The current Basel MAR50 partial-runtime slice is complete only when:
+The current Basel MAR50 package-owned implemented scope is complete only when:
 
 - canonical counterparty and netting-set records validate and normalise;
 - reduced and full BA-CVA run through one public API using cited Table 1 risk

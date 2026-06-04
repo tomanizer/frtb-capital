@@ -2,9 +2,9 @@
 
 Credit Valuation Adjustment capital for the `frtb-capital` suite.
 
-The package implements a **partial** CVA capital slice anchored to Basel MAR50,
-with profile-owned citations and hashes for U.S. NPR 2.0, EU CRR3, and UK PRA
-comparison profiles:
+The package implements the package-owned CVA capital scope anchored to Basel
+MAR50, with profile-owned citations and hashes for U.S. NPR 2.0, EU CRR3, and
+UK PRA comparison profiles:
 
 - **Reduced BA-CVA** (MAR50.14-MAR50.16): stand-alone and portfolio aggregation
   with cited Table 1 risk weights, `alpha`, `rho`, and `D_BA-CVA`.
