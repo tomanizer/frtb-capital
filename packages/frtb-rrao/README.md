@@ -43,6 +43,7 @@ Planning documents:
 Package-local regulatory documentation:
 
 - [Package journey](docs/PACKAGE_JOURNEY.md) — end-to-end client flow, tiers, profile/evidence routing, orchestration boundaries
+- [Capital attribution](ATTRIBUTION.md) — additive allocation method, supported dimensions, and limitations
 - [Regulatory traceability](docs/REGULATORY_TRACEABILITY.md)
 - [Regulatory assumptions](docs/REGULATORY_ASSUMPTIONS.md)
 - [Regulatory sources](docs/regulatory_sources.yml)

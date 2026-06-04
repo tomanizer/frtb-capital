@@ -35,6 +35,7 @@ matrix in [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md).
 | [PUBLIC_API.md](../../docs/modules/frtb-sbm/PUBLIC_API.md) | Stable client integration surface, handoff specs, and top-level imports |
 | [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md) | Code-to-regulation map and phase-1 support status |
 | [REGULATORY_ASSUMPTIONS.md](docs/REGULATORY_ASSUMPTIONS.md) | Source-cited implementation boundaries |
+| [ATTRIBUTION.md](ATTRIBUTION.md) | Capital attribution method, inputs, supported grains, and limitations |
 | [regulatory_sources.yml](docs/regulatory_sources.yml) | Link-only regulatory source manifest |
 | [SBM batch/Arrow performance report](../../docs/performance/frtb-sbm-batch-arrow-report.md) | High-volume handoff benchmark evidence and remaining performance boundaries |
 | [Module planning pack](../../docs/modules/frtb-sbm/README.md) | PRD, architecture, requirements registry |
