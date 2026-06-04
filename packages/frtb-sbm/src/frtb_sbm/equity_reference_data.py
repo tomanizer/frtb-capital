@@ -109,7 +109,16 @@ _EQUITY_SPOT_SPOT_CORRELATIONS: dict[str, float] = {
 def equity_buckets_for_profile(
     profile: SbmRegulatoryProfile | str,
 ) -> tuple[SbmEquityBucketDefinition, ...]:
-    """Return cited equity bucket definitions for a supported profile."""
+    """Return cited equity bucket definitions for a supported profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmEquityBucketDefinition, ...]
+    """
 
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     _ensure_equity_delta_supported(profile)
@@ -120,7 +129,18 @@ def equity_bucket_definition(
     profile: SbmRegulatoryProfile | str,
     bucket_id: str,
 ) -> SbmEquityBucketDefinition:
-    """Return the equity bucket definition for a canonical bucket id."""
+    """Return the equity bucket definition for a canonical bucket id.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket_id : str
+        See signature.
+
+    Returns
+    -------
+    SbmEquityBucketDefinition
+    """
 
     _ensure_equity_delta_supported(profile)
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
@@ -140,7 +160,20 @@ def equity_delta_risk_weight(
     bucket_id: str,
     risk_factor: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited equity delta risk weight for spot or repo sensitivities."""
+    """Return the cited equity delta risk weight for spot or repo sensitivities.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket_id : str
+        See signature.
+    risk_factor : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_equity_delta_supported(profile)
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
@@ -168,7 +201,16 @@ def equity_delta_intra_bucket_correlation(
     issuer_a: str,
     issuer_b: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return MAR21.78 intra-bucket correlation for two weighted equity sensitivities."""
+    """Return MAR21.78 intra-bucket correlation for two weighted equity sensitivities.
+    Parameters
+    ----------
+    profile, bucket_id, risk_factor_a, risk_factor_b, issuer_a, issuer_b :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_equity_delta_supported(profile)
     normalised_bucket = _require_text(bucket_id, "bucket_id")
@@ -201,7 +243,20 @@ def equity_inter_bucket_correlation(
     bucket1: str,
     bucket2: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return MAR21.80 inter-bucket gamma for two equity buckets."""
+    """Return MAR21.80 inter-bucket gamma for two equity buckets.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket1 : str
+        See signature.
+    bucket2 : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_equity_delta_supported(profile)
     b1 = _require_equity_bucket_number(bucket1)
@@ -220,7 +275,16 @@ def equity_inter_bucket_correlation(
 
 
 def equity_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:
-    """Return equity tables for profile hashing."""
+    """Return equity tables for profile hashing.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    dict[str, object]
+    """
 
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     _ensure_equity_delta_supported(profile)

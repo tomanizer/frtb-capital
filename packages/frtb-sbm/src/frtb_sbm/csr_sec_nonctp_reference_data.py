@@ -131,7 +131,16 @@ _PROFILE_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmCsrSecNonctpBucketDefiniti
 def csr_sec_nonctp_buckets_for_profile(
     profile: SbmRegulatoryProfile | str,
 ) -> tuple[SbmCsrSecNonctpBucketDefinition, ...]:
-    """Return cited CSR securitisation non-CTP bucket definitions."""
+    """Return cited CSR securitisation non-CTP bucket definitions.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmCsrSecNonctpBucketDefinition, ...]
+    """
 
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     _ensure_csr_sec_nonctp_delta_supported(profile)
@@ -142,7 +151,18 @@ def csr_sec_nonctp_bucket_definition(
     profile: SbmRegulatoryProfile | str,
     bucket_id: str,
 ) -> SbmCsrSecNonctpBucketDefinition:
-    """Return the CSR securitisation non-CTP bucket definition for a bucket id."""
+    """Return the CSR securitisation non-CTP bucket definition for a bucket id.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket_id : str
+        See signature.
+
+    Returns
+    -------
+    SbmCsrSecNonctpBucketDefinition
+    """
 
     _ensure_csr_sec_nonctp_delta_supported(profile)
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
@@ -159,7 +179,16 @@ def csr_sec_nonctp_bucket_definition(
 def csr_sec_nonctp_prescribed_tenors(
     profile: SbmRegulatoryProfile | str,
 ) -> frozenset[str]:
-    """Return prescribed CSR securitisation non-CTP delta tenors."""
+    """Return prescribed CSR securitisation non-CTP delta tenors.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    frozenset[str]
+    """
 
     _ensure_csr_sec_nonctp_delta_supported(profile)
     del profile
@@ -174,7 +203,12 @@ def csr_sec_nonctp_validate_delta_inputs(
     tenor: str,
     qualifier: str,
 ) -> None:
-    """Validate CSR securitisation non-CTP delta lookup inputs."""
+    """Validate CSR securitisation non-CTP delta lookup inputs.
+    Parameters
+    ----------
+    profile, bucket_id, risk_factor, tenor, qualifier :
+        See function signature for types and defaults.
+    """
 
     _ensure_csr_sec_nonctp_delta_supported(profile)
     csr_sec_nonctp_bucket_definition(profile, bucket_id)
@@ -191,7 +225,12 @@ def csr_sec_nonctp_validate_vega_inputs(
     risk_factor: str,
     qualifier: str,
 ) -> None:
-    """Validate CSR securitisation non-CTP vega lookup inputs."""
+    """Validate CSR securitisation non-CTP vega lookup inputs.
+    Parameters
+    ----------
+    profile, bucket_id, risk_factor, qualifier :
+        See function signature for types and defaults.
+    """
 
     _ensure_csr_sec_nonctp_delta_supported(profile)
     csr_sec_nonctp_bucket_definition(profile, bucket_id)
@@ -205,7 +244,18 @@ def csr_sec_nonctp_delta_risk_weight(
     *,
     bucket_id: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited CSR securitisation non-CTP delta risk weight."""
+    """Return the cited CSR securitisation non-CTP delta risk weight.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     bucket = csr_sec_nonctp_bucket_definition(profile, bucket_id)
     return bucket.risk_weight, (bucket.citation_id, _WEIGHT_CITATION)
@@ -222,7 +272,16 @@ def csr_sec_nonctp_delta_intra_bucket_correlation(
     risk_factor_a: str,
     risk_factor_b: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited CSR securitisation non-CTP intra-bucket correlation."""
+    """Return the cited CSR securitisation non-CTP intra-bucket correlation.
+    Parameters
+    ----------
+    profile, bucket_id, tranche_a, tranche_b, tenor_a, tenor_b, risk_factor_a, risk_factor_b :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_csr_sec_nonctp_delta_supported(profile)
     bucket = csr_sec_nonctp_bucket_definition(profile, bucket_id)
@@ -255,7 +314,20 @@ def csr_sec_nonctp_inter_bucket_correlation(
     bucket1: str,
     bucket2: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited CSR securitisation non-CTP inter-bucket correlation."""
+    """Return the cited CSR securitisation non-CTP inter-bucket correlation.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket1 : str
+        See signature.
+    bucket2 : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_csr_sec_nonctp_delta_supported(profile)
     del bucket1, bucket2
@@ -263,7 +335,16 @@ def csr_sec_nonctp_inter_bucket_correlation(
 
 
 def csr_sec_nonctp_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:
-    """Return CSR securitisation non-CTP tables for profile hashing."""
+    """Return CSR securitisation non-CTP tables for profile hashing.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    dict[str, object]
+    """
 
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     _ensure_csr_sec_nonctp_delta_supported(profile)

@@ -6,7 +6,16 @@ from collections.abc import Iterable
 
 
 def merge_citation_groups(groups: Iterable[Iterable[str]]) -> tuple[str, ...]:
-    """Return citation ids from an iterable of citation groups."""
+    """Return citation ids from an iterable of citation groups.
+    Parameters
+    ----------
+    groups : Iterable[Iterable[str]]
+        See signature.
+
+    Returns
+    -------
+    tuple[str, ...]
+    """
 
     merged: list[str] = []
     seen: set[str] = set()
@@ -19,6 +28,15 @@ def merge_citation_groups(groups: Iterable[Iterable[str]]) -> tuple[str, ...]:
 
 
 def merge_citation_ids(*groups: tuple[str, ...]) -> tuple[str, ...]:
-    """Return citation ids in first-seen order with duplicates removed."""
+    """Return citation ids in first-seen order with duplicates removed.
+    Parameters
+    ----------
+    *groups : tuple[str, ...]
+        See signature.
+
+    Returns
+    -------
+    tuple[str, ...]
+    """
 
     return merge_citation_groups(groups)

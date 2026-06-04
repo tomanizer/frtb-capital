@@ -25,7 +25,11 @@ class GirrDeltaFactorKey:
     tenor: str
 
     def as_tuple(self) -> tuple[str, str, str]:
-        """Return the stable tuple form used in audit payloads."""
+        """Return the stable tuple form used in audit payloads.
+        Returns
+        -------
+        tuple[str, str, str]
+        """
 
         return (self.bucket, self.risk_factor, self.tenor)
 
@@ -45,13 +49,22 @@ def net_girr_delta_weighted_sensitivities(
     sensitivities: Sequence[SbmSensitivity],
     weighted_sensitivities: Sequence[WeightedSensitivity],
 ) -> GirrDeltaNettedFactorGrid:
-    """
-    Net GIRR delta weighted sensitivities to distinct regulatory factor keys.
+    """Net GIRR delta weighted sensitivities to distinct regulatory factor keys.
 
     Netting is exact for duplicate bucket/risk-factor/tenor rows because their
     mutual correlation and their correlations to every other factor are
     identical. The input hash remains tied to the original row sensitivities;
     this helper only changes the internal aggregation grid.
+    Parameters
+    ----------
+    sensitivities : Sequence[SbmSensitivity]
+        See signature.
+    weighted_sensitivities : Sequence[WeightedSensitivity]
+        See signature.
+
+    Returns
+    -------
+    GirrDeltaNettedFactorGrid
     """
 
     sensitivity_by_id = _sensitivity_by_id(sensitivities)
@@ -101,12 +114,23 @@ def net_girr_delta_sensitivity_batch(
     profile_id: str,
     reporting_currency: str,
 ) -> GirrDeltaNettedFactorGrid:
-    """
-    Weight and net a GIRR delta batch without materialising per-row sensitivities.
+    """Weight and net a GIRR delta batch without materialising per-row sensitivities.
 
     The output shape intentionally matches ``net_girr_delta_weighted_sensitivities``
     so the existing aggregation kernel receives one path regardless of whether
     the caller supplied row dataclasses or an Arrow-backed batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+    profile_id : str
+        See signature.
+    reporting_currency : str
+        See signature.
+
+    Returns
+    -------
+    GirrDeltaNettedFactorGrid
     """
 
     ensure_profile_supports_risk_class_measure(

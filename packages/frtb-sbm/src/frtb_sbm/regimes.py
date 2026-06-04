@@ -89,7 +89,16 @@ PROFILE_SUPPORTED_MEASURES: dict[
 
 
 def get_sbm_rule_profile(profile: SbmRegulatoryProfile | str) -> SbmRuleProfile:
-    """Return supported SBM profile metadata or fail closed."""
+    """Return supported SBM profile metadata or fail closed.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    SbmRuleProfile
+    """
 
     resolved = resolve_sbm_profile(profile)
     metadata = SUPPORTED_PROFILE_METADATA[resolved]
@@ -123,7 +132,16 @@ def get_sbm_rule_profile(profile: SbmRegulatoryProfile | str) -> SbmRuleProfile:
 
 
 def resolve_sbm_profile(profile: SbmRegulatoryProfile | str) -> SbmRegulatoryProfile:
-    """Normalise and reject unsupported SBM profiles."""
+    """Normalise and reject unsupported SBM profiles.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    SbmRegulatoryProfile
+    """
 
     try:
         resolved = SbmRegulatoryProfile(profile)
@@ -143,7 +161,16 @@ def resolve_sbm_profile(profile: SbmRegulatoryProfile | str) -> SbmRegulatoryPro
 
 
 def profile_content_hash(profile: SbmRegulatoryProfile | str) -> str:
-    """Return the deterministic content hash for a supported profile."""
+    """Return the deterministic content hash for a supported profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     return get_sbm_rule_profile(profile).content_hash
 
@@ -153,7 +180,20 @@ def profile_supports_risk_class_measure(
     risk_class: SbmRiskClass | str,
     risk_measure: SbmRiskMeasure | str,
 ) -> bool:
-    """Return whether the profile supports a risk-class and measure path."""
+    """Return whether the profile supports a risk-class and measure path.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    risk_class : SbmRiskClass | str
+        See signature.
+    risk_measure : SbmRiskMeasure | str
+        See signature.
+
+    Returns
+    -------
+    bool
+    """
 
     resolved = resolve_sbm_profile(profile)
     resolved_risk_class = _coerce_risk_class(risk_class)
@@ -167,7 +207,16 @@ def ensure_profile_supports_risk_class_measure(
     risk_class: SbmRiskClass | str,
     risk_measure: SbmRiskMeasure | str,
 ) -> None:
-    """Raise when a profile/risk-class/measure path is unsupported."""
+    """Raise when a profile/risk-class/measure path is unsupported.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    risk_class : SbmRiskClass | str
+        See signature.
+    risk_measure : SbmRiskMeasure | str
+        See signature.
+    """
 
     from frtb_sbm.validation import ensure_sbm_risk_class_measure_supported
 
@@ -182,7 +231,16 @@ def ensure_profile_supports_risk_class_measure(
 def supported_risk_class_measures(
     profile: SbmRegulatoryProfile | str,
 ) -> frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]:
-    """Return the supported risk-class and measure pairs for a profile."""
+    """Return the supported risk-class and measure pairs for a profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]
+    """
 
     resolved = resolve_sbm_profile(profile)
     supported: set[tuple[SbmRiskClass, SbmRiskMeasure]] = set()
