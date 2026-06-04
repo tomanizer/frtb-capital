@@ -44,3 +44,44 @@ def test_docs_change_selects_no_pytest_targets() -> None:
 
 def test_root_test_fixture_change_selects_root_tests() -> None:
     assert select({"tests/fixtures/example.json"}) == ("tests",)
+
+
+def test_package_example_python_change_selects_package_tests() -> None:
+    assert select({"packages/frtb-sbm/examples/sbm_notebook_data.py"}) == (
+        "packages/frtb-sbm/tests",
+    )
+
+
+def test_package_script_python_change_selects_package_tests() -> None:
+    assert select({"packages/frtb-drc/scripts/generate_fixture.py"}) == ("packages/frtb-drc/tests",)
+
+
+def test_common_package_support_python_change_selects_full_suite() -> None:
+    assert select({"packages/frtb-common/scripts/generate_fixture.py"}) == (
+        "packages",
+        "tests",
+    )
+
+
+def test_local_changed_paths_fail_closed_to_full_suite(monkeypatch) -> None:
+    selector = load_selector()
+
+    def fake_git_lines(args: list[str], *, check: bool = False) -> list[str]:
+        if args == ["merge-base", "missing-base", "HEAD"]:
+            return []
+        if args == ["diff", "--name-only", "missing-base", "HEAD"] and check:
+            raise selector.subprocess.CalledProcessError(128, ["git", *args])
+        return []
+
+    monkeypatch.setattr(selector, "_git_lines", fake_git_lines)
+
+    assert selector._local_changed_paths("missing-base") is None
+
+
+def test_main_prints_full_suite_when_local_paths_are_unknown(monkeypatch, capsys) -> None:
+    selector = load_selector()
+
+    monkeypatch.setattr(selector, "_changed_paths", lambda base_ref: None)
+
+    assert selector.main(["--base", "missing-base"]) == 0
+    assert capsys.readouterr().out.strip() == "packages tests"

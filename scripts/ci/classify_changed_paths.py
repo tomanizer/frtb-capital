@@ -93,7 +93,12 @@ def _is_runtime_or_test_path(path: str) -> bool:
         len(parts) >= 3
         and parts[0] == "packages"
         and not path.endswith((".md", ".yml", ".yaml", ".ipynb"))
-        and ("src" in parts or "tests" in parts or path.endswith("/pyproject.toml"))
+        and (
+            "src" in parts
+            or "tests" in parts
+            or (("examples" in parts or "scripts" in parts) and path.endswith(".py"))
+            or path.endswith("/pyproject.toml")
+        )
     )
 
 

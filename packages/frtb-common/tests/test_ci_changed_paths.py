@@ -98,6 +98,20 @@ def test_root_test_fixture_pr_runs_runtime_tests() -> None:
     assert outputs["test"] is True
 
 
+def test_package_example_python_pr_runs_runtime_tests() -> None:
+    outputs = classify({"packages/frtb-sbm/examples/sbm_notebook_data.py"})
+
+    assert outputs["code"] is True
+    assert outputs["test"] is True
+
+
+def test_package_script_python_pr_runs_runtime_tests() -> None:
+    outputs = classify({"packages/frtb-drc/scripts/generate_fixture.py"})
+
+    assert outputs["code"] is True
+    assert outputs["test"] is True
+
+
 def test_diff_name_only_falls_back_when_shallow_checkout_lacks_merge_base(
     monkeypatch,
 ) -> None:

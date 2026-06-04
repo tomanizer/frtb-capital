@@ -15,7 +15,7 @@ FULL_TEST_TARGETS = ("packages", "tests")
 SCRIPT_TEST_TARGETS = ("tests", "packages/frtb-common/tests")
 
 
-def _git_lines(args: list[str]) -> list[str]:
+def _git_lines(args: list[str], *, check: bool = False) -> list[str]:
     result = subprocess.run(
         ["git", *args],
         check=False,
@@ -25,17 +25,31 @@ def _git_lines(args: list[str]) -> list[str]:
         stderr=subprocess.DEVNULL,
     )
     if result.returncode != 0:
+        if check:
+            raise subprocess.CalledProcessError(result.returncode, ["git", *args])
         return []
     return [line for line in result.stdout.splitlines() if line]
 
 
-def _local_changed_paths(base_ref: str) -> set[str]:
+def _local_changed_paths(base_ref: str) -> set[str] | None:
     diff_base = _git_lines(["merge-base", base_ref, "HEAD"])
     paths: set[str] = set()
-    if diff_base:
-        paths.update(_git_lines(["diff", "--name-only", f"{diff_base[0]}...HEAD"]))
-    else:
-        paths.update(_git_lines(["diff", "--name-only", base_ref, "HEAD"]))
+    try:
+        if diff_base:
+            try:
+                paths.update(
+                    _git_lines(["diff", "--name-only", f"{diff_base[0]}...HEAD"], check=True)
+                )
+            except subprocess.CalledProcessError:
+                paths.update(_git_lines(["diff", "--name-only", diff_base[0], "HEAD"], check=True))
+        else:
+            paths.update(_git_lines(["diff", "--name-only", base_ref, "HEAD"], check=True))
+    except subprocess.CalledProcessError:
+        print(
+            f"Could not determine committed changes against {base_ref}; running full pytest suite.",
+            file=sys.stderr,
+        )
+        return None
 
     paths.update(_git_lines(["diff", "--name-only"]))
     paths.update(_git_lines(["diff", "--cached", "--name-only"]))
@@ -43,7 +57,7 @@ def _local_changed_paths(base_ref: str) -> set[str]:
     return paths
 
 
-def _changed_paths(base_ref: str) -> set[str]:
+def _changed_paths(base_ref: str) -> set[str] | None:
     event_name, paths = classify_changed_paths._changed_paths()
     if event_name:
         return paths
@@ -68,8 +82,15 @@ def select_targets(paths: Iterable[str]) -> tuple[str, ...]:
             continue
         if path.startswith("packages/"):
             parts = Path(path).parts
-            if len(parts) >= 3 and ("src" in parts or "tests" in parts):
-                selected.add(f"packages/{parts[1]}/tests")
+            if len(parts) >= 3 and (
+                "src" in parts
+                or "tests" in parts
+                or (("examples" in parts or "scripts" in parts) and path.endswith(".py"))
+            ):
+                if parts[1] == "frtb-common":
+                    force_full = True
+                else:
+                    selected.add(f"packages/{parts[1]}/tests")
             continue
         if path.startswith("scripts/") and path.endswith(".py"):
             selected.update(SCRIPT_TEST_TARGETS)
@@ -102,7 +123,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     paths = _changed_paths(args.base)
-    targets = select_targets(paths)
+    targets = FULL_TEST_TARGETS if paths is None else select_targets(paths)
 
     if args.github_output:
         _write_github_output(targets)
