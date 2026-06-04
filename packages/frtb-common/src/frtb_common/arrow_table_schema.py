@@ -16,7 +16,18 @@ from frtb_common.arrow_table import (
 
 
 def column_spec_to_json_schema(spec: ColumnSpec) -> dict[str, object]:
-    """Return a JSON Schema property for one Arrow column spec."""
+    """Return a JSON Schema property for one Arrow column spec.
+
+    Parameters
+    ----------
+    spec : ColumnSpec
+        Normalized column declaration to export.
+
+    Returns
+    -------
+    dict[str, object]
+        JSON Schema property object with FRTB extension metadata.
+    """
 
     return {
         **_json_type_for_logical_type(spec.logical_type),
@@ -35,7 +46,22 @@ def column_specs_to_json_schema(
     title: str,
     description: str | None = None,
 ) -> dict[str, object]:
-    """Return a deterministic JSON Schema document for a column spec tuple."""
+    """Return a deterministic JSON Schema document for a column spec tuple.
+
+    Parameters
+    ----------
+    specs : sequence of ColumnSpec
+        Column declarations to export.
+    title : str
+        JSON Schema document title.
+    description : str, optional
+        Optional document-level description.
+
+    Returns
+    -------
+    dict[str, object]
+        Draft 2020-12 JSON Schema with stable property and column order metadata.
+    """
 
     validated = validate_column_specs(specs)
     schema: dict[str, object] = {
@@ -53,7 +79,18 @@ def column_specs_to_json_schema(
 
 
 def column_specs_to_arrow_schema(specs: Sequence[ColumnSpec]) -> pa.Schema:
-    """Return a PyArrow schema matching the column specs."""
+    """Return a PyArrow schema matching the column specs.
+
+    Parameters
+    ----------
+    specs : sequence of ColumnSpec
+        Column declarations to export.
+
+    Returns
+    -------
+    pyarrow.Schema
+        Arrow schema with logical-type metadata on each field.
+    """
 
     validated = validate_column_specs(specs)
     return pa.schema(
@@ -77,7 +114,18 @@ def column_specs_to_arrow_schema(specs: Sequence[ColumnSpec]) -> pa.Schema:
 
 
 def arrow_schema_to_dict(schema: pa.Schema) -> dict[str, object]:
-    """Return a deterministic JSON-ready representation of a PyArrow schema."""
+    """Return a deterministic JSON-ready representation of a PyArrow schema.
+
+    Parameters
+    ----------
+    schema : pyarrow.Schema
+        Arrow schema to serialise for hashing or evidence export.
+
+    Returns
+    -------
+    dict[str, object]
+        Sorted field metadata suitable for stable JSON encoding.
+    """
 
     fields: list[dict[str, object]] = []
     for field in schema:

@@ -45,6 +45,13 @@ class ComponentContributionBundle:
             )
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of bundle fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Dataclass field names mapped through :func:`frtb_common.serialization.jsonable`.
+        """
         return {field.name: jsonable(getattr(self, field.name)) for field in fields(self)}
 
 

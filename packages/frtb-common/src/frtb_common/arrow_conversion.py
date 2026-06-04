@@ -26,7 +26,18 @@ ArrowColumnArray = npt.NDArray[Any]
 
 
 def arrow_object_array(column: pa.ChunkedArray) -> npt.NDArray[np.object_]:
-    """Return a NumPy object array, preserving Arrow nulls as ``None``."""
+    """Return a NumPy object array, preserving Arrow nulls as ``None``.
+
+    Parameters
+    ----------
+    column : pyarrow.ChunkedArray
+        Arrow column to materialise, including dictionary-encoded chunks.
+
+    Returns
+    -------
+    ndarray
+        One-dimensional object array with Arrow nulls mapped to ``None``.
+    """
 
     arrays = tuple(_object_array_from_arrow_array(chunk) for chunk in column.chunks)
     if not arrays:
@@ -41,7 +52,20 @@ def arrow_float64_array(
     *,
     field: str,
 ) -> npt.NDArray[np.float64]:
-    """Return a float64 NumPy view or array, casting numeric Arrow columns if needed."""
+    """Return a float64 NumPy view or array, casting numeric Arrow columns if needed.
+
+    Parameters
+    ----------
+    column : pyarrow.ChunkedArray
+        Numeric Arrow column to convert.
+    field : str
+        Column label used in validation errors.
+
+    Returns
+    -------
+    ndarray
+        One-dimensional float64 array; empty columns return a zero-length array.
+    """
 
     if len(column) == 0:
         return np.empty(0, dtype=np.float64)
@@ -58,7 +82,22 @@ def arrow_float64_array_with_nulls(
     field: str,
     null_value: float = math.nan,
 ) -> npt.NDArray[np.float64]:
-    """Return a float64 NumPy array after filling Arrow nulls."""
+    """Return a float64 NumPy array after filling Arrow nulls.
+
+    Parameters
+    ----------
+    column : pyarrow.ChunkedArray
+        Numeric Arrow column to convert.
+    field : str
+        Column label used in validation errors.
+    null_value : float, optional
+        Replacement for Arrow nulls (default ``math.nan``).
+
+    Returns
+    -------
+    ndarray
+        One-dimensional float64 array with nulls filled.
+    """
 
     if len(column) == 0:
         return np.empty(0, dtype=np.float64)
@@ -77,7 +116,22 @@ def arrow_bool_array(
     field: str,
     null_value: bool = False,
 ) -> npt.NDArray[np.bool_]:
-    """Return a boolean NumPy array after filling Arrow nulls."""
+    """Return a boolean NumPy array after filling Arrow nulls.
+
+    Parameters
+    ----------
+    column : pyarrow.ChunkedArray
+        Boolean Arrow column to convert.
+    field : str
+        Column label used in validation errors.
+    null_value : bool, optional
+        Replacement for Arrow nulls (default ``False``).
+
+    Returns
+    -------
+    ndarray
+        One-dimensional boolean array with nulls filled.
+    """
 
     if len(column) == 0:
         return np.empty(0, dtype=np.bool_)
@@ -98,7 +152,20 @@ def arrow_bool_or_object_array(
     *,
     null_value: bool = False,
 ) -> npt.NDArray[np.bool_] | npt.NDArray[np.object_]:
-    """Return bool arrays for boolean Arrow columns, otherwise object arrays with nulls filled."""
+    """Return bool arrays for boolean Arrow columns, otherwise object arrays with nulls filled.
+
+    Parameters
+    ----------
+    column : pyarrow.ChunkedArray
+        Arrow column to materialise.
+    null_value : bool, optional
+        Replacement for Arrow nulls on boolean columns (default ``False``).
+
+    Returns
+    -------
+    ndarray
+        Boolean array for boolean Arrow types; otherwise an object array.
+    """
 
     if len(column) == 0:
         return np.empty(0, dtype=np.bool_)
@@ -122,6 +189,22 @@ def read_arrow_columns(
     """Read declared Arrow columns into read-only NumPy arrays.
 
     ``null_defaults`` restores originally-null Arrow positions to package-specific values.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Source Arrow table.
+    specs : sequence of ColumnSpec
+        Declared column contracts to read and validate.
+    error : callable
+        Factory ``(message, column) -> Exception`` used for adapter errors.
+    null_defaults : mapping, optional
+        Map of canonical column names to values restored at originally-null positions.
+
+    Returns
+    -------
+    dict[str, ndarray]
+        Canonical column names mapped to read-only NumPy arrays.
     """
 
     if not isinstance(table, pa.Table):

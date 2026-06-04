@@ -16,6 +16,16 @@ def jsonable(value: Any) -> object:
     Handles common domain types (enums, dates, dataclasses with ``as_dict``,
     exceptions) and falls back to ``str`` for anything else that ``json.dumps``
     cannot handle.
+
+    Parameters
+    ----------
+    value : Any
+        Scalar, mapping, sequence, dataclass, enum, date, or exception to encode.
+
+    Returns
+    -------
+    object
+        JSON-compatible structure of dicts, lists, strings, numbers, and booleans.
     """
     if hasattr(value, "as_dict") and callable(value.as_dict):
         return jsonable(value.as_dict())
