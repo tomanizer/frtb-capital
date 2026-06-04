@@ -147,3 +147,32 @@ The checker should be conservative about public/private classification. It
 should not force blanket docstrings on every private helper, and it should not
 turn subjective quality judgement into a hard gate until the findings are
 stable enough to review consistently.
+
+## Inventory Checker
+
+The report-mode inventory command is:
+
+```bash
+make docstring-inventory
+```
+
+By default, the command exits zero even when it finds gaps. This keeps the first
+automation slice report-only. Use `--fail-on-findings` only for local tests,
+experiments, or a later baseline ratchet.
+
+The checker scans runtime Python modules under `packages/*/src` and reports:
+
+- missing module docstrings;
+- missing docstrings on public classes, functions, and methods;
+- public callables with parameters but no NumPy `Parameters` section;
+- public callables that return meaningful values but have no NumPy `Returns`
+  section;
+- obvious trivial docstrings that only restate the object name or use generic
+  placeholder text.
+
+The checker treats an object as public when it is exported from a package
+`__init__.py`, referenced by `docs/quality/package_maturity.toml`, or declared
+as a non-underscore top-level class or function. Public methods on public
+classes are also checked. Private helpers are not blanket-enforced by this first
+checker; domain-significant private helpers remain a review standard until a
+low-noise heuristic is available.
