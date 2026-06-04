@@ -72,6 +72,6 @@ requirements:
     title: Audit and Euler-compatible reports
     source: Basel MAR21 component traceability by formula
     status: partial
-    modules: [src/frtb_sbm/audit.py, src/frtb_sbm/capital.py]
-    tests: [tests/test_sbm_audit.py, tests/test_sbm_replay.py, tests/test_sbm_fixture_workflow.py, tests/risk_classes/test_sbm_fx.py]
-    notes: Serializes run context, scenario evidence, and branch metadata for supported BASEL_MAR21 delta, vega, and curvature slices.
+    modules: [src/frtb_sbm/audit.py, src/frtb_sbm/attribution.py, src/frtb_sbm/impact.py, src/frtb_sbm/capital.py]
+    tests: [tests/test_sbm_audit.py, tests/test_sbm_replay.py, tests/test_sbm_fixture_workflow.py, tests/test_sbm_attribution_impact.py, tests/risk_classes/test_sbm_fx.py]
+    notes: Serializes run context, scenario evidence, and branch metadata for supported BASEL_MAR21 delta, vega, and curvature slices. Delta and vega attribution emits analytical Euler CapitalContribution records for selected differentiable branches; curvature and non-differentiable or incomplete-evidence paths emit explicit unsupported residuals. Baseline-vs-candidate impact is finite difference.

@@ -102,6 +102,7 @@ from frtb_sbm.arrow_batch import (
     normalize_girr_delta_arrow_table,
     normalize_girr_vega_arrow_table,
 )
+from frtb_sbm.attribution import calculate_sbm_attribution
 from frtb_sbm.audit import (
     input_hash_for_sensitivities,
     serialize_sbm_result,
@@ -242,6 +243,7 @@ from frtb_sbm.data_models import (
     SbmWarning,
     WeightedSensitivity,
 )
+from frtb_sbm.impact import calculate_sbm_capital_impact
 from frtb_sbm.reference_data import (
     FX_DELTA_RISK_WEIGHT,
     FX_INTER_BUCKET_CORRELATION,
@@ -483,6 +485,7 @@ __all__ = [
     "calculate_girr_curvature_risk_class_capital_from_batch",
     "calculate_non_girr_vega_risk_class_capital",
     "calculate_non_girr_vega_risk_class_capital_from_batch",
+    "calculate_sbm_attribution",
     "calculate_sbm_capital",
     "calculate_sbm_capital_from_commodity_curvature_arrow",
     "calculate_sbm_capital_from_commodity_curvature_batch",
@@ -526,6 +529,7 @@ __all__ = [
     "calculate_sbm_capital_from_girr_delta_batch",
     "calculate_sbm_capital_from_girr_vega_arrow",
     "calculate_sbm_capital_from_girr_vega_batch",
+    "calculate_sbm_capital_impact",
     "calculate_sbm_portfolio_capital_from_arrow_tables",
     "calculate_sbm_portfolio_capital_from_batches",
     "citations_for_profile",

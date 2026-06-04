@@ -23,8 +23,16 @@ before capital is emitted:
 - risk-class/measure combinations outside the supported matrix;
 - missing curvature up/down shock inputs;
 - missing FX curvature scalar evidence where MAR21.98 requires it;
-- equity repo vega/curvature sub-features;
-- analytical Euler attribution and finite-difference impact analysis.
+- equity repo vega/curvature sub-features.
+
+## Attribution And Impact Limits
+
+Analytical Euler attribution is implemented for selected, differentiable delta
+and vega branches when scenario detail and full pairwise correlation evidence are
+retained. Curvature, active floors, alternative `S_b`, missing scenario detail,
+and incomplete pairwise evidence return explicit unsupported residual records
+rather than derivative estimates. Finite-difference impact is supported only as
+baseline-vs-candidate capital comparison and is not a marginal contribution.
 
 ## Validation Limits
 

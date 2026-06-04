@@ -293,14 +293,19 @@ number deterministically, including:
 
 Audit serialisation must be deterministic and JSON/Markdown ready.
 
-### SBM-FUNC-022: Explain and contribution readiness
+### SBM-FUNC-022: Explain and contribution output
 
 The package must preserve stable ids, deterministic ordering, intermediate
-aggregation records, and branch metadata so later analytical Euler contribution
-or impact analysis can be added without breaking the public capital API.
+aggregation records, and branch metadata so attribution and impact outputs do
+not change the public capital number.
 
-The first capital slices do not need full Euler allocation, but they must not
-block it structurally.
+For selected differentiable delta and vega branches, attribution must emit
+analytical Euler `CapitalContribution` records at sensitivity granularity and
+reconcile to the risk-class capital within tolerance. Curvature, active floors,
+alternative `S_b`, missing selected-scenario detail, and incomplete pairwise
+correlation evidence must emit explicit unsupported residual records rather than
+derivative estimates. Baseline-vs-candidate impact must be labelled as finite
+difference and not as marginal contribution.
 
 ### SBM-FUNC-023: CRIF / adapter boundary
 
@@ -432,6 +437,6 @@ adds:
 - profile-layer requirements;
 - risk-class-specific functional requirements;
 - fail-closed unsupported behavior;
-- audit, replay, and attribution-readiness requirements;
+- audit, replay, attribution, and impact requirements;
 - non-functional and validation requirements;
 - issue-friendly requirement IDs.

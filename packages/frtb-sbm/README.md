@@ -18,6 +18,7 @@ explicit errors.
 | Unsupported profiles and unmapped sub-features | Unsupported capital (fail-closed) |
 | Arrow batch | Supported BASEL_MAR21 delta, vega, and curvature capital paths implemented; portfolio dispatcher available |
 | CRIF/CSV adapters | Implemented row-dict canonical mapping for supported BASEL_MAR21 delta/vega/curvature paths; GIRR delta CRIF-to-Arrow batch |
+| Attribution and impact | Delta/vega analytical Euler attribution implemented for differentiable selected branches; curvature, active floors, alternative `S_b`, and incomplete pairwise evidence emit explicit unsupported residuals. Baseline-vs-candidate impact is finite difference, not marginal contribution. |
 
 Outputs from this prototype package are not final regulatory capital.
 `PACKAGE_METADATA.validation_status` remains `PENDING`; current evidence is
@@ -44,7 +45,12 @@ matrix in [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md).
 ## Public API
 
 ```python
-from frtb_sbm import PACKAGE_METADATA, calculate_sbm_capital
+from frtb_sbm import (
+    PACKAGE_METADATA,
+    calculate_sbm_attribution,
+    calculate_sbm_capital,
+    calculate_sbm_capital_impact,
+)
 ```
 
 High-volume supported BASEL_MAR21 delta, vega, and curvature inputs can be
