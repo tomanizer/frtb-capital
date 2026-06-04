@@ -6,7 +6,7 @@ findings and tracking issues; **does not** change runtime calculation code.
 Guard: run `python3 scripts/agent_worktree.py guard` in a compliant worktree before
 any follow-up implementation PR.
 
-Skill: [`.grok/skills/frtb-simplify-audit/SKILL.md`](../../../.grok/skills/frtb-simplify-audit/SKILL.md)
+Skill: [`.grok/skills/frtb-simplify-audit/SKILL.md`](../../../../.grok/skills/frtb-simplify-audit/SKILL.md)
 
 ## Reports
 
@@ -22,7 +22,7 @@ Skill: [`.grok/skills/frtb-simplify-audit/SKILL.md`](../../../.grok/skills/frtb-
 | `frtb-sbm` | [frtb-sbm.md](frtb-sbm.md) | [#544](https://github.com/tomanizer/frtb-capital/issues/544) |
 
 Prior run: [`2026-06-02/`](../2026-06-02/). Live refactor queue:
-[`REFACTOR_HOTSPOTS.md`](../REFACTOR_HOTSPOTS.md).
+[`REFACTOR_HOTSPOTS.md`](../../REFACTOR_HOTSPOTS.md).
 
 ## Suite-level findings
 
