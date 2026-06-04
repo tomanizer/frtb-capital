@@ -22,6 +22,9 @@ from frtb_ima.data_models import (
 from frtb_ima.regimes import RegulatoryRegime, get_policy
 from frtb_ima.rfet_evidence import (
     RFETExclusionReason,
+    _rfet_observation_window,
+    _rfet_qualitative_stage,
+    _rfet_quantitative_stage,
     assess_rfet_evidence,
     base_required_observation_count,
     prorated_required_observation_count,
@@ -207,6 +210,91 @@ def test_assess_rfet_evidence_records_calendar_and_holiday_exclusions() -> None:
         RFETExclusionReason.NON_BUSINESS_DATE,
     }
     assert result.as_dict()["official_holiday_count"] == 1
+
+
+def test_rfet_observation_window_stage_keeps_calendar_metadata() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    holiday = date(2024, 12, 25)
+    calendar = BusinessCalendar(
+        business_dates=_weekdays(date(2024, 7, 1), AS_OF, {holiday}),
+        official_holidays=(holiday,),
+        source="FED",
+        version="2026.1",
+    )
+
+    window = _rfet_observation_window(AS_OF, policy, calendar=calendar)
+
+    assert window.lookback_start == date(2024, 7, 1)
+    assert window.lookback_end == AS_OF
+    assert window.lookback_basis == ObservationWindowBasis.EXACT_TWELVE_MONTH_BUSINESS_CALENDAR
+    assert window.calendar_source == "FED"
+    assert window.official_holiday_count == 1
+    assert holiday in window.official_holidays
+    assert date(2025, 1, 4) not in window.business_dates
+
+
+def test_rfet_qualitative_stage_isolates_representativeness_controls() -> None:
+    evidence = RFETEvidence(
+        risk_factor_name="USD_SWAP_5Y",
+        as_of_date=AS_OF,
+        observations=_observations(3),
+        qualitative_pass=True,
+        bucket_id="USD_RATES",
+        representativeness=(
+            RFETRepresentativenessEvidence(
+                bucket_id="USD_RATES",
+                methodology="curve-node-proximity",
+                passed=False,
+                rationale="Observed tenors do not represent the 5Y node.",
+            ),
+        ),
+    )
+
+    qualitative = _rfet_qualitative_stage(_risk_factor(), evidence)
+
+    assert qualitative.qualitative_pass is True
+    assert qualitative.bucket_representative is False
+    assert [item.methodology for item in qualitative.representativeness] == [
+        "curve-node-proximity"
+    ]
+
+
+def test_rfet_quantitative_stage_records_window_and_dedup_exclusions() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    window = _rfet_observation_window(AS_OF, policy)
+    evidence = _evidence(
+        (
+            RealPriceObservation(
+                "USD_SWAP_5Y",
+                AS_OF - timedelta(days=2),
+                source="TRADE_STORE",
+                vendor_id="INTERNAL",
+                venue="SEF_A",
+                feed="EXECUTIONS",
+                vendor_audit_evidence_id="internal-lineage-control-2026",
+            ),
+            RealPriceObservation(
+                "USD_SWAP_5Y",
+                AS_OF - timedelta(days=2),
+                source="TRADE_STORE",
+                vendor_id="INTERNAL",
+                venue="SEF_A",
+                feed="EXECUTIONS",
+                vendor_audit_evidence_id="internal-lineage-control-2026",
+            ),
+            RealPriceObservation("USD_SWAP_5Y", AS_OF - timedelta(days=400), source="VENDOR_A"),
+        )
+    )
+    qualitative = _rfet_qualitative_stage(_risk_factor(), evidence)
+
+    quantitative = _rfet_quantitative_stage(evidence, window, qualitative)
+
+    assert quantitative.eligible_dates == (AS_OF - timedelta(days=2),)
+    assert quantitative.eligible_sources == frozenset({"TRADE_STORE"})
+    assert [exclusion.reason for exclusion in quantitative.exclusions] == [
+        RFETExclusionReason.OUTSIDE_LOOKBACK,
+        RFETExclusionReason.DUPLICATE_SOURCE_VENDOR,
+    ]
 
 
 def test_assess_rfet_evidence_requires_representative_bucket() -> None:
