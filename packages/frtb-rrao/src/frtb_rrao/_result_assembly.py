@@ -14,7 +14,12 @@ from frtb_rrao.validation import RraoInputError
 
 
 def validate_context(context: RraoCalculationContext) -> None:
-    """Validate public RRAO calculation context fields."""
+    """Validate public RRAO calculation context fields.
+    Parameters
+    ----------
+    context : RraoCalculationContext
+        Context.
+    """
 
     if not isinstance(context, RraoCalculationContext):
         raise RraoInputError("calculation context must be RraoCalculationContext", field="context")
@@ -36,7 +41,17 @@ def validate_context(context: RraoCalculationContext) -> None:
 def partition_lines(
     lines: tuple[RraoCapitalLine, ...],
 ) -> tuple[tuple[RraoCapitalLine, ...], tuple[RraoCapitalLine, ...]]:
-    """Split included and excluded capital lines without reordering."""
+    """Split included and excluded capital lines without reordering.
+    Parameters
+    ----------
+    lines : tuple[RraoCapitalLine, ...]
+        Lines.
+
+    Returns
+    -------
+    tuple[tuple[RraoCapitalLine, ...], tuple[RraoCapitalLine, ...]]
+        Result of the operation.
+    """
 
     included: list[RraoCapitalLine] = []
     excluded: list[RraoCapitalLine] = []
@@ -49,13 +64,33 @@ def partition_lines(
 
 
 def collect_line_citations(lines: tuple[RraoCapitalLine, ...]) -> tuple[str, ...]:
-    """Collect line citations while preserving first-seen order."""
+    """Collect line citations while preserving first-seen order.
+    Parameters
+    ----------
+    lines : tuple[RraoCapitalLine, ...]
+        Lines.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Result of the operation.
+    """
 
     return merged_citation_ids(*(line.citations for line in lines))
 
 
 def profile_warnings(profile: RraoRegulatoryProfile) -> tuple[str, ...]:
-    """Return public warnings for a supported RRAO profile."""
+    """Return public warnings for a supported RRAO profile.
+    Parameters
+    ----------
+    profile : RraoRegulatoryProfile
+        Profile.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Result of the operation.
+    """
 
     if profile is RraoRegulatoryProfile.US_NPR_2_0:
         return (

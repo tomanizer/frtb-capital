@@ -45,7 +45,19 @@ def build_rrao_allocation_report(
     result: RraoCapitalResult,
     dimension: RraoAllocationDimension | str,
 ) -> RraoAllocationReport:
-    """Build a deterministic additive allocation report for one dimension."""
+    """Build a deterministic additive allocation report for one dimension.
+    Parameters
+    ----------
+    result : RraoCapitalResult
+        Result.
+    dimension : RraoAllocationDimension | str
+        Dimension.
+
+    Returns
+    -------
+    RraoAllocationReport
+        Result of the operation.
+    """
 
     if not isinstance(result, RraoCapitalResult):
         raise RraoInputError("result must be RraoCapitalResult", field="result")
@@ -80,7 +92,19 @@ def build_rrao_allocation_reports(
     result: RraoCapitalResult,
     dimensions: Iterable[RraoAllocationDimension | str] = SUPPORTED_RRAO_ALLOCATION_DIMENSIONS,
 ) -> tuple[RraoAllocationReport, ...]:
-    """Build deterministic allocation reports for supported dimensions."""
+    """Build deterministic allocation reports for supported dimensions.
+    Parameters
+    ----------
+    result : RraoCapitalResult
+        Result.
+    dimensions : Iterable[RraoAllocationDimension | str], optional
+        Dimensions.
+
+    Returns
+    -------
+    tuple[RraoAllocationReport, ...]
+        Result of the operation.
+    """
 
     return tuple(build_rrao_allocation_report(result, dimension) for dimension in dimensions)
 
@@ -88,7 +112,17 @@ def build_rrao_allocation_reports(
 def resolve_rrao_allocation_dimension(
     dimension: RraoAllocationDimension | str,
 ) -> RraoAllocationDimension:
-    """Return a supported RRAO allocation dimension or fail closed."""
+    """Return a supported RRAO allocation dimension or fail closed.
+    Parameters
+    ----------
+    dimension : RraoAllocationDimension | str
+        Dimension.
+
+    Returns
+    -------
+    RraoAllocationDimension
+        Result of the operation.
+    """
 
     if isinstance(dimension, RraoAllocationDimension):
         return dimension
@@ -107,7 +141,12 @@ def resolve_rrao_allocation_dimension(
 
 
 def validate_rrao_allocation_report(report: RraoAllocationReport) -> None:
-    """Raise when an allocation report does not reconcile to its bucket records."""
+    """Raise when an allocation report does not reconcile to its bucket records.
+    Parameters
+    ----------
+    report : RraoAllocationReport
+        Report.
+    """
 
     if not isinstance(report, RraoAllocationReport):
         raise RraoInputError("report must be RraoAllocationReport", field="report")
@@ -130,7 +169,17 @@ def validate_rrao_allocation_report(report: RraoAllocationReport) -> None:
 
 
 def serialize_rrao_allocation_report(report: RraoAllocationReport) -> dict[str, object]:
-    """Return a JSON-serialisable deterministic allocation report payload."""
+    """Return a JSON-serialisable deterministic allocation report payload.
+    Parameters
+    ----------
+    report : RraoAllocationReport
+        Report.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
 
     validate_rrao_allocation_report(report)
     return {

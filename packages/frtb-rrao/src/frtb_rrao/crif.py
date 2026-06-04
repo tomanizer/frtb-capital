@@ -123,7 +123,23 @@ def adapt_rrao_records(
     source_file: str = "records",
     source_sign_convention: NotionalSignConvention = "gross",
 ) -> RraoAdapterResult:
-    """Convert CRIF/FNet-shaped mappings into canonical RRAO positions."""
+    """Convert CRIF/FNet-shaped mappings into canonical RRAO positions.
+    Parameters
+    ----------
+    records : object
+        Records.
+    source_system : str, optional
+        Source system.
+    source_file : str, optional
+        Source file.
+    source_sign_convention : NotionalSignConvention, optional
+        Source sign convention.
+
+    Returns
+    -------
+    RraoAdapterResult
+        Result of the operation.
+    """
 
     if isinstance(records, Mapping):
         raise RraoInputError("records must be an iterable of mapping rows", field="records")
@@ -202,7 +218,21 @@ def adapt_crif_records(
     source_file: str = "crif",
     source_sign_convention: NotionalSignConvention = "gross",
 ) -> RraoAdapterResult:
-    """Convert CRIF-style RRAO rows into canonical positions."""
+    """Convert CRIF-style RRAO rows into canonical positions.
+    Parameters
+    ----------
+    records : object
+        Records.
+    source_file : str, optional
+        Source file.
+    source_sign_convention : NotionalSignConvention, optional
+        Source sign convention.
+
+    Returns
+    -------
+    RraoAdapterResult
+        Result of the operation.
+    """
 
     return adapt_rrao_records(
         records,
@@ -218,7 +248,21 @@ def adapt_fnet_records(
     source_file: str = "fnet",
     source_sign_convention: NotionalSignConvention = "gross",
 ) -> RraoAdapterResult:
-    """Convert FNet-shaped RRAO rows into canonical positions."""
+    """Convert FNet-shaped RRAO rows into canonical positions.
+    Parameters
+    ----------
+    records : object
+        Records.
+    source_file : str, optional
+        Source file.
+    source_sign_convention : NotionalSignConvention, optional
+        Source sign convention.
+
+    Returns
+    -------
+    RraoAdapterResult
+        Result of the operation.
+    """
 
     return adapt_rrao_records(
         records,

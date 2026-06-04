@@ -40,7 +40,19 @@ def build_rrao_capital_lines(
     *,
     profile: RraoRegulatoryProfile | str = RraoRegulatoryProfile.US_NPR_2_0,
 ) -> tuple[RraoCapitalLine, ...]:
-    """Build additive line add-ons for supported canonical RRAO positions."""
+    """Build additive line add-ons for supported canonical RRAO positions.
+    Parameters
+    ----------
+    positions : object
+        Positions.
+    profile : RraoRegulatoryProfile | str, optional
+        Profile.
+
+    Returns
+    -------
+    tuple[RraoCapitalLine, ...]
+        Result of the operation.
+    """
 
     rule_profile = get_rrao_rule_profile(profile)
     validated = validate_rrao_positions(positions)
@@ -65,7 +77,17 @@ def _build_rrao_capital_lines_from_validated(
 
 
 def build_rrao_subtotals(lines: Iterable[RraoCapitalLine]) -> tuple[RraoSubtotal, ...]:
-    """Build deterministic explain subtotals by classification, evidence, desk, and entity."""
+    """Build deterministic explain subtotals by classification, evidence, desk, and entity.
+    Parameters
+    ----------
+    lines : Iterable[RraoCapitalLine]
+        Lines.
+
+    Returns
+    -------
+    tuple[RraoSubtotal, ...]
+        Result of the operation.
+    """
 
     materialised = tuple(lines)
     subtotal_maps: dict[str, dict[str, _SubtotalAccumulator]] = {
@@ -95,7 +117,17 @@ def build_rrao_subtotals(lines: Iterable[RraoCapitalLine]) -> tuple[RraoSubtotal
 
 
 def included_rrao_total(lines: Iterable[RraoCapitalLine]) -> float:
-    """Return the additive RRAO total for included lines."""
+    """Return the additive RRAO total for included lines.
+    Parameters
+    ----------
+    lines : Iterable[RraoCapitalLine]
+        Lines.
+
+    Returns
+    -------
+    float
+        Result of the operation.
+    """
 
     return sum(line.add_on for line in lines if not line.is_excluded)
 

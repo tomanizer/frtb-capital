@@ -28,7 +28,17 @@ _HASH_HEX_LENGTH = 64
 
 
 def input_hash_for_positions(positions: object) -> str:
-    """Return a deterministic hash of canonical RRAO input positions."""
+    """Return a deterministic hash of canonical RRAO input positions.
+    Parameters
+    ----------
+    positions : object
+        Positions.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     validated = validate_rrao_positions(positions)
     return _input_hash_for_validated_positions(validated)
@@ -47,7 +57,17 @@ def _lineage_payload(lineage: RraoSourceLineage | None) -> dict[str, object] | N
 
 
 def serialize_rrao_result(result: RraoCapitalResult) -> dict[str, object]:
-    """Return a JSON-serialisable audit payload for an RRAO result."""
+    """Return a JSON-serialisable audit payload for an RRAO result.
+    Parameters
+    ----------
+    result : RraoCapitalResult
+        Result.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
 
     return {
         "run_id": result.run_id,
@@ -66,7 +86,12 @@ def serialize_rrao_result(result: RraoCapitalResult) -> dict[str, object]:
 
 
 def validate_rrao_result_reconciliation(result: RraoCapitalResult) -> None:
-    """Raise when a public RRAO result does not reconcile to its line records."""
+    """Raise when a public RRAO result does not reconcile to its line records.
+    Parameters
+    ----------
+    result : RraoCapitalResult
+        Result.
+    """
 
     _validate_hash("profile_hash", result.profile_hash)
     _validate_hash("input_hash", result.input_hash)

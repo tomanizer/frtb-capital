@@ -35,7 +35,19 @@ def classify_rrao_positions(
     *,
     profile: RraoRegulatoryProfile | str = RraoRegulatoryProfile.US_NPR_2_0,
 ) -> tuple[RraoClassificationDecision, ...]:
-    """Classify validated RRAO positions for a supported rule profile."""
+    """Classify validated RRAO positions for a supported rule profile.
+    Parameters
+    ----------
+    positions : object
+        Positions.
+    profile : RraoRegulatoryProfile | str, optional
+        Profile.
+
+    Returns
+    -------
+    tuple[RraoClassificationDecision, ...]
+        Result of the operation.
+    """
 
     rule_profile = get_rrao_rule_profile(profile)
     validated = validate_rrao_positions(positions)
@@ -57,7 +69,19 @@ def classify_rrao_position(
     *,
     profile: RraoRegulatoryProfile | str = RraoRegulatoryProfile.US_NPR_2_0,
 ) -> RraoClassificationDecision:
-    """Classify one canonical RRAO position for a supported rule profile."""
+    """Classify one canonical RRAO position for a supported rule profile.
+    Parameters
+    ----------
+    position : RraoPosition
+        Position.
+    profile : RraoRegulatoryProfile | str, optional
+        Profile.
+
+    Returns
+    -------
+    RraoClassificationDecision
+        Result of the operation.
+    """
 
     rule_profile = get_rrao_rule_profile(profile)
     validated = validate_rrao_positions((position,))[0]
