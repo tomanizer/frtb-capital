@@ -81,3 +81,27 @@ that public adapters and result shapes remain compatible with orchestration
 contracts.
 
 See `AGENTS.md` for package boundary rules.
+
+## End-to-end examples
+
+See `examples/run_demo.py` for an illustration of the cross-component handoff
+boundary (the only package allowed to depend on multiple capital components):
+
+- Constructs minimal `ComponentCapitalSummary` handoffs (from `frtb_common`,
+  the stable shape produced by owning packages' adapters).
+- Calls `compose_standardised_approach_capital` for matching jurisdiction
+  family (produces `StandardisedApproachCapitalResult` with subtotals);
+  demonstrates `standardised_jurisdiction_family` helper.
+- Calls `calculate_suite_capital` (fails closed with missing-arg TypeError
+  in current scaffold, as designed until full IMA/SA/CVA summaries provided).
+- Shows ADR 0022 mismatch error when profiles from different families are
+  supplied.
+
+```bash
+uv run python packages/frtb-orchestration/examples/run_demo.py
+```
+
+See `tests/test_orchestration_scaffold.py` for scaffold tests and sample
+builders. Manifest-based routing (`run_standardised_approach_from_manifest`)
+and full suite aggregation are also exported. Once IMA + SA arithmetic land,
+this will produce the composed SA total + top-of-house aggregates.

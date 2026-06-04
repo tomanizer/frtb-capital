@@ -38,3 +38,17 @@ assumptions are recorded in
 [`docs/REGULATORY_ASSUMPTIONS.md`](docs/REGULATORY_ASSUMPTIONS.md). The
 package-local requirement registry is
 [`docs/requirements/BASEL_FRTB_CVA.yml`](docs/requirements/BASEL_FRTB_CVA.yml).
+
+## End-to-end examples
+
+See `examples/run_demo.py` for a self-contained synthetic demo that constructs
+`CvaCounterparty` / `CvaNettingSet` / `CvaHedge` / `SaCvaSensitivity` inputs and
+exercises `calculate_cva_capital` for BA-CVA Reduced, Full (with hedges), SA-CVA
+(GIRR delta), and Mixed carve-out paths.
+
+```bash
+uv run python packages/frtb-cva/examples/run_demo.py
+```
+
+The tests/fixtures/*/loader.py also show how to load structured synthetic
+inputs for the workflow tests.
