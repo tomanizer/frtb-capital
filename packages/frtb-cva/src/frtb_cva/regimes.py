@@ -43,18 +43,20 @@ SUPPORTED_PROFILE_METADATA: dict[CvaRegulatoryProfile, dict[str, object]] = {
 
 UNSUPPORTED_PROFILE_REASONS: dict[CvaRegulatoryProfile, str] = {
     CvaRegulatoryProfile.US_NPR20_VB: (
-        "U.S. NPR 2.0 CVA profile is unsupported until proposed section mapping "
+        "CVA profile US_NPR20_VB is unsupported until U.S. NPR 2.0 proposed section mapping "
         "and fixtures are added."
     ),
     CvaRegulatoryProfile.EU_CRR3_CVA: (
-        "EU CRR3 CVA profile is unsupported until Articles 382-386 mapping and fixtures are added."
+        "CVA profile EU_CRR3_CVA is unsupported until Articles 382-386 mapping "
+        "and fixtures are added."
     ),
     CvaRegulatoryProfile.UK_PRA_CVA: (
-        "UK PRA CVA profile is unsupported until UK-specific source mapping and fixtures are added."
+        "CVA profile UK_PRA_CVA is unsupported until UK-specific source mapping "
+        "and fixtures are added."
     ),
 }
 
-_BASEL_SUPPORTED_METHODS = frozenset({CvaMethod.BA_CVA_REDUCED, CvaMethod.SA_CVA})
+_BASEL_SUPPORTED_METHODS = frozenset(CvaMethod)
 _BASEL_SUPPORTED_SA_CVA_RISK_CLASSES = frozenset(SaCvaRiskClass)
 
 
