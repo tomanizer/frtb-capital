@@ -59,7 +59,29 @@ def calculate_rcs_delta_capital(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Calculate SA-CVA RCS delta capital per MAR50.66-MAR50.68."""
+    """Calculate SA-CVA RCS delta capital per MAR50.66-MAR50.68.
+
+    Parameters
+    ----------
+    sensitivities :
+        Raw SA-CVA sensitivities prior to weighting.
+
+    hedges, optional :
+        Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+
+    m_cva, optional :
+        SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
+
+    reporting_currency, optional :
+        Input for ``calculate_rcs_delta_capital`` used in the CVA capital path.
+
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+
+    Returns
+    -------
+    SaCvaRiskClassCapital
+        Result of ``calculate_rcs_delta_capital`` for audit and downstream aggregation."""
 
     del reporting_currency
     if not sensitivities:
@@ -81,7 +103,29 @@ def calculate_rcs_vega_capital(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Calculate SA-CVA RCS vega capital per MAR50.69."""
+    """Calculate SA-CVA RCS vega capital per MAR50.69.
+
+    Parameters
+    ----------
+    sensitivities :
+        Raw SA-CVA sensitivities prior to weighting.
+
+    hedges, optional :
+        Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+
+    m_cva, optional :
+        SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
+
+    reporting_currency, optional :
+        Input for ``calculate_rcs_vega_capital`` used in the CVA capital path.
+
+    profile, optional :
+        Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
+
+    Returns
+    -------
+    SaCvaRiskClassCapital
+        Result of ``calculate_rcs_vega_capital`` for audit and downstream aggregation."""
 
     del reporting_currency
     if not sensitivities:

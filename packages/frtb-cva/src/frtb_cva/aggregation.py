@@ -86,7 +86,25 @@ def aggregate_intra_bucket(
     config: SaCvaAggregationConfig,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaBucketCapital:
-    """Aggregate weighted sensitivities to bucket capital K_b."""
+    """Aggregate weighted sensitivities to bucket capital K_b.
+
+    Parameters
+    ----------
+    bucket_id : str
+        SA-CVA bucket identifier stored on the bucket capital result.
+    weighted_sensitivities : tuple[SaCvaWeightedSensitivity, ...]
+        Net and hedge-weighted SA-CVA sensitivities validated for bucket aggregation.
+    config : SaCvaAggregationConfig
+        Risk-class aggregation hooks (intra-bucket correlation, inter-bucket gamma,
+        citation ids).
+    profile : CvaRegulatoryProfile | str, optional
+        Regulatory profile label or enum value; defaults to Basel MAR50 (2020).
+
+    Returns
+    -------
+    SaCvaBucketCapital
+        Bucket capital ``K_b`` with floor metadata and profile-mapped citations.
+    """
 
     if not weighted_sensitivities:
         raise CvaInputError("bucket requires at least one weighted sensitivity", field="bucket_id")
@@ -141,7 +159,25 @@ def aggregate_inter_bucket(
     m_cva: float = M_CVA_DEFAULT,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Aggregate bucket capitals to risk-class capital."""
+    """Aggregate bucket capitals to risk-class capital.
+
+    Parameters
+    ----------
+    bucket_capitals : tuple[SaCvaBucketCapital, ...]
+        Bucket-level ``K_b`` capitals prior to risk-class aggregation.
+    config : SaCvaAggregationConfig
+        Risk-class aggregation hooks (intra-bucket correlation, inter-bucket gamma,
+        citation ids).
+    m_cva : float, optional
+        SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
+    profile : CvaRegulatoryProfile | str, optional
+        Regulatory profile label or enum value; defaults to Basel MAR50 (2020).
+
+    Returns
+    -------
+    SaCvaRiskClassCapital
+        Risk-class capital with pre- and post-multiplier totals and bucket breakdown.
+    """
 
     if not bucket_capitals:
         raise CvaInputError("risk class requires at least one bucket", field="bucket_capitals")
@@ -196,7 +232,25 @@ def aggregate_weighted_sensitivities(
     m_cva: float = M_CVA_DEFAULT,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Group weighted sensitivities by bucket and aggregate to risk-class capital."""
+    """Group weighted sensitivities by bucket and aggregate to risk-class capital.
+
+    Parameters
+    ----------
+    weighted_sensitivities : tuple[SaCvaWeightedSensitivity, ...]
+        Net and hedge-weighted SA-CVA sensitivities validated for bucket aggregation.
+    config : SaCvaAggregationConfig
+        Risk-class aggregation hooks (intra-bucket correlation, inter-bucket gamma,
+        citation ids).
+    m_cva : float, optional
+        SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
+    profile : CvaRegulatoryProfile | str, optional
+        Regulatory profile label or enum value; defaults to Basel MAR50 (2020).
+
+    Returns
+    -------
+    SaCvaRiskClassCapital
+        Risk-class capital after intra- and inter-bucket MAR50.53 aggregation.
+    """
 
     buckets: dict[str, list[SaCvaWeightedSensitivity]] = defaultdict(list)
     for item in weighted_sensitivities:
@@ -219,6 +273,22 @@ def aggregate_weighted_sensitivities(
 
 
 def uniform_inter_bucket_gamma(gamma_bc: float, citation_id: str) -> InterBucketGammaFn:
+    """Build a uniform inter-bucket gamma lookup for SA-CVA aggregation.
+
+    Parameters
+    ----------
+    gamma_bc : float
+        Inter-bucket correlation ``gamma_bc`` applied uniformly to all bucket pairs.
+    citation_id : str
+        Profile-specific citation id attached to the gamma for audit replay.
+
+    Returns
+    -------
+    InterBucketGammaFn
+        Callable ``(left_bucket, right_bucket) -> (gamma_bc, citation_id)`` that
+        ignores bucket ids and returns the fixed pair.
+    """
+
     def _lookup(left_bucket: str, right_bucket: str) -> tuple[float, str]:
         del left_bucket, right_bucket
         return gamma_bc, citation_id
@@ -258,7 +328,18 @@ def _girr_vega_intra_correlation(
 def girr_delta_aggregation_config(
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaAggregationConfig:
-    """Return cited GIRR delta aggregation configuration."""
+    """Return cited GIRR delta aggregation configuration.
+
+    Parameters
+    ----------
+    profile : CvaRegulatoryProfile | str, optional
+        Regulatory profile label or enum value; defaults to Basel MAR50 (2020).
+
+    Returns
+    -------
+    SaCvaAggregationConfig
+        GIRR delta hooks with profile-mapped intra-bucket rho and inter-bucket gamma.
+    """
 
     def _intra(
         left: SaCvaWeightedSensitivity, right: SaCvaWeightedSensitivity
@@ -282,7 +363,18 @@ def girr_delta_aggregation_config(
 def girr_vega_aggregation_config(
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaAggregationConfig:
-    """Return cited GIRR vega aggregation configuration."""
+    """Return cited GIRR vega aggregation configuration.
+
+    Parameters
+    ----------
+    profile : CvaRegulatoryProfile | str, optional
+        Regulatory profile label or enum value; defaults to Basel MAR50 (2020).
+
+    Returns
+    -------
+    SaCvaAggregationConfig
+        GIRR vega hooks with profile-mapped intra-bucket rho and inter-bucket gamma.
+    """
 
     def _intra(
         left: SaCvaWeightedSensitivity, right: SaCvaWeightedSensitivity

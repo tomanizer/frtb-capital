@@ -46,7 +46,26 @@ def input_hash(
     hedges: Iterable[CvaHedge] = (),
     sensitivities: Iterable[SaCvaSensitivity] = (),
 ) -> str:
-    """Return a deterministic hash of canonical CVA inputs."""
+    """Return a deterministic hash of canonical CVA inputs.
+
+    Parameters
+    ----------
+    context : CvaCalculationContext
+        Calculation context carrying profile, currency, and method metadata.
+    counterparties : Iterable[CvaCounterparty]
+        Counterparty records validated with netting sets.
+    netting_sets : Iterable[CvaNettingSet]
+        Netting sets included in the canonical input payload.
+    hedges : Iterable[CvaHedge], optional
+        Hedge records included in the canonical input payload.
+    sensitivities : Iterable[SaCvaSensitivity], optional
+        SA-CVA sensitivities included in the canonical input payload.
+
+    Returns
+    -------
+    str
+        Hex digest of the canonical JSON input payload for audit replay.
+    """
 
     validated_context = validate_calculation_context(context)
     validated_counterparties = validate_cva_counterparties(counterparties)
@@ -87,7 +106,18 @@ def _input_hash_from_validated(
 
 
 def serialize_cva_result(result: CvaCapitalResult) -> dict[str, object]:
-    """Return a JSON-serialisable audit payload for a CVA result."""
+    """Return a JSON-serialisable audit payload for a CVA result.
+
+    Parameters
+    ----------
+    result : CvaCapitalResult
+        Frozen CVA capital result to serialize for evidence storage.
+
+    Returns
+    -------
+    dict[str, object]
+        JSON-serializable audit payload for this capital result.
+    """
 
     return {
         "run_id": result.run_id,
@@ -127,7 +157,18 @@ def serialize_cva_result(result: CvaCapitalResult) -> dict[str, object]:
 
 
 def validate_cva_result_reconciliation(result: CvaCapitalResult) -> None:
-    """Raise when a public CVA result does not reconcile to its line records."""
+    """Raise when a public CVA result does not reconcile to its line records.
+
+    Parameters
+    ----------
+    result : CvaCapitalResult
+        Public CVA result whose BA-CVA, SA-CVA, and mixed-method totals are checked.
+
+    Raises
+    ------
+    CvaInputError
+        When component totals or hashes do not reconcile to ``total_cva_capital``.
+    """
 
     _validate_cva_result_hashes(result)
     _validate_mixed_method_reconciliation(result)
