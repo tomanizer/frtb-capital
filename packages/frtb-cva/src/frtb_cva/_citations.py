@@ -4,7 +4,18 @@ from __future__ import annotations
 
 
 def merge_citations(*groups: tuple[str, ...]) -> tuple[str, ...]:
-    """Return citation ids in first-seen order with duplicates removed."""
+    """Return citation ids in first-seen order with duplicates removed.
+
+    Parameters
+    ----------
+    *groups : tuple[str, ...]
+        Citation id tuples merged in argument order.
+
+    Returns
+    -------
+    tuple[str, ...]
+        De-duplicated citation ids preserving first-seen order for audit output.
+    """
 
     citation_ids: list[str] = []
     seen: set[str] = set()

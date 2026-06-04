@@ -33,7 +33,7 @@ class SaCvaRiskClass(StrEnum):
 
 
 class SaCvaRiskMeasure(StrEnum):
-    """SA-CVA risk measure."""
+    """Delta and vega measures used in MAR50 SA-CVA bucket and risk-class aggregation."""
 
     DELTA = "DELTA"
     VEGA = "VEGA"
@@ -415,7 +415,13 @@ class CvaCapitalResult:
     audit_metadata: tuple[tuple[str, str], ...] = ()
 
     def as_dict(self) -> dict[str, object]:
-        """Return the deterministic audit payload for this result."""
+        """Return the deterministic audit payload for this result.
+
+        Returns
+        -------
+        dict[str, object]
+            JSON-serializable audit payload for this capital result.
+        """
 
         from frtb_cva.audit import serialize_cva_result
 

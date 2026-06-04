@@ -34,7 +34,20 @@ def resolve_calculation_method(
     *,
     netting_sets: tuple[CvaNettingSet, ...] = (),
 ) -> ScopeResolution:
-    """Resolve the effective CVA method from calculation context."""
+    """Resolve the effective CVA method from calculation context.
+
+Parameters
+----------
+context :
+    Calculation context carrying profile, currency, and method metadata.
+
+netting_sets, optional :
+    Input for ``resolve_calculation_method`` used in the CVA capital path.
+
+Returns
+-------
+ScopeResolution
+    Result of ``resolve_calculation_method`` for audit and downstream aggregation."""
 
     unsupported_flags: list[str] = []
     audit_metadata: list[tuple[str, str]] = [
@@ -109,7 +122,20 @@ def validate_method_selection(
     *,
     netting_sets: tuple[CvaNettingSet, ...] = (),
 ) -> ScopeResolution:
-    """Validate method selection and carve-out evidence before capital calculation."""
+    """Validate method selection and carve-out evidence before capital calculation.
+
+Parameters
+----------
+context :
+    Calculation context carrying profile, currency, and method metadata.
+
+netting_sets, optional :
+    Input for ``validate_method_selection`` used in the CVA capital path.
+
+Returns
+-------
+ScopeResolution
+    Result of ``validate_method_selection`` for audit and downstream aggregation."""
 
     return resolve_calculation_method(context, netting_sets=netting_sets)
 
@@ -162,7 +188,26 @@ def partition_mixed_method_inputs(
     tuple[CvaNettingSet, ...],
     tuple[CvaHedge, ...],
 ]:
-    """Split inputs into SA-CVA and BA-CVA carve-out subsets without double-counting hedges."""
+    """Split inputs into SA-CVA and BA-CVA carve-out subsets without double-counting hedges.
+
+Parameters
+----------
+counterparties :
+    Input for ``partition_mixed_method_inputs`` used in the CVA capital path.
+
+netting_sets :
+    Input for ``partition_mixed_method_inputs`` used in the CVA capital path.
+
+hedges :
+    Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+
+carve_out_netting_set_ids :
+    Stable identifiers for carve out netting set recorded on results.
+
+Returns
+-------
+tuple[tuple[CvaCounterparty, ...], tuple[CvaNettingSet, ...], tuple[CvaHedge, ...], tuple[CvaCounterparty, ...], tuple[CvaNettingSet, ...], tuple[CvaHedge, ...]]
+    Result of ``partition_mixed_method_inputs`` for audit and downstream aggregation."""
 
     carve_out_set = set(carve_out_netting_set_ids)
     ba_netting_sets = tuple(

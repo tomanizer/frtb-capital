@@ -46,7 +46,26 @@ def calculate_cva_capital(
     hedges: Iterable[CvaHedge] = (),
     sensitivities: Iterable[SaCvaSensitivity] = (),
 ) -> CvaCapitalResult:
-    """Calculate supported BA-CVA, SA-CVA, or mixed carve-out CVA capital."""
+    """Calculate supported BA-CVA, SA-CVA, or mixed carve-out CVA capital.
+
+    Parameters
+    ----------
+    context : CvaCalculationContext
+        Calculation context carrying profile, currency, and method metadata.
+    counterparties : Iterable[CvaCounterparty]
+        Counterparty records referenced by netting sets and BA-CVA weights.
+    netting_sets : Iterable[CvaNettingSet]
+        Netting sets supplying EAD, maturity, and discount inputs for BA-CVA.
+    hedges : Iterable[CvaHedge], optional
+        Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+    sensitivities : Iterable[SaCvaSensitivity], optional
+        Raw SA-CVA sensitivities prior to weighting.
+
+    Returns
+    -------
+    CvaCapitalResult
+        Frozen CVA capital result with method components, citations, and audit hashes.
+    """
 
     validated_context = validate_calculation_context(context)
     validated_counterparties = validate_cva_counterparties(counterparties)

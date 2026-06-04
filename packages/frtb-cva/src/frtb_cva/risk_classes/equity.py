@@ -60,7 +60,29 @@ def calculate_equity_delta_capital(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Calculate SA-CVA equity delta capital per MAR50.70-MAR50.72."""
+    """Calculate SA-CVA equity delta capital per MAR50.70-MAR50.72.
+
+Parameters
+----------
+sensitivities :
+    Raw SA-CVA sensitivities prior to weighting.
+
+hedges, optional :
+    Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+
+m_cva, optional :
+    SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
+
+reporting_currency, optional :
+    Input for ``calculate_equity_delta_capital`` used in the CVA capital path.
+
+profile, optional :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+SaCvaRiskClassCapital
+    Result of ``calculate_equity_delta_capital`` for audit and downstream aggregation."""
 
     del reporting_currency
     if not sensitivities:
@@ -82,7 +104,29 @@ def calculate_equity_vega_capital(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Calculate SA-CVA equity vega capital per MAR50.73."""
+    """Calculate SA-CVA equity vega capital per MAR50.73.
+
+Parameters
+----------
+sensitivities :
+    Raw SA-CVA sensitivities prior to weighting.
+
+hedges, optional :
+    Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+
+m_cva, optional :
+    SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
+
+reporting_currency, optional :
+    Input for ``calculate_equity_vega_capital`` used in the CVA capital path.
+
+profile, optional :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+SaCvaRiskClassCapital
+    Result of ``calculate_equity_vega_capital`` for audit and downstream aggregation."""
 
     del reporting_currency
     if not sensitivities:

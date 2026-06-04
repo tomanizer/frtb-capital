@@ -72,7 +72,17 @@ _CCS_VEGA_PATH = (
 def cva_profile_support_status(
     profile: CvaRegulatoryProfile | str,
 ) -> CvaProfileSupportStatus:
-    """Return the capital-producing status for a known CVA profile."""
+    """Return the capital-producing status for a known CVA profile.
+
+Parameters
+----------
+profile :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+CvaProfileSupportStatus
+    Result of ``cva_profile_support_status`` for audit and downstream aggregation."""
 
     resolved = _resolve_profile_id(profile)
     if resolved in _SUPPORTED_PROFILES:
@@ -81,7 +91,17 @@ def cva_profile_support_status(
 
 
 def cva_capital_supported_methods(profile: CvaRegulatoryProfile | str) -> frozenset[CvaMethod]:
-    """Return supported CVA methods for a profile without falling back to Basel."""
+    """Return supported CVA methods for a profile without falling back to Basel.
+
+Parameters
+----------
+profile :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+frozenset[CvaMethod]
+    Result of ``cva_capital_supported_methods`` for audit and downstream aggregation."""
 
     resolved = _resolve_profile_id(profile)
     if resolved in _SUPPORTED_PROFILES:
@@ -92,7 +112,17 @@ def cva_capital_supported_methods(profile: CvaRegulatoryProfile | str) -> frozen
 def cva_sa_cva_supported_paths(
     profile: CvaRegulatoryProfile | str,
 ) -> frozenset[tuple[SaCvaRiskClass, SaCvaRiskMeasure]]:
-    """Return supported SA-CVA risk-class and measure paths for a profile."""
+    """Return supported SA-CVA risk-class and measure paths for a profile.
+
+Parameters
+----------
+profile :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+frozenset[tuple[SaCvaRiskClass, SaCvaRiskMeasure]]
+    Result of ``cva_sa_cva_supported_paths`` for audit and downstream aggregation."""
 
     resolved = _resolve_profile_id(profile)
     if resolved in _SUPPORTED_PROFILES:
@@ -104,7 +134,15 @@ def ensure_cva_profile_method_supported(
     profile: CvaRegulatoryProfile | str,
     method: CvaMethod | str,
 ) -> None:
-    """Fail closed when a CVA profile/method cell is not capital-producing."""
+    """Fail closed when a CVA profile/method cell is not capital-producing.
+
+Parameters
+----------
+profile :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+method :
+    Requested CVA calculation method (BA-CVA, SA-CVA, or mixed carve-out)."""
 
     resolved = _resolve_profile_id(profile)
     resolved_method = _resolve_method_id(method)
@@ -122,7 +160,18 @@ def ensure_cva_sa_cva_path_supported(
     risk_class: SaCvaRiskClass | str,
     risk_measure: SaCvaRiskMeasure | str,
 ) -> None:
-    """Fail closed when a profile/risk-class/measure cell is not supported."""
+    """Fail closed when a profile/risk-class/measure cell is not supported.
+
+Parameters
+----------
+profile :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+risk_class :
+    SA-CVA risk class driving aggregation configuration.
+
+risk_measure :
+    SA-CVA risk measure (delta or vega) for the aggregation path."""
 
     resolved = _resolve_profile_id(profile)
     resolved_risk_class = _resolve_risk_class_id(risk_class)
@@ -142,7 +191,12 @@ def ensure_cva_sa_cva_path_supported(
 
 
 def cva_profile_support_matrix() -> tuple[CvaSupportCell, ...]:
-    """Return the current CVA support matrix."""
+    """Return the current CVA support matrix.
+
+Returns
+-------
+tuple[CvaSupportCell, ...]
+    Result of ``cva_profile_support_matrix`` for audit and downstream aggregation."""
 
     rows: list[CvaSupportCell] = []
     for profile in sorted(_SUPPORTED_PROFILES, key=lambda item: item.value):

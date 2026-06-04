@@ -43,7 +43,18 @@ class CvaAttributionResult:
 
 
 def attribute_cva_capital(result: CvaCapitalResult) -> CvaAttributionResult:
-    """Return standalone explain amounts and explicit unsupported CVA branches."""
+    """Return standalone explain amounts and explicit unsupported CVA branches.
+
+    Parameters
+    ----------
+    result : CvaCapitalResult
+        Assembled CVA capital result whose method components are explained.
+
+    Returns
+    -------
+    CvaAttributionResult
+        Standalone contribution rows, residual, and unsupported-branch flags.
+    """
 
     contributions: list[CvaAttributionContribution] = []
     unsupported: list[str] = []
@@ -104,13 +115,25 @@ def project_cva_attribution(
 ) -> tuple[CapitalContribution, ...]:
     """Project a :class:`CvaAttributionResult` to suite-wide attribution records.
 
-    Standalone explain rows are projected as
-    :attr:`AttributionMethod.STANDALONE`. Unsupported nonlinear branches are
-    projected as :attr:`AttributionMethod.UNSUPPORTED`, and any gap between the
-    explain rows and :attr:`CvaAttributionResult.total_capital` is projected as
-    a single :attr:`AttributionMethod.RESIDUAL` row. The projected set therefore
-    reconciles through ``sum(contribution) + sum(residual)`` even when exact
-    Euler decomposition is not valid for a CVA branch.
+Standalone explain rows are projected as
+:attr:`AttributionMethod.STANDALONE`. Unsupported nonlinear branches are
+projected as :attr:`AttributionMethod.UNSUPPORTED`, and any gap between the
+explain rows and :attr:`CvaAttributionResult.total_capital` is projected as
+a single :attr:`AttributionMethod.RESIDUAL` row. The projected set therefore
+reconciles through ``sum(contribution) + sum(residual)`` even when exact
+Euler decomposition is not valid for a CVA branch.
+
+    Parameters
+    ----------
+    result : CvaAttributionResult
+        CVA attribution totals and branch flags from :func:`attribute_cva_capital`.
+    capital_result : CvaCapitalResult
+        Source capital result supplying input and profile hashes for contributions.
+
+    Returns
+    -------
+    tuple[CapitalContribution, ...]
+        Suite-wide contribution records including residual and unsupported rows.
     """
     input_hash = capital_result.input_hash
     profile_hash = capital_result.profile_hash

@@ -43,7 +43,23 @@ def calculate_netting_set_standalone(
     *,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> BaCvaStandAloneLine:
-    """Calculate stand-alone BA-CVA capital for one netting set."""
+    """Calculate stand-alone BA-CVA capital for one netting set.
+
+Parameters
+----------
+netting_set :
+    Input for ``calculate_netting_set_standalone`` used in the CVA capital path.
+
+counterparty :
+    Input for ``calculate_netting_set_standalone`` used in the CVA capital path.
+
+profile, optional :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+BaCvaStandAloneLine
+    Result of ``calculate_netting_set_standalone`` for audit and downstream aggregation."""
 
     if netting_set.counterparty_id != counterparty.counterparty_id:
         raise CvaInputError(
@@ -93,7 +109,23 @@ def calculate_counterparty_standalone(
     *,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> BaCvaCounterpartyCapital:
-    """Aggregate netting-set stand-alone capital to counterparty stand-alone capital."""
+    """Aggregate netting-set stand-alone capital to counterparty stand-alone capital.
+
+Parameters
+----------
+counterparty :
+    Input for ``calculate_counterparty_standalone`` used in the CVA capital path.
+
+netting_sets :
+    Input for ``calculate_counterparty_standalone`` used in the CVA capital path.
+
+profile, optional :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+BaCvaCounterpartyCapital
+    Result of ``calculate_counterparty_standalone`` for audit and downstream aggregation."""
 
     capital, _ = _counterparty_standalone_with_lines(counterparty, netting_sets, profile=profile)
     return capital
@@ -155,7 +187,23 @@ def calculate_reduced_portfolio(
     *,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> BaCvaReducedPortfolioResult:
-    """Calculate reduced BA-CVA portfolio capital per MAR50.14."""
+    """Calculate reduced BA-CVA portfolio capital per MAR50.14.
+
+Parameters
+----------
+counterparties :
+    Input for ``calculate_reduced_portfolio`` used in the CVA capital path.
+
+netting_sets :
+    Input for ``calculate_reduced_portfolio`` used in the CVA capital path.
+
+profile, optional :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+BaCvaReducedPortfolioResult
+    Result of ``calculate_reduced_portfolio`` for audit and downstream aggregation."""
 
     netting_sets_by_counterparty: dict[str, list[CvaNettingSet]] = defaultdict(list)
     for netting_set in netting_sets:
@@ -255,7 +303,26 @@ def calculate_full_portfolio(
     *,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> BaCvaFullPortfolioResult:
-    """Calculate full BA-CVA with hedge recognition per MAR50.17-MAR50.26."""
+    """Calculate full BA-CVA with hedge recognition per MAR50.17-MAR50.26.
+
+Parameters
+----------
+counterparties :
+    Input for ``calculate_full_portfolio`` used in the CVA capital path.
+
+netting_sets :
+    Input for ``calculate_full_portfolio`` used in the CVA capital path.
+
+hedges, optional :
+    Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+
+profile, optional :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+BaCvaFullPortfolioResult
+    Result of ``calculate_full_portfolio`` for audit and downstream aggregation."""
 
     reduced = calculate_reduced_portfolio(counterparties, netting_sets, profile=profile)
     rho, rho_citation = ba_cva_rho(profile=profile)

@@ -26,7 +26,32 @@ def calculate_risk_class_capital(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> SaCvaRiskClassCapital:
-    """Validate, weight, and aggregate sensitivities for one risk class."""
+    """Validate, weight, and aggregate sensitivities for one risk class.
+
+Parameters
+----------
+sensitivities :
+    Raw SA-CVA sensitivities prior to weighting.
+
+aggregation_config :
+    Input for ``calculate_risk_class_capital`` used in the CVA capital path.
+
+hedges, optional :
+    Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
+
+m_cva, optional :
+    SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
+
+reporting_currency, optional :
+    Input for ``calculate_risk_class_capital`` used in the CVA capital path.
+
+profile, optional :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+SaCvaRiskClassCapital
+    Result of ``calculate_risk_class_capital`` for audit and downstream aggregation."""
 
     validated = validate_sa_cva_sensitivities(sensitivities)
     validated_hedges = validate_cva_hedges(hedges)

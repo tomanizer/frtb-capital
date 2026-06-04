@@ -33,7 +33,20 @@ def resolve_sa_cva_bucket(
     *,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> tuple[str, tuple[str, ...]]:
-    """Return the effective bucket id and citation ids for one sensitivity row."""
+    """Return the effective bucket id and citation ids for one sensitivity row.
+
+Parameters
+----------
+sensitivity :
+    Single SA-CVA sensitivity row prior to weighting.
+
+profile, optional :
+    Optional regulatory profile label or ``CvaRegulatoryProfile`` value; defaults to Basel MAR50 (2020).
+
+Returns
+-------
+tuple[str, tuple[str, ...]]
+    Result of ``resolve_sa_cva_bucket`` for audit and downstream aggregation."""
 
     bucket = sensitivity.bucket_id
     if sensitivity.index_treatment is SaCvaIndexTreatment.LOOK_THROUGH_REQUIRED:
