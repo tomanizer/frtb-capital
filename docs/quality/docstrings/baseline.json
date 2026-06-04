@@ -2,17 +2,17 @@
   "description": "Runtime package docstring inventory report.",
   "metrics": {
     "findings_by_rule": {
-      "MISSING_PARAMETERS_SECTION": 823,
-      "MISSING_PUBLIC_DOCSTRING": 134,
-      "MISSING_RETURNS_SECTION": 925,
+      "MISSING_PARAMETERS_SECTION": 804,
+      "MISSING_PUBLIC_DOCSTRING": 102,
+      "MISSING_RETURNS_SECTION": 913,
       "TRIVIAL_DOCSTRING": 1
     },
     "packages_with_findings": 7,
-    "total_findings": 1883
+    "total_findings": 1820
   },
   "packages": {
     "frtb-cva": {
-      "finding_count": 252,
+      "finding_count": 178,
       "findings": [
         {
           "line": 6,
@@ -31,159 +31,6 @@
           "package": "frtb-cva",
           "path": "packages/frtb-cva/src/frtb_cva/_citations.py",
           "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 24,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "hash_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 24,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "hash_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 30,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "input_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 30,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "input_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 49,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "batch_input_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 49,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "batch_input_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 85,
-          "message": "Public function is missing a docstring.",
-          "object_name": "context_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 107,
-          "message": "Public function is missing a docstring.",
-          "object_name": "counterparty_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 120,
-          "message": "Public function is missing a docstring.",
-          "object_name": "netting_set_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 137,
-          "message": "Public function is missing a docstring.",
-          "object_name": "hedge_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 163,
-          "message": "Public function is missing a docstring.",
-          "object_name": "sensitivity_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 191,
-          "message": "Public function is missing a docstring.",
-          "object_name": "lineage_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 202,
-          "message": "Public function is missing a docstring.",
-          "object_name": "batch_counterparty_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 215,
-          "message": "Public function is missing a docstring.",
-          "object_name": "batch_netting_set_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 232,
-          "message": "Public function is missing a docstring.",
-          "object_name": "batch_hedge_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 256,
-          "message": "Public function is missing a docstring.",
-          "object_name": "batch_sensitivity_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 280,
-          "message": "Public function is missing a docstring.",
-          "object_name": "batch_lineage_payload",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_payloads.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
           "line": 8,
@@ -301,78 +148,6 @@
           "package": "frtb-cva",
           "path": "packages/frtb-cva/src/frtb_cva/aggregation.py",
           "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 428,
-          "message": "Public function is missing a docstring.",
-          "object_name": "normalize_cva_counterparty_arrow_table",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/arrow_batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 441,
-          "message": "Public function is missing a docstring.",
-          "object_name": "normalize_cva_netting_set_arrow_table",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/arrow_batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 454,
-          "message": "Public function is missing a docstring.",
-          "object_name": "normalize_cva_hedge_arrow_table",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/arrow_batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 467,
-          "message": "Public function is missing a docstring.",
-          "object_name": "normalize_sa_cva_sensitivity_arrow_table",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/arrow_batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 480,
-          "message": "Public function is missing a docstring.",
-          "object_name": "build_cva_counterparty_batch_from_arrow",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/arrow_batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 496,
-          "message": "Public function is missing a docstring.",
-          "object_name": "build_cva_netting_set_batch_from_arrow",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/arrow_batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 512,
-          "message": "Public function is missing a docstring.",
-          "object_name": "build_cva_hedge_batch_from_arrow",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/arrow_batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 526,
-          "message": "Public function is missing a docstring.",
-          "object_name": "build_sa_cva_sensitivity_batch_from_arrow",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/arrow_batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
           "line": 45,
@@ -528,240 +303,6 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 145,
-          "message": "Public method is missing a docstring.",
-          "object_name": "CvaCounterpartyBatch.row_count",
-          "object_type": "method",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 173,
-          "message": "Public method is missing a docstring.",
-          "object_name": "CvaNettingSetBatch.row_count",
-          "object_type": "method",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 208,
-          "message": "Public method is missing a docstring.",
-          "object_name": "CvaHedgeBatch.row_count",
-          "object_type": "method",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 243,
-          "message": "Public method is missing a docstring.",
-          "object_name": "SaCvaSensitivityBatch.row_count",
-          "object_type": "method",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 258,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_cva_counterparty_batch_from_counterparties",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 258,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_cva_counterparty_batch_from_counterparties",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 297,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_cva_netting_set_batch_from_netting_sets",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 297,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_cva_netting_set_batch_from_netting_sets",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 344,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_cva_hedge_batch_from_hedges",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 344,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_cva_hedge_batch_from_hedges",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 395,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "build_sa_cva_sensitivity_batch_from_sensitivities",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 395,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_sa_cva_sensitivity_batch_from_sensitivities",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 453,
-          "message": "Public function is missing a docstring.",
-          "object_name": "build_cva_counterparty_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 529,
-          "message": "Public function is missing a docstring.",
-          "object_name": "build_cva_netting_set_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 637,
-          "message": "Public function is missing a docstring.",
-          "object_name": "build_cva_hedge_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 779,
-          "message": "Public function is missing a docstring.",
-          "object_name": "build_sa_cva_sensitivity_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 928,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "calculate_cva_capital_from_batches",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 928,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "calculate_cva_capital_from_batches",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 1077,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "calculate_reduced_portfolio_from_batches",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 1077,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "calculate_reduced_portfolio_from_batches",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 1177,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "calculate_full_portfolio_from_batches",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 1177,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "calculate_full_portfolio_from_batches",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 1353,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "calculate_sa_cva_capital_from_batch",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 1353,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "calculate_sa_cva_capital_from_batch",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 1392,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "input_hash_for_cva_batches",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 1392,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "input_hash_for_cva_batches",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/batch.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 41,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_cva_capital",
@@ -777,51 +318,6 @@
           "object_type": "function",
           "package": "frtb-cva",
           "path": "packages/frtb-cva/src/frtb_cva/capital.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 47,
-          "message": "Public class is missing a docstring.",
-          "object_name": "CvaAdapterWarning",
-          "object_type": "class",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/crif.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 54,
-          "message": "Public class is missing a docstring.",
-          "object_name": "CvaRejectedRow",
-          "object_type": "class",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/crif.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 61,
-          "message": "Public class is missing a docstring.",
-          "object_name": "CvaAdapterResult",
-          "object_type": "class",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/crif.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 70,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "adapt_cva_records",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/crif.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 70,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "adapt_cva_records",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/crif.py",
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
@@ -2085,168 +1581,6 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 36,
-          "message": "Public class is missing a docstring.",
-          "object_name": "EadSignConvention",
-          "object_type": "class",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 41,
-          "message": "Public class is missing a docstring.",
-          "object_name": "AmountSignConventionEnum",
-          "object_type": "class",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 61,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalise_ead_amount",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 61,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalise_ead_amount",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 81,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalise_sensitivity_amount",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 81,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalise_sensitivity_amount",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 99,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_cva_counterparties",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 99,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_cva_counterparties",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 123,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_cva_netting_sets",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 123,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_cva_netting_sets",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 154,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_cva_hedges",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 154,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_cva_hedges",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 176,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_sa_cva_sensitivities",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 176,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_sa_cva_sensitivities",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 202,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_calculation_context",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 202,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_calculation_context",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 457,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_m_cva_multiplier",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 457,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_m_cva_multiplier",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
           "line": 128,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "compute_weighted_sensitivities",
@@ -2285,7 +1619,7 @@
       ]
     },
     "frtb-drc": {
-      "finding_count": 187,
+      "finding_count": 193,
       "findings": [
         {
           "line": 6,
@@ -2303,6 +1637,60 @@
           "object_type": "function",
           "package": "frtb-drc",
           "path": "packages/frtb-drc/src/frtb_drc/_citations.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 27,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "drc_crif_result_to_arrow_tables",
+          "object_type": "function",
+          "package": "frtb-drc",
+          "path": "packages/frtb-drc/src/frtb_drc/_crif_arrow_adapter.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 27,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "drc_crif_result_to_arrow_tables",
+          "object_type": "function",
+          "package": "frtb-drc",
+          "path": "packages/frtb-drc/src/frtb_drc/_crif_arrow_adapter.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 37,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "DrcRejectedCrifRow.as_dict",
+          "object_type": "method",
+          "package": "frtb-drc",
+          "path": "packages/frtb-drc/src/frtb_drc/_crif_models.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 74,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "DrcCrifAdapterResult.accepted_count",
+          "object_type": "method",
+          "package": "frtb-drc",
+          "path": "packages/frtb-drc/src/frtb_drc/_crif_models.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 80,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "DrcCrifAdapterResult.rejected_count",
+          "object_type": "method",
+          "package": "frtb-drc",
+          "path": "packages/frtb-drc/src/frtb_drc/_crif_models.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 85,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "DrcCrifAdapterResult.to_arrow_tables",
+          "object_type": "method",
+          "package": "frtb-drc",
+          "path": "packages/frtb-drc/src/frtb_drc/_crif_models.py",
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
@@ -7884,7 +7272,7 @@
       ]
     },
     "frtb-orchestration": {
-      "finding_count": 50,
+      "finding_count": 55,
       "findings": [
         {
           "line": 41,
@@ -8283,7 +7671,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 112,
+          "line": 121,
           "message": "Public method returns a value but no NumPy Returns section.",
           "object_name": "SuiteAttributionResult.as_dict",
           "object_type": "method",
@@ -8292,7 +7680,34 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 217,
+          "line": 157,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "SuiteAttributionComponentReport.as_dict",
+          "object_type": "method",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 224,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "SuiteAttributionReport.contribution_records",
+          "object_type": "method",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 234,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "SuiteAttributionReport.as_dict",
+          "object_type": "method",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 343,
           "message": "Public method returns a value but no NumPy Returns section.",
           "object_name": "SuiteCapitalResult.as_dict",
           "object_type": "method",
@@ -8301,7 +7716,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 240,
+          "line": 366,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "calculate_suite_capital",
           "object_type": "function",
@@ -8310,7 +7725,7 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 240,
+          "line": 366,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "calculate_suite_capital",
           "object_type": "function",
@@ -8319,7 +7734,7 @@
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
-          "line": 329,
+          "line": 455,
           "message": "Public function has parameters but no NumPy Parameters section.",
           "object_name": "aggregate_suite_attribution",
           "object_type": "function",
@@ -8328,9 +7743,27 @@
           "rule": "MISSING_PARAMETERS_SECTION"
         },
         {
-          "line": 329,
+          "line": 455,
           "message": "Public function returns a value but no NumPy Returns section.",
           "object_name": "aggregate_suite_attribution",
+          "object_type": "function",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 523,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "build_suite_attribution_report",
+          "object_type": "function",
+          "package": "frtb-orchestration",
+          "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 523,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "build_suite_attribution_report",
           "object_type": "function",
           "package": "frtb-orchestration",
           "path": "packages/frtb-orchestration/src/frtb_orchestration/suite.py",

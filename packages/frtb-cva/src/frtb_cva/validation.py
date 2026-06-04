@@ -1,5 +1,8 @@
-"""
-Validation helpers for canonical CVA inputs.
+"""Deterministic validation and sign normalisation for canonical CVA inputs.
+
+This module guards public CVA entrypoints: it validates dataclass rows, enforces
+unique identifiers, normalises exposure and sensitivity signs, and raises
+:class:`UnsupportedRegulatoryFeatureError` for unimplemented MAR50.9 elections.
 """
 
 from __future__ import annotations
@@ -34,11 +37,15 @@ EADSignConvention = Literal["non_negative", "signed_absolute"]
 
 
 class EadSignConvention(StrEnum):
+    """Supported exposure-at-default sign conventions for netting-set inputs."""
+
     NON_NEGATIVE = "non_negative"
     SIGNED_ABSOLUTE = "signed_absolute"
 
 
 class AmountSignConventionEnum(StrEnum):
+    """Supported sensitivity amount sign conventions for SA-CVA inputs."""
+
     POSITIVE_LOSS = "positive_loss"
     SIGNED_ABSOLUTE = "signed_absolute"
 
@@ -63,7 +70,25 @@ def normalise_ead_amount(
     *,
     source_sign_convention: EADSignConvention = "non_negative",
 ) -> float:
-    """Return a finite non-negative exposure-at-default amount."""
+    """Return a finite non-negative exposure-at-default amount.
+
+    Parameters
+    ----------
+    value : float
+        Raw EAD amount from a netting set or adapter row.
+    source_sign_convention : EADSignConvention, optional
+        ``non_negative`` rejects negative values; ``signed_absolute`` takes the absolute value.
+
+    Returns
+    -------
+    float
+        Finite, non-negative EAD stored on canonical netting-set records.
+
+    Raises
+    ------
+    CvaInputError
+        If the value is non-finite or negative under ``non_negative``.
+    """
 
     if source_sign_convention not in {"non_negative", "signed_absolute"}:
         raise CvaInputError(
@@ -83,7 +108,25 @@ def normalise_sensitivity_amount(
     *,
     source_sign_convention: AmountSignConvention = "positive_loss",
 ) -> float:
-    """Return a finite sensitivity amount under the positive-loss convention."""
+    """Return a finite sensitivity amount under the positive-loss convention.
+
+    Parameters
+    ----------
+    value : float
+        Raw sensitivity amount from a row or adapter.
+    source_sign_convention : AmountSignConvention, optional
+        ``positive_loss`` requires a finite numeric value; ``signed_absolute`` allows negatives.
+
+    Returns
+    -------
+    float
+        Finite sensitivity amount stored on canonical SA-CVA records.
+
+    Raises
+    ------
+    CvaInputError
+        If the value is non-finite or the sign convention token is unknown.
+    """
 
     if source_sign_convention not in {"positive_loss", "signed_absolute"}:
         raise CvaInputError(
@@ -97,7 +140,23 @@ normalise_cva_amount = normalise_sensitivity_amount
 
 
 def validate_cva_counterparties(counterparties: object) -> tuple[CvaCounterparty, ...]:
-    """Validate canonical counterparty records and return them as a tuple."""
+    """Validate canonical counterparty records and return them as a tuple.
+
+    Parameters
+    ----------
+    counterparties : object
+        Iterable of :class:`~frtb_cva.data_models.CvaCounterparty` rows.
+
+    Returns
+    -------
+    tuple[CvaCounterparty, ...]
+        Validated counterparties with unique ``counterparty_id`` values.
+
+    Raises
+    ------
+    CvaInputError
+        If the input is not an iterable of counterparty dataclasses or validation fails.
+    """
 
     if isinstance(counterparties, CvaCounterparty):
         raise CvaInputError("counterparties must be an iterable of CvaCounterparty objects")
@@ -125,7 +184,25 @@ def validate_cva_netting_sets(
     *,
     counterparties: tuple[CvaCounterparty, ...] | None = None,
 ) -> tuple[CvaNettingSet, ...]:
-    """Validate canonical netting-set records and return them as a tuple."""
+    """Validate canonical netting-set records and return them as a tuple.
+
+    Parameters
+    ----------
+    netting_sets : object
+        Iterable of :class:`~frtb_cva.data_models.CvaNettingSet` rows.
+    counterparties : tuple[CvaCounterparty, ...] or None, optional
+        When provided, each netting set must reference a known counterparty id.
+
+    Returns
+    -------
+    tuple[CvaNettingSet, ...]
+        Validated netting sets with unique ``netting_set_id`` values.
+
+    Raises
+    ------
+    CvaInputError
+        If rows are ill-typed, duplicated, or reference unknown counterparties.
+    """
 
     if isinstance(netting_sets, CvaNettingSet):
         raise CvaInputError("netting_sets must be an iterable of CvaNettingSet objects")
@@ -152,7 +229,23 @@ def validate_cva_netting_sets(
 
 
 def validate_cva_hedges(hedges: object) -> tuple[CvaHedge, ...]:
-    """Validate canonical hedge records and return them as a tuple."""
+    """Validate canonical hedge records and return them as a tuple.
+
+    Parameters
+    ----------
+    hedges : object
+        Iterable of :class:`~frtb_cva.data_models.CvaHedge` rows (may be empty).
+
+    Returns
+    -------
+    tuple[CvaHedge, ...]
+        Validated hedges with unique ``hedge_id`` values.
+
+    Raises
+    ------
+    CvaInputError
+        If rows are ill-typed, duplicated, or missing eligibility evidence.
+    """
 
     if isinstance(hedges, CvaHedge):
         raise CvaInputError("hedges must be an iterable of CvaHedge objects")
@@ -176,7 +269,23 @@ def validate_cva_hedges(hedges: object) -> tuple[CvaHedge, ...]:
 def validate_sa_cva_sensitivities(
     sensitivities: object,
 ) -> tuple[SaCvaSensitivity, ...]:
-    """Validate canonical SA-CVA sensitivity records and return them as a tuple."""
+    """Validate canonical SA-CVA sensitivity records and return them as a tuple.
+
+    Parameters
+    ----------
+    sensitivities : object
+        Iterable of :class:`~frtb_cva.data_models.SaCvaSensitivity` rows.
+
+    Returns
+    -------
+    tuple[SaCvaSensitivity, ...]
+        Validated sensitivities with unique ``sensitivity_id`` values.
+
+    Raises
+    ------
+    CvaInputError
+        If rows are ill-typed, duplicated, or violate SA-CVA field requirements.
+    """
 
     if isinstance(sensitivities, SaCvaSensitivity):
         raise CvaInputError("sensitivities must be an iterable of SaCvaSensitivity objects")
@@ -200,7 +309,25 @@ def validate_sa_cva_sensitivities(
 
 
 def validate_calculation_context(context: object) -> CvaCalculationContext:
-    """Validate a CVA calculation context."""
+    """Validate a CVA calculation context.
+
+    Parameters
+    ----------
+    context : object
+        Candidate :class:`~frtb_cva.data_models.CvaCalculationContext`.
+
+    Returns
+    -------
+    CvaCalculationContext
+        The same context when all required fields and enums are valid.
+
+    Raises
+    ------
+    CvaInputError
+        If the object is not a context or required text fields are blank.
+    UnsupportedRegulatoryFeatureError
+        If ``materiality_threshold_elected`` is requested but not implemented.
+    """
 
     if not isinstance(context, CvaCalculationContext):
         raise CvaInputError("context must be a CvaCalculationContext", field="context")
@@ -455,7 +582,23 @@ def _finite_float(value: object, *, field: str) -> float:
 
 
 def validate_m_cva_multiplier(value: object) -> float:
-    """Return a finite, positive SA-CVA multiplier."""
+    """Return a finite, positive SA-CVA multiplier.
+
+    Parameters
+    ----------
+    value : object
+        Candidate ``m_cva`` multiplier from caller configuration.
+
+    Returns
+    -------
+    float
+        Finite multiplier strictly greater than zero.
+
+    Raises
+    ------
+    CvaInputError
+        If the value is non-numeric, non-finite, or not positive.
+    """
 
     m_cva = _finite_float(value, field="m_cva")
     if m_cva <= 0.0:

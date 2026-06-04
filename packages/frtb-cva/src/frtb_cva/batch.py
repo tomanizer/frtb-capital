@@ -1,4 +1,9 @@
-"""Package-owned CVA batches for high-volume BA-CVA and SA-CVA kernels."""
+"""Package-owned columnar CVA batches for BA-CVA and SA-CVA kernel entrypoints.
+
+This module defines frozen batch containers, builds them from dataclasses or aligned
+columns, and exposes vectorised capital calculations that preserve deterministic
+input hashes via :mod:`frtb_cva._payloads`.
+"""
 
 from __future__ import annotations
 
@@ -143,6 +148,13 @@ class CvaCounterpartyBatch:
 
     @property
     def row_count(self) -> int:
+        """Return the number of counterparty rows in the batch.
+
+        Returns
+        -------
+        int
+            Length of the ``counterparty_ids`` column.
+        """
         return int(self.counterparty_ids.shape[0])
 
 
@@ -171,6 +183,13 @@ class CvaNettingSetBatch:
 
     @property
     def row_count(self) -> int:
+        """Return the number of netting-set rows in the batch.
+
+        Returns
+        -------
+        int
+            Length of the ``netting_set_ids`` column.
+        """
         return int(self.netting_set_ids.shape[0])
 
 
@@ -206,6 +225,13 @@ class CvaHedgeBatch:
 
     @property
     def row_count(self) -> int:
+        """Return the number of hedge rows in the batch.
+
+        Returns
+        -------
+        int
+            Length of the ``hedge_ids`` column.
+        """
         return int(self.hedge_ids.shape[0])
 
 
@@ -241,6 +267,13 @@ class SaCvaSensitivityBatch:
 
     @property
     def row_count(self) -> int:
+        """Return the number of SA-CVA sensitivity rows in the batch.
+
+        Returns
+        -------
+        int
+            Length of the ``sensitivity_ids`` column.
+        """
         return int(self.sensitivity_ids.shape[0])
 
 
@@ -262,7 +295,29 @@ def build_cva_counterparty_batch_from_counterparties(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> CvaCounterpartyBatch:
-    """Build a counterparty batch from existing canonical dataclasses."""
+    """Build a counterparty batch from existing canonical dataclasses.
+
+    Parameters
+    ----------
+    counterparties : Iterable[CvaCounterparty]
+        Validated counterparty dataclass rows.
+    source_hash : str or None, optional
+        Upstream content hash for audit lineage.
+    handoff_hash : str or None, optional
+        Normalized handoff hash when rows originate from Arrow adapters.
+    diagnostics : Sequence[Mapping[str, object]], optional
+        Adapter diagnostics stored on the batch container.
+
+    Returns
+    -------
+    CvaCounterpartyBatch
+        Columnar batch with frozen NumPy/object arrays.
+
+    Raises
+    ------
+    CvaInputError
+        If validation fails or the iterable is empty.
+    """
 
     validated = validate_cva_counterparties(counterparties)
     if not validated:
@@ -302,7 +357,31 @@ def build_cva_netting_set_batch_from_netting_sets(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> CvaNettingSetBatch:
-    """Build a netting-set batch from existing canonical dataclasses."""
+    """Build a netting-set batch from existing canonical dataclasses.
+
+    Parameters
+    ----------
+    netting_sets : Iterable[CvaNettingSet]
+        Validated netting-set dataclass rows.
+    counterparties : Iterable[CvaCounterparty] or None, optional
+        Counterparties used to validate netting-set counterparty references.
+    source_hash : str or None, optional
+        Upstream content hash for audit lineage.
+    handoff_hash : str or None, optional
+        Normalized handoff hash when rows originate from Arrow adapters.
+    diagnostics : Sequence[Mapping[str, object]], optional
+        Adapter diagnostics stored on the batch container.
+
+    Returns
+    -------
+    CvaNettingSetBatch
+        Columnar batch with EAD sign conventions already normalised on rows.
+
+    Raises
+    ------
+    CvaInputError
+        If validation fails or the iterable is empty.
+    """
 
     validated_counterparties = (
         validate_cva_counterparties(counterparties) if counterparties is not None else None
@@ -348,7 +427,24 @@ def build_cva_hedge_batch_from_hedges(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> CvaHedgeBatch:
-    """Build a hedge batch from existing canonical dataclasses."""
+    """Build a hedge batch from existing canonical dataclasses.
+
+    Parameters
+    ----------
+    hedges : Iterable[CvaHedge]
+        Hedge dataclass rows (may be empty).
+    source_hash : str or None, optional
+        Upstream content hash for audit lineage.
+    handoff_hash : str or None, optional
+        Normalized handoff hash when rows originate from Arrow adapters.
+    diagnostics : Sequence[Mapping[str, object]], optional
+        Adapter diagnostics stored on the batch container.
+
+    Returns
+    -------
+    CvaHedgeBatch
+        Columnar batch ready for BA-CVA full and SA-CVA hedge recognition paths.
+    """
 
     validated = validate_cva_hedges(hedges)
     return build_cva_hedge_batch_from_columns(
@@ -399,7 +495,29 @@ def build_sa_cva_sensitivity_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SaCvaSensitivityBatch:
-    """Build a sensitivity batch from existing canonical dataclasses."""
+    """Build a sensitivity batch from existing canonical dataclasses.
+
+    Parameters
+    ----------
+    sensitivities : Iterable[SaCvaSensitivity]
+        Validated SA-CVA sensitivity dataclass rows.
+    source_hash : str or None, optional
+        Upstream content hash for audit lineage.
+    handoff_hash : str or None, optional
+        Normalized handoff hash when rows originate from Arrow adapters.
+    diagnostics : Sequence[Mapping[str, object]], optional
+        Adapter diagnostics stored on the batch container.
+
+    Returns
+    -------
+    SaCvaSensitivityBatch
+        Columnar batch with index-treatment columns preserved for bucket routing.
+
+    Raises
+    ------
+    CvaInputError
+        If validation fails or the iterable is empty.
+    """
 
     validated = validate_sa_cva_sensitivities(sensitivities)
     if not validated:
@@ -468,6 +586,35 @@ def build_cva_counterparty_batch_from_columns(
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
 ) -> CvaCounterpartyBatch:
+    """Build a validated counterparty batch from aligned column inputs.
+
+    Parameters
+    ----------
+    counterparty_ids, desk_ids, legal_entities, sectors, credit_qualities, regions,
+        source_row_ids, lineage_source_systems, lineage_source_files
+        : ColumnInput
+        Required per-row columns with matching lengths.
+    lineage_source_row_ids : ColumnInput or None, optional
+        Optional lineage row ids; defaults to ``source_row_ids`` when omitted.
+    source_column_maps : Sequence[Sequence[tuple[str, str]]] or None, optional
+        Per-row source-to-canonical column maps frozen on the batch.
+    source_hash, handoff_hash : str or None, optional
+        Audit hashes propagated to capital results.
+    diagnostics : Sequence[Mapping[str, object]], optional
+        Adapter diagnostics stored on the batch container.
+    copy_arrays : bool, optional
+        When ``True``, copy inputs into package-owned arrays (default ``True``).
+
+    Returns
+    -------
+    CvaCounterpartyBatch
+        Columnar batch with unique ``counterparty_id`` values.
+
+    Raises
+    ------
+    CvaInputError
+        If any column length mismatches or the batch is empty.
+    """
     row_count = len(counterparty_ids)
     if row_count == 0:
         raise CvaInputError("counterparty batch requires at least one row", field="counterparties")
@@ -548,6 +695,33 @@ def build_cva_netting_set_batch_from_columns(
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
 ) -> CvaNettingSetBatch:
+    """Build a validated netting-set batch from aligned column inputs.
+
+    Parameters
+    ----------
+    netting_set_ids, counterparty_ids, eads, effective_maturities, discount_factors,
+        currencies, sign_conventions, uses_imm_eads, source_row_ids
+        : ColumnInput
+        Required per-row columns with matching lengths.
+    carved_out_to_ba_cva, discount_factor_explicit : ColumnInput or None, optional
+        Optional carve-out and explicit discount-factor flags (default ``False``).
+    lineage_source_systems, lineage_source_files, lineage_source_row_ids
+        : ColumnInput or None, optional
+        Lineage columns with package defaults when omitted.
+    source_column_maps, source_hash, handoff_hash, diagnostics, copy_arrays
+        : optional
+        Same semantics as :func:`build_cva_counterparty_batch_from_columns`.
+
+    Returns
+    -------
+    CvaNettingSetBatch
+        Columnar batch with EAD amounts normalised to the declared sign convention.
+
+    Raises
+    ------
+    CvaInputError
+        If validation fails, ids are duplicated, or the batch is empty.
+    """
     row_count = len(netting_set_ids)
     if row_count == 0:
         raise CvaInputError("netting-set batch requires at least one row", field="netting_sets")
@@ -663,6 +837,34 @@ def build_cva_hedge_batch_from_columns(
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
 ) -> CvaHedgeBatch:
+    """Build a validated hedge batch from aligned column inputs.
+
+    Parameters
+    ----------
+    hedge_ids, source_row_ids, counterparty_ids, hedge_types, notionals,
+        remaining_maturities, discount_factors, reference_sectors,
+        reference_credit_qualities, reference_regions, reference_relations,
+        eligibilities, is_internal
+        : ColumnInput
+        Required per-row columns with matching lengths.
+    discount_factor_explicit, internal_desk_counterparty_ids, sa_cva_risk_classes,
+        eligibility_evidence_ids, rejection_reasons, lineage_source_systems,
+        lineage_source_files, lineage_source_row_ids, source_column_maps
+        : optional
+        Optional hedge metadata and lineage columns.
+    source_hash, handoff_hash, diagnostics, copy_arrays : optional
+        Audit and materialisation controls shared with other batch builders.
+
+    Returns
+    -------
+    CvaHedgeBatch
+        Columnar batch with eligibility evidence rules enforced per row.
+
+    Raises
+    ------
+    CvaInputError
+        If validation fails or hedge ids are duplicated.
+    """
     row_count = len(hedge_ids)
     _require_lengths(
         row_count,
@@ -805,6 +1007,33 @@ def build_sa_cva_sensitivity_batch_from_columns(
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
 ) -> SaCvaSensitivityBatch:
+    """Build a validated SA-CVA sensitivity batch from aligned column inputs.
+
+    Parameters
+    ----------
+    sensitivity_ids, risk_classes, risk_measures, sensitivity_tags, bucket_ids,
+        risk_factor_keys, amounts, amount_currencies, sign_conventions, source_row_ids
+        : ColumnInput
+        Required per-row columns with matching lengths.
+    tenors, volatility_inputs, hedge_ids, index_treatments, index_max_sector_weights,
+        index_homogeneous_sector_quality, index_dominant_sectors, index_remap_bucket_ids,
+        lineage_source_systems, lineage_source_files, lineage_source_row_ids,
+        source_column_maps
+        : optional
+        Optional SA-CVA path metadata and lineage columns.
+    source_hash, handoff_hash, diagnostics, copy_arrays : optional
+        Audit and materialisation controls shared with other batch builders.
+
+    Returns
+    -------
+    SaCvaSensitivityBatch
+        Columnar batch ready for SA-CVA risk-class aggregation kernels.
+
+    Raises
+    ------
+    CvaInputError
+        If validation fails, ids are duplicated, or the batch is empty.
+    """
     row_count = len(sensitivity_ids)
     if row_count == 0:
         raise CvaInputError("sensitivity batch requires at least one row", field="sensitivities")
@@ -933,7 +1162,31 @@ def calculate_cva_capital_from_batches(
     hedges: CvaHedgeBatch | None = None,
     sensitivities: SaCvaSensitivityBatch | None = None,
 ) -> CvaBatchCapitalCalculation:
-    """Calculate supported CVA capital from package-owned columnar batches."""
+    """Calculate supported CVA capital from package-owned columnar batches.
+
+    Parameters
+    ----------
+    context : CvaCalculationContext
+        Method, profile, and carve-out controls for the run.
+    counterparties : CvaCounterpartyBatch or None, optional
+        Counterparty batch for BA-CVA paths (empty batch when omitted).
+    netting_sets : CvaNettingSetBatch or None, optional
+        Netting-set batch for BA-CVA paths (empty batch when omitted).
+    hedges : CvaHedgeBatch or None, optional
+        Hedge batch for BA-CVA full and SA-CVA hedge recognition.
+    sensitivities : SaCvaSensitivityBatch or None, optional
+        SA-CVA sensitivity batch required for SA-CVA and mixed carve-out methods.
+
+    Returns
+    -------
+    CvaBatchCapitalCalculation
+        Capital result plus counters for dataclass materialisation during the run.
+
+    Raises
+    ------
+    CvaInputError
+        If method-specific inputs are missing or inconsistent with the context.
+    """
 
     validated_context = validate_calculation_context(context)
     counterparty_batch = counterparties or _empty_counterparty_batch()
@@ -1080,7 +1333,27 @@ def calculate_reduced_portfolio_from_batches(
     *,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> BaCvaReducedPortfolioResult:
-    """Calculate reduced BA-CVA from columnar counterparty/netting-set batches."""
+    """Calculate reduced BA-CVA from columnar counterparty/netting-set batches.
+
+    Parameters
+    ----------
+    counterparties : CvaCounterpartyBatch
+        Counterparty classification columns for risk-weight lookup.
+    netting_sets : CvaNettingSetBatch
+        Netting-set EAD, maturity, and discount columns.
+    profile : CvaRegulatoryProfile or str, optional
+        Regulatory profile controlling citations and parameters.
+
+    Returns
+    -------
+    BaCvaReducedPortfolioResult
+        Reduced portfolio capital with per-counterparty and per-netting-set lines.
+
+    Raises
+    ------
+    CvaInputError
+        If counterparties are missing netting sets or capital components are non-finite.
+    """
 
     _validate_ba_relationships(counterparties, netting_sets)
     if counterparties.row_count == 0:
@@ -1181,7 +1454,29 @@ def calculate_full_portfolio_from_batches(
     *,
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> BaCvaFullPortfolioResult:
-    """Calculate full BA-CVA with hedge recognition from columnar batches."""
+    """Calculate full BA-CVA with hedge recognition from columnar batches.
+
+    Parameters
+    ----------
+    counterparties : CvaCounterpartyBatch
+        Counterparty batch shared with the embedded reduced portfolio calculation.
+    netting_sets : CvaNettingSetBatch
+        Netting-set batch shared with the embedded reduced portfolio calculation.
+    hedges : CvaHedgeBatch or None, optional
+        Hedge batch evaluated for MAR50 hedge recognition (empty when omitted).
+    profile : CvaRegulatoryProfile or str, optional
+        Regulatory profile controlling citations and parameters.
+
+    Returns
+    -------
+    BaCvaFullPortfolioResult
+        Full portfolio capital combining reduced and hedged components with audit lines.
+
+    Raises
+    ------
+    CvaInputError
+        If hedge counterparties are outside the BA-CVA counterparty set.
+    """
 
     hedge_batch = hedges or _empty_hedge_batch()
     reduced = calculate_reduced_portfolio_from_batches(
@@ -1358,7 +1653,31 @@ def calculate_sa_cva_capital_from_batch(
     reporting_currency: str = "USD",
     profile: CvaRegulatoryProfile | str = CvaRegulatoryProfile.BASEL_MAR50_2020,
 ) -> tuple[SaCvaRiskClassCapital, ...]:
-    """Calculate supported SA-CVA risk-class totals from a sensitivity batch."""
+    """Calculate supported SA-CVA risk-class totals from a sensitivity batch.
+
+    Parameters
+    ----------
+    sensitivities : SaCvaSensitivityBatch
+        Columnar SA-CVA sensitivities grouped by risk class and measure.
+    hedges : CvaHedgeBatch or None, optional
+        Hedge batch used to filter ``HDG`` tagged sensitivities.
+    m_cva : float, optional
+        SA-CVA multiplier applied after intra- and inter-bucket aggregation.
+    reporting_currency : str, optional
+        Reporting currency passed to FX delta weighting helpers.
+    profile : CvaRegulatoryProfile or str, optional
+        Regulatory profile controlling risk weights and correlations.
+
+    Returns
+    -------
+    tuple[SaCvaRiskClassCapital, ...]
+        One capital result per supported risk-class and measure path present in the batch.
+
+    Raises
+    ------
+    CvaInputError
+        If the batch is empty or contains unsupported risk-class and measure pairs.
+    """
 
     validated_m_cva = validate_m_cva_multiplier(m_cva)
     if sensitivities.row_count == 0:
@@ -1397,7 +1716,26 @@ def input_hash_for_cva_batches(
     hedges: CvaHedgeBatch | None = None,
     sensitivities: SaCvaSensitivityBatch | None = None,
 ) -> str:
-    """Return the row-compatible deterministic input hash for CVA batches."""
+    """Return the row-compatible deterministic input hash for CVA batches.
+
+    Parameters
+    ----------
+    context : CvaCalculationContext
+        Calculation context included in the hash payload.
+    counterparties : CvaCounterpartyBatch or None, optional
+        Counterparty batch serialized into the payload when provided.
+    netting_sets : CvaNettingSetBatch or None, optional
+        Netting-set batch serialized into the payload when provided.
+    hedges : CvaHedgeBatch or None, optional
+        Hedge batch serialized into the payload when provided.
+    sensitivities : SaCvaSensitivityBatch or None, optional
+        Sensitivity batch serialized into the payload when provided.
+
+    Returns
+    -------
+    str
+        Stable SHA-256 digest of the canonical batch input payload.
+    """
 
     return _hash_payload(
         _batch_input_payload(
