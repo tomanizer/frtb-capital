@@ -4,7 +4,7 @@ Use during Step 3 of `frtb-simplify-audit`. Mark pass / finding per package.
 
 ## Mechanical gates
 
-- [ ] `python3 scripts/agent_worktree.py guard` passed
+- [ ] `make agent-ensure AGENT=<agent> TASK=simplify-audit` passed (and `cd` done if printed)
 - [ ] `uv run python scripts/ci/check_simplification_drift.py` — no unexpected findings (or each suppressed with `# simplify-audit: keep - <reason>`)
 - [ ] No sibling capital imports in `packages/*/src` (orchestration excepted per policy)
 

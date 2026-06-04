@@ -17,9 +17,11 @@ directly; this skill is a short repo-specific reminder and entrypoint.
 
 ## Working Rules
 
-- Run `python3 scripts/agent_worktree.py guard` before editing. If it fails,
-  create a worktree under the resolved standard worktree root with
-  `make agent-new AGENT=grok TASK=<task-name>`.
+- Before editing, run `make agent-ensure AGENT=grok TASK=<task-slug>` from any
+  checkout (including protected `main`). If not already in a compliant worktree,
+  the command creates or reuses `frtb-capital-worktrees/grok/<task-slug>` and
+  prints `next: cd ...` — **run that `cd` before changing files**. Pick
+  `<task-slug>` from the user request (kebab-case, e.g. `drc-package-journey`).
 - Respect package boundaries. Capital packages must not import sibling capital
   packages; shared types belong in `frtb-common`.
 - Keep suite aggregation in `frtb-orchestration`.
