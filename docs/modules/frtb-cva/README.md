@@ -26,7 +26,7 @@ unsupported and fail closed via explicit errors.
 
 End-to-end client flow (Arrow handoff, batch capital, attribution, orchestration
 and result-store boundaries) is documented in
-[`packages/frtb-cva/docs/PACKAGE_JOURNEY.md`](../../packages/frtb-cva/docs/PACKAGE_JOURNEY.md).
+[`packages/frtb-cva/docs/PACKAGE_JOURNEY.md`](../../../packages/frtb-cva/docs/PACKAGE_JOURNEY.md).
 
 ## Planning Documents
 

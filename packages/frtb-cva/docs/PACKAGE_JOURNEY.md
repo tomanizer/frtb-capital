@@ -1,7 +1,7 @@
 # frtb-cva integration journey
 
 This document describes how a **CVA capital run** works in `frtb-cva` as implemented
-today. It is the template for examples, notebooks, and client integration guides.
+today. Use it as the reference layout for examples, notebooks, and client integration guides.
 
 Outputs are **engineering and validation evidence**, not final regulatory capital.
 See [`REGULATORY_TRACEABILITY.md`](REGULATORY_TRACEABILITY.md) for citations and
@@ -139,7 +139,7 @@ Column names may differ from the package spec when aliases are declared in
 `CVA_*_ARROW_COLUMN_SPECS` (for example `counterpartyId` → `counterparty_id`).
 
 Required tables depend on method — see
-[PUBLIC_API.md](../../../docs/modules/frtb-cva/PUBLIC_API.md#client-integration).
+[PUBLIC_API.md — Client integration](../../../docs/modules/frtb-cva/PUBLIC_API.md#client-integration).
 
 ### Step 2 — Normalize
 
@@ -326,7 +326,7 @@ package boundaries stay clear.
   post-hoc analytical decomposition with documented non-linear gaps.
 - Do not import `frtb-result-store` from package examples without an explicit
   adapter layer in the integration notebook.
-- Do not present prototype outputs as final regulatory capital.
+- Do not label engineering evidence as final regulatory capital.
 
 ---
 
