@@ -539,9 +539,30 @@ def _function_digest(body: Sequence[ast.stmt]) -> str:
     return hashlib.sha256(bytes(normalized, "utf-8")).hexdigest()[:16]
 
 
+def _docstring_line_numbers(text: str) -> frozenset[int]:
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return frozenset()
+    lines: set[int] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef | ast.Module):
+            continue
+        if not node.body:
+            continue
+        first = node.body[0]
+        if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant):
+            end = first.end_lineno or first.lineno
+            lines.update(range(first.lineno, end + 1))
+    return frozenset(lines)
+
+
 def _logical_loc(text: str) -> int:
+    docstring_lines = _docstring_line_numbers(text)
     return sum(
-        1 for line in text.splitlines() if line.strip() and not line.lstrip().startswith("#")
+        1
+        for line_number, line in enumerate(text.splitlines(), start=1)
+        if line.strip() and not line.lstrip().startswith("#") and line_number not in docstring_lines
     )
 
 

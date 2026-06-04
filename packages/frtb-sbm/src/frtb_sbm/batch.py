@@ -123,13 +123,21 @@ class SbmSensitivityBatch:
 
     @property
     def row_count(self) -> int:
-        """Return the number of accepted sensitivity rows represented."""
+        """Return the number of accepted sensitivity rows represented.
+        Returns
+        -------
+        int
+        """
 
         return int(self.amounts.shape[0])
 
     @property
     def risk_class(self) -> SbmRiskClass:
-        """Return the homogeneous risk class represented by this batch."""
+        """Return the homogeneous risk class represented by this batch.
+        Returns
+        -------
+        SbmRiskClass
+        """
 
         if self.row_count == 0:
             raise SbmInputError("batch must not be empty", field="batch")
@@ -137,7 +145,11 @@ class SbmSensitivityBatch:
 
     @property
     def risk_measure(self) -> SbmRiskMeasure:
-        """Return the homogeneous risk measure represented by this batch."""
+        """Return the homogeneous risk measure represented by this batch.
+        Returns
+        -------
+        SbmRiskMeasure
+        """
 
         if self.row_count == 0:
             raise SbmInputError("batch must not be empty", field="batch")
@@ -153,13 +165,21 @@ def build_sbm_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a homogeneous SBM batch from existing row-wise canonical sensitivities.
+    """Build a homogeneous SBM batch from existing row-wise canonical sensitivities.
 
     This is a compatibility builder for callers that already hold
     ``SbmSensitivity`` rows. High-volume adapters should use
     ``build_sbm_batch_from_columns`` so accepted rows are never materialised as
     dataclasses.
+    Parameters
+    ----------
+    sensitivities, expected_risk_class, expected_risk_measure, source_hash, handoff_hash,
+    diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     validated = validate_sbm_sensitivities(sensitivities)
@@ -218,12 +238,19 @@ def build_girr_delta_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a GIRR delta batch from existing row-wise canonical sensitivities.
+    """Build a GIRR delta batch from existing row-wise canonical sensitivities.
 
     This compatibility builder is intentionally outside the high-volume Arrow
     path: it starts from already-materialised ``SbmSensitivity`` rows, then
     converts them to the same batch representation used by Arrow batches.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -243,12 +270,19 @@ def build_girr_vega_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a GIRR vega batch from existing row-wise canonical sensitivities.
+    """Build a GIRR vega batch from existing row-wise canonical sensitivities.
 
     This compatibility builder starts from already-materialised
     ``SbmSensitivity`` rows. High-volume Arrow adapters should use
     ``build_girr_vega_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -268,10 +302,17 @@ def build_fx_vega_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build an FX vega batch from existing row-wise canonical sensitivities.
+    """Build an FX vega batch from existing row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -291,10 +332,17 @@ def build_equity_vega_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build an equity vega batch from existing row-wise canonical sensitivities.
+    """Build an equity vega batch from existing row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -314,10 +362,17 @@ def build_commodity_vega_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a commodity vega batch from existing row-wise canonical sensitivities.
+    """Build a commodity vega batch from existing row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -337,10 +392,17 @@ def build_csr_nonsec_vega_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a CSR non-securitisation vega batch from row-wise canonical sensitivities.
+    """Build a CSR non-securitisation vega batch from row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -360,10 +422,17 @@ def build_csr_sec_nonctp_vega_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a CSR securitisation non-CTP vega batch from row-wise sensitivities.
+    """Build a CSR securitisation non-CTP vega batch from row-wise sensitivities.
 
     High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -383,10 +452,17 @@ def build_csr_sec_ctp_vega_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a CSR securitisation CTP vega batch from row-wise canonical sensitivities.
+    """Build a CSR securitisation CTP vega batch from row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use ``build_sbm_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -406,12 +482,19 @@ def build_girr_curvature_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a GIRR curvature batch from existing row-wise canonical sensitivities.
+    """Build a GIRR curvature batch from existing row-wise canonical sensitivities.
 
     This validates and preserves the separate up/down shock arrays used by the
     curvature contract. Public curvature capital is available through the row
     API; this compatibility builder does not provide a batch capital entrypoint.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -449,7 +532,16 @@ def build_fx_curvature_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """Build an FX curvature batch from row-wise canonical sensitivities."""
+    """Build an FX curvature batch from row-wise canonical sensitivities.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_sensitivities(
         sensitivities,
@@ -467,7 +559,16 @@ def build_equity_curvature_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """Build an equity curvature batch from row-wise canonical sensitivities."""
+    """Build an equity curvature batch from row-wise canonical sensitivities.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_sensitivities(
         sensitivities,
@@ -485,7 +586,16 @@ def build_commodity_curvature_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """Build a commodity curvature batch from row-wise canonical sensitivities."""
+    """Build a commodity curvature batch from row-wise canonical sensitivities.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_sensitivities(
         sensitivities,
@@ -503,7 +613,16 @@ def build_csr_nonsec_curvature_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """Build a CSR non-securitisation curvature batch from row-wise sensitivities."""
+    """Build a CSR non-securitisation curvature batch from row-wise sensitivities.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_sensitivities(
         sensitivities,
@@ -521,7 +640,16 @@ def build_csr_sec_nonctp_curvature_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """Build a CSR securitisation non-CTP curvature batch from row-wise sensitivities."""
+    """Build a CSR securitisation non-CTP curvature batch from row-wise sensitivities.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_sensitivities(
         sensitivities,
@@ -539,7 +667,16 @@ def build_csr_sec_ctp_curvature_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """Build a CSR securitisation CTP curvature batch from row-wise sensitivities."""
+    """Build a CSR securitisation CTP curvature batch from row-wise sensitivities.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_sensitivities(
         sensitivities,
@@ -557,10 +694,17 @@ def build_fx_delta_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build an FX delta batch from existing row-wise canonical sensitivities.
+    """Build an FX delta batch from existing row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use ``build_fx_delta_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -580,10 +724,17 @@ def build_equity_delta_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build an equity delta batch from existing row-wise canonical sensitivities.
+    """Build an equity delta batch from existing row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use ``build_equity_delta_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -603,10 +754,17 @@ def build_commodity_delta_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a commodity delta batch from existing row-wise canonical sensitivities.
+    """Build a commodity delta batch from existing row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use ``build_commodity_delta_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -626,10 +784,17 @@ def build_csr_nonsec_delta_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a CSR non-securitisation delta batch from row-wise canonical sensitivities.
+    """Build a CSR non-securitisation delta batch from row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use ``build_csr_nonsec_delta_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -649,11 +814,18 @@ def build_csr_sec_nonctp_delta_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a CSR securitisation non-CTP delta batch from row-wise canonical sensitivities.
+    """Build a CSR securitisation non-CTP delta batch from row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use
     ``build_csr_sec_nonctp_delta_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -673,10 +845,17 @@ def build_csr_sec_ctp_delta_batch_from_sensitivities(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
 ) -> SbmSensitivityBatch:
-    """
-    Build a CSR securitisation CTP delta batch from row-wise canonical sensitivities.
+    """Build a CSR securitisation CTP delta batch from row-wise canonical sensitivities.
 
     High-volume Arrow adapters should use ``build_csr_sec_ctp_delta_batch_from_columns``.
+    Parameters
+    ----------
+    sensitivities, source_hash, handoff_hash, diagnostics :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_sensitivities(
@@ -721,7 +900,21 @@ def build_sbm_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """Build a homogeneous SBM batch from columnar arrays owned by an adapter."""
+    """Build a homogeneous SBM batch from columnar arrays owned by an adapter.
+    Parameters
+    ----------
+    expected_risk_class, expected_risk_measure, sensitivity_ids, source_row_ids, desk_ids,
+    legal_entities, risk_classes, risk_measures, buckets, risk_factors, amounts,
+    amount_currencies, sign_conventions, tenors, lineage_source_systems, lineage_source_files,
+    source_hash, handoff_hash, diagnostics, position_ids, qualifiers, option_tenors,
+    liquidity_horizon_days, maturities, up_shock_amounts, down_shock_amounts, source_column_maps,
+    mapping_citation_ids, copy_arrays :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     resolved_risk_class = coerce_risk_class(expected_risk_class)
     resolved_risk_measure = coerce_risk_measure(expected_risk_measure)
@@ -875,7 +1068,20 @@ def build_girr_delta_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """Build a GIRR delta batch from columnar arrays owned by an adapter."""
+    """Build a GIRR delta batch from columnar arrays owned by an adapter.
+    Parameters
+    ----------
+    sensitivity_ids, source_row_ids, desk_ids, legal_entities, risk_classes, risk_measures,
+    buckets, risk_factors, amounts, amount_currencies, sign_conventions, tenors,
+    lineage_source_systems, lineage_source_files, source_hash, handoff_hash, diagnostics,
+    position_ids, qualifiers, option_tenors, liquidity_horizon_days, maturities, up_shock_amounts,
+    down_shock_amounts, source_column_maps, mapping_citation_ids, copy_arrays :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return build_sbm_batch_from_columns(
         expected_risk_class=SbmRiskClass.GIRR,
@@ -940,7 +1146,20 @@ def build_girr_vega_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """Build a GIRR vega batch from columnar arrays owned by an adapter."""
+    """Build a GIRR vega batch from columnar arrays owned by an adapter.
+    Parameters
+    ----------
+    sensitivity_ids, source_row_ids, desk_ids, legal_entities, risk_classes, risk_measures,
+    buckets, risk_factors, amounts, amount_currencies, sign_conventions, tenors, option_tenors,
+    lineage_source_systems, lineage_source_files, source_hash, handoff_hash, diagnostics,
+    position_ids, qualifiers, liquidity_horizon_days, maturities, up_shock_amounts,
+    down_shock_amounts, source_column_maps, mapping_citation_ids, copy_arrays :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return build_sbm_batch_from_columns(
         expected_risk_class=SbmRiskClass.GIRR,
@@ -1005,11 +1224,22 @@ def build_girr_curvature_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """
-    Build a GIRR curvature batch from columnar arrays owned by an adapter.
+    """Build a GIRR curvature batch from columnar arrays owned by an adapter.
 
     The curvature contract intentionally keeps ``up_shock_amounts`` and
     ``down_shock_amounts`` as separate arrays at the batch boundary.
+    Parameters
+    ----------
+    sensitivity_ids, source_row_ids, desk_ids, legal_entities, risk_classes, risk_measures,
+    buckets, risk_factors, amounts, amount_currencies, sign_conventions, tenors, up_shock_amounts,
+    down_shock_amounts, lineage_source_systems, lineage_source_files, source_hash, handoff_hash,
+    diagnostics, position_ids, qualifiers, option_tenors, liquidity_horizon_days, maturities,
+    source_column_maps, mapping_citation_ids, copy_arrays :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
     """
 
     return build_sbm_batch_from_columns(
@@ -1075,7 +1305,20 @@ def build_fx_delta_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """Build an FX delta batch from columnar arrays owned by an adapter."""
+    """Build an FX delta batch from columnar arrays owned by an adapter.
+    Parameters
+    ----------
+    sensitivity_ids, source_row_ids, desk_ids, legal_entities, risk_classes, risk_measures,
+    buckets, risk_factors, amounts, amount_currencies, sign_conventions, tenors,
+    lineage_source_systems, lineage_source_files, source_hash, handoff_hash, diagnostics,
+    position_ids, qualifiers, option_tenors, liquidity_horizon_days, maturities, up_shock_amounts,
+    down_shock_amounts, source_column_maps, mapping_citation_ids, copy_arrays :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return build_sbm_batch_from_columns(
         expected_risk_class=SbmRiskClass.FX,
@@ -1140,7 +1383,20 @@ def build_equity_delta_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """Build an equity delta batch from columnar arrays owned by an adapter."""
+    """Build an equity delta batch from columnar arrays owned by an adapter.
+    Parameters
+    ----------
+    sensitivity_ids, source_row_ids, desk_ids, legal_entities, risk_classes, risk_measures,
+    buckets, risk_factors, amounts, amount_currencies, sign_conventions, tenors,
+    lineage_source_systems, lineage_source_files, source_hash, handoff_hash, diagnostics,
+    position_ids, qualifiers, option_tenors, liquidity_horizon_days, maturities, up_shock_amounts,
+    down_shock_amounts, source_column_maps, mapping_citation_ids, copy_arrays :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return build_sbm_batch_from_columns(
         expected_risk_class=SbmRiskClass.EQUITY,
@@ -1205,7 +1461,20 @@ def build_commodity_delta_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """Build a commodity delta batch from columnar arrays owned by an adapter."""
+    """Build a commodity delta batch from columnar arrays owned by an adapter.
+    Parameters
+    ----------
+    sensitivity_ids, source_row_ids, desk_ids, legal_entities, risk_classes, risk_measures,
+    buckets, risk_factors, amounts, amount_currencies, sign_conventions, tenors,
+    lineage_source_systems, lineage_source_files, source_hash, handoff_hash, diagnostics,
+    position_ids, qualifiers, option_tenors, liquidity_horizon_days, maturities, up_shock_amounts,
+    down_shock_amounts, source_column_maps, mapping_citation_ids, copy_arrays :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return build_sbm_batch_from_columns(
         expected_risk_class=SbmRiskClass.COMMODITY,
@@ -1270,7 +1539,20 @@ def build_csr_nonsec_delta_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """Build a CSR non-securitisation delta batch from columnar adapter arrays."""
+    """Build a CSR non-securitisation delta batch from columnar adapter arrays.
+    Parameters
+    ----------
+    sensitivity_ids, source_row_ids, desk_ids, legal_entities, risk_classes, risk_measures,
+    buckets, risk_factors, amounts, amount_currencies, sign_conventions, tenors,
+    lineage_source_systems, lineage_source_files, source_hash, handoff_hash, diagnostics,
+    position_ids, qualifiers, option_tenors, liquidity_horizon_days, maturities, up_shock_amounts,
+    down_shock_amounts, source_column_maps, mapping_citation_ids, copy_arrays :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return build_sbm_batch_from_columns(
         expected_risk_class=SbmRiskClass.CSR_NONSEC,
@@ -1335,7 +1617,20 @@ def build_csr_sec_nonctp_delta_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """Build a CSR securitisation non-CTP delta batch from columnar adapter arrays."""
+    """Build a CSR securitisation non-CTP delta batch from columnar adapter arrays.
+    Parameters
+    ----------
+    sensitivity_ids, source_row_ids, desk_ids, legal_entities, risk_classes, risk_measures,
+    buckets, risk_factors, amounts, amount_currencies, sign_conventions, tenors,
+    lineage_source_systems, lineage_source_files, source_hash, handoff_hash, diagnostics,
+    position_ids, qualifiers, option_tenors, liquidity_horizon_days, maturities, up_shock_amounts,
+    down_shock_amounts, source_column_maps, mapping_citation_ids, copy_arrays :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return build_sbm_batch_from_columns(
         expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
@@ -1400,7 +1695,20 @@ def build_csr_sec_ctp_delta_batch_from_columns(
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
-    """Build a CSR securitisation CTP delta batch from columnar adapter arrays."""
+    """Build a CSR securitisation CTP delta batch from columnar adapter arrays.
+    Parameters
+    ----------
+    sensitivity_ids, source_row_ids, desk_ids, legal_entities, risk_classes, risk_measures,
+    buckets, risk_factors, amounts, amount_currencies, sign_conventions, tenors,
+    lineage_source_systems, lineage_source_files, source_hash, handoff_hash, diagnostics,
+    position_ids, qualifiers, option_tenors, liquidity_horizon_days, maturities, up_shock_amounts,
+    down_shock_amounts, source_column_maps, mapping_citation_ids, copy_arrays :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return build_sbm_batch_from_columns(
         expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
@@ -1436,13 +1744,31 @@ def build_csr_sec_ctp_delta_batch_from_columns(
 
 
 def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a homogeneous batch."""
+    """Return the row-equivalent deterministic input hash for a homogeneous batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     return _hash_payload({"sensitivities": list(_sensitivity_payloads_from_batch(batch))})
 
 
 def input_hash_for_sbm_batches(batches: object) -> str:
-    """Return the row-equivalent deterministic input hash for batch portfolios."""
+    """Return the row-equivalent deterministic input hash for batch portfolios.
+    Parameters
+    ----------
+    batches : object
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     validated = coerce_sbm_batch_sequence(batches)
     return _hash_payload(
@@ -1457,7 +1783,16 @@ def input_hash_for_sbm_batches(batches: object) -> str:
 
 
 def concatenate_sbm_batches(batches: object) -> SbmSensitivityBatch:
-    """Concatenate homogeneous SBM batches without materialising row dataclasses."""
+    """Concatenate homogeneous SBM batches without materialising row dataclasses.
+    Parameters
+    ----------
+    batches : object
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     validated = coerce_sbm_batch_sequence(batches)
     if len(validated) == 1:
@@ -1517,7 +1852,16 @@ def concatenate_sbm_batches(batches: object) -> SbmSensitivityBatch:
 
 
 def input_hash_for_girr_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a GIRR delta batch."""
+    """Return the row-equivalent deterministic input hash for a GIRR delta batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     _require_batch_path(
         batch,
@@ -1529,7 +1873,16 @@ def input_hash_for_girr_delta_batch(batch: SbmSensitivityBatch) -> str:
 
 
 def input_hash_for_girr_vega_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a GIRR vega batch."""
+    """Return the row-equivalent deterministic input hash for a GIRR vega batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     _require_batch_path(
         batch,
@@ -1541,7 +1894,16 @@ def input_hash_for_girr_vega_batch(batch: SbmSensitivityBatch) -> str:
 
 
 def input_hash_for_girr_curvature_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a GIRR curvature batch."""
+    """Return the row-equivalent deterministic input hash for a GIRR curvature batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     _require_batch_path(
         batch,
@@ -1553,7 +1915,16 @@ def input_hash_for_girr_curvature_batch(batch: SbmSensitivityBatch) -> str:
 
 
 def input_hash_for_fx_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for an FX delta batch."""
+    """Return the row-equivalent deterministic input hash for an FX delta batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     _require_batch_path(
         batch,
@@ -1565,7 +1936,16 @@ def input_hash_for_fx_delta_batch(batch: SbmSensitivityBatch) -> str:
 
 
 def input_hash_for_equity_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for an equity delta batch."""
+    """Return the row-equivalent deterministic input hash for an equity delta batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     _require_batch_path(
         batch,
@@ -1577,7 +1957,16 @@ def input_hash_for_equity_delta_batch(batch: SbmSensitivityBatch) -> str:
 
 
 def input_hash_for_commodity_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a commodity delta batch."""
+    """Return the row-equivalent deterministic input hash for a commodity delta batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     _require_batch_path(
         batch,
@@ -1589,7 +1978,16 @@ def input_hash_for_commodity_delta_batch(batch: SbmSensitivityBatch) -> str:
 
 
 def input_hash_for_csr_nonsec_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a CSR non-sec delta batch."""
+    """Return the row-equivalent deterministic input hash for a CSR non-sec delta batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     _require_batch_path(
         batch,
@@ -1601,7 +1999,16 @@ def input_hash_for_csr_nonsec_delta_batch(batch: SbmSensitivityBatch) -> str:
 
 
 def input_hash_for_csr_sec_nonctp_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a CSR sec non-CTP batch."""
+    """Return the row-equivalent deterministic input hash for a CSR sec non-CTP batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     _require_batch_path(
         batch,
@@ -1613,7 +2020,16 @@ def input_hash_for_csr_sec_nonctp_delta_batch(batch: SbmSensitivityBatch) -> str
 
 
 def input_hash_for_csr_sec_ctp_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a CSR sec CTP batch."""
+    """Return the row-equivalent deterministic input hash for a CSR sec CTP batch.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     _require_batch_path(
         batch,
@@ -1625,7 +2041,16 @@ def input_hash_for_csr_sec_ctp_delta_batch(batch: SbmSensitivityBatch) -> str:
 
 
 def sorted_sbm_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in stable risk-class, bucket, factor, and id order."""
+    """Return indices in stable risk-class, bucket, factor, and id order.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     return np.lexsort(
         (
@@ -1639,7 +2064,16 @@ def sorted_sbm_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64
 
 
 def sorted_girr_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in the same stable order used by row-wise GIRR delta weighting."""
+    """Return indices in the same stable order used by row-wise GIRR delta weighting.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     _require_batch_path(
         batch,
@@ -1651,7 +2085,16 @@ def sorted_girr_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[n
 
 
 def sorted_girr_vega_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in the same stable order used by row-wise GIRR vega weighting."""
+    """Return indices in the same stable order used by row-wise GIRR vega weighting.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     _require_batch_path(
         batch,
@@ -1663,7 +2106,16 @@ def sorted_girr_vega_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np
 
 
 def sorted_girr_curvature_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in the same stable order used by row-wise GIRR curvature helpers."""
+    """Return indices in the same stable order used by row-wise GIRR curvature helpers.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     _require_batch_path(
         batch,
@@ -1675,7 +2127,16 @@ def sorted_girr_curvature_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArr
 
 
 def sorted_curvature_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in the same stable order used by row-wise curvature helpers."""
+    """Return indices in the same stable order used by row-wise curvature helpers.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     if batch.row_count == 0:
         raise SbmInputError("curvature batch must not be empty", field="batch")
@@ -1685,7 +2146,16 @@ def sorted_curvature_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np
 
 
 def sorted_fx_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in the same stable order used by row-wise FX delta weighting."""
+    """Return indices in the same stable order used by row-wise FX delta weighting.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     _require_batch_path(
         batch,
@@ -1697,7 +2167,16 @@ def sorted_fx_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.
 
 
 def sorted_equity_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in the same stable order used by row-wise equity delta weighting."""
+    """Return indices in the same stable order used by row-wise equity delta weighting.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     _require_batch_path(
         batch,
@@ -1709,7 +2188,16 @@ def sorted_equity_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray
 
 
 def sorted_commodity_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in the same stable order used by row-wise commodity delta weighting."""
+    """Return indices in the same stable order used by row-wise commodity delta weighting.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     _require_batch_path(
         batch,
@@ -1721,7 +2209,16 @@ def sorted_commodity_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDAr
 
 
 def sorted_csr_nonsec_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in the same stable order used by row-wise CSR non-sec weighting."""
+    """Return indices in the same stable order used by row-wise CSR non-sec weighting.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     _require_batch_path(
         batch,
@@ -1735,7 +2232,16 @@ def sorted_csr_nonsec_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDA
 def sorted_csr_sec_nonctp_delta_batch_indices(
     batch: SbmSensitivityBatch,
 ) -> npt.NDArray[np.int64]:
-    """Return indices in the stable order used by row-wise CSR sec non-CTP weighting."""
+    """Return indices in the stable order used by row-wise CSR sec non-CTP weighting.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     _require_batch_path(
         batch,
@@ -1747,7 +2253,16 @@ def sorted_csr_sec_nonctp_delta_batch_indices(
 
 
 def sorted_csr_sec_ctp_delta_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
-    """Return indices in the same stable order used by row-wise CSR sec CTP weighting."""
+    """Return indices in the same stable order used by row-wise CSR sec CTP weighting.
+    Parameters
+    ----------
+    batch : SbmSensitivityBatch
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.int64]
+    """
 
     _require_batch_path(
         batch,
@@ -2121,7 +2636,16 @@ def _validate_mapping_citations(
 
 
 def coerce_sbm_batch_sequence(batches: object) -> tuple[SbmSensitivityBatch, ...]:
-    """Return a validated non-empty tuple of package-owned SBM batches."""
+    """Return a validated non-empty tuple of package-owned SBM batches.
+    Parameters
+    ----------
+    batches : object
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmSensitivityBatch, ...]
+    """
 
     if isinstance(batches, SbmSensitivityBatch):
         return (batches,)

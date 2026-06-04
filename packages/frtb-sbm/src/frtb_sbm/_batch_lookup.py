@@ -16,7 +16,20 @@ def batch_text_by_id(
     values: npt.NDArray[np.object_] | None,
     field: str,
 ) -> Mapping[str, str]:
-    """Return required batch text values keyed by sensitivity id."""
+    """Return required batch text values keyed by sensitivity id.
+    Parameters
+    ----------
+    batch : Any
+        See signature.
+    values : npt.NDArray[np.object_] | None
+        See signature.
+    field : str
+        See signature.
+
+    Returns
+    -------
+    Mapping[str, str]
+    """
 
     if values is None:
         raise SbmInputError(f"{field} is required", field=field)
@@ -30,7 +43,18 @@ def batch_optional_text_by_id(
     batch: Any,
     values: npt.NDArray[np.object_] | None,
 ) -> Mapping[str, str]:
-    """Return optional batch text values keyed by sensitivity id."""
+    """Return optional batch text values keyed by sensitivity id.
+    Parameters
+    ----------
+    batch : Any
+        See signature.
+    values : npt.NDArray[np.object_] | None
+        See signature.
+
+    Returns
+    -------
+    Mapping[str, str]
+    """
 
     if values is None:
         return {}
