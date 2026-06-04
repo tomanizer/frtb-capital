@@ -3,7 +3,7 @@
 These were the implementation-ready issue drafts for the v1 delivery sequence.
 They are retained as historical planning evidence; the active implementation
 status is now tracked in [`MODEL_DOCUMENTATION.md`](MODEL_DOCUMENTATION.md) and
-[`requirements/BASEL_FRTB_RRAO.yml`](requirements/BASEL_FRTB_RRAO.yml).
+[`BASEL_FRTB_RRAO.yml`](../../../packages/frtb-rrao/docs/requirements/BASEL_FRTB_RRAO.yml).
 Cross-cutting changes to `frtb-common` or orchestration should still reference
 an ADR when they change shared contracts.
 

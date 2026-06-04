@@ -38,7 +38,7 @@ matrix in [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md).
 | [regulatory_sources.yml](docs/regulatory_sources.yml) | Link-only regulatory source manifest |
 | [SBM batch/Arrow performance report](../../docs/performance/frtb-sbm-batch-arrow-report.md) | High-volume handoff benchmark evidence and remaining performance boundaries |
 | [Module planning pack](../../docs/modules/frtb-sbm/README.md) | PRD, architecture, requirements registry |
-| [Requirements registry](../../docs/modules/frtb-sbm/requirements/BASEL_FRTB_SBM.yml) | Requirement ids and implementation status |
+| [Requirements registry](docs/requirements/BASEL_FRTB_SBM.yml) | Requirement ids and implementation status |
 
 ## Public API
 

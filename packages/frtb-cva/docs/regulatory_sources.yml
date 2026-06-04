@@ -23,3 +23,13 @@ sources:
     url: https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
     status: unsupported
     notes: Planned comparison profile EU_CRR3_CVA.
+  - id: uk_pra_ps1_26
+    title: PRA PS1/26 — Implementation of Basel 3.1 final rules
+    url: https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement
+    status: unsupported
+    notes: Planned comparison profile UK_PRA_CVA.
+  - id: uk_pra_cp16_22_cva
+    title: PRA CP16/22 Chapter 7 — credit valuation adjustment and counterparty credit risk
+    url: https://www.bankofengland.co.uk/prudential-regulation/publication/2022/november/implementation-of-the-basel-3-1-standards/credit-valuation-adjustment
+    status: unsupported
+    notes: Source context for UK PRA CVA profile mapping.

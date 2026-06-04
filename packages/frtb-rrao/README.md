@@ -46,6 +46,8 @@ Package-local regulatory documentation:
 - [Regulatory traceability](docs/REGULATORY_TRACEABILITY.md)
 - [Regulatory assumptions](docs/REGULATORY_ASSUMPTIONS.md)
 - [Regulatory sources](docs/regulatory_sources.yml)
+- [Requirement registry](docs/requirements/BASEL_FRTB_RRAO.yml)
+- [Dataset contract](docs/DATASET_CONTRACT.md)
 - [Performance and replay controls](docs/PERFORMANCE.md)
 - [Allocation reports](docs/ALLOCATION.md)
 - [Mutation evidence](../../docs/quality/frtb-rrao/mutation_baseline.md)

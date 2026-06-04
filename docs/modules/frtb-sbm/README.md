@@ -26,6 +26,8 @@ End-to-end client flow (Arrow handoff, portfolio batch capital, attribution,
 - [Regulatory traceability](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md)
 - [Regulatory assumptions](../../../packages/frtb-sbm/docs/REGULATORY_ASSUMPTIONS.md)
 - [Regulatory sources manifest](../../../packages/frtb-sbm/docs/regulatory_sources.yml)
+- [Requirement registry](../../../packages/frtb-sbm/docs/requirements/BASEL_FRTB_SBM.yml)
+- [Dataset contract](../../../packages/frtb-sbm/docs/DATASET_CONTRACT.md)
 - [Package README](../../../packages/frtb-sbm/README.md)
 
 ## Planning Documents
@@ -38,7 +40,7 @@ End-to-end client flow (Arrow handoff, portfolio batch capital, attribution,
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
 - [Decisions and plan](DECISIONS_AND_PLAN.md)
 - [Issue breakdown](ISSUE_BREAKDOWN.md)
-- [Workable requirements](requirements/BASEL_FRTB_SBM.yml)
+- [Workable requirements](../../../packages/frtb-sbm/docs/requirements/BASEL_FRTB_SBM.yml)
 
 ## Phase-1 Issue Tracker
 

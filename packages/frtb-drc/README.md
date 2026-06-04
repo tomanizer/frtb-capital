@@ -34,6 +34,8 @@ Outputs are engineering and validation evidence, not final regulatory capital.
 | [PROFILE_SUPPORT_MATRIX.md](../../docs/modules/frtb-drc/PROFILE_SUPPORT_MATRIX.md) | Profile and risk-class support status |
 | [Module README](../../docs/modules/frtb-drc/README.md) | Planning pack, model documentation, requirements |
 | [REGULATORY_REQUIREMENTS.md](../../docs/modules/frtb-drc/REGULATORY_REQUIREMENTS.md) | Regulatory requirement mapping (module docs) |
+| [Requirement registry](docs/requirements/BASEL_FRTB_DRC.yml) | Package-local machine-readable implementation status |
+| [Dataset contract](docs/DATASET_CONTRACT.md) | Package-local synthetic fixture contract |
 | [CLIENT_REFERENCE_DATA.md](../../docs/CLIENT_REFERENCE_DATA.md) | Run-scoped risk-weight and overlay rules |
 
 ## Public API

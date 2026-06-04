@@ -4,7 +4,7 @@ These were implementation-ready issue drafts derived from
 [DETAILED_REQUIREMENTS.md](DETAILED_REQUIREMENTS.md). They are retained as
 historical planning evidence for the v1 delivery sequence. Current runtime
 status is tracked in
-[requirements/BASEL_FRTB_CVA.yml](requirements/BASEL_FRTB_CVA.yml) and
+[BASEL_FRTB_CVA.yml](../../../packages/frtb-cva/docs/requirements/BASEL_FRTB_CVA.yml) and
 [packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md](../../../packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md).
 Cross-cutting changes to `frtb-common` or orchestration should still reference
 an ADR when they change shared contracts.
@@ -28,7 +28,7 @@ current during the v1 delivery sequence.
 - Keep [ARCHITECTURE_AND_DATA_DESIGN.md](ARCHITECTURE_AND_DATA_DESIGN.md) and
   [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN.md) current as implementation
   evolves.
-- Expand [requirements/BASEL_FRTB_CVA.yml](requirements/BASEL_FRTB_CVA.yml) to map
+- Expand [BASEL_FRTB_CVA.yml](../../../packages/frtb-cva/docs/requirements/BASEL_FRTB_CVA.yml) to map
   detailed requirement IDs to modules and tests.
 - Update [docs/regulatory/crosswalk/frtb-cva.yml](../../regulatory/crosswalk/frtb-cva.yml)
   with Basel MAR50 and planned U.S./EU source refs.

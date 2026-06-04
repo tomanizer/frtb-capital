@@ -32,7 +32,7 @@ To define how the FRTB capital suite is independently validated under SR 11-7 / 
 | `frtb-ima` calculation package | `packages/frtb-ima/` |
 | FRTB-IMA model documentation pack | `docs/modules/frtb-ima/model_documentation/` |
 | Architectural decisions | `docs/decisions/` (ADRs 0001 onward) |
-| Requirement registry | `docs/modules/frtb-ima/requirements/` and `packages/frtb-ima/docs/requirements/NPR_2_0_MARKET_RISK.yml` |
+| Requirement registry | `packages/frtb-ima/docs/requirements/NPR_2_0_MARKET_RISK.yml`; `docs/modules/frtb-ima/requirements/` is a navigation pointer |
 | Audit records and replay CLI | `packages/frtb-ima/src/frtb_ima/audit.py`, `packages/frtb-ima/src/frtb_ima/replay.py` |
 | Committed regression fixture | `packages/frtb-ima/tests/fixtures/capital_run_v1/` |
 | Independent numerical reference vectors | `packages/frtb-ima/tests/test_reference_vectors.py` |

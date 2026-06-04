@@ -29,7 +29,7 @@
 | Docs and requirement registry checks | Every PR | `make docs-check`. |
 | Target-scale benchmark | Material performance changes | `make rrao-benchmark`, `PERFORMANCE.md`. |
 | Mutation baseline | Release or scheduled quality review | `make mutation-rrao`, `docs/quality/frtb-rrao/`. |
-| Requirement inventory review | Release and material model change | `requirements/BASEL_FRTB_RRAO.yml`. |
+| Requirement inventory review | Release and material model change | `../../../../packages/frtb-rrao/docs/requirements/BASEL_FRTB_RRAO.yml`. |
 
 ## Change Control
 

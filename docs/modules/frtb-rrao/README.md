@@ -29,7 +29,7 @@ End-to-end client flow (Arrow handoff, batch capital, allocation reports,
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
 - [Decisions and implementation plan](DECISIONS_AND_PLAN.md)
 - [Workable issue breakdown](ISSUE_BREAKDOWN.md)
-- [Workable requirements](requirements/BASEL_FRTB_RRAO.yml)
+- [Workable requirements](../../../packages/frtb-rrao/docs/requirements/BASEL_FRTB_RRAO.yml)
 - [Stable public API](PUBLIC_API.md)
 - [IMA-style model documentation pack](model_documentation/README.md)
 
@@ -38,6 +38,8 @@ Package-local traceability documents live under `packages/frtb-rrao/docs`:
 - [Regulatory traceability](../../../packages/frtb-rrao/docs/REGULATORY_TRACEABILITY.md)
 - [Regulatory assumptions](../../../packages/frtb-rrao/docs/REGULATORY_ASSUMPTIONS.md)
 - [Regulatory sources](../../../packages/frtb-rrao/docs/regulatory_sources.yml)
+- [Requirement registry](../../../packages/frtb-rrao/docs/requirements/BASEL_FRTB_RRAO.yml)
+- [Dataset contract](../../../packages/frtb-rrao/docs/DATASET_CONTRACT.md)
 - [Performance benchmark](../../../packages/frtb-rrao/docs/PERFORMANCE.md)
 - [Allocation explain views](../../../packages/frtb-rrao/docs/ALLOCATION.md)
 

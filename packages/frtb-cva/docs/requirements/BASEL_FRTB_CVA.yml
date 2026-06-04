@@ -2,9 +2,9 @@ schema_version: 1
 name: BASEL_FRTB_CVA
 module: frtb-cva
 status_values: [planned, implemented, partial, unsupported, out_of_scope]
-detailed_requirements_doc: ../DETAILED_REQUIREMENTS.md
-architecture_doc: ../ARCHITECTURE_AND_DATA_DESIGN.md
-decisions_doc: ../DECISIONS_AND_PLAN.md
+detailed_requirements_doc: ../../../../docs/modules/frtb-cva/DETAILED_REQUIREMENTS.md
+architecture_doc: ../../../../docs/modules/frtb-cva/ARCHITECTURE_AND_DATA_DESIGN.md
+decisions_doc: ../../../../docs/modules/frtb-cva/DECISIONS_AND_PLAN.md
 source_register:
   - name: Basel MAR50
     url: https://www.bis.org/basel_framework/chapter/MAR/50.htm

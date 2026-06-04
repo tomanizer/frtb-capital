@@ -18,7 +18,7 @@ requirements:
     title: Package-local regulatory traceability pack
     source: Basel MAR20.4; Basel MAR23.1-MAR23.8; proposed U.S. section __.211; Regulation (EU) No 575/2013 Article 325u
     status: implemented
-    modules: [docs/REGULATORY_TRACEABILITY.md, docs/REGULATORY_ASSUMPTIONS.md, docs/regulatory_sources.yml, ../../docs/modules/frtb-rrao/model_documentation]
+    modules: [docs/REGULATORY_TRACEABILITY.md, docs/REGULATORY_ASSUMPTIONS.md, docs/regulatory_sources.yml, ../../../../docs/modules/frtb-rrao/model_documentation]
     tests: [tests/test_regulatory_sources.py]
     notes: Implemented modules are source-mapped, the model-documentation evidence pack is present, and PRA capital paths remain explicitly unsupported until fixture-tested.
   - id: RRAO-DATA-001
@@ -130,13 +130,13 @@ requirements:
     title: Property and mutation quality evidence
     source: Engineering control for test-suite robustness; not a regulatory source
     status: implemented
-    modules: [../../docs/quality/frtb-rrao, tests/test_properties.py]
+    modules: [../../../../docs/quality/frtb-rrao, tests/test_properties.py]
     tests: [tests/test_properties.py]
     notes: Adds Hypothesis invariants and mutmut evidence comparable to the IMA package quality pattern.
   - id: RRAO-API-002
     title: Stable top-level public API surface
     source: Engineering compatibility control; not a regulatory source
     status: implemented
-    modules: [src/frtb_rrao/__init__.py, ../../docs/modules/frtb-rrao/PUBLIC_API.md]
+    modules: [src/frtb_rrao/__init__.py, ../../../../docs/modules/frtb-rrao/PUBLIC_API.md]
     tests: [tests/test_rrao_public_api_surface.py]
     notes: Keeps low-level reference-data and implementation helpers importable from their submodules but outside the v1 top-level compatibility contract.
