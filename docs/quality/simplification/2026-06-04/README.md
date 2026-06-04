@@ -41,7 +41,8 @@ Prior run: [`2026-06-02/`](../2026-06-02/). Live refactor queue:
 ## Recommended implementation order
 
 1. Add/extend hash regression tests; run `check_simplification_drift.py` before each PR.
-2. Migrate `_hash_payload` → `frtb_common.stable_json_hash` (SBM, DRC, CVA).
+2. Migrate `_hash_payload` → `frtb_common.stable_json_hash` (SBM, DRC, CVA);
+   use the [stable hash migration guide](hash-migration-guide.md).
 3. Package-local helper extraction (`_text`, `_citations`, `_payloads`) where not done.
 4. Collapse SBM sensitivity-builder wrappers; split largest `batch.py` files.
 5. RRAO shared validation module; decide single vs dual kernel.

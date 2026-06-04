@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
@@ -11,6 +12,7 @@ from enum import StrEnum
 import pytest
 from frtb_common import (
     is_sha256_hex,
+    jsonable,
     require_sha256_hex,
     stable_json_dumps,
     stable_json_hash,
@@ -56,6 +58,42 @@ def test_stable_json_hash_matches_sha256_of_stable_json_dumps() -> None:
 
 def test_stable_json_hash_is_input_sensitive() -> None:
     assert stable_json_hash({"amount": 1.0}) != stable_json_hash({"amount": 2.0})
+
+
+def test_stable_json_hash_matches_plain_legacy_payload_helper() -> None:
+    """Consumer helpers that hash JSON-ready payloads can migrate without drift."""
+
+    def legacy_hash_payload(payload: Mapping[str, object]) -> str:
+        encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    payload = {
+        "capital_component": "example",
+        "lineage": {"source_row_id": "42", "source_column_map": [["amount", "Amount"]]},
+        "mapping_citation_ids": ["citation-1"],
+    }
+
+    assert stable_json_hash(payload) == legacy_hash_payload(payload)
+
+
+def test_stable_json_hash_matches_jsonable_legacy_payload_helper() -> None:
+    """Consumer helpers that pre-coerce with jsonable can migrate without drift."""
+
+    def legacy_hash_payload(payload: object) -> str:
+        encoded = bytes(
+            json.dumps(jsonable(payload), sort_keys=True, separators=(",", ":")),
+            "utf-8",
+        )
+        return hashlib.sha256(encoded).hexdigest()
+
+    payload = {
+        "when": date(2026, 6, 4),
+        "profile": _Regime.BASEL,
+        "nested": _Payload(amount=10.5, regime=_Regime.BASEL),
+        "axis": ("group", "branch"),
+    }
+
+    assert stable_json_hash(payload) == legacy_hash_payload(payload)
 
 
 def test_sha256_hex_validation_accepts_lowercase_digest_only() -> None:

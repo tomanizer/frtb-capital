@@ -53,7 +53,8 @@ policy.
 
 ## Recommended sequence
 
-1. Document migration guide from `_hash_payload` to `stable_json_hash`.
+1. Document migration guide from `_hash_payload` to `stable_json_hash`
+   ([hash-migration-guide.md](hash-migration-guide.md)).
 2. Add Arrow helper tests mirroring one package’s null/chunk behavior.
 3. Split `crif.py` only when a fourth major CRIF feature lands.
 

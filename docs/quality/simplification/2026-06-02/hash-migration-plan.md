@@ -6,6 +6,9 @@ This note records the migration plan enabled by `frtb_common.hashing`. The #378
 implementation adds shared helpers only; component input hashes and profile
 hashes are not migrated in the same PR.
 
+For the current migration contract and package-scoped follow-up checklist, see
+[`../2026-06-04/hash-migration-guide.md`](../2026-06-04/hash-migration-guide.md).
+
 ## Shared helpers
 
 - `frtb_common.stable_json_dumps(payload)`
@@ -58,4 +61,3 @@ in place:
 
 Every migration PR should run the affected package tests plus
 `make quality-control`.
-

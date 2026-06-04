@@ -38,6 +38,8 @@ Current contents:
 - JSON-ready serialization with `jsonable` for common domain values such as
   enums, dates, objects exposing `as_dict`, exceptions, mappings, and
   sequences;
+- deterministic JSON hashing with `stable_json_hash` for package-neutral
+  payloads, plus SHA-256 validation helpers;
 - regulatory citation enforcement helpers for package policy tests:
   - `assert_policy_has_regulatory_citations`;
   - `MissingRegulatoryCitationsError`.
