@@ -124,9 +124,17 @@ def test_support_matrix_uses_every_status_taxonomy_value() -> None:
 
 @pytest.mark.parametrize("profile", list(CvaRegulatoryProfile))
 def test_package_boundary_policies_are_out_of_scope(profile: CvaRegulatoryProfile) -> None:
-    cells = {(cell.profile, cell.method): cell for cell in cva_profile_support_matrix()}
-    approval = cells[(profile, SA_CVA_APPROVAL_GOVERNANCE_POLICY)]
-    generation = cells[(profile, EXPOSURE_SENSITIVITY_GENERATION_POLICY)]
+    matrix = cva_profile_support_matrix()
+    approval = next(
+        cell
+        for cell in matrix
+        if cell.profile is profile and cell.method == SA_CVA_APPROVAL_GOVERNANCE_POLICY
+    )
+    generation = next(
+        cell
+        for cell in matrix
+        if cell.profile is profile and cell.method == EXPOSURE_SENSITIVITY_GENERATION_POLICY
+    )
 
     assert approval.status is CvaSupportStatus.OUT_OF_SCOPE
     assert approval.blocker == "supervisory_approval_boundary"
