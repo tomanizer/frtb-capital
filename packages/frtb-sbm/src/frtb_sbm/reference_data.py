@@ -848,14 +848,32 @@ PROFILE_GIRR_VEGA_OPTION_TENORS: dict[
 def citations_for_profile(
     profile: SbmRegulatoryProfile | str,
 ) -> dict[str, SbmCitation]:
-    """Return citations for a supported SBM profile."""
+    """Return citations for a supported SBM profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    dict[str, SbmCitation]
+    """
 
     resolved = _resolve_supported_profile(profile)
     return dict(PROFILE_CITATIONS[resolved])
 
 
 def curvature_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ...]:
-    """Return ordered citation ids for curvature contract validation."""
+    """Return ordered citation ids for curvature contract validation.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    tuple[str, ...]
+    """
 
     citations = citations_for_profile(profile)
     required = (
@@ -884,7 +902,16 @@ def curvature_risk_weight(
     currency: str = "",
     reporting_currency: str = "",
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited MAR21.98/MAR21.99 curvature shock size for one factor."""
+    """Return the cited MAR21.98/MAR21.99 curvature shock size for one factor.
+    Parameters
+    ----------
+    profile, risk_class, bucket_id, risk_factor, currency, reporting_currency :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     resolved_class = _coerce_risk_class(risk_class)
     if resolved_class is SbmRiskClass.GIRR:
@@ -939,7 +966,16 @@ def curvature_risk_weight(
 def girr_buckets_for_profile(
     profile: SbmRegulatoryProfile | str,
 ) -> tuple[SbmGirrBucketDefinition, ...]:
-    """Return GIRR bucket definitions for a supported profile."""
+    """Return GIRR bucket definitions for a supported profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmGirrBucketDefinition, ...]
+    """
 
     resolved = _resolve_supported_profile(profile)
     return PROFILE_GIRR_BUCKETS[resolved]
@@ -948,7 +984,16 @@ def girr_buckets_for_profile(
 def girr_tenors_for_profile(
     profile: SbmRegulatoryProfile | str,
 ) -> tuple[SbmGirrTenorDefinition, ...]:
-    """Return the prescribed GIRR tenor set for a supported profile."""
+    """Return the prescribed GIRR tenor set for a supported profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmGirrTenorDefinition, ...]
+    """
 
     resolved = _resolve_supported_profile(profile)
     return PROFILE_GIRR_TENORS[resolved]
@@ -958,7 +1003,18 @@ def girr_bucket_for_currency(
     profile: SbmRegulatoryProfile | str,
     currency: str,
 ) -> SbmGirrBucketDefinition:
-    """Return the GIRR bucket definition for a currency code."""
+    """Return the GIRR bucket definition for a currency code.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    currency : str
+        See signature.
+
+    Returns
+    -------
+    SbmGirrBucketDefinition
+    """
 
     normalised = _require_currency(currency)
     for bucket in girr_buckets_for_profile(profile):
@@ -974,7 +1030,18 @@ def girr_bucket_definition(
     profile: SbmRegulatoryProfile | str,
     bucket_id: str,
 ) -> SbmGirrBucketDefinition:
-    """Return the GIRR bucket definition for a bucket id."""
+    """Return the GIRR bucket definition for a bucket id.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket_id : str
+        See signature.
+
+    Returns
+    -------
+    SbmGirrBucketDefinition
+    """
 
     normalised = _require_text(bucket_id, "bucket_id")
     for bucket in girr_buckets_for_profile(profile):
@@ -990,7 +1057,18 @@ def girr_tenor_definition(
     profile: SbmRegulatoryProfile | str,
     tenor: str,
 ) -> SbmGirrTenorDefinition:
-    """Return the GIRR tenor definition for a canonical tenor label."""
+    """Return the GIRR tenor definition for a canonical tenor label.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    tenor : str
+        See signature.
+
+    Returns
+    -------
+    SbmGirrTenorDefinition
+    """
 
     normalised = _require_text(tenor, "tenor")
     for tenor_definition in girr_tenors_for_profile(profile):
@@ -1006,7 +1084,18 @@ def girr_delta_risk_weight_rule(
     profile: SbmRegulatoryProfile | str,
     tenor: str,
 ) -> SbmGirrRiskWeightRule:
-    """Return the cited base GIRR delta risk-weight rule for a tenor."""
+    """Return the cited base GIRR delta risk-weight rule for a tenor.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    tenor : str
+        See signature.
+
+    Returns
+    -------
+    SbmGirrRiskWeightRule
+    """
 
     normalised = _require_text(tenor, "tenor")
     for rule in PROFILE_GIRR_DELTA_RISK_WEIGHTS[_resolve_supported_profile(profile)]:
@@ -1032,7 +1121,16 @@ def girr_delta_risk_weight(
     currency: str,
     reporting_currency: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited GIRR delta risk weight and citation ids."""
+    """Return the cited GIRR delta risk weight and citation ids.
+    Parameters
+    ----------
+    profile, tenor, currency, reporting_currency :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_girr_delta_supported(profile)
     resolved = _resolve_supported_profile(profile)
@@ -1058,7 +1156,16 @@ def girr_delta_intra_bucket_correlation(
     tenor2: str,
     same_curve: bool,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited GIRR delta intra-bucket correlation and citation ids."""
+    """Return the cited GIRR delta intra-bucket correlation and citation ids.
+    Parameters
+    ----------
+    profile, tenor1, tenor2, same_curve :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_girr_delta_supported(profile)
     resolved = _resolve_supported_profile(profile)
@@ -1091,7 +1198,16 @@ def girr_delta_intra_bucket_correlation(
 
 
 def girr_vega_liquidity_horizon_days(profile: SbmRegulatoryProfile | str) -> int:
-    """Return the cited GIRR vega liquidity horizon in days for a profile."""
+    """Return the cited GIRR vega liquidity horizon in days for a profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    int
+    """
 
     return vega_liquidity_horizon_days(
         profile,
@@ -1105,7 +1221,20 @@ def vega_liquidity_horizon_days(
     risk_class: SbmRiskClass | str,
     bucket_id: str = "",
 ) -> int:
-    """Return the cited MAR21.92 Table 13 vega liquidity horizon in days."""
+    """Return the cited MAR21.92 Table 13 vega liquidity horizon in days.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    risk_class : SbmRiskClass | str
+        See signature.
+    bucket_id : str, optional
+        See signature.
+
+    Returns
+    -------
+    int
+    """
 
     resolved = _resolve_supported_profile(profile)
     _ensure_vega_supported(profile)
@@ -1133,7 +1262,18 @@ def vega_risk_weight(
     *,
     liquidity_horizon_days: int,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited vega risk weight min(100%, 55% * sqrt(LH/10))."""
+    """Return the cited vega risk weight min(100%, 55% * sqrt(LH/10)).
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    liquidity_horizon_days : int
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_vega_supported(profile)
     horizon = require_positive_int(liquidity_horizon_days, "liquidity_horizon_days")
@@ -1147,7 +1287,16 @@ def vega_risk_weight(
 def girr_vega_option_tenors(
     profile: SbmRegulatoryProfile | str,
 ) -> tuple[SbmGirrTenorDefinition, ...]:
-    """Return the prescribed GIRR vega option-tenor set for a supported profile."""
+    """Return the prescribed GIRR vega option-tenor set for a supported profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmGirrTenorDefinition, ...]
+    """
 
     resolved = _resolve_supported_profile(profile)
     _ensure_girr_vega_supported(profile)
@@ -1158,7 +1307,18 @@ def girr_vega_option_tenor_definition(
     profile: SbmRegulatoryProfile | str,
     option_tenor: str,
 ) -> SbmGirrTenorDefinition:
-    """Return the GIRR vega option-tenor definition for a canonical label."""
+    """Return the GIRR vega option-tenor definition for a canonical label.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    option_tenor : str
+        See signature.
+
+    Returns
+    -------
+    SbmGirrTenorDefinition
+    """
 
     normalised = _require_text(option_tenor, "option_tenor")
     for tenor_definition in girr_vega_option_tenors(profile):
@@ -1178,7 +1338,16 @@ def girr_vega_intra_bucket_correlation(
     tenor1: str,
     tenor2: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return min(1, rho_opt * rho_ul) with 1% exponential tenor constants."""
+    """Return min(1, rho_opt * rho_ul) with 1% exponential tenor constants.
+    Parameters
+    ----------
+    profile, option_tenor1, option_tenor2, tenor1, tenor2 :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_girr_vega_supported(profile)
     rho_opt, _ = vega_option_tenor_correlation(
@@ -1203,7 +1372,20 @@ def vega_option_tenor_correlation(
     option_tenor1: str,
     option_tenor2: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the MAR21.93 option-tenor correlation term used by vega paths."""
+    """Return the MAR21.93 option-tenor correlation term used by vega paths.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    option_tenor1 : str
+        See signature.
+    option_tenor2 : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_vega_supported(profile)
     option_maturity1 = girr_vega_option_tenor_definition(profile, option_tenor1).maturity_years
@@ -1225,7 +1407,20 @@ def girr_inter_bucket_correlation(
     bucket1: str,
     bucket2: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited GIRR inter-bucket correlation and citation ids."""
+    """Return the cited GIRR inter-bucket correlation and citation ids.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket1 : str
+        See signature.
+    bucket2 : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_girr_delta_supported(profile)
     resolved = _resolve_supported_profile(profile)
@@ -1242,7 +1437,16 @@ def girr_inter_bucket_correlation(
 def fx_buckets_for_profile(
     profile: SbmRegulatoryProfile | str,
 ) -> tuple[SbmFxBucketDefinition, ...]:
-    """Return cited FX bucket definitions for a supported profile."""
+    """Return cited FX bucket definitions for a supported profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmFxBucketDefinition, ...]
+    """
 
     resolved = _resolve_supported_profile(profile)
     _ensure_fx_delta_supported(profile)
@@ -1252,7 +1456,16 @@ def fx_buckets_for_profile(
 def fx_specified_currencies_for_profile(
     profile: SbmRegulatoryProfile | str,
 ) -> frozenset[str]:
-    """Return the cited FX specified-currency set for a supported profile."""
+    """Return the cited FX specified-currency set for a supported profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    frozenset[str]
+    """
 
     resolved = _resolve_supported_profile(profile)
     _ensure_fx_delta_supported(profile)
@@ -1260,7 +1473,16 @@ def fx_specified_currencies_for_profile(
 
 
 def normalise_fx_delta_currency_code(currency: str) -> str:
-    """Map FX delta currency codes to MAR21.88 canonical bucket codes (ADR 0017)."""
+    """Map FX delta currency codes to MAR21.88 canonical bucket codes (ADR 0017).
+    Parameters
+    ----------
+    currency : str
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     normalised = _require_currency(currency)
     if normalised == "CNH":
@@ -1272,7 +1494,18 @@ def fx_bucket_definition(
     profile: SbmRegulatoryProfile | str,
     bucket_id: str,
 ) -> SbmFxBucketDefinition:
-    """Return the FX bucket definition for a currency bucket id."""
+    """Return the FX bucket definition for a currency bucket id.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket_id : str
+        See signature.
+
+    Returns
+    -------
+    SbmFxBucketDefinition
+    """
 
     _ensure_fx_delta_supported(profile)
     normalised = normalise_fx_delta_currency_code(bucket_id)
@@ -1292,7 +1525,20 @@ def fx_delta_risk_weight(
     currency: str,
     reporting_currency: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited FX delta risk weight and citation ids."""
+    """Return the cited FX delta risk weight and citation ids.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    currency : str
+        See signature.
+    reporting_currency : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_fx_delta_supported(profile)
     normalised_currency = normalise_fx_delta_currency_code(currency)
@@ -1317,7 +1563,20 @@ def fx_delta_intra_bucket_correlation(
     bucket1: str,
     bucket2: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited FX delta intra-bucket correlation and citation ids."""
+    """Return the cited FX delta intra-bucket correlation and citation ids.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket1 : str
+        See signature.
+    bucket2 : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_fx_delta_supported(profile)
     normalised_bucket1 = normalise_fx_delta_currency_code(bucket1)
@@ -1334,7 +1593,20 @@ def fx_inter_bucket_correlation(
     bucket1: str,
     bucket2: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited FX inter-bucket correlation and citation ids."""
+    """Return the cited FX inter-bucket correlation and citation ids.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket1 : str
+        See signature.
+    bucket2 : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_fx_delta_supported(profile)
     normalised_bucket1 = normalise_fx_delta_currency_code(bucket1)
@@ -1349,7 +1621,16 @@ def fx_inter_bucket_correlation(
 def correlation_scenarios_for_profile(
     profile: SbmRegulatoryProfile | str,
 ) -> tuple[SbmCorrelationScenarioDefinition, ...]:
-    """Return low, medium, and high correlation scenario definitions."""
+    """Return low, medium, and high correlation scenario definitions.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmCorrelationScenarioDefinition, ...]
+    """
 
     resolved = _resolve_supported_profile(profile)
     return PROFILE_CORRELATION_SCENARIOS[resolved]
@@ -1359,7 +1640,18 @@ def correlation_scenario_definition(
     profile: SbmRegulatoryProfile | str,
     scenario: SbmScenarioLabel | str,
 ) -> SbmCorrelationScenarioDefinition:
-    """Return one correlation scenario definition."""
+    """Return one correlation scenario definition.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    scenario : SbmScenarioLabel | str
+        See signature.
+
+    Returns
+    -------
+    SbmCorrelationScenarioDefinition
+    """
 
     resolved_scenario = _coerce_scenario(scenario)
     for definition in correlation_scenarios_for_profile(profile):
@@ -1375,7 +1667,18 @@ def apply_correlation_scenario_definition(
     base_correlation: float,
     definition: SbmCorrelationScenarioDefinition,
 ) -> float:
-    """Apply one profile-owned MAR21.6 correlation-scenario rule to a base parameter."""
+    """Apply one profile-owned MAR21.6 correlation-scenario rule to a base parameter.
+    Parameters
+    ----------
+    base_correlation : float
+        See signature.
+    definition : SbmCorrelationScenarioDefinition
+        See signature.
+
+    Returns
+    -------
+    float
+    """
 
     if not math.isfinite(base_correlation):
         raise SbmInputError("base_correlation must be finite", field="base_correlation")
@@ -1396,7 +1699,20 @@ def apply_correlation_scenario(
     base_correlation: float,
     scenario: SbmScenarioLabel | str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Apply a profile correlation scenario to a base correlation parameter."""
+    """Apply a profile correlation scenario to a base correlation parameter.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    base_correlation : float
+        See signature.
+    scenario : SbmScenarioLabel | str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     definition = correlation_scenario_definition(profile, scenario)
     adjusted = apply_correlation_scenario_definition(base_correlation, definition)
@@ -1404,7 +1720,16 @@ def apply_correlation_scenario(
 
 
 def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:
-    """Return a deterministic, JSON-serialisable payload for profile hashing."""
+    """Return a deterministic, JSON-serialisable payload for profile hashing.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    dict[str, object]
+    """
 
     resolved = _resolve_supported_profile(profile)
     citations = citations_for_profile(resolved)

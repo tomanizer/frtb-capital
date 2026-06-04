@@ -69,7 +69,16 @@ _PROFILE_COMMODITY_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmCommodityBucketD
 def commodity_buckets_for_profile(
     profile: SbmRegulatoryProfile | str,
 ) -> tuple[SbmCommodityBucketDefinition, ...]:
-    """Return cited commodity bucket definitions for a supported profile."""
+    """Return cited commodity bucket definitions for a supported profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmCommodityBucketDefinition, ...]
+    """
 
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     _ensure_commodity_delta_supported(profile)
@@ -80,7 +89,18 @@ def commodity_bucket_definition(
     profile: SbmRegulatoryProfile | str,
     bucket_id: str,
 ) -> SbmCommodityBucketDefinition:
-    """Return the commodity bucket definition for a canonical bucket id."""
+    """Return the commodity bucket definition for a canonical bucket id.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket_id : str
+        See signature.
+
+    Returns
+    -------
+    SbmCommodityBucketDefinition
+    """
 
     _ensure_commodity_delta_supported(profile)
     normalised = _require_text(bucket_id, "bucket_id")
@@ -99,7 +119,18 @@ def commodity_delta_risk_weight(
     *,
     bucket_id: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return the cited commodity delta risk weight for one bucket."""
+    """Return the cited commodity delta risk weight for one bucket.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket_id : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     bucket = commodity_bucket_definition(profile, bucket_id)
     return bucket.risk_weight, (_COMMODITY_WEIGHT_CITATION,)
@@ -116,7 +147,16 @@ def commodity_delta_intra_bucket_correlation(
     location_a: str,
     location_b: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return MAR21.83 intra-bucket correlation as rho_cty * rho_tenor * rho_location."""
+    """Return MAR21.83 intra-bucket correlation as rho_cty * rho_tenor * rho_location.
+    Parameters
+    ----------
+    profile, bucket_id, commodity_a, commodity_b, tenor_a, tenor_b, location_a, location_b :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_commodity_delta_supported(profile)
     bucket = commodity_bucket_definition(profile, bucket_id)
@@ -143,7 +183,20 @@ def commodity_inter_bucket_correlation(
     bucket1: str,
     bucket2: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return MAR21.85 inter-bucket gamma for two commodity buckets."""
+    """Return MAR21.85 inter-bucket gamma for two commodity buckets.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    bucket1 : str
+        See signature.
+    bucket2 : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     _ensure_commodity_delta_supported(profile)
     b1 = _require_commodity_bucket_number(bucket1)
@@ -158,7 +211,16 @@ def commodity_inter_bucket_correlation(
 
 
 def commodity_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:
-    """Return commodity tables for profile hashing."""
+    """Return commodity tables for profile hashing.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    dict[str, object]
+    """
 
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     _ensure_commodity_delta_supported(profile)

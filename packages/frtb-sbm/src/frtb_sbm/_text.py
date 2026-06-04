@@ -6,7 +6,20 @@ from frtb_sbm.validation import SbmInputError
 
 
 def require_text(value: object, field: str, sensitivity_id: str = "") -> str:
-    """Return stripped non-empty text or raise the package input error."""
+    """Return stripped non-empty text or raise the package input error.
+    Parameters
+    ----------
+    value : object
+        See signature.
+    field : str
+        See signature.
+    sensitivity_id : str, optional
+        See signature.
+
+    Returns
+    -------
+    str
+    """
 
     if not isinstance(value, str) or not value.strip():
         raise SbmInputError(
