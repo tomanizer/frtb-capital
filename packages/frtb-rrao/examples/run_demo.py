@@ -68,9 +68,10 @@ def run_for_profile(profile: RraoRegulatoryProfile, label: str) -> None:
 
     # Show a couple of capital lines
     for line in list(result.lines)[:3]:
-        print(f"    {line.classification.value} ({line.evidence_type.value}): "
-              f"notional={line.gross_effective_notional:,.0f} "
-              f"rw={line.risk_weight} add_on={line.add_on:,.0f}"
+        print(
+            f"    {line.classification.value} ({line.evidence_type.value}): "
+            f"notional={line.gross_effective_notional:,.0f} "
+            f"rw={line.risk_weight} add_on={line.add_on:,.0f}"
         )
 
     expected = load_expected_outputs()

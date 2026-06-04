@@ -301,8 +301,7 @@ def main() -> None:
     print("See tests/fixtures/*/loader.py for more fixture-based examples.")
     print("See tests/test_sbm_public_api.py and batch/arrow tests for construction patterns.")
     print(
-        "Supported under BASEL_MAR21 profile "
-        "(GIRR/EQUITY/FX/COMMODITY/CSR delta/vega + curvature)."
+        "Supported under BASEL_MAR21 profile (GIRR/EQUITY/FX/COMMODITY/CSR delta/vega + curvature)."
     )
 
 

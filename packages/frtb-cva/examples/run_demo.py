@@ -201,16 +201,14 @@ def run_mixed_demo() -> CvaCapitalResult:
         if ns.netting_set_id == "ns-0-0":
             # recreate with flag (dataclass frozen, so new)
             from dataclasses import replace
+
             nss[0] = replace(ns, carved_out_to_ba_cva=True)
             break
     nss = tuple(nss)
     sens = make_synthetic_sa_sensitivities()
     result = calculate_cva_capital(context, ctps, nss, sensitivities=sens)
     print(f"Total CVA capital (mixed): {result.total_cva_capital:,.2f}")
-    print(
-        f"  Method components: "
-        f"{[(m.method, m.total_capital) for m in result.method_components]}"
-    )
+    print(f"  Method components: {[(m.method, m.total_capital) for m in result.method_components]}")
     return result
 
 

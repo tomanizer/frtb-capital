@@ -111,8 +111,7 @@ def main() -> None:
     print("\nDemo complete.")
     print("See tests/test_orchestration_scaffold.py and src/ for full contracts.")
     print(
-        "Manifest-based SA routing is also available via "
-        "run_standardised_approach_from_manifest."
+        "Manifest-based SA routing is also available via run_standardised_approach_from_manifest."
     )
 
 

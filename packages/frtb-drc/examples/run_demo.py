@@ -100,9 +100,7 @@ def run_fixture_demo() -> DrcCapitalResult:
     print(f"  Profile:   {fixture.context.profile_id}")
     print(f"  As-of:     {fixture.context.calculation_date}")
 
-    result: DrcCapitalResult = calculate_drc_capital(
-        fixture.positions, context=fixture.context
-    )
+    result: DrcCapitalResult = calculate_drc_capital(fixture.positions, context=fixture.context)
     print(f"\n  Total DRC capital: {result.total_drc:,.2f}")
     print(f"  Input hash: {result.input_hash[:16]}...")
     print(f"  Profile hash: {result.profile_hash[:16]}...")
@@ -149,8 +147,7 @@ def run_raw_construction_demo() -> DrcCapitalResult:
     print("\n=== Minimal raw DrcPosition construction demo ===")
     pos = make_minimal_drc_position()
     print(
-        f"  Built position: {pos.position_id} issuer={pos.issuer_id} "
-        f"notional={pos.notional:,.0f}"
+        f"  Built position: {pos.position_id} issuer={pos.issuer_id} notional={pos.notional:,.0f}"
     )
 
     ctx = DrcCalculationContext(
@@ -172,8 +169,7 @@ def main() -> None:
     print("Prototype / illustration only. Not final regulatory capital.\n")
     print("See packages/frtb-drc/docs/ and REGULATORY_TRACEABILITY.md for citations.")
     print(
-        "Securitisation and CTP paths explicitly fail closed "
-        "(UnsupportedRegulatoryFeatureError)."
+        "Securitisation and CTP paths explicitly fail closed (UnsupportedRegulatoryFeatureError)."
     )
 
     run_fixture_demo()
