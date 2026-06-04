@@ -36,12 +36,16 @@ Furthermore, we need to define the treatment for SBM curvature capital aggregati
    ```
 
 2. **Linear Treatment of Curvature shocks**:
-   SBM Curvature capital is treated as **purely linear** within the selected shock direction (up vs down). 
+   SBM Curvature capital is treated as **purely linear** within the selected shock direction (up vs down).
    - The SBM calculation kernel determines which shock direction (up or down) is active for each curvature risk factor bucket/currency.
    - Within that selected shock direction, the curvature charge is treated as linear, allowing the analytical Euler derivative to be calculated with respect to the active direction's shock exposure.
+   - ADR 0038's method-selection rules still apply: if an active CVR floor,
+     min/max branch, missing denominator, or incomplete evidence prevents exact
+     derivative reconstruction, the package must emit `UNSUPPORTED` residual
+     records rather than analytical curvature contributions.
 
 3. **Method Categorization**:
-   - `ANALYTICAL_EULER`: For stable, differentiable branches (including SBM correlation matrices and linear curvature shock directions).
+   - `ANALYTICAL_EULER`: For stable, differentiable branches (including SBM correlation matrices and linear curvature shock directions when ADR 0038's method-selection rules permit them).
    - `RESIDUAL`: For reconciling remaining category-level capital where exact analytical allocation is not applicable.
    - `UNSUPPORTED`: For non-differentiable branches (active floors, zero denominators). The capital is allocated to `residual` to ensure 100% exact numerical reconciliation.
 

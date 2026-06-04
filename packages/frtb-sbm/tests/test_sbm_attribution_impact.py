@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from datetime import date
 
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
@@ -228,6 +229,57 @@ def test_attribution_two_sensitivities_same_bucket_reconciles() -> None:
     assert math.isclose(total, result.total_capital, rel_tol=1e-6), (
         f"Euler sum {total} != total capital {result.total_capital}"
     )
+
+
+def test_attribution_two_buckets_matches_finite_difference_derivative() -> None:
+    """Two GIRR delta buckets: Euler multipliers include the inter-bucket gamma term."""
+    s1 = _single_girr_delta(run_id="run", amount=1_000_000.0, tenor="1y", bucket="1")
+    s2 = SbmSensitivity(
+        sensitivity_id="run-usd-5y",
+        source_row_id="run-row-002",
+        desk_id="rates-desk",
+        legal_entity="LE-001",
+        risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.DELTA,
+        bucket="2",
+        risk_factor="USD",
+        tenor="5y",
+        amount=700_000.0,
+        amount_currency="USD",
+        sign_convention=SbmSignConvention.RECEIVE,
+        lineage=_lineage("run", "row-002"),
+    )
+    sensitivities = (s1, s2)
+    result = calculate_sbm_capital(sensitivities, context=_context())
+    contributions = calculate_sbm_attribution(result)
+
+    euler = [c for c in contributions if c.method == AttributionMethod.ANALYTICAL_EULER]
+    assert len(euler) == 2
+    assert math.isclose(
+        sum((r.contribution or 0.0) + r.residual for r in contributions),
+        result.total_capital,
+        rel_tol=1e-6,
+    )
+
+    raw_amount_by_id = {s.sensitivity_id: s.amount for s in sensitivities}
+    bump = 100.0
+    for contribution in euler:
+        assert contribution.marginal_multiplier is not None
+        raw_amount = raw_amount_by_id[contribution.source_id]
+        risk_weight = contribution.base_amount / raw_amount
+        bumped = tuple(
+            replace(s, amount=s.amount + bump) if s.sensitivity_id == contribution.source_id else s
+            for s in sensitivities
+        )
+        bumped_result = calculate_sbm_capital(bumped, context=_context(run_id="bumped"))
+        finite_difference = (bumped_result.total_capital - result.total_capital) / bump
+        analytical_raw_derivative = contribution.marginal_multiplier * risk_weight
+        assert math.isclose(
+            finite_difference,
+            analytical_raw_derivative,
+            rel_tol=1e-4,
+            abs_tol=1e-6,
+        )
 
 
 # ---------------------------------------------------------------------------

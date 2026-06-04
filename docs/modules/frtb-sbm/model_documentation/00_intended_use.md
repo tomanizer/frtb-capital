@@ -27,11 +27,16 @@ batch, and Arrow batch curvature paths for:
 The package also supports CRIF/CSV adapter paths where input rows map to the
 canonical sensitivity model and preserve source lineage.
 
+Post-calculation attribution is supported for selected, differentiable delta and
+vega branches through analytical Euler `CapitalContribution` records. Curvature
+and other non-differentiable or incomplete-evidence attribution paths are
+reported as unsupported residual records. Baseline-vs-candidate impact is
+available as finite difference and is separate from marginal contribution.
+
 ## Out Of Scope
 
 - U.S. NPR 2.0, EU CRR3, and PRA UK CRR runtime capital;
 - market-data sourcing, pricing, and sensitivity generation;
 - total SA aggregation across SBM, DRC, and RRAO;
-- analytical Euler attribution and finite-difference impact capital reports;
 - unsupported curvature sub-features where the package requires additional
   evidence, such as equity repo curvature and FX scalar flags.

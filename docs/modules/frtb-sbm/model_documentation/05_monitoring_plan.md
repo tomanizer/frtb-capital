@@ -30,5 +30,5 @@ Open a documentation update, ADR, or explicit traceability update when:
 - risk weights, correlations, or scenario-selection behavior changes;
 - curvature branch logic or required evidence changes;
 - audit/result fields change;
-- analytical attribution or capital impact analysis becomes supported;
+- analytical attribution or capital impact support boundaries change;
 - fixture or benchmark baselines are replaced.
