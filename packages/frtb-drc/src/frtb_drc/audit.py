@@ -21,7 +21,17 @@ from frtb_drc.validation import DrcInputError
 
 
 def input_snapshot_hash(positions: Iterable[DrcPosition]) -> str:
-    """Hash canonical DRC inputs in deterministic position-id order."""
+    """Hash canonical DRC inputs in deterministic position-id order.
+    Parameters
+    ----------
+    positions : Iterable[DrcPosition]
+        Canonical DRC position records.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     payload = [
         position.as_dict()
@@ -34,25 +44,62 @@ def input_snapshot_hash(positions: Iterable[DrcPosition]) -> str:
 
 
 def rule_profile_hash(profile_id: str) -> str:
-    """Return the selected rule profile content hash."""
+    """Return the selected rule profile content hash.
+    Parameters
+    ----------
+    profile_id : str
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     return get_rule_profile(profile_id).content_hash
 
 
 def serialize_result(result: DrcCapitalResult) -> dict[str, object]:
-    """Return a JSON-ready deterministic result snapshot."""
+    """Return a JSON-ready deterministic result snapshot.
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        DRC capital result to serialize or reconcile.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
 
     return _sort_mapping(jsonable(result.as_dict()))
 
 
 def result_json(result: DrcCapitalResult) -> str:
-    """Serialize a result with stable JSON key order and compact separators."""
+    """Serialize a result with stable JSON key order and compact separators.
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        DRC capital result to serialize or reconcile.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     return json.dumps(serialize_result(result), sort_keys=True, separators=(",", ":"))
 
 
 def validate_reconciliation(result: DrcCapitalResult, *, tolerance: float = 1e-12) -> None:
-    """Validate bucket/category/total reconciliation and HBR arithmetic."""
+    """Validate bucket/category/total reconciliation and HBR arithmetic.
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        DRC capital result to serialize or reconcile.
+    tolerance : float, optional
+        Absolute tolerance for reconciliation checks.
+    """
 
     category_total = 0.0
     for category in result.categories:

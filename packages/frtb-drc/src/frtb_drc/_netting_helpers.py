@@ -24,7 +24,31 @@ def bounded_rejected_group_offsets(
     reason_code: str,
     citations: tuple[str, ...],
 ) -> tuple[RejectedOffset, ...]:
-    """Build rejected offsets for non-exact long/short group pairings."""
+    """Build rejected offsets for non-exact long/short group pairings.
+    Parameters
+    ----------
+    bucket_key : str
+        DRC bucket key for the calculation scope.
+    long_groups : Mapping[str, Sequence[T]]
+        Long groups.
+    short_groups : Mapping[str, Sequence[T]]
+        Short groups.
+    rejection_id_prefix : str
+        Rejection id prefix.
+    sequence : Iterator[int]
+        Sequence.
+    representative : Callable[[Sequence[T]], str]
+        Representative.
+    reason_code : str
+        Reason code.
+    citations : tuple[str, ...]
+        Citations.
+
+    Returns
+    -------
+    tuple[RejectedOffset, ...]
+        Result of the operation.
+    """
 
     rejected: list[RejectedOffset] = []
     sorted_short_groups = sorted(short_groups)
@@ -73,7 +97,23 @@ def risk_weights_for_net_jtd(
     field_name: str,
     position_label: str = "",
 ) -> set[float]:
-    """Return the distinct supplied risk weights needed by a net JTD record."""
+    """Return the distinct supplied risk weights needed by a net JTD record.
+    Parameters
+    ----------
+    net_jtd : NetJtd
+        Net jtd.
+    risk_weights : Mapping[str, object]
+        Risk weights.
+    field_name : str
+        Human-readable field label for error messages.
+    position_label : str, optional
+        Position label.
+
+    Returns
+    -------
+    set[float]
+        Result of the operation.
+    """
 
     weights: set[float] = set()
     for position_id in net_jtd.position_ids:

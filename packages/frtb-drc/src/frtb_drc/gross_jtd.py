@@ -31,7 +31,19 @@ def calculate_gross_jtd(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> GrossJtd:
-    """Calculate cited gross JTD for one supported non-securitisation position."""
+    """Calculate cited gross JTD for one supported non-securitisation position.
+    Parameters
+    ----------
+    position : DrcPosition
+        Position.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    GrossJtd
+        Result of the operation.
+    """
 
     validate_position(position, profile_id=profile_id)
     profile = get_rule_profile(profile_id)
@@ -84,7 +96,19 @@ def calculate_gross_jtds(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> tuple[GrossJtd, ...]:
-    """Calculate gross JTD records in input order."""
+    """Calculate gross JTD records in input order.
+    Parameters
+    ----------
+    positions : Iterable[DrcPosition]
+        Canonical DRC position records.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[GrossJtd, ...]
+        Result of the operation.
+    """
 
     validated_positions = validate_positions(positions, profile_id=profile_id)
     return tuple(

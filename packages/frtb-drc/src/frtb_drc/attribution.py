@@ -48,6 +48,11 @@ def calculate_drc_attribution(
     profile_hash:
         Hash of the rule profile used in the calculation.
         Pass ``result.profile_hash`` when available.
+
+    Returns
+    -------
+    tuple[CapitalContribution, ...]
+        Deterministic attribution records reconciled to ``result.total_drc``.
     """
 
     net_by_id = {record.net_jtd_id: record for record in result.net_jtds}
@@ -73,7 +78,17 @@ def validate_attribution_reconciliation(
     *,
     tolerance: float = _TOLERANCE,
 ) -> None:
-    """Validate that contributions plus residual records reconcile to total capital."""
+    """Validate that contributions plus residual records reconcile to total capital.
+
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        Capital result whose ``total_drc`` is the reconciliation target.
+    records : tuple[CapitalContribution, ...] | None, optional
+        Attribution records to validate; defaults to ``result.attribution_records``.
+    tolerance : float, optional
+        Absolute tolerance for the reconciliation check.
+    """
 
     attribution_records = result.attribution_records if records is None else records
     total = math.fsum(

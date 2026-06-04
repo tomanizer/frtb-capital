@@ -13,7 +13,17 @@ from frtb_drc.data_models import DrcCapitalResult
 
 
 def to_component_summary(result: DrcCapitalResult) -> ComponentCapitalSummary:
-    """Return the shared component summary view for one DRC capital result."""
+    """Return the shared component summary view for one DRC capital result.
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        DRC capital result to serialize or reconcile.
+
+    Returns
+    -------
+    ComponentCapitalSummary
+        Result of the operation.
+    """
 
     return ComponentCapitalSummary(
         component=StandardisedComponent.DRC,

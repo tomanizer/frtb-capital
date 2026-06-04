@@ -23,7 +23,19 @@ def fair_value_cap_evidence_by_position(
     *,
     field_name: str = "fair_value_cap_evidence",
 ) -> dict[str, DrcFairValueCapEvidence]:
-    """Return fair-value cap evidence keyed by position id, rejecting duplicates."""
+    """Return fair-value cap evidence keyed by position id, rejecting duplicates.
+    Parameters
+    ----------
+    records : Iterable[DrcFairValueCapEvidence]
+        Records.
+    field_name : str, optional
+        Human-readable field label for error messages.
+
+    Returns
+    -------
+    dict[str, DrcFairValueCapEvidence]
+        Result of the operation.
+    """
 
     by_position: dict[str, DrcFairValueCapEvidence] = {}
     for record in records:
@@ -39,7 +51,14 @@ def validate_fair_value_cap_evidence(
     *,
     context: DrcCalculationContext,
 ) -> None:
-    """Validate run-scoped fair-value cap evidence without requiring positions."""
+    """Validate run-scoped fair-value cap evidence without requiring positions.
+    Parameters
+    ----------
+    evidence : Mapping[str, DrcFairValueCapEvidence]
+        Risk-weight or fair-value-cap evidence records.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+    """
 
     if not evidence:
         return
@@ -64,7 +83,19 @@ def used_fair_value_cap_evidence(
     positions: Iterable[DrcPosition],
     context: DrcCalculationContext,
 ) -> tuple[DrcFairValueCapEvidence, ...]:
-    """Return cap evidence used by supplied positions in deterministic order."""
+    """Return cap evidence used by supplied positions in deterministic order.
+    Parameters
+    ----------
+    positions : Iterable[DrcPosition]
+        Canonical DRC position records.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+
+    Returns
+    -------
+    tuple[DrcFairValueCapEvidence, ...]
+        Result of the operation.
+    """
 
     position_ids = tuple(sorted(position.position_id for position in positions))
     return used_fair_value_cap_evidence_for_position_ids(position_ids, context)
@@ -74,7 +105,19 @@ def used_fair_value_cap_evidence_for_position_ids(
     position_ids: Iterable[str],
     context: DrcCalculationContext,
 ) -> tuple[DrcFairValueCapEvidence, ...]:
-    """Return cap evidence used by supplied position ids in deterministic order."""
+    """Return cap evidence used by supplied position ids in deterministic order.
+    Parameters
+    ----------
+    position_ids : Iterable[str]
+        Position identifiers to filter evidence.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+
+    Returns
+    -------
+    tuple[DrcFairValueCapEvidence, ...]
+        Result of the operation.
+    """
 
     evidence = context.securitisation_non_ctp_fair_value_cap_evidence
     return tuple(
@@ -86,7 +129,19 @@ def fair_value_cap_hash_payload(
     position_ids: Iterable[str],
     context: DrcCalculationContext,
 ) -> tuple[dict[str, object], ...]:
-    """Return deterministic JSON-ready cap evidence payload for input hashes."""
+    """Return deterministic JSON-ready cap evidence payload for input hashes.
+    Parameters
+    ----------
+    position_ids : Iterable[str]
+        Position identifiers to filter evidence.
+    context : DrcCalculationContext
+        Calculation context including profile, FX, and run metadata.
+
+    Returns
+    -------
+    tuple[dict[str, object], ...]
+        Result of the operation.
+    """
 
     return tuple(
         cast(dict[str, object], jsonable(record.as_dict()))

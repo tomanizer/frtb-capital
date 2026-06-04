@@ -75,7 +75,21 @@ def get_lgd_rule(
     profile_id: str = US_NPR_2_0_PROFILE_ID,
     is_defaulted: bool = False,
 ) -> LgdRule:
-    """Return the cited LGD rule for seniority/defaulted status."""
+    """Return the cited LGD rule for seniority/defaulted status.
+    Parameters
+    ----------
+    seniority : DrcSeniority
+        Instrument seniority for LGD lookup.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+    is_defaulted : bool, optional
+        Whether the position is in defaulted status.
+
+    Returns
+    -------
+    LgdRule
+        Result of the operation.
+    """
 
     _ensure_profile_exists(profile_id)
     if is_defaulted and profile_id == US_NPR_2_0_PROFILE_ID:
@@ -84,7 +98,17 @@ def get_lgd_rule(
 
 
 def get_maturity_policy(profile_id: str = US_NPR_2_0_PROFILE_ID) -> MaturityPolicy:
-    """Return the maturity weighting policy for a profile."""
+    """Return the maturity weighting policy for a profile.
+    Parameters
+    ----------
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    MaturityPolicy
+        Result of the operation.
+    """
 
     _ensure_profile_exists(profile_id)
     try:
@@ -98,7 +122,19 @@ def get_bucket_definition(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> BucketDefinition:
-    """Return a bucket definition by key."""
+    """Return a bucket definition by key.
+    Parameters
+    ----------
+    bucket_key : str
+        DRC bucket key for the calculation scope.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    BucketDefinition
+        Result of the operation.
+    """
 
     _ensure_profile_exists(profile_id)
     try:
@@ -113,7 +149,21 @@ def get_risk_weight_rule(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> RiskWeightRule:
-    """Return a strict risk-weight rule by bucket and credit quality."""
+    """Return a strict risk-weight rule by bucket and credit quality.
+    Parameters
+    ----------
+    bucket_key : str
+        DRC bucket key for the calculation scope.
+    credit_quality : CreditQuality
+        Credit-quality bucket for risk-weight lookup.
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    RiskWeightRule
+        Result of the operation.
+    """
 
     _ensure_profile_exists(profile_id)
     try:
@@ -125,7 +175,17 @@ def get_risk_weight_rule(
 
 
 def iter_lgd_rules(profile_id: str = US_NPR_2_0_PROFILE_ID) -> tuple[LgdRule, ...]:
-    """Return all non-defaulted LGD rules for a profile in stable order."""
+    """Return all non-defaulted LGD rules for a profile in stable order.
+    Parameters
+    ----------
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[LgdRule, ...]
+        Result of the operation.
+    """
 
     _ensure_profile_exists(profile_id)
     return tuple(
@@ -136,7 +196,17 @@ def iter_lgd_rules(profile_id: str = US_NPR_2_0_PROFILE_ID) -> tuple[LgdRule, ..
 def iter_bucket_definitions(
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> tuple[BucketDefinition, ...]:
-    """Return bucket definitions for a profile in stable order."""
+    """Return bucket definitions for a profile in stable order.
+    Parameters
+    ----------
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[BucketDefinition, ...]
+        Result of the operation.
+    """
 
     _ensure_profile_exists(profile_id)
     return tuple(
@@ -145,7 +215,17 @@ def iter_bucket_definitions(
 
 
 def iter_risk_weight_rules(profile_id: str = US_NPR_2_0_PROFILE_ID) -> tuple[RiskWeightRule, ...]:
-    """Return risk-weight entries for a profile in stable order."""
+    """Return risk-weight entries for a profile in stable order.
+    Parameters
+    ----------
+    profile_id : str, optional
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    tuple[RiskWeightRule, ...]
+        Result of the operation.
+    """
 
     _ensure_profile_exists(profile_id)
     return tuple(
@@ -166,7 +246,17 @@ def _require_lgd_rule(profile_id: str, seniority: DrcSeniority, *, defaulted: bo
 
 
 def profile_reference_data_payload(profile_id: str) -> dict[str, object]:
-    """Return deterministic reference-data payload used in profile hashing."""
+    """Return deterministic reference-data payload used in profile hashing.
+    Parameters
+    ----------
+    profile_id : str
+        Active DRC rule profile identifier.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
 
     return {
         "lgd_rules": [
