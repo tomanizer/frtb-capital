@@ -78,7 +78,12 @@ class ArtifactSchemaEntry:
 
     @property
     def schema_fingerprint(self) -> str:
-        """Return the stable fingerprint for the registered Arrow schema."""
+        """Return the stable fingerprint for the registered Arrow schema.
+        Returns
+        -------
+        str
+            Result of the operation.
+        """
 
         return artifact_schema_fingerprint(self)
 
@@ -204,7 +209,17 @@ ARTIFACT_SCHEMA_REGISTRY: Mapping[str, ArtifactSchemaEntry] = MappingProxyType(
 
 
 def artifact_schema_for(schema_id: str) -> ArtifactSchemaEntry:
-    """Return a registered artifact schema or fail closed."""
+    """Return a registered artifact schema or fail closed.
+    Parameters
+    ----------
+    schema_id : str
+        Schema id.
+
+    Returns
+    -------
+    ArtifactSchemaEntry
+        Result of the operation.
+    """
 
     try:
         return ARTIFACT_SCHEMA_REGISTRY[schema_id]
@@ -213,7 +228,17 @@ def artifact_schema_for(schema_id: str) -> ArtifactSchemaEntry:
 
 
 def artifact_schema_fingerprint(entry: ArtifactSchemaEntry) -> str:
-    """Generate a stable fingerprint for an artifact schema registry entry."""
+    """Generate a stable fingerprint for an artifact schema registry entry.
+    Parameters
+    ----------
+    entry : ArtifactSchemaEntry
+        Entry.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     payload = {
         "schema_id": entry.schema_id,
@@ -296,7 +321,25 @@ def stage_artifact_write(
     final_root: Path,
     final_uri: str | None = None,
 ) -> StagedArtifact:
-    """Validate and stage one artifact without materializing all chunks."""
+    """Validate and stage one artifact without materializing all chunks.
+    Parameters
+    ----------
+    run : CalculationRun
+        Run.
+    request : ArtifactWriteRequest
+        Request.
+    staging_dir : Path
+        Staging dir.
+    final_root : Path
+        Final root.
+    final_uri : str | None, optional
+        Final uri.
+
+    Returns
+    -------
+    StagedArtifact
+        Result of the operation.
+    """
 
     entry = artifact_schema_for(request.schema_id)
     _validate_request_matches_schema(request, entry)

@@ -102,7 +102,39 @@ class CalculationRun:
         run_group_identity_payload: Mapping[str, object] | None = None,
         metadata: Mapping[str, object] | None = None,
     ) -> CalculationRun:
-        """Create a run whose storage id is generated from canonical identity."""
+        """Create a run whose storage id is generated from canonical identity.
+        Parameters
+        ----------
+        as_of_date : date
+            As of date.
+        regime_id : str
+            Regime id.
+        base_currency : str
+            Base currency.
+        input_snapshot_id : str
+            Input snapshot id.
+        calculation_scope : str
+            Calculation scope.
+        engine_version : str
+            Engine version.
+        code_version : str
+            Code version.
+        calculation_policy_id : str
+            Calculation policy id.
+        created_at : datetime
+            Created at.
+        run_group_id : str | None, optional
+            Run group id.
+        run_group_identity_payload : Mapping[str, object] | None, optional
+            Run group identity payload.
+        metadata : Mapping[str, object] | None, optional
+            Metadata.
+
+        Returns
+        -------
+        CalculationRun
+            Result of the operation.
+        """
 
         if run_group_id is None and run_group_identity_payload:
             run_group_id = generate_run_group_id(run_group_identity_payload)
@@ -181,7 +213,31 @@ class RunStatusEvent:
         reason_text: str,
         external_evidence_ref: str | None = None,
     ) -> RunStatusEvent:
-        """Create a transition with a deterministic event id."""
+        """Create a transition with a deterministic event id.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        from_status : RunStatus | str | None
+            From status.
+        to_status : RunStatus | str
+            To status.
+        event_time : datetime
+            Event time.
+        actor : str
+            Actor.
+        reason_code : str
+            Reason code.
+        reason_text : str
+            Reason text.
+        external_evidence_ref : str | None, optional
+            External evidence ref.
+
+        Returns
+        -------
+        RunStatusEvent
+            Result of the operation.
+        """
 
         payload = {
             "run_id": run_id,
