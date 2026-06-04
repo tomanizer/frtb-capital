@@ -39,6 +39,13 @@ from frtb_drc.capital import (
     calculate_hedge_benefit_ratio,
 )
 from frtb_drc.component_summary import to_component_summary
+from frtb_drc.crif import (
+    DrcCrifAdapterResult,
+    DrcCrifDirectionStrategy,
+    DrcRejectedCrifRow,
+    adapt_drc_crif_rows,
+    drc_crif_result_to_arrow_tables,
+)
 from frtb_drc.ctp import (
     CtpCalculation,
     CtpCapitalInput,
@@ -145,6 +152,8 @@ __all__ = [
     "DrcCalculationContext",
     "DrcCapitalResult",
     "DrcCitation",
+    "DrcCrifAdapterResult",
+    "DrcCrifDirectionStrategy",
     "DrcFairValueCapEvidence",
     "DrcFxConversion",
     "DrcFxRate",
@@ -153,6 +162,7 @@ __all__ = [
     "DrcPosition",
     "DrcPositionBatch",
     "DrcProfileSupportCell",
+    "DrcRejectedCrifRow",
     "DrcRiskClass",
     "DrcRiskWeightEvidence",
     "DrcRuleProfile",
@@ -172,6 +182,7 @@ __all__ = [
     "SecuritisationNonCtpCapitalInput",
     "SecuritisationNonCtpNettingInput",
     "__version__",
+    "adapt_drc_crif_rows",
     "build_drc_ctp_batch_from_arrow",
     "build_drc_ctp_batch_from_columns",
     "build_drc_nonsec_batch_from_arrow",
@@ -197,6 +208,7 @@ __all__ = [
     "calculate_securitisation_non_ctp_drc",
     "calculate_securitisation_non_ctp_gross_jtd",
     "calculate_securitisation_non_ctp_net_jtds",
+    "drc_crif_result_to_arrow_tables",
     "drc_profile_support_matrix",
     "ensure_risk_class_supported",
     "fair_value_cap_evidence_by_position",

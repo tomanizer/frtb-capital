@@ -18,12 +18,28 @@ HANDOFF_SURFACE = (
     "calculate_drc_capital_from_batch",
     "input_hash_for_drc_batch",
 )
+ADAPTER_SURFACE = (
+    "DrcCrifAdapterResult",
+    "DrcCrifDirectionStrategy",
+    "DrcRejectedCrifRow",
+    "adapt_drc_crif_rows",
+    "drc_crif_result_to_arrow_tables",
+)
 
 
 def test_documented_handoff_surface_is_top_level_importable() -> None:
     exported = set(frtb_drc.__all__)
     documented = _public_api_doc()
     for name in HANDOFF_SURFACE:
+        assert name in exported
+        assert hasattr(frtb_drc, name)
+        assert f"`{name}`" in documented
+
+
+def test_documented_adapter_surface_is_top_level_importable() -> None:
+    exported = set(frtb_drc.__all__)
+    documented = _public_api_doc()
+    for name in ADAPTER_SURFACE:
         assert name in exported
         assert hasattr(frtb_drc, name)
         assert f"`{name}`" in documented
@@ -60,7 +76,7 @@ def test_minimal_handoff_fixtures_round_trip_to_batches() -> None:
 
 
 def test_top_level_public_api_surface_remains_bounded() -> None:
-    assert len(frtb_drc.__all__) < 125
+    assert len(frtb_drc.__all__) < 135
 
 
 def _public_api_doc() -> str:
