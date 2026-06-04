@@ -78,6 +78,57 @@ The full normalizer → builder → capital-entry mapping lives in
 
 ---
 
+## Risk-class routing (same journey, different kernels)
+
+Integration is **identical** across asset classes: one homogeneous table per path,
+path-specific normalize/build/calculate symbols, then portfolio grouping by
+`(risk_class, risk_measure)`. What changes is the **regulatory kernel** invoked
+after the batch is built — weights, buckets, correlations, and required input
+columns differ by class and measure.
+
+### Shared pipeline (all seven risk classes)
+
+| Stage | Shared behaviour |
+| --- | --- |
+| Ingress / normalize | `frtb_common.normalize_arrow_table` + path `ColumnSpec`; identity, classification, amount, lineage columns per [`PUBLIC_API.md`](../../../docs/modules/frtb-sbm/PUBLIC_API.md#inputtable-column-summary) |
+| Batch | `SbmSensitivityBatch` NumPy columns; no per-row `SbmSensitivity` on the fast path |
+| Aggregation pattern | Weight sensitivities → intra-bucket `Kb` with correlation scenarios → inter-bucket / risk-class total (delta and vega); curvature uses MAR21.5 branch engine with up/down shocks |
+| Result shape | One `RiskClassCapital` per path in `SbmCapitalResult.risk_classes`; portfolio `total_capital` sums implemented paths |
+| Attribution | Delta and vega: analytical Euler on weighted lines; curvature: `UNSUPPORTED` for every class (CVR floor) |
+
+Callers supply **bucket, qualifier, risk factor, and path-specific axes** (tenor,
+option tenor, curvature up/down, mapping citation ids). The package does not
+infer buckets from raw instruments — upstream systems or CRIF adapters assign
+canonical classification before capital runs.
+
+### How classes differ (mechanical summary)
+
+| Risk class | Delta (distinct mechanics) | Vega | Curvature (distinct mechanics) |
+| --- | --- | --- | --- |
+| **GIRR** | Cited tenor grid; factor netting via `net_girr_delta_sensitivity_batch`; MAR21.4–MAR21.7 scenario selection | GIRR vega tenor/bucket correlations (MAR21.90+) | MAR21.5 + MAR21.96–MAR21.101 branch engine; up/down shock columns |
+| **FX** | MAR21.86–MAR21.89 buckets; `CNH` may map to `CNY` bucket per MAR21.88 | FX vega buckets/correlations | Optional MAR21.98 **1.5× scalar** for non-reporting-currency pairs: set `FX_CURVATURE_SCALAR_1_5_FLAG` in `mapping_citation_ids` and a two-currency `qualifier` (e.g. `EUR/GBP`) |
+| **Equity** | MAR21.71–MAR21.75 bucket weights | Equity vega | Supported curvature; **equity repo** vega/curvature sub-features fail closed |
+| **Commodity** | MAR21.76–MAR21.80 delivery/non-delivery buckets | Commodity vega | Curvature on same batch/Arrow boundary as delta/vega |
+| **CSR non-sec** | MAR21.51–MAR21.57 credit-quality buckets | Shared non-GIRR vega engine | CSR curvature on cited MAR21.51–MAR21.57 / shared curvature mechanics |
+| **CSR sec non-CTP** | MAR21.71 senior-IG vs non-senior / HY multipliers on Table weights | CSR sec non-CTP vega | Same curvature boundary as other CSR paths |
+| **CSR sec CTP** | MAR21.59 Table 6 buckets 1–16; decomposition evidence checks fail closed when required | CSR sec CTP vega | CTP-specific delta/vega/curvature paths |
+
+**US NPR 2.0:** only **GIRR delta** is implemented; all other NPR cells fail closed
+even if Basel paths would succeed under `BASEL_MAR21`.
+
+### Choosing the right path in client code
+
+1. Tag each sensitivity row with `risk_class` and `risk_measure` before export.
+2. Split Arrow exports so each table is homogeneous (see profile section above).
+3. Call the matching `normalize_*` / `calculate_sbm_capital_from_*` pair from
+   [PUBLIC_API.md](../../../docs/modules/frtb-sbm/PUBLIC_API.md#inputtable-specs-and-normalizers),
+   or pass multiple normalized tables to `calculate_sbm_portfolio_capital_from_arrow_tables`.
+4. For regulatory thresholds, weights, and citation ids per cell, use
+   [`REGULATORY_TRACEABILITY.md`](REGULATORY_TRACEABILITY.md) (support matrix) and
+   [`REGULATORY_ASSUMPTIONS.md`](REGULATORY_ASSUMPTIONS.md) (boundary assumptions).
+
+---
+
 ## End-to-end journey (Tier 1 — multi-path portfolio)
 
 Production desks usually run **many SBM paths in one run** (for example GIRR delta,
