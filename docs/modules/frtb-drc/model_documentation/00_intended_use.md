@@ -55,7 +55,7 @@ Known fail-closed profile paths are:
 
 Regulatory anchors for the supported path are recorded in
 [`REGULATORY_REQUIREMENTS.md`](../REGULATORY_REQUIREMENTS.md) and
-[`requirements/BASEL_FRTB_DRC.yml`](../requirements/BASEL_FRTB_DRC.yml).
+[`BASEL_FRTB_DRC.yml`](../../../../packages/frtb-drc/docs/requirements/BASEL_FRTB_DRC.yml).
 
 ## Out of Scope
 

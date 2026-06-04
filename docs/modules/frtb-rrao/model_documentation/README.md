@@ -27,7 +27,7 @@ review.
   is the bidirectional code-to-regulation map.
 - [`REGULATORY_ASSUMPTIONS.md`](../../../../packages/frtb-rrao/docs/REGULATORY_ASSUMPTIONS.md)
   records source-cited boundaries and limitations.
-- [`BASEL_FRTB_RRAO.yml`](../requirements/BASEL_FRTB_RRAO.yml) is the
+- [`BASEL_FRTB_RRAO.yml`](../../../../packages/frtb-rrao/docs/requirements/BASEL_FRTB_RRAO.yml) is the
   machine-readable requirement inventory.
 - [`PUBLIC_API.md`](../PUBLIC_API.md) defines the stable v1 top-level import
   surface.

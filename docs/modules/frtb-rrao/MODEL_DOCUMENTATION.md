@@ -24,7 +24,7 @@ inputs.
 | [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md) | Modules, calculation flow, enums, dataclasses, invariants, and test layout. | Implemented v1 design with remaining boundaries. |
 | [Decisions and implementation plan](DECISIONS_AND_PLAN.md) | Design decisions, sequencing, risk assessment, and open questions. | Historical implementation plan and remaining boundaries. |
 | [Workable issue breakdown](ISSUE_BREAKDOWN.md) | PR-sized implementation issues for the `frtb-rrao v1` milestone. | Historical delivery plan. |
-| [Requirements registry](requirements/BASEL_FRTB_RRAO.yml) | Machine-checkable requirements and target modules/tests. | Implemented statuses for scoped v1 items. |
+| [Requirements registry](../../../packages/frtb-rrao/docs/requirements/BASEL_FRTB_RRAO.yml) | Machine-checkable requirements and target modules/tests. | Implemented statuses for scoped v1 items. |
 | [Stable public API](PUBLIC_API.md) | Top-level import compatibility contract. | Implemented v1 public surface. |
 | [IMA-style evidence pack](model_documentation/README.md) | Intended use, conceptual soundness, methodology, lineage, validation evidence, limitations, and change history. | Active model-documentation pack. |
 | [Package regulatory traceability](../../../packages/frtb-rrao/docs/REGULATORY_TRACEABILITY.md) | Package-local code-to-regulation and regulation-to-code cross-reference. | Implemented v1 code map. |

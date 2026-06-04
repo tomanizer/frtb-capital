@@ -185,7 +185,7 @@ Add section **"Profile × method × SA-CVA support matrix"** to
 
 ### 4.4 Requirements registry
 
-Add requirement `CVA-MATRIX-001` to `docs/modules/frtb-cva/requirements/BASEL_FRTB_CVA.yml`:
+Add requirement `CVA-MATRIX-001` to `packages/frtb-cva/docs/requirements/BASEL_FRTB_CVA.yml`:
 
 ```yaml
 - id: CVA-MATRIX-001
@@ -277,7 +277,7 @@ For each comparison profile, deliver in order:
 
 | Work item | Deliverable |
 | --- | --- |
-| Citation map | `docs/modules/frtb-cva/requirements/US_NPR20_CVA.yml` (new) or section in crosswalk |
+| Citation map | `packages/frtb-cva/docs/requirements/US_NPR20_CVA.yml` (new) or section in crosswalk |
 | Section V.B.2–V.B.3 | Map method election, CVA segment, hedging to existing `scope.py` hooks |
 | Reference data | Only where NPR text differs from July 2020 Basel (document sameness explicitly) |
 | Tests | `test_cva_regimes.py`: profile metadata hash; `test_cva_unsupported_features`: remain fail closed until tables exist |
@@ -453,7 +453,7 @@ These fields are **not** added in Phase B.
 
 - [`DECISIONS_AND_PLAN.md`](DECISIONS_AND_PLAN.md) — CVA-DEC-001 through CVA-DEC-011
 - [`ARCHITECTURE_AND_DATA_DESIGN.md`](ARCHITECTURE_AND_DATA_DESIGN.md)
-- [`requirements/BASEL_FRTB_CVA.yml`](requirements/BASEL_FRTB_CVA.yml)
+- [`BASEL_FRTB_CVA.yml`](../../../packages/frtb-cva/docs/requirements/BASEL_FRTB_CVA.yml)
 - [`packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md)
 - [`packages/frtb-sbm/tests/test_sbm_support_matrix.py`](../../../packages/frtb-sbm/tests/test_sbm_support_matrix.py) — pattern reference
 - Basel MAR50.8–MAR50.9, MAR50.14–MAR50.26, MAR50.42–MAR50.77

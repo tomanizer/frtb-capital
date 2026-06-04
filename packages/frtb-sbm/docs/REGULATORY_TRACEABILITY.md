@@ -169,7 +169,7 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | Document | Location |
 | --- | --- |
 | Module planning pack | [`docs/modules/frtb-sbm/README.md`](../../../docs/modules/frtb-sbm/README.md) |
-| Requirements registry | [`docs/modules/frtb-sbm/requirements/BASEL_FRTB_SBM.yml`](../../../docs/modules/frtb-sbm/requirements/BASEL_FRTB_SBM.yml) |
+| Requirements registry | [`requirements/BASEL_FRTB_SBM.yml`](requirements/BASEL_FRTB_SBM.yml) |
 | Regulatory assumptions | [`REGULATORY_ASSUMPTIONS.md`](REGULATORY_ASSUMPTIONS.md) |
 | Package README | [`../README.md`](../README.md) |
 | Issue breakdown | [`docs/modules/frtb-sbm/ISSUE_BREAKDOWN.md`](../../../docs/modules/frtb-sbm/ISSUE_BREAKDOWN.md) |

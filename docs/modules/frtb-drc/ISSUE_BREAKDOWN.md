@@ -7,7 +7,7 @@ reference an ADR when they change shared contracts.
 This file is historical planning material. Delivered issues remain useful for
 audit traceability, but current implementation status is authoritative in
 `README.md`, `DETAILED_REQUIREMENTS.md`, `REGULATORY_REQUIREMENTS.md`, and
-`requirements/BASEL_FRTB_DRC.yml`.
+`../../../packages/frtb-drc/docs/requirements/BASEL_FRTB_DRC.yml`.
 
 ## Issue 1: Add DRC model documentation and traceability skeleton
 

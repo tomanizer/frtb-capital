@@ -29,4 +29,9 @@ The stable client integration surface is documented in
 Outputs are synthetic engineering and validation evidence, not final regulatory
 capital. See
 [`docs/REGULATORY_TRACEABILITY.md`](docs/REGULATORY_TRACEABILITY.md) for
-citations and scope boundaries.
+citations and scope boundaries. For a concise regulation overview, see
+[`docs/REGULATION_SUMMARY.md`](docs/REGULATION_SUMMARY.md); implementation
+assumptions are recorded in
+[`docs/REGULATORY_ASSUMPTIONS.md`](docs/REGULATORY_ASSUMPTIONS.md). The
+package-local requirement registry is
+[`docs/requirements/BASEL_FRTB_CVA.yml`](docs/requirements/BASEL_FRTB_CVA.yml).

@@ -28,6 +28,16 @@ End-to-end client flow (Arrow handoff, batch capital, attribution, orchestration
 and result-store boundaries) is documented in
 [`packages/frtb-cva/docs/PACKAGE_JOURNEY.md`](../../../packages/frtb-cva/docs/PACKAGE_JOURNEY.md).
 
+## Package-Local Documentation
+
+- [Regulation summary](../../../packages/frtb-cva/docs/REGULATION_SUMMARY.md)
+- [Regulatory assumptions](../../../packages/frtb-cva/docs/REGULATORY_ASSUMPTIONS.md)
+- [Regulatory traceability](../../../packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md)
+- [Regulatory sources manifest](../../../packages/frtb-cva/docs/regulatory_sources.yml)
+- [Requirement registry](../../../packages/frtb-cva/docs/requirements/BASEL_FRTB_CVA.yml)
+- [Dataset contract](../../../packages/frtb-cva/docs/DATASET_CONTRACT.md)
+- [Package README](../../../packages/frtb-cva/README.md)
+
 ## Planning Documents
 
 - [AUDIT-IMP-005 design — profile/method coverage and MAR50.9](DESIGN_AUDIT_IMP_005.md)
@@ -37,12 +47,12 @@ and result-store boundaries) is documented in
 - [Decisions and implementation plan](DECISIONS_AND_PLAN.md)
 - [Workable issue breakdown](ISSUE_BREAKDOWN.md)
 - [Regulatory requirements](REGULATORY_REQUIREMENTS.md)
-- [Workable requirements](requirements/BASEL_FRTB_CVA.yml)
+- [Workable requirements](../../../packages/frtb-cva/docs/requirements/BASEL_FRTB_CVA.yml)
 - [Model documentation promotion plan](../MODEL_DOCUMENTATION_PROMOTION_PLAN.md)
 
 The historical implementation order is retained in
 [ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md); current runtime status is tracked in
-[requirements/BASEL_FRTB_CVA.yml](requirements/BASEL_FRTB_CVA.yml).
+[BASEL_FRTB_CVA.yml](../../../packages/frtb-cva/docs/requirements/BASEL_FRTB_CVA.yml).
 
 Outputs are synthetic engineering and validation evidence, not final regulatory
 capital.

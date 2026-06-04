@@ -63,6 +63,13 @@ Code-first end-to-end flow (row multi-class vs per-class batch, automatic attrib
 batch audit boundaries, SA handoff):
 [`packages/frtb-drc/docs/PACKAGE_JOURNEY.md`](../../../packages/frtb-drc/docs/PACKAGE_JOURNEY.md).
 
+## Package-Local Documentation
+
+- [Integration journey](../../../packages/frtb-drc/docs/PACKAGE_JOURNEY.md)
+- [Requirement registry](../../../packages/frtb-drc/docs/requirements/BASEL_FRTB_DRC.yml)
+- [Dataset contract](../../../packages/frtb-drc/docs/DATASET_CONTRACT.md)
+- [Package README](../../../packages/frtb-drc/README.md)
+
 ## Planning Documents
 
 - [Product requirements](PRD.md)
@@ -72,7 +79,7 @@ batch audit boundaries, SA handoff):
 - [Decisions and implementation plan](DECISIONS_AND_PLAN.md)
 - [Profile support matrix](PROFILE_SUPPORT_MATRIX.md)
 - [Workable issue breakdown](ISSUE_BREAKDOWN.md)
-- [Workable requirements](requirements/BASEL_FRTB_DRC.yml)
+- [Workable requirements](../../../packages/frtb-drc/docs/requirements/BASEL_FRTB_DRC.yml)
 - [Model documentation — intended use](model_documentation/00_intended_use.md)
 - [Model documentation promotion plan](../MODEL_DOCUMENTATION_PROMOTION_PLAN.md)
 

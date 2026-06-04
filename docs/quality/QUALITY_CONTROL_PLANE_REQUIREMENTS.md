@@ -305,7 +305,7 @@ Required for `frtb-ima` and `frtb-rrao`:
 - module documentation root exists;
 - module model documentation pack exists at
   `docs/modules/<module>/model_documentation/README.md`;
-- requirement registry exists under `docs/modules/<module>/requirements/`;
+- requirement registry exists under `packages/<module>/docs/requirements/`;
 - package source files exist under `src/<import_name>/`;
 - package metadata reports implemented status;
 - public calculation entry point imports successfully;
@@ -326,7 +326,7 @@ Required for `frtb-drc`:
 - detailed requirements exist;
 - issue breakdown or decisions/plan exists;
 - regulatory requirements or traceability documentation exists;
-- requirement registry exists under `docs/modules/frtb-drc/requirements/`;
+- requirement registry exists under `packages/frtb-drc/docs/requirements/`;
 - package source files exist under `src/frtb_drc/`;
 - package metadata reports partial status;
 - public calculation entry point imports successfully;
@@ -348,7 +348,7 @@ Required for `frtb-sbm` and `frtb-cva` at the first implementation milestone:
 - package scaffold test exists;
 - module documentation root exists;
 - regulatory requirements or PRD exists;
-- requirement registry exists under `docs/modules/<module>/requirements/`;
+- requirement registry exists under `packages/<module>/docs/requirements/`;
 - package metadata reports scaffolded status;
 - public calculation entry point imports successfully;
 - registry declares `scaffold-boundary` `required_tests` entry whose path
@@ -403,7 +403,7 @@ on the file tree at the time this spec was written:
 | Detailed requirements | `docs/modules/frtb-drc/DETAILED_REQUIREMENTS.md` | Present |
 | Issue breakdown / decisions | `docs/modules/frtb-drc/ISSUE_BREAKDOWN.md` | Present |
 | Regulatory requirements | `docs/modules/frtb-drc/REGULATORY_REQUIREMENTS.md` | Present |
-| Requirement registry | `docs/modules/frtb-drc/requirements/BASEL_FRTB_DRC.yml` | Present |
+| Requirement registry | `packages/frtb-drc/docs/requirements/BASEL_FRTB_DRC.yml` | Present |
 | Package source files | `packages/frtb-drc/src/frtb_drc/` | Present |
 | Package README | `packages/frtb-drc/README.md` | Present |
 | Package CHANGELOG | `packages/frtb-drc/CHANGELOG.md` | Present |

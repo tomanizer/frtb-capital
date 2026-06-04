@@ -137,7 +137,7 @@ Each implementation slice should keep these documents aligned:
 - `docs/modules/frtb-sbm/DECISIONS_AND_PLAN.md`;
 - `docs/modules/frtb-sbm/ISSUE_BREAKDOWN.md`;
 - `docs/modules/frtb-sbm/README.md`;
-- `requirements/BASEL_FRTB_SBM.yml` and any package-local regulatory
+- `../../../packages/frtb-sbm/docs/requirements/BASEL_FRTB_SBM.yml` and any package-local regulatory
   traceability once calculation modules exist.
 
 ## First vertical slice target

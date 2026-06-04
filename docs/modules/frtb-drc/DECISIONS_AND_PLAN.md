@@ -147,7 +147,7 @@ Each implementation slice must update:
 
 - `docs/modules/frtb-drc/DETAILED_REQUIREMENTS.md`;
 - `docs/modules/frtb-drc/REGULATORY_REQUIREMENTS.md`;
-- `docs/modules/frtb-drc/requirements/BASEL_FRTB_DRC.yml`;
+- `packages/frtb-drc/docs/requirements/BASEL_FRTB_DRC.yml`;
 - `packages/frtb-drc/README.md`;
 - package-local regulatory traceability once calculation modules exist;
 - validation fixtures and audit reports when result formats change.

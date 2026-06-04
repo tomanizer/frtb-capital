@@ -7,7 +7,7 @@ planning_docs:
   - docs/modules/frtb-cva/ARCHITECTURE_AND_DATA_DESIGN.md
   - docs/modules/frtb-cva/DECISIONS_AND_PLAN.md
   - docs/modules/frtb-cva/ISSUE_BREAKDOWN.md
-  - docs/modules/frtb-cva/requirements/BASEL_FRTB_CVA.yml
+  - packages/frtb-cva/docs/requirements/BASEL_FRTB_CVA.yml
 
 requirements:
   - id: CVA-POLICY-001

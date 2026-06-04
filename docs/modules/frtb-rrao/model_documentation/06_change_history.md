@@ -8,7 +8,7 @@ to authoritative change logs.
 - Suite changelog: [`CHANGELOG.md`](../../../../CHANGELOG.md)
 - Package changelog: [`packages/frtb-rrao/CHANGELOG.md`](../../../../packages/frtb-rrao/CHANGELOG.md)
 - ADRs: [`docs/decisions/`](../../../decisions/)
-- Requirement registry: [`BASEL_FRTB_RRAO.yml`](../requirements/BASEL_FRTB_RRAO.yml)
+- Requirement registry: [`BASEL_FRTB_RRAO.yml`](../../../../packages/frtb-rrao/docs/requirements/BASEL_FRTB_RRAO.yml)
 - Regulatory traceability:
   [`REGULATORY_TRACEABILITY.md`](../../../../packages/frtb-rrao/docs/REGULATORY_TRACEABILITY.md)
 
