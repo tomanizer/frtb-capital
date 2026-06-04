@@ -50,8 +50,9 @@ required upstream CCR/orchestration input contract.
 - Successful non-Basel CVA results now carry profile-specific citation ids and
   profile hashes, even when capital numbers match the Basel-aligned comparison
   calibration.
-- The package version and changelog fragment record the material profile-support
-  expansion in accordance with ADR 0005 and ADR 0015.
+- The package changelog fragment records the material profile-support expansion;
+  the package version bump is deferred to the release PR in accordance with ADR
+  0015.
 - Model documentation, package requirements, and regulatory source manifests
   must distinguish comparison evidence from final U.S., EU, or UK regulatory
   capital.
