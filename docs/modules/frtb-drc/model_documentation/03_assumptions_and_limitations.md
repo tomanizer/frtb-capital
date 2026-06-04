@@ -8,6 +8,10 @@ The current capital-producing scope is:
   paths;
 - Basel MAR22 non-securitisation row/batch paths using MAR22.12,
   MAR22.15-MAR22.18, MAR22.22, and MAR22.24;
+- Basel MAR22 securitisation non-CTP row/batch paths using MAR22.31-MAR22.35
+  and typed MAR22.34 evidence;
+- Basel MAR22 CTP row/batch paths using MAR22.36-MAR22.45 and typed MAR22.42
+  evidence;
 - class-specific Arrow batches for non-securitisation, securitisation non-CTP,
   and CTP under ADR 0023.
 
@@ -28,7 +32,6 @@ before capital is emitted.
 
 The following paths remain unsupported and fail closed:
 
-- Basel MAR22 CTP pending MAR22.42 decomposition and risk-weight mappings;
 - EU CRR3 DRC paths pending Article 325w and related CQS/RTS mappings;
 - PRA UK CRR DRC paths pending PRA PS1/26 Chapter 3 and Appendix 1 mappings;
 - internal derivation of banking-book securitisation risk weights;

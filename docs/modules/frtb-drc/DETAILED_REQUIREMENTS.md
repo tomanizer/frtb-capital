@@ -209,10 +209,11 @@ classification to the PSE/GSE debt bucket when that treatment is valid.
 For U.S. NPR 2.0, securitisation non-CTP bucket assignment must use the cited
 corporate or asset-class/region taxonomy and CTP bucket assignment must use the
 profile's CTP bucket keys. Basel MAR22 securitisation non-CTP bucket assignment
-uses the MAR22.31 asset-class/region taxonomy. Basel MAR22 CTP, EU CRR3, and
-PRA UK CRR bucket mappings remain fail-closed until their cited bucket,
-risk-weight, and decomposition mappings are implemented with deterministic
-tests.
+uses the MAR22.31 asset-class/region taxonomy. Basel MAR22 CTP bucket
+assignment uses the MAR22.40-MAR22.41 CTP bucket taxonomy and typed MAR22.42
+risk-weight evidence. EU CRR3 and PRA UK CRR bucket mappings remain
+fail-closed until their cited bucket, risk-weight, and decomposition mappings
+are implemented with deterministic tests.
 
 ### DRC-FUNC-009: Risk weights
 
@@ -461,8 +462,10 @@ conditions remain true:
 - Basel MAR22 securitisation non-CTP row and batch paths use cited MAR22.31
   bucket mappings, MAR22.34 typed risk-weight and fair-value cap evidence, and
   MAR22.35 category aggregation.
-- Basel MAR22 CTP, EU CRR3, and PRA UK CRR paths fail explicitly until cited
-  rule mappings and tests are added.
+- Basel MAR22 CTP row and batch paths use cited MAR22.36-MAR22.45 CTP
+  mechanics and typed MAR22.42 risk-weight evidence.
+- EU CRR3 and PRA UK CRR paths fail explicitly until cited rule mappings and
+  tests are added.
 - Results are frozen, serialisable, carry rule-profile/input hashes, and emit
   attribution records that reconcile to total capital through analytical,
   residual, or unsupported methods.

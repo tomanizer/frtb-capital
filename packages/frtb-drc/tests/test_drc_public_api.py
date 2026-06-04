@@ -19,9 +19,11 @@ from frtb_drc import (
     DrcInstrumentType,
     DrcPosition,
     DrcRiskClass,
+    DrcRiskWeightEvidence,
     DrcSeniority,
     DrcSourceLineage,
     calculate_drc_capital,
+    risk_weight_evidence_by_position,
     validate_reconciliation,
 )
 
@@ -101,7 +103,6 @@ def test_calculate_drc_capital_fails_known_unsupported_eu_profile_before_capital
 @pytest.mark.parametrize(
     ("profile_id", "risk_class", "expected"),
     [
-        (BASEL_MAR22_PROFILE_ID, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO, r"MAR22\.42"),
         (EU_CRR3_PROFILE_ID, DrcRiskClass.NON_SECURITISATION, EU_CRR3_PROFILE_ID),
         (EU_CRR3_PROFILE_ID, DrcRiskClass.SECURITISATION_NON_CTP, EU_CRR3_PROFILE_ID),
         (EU_CRR3_PROFILE_ID, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO, EU_CRR3_PROFILE_ID),
@@ -150,6 +151,38 @@ def test_public_api_wires_securitisation_non_ctp_category() -> None:
     assert result.categories[0].risk_class is DrcRiskClass.SECURITISATION_NON_CTP
     assert "US_NPR_210_C_1" in result.citations
     assert "US_NPR_210_C_3_IV" in result.citations
+    validate_reconciliation(result)
+
+
+def test_public_api_wires_basel_ctp_category_with_typed_evidence() -> None:
+    position = _position(
+        "basel-ctp",
+        DefaultDirection.LONG,
+        100.0,
+        issuer=None,
+        tranche="10-15",
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        instrument_type=DrcInstrumentType.INDEX_TRANCHE,
+        seniority=None,
+        credit_quality=None,
+        bucket_key="CDX_NA_IG",
+        citation_ids=("BASEL_MAR22_36", "BASEL_MAR22_42"),
+    )
+    evidence = _ctp_risk_weight_evidence(position.position_id, risk_weight=0.2)
+
+    result = calculate_drc_capital(
+        (position,),
+        context=_context(
+            profile_id=BASEL_MAR22_PROFILE_ID,
+            ctp_risk_weight_evidence=risk_weight_evidence_by_position((evidence,)),
+        ),
+    )
+
+    assert result.total_drc == pytest.approx(20.0)
+    assert result.categories[0].risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
+    assert result.risk_weight_evidence == (evidence,)
+    assert "BASEL_MAR22_42" in result.citations
+    assert not any(citation.startswith("US_NPR") for citation in result.citations)
     validate_reconciliation(result)
 
 
@@ -360,6 +393,7 @@ def _context(
     fx_rates: dict[str, DrcFxRate] | None = None,
     securitisation_non_ctp_risk_weights: dict[str, float] | None = None,
     securitisation_non_ctp_offset_groups: dict[str, str] | None = None,
+    ctp_risk_weight_evidence: dict[str, DrcRiskWeightEvidence] | None = None,
 ) -> DrcCalculationContext:
     return DrcCalculationContext(
         run_id=run_id,
@@ -376,6 +410,29 @@ def _context(
         securitisation_non_ctp_offset_groups={}
         if securitisation_non_ctp_offset_groups is None
         else securitisation_non_ctp_offset_groups,
+        ctp_risk_weight_evidence={}
+        if ctp_risk_weight_evidence is None
+        else ctp_risk_weight_evidence,
+    )
+
+
+def _ctp_risk_weight_evidence(position_id: str, *, risk_weight: float) -> DrcRiskWeightEvidence:
+    return DrcRiskWeightEvidence(
+        position_id=position_id,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        source_profile_id=BASEL_MAR22_PROFILE_ID,
+        source_table="BASEL_MAR22_CTP_BANKING_BOOK_SECURITISATION_RW",
+        source_method="upstream-basel-ctp-decomposition",
+        effective_risk_weight=risk_weight,
+        as_of_date=date(2026, 5, 29),
+        source_id=f"rw-{position_id}",
+        lineage=DrcSourceLineage(
+            source_system="synthetic-risk-weight-engine",
+            source_file="basel-ctp-risk-weights.csv",
+            source_row_id=f"rw-{position_id}",
+            source_column_map={"effective_risk_weight": "risk_weight"},
+        ),
+        citation_ids=("BASEL_MAR22_42",),
     )
 
 

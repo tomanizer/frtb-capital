@@ -81,7 +81,7 @@ implemented `regimes.py` contracts:
 | Profile | `NON_SECURITISATION` | `SECURITISATION_NON_CTP` | `CORRELATION_TRADING_PORTFOLIO` |
 | --- | --- | --- | --- |
 | `US_NPR_2_0` | Supported (row + batch) | Supported; legacy `securitisation_non_ctp_risk_weights` float map **or** typed `DrcRiskWeightEvidence` | Supported; legacy `ctp_risk_weights` **or** typed evidence; offset groups via `ctp_offset_groups` |
-| `BASEL_MAR22` | Supported (row + batch) | Supported; **typed** `DrcRiskWeightEvidence` required (float map alone is not sufficient) | **Fail closed** until MAR22.42 banking-book / decomposition contracts are implemented |
+| `BASEL_MAR22` | Supported (row + batch) | Supported; **typed** `DrcRiskWeightEvidence` required (float map alone is not sufficient) | Supported; **typed** MAR22.42 `DrcRiskWeightEvidence` required (float map alone is not sufficient) |
 | `EU_CRR3` | Fail closed | Fail closed | Fail closed |
 | `PRA_UK_CRR` | Fail closed | Fail closed | Fail closed |
 
@@ -335,7 +335,7 @@ When reviewing module READMEs or planning docs against this journey:
 | Batch audit payload | Empty `gross_jtds` / `input_positions` on batch results | Assuming batch and row results carry identical evidence depth |
 | Vendor ingress | Client ETL → Arrow contract only | Expecting a package `adapt_crif_records` helper |
 | EU / PRA profiles | Known IDs, **fail closed** for all classes | Any prose implying comparison-profile capital is already produced |
-| Basel CTP | **Fail closed** on `BASEL_MAR22` | Tables that list CTP as supported under Basel without the fail-closed cell |
+| Basel CTP | Supported on `BASEL_MAR22` with typed MAR22.42 risk-weight evidence | Tables that list CTP as unsupported under Basel |
 
 ---
 

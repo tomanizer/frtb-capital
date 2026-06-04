@@ -81,9 +81,10 @@ Implemented U.S. NPR 2.0 securitisation non-CTP and CTP paths consume cited
 upstream risk-weight evidence rather than deriving banking-book securitisation
 weights internally. Basel MAR22 securitisation non-CTP consumes cited MAR22.34
 typed risk-weight evidence and fair-value cap evidence rather than deriving
-banking-book securitisation weights internally. Basel MAR22 CTP, EU CRR3, and
-PRA UK CRR paths fail closed until their cited rule mappings and fixtures are
-complete.
+banking-book securitisation weights internally. Basel MAR22 CTP consumes cited
+MAR22.42 typed risk-weight and decomposition evidence rather than deriving
+banking-book securitisation weights internally. EU CRR3 and PRA UK CRR paths
+fail closed until their cited rule mappings and fixtures are complete.
 
 ## Delivery Slices
 
@@ -120,10 +121,10 @@ complete.
 
 ## Risks
 
-- Securitisation and CTP treatment remains profile-sensitive. U.S. NPR 2.0
-  paths rely on cited upstream risk-weight and decomposition evidence; Basel
-  securitisation and CTP, EU, and PRA mappings must continue to fail closed
-  until implemented with profile-specific citations and tests.
+- Securitisation and CTP treatment remains profile-sensitive. U.S. NPR 2.0 and
+  Basel MAR22 paths rely on cited upstream risk-weight and decomposition
+  evidence; EU and PRA mappings must continue to fail closed until implemented
+  with profile-specific citations and tests.
 - U.S. NPR 2.0 is proposed-rule material. Label all U.S. outputs as proposed
   and keep Basel defaults separately selectable.
 - The reference implementation is reconstructed from video and contains

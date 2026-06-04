@@ -646,17 +646,13 @@ _BASEL_MAR22_PROFILE = DrcRuleProfile(
         {
             DrcRiskClass.NON_SECURITISATION,
             DrcRiskClass.SECURITISATION_NON_CTP,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         }
     ),
     citations=BASEL_MAR22_CITATIONS,
     securitisation_non_ctp_fair_value_cap_allowed=True,
     securitisation_non_ctp_fair_value_cap_citation_ids=("BASEL_MAR22_34",),
-    unsupported_features={
-        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
-            "BASEL_MAR22 CTP because MAR22.42 banking-book securitisation risk-weight "
-            "lineage and CTP decomposition evidence are not implemented"
-        ),
-    },
+    unsupported_features={},
 )
 
 _EU_CRR3_PROFILE = DrcRuleProfile(
@@ -812,6 +808,26 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
                     "BASEL_MAR22_35",
                 ),
                 "Maintain Basel-specific typed evidence fixtures.",
+            ),
+            (
+                BASEL_MAR22_PROFILE_ID,
+                DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ): (
+                (
+                    "Basel MAR22 CTP row and batch capital supported with typed "
+                    "MAR22.42 banking-book risk-weight and decomposition evidence."
+                ),
+                (
+                    "BASEL_MAR22_36",
+                    "BASEL_MAR22_37",
+                    "BASEL_MAR22_39",
+                    "BASEL_MAR22_40",
+                    "BASEL_MAR22_41",
+                    "BASEL_MAR22_42",
+                    "BASEL_MAR22_44",
+                    "BASEL_MAR22_45",
+                ),
+                "Maintain Basel-specific CTP typed evidence fixtures.",
             ),
         }
     )
