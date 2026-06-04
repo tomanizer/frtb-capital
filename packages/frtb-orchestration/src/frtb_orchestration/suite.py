@@ -561,7 +561,9 @@ def build_suite_attribution_report(
         component_set=component_set,
         components=components,
         suite_residual=attribution.suite_residual,
-        reconciliation_status=ReconciliationStatus(attribution.suite_residual.reconciliation_status),
+        reconciliation_status=ReconciliationStatus(
+            attribution.suite_residual.reconciliation_status
+        ),
         residual_reason=attribution.suite_residual.reason,
     )
 
