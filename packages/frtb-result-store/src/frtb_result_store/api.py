@@ -87,6 +87,7 @@ def create_result_store_app(
     routes = cast(_RouteRegistrar, app)
     _register_run_routes(routes, result_store, HTTPException)
     _register_capital_tree_routes(routes, result_store, HTTPException)
+    _register_attribution_projection_routes(routes, result_store, HTTPException)
     _register_artifact_routes(routes, result_store, HTTPException, Query, FileResponse)
     _register_run_group_routes(routes, result_store, HTTPException)
 
@@ -129,20 +130,11 @@ def _register_run_routes(
         }
 
 
-def _register_capital_tree_routes(
+def _register_attribution_projection_routes(
     app: _RouteRegistrar,
     result_store: DuckDbParquetResultStore,
     http_exception_type: type[Exception],
 ) -> None:
-    @app.get(
-        "/runs/{run_id}/capital-tree",
-        tags=["Capital Tree"],
-        summary="Return the flattened FRTB capital tree for a run",
-    )
-    def capital_tree(run_id: str) -> dict[str, object]:
-        _require_run(result_store, run_id, http_exception_type)
-        return {"nodes": _to_jsonable(result_store.capital_tree(run_id))}
-
     @app.get(
         "/runs/{run_id}/top-contributors",
         tags=["Attribution"],
@@ -156,6 +148,53 @@ def _register_capital_tree_routes(
             )
         _require_run(result_store, run_id, http_exception_type)
         return {"contributors": _to_jsonable(result_store.top_contributors(run_id, limit=limit))}
+
+    @app.get(
+        "/runs/{run_id}/attribution/residual",
+        tags=["Attribution"],
+        summary="Return persisted residual attribution records for a run",
+    )
+    def residual_attribution_records(
+        run_id: str,
+        node_id: str | None = None,
+    ) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        return {
+            "residual_records": _to_jsonable(
+                result_store.residual_attribution_records(run_id, node_id=node_id)
+            )
+        }
+
+    @app.get(
+        "/runs/{run_id}/attribution/unsupported",
+        tags=["Attribution"],
+        summary="Return persisted unsupported attribution records for a run",
+    )
+    def unsupported_attribution_records(
+        run_id: str,
+        node_id: str | None = None,
+    ) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        return {
+            "unsupported_records": _to_jsonable(
+                result_store.unsupported_attribution_records(run_id, node_id=node_id)
+            )
+        }
+
+
+def _register_capital_tree_routes(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+) -> None:
+    @app.get(
+        "/runs/{run_id}/capital-tree",
+        tags=["Capital Tree"],
+        summary="Return the flattened FRTB capital tree for a run",
+    )
+    def capital_tree(run_id: str) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        return {"nodes": _to_jsonable(result_store.capital_tree(run_id))}
 
     @app.get(
         "/runs/{run_id}/nodes/{node_id}",

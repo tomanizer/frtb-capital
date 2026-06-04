@@ -21,6 +21,23 @@ The record supports:
 - target type/id overrides for dashboard and drillthrough views;
 - optional artifact references and metadata.
 
+Persisted mart/API projections expose producer-owned attribution rows for
+analysts:
+
+- `top_contributors`;
+- `residual_attribution`;
+- `unsupported_attribution`;
+- `DuckDbParquetResultStore.top_contributors(...)`;
+- `DuckDbParquetResultStore.residual_attribution_records(...)`;
+- `DuckDbParquetResultStore.unsupported_attribution_records(...)`;
+- `GET /runs/{run_id}/top-contributors`;
+- `GET /runs/{run_id}/attribution/residual`;
+- `GET /runs/{run_id}/attribution/unsupported`.
+
+Projection rows include `contribution`, `residual`, `method`, `source_id`,
+`source_level`, `target_id`, and `unsupported_reason` for drillthrough. The
+result store does not create those values; it only materializes and serves them.
+
 ## Method
 
 Storage preserves the method supplied by the component package:
@@ -56,6 +73,9 @@ sensitivity, net JTD, bucket, category, component, and suite.
 
 - No capital formulae are implemented here.
 - No Euler, residual, or unsupported-method decisions are made here.
+- Marts and APIs are storage-only projections over `CapitalAttributionRecord`;
+  they must not implement finite differences, standalone attribution, or Euler
+  fallback logic.
 - Corrections require a new append-only run bundle; existing evidence is not
   mutated.
 - Capital packages must not import `frtb-result-store`.

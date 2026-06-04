@@ -7,11 +7,13 @@ from frtb_common.hashing import stable_json_hash
 
 __all__ = ["MART_NAMES", "MART_SCHEMAS", "mart_schema_fingerprint"]
 
-MART_SCHEMA_VERSION = 3
+MART_SCHEMA_VERSION = 4
 MART_NAMES = (
     "capital_summary",
     "capital_tree",
     "top_contributors",
+    "residual_attribution",
+    "unsupported_attribution",
     "movement_summary",
     "regime_comparison",
     "component_breakdown",
@@ -78,6 +80,7 @@ MART_SCHEMAS: dict[str, pa.Schema] = {
             ("attribution_id", pa.string()),
             ("target_type", pa.string()),
             ("target_id", pa.string()),
+            ("source_id", pa.string()),
             ("source_level", pa.string()),
             ("category", pa.string()),
             ("bucket_key", pa.string()),
@@ -85,6 +88,49 @@ MART_SCHEMAS: dict[str, pa.Schema] = {
             ("contribution", pa.float64()),
             ("residual", pa.float64()),
             ("method", pa.string()),
+            ("unsupported_reason", pa.string()),
+            ("artifact_id", pa.string()),
+        ]
+    ),
+    "residual_attribution": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("rank", pa.int64()),
+            ("node_id", pa.string()),
+            ("component", pa.string()),
+            ("attribution_id", pa.string()),
+            ("target_type", pa.string()),
+            ("target_id", pa.string()),
+            ("source_id", pa.string()),
+            ("source_level", pa.string()),
+            ("category", pa.string()),
+            ("bucket_key", pa.string()),
+            ("base_amount", pa.float64()),
+            ("contribution", pa.float64()),
+            ("residual", pa.float64()),
+            ("method", pa.string()),
+            ("unsupported_reason", pa.string()),
+            ("artifact_id", pa.string()),
+        ]
+    ),
+    "unsupported_attribution": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("rank", pa.int64()),
+            ("node_id", pa.string()),
+            ("component", pa.string()),
+            ("attribution_id", pa.string()),
+            ("target_type", pa.string()),
+            ("target_id", pa.string()),
+            ("source_id", pa.string()),
+            ("source_level", pa.string()),
+            ("category", pa.string()),
+            ("bucket_key", pa.string()),
+            ("base_amount", pa.float64()),
+            ("contribution", pa.float64()),
+            ("residual", pa.float64()),
+            ("method", pa.string()),
+            ("unsupported_reason", pa.string()),
             ("artifact_id", pa.string()),
         ]
     ),

@@ -367,6 +367,8 @@ The first-pass mart set is:
 capital_summary
 capital_tree
 top_contributors
+residual_attribution
+unsupported_attribution
 movement_summary
 regime_comparison
 component_breakdown
