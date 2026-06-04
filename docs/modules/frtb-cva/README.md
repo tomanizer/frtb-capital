@@ -22,10 +22,15 @@ Supported public paths:
 Comparison profiles and the MAR50.9 materiality-threshold alternative remain
 unsupported and fail closed via explicit errors.
 
+## Integration journey
+
+End-to-end client flow (Arrow handoff, batch capital, attribution, orchestration
+and result-store boundaries) is documented in
+[`packages/frtb-cva/docs/PACKAGE_JOURNEY.md`](../../../packages/frtb-cva/docs/PACKAGE_JOURNEY.md).
+
 ## Planning Documents
 
 - [AUDIT-IMP-005 design — profile/method coverage and MAR50.9](DESIGN_AUDIT_IMP_005.md)
-- [Package regulatory traceability and support matrix](../../../packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md)
 - [Product requirements](PRD.md)
 - [Detailed requirements](DETAILED_REQUIREMENTS.md)
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
