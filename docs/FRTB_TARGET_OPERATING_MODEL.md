@@ -22,7 +22,7 @@ flagged inline as **[OPEN]**.
 
 | # | Decision area | Choice | Primary impact |
 | --- | --- | --- | --- |
-| 1 | **Jurisdiction** | **US (NPR)** | `FED_NPR_2_0` (frtb-ima) / `US_NPR_2_0` (SA & CVA) regime profiles; FFIEC-style return; US DRC bucket taxonomy (ADRs 0024–0028) authoritative |
+| 1 | **Jurisdiction** | **US (NPR)** | `FED_NPR_2_0` (frtb-ima) / `US_NPR_2_0` (SA: frtb-sbm, frtb-drc) / `US_NPR20_VB` (frtb-cva) regime profiles; FFIEC-style return; US DRC bucket taxonomy (ADRs 0024–0028) authoritative |
 | 2 | **IMA scope** | **IMA + SA from day one** | PLA, backtesting, NMRF/SES, stress periods, desk eligibility all in the go-live critical path |
 | 3 | **Run cadence** | **Daily T+1 batch** | One official run on prior close; intraday is estimate-only |
 | 4 | **Org topology** | **Centralised Risk Analytics** | Single team operates the run, owns reconciliation & attribution suite-wide |
@@ -51,9 +51,11 @@ flagged inline as **[OPEN]**.
 > **Regime-profile identifiers.** "US NPR" is the prose shorthand used throughout
 > this document. The implemented profile **enum identifiers differ by package**:
 > `frtb-ima` uses `RegulatoryRegime.FED_NPR_2_0` (with `ECB_CRR3` and `PRA_UK_CRR`
-> for the EU/UK variants); the Standardised-Approach and CVA packages (`frtb-sbm`,
-> `frtb-drc`, `frtb-cva`) use `US_NPR_2_0` (with `BASEL_MAR21`). Where this document
-> names a code identifier it uses the package-correct enum value.
+> for the EU/UK variants); the Standardised-Approach packages (`frtb-sbm`,
+> `frtb-drc`) use `US_NPR_2_0` (with `BASEL_MAR21`); and `frtb-cva` uses a separate
+> `CvaRegulatoryProfile` enum — `US_NPR20_VB` (with `BASEL_MAR50_2020`, `EU_CRR3_CVA`,
+> `UK_PRA_CVA`). Where this document names a code identifier it uses the
+> package-correct enum value.
 
 ---
 
@@ -265,7 +267,7 @@ flowchart LR
 | Activity | Owner | Library touchpoint |
 | --- | --- | --- |
 | Desk boundary & IMA-eligibility policy | Risk + FO | `DeskEligibilityStatus`, two-state guard (ADR 0009) |
-| Jurisdiction/regime profile selection (`FED_NPR_2_0`/`ECB_CRR3`/`PRA_UK_CRR` in frtb-ima; `US_NPR_2_0`/`BASEL_MAR21` in SA & CVA) | Quant + Risk | `regimes.py` per package; profile guards (ADR 0022) |
+| Jurisdiction/regime profile selection (`FED_NPR_2_0`/`ECB_CRR3`/`PRA_UK_CRR` in frtb-ima; `US_NPR_2_0`/`BASEL_MAR21` in frtb-sbm & frtb-drc; `US_NPR20_VB`/`BASEL_MAR50_2020` in frtb-cva) | Quant + Risk | `regimes.py` per package; profile guards (ADR 0022) |
 | Reference data load (buckets, weights, correlations) | Risk Analytics | package `*_reference_data.py` rule tables |
 | RFET observation-feed onboarding (vendor pools + internal observability DB) | Market/Risk Data + IT | RFET evidence input specs (see §4.4) |
 | Reduced-data-set selection (modellable factors w/ stress history) | Quant + Market/Risk Data | ES stress-scaling inputs |
