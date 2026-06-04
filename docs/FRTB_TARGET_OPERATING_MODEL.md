@@ -466,7 +466,7 @@ the exact US figures are confirmed, the `FED_NPR_2_0` profile is **seeded with t
 Basel MAR31 thresholds as the working baseline** (≥24 obs/year with a ≤1-month max
 gap, or ≥100 obs over 12 months; bucketing approach permitted). The exact US-NPR
 threshold values and the Type A/B idiosyncratic-NMRF criteria still need to be
-pinned against the rule text — tracked as O9 below — at which point the parameters
+pinned against the rule text — tracked as O9-residual below — at which point the parameters
 are updated through the release train.
 
 ---
@@ -598,7 +598,7 @@ and risk weights per ADRs 0024–0028).
 | RRAO for residual risks | MAR23 | `frtb-rrao` |
 | CVA capital (BA-CVA / SA-CVA) | MAR50 | `frtb-cva` |
 | Dual-stack: expanded vs standardised total RWA, **larger binds** | US NPR | Orchestration max() (decision 21) |
-| Output floor on standardised RWA | US NPR transitional | **[OPEN]** floor schedule to encode (§10) |
+| Transitional output floor (floors **expanded** RWA at a % of **standardised** RWA) — EU CRR3 / UK PRA variants | Basel III / CRR3 / PRA | **[OPEN]** floor schedule to encode (O11, §10) |
 | Full audit trail / reproducibility | SR 11-7, SS 1/23 | result store, hashing, ADR log |
 
 > **Capital stack (decision 21).** Under US NPR the firm computes two total-RWA
@@ -606,9 +606,14 @@ and risk weights per ADRs 0024–0028).
 > **standardised** measure (SA for all desks) — and the **larger is
 > capital-of-record**. `frtb-orchestration` owns this comparison
 > (`calculate_suite_capital`, ADR 0039) and records both stacks plus the binding
-> selection in the run evidence. The transitional **output floor** applied to the
-> standardised stack is a known gap to schedule (O11, §10): the floor percentage
-> and its phase-in must be encoded as profile parameters before the floor can bind.
+> selection in the run evidence. **In the US NPR this greater-of test *is* the
+> output-floor mechanism** — the standardised stack acts as an effective 100% floor
+> on the expanded stack, so there is no separate transitional output-floor
+> schedule. The Basel-style **transitional output floor** (phasing toward 72.5%)
+> is an **EU CRR3 / UK PRA** feature: it floors the **expanded** RWA stack at a
+> percentage of the **standardised** RWA stack (it does not floor the standardised
+> stack itself). Encoding that percentage and its phase-in for the non-US regime
+> variants is a known gap (O11, §10).
 
 > Specific paragraph citations live in `docs/regulatory/` and each package's
 > `REGULATORY_TRACEABILITY.md`. This table is a navigational map, not the
@@ -764,9 +769,12 @@ that the round-2 model left implicit. Status of the round-3 register:
    thresholds and the Type A/B idiosyncratic-NMRF criteria against the final-rule
    text, replacing the Basel MAR31 interim (decision 30). Regulatory-sourcing task
    (Quant + regulatory traceability + MRM).
-2. **O11 — Output-floor schedule.** Encode the US-NPR transitional output-floor
-   percentage and phase-in as profile parameters so it can bind on the
-   standardised stack (decision 21; §7).
+2. **O11 — Output-floor schedule (EU/UK variants).** Encode the transitional
+   output-floor percentage and phase-in (toward 72.5%) as profile parameters for
+   the `ECB_CRR3` / `PRA_UK_CRR` regimes, where the floor binds on the **expanded**
+   RWA stack as a percentage of the **standardised** stack. (The US NPR needs no
+   separate floor schedule — its dual-stack greater-of test is the floor; §7,
+   decision 21.)
 3. **O12 — MAR12 desk-compliance confirmation.** Market Risk + MRM must confirm the
    inherited management-desk structure (decision 22) meets the FRTB qualitative
    desk-definition/granularity standards, and define the remediation path if not.
