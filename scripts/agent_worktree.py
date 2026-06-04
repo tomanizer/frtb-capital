@@ -382,9 +382,8 @@ def ensure(args: argparse.Namespace) -> int:
     agent = slugify(agent_raw, label="agent")
     task = slugify(task_source.split("/", 1)[-1], label="task")
     branch = getattr(args, "branch", None) or f"{agent}/{task}"
-    worktree_path = (
-        getattr(args, "path", None) or args.worktree_root / agent / task
-    ).expanduser().resolve()
+    path_candidate = getattr(args, "path", None) or args.worktree_root / agent / task
+    worktree_path = path_candidate.expanduser().resolve()
 
     existing = find_worktree_at_path(main_clone, worktree_path)
     if existing is not None:
