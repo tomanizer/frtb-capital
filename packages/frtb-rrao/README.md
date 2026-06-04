@@ -56,9 +56,10 @@ Package-local regulatory documentation:
 ## End-to-end examples
 
 See `examples/run_demo.py` for a quick-start demo that loads the package's
-synthetic sample book fixture and exercises `calculate_rrao_capital` under
-US_NPR_2_0 and BASEL_MAR23 profiles, printing totals, exclusion counts, and
-capital lines.
+synthetic sample book fixture and exercises `calculate_rrao_capital` under the
+primary US_NPR_2_0 profile, printing totals, exclusion counts, and capital lines.
+(Basel/EU multi-profile comparison, including profile-specific exclusions, is
+covered in the notebooks and test_eu_profile.py.)
 
 ```bash
 uv run python packages/frtb-rrao/examples/run_demo.py

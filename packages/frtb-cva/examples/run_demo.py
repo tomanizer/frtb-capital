@@ -15,6 +15,7 @@ Run with:
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 from frtb_cva import (
@@ -195,14 +196,12 @@ def run_mixed_demo() -> CvaCapitalResult:
     )
     ctps = make_synthetic_counterparties(3)
     nss = make_synthetic_netting_sets(ctps, n_per=2)
-    # Mark the carved-out one
+    # Mark the carved-out one (use enumerate to avoid hardcoding index 0)
     nss = list(nss)
-    for ns in nss:
+    for idx, ns in enumerate(nss):
         if ns.netting_set_id == "ns-0-0":
             # recreate with flag (dataclass frozen, so new)
-            from dataclasses import replace
-
-            nss[0] = replace(ns, carved_out_to_ba_cva=True)
+            nss[idx] = replace(ns, carved_out_to_ba_cva=True)
             break
     nss = tuple(nss)
     sens = make_synthetic_sa_sensitivities()

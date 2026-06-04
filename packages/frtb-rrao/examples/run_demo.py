@@ -7,7 +7,7 @@ synthetic sample-book fixture.
 
 It demonstrates:
 - Loading canonical RraoPosition inputs (via the package's own examples.rrao_fixture).
-- Running for supported profiles (US_NPR_2_0 primary + BASEL_MAR23 comparison).
+- Running for the primary US_NPR_2_0 profile.
 - Printing key results: total capital, exclusion counts, per-risk-type lines.
 
 All data is synthetic. Outputs are not final regulatory capital.
