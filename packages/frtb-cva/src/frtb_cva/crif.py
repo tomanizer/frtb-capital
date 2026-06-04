@@ -1,5 +1,8 @@
-"""
-Optional CRIF/vendor-to-canonical CVA adapter (stdlib only).
+"""Optional stdlib CRIF/vendor row adapter for canonical CVA dataclasses.
+
+This module maps iterable vendor record rows into validated
+:class:`~frtb_cva.data_models` inputs. It performs field aliasing and sign
+normalisation only; Arrow handoffs use :mod:`frtb_cva.arrow_batch` instead.
 """
 
 from __future__ import annotations
@@ -45,6 +48,8 @@ _SIGN_FIELDS = ("SignConvention", "sign_convention")
 
 @dataclass(frozen=True)
 class CvaAdapterWarning:
+    """Non-fatal adapter warning tied to a source row and field."""
+
     source_row_id: str
     field: str
     message: str
@@ -52,6 +57,8 @@ class CvaAdapterWarning:
 
 @dataclass(frozen=True)
 class CvaRejectedRow:
+    """Rejected vendor row with deterministic reason metadata for audit."""
+
     source_row_id: str
     reason: str
     field: str
@@ -59,6 +66,8 @@ class CvaRejectedRow:
 
 @dataclass(frozen=True)
 class CvaAdapterResult:
+    """Validated canonical rows plus adapter warnings and rejected records."""
+
     counterparties: tuple[CvaCounterparty, ...] = ()
     netting_sets: tuple[CvaNettingSet, ...] = ()
     hedges: tuple[CvaHedge, ...] = ()
@@ -76,7 +85,33 @@ def adapt_cva_records(
     amount_sign_convention: AmountSignConvention = "positive_loss",
     ead_sign_convention: str = "non_negative",
 ) -> CvaAdapterResult:
-    """Map external rows to canonical CVA records for one record kind."""
+    """Map external rows to canonical CVA records for one record kind.
+
+    Parameters
+    ----------
+    records : object
+        Iterable of mapping rows to adapt. Strings, bytes, and bare mappings are rejected.
+    record_kind : str
+        One of ``counterparty``, ``netting_set``, ``hedge``, or ``sensitivity``.
+    source_system : str, optional
+        Lineage source system label stored on adapted rows.
+    source_file : str, optional
+        Lineage source file label stored on adapted rows.
+    amount_sign_convention : AmountSignConvention, optional
+        Sign convention applied when normalising sensitivity amounts.
+    ead_sign_convention : str, optional
+        Sign convention applied when normalising netting-set EAD amounts.
+
+    Returns
+    -------
+    CvaAdapterResult
+        Validated tuples for the requested kind plus warnings and rejected rows.
+
+    Raises
+    ------
+    CvaInputError
+        If ``records`` is not iterable or ``record_kind`` is unsupported.
+    """
 
     if isinstance(records, (str, bytes, Mapping)) or not isinstance(records, Iterable):
         raise CvaInputError("records must be an iterable of mapping rows", field="records")

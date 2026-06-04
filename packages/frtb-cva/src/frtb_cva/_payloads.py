@@ -1,4 +1,10 @@
-"""Shared deterministic CVA input payload builders."""
+"""Deterministic JSON payload builders for CVA input hashing and audit replay.
+
+This module serialises :class:`~frtb_cva.data_models.CvaCalculationContext` rows and
+package-owned columnar batches into canonical dictionaries consumed by
+:func:`hash_payload` and batch capital entrypoints. It owns handoff hashing shape
+only and does not perform regulatory capital calculations.
+"""
 
 from __future__ import annotations
 
@@ -22,7 +28,18 @@ from frtb_cva.validation import CvaInputError
 
 
 def hash_payload(payload: Mapping[str, object]) -> str:
-    """Return the stable SHA-256 JSON hash used by CVA audit contracts."""
+    """Return the stable SHA-256 JSON hash used by CVA audit contracts.
+
+    Parameters
+    ----------
+    payload : Mapping[str, object]
+        Canonical JSON-serialisable mapping from payload builders in this module.
+
+    Returns
+    -------
+    str
+        Hex-encoded digest from :func:`frtb_common.stable_json_hash`.
+    """
 
     return stable_json_hash(payload)
 
@@ -35,7 +52,26 @@ def input_payload(
     hedges: Iterable[CvaHedge] = (),
     sensitivities: Iterable[SaCvaSensitivity] = (),
 ) -> dict[str, object]:
-    """Return the canonical row-input payload used for CVA input hashes."""
+    """Return the canonical row-input payload used for CVA input hashes.
+
+    Parameters
+    ----------
+    context : CvaCalculationContext
+        Run controls and method selection for the capital calculation.
+    counterparties : Iterable[CvaCounterparty]
+        Counterparty rows included in the hash.
+    netting_sets : Iterable[CvaNettingSet]
+        Netting-set rows included in the hash.
+    hedges : Iterable[CvaHedge], optional
+        Hedge rows included when BA-CVA full or mixed carve-out paths apply.
+    sensitivities : Iterable[SaCvaSensitivity], optional
+        SA-CVA sensitivity rows included when SA-CVA or mixed paths apply.
+
+    Returns
+    -------
+    dict[str, object]
+        Nested mapping with ``context``, entity lists, and lineage metadata.
+    """
 
     return {
         "context": context_payload(context),
@@ -54,7 +90,26 @@ def batch_input_payload(
     hedges: Any | None = None,
     sensitivities: Any | None = None,
 ) -> dict[str, object]:
-    """Return the row-compatible payload for package-owned CVA batches."""
+    """Return the row-compatible payload for package-owned CVA batches.
+
+    Parameters
+    ----------
+    context : CvaCalculationContext
+        Run controls and method selection for the capital calculation.
+    counterparties : Any or None
+        Optional :class:`~frtb_cva.batch.CvaCounterpartyBatch` (or compatible batch).
+    netting_sets : Any or None
+        Optional :class:`~frtb_cva.batch.CvaNettingSetBatch`.
+    hedges : Any or None
+        Optional :class:`~frtb_cva.batch.CvaHedgeBatch`.
+    sensitivities : Any or None
+        Optional :class:`~frtb_cva.batch.SaCvaSensitivityBatch`.
+
+    Returns
+    -------
+    dict[str, object]
+        Nested mapping mirroring :func:`input_payload` but built from batch columns.
+    """
 
     return {
         "context": context_payload(context),
@@ -83,6 +138,18 @@ def batch_input_payload(
 
 
 def context_payload(context: CvaCalculationContext) -> dict[str, object]:
+    """Serialise calculation context and run controls for deterministic hashing.
+
+    Parameters
+    ----------
+    context : CvaCalculationContext
+        Validated run metadata, profile, method, and carve-out identifiers.
+
+    Returns
+    -------
+    dict[str, object]
+        JSON-compatible context mapping including nested ``run_controls``.
+    """
     run_controls = context.run_controls or CvaRunControls()
     return {
         "run_id": context.run_id,
@@ -105,6 +172,18 @@ def context_payload(context: CvaCalculationContext) -> dict[str, object]:
 
 
 def counterparty_payload(counterparty: CvaCounterparty) -> dict[str, object]:
+    """Serialise one counterparty dataclass row for input hashing.
+
+    Parameters
+    ----------
+    counterparty : CvaCounterparty
+        Canonical counterparty record.
+
+    Returns
+    -------
+    dict[str, object]
+        Counterparty fields with enum values exported as strings.
+    """
     return {
         "counterparty_id": counterparty.counterparty_id,
         "desk_id": counterparty.desk_id,
@@ -118,6 +197,18 @@ def counterparty_payload(counterparty: CvaCounterparty) -> dict[str, object]:
 
 
 def netting_set_payload(netting_set: CvaNettingSet) -> dict[str, object]:
+    """Serialise one netting-set dataclass row for input hashing.
+
+    Parameters
+    ----------
+    netting_set : CvaNettingSet
+        Canonical netting-set record with EAD and discount metadata.
+
+    Returns
+    -------
+    dict[str, object]
+        Netting-set fields including sign convention and carve-out flags.
+    """
     return {
         "netting_set_id": netting_set.netting_set_id,
         "counterparty_id": netting_set.counterparty_id,
@@ -135,6 +226,18 @@ def netting_set_payload(netting_set: CvaNettingSet) -> dict[str, object]:
 
 
 def hedge_payload(hedge: CvaHedge) -> dict[str, object]:
+    """Serialise one hedge dataclass row for input hashing.
+
+    Parameters
+    ----------
+    hedge : CvaHedge
+        Canonical hedge record with eligibility and reference metadata.
+
+    Returns
+    -------
+    dict[str, object]
+        Hedge fields including optional SA-CVA risk-class assignment.
+    """
     return {
         "hedge_id": hedge.hedge_id,
         "source_row_id": hedge.source_row_id,
@@ -161,6 +264,18 @@ def hedge_payload(hedge: CvaHedge) -> dict[str, object]:
 
 
 def sensitivity_payload(sensitivity: SaCvaSensitivity) -> dict[str, object]:
+    """Serialise one SA-CVA sensitivity dataclass row for input hashing.
+
+    Parameters
+    ----------
+    sensitivity : SaCvaSensitivity
+        Canonical sensitivity with bucket, tag, and index-treatment metadata.
+
+    Returns
+    -------
+    dict[str, object]
+        Sensitivity fields with optional index remapping attributes.
+    """
     return {
         "sensitivity_id": sensitivity.sensitivity_id,
         "risk_class": sensitivity.risk_class.value,
@@ -189,6 +304,18 @@ def sensitivity_payload(sensitivity: SaCvaSensitivity) -> dict[str, object]:
 
 
 def lineage_payload(lineage: CvaSourceLineage | None) -> dict[str, object] | None:
+    """Serialise optional source lineage for one input row.
+
+    Parameters
+    ----------
+    lineage : CvaSourceLineage or None
+        Adapter lineage attached to a counterparty, netting set, hedge, or sensitivity.
+
+    Returns
+    -------
+    dict[str, object] or None
+        Lineage mapping, or ``None`` when lineage is absent.
+    """
     if lineage is None:
         return None
     return {
@@ -200,6 +327,20 @@ def lineage_payload(lineage: CvaSourceLineage | None) -> dict[str, object] | Non
 
 
 def batch_counterparty_payload(batch: Any, index: int) -> dict[str, object]:
+    """Serialise one counterparty batch row for input hashing.
+
+    Parameters
+    ----------
+    batch : CvaCounterpartyBatch
+        Columnar counterparty batch.
+    index : int
+        Zero-based row index.
+
+    Returns
+    -------
+    dict[str, object]
+        Row payload matching :func:`counterparty_payload` field names.
+    """
     return {
         "counterparty_id": batch.counterparty_ids[index],
         "desk_id": batch.desk_ids[index],
@@ -213,6 +354,20 @@ def batch_counterparty_payload(batch: Any, index: int) -> dict[str, object]:
 
 
 def batch_netting_set_payload(batch: Any, index: int) -> dict[str, object]:
+    """Serialise one netting-set batch row for input hashing.
+
+    Parameters
+    ----------
+    batch : CvaNettingSetBatch
+        Columnar netting-set batch.
+    index : int
+        Zero-based row index.
+
+    Returns
+    -------
+    dict[str, object]
+        Row payload matching :func:`netting_set_payload` field names.
+    """
     return {
         "netting_set_id": batch.netting_set_ids[index],
         "counterparty_id": batch.counterparty_ids[index],
@@ -230,6 +385,20 @@ def batch_netting_set_payload(batch: Any, index: int) -> dict[str, object]:
 
 
 def batch_hedge_payload(batch: Any, index: int) -> dict[str, object]:
+    """Serialise one hedge batch row for input hashing.
+
+    Parameters
+    ----------
+    batch : CvaHedgeBatch
+        Columnar hedge batch.
+    index : int
+        Zero-based row index.
+
+    Returns
+    -------
+    dict[str, object]
+        Row payload matching :func:`hedge_payload` field names.
+    """
     return {
         "hedge_id": batch.hedge_ids[index],
         "source_row_id": batch.source_row_ids[index],
@@ -254,6 +423,20 @@ def batch_hedge_payload(batch: Any, index: int) -> dict[str, object]:
 
 
 def batch_sensitivity_payload(batch: Any, index: int) -> dict[str, object]:
+    """Serialise one SA-CVA sensitivity batch row for input hashing.
+
+    Parameters
+    ----------
+    batch : SaCvaSensitivityBatch
+        Columnar sensitivity batch.
+    index : int
+        Zero-based row index.
+
+    Returns
+    -------
+    dict[str, object]
+        Row payload matching :func:`sensitivity_payload` field names.
+    """
     return {
         "sensitivity_id": batch.sensitivity_ids[index],
         "risk_class": batch.risk_classes[index],
@@ -278,6 +461,20 @@ def batch_sensitivity_payload(batch: Any, index: int) -> dict[str, object]:
 
 
 def batch_lineage_payload(batch: Any, index: int) -> dict[str, object] | None:
+    """Serialise optional lineage columns for one batch row.
+
+    Parameters
+    ----------
+    batch
+        Columnar batch exposing ``lineage_source_*`` and ``source_column_maps``.
+    index : int
+        Zero-based row index.
+
+    Returns
+    -------
+    dict[str, object] or None
+        Lineage mapping when either source system or file is non-empty.
+    """
     source_system = batch.lineage_source_systems[index]
     source_file = batch.lineage_source_files[index]
     if not source_system and not source_file:

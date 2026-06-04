@@ -1,4 +1,9 @@
-"""Arrow batch adapters for CVA batch inputs."""
+"""Arrow handoff adapters for CVA counterparty, netting-set, hedge, and sensitivity batches.
+
+This module declares package-owned :class:`~frtb_common.arrow_table.ColumnSpec`
+tables, normalises vendor Arrow inputs through :func:`frtb_common.normalize_arrow_table`,
+and materialises :mod:`frtb_cva.batch` columnar batches for kernel entrypoints.
+"""
 
 from __future__ import annotations
 
@@ -433,6 +438,26 @@ def normalize_cva_counterparty_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
+    """Normalise a counterparty Arrow table to the CVA column contract.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Raw vendor counterparty table.
+    diagnostics : Sequence[AdapterDiagnostic], optional
+        Adapter diagnostics to attach to the handoff.
+    metadata : Mapping[str, str] or None, optional
+        Handoff metadata stored on the normalized table.
+    rejected : pyarrow.Table or None, optional
+        Pre-rejected rows to merge into the handoff partition.
+    source_hash : str or None, optional
+        Upstream content hash for audit lineage.
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Accepted/rejected partition with CVA counterparty column specs applied.
+    """
     return _normalize(
         table, CVA_COUNTERPARTY_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
     )
@@ -446,6 +471,26 @@ def normalize_cva_netting_set_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
+    """Normalise a netting-set Arrow table to the CVA column contract.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Raw vendor netting-set table.
+    diagnostics : Sequence[AdapterDiagnostic], optional
+        Adapter diagnostics to attach to the handoff.
+    metadata : Mapping[str, str] or None, optional
+        Handoff metadata stored on the normalized table.
+    rejected : pyarrow.Table or None, optional
+        Pre-rejected rows to merge into the handoff partition.
+    source_hash : str or None, optional
+        Upstream content hash for audit lineage.
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Accepted/rejected partition with CVA netting-set column specs applied.
+    """
     return _normalize(
         table, CVA_NETTING_SET_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
     )
@@ -459,6 +504,26 @@ def normalize_cva_hedge_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
+    """Normalise a hedge Arrow table to the CVA column contract.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Raw vendor hedge table.
+    diagnostics : Sequence[AdapterDiagnostic], optional
+        Adapter diagnostics to attach to the handoff.
+    metadata : Mapping[str, str] or None, optional
+        Handoff metadata stored on the normalized table.
+    rejected : pyarrow.Table or None, optional
+        Pre-rejected rows to merge into the handoff partition.
+    source_hash : str or None, optional
+        Upstream content hash for audit lineage.
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Accepted/rejected partition with CVA hedge column specs applied.
+    """
     return _normalize(
         table, CVA_HEDGE_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
     )
@@ -472,6 +537,26 @@ def normalize_sa_cva_sensitivity_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
+    """Normalise an SA-CVA sensitivity Arrow table to the CVA column contract.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Raw vendor sensitivity table.
+    diagnostics : Sequence[AdapterDiagnostic], optional
+        Adapter diagnostics to attach to the handoff.
+    metadata : Mapping[str, str] or None, optional
+        Handoff metadata stored on the normalized table.
+    rejected : pyarrow.Table or None, optional
+        Pre-rejected rows to merge into the handoff partition.
+    source_hash : str or None, optional
+        Upstream content hash for audit lineage.
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Accepted/rejected partition with SA-CVA sensitivity column specs applied.
+    """
     return _normalize(
         table, SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
     )
@@ -480,6 +565,23 @@ def normalize_sa_cva_sensitivity_arrow_table(
 def build_cva_counterparty_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> CvaCounterpartyBatch:
+    """Materialise a counterparty batch from a normalized Arrow handoff.
+
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        Accepted counterparty rows produced by :func:`normalize_cva_counterparty_arrow_table`.
+
+    Returns
+    -------
+    CvaCounterpartyBatch
+        Validated columnar batch with handoff and source hashes attached.
+
+    Raises
+    ------
+    CvaInputError
+        If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
+    """
     if not isinstance(handoff, NormalizedArrowTable):
         raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
     table = handoff.accepted
@@ -496,6 +598,23 @@ def build_cva_counterparty_batch_from_arrow(
 def build_cva_netting_set_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> CvaNettingSetBatch:
+    """Materialise a netting-set batch from a normalized Arrow handoff.
+
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        Accepted netting-set rows from :func:`normalize_cva_netting_set_arrow_table`.
+
+    Returns
+    -------
+    CvaNettingSetBatch
+        Validated columnar batch with EAD sign conventions enforced.
+
+    Raises
+    ------
+    CvaInputError
+        If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
+    """
     if not isinstance(handoff, NormalizedArrowTable):
         raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
     table = handoff.accepted
@@ -510,6 +629,23 @@ def build_cva_netting_set_batch_from_arrow(
 
 
 def build_cva_hedge_batch_from_arrow(handoff: NormalizedArrowTable) -> CvaHedgeBatch:
+    """Materialise a hedge batch from a normalized Arrow handoff.
+
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        Accepted hedge rows from :func:`normalize_cva_hedge_arrow_table`.
+
+    Returns
+    -------
+    CvaHedgeBatch
+        Validated columnar batch with eligibility columns preserved.
+
+    Raises
+    ------
+    CvaInputError
+        If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
+    """
     if not isinstance(handoff, NormalizedArrowTable):
         raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
     table = handoff.accepted
@@ -526,6 +662,23 @@ def build_cva_hedge_batch_from_arrow(handoff: NormalizedArrowTable) -> CvaHedgeB
 def build_sa_cva_sensitivity_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SaCvaSensitivityBatch:
+    """Materialise an SA-CVA sensitivity batch from a normalized Arrow handoff.
+
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        Accepted sensitivity rows from :func:`normalize_sa_cva_sensitivity_arrow_table`.
+
+    Returns
+    -------
+    SaCvaSensitivityBatch
+        Validated columnar batch ready for SA-CVA kernel weighting.
+
+    Raises
+    ------
+    CvaInputError
+        If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
+    """
     if not isinstance(handoff, NormalizedArrowTable):
         raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
     table = handoff.accepted
