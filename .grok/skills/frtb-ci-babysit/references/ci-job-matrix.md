@@ -41,9 +41,11 @@ When `changes_code=false` and `changes_docs=true` (and no `workflow` forcing ful
 
 | Change class | After a fix, prefer |
 | --- | --- |
-| Docs / agent skills only | `make docs-check` |
-| Single package code | `uv run pytest packages/<pkg>/tests` + `make quality-control` |
-| Cross-cutting / maturity / drift | `make quality-control` |
+| Ordinary package code, tests, fixtures, scripts, examples, adapters, focused refactors | `make ci-local-pr` |
+| CI workflow, governance, docs quality, dependencies, SBOM, examples, notebooks, agent instructions | `make ci-local-governance` |
+| Vectorization, batch, adapter, benchmark, memory/performance-sensitive, scaling-sensitive changes | `make ci-local-performance` |
+| Release-readiness, high-risk final audit, broad cross-package hardening | `make ci-local-release` |
+| Docs-only fast path during CI babysit | `make agent-guard` + `make docs-check` |
 | Pre-push default | `make agent-guard` then narrowest row above |
 
 See `references/qc-failures.md` when `quality-control` fails.

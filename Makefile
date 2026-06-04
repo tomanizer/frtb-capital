@@ -9,7 +9,9 @@ COVERAGE_JSON := dist/coverage/implemented-packages.json
 COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_rrao
 MUTATION_DIST := dist/mutation
 
-.PHONY: check ci-local ci-local-fast ci-local-full lint format format-check typecheck
+.PHONY: check ci-local ci-local-fast ci-local-full
+.PHONY: ci-local-pr ci-local-governance ci-local-performance ci-local-release
+.PHONY: lint format format-check typecheck
 .PHONY: test test-no-cov test-changed test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording docs-staleness
 .PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check docstring-inventory drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
@@ -25,6 +27,14 @@ ci-local: docs-check lint format-check typecheck test build
 ci-local-fast: docs-check lint format-check typecheck test-no-cov
 
 ci-local-full: ci-local audit-deps sbom examples-check notebooks-check
+
+ci-local-pr: test-changed quality-control changed-code-check test-value-check dead-code-check
+
+ci-local-governance: ci-local-full quality-control
+
+ci-local-performance: test-changed benchmark-suite benchmark-budget-check quality-control
+
+ci-local-release: ci-local-full quality-control test-partial-runtime-coverage benchmark-suite benchmark-budget-check
 
 lint:
 	uv run ruff check $(LINT_PATHS)

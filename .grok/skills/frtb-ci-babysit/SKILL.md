@@ -205,8 +205,10 @@ Narrow commands per Step 0.5 / `references/ci-job-matrix.md`:
 
 ```bash
 make agent-guard
-# docs-only: make docs-check
-# code: make ci-local-fast or make ci-local; then make quality-control when QC failed on CI
+# ordinary code: make ci-local-pr
+# CI/governance/docs/dependency/examples/notebooks: make ci-local-governance
+# performance/vectorization/batch/benchmark-sensitive: make ci-local-performance
+# release-readiness or high-risk final audit: make ci-local-release
 ```
 
 Repeat until `REQUIRED_JOBS` are green (max **3** fix loops). Refresh `HEAD_SHA` after

@@ -176,6 +176,10 @@ uv sync                              # install workspace + dev deps
 
 # Workspace-level
 make check                           # lint + typecheck + tests across all packages
+make ci-local-pr                     # ordinary package-code PR validation
+make ci-local-governance             # CI/governance/docs/dependency validation
+make ci-local-performance            # performance/vectorization validation
+make ci-local-release                # release-readiness or high-risk final audit
 
 # Per-package (from workspace root)
 uv run pytest packages/frtb-ima/tests
@@ -183,6 +187,23 @@ uv run mypy packages/frtb-ima/src
 ```
 
 Per-package Makefiles remain valid when invoked from inside the package directory.
+
+### Local CI presets for agents
+
+Run `make agent-guard` before validation. Prefer these presets over ad hoc command
+bundles, and list the exact preset or narrower substitute in the PR body:
+
+- `make ci-local-pr` — ordinary package code, tests, fixtures, scripts, examples,
+  adapters, or focused refactors.
+- `make ci-local-governance` — CI workflow, repository governance, docs quality,
+  dependency/SBOM, examples, notebook, or agent-instruction changes.
+- `make ci-local-performance` — vectorization, batch, adapter, benchmark,
+  memory/performance-sensitive, or scaling-sensitive changes.
+- `make ci-local-release` — release-readiness, pre-merge hardening, broad
+  cross-package changes, or final audit before a high-risk merge.
+
+If a preset is impractical, run the most relevant narrower commands, explain why
+the preset was skipped, and include that validation gap in the PR.
 
 ---
 

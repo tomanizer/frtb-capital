@@ -118,6 +118,28 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
   review or merge, and do not bypass the check without a documented governance
   reason.
 
+### Local CI presets for agents
+
+Run `make agent-guard` before validation. Prefer these presets over ad hoc command
+bundles, and list the exact preset or narrower substitute in the PR body:
+
+- `make ci-local-pr` — ordinary package code, tests, fixtures, scripts, examples,
+  adapters, or focused refactors. Runs changed pytest targets, mandatory
+  governance checks, and strict changed-code/test-value/dead-code guards.
+- `make ci-local-governance` — CI workflow, repository governance, docs quality,
+  dependency/SBOM, examples, notebook, or agent-instruction changes. Mirrors the
+  broad local CI surface and adds `quality-control`.
+- `make ci-local-performance` — vectorization, batch, adapter, benchmark,
+  memory/performance-sensitive, or scaling-sensitive changes. Runs changed tests,
+  the benchmark suite, benchmark budgets, and `quality-control`.
+- `make ci-local-release` — release-readiness, pre-merge hardening, broad
+  cross-package changes, or final audit before a high-risk merge. Runs the full
+  local CI surface, `quality-control`, partial-runtime coverage, benchmark suite,
+  and benchmark budgets.
+
+If a preset is impractical, run the most relevant narrower commands, explain why
+the preset was skipped, and include that validation gap in the PR.
+
 ## CI babysit
 
 When asked to babysit, watch, or bring a PR to merge-ready (CI green, Gemini and
