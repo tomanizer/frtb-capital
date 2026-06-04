@@ -7,7 +7,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from frtb_cva._unsupported import MAR50_9_MATERIALITY_POLICY, MAR50_9_UNSUPPORTED_MESSAGE
+from frtb_cva._unsupported import (
+    EXPOSURE_SENSITIVITY_GENERATION_POLICY,
+    MAR50_9_MATERIALITY_POLICY,
+    MAR50_9_UNSUPPORTED_MESSAGE,
+    SA_CVA_APPROVAL_GOVERNANCE_POLICY,
+)
 from frtb_cva.data_models import (
     CvaMethod,
     CvaRegulatoryProfile,
@@ -145,6 +150,7 @@ def cva_profile_support_matrix() -> tuple[CvaSupportCell, ...]:
         rows.extend(_sa_path_rows(profile))
         rows.append(_ccs_vega_row(profile))
         rows.append(_materiality_row(profile))
+        rows.extend(_out_of_scope_rows(profile))
     return tuple(rows)
 
 
@@ -258,6 +264,47 @@ def _materiality_citation(profile: CvaRegulatoryProfile) -> str:
     return "PRA PS1/26; PRA Rulebook CVA Risk Part AA-CVA"
 
 
+def _out_of_scope_rows(profile: CvaRegulatoryProfile) -> tuple[CvaSupportCell, ...]:
+    return (
+        CvaSupportCell(
+            profile=profile,
+            method=SA_CVA_APPROVAL_GOVERNANCE_POLICY,
+            status=CvaSupportStatus.OUT_OF_SCOPE,
+            citation=_sa_cva_approval_citation(profile),
+            blocker="supervisory_approval_boundary",
+            tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
+        ),
+        CvaSupportCell(
+            profile=profile,
+            method=EXPOSURE_SENSITIVITY_GENERATION_POLICY,
+            status=CvaSupportStatus.OUT_OF_SCOPE,
+            citation=_exposure_generation_citation(profile),
+            blocker="upstream_exposure_sensitivity_boundary",
+            tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
+        ),
+    )
+
+
+def _sa_cva_approval_citation(profile: CvaRegulatoryProfile) -> str:
+    if profile is CvaRegulatoryProfile.BASEL_MAR50_2020:
+        return "Basel MAR50.7"
+    if profile is CvaRegulatoryProfile.US_NPR20_VB:
+        return "U.S. NPR 2.0 91 FR 14952 section V.B"
+    if profile is CvaRegulatoryProfile.EU_CRR3_CVA:
+        return "Regulation (EU) 2024/1623 Articles 383-383z"
+    return "PRA PS1/26; PRA Rulebook CVA Risk Part SA-CVA"
+
+
+def _exposure_generation_citation(profile: CvaRegulatoryProfile) -> str:
+    if profile is CvaRegulatoryProfile.BASEL_MAR50_2020:
+        return "Basel MAR50.31-MAR50.36"
+    if profile is CvaRegulatoryProfile.US_NPR20_VB:
+        return "U.S. NPR 2.0 91 FR 14952 section V.B"
+    if profile is CvaRegulatoryProfile.EU_CRR3_CVA:
+        return "Regulation (EU) 2024/1623 Articles 383-383z"
+    return "PRA PS1/26; PRA Rulebook CVA Risk Part"
+
+
 def _resolve_profile_id(profile: CvaRegulatoryProfile | str) -> CvaRegulatoryProfile:
     try:
         return CvaRegulatoryProfile(profile)
@@ -301,8 +348,10 @@ def _path_sort_key(path: tuple[SaCvaRiskClass, SaCvaRiskMeasure]) -> tuple[str, 
 
 
 __all__ = [
+    "EXPOSURE_SENSITIVITY_GENERATION_POLICY",
     "MAR50_9_MATERIALITY_POLICY",
     "MAR50_9_UNSUPPORTED_MESSAGE",
+    "SA_CVA_APPROVAL_GOVERNANCE_POLICY",
     "CvaProfileSupportStatus",
     "CvaSupportCell",
     "CvaSupportStatus",

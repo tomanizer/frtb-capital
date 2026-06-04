@@ -66,7 +66,7 @@ requirements:
     status: implemented
     modules: [src/frtb_cva/support_matrix.py]
     tests: [tests/test_cva_support_matrix.py]
-    notes: Runtime-readable matrix separates supported Basel, U.S. NPR, EU CRR3, and UK PRA profile cells from MAR50.9/simplified CCR-boundary fail-closed status and CCS vega regulatory absence.
+    notes: Runtime-readable matrix separates supported Basel, U.S. NPR, EU CRR3, and UK PRA profile cells from MAR50.9/simplified CCR-boundary fail-closed status, CCS vega regulatory absence, and package-boundary out-of-scope rows for approval workflow and exposure/sensitivity generation.
   - id: CVA-HEDGE-001
     title: Eligible CVA hedge and internal transfer treatment
     detailed_ids: [CVA-FUNC-004, CVA-FUNC-007, CVA-BOUNDARY-006]

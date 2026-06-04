@@ -198,7 +198,10 @@ package-boundary and attribution rules (ADR 0012).
 
 **Implication:** `materiality_threshold_elected=True` must never produce CVA
 capital. Future work requires an ADR, orchestration handoff, and deterministic
-fixtures. Full design: [DESIGN_AUDIT_IMP_005.md](DESIGN_AUDIT_IMP_005.md).
+fixtures. Package maturity promotion may proceed without implementing MAR50.9
+because the promoted scope is limited to package-owned BA-CVA, SA-CVA, mixed
+carve-out, profile, batch, and audit mechanics. Full design:
+[DESIGN_AUDIT_IMP_005.md](DESIGN_AUDIT_IMP_005.md).
 
 Basel anchor: MAR50.9.
 
