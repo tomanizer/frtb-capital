@@ -109,8 +109,9 @@ records; they are never silently dropped.
 
 **Decision:** The implementation provides deterministic counterparty,
 netting-set, bucket, and risk-class explain records with attribution-ready
-lineage. Analytical Euler allocation remains explicit about nonlinear residuals;
-baseline-vs-candidate impact is outside the capital kernel.
+lineage. Attribution projection remains explicit about unsupported nonlinear
+branches and residuals; baseline-vs-candidate impact is outside the capital
+kernel.
 
 **Reason:** SA-CVA nonlinearities (square roots, `S_b` floor/cap, hedge
 disallowance, BA-CVA hedge floor) require stable branch metadata before

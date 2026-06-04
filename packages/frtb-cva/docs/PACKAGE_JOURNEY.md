@@ -201,15 +201,16 @@ components (`method_components` records each part).
 | --- | --- | --- |
 | Reconciliation | `validate_cva_result_reconciliation` | Internal consistency checks on the result object |
 | Replay / evidence | `serialize_cva_result`, `input_hash` | Deterministic serialization and input fingerprinting |
-| Attribution | `attribute_cva_capital` → `project_cva_attribution` | Analytical Euler-style contributions on audit breakdown |
+| Attribution | `attribute_cva_capital` → `project_cva_attribution` | Standalone explain rows plus unsupported/residual shared projection |
 | Impact | `assess_cva_capital_impact` | Scenario-style impact where supported |
 
 **Attribution is not a backward pass through the calculator.** Capital is fixed
-first; attribution decomposes **already computed** stand-alone lines and bucket
+first; attribution decomposes **already computed** standalone lines and bucket
 allocations. Portfolio-level square-root branches (reduced BA portfolio,
-hedged full BA, SA risk-class sqrt) are listed in `unsupported_branches` when
-they cannot be allocated exactly — `reconciled` may be `False` with an explicit
-residual. See ADR 0012.
+hedged full BA, SA risk-class sqrt) and beta floor behavior are listed in
+`unsupported_branches` when they cannot be allocated exactly. Shared projection
+emits `UNSUPPORTED` markers and a `RESIDUAL` row so the projected records still
+reconcile to total CVA capital. See ADR 0012.
 
 ### Step 7 — Suite and storage (callers)
 
