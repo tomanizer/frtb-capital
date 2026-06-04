@@ -19,6 +19,10 @@ The package implements a **partial** Basel MAR50 slice:
 
 Public entry point: `calculate_cva_capital`. Unsupported methods and risk
 classes fail closed with `UnsupportedRegulatoryFeatureError` or `CvaInputError`.
+
+**Integration journey (Arrow → capital → attribution → suite/store):**
+[`docs/PACKAGE_JOURNEY.md`](docs/PACKAGE_JOURNEY.md)
+
 The stable client integration surface is documented in
 [`docs/modules/frtb-cva/PUBLIC_API.md`](../../docs/modules/frtb-cva/PUBLIC_API.md).
 
