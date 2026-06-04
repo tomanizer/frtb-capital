@@ -41,6 +41,8 @@ EXPECTED_PUBLIC_API = (
     "build_rrao_batch_from_arrow",
     "build_rrao_batch_from_columns",
     "build_rrao_batch_from_positions",
+    "build_rrao_contribution_bundle",
+    "calculate_rrao_attribution",
     "calculate_rrao_capital",
     "calculate_rrao_capital_from_batch",
     "classify_rrao_position",
@@ -50,6 +52,7 @@ EXPECTED_PUBLIC_API = (
     "input_hash_for_rrao_batch",
     "normalize_rrao_arrow_table",
     "resolve_rrao_allocation_dimension",
+    "rrao_allocation_report_to_contributions",
     "serialize_rrao_allocation_report",
     "serialize_rrao_result",
     "to_component_summary",
@@ -61,4 +64,4 @@ EXPECTED_PUBLIC_API = (
 
 def test_top_level_public_api_surface_is_explicit_and_narrow() -> None:
     assert frtb_rrao.__all__ == list(EXPECTED_PUBLIC_API)
-    assert len(frtb_rrao.__all__) < 57
+    assert len(frtb_rrao.__all__) < 60

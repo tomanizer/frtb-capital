@@ -133,6 +133,8 @@ make the method explicit:
 
 - `ANALYTICAL_EULER` requires `base_amount`, `marginal_multiplier`, and
   `contribution`.
+- `STANDALONE` carries additive or standalone explain amounts in
+  `contribution` and must not be described as a marginal derivative.
 - `RESIDUAL` carries the residual amount and reason.
 - `UNSUPPORTED` carries the unsupported reason and, when applicable, the full
   unattributed amount as residual.

@@ -8,7 +8,8 @@ packages project into after their own capital result has already been produced.
 
 The shared runtime contracts are:
 
-- `AttributionMethod`: `ANALYTICAL_EULER`, `RESIDUAL`, and `UNSUPPORTED`.
+- `AttributionMethod`: `ANALYTICAL_EULER`, `STANDALONE`, `RESIDUAL`, and
+  `UNSUPPORTED`.
 - `ReconciliationStatus`: `RECONCILED`, `PARTIAL_RESIDUAL`, `UNRECONCILED`,
   and `UNKNOWN`.
 - `CapitalContribution`: one package-neutral contribution record.
@@ -20,8 +21,10 @@ The shared runtime contracts are:
 ## Method Contract
 
 `ANALYTICAL_EULER` records must carry both `marginal_multiplier` and
-`contribution`. `RESIDUAL` and `UNSUPPORTED` records carry the explicitly
-unattributed amount in `residual` and explain the cause in `reason`.
+`contribution`. `STANDALONE` records carry additive or standalone explain
+amounts in `contribution` without implying a marginal derivative. `RESIDUAL`
+and `UNSUPPORTED` records carry the explicitly unattributed amount in
+`residual` and explain the cause in `reason`.
 
 For a complete contribution set, the intended reconciliation invariant is:
 

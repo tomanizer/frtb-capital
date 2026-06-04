@@ -2,14 +2,20 @@
 
 `frtb-rrao` does not implement Euler-style capital attribution. RRAO v1 is an
 additive line-capital component, so the package exposes deterministic additive
-allocation reports over a completed `RraoCapitalResult`.
+allocation reports and shared `CapitalContribution` projections over a
+completed `RraoCapitalResult`.
 
 ## Current Support
 
 Public helpers:
 
 ```python
-from frtb_rrao import build_rrao_allocation_report, build_rrao_allocation_reports
+from frtb_rrao import (
+    build_rrao_allocation_report,
+    build_rrao_allocation_reports,
+    build_rrao_contribution_bundle,
+    calculate_rrao_attribution,
+)
 ```
 
 Supported dimensions are:
@@ -24,10 +30,11 @@ Aliases accepted by the helper include `desk`, `legal-entity`, and
 
 ## Method
 
-The allocation method is `additive_line_add_on`. Each included line contributes
-the add-on already calculated for that line. Excluded lines remain visible in
-allocation buckets with zero add-on so row counts, source ids, and exclusion
-evidence reconcile to the public result.
+The allocation method is `additive_line_add_on`. Shared contribution records
+use `AttributionMethod.STANDALONE`. Each included line contributes the add-on
+already calculated for that line. Excluded lines remain visible in allocation
+buckets and shared records with zero add-on so row counts, source ids, and
+exclusion evidence reconcile to the public result.
 
 Every report validates that:
 
@@ -35,6 +42,10 @@ Every report validates that:
 - `allocated_rrao` reconciles to `total_rrao`;
 - bucket keys are deterministic and unique;
 - each bucket uses the requested dimension.
+
+The canonical `ComponentContributionBundle` view is the line-level projection:
+`ComponentContributionBundle(component="frtb_rrao", ...)`. Its component total,
+input hash, and profile hash come from the source `RraoCapitalResult`.
 
 ## Inputs Used
 
@@ -49,13 +60,16 @@ Allocation consumes:
 ## Allocation Grain
 
 The supported explain grains are line, desk, legal entity, and evidence type.
-The package does not project these reports to `frtb_common.CapitalContribution`
-records today.
+`calculate_rrao_attribution` supports the same grains. The bundle helper uses
+line grain as the canonical orchestration handoff because it preserves
+position-level source ids.
 
 ## Limitations
 
 - No marginal, analytical Euler, or finite-difference attribution is implemented
   in `frtb-rrao`.
+- `STANDALONE` records explain additive line charges only; they are not
+  derivatives through SA aggregation or any top-of-house capital formula.
 - Classification subtotal allocation is unsupported because classification
   subtotals already exist in the public result.
 - Cross-component SA attribution is owned by `frtb-orchestration`, not RRAO.
@@ -67,6 +81,7 @@ records today.
 Tests:
 
 - `packages/frtb-rrao/tests/test_rrao_allocation.py`
+- `packages/frtb-rrao/tests/test_rrao_attribution.py`
 - `packages/frtb-rrao/tests/test_rrao_reconciliation_tolerance.py`
 
 Documentation and regulatory references:
