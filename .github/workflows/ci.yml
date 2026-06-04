@@ -164,6 +164,16 @@ jobs:
             dist/quality/dead-code-report.json
           if-no-files-found: ignore
 
+      - name: Upload docstring reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: docstring-quality
+          path: |
+            dist/quality/docstring-inventory.json
+            dist/quality/docstring-baseline-report.json
+          if-no-files-found: ignore
+
   test:
     name: test (3.11)
     needs: changes

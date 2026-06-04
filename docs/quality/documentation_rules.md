@@ -176,3 +176,31 @@ as a non-underscore top-level class or function. Public methods on public
 classes are also checked. Private helpers are not blanket-enforced by this first
 checker; domain-significant private helpers remain a review standard until a
 low-noise heuristic is available.
+
+## Baseline Ratchet
+
+The committed baseline lives at:
+
+```text
+docs/quality/docstrings/baseline.json
+```
+
+Refresh it after an intentional documentation cleanup or checker change:
+
+```bash
+make docstring-baseline
+```
+
+The baseline stores the full inventory so package cleanup issues can be opened
+from stable package-scoped evidence. The initial CI ratchet is narrower:
+
+- new missing runtime module docstrings fail;
+- new missing public class, function, and method docstrings fail;
+- stale hard-gated baseline entries fail so fixed gaps are removed from the
+  allowance in the same reviewed change;
+- missing `Parameters`, missing `Returns`, and trivial-docstring findings remain
+  report-only until the false-positive rate is low enough for a later ratchet.
+
+`make quality-control` runs the ratchet through `make docstring-check` and writes
+the current report to `dist/quality/docstring-baseline-report.json` for CI
+artifacts.

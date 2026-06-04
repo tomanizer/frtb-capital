@@ -13,7 +13,7 @@ MUTATION_DIST := dist/mutation
 .PHONY: ci-local-pr ci-local-governance ci-local-performance ci-local-release
 .PHONY: lint format format-check typecheck
 .PHONY: test test-no-cov test-changed test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording docs-staleness
-.PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check docstring-inventory drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
+.PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check docstring-inventory docstring-baseline docstring-check drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
 .PHONY: examples-check notebooks-check package-status-dashboard
 .PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
@@ -107,6 +107,13 @@ docstring-inventory:
 	uv run python scripts/ci/check_docstring_inventory.py --quiet --json-output dist/quality/docstring-inventory.json
 	@echo "docstring inventory written to dist/quality/docstring-inventory.json"
 
+docstring-baseline:
+	uv run python scripts/ci/check_docstring_baseline.py --update-baseline
+
+docstring-check:
+	mkdir -p dist/quality
+	uv run python scripts/ci/check_docstring_baseline.py --json-output dist/quality/docstring-baseline-report.json
+
 drift-check:
 	mkdir -p dist/quality
 	uv run python scripts/ci/check_code_drift.py --json-output dist/quality/code-drift-report.json
@@ -148,7 +155,7 @@ drift-reports: drift-report changed-code-report test-value-report dead-code-repo
 drift-baseline:
 	uv run python scripts/ci/check_code_drift.py --update-baseline
 
-quality-control: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift docs-staleness import-smoke maturity-check drift-reports
+quality-control: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift docs-staleness import-smoke maturity-check docstring-check drift-reports
 
 regulatory-corpus:
 	python3 tools/regulatory/lint_regulatory_corpus.py
