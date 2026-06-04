@@ -15,6 +15,12 @@ Basel MAR21 delta, vega, and curvature canonical inputs. Row-wise,
 package-owned batch, and Arrow batch paths are available for the supported
 matrix. Unsupported profiles and unmapped sub-features fail closed.
 
+## Integration journey
+
+End-to-end client flow (Arrow handoff, portfolio batch capital, attribution,
+`to_component_summary`, and SA orchestration boundaries) is documented in
+[`packages/frtb-sbm/docs/PACKAGE_JOURNEY.md`](../../../packages/frtb-sbm/docs/PACKAGE_JOURNEY.md).
+
 ## Package-Local Documentation
 
 - [Regulatory traceability](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md)

@@ -24,10 +24,14 @@ Outputs from this prototype package are not final regulatory capital.
 synthetic and internal. The single source of package support status is the
 matrix in [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md).
 
+**Integration journey (Arrow → capital → attribution → SA/suite/store):**
+[`docs/PACKAGE_JOURNEY.md`](docs/PACKAGE_JOURNEY.md)
+
 ## Documentation
 
 | Document | Purpose |
 | --- | --- |
+| [PACKAGE_JOURNEY.md](docs/PACKAGE_JOURNEY.md) | End-to-end client flow, tiers, portfolio dispatcher, orchestration boundaries |
 | [PUBLIC_API.md](../../docs/modules/frtb-sbm/PUBLIC_API.md) | Stable client integration surface, handoff specs, and top-level imports |
 | [REGULATORY_TRACEABILITY.md](docs/REGULATORY_TRACEABILITY.md) | Code-to-regulation map and phase-1 support status |
 | [REGULATORY_ASSUMPTIONS.md](docs/REGULATORY_ASSUMPTIONS.md) | Source-cited implementation boundaries |
