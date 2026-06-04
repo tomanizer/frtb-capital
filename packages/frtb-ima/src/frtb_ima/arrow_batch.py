@@ -299,7 +299,25 @@ def normalize_ima_input_manifest_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize an Arrow artifact-lineage table for IMA input manifest construction."""
+    """Normalize an Arrow artifact-lineage table for IMA input manifest construction.
+    Parameters
+    ----------
+    table : pa.Table
+        Table.
+    diagnostics : Sequence[AdapterDiagnostic], optional
+        Diagnostics.
+    metadata : Mapping[str, str] | None, optional
+        Metadata.
+    rejected : pa.Table | None, optional
+        Rejected.
+    source_hash : str | None, optional
+        Source hash.
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Result of the operation.
+    """
 
     return normalize_arrow_table(
         table,
@@ -320,7 +338,25 @@ def normalize_ima_scenario_metadata_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize an Arrow scenario metadata table for IMA scenario-axis tables."""
+    """Normalize an Arrow scenario metadata table for IMA scenario-axis tables.
+    Parameters
+    ----------
+    table : pa.Table
+        Table.
+    diagnostics : Sequence[AdapterDiagnostic], optional
+        Diagnostics.
+    metadata : Mapping[str, str] | None, optional
+        Metadata.
+    rejected : pa.Table | None, optional
+        Rejected.
+    source_hash : str | None, optional
+        Source hash.
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Result of the operation.
+    """
 
     return normalize_arrow_table(
         table,
@@ -341,7 +377,25 @@ def normalize_ima_rfet_observation_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize an Arrow real-price observation table for RFET input tables."""
+    """Normalize an Arrow real-price observation table for RFET input tables.
+    Parameters
+    ----------
+    table : pa.Table
+        Table.
+    diagnostics : Sequence[AdapterDiagnostic], optional
+        Diagnostics.
+    metadata : Mapping[str, str] | None, optional
+        Metadata.
+    rejected : pa.Table | None, optional
+        Rejected.
+    source_hash : str | None, optional
+        Source hash.
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Result of the operation.
+    """
 
     return normalize_arrow_table(
         table,
@@ -357,7 +411,17 @@ def normalize_ima_rfet_observation_arrow_table(
 def build_scenario_metadata_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> ScenarioMetadataBatch:
-    """Build a columnar IMA scenario metadata batch from a normalized Arrow table."""
+    """Build a columnar IMA scenario metadata batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        Handoff.
+
+    Returns
+    -------
+    ScenarioMetadataBatch
+        Result of the operation.
+    """
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise ValueError("handoff must be NormalizedArrowTable")
@@ -379,7 +443,17 @@ def build_scenario_metadata_batch_from_arrow(
 def build_rfet_observation_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> RFETObservationBatch:
-    """Build a columnar RFET observation batch from a normalized Arrow table."""
+    """Build a columnar RFET observation batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        Handoff.
+
+    Returns
+    -------
+    RFETObservationBatch
+        Result of the operation.
+    """
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise ValueError("handoff must be NormalizedArrowTable")
@@ -407,7 +481,25 @@ def build_capital_run_input_manifest_from_arrow(
     schema_version: str | None = None,
     metadata: Mapping[str, str] | None = None,
 ) -> CapitalRunInputManifest:
-    """Build an IMA capital-run input manifest from a normalized Arrow table."""
+    """Build an IMA capital-run input manifest from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        Handoff.
+    run_id : str | None, optional
+        Run id.
+    as_of_date : date | datetime | str | None, optional
+        As of date.
+    schema_version : str | None, optional
+        Schema version.
+    metadata : Mapping[str, str] | None, optional
+        Metadata.
+
+    Returns
+    -------
+    CapitalRunInputManifest
+        Result of the operation.
+    """
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise ValueError("handoff must be NormalizedArrowTable")

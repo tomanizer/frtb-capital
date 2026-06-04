@@ -27,7 +27,21 @@ def validate_observation_dates(
     *,
     length_label: str,
 ) -> tuple[date, ...] | None:
-    """Validate optional observation dates for aligned PLA/backtesting vectors."""
+    """Validate optional observation dates for aligned PLA/backtesting vectors.
+    Parameters
+    ----------
+    observation_dates : Sequence[date] | None
+        Observation dates.
+    expected_length : int
+        Expected length.
+    length_label : str
+        Length label.
+
+    Returns
+    -------
+    tuple[date, ...] | None
+        Result of the operation.
+    """
 
     if observation_dates is None:
         return None
@@ -46,7 +60,23 @@ def select_recent_observation_window(
     calendar: BusinessCalendar | None = None,
     validation_label: str,
 ) -> ObservationDateWindow:
-    """Return the most recent observation dates and shared calendar validation metadata."""
+    """Return the most recent observation dates and shared calendar validation metadata.
+    Parameters
+    ----------
+    observation_dates : tuple[date, ...] | None
+        Observation dates.
+    window_size : int
+        Window size.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    validation_label : str
+        Validation label.
+
+    Returns
+    -------
+    ObservationDateWindow
+        Result of the operation.
+    """
 
     selected_dates = observation_dates[-window_size:] if observation_dates is not None else None
     if calendar is None:

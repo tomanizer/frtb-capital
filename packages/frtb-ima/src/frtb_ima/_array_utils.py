@@ -17,7 +17,25 @@ def finite_1d_float_array(
     empty_message: str | None = None,
     require_float_sequence: bool = False,
 ) -> npt.NDArray[np.float64]:
-    """Return a finite one-dimensional float64 array."""
+    """Return a finite one-dimensional float64 array.
+    Parameters
+    ----------
+    values : object
+        Values.
+    name : str
+        Name.
+    descriptor : str, optional
+        Descriptor.
+    empty_message : str | None, optional
+        Empty message.
+    require_float_sequence : bool, optional
+        Require float sequence.
+
+    Returns
+    -------
+    npt.NDArray[np.float64]
+        Result of the operation.
+    """
 
     if require_float_sequence and (
         values is None
@@ -36,7 +54,19 @@ def finite_1d_float_array(
 
 
 def readonly_string_array(values: object, field_name: str) -> npt.NDArray[np.str_]:
-    """Return a read-only one-dimensional string array."""
+    """Return a read-only one-dimensional string array.
+    Parameters
+    ----------
+    values : object
+        Values.
+    field_name : str
+        Field name.
+
+    Returns
+    -------
+    npt.NDArray[np.str_]
+        Result of the operation.
+    """
 
     array = np.array(values, dtype=np.str_, copy=True)
     if array.ndim != 1:
@@ -46,7 +76,19 @@ def readonly_string_array(values: object, field_name: str) -> npt.NDArray[np.str
 
 
 def readonly_date_array(values: object, field_name: str) -> npt.NDArray[np.datetime64]:
-    """Return a read-only one-dimensional daily datetime64 array."""
+    """Return a read-only one-dimensional daily datetime64 array.
+    Parameters
+    ----------
+    values : object
+        Values.
+    field_name : str
+        Field name.
+
+    Returns
+    -------
+    npt.NDArray[np.datetime64]
+        Result of the operation.
+    """
 
     array = np.array(values, dtype="datetime64[D]", copy=True)
     if array.ndim != 1:
@@ -58,7 +100,15 @@ def readonly_date_array(values: object, field_name: str) -> npt.NDArray[np.datet
 
 
 def validate_equal_lengths(label: str, first: np.ndarray, *others: np.ndarray) -> None:
-    """Require a set of column arrays to have the same first dimension."""
+    """Require a set of column arrays to have the same first dimension.
+    Parameters
+    ----------
+    label : str
+        Label.
+    first : np.ndarray
+        First.
+    *others : np.ndarray
+    """
 
     expected = first.shape[0]
     for array in others:
@@ -67,7 +117,19 @@ def validate_equal_lengths(label: str, first: np.ndarray, *others: np.ndarray) -
 
 
 def date_from_datetime64(value: np.datetime64, label: str) -> date:
-    """Convert a datetime64 value to ``datetime.date`` with a package-local error."""
+    """Convert a datetime64 value to ``datetime.date`` with a package-local error.
+    Parameters
+    ----------
+    value : np.datetime64
+        Value.
+    label : str
+        Label.
+
+    Returns
+    -------
+    date
+        Result of the operation.
+    """
 
     parsed = value.astype("datetime64[D]").item()
     if not isinstance(parsed, date) or isinstance(parsed, datetime):

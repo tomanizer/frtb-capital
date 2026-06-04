@@ -213,7 +213,12 @@ class RFETEvidence:
 
     @property
     def observation_count(self) -> int:
-        """Raw observation count before RFET eligibility filters."""
+        """Raw observation count before RFET eligibility filters.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.observations)
 
 
@@ -277,32 +282,87 @@ class ScenarioCube:
 
     @property
     def scenario_count(self) -> int:
+        """Number of scenarios in the cube.
+
+        Returns
+        -------
+        int
+            Length of the scenario axis.
+        """
+
         return int(self.values.shape[0])
 
     @property
     def position_count(self) -> int:
+        """Number of positions in the cube.
+
+        Returns
+        -------
+        int
+            Length of the position axis.
+        """
+
         return int(self.values.shape[1])
 
     @property
     def risk_factor_count(self) -> int:
+        """Number of risk factors in the cube.
+
+        Returns
+        -------
+        int
+            Length of the risk-factor axis.
+        """
+
         return int(self.values.shape[2])
 
     @property
     def position_index(self) -> dict[str, int]:
+        """Map position ids to column indices.
+
+        Returns
+        -------
+        dict[str, int]
+            Position id to column index lookup.
+        """
+
         return {position_id: index for index, position_id in enumerate(self.position_ids)}
 
     @property
     def risk_factor_index(self) -> dict[str, int]:
+        """Map risk-factor names to depth indices.
+
+        Returns
+        -------
+        dict[str, int]
+            Risk-factor name to depth index lookup.
+        """
+
         return {
             risk_factor_name: index for index, risk_factor_name in enumerate(self.risk_factor_names)
         }
 
     def total_scenario_pnl(self) -> FloatArray:
-        """Aggregate all positions and risk factors into one scenario vector."""
+        """Aggregate all positions and risk factors into one scenario vector.
+        Returns
+        -------
+        FloatArray
+            Result of the operation.
+        """
         return cast(FloatArray, np.sum(self.values, axis=(1, 2)))
 
     def pnl_for_positions(self, position_ids: Sequence[str]) -> FloatArray:
-        """Aggregate selected position IDs across all risk factors."""
+        """Aggregate selected position IDs across all risk factors.
+        Parameters
+        ----------
+        position_ids : Sequence[str]
+            Position ids.
+
+        Returns
+        -------
+        FloatArray
+            Result of the operation.
+        """
         index = self.position_index
         missing = [position_id for position_id in position_ids if position_id not in index]
         if missing:
@@ -311,7 +371,17 @@ class ScenarioCube:
         return cast(FloatArray, np.sum(self.values[:, selected, :], axis=(1, 2)))
 
     def pnl_for_risk_factors(self, risk_factor_names: Sequence[str]) -> FloatArray:
-        """Aggregate selected risk-factor names across all positions."""
+        """Aggregate selected risk-factor names across all positions.
+        Parameters
+        ----------
+        risk_factor_names : Sequence[str]
+            Risk factor names.
+
+        Returns
+        -------
+        FloatArray
+            Result of the operation.
+        """
         index = self.risk_factor_index
         missing = [name for name in risk_factor_names if name not in index]
         if missing:
@@ -371,7 +441,12 @@ class CapitalRunResult:
         object.__setattr__(self, "notes", tuple(self.notes))
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "as_of_date": self.as_of_date.isoformat(),
             "regime": self.regime.value,

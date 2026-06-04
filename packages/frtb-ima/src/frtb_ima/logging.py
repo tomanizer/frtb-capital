@@ -38,6 +38,18 @@ class JSONFormatter(py_logging.Formatter):
     """Format log records as one compact JSON object per line."""
 
     def format(self, record: py_logging.LogRecord) -> str:
+        """Return one compact JSON object per log record.
+
+        Parameters
+        ----------
+        record : logging.LogRecord
+            Log record to serialise.
+
+        Returns
+        -------
+        str
+            Single-line JSON payload for the record.
+        """
         payload: dict[str, object] = {
             "ts": self.formatTime(record),
             "level": record.levelname,
@@ -68,7 +80,21 @@ def calculation_log_extra(
     regime: str | None = None,
     **fields: object,
 ) -> dict[str, object]:
-    """Build safe structured fields for calculation-boundary log records."""
+    """Build safe structured fields for calculation-boundary log records.
+    Parameters
+    ----------
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+    regime : str | None, optional
+        Regime.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
     extra: dict[str, object] = {}
     if run_id is not None:
         extra["run_id"] = run_id
@@ -86,11 +112,23 @@ def configure_json_logging(
     stream: TextIO | None = None,
     logger_name: str | None = None,
 ) -> py_logging.Handler:
-    """
-    Attach a JSON log handler to the root logger or a named logger.
+    """Attach a JSON log handler to the root logger or a named logger.
 
     Applications own logging configuration. This helper is intentionally small
     and dependency-free for examples, demos, and simple runners.
+    Parameters
+    ----------
+    level : int | str, optional
+        Level.
+    stream : TextIO | None, optional
+        Stream.
+    logger_name : str | None, optional
+        Logger name.
+
+    Returns
+    -------
+    py_logging.Handler
+        Result of the operation.
     """
     logger = py_logging.getLogger(logger_name)
     handler = py_logging.StreamHandler(stream if stream is not None else sys.stderr)

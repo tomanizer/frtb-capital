@@ -59,7 +59,25 @@ def replay_audit_file(
     expected_policy_hash: str | None = None,
     expected_inputs_hash: str | None = None,
 ) -> dict[str, object]:
-    """Replay an audit NDJSON file against a fixture directory."""
+    """Replay an audit NDJSON file against a fixture directory.
+    Parameters
+    ----------
+    audit_path : str | Path
+        Audit path.
+    fixture_root : str | Path, optional
+        Fixture root.
+    expected_code_version : str | None, optional
+        Expected code version.
+    expected_policy_hash : str | None, optional
+        Expected policy hash.
+    expected_inputs_hash : str | None, optional
+        Expected inputs hash.
+
+    Returns
+    -------
+    dict[str, object]
+        Result of the operation.
+    """
     audit = Path(audit_path)
     fixture = Path(fixture_root)
     checks: list[dict[str, object]] = []
@@ -114,7 +132,17 @@ def replay_audit_file(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """CLI entry point for ``python -m frtb_ima.replay``."""
+    """CLI entry point for ``python -m frtb_ima.replay``.
+    Parameters
+    ----------
+    argv : Sequence[str] | None, optional
+        Argv.
+
+    Returns
+    -------
+    int
+        Result of the operation.
+    """
     parser = argparse.ArgumentParser(
         description="Replay an FRTB-IMA audit NDJSON file against a fixture input bundle.",
     )

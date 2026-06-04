@@ -140,17 +140,25 @@ class ScenarioMetadataBatch:
 
     @property
     def scenario_count(self) -> int:
-        """Number of scenario metadata rows carried by the batch."""
+        """Number of scenario metadata rows carried by the batch.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
 
         return int(self.scenario_ids.size)
 
     def to_metadata(self) -> tuple[ScenarioMetadata, ...]:
-        """
-        Materialize compatibility dataclasses in batch order.
+        """Materialize compatibility dataclasses in batch order.
 
         High-volume adapters should pass the batch itself through ingestion and
         audit checks. This method is for legacy APIs that still require
         ``ScenarioMetadata`` objects.
+        Returns
+        -------
+        tuple[ScenarioMetadata, ...]
+            Result of the operation.
         """
 
         return tuple(
@@ -170,7 +178,17 @@ class ScenarioMetadataBatch:
 
 
 def input_hash_for_scenario_metadata_batch(batch: ScenarioMetadataBatch) -> str:
-    """Return a stable audit hash for a columnar scenario metadata batch."""
+    """Return a stable audit hash for a columnar scenario metadata batch.
+    Parameters
+    ----------
+    batch : ScenarioMetadataBatch
+        Batch.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     return compute_inputs_hash(
         scenario_ids=batch.scenario_ids,
@@ -217,16 +235,31 @@ class ScenarioVector:
 
     @property
     def scenario_ids(self) -> tuple[str, ...]:
-        """Scenario IDs in vector order, or an empty tuple if metadata is absent."""
+        """Scenario IDs in vector order, or an empty tuple if metadata is absent.
+        Returns
+        -------
+        tuple[str, ...]
+            Result of the operation.
+        """
         return tuple(item.scenario_id for item in self.metadata)
 
     @property
     def scenario_dates(self) -> tuple[date, ...]:
-        """Scenario dates in vector order, or an empty tuple if metadata is absent."""
+        """Scenario dates in vector order, or an empty tuple if metadata is absent.
+        Returns
+        -------
+        tuple[date, ...]
+            Result of the operation.
+        """
         return tuple(item.scenario_date for item in self.metadata)
 
     def tolist(self) -> list[float]:
-        """Return values as a plain list for compatibility with existing APIs."""
+        """Return values as a plain list for compatibility with existing APIs.
+        Returns
+        -------
+        list[float]
+            Result of the operation.
+        """
         return [float(value) for value in self.values]
 
 
@@ -238,10 +271,26 @@ def make_scenario_metadata(
     calibration_window: str = "",
     source: str = "",
 ) -> tuple[ScenarioMetadata, ...]:
-    """
-    Create deterministic scenario metadata from ordered scenario dates.
+    """Create deterministic scenario metadata from ordered scenario dates.
 
     Scenario IDs are stable and position-based: ``{prefix}-{index:05d}``.
+    Parameters
+    ----------
+    scenario_dates : Sequence[date]
+        Scenario dates.
+    prefix : str, optional
+        Prefix.
+    scenario_set : ScenarioSetType, optional
+        Scenario set.
+    calibration_window : str, optional
+        Calibration window.
+    source : str, optional
+        Source.
+
+    Returns
+    -------
+    tuple[ScenarioMetadata, ...]
+        Result of the operation.
     """
     return tuple(
         ScenarioMetadata(
@@ -256,7 +305,12 @@ def make_scenario_metadata(
 
 
 def validate_unique_scenarios(metadata: Sequence[ScenarioMetadata]) -> None:
-    """Validate that scenario IDs and dates are unique within a metadata sequence."""
+    """Validate that scenario IDs and dates are unique within a metadata sequence.
+    Parameters
+    ----------
+    metadata : Sequence[ScenarioMetadata]
+        Metadata.
+    """
     ids = [item.scenario_id for item in metadata]
     dates = [item.scenario_date for item in metadata]
     if len(ids) != len(set(ids)):
@@ -266,12 +320,15 @@ def validate_unique_scenarios(metadata: Sequence[ScenarioMetadata]) -> None:
 
 
 def validate_aligned_metadata(vectors: Mapping[str, ScenarioVector]) -> None:
-    """
-    Validate that all vectors with metadata share identical scenario ordering.
+    """Validate that all vectors with metadata share identical scenario ordering.
 
     Vectors without metadata are ignored by this function; length checks for
     metadata-free vectors belong in the nested-vector validator introduced by
     the next workstream issue.
+    Parameters
+    ----------
+    vectors : Mapping[str, ScenarioVector]
+        Vectors.
     """
     reference_name: str | None = None
     reference_ids: tuple[str, ...] | None = None
