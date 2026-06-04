@@ -13,7 +13,7 @@ capital.
 | Category | Symbols | Rationale |
 | --- | --- | --- |
 | Identity | `PACKAGE_METADATA`, `__version__` | Workspace discovery and maturity reporting. |
-| Suite capital | `calculate_suite_capital`, `SuiteCapitalResult`, `SuiteAttributionResult`, `SuiteAttributionReport`, `SuiteAttributionComponentReport`, `aggregate_suite_attribution`, `build_suite_attribution_report` | Top-of-house additive `IMA + SA + CVA` aggregation and attribution-ready branch reporting. |
+| Suite capital | `calculate_suite_capital`, `SuiteCapitalResult`, `SuiteAttributionResult`, `SuiteAttributionReport`, `SuiteAttributionComponentReport`, `SuiteAttributionSummary`, `SuiteAttributionRecordSummary`, `SuiteAttributionGroupSummary`, `aggregate_suite_attribution`, `build_suite_attribution_report`, `summarise_suite_attribution`, `top_suite_attribution_contributors`, `suite_attribution_residual_records`, `suite_attribution_unsupported_records` | Top-of-house additive `IMA + SA + CVA` aggregation and attribution-ready branch reporting. |
 | SA composition | `compose_standardised_approach_capital`, `StandardisedApproachCapitalResult`, `StandardisedComponentSubtotal`, `StandardisedFallbackRoute`, `ComponentCapitalSummary`, `StandardisedComponent` | Composes SBM, DRC, and RRAO public component summaries into Standardised Approach capital. |
 | IMA handoff | `ImaCapitalSummary`, `recognise_ima_summary` | Direct or duck-typed summary handoff from IMA audit-log-shaped outputs. |
 | CVA handoff | `CvaCapitalSummary`, `recognise_cva_summary` | Direct or duck-typed summary handoff from public CVA capital results. |
@@ -59,6 +59,15 @@ component sets:
 Partial, duplicate, or component-total-mismatched bundles raise
 `OrchestrationInputError`. Report payloads include reconciliation status and
 the suite residual reason, and `as_dict()` is JSON-serialisable.
+
+`summarise_suite_attribution` consumes a `SuiteAttributionReport` and returns a
+derived `SuiteAttributionSummary` containing top contributors, contributor
+groups by component and source level, residual records, and unsupported
+attribution records. The projection helpers expose enough drillthrough ids for
+package-owned records: `component`, `contribution_id`, `source_id`,
+`source_level`, `bucket_key`, `category`, `method`, `contribution`, `residual`,
+`reconciliation_status`, and `reason`. These helpers do not recalculate capital
+or attribution methods.
 
 ## Standardised Approach composition
 

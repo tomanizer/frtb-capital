@@ -9,7 +9,11 @@ private component internals.
 Public helper:
 
 ```python
-from frtb_orchestration import aggregate_suite_attribution, build_suite_attribution_report
+from frtb_orchestration import (
+    aggregate_suite_attribution,
+    build_suite_attribution_report,
+    summarise_suite_attribution,
+)
 ```
 
 `aggregate_suite_attribution(suite_result=..., component_bundles=...)` returns a
@@ -22,6 +26,14 @@ the same validation and residual construction in a client-facing
 `SuiteAttributionReport`. The report exposes a canonical component set,
 component sections, reconciliation status, residual reason, and a
 JSON-serialisable `as_dict()` payload for notebooks and APIs.
+
+`summarise_suite_attribution(report=...)` builds analyst-facing projections from
+an existing `SuiteAttributionReport`: top contributors, grouped contributors by
+component and source level, residual records, and unsupported attribution
+records. The summary rows include `component`, `contribution_id`, `source_id`,
+`source_level`, `bucket_key`, `category`, `method`, `contribution`, `residual`,
+`reconciliation_status`, and `reason` fields for drillthrough to package-owned
+records.
 
 ## Method
 
@@ -39,6 +51,10 @@ The suite aggregation method is reconciliation and preservation:
 6. For report output, order component sections canonically as either
    `frtb_ima`, `frtb_sa`, `frtb_cva` or `frtb_ima`, `frtb_sbm`, `frtb_drc`,
    `frtb_rrao`, `frtb_cva`.
+7. For summaries, derive rows only from the report contribution records. Top
+   contributors are sorted by absolute `contribution + residual`, then by stable
+   ids. Residual and unsupported tables preserve producer-owned method and
+   reason fields.
 
 The suite residual has `ReconciliationStatus.RECONCILED` when component bundle
 totals equal suite capital within `1e-6`; otherwise it has
@@ -58,6 +74,9 @@ The helper consumes:
 The report builder consumes the same inputs and optional `suite_total_capital`
 override accepted by `aggregate_suite_attribution`.
 
+The summary helper consumes an already-built `SuiteAttributionReport` and does
+not consume raw package inputs.
+
 ## Allocation Grain
 
 Orchestration supports:
@@ -72,6 +91,14 @@ It does not change the source grain chosen by component packages.
 by the suite residual record; component records are the original
 `CapitalContribution` objects.
 
+`SuiteAttributionSummary` supports the same allocation grains and adds:
+
+- `top_contributors`;
+- `contributors_by_component`;
+- `contributors_by_source_level`;
+- `residual_records`;
+- `unsupported_records`.
+
 ## Limitations
 
 - Partial component sets are rejected.
@@ -79,6 +106,8 @@ by the suite residual record; component records are the original
 - Component totals that do not match suite component capital are rejected.
 - Orchestration does not invent exact Euler decomposition for non-additive
   component internals or unsupported component branches.
+- Summary helpers are projections only. They do not re-run package capital,
+  marginal multipliers, finite differences, or fallback calculations.
 - Cross-run impact analysis is outside this helper.
 
 ## Evidence
