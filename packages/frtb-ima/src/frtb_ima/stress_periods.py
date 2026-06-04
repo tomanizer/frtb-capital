@@ -103,21 +103,41 @@ class HistoricalStressSeries:
 
     @property
     def observation_count(self) -> int:
-        """Number of aligned historical observations."""
+        """Number of aligned historical observations.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.dates)
 
     @property
     def start_date(self) -> date:
-        """First observation date."""
+        """First observation date.
+        Returns
+        -------
+        date
+            Result of the operation.
+        """
         return self.dates[0]
 
     @property
     def end_date(self) -> date:
-        """Last observation date."""
+        """Last observation date.
+        Returns
+        -------
+        date
+            Result of the operation.
+        """
         return self.dates[-1]
 
     def as_dict(self) -> dict[str, object]:
-        """Return an audit summary without serialising the loss vector."""
+        """Return an audit summary without serialising the loss vector.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "risk_class": self.risk_class.value,
             "name": self.name,
@@ -182,7 +202,12 @@ class StressPeriodCandidate:
         object.__setattr__(self, "es_estimator", es_estimator)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "risk_class": self.risk_class.value,
             "period_id": self.period_id,
@@ -202,7 +227,12 @@ class StressPeriodCandidate:
         }
 
     def to_nmrf_stress_period_spec(self) -> NMRFStressPeriodSpec:
-        """Convert this selected window into an NMRF valuation stress-period spec."""
+        """Convert this selected window into an NMRF valuation stress-period spec.
+        Returns
+        -------
+        NMRFStressPeriodSpec
+            Result of the operation.
+        """
         return NMRFStressPeriodSpec(
             stress_period_id=self.period_id,
             calibration_source=self.source,
@@ -270,11 +300,21 @@ class StressPeriodSelectionResult:
 
     @property
     def risk_class_count(self) -> int:
-        """Number of risk classes with selected stress periods."""
+        """Number of risk classes with selected stress periods.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.selected_by_risk_class)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         selected = {
             risk_class.value: self.selected_by_risk_class[risk_class].as_dict()
             for risk_class in sorted(self.selected_by_risk_class, key=lambda item: item.value)
@@ -317,8 +357,7 @@ def rolling_window_severity_scores(
     confidence_level: float,
     es_estimator: ESEstimator,
 ) -> npt.NDArray[np.float64]:
-    """
-    Return one severity score per rolling window.
+    """Return one severity score per rolling window.
 
     ``severity_score`` is derived from the supplied positive-loss history using
     the selected metric. ``EXPECTED_SHORTFALL`` returns the empirical mean of
@@ -329,6 +368,25 @@ def rolling_window_severity_scores(
     is the add-one/remove-one rolling-window optimisation. ``EXPECTED_SHORTFALL``
     uses a strided rolling-window view plus ``np.partition`` to avoid full
     sorting of each window.
+    Parameters
+    ----------
+    losses : FloatVector
+        Losses.
+    window_observations : int, optional
+        Window observations.
+    minimum_observations : int, optional
+        Minimum observations.
+    severity_metric : StressSeverityMetric, optional
+        Severity metric.
+    confidence_level : float
+        Confidence level.
+    es_estimator : ESEstimator
+        Es estimator.
+
+    Returns
+    -------
+    npt.NDArray[np.float64]
+        Result of the operation.
     """
     _validate_selection_parameters(
         window_observations=window_observations,
@@ -385,7 +443,27 @@ def stress_period_candidates_from_history(
     confidence_level: float,
     es_estimator: ESEstimator,
 ) -> tuple[StressPeriodCandidate, ...]:
-    """Build all candidate stress windows for audit or diagnostics."""
+    """Build all candidate stress windows for audit or diagnostics.
+    Parameters
+    ----------
+    series : HistoricalStressSeries
+        Series.
+    window_observations : int, optional
+        Window observations.
+    minimum_observations : int, optional
+        Minimum observations.
+    severity_metric : StressSeverityMetric, optional
+        Severity metric.
+    confidence_level : float
+        Confidence level.
+    es_estimator : ESEstimator
+        Es estimator.
+
+    Returns
+    -------
+    tuple[StressPeriodCandidate, ...]
+        Result of the operation.
+    """
     if not isinstance(series, HistoricalStressSeries):
         raise TypeError("series must be a HistoricalStressSeries")
     scores = rolling_window_severity_scores(
@@ -420,12 +498,32 @@ def select_stress_period_from_history(
     es_estimator: ESEstimator,
     tie_break: StressPeriodTieBreak = StressPeriodTieBreak.LATEST_START_DATE,
 ) -> StressPeriodCandidate:
-    """
-    Select the highest-severity stress period from one risk-class history.
+    """Select the highest-severity stress period from one risk-class history.
 
     Ties are resolved by the requested start-date rule. The default selects the
     most recent start date; candidate period IDs are deterministic and provide a
     stable tertiary ordering if a caller later supplies duplicate date ranges.
+    Parameters
+    ----------
+    series : HistoricalStressSeries
+        Series.
+    window_observations : int, optional
+        Window observations.
+    minimum_observations : int, optional
+        Minimum observations.
+    severity_metric : StressSeverityMetric, optional
+        Severity metric.
+    confidence_level : float
+        Confidence level.
+    es_estimator : ESEstimator
+        Es estimator.
+    tie_break : StressPeriodTieBreak, optional
+        Tie break.
+
+    Returns
+    -------
+    StressPeriodCandidate
+        Result of the operation.
     """
     if not isinstance(series, HistoricalStressSeries):
         raise TypeError("series must be a HistoricalStressSeries")
@@ -464,7 +562,39 @@ def select_stress_periods_by_risk_class(
     use_exact_twelve_month_window: bool = False,
     metadata: Mapping[str, object] | None = None,
 ) -> StressPeriodSelectionResult:
-    """Select one common stress period per risk class from supplied histories."""
+    """Select one common stress period per risk class from supplied histories.
+    Parameters
+    ----------
+    histories : Sequence[HistoricalStressSeries]
+        Histories.
+    as_of_date : date
+        As of date.
+    window_observations : int, optional
+        Window observations.
+    minimum_observations : int, optional
+        Minimum observations.
+    severity_metric : StressSeverityMetric, optional
+        Severity metric.
+    confidence_level : float
+        Confidence level.
+    es_estimator : ESEstimator
+        Es estimator.
+    tie_break : StressPeriodTieBreak, optional
+        Tie break.
+    regime : RegulatoryRegime | str, optional
+        Regime.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    use_exact_twelve_month_window : bool, optional
+        Use exact twelve month window.
+    metadata : Mapping[str, object] | None, optional
+        Metadata.
+
+    Returns
+    -------
+    StressPeriodSelectionResult
+        Result of the operation.
+    """
     if not histories:
         raise ValueError("histories must be non-empty")
     if not isinstance(as_of_date, date):
@@ -547,7 +677,35 @@ def select_stress_periods_for_policy(
     desk_id: str | None = None,
     metadata: Mapping[str, object] | None = None,
 ) -> StressPeriodSelectionResult:
-    """Select stress periods using the run-level policy confidence level."""
+    """Select stress periods using the run-level policy confidence level.
+    Parameters
+    ----------
+    histories : Sequence[HistoricalStressSeries]
+        Histories.
+    policy : RegulatoryPolicy
+        Policy.
+    as_of_date : date
+        As of date.
+    severity_metric : StressSeverityMetric, optional
+        Severity metric.
+    tie_break : StressPeriodTieBreak, optional
+        Tie break.
+    calendar : BusinessCalendar | None, optional
+        Calendar.
+    use_exact_twelve_month_window : bool, optional
+        Use exact twelve month window.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+    metadata : Mapping[str, object] | None, optional
+        Metadata.
+
+    Returns
+    -------
+    StressPeriodSelectionResult
+        Result of the operation.
+    """
     if not isinstance(policy, RegulatoryPolicy):
         raise TypeError("policy must be a RegulatoryPolicy")
     policy.require_capital_runtime_supported()
@@ -582,7 +740,17 @@ def select_stress_periods_for_policy(
 def stress_period_specs_for_nmrf(
     selection_result: StressPeriodSelectionResult,
 ) -> dict[RiskClass, NMRFStressPeriodSpec]:
-    """Return NMRF valuation stress-period specs keyed by risk class."""
+    """Return NMRF valuation stress-period specs keyed by risk class.
+    Parameters
+    ----------
+    selection_result : StressPeriodSelectionResult
+        Selection result.
+
+    Returns
+    -------
+    dict[RiskClass, NMRFStressPeriodSpec]
+        Result of the operation.
+    """
     if not isinstance(selection_result, StressPeriodSelectionResult):
         raise TypeError("selection_result must be a StressPeriodSelectionResult")
     return {
@@ -598,7 +766,14 @@ def validate_selected_stress_periods(
     selection_result: StressPeriodSelectionResult,
     required_risk_classes: Sequence[RiskClass],
 ) -> None:
-    """Validate that all required risk classes have selected stress periods."""
+    """Validate that all required risk classes have selected stress periods.
+    Parameters
+    ----------
+    selection_result : StressPeriodSelectionResult
+        Selection result.
+    required_risk_classes : Sequence[RiskClass]
+        Required risk classes.
+    """
     if not isinstance(selection_result, StressPeriodSelectionResult):
         raise TypeError("selection_result must be a StressPeriodSelectionResult")
     required = tuple(required_risk_classes)

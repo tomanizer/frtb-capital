@@ -51,11 +51,21 @@ class IMCCRiskClassComponent:
 
     @property
     def lha_es(self) -> float:
-        """Risk-class LHA ES contribution to constrained IMCC."""
+        """Risk-class LHA ES contribution to constrained IMCC.
+        Returns
+        -------
+        float
+            Result of the operation.
+        """
         return self.lha_es_result.lha_es
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "risk_class": self.risk_class.value,
             "lha_es": self.lha_es,
@@ -77,26 +87,51 @@ class IMCCResult:
 
     @property
     def constrained_weight(self) -> float:
-        """Weight applied to the constrained component."""
+        """Weight applied to the constrained component.
+        Returns
+        -------
+        float
+            Result of the operation.
+        """
         return 1.0 - self.unconstrained_weight
 
     @property
     def unconstrained_lha_es(self) -> float:
-        """All-risk-class LHA ES used in the unconstrained component."""
+        """All-risk-class LHA ES used in the unconstrained component.
+        Returns
+        -------
+        float
+            Result of the operation.
+        """
         return self.unconstrained.lha_es
 
     def component_by_risk_class(
         self,
         risk_class: RiskClass,
     ) -> IMCCRiskClassComponent:
-        """Return the constrained component for one risk class."""
+        """Return the constrained component for one risk class.
+        Parameters
+        ----------
+        risk_class : RiskClass
+            Risk class.
+
+        Returns
+        -------
+        IMCCRiskClassComponent
+            Result of the operation.
+        """
         for component in self.constrained_components:
             if component.risk_class == risk_class:
                 return component
         raise KeyError(f"No IMCC constrained component for risk class {risk_class.value}")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "alpha": self.alpha,
             "estimator": self.estimator.value,
@@ -112,7 +147,12 @@ class IMCCResult:
         }
 
     def summary_lines(self) -> list[str]:
-        """Return a compact text summary suitable for logs or examples."""
+        """Return a compact text summary suitable for logs or examples.
+        Returns
+        -------
+        list[str]
+            Result of the operation.
+        """
         lines = [
             f"IMCC alpha={self.alpha:.4f} estimator={self.estimator.value}",
             f"unconstrained_weight={self.unconstrained_weight:.6f}",
@@ -139,7 +179,12 @@ class StressScalingResult:
     scaled_stress_es: float
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "stress_reduced_es": self.stress_reduced_es,
             "current_full_es": self.current_full_es,
@@ -151,7 +196,12 @@ class StressScalingResult:
         }
 
     def summary_lines(self) -> list[str]:
-        """Return a compact text summary suitable for logs or examples."""
+        """Return a compact text summary suitable for logs or examples.
+        Returns
+        -------
+        list[str]
+            Result of the operation.
+        """
         return [
             f"stress_reduced_es={self.stress_reduced_es:.6f}",
             f"current_full_es={self.current_full_es:.6f}",
@@ -176,8 +226,7 @@ def imcc_unconstrained(
     estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
-    """
-    Compute unconstrained IMCC as the LHA ES of all-risk-class aggregated vectors.
+    """Compute unconstrained IMCC as the LHA ES of all-risk-class aggregated vectors.
 
     Args:
         all_risk_class_vectors: Nested LH vectors with all risk classes aggregated
@@ -187,6 +236,21 @@ def imcc_unconstrained(
 
     Returns:
         Unconstrained IMCC scalar.
+    Parameters
+    ----------
+    all_risk_class_vectors : LHVectorInput
+        All risk class vectors.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+    lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
+        Lha weights.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     return imcc_unconstrained_breakdown(
         all_risk_class_vectors,
@@ -202,7 +266,23 @@ def imcc_unconstrained_breakdown(
     estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> LHAESResult:
-    """Compute the unconstrained all-risk-class LHA ES decomposition."""
+    """Compute the unconstrained all-risk-class LHA ES decomposition.
+    Parameters
+    ----------
+    all_risk_class_vectors : LHVectorInput
+        All risk class vectors.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+    lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
+        Lha weights.
+
+    Returns
+    -------
+    LHAESResult
+        Result of the operation.
+    """
     return lha_es_breakdown_from_vectors(
         all_risk_class_vectors,
         alpha=alpha,
@@ -217,8 +297,7 @@ def imcc_constrained(
     estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
-    """
-    Compute constrained IMCC as the sum of per-risk-class LHA ES values.
+    """Compute constrained IMCC as the sum of per-risk-class LHA ES values.
 
     No diversification credit across risk classes.
 
@@ -230,6 +309,21 @@ def imcc_constrained(
 
     Returns:
         Constrained IMCC scalar.
+    Parameters
+    ----------
+    per_risk_class_vectors : PerRiskClassLHVectorInput
+        Per risk class vectors.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+    lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
+        Lha weights.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     return sum(
         component.lha_es
@@ -248,7 +342,23 @@ def imcc_constrained_breakdown(
     estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> tuple[IMCCRiskClassComponent, ...]:
-    """Compute per-risk-class constrained LHA ES components."""
+    """Compute per-risk-class constrained LHA ES components.
+    Parameters
+    ----------
+    per_risk_class_vectors : PerRiskClassLHVectorInput
+        Per risk class vectors.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+    lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
+        Lha weights.
+
+    Returns
+    -------
+    tuple[IMCCRiskClassComponent, ...]
+        Result of the operation.
+    """
     components: list[IMCCRiskClassComponent] = []
     for risk_class in sorted(per_risk_class_vectors, key=lambda item: item.value):
         lh_vectors = per_risk_class_vectors[risk_class]
@@ -276,8 +386,7 @@ def imcc(
     w: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> float:
-    """
-    Compute final IMCC = w * unconstrained + (1 - w) * constrained.
+    """Compute final IMCC = w * unconstrained + (1 - w) * constrained.
 
     ``w`` must be supplied by the caller or sourced from ``RegulatoryPolicy``.
 
@@ -290,6 +399,25 @@ def imcc(
 
     Returns:
         IMCC scalar.
+    Parameters
+    ----------
+    all_risk_class_vectors : LHVectorInput
+        All risk class vectors.
+    per_risk_class_vectors : PerRiskClassLHVectorInput
+        Per risk class vectors.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+    w : float
+        W.
+    lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
+        Lha weights.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     return imcc_breakdown(
         all_risk_class_vectors,
@@ -309,12 +437,30 @@ def imcc_breakdown(
     w: float,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = DEFAULT_LHA_WEIGHTS,
 ) -> IMCCResult:
-    """
-    Compute final IMCC and return the constrained/unconstrained decomposition.
+    """Compute final IMCC and return the constrained/unconstrained decomposition.
 
     The scalar formula remains:
 
         IMCC = w * unconstrained_LHA_ES + (1 - w) * constrained_LHA_ES
+    Parameters
+    ----------
+    all_risk_class_vectors : LHVectorInput
+        All risk class vectors.
+    per_risk_class_vectors : PerRiskClassLHVectorInput
+        Per risk class vectors.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+    w : float
+        W.
+    lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
+        Lha weights.
+
+    Returns
+    -------
+    IMCCResult
+        Result of the operation.
     """
     if not math.isfinite(w) or not (0.0 <= w <= 1.0):
         raise ValueError(f"w must be finite and in [0, 1], got {w}")
@@ -352,7 +498,25 @@ def imcc_for_policy(
     run_id: str | None = None,
     desk_id: str | None = None,
 ) -> float:
-    """Compute IMCC using ES confidence level, LHA weights, and blend from policy."""
+    """Compute IMCC using ES confidence level, LHA weights, and blend from policy.
+    Parameters
+    ----------
+    all_risk_class_vectors : LHVectorInput
+        All risk class vectors.
+    per_risk_class_vectors : PerRiskClassLHVectorInput
+        Per risk class vectors.
+    policy : RegulatoryPolicy
+        Policy.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+
+    Returns
+    -------
+    float
+        Result of the operation.
+    """
     policy.require_capital_runtime_supported()
     result = imcc_breakdown(
         all_risk_class_vectors,
@@ -374,7 +538,25 @@ def imcc_breakdown_for_policy(
     run_id: str | None = None,
     desk_id: str | None = None,
 ) -> IMCCResult:
-    """Compute decomposed IMCC using ES confidence, LHA weights, and blend policy."""
+    """Compute decomposed IMCC using ES confidence, LHA weights, and blend policy.
+    Parameters
+    ----------
+    all_risk_class_vectors : LHVectorInput
+        All risk class vectors.
+    per_risk_class_vectors : PerRiskClassLHVectorInput
+        Per risk class vectors.
+    policy : RegulatoryPolicy
+        Policy.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+
+    Returns
+    -------
+    IMCCResult
+        Result of the operation.
+    """
     policy.require_capital_runtime_supported()
     result = imcc_breakdown(
         all_risk_class_vectors,
@@ -414,8 +596,7 @@ def scale_stress_es(
     current_full_es: float,
     current_reduced_es: float,
 ) -> float:
-    """
-    Scale stress-period ES from a reduced risk-factor set to the full set.
+    """Scale stress-period ES from a reduced risk-factor set to the full set.
 
     Per NPR 2.0 / Basel FRTB IMA indirect approach:
 
@@ -434,6 +615,19 @@ def scale_stress_es(
 
     Raises:
         ValueError: if current_reduced_es is zero (division undefined).
+    Parameters
+    ----------
+    stress_reduced_es : float
+        Stress reduced es.
+    current_full_es : float
+        Current full es.
+    current_reduced_es : float
+        Current reduced es.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     return scale_stress_es_breakdown(
         stress_reduced_es,
@@ -447,11 +641,23 @@ def scale_stress_es_breakdown(
     current_full_es: float,
     current_reduced_es: float,
 ) -> StressScalingResult:
-    """
-    Scale stress-period ES and return the full reduced-set scaling audit trail.
+    """Scale stress-period ES and return the full reduced-set scaling audit trail.
 
     The applied ratio is floored at 1.0 so the reduced-set scaling step never
     deflates stress-period ES.
+    Parameters
+    ----------
+    stress_reduced_es : float
+        Stress reduced es.
+    current_full_es : float
+        Current full es.
+    current_reduced_es : float
+        Current reduced es.
+
+    Returns
+    -------
+    StressScalingResult
+        Result of the operation.
     """
     _validate_non_negative_finite(stress_reduced_es, "stress_reduced_es")
     _validate_non_negative_finite(current_full_es, "current_full_es")
