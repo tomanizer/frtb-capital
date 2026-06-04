@@ -44,7 +44,16 @@ def calculate_fx_delta_risk_class_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Calculate cited FX delta risk-class capital for a supported profile."""
+    """Calculate cited FX delta risk-class capital for a supported profile.
+    Parameters
+    ----------
+    sensitivities, profile_id, reporting_currency, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     batch = build_fx_delta_batch_from_sensitivities(sensitivities)
     return calculate_fx_delta_risk_class_capital_from_batch(
@@ -64,7 +73,16 @@ def calculate_fx_delta_risk_class_capital_from_batch(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Calculate cited FX delta risk-class capital from a package-owned batch."""
+    """Calculate cited FX delta risk-class capital from a package-owned batch.
+    Parameters
+    ----------
+    batch, profile_id, reporting_currency, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     weighted = weight_fx_delta_sensitivity_batch(
         batch,
@@ -86,7 +104,16 @@ def aggregate_fx_delta_measure_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Aggregate weighted FX delta sensitivities through shared bucket primitives."""
+    """Aggregate weighted FX delta sensitivities through shared bucket primitives.
+    Parameters
+    ----------
+    weighted, profile_id, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     grouped = group_weighted_sensitivities_by_bucket(weighted)
 
@@ -127,7 +154,18 @@ def build_fx_delta_intra_bucket_correlation_matrix(
     *,
     profile_id: str,
 ) -> npt.NDArray[np.float64]:
-    """Return the cited FX delta intra-bucket correlation matrix."""
+    """Return the cited FX delta intra-bucket correlation matrix.
+    Parameters
+    ----------
+    ordered : Sequence[WeightedSensitivity]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    npt.NDArray[np.float64]
+    """
 
     size = len(ordered)
     if size == 0:
@@ -148,7 +186,18 @@ def build_fx_inter_bucket_correlation_map(
     *,
     profile_id: str,
 ) -> dict[tuple[str, str], float]:
-    """Return cited FX inter-bucket correlations for distinct bucket pairs."""
+    """Return cited FX inter-bucket correlations for distinct bucket pairs.
+    Parameters
+    ----------
+    bucket_ids : Sequence[str]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    dict[tuple[str, str], float]
+    """
 
     correlations: dict[tuple[str, str], float] = {}
     ordered_ids = tuple(sorted(bucket_ids))

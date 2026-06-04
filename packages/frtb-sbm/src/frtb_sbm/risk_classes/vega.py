@@ -120,7 +120,16 @@ def calculate_non_girr_vega_risk_class_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Calculate cited non-GIRR vega risk-class capital for a supported profile."""
+    """Calculate cited non-GIRR vega risk-class capital for a supported profile.
+    Parameters
+    ----------
+    sensitivities, profile_id, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     if not sensitivities:
         raise SbmInputError("sensitivities must not be empty", field="sensitivities")
@@ -155,7 +164,16 @@ def calculate_non_girr_vega_risk_class_capital_from_batch(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Calculate cited non-GIRR vega risk-class capital from a package-owned batch."""
+    """Calculate cited non-GIRR vega risk-class capital from a package-owned batch.
+    Parameters
+    ----------
+    batch, profile_id, pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     if batch.row_count == 0:
         raise SbmInputError("batch must not be empty", field="batch")
@@ -195,7 +213,17 @@ def aggregate_non_girr_vega_measure_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    """Aggregate weighted non-GIRR vega sensitivities through shared primitives."""
+    """Aggregate weighted non-GIRR vega sensitivities through shared primitives.
+    Parameters
+    ----------
+    weighted, profile_id, risk_class, risk_factor_by_id, qualifier_by_id, option_tenor_by_id,
+    pairwise_evidence_mode, pairwise_evidence_limit :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    RiskClassCapital
+    """
 
     if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
         return _aggregate_csr_sec_nonctp_vega_measure_capital(
@@ -261,7 +289,17 @@ def build_non_girr_vega_intra_bucket_correlation_matrix(
     qualifier_by_id: Mapping[str, str],
     option_tenor_by_id: Mapping[str, str],
 ) -> npt.NDArray[np.float64]:
-    """Return MAR21.94 non-GIRR vega intra-bucket correlations."""
+    """Return MAR21.94 non-GIRR vega intra-bucket correlations.
+    Parameters
+    ----------
+    ordered, profile_id, risk_class, bucket_id, risk_factor_by_id, qualifier_by_id,
+    option_tenor_by_id :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    npt.NDArray[np.float64]
+    """
 
     size = len(ordered)
     if size == 0:
@@ -422,7 +460,17 @@ def non_girr_vega_intra_bucket_correlation(
     option_tenor_a: str,
     option_tenor_b: str,
 ) -> tuple[float, tuple[str, ...]]:
-    """Return min(1, corresponding delta rho * option-tenor rho) per MAR21.94."""
+    """Return min(1, corresponding delta rho * option-tenor rho) per MAR21.94.
+    Parameters
+    ----------
+    profile_id, risk_class, bucket_id, risk_factor_a, risk_factor_b, qualifier_a, qualifier_b,
+    option_tenor_a, option_tenor_b :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
 
     delta_correlation, delta_citations = _corresponding_delta_correlation(
         profile_id,
@@ -450,7 +498,20 @@ def build_non_girr_vega_inter_bucket_correlation_map(
     *,
     profile_id: str,
 ) -> dict[tuple[str, str], float]:
-    """Return MAR21.95 vega inter-bucket correlations from delta gamma tables."""
+    """Return MAR21.95 vega inter-bucket correlations from delta gamma tables.
+    Parameters
+    ----------
+    risk_class : SbmRiskClass
+        See signature.
+    bucket_ids : Sequence[str]
+        See signature.
+    profile_id : str
+        See signature.
+
+    Returns
+    -------
+    dict[tuple[str, str], float]
+    """
 
     if risk_class is SbmRiskClass.FX:
         return build_fx_inter_bucket_correlation_map(bucket_ids, profile_id=profile_id)
