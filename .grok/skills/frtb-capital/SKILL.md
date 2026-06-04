@@ -41,3 +41,6 @@ For PR babysitting, use `/frtb-ci-babysit` or
 
 For documentation audits across all packages, use `/frtb-doc-audit` or
 `.grok/skills/frtb-doc-audit/SKILL.md`.
+
+For simplification / maintainability audits, use `/frtb-simplify-audit` or
+`.grok/skills/frtb-simplify-audit/SKILL.md`.

@@ -39,5 +39,12 @@ PUBLIC_API, ADR alignment), read and follow:
 - `.grok/skills/frtb-doc-audit/SKILL.md`
 - `.grok/skills/frtb-doc-audit/references/audit-checklist.md`
 
+For simplification / maintainability audits (complexity, wrappers, duplication),
+read and follow:
+
+- `.grok/skills/frtb-simplify-audit/SKILL.md`
+- `docs/quality/simplification/rubric.md`
+- `docs/quality/simplification/2026-06-04/`
+
 Use `make agent-new AGENT=copilot TASK=<task-name>` when the worktree guard fails.
 Documentation-only changes do not bump package versions.

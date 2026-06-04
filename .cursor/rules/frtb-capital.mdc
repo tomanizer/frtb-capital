@@ -60,4 +60,10 @@ For documentation audits across all packages, read and follow:
 - `.grok/skills/frtb-doc-audit/SKILL.md`
 - `.grok/skills/frtb-doc-audit/references/audit-checklist.md`
 
+For simplification / maintainability audits, read and follow:
+
+- `.grok/skills/frtb-simplify-audit/SKILL.md`
+- `docs/quality/simplification/rubric.md`
+- `docs/quality/simplification/2026-06-04/`
+
 Use `make agent-new AGENT=cursor TASK=<task-name>` when the worktree guard fails.
