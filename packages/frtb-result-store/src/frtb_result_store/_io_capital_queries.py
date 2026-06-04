@@ -27,7 +27,19 @@ from frtb_result_store.store_row_io import (
 
 class StoreCapitalQueryMixin:
     def child_nodes(self: Any, run_id: str, parent_node_id: str) -> tuple[CapitalNode, ...]:
-        """Return direct child nodes in graph order."""
+        """Return direct child nodes in graph order.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        parent_node_id : str
+            Parent node id.
+
+        Returns
+        -------
+        tuple[CapitalNode, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -55,7 +67,17 @@ class StoreCapitalQueryMixin:
         return tuple(_node_from_row(row) for row in rows)
 
     def edges(self: Any, run_id: str) -> tuple[CapitalEdge, ...]:
-        """Return graph edges for one run."""
+        """Return graph edges for one run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        tuple[CapitalEdge, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -73,7 +95,19 @@ class StoreCapitalQueryMixin:
         return tuple(_edge_from_row(row) for row in rows)
 
     def measures_for_node(self: Any, run_id: str, node_id: str) -> tuple[CapitalMeasure, ...]:
-        """Return scalar measures attached to one node."""
+        """Return scalar measures attached to one node.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        node_id : str
+            Node id.
+
+        Returns
+        -------
+        tuple[CapitalMeasure, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -96,7 +130,19 @@ class StoreCapitalQueryMixin:
         *,
         artifact_type: ArtifactType | str | None = None,
     ) -> tuple[ArtifactRef, ...]:
-        """Return large-artifact references for a run."""
+        """Return large-artifact references for a run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        artifact_type : ArtifactType | str | None, optional
+            Artifact type.
+
+        Returns
+        -------
+        tuple[ArtifactRef, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -132,7 +178,19 @@ class StoreCapitalQueryMixin:
         run_id: str,
         node_id: str,
     ) -> tuple[CapitalAttributionRecord, ...]:
-        """Return attribution rows attached to one capital node."""
+        """Return attribution rows attached to one capital node.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        node_id : str
+            Node id.
+
+        Returns
+        -------
+        tuple[CapitalAttributionRecord, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -158,7 +216,21 @@ class StoreCapitalQueryMixin:
         baseline_run_id: str | None = None,
         node_id: str | None = None,
     ) -> tuple[MovementResult, ...]:
-        """Return official movement result rows attached to one current run."""
+        """Return official movement result rows attached to one current run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        baseline_run_id : str | None, optional
+            Baseline run id.
+        node_id : str | None, optional
+            Node id.
+
+        Returns
+        -------
+        tuple[MovementResult, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -185,7 +257,19 @@ class StoreCapitalQueryMixin:
         return tuple(_movement_from_row(row) for row in rows)
 
     def lineage_for_result(self: Any, run_id: str, result_id: str) -> tuple[LineageRef, ...]:
-        """Return lineage references for a stored result object."""
+        """Return lineage references for a stored result object.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        result_id : str
+            Result id.
+
+        Returns
+        -------
+        tuple[LineageRef, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()

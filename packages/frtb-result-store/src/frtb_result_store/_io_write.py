@@ -62,6 +62,12 @@ class StoreWriteMixin:
 
         The operation is append-only by ``run_id``. Rewriting the same run is a
         hard error; corrections must be represented by a new calculation run.
+        Parameters
+        ----------
+        bundle : ResultBundle
+            Bundle.
+        artifact_requests : Sequence[ArtifactWriteRequest], optional
+            Artifact requests.
         """
 
         run_id = bundle.run.run_id
@@ -300,7 +306,12 @@ class StoreWriteMixin:
         return cast(str | None, self._path_uri(final_path))
 
     def append_status_event(self: Any, event: RunStatusEvent) -> None:
-        """Append a lifecycle status event for an existing committed run."""
+        """Append a lifecycle status event for an existing committed run.
+        Parameters
+        ----------
+        event : RunStatusEvent
+            Event.
+        """
 
         if not self.run_exists(event.run_id):
             raise ResultStoreWriteError(f"run does not exist: {event.run_id}")

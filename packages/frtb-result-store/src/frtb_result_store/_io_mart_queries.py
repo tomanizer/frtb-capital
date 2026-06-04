@@ -23,12 +23,32 @@ from frtb_result_store.store_schemas import _dict_rows
 
 class StoreMartQueryMixin:
     def capital_tree(self: Any, run_id: str) -> tuple[CapitalNode, ...]:
-        """Return all capital graph nodes for one run from the persisted mart."""
+        """Return all capital graph nodes for one run from the persisted mart.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        tuple[CapitalNode, ...]
+            Result of the operation.
+        """
 
         return tuple(row.to_node() for row in self.capital_tree_mart(run_id))
 
     def capital_summary(self: Any, run_id: str) -> tuple[CapitalSummaryRow, ...]:
-        """Return persisted dashboard summary rows for one run."""
+        """Return persisted dashboard summary rows for one run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        tuple[CapitalSummaryRow, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -47,7 +67,17 @@ class StoreMartQueryMixin:
         return tuple(capital_summary_from_row(row) for row in rows)
 
     def capital_tree_mart(self: Any, run_id: str) -> tuple[CapitalTreeMartRow, ...]:
-        """Return persisted flattened capital tree rows for one run."""
+        """Return persisted flattened capital tree rows for one run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        tuple[CapitalTreeMartRow, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -67,7 +97,17 @@ class StoreMartQueryMixin:
         return tuple(capital_tree_mart_from_row(row) for row in rows)
 
     def component_breakdown(self: Any, run_id: str) -> tuple[ComponentBreakdownRow, ...]:
-        """Return persisted component-level dashboard totals for one run."""
+        """Return persisted component-level dashboard totals for one run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+
+        Returns
+        -------
+        tuple[ComponentBreakdownRow, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -89,7 +129,19 @@ class StoreMartQueryMixin:
         *,
         node_id: str | None = None,
     ) -> tuple[MovementSummaryRow, ...]:
-        """Return persisted movement summary rows for one run, optionally by node."""
+        """Return persisted movement summary rows for one run, optionally by node.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        node_id : str | None, optional
+            Node id.
+
+        Returns
+        -------
+        tuple[MovementSummaryRow, ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -115,7 +167,19 @@ class StoreMartQueryMixin:
     def top_contributors(
         self: Any, run_id: str, *, limit: int = 10
     ) -> tuple[dict[str, object], ...]:
-        """Return top attribution contributors from the persisted mart."""
+        """Return top attribution contributors from the persisted mart.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        limit : int, optional
+            Limit.
+
+        Returns
+        -------
+        tuple[dict[str, object], ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -140,7 +204,19 @@ class StoreMartQueryMixin:
         *,
         node_id: str | None = None,
     ) -> tuple[dict[str, object], ...]:
-        """Return persisted residual attribution projection rows for one run."""
+        """Return persisted residual attribution projection rows for one run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        node_id : str | None, optional
+            Node id.
+
+        Returns
+        -------
+        tuple[dict[str, object], ...]
+            Result of the operation.
+        """
 
         return cast(
             tuple[dict[str, object], ...],
@@ -157,7 +233,19 @@ class StoreMartQueryMixin:
         *,
         node_id: str | None = None,
     ) -> tuple[dict[str, object], ...]:
-        """Return persisted unsupported attribution projection rows for one run."""
+        """Return persisted unsupported attribution projection rows for one run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        node_id : str | None, optional
+            Node id.
+
+        Returns
+        -------
+        tuple[dict[str, object], ...]
+            Result of the operation.
+        """
 
         return cast(
             tuple[dict[str, object], ...],
@@ -196,7 +284,19 @@ class StoreMartQueryMixin:
         return _dict_rows(columns, rows)
 
     def mart_rows(self: Any, run_id: str, mart_name: str) -> tuple[dict[str, object], ...]:
-        """Return rows from one persisted mart for a committed run."""
+        """Return rows from one persisted mart for a committed run.
+        Parameters
+        ----------
+        run_id : str
+            Run id.
+        mart_name : str
+            Mart name.
+
+        Returns
+        -------
+        tuple[dict[str, object], ...]
+            Result of the operation.
+        """
 
         if not self.run_exists(run_id):
             return ()
@@ -214,7 +314,17 @@ class StoreMartQueryMixin:
         return _dict_rows(columns, rows)
 
     def regime_comparison(self: Any, run_group_id: str) -> tuple[dict[str, object], ...]:
-        """Return persisted comparison rows for one run group."""
+        """Return persisted comparison rows for one run group.
+        Parameters
+        ----------
+        run_group_id : str
+            Run group id.
+
+        Returns
+        -------
+        tuple[dict[str, object], ...]
+            Result of the operation.
+        """
 
         columns = _mart_columns("regime_comparison")
         if not self._has_mart_files("regime_comparison"):

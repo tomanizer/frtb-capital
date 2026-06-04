@@ -62,7 +62,19 @@ def create_result_store_app(
     *,
     title: str = "FRTB Result Store API",
 ) -> Any:
-    """Return a read-only FastAPI app over committed result-store data."""
+    """Return a read-only FastAPI app over committed result-store data.
+    Parameters
+    ----------
+    store : DuckDbParquetResultStore | ResultStoreConfig | Path | str
+        Store.
+    title : str, optional
+        Title.
+
+    Returns
+    -------
+    Any
+        Result of the operation.
+    """
 
     try:
         from fastapi import FastAPI, HTTPException, Query
