@@ -154,6 +154,65 @@ def test_drc_crif_adapter_returns_deterministic_rejections() -> None:
     ]
 
 
+def test_drc_crif_adapter_rejects_ambiguous_source_columns_without_raising() -> None:
+    result = adapt_drc_crif_rows(
+        [
+            {
+                "TradeID": "ambiguous-row-id",
+                "RowID": "vendor-row-a",
+                "source_row_id": "vendor-row-b",
+                "Desk": "credit-desk",
+                "Entity": "bank-na",
+                "RiskType": "DRC_NONSEC",
+                "Product": "Bond",
+                "Direction": "LONG",
+                "Qualifier": "issuer-alpha",
+                "Bucket": "Corporate",
+                "Seniority": "Senior",
+                "Rating": "IG",
+                "Notional": "100.0",
+                "Maturity": "1.5",
+                "Currency": "USD",
+                "RegulatoryCitations": "US_NPR_210_B_1_IV",
+            },
+            {
+                "TradeID": "ambiguous-direction-source",
+                "RowID": "vendor-row-ambiguous-direction",
+                "Desk": "credit-desk",
+                "Entity": "bank-na",
+                "RiskType": "DRC_NONSEC",
+                "Product": "Bond",
+                "Direction": "LONG",
+                "LongShort": "SHORT",
+                "Qualifier": "issuer-alpha",
+                "Bucket": "Corporate",
+                "Seniority": "Senior",
+                "Rating": "IG",
+                "Notional": "100.0",
+                "Maturity": "1.5",
+                "Currency": "USD",
+                "RegulatoryCitations": "US_NPR_210_B_1_IV",
+            },
+        ],
+    )
+
+    assert result.positions == ()
+    assert [row.source_row_id for row in result.rejected_rows] == [
+        "row-1",
+        "vendor-row-ambiguous-direction",
+    ]
+    assert [row.reason_code for row in result.rejected_rows] == [
+        "drc_crif.ambiguous_source_column",
+        "drc_crif.ambiguous_source_column",
+    ]
+    assert set(result.rejected_rows[0].source_columns) == {"RowID", "source_row_id"}
+    assert set(result.rejected_rows[1].source_columns) == {"Direction", "LongShort"}
+    assert result.rejected_rows[0].source_values["source_row_id"] == {
+        "RowID": "vendor-row-a",
+        "source_row_id": "vendor-row-b",
+    }
+
+
 def test_drc_crif_adapter_builds_class_specific_sec_and_ctp_handoffs() -> None:
     result = adapt_drc_crif_rows(
         [

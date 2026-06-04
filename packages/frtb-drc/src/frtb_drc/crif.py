@@ -73,8 +73,9 @@ def adapt_drc_crif_rows(
         if not isinstance(row, Mapping):
             raise DrcInputError(f"CRIF row at index {index} must be a mapping")
         normalized = _NormalizedRow(row)
-        source_row_id = _text_or_none(normalized.value("source_row_id")) or f"row-{index + 1}"
+        source_row_id = f"row-{index + 1}"
         try:
+            source_row_id = _text_or_none(normalized.value("source_row_id")) or source_row_id
             position = _accepted_position_from_row(
                 normalized,
                 source_system=source_system,
