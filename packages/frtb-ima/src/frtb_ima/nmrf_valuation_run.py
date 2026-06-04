@@ -87,11 +87,21 @@ class NMRFValuationRunRequest:
 
     @property
     def spec_count(self) -> int:
-        """Number of NMRF valuation specifications in this request."""
+        """Number of NMRF valuation specifications in this request.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.specs)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "run_id": self.run_id,
             "desk_id": self.desk_id,
@@ -144,11 +154,21 @@ class NMRFArtifactReconciliationItem:
 
     @property
     def passed(self) -> bool:
-        """Return True when all reconciliation checks passed."""
+        """Return True when all reconciliation checks passed.
+        Returns
+        -------
+        bool
+            Result of the operation.
+        """
         return not self.errors
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable audit summary without expanding loss vectors."""
+        """Return a serialisable audit summary without expanding loss vectors.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "risk_factor_name": self.risk_factor_name,
             "required_method": self.required_method.value,
@@ -206,7 +226,12 @@ class NMRFArtifactReconciliationResult:
 
     @property
     def passed(self) -> bool:
-        """Return True when all specs reconciled and no extra artifacts exist."""
+        """Return True when all specs reconciled and no extra artifacts exist.
+        Returns
+        -------
+        bool
+            Result of the operation.
+        """
         return (
             all(item.passed for item in self.items)
             and not self.unexpected_artifacts
@@ -215,55 +240,105 @@ class NMRFArtifactReconciliationResult:
 
     @property
     def spec_count(self) -> int:
-        """Number of requested valuation specs."""
+        """Number of requested valuation specs.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.items)
 
     @property
     def artifact_count(self) -> int:
-        """Number of returned artifacts in the reconciled valuation batch."""
+        """Number of returned artifacts in the reconciled valuation batch.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         if self.returned_artifact_count is not None:
             return self.returned_artifact_count
         return sum(item.artifact_count for item in self.items) + self.unexpected_count
 
     @property
     def missing_count(self) -> int:
-        """Number of requested specs with no returned artifact."""
+        """Number of requested specs with no returned artifact.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return sum(1 for item in self.items if item.artifact_count == 0)
 
     @property
     def unexpected_count(self) -> int:
-        """Number of returned artifacts for risk factors not present in the request."""
+        """Number of returned artifacts for risk factors not present in the request.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         if self.unexpected_artifact_count is not None:
             return self.unexpected_artifact_count
         return len(self.unexpected_artifacts)
 
     @property
     def unexpected_risk_factor_count(self) -> int:
-        """Number of unexpected risk-factor names in the returned artifacts."""
+        """Number of unexpected risk-factor names in the returned artifacts.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.unexpected_artifacts)
 
     @property
     def duplicate_count(self) -> int:
-        """Number of requested risk factors with duplicate returned artifacts."""
+        """Number of requested risk factors with duplicate returned artifacts.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.duplicate_artifacts)
 
     @property
     def failed_item_count(self) -> int:
-        """Number of requested specs that failed one or more checks."""
+        """Number of requested specs that failed one or more checks.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return sum(1 for item in self.items if not item.passed)
 
     @property
     def required_methods(self) -> dict[str, NMRFStressMethod]:
-        """Return required methods keyed by risk factor for capital validation."""
+        """Return required methods keyed by risk factor for capital validation.
+        Returns
+        -------
+        dict[str, NMRFStressMethod]
+            Result of the operation.
+        """
         return {item.risk_factor_name: item.required_method for item in self.items}
 
     @property
     def required_liquidity_horizons(self) -> dict[str, LiquidityHorizon]:
-        """Return required liquidity horizons keyed by risk factor."""
+        """Return required liquidity horizons keyed by risk factor.
+        Returns
+        -------
+        dict[str, LiquidityHorizon]
+            Result of the operation.
+        """
         return {item.risk_factor_name: item.required_liquidity_horizon for item in self.items}
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "passed": self.passed,
             "spec_count": self.spec_count,
@@ -309,11 +384,21 @@ class NMRFValuationRunResult:
 
     @property
     def passed(self) -> bool:
-        """Return True when the valuation run can be consumed by capital."""
+        """Return True when the valuation run can be consumed by capital.
+        Returns
+        -------
+        bool
+            Result of the operation.
+        """
         return self.reconciliation.passed
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "request": self.request.as_dict(),
             "artifact_count": len(self.artifacts),
@@ -336,7 +421,31 @@ def build_nmrf_valuation_run_request(
     notes: str = "",
     metadata: Mapping[str, object] | None = None,
 ) -> NMRFValuationRunRequest:
-    """Build a run-level request for upstream NMRF valuation artifacts."""
+    """Build a run-level request for upstream NMRF valuation artifacts.
+    Parameters
+    ----------
+    specs : Sequence[NMRFValuationSpec]
+        Specs.
+    policy : RegulatoryPolicy
+        Policy.
+    run_id : str
+        Run id.
+    desk_id : str
+        Desk id.
+    as_of_date : date | None, optional
+        As of date.
+    source : str, optional
+        Source.
+    notes : str, optional
+        Notes.
+    metadata : Mapping[str, object] | None, optional
+        Metadata.
+
+    Returns
+    -------
+    NMRFValuationRunRequest
+        Result of the operation.
+    """
     return NMRFValuationRunRequest(
         run_id=run_id,
         desk_id=desk_id,
@@ -358,11 +467,29 @@ def reconcile_nmrf_valuation_artifacts(
     desk_id: str | None = None,
     regime: str | None = None,
 ) -> NMRFArtifactReconciliationResult:
-    """
-    Reconcile upstream NMRF stress artifacts to valuation specifications.
+    """Reconcile upstream NMRF stress artifacts to valuation specifications.
 
     This function validates the handoff contract only. It does not call a
     valuation engine and does not compute SES capital.
+    Parameters
+    ----------
+    specs : Sequence[NMRFValuationSpec]
+        Specs.
+    artifacts : Sequence[NMRFStressArtifact]
+        Artifacts.
+    allow_prototype_artifacts : bool, optional
+        Allow prototype artifacts.
+    run_id : str | None, optional
+        Run id.
+    desk_id : str | None, optional
+        Desk id.
+    regime : str | None, optional
+        Regime.
+
+    Returns
+    -------
+    NMRFArtifactReconciliationResult
+        Result of the operation.
     """
     specs_tuple = tuple(specs)
     if not specs_tuple:
@@ -441,7 +568,25 @@ def complete_nmrf_valuation_run(
     elapsed_seconds: float | None = None,
     notes: str = "",
 ) -> NMRFValuationRunResult:
-    """Build a completed NMRF valuation run with reconciliation detail."""
+    """Build a completed NMRF valuation run with reconciliation detail.
+    Parameters
+    ----------
+    request : NMRFValuationRunRequest
+        Request.
+    artifacts : Sequence[NMRFStressArtifact]
+        Artifacts.
+    allow_prototype_artifacts : bool, optional
+        Allow prototype artifacts.
+    elapsed_seconds : float | None, optional
+        Elapsed seconds.
+    notes : str, optional
+        Notes.
+
+    Returns
+    -------
+    NMRFValuationRunResult
+        Result of the operation.
+    """
     reconciliation = reconcile_nmrf_valuation_artifacts(
         request.specs,
         artifacts,
@@ -462,7 +607,12 @@ def complete_nmrf_valuation_run(
 def require_nmrf_valuation_reconciliation_passed(
     reconciliation: NMRFArtifactReconciliationResult,
 ) -> None:
-    """Raise a compact error if the NMRF artifact reconciliation failed."""
+    """Raise a compact error if the NMRF artifact reconciliation failed.
+    Parameters
+    ----------
+    reconciliation : NMRFArtifactReconciliationResult
+        Reconciliation.
+    """
     if reconciliation.passed:
         return
     raise NMRFValuationRunError(
@@ -481,7 +631,23 @@ def calculate_nmrf_capital_from_valuation_run(
     *,
     allow_linear_approximation: bool = False,
 ) -> NMRFCapitalResult:
-    """Validate a reconciled valuation run, then delegate to NMRF capital."""
+    """Validate a reconciled valuation run, then delegate to NMRF capital.
+    Parameters
+    ----------
+    classifications : Mapping[str, ModellabilityStatus]
+        Classifications.
+    valuation_run : NMRFValuationRunResult
+        Valuation run.
+    policy : RegulatoryPolicy
+        Policy.
+    allow_linear_approximation : bool, optional
+        Allow linear approximation.
+
+    Returns
+    -------
+    NMRFCapitalResult
+        Result of the operation.
+    """
     if valuation_run.request.regime != policy.regime.value:
         raise NMRFValuationRunError(
             "NMRF valuation run regime does not match policy: "

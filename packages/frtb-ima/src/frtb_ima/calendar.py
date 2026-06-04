@@ -78,16 +78,31 @@ class ObservationWindow:
 
     @property
     def business_day_count(self) -> int:
-        """Number of supplied business dates in the window."""
+        """Number of supplied business dates in the window.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.business_dates)
 
     @property
     def official_holiday_count(self) -> int:
-        """Number of supplied official holidays in the window."""
+        """Number of supplied official holidays in the window.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.official_holidays)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for audit/report outputs."""
+        """Return a serialisable dictionary for audit/report outputs.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "start_date": self.start_date.isoformat(),
             "end_date": self.end_date.isoformat(),
@@ -145,11 +160,27 @@ class BusinessCalendar:
         shift_reason: str = "",
         require_complete_weekdays: bool = True,
     ) -> ObservationWindow:
-        """
-        Return an exact 12-month business-calendar window.
+        """Return an exact 12-month business-calendar window.
 
         The unshifted window is ``(as_of_date - 12 months, as_of_date]``. A
         shifted period must supply both dates and a non-empty policy reason.
+        Parameters
+        ----------
+        as_of_date : date
+            As of date.
+        shifted_start_date : date | None, optional
+            Shifted start date.
+        shifted_end_date : date | None, optional
+            Shifted end date.
+        shift_reason : str, optional
+            Shift reason.
+        require_complete_weekdays : bool, optional
+            Require complete weekdays.
+
+        Returns
+        -------
+        ObservationWindow
+            Result of the operation.
         """
         if not isinstance(as_of_date, date):
             raise TypeError("as_of_date must be a datetime.date")
@@ -180,7 +211,21 @@ class BusinessCalendar:
         as_of_date: date,
         require_complete_weekdays: bool = True,
     ) -> ObservationWindow:
-        """Return the most recent ``count`` supplied business dates up to ``as_of_date``."""
+        """Return the most recent ``count`` supplied business dates up to ``as_of_date``.
+        Parameters
+        ----------
+        count : int
+            Count.
+        as_of_date : date
+            As of date.
+        require_complete_weekdays : bool, optional
+            Require complete weekdays.
+
+        Returns
+        -------
+        ObservationWindow
+            Result of the operation.
+        """
         if count <= 0:
             raise ValueError(f"count must be positive, got {count}")
         if not isinstance(as_of_date, date):
@@ -205,7 +250,25 @@ class BusinessCalendar:
         shift_reason: str = "",
         require_complete_weekdays: bool = True,
     ) -> ObservationWindow:
-        """Return supplied business dates and official holidays for a date range."""
+        """Return supplied business dates and official holidays for a date range.
+        Parameters
+        ----------
+        start_date : date
+            Start date.
+        end_date : date
+            End date.
+        basis : ObservationWindowBasis
+            Basis.
+        shift_reason : str, optional
+            Shift reason.
+        require_complete_weekdays : bool, optional
+            Require complete weekdays.
+
+        Returns
+        -------
+        ObservationWindow
+            Result of the operation.
+        """
         if not isinstance(start_date, date) or not isinstance(end_date, date):
             raise TypeError("window dates must be datetime.date values")
         if start_date > end_date:
@@ -235,13 +298,23 @@ class BusinessCalendar:
         )
 
     def missing_weekdays(self, start_date: date, end_date: date) -> tuple[date, ...]:
-        """
-        Return weekday dates absent from business dates and official holidays.
+        """Return weekday dates absent from business dates and official holidays.
 
         This dependency-free completeness check treats configured weekend days
         and supplied official holidays as non-business days. Callers with more
         complex exchange calendars should supply those closures as official
         holidays or disable completeness enforcement.
+        Parameters
+        ----------
+        start_date : date
+            Start date.
+        end_date : date
+            End date.
+
+        Returns
+        -------
+        tuple[date, ...]
+            Result of the operation.
         """
         business = set(self.business_dates)
         holidays = set(self.official_holidays)

@@ -69,7 +69,12 @@ class NMRFStressPeriodSpec:
             raise ValueError("start_date cannot be after end_date")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "stress_period_id": self.stress_period_id,
             "calibration_source": self.calibration_source,
@@ -103,7 +108,12 @@ class NMRFDirectShockSpec:
             raise ValueError("confidence_level must be in (0, 1)")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "shock_size": self.shock_size,
             "shock_unit": self.shock_unit,
@@ -142,11 +152,21 @@ class NMRFStepwiseShockGrid:
 
     @property
     def shock_count(self) -> int:
-        """Number of shock points in the valuation grid/path."""
+        """Number of shock points in the valuation grid/path.
+        Returns
+        -------
+        int
+            Result of the operation.
+        """
         return len(self.shock_points)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "shock_points": list(self.shock_points),
             "shock_unit": self.shock_unit,
@@ -180,7 +200,12 @@ class NMRFFullRevaluationSpec:
         object.__setattr__(self, "market_state_ids", market_state_ids)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable audit summary without expanding large state lists."""
+        """Return a serialisable audit summary without expanding large state lists.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "scenario_set_id": self.scenario_set_id,
             "market_state_count": len(self.market_state_ids),
@@ -215,7 +240,12 @@ class NMRFMaxLossFallbackSpec:
         object.__setattr__(self, "candidate_scenario_ids", candidate_scenario_ids)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "candidate_scenario_ids": list(self.candidate_scenario_ids),
             "candidate_scenario_count": len(self.candidate_scenario_ids),
@@ -289,7 +319,12 @@ class NMRFValuationSpec:
             )
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "risk_factor_name": self.risk_factor_name,
             "modellability_status": self.modellability_status.value,
@@ -352,7 +387,35 @@ def build_nmrf_valuation_spec(
     source: str = "",
     notes: str = "",
 ) -> NMRFValuationSpec:
-    """Build one upstream valuation spec from a method-selection instruction."""
+    """Build one upstream valuation spec from a method-selection instruction.
+    Parameters
+    ----------
+    instruction : NMRFValuationInstruction
+        Instruction.
+    risk_class : RiskClass
+        Risk class.
+    stress_period : NMRFStressPeriodSpec
+        Stress period.
+    policy : RegulatoryPolicy
+        Policy.
+    direct_shock : NMRFDirectShockSpec | None, optional
+        Direct shock.
+    stepwise_grid : NMRFStepwiseShockGrid | None, optional
+        Stepwise grid.
+    full_revaluation : NMRFFullRevaluationSpec | None, optional
+        Full revaluation.
+    max_loss_fallback : NMRFMaxLossFallbackSpec | None, optional
+        Max loss fallback.
+    source : str, optional
+        Source.
+    notes : str, optional
+        Notes.
+
+    Returns
+    -------
+    NMRFValuationSpec
+        Result of the operation.
+    """
     if not isinstance(instruction, NMRFValuationInstruction):
         raise TypeError("instruction must be an NMRFValuationInstruction")
 
@@ -385,7 +448,35 @@ def build_nmrf_valuation_specs(
     max_loss_fallbacks: Mapping[str, NMRFMaxLossFallbackSpec] | None = None,
     source: str = "nmrf valuation specification builder",
 ) -> tuple[NMRFValuationSpec, ...]:
-    """Build deterministic valuation specs for a sequence of NMRF instructions."""
+    """Build deterministic valuation specs for a sequence of NMRF instructions.
+    Parameters
+    ----------
+    instructions : Sequence[NMRFValuationInstruction]
+        Instructions.
+    risk_classes : Mapping[str, RiskClass]
+        Risk classes.
+    stress_periods_by_risk_class : Mapping[RiskClass, NMRFStressPeriodSpec]
+        Stress periods by risk class.
+    policy : RegulatoryPolicy
+        Policy.
+    stress_periods_by_risk_factor : Mapping[str, NMRFStressPeriodSpec] | None, optional
+        Stress periods by risk factor.
+    direct_shocks : Mapping[str, NMRFDirectShockSpec] | None, optional
+        Direct shocks.
+    stepwise_grids : Mapping[str, NMRFStepwiseShockGrid] | None, optional
+        Stepwise grids.
+    full_revaluations : Mapping[str, NMRFFullRevaluationSpec] | None, optional
+        Full revaluations.
+    max_loss_fallbacks : Mapping[str, NMRFMaxLossFallbackSpec] | None, optional
+        Max loss fallbacks.
+    source : str, optional
+        Source.
+
+    Returns
+    -------
+    tuple[NMRFValuationSpec, ...]
+        Result of the operation.
+    """
     if not instructions:
         raise ValueError("instructions must be non-empty")
 
@@ -445,7 +536,17 @@ def build_nmrf_valuation_specs(
 def required_methods_from_valuation_specs(
     specs: Sequence[NMRFValuationSpec],
 ) -> dict[str, NMRFStressMethod]:
-    """Return the required method mapping expected by NMRF capital validation."""
+    """Return the required method mapping expected by NMRF capital validation.
+    Parameters
+    ----------
+    specs : Sequence[NMRFValuationSpec]
+        Specs.
+
+    Returns
+    -------
+    dict[str, NMRFStressMethod]
+        Result of the operation.
+    """
     if not specs:
         raise ValueError("specs must be non-empty")
     return {spec.risk_factor_name: spec.method for spec in specs}
@@ -454,7 +555,17 @@ def required_methods_from_valuation_specs(
 def required_liquidity_horizons_from_valuation_specs(
     specs: Sequence[NMRFValuationSpec],
 ) -> dict[str, LiquidityHorizon]:
-    """Return the required LH mapping expected by NMRF capital validation."""
+    """Return the required LH mapping expected by NMRF capital validation.
+    Parameters
+    ----------
+    specs : Sequence[NMRFValuationSpec]
+        Specs.
+
+    Returns
+    -------
+    dict[str, LiquidityHorizon]
+        Result of the operation.
+    """
     if not specs:
         raise ValueError("specs must be non-empty")
     return {spec.risk_factor_name: spec.required_liquidity_horizon for spec in specs}

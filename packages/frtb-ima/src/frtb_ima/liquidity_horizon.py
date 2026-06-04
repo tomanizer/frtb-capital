@@ -64,7 +64,12 @@ class LHAESComponent:
     present: bool
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "liquidity_horizon": self.liquidity_horizon.name,
             "weight": self.weight,
@@ -87,14 +92,29 @@ class LHAESResult:
     metadata_aligned: bool | None = None
 
     def component_by_horizon(self, lh: LiquidityHorizon) -> LHAESComponent:
-        """Return the decomposition component for one liquidity horizon."""
+        """Return the decomposition component for one liquidity horizon.
+        Parameters
+        ----------
+        lh : LiquidityHorizon
+            Lh.
+
+        Returns
+        -------
+        LHAESComponent
+            Result of the operation.
+        """
         for component in self.components:
             if component.liquidity_horizon == lh:
                 return component
         raise KeyError(f"No component for liquidity horizon {lh.name}")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and notebooks."""
+        """Return a serialisable dictionary for reporting and notebooks.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "alpha": self.alpha,
             "estimator": self.estimator.value,
@@ -106,7 +126,12 @@ class LHAESResult:
         }
 
     def summary_lines(self) -> list[str]:
-        """Return a compact text summary suitable for logs or examples."""
+        """Return a compact text summary suitable for logs or examples.
+        Returns
+        -------
+        list[str]
+            Result of the operation.
+        """
         lines = [
             f"LHA ES alpha={self.alpha:.4f} estimator={self.estimator.value}",
             f"sum_weighted_squares={self.sum_weighted_squares:.6f}",
@@ -143,11 +168,25 @@ def lha_es_breakdown_from_vectors(
     estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> LHAESResult:
-    """
-    Compute LHA ES and return an audit-friendly decomposition.
+    """Compute LHA ES and return an audit-friendly decomposition.
 
     This is the canonical vector-based reporting path. It validates nested
     liquidity-horizon vector structure before calculation.
+    Parameters
+    ----------
+    lh_vectors : Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]]
+        Lh vectors.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+    lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
+        Lha weights.
+
+    Returns
+    -------
+    LHAESResult
+        Result of the operation.
     """
     validation = validate_nested_lh_vectors(lh_vectors)
 
@@ -199,11 +238,25 @@ def lha_es_breakdown_from_scalars(
     estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> LHAESResult:
-    """
-    Compute LHA ES from pre-computed ES scalars and return decomposition.
+    """Compute LHA ES from pre-computed ES scalars and return decomposition.
 
     This path is useful when ES has already been calculated upstream, but it
     does not validate scenario alignment because no vectors are supplied.
+    Parameters
+    ----------
+    es_by_lh : Mapping[LiquidityHorizon, float]
+        Es by lh.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+    lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
+        Lha weights.
+
+    Returns
+    -------
+    LHAESResult
+        Result of the operation.
     """
     if LiquidityHorizon.LH10 not in es_by_lh:
         raise KeyError("es_by_lh must contain LH10 (the full risk-factor ES)")
@@ -240,8 +293,7 @@ def lha_es_from_vectors(
     estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> float:
-    """
-    Compute liquidity-horizon-adjusted ES from nested scenario vectors.
+    """Compute liquidity-horizon-adjusted ES from nested scenario vectors.
 
     Args:
         lh_vectors: Mapping from LiquidityHorizon cutoff to the P&L vector
@@ -255,6 +307,21 @@ def lha_es_from_vectors(
     Raises:
         KeyError:   if LH10 vector is missing.
         ValueError: if any vector is empty or structurally invalid.
+    Parameters
+    ----------
+    lh_vectors : Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]]
+        Lh vectors.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+    lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
+        Lha weights.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     if LiquidityHorizon.LH10 not in lh_vectors:
         raise KeyError("lh_vectors must contain LH10 (the full risk-factor vector)")
@@ -272,11 +339,25 @@ def lha_es_from_scalars(
     estimator: ESEstimator,
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> float:
-    """
-    Compute LHA ES directly from pre-computed ES scalars per LH subset.
+    """Compute LHA ES directly from pre-computed ES scalars per LH subset.
 
     Convenience wrapper for callers that have already computed ES per subset.
     Same formula as lha_es_from_vectors.
+    Parameters
+    ----------
+    es_by_lh : Mapping[LiquidityHorizon, float]
+        Es by lh.
+    alpha : float
+        Alpha.
+    estimator : ESEstimator
+        Estimator.
+    lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
+        Lha weights.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     return lha_es_breakdown_from_scalars(
         es_by_lh,
@@ -296,13 +377,25 @@ def lha_es_scalar_approximation(
     weighted_avg_lh_days: float,
     base_horizon_days: float = 10.0,
 ) -> float:
-    """
-    Scalar approximation: ES_full * sqrt(weighted_avg_LH / base_horizon).
+    """Scalar approximation: ES_full * sqrt(weighted_avg_LH / base_horizon).
 
     WARNING: This is a simplified scalar approximation.
     It is provided only for comparison / educational purposes because some
     legacy model documentation describes LHA as scalar horizon scaling.
     Do NOT use this as the primary LHA calculation.
     The nested-vector method (lha_es_from_vectors) is the required approach.
+    Parameters
+    ----------
+    es_full : float
+        Es full.
+    weighted_avg_lh_days : float
+        Weighted avg lh days.
+    base_horizon_days : float, optional
+        Base horizon days.
+
+    Returns
+    -------
+    float
+        Result of the operation.
     """
     return es_full * math.sqrt(weighted_avg_lh_days / base_horizon_days)

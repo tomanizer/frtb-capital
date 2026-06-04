@@ -64,11 +64,21 @@ class NMRFMethodDiagnostic:
 
     @property
     def passed(self) -> bool:
-        """Return True when the diagnostic explicitly passed."""
+        """Return True when the diagnostic explicitly passed.
+        Returns
+        -------
+        bool
+            Result of the operation.
+        """
         return self.outcome == NMRFDiagnosticOutcome.PASS
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "name": self.name,
             "outcome": self.outcome.value,
@@ -126,7 +136,12 @@ class NMRFMethodEvidence:
 
     @property
     def direct_robust(self) -> bool:
-        """Return True when direct valuation evidence supports using direct shocks."""
+        """Return True when direct valuation evidence supports using direct shocks.
+        Returns
+        -------
+        bool
+            Result of the operation.
+        """
         return (
             self.direct_method_available
             and self.direct_shock_well_defined
@@ -138,13 +153,23 @@ class NMRFMethodEvidence:
 
     @property
     def all_diagnostics(self) -> tuple[NMRFMethodDiagnostic, ...]:
-        """Return direct robustness plus any supplemental diagnostics."""
+        """Return direct robustness plus any supplemental diagnostics.
+        Returns
+        -------
+        tuple[NMRFMethodDiagnostic, ...]
+            Result of the operation.
+        """
         if self.direct_robustness is None:
             return self.diagnostics
         return (self.direct_robustness, *self.diagnostics)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "risk_factor_name": self.risk_factor_name,
             "nonlinear": self.nonlinear,
@@ -211,7 +236,12 @@ class NMRFMethodSelectionInput:
 
     @property
     def is_nmrf(self) -> bool:
-        """Return True when RFET classified this factor as Type A or Type B."""
+        """Return True when RFET classified this factor as Type A or Type B.
+        Returns
+        -------
+        bool
+            Result of the operation.
+        """
         return self.modellability_status in {
             ModellabilityStatus.TYPE_A_NMRF,
             ModellabilityStatus.TYPE_B_NMRF,
@@ -238,13 +268,31 @@ def assess_direct_loss_robustness(
     source: str = "",
     notes: str = "",
 ) -> NMRFMethodDiagnostic:
-    """
-    Compare direct-shock losses with benchmark revaluation losses.
+    """Compare direct-shock losses with benchmark revaluation losses.
 
     The calculation is vectorized across scenario/checkpoint losses. A direct
     method passes only when the worst relative deviation from the benchmark is
     within the supplied threshold. ``absolute_tolerance`` prevents zero-loss
     checkpoints from creating unstable relative-error denominators.
+    Parameters
+    ----------
+    direct_losses : Sequence[float] | npt.NDArray[np.float64]
+        Direct losses.
+    benchmark_losses : Sequence[float] | npt.NDArray[np.float64]
+        Benchmark losses.
+    max_relative_error_threshold : float, optional
+        Max relative error threshold.
+    absolute_tolerance : float, optional
+        Absolute tolerance.
+    source : str, optional
+        Source.
+    notes : str, optional
+        Notes.
+
+    Returns
+    -------
+    NMRFMethodDiagnostic
+        Result of the operation.
     """
     if max_relative_error_threshold < 0.0 or not math.isfinite(max_relative_error_threshold):
         raise ValueError("max_relative_error_threshold must be finite and non-negative")
@@ -285,7 +333,21 @@ def selection_input_from_method_evidence(
     modellability_status: ModellabilityStatus,
     liquidity_horizon: LiquidityHorizon,
 ) -> NMRFMethodSelectionInput:
-    """Convert auditable method evidence into the selector's stable input API."""
+    """Convert auditable method evidence into the selector's stable input API.
+    Parameters
+    ----------
+    evidence : NMRFMethodEvidence
+        Evidence.
+    modellability_status : ModellabilityStatus
+        Modellability status.
+    liquidity_horizon : LiquidityHorizon
+        Liquidity horizon.
+
+    Returns
+    -------
+    NMRFMethodSelectionInput
+        Result of the operation.
+    """
     if not isinstance(evidence, NMRFMethodEvidence):
         raise TypeError("evidence must be an NMRFMethodEvidence")
     return NMRFMethodSelectionInput(
@@ -339,7 +401,12 @@ class NMRFValuationInstruction:
             raise TypeError("reason must be an NMRFMethodReason")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "risk_factor_name": self.risk_factor_name,
             "modellability_status": self.modellability_status.value,
@@ -366,11 +433,21 @@ class NMRFMethodDecision:
 
     @property
     def required_liquidity_horizon(self) -> LiquidityHorizon:
-        """Stress horizon required for this NMRF after applying the 20-day floor."""
+        """Stress horizon required for this NMRF after applying the 20-day floor.
+        Returns
+        -------
+        LiquidityHorizon
+            Result of the operation.
+        """
         return nmrf_effective_liquidity_horizon(self.liquidity_horizon)
 
     def to_valuation_instruction(self) -> NMRFValuationInstruction:
-        """Convert the decision into a valuation-run instruction."""
+        """Convert the decision into a valuation-run instruction.
+        Returns
+        -------
+        NMRFValuationInstruction
+            Result of the operation.
+        """
         return NMRFValuationInstruction(
             risk_factor_name=self.risk_factor_name,
             modellability_status=self.modellability_status,
@@ -383,7 +460,12 @@ class NMRFMethodDecision:
         )
 
     def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails."""
+        """Return a serialisable dictionary for reporting and audit trails.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
         return {
             "risk_factor_name": self.risk_factor_name,
             "modellability_status": self.modellability_status.value,
@@ -419,14 +501,24 @@ def select_nmrf_method(
     selection_input: NMRFMethodSelectionInput,
     policy: RegulatoryPolicy,
 ) -> NMRFMethodDecision:
-    """
-    Select the stress method for one Type A or Type B NMRF.
+    """Select the stress method for one Type A or Type B NMRF.
 
     Default policy:
       * full revaluation for nonlinear factors when available;
       * direct when the shock is well-defined and robust;
       * stepwise when direct is not robust or a grid/path is required;
       * max-loss fallback only when explicitly allowed.
+    Parameters
+    ----------
+    selection_input : NMRFMethodSelectionInput
+        Selection input.
+    policy : RegulatoryPolicy
+        Policy.
+
+    Returns
+    -------
+    NMRFMethodDecision
+        Result of the operation.
     """
     if not selection_input.is_nmrf:
         raise NMRFMethodSelectionError("NMRF method selection requires TYPE_A_NMRF or TYPE_B_NMRF")
@@ -524,7 +616,23 @@ def select_nmrf_method_from_evidence(
     liquidity_horizon: LiquidityHorizon,
     policy: RegulatoryPolicy,
 ) -> NMRFMethodDecision:
-    """Select one NMRF stress method from auditable method evidence."""
+    """Select one NMRF stress method from auditable method evidence.
+    Parameters
+    ----------
+    evidence : NMRFMethodEvidence
+        Evidence.
+    modellability_status : ModellabilityStatus
+        Modellability status.
+    liquidity_horizon : LiquidityHorizon
+        Liquidity horizon.
+    policy : RegulatoryPolicy
+        Policy.
+
+    Returns
+    -------
+    NMRFMethodDecision
+        Result of the operation.
+    """
     return select_nmrf_method(
         selection_input_from_method_evidence(
             evidence,
@@ -539,7 +647,19 @@ def select_nmrf_methods(
     selection_inputs: Sequence[NMRFMethodSelectionInput],
     policy: RegulatoryPolicy,
 ) -> tuple[NMRFMethodDecision, ...]:
-    """Select stress methods for a deterministic sequence of NMRF inputs."""
+    """Select stress methods for a deterministic sequence of NMRF inputs.
+    Parameters
+    ----------
+    selection_inputs : Sequence[NMRFMethodSelectionInput]
+        Selection inputs.
+    policy : RegulatoryPolicy
+        Policy.
+
+    Returns
+    -------
+    tuple[NMRFMethodDecision, ...]
+        Result of the operation.
+    """
     if not selection_inputs:
         raise ValueError("selection_inputs must be non-empty")
     return tuple(
