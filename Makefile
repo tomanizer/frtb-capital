@@ -183,24 +183,25 @@ mutation-score-check:
 	uv run python scripts/ci/check_mutation_score.py --json-output $(MUTATION_DIST)/mutation-score.json
 
 benchmark:
-	uv run python scripts/benchmark_target_scale.py --output dist/benchmarks/frtb-ima-target-scale.json
+	uv run python scripts/ci/run_benchmark_suite.py ima-target-scale
 
 ima-arrow-batch-benchmark:
-	uv run python benchmarks/ima_arrow_batch_harness.py --output dist/benchmarks/frtb-ima-arrow-batch.json
+	uv run python scripts/ci/run_benchmark_suite.py ima-arrow-batch
 
 sbm-benchmark:
-	uv run python benchmarks/sbm_adapter_harness.py --output dist/benchmarks/frtb-sbm-batch-arrow.json
+	uv run python scripts/ci/run_benchmark_suite.py sbm
 
 drc-benchmark:
-	uv run python benchmarks/drc_adapter_harness.py --output dist/benchmarks/frtb-drc-batch-arrow.json
+	uv run python scripts/ci/run_benchmark_suite.py drc
 
 rrao-benchmark:
-	PYTHONPATH=packages/frtb-common/src:packages/frtb-rrao/src uv run python packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py --output dist/benchmarks/frtb-rrao-target-scale.json
+	uv run python scripts/ci/run_benchmark_suite.py rrao
 
 cva-benchmark:
-	PYTHONPATH=packages/frtb-common/src:packages/frtb-cva/src uv run python packages/frtb-cva/scripts/benchmark_cva_target_scale.py --output dist/benchmarks/frtb-cva-target-scale.json
+	uv run python scripts/ci/run_benchmark_suite.py cva
 
-benchmark-suite: benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark
+benchmark-suite:
+	uv run python scripts/ci/run_benchmark_suite.py
 
 benchmark-budget-check:
 	uv run python scripts/ci/check_benchmark_budgets.py
