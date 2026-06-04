@@ -1,12 +1,14 @@
-# FRTB Target Operating Model (TOM) — Draft v0.4
+# FRTB Target Operating Model (TOM) — Draft v0.5
 
-> **Status:** Fourth draft. Incorporates **20 stakeholder decisions** across two
-> rounds (see §0). Highlights: corrected **IMA evidence provenance** (RFET / NMRF
-> / PLA — §4.4) with an **internal-primary** observation-sourcing model and
-> **per-regime configurable** RFET thresholds; a plain-language responsibility
-> matrix (§3, no RACI); a new **Market/Risk Data** function; and resolved
-> operational rules for run SLA, break gating, parallel-run, retention, access
-> control, and conditional-use limits. This document describes a *target* operating model for
+> **Status:** Fifth draft. Incorporates **30 stakeholder decisions** across three
+> rounds (see §0). Round 3 adds the **US dual-stack capital model** (max() binds),
+> **desk-boundary** policy, **reference-data** and **input-DQ** governance, the
+> **limits stance**, a dedicated **FRTB Steering Committee**, **CVA data
+> ownership**, **third-party (RFET vendor) governance**, **library-driven
+> reduced-set** selection, and an interim **Basel MAR31** RFET calibration. Earlier
+> rounds established the corrected IMA evidence provenance (§4.4), the
+> plain-language responsibility matrix (§3), and the operational run/retention/
+> access rules. Four items (O9-residual, O11–O13) remain open for round 4. This document describes a *target* operating model for
 > running FRTB market-risk capital using the `frtb-capital` library as the
 > calculation engine. It is an organisational / functional / technical design
 > artifact, **not** a regulatory submission. The library itself remains a
@@ -56,6 +58,21 @@ flagged inline as **[OPEN]**.
 > `CvaRegulatoryProfile` enum — `US_NPR20_VB` (with `BASEL_MAR50_2020`, `EU_CRR3_CVA`,
 > `UK_PRA_CVA`). Where this document names a code identifier it uses the
 > package-correct enum value.
+
+### Round-3 decisions (scope, governance, data ownership)
+
+| # | Decision area | Choice | Primary impact |
+| --- | --- | --- | --- |
+| 21 | **Capital stack** | **Dual-stack, max() binds** | Orchestration computes expanded *and* standardised total RWA; the larger is capital-of-record. Output floor scheduled as a sub-item (§7) |
+| 22 | **Desk boundary** | **Inherit management desks 1:1** | Regulatory desks mirror management/booking desks; minimal separate governance. **Caveat:** MAR12 desk-granularity/qualitative-standards compliance risk (§3) |
+| 23 | **Reference-data governance** | **Quant owns, release-train** | SBM/DRC/CVA rule tables treated as model parameters; change via the quarterly release train + MRM (decision 10) |
+| 24 | **Input data quality** | **Source-system ownership** | Each feed (risk engine, observability DB, ref data) certifies its own DQ; Risk Analytics monitors certificates; library fail-closed is backstop |
+| 25 | **Limits linkage** | **Capital is measurement-only** | FRTB capital is reported, not a binding desk limit; limits run off separate market-risk measures (VaR/sensitivities) |
+| 26 | **Governance forum** | **Dedicated FRTB Steering Committee** | Risk + Quant + Finance + IT + MRM own methodology, change train, outcomes; escalate to Model Risk & Capital committees |
+| 27 | **CVA data ownership** | **Risk Analytics consolidates** | RA sources counterparty exposure (CCR/SA-CCR engine) and eligible hedges, curates CVA inputs — one run-the-engine owner |
+| 28 | **RFET vendor pool** | **Govern the slot, decide later** | TOM defines the third-party governance slot (MRM validation, coverage thresholds, SLA); specific pool chosen in procurement (vendor-neutral) |
+| 29 | **Reduced data set** | **Library-driven selection** | Library selects the reduced set algorithmically each run to meet the captured-share floor; Quant reviews |
+| 30 | **RFET interim stance** | **Basel MAR31 default** | `FED_NPR_2_0` seeded with Basel MAR31 thresholds pending confirmation of exact US figures (O9) |
 
 ---
 
@@ -205,11 +222,15 @@ a role isn't listed in a row, it has no part in that activity.
 
 | Activity | Leads (does the work) | Helps | Signs it off | Kept informed |
 | --- | --- | --- | --- | --- |
-| Desk structure / boundary definition | Front Office | Risk Analytics, Quant | Market Risk (2LOD) | Finance, MRM |
+| Desk structure / boundary (inherit mgmt desks, decision 22) | Front Office | Risk Analytics | Market Risk (2LOD) | Finance, MRM |
 | Pricing, sensitivities & P&L/HPL/RTPL vectors | Quant | Risk Analytics | Quant head | Market Risk |
 | RFET observation sourcing & curation | Market/Risk Data | Quant, vendors | Market Risk (2LOD) | Risk Analytics |
+| Reference-data rule tables (buckets/weights/correlations) | Quant | Risk Analytics | Market Risk (2LOD) | Finance |
 | Methodology / regime config (ADRs) | Quant | Risk Analytics, MRM | Market Risk (2LOD) | Finance |
+| CVA exposure & eligible-hedge data | Risk Analytics | CCR / xVA | Risk Analytics head | MRM |
+| Input data-quality certification | Source systems | Risk Analytics *(monitors)* | Source-system owners | Market Risk |
 | Daily capital run execution | Risk Analytics | IT (platform) | Risk Analytics head | Market Risk |
+| Dual-stack max() + binding-stack selection | Risk Analytics *(runs orchestration)* | — | Market Risk (2LOD) | Finance |
 | RFET → NMRF → SES determination | Risk Analytics *(runs library)* | Quant *(classification)* | Market Risk (2LOD) | MRM |
 | PLA / backtesting → desk eligibility | Risk Analytics *(runs library)* | Quant *(vectors)* | Market Risk (2LOD) | FO, MRM |
 | Reconciliation (SA↔IMA, risk↔finance) | Risk Analytics | Finance | Risk Analytics head | Market Risk |
@@ -224,6 +245,35 @@ a role isn't listed in a row, it has no part in that activity.
 > Risk Analytics operates it and owns the result, but the RFET, the NMRF/SES
 > derivation, and the PLA/backtesting metrics are computed by the library using
 > the prescribed regulatory methodology, not hand-calculated. See §4.4.
+
+> **Desk-boundary caveat (decision 22).** Regulatory desks inherit the existing
+> management/booking desk structure 1:1 with minimal separate governance. This is
+> the pragmatic choice, but it carries a **MAR12 compliance risk**: management
+> desks may not satisfy the FRTB qualitative desk-definition and granularity
+> standards (e.g. a single trader/head, a clear business strategy, desk-level risk
+> management). Market Risk (2LOD) must confirm the inherited structure meets MAR12
+> at onboarding and re-confirm on reorganisation; flagged for MRM review.
+
+### Governance forums (decision 26)
+
+A **dedicated FRTB Steering Committee** owns the operating model end-to-end rather
+than spreading it across unrelated standing forums.
+
+```mermaid
+flowchart TB
+    WG["FRTB working group<br/>(operational, run cadence)"] --> SC
+    SC["FRTB Steering Committee<br/>Risk · Quant · Finance · IT · MRM"]
+    SC -->|methodology & model risk| MRC["Model Risk Committee"]
+    SC -->|capital outcomes & RWA| CC["Capital Committee / ALCO"]
+    MRC --> BRC["Board Risk Committee"]
+    CC --> BRC
+```
+
+| Forum | Owns | Cadence |
+| --- | --- | --- |
+| FRTB Steering Committee | Methodology, the release train, run outcomes, cross-function escalation | Aligned to the quarterly release train + ad hoc |
+| Model Risk Committee | Model approvals, conditional-use findings, validation outcomes | Per MRM cycle |
+| Capital Committee / ALCO | Capital/RWA outcomes, dual-stack binding result, disclosure | Monthly/quarterly |
 
 ---
 
@@ -375,7 +425,7 @@ flowchart TB
 | 3. NMRF derivation | Every risk factor that **fails** RFET is non-modellable ⇒ an NMRF. This follows *mechanically* from RFET — there is no separate "is it an NMRF" decision. | RFET output | **`frtb-capital`** derives the set automatically |
 | 4. NMRF classification (Type A vs B) | *This* is where judgment enters. Idiosyncratic credit/equity NMRFs that meet the criteria are **Type A** (aggregated assuming **zero correlation**, ADR 0006); all others are **Type B** (prescribed correlation). | Risk-factor taxonomy + idiosyncratic-eligibility flags | **Quant** sets the classification methodology; **`frtb-capital`** applies it (`frtb_ima.nmrf.route_nmrf_classifications_for_capital`, `NMRFTaxonomyMode`) |
 | 5. SES | Each NMRF gets a stress-scenario shock, a liquidity horizon, and is aggregated into the Stressed Expected Shortfall add-on. | Stress-period calibration spec | **`frtb-capital`** — calibration via `frtb_ima.nmrf_stress_spec` / `stress_periods`, SES aggregation via `frtb_ima.nmrf.calculate_nmrf_capital_for_policy` / `aggregate_ses_breakdown_for_policy`; **Quant** owns the calibration |
-| 6. Reduced data set | The ES stress scaling (`ES = ES_{R,S} · ES_{F,C} / ES_{R,C}`) needs a **reduced set of modellable risk factors** with long enough history for the stress period (must capture ≥ the regulatory share of full ES). This is a *data-availability selection among modellable factors* — related to, but distinct from, RFET. | Long-history market data | **Market/Risk Data** maintains the history; **Quant** selects the reduced set; **`frtb-capital`** computes the ratios |
+| 6. Reduced data set | The ES stress scaling (`ES = ES_{R,S} · ES_{F,C} / ES_{R,C}`) needs a **reduced set of modellable risk factors** with long enough history for the stress period (must capture ≥ the regulatory share of full ES). This is a *data-availability selection among modellable factors* — related to, but distinct from, RFET. **Library-driven (decision 29):** the library selects the reduced set algorithmically each run to satisfy the captured-share floor; Quant reviews. | Long-history market data | **Market/Risk Data** maintains the history; **`frtb-capital`** selects the set and computes the ratios; **Quant** reviews the selection |
 | 7. PLA | The risk engine supplies **HPL** (hypothetical, full-reval P&L) and **RTPL** (risk-theoretical P&L). The library runs the **regulatory PLA test** — Spearman correlation and the KS statistic — and assigns the green/amber/red zone. | **Risk engine HPL/RTPL vectors** | **`frtb-capital`** (`frtb_ima.pla`) runs the test using regulator methodology; Quant owns the vectors |
 | 8. Backtesting & eligibility | Backtesting exceptions are counted from the P&L-vs-VaR vectors; combined with the PLA zone they drive **desk IMA eligibility**. A red desk falls back to SA (ADR 0009, 0032). | Risk engine P&L vectors | **`frtb-capital`** (`frtb_ima.backtesting`) computes; **Market Risk (2LOD)** owns the eligibility decision |
 
@@ -401,12 +451,23 @@ participant, at the cost of a substantial internal observation-capture build —
 the curation, completeness, and vendor-gap reconciliation are owned by the
 **Market/Risk Data** function in 2LOD.
 
-**Thresholds (decision 11 — configurable per regime).** The RFET observation
-count, maximum gap, observation window, and bucketing approach are **parameters of
-the regime profile**, not hard-coded. The `FED_NPR_2_0` profile carries the US figures;
-a Basel and an internal-conservative variant coexist and are selected at config
-time. The exact US-NPR threshold values and the Type A/B idiosyncratic-NMRF
-criteria still need to be pinned against the rule text — tracked as O9 below.
+**Vendor governance (decision 28 — govern the slot, decide later).** The
+supplementary external pool is **not fixed in this TOM**. Instead the TOM defines
+the governance *slot*: the pool is an **SR 11-7 third-party data dependency**
+requiring MRM validation, documented coverage/quality thresholds, and a delivery
+SLA; the specific vendor (e.g. an industry RFE service) is selected in
+procurement against those criteria. This keeps the model vendor-neutral and the
+control story explicit.
+
+**Thresholds (decision 11 — configurable per regime; decision 30 — interim
+stance).** The RFET observation count, maximum gap, observation window, and
+bucketing approach are **parameters of the regime profile**, not hard-coded. Until
+the exact US figures are confirmed, the `FED_NPR_2_0` profile is **seeded with the
+Basel MAR31 thresholds as the working baseline** (≥24 obs/year with a ≤1-month max
+gap, or ≥100 obs over 12 months; bucketing approach permitted). The exact US-NPR
+threshold values and the Type A/B idiosyncratic-NMRF criteria still need to be
+pinned against the rule text — tracked as O9-residual below — at which point the parameters
+are updated through the release train.
 
 ---
 
@@ -439,11 +500,17 @@ flowchart TB
 | --- | --- | --- | --- |
 | Desk capital + attribution drilldown | FO desk heads | Daily (T+1) | Result-store views / dashboard |
 | SA↔IMA reconciliation & breaks | Risk Analytics, Market Risk | Daily | Reconciliation report |
-| Limit utilisation vs appetite | Market Risk (2LOD) | Daily | Limits system feed |
+| Capital consumption (measurement, not a limit) | Market Risk (2LOD) | Daily | Result-store views |
 | Capital MI pack | ExCo, Risk Committee | Weekly/Monthly | Finance MI |
-| PLA traffic-light + backtest exceptions | Desk eligibility board, MRM | Quarterly | Eligibility report |
-| FRTB regulatory return | Regulator | Monthly/Quarterly | COREP/FFIEC/PRA via Finance |
+| PLA traffic-light + backtest exceptions | Market Risk (2LOD), MRM | Quarterly | Eligibility report |
+| FRTB regulatory return | Regulator | Monthly/Quarterly | US FFIEC via Finance |
 | Model performance & validation findings | Board Risk Committee | Annual + ad hoc | MRM report |
+
+> **Limits stance (decision 25).** FRTB capital is **measurement, not a binding
+> desk limit**. Day-to-day desk limits run off separate market-risk measures
+> (VaR / sensitivities / desk risk appetite); capital consumption is reported and
+> informs strategy and the MI pack but does not itself gate trading. This keeps
+> the limit framework decoupled from the T+1 capital cadence.
 
 **How (mechanism):** every reported number traces to an immutable run in
 `frtb-result-store` with a content/handoff hash, so any figure in a board pack or
@@ -495,6 +562,8 @@ flowchart LR
 | --- | --- | --- |
 | Risk engine → library | Arrow column specs for sensitivities, scenario P&L, HPL/RTPL vectors + run context + content hash (ADR 0023, 0033) | Risk Analytics + IT |
 | Observation data → library | Arrow column specs for curated real price observations (RFET evidence) | Market/Risk Data + IT |
+| CCR/SA-CCR engine → library | Counterparty exposure profiles + eligible-hedge data for CVA | Risk Analytics + IT |
+| Every feed → run | **DQ certificate** (completeness, staleness, mapping coverage) attached per feed (decision 24) | Source-system owners; Risk Analytics monitors |
 | Library internal | `ComponentCapitalSummary` handoff (ADR 0029) | Library maintainers |
 | Library → finance | **Controlled file handover**: reviewed, signed-off extract derived from frozen result records + `CapitalRunAuditLog` + lineage hash | Risk Analytics (produces) → Finance (ingests) |
 | Finance → reporting | Ledger postings + US FFIEC return mapping | Finance |
@@ -528,7 +597,23 @@ and risk weights per ADRs 0024–0028).
 | DRC for default risk | MAR22 | `frtb-drc` |
 | RRAO for residual risks | MAR23 | `frtb-rrao` |
 | CVA capital (BA-CVA / SA-CVA) | MAR50 | `frtb-cva` |
+| Dual-stack: expanded vs standardised total RWA, **larger binds** | US NPR | Orchestration max() (decision 21) |
+| Transitional output floor (floors **expanded** RWA at a % of **standardised** RWA) — EU CRR3 / UK PRA variants | Basel III / CRR3 / PRA | **[OPEN]** floor schedule to encode (O11, §10) |
 | Full audit trail / reproducibility | SR 11-7, SS 1/23 | result store, hashing, ADR log |
+
+> **Capital stack (decision 21).** Under US NPR the firm computes two total-RWA
+> stacks — the **expanded** measure (IMA where eligible + SA where not) and the
+> **standardised** measure (SA for all desks) — and the **larger is
+> capital-of-record**. `frtb-orchestration` owns this comparison
+> (`calculate_suite_capital`, ADR 0039) and records both stacks plus the binding
+> selection in the run evidence. **In the US NPR this greater-of test *is* the
+> output-floor mechanism** — the standardised stack acts as an effective 100% floor
+> on the expanded stack, so there is no separate transitional output-floor
+> schedule. The Basel-style **transitional output floor** (phasing toward 72.5%)
+> is an **EU CRR3 / UK PRA** feature: it floors the **expanded** RWA stack at a
+> percentage of the **standardised** RWA stack (it does not floor the standardised
+> stack itself). Encoding that percentage and its phase-in for the non-US regime
+> variants is a known gap (O11, §10).
 
 > Specific paragraph citations live in `docs/regulatory/` and each package's
 > `REGULATORY_TRACEABILITY.md`. This table is a navigational map, not the
@@ -660,24 +745,51 @@ that round-1 raised. Status of the round-2 register:
 | O6 | Retention & immutability | **Resolved** → decision 18 (7-year WORM; §9) |
 | O7 | Access & segregation of duties | **Resolved** → decision 19 (role-based, env-gated; §9) |
 | O8 | Conditional-use cap | **Resolved** → decision 20 (time-boxed, reverts to SA; §8) |
-| O9 | **US-NPR RFET & NMRF specifics** | **OPEN** — exact US observation thresholds/gap rules + Type A/B idiosyncratic criteria still need pinning to the rule text (parameterised slot exists per decision 11). |
-| O10 | RFET observation-data sourcing | **Resolved (strategy)** → decision 12 (internal-primary). Remaining build detail: which specific vendor pool(s) and the internal-capture/reconciliation design. |
+| O9 | US-NPR RFET & NMRF specifics | **Interim resolved** → decision 30 (Basel MAR31 default seeds `FED_NPR_2_0`); exact US figures still to pin (see O9-residual below). |
+| O10 | RFET observation-data sourcing | **Resolved** → decision 12 (internal-primary) + decision 28 (vendor slot governed, selected in procurement). |
 
-### Genuinely-open items for round 3
+Round-3 decisions (21–30) resolved the scope, governance, and data-ownership gaps
+that the round-2 model left implicit. Status of the round-3 register:
 
-1. **O9 — US-NPR numeric calibration.** Pin the exact `FED_NPR_2_0` RFET thresholds and
-   the Type A/B idiosyncratic-NMRF criteria against the final-rule text. This is a
-   regulatory-sourcing task (Quant + regulatory traceability + MRM), not an
-   organisational decision.
-2. **O10 residual — observation-capture build.** Which vendor pool(s) supplement
-   the internal observability DB, and the internal trade/quote-capture and
-   vendor-gap reconciliation design.
-3. **New: reduced-data-set selection criteria.** The ≥-share-of-full-ES rule and
-   the governance for selecting/refreshing the reduced set (Quant + Market/Risk
-   Data) — surfaced by §4.4 but not yet specified.
+| # | Question | Status |
+| --- | --- | --- |
+| Capital stack | dual-stack / which binds | **Resolved** → decision 21 (max() binds; §7) |
+| Desk boundary | definition & re-approval | **Resolved** → decision 22 (inherit mgmt desks; §3) — *MAR12 caveat tracked O12* |
+| Reference-data governance | rule-table ownership | **Resolved** → decision 23 (Quant, release-train; §3/§4.3) |
+| Input data quality | pre-run gate ownership | **Resolved** → decision 24 (source-system certificates; §6) |
+| Limits linkage | capital vs limits | **Resolved** → decision 25 (measurement-only; §5) |
+| Governance forum | committee map | **Resolved** → decision 26 (FRTB Steering Committee; §3) |
+| CVA data ownership | exposure/hedge provenance | **Resolved** → decision 27 (Risk Analytics consolidates; §3/§6) |
+| RFET vendor | third-party governance | **Resolved** → decision 28 (govern the slot; §4.4) |
+| Reduced data set | selection & refresh | **Resolved** → decision 29 (library-driven; §4.4) |
+
+### Genuinely-open items for round 4
+
+1. **O9-residual — US-NPR numeric calibration.** Pin the exact `FED_NPR_2_0` RFET
+   thresholds and the Type A/B idiosyncratic-NMRF criteria against the final-rule
+   text, replacing the Basel MAR31 interim (decision 30). Regulatory-sourcing task
+   (Quant + regulatory traceability + MRM).
+2. **O11 — Output-floor schedule (EU/UK variants).** Encode the transitional
+   output-floor percentage and phase-in (toward 72.5%) as profile parameters for
+   the `ECB_CRR3` / `PRA_UK_CRR` regimes, where the floor binds on the **expanded**
+   RWA stack as a percentage of the **standardised** stack. (The US NPR needs no
+   separate floor schedule — its dual-stack greater-of test is the floor; §7,
+   decision 21.)
+3. **O12 — MAR12 desk-compliance confirmation.** Market Risk + MRM must confirm the
+   inherited management-desk structure (decision 22) meets the FRTB qualitative
+   desk-definition/granularity standards, and define the remediation path if not.
+4. **O13 — Observation-capture build & CCR interface detail.** The internal
+   trade/quote-capture design, vendor-gap reconciliation, and the precise
+   CCR/SA-CCR → CVA exposure interface (decisions 12, 27).
+
+### Still not modelled (candidate round-4 scope)
+
+Prudent valuation / IPV interaction, BCBS 239 data-aggregation lineage attestation,
+and a full DR/BCP plan beyond the run SLA are acknowledged gaps not yet in the
+decision register.
 
 ---
 
-*Draft v0.4 — round-1 and round-2 decisions (1–20) incorporated and threaded
-through §§1, 3, 4.3, 4.4, 6, 8, 9. One regulatory-sourcing item (O9) and two build-
-detail items remain open for round 3.*
+*Draft v0.5 — round-1/2/3 decisions (1–30) incorporated and threaded through
+§§1, 3, 4.3, 4.4, 5, 6, 7, 8, 9. Four items (O9-residual, O11–O13) plus three
+not-yet-modelled topics remain for round 4.*
