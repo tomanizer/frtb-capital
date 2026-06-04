@@ -81,17 +81,17 @@ histories, NMRF artifacts, PLA vectors, and backtesting vectors remain
 Each summary is produced by the owning component package's public
 `to_component_summary` adapter. Orchestration uses the shared summary fields:
 
-- component slot
-- package name
-- run id
-- calculation date
-- base currency
-- profile id and profile hash
-- input hash
-- total capital
-- line and subtotal counts
-- excluded line count
-- citations and warnings
+- `component`
+- `package_name`
+- `run_id`
+- `calculation_date`
+- `base_currency`
+- `profile_id` and `profile_hash`
+- `input_hash`
+- `total_capital`
+- `line_count` and `subtotal_count`
+- `excluded_line_count`
+- `citations` and `warnings`
 
 The composed SA result preserves deterministic subtotals and optional
 desk-level SA fallback routes from structural IMA eligibility evidence.
@@ -166,13 +166,13 @@ validation, and sign conventions.
 `ManifestInputTableRoute` registers the public package callables for one logical
 input table:
 
-- logical table name
-- optional SA component slot
-- normalizer
-- optional batch builder
-- optional batch calculator
-- optional `to_component_summary` adapter
-- context attribute required for calculation routes
+- `logical_name`
+- `component`
+- `normalize`
+- `build_batch`
+- `calculate_batch`
+- `to_component_summary`
+- `context_attr`
 
 `validate_capital_run_manifest(...)` validates supplied tables without
 calculating capital. For each known table it records:
@@ -244,7 +244,7 @@ benchmarks.
 
 ## Update Rules
 
-When changing orchestration dataset, summary, manifest, or routing semantics:
+When changing orchestration datasets, summaries, manifests, or routing semantics:
 
 1. Update the public API documentation if any stable symbol, logical table key,
    route behavior, or summary field changes.
