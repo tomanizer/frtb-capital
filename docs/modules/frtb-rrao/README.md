@@ -14,6 +14,12 @@ The package is importable and exposes `calculate_rrao_capital` for supported
 Basel MAR23, U.S. NPR 2.0, and EU CRR3 comparison-profile canonical inputs.
 Unsupported profiles and unsupported evidence paths fail closed.
 
+## Integration journey
+
+End-to-end client flow (Arrow handoff, batch capital, allocation reports,
+`to_component_summary`, and SA orchestration boundaries) is documented in
+[`packages/frtb-rrao/docs/PACKAGE_JOURNEY.md`](../../../packages/frtb-rrao/docs/PACKAGE_JOURNEY.md).
+
 ## Planning Documents
 
 - [Product requirements](PRD.md)
