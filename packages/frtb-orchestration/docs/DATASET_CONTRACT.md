@@ -41,6 +41,8 @@ The canonical orchestration outputs are:
 - `SuiteCapitalResult`
 - `SuiteAttributionResult`
 - `SuiteAttributionReport` and `SuiteAttributionComponentReport`
+- `SuiteAttributionSummary`, `SuiteAttributionRecordSummary`, and
+  `SuiteAttributionGroupSummary`
 
 SA is a composition label for `SBM + DRC + RRAO`. It is not a standalone package
 and does not own a separate raw sensitivity, default-risk, or residual-risk

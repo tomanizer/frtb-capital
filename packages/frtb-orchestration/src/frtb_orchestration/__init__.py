@@ -51,6 +51,15 @@ from frtb_orchestration.suite import (
     SuiteCapitalResult,
     suite_jurisdiction_family,
 )
+from frtb_orchestration.suite_attribution_summary import (
+    SuiteAttributionGroupSummary,
+    SuiteAttributionRecordSummary,
+    SuiteAttributionSummary,
+    suite_attribution_residual_records,
+    suite_attribution_unsupported_records,
+    summarise_suite_attribution,
+    top_suite_attribution_contributors,
+)
 
 __all__ = [
     "CVA_COUNTERPARTY_INPUT_TABLE",
@@ -78,8 +87,11 @@ __all__ = [
     "StandardisedComponentSubtotal",
     "StandardisedFallbackRoute",
     "SuiteAttributionComponentReport",
+    "SuiteAttributionGroupSummary",
+    "SuiteAttributionRecordSummary",
     "SuiteAttributionReport",
     "SuiteAttributionResult",
+    "SuiteAttributionSummary",
     "SuiteCapitalResult",
     "__version__",
     "aggregate_suite_attribution",
@@ -90,6 +102,10 @@ __all__ = [
     "recognise_ima_summary",
     "run_standardised_approach_from_manifest",
     "standardised_jurisdiction_family",
+    "suite_attribution_residual_records",
+    "suite_attribution_unsupported_records",
     "suite_jurisdiction_family",
+    "summarise_suite_attribution",
+    "top_suite_attribution_contributors",
     "validate_capital_run_manifest",
 ]
