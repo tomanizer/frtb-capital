@@ -120,7 +120,7 @@ Source of truth in code: `_SUPPORTED_PATHS` in `sa_cva.py`.
 | Eligible external hedge benefit | No (MAR50.13(2)) | Yes | Yes (MAR50.37–MAR50.39) | Explicit ineligibility records |
 | Internal hedge / transfer routing | N/A | Partial metadata | Partial metadata | NPR V.A.6.c deferred to U.S. profile |
 | MAR50.9 hedge recognition | N/A | **Disallowed** | **Disallowed** | Method unsupported |
-| Analytical Euler (nonlinear branches) | N/A | Attribution partial | Attribution partial | ADR 0012 residual branches |
+| Exact Euler for nonlinear branches | N/A | Unsupported/residual projection | Unsupported/residual projection | ADR 0012 residual branches |
 
 ### 3.5 Documentation and metadata drift to fix
 
