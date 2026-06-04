@@ -76,7 +76,7 @@ generation command for SBM at this time.
 - `base_currency`
 - `reporting_currency`
 - `profile_id`
-- optional `desk_id`, `legal_entity`, citation policy, and run controls
+- optional `desk_id`, `legal_entity`, `citation_policy`, and `run_controls`
 
 `SbmSensitivity` is the canonical row shape. Required fields are:
 
@@ -110,7 +110,7 @@ Optional or path-specific fields are:
 - `source_system`
 - `source_file`
 - `source_row_id`
-- optional source-to-canonical column mapping
+- optional `source_column_map`
 
 Every accepted row must have stable identifiers. `sensitivity_id` must be
 unique within the run, and `source_row_id` must remain traceable to the upstream
