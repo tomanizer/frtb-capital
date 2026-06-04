@@ -11,6 +11,10 @@ import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
 import numpy.typing as npt
 
+from frtb_rrao._validation_rules import (
+    UNDERLYING_COUNT_INTEGER_MESSAGE,
+    UNDERLYING_COUNT_NON_NEGATIVE_MESSAGE,
+)
 from frtb_rrao.validation import RraoInputError
 
 ObjectArray = npt.NDArray[np.object_]
@@ -242,15 +246,15 @@ def _optional_int(value: object | None) -> int | None:
     if isinstance(value, str) and not value.strip():
         return None
     if isinstance(value, (bool, np.bool_)):
-        raise RraoInputError("underlying count must be an integer", field="underlying_count")
+        raise RraoInputError(UNDERLYING_COUNT_INTEGER_MESSAGE, field="underlying_count")
     if isinstance(value, (int, np.integer)):
         if value < 0:
             raise RraoInputError(
-                "underlying count must be non-negative",
+                UNDERLYING_COUNT_NON_NEGATIVE_MESSAGE,
                 field="underlying_count",
             )
         return int(value)
-    raise RraoInputError("underlying count must be an integer", field="underlying_count")
+    raise RraoInputError(UNDERLYING_COUNT_INTEGER_MESSAGE, field="underlying_count")
 
 
 def _coerce_enum_value(

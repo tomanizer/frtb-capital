@@ -11,6 +11,44 @@ from __future__ import annotations
 import math
 from typing import Literal
 
+from frtb_rrao._validation_rules import (
+    BACK_TO_BACK_CROSS_REFERENCE_MESSAGE,
+    BACK_TO_BACK_MATCHING_CURRENCY_MESSAGE,
+    BACK_TO_BACK_MATCHING_NOTIONAL_MESSAGE,
+    BACK_TO_BACK_ONLY_FOR_EXACT_EXCLUSION_MESSAGE,
+    BACK_TO_BACK_SELF_MATCH_MESSAGE,
+    BACK_TO_BACK_SHARED_EVIDENCE_MESSAGE,
+    EXACT_BACK_TO_BACK_REQUIRES_MATCH_MESSAGE,
+    EXCLUDED_CLASSIFICATION_REQUIRES_REASON_MESSAGE,
+    EXCLUSION_REASON_REQUIRES_EXPLICIT_EVIDENCE_MESSAGE,
+    EXPLICIT_EXCLUSION_REQUIRES_REASON_MESSAGE,
+    FUND_GROSS_NOTIONAL_POSITIVE_MESSAGE,
+    GROSS_NOTIONAL_MATCHES_FUND_PORTION_MESSAGE,
+    GROSS_NOTIONAL_NON_NEGATIVE_MESSAGE,
+    INCLUDED_EXPOSURE_RATIO_RANGE_MESSAGE,
+    INVESTMENT_FUND_BACKSTOP_METHOD_REQUIRED_MESSAGE,
+    INVESTMENT_FUND_DESCRIPTOR_REQUIRED_MESSAGE,
+    INVESTMENT_FUND_EVIDENCE_TYPE_REQUIRED_MESSAGE,
+    INVESTMENT_FUND_FLAG_REQUIRED_MESSAGE,
+    INVESTMENT_FUND_MANDATE_ALLOWS_RRAO_MESSAGE,
+    INVESTMENT_FUND_NON_LOOK_THROUGH_MESSAGE,
+    SOURCE_LINEAGE_REQUIRED_MESSAGE,
+    UNDERLYING_COUNT_INTEGER_MESSAGE,
+    UNDERLYING_COUNT_NON_NEGATIVE_MESSAGE,
+    UNSUPPORTED_CLASSIFICATION_MESSAGE,
+    back_to_back_match_requires_exact_exclusion,
+    exact_back_to_back_requires_match,
+    excluded_classification_requires_reason,
+    exclusion_reason_requires_explicit_evidence,
+    explicit_exclusion_requires_reason,
+    fund_gross_notional_is_positive,
+    gross_notional_matches_included_fund_portion,
+    included_exposure_ratio_is_valid,
+    investment_fund_path_required,
+    is_unsupported_classification_hint,
+    is_valid_underlying_count,
+    supervisor_directive_required,
+)
 from frtb_rrao.data_models import (
     RraoBackToBackMatch,
     RraoClassification,
@@ -55,7 +93,7 @@ def normalise_gross_effective_notional(
         if source_sign_convention == "signed_absolute":
             return abs(notional)
         raise RraoInputError(
-            "gross effective notional must be non-negative",
+            GROSS_NOTIONAL_NON_NEGATIVE_MESSAGE,
             field="gross_effective_notional",
         )
     return notional
@@ -125,9 +163,9 @@ def _validate_position(position: RraoPosition, seen_position_ids: set[str]) -> N
             field="classification_hint",
             position_id=position_id,
         )
-    if position.classification_hint is RraoClassification.UNSUPPORTED:
+    if is_unsupported_classification_hint(position.classification_hint):
         raise RraoInputError(
-            "unsupported classification path",
+            UNSUPPORTED_CLASSIFICATION_MESSAGE,
             field="classification_hint",
             position_id=position_id,
         )
@@ -148,7 +186,9 @@ def _validate_position(position: RraoPosition, seen_position_ids: set[str]) -> N
 
 def _validate_lineage(lineage: RraoSourceLineage | None, position_id: str) -> None:
     if lineage is None:
-        raise RraoInputError("source lineage is required", field="lineage", position_id=position_id)
+        raise RraoInputError(
+            SOURCE_LINEAGE_REQUIRED_MESSAGE, field="lineage", position_id=position_id
+        )
     if not isinstance(lineage, RraoSourceLineage):
         raise RraoInputError("invalid source lineage", field="lineage", position_id=position_id)
 
@@ -174,13 +214,13 @@ def _validate_optional_fields(position: RraoPosition) -> None:
             bool,
         ):
             raise RraoInputError(
-                "underlying count must be an integer",
+                UNDERLYING_COUNT_INTEGER_MESSAGE,
                 field="underlying_count",
                 position_id=position.position_id,
             )
-        if position.underlying_count < 0:
+        if not is_valid_underlying_count(position.underlying_count):
             raise RraoInputError(
-                "underlying count must be non-negative",
+                UNDERLYING_COUNT_NON_NEGATIVE_MESSAGE,
                 field="underlying_count",
                 position_id=position.position_id,
             )
@@ -212,60 +252,57 @@ def _validate_optional_fields(position: RraoPosition) -> None:
 
 
 def _validate_evidence_requirements(position: RraoPosition) -> None:
-    if position.evidence_type is RraoEvidenceType.SUPERVISOR_DIRECTIVE:
+    if supervisor_directive_required(position.evidence_type, position.classification_hint):
         _require_text(
             position.supervisor_directive_id,
             "supervisor_directive_id",
             position.position_id,
         )
-    if position.classification_hint is RraoClassification.SUPERVISOR_DIRECTED:
-        _require_text(
-            position.supervisor_directive_id,
-            "supervisor_directive_id",
-            position.position_id,
-        )
-    if (
-        position.classification_hint is RraoClassification.EXCLUDED
-        and position.exclusion_reason is None
+    if excluded_classification_requires_reason(
+        position.classification_hint,
+        position.exclusion_reason,
     ):
         raise RraoInputError(
-            "excluded classification requires an exclusion reason",
+            EXCLUDED_CLASSIFICATION_REQUIRES_REASON_MESSAGE,
             field="exclusion_reason",
             position_id=position.position_id,
         )
     if position.exclusion_reason is not None:
-        if position.evidence_type is not RraoEvidenceType.EXPLICIT_EXCLUSION:
+        if exclusion_reason_requires_explicit_evidence(
+            position.exclusion_reason,
+            position.evidence_type,
+        ):
             raise RraoInputError(
-                "exclusion reason requires explicit exclusion evidence type",
+                EXCLUSION_REASON_REQUIRES_EXPLICIT_EVIDENCE_MESSAGE,
                 field="evidence_type",
                 position_id=position.position_id,
             )
         _require_text(position.exclusion_evidence_id, "exclusion_evidence_id", position.position_id)
-    if (
-        position.exclusion_reason is RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK
-        and position.back_to_back_match is None
+    if exact_back_to_back_requires_match(
+        position.exclusion_reason,
+        position.back_to_back_match is not None,
     ):
         raise RraoInputError(
-            "exact back-to-back exclusion requires match evidence",
+            EXACT_BACK_TO_BACK_REQUIRES_MATCH_MESSAGE,
             field="back_to_back_match",
             position_id=position.position_id,
         )
-    if (
-        position.back_to_back_match is not None
-        and position.exclusion_reason is not RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK
+    if back_to_back_match_requires_exact_exclusion(
+        position.exclusion_reason,
+        position.back_to_back_match is not None,
     ):
         raise RraoInputError(
-            "back-to-back match evidence is only valid for exact back-to-back exclusions",
+            BACK_TO_BACK_ONLY_FOR_EXACT_EXCLUSION_MESSAGE,
             field="back_to_back_match",
+            position_id=position.position_id,
+        )
+    if explicit_exclusion_requires_reason(position.evidence_type, position.exclusion_reason):
+        raise RraoInputError(
+            EXPLICIT_EXCLUSION_REQUIRES_REASON_MESSAGE,
+            field="exclusion_reason",
             position_id=position.position_id,
         )
     if position.evidence_type is RraoEvidenceType.EXPLICIT_EXCLUSION:
-        if position.exclusion_reason is None:
-            raise RraoInputError(
-                "explicit exclusion evidence requires an exclusion reason",
-                field="exclusion_reason",
-                position_id=position.position_id,
-            )
         _require_text(position.exclusion_evidence_id, "exclusion_evidence_id", position.position_id)
 
 
@@ -323,7 +360,7 @@ def _validate_back_to_back_match_fields(
     )
     if matched_position_id == position.position_id:
         raise RraoInputError(
-            "back-to-back match must reference the opposite transaction",
+            BACK_TO_BACK_SELF_MATCH_MESSAGE,
             field="back_to_back_match.matched_position_id",
             position_id=position.position_id,
         )
@@ -338,25 +375,25 @@ def _validate_exact_back_to_back_pair(
 ) -> None:
     if left_match.matched_position_id != right.position_id:
         raise RraoInputError(
-            "back-to-back match group does not cross-reference the paired transaction",
+            BACK_TO_BACK_CROSS_REFERENCE_MESSAGE,
             field="back_to_back_match.matched_position_id",
             position_id=left.position_id,
         )
     if right_match.matched_position_id != left.position_id:
         raise RraoInputError(
-            "back-to-back match group does not cross-reference the paired transaction",
+            BACK_TO_BACK_CROSS_REFERENCE_MESSAGE,
             field="back_to_back_match.matched_position_id",
             position_id=right.position_id,
         )
     if left.exclusion_evidence_id != right.exclusion_evidence_id:
         raise RraoInputError(
-            "exact back-to-back pair must share the same exclusion evidence id",
+            BACK_TO_BACK_SHARED_EVIDENCE_MESSAGE,
             field="exclusion_evidence_id",
             position_id=right.position_id,
         )
     if left.currency != right.currency:
         raise RraoInputError(
-            "exact back-to-back pair must have matching currency",
+            BACK_TO_BACK_MATCHING_CURRENCY_MESSAGE,
             field="currency",
             position_id=right.position_id,
         )
@@ -365,37 +402,37 @@ def _validate_exact_back_to_back_pair(
         right.gross_effective_notional,
     ):
         raise RraoInputError(
-            "exact back-to-back pair must have matching gross effective notional",
+            BACK_TO_BACK_MATCHING_NOTIONAL_MESSAGE,
             field="gross_effective_notional",
             position_id=right.position_id,
         )
 
 
 def _validate_investment_fund_fields(position: RraoPosition) -> None:
-    is_fund_path = (
-        position.is_investment_fund_exposure
-        or position.evidence_type is RraoEvidenceType.INVESTMENT_FUND_EXPOSURE
-        or position.investment_fund_descriptor is not None
+    is_fund_path = investment_fund_path_required(
+        is_investment_fund_exposure=position.is_investment_fund_exposure,
+        evidence_type=position.evidence_type,
+        descriptor_present=position.investment_fund_descriptor is not None,
     )
     if not is_fund_path:
         return
 
     if not position.is_investment_fund_exposure:
         raise RraoInputError(
-            "investment fund exposure flag is required",
+            INVESTMENT_FUND_FLAG_REQUIRED_MESSAGE,
             field="is_investment_fund_exposure",
             position_id=position.position_id,
         )
     if position.evidence_type is not RraoEvidenceType.INVESTMENT_FUND_EXPOSURE:
         raise RraoInputError(
-            "investment fund exposure requires investment-fund evidence type",
+            INVESTMENT_FUND_EVIDENCE_TYPE_REQUIRED_MESSAGE,
             field="evidence_type",
             position_id=position.position_id,
         )
     descriptor = position.investment_fund_descriptor
     if descriptor is None:
         raise RraoInputError(
-            "investment fund descriptor is required",
+            INVESTMENT_FUND_DESCRIPTOR_REQUIRED_MESSAGE,
             field="investment_fund_descriptor",
             position_id=position.position_id,
         )
@@ -425,7 +462,7 @@ def _validate_investment_fund_fields(position: RraoPosition) -> None:
         )
     if descriptor.section_205_method is not RraoInvestmentFundMethod.BACKSTOP_FUND_METHOD:
         raise RraoInputError(
-            "investment fund RRAO inclusion requires the __.205(e)(3)(iii) backstop method",
+            INVESTMENT_FUND_BACKSTOP_METHOD_REQUIRED_MESSAGE,
             field="investment_fund_descriptor.section_205_method",
             position_id=position.position_id,
         )
@@ -443,7 +480,7 @@ def _validate_investment_fund_fields(position: RraoPosition) -> None:
         )
     if descriptor.look_through_available:
         raise RraoInputError(
-            "investment fund RRAO inclusion requires a non-look-through portion",
+            INVESTMENT_FUND_NON_LOOK_THROUGH_MESSAGE,
             field="investment_fund_descriptor.look_through_available",
             position_id=position.position_id,
         )
@@ -455,7 +492,7 @@ def _validate_investment_fund_fields(position: RraoPosition) -> None:
         )
     if not descriptor.mandate_allows_rrao_exposures:
         raise RraoInputError(
-            "investment fund mandate evidence must permit RRAO exposure types",
+            INVESTMENT_FUND_MANDATE_ALLOWS_RRAO_MESSAGE,
             field="investment_fund_descriptor.mandate_allows_rrao_exposures",
             position_id=position.position_id,
         )
@@ -464,9 +501,9 @@ def _validate_investment_fund_fields(position: RraoPosition) -> None:
         descriptor.fund_gross_effective_notional,
         field="investment_fund_descriptor.fund_gross_effective_notional",
     )
-    if fund_notional <= 0.0:
+    if not fund_gross_notional_is_positive(fund_notional):
         raise RraoInputError(
-            "fund gross effective notional must be positive",
+            FUND_GROSS_NOTIONAL_POSITIVE_MESSAGE,
             field="investment_fund_descriptor.fund_gross_effective_notional",
             position_id=position.position_id,
         )
@@ -474,21 +511,19 @@ def _validate_investment_fund_fields(position: RraoPosition) -> None:
         descriptor.included_exposure_ratio,
         field="investment_fund_descriptor.included_exposure_ratio",
     )
-    if ratio <= 0.0 or ratio > 1.0:
+    if not included_exposure_ratio_is_valid(ratio):
         raise RraoInputError(
-            "included exposure ratio must be greater than zero and no more than one",
+            INCLUDED_EXPOSURE_RATIO_RANGE_MESSAGE,
             field="investment_fund_descriptor.included_exposure_ratio",
             position_id=position.position_id,
         )
-    expected_notional = fund_notional * ratio
-    if not math.isclose(
+    if not gross_notional_matches_included_fund_portion(
         position.gross_effective_notional,
-        expected_notional,
-        rel_tol=1e-12,
-        abs_tol=1e-9,
+        fund_notional,
+        ratio,
     ):
         raise RraoInputError(
-            "gross effective notional must equal the cited investment-fund included portion",
+            GROSS_NOTIONAL_MATCHES_FUND_PORTION_MESSAGE,
             field="gross_effective_notional",
             position_id=position.position_id,
         )
