@@ -9,6 +9,7 @@ model.
 | Area | Purpose |
 | --- | --- |
 | [Architecture](ARCHITECTURE.md) | Workspace structure, package boundaries, dependency rules, and orchestration ownership. |
+| [Capital attribution methods](CAPITAL_ATTRIBUTION_METHODS.md) | Suite-level guide to Euler attribution, residuals, unsupported branches, standalone contribution, and finite-difference impact. |
 | [Modules](modules/README.md) | Component documentation for implemented and partial-runtime capital modules. |
 | [ADRs](decisions/) | Architecture and material model decisions. |
 | [Documentation ownership](DOCUMENTATION_OWNERSHIP.md) | Canonical sources, review ownership, status vocabulary, and stale-roadmap policy. |
