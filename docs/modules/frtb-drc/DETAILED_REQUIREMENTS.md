@@ -211,7 +211,9 @@ corporate or asset-class/region taxonomy and CTP bucket assignment must use the
 profile's CTP bucket keys. Basel MAR22 securitisation non-CTP bucket assignment
 uses the MAR22.31 asset-class/region taxonomy. Basel MAR22 CTP bucket
 assignment uses the MAR22.40-MAR22.41 CTP bucket taxonomy and typed MAR22.42
-risk-weight evidence. EU CRR3 and PRA UK CRR bucket mappings remain
+risk-weight evidence. EU CRR3 non-securitisation uses Article 325y bucket and
+risk-weight mappings with Article 325y(6) CQS assignment evidence. EU CRR3
+securitisation non-CTP, EU CRR3 CTP, and PRA UK CRR bucket mappings remain
 fail-closed until their cited bucket, risk-weight, and decomposition mappings
 are implemented with deterministic tests.
 
@@ -464,8 +466,10 @@ conditions remain true:
   MAR22.35 category aggregation.
 - Basel MAR22 CTP row and batch paths use cited MAR22.36-MAR22.45 CTP
   mechanics and typed MAR22.42 risk-weight evidence.
-- EU CRR3 and PRA UK CRR paths fail explicitly until cited rule mappings and
-  tests are added.
+- EU CRR3 non-securitisation row and batch paths use cited Article 325w,
+  Article 325x, Article 325y, and ECAI/CQS mapping evidence.
+- EU CRR3 securitisation non-CTP, EU CRR3 CTP, and PRA UK CRR paths fail
+  explicitly until cited rule mappings and tests are added.
 - Results are frozen, serialisable, carry rule-profile/input hashes, and emit
   attribution records that reconcile to total capital through analytical,
   residual, or unsupported methods.

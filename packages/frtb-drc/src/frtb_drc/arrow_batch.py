@@ -25,6 +25,7 @@ from frtb_drc.batch import (
     build_drc_nonsec_batch_from_columns,
     build_drc_securitisation_non_ctp_batch_from_columns,
 )
+from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID
 from frtb_drc.validation import DrcInputError
 
 
@@ -293,6 +294,8 @@ def normalize_drc_ctp_arrow_table(
 
 def build_drc_nonsec_batch_from_arrow(
     handoff: NormalizedArrowTable,
+    *,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> DrcPositionBatch:
     """Build a DRC-owned non-securitisation batch from a normalized Arrow table."""
 
@@ -309,6 +312,7 @@ def build_drc_nonsec_batch_from_arrow(
         handoff_hash=normalized_arrow_table_hash(handoff),
         diagnostics=diagnostics,
         copy_arrays=False,
+        profile_id=profile_id,
     )
 
 

@@ -1,0 +1,91 @@
+{
+  "buckets": {
+    "CORPORATE": {
+      "capital": 2.025,
+      "floor_applied": false,
+      "hbr": 0.75,
+      "weighted_long": 2.6999999999999997,
+      "weighted_short": 0.8999999999999999
+    },
+    "LOCAL_GOVERNMENT_MUNICIPAL": {
+      "capital": 0.44999999999999996,
+      "floor_applied": false,
+      "hbr": 1.0,
+      "weighted_long": 0.44999999999999996,
+      "weighted_short": 0.0
+    },
+    "SOVEREIGN": {
+      "capital": 1.5,
+      "floor_applied": false,
+      "hbr": 1.0,
+      "weighted_long": 1.5,
+      "weighted_short": 0.0
+    }
+  },
+  "category_capital": 3.9749999999999996,
+  "citations": [
+    "EU_CRR3_ARTICLE_325W",
+    "EU_CRR3_ARTICLE_325X",
+    "EU_CRR3_ARTICLE_325Y_1_2",
+    "EU_CRR3_ARTICLE_325Y_3_5",
+    "EU_CRR3_ARTICLE_325Y_6",
+    "EU_CRR3_ECAI_CQS_MAPPING"
+  ],
+  "fixture_id": "drc_eu_nonsec_v1",
+  "gross": {
+    "eu-corp-alpha-long": 75.0,
+    "eu-corp-alpha-short": 30.0,
+    "eu-corp-beta-short": 15.0,
+    "eu-muni-short-maturity": 60.0,
+    "eu-sovereign-long": 75.0
+  },
+  "input_count": 5,
+  "input_hash": "50ce9aaf4ebd56d346e0ebbfcd982ced3cdafe1f9cc775b268de045aa5f1bd73",
+  "maturity_weights": {
+    "eu-corp-alpha-long": 1.0,
+    "eu-corp-alpha-short": 1.0,
+    "eu-corp-beta-short": 1.0,
+    "eu-muni-short-maturity": 0.25,
+    "eu-sovereign-long": 1.0
+  },
+  "net": {
+    "net-corporate-issuer-alpha-senior_debt-long": {
+      "amount": 45.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "issuer-alpha",
+      "rejected_offsets": []
+    },
+    "net-corporate-issuer-beta-senior_debt-short": {
+      "amount": 15.0,
+      "bucket": "CORPORATE",
+      "direction": "SHORT",
+      "issuer": "issuer-beta",
+      "rejected_offsets": []
+    },
+    "net-local-government-municipal-municipality-a-senior_debt-long": {
+      "amount": 15.0,
+      "bucket": "LOCAL_GOVERNMENT_MUNICIPAL",
+      "direction": "LONG",
+      "issuer": "municipality-a",
+      "rejected_offsets": []
+    },
+    "net-sovereign-sovereign-a-senior_debt-long": {
+      "amount": 75.0,
+      "bucket": "SOVEREIGN",
+      "direction": "LONG",
+      "issuer": "sovereign-a",
+      "rejected_offsets": []
+    }
+  },
+  "profile_hash": "7bfcaa79bd331e8fcba34b50a0abef2592f0ec8fdfde50962a276b136d40ca73",
+  "result_json_sha256": "fb213a067dbf0176a4481f64cce372873a9449e64bc5e08ee914f2b3af2d7f2b",
+  "scaled": {
+    "eu-corp-alpha-long": 75.0,
+    "eu-corp-alpha-short": 30.0,
+    "eu-corp-beta-short": 15.0,
+    "eu-muni-short-maturity": 15.0,
+    "eu-sovereign-long": 75.0
+  },
+  "total_drc": 3.9749999999999996
+}

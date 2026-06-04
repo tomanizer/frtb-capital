@@ -6,7 +6,7 @@
 
 - Package directory: `packages/frtb-drc`
 - Import name: `frtb_drc`
-- Implementation status: partial runtime; supported U.S. NPR 2.0 and Basel MAR22 row/batch paths for non-securitisation, securitisation non-CTP, and CTP
+- Implementation status: partial runtime; supported U.S. NPR 2.0 and Basel MAR22 row/batch paths for non-securitisation, securitisation non-CTP, and CTP; supported EU CRR3 row/batch path for non-securitisation
 - Validation status: pending
 
 The package is importable and exposes `calculate_drc_capital` for supported
@@ -25,9 +25,11 @@ Known profiles are `US_NPR_2_0`, `BASEL_MAR22`, `EU_CRR3`, and
 MAR22.31-MAR22.35 bucket, risk-weight evidence, fair-value cap, HBR, and
 category aggregation contracts. Basel MAR22 CTP is supported through cited
 MAR22.36-MAR22.45 CTP contracts and typed MAR22.42 banking-book
-securitisation risk-weight evidence. EU CRR3 and UK PRA profiles are known
-identities but fail closed for all DRC risk classes until Article 325w / PRA
-PS1/26 rulebook mappings are implemented.
+securitisation risk-weight evidence. EU CRR3 non-securitisation is supported
+through cited Article 325w gross JTD/LGD, Article 325x netting/maturity,
+Article 325y bucket/risk-weight/HBR/category mechanics, and ECAI-to-CQS
+mapping evidence. EU CRR3 securitisation non-CTP, EU CRR3 CTP, and all UK PRA
+paths fail closed until their profile-specific mappings are implemented.
 Securitisation non-CTP and CTP sub-scope without supplied risk weights or
 explicit replication evidence also fails closed.
 
@@ -90,3 +92,4 @@ batch audit boundaries, SA handoff):
 - [ADR 0036: DRC securitisation and CTP risk-weight evidence contract](../../decisions/0036-drc-securitisation-risk-weight-evidence.md)
 - [ADR 0030: DRC securitisation fair-value cap evidence](../../decisions/0030-drc-securitisation-fair-value-cap-evidence.md)
 - [ADR 0031: DRC attribution method contract](../../decisions/0031-drc-attribution-method-contract.md)
+- [ADR 0041: DRC EU CRR3 non-securitisation profile slice](../../decisions/0041-drc-eu-crr3-nonsec-profile.md)

@@ -92,6 +92,7 @@ from frtb_drc.securitisation import (
 )
 from frtb_drc.validation import (
     BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     DrcInputError,
     chargeable_non_securitisation_bucket_keys,
@@ -102,9 +103,15 @@ from frtb_drc.validation import (
     validate_positions,
 )
 
-_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
-_NETTING_CITATION = "US_NPR_210_B_2"
-_ZERO_CATEGORY_CITATION = "US_NPR_210_B_3_III"
+_US_NPR_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
+_BASEL_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
+_EU_CRR3_FORMULA_CITATIONS = ("EU_CRR3_ARTICLE_325W",)
+_US_NPR_NETTING_CITATION = "US_NPR_210_B_2"
+_BASEL_NETTING_CITATION = "BASEL_MAR22_19"
+_EU_CRR3_NETTING_CITATION = "EU_CRR3_ARTICLE_325X"
+_US_NPR_ZERO_CATEGORY_CITATION = "US_NPR_210_B_3_III"
+_BASEL_ZERO_CATEGORY_CITATION = "BASEL_MAR22_26"
+_EU_CRR3_ZERO_CATEGORY_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
 _SEC_NON_CTP_GROSS_CITATIONS = ("US_NPR_210_C_1", "BASEL_MAR22_27")
 _SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS = ("US_NPR_210_C_3_III", "BASEL_MAR22_34")
 _SEC_NON_CTP_NETTING_CITATIONS = (
@@ -647,18 +654,23 @@ def calculate_drc_capital_from_batch(
             gross_jtd,
             profile_id=profile.profile_id,
         )
-        net_jtds = _calculate_net_jtds_from_arrays(calculation_batch, gross_jtd, scaled_jtd)
+        net_jtds = _calculate_net_jtds_from_arrays(
+            calculation_batch,
+            gross_jtd,
+            scaled_jtd,
+            profile_id=profile.profile_id,
+        )
         capital_inputs = _capital_inputs(calculation_batch, net_jtds)
         category = (
             calculate_category_drc(capital_inputs, profile_id=profile.profile_id)
             if capital_inputs
-            else _zero_nonsec_category()
+            else _zero_nonsec_category(profile.profile_id)
         )
         formula_citations = (
-            *_FORMULA_CITATIONS,
+            *_nonsec_formula_citations(profile.profile_id),
             maturity_citation,
             *lgd_citations,
-            *((_NETTING_CITATION,) if net_jtds else ()),
+            *((_nonsec_netting_citation(profile.profile_id),) if net_jtds else ()),
         )
     elif risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
         gross_jtd = _securitisation_non_ctp_gross_jtd_array(calculation_batch, context=context)
@@ -1254,6 +1266,8 @@ def _calculate_net_jtds_from_arrays(
     batch: DrcPositionBatch,
     gross_jtd: FloatArray,
     scaled_jtd: FloatArray,
+    *,
+    profile_id: str,
 ) -> tuple[NetJtd, ...]:
     grouped: dict[tuple[str, str], list[int]] = {}
     for index in _sorted_indices(batch):
@@ -1264,8 +1278,18 @@ def _calculate_net_jtds_from_arrays(
         grouped.setdefault(key, []).append(index)
 
     net_records: list[NetJtd] = []
+    netting_citation = _nonsec_netting_citation(profile_id)
     for key in sorted(grouped):
-        net_records.extend(_net_group(batch, grouped[key], gross_jtd, scaled_jtd, key=key))
+        net_records.extend(
+            _net_group(
+                batch,
+                grouped[key],
+                gross_jtd,
+                scaled_jtd,
+                key=key,
+                netting_citation=netting_citation,
+            )
+        )
     return tuple(net_records)
 
 
@@ -1516,6 +1540,7 @@ def _net_group(
     scaled_jtd: FloatArray,
     *,
     key: tuple[str, str],
+    netting_citation: str,
 ) -> list[NetJtd]:
     bucket_key, issuer_key = key
     longs = _by_seniority(batch, indices, DefaultDirection.LONG)
@@ -1531,7 +1556,14 @@ def _net_group(
         ]
         for seniority, items in shorts.items()
     }
-    rejected = _rejected_seniority_offsets(batch, bucket_key, issuer_key, longs, shorts)
+    rejected = _rejected_seniority_offsets(
+        batch,
+        bucket_key,
+        issuer_key,
+        longs,
+        shorts,
+        netting_citation=netting_citation,
+    )
     records: list[NetJtd] = []
 
     for seniority in sorted(longs, key=_seniority_rank):
@@ -1684,6 +1716,8 @@ def _rejected_seniority_offsets(
     issuer_key: str,
     longs: dict[DrcSeniority, list[int]],
     shorts: dict[DrcSeniority, list[int]],
+    *,
+    netting_citation: str,
 ) -> tuple[RejectedOffset, ...]:
     rejected: list[RejectedOffset] = []
     sequence = count(1)
@@ -1706,7 +1740,7 @@ def _rejected_seniority_offsets(
                             long_source_id=f"scaled-{batch.position_ids[long_index]}",
                             short_source_id=f"scaled-{batch.position_ids[short_index]}",
                             reason_code="SHORT_HIGHER_SENIORITY_THAN_LONG",
-                            citations=(_NETTING_CITATION,),
+                            citations=(netting_citation,),
                         )
                     )
     return tuple(rejected)
@@ -1802,7 +1836,7 @@ def _credit_quality_for_net_jtd(
     return next(iter(credit_qualities))
 
 
-def _zero_nonsec_category() -> CategoryDrc:
+def _zero_nonsec_category(profile_id: str) -> CategoryDrc:
     return CategoryDrc(
         category_id="category-drc-non-securitisation",
         risk_class=DrcRiskClass.NON_SECURITISATION,
@@ -1815,7 +1849,7 @@ def _zero_nonsec_category() -> CategoryDrc:
                 source_id=DrcRiskClass.NON_SECURITISATION.value,
                 selected=True,
                 reason="all supported net JTD records are zero",
-                citations=(_ZERO_CATEGORY_CITATION,),
+                citations=(_zero_nonsec_category_citation(profile_id),),
             ),
         ),
     )
@@ -1831,7 +1865,7 @@ def _collect_batch_citations(
     fx_citations: tuple[str, ...] = (),
 ) -> tuple[str, ...]:
     citation_ids = {*formula_citations, *fx_citations}
-    if profile_id != BASEL_MAR22_PROFILE_ID:
+    if profile_id == US_NPR_2_0_PROFILE_ID:
         citation_ids.add("US_NPR_210_SCOPE")
     for group in batch.citation_ids:
         citation_ids.update(group)
@@ -1849,6 +1883,15 @@ def _collect_batch_citations(
 
 
 def _batch_api_citations(profile_id: str, risk_class: DrcRiskClass) -> tuple[str, ...]:
+    if profile_id == EU_CRR3_PROFILE_ID and risk_class is DrcRiskClass.NON_SECURITISATION:
+        return (
+            "EU_CRR3_ARTICLE_325W",
+            "EU_CRR3_ARTICLE_325X",
+            "EU_CRR3_ARTICLE_325Y_1_2",
+            "EU_CRR3_ARTICLE_325Y_3_5",
+            "EU_CRR3_ARTICLE_325Y_6",
+            "EU_CRR3_ECAI_CQS_MAPPING",
+        )
     if profile_id == BASEL_MAR22_PROFILE_ID and risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
         return _BASEL_SEC_NON_CTP_BATCH_CITATIONS
     if (
@@ -1858,7 +1901,33 @@ def _batch_api_citations(profile_id: str, risk_class: DrcRiskClass) -> tuple[str
         return _BASEL_CTP_BATCH_CITATIONS
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return ()
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return ()
     return ("US_NPR_210_SCOPE",)
+
+
+def _nonsec_formula_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_FORMULA_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_FORMULA_CITATIONS
+    return _US_NPR_FORMULA_CITATIONS
+
+
+def _nonsec_netting_citation(profile_id: str) -> str:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_NETTING_CITATION
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_NETTING_CITATION
+    return _US_NPR_NETTING_CITATION
+
+
+def _zero_nonsec_category_citation(profile_id: str) -> str:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_ZERO_CATEGORY_CITATION
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_ZERO_CATEGORY_CITATION
+    return _US_NPR_ZERO_CATEGORY_CITATION
 
 
 def _context_input_hash_for_batch(

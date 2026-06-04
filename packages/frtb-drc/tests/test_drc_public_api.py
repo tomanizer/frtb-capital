@@ -83,27 +83,35 @@ def test_calculate_drc_capital_supports_basel_nonsec_profile() -> None:
     validate_reconciliation(result)
 
 
-def test_calculate_drc_capital_fails_known_unsupported_eu_profile_before_capital() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=EU_CRR3_PROFILE_ID):
-        calculate_drc_capital(
-            (
-                _position(
-                    "eu-long",
-                    DefaultDirection.LONG,
-                    100.0,
-                    bucket_key="SOVEREIGN",
-                    credit_quality=CreditQuality.AA,
-                    citation_ids=("EU_CRR3_ARTICLE_325W",),
-                ),
+def test_calculate_drc_capital_supports_eu_crr3_nonsec_profile() -> None:
+    result = calculate_drc_capital(
+        (
+            _position(
+                "eu-long",
+                DefaultDirection.LONG,
+                100.0,
+                bucket_key="SOVEREIGN",
+                credit_quality=CreditQuality.AA,
+                citation_ids=("EU_CRR3_ARTICLE_325W", "EU_CRR3_ECAI_CQS_MAPPING"),
             ),
-            context=_context(profile_id=EU_CRR3_PROFILE_ID),
-        )
+        ),
+        context=_context(profile_id=EU_CRR3_PROFILE_ID),
+    )
+
+    assert result.profile_id == EU_CRR3_PROFILE_ID
+    assert result.total_drc == pytest.approx(1.5)
+    assert "EU_CRR3_ARTICLE_325W" in result.citations
+    assert "EU_CRR3_ARTICLE_325X" in result.citations
+    assert "EU_CRR3_ARTICLE_325Y_1_2" in result.citations
+    assert "EU_CRR3_ECAI_CQS_MAPPING" in result.citations
+    assert not any(citation.startswith("US_NPR") for citation in result.citations)
+    assert not any(citation.startswith("BASEL_MAR22") for citation in result.citations)
+    validate_reconciliation(result)
 
 
 @pytest.mark.parametrize(
     ("profile_id", "risk_class", "expected"),
     [
-        (EU_CRR3_PROFILE_ID, DrcRiskClass.NON_SECURITISATION, EU_CRR3_PROFILE_ID),
         (EU_CRR3_PROFILE_ID, DrcRiskClass.SECURITISATION_NON_CTP, EU_CRR3_PROFILE_ID),
         (EU_CRR3_PROFILE_ID, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO, EU_CRR3_PROFILE_ID),
         (PRA_UK_CRR_PROFILE_ID, DrcRiskClass.NON_SECURITISATION, PRA_UK_CRR_PROFILE_ID),

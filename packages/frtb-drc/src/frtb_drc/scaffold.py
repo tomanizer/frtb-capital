@@ -40,6 +40,8 @@ from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.reference_data import get_risk_weight_rule
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    US_NPR_2_0_PROFILE_ID,
     DrcRuleProfile,
     ensure_risk_class_supported,
     get_rule_profile,
@@ -60,7 +62,12 @@ PACKAGE_METADATA = CapitalComponentMetadata(
     validation_status=ValidationStatus.PENDING,
 )
 
-_ZERO_CATEGORY_CITATION = "US_NPR_210_B_3_III"
+_US_NPR_ZERO_CATEGORY_CITATION = "US_NPR_210_B_3_III"
+_BASEL_ZERO_CATEGORY_CITATION = "BASEL_MAR22_26"
+_EU_CRR3_ZERO_CATEGORY_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
+_US_NPR_NONSEC_NETTING_CITATION = "US_NPR_210_B_2"
+_BASEL_NONSEC_NETTING_CITATION = "BASEL_MAR22_19"
+_EU_CRR3_NONSEC_NETTING_CITATION = "EU_CRR3_ARTICLE_325X"
 
 
 def calculate_drc_capital(
@@ -278,7 +285,7 @@ def _calculate_nonsec_category(
     category = (
         calculate_category_drc(capital_inputs, profile_id=profile.profile_id)
         if capital_inputs
-        else _zero_nonsec_category()
+        else _zero_nonsec_category(profile.profile_id)
     )
     return category, gross_jtds, scaled_jtds, net_jtds
 
@@ -330,7 +337,7 @@ def _credit_quality_for_net_jtd(
     return next(iter(credit_qualities))
 
 
-def _zero_nonsec_category() -> CategoryDrc:
+def _zero_nonsec_category(profile_id: str) -> CategoryDrc:
     return CategoryDrc(
         category_id="category-drc-non-securitisation",
         risk_class=DrcRiskClass.NON_SECURITISATION,
@@ -343,7 +350,7 @@ def _zero_nonsec_category() -> CategoryDrc:
                 source_id=DrcRiskClass.NON_SECURITISATION.value,
                 selected=True,
                 reason="all supported net JTD records are zero",
-                citations=(_ZERO_CATEGORY_CITATION,),
+                citations=(_zero_nonsec_category_citation(profile_id),),
             ),
         ),
     )
@@ -358,16 +365,12 @@ def _collect_citations(
     profile_id: str,
 ) -> tuple[str, ...]:
     citation_ids: set[str] = set()
-    if profile_id != BASEL_MAR22_PROFILE_ID:
+    if profile_id == US_NPR_2_0_PROFILE_ID:
         citation_ids.add("US_NPR_210_SCOPE")
-    if (
-        any(
-            DrcRiskClass(record.risk_class) == DrcRiskClass.NON_SECURITISATION
-            for record in net_jtds
-        )
-        and profile_id != BASEL_MAR22_PROFILE_ID
+    if any(
+        DrcRiskClass(record.risk_class) == DrcRiskClass.NON_SECURITISATION for record in net_jtds
     ):
-        citation_ids.add("US_NPR_210_B_2")
+        citation_ids.add(_nonsec_netting_citation(profile_id))
     if any(
         DrcRiskClass(record.risk_class) == DrcRiskClass.SECURITISATION_NON_CTP
         for record in net_jtds
@@ -378,7 +381,7 @@ def _collect_citations(
             DrcRiskClass(record.risk_class) == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
             for record in net_jtds
         )
-        and profile_id != BASEL_MAR22_PROFILE_ID
+        and profile_id == US_NPR_2_0_PROFILE_ID
     ):
         citation_ids.add("US_NPR_210_D_2")
     for gross_jtd in gross_jtds:
@@ -399,6 +402,22 @@ def _collect_citations(
             citation_ids.update(_branch_citations(bucket.branch_metadata))
             citation_ids.update(_branch_citations(bucket.hbr.branch_metadata))
     return tuple(sorted(citation_ids))
+
+
+def _zero_nonsec_category_citation(profile_id: str) -> str:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_ZERO_CATEGORY_CITATION
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_ZERO_CATEGORY_CITATION
+    return _US_NPR_ZERO_CATEGORY_CITATION
+
+
+def _nonsec_netting_citation(profile_id: str) -> str:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return _BASEL_NONSEC_NETTING_CITATION
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_NONSEC_NETTING_CITATION
+    return _US_NPR_NONSEC_NETTING_CITATION
 
 
 def _branch_citations(branches: tuple[BranchMetadata, ...]) -> set[str]:
