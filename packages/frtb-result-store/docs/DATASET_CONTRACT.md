@@ -17,8 +17,9 @@ This package's dataset contract is therefore a storage-result contract:
 - status events, result events, telemetry, and derived dashboard marts.
 
 The detailed operator-facing storage contract is
-`docs/modules/frtb-result-store/STORAGE_CONTRACT.md`. This package-local
-contract summarizes the data boundary and persisted row families.
+[`STORAGE_CONTRACT.md`](../../../docs/modules/frtb-result-store/STORAGE_CONTRACT.md).
+This package-local contract summarizes the data boundary and persisted row
+families.
 
 ## Boundary
 
@@ -278,10 +279,12 @@ When changing result-store data semantics:
 
 1. Update this contract when a persisted row family, manifest field, artifact
    rule, mart, or backend boundary changes.
-2. Update `docs/modules/frtb-result-store/STORAGE_CONTRACT.md` for
-   operator-facing storage behavior changes.
-3. Update `docs/modules/frtb-result-store/PUBLIC_API.md` when stable symbols or
-   query surfaces change.
+2. Update
+   [`STORAGE_CONTRACT.md`](../../../docs/modules/frtb-result-store/STORAGE_CONTRACT.md)
+   for operator-facing storage behavior changes.
+3. Update
+   [`PUBLIC_API.md`](../../../docs/modules/frtb-result-store/PUBLIC_API.md) when
+   stable symbols or query surfaces change.
 4. Bump `RESULT_STORE_SCHEMA_VERSION` for breaking persisted schema changes.
 5. Add or update tests for write compatibility, manifest fingerprints, export,
    read-only API behavior, and affected marts.
