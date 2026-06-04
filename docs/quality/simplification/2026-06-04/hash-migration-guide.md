@@ -45,6 +45,11 @@ hashlib.sha256(
 ).hexdigest()
 ```
 
+The plain `json.dumps(payload, ...)` form is equivalent only when the package
+payload builder already emits JSON-ready values. If raw dates, enums, dataclasses,
+or other domain objects can reach the helper, add a package-local compatibility
+test before replacing the helper with `stable_json_hash`.
+
 The compatibility tests live in
 `packages/frtb-common/tests/test_hashing.py::test_stable_json_hash_matches_plain_legacy_payload_helper`
 and
@@ -65,6 +70,11 @@ and
 Do not migrate IMA binary or NumPy-array hashing through this helper. Those
 input envelopes deliberately remain package-local until a separate design covers
 binary and array canonicalization.
+
+Do not migrate RRAO streaming multi-position digests through this helper unless
+a later design explicitly covers streaming hash envelopes. RRAO's package-local
+`hash_payload` wrapper already delegates ordinary payload hashing to
+`stable_json_hash`.
 
 ## Current package order
 
