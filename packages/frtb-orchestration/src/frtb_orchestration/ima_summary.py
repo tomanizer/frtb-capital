@@ -62,7 +62,12 @@ class ImaCapitalSummary:
         _require_text_tuple(self.warnings, "warnings")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic audit payload for this IMA summary."""
+        """Return a deterministic audit payload for this IMA summary.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
 
         return {
             "package_name": self.package_name,
@@ -103,6 +108,15 @@ def recognise_ima_summary(result: object) -> ImaCapitalSummary:
     - ``sa_fallback_desk_count`` (derived from ``desk_records`` if present)
     - ``citations``
     - ``warnings``
+    Parameters
+    ----------
+    result : object
+        Result.
+
+    Returns
+    -------
+    ImaCapitalSummary
+        Result of the operation.
     """
 
     run_id = _required_text_attr(result, ["run_id"], component="IMA")

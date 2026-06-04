@@ -25,7 +25,17 @@ _SUITE_EXTRA_PROFILE_FAMILY: dict[str, str] = {
 
 
 def suite_jurisdiction_family(profile_id: str) -> str:
-    """Return the suite-level jurisdiction family for a profile or regime id."""
+    """Return the suite-level jurisdiction family for a profile or regime id.
+    Parameters
+    ----------
+    profile_id : str
+        Profile id.
+
+    Returns
+    -------
+    str
+        Result of the operation.
+    """
 
     try:
         return standardised_jurisdiction_family(profile_id)

@@ -119,7 +119,12 @@ class SuiteAttributionResult:
             )
 
     def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable attribution report."""
+        """Return a JSON-serialisable attribution report.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
 
         return {
             "run_id": self.run_id,
@@ -155,7 +160,12 @@ class SuiteAttributionComponentReport:
         _require_tuple_of(self.contributions, CapitalContribution, "contributions")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable component attribution section."""
+        """Return a JSON-serialisable component attribution section.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
 
         return {
             "component": self.component,
@@ -222,7 +232,12 @@ class SuiteAttributionReport:
 
     @property
     def contribution_records(self) -> tuple[CapitalContribution, ...]:
-        """Return component records followed by the suite residual record."""
+        """Return component records followed by the suite residual record.
+        Returns
+        -------
+        tuple[CapitalContribution, ...]
+            Result of the operation.
+        """
 
         component_records = tuple(
             contribution
@@ -232,7 +247,12 @@ class SuiteAttributionReport:
         return (*component_records, self.suite_residual)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic JSON-serialisable suite attribution report."""
+        """Return a deterministic JSON-serialisable suite attribution report.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
 
         return {
             "run_id": self.run_id,
@@ -341,7 +361,12 @@ class SuiteCapitalResult:
                 )
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic audit payload for the suite capital result."""
+        """Return a deterministic audit payload for the suite capital result.
+        Returns
+        -------
+        dict[str, object]
+            Result of the operation.
+        """
 
         payload: dict[str, object] = {
             "run_id": self.run_id,
@@ -376,6 +401,23 @@ def calculate_suite_capital(
     Components must share calculation date, base currency, and jurisdiction
     family. When attribution bundles are supplied, they are validated and
     re-exposed with an explicit suite-level residual record.
+    Parameters
+    ----------
+    ima_summary : ImaCapitalSummary
+        Ima summary.
+    sa_result : StandardisedApproachCapitalResult
+        Sa result.
+    cva_summary : CvaCapitalSummary
+        Cva summary.
+    run_id : str | None, optional
+        Run id.
+    component_contribution_bundles : tuple[ComponentContributionBundle, ...], optional
+        Component contribution bundles.
+
+    Returns
+    -------
+    SuiteCapitalResult
+        Result of the operation.
     """
 
     if not isinstance(ima_summary, ImaCapitalSummary):
@@ -463,6 +505,19 @@ def aggregate_suite_attribution(
     Incoming component bundles and their contained ``CapitalContribution``
     records are preserved unchanged. The returned suite residual explicitly
     reconciles bundle totals to the top-of-house suite capital.
+    Parameters
+    ----------
+    suite_result : SuiteCapitalResult
+        Suite result.
+    component_bundles : tuple[ComponentContributionBundle, ...]
+        Component bundles.
+    suite_total_capital : float | None, optional
+        Suite total capital.
+
+    Returns
+    -------
+    SuiteAttributionResult
+        Result of the operation.
     """
 
     if not isinstance(suite_result, SuiteCapitalResult):
@@ -533,6 +588,19 @@ def build_suite_attribution_report(
     records are exposed unchanged, while component sections are ordered to the
     supported top-level or decomposed suite component set for stable notebook
     and JSON output.
+    Parameters
+    ----------
+    suite_result : SuiteCapitalResult
+        Suite result.
+    component_bundles : tuple[ComponentContributionBundle, ...]
+        Component bundles.
+    suite_total_capital : float | None, optional
+        Suite total capital.
+
+    Returns
+    -------
+    SuiteAttributionReport
+        Result of the operation.
     """
 
     attribution = aggregate_suite_attribution(
