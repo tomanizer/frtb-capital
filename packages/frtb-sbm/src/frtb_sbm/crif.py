@@ -245,7 +245,16 @@ def adapt_crif_records(
     legal_entity: str = "UNKNOWN",
     sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
 ) -> SbmAdapterResult:
-    """Map CRIF-like row dictionaries into canonical ``SbmSensitivity`` records."""
+    """Map CRIF-like row dictionaries into canonical ``SbmSensitivity`` records.
+    Parameters
+    ----------
+    records, source_file, desk_id, legal_entity, sign_convention :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    SbmAdapterResult
+    """
 
     if not isinstance(records, Sequence) or isinstance(records, str | bytes):
         raise SbmInputError("records must be a sequence of mapping rows", field="records")
@@ -296,7 +305,16 @@ def normalize_girr_delta_crif_records(
     sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize CRIF-like row dictionaries into the GIRR delta Arrow table."""
+    """Normalize CRIF-like row dictionaries into the GIRR delta Arrow table.
+    Parameters
+    ----------
+    records, source_file, desk_id, legal_entity, sign_convention, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     if not isinstance(records, Sequence) or isinstance(records, str | bytes):
         raise SbmInputError("records must be a sequence of mapping rows", field="records")
@@ -332,7 +350,16 @@ def normalize_girr_delta_crif_arrow_table(
     sign_convention: SbmSignConvention = SbmSignConvention.RECEIVE,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a CRIF-like Arrow table into the GIRR delta Arrow table."""
+    """Normalize a CRIF-like Arrow table into the GIRR delta Arrow table.
+    Parameters
+    ----------
+    table, source_file, desk_id, legal_entity, sign_convention, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     crif_handoff = normalize_crif_arrow_table(
         table,

@@ -17,7 +17,16 @@ from frtb_sbm.validation import SbmInputError
 
 
 def to_component_summary(result: SbmCapitalResult) -> ComponentCapitalSummary:
-    """Return the shared component summary view for one SBM capital result."""
+    """Return the shared component summary view for one SBM capital result.
+    Parameters
+    ----------
+    result : SbmCapitalResult
+        See signature.
+
+    Returns
+    -------
+    ComponentCapitalSummary
+    """
 
     if result.run_context is None:
         raise SbmInputError("SbmCapitalResult.run_context is required for component summary")
@@ -44,7 +53,16 @@ def to_component_summary(result: SbmCapitalResult) -> ComponentCapitalSummary:
 def unsupported_features_from_result(
     result: SbmCapitalResult,
 ) -> tuple[SbmUnsupportedFeature, ...]:
-    """Return structured unsupported-feature metadata carried on a result."""
+    """Return structured unsupported-feature metadata carried on a result.
+    Parameters
+    ----------
+    result : SbmCapitalResult
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmUnsupportedFeature, ...]
+    """
 
     return result.unsupported_features
 

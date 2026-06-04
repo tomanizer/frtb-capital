@@ -431,7 +431,16 @@ def normalize_girr_delta_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM GIRR delta input table contract."""
+    """Normalize a raw Arrow table to the SBM GIRR delta input table contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -452,7 +461,16 @@ def normalize_girr_vega_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM GIRR vega handoff contract."""
+    """Normalize a raw Arrow table to the SBM GIRR vega handoff contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -473,7 +491,16 @@ def normalize_girr_curvature_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM GIRR curvature validation contract."""
+    """Normalize a raw Arrow table to the SBM GIRR curvature validation contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -494,7 +521,16 @@ def normalize_fx_curvature_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM FX curvature handoff contract."""
+    """Normalize a raw Arrow table to the SBM FX curvature handoff contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return _normalize_curvature_arrow_table(
         table,
@@ -514,7 +550,16 @@ def normalize_equity_curvature_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM equity curvature handoff contract."""
+    """Normalize a raw Arrow table to the SBM equity curvature handoff contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return _normalize_curvature_arrow_table(
         table,
@@ -534,7 +579,16 @@ def normalize_commodity_curvature_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM commodity curvature contract."""
+    """Normalize a raw Arrow table to the SBM commodity curvature contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return _normalize_curvature_arrow_table(
         table,
@@ -554,7 +608,16 @@ def normalize_csr_nonsec_curvature_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM CSR non-sec curvature contract."""
+    """Normalize a raw Arrow table to the SBM CSR non-sec curvature contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return _normalize_curvature_arrow_table(
         table,
@@ -574,7 +637,16 @@ def normalize_csr_sec_nonctp_curvature_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM CSR sec non-CTP curvature contract."""
+    """Normalize a raw Arrow table to the SBM CSR sec non-CTP curvature contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return _normalize_curvature_arrow_table(
         table,
@@ -594,7 +666,16 @@ def normalize_csr_sec_ctp_curvature_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM CSR sec CTP curvature contract."""
+    """Normalize a raw Arrow table to the SBM CSR sec CTP curvature contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return _normalize_curvature_arrow_table(
         table,
@@ -634,7 +715,16 @@ def normalize_fx_delta_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM FX delta handoff contract."""
+    """Normalize a raw Arrow table to the SBM FX delta handoff contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -655,7 +745,16 @@ def normalize_equity_delta_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM equity delta handoff contract."""
+    """Normalize a raw Arrow table to the SBM equity delta handoff contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -676,7 +775,16 @@ def normalize_commodity_delta_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM commodity delta handoff contract."""
+    """Normalize a raw Arrow table to the SBM commodity delta handoff contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -697,7 +805,16 @@ def normalize_csr_nonsec_delta_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM CSR non-securitisation delta contract."""
+    """Normalize a raw Arrow table to the SBM CSR non-securitisation delta contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -718,7 +835,16 @@ def normalize_csr_sec_nonctp_delta_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM CSR securitisation non-CTP delta contract."""
+    """Normalize a raw Arrow table to the SBM CSR securitisation non-CTP delta contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -739,7 +865,16 @@ def normalize_csr_sec_ctp_delta_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM CSR securitisation CTP delta contract."""
+    """Normalize a raw Arrow table to the SBM CSR securitisation CTP delta contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -760,7 +895,16 @@ def normalize_fx_vega_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM FX vega handoff contract."""
+    """Normalize a raw Arrow table to the SBM FX vega handoff contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -781,7 +925,16 @@ def normalize_equity_vega_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM equity vega handoff contract."""
+    """Normalize a raw Arrow table to the SBM equity vega handoff contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -802,7 +955,16 @@ def normalize_commodity_vega_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM commodity vega handoff contract."""
+    """Normalize a raw Arrow table to the SBM commodity vega handoff contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -823,7 +985,16 @@ def normalize_csr_nonsec_vega_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM CSR non-securitisation vega contract."""
+    """Normalize a raw Arrow table to the SBM CSR non-securitisation vega contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -844,7 +1015,16 @@ def normalize_csr_sec_nonctp_vega_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM CSR securitisation non-CTP vega contract."""
+    """Normalize a raw Arrow table to the SBM CSR securitisation non-CTP vega contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -865,7 +1045,16 @@ def normalize_csr_sec_ctp_vega_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the SBM CSR securitisation CTP vega contract."""
+    """Normalize a raw Arrow table to the SBM CSR securitisation CTP vega contract.
+    Parameters
+    ----------
+    table, diagnostics, metadata, rejected, source_hash :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    NormalizedArrowTable
+    """
 
     return normalize_arrow_table(
         table,
@@ -881,7 +1070,16 @@ def normalize_csr_sec_ctp_vega_arrow_table(
 def build_girr_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned GIRR delta batch from a normalized Arrow table."""
+    """Build an SBM-owned GIRR delta batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -893,7 +1091,16 @@ def build_girr_delta_batch_from_arrow(
 def build_girr_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned GIRR vega batch from a normalized Arrow table."""
+    """Build an SBM-owned GIRR vega batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -905,7 +1112,16 @@ def build_girr_vega_batch_from_arrow(
 def build_girr_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned GIRR curvature batch from a normalized handoff."""
+    """Build an SBM-owned GIRR curvature batch from a normalized handoff.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -918,7 +1134,16 @@ def build_girr_curvature_batch_from_arrow(
 def build_fx_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned FX curvature batch from a normalized Arrow table."""
+    """Build an SBM-owned FX curvature batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -930,7 +1155,16 @@ def build_fx_curvature_batch_from_arrow(
 def build_equity_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned equity curvature batch from a normalized Arrow table."""
+    """Build an SBM-owned equity curvature batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -942,7 +1176,16 @@ def build_equity_curvature_batch_from_arrow(
 def build_commodity_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned commodity curvature batch from a normalized Arrow table."""
+    """Build an SBM-owned commodity curvature batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -954,7 +1197,16 @@ def build_commodity_curvature_batch_from_arrow(
 def build_csr_nonsec_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR non-sec curvature batch from a normalized Arrow table."""
+    """Build an SBM-owned CSR non-sec curvature batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -966,7 +1218,16 @@ def build_csr_nonsec_curvature_batch_from_arrow(
 def build_csr_sec_nonctp_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR sec non-CTP curvature batch from a normalized Arrow table."""
+    """Build an SBM-owned CSR sec non-CTP curvature batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -978,7 +1239,16 @@ def build_csr_sec_nonctp_curvature_batch_from_arrow(
 def build_csr_sec_ctp_curvature_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR sec CTP curvature batch from a normalized Arrow table."""
+    """Build an SBM-owned CSR sec CTP curvature batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_curvature_batch_from_arrow(
         handoff,
@@ -1011,7 +1281,16 @@ def _build_curvature_batch_from_arrow(
 def build_fx_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned FX delta batch from a normalized Arrow table."""
+    """Build an SBM-owned FX delta batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1023,7 +1302,16 @@ def build_fx_delta_batch_from_arrow(
 def build_equity_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned equity delta batch from a normalized Arrow table."""
+    """Build an SBM-owned equity delta batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1035,7 +1323,16 @@ def build_equity_delta_batch_from_arrow(
 def build_commodity_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned commodity delta batch from a normalized Arrow table."""
+    """Build an SBM-owned commodity delta batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1047,7 +1344,16 @@ def build_commodity_delta_batch_from_arrow(
 def build_csr_nonsec_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR non-securitisation delta batch from an Arrow table."""
+    """Build an SBM-owned CSR non-securitisation delta batch from an Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1059,7 +1365,16 @@ def build_csr_nonsec_delta_batch_from_arrow(
 def build_csr_sec_nonctp_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR securitisation non-CTP delta batch from an Arrow table."""
+    """Build an SBM-owned CSR securitisation non-CTP delta batch from an Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1071,7 +1386,16 @@ def build_csr_sec_nonctp_delta_batch_from_arrow(
 def build_csr_sec_ctp_delta_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR securitisation CTP delta batch from an Arrow table."""
+    """Build an SBM-owned CSR securitisation CTP delta batch from an Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_sbm_batch_from_arrow(
         handoff,
@@ -1083,7 +1407,16 @@ def build_csr_sec_ctp_delta_batch_from_arrow(
 def build_fx_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned FX vega batch from a normalized Arrow table."""
+    """Build an SBM-owned FX vega batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1095,7 +1428,16 @@ def build_fx_vega_batch_from_arrow(
 def build_equity_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned equity vega batch from a normalized Arrow table."""
+    """Build an SBM-owned equity vega batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1107,7 +1449,16 @@ def build_equity_vega_batch_from_arrow(
 def build_commodity_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned commodity vega batch from a normalized Arrow table."""
+    """Build an SBM-owned commodity vega batch from a normalized Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1119,7 +1470,16 @@ def build_commodity_vega_batch_from_arrow(
 def build_csr_nonsec_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR non-securitisation vega batch from an Arrow table."""
+    """Build an SBM-owned CSR non-securitisation vega batch from an Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1131,7 +1491,16 @@ def build_csr_nonsec_vega_batch_from_arrow(
 def build_csr_sec_nonctp_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR securitisation non-CTP vega batch from an Arrow table."""
+    """Build an SBM-owned CSR securitisation non-CTP vega batch from an Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1143,7 +1512,16 @@ def build_csr_sec_nonctp_vega_batch_from_arrow(
 def build_csr_sec_ctp_vega_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> SbmSensitivityBatch:
-    """Build an SBM-owned CSR securitisation CTP vega batch from an Arrow table."""
+    """Build an SBM-owned CSR securitisation CTP vega batch from an Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
 
     return _build_non_girr_vega_batch_from_arrow(
         handoff,
@@ -1203,7 +1581,18 @@ def calculate_sbm_capital_from_girr_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized GIRR delta Arrow table."""
+    """Calculate SBM capital from a normalized GIRR delta Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_girr_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_girr_delta_batch(batch, context=context)
@@ -1214,7 +1603,18 @@ def calculate_sbm_capital_from_girr_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized GIRR vega Arrow table."""
+    """Calculate SBM capital from a normalized GIRR vega Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_girr_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_girr_vega_batch(batch, context=context)
@@ -1225,7 +1625,18 @@ def calculate_sbm_capital_from_girr_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized GIRR curvature Arrow table."""
+    """Calculate SBM capital from a normalized GIRR curvature Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_girr_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_girr_curvature_batch(batch, context=context)
@@ -1236,7 +1647,18 @@ def calculate_sbm_capital_from_fx_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized FX delta Arrow table."""
+    """Calculate SBM capital from a normalized FX delta Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_fx_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_fx_delta_batch(batch, context=context)
@@ -1247,7 +1669,18 @@ def calculate_sbm_capital_from_equity_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized equity delta Arrow table."""
+    """Calculate SBM capital from a normalized equity delta Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_equity_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_equity_delta_batch(batch, context=context)
@@ -1258,7 +1691,18 @@ def calculate_sbm_capital_from_commodity_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized commodity delta Arrow table."""
+    """Calculate SBM capital from a normalized commodity delta Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_commodity_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_commodity_delta_batch(batch, context=context)
@@ -1269,7 +1713,18 @@ def calculate_sbm_capital_from_csr_nonsec_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR non-sec delta Arrow table."""
+    """Calculate SBM capital from a normalized CSR non-sec delta Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_csr_nonsec_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_nonsec_delta_batch(batch, context=context)
@@ -1280,7 +1735,18 @@ def calculate_sbm_capital_from_csr_sec_nonctp_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec non-CTP delta Arrow table."""
+    """Calculate SBM capital from a normalized CSR sec non-CTP delta Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_csr_sec_nonctp_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_nonctp_delta_batch(batch, context=context)
@@ -1291,7 +1757,18 @@ def calculate_sbm_capital_from_csr_sec_ctp_delta_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec CTP delta Arrow table."""
+    """Calculate SBM capital from a normalized CSR sec CTP delta Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_csr_sec_ctp_delta_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_ctp_delta_batch(batch, context=context)
@@ -1302,7 +1779,18 @@ def calculate_sbm_capital_from_fx_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized FX vega Arrow table."""
+    """Calculate SBM capital from a normalized FX vega Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_fx_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_fx_vega_batch(batch, context=context)
@@ -1313,7 +1801,18 @@ def calculate_sbm_capital_from_equity_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized equity vega Arrow table."""
+    """Calculate SBM capital from a normalized equity vega Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_equity_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_equity_vega_batch(batch, context=context)
@@ -1324,7 +1823,18 @@ def calculate_sbm_capital_from_commodity_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized commodity vega Arrow table."""
+    """Calculate SBM capital from a normalized commodity vega Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_commodity_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_commodity_vega_batch(batch, context=context)
@@ -1335,7 +1845,18 @@ def calculate_sbm_capital_from_csr_nonsec_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR non-sec vega Arrow table."""
+    """Calculate SBM capital from a normalized CSR non-sec vega Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_csr_nonsec_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_nonsec_vega_batch(batch, context=context)
@@ -1346,7 +1867,18 @@ def calculate_sbm_capital_from_csr_sec_nonctp_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec non-CTP vega Arrow table."""
+    """Calculate SBM capital from a normalized CSR sec non-CTP vega Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_csr_sec_nonctp_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_nonctp_vega_batch(batch, context=context)
@@ -1357,7 +1889,18 @@ def calculate_sbm_capital_from_csr_sec_ctp_vega_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec CTP vega Arrow table."""
+    """Calculate SBM capital from a normalized CSR sec CTP vega Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_csr_sec_ctp_vega_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_ctp_vega_batch(batch, context=context)
@@ -1368,7 +1911,18 @@ def calculate_sbm_capital_from_fx_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized FX curvature Arrow table."""
+    """Calculate SBM capital from a normalized FX curvature Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_fx_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_fx_curvature_batch(batch, context=context)
@@ -1379,7 +1933,18 @@ def calculate_sbm_capital_from_equity_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized equity curvature Arrow table."""
+    """Calculate SBM capital from a normalized equity curvature Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_equity_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_equity_curvature_batch(batch, context=context)
@@ -1390,7 +1955,18 @@ def calculate_sbm_capital_from_commodity_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized commodity curvature Arrow table."""
+    """Calculate SBM capital from a normalized commodity curvature Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_commodity_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_commodity_curvature_batch(batch, context=context)
@@ -1401,7 +1977,18 @@ def calculate_sbm_capital_from_csr_nonsec_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR non-sec curvature Arrow table."""
+    """Calculate SBM capital from a normalized CSR non-sec curvature Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_csr_nonsec_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_nonsec_curvature_batch(batch, context=context)
@@ -1412,7 +1999,18 @@ def calculate_sbm_capital_from_csr_sec_nonctp_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec non-CTP curvature Arrow table."""
+    """Calculate SBM capital from a normalized CSR sec non-CTP curvature Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_csr_sec_nonctp_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch(batch, context=context)
@@ -1423,7 +2021,18 @@ def calculate_sbm_capital_from_csr_sec_ctp_curvature_arrow(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital from a normalized CSR sec CTP curvature Arrow table."""
+    """Calculate SBM capital from a normalized CSR sec CTP curvature Arrow table.
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmCapitalResult
+    """
 
     batch = build_csr_sec_ctp_curvature_batch_from_arrow(handoff)
     return calculate_sbm_capital_from_csr_sec_ctp_curvature_batch(batch, context=context)
@@ -1434,13 +2043,22 @@ def calculate_sbm_portfolio_capital_from_arrow_tables(
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmBatchPortfolioCalculation:
-    """
-    Calculate portfolio-level SBM capital from normalized Arrow tables.
+    """Calculate portfolio-level SBM capital from normalized Arrow tables.
 
     Each normalized table must be homogeneous by ``risk_class`` and ``risk_measure``.
     The dispatcher infers the path from Arrow metadata, builds package-owned
     batches, and delegates to the batch portfolio dispatcher without accepted
     input-row dataclass materialization.
+    Parameters
+    ----------
+    arrow_tables : object | None, optional
+        See signature.
+    context : SbmCalculationContext | None, optional
+        See signature.
+
+    Returns
+    -------
+    SbmBatchPortfolioCalculation
     """
 
     if arrow_tables is None:
