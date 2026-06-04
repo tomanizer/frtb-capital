@@ -69,9 +69,25 @@ def test_capital_contribution_method_coercion() -> None:
     )
     assert contrib.method == AttributionMethod.RESIDUAL
 
+    standalone = CapitalContribution(
+        contribution_id="contrib-standalone",
+        source_id="line-1",
+        source_level="line",
+        bucket_key=None,
+        category="RRAO",
+        base_amount=100.0,
+        marginal_multiplier=None,
+        contribution=1.0,
+        method="STANDALONE",
+        reason="standalone line add-on",
+    )
+    assert standalone.method == AttributionMethod.STANDALONE
+    assert standalone.contribution == 1.0
+
     # Invalid method string
     with pytest.raises(
-        ValueError, match="method must be one of: ANALYTICAL_EULER, RESIDUAL, UNSUPPORTED"
+        ValueError,
+        match="method must be one of: ANALYTICAL_EULER, STANDALONE, RESIDUAL, UNSUPPORTED",
     ):
         CapitalContribution(
             contribution_id="contrib-1",

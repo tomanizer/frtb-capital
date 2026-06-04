@@ -13,6 +13,7 @@ class AttributionMethod(StrEnum):
     """Supported attribution method labels."""
 
     ANALYTICAL_EULER = "ANALYTICAL_EULER"
+    STANDALONE = "STANDALONE"
     RESIDUAL = "RESIDUAL"
     UNSUPPORTED = "UNSUPPORTED"
 
