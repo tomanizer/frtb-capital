@@ -30,6 +30,8 @@ from frtb_cva.reference_data import (
     ba_cva_rho,
     ba_cva_risk_weight,
     compute_non_imm_discount_factor,
+    profile_citation_id,
+    profile_citation_ids,
     resolve_netting_set_discount_factor,
 )
 from frtb_cva.validation import CvaInputError
@@ -139,7 +141,10 @@ def _counterparty_standalone_with_lines(
         sector=counterparty.sector,
         credit_quality=counterparty.credit_quality,
         region=counterparty.region,
-        citations=_unique_citations(rw_citation, "basel_mar50_15"),
+        citations=_unique_citations(
+            rw_citation,
+            profile_citation_id("basel_mar50_15", profile),
+        ),
     )
     return capital, lines
 
@@ -200,7 +205,7 @@ def calculate_reduced_portfolio(
             rho_citation,
             discount_citation,
             alpha_citation,
-            "basel_mar50_14",
+            profile_citation_id("basel_mar50_14", profile),
         ),
     )
 
@@ -215,11 +220,15 @@ def _unique_citations(*citation_ids: str) -> tuple[str, ...]:
     return tuple(merged)
 
 
-def _resolve_hedge_discount_factor(hedge: CvaHedge) -> tuple[float, str, bool]:
+def _resolve_hedge_discount_factor(
+    hedge: CvaHedge,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> tuple[float, str, bool]:
     if hedge.discount_factor_explicit or hedge.discount_factor != 1.0:
-        return hedge.discount_factor, "basel_mar50_23", True
+        return hedge.discount_factor, profile_citation_id("basel_mar50_23", profile), True
     discount_factor, citation = compute_non_imm_discount_factor(hedge.remaining_maturity)
-    return discount_factor, citation, False
+    return discount_factor, profile_citation_id(citation, profile), False
 
 
 def _hedge_risk_weight(
@@ -263,7 +272,7 @@ def calculate_full_portfolio(
     hedge_lines: list[BaCvaHedgeRecognitionLine] = []
 
     for hedge in sorted(hedges, key=lambda item: item.hedge_id):
-        decision = assess_ba_cva_hedge_eligibility(hedge)
+        decision = assess_ba_cva_hedge_eligibility(hedge, profile=profile)
         if decision.eligibility is not HedgeEligibility.ELIGIBLE:
             hedge_lines.append(
                 BaCvaHedgeRecognitionLine(
@@ -295,7 +304,10 @@ def calculate_full_portfolio(
             profile=profile,
         )
         risk_weight, rw_citation = _hedge_risk_weight(hedge, profile=profile)
-        discount_factor, df_citation, _ = _resolve_hedge_discount_factor(hedge)
+        discount_factor, df_citation, _ = _resolve_hedge_discount_factor(
+            hedge,
+            profile=profile,
+        )
         weighted_notional = (
             risk_weight * hedge.remaining_maturity * hedge.notional * discount_factor
         )
@@ -317,10 +329,11 @@ def calculate_full_portfolio(
                     index_contribution=index_term,
                     reason_code=decision.reason_code,
                     citations=_unique_citations(
+                        *decision.citations,
                         rhc_citation,
                         rw_citation,
                         df_citation,
-                        "basel_mar50_24",
+                        profile_citation_id("basel_mar50_24", profile),
                     ),
                 )
             )
@@ -347,10 +360,11 @@ def calculate_full_portfolio(
                 index_contribution=0.0,
                 reason_code=decision.reason_code,
                 citations=_unique_citations(
+                    *decision.citations,
                     rhc_citation,
                     rw_citation,
                     df_citation,
-                    "basel_mar50_23",
+                    profile_citation_id("basel_mar50_23", profile),
                 ),
             )
         )
@@ -391,9 +405,11 @@ def calculate_full_portfolio(
             rho_citation,
             discount_citation,
             beta_citation,
-            "basel_mar50_17",
-            "basel_mar50_20",
-            "basel_mar50_21",
+            *profile_citation_ids(
+                ("basel_mar50_17", "basel_mar50_20", "basel_mar50_21"),
+                profile,
+            ),
+            *(citation for line in hedge_lines for citation in line.citations),
         ),
     )
 

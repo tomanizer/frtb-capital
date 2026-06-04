@@ -12,6 +12,13 @@ from dataclasses import dataclass
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_cva._basel_citations import ADDITIONAL_BASEL_MAR50_CITATIONS, BASEL_MAR50_URL
+from frtb_cva._profile_citations import (
+    EU_CRR3_CITATIONS,
+    PROFILE_CITATION_ID_MAP,
+    UK_PRA_CITATIONS,
+    US_NPR20_CITATIONS,
+)
 from frtb_cva.data_models import (
     CreditQuality,
     CvaCitation,
@@ -20,8 +27,6 @@ from frtb_cva.data_models import (
     HedgeReferenceRelation,
 )
 from frtb_cva.validation import CvaInputError
-
-BASEL_MAR50_URL = "https://www.bis.org/basel_framework/chapter/MAR/50.htm"
 
 BA_CVA_ALPHA = 1.4
 BA_CVA_RHO = 0.5
@@ -267,6 +272,11 @@ BASEL_MAR50_CITATIONS: dict[str, CvaCitation] = {
     ),
 }
 
+BASEL_PROFILE_CITATIONS: dict[str, CvaCitation] = {
+    **BASEL_MAR50_CITATIONS,
+    **ADDITIONAL_BASEL_MAR50_CITATIONS,
+}
+
 _TABLE_1_RISK_WEIGHTS: dict[tuple[CvaSector, CreditQuality], float] = {
     (CvaSector.SOVEREIGN, CreditQuality.INVESTMENT_GRADE): 0.005,
     (CvaSector.SOVEREIGN, CreditQuality.HIGH_YIELD): 0.02,
@@ -355,8 +365,51 @@ BASEL_GIRR_DELTA_CORRELATIONS: dict[tuple[str, str], float] = {
 }
 
 PROFILE_CITATIONS: dict[CvaRegulatoryProfile, dict[str, CvaCitation]] = {
-    CvaRegulatoryProfile.BASEL_MAR50_2020: BASEL_MAR50_CITATIONS,
+    CvaRegulatoryProfile.BASEL_MAR50_2020: BASEL_PROFILE_CITATIONS,
+    CvaRegulatoryProfile.US_NPR20_VB: US_NPR20_CITATIONS,
+    CvaRegulatoryProfile.EU_CRR3_CVA: EU_CRR3_CITATIONS,
+    CvaRegulatoryProfile.UK_PRA_CVA: UK_PRA_CITATIONS,
 }
+
+
+def profile_citation_id(
+    citation_id: str,
+    profile: CvaRegulatoryProfile | str,
+) -> str:
+    """Return the active profile's citation id for a Basel-aligned rule cell."""
+
+    resolved = _resolve_supported_profile(profile)
+    if citation_id in PROFILE_CITATIONS[resolved]:
+        return citation_id
+    if resolved is CvaRegulatoryProfile.BASEL_MAR50_2020:
+        return citation_id
+    citation_map = PROFILE_CITATION_ID_MAP.get(resolved)
+    if citation_map is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"CVA profile {resolved.value} has no citation map defined."
+        )
+    try:
+        return citation_map[citation_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"CVA citation {citation_id!r} is unmapped for profile {resolved.value}."
+        ) from exc
+
+
+def profile_citation_ids(
+    citation_ids: tuple[str, ...],
+    profile: CvaRegulatoryProfile | str,
+) -> tuple[str, ...]:
+    """Map citation ids to the active profile and preserve first-seen order."""
+
+    mapped: list[str] = []
+    seen: set[str] = set()
+    for citation_id in citation_ids:
+        active_id = profile_citation_id(citation_id, profile)
+        if active_id not in seen:
+            mapped.append(active_id)
+            seen.add(active_id)
+    return tuple(mapped)
 
 
 def citations_for_profile(
@@ -376,7 +429,7 @@ def ba_cva_risk_weight(
 ) -> tuple[float, str]:
     """Return the cited BA-CVA Table 1 risk weight and citation id."""
 
-    _resolve_supported_profile(profile)
+    resolved_profile = _resolve_supported_profile(profile)
     resolved_sector = _resolve_sector(sector)
     resolved_quality = _resolve_credit_quality(credit_quality)
     key = (resolved_sector, resolved_quality)
@@ -385,7 +438,7 @@ def ba_cva_risk_weight(
             f"no BA-CVA risk weight for {resolved_sector.value}/{resolved_quality.value}",
             field="risk_weight",
         )
-    return _TABLE_1_RISK_WEIGHTS[key], "basel_mar50_16"
+    return _TABLE_1_RISK_WEIGHTS[key], profile_citation_id("basel_mar50_16", resolved_profile)
 
 
 def ba_cva_alpha(
@@ -393,8 +446,8 @@ def ba_cva_alpha(
 ) -> tuple[float, str]:
     """Return the cited BA-CVA supervisory multiplier alpha."""
 
-    _resolve_supported_profile(profile)
-    return BA_CVA_ALPHA, "basel_mar50_15"
+    resolved_profile = _resolve_supported_profile(profile)
+    return BA_CVA_ALPHA, profile_citation_id("basel_mar50_15", resolved_profile)
 
 
 def ba_cva_beta(
@@ -402,8 +455,8 @@ def ba_cva_beta(
 ) -> tuple[float, str]:
     """Return the cited full BA-CVA floor beta."""
 
-    _resolve_supported_profile(profile)
-    return BA_CVA_BETA, "basel_mar50_20"
+    resolved_profile = _resolve_supported_profile(profile)
+    return BA_CVA_BETA, profile_citation_id("basel_mar50_20", resolved_profile)
 
 
 def ba_cva_hedge_counterparty_correlation(
@@ -413,13 +466,16 @@ def ba_cva_hedge_counterparty_correlation(
 ) -> tuple[float, str]:
     """Return Table 2 hedge-counterparty correlation r_hc (MAR50.26)."""
 
-    _resolve_supported_profile(profile)
+    resolved_profile = _resolve_supported_profile(profile)
     if relation not in _HEDGE_REFERENCE_CORRELATIONS:
         raise CvaInputError(
             f"unsupported hedge reference relation {relation.value}",
             field="reference_relation",
         )
-    return _HEDGE_REFERENCE_CORRELATIONS[relation], "basel_mar50_26"
+    return (
+        _HEDGE_REFERENCE_CORRELATIONS[relation],
+        profile_citation_id("basel_mar50_26", resolved_profile),
+    )
 
 
 def ba_cva_index_risk_weight_scalar(
@@ -428,8 +484,8 @@ def ba_cva_index_risk_weight_scalar(
 ) -> tuple[float, str]:
     """Return the cited index hedge diversification scalar (MAR50.24(4))."""
 
-    _resolve_supported_profile(profile)
-    return BA_CVA_INDEX_RW_SCALAR, "basel_mar50_24"
+    resolved_profile = _resolve_supported_profile(profile)
+    return BA_CVA_INDEX_RW_SCALAR, profile_citation_id("basel_mar50_24", resolved_profile)
 
 
 def ba_cva_rho(
@@ -437,8 +493,8 @@ def ba_cva_rho(
 ) -> tuple[float, str]:
     """Return the cited BA-CVA portfolio correlation rho."""
 
-    _resolve_supported_profile(profile)
-    return BA_CVA_RHO, "basel_mar50_14"
+    resolved_profile = _resolve_supported_profile(profile)
+    return BA_CVA_RHO, profile_citation_id("basel_mar50_14", resolved_profile)
 
 
 def ba_cva_discount_scalar(
@@ -446,8 +502,8 @@ def ba_cva_discount_scalar(
 ) -> tuple[float, str]:
     """Return the cited reduced BA-CVA discount scalar D_BA-CVA."""
 
-    _resolve_supported_profile(profile)
-    return D_BA_CVA, "basel_mar50_14"
+    resolved_profile = _resolve_supported_profile(profile)
+    return D_BA_CVA, profile_citation_id("basel_mar50_14", resolved_profile)
 
 
 def compute_non_imm_discount_factor(maturity: float) -> tuple[float, str]:
@@ -479,13 +535,17 @@ def resolve_netting_set_discount_factor(
     supplied discount factor of 1.0 with the computed non-IMM formula.
     """
 
-    _resolve_supported_profile(profile)
+    resolved_profile = _resolve_supported_profile(profile)
     if uses_imm_ead:
-        return 1.0, "basel_mar50_15_4", False
+        return 1.0, profile_citation_id("basel_mar50_15_4", resolved_profile), False
     if discount_factor_explicit:
-        return supplied_discount_factor, "basel_mar50_15_4", True
+        return (
+            supplied_discount_factor,
+            profile_citation_id("basel_mar50_15_4", resolved_profile),
+            True,
+        )
     computed, citation_id = compute_non_imm_discount_factor(effective_maturity)
-    return computed, citation_id, False
+    return computed, profile_citation_id(citation_id, resolved_profile), False
 
 
 def girr_delta_risk_weight_rule(
@@ -495,17 +555,21 @@ def girr_delta_risk_weight_rule(
 ) -> SaCvaGirrDeltaRiskWeightRule:
     """Return the cited SA-CVA GIRR delta risk-weight rule for a tenor."""
 
-    _resolve_supported_profile(profile)
+    resolved_profile = _resolve_supported_profile(profile)
     normalised = _require_text(tenor, "tenor")
     for rule in BASEL_GIRR_DELTA_RISK_WEIGHTS:
         if rule.tenor == normalised:
-            return rule
+            return SaCvaGirrDeltaRiskWeightRule(
+                tenor=rule.tenor,
+                risk_weight=rule.risk_weight,
+                citation_id=profile_citation_id(rule.citation_id, resolved_profile),
+            )
     for special_rule in BASEL_GIRR_SPECIAL_RISK_FACTORS:
         if special_rule.risk_factor == normalised:
             return SaCvaGirrDeltaRiskWeightRule(
                 tenor=special_rule.risk_factor,
                 risk_weight=special_rule.risk_weight,
-                citation_id=special_rule.citation_id,
+                citation_id=profile_citation_id(special_rule.citation_id, resolved_profile),
             )
     raise CvaInputError(
         f"no SA-CVA GIRR delta risk weight for tenor {normalised}",
@@ -532,7 +596,7 @@ def girr_delta_intra_bucket_correlation(
 ) -> tuple[float, str]:
     """Return the cited SA-CVA GIRR delta intra-bucket correlation."""
 
-    _resolve_supported_profile(profile)
+    resolved_profile = _resolve_supported_profile(profile)
     normalised_tenor1 = _require_text(tenor1, "tenor1")
     normalised_tenor2 = _require_text(tenor2, "tenor2")
     key = (normalised_tenor1, normalised_tenor2)
@@ -548,7 +612,10 @@ def girr_delta_intra_bucket_correlation(
         if "PARALLEL" in {normalised_tenor1, normalised_tenor2}
         else "basel_mar50_56"
     )
-    return BASEL_GIRR_DELTA_CORRELATIONS[key], citation_id
+    return (
+        BASEL_GIRR_DELTA_CORRELATIONS[key],
+        profile_citation_id(citation_id, resolved_profile),
+    )
 
 
 def girr_inter_bucket_correlation(
@@ -556,8 +623,11 @@ def girr_inter_bucket_correlation(
 ) -> tuple[float, str]:
     """Return the cited SA-CVA GIRR cross-bucket correlation gamma_bc."""
 
-    _resolve_supported_profile(profile)
-    return GIRR_INTER_BUCKET_CORRELATION, "basel_mar50_55"
+    resolved_profile = _resolve_supported_profile(profile)
+    return GIRR_INTER_BUCKET_CORRELATION, profile_citation_id(
+        "basel_mar50_55",
+        resolved_profile,
+    )
 
 
 def girr_specified_currencies() -> frozenset[str]:
@@ -581,8 +651,11 @@ def girr_other_currency_risk_weight_scalar(
 ) -> tuple[float, str]:
     """Return the cited MAR50.57 scalar for non-specified GIRR currency buckets."""
 
-    _resolve_supported_profile(profile)
-    return GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR, "basel_mar50_57"
+    resolved_profile = _resolve_supported_profile(profile)
+    return GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR, profile_citation_id(
+        "basel_mar50_57",
+        resolved_profile,
+    )
 
 
 def girr_delta_tenors(
@@ -601,11 +674,15 @@ def girr_tenor_definition(
 ) -> SaCvaGirrTenorDefinition:
     """Return the cited SA-CVA GIRR tenor definition."""
 
-    _resolve_supported_profile(profile)
+    resolved_profile = _resolve_supported_profile(profile)
     normalised = _require_text(tenor, "tenor")
     for tenor_definition in BASEL_GIRR_TENORS:
         if tenor_definition.tenor == normalised:
-            return tenor_definition
+            return SaCvaGirrTenorDefinition(
+                tenor=tenor_definition.tenor,
+                maturity_years=tenor_definition.maturity_years,
+                citation_id=profile_citation_id(tenor_definition.citation_id, resolved_profile),
+            )
     raise CvaInputError(
         f"no SA-CVA GIRR tenor definition for tenor {normalised}",
         field="tenor",
@@ -616,82 +693,110 @@ def profile_reference_payload(profile: CvaRegulatoryProfile | str) -> dict[str, 
     """Return a deterministic, JSON-serialisable payload for profile hashing."""
 
     resolved = _resolve_supported_profile(profile)
-    citations = citations_for_profile(resolved)
+    from frtb_cva.sa_cva_reference_data import sa_cva_reference_payload
+
     return {
         "profile": resolved.value,
-        "citations": {
-            citation_id: {
-                "source_id": citation.source_id,
-                "paragraph": citation.paragraph,
-                "url": citation.url,
-                "note": citation.note,
-            }
-            for citation_id, citation in sorted(citations.items())
-        },
-        "ba_cva": {
-            "alpha": BA_CVA_ALPHA,
-            "alpha_citation_id": "basel_mar50_15",
-            "rho": BA_CVA_RHO,
-            "rho_citation_id": "basel_mar50_14",
-            "beta": BA_CVA_BETA,
-            "beta_citation_id": "basel_mar50_20",
-            "d_ba_cva": D_BA_CVA,
-            "d_ba_cva_citation_id": "basel_mar50_14",
-            "non_imm_discount_rate": NON_IMM_DISCOUNT_RATE,
-            "non_imm_discount_citation_id": "basel_mar50_15_4",
-            "risk_weights": [
-                {
-                    "sector": rule.sector.value,
-                    "credit_quality": rule.credit_quality.value,
-                    "risk_weight": rule.risk_weight,
-                    "citation_id": rule.citation_id,
-                }
-                for rule in BASEL_BA_CVA_RISK_WEIGHT_RULES
-            ],
-        },
-        "sa_cva_girr_delta": {
-            "specified_currencies": sorted(GIRR_SPECIFIED_CURRENCIES),
-            "tenors": [
-                {
-                    "tenor": tenor_definition.tenor,
-                    "maturity_years": tenor_definition.maturity_years,
-                    "citation_id": tenor_definition.citation_id,
-                }
-                for tenor_definition in BASEL_GIRR_TENORS
-            ],
-            "risk_weights": [
-                {
-                    "tenor": rule.tenor,
-                    "risk_weight": rule.risk_weight,
-                    "citation_id": rule.citation_id,
-                }
-                for rule in BASEL_GIRR_DELTA_RISK_WEIGHTS
-            ],
-            "special_risk_factors": [
-                {
-                    "risk_factor": rule.risk_factor,
-                    "risk_weight": rule.risk_weight,
-                    "citation_id": rule.citation_id,
-                }
-                for rule in BASEL_GIRR_SPECIAL_RISK_FACTORS
-            ],
-            "correlations": [
-                {
-                    "tenor1": tenor1,
-                    "tenor2": tenor2,
-                    "correlation": correlation,
-                    "citation_id": "basel_mar50_57"
-                    if "PARALLEL" in {tenor1, tenor2}
-                    else "basel_mar50_56",
-                }
-                for (tenor1, tenor2), correlation in sorted(BASEL_GIRR_DELTA_CORRELATIONS.items())
-            ],
-            "inter_bucket_correlation": GIRR_INTER_BUCKET_CORRELATION,
-            "inter_bucket_correlation_citation_id": "basel_mar50_55",
-            "other_currency_risk_weight_scalar": GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR,
-            "other_currency_risk_weight_scalar_citation_id": "basel_mar50_57",
-        },
+        "citations": _citation_reference_payload(resolved),
+        "ba_cva": _ba_cva_reference_payload(resolved),
+        "sa_cva_girr_delta": _girr_delta_reference_payload(resolved),
+        "sa_cva_reference_tables": sa_cva_reference_payload(resolved),
     }
+
+
+def _citation_reference_payload(profile: CvaRegulatoryProfile) -> dict[str, object]:
+    citations = citations_for_profile(profile)
+    return {
+        citation_id: {
+            "source_id": citation.source_id,
+            "paragraph": citation.paragraph,
+            "url": citation.url,
+            "note": citation.note,
+        }
+        for citation_id, citation in sorted(citations.items())
+    }
+
+
+def _ba_cva_reference_payload(profile: CvaRegulatoryProfile) -> dict[str, object]:
+    return {
+        "alpha": BA_CVA_ALPHA,
+        "alpha_citation_id": profile_citation_id("basel_mar50_15", profile),
+        "rho": BA_CVA_RHO,
+        "rho_citation_id": profile_citation_id("basel_mar50_14", profile),
+        "beta": BA_CVA_BETA,
+        "beta_citation_id": profile_citation_id("basel_mar50_20", profile),
+        "d_ba_cva": D_BA_CVA,
+        "d_ba_cva_citation_id": profile_citation_id("basel_mar50_14", profile),
+        "non_imm_discount_rate": NON_IMM_DISCOUNT_RATE,
+        "non_imm_discount_citation_id": profile_citation_id("basel_mar50_15_4", profile),
+        "risk_weights": [
+            {
+                "sector": rule.sector.value,
+                "credit_quality": rule.credit_quality.value,
+                "risk_weight": rule.risk_weight,
+                "citation_id": profile_citation_id(rule.citation_id, profile),
+            }
+            for rule in BASEL_BA_CVA_RISK_WEIGHT_RULES
+        ],
+    }
+
+
+def _girr_delta_reference_payload(profile: CvaRegulatoryProfile) -> dict[str, object]:
+    return {
+        "specified_currencies": sorted(GIRR_SPECIFIED_CURRENCIES),
+        "tenors": [
+            {
+                "tenor": tenor_definition.tenor,
+                "maturity_years": tenor_definition.maturity_years,
+                "citation_id": profile_citation_id(tenor_definition.citation_id, profile),
+            }
+            for tenor_definition in BASEL_GIRR_TENORS
+        ],
+        "risk_weights": [
+            {
+                "tenor": rule.tenor,
+                "risk_weight": rule.risk_weight,
+                "citation_id": profile_citation_id(rule.citation_id, profile),
+            }
+            for rule in BASEL_GIRR_DELTA_RISK_WEIGHTS
+        ],
+        "special_risk_factors": [
+            {
+                "risk_factor": rule.risk_factor,
+                "risk_weight": rule.risk_weight,
+                "citation_id": profile_citation_id(rule.citation_id, profile),
+            }
+            for rule in BASEL_GIRR_SPECIAL_RISK_FACTORS
+        ],
+        "correlations": [
+            {
+                "tenor1": tenor1,
+                "tenor2": tenor2,
+                "correlation": correlation,
+                "citation_id": profile_citation_id(
+                    _girr_correlation_citation_id(tenor1, tenor2),
+                    profile,
+                ),
+            }
+            for (tenor1, tenor2), correlation in sorted(BASEL_GIRR_DELTA_CORRELATIONS.items())
+        ],
+        "inter_bucket_correlation": GIRR_INTER_BUCKET_CORRELATION,
+        "inter_bucket_correlation_citation_id": profile_citation_id(
+            "basel_mar50_55",
+            profile,
+        ),
+        "other_currency_risk_weight_scalar": GIRR_OTHER_CURRENCY_RISK_WEIGHT_SCALAR,
+        "other_currency_risk_weight_scalar_citation_id": profile_citation_id(
+            "basel_mar50_57",
+            profile,
+        ),
+    }
+
+
+def _girr_correlation_citation_id(tenor1: str, tenor2: str) -> str:
+    if "PARALLEL" in {tenor1, tenor2}:
+        return "basel_mar50_57"
+    return "basel_mar50_56"
 
 
 def _resolve_supported_profile(profile: CvaRegulatoryProfile | str) -> CvaRegulatoryProfile:
@@ -743,6 +848,7 @@ __all__ = [
     "BASEL_GIRR_SPECIAL_RISK_FACTORS",
     "BASEL_GIRR_TENORS",
     "BASEL_MAR50_CITATIONS",
+    "BASEL_PROFILE_CITATIONS",
     "BA_CVA_ALPHA",
     "BA_CVA_BETA",
     "BA_CVA_INDEX_RW_SCALAR",
@@ -774,6 +880,8 @@ __all__ = [
     "girr_other_currency_risk_weight_scalar",
     "girr_specified_currencies",
     "girr_tenor_definition",
+    "profile_citation_id",
+    "profile_citation_ids",
     "profile_reference_payload",
     "resolve_netting_set_discount_factor",
 ]

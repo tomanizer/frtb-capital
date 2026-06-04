@@ -14,6 +14,7 @@ from frtb_cva.data_models import (
     SaCvaSensitivity,
     SaCvaWeightedSensitivity,
 )
+from frtb_cva.reference_data import profile_citation_id
 from frtb_cva.risk_classes._common import calculate_risk_class_capital
 from frtb_cva.sa_cva_reference_data import fx_inter_bucket_correlation
 from frtb_cva.validation import CvaInputError
@@ -36,7 +37,10 @@ def _fx_delta_config(
         risk_measure=SaCvaRiskMeasure.DELTA,
         intra_bucket_correlation=_single_factor_correlation,
         inter_bucket_gamma=uniform_inter_bucket_gamma(gamma_bc, gamma_citation),
-        intra_bucket_citations=("basel_mar50_53", "basel_mar50_61"),
+        intra_bucket_citations=(
+            profile_citation_id("basel_mar50_53", profile),
+            profile_citation_id("basel_mar50_61", profile),
+        ),
     )
 
 
@@ -49,7 +53,10 @@ def _fx_vega_config(
         risk_measure=SaCvaRiskMeasure.VEGA,
         intra_bucket_correlation=_single_factor_correlation,
         inter_bucket_gamma=uniform_inter_bucket_gamma(gamma_bc, gamma_citation),
-        intra_bucket_citations=("basel_mar50_53", "basel_mar50_62"),
+        intra_bucket_citations=(
+            profile_citation_id("basel_mar50_53", profile),
+            profile_citation_id("basel_mar50_62", profile),
+        ),
     )
 
 

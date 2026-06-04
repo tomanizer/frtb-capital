@@ -14,6 +14,7 @@ from frtb_cva.data_models import (
     SaCvaSensitivity,
     SaCvaWeightedSensitivity,
 )
+from frtb_cva.reference_data import profile_citation_id
 from frtb_cva.risk_classes._common import calculate_risk_class_capital
 from frtb_cva.sa_cva_reference_data import equity_inter_bucket_correlation
 from frtb_cva.validation import CvaInputError
@@ -44,7 +45,10 @@ def _equity_config(
         risk_measure=risk_measure,
         intra_bucket_correlation=_equity_intra_bucket_correlation,
         inter_bucket_gamma=_gamma,
-        intra_bucket_citations=("basel_mar50_53", citation),
+        intra_bucket_citations=(
+            profile_citation_id("basel_mar50_53", profile),
+            profile_citation_id(citation, profile),
+        ),
     )
 
 

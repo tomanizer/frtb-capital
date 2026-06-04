@@ -62,8 +62,11 @@ You do **not** always execute BA-CVA and then SA-CVA.
 | `SA_CVA` | SA-CVA sensitivities (+ hedges when tag is `HDG`) | SA-CVA risk-class capital only |
 | `MIXED_CARVE_OUT` | Sensitivities + BA carve-out netting sets | SA-CVA on full book **plus** reduced BA-CVA on carved-out netting sets |
 
-Unsupported methods, comparison profiles, and MAR50.9 materiality-threshold
-election fail closed with `CvaInputError` or `UnsupportedRegulatoryFeatureError`.
+Unsupported methods, unmapped future profiles, MAR50.9 materiality-threshold
+election, and analogous CCR-substitution alternatives fail closed with
+`CvaInputError` or `UnsupportedRegulatoryFeatureError`. The delivered
+`US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA` comparison profiles are
+capital-producing under audit with profile-owned citations and hashes.
 
 ---
 

@@ -256,6 +256,12 @@ def _resolve_profile(profile: CvaRegulatoryProfile | str) -> CvaRegulatoryProfil
     return _resolve_supported_profile(profile)
 
 
+def _cite(citation_id: str, profile: CvaRegulatoryProfile | str) -> str:
+    from frtb_cva.reference_data import profile_citation_id
+
+    return profile_citation_id(citation_id, profile)
+
+
 def _symmetric_gamma_lookup(
     table: dict[tuple[str, str], float],
     left_bucket: str,
@@ -287,8 +293,8 @@ def fx_delta_risk_weight(
 ) -> tuple[float, str]:
     """MAR50.61(3): FX delta risk weight vs reporting currency."""
 
-    _resolve_profile(profile)
-    return FX_DELTA_RISK_WEIGHT, "basel_mar50_61"
+    resolved_profile = _resolve_profile(profile)
+    return FX_DELTA_RISK_WEIGHT, _cite("basel_mar50_61", resolved_profile)
 
 
 def fx_inter_bucket_correlation(
@@ -296,8 +302,8 @@ def fx_inter_bucket_correlation(
 ) -> tuple[float, str]:
     """MAR50.60: FX cross-bucket gamma_bc."""
 
-    _resolve_profile(profile)
-    return FX_INTER_BUCKET_CORRELATION, "basel_mar50_60"
+    resolved_profile = _resolve_profile(profile)
+    return FX_INTER_BUCKET_CORRELATION, _cite("basel_mar50_60", resolved_profile)
 
 
 def sa_cva_vega_risk_weight(
@@ -309,10 +315,10 @@ def sa_cva_vega_risk_weight(
 ) -> tuple[float, str]:
     """MAR50.58/62/69/73/77: RW_k = rw_scalar · RW_sigma · sigma_k."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     if volatility_input < 0:
         raise CvaInputError("volatility input must be non-negative", field="volatility_input")
-    return rw_scalar * rw_sigma * volatility_input, "basel_mar50_58"
+    return rw_scalar * rw_sigma * volatility_input, _cite("basel_mar50_58", resolved_profile)
 
 
 def girr_vega_intra_bucket_correlation(
@@ -323,12 +329,12 @@ def girr_vega_intra_bucket_correlation(
 ) -> tuple[float, str]:
     """MAR50.58(4): inflation vs rate vol correlation."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     if factor1 == factor2:
-        return 1.0, "basel_mar50_58"
+        return 1.0, _cite("basel_mar50_58", resolved_profile)
     factors = {factor1, factor2}
     if factors == {GIRR_VEGA_INFLATION_FACTOR, GIRR_VEGA_RATE_FACTOR}:
-        return 0.4, "basel_mar50_58"
+        return 0.4, _cite("basel_mar50_58", resolved_profile)
     raise CvaInputError(
         f"no GIRR vega correlation for factors {factor1}/{factor2}",
         field="correlation",
@@ -343,7 +349,7 @@ def ccs_delta_risk_weight(
 ) -> tuple[float, str]:
     """MAR50.65(3): CCS delta risk weight by bucket and credit quality."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
     quality = _resolve_credit_quality(credit_quality)
     key = (bucket, quality)
@@ -352,7 +358,7 @@ def ccs_delta_risk_weight(
             f"no CCS delta risk weight for bucket {bucket} and {quality.value}",
             field="risk_weight",
         )
-    return CCS_DELTA_RISK_WEIGHTS[key], "basel_mar50_65"
+    return CCS_DELTA_RISK_WEIGHTS[key], _cite("basel_mar50_65", resolved_profile)
 
 
 def ccs_inter_bucket_correlation(
@@ -363,8 +369,11 @@ def ccs_inter_bucket_correlation(
 ) -> tuple[float, str]:
     """MAR50.64: CCS cross-bucket gamma_bc."""
 
-    _resolve_profile(profile)
-    return _symmetric_gamma_lookup(CCS_GAMMA_BC, bucket1, bucket2), "basel_mar50_64"
+    resolved_profile = _resolve_profile(profile)
+    return _symmetric_gamma_lookup(CCS_GAMMA_BC, bucket1, bucket2), _cite(
+        "basel_mar50_64",
+        resolved_profile,
+    )
 
 
 def ccs_delta_intra_bucket_correlation(
@@ -377,18 +386,18 @@ def ccs_delta_intra_bucket_correlation(
 ) -> tuple[float, str]:
     """MAR50.65(4)-(7): CCS intra-bucket rho."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     if same_entity:
         rho_tenor = 1.0 if same_tenor else 0.9
-        return rho_tenor, "basel_mar50_65"
+        return rho_tenor, _cite("basel_mar50_65", resolved_profile)
     if legally_related:
         rho = 0.9 if same_tenor else 0.81
-        return rho, "basel_mar50_65"
+        return rho, _cite("basel_mar50_65", resolved_profile)
     if same_credit_quality:
         rho = 0.5 if same_tenor else 0.45
-        return rho, "basel_mar50_65"
+        return rho, _cite("basel_mar50_65", resolved_profile)
     rho = 0.4 if same_tenor else 0.36
-    return rho, "basel_mar50_65"
+    return rho, _cite("basel_mar50_65", resolved_profile)
 
 
 def rcs_delta_risk_weight(
@@ -398,11 +407,11 @@ def rcs_delta_risk_weight(
 ) -> tuple[float, str]:
     """MAR50.68(3): RCS delta risk weight by bucket."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
     if bucket not in RCS_DELTA_RISK_WEIGHTS:
         raise CvaInputError(f"no RCS delta risk weight for bucket {bucket}", field="risk_weight")
-    return RCS_DELTA_RISK_WEIGHTS[bucket], "basel_mar50_68"
+    return RCS_DELTA_RISK_WEIGHTS[bucket], _cite("basel_mar50_68", resolved_profile)
 
 
 def rcs_inter_bucket_correlation(
@@ -413,7 +422,7 @@ def rcs_inter_bucket_correlation(
 ) -> tuple[float, str]:
     """MAR50.67: RCS cross-bucket gamma_bc with cross-quality halving."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     left = _normalise_bucket(bucket1)
     right = _normalise_bucket(bucket2)
     left_coord = RCS_TABLE_COORDINATES.get(left)
@@ -428,7 +437,7 @@ def rcs_inter_bucket_correlation(
     right_ig = right in RCS_IG_BUCKETS
     if left_ig != right_ig:
         gamma *= 0.5
-    return gamma, "basel_mar50_67"
+    return gamma, _cite("basel_mar50_67", resolved_profile)
 
 
 def equity_delta_risk_weight(
@@ -438,11 +447,11 @@ def equity_delta_risk_weight(
 ) -> tuple[float, str]:
     """MAR50.72(3): equity delta risk weight."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
     if bucket not in EQUITY_DELTA_RISK_WEIGHTS:
         raise CvaInputError(f"no equity delta risk weight for bucket {bucket}", field="risk_weight")
-    return EQUITY_DELTA_RISK_WEIGHTS[bucket], "basel_mar50_72"
+    return EQUITY_DELTA_RISK_WEIGHTS[bucket], _cite("basel_mar50_72", resolved_profile)
 
 
 def equity_vega_rw_scalar(
@@ -452,11 +461,11 @@ def equity_vega_rw_scalar(
 ) -> tuple[float, str]:
     """MAR50.73(3): equity vega RW scalar before RW_sigma · sigma_k."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
     if bucket not in EQUITY_VEGA_RW_SCALAR:
         raise CvaInputError(f"no equity vega RW scalar for bucket {bucket}", field="risk_weight")
-    return EQUITY_VEGA_RW_SCALAR[bucket], "basel_mar50_73"
+    return EQUITY_VEGA_RW_SCALAR[bucket], _cite("basel_mar50_73", resolved_profile)
 
 
 def equity_inter_bucket_correlation(
@@ -467,17 +476,17 @@ def equity_inter_bucket_correlation(
 ) -> tuple[float, str]:
     """MAR50.71: equity cross-bucket gamma_bc."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     left = _normalise_bucket(bucket1)
     right = _normalise_bucket(bucket2)
     if EQUITY_OTHER_BUCKET in {left, right}:
-        return 0.0, "basel_mar50_71"
+        return 0.0, _cite("basel_mar50_71", resolved_profile)
     pair = {left, right}
     if pair == {"12", "13"}:
-        return 0.75, "basel_mar50_71"
+        return 0.75, _cite("basel_mar50_71", resolved_profile)
     if "12" in pair or "13" in pair:
-        return 0.45, "basel_mar50_71"
-    return 0.15, "basel_mar50_71"
+        return 0.45, _cite("basel_mar50_71", resolved_profile)
+    return 0.15, _cite("basel_mar50_71", resolved_profile)
 
 
 def commodity_delta_risk_weight(
@@ -487,14 +496,14 @@ def commodity_delta_risk_weight(
 ) -> tuple[float, str]:
     """MAR50.76(3): commodity delta risk weight."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     bucket = _normalise_bucket(bucket_id)
     if bucket not in COMMODITY_DELTA_RISK_WEIGHTS:
         raise CvaInputError(
             f"no commodity delta risk weight for bucket {bucket}",
             field="risk_weight",
         )
-    return COMMODITY_DELTA_RISK_WEIGHTS[bucket], "basel_mar50_76"
+    return COMMODITY_DELTA_RISK_WEIGHTS[bucket], _cite("basel_mar50_76", resolved_profile)
 
 
 def commodity_inter_bucket_correlation(
@@ -505,12 +514,12 @@ def commodity_inter_bucket_correlation(
 ) -> tuple[float, str]:
     """MAR50.75: commodity cross-bucket gamma_bc."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     left = _normalise_bucket(bucket1)
     right = _normalise_bucket(bucket2)
     if COMMODITY_OTHER_BUCKET in {left, right}:
-        return 0.0, "basel_mar50_75"
-    return 0.2, "basel_mar50_75"
+        return 0.0, _cite("basel_mar50_75", resolved_profile)
+    return 0.2, _cite("basel_mar50_75", resolved_profile)
 
 
 def ccs_single_name_bucket_for_sector(
@@ -521,10 +530,10 @@ def ccs_single_name_bucket_for_sector(
 ) -> tuple[str, str]:
     """MAR50.63(2): map a dominant CCS sector to the single-name bucket id."""
 
-    _resolve_profile(profile)
+    resolved_profile = _resolve_profile(profile)
     if sector is CvaSector.SOVEREIGN:
         bucket = "1a" if credit_quality is CreditQuality.INVESTMENT_GRADE else "1b"
-        return bucket, "basel_mar50_63"
+        return bucket, _cite("basel_mar50_63", resolved_profile)
     sector_buckets: dict[CvaSector, str] = {
         CvaSector.LOCAL_GOVERNMENT: "2",
         CvaSector.FINANCIALS: "3",
@@ -535,12 +544,154 @@ def ccs_single_name_bucket_for_sector(
         CvaSector.OTHER: "7",
     }
     try:
-        return sector_buckets[sector], "basel_mar50_63"
+        return sector_buckets[sector], _cite("basel_mar50_63", resolved_profile)
     except KeyError as exc:
         raise CvaInputError(
             f"no CCS single-name bucket for sector {sector.value}",
             field="index_dominant_sector",
         ) from exc
+
+
+def sa_cva_reference_payload(profile: CvaRegulatoryProfile | str) -> dict[str, object]:
+    """Return deterministic SA-CVA reference-table payload for profile hashing."""
+
+    resolved_profile = _resolve_profile(profile)
+    return {
+        "fx": _fx_reference_payload(resolved_profile),
+        "vega": _vega_reference_payload(resolved_profile),
+        "ccs": _ccs_reference_payload(resolved_profile),
+        "rcs": _rcs_reference_payload(resolved_profile),
+        "equity": _equity_reference_payload(resolved_profile),
+        "commodity": _commodity_reference_payload(resolved_profile),
+    }
+
+
+def _fx_reference_payload(profile: CvaRegulatoryProfile) -> dict[str, object]:
+    from frtb_cva.reference_data import profile_citation_id
+
+    return {
+        "delta_risk_weight": FX_DELTA_RISK_WEIGHT,
+        "delta_risk_weight_citation_id": profile_citation_id("basel_mar50_61", profile),
+        "inter_bucket_correlation": FX_INTER_BUCKET_CORRELATION,
+        "inter_bucket_correlation_citation_id": profile_citation_id("basel_mar50_60", profile),
+    }
+
+
+def _vega_reference_payload(profile: CvaRegulatoryProfile) -> dict[str, object]:
+    from frtb_cva.reference_data import profile_citation_ids
+
+    return {
+        "rw_sigma": SA_CVA_VEGA_RW_SIGMA,
+        "rw_sigma_citation_ids": profile_citation_ids(
+            (
+                "basel_mar50_58",
+                "basel_mar50_62",
+                "basel_mar50_69",
+                "basel_mar50_73",
+                "basel_mar50_77",
+            ),
+            profile,
+        ),
+    }
+
+
+def _ccs_reference_payload(profile: CvaRegulatoryProfile) -> dict[str, object]:
+    from frtb_cva.reference_data import profile_citation_id
+
+    return {
+        "single_name_buckets": sorted(CCS_SINGLE_NAME_BUCKETS),
+        "qualified_index_bucket": CCS_QUALIFIED_INDEX_BUCKET,
+        "delta_tenors": CCS_DELTA_TENORS,
+        "delta_risk_weights": [
+            {
+                "bucket": bucket,
+                "credit_quality": credit_quality.value,
+                "risk_weight": risk_weight,
+                "citation_id": profile_citation_id("basel_mar50_65", profile),
+            }
+            for (bucket, credit_quality), risk_weight in sorted(
+                CCS_DELTA_RISK_WEIGHTS.items(),
+                key=lambda item: (item[0][0], item[0][1].value),
+            )
+        ],
+        "gamma_bc": [
+            {
+                "bucket1": bucket1,
+                "bucket2": bucket2,
+                "correlation": correlation,
+                "citation_id": profile_citation_id("basel_mar50_64", profile),
+            }
+            for (bucket1, bucket2), correlation in sorted(CCS_GAMMA_BC.items())
+        ],
+    }
+
+
+def _rcs_reference_payload(profile: CvaRegulatoryProfile) -> dict[str, object]:
+    from frtb_cva.reference_data import profile_citation_id
+
+    return {
+        "ig_buckets": sorted(RCS_IG_BUCKETS),
+        "hy_nr_buckets": sorted(RCS_HY_NR_BUCKETS),
+        "delta_risk_weights": [
+            {
+                "bucket": bucket,
+                "risk_weight": risk_weight,
+                "citation_id": profile_citation_id("basel_mar50_68", profile),
+            }
+            for bucket, risk_weight in sorted(RCS_DELTA_RISK_WEIGHTS.items())
+        ],
+        "gamma_coordinates": [
+            {
+                "coordinate1": coordinate1,
+                "coordinate2": coordinate2,
+                "correlation": correlation,
+                "citation_id": profile_citation_id("basel_mar50_67", profile),
+            }
+            for (coordinate1, coordinate2), correlation in sorted(RCS_GAMMA_BY_COORDINATE.items())
+        ],
+    }
+
+
+def _equity_reference_payload(profile: CvaRegulatoryProfile) -> dict[str, object]:
+    from frtb_cva.reference_data import profile_citation_id
+
+    return {
+        "large_cap_buckets": sorted(EQUITY_LARGE_CAP_BUCKETS),
+        "qualified_index_buckets": sorted(EQUITY_QUALIFIED_INDEX_BUCKETS),
+        "delta_risk_weights": [
+            {
+                "bucket": bucket,
+                "risk_weight": risk_weight,
+                "citation_id": profile_citation_id("basel_mar50_72", profile),
+            }
+            for bucket, risk_weight in sorted(EQUITY_DELTA_RISK_WEIGHTS.items())
+        ],
+        "vega_rw_scalars": [
+            {
+                "bucket": bucket,
+                "risk_weight_scalar": scalar,
+                "citation_id": profile_citation_id("basel_mar50_73", profile),
+            }
+            for bucket, scalar in sorted(EQUITY_VEGA_RW_SCALAR.items())
+        ],
+    }
+
+
+def _commodity_reference_payload(profile: CvaRegulatoryProfile) -> dict[str, object]:
+    from frtb_cva.reference_data import profile_citation_id
+
+    return {
+        "main_buckets": sorted(COMMODITY_MAIN_BUCKETS),
+        "other_bucket": COMMODITY_OTHER_BUCKET,
+        "delta_risk_weights": [
+            {
+                "bucket": bucket,
+                "risk_weight": risk_weight,
+                "citation_id": profile_citation_id("basel_mar50_76", profile),
+            }
+            for bucket, risk_weight in sorted(COMMODITY_DELTA_RISK_WEIGHTS.items())
+        ],
+    }
 
 
 def _resolve_credit_quality(credit_quality: CreditQuality | str) -> CreditQuality:
@@ -621,5 +772,6 @@ __all__ = [
     "parse_ccs_entity_key",
     "rcs_delta_risk_weight",
     "rcs_inter_bucket_correlation",
+    "sa_cva_reference_payload",
     "sa_cva_vega_risk_weight",
 ]

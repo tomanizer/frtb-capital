@@ -15,6 +15,11 @@ Companion artefacts after implementation:
 - `packages/frtb-cva/docs/REGULATORY_TRACEABILITY.md` (expanded matrix section)
 - `docs/modules/frtb-cva/DECISIONS_AND_PLAN.md` (CVA-DEC-012 for MAR50.9)
 
+Issue #568 extends this design by making `US_NPR20_VB`, `EU_CRR3_CVA`, and
+`UK_PRA_CVA` capital-producing comparison profiles under audit with
+profile-owned citations and hashes. References to those profiles failing closed
+below describe the pre-#568 baseline.
+
 ---
 
 ## 1. Problem statement
@@ -22,8 +27,9 @@ Companion artefacts after implementation:
 The CVA audit ([#495](https://github.com/tomanizer/frtb-capital/issues/495)) found
 substantial Basel MAR50 coverage, but the package remains `partial_runtime` because:
 
-1. **Comparison profiles** (`US_NPR20_VB`, `EU_CRR3_CVA`, `UK_PRA_CVA`) fail closed at
-   `regimes.resolve_cva_profile()` with no capital-producing reference data.
+1. **Comparison profiles** (`US_NPR20_VB`, `EU_CRR3_CVA`, `UK_PRA_CVA`) needed
+   profile-owned citations, reference payloads, support-matrix rows, and
+   deterministic fixtures before becoming capital-producing under audit.
 2. **MAR50.9** materiality-threshold 100% CCR alternative is gated but not documented as
    a formal suite decision with blocker taxonomy.
 3. **No machine-checked support matrix** ties profile × method × SA risk-class/measure ×
@@ -40,16 +46,16 @@ and replay hashes must remain unchanged.
 
 | ID | Goal | Acceptance signal |
 | --- | --- | --- |
-| G1 | Inventory every unsupported profile/method cell with status and blocker | Matrix rows in traceability + `support_matrix.py` |
+| G1 | Inventory every profile/method cell with status and blocker | Matrix rows in traceability + `support_matrix.py` |
 | G2 | Explicit MAR50.9 decision with tests | CVA-DEC-012 + unchanged fail-closed tests |
-| G3 | At least one gap closed or narrowed in a follow-on implementation PR | See §8 delivery phases |
+| G3 | Non-Basel profile gap closed without silent Basel citation fallback | Issue #568 tests and profile hashes |
 | G4 | No silent Basel calibration on U.S./EU/UK profiles | Profile-specific `reference_data` or fail closed |
 | G5 | `make quality-control` and all CVA tests pass | CI green |
 
 ### Non-goals (this epic)
 
 - Production regulatory capital claims or clearing `validation_status` from `PENDING`.
-- Implementing full U.S./EU/UK CVA capital without cited profile reference tables and fixtures.
+- Claiming final U.S./EU/UK regulatory capital beyond cited comparison-profile evidence.
 - CCR capital engine inside `frtb-cva` (MAR50.9 depends on external CCR totals).
 - Orchestration-level SA composition changes (`frtb-orchestration` stays out of scope unless ADR).
 - CCS vega capital (regulatory absence, not a profile gap).
@@ -63,17 +69,18 @@ and replay hashes must remain unchanged.
 | Profile ID | Runtime | Capital-producing | Fail-closed mechanism | Primary blocker |
 | --- | --- | --- | --- | --- |
 | `BASEL_MAR50_2020` | Supported | Yes (partial) | — | July 2020 calibration only; MAR50.9 excluded |
-| `US_NPR20_VB` | Enum only | No | `UnsupportedRegulatoryFeatureError` in `regimes.py` | No proposed section V.B crosswalk tables in `reference_data.py` |
-| `EU_CRR3_CVA` | Enum only | No | Same | Articles 382–386 mapping and fixtures missing |
-| `UK_PRA_CVA` | Enum only | No | Same | UK PRA crosswalk placeholder only |
+| `US_NPR20_VB` | Supported comparison profile | Yes (partial) | MAR50.9/simplified alternatives only | Proposed-rule section V.B; not final U.S. capital |
+| `EU_CRR3_CVA` | Supported comparison profile | Yes (partial) | Simplified CCR-substitution alternatives only | ECB shorthand routes here; no separate ECB profile |
+| `UK_PRA_CVA` | Supported comparison profile | Yes (partial) | Alternative approach / CCR boundary only | PRA effective-date metadata is 1 January 2027 |
 
-Profile resolution flow today:
+Profile resolution flow after issue #568:
 
 ```text
 calculate_cva_capital
-  → validate_calculation_context (materiality → CvaInputError)
+  → validate_calculation_context (materiality → UnsupportedRegulatoryFeatureError)
   → get_cva_rule_profile → resolve_cva_profile
-       → UNSUPPORTED_PROFILE_REASONS → UnsupportedRegulatoryFeatureError
+       → SUPPORTED_PROFILE_METADATA → profile_reference_payload(profile)
+       → profile-owned citation ids and content hash
 ```
 
 ### 3.2 CVA methods (`CvaMethod`)
@@ -273,30 +280,30 @@ For each comparison profile, deliver in order:
 5. Fail-closed tests (profile resolves but capital path rejects) OR capital fixtures
 ```
 
-### 6.3 U.S. NPR 2.0 (`US_NPR20_VB`) — first comparison slice (recommended Phase C)
+### 6.3 U.S. NPR 2.0 (`US_NPR20_VB`) - delivered by #568
 
 | Work item | Deliverable |
 | --- | --- |
-| Citation map | `packages/frtb-cva/docs/requirements/US_NPR20_CVA.yml` (new) or section in crosswalk |
+| Citation map | `packages/frtb-cva/docs/regulatory_sources.yml`, `docs/regulatory/crosswalk/frtb-cva.yml`, and `frtb_cva._profile_citations` |
 | Section V.B.2–V.B.3 | Map method election, CVA segment, hedging to existing `scope.py` hooks |
 | Reference data | Only where NPR text differs from July 2020 Basel (document sameness explicitly) |
-| Tests | `test_cva_regimes.py`: profile metadata hash; `test_cva_unsupported_features`: remain fail closed until tables exist |
-| Fixture blocker | At least one NPR-labelled synthetic row proving profile hash ≠ Basel hash when any parameter differs |
+| Tests | `test_cva_regimes.py`: profile metadata hash; `test_cva_unsupported_features`: NPR-labelled SA-CVA and BA-CVA public API runs |
+| Fixture evidence | NPR-labelled synthetic rows prove profile hash and citations differ from Basel even when numeric calibration matches |
 
 ### 6.4 EU CRR3 (`EU_CRR3_CVA`)
 
-| Blocker | Detail |
+| Item | Detail |
 | --- | --- |
-| Citation | Articles 382–386 (Regulation (EU) 2024/1623) |
+| Citation | Articles 381-386 and inserted Articles 383a-383z (Regulation (EU) 2024/1623) |
 | Fixture | EBA RTS on CVA for SFTs where material |
-| Status | Remain `unsupported_fail_closed` through Phase C |
+| Status | Capital-producing comparison profile under audit; ECB shorthand routes here |
 
 ### 6.5 UK PRA (`UK_PRA_CVA`)
 
-| Blocker | Detail |
+| Item | Detail |
 | --- | --- |
-| Citation | PRA PS1/26 and consultation CP16/22 crosswalk |
-| Status | Remain `unsupported_fail_closed` through Phase C |
+| Citation | PRA PS1/26 and PRA Rulebook CVA Risk Part; CP16/22 retained as historical context |
+| Status | Capital-producing comparison profile under audit |
 
 ---
 
@@ -310,10 +317,12 @@ Rationale:
 - Unblocks parallel work on U.S./EU/UK profiles with explicit blocker columns.
 - Aligns maturity gate with `frtb-sbm` (`support-matrix` required test).
 
-**Second PR candidate (Phase C): U.S. NPR profile metadata and citation crosswalk** — capital
-still fail closed until at least one NPR-divergent parameter is cited and fixture-backed.
+**Comparison-profile delivery (Phase C): U.S. NPR, EU CRR3, and UK PRA profile
+metadata and citation crosswalks** - completed by issue #568 with profile-owned
+citations, hashes, and public API synthetic runs.
 
-**Defer:** MAR50.9 implementation (§5), EU/UK capital, CCS vega (regulatory absence).
+**Defer:** MAR50.9 implementation (§5), final-rule jurisdiction-specific numeric
+divergence, CCS vega (regulatory absence).
 
 ---
 
@@ -329,12 +338,11 @@ flowchart LR
     M2[test_cva_support_matrix.py]
     M3[REGULATORY_TRACEABILITY matrix]
   end
-  subgraph phaseC [Phase C - US profile prep]
-    U1[citation crosswalk]
-    U2[profile metadata hash]
+  subgraph phaseC [Phase C - comparison profiles]
+    U1[profile citation crosswalks]
+    U2[profile metadata hashes]
   end
-  subgraph phaseD [Phase D - Optional]
-    E1[EU/UK citation maps]
+  subgraph phaseD [Phase D - Optional MAR50.9]
     O1[MAR50.9 ADR if orchestration scope]
   end
   phaseA --> phaseB --> phaseC --> phaseD
@@ -344,8 +352,8 @@ flowchart LR
 | --- | --- | --- |
 | **A** | This design doc + CVA-DEC-012 draft | Design review |
 | **B** | Matrix module, tests, traceability, crosswalk fix, `CVA-MATRIX-001`, maturity test id | G1, G2 (docs), G5 |
-| **C** | `US_NPR20_VB` citation map + profile metadata; remain fail closed OR one NPR fixture if divergence found | G3 (narrowed US blocker) |
-| **D** | EU/UK maps; MAR50.9 only with ADR | G3 long-term |
+| **C** | `US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA` citation maps + profile metadata + public API fixtures | G3 (closed by #568) |
+| **D** | MAR50.9 only with ADR and upstream CCR/orchestration input design | Remaining long-term scope |
 
 ---
 
@@ -357,7 +365,7 @@ flowchart LR
 | --- | --- |
 | `test_basel_methods_match_supported_set` | Four methods for `BASEL_MAR50_2020` |
 | `test_basel_sa_paths_match_sa_cva_module` | 11 paths; CCS vega absent |
-| `test_comparison_profiles_empty_support` | US/EU/UK → empty method/path sets |
+| `test_non_basel_profiles_support_basel_aligned_methods_and_paths` | US/EU/UK → supported method/path sets with CCS vega still absent |
 | `test_traceability_lists_all_basel_sa_rows` | Markdown sync |
 | `test_mar50_9_policy_unsupported` | Matrix status + API fail closed |
 
@@ -381,10 +389,10 @@ path = "packages/frtb-cva/tests/test_cva_support_matrix.py"
 
 ## 10. Data model and API changes
 
-### 10.1 Minimal changes (Phase B)
+### 10.1 Delivered API changes
 
-- Export matrix helpers from `frtb_cva.__init__` only if needed for orchestration; prefer
-  keeping registry package-local until orchestration ADR.
+- Support-matrix helpers are exported from `frtb_cva.__init__` for public
+  profile-status introspection and maturity evidence.
 - No change to `CvaCapitalResult` shape for fail-closed paths.
 
 ### 10.2 Optional context fields (Phase D / MAR50.9 only)
@@ -405,8 +413,8 @@ These fields are **not** added in Phase B.
 
 ## 11. Attribution and impact
 
-- Unsupported profiles and MAR50.9 must not appear as **reconciled** Euler branches in
-  `attribution.py`.
+- Unsupported profile/method cells and MAR50.9 must not appear as **reconciled**
+  Euler branches in `attribution.py`.
 - `impact.py` comparisons must fail closed when baseline or candidate uses unsupported
   profile/method cells.
 - Matrix rows with `status=unsupported_fail_closed` map to explicit residual metadata per
@@ -427,25 +435,23 @@ These fields are **not** added in Phase B.
 
 ## 13. Acceptance checklist (AUDIT-IMP-005)
 
-- [ ] CVA profile/method support matrix is current and linked from CVA docs
-- [ ] MAR50.9 has CVA-DEC-012 and corresponding tests
-- [ ] At least one gap fully implemented **or** split into Phase C blocker issue (US citation map)
-- [ ] Unsupported cells fail closed (no Basel silent fallback for US/EU/UK)
-- [ ] `make quality-control` and all CVA tests pass
-- [ ] `ba_cva_reduced_v1` and `sa_cva_girr_delta_v1` fixture outputs unchanged
+- [x] CVA profile/method support matrix is current and linked from CVA docs
+- [x] MAR50.9 has CVA-DEC-012 and corresponding tests
+- [x] U.S. NPR, EU CRR3, and UK PRA comparison profiles are implemented under audit with profile-owned citations and hashes
+- [x] Unsupported cells fail closed (no Basel silent fallback for US/EU/UK)
+- [x] `make quality-control` and all CVA tests pass
+- [x] `ba_cva_reduced_v1` and `sa_cva_girr_delta_v1` fixture workflows pass
 
 ---
 
 ## 14. Issue split (recommended)
 
-| Issue | Title | Phase |
-| --- | --- | --- |
-| #501 (parent) | AUDIT-IMP-005 umbrella | A–D |
-| Child A | CVA support matrix module + traceability + maturity gate | B |
-| Child B | CVA-DEC-012 MAR50.9 consolidation + matrix row | B |
-| Child C | US NPR 2.0 CVA profile citation crosswalk | C |
-| Child D | EU CRR3 CVA profile citation crosswalk | D |
-| Child E | UK PRA CVA profile citation crosswalk | D |
+| Issue | Title | Phase | Status |
+| --- | --- | --- | --- |
+| #501 (parent) | AUDIT-IMP-005 umbrella | A-D | Historical umbrella |
+| Child A | CVA support matrix module + traceability + maturity gate | B | Delivered |
+| Child B | CVA-DEC-012 MAR50.9 consolidation + matrix row | B | Delivered as fail-closed decision |
+| #568 | US NPR 2.0, EU CRR3, and UK PRA CVA profile citation crosswalks | C | Delivered on this branch |
 
 ---
 

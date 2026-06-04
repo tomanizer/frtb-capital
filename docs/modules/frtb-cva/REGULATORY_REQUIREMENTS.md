@@ -10,9 +10,10 @@ detail, module layout, and implementation decisions live in:
 - [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN.md)
 - [ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md)
 
-The package supports a partial Basel MAR50 runtime with profile hooks for U.S.
-NPR 2.0, CRR3, and PRA comparison. CVA is distinct from market-risk SA SBM even
-when SA-CVA reuses SBM-style delta and vega aggregation mechanics.
+The package supports a partial Basel MAR50 runtime plus U.S. NPR 2.0, CRR3, and
+PRA comparison profiles with profile-owned citations and hashes. CVA is distinct
+from market-risk SA SBM even when SA-CVA reuses SBM-style delta and vega
+aggregation mechanics.
 
 ## Primary Sources
 
@@ -20,7 +21,7 @@ when SA-CVA reuses SBM-style delta and vega aggregation mechanics.
 | --- | --- | --- |
 | Basel Framework MAR50 | https://www.bis.org/basel_framework/chapter/MAR/50.htm | CVA definitions, scope, BA-CVA, SA-CVA, eligible hedges, aggregation, and multiplier. |
 | U.S. NPR 2.0, 91 FR 14952 | https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959 | Proposed CVA risk scope, CVA hedges, internal CVA risk transfers, and measure for CVA risk, section V.B. |
-| CRR3 | https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng | EU CVA framework amendments, CRR Articles 382-386 and related CVA provisions. |
+| CRR3 | https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng | EU CVA framework amendments, CRR Articles 381-386 and related CVA provisions. |
 | EBA RTS on CVA risk of SFTs | https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/market-counterparty-and-cva-risk/regulatory-technical-standards-cva-risk-securities-financing-transactions | EU technical context for SFT CVA scope. |
 | Local reference implementation | External `extract_cva` capital navigator, CVA component | Implementation inspiration for BA-CVA, SA-CVA risk-class modules, hedge/CVA netting, and capital reports; not included in this repository. |
 

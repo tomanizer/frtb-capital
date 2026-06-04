@@ -14,6 +14,10 @@ source_register:
     url: https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
   - name: CRR3 Regulation (EU) 2024/1623
     url: https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
+  - name: PRA PS1/26 Basel 3.1 final rules
+    url: https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement
+  - name: PRA2026/1 PRA Rulebook CRR Firms Instrument 2026
+    url: https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf
 requirements:
   - id: CVA-BOUNDARY-001
     title: Package responsibility and orchestration boundary
@@ -50,7 +54,7 @@ requirements:
   - id: CVA-SCOPE-001
     title: CVA scope, exclusions, and method selection
     detailed_ids: [CVA-FUNC-006, CVA-FUNC-022]
-    source: Basel MAR50.1-MAR50.13; U.S. NPR 2.0 section V.B.2
+    source: Basel MAR50.1-MAR50.13; U.S. NPR 2.0 section V.B.2; Regulation (EU) 2024/1623 Articles 381-386; PRA Rulebook CVA Risk Part
     status: implemented
     modules: [src/frtb_cva/regimes.py, src/frtb_cva/scope.py]
     tests: [tests/test_cva_scope.py, tests/test_cva_mixed_method.py, tests/test_cva_unsupported_features.py]
@@ -58,15 +62,15 @@ requirements:
   - id: CVA-MATRIX-001
     title: CVA profile, method, and SA-CVA support matrix
     detailed_ids: [CVA-FUNC-006, CVA-FUNC-027]
-    source: Basel MAR50.8-MAR50.9; MAR50.14-MAR50.26; MAR50.42-MAR50.77
+    source: Basel MAR50.8-MAR50.9; MAR50.14-MAR50.26; MAR50.42-MAR50.77; U.S. NPR 2.0 section V.B; Regulation (EU) 2024/1623 Articles 381-386 and 383a-383z; PRA Rulebook CVA Risk Part
     status: implemented
     modules: [src/frtb_cva/support_matrix.py]
     tests: [tests/test_cva_support_matrix.py]
-    notes: Runtime-readable matrix separates Basel capital-producing cells, MAR50.9 fail-closed CCR-boundary status, CCS vega regulatory absence, and comparison-profile fail-closed cells.
+    notes: Runtime-readable matrix separates supported Basel, U.S. NPR, EU CRR3, and UK PRA profile cells from MAR50.9/simplified CCR-boundary fail-closed status and CCS vega regulatory absence.
   - id: CVA-HEDGE-001
     title: Eligible CVA hedge and internal transfer treatment
     detailed_ids: [CVA-FUNC-004, CVA-FUNC-007, CVA-BOUNDARY-006]
-    source: Basel MAR50.10-MAR50.11; MAR50.37-MAR50.39
+    source: Basel MAR50.10-MAR50.11; MAR50.37-MAR50.39; U.S. NPR 2.0 section V.B; Regulation (EU) 2024/1623; PRA Rulebook CVA Risk Part
     status: implemented
     modules: [src/frtb_cva/hedges.py]
     tests: [tests/test_cva_hedges.py, tests/test_cva_ba_cva_full.py]
@@ -162,15 +166,15 @@ requirements:
   - id: CVA-AGG-001
     title: Public CVA run API and method assembly
     detailed_ids: [CVA-FUNC-001, CVA-FUNC-023]
-    source: Basel MAR50.6-MAR50.8; MAR50.42
+    source: Basel MAR50.6-MAR50.8; MAR50.42; U.S. NPR 2.0 section V.B; Regulation (EU) 2024/1623 Articles 381-386 and 383a-383z; PRA Rulebook CVA Risk Part
     status: implemented
     modules: [src/frtb_cva/capital.py, src/frtb_cva/sa_cva.py]
     tests: [tests/test_cva_public_api.py, tests/test_cva_mixed_method.py, tests/test_cva_sa_cva.py]
-    notes: Public API assembles reduced BA-CVA, full BA-CVA, SA-CVA, and mixed carve-out results for supported Basel MAR50 inputs.
+    notes: Public API assembles reduced BA-CVA, full BA-CVA, SA-CVA, and mixed carve-out results for supported Basel MAR50 and comparison-profile inputs.
   - id: CVA-AUDIT-001
     title: CVA audit, replay, and benchmark output
     detailed_ids: [CVA-FUNC-024, CVA-FUNC-025, CVA-NFR-001]
-    source: Basel MAR50 traceability by component; U.S. NPR 2.0 section V.B.6
+    source: Basel MAR50 traceability by component; U.S. NPR 2.0 section V.B.6; Regulation (EU) 2024/1623; PRA Rulebook CVA Risk Part
     status: implemented
     modules: [src/frtb_cva/audit.py]
     tests: [tests/test_cva_audit.py, tests/test_cva_replay.py, tests/test_cva_attribution.py, tests/test_cva_impact.py]
