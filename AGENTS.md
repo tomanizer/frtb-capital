@@ -138,6 +138,22 @@ Grok: `/frtb-doc-audit` or `/frtb-doc-audit --report-only`. Claude Code:
 Use `--agent codex` (or `claude`, `cursor`, `copilot`) in the skill when creating
 a worktree. Documentation-only PRs do not bump package versions (ADR 0015).
 
+## Simplification audits
+
+When asked to audit code maintainability (overlong files/functions, wrappers,
+duplication, complexity), follow:
+
+- [`.grok/skills/frtb-simplify-audit/SKILL.md`](.grok/skills/frtb-simplify-audit/SKILL.md)
+- [`docs/quality/simplification/rubric.md`](docs/quality/simplification/rubric.md)
+- Latest reports: [`docs/quality/simplification/2026-06-04/`](docs/quality/simplification/2026-06-04/)
+
+Grok: `/frtb-simplify-audit`. Claude Code: `/frtb-simplify-audit` →
+[`.claude/commands/frtb-simplify-audit.md`](.claude/commands/frtb-simplify-audit.md).
+
+Default is **audit-only** (reports, no runtime edits). Use `--issues` to open
+per-package tracking issues. Implementation refactors stay **one package per PR**;
+run `uv run python scripts/ci/check_simplification_drift.py` before wrapper changes.
+
 ## Review focus
 
 When reviewing or changing code, focus on:
