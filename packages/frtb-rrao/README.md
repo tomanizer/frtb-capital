@@ -27,6 +27,9 @@ The PRA_UK_CRR profile maps UK CRR Article 325u and UK retained Delegated
 Regulation (EU) 2022/2328 with legislation.gov.uk citations and `rrao_pra`
 fixture replay. Investment-fund inclusion remains fail-closed for PRA, as for EU.
 
+**Integration journey (Arrow → capital → allocation → SA/suite/store):**
+[`docs/PACKAGE_JOURNEY.md`](docs/PACKAGE_JOURNEY.md)
+
 Planning documents:
 
 - [Model documentation](../../docs/modules/frtb-rrao/MODEL_DOCUMENTATION.md)
@@ -39,6 +42,7 @@ Planning documents:
 
 Package-local regulatory documentation:
 
+- [Package journey](docs/PACKAGE_JOURNEY.md) — end-to-end client flow, tiers, profile/evidence routing, orchestration boundaries
 - [Regulatory traceability](docs/REGULATORY_TRACEABILITY.md)
 - [Regulatory assumptions](docs/REGULATORY_ASSUMPTIONS.md)
 - [Regulatory sources](docs/regulatory_sources.yml)
