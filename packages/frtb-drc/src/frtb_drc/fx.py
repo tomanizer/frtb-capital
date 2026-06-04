@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 from collections.abc import Iterable, Mapping
 from dataclasses import replace
 
-from frtb_common import jsonable
-
 from frtb_drc._citations import merge_citations as _merge_citations
+from frtb_drc._hashing import hash_payload as _hash_payload
 from frtb_drc._identifiers import slug as _slug
 from frtb_drc._validation_utils import require_text as _require_text
 from frtb_drc.data_models import (
@@ -145,15 +142,7 @@ def input_hash_with_fx(
         "input_hash": input_hash,
         "fx_conversions": [conversion.as_dict() for conversion in conversions],
     }
-    encoded = bytes(
-        json.dumps(
-            jsonable(payload),
-            sort_keys=True,
-            separators=(",", ":"),
-        ),
-        "utf-8",
-    )
-    return hashlib.sha256(encoded).hexdigest()
+    return _hash_payload(payload)
 
 
 def fx_citation_ids(conversions: tuple[DrcFxConversion, ...]) -> tuple[str, ...]:

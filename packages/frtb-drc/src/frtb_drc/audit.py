@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from collections.abc import Iterable, Mapping
 from typing import Any
 
 from frtb_common import jsonable
 
+from frtb_drc._hashing import hash_payload as _stable_hash_payload
 from frtb_drc.data_models import (
     CategoryDrc,
     DefaultDirection,
@@ -101,12 +101,7 @@ def _validate_net_records(result: DrcCapitalResult) -> None:
 
 
 def _hash_payload(payload: object) -> str:
-    encoded = json.dumps(
-        jsonable(payload),
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return _stable_hash_payload(payload)
 
 
 def _sort_mapping(value: object) -> dict[str, object]:

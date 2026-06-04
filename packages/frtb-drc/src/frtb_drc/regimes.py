@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date
 from types import MappingProxyType
 
-from frtb_common import UnsupportedRegulatoryFeatureError, jsonable
+from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_drc._hashing import hash_payload
 from frtb_drc.data_models import DrcCitation, DrcRiskClass
 from frtb_drc.reference_data import profile_reference_data_payload
 from frtb_drc.validation import DrcInputError
@@ -575,8 +574,7 @@ def profile_content_hash(profile: DrcRuleProfile) -> str:
     """Compute a deterministic hash from profile content, excluding the hash itself."""
 
     payload = _profile_hash_payload(profile)
-    encoded = json.dumps(jsonable(payload), sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return hash_payload(payload)
 
 
 def _profile_hash_payload(profile: DrcRuleProfile) -> dict[str, object]:

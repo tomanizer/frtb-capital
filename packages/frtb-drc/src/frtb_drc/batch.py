@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
@@ -12,7 +10,6 @@ from typing import Any, cast
 
 import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
-from frtb_common import jsonable
 
 from frtb_drc._batch_columns import (
     BoolArray,
@@ -32,6 +29,7 @@ from frtb_drc._batch_columns import (
     _required_text_array,
     _text_array_with_default,
 )
+from frtb_drc._hashing import hash_payload as _stable_hash_payload
 from frtb_drc._identifiers import slug_path as _slug
 from frtb_drc._netting_helpers import (
     bounded_rejected_group_offsets as _bounded_rejected_group_offsets,
@@ -2138,8 +2136,7 @@ def _optional_float_payload(value: float) -> float | None:
 
 
 def _hash_payload(payload: object) -> str:
-    encoded = bytes(json.dumps(jsonable(payload), sort_keys=True, separators=(",", ":")), "utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return _stable_hash_payload(payload)
 
 
 def _raise_first_mismatch(
