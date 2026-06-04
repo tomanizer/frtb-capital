@@ -46,12 +46,12 @@ package-scoped PRs.
 ## Step 1 — Compliant checkout
 
 ```bash
-python3 scripts/agent_worktree.py guard
-# on failure:
-make agent-new AGENT=<agent> TASK=simplify-audit
+make agent-ensure AGENT=<agent> TASK=simplify-audit
 ```
 
-Never commit from the protected main clone (`~/Documents/Projects/frtb-capital`).
+If not already in a compliant worktree, this creates or reuses one and prints
+`next: cd ...` — **change directory there before any edit**. Never commit from
+the protected main clone (`~/Documents/Projects/frtb-capital`).
 
 ## Step 2 — Package inventory
 

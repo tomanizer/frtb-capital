@@ -49,14 +49,14 @@ If both `--report-only` and `--fix` appear, `--report-only` wins.
 
 ## Step 1: Compliant checkout
 
-**Success criteria:** `python3 scripts/agent_worktree.py guard` passes, or a new
-worktree exists on branch `<agent>/doc-audit-fix` (or user-supplied task name).
+**Success criteria:** a compliant worktree is active before any file edit.
 
-1. Run `python3 scripts/agent_worktree.py guard` from the current directory.
-2. If it fails, run `make agent-new AGENT=<agent> TASK=doc-audit-fix` from the
-   protected main clone (`~/Documents/Projects/frtb-capital`), then `cd` into
-   the new worktree path printed by the command.
-3. Never edit, commit, or branch-switch in the protected main clone.
+1. Run `make agent-ensure AGENT=<agent> TASK=doc-audit-fix` from any checkout
+   (including protected `main`).
+2. If the command prints `next: cd ...`, change directory there before continuing.
+3. If already in `<worktree-root>/<agent>/doc-audit-fix` on branch
+   `<agent>/doc-audit-fix`, the command passes in place.
+4. Never commit or push from the protected main clone.
 
 ## Step 2: Package inventory
 
@@ -153,7 +153,7 @@ Push branch `<agent>/doc-audit-fix` and open PR with:
 - Note: docs-only, no version bumps
 - Residual follow-ups from audit
 
-Run `python3 scripts/agent_worktree.py guard` before commit.
+Run `make agent-guard` before commit (worktree should already exist from Step 1).
 
 Do **not** run `make quality-control` unless the user requests it; doc-only PRs
 typically skip calculation gates.
