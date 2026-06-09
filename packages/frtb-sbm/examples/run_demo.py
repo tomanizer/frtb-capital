@@ -366,8 +366,7 @@ def run_impact_demo() -> None:
 
     baseline_sens = make_girr_delta_sensitivities()
     candidate_sens = [
-        replace(s, amount=1_200_000.0) if s.sensitivity_id == "eur-1y" else s
-        for s in baseline_sens
+        replace(s, amount=1_200_000.0) if s.sensitivity_id == "eur-1y" else s for s in baseline_sens
     ]
 
     baseline = calculate_sbm_capital(baseline_sens, context=baseline_context)
