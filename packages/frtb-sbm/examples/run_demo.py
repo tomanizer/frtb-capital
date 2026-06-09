@@ -7,6 +7,9 @@ calculate_sbm_capital for supported paths under BASEL_MAR21 profile:
 - Equity, FX, Commodity delta
 - CSR non-sec delta
 - Curvature (GIRR example)
+- Post-calculation analytical Euler attribution (delta/vega) and explicit
+  unsupported records for curvature
+- Baseline-vs-candidate capital impact (finite difference between two runs)
 
 Uses the public API and produces SbmCapitalResult with breakdowns.
 
@@ -18,8 +21,10 @@ Run:
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
+from frtb_common.attribution import AttributionMethod
 from frtb_sbm import (
     SbmCalculationContext,
     SbmCapitalResult,
@@ -29,7 +34,9 @@ from frtb_sbm import (
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
+    calculate_sbm_attribution,
     calculate_sbm_capital,
+    calculate_sbm_capital_impact,
 )
 
 AS_OF = date(2026, 5, 30)
@@ -288,14 +295,102 @@ def run_curvature_demo() -> SbmCapitalResult:
     return result
 
 
+def print_attribution_summary(result: SbmCapitalResult, *, heading: str) -> None:
+    """Print analytical Euler contributions and unsupported attribution branches."""
+    contributions = calculate_sbm_attribution(result)
+    print(f"\n--- {heading} ---")
+
+    euler = [c for c in contributions if c.method == AttributionMethod.ANALYTICAL_EULER]
+    unsupported = [c for c in contributions if c.method == AttributionMethod.UNSUPPORTED]
+    residuals = [c for c in contributions if c.method == AttributionMethod.RESIDUAL]
+
+    if euler:
+        print(
+            f"{'source_id':<18} {'category':<10} {'bucket':<8} "
+            f"{'WS':>12} {'marginal':>10} {'contribution':>14}"
+        )
+        for c in sorted(euler, key=lambda row: (row.category, row.bucket_key or "", row.source_id)):
+            print(
+                f"{c.source_id:<18} {c.category:<10} {(c.bucket_key or '-'):<8} "
+                f"{c.base_amount:>12,.2f} {c.marginal_multiplier:>10.6f} "
+                f"{c.contribution:>14,.2f}"
+            )
+
+    for c in unsupported:
+        print(f"  UNSUPPORTED ({c.category}): {c.reason}")
+        if c.residual:
+            print(f"    risk-class capital in residual: {c.residual:,.2f}")
+
+    for c in residuals:
+        print(f"  RESIDUAL ({c.category}): {c.residual:,.2f} — {c.reason}")
+
+    attributed_total = sum((r.contribution or 0.0) + r.residual for r in contributions)
+    print(f"  Attribution sum: {attributed_total:,.2f}  |  SBM total: {result.total_capital:,.2f}")
+
+
+def run_attribution_demo(
+    girr_delta_result: SbmCapitalResult,
+    multi_class_result: SbmCapitalResult,
+    curvature_result: SbmCapitalResult,
+) -> None:
+    print("\n=== Attribution (analytical Euler) demo ===")
+    print(
+        "Delta and vega paths decompose selected risk-class capital to sensitivity "
+        "grain. Curvature returns explicit UNSUPPORTED records (MAR21.5 CVR floor)."
+    )
+
+    print_attribution_summary(
+        girr_delta_result,
+        heading="GIRR delta — per-sensitivity Euler contributions",
+    )
+    print_attribution_summary(
+        multi_class_result,
+        heading="Multi-class delta — portfolio-wide Euler contributions",
+    )
+    print_attribution_summary(
+        curvature_result,
+        heading="GIRR curvature — unsupported attribution branch",
+    )
+
+
+def run_impact_demo() -> None:
+    """Compare two GIRR delta runs after bumping eur-1y notional (+20%)."""
+    print("\n=== Capital impact (finite difference) demo ===")
+    print(
+        "Impact is the portfolio total delta between two reconciled capital runs. "
+        "It is not per-sensitivity marginal attribution (see attribution section)."
+    )
+
+    baseline_context = replace(sample_context(), run_id="sbm-impact-baseline")
+    candidate_context = replace(sample_context(), run_id="sbm-impact-candidate")
+
+    baseline_sens = make_girr_delta_sensitivities()
+    candidate_sens = [
+        replace(s, amount=1_200_000.0) if s.sensitivity_id == "eur-1y" else s
+        for s in baseline_sens
+    ]
+
+    baseline = calculate_sbm_capital(baseline_sens, context=baseline_context)
+    candidate = calculate_sbm_capital(candidate_sens, context=candidate_context)
+    impact = calculate_sbm_capital_impact(baseline, candidate)
+
+    print("  Scenario: bump eur-1y notional 1,000,000 → 1,200,000 (+20%)")
+    print(f"  Baseline total ({impact.baseline_run_id}): {impact.baseline_total:,.2f}")
+    print(f"  Candidate total ({impact.candidate_run_id}): {impact.candidate_total:,.2f}")
+    print(f"  Impact delta (candidate - baseline): {impact.delta:+,.2f}")
+    print(f"  Method: {impact.method}")
+
+
 def main() -> None:
     print("FRTB SBM End-to-End Demo (synthetic sensitivities)")
     print("Prototype / illustration only. Not final regulatory capital.\n")
 
-    run_girr_delta_demo()
-    run_multi_class_delta_demo()
+    girr_delta_result = run_girr_delta_demo()
+    multi_class_result = run_multi_class_delta_demo()
     run_vega_demo()
-    run_curvature_demo()
+    curvature_result = run_curvature_demo()
+    run_attribution_demo(girr_delta_result, multi_class_result, curvature_result)
+    run_impact_demo()
 
     print("\nDemo complete.")
     print("See tests/fixtures/*/loader.py for more fixture-based examples.")
@@ -303,6 +398,7 @@ def main() -> None:
     print(
         "Supported under BASEL_MAR21 profile (GIRR/EQUITY/FX/COMMODITY/CSR delta/vega + curvature)."
     )
+    print("See packages/frtb-sbm/ATTRIBUTION.md for attribution method and limitations.")
 
 
 if __name__ == "__main__":
