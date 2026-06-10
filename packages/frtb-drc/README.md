@@ -24,7 +24,7 @@ placeholder capital.
 Outputs are engineering and validation evidence, not final regulatory capital.
 `PACKAGE_METADATA.validation_status` remains `PENDING`.
 
-**Integration journey (Arrow per class → capital → attribution → SA/suite/store):**
+**Integration journey (Arrow per class -> capital -> attribution -> SA/suite/store):**
 [`docs/PACKAGE_JOURNEY.md`](docs/PACKAGE_JOURNEY.md)
 
 ## Documentation
@@ -32,7 +32,7 @@ Outputs are engineering and validation evidence, not final regulatory capital.
 | Document | Purpose |
 | --- | --- |
 | [PACKAGE_JOURNEY.md](docs/PACKAGE_JOURNEY.md) | End-to-end client flow, row vs batch semantics, profile/class routing, orchestration boundaries |
-| [ATTRIBUTION.md](ATTRIBUTION.md) | Capital attribution method, inputs, supported grains, and limitations |
+| [ATTRIBUTION.md](ATTRIBUTION.md) | Capital attribution, contributor summaries, baseline impact analysis, inputs, supported grains, and limitations |
 | [PUBLIC_API.md](../../docs/modules/frtb-drc/PUBLIC_API.md) | Stable client integration surface and Arrow paths |
 | [PROFILE_SUPPORT_MATRIX.md](../../docs/modules/frtb-drc/PROFILE_SUPPORT_MATRIX.md) | Profile and risk-class support status |
 | [Module README](../../docs/modules/frtb-drc/README.md) | Planning pack, model documentation, requirements |
@@ -45,10 +45,15 @@ Outputs are engineering and validation evidence, not final regulatory capital.
 
 ```python
 from frtb_drc import PACKAGE_METADATA, calculate_drc_capital
+from frtb_drc.impact import calculate_drc_impact
 ```
 
 High-volume paths use class-specific Arrow normalizers and batch builders
 documented in [`PUBLIC_API.md`](../../docs/modules/frtb-drc/PUBLIC_API.md).
+
+`calculate_drc_impact` compares two completed `DrcCapitalResult` objects for
+baseline-versus-candidate governance analysis. It does not calculate regulatory
+capital and does not replace marginal attribution.
 
 Securitisation non-CTP and CTP risk weights and replication/decomposition
 evidence are supplied in `DrcCalculationContext` as run-scoped maps. Missing
