@@ -44,24 +44,24 @@ def test_multi_risk_class_delta_euler_records_reconcile_by_risk_class() -> None:
     result = calculate_sbm_capital(sensitivities, context=_context("multi-risk"))
     records = calculate_sbm_attribution(result)
 
-    assert {record.category for record in records} == {"FX", "GIRR"}
-    assert all(record.method is AttributionMethod.ANALYTICAL_EULER for record in records)
+    categories = set()
+    for record in records:
+        categories.add(record.category)
+        assert record.method is AttributionMethod.ANALYTICAL_EULER
+    assert categories == {"FX", "GIRR"}
     assert _record_total(records) == pytest.approx(
         result.total_capital,
         rel=1e-6,
         abs=1e-6,
     )
 
-    capital_by_risk_class = {
-        str(risk_class.risk_class): risk_class.selected_capital
-        for risk_class in result.risk_classes
-    }
-    for risk_class, selected_capital in capital_by_risk_class.items():
-        risk_class_records = tuple(
-            record for record in records if record.category == risk_class
-        )
-        assert _record_total(risk_class_records) == pytest.approx(
-            selected_capital,
+    for risk_class in result.risk_classes:
+        risk_class_records: list[CapitalContribution] = []
+        for record in records:
+            if record.category == str(risk_class.risk_class):
+                risk_class_records.append(record)
+        assert _record_total(tuple(risk_class_records)) == pytest.approx(
+            risk_class.selected_capital,
             rel=1e-6,
             abs=1e-6,
         )
@@ -135,14 +135,18 @@ def test_negative_girr_sensitivity_can_reduce_euler_capital_contribution() -> No
 
     result = calculate_sbm_capital(sensitivities, context=_context("negative-euler"))
     records = calculate_sbm_attribution(result)
-    euler = tuple(
-        record for record in records if record.method is AttributionMethod.ANALYTICAL_EULER
-    )
+    euler: list[CapitalContribution] = []
+    for record in records:
+        if record.method is AttributionMethod.ANALYTICAL_EULER:
+            euler.append(record)
+
+    negative_contribution_found = False
+    for record in euler:
+        if record.contribution is not None and record.contribution < 0.0:
+            negative_contribution_found = True
 
     assert len(euler) == 2
-    assert any(
-        record.contribution is not None and record.contribution < 0.0 for record in euler
-    )
+    assert negative_contribution_found
     assert _record_total(records) == pytest.approx(
         result.total_capital,
         rel=1e-6,
@@ -170,14 +174,14 @@ def test_multi_risk_class_finite_difference_matches_euler_derivatives() -> None:
     )
 
     result = calculate_sbm_capital(sensitivities, context=_context("finite-diff"))
-    records = tuple(
-        record
-        for record in calculate_sbm_attribution(result)
-        if record.method is AttributionMethod.ANALYTICAL_EULER
-    )
-    raw_amount_by_id = {
-        sensitivity.sensitivity_id: sensitivity.amount for sensitivity in sensitivities
-    }
+    records: list[CapitalContribution] = []
+    for record in calculate_sbm_attribution(result):
+        if record.method is AttributionMethod.ANALYTICAL_EULER:
+            records.append(record)
+
+    raw_amount_by_id = {}
+    for sensitivity in sensitivities:
+        raw_amount_by_id[sensitivity.sensitivity_id] = sensitivity.amount
     bump = 100.0
 
     for record in records:
@@ -185,12 +189,13 @@ def test_multi_risk_class_finite_difference_matches_euler_derivatives() -> None:
         assert record.marginal_multiplier is not None
         raw_amount = raw_amount_by_id[record.source_id]
         risk_weight = record.base_amount / raw_amount
-        bumped = tuple(
-            replace(sensitivity, amount=sensitivity.amount + bump)
-            if sensitivity.sensitivity_id == record.source_id
-            else sensitivity
-            for sensitivity in sensitivities
-        )
+        bumped_items = []
+        for sensitivity in sensitivities:
+            if sensitivity.sensitivity_id == record.source_id:
+                bumped_items.append(replace(sensitivity, amount=sensitivity.amount + bump))
+            else:
+                bumped_items.append(sensitivity)
+        bumped = tuple(bumped_items)
         bumped_result = calculate_sbm_capital(
             bumped,
             context=_context(f"bumped-{record.source_id}"),
@@ -233,6 +238,10 @@ def _girr_delta(
     tenor: str,
     amount: float,
 ) -> SbmSensitivity:
+    sign_convention = SbmSignConvention.RECEIVE
+    if amount < 0.0:
+        sign_convention = SbmSignConvention.SHORT
+
     return SbmSensitivity(
         sensitivity_id=sensitivity_id,
         source_row_id=f"row-{sensitivity_id}",
@@ -245,9 +254,7 @@ def _girr_delta(
         tenor=tenor,
         amount=amount,
         amount_currency="USD",
-        sign_convention=(
-            SbmSignConvention.SHORT if amount < 0.0 else SbmSignConvention.RECEIVE
-        ),
+        sign_convention=sign_convention,
         lineage=_lineage(sensitivity_id),
     )
 
@@ -276,4 +283,10 @@ def _fx_delta(
 
 
 def _record_total(records: tuple[CapitalContribution, ...]) -> float:
-    return math.fsum((record.contribution or 0.0) + record.residual for record in records)
+    total = 0.0
+    for record in records:
+        contribution = record.contribution
+        if contribution is None:
+            contribution = 0.0
+        total = math.fsum((total, contribution, record.residual))
+    return total
