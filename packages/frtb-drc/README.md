@@ -50,6 +50,12 @@ from frtb_drc.impact import calculate_drc_impact
 
 High-volume paths use class-specific Arrow normalizers and batch builders
 documented in [`PUBLIC_API.md`](../../docs/modules/frtb-drc/PUBLIC_API.md).
+Securitisation non-CTP and CTP evidence attachments can also be normalized from
+Arrow with `normalize_drc_risk_weight_evidence_arrow_table`,
+`build_drc_securitisation_non_ctp_risk_weight_evidence_from_arrow`,
+`build_drc_ctp_risk_weight_evidence_from_arrow`, and
+`build_drc_fair_value_cap_evidence_from_arrow` before being supplied through
+`DrcCalculationContext`.
 
 `calculate_drc_impact` compares two completed `DrcCapitalResult` objects for
 baseline-versus-candidate governance analysis. It does not calculate regulatory
