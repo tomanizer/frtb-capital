@@ -5,9 +5,14 @@ results. Attribution is post-calculation: it consumes the validated
 `DrcCapitalResult`, retained net-JTD and branch evidence, and run-scoped
 risk-weight lineage without changing DRC capital.
 
+Baseline-versus-candidate impact analysis is also post-calculation. It compares
+two completed `DrcCapitalResult` graphs and explains `candidate.total_drc -
+baseline.total_drc`; it is not analytical Euler attribution and it does not
+rerun or change DRC capital.
+
 ## Current Support
 
-Public helpers:
+Public attribution helpers:
 
 ```python
 from frtb_drc import (
@@ -21,9 +26,15 @@ from frtb_drc import (
 )
 ```
 
+Public impact helpers:
+
+```python
+from frtb_drc.impact import calculate_drc_impact, validate_drc_impact_reconciliation
+```
+
 Row and batch calculation paths populate `DrcCapitalResult.attribution_records`
 where the caller supplies the risk-weight evidence needed by the supported
-path.
+path. Impact helpers consume already completed results supplied by the caller.
 
 ## Method
 
@@ -40,6 +51,22 @@ net JTD records. The helper uses:
 For non-CTP paths, attribution is bucket-local through the HBR expression. For
 CTP, the method applies the active positive/negative bucket recognition factor
 before reconciling to CTP category capital.
+
+## Baseline Impact
+
+`calculate_drc_impact(baseline, candidate)` returns a `DrcImpactAnalysis` with:
+
+- a package-neutral `CapitalImpact` run-level record;
+- DRC-specific `DrcImpactRecord` rows for stable bucket finite differences;
+- `UNSUPPORTED` records for profile changes, floor branches, unsupported branch
+  metadata, added/removed buckets, and bucket/category moves;
+- `RESIDUAL` records when bucket records do not explain the full run-level
+  capital delta.
+
+Each impact record carries baseline and candidate input/profile hashes, source
+grain, bucket/category labels where available, citations, reason text, and a
+reconciliation status. The analysis validates that record deltas reconcile to
+the run-level `CapitalImpact.delta` within tolerance, or raises `DrcInputError`.
 
 ## Contributor Summaries
 
@@ -108,12 +135,20 @@ Summary helpers consume:
 - `DrcCapitalResult.attribution_records` or explicitly supplied records
 - `DrcCapitalResult.net_jtds` for issuer and risk-class lineage
 
+Impact helpers consume:
+
+- baseline and candidate `DrcCapitalResult.total_drc`
+- baseline and candidate profile/input hashes
+- baseline and candidate category, bucket, HBR, branch, and citation records
+
 ## Allocation Grain
 
 - Analytical records: `source_level="net_jtd"`.
 - Unsupported records: `source_level="bucket"` or `source_level="category"`.
 - Residual records: `source_level="category"`.
 - Summary projections: issuer, bucket, category, and risk class.
+- Impact records: `source_level="bucket"` for stable finite differences and
+  `source_level="result"` for profile-level unsupported or residual deltas.
 
 ## Limitations
 
@@ -126,7 +161,8 @@ Summary helpers consume:
 - Issuer summaries cannot assign bucket/category unsupported residuals to an
   issuer when the source record has no net-JTD lineage; those amounts remain
   visible under `UNALLOCATED`.
-- Baseline-versus-candidate impact remains separate from marginal attribution.
+- Impact analysis compares retained result graph nodes. It does not infer
+  economic drivers hidden outside the two supplied `DrcCapitalResult` objects.
 
 ## Evidence
 
@@ -134,6 +170,7 @@ Tests:
 
 - `packages/frtb-drc/tests/test_drc_attribution.py`
 - `packages/frtb-drc/tests/test_drc_attribution_summaries.py`
+- `packages/frtb-drc/tests/test_drc_impact.py`
 
 Design references:
 
