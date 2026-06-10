@@ -68,9 +68,12 @@ def _optional_text_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    if values is None:
-        return _batch_arrays.object_array([None] * row_count, copy=copy)
-    return _batch_arrays.object_array([_optional_text(value) for value in values], copy=copy)
+    return _batch_arrays.optional_text_array(
+        values,
+        row_count,
+        copy=copy,
+        optional_text=_optional_text,
+    )
 
 
 def _text_array_with_default(
@@ -80,11 +83,12 @@ def _text_array_with_default(
     default: str,
     copy: bool,
 ) -> ObjectArray:
-    if values is None:
-        return _batch_arrays.object_array([default] * row_count, copy=copy)
-    return _batch_arrays.object_array(
-        [_optional_text(value) or default for value in values],
+    return _batch_arrays.text_array_with_default(
+        values,
+        row_count,
+        default=default,
         copy=copy,
+        optional_text=_optional_text,
     )
 
 
@@ -95,10 +99,17 @@ def _enum_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    return _batch_arrays.object_array(
-        [_coerce_enum_value(value, enum_type, field_name) for value in values],
-        copy=copy,
-    )
+    try:
+        return _batch_arrays.enum_array(
+            values,
+            enum_type,
+            field_name,
+            copy=copy,
+            required_text=_required_text,
+            invalid_message=_invalid_enum_message,
+        )
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise RraoInputError(str(exc), field=exc.field or field_name) from exc
 
 
 def _optional_enum_array(
@@ -109,17 +120,19 @@ def _optional_enum_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    if values is None:
-        return _batch_arrays.object_array([None] * row_count, copy=copy)
-    return _batch_arrays.object_array(
-        [
-            None
-            if _optional_text(value) is None
-            else _coerce_enum_value(value, enum_type, field_name)
-            for value in values
-        ],
-        copy=copy,
-    )
+    try:
+        return _batch_arrays.nullable_enum_array(
+            values,
+            enum_type,
+            field_name,
+            row_count,
+            copy=copy,
+            optional_text=_optional_text,
+            required_text=_required_text,
+            invalid_message=_invalid_enum_message,
+        )
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise RraoInputError(str(exc), field=exc.field or field_name) from exc
 
 
 def _required_float_array(
@@ -141,13 +154,10 @@ def _optional_float_array(
     *,
     copy: bool,
 ) -> FloatArray:
-    if values is None:
-        array = np.full(row_count, np.nan, dtype=np.float64)
-    elif (fast_array := _float_array_from_numpy(values, copy=copy)) is not None:
-        return fast_array
-    else:
-        array = np.asarray([_optional_float(value) for value in values], dtype=np.float64)
-    return _batch_arrays.readonly_array(array, copy=copy)
+    try:
+        return _batch_arrays.optional_float_array(values, row_count, copy=copy)
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise _rrao_float_error(exc) from exc
 
 
 def _optional_int_array(
@@ -230,16 +240,6 @@ def _required_float(value: object, field_name: str) -> float:
     return number
 
 
-def _optional_float(value: object | None) -> float:
-    if value is None:
-        return math.nan
-    if isinstance(value, float) and math.isnan(value):
-        return math.nan
-    if isinstance(value, str) and not value.strip():
-        return math.nan
-    return _required_float(value, "optional numeric field")
-
-
 def _optional_int(value: object | None) -> int | None:
     if value is None:
         return None
@@ -257,36 +257,30 @@ def _optional_int(value: object | None) -> int | None:
     raise RraoInputError(UNDERLYING_COUNT_INTEGER_MESSAGE, field="underlying_count")
 
 
-def _coerce_enum_value(
-    value: object | None,
-    enum_type: type[EnumT],
-    field_name: str,
-) -> str:
-    text = _required_text(value, field_name)
-    try:
-        return enum_type(text).value
-    except ValueError as exc:
-        raise RraoInputError(f"invalid {field_name}", field=field_name) from exc
+def _invalid_enum_message(field_name: str, _value: str) -> str:
+    return f"invalid {field_name}"
 
 
 def _freeze_source_column_maps(
     values: Sequence[Sequence[tuple[str, str]]] | None,
     row_count: int,
 ) -> tuple[tuple[tuple[str, str], ...], ...]:
-    if values is None:
-        return tuple(() for _ in range(row_count))
-    frozen: list[tuple[tuple[str, str], ...]] = []
-    for row in values:
-        pairs: list[tuple[str, str]] = []
-        for source, target in row:
-            pairs.append(
-                (
-                    _required_text(source, "lineage.source_column_map.source"),
-                    _required_text(target, "lineage.source_column_map.canonical"),
-                )
-            )
-        frozen.append(tuple(pairs))
-    return tuple(frozen)
+    return _batch_arrays.freeze_source_column_maps(
+        values,
+        row_count,
+        source_text=lambda value: _required_text(value, "lineage.source_column_map.source"),
+        target_text=lambda value: _required_text(value, "lineage.source_column_map.canonical"),
+    )
+
+
+def _rrao_float_error(exc: _batch_arrays.BatchArrayCoercionError) -> RraoInputError:
+    message = str(exc)
+    field = exc.field or "optional numeric field"
+    if "must be numeric" in message or "must be provided" in message:
+        return RraoInputError("value must be numeric", field=field)
+    if "must be finite" in message:
+        return RraoInputError("value must be finite", field=field)
+    return RraoInputError(message, field=field)
 
 
 def _freeze_citations(

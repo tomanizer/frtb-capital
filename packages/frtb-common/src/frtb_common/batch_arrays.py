@@ -144,11 +144,15 @@ def enum_array(
     *,
     copy: bool,
     required_text: Callable[[object | None, str], str] = required_text_value,
+    invalid_message: Callable[[str, str], str] | None = None,
 ) -> ObjectArray:
     """Return a required enum value array containing canonical enum values."""
 
     return object_array(
-        [_coerce_enum_value(value, enum_type, field, required_text) for value in values],
+        [
+            _coerce_enum_value(value, enum_type, field, required_text, invalid_message)
+            for value in values
+        ],
         copy=copy,
     )
 
@@ -162,6 +166,7 @@ def nullable_enum_array(
     copy: bool,
     optional_text: Callable[[object | None], str | None] = optional_text_value,
     required_text: Callable[[object | None, str], str] = required_text_value,
+    invalid_message: Callable[[str, str], str] | None = None,
 ) -> ObjectArray:
     """Return a nullable enum value array containing canonical enum values."""
 
@@ -171,7 +176,7 @@ def nullable_enum_array(
         [
             None
             if optional_text(value) is None
-            else _coerce_enum_value(value, enum_type, field, required_text)
+            else _coerce_enum_value(value, enum_type, field, required_text, invalid_message)
             for value in values
         ],
         copy=copy,
@@ -408,15 +413,19 @@ def freeze_source_column_maps(
     row_count: int,
     *,
     text_coercer: Callable[[object], str] = str,
+    source_text: Callable[[object], str] | None = None,
+    target_text: Callable[[object], str] | None = None,
     sort_pairs: bool = False,
 ) -> tuple[tuple[tuple[str, str], ...], ...]:
     """Freeze source-to-canonical column mappings for audit payloads."""
 
     if values is None:
         return tuple(() for _ in range(row_count))
+    source_coercer = source_text or text_coercer
+    target_coercer = target_text or text_coercer
     frozen: list[tuple[tuple[str, str], ...]] = []
     for row in values:
-        pairs = tuple((text_coercer(source), text_coercer(target)) for source, target in row)
+        pairs = tuple((source_coercer(source), target_coercer(target)) for source, target in row)
         frozen.append(tuple(sorted(pairs)) if sort_pairs else pairs)
     return tuple(frozen)
 
@@ -426,12 +435,18 @@ def _coerce_enum_value(
     enum_type: type[EnumT],
     field: str,
     required_text: Callable[[object | None, str], str],
+    invalid_message: Callable[[str, str], str] | None,
 ) -> str:
     text = required_text(value, field)
     try:
         return enum_type(text).value
     except ValueError as exc:
+        message = (
+            invalid_message(field, text)
+            if invalid_message is not None
+            else f"{field} contains unsupported value: {text}"
+        )
         raise BatchArrayCoercionError(
-            f"{field} contains unsupported value: {text}",
+            message,
             field=field,
         ) from exc
