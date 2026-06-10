@@ -1,0 +1,54 @@
+{
+  "sovereign_ig": {
+    "risk_weight": 0.005,
+    "alpha": 1.4,
+    "rho": 0.5,
+    "d_ba_cva": 0.65,
+    "netting_set_lines": [
+      {
+        "netting_set_id": "ns-sovereign-ig",
+        "counterparty_id": "ctp-sovereign-ig",
+        "ead": 1000000.0,
+        "effective_maturity": 2.5,
+        "discount_factor": 0.9400247793232364,
+        "standalone_capital": 8393.07838681461
+      }
+    ],
+    "counterparty_capitals": [
+      {
+        "counterparty_id": "ctp-sovereign-ig",
+        "standalone_capital": 8393.07838681461,
+        "netting_set_ids": ["ns-sovereign-ig"]
+      }
+    ],
+    "sum_scva": 8393.07838681461,
+    "k_portfolio": 8393.07838681461,
+    "k_reduced": 5455.500951429497
+  },
+  "financial_hy": {
+    "risk_weight": 0.12,
+    "alpha": 1.4,
+    "rho": 0.5,
+    "d_ba_cva": 0.65,
+    "netting_set_lines": [
+      {
+        "netting_set_id": "ns-fin-hy",
+        "counterparty_id": "ctp-fin-hy",
+        "ead": 500000.0,
+        "effective_maturity": 1.0,
+        "discount_factor": 1.0,
+        "standalone_capital": 42857.142857142855
+      }
+    ],
+    "counterparty_capitals": [
+      {
+        "counterparty_id": "ctp-fin-hy",
+        "standalone_capital": 42857.142857142855,
+        "netting_set_ids": ["ns-fin-hy"]
+      }
+    ],
+    "sum_scva": 42857.142857142855,
+    "k_portfolio": 42857.142857142855,
+    "k_reduced": 27857.142857142855
+  }
+}
