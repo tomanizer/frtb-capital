@@ -378,10 +378,23 @@ def _source_name(
     fallback_index: int,
 ) -> str:
     for key in keys:
-        value = values.get(key)
-        if value is not None and str(value).strip():
-            return str(value).strip()
+        name = _source_name_value(values.get(key), keys)
+        if name is not None:
+            return name
     return f"item_{fallback_index}"
+
+
+def _source_name_value(value: object, keys: tuple[str, ...]) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, Mapping):
+        for key in keys:
+            name = _source_name_value(value.get(key), keys)
+            if name is not None:
+                return name
+        return None
+    text = str(value).strip()
+    return text or None
 
 
 def _category_token(value: object) -> str:
