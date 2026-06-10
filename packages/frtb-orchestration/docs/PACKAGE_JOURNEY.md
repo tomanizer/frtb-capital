@@ -88,7 +88,7 @@ sequenceDiagram
         Orch-->>Caller: SuiteCapitalResult and attribution-ready metadata
         Caller->>Store: Persist completed result bundle
     else Missing or incompatible input
-        Orch-->>Caller: OrchestrationInputError with no placeholder capital
+        Orch-->>Caller: OrchestrationInputError; no capital is emitted
     end
 ```
 
