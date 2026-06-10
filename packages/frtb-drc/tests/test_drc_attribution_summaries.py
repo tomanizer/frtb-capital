@@ -9,6 +9,7 @@ from frtb_drc import (
     CapitalContribution,
     DefaultDirection,
     DrcAttributionGrain,
+    DrcAttributionSummary,
     DrcCapitalResult,
     DrcRiskClass,
     NetJtd,
@@ -271,28 +272,30 @@ def _net_jtd(
     )
 
 
-def _by_key(summaries):
-    by_key = {}
+def _by_key(
+    summaries: tuple[DrcAttributionSummary, ...],
+) -> dict[str, DrcAttributionSummary]:
+    by_key: dict[str, DrcAttributionSummary] = {}
     for summary in summaries:
         by_key[summary.key] = summary
     return by_key
 
 
-def _keys(summaries):
-    keys = []
+def _keys(summaries: tuple[DrcAttributionSummary, ...]) -> list[str]:
+    keys: list[str] = []
     for summary in summaries:
         keys.append(summary.key)
     return keys
 
 
-def _total(summaries):
+def _total(summaries: tuple[DrcAttributionSummary, ...]) -> float:
     total = 0.0
     for summary in summaries:
         total += summary.total
     return total
 
 
-def _record_count(summaries):
+def _record_count(summaries: tuple[DrcAttributionSummary, ...]) -> int:
     count = 0
     for summary in summaries:
         count += summary.record_count
