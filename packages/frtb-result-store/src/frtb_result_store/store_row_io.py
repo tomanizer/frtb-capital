@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from datetime import date, datetime
 from typing import cast
 
+import frtb_result_store.store_hierarchy_rows as _store_hierarchy_rows
 from frtb_common import AttributionMethod
 from frtb_common.hashing import stable_json_dumps
 
@@ -61,15 +62,14 @@ from frtb_result_store.run_metadata_io import (
 from frtb_result_store.run_metadata_io import (
     telemetry_row as _telemetry_row,
 )
-from frtb_result_store.store_hierarchy_rows import (
-    _hierarchy_definition_from_row as _hierarchy_definition_from_row,
-    _hierarchy_definition_row as _hierarchy_definition_row,
-    _hierarchy_level_from_mapping as _hierarchy_level_from_mapping,
-    _hierarchy_node_from_row as _hierarchy_node_from_row,
-    _hierarchy_node_row as _hierarchy_node_row,
-    _hierarchy_path_item_from_mapping as _hierarchy_path_item_from_mapping,
-    _json_object_list as _json_object_list,
-)
+
+_hierarchy_definition_from_row = _store_hierarchy_rows._hierarchy_definition_from_row
+_hierarchy_definition_row = _store_hierarchy_rows._hierarchy_definition_row
+_hierarchy_level_from_mapping = _store_hierarchy_rows._hierarchy_level_from_mapping
+_hierarchy_node_from_row = _store_hierarchy_rows._hierarchy_node_from_row
+_hierarchy_node_row = _store_hierarchy_rows._hierarchy_node_row
+_hierarchy_path_item_from_mapping = _store_hierarchy_rows._hierarchy_path_item_from_mapping
+_json_object_list = _store_hierarchy_rows._json_object_list
 
 
 def _rows_for_bundle(
