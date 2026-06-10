@@ -92,6 +92,15 @@ def test_enum_arrays_coerce_and_reject_values() -> None:
     assert nullable.tolist() == [None, "RIGHT", None]
     with pytest.raises(BatchArrayCoercionError, match="side contains unsupported value"):
         enum_array(["MIDDLE"], SampleEnum, "side", copy=True)
+    with pytest.raises(BatchArrayCoercionError, match="invalid side"):
+        nullable_enum_array(
+            ["MIDDLE"],
+            SampleEnum,
+            "side",
+            1,
+            copy=True,
+            invalid_message=lambda field, _value: f"invalid {field}",
+        )
 
 
 def test_float_array_from_numpy_accepts_numeric_numpy_fast_path() -> None:
@@ -224,3 +233,14 @@ def test_freeze_source_column_maps_can_sort_and_coerce_pairs() -> None:
 
     assert result == ((("a", "canonical_a"), ("b", "canonical_b")),)
     assert freeze_source_column_maps(None, 2) == ((), ())
+
+
+def test_freeze_source_column_maps_accepts_source_and_target_coercers() -> None:
+    result = freeze_source_column_maps(
+        [[("raw", "canonical")]],
+        1,
+        source_text=lambda value: f"source:{value}",
+        target_text=lambda value: f"target:{value}",
+    )
+
+    assert result == ((("source:raw", "target:canonical"),),)

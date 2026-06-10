@@ -40,6 +40,10 @@ def test_rrao_batch_column_helpers_report_numeric_errors() -> None:
     optional = columns._optional_float_array([float("nan"), " "], 2, copy=True)
     assert np.isnan(optional).all()
 
+    with pytest.raises(RraoInputError, match="value must be numeric") as optional_error:
+        columns._optional_float_array(["not numeric"], 1, copy=True)
+    assert optional_error.value.field == "optional numeric field"
+
 
 def test_rrao_batch_column_helpers_report_optional_int_and_enum_errors() -> None:
     with pytest.raises(RraoInputError, match="integer"):
@@ -47,6 +51,15 @@ def test_rrao_batch_column_helpers_report_optional_int_and_enum_errors() -> None
 
     with pytest.raises(RraoInputError, match="invalid evidence_type"):
         columns._enum_array(["not-a-type"], RraoEvidenceType, "evidence_type", copy=True)
+
+    optional = columns._optional_enum_array(
+        [None, "", "GAP_RISK"],
+        3,
+        RraoEvidenceType,
+        "evidence_type",
+        copy=True,
+    )
+    assert optional.tolist() == [None, None, "GAP_RISK"]
 
 
 def test_rrao_batch_column_helpers_wrap_common_bool_and_float_errors(
@@ -69,3 +82,16 @@ def test_rrao_batch_column_helpers_validate_citations() -> None:
 
     with pytest.raises(RraoInputError, match="citations"):
         columns._freeze_citations([[" "]], 1)
+
+
+def test_rrao_batch_column_helpers_preserve_source_map_validation() -> None:
+    result = columns._freeze_source_column_maps([[("raw_b", "canonical_b")]], 1)
+
+    assert result == ((("raw_b", "canonical_b"),),)
+    with pytest.raises(RraoInputError, match="non-empty text") as source_error:
+        columns._freeze_source_column_maps([[("", "canonical")]], 1)
+    assert source_error.value.field == "lineage.source_column_map.source"
+
+    with pytest.raises(RraoInputError, match="non-empty text") as target_error:
+        columns._freeze_source_column_maps([[("raw", "")]], 1)
+    assert target_error.value.field == "lineage.source_column_map.canonical"
