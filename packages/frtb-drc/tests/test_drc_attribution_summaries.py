@@ -74,7 +74,10 @@ def test_bucket_category_and_risk_class_summaries_reconcile_to_source_records() 
     assert bucket["SEC_CLO_NORTH_AMERICA"].contribution == pytest.approx(20.0)
     assert bucket["SEC_CLO_NORTH_AMERICA"].residual == pytest.approx(3.0)
     assert bucket["SEC_CLO_NORTH_AMERICA"].total == pytest.approx(23.0)
-    assert bucket["SEC_CLO_NORTH_AMERICA"].reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
+    assert (
+        bucket["SEC_CLO_NORTH_AMERICA"].reconciliation_status
+        is ReconciliationStatus.PARTIAL_RESIDUAL
+    )
 
     categories = {
         summary.key: summary for summary in summarize_drc_attribution_by_category(result)
