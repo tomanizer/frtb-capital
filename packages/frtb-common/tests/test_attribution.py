@@ -3,7 +3,6 @@
 import math
 
 import pytest
-
 from frtb_common.attribution import (
     AttributionMethod,
     CapitalContribution,
