@@ -133,6 +133,7 @@ Tests:
 
 - `packages/frtb-sbm/tests/test_sbm_attribution_impact.py`
 - `packages/frtb-sbm/tests/test_sbm_attribution_summaries.py`
+- `packages/frtb-sbm/tests/test_sbm_attribution_unsupported_branches.py`
 
 Design and regulatory references:
 
