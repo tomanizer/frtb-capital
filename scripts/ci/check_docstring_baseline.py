@@ -94,6 +94,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.update_baseline:
         _write_json(baseline_path, report)
+        if not section_baseline_path.exists():
+            _write_json(section_baseline_path, build_report((), paths=args.paths))
         if not args.quiet:
             print(f"updated docstring baseline: {baseline_path}")
         return 0
