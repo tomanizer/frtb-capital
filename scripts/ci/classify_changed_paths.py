@@ -159,7 +159,13 @@ def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
         path.startswith("packages/frtb-ima/examples/")
         or path.startswith("packages/frtb-ima/src/")
         or path.startswith("packages/frtb-ima/tests/fixtures/")
-        or path in {"packages/frtb-ima/pyproject.toml", "uv.lock"}
+        or path
+        in {
+            "Makefile",
+            "packages/frtb-ima/pyproject.toml",
+            "scripts/run_package_demos.py",
+            "uv.lock",
+        }
         for path in paths
     )
 
