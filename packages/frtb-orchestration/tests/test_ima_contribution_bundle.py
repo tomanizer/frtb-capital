@@ -25,6 +25,10 @@ from frtb_orchestration import (
 _CALCULATION_DATE = date(2026, 3, 31)
 _INPUT_HASH = "1" * 64
 _POLICY_HASH = "2" * 64
+_ZERO_INPUT_HASH = "3" * 64
+_ZERO_PROFILE_HASH = "4" * 64
+_CVA_INPUT_HASH = "5" * 64
+_CVA_PROFILE_HASH = "6" * 64
 
 
 def test_orchestration_consumes_public_ima_contribution_bundle() -> None:
@@ -97,8 +101,8 @@ def _zero_component_bundle(component: str) -> ComponentContributionBundle:
         contribution=0.0,
         method=AttributionMethod.ANALYTICAL_EULER,
         citations=("adr_0038",),
-        input_hash=f"input-hash-{component}",
-        profile_hash=f"profile-hash-{component}",
+        input_hash=_ZERO_INPUT_HASH,
+        profile_hash=_ZERO_PROFILE_HASH,
         reconciliation_status=ReconciliationStatus.RECONCILED,
     )
     return ComponentContributionBundle(
@@ -129,10 +133,10 @@ def _component_summary(
         run_id=f"{component.value}-run",
         calculation_date=_CALCULATION_DATE,
         base_currency="USD",
-        profile_id="TEST",
+        profile_id="US_NPR_2_0",
         total_capital=0.0,
-        profile_hash=f"profile-hash-{component.value}",
-        input_hash=f"input-hash-{component.value}",
+        profile_hash=_ZERO_PROFILE_HASH,
+        input_hash=_ZERO_INPUT_HASH,
         line_count=0,
         excluded_line_count=0,
         subtotal_count=0,
@@ -146,14 +150,14 @@ def _zero_cva_summary() -> CvaCapitalSummary:
         run_id="cva-run",
         calculation_date=_CALCULATION_DATE,
         base_currency="USD",
-        profile_id="BASEL_MAR50_2020",
+        profile_id="US_NPR20_VB",
         method="BA_CVA_REDUCED",
         total_cva_capital=0.0,
         ba_cva_reduced_total=0.0,
         ba_cva_full_total=None,
         sa_cva_total=None,
-        profile_hash="profile-hash-cva",
-        input_hash="input-hash-cva",
+        profile_hash=_CVA_PROFILE_HASH,
+        input_hash=_CVA_INPUT_HASH,
         risk_class_count=0,
         counterparty_count=0,
         citations=("adr_0038",),
