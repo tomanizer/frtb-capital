@@ -150,7 +150,7 @@ def _desk_components(record: DeskAuditRecord) -> tuple[tuple[str, float], ...]:
 
 
 def _detail_components_or_aggregate(
-    values: Mapping[str, object],
+    values: Mapping[str, object] | None,
     prefix: str,
     aggregate_amount: float,
 ) -> tuple[tuple[str, float], ...]:
@@ -161,10 +161,12 @@ def _detail_components_or_aggregate(
 
 
 def _reconciling_detail_components(
-    values: Mapping[str, object],
+    values: Mapping[str, object] | None,
     prefix: str,
     aggregate_amount: float,
 ) -> tuple[tuple[str, float], ...]:
+    if not isinstance(values, Mapping):
+        return ()
     for key in _COMPONENT_MAP_KEYS:
         raw_components = values.get(key)
         if not isinstance(raw_components, Mapping):
