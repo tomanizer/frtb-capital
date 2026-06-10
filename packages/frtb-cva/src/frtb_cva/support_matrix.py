@@ -213,35 +213,13 @@ def cva_profile_support_matrix() -> tuple[CvaSupportCell, ...]:
     rows: list[CvaSupportCell] = []
     for profile in sorted(_SUPPORTED_PROFILES, key=lambda item: item.value):
         if profile is _CAPITAL_PRODUCING_PROFILE:
-            rows.extend(
-                _method_rows(
-                    profile,
-                    status=CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT,
-                    blocker="none",
-                )
-            )
-            rows.extend(
-                _sa_path_rows(
-                    profile,
-                    status=CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT,
-                    blocker="none",
-                )
-            )
+            status = CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT
+            blocker = "none"
         else:
-            rows.extend(
-                _method_rows(
-                    profile,
-                    status=CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED,
-                    blocker=_PROFILE_FIXTURE_BLOCKER,
-                )
-            )
-            rows.extend(
-                _sa_path_rows(
-                    profile,
-                    status=CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED,
-                    blocker=_PROFILE_FIXTURE_BLOCKER,
-                )
-            )
+            status = CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED
+            blocker = _PROFILE_FIXTURE_BLOCKER
+        rows.extend(_method_rows(profile, status=status, blocker=blocker))
+        rows.extend(_sa_path_rows(profile, status=status, blocker=blocker))
         rows.append(_ccs_vega_row(profile))
         rows.append(_materiality_row(profile))
         rows.extend(_out_of_scope_rows(profile))
