@@ -24,7 +24,9 @@ from frtb_cva._batch_columns import (
     _enum_array,
     _finite_float,
     _float_array,
+    _freeze_source_column_maps,
     _normalised_ead_array,
+    _optional_enum_array,
     _optional_float_array,
     _optional_float_value,
     _optional_text_array,
@@ -169,6 +171,20 @@ def test_column_helpers_fail_closed_on_invalid_shapes_and_values() -> None:
         None,
     ]
     assert np.isnan(_optional_float_array([None, np.nan, " "], 3, copy=True)).all()
+    with pytest.raises(CvaInputError, match="value must be numeric"):
+        _optional_float_array(["1.25"], 1, copy=True)
+    assert _optional_enum_array(
+        [None, "", np.nan, "BA_CVA_FULL"], 4, CvaMethod, "method", copy=True
+    ).tolist() == [
+        None,
+        None,
+        None,
+        "BA_CVA_FULL",
+    ]
+    assert _freeze_source_column_maps([[("raw", "canonical")]], 1) == ((("raw", "canonical"),),)
+    with pytest.raises(CvaInputError, match="non-empty text is required") as source_error:
+        _freeze_source_column_maps([[("", "canonical")]], 1)
+    assert source_error.value.field == "lineage.source_column_map.source"
     assert _optional_float_value(np.nan) is None
     assert _default_text_sequence(["explicit"], 1, "default") == ["explicit"]
     assert _default_text_sequence(None, 2, "default") == ["default", "default"]

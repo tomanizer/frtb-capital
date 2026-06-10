@@ -273,9 +273,13 @@ def optional_float_array(
     field: str = "optional numeric field",
     allow_bool: bool = True,
     require_1d_fast_path: bool = False,
+    optional_float: Callable[[object | None], float] | None = None,
 ) -> FloatArray:
     """Return a read-only float array with missing optional values as ``NaN``."""
 
+    scalar_coercer = optional_float or (
+        lambda value: optional_float_value(value, field=field, allow_bool=allow_bool)
+    )
     if values is None:
         array = np.full(row_count, np.nan, dtype=np.float64)
     elif (
@@ -291,7 +295,7 @@ def optional_float_array(
         return fast_array
     else:
         array = np.asarray(
-            [optional_float_value(value, field=field, allow_bool=allow_bool) for value in values],
+            [scalar_coercer(value) for value in values],
             dtype=np.float64,
         )
     return readonly_array(array, copy=False)
