@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from typing import Any, cast
 
 import numpy as np
@@ -16,6 +16,8 @@ from frtb_common import (
     NormalizedArrowTable,
     NullPolicy,
     TabularLogicalType,
+    arrow_date_array,
+    arrow_timestamp_array,
     normalize_arrow_table,
     normalized_arrow_table_hash,
     read_arrow_columns,
@@ -806,46 +808,13 @@ def _required_table_column(table: pa.Table, column_name: str) -> list[object]:
 def _date_column(table: pa.Table, column_name: str) -> DateArray:
     if column_name not in table.column_names:
         raise ValueError(f"column is required: {column_name}")
-    array = _single_array(table.column(column_name))
-    if pa.types.is_date(array.type) or pa.types.is_timestamp(array.type):
-        return np.asarray(array.to_numpy(zero_copy_only=False), dtype="datetime64[D]")
-    values = array.to_pylist()
-    return np.asarray([_parse_date(value, column_name) for value in values], dtype="datetime64[D]")
+    return arrow_date_array(table.column(column_name), field=column_name)
 
 
 def _timestamp_column(table: pa.Table, column_name: str) -> DatetimeArray:
     if column_name not in table.column_names:
         return np.full(table.num_rows, np.datetime64("NaT", "us"), dtype="datetime64[us]")
-    array = _single_array(table.column(column_name))
-    if pa.types.is_timestamp(array.type):
-        return np.asarray(array.to_numpy(zero_copy_only=False), dtype="datetime64[us]")
-    values = array.to_pylist()
-    timestamps: list[np.datetime64] = []
-    for value in values:
-        if value is None:
-            timestamps.append(np.datetime64("NaT", "us"))
-        elif isinstance(value, datetime):
-            timestamps.append(np.datetime64(_timestamp_to_utc_naive(value), "us"))
-        elif isinstance(value, str):
-            timestamps.append(
-                np.datetime64(
-                    _timestamp_to_utc_naive(datetime.fromisoformat(value.replace("Z", "+00:00"))),
-                    "us",
-                )
-            )
-        else:
-            raise ValueError(f"{column_name} must contain timestamps or ISO-8601 text")
-    return np.asarray(timestamps, dtype="datetime64[us]")
-
-
-def _timestamp_to_utc_naive(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value
-    return value.astimezone(UTC).replace(tzinfo=None)
-
-
-def _single_array(column: pa.ChunkedArray) -> pa.Array:
-    return column.chunk(0) if column.num_chunks == 1 else column.combine_chunks()
+    return arrow_timestamp_array(table.column(column_name), field=column_name)
 
 
 def _ima_error(message: str, _field: str | None) -> ValueError:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Mapping, Sequence
+from datetime import UTC, date, datetime
 from typing import Any, cast
 
 import numpy as np
@@ -177,6 +178,81 @@ def arrow_bool_or_object_array(
         return np.asarray(values, dtype=np.bool_)
 
     return _object_array_from_arrow_array(array, null_value=null_value)
+
+
+def arrow_date_array(
+    column: pa.ChunkedArray,
+    *,
+    field: str,
+) -> npt.NDArray[np.datetime64]:
+    """Return a day-resolution NumPy date array from Arrow date, timestamp, or text values.
+
+    Parameters
+    ----------
+    column : pyarrow.ChunkedArray
+        Arrow column to materialise.
+    field : str
+        Column label used in validation errors.
+
+    Returns
+    -------
+    ndarray
+        One-dimensional ``datetime64[D]`` array.
+    """
+
+    if len(column) == 0:
+        return np.empty(0, dtype="datetime64[D]")
+    array = _single_arrow_array(column)
+    if pa.types.is_date(array.type) or pa.types.is_timestamp(array.type):
+        try:
+            if pa.types.is_timestamp(array.type):
+                array = _timezone_naive_timestamp_array(array)
+            return np.asarray(array.to_numpy(zero_copy_only=False), dtype="datetime64[D]")
+        except (pa.ArrowInvalid, TypeError, ValueError) as exc:
+            raise NormalizedTableError(f"{field} must contain dates") from exc
+    values = array.to_pylist()
+    return np.asarray(
+        [_parse_arrow_date_value(value, field) for value in values],
+        dtype="datetime64[D]",
+    )
+
+
+def arrow_timestamp_array(
+    column: pa.ChunkedArray,
+    *,
+    field: str,
+) -> npt.NDArray[np.datetime64]:
+    """Return a microsecond-resolution NumPy timestamp array from Arrow or text values.
+
+    Arrow nulls are represented as ``NaT`` for nullable timestamp columns.
+
+    Parameters
+    ----------
+    column : pyarrow.ChunkedArray
+        Arrow column to materialise.
+    field : str
+        Column label used in validation errors.
+
+    Returns
+    -------
+    ndarray
+        One-dimensional ``datetime64[us]`` array.
+    """
+
+    if len(column) == 0:
+        return np.empty(0, dtype="datetime64[us]")
+    array = _single_arrow_array(column)
+    if pa.types.is_timestamp(array.type):
+        try:
+            array = _timezone_naive_timestamp_array(array)
+            return np.asarray(array.to_numpy(zero_copy_only=False), dtype="datetime64[us]")
+        except (pa.ArrowInvalid, TypeError, ValueError) as exc:
+            raise NormalizedTableError(f"{field} must contain timestamps") from exc
+    values = array.to_pylist()
+    return np.asarray(
+        [_parse_arrow_timestamp_value(value, field) for value in values],
+        dtype="datetime64[us]",
+    )
 
 
 def read_arrow_columns(
@@ -397,6 +473,49 @@ def _object_array_from_arrow_array(
     return values
 
 
+def _parse_arrow_date_value(value: object, field: str) -> date:
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value)
+        except ValueError as exc:
+            raise NormalizedTableError(f"{field} must contain dates or ISO-8601 date text") from exc
+    raise NormalizedTableError(f"{field} must contain dates or ISO-8601 date text")
+
+
+def _parse_arrow_timestamp_value(value: object, field: str) -> np.datetime64:
+    if value is None:
+        return np.datetime64("NaT", "us")
+    if isinstance(value, datetime):
+        return np.datetime64(_timestamp_to_utc_naive(value), "us")
+    if isinstance(value, str):
+        try:
+            return np.datetime64(
+                _timestamp_to_utc_naive(datetime.fromisoformat(value.replace("Z", "+00:00"))),
+                "us",
+            )
+        except ValueError as exc:
+            raise NormalizedTableError(f"{field} must contain timestamps or ISO-8601 text") from exc
+    raise NormalizedTableError(f"{field} must contain timestamps or ISO-8601 text")
+
+
+def _timestamp_to_utc_naive(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(UTC).replace(tzinfo=None)
+
+
+def _timezone_naive_timestamp_array(array: pa.Array) -> pa.Array:
+    timezone = getattr(array.type, "tz", None)
+    if timezone is None:
+        return array
+    unit = getattr(array.type, "unit", "us")
+    return cast(pa.Array, pc.cast(array, pa.timestamp(unit)))
+
+
 def _integer_array_to_object_array(
     array: pa.Array,
     *,
@@ -435,9 +554,11 @@ def _dictionary_array_to_object_array(
 __all__ = [
     "arrow_bool_array",
     "arrow_bool_or_object_array",
+    "arrow_date_array",
     "arrow_float64_array",
     "arrow_float64_array_with_nulls",
     "arrow_object_array",
+    "arrow_timestamp_array",
     "read_arrow_columns",
     "unique_non_null_text_values",
 ]
