@@ -358,6 +358,28 @@ def test_claimed_attribution_support_requires_real_evidence(tmp_path: Path, monk
     assert "attribution-test-placeholder:attribution" in result.failed_requirement_ids
 
 
+def test_attribution_status_mapping_must_cover_supported_status(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    entry = _make_package(
+        tmp_path,
+        package="qc-attribution-internal",
+        import_name="qc_attribution_internal",
+        profile="implemented",
+        implementation="IMPLEMENTED",
+        validation="AVAILABLE",
+        required_tests=("public-api",),
+        attribution_status="allocation_only",
+    )
+    _write_registry(tmp_path, [entry])
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.delitem(maturity.ATTRIBUTION_REQUIRED_TEST_IDS, "allocation_only")
+
+    with pytest.raises(maturity.MaturityCheckError, match="allocation_only"):
+        maturity.check_registry(maturity.load_registry(root=tmp_path), root=tmp_path)
+
+
 def test_requirement_registry_accepts_yaml_extension(tmp_path: Path, monkeypatch) -> None:
     entry = _make_package(
         tmp_path,
