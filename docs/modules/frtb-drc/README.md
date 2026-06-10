@@ -58,6 +58,23 @@ non-unique risk-weight lineage, and unsupported branch shapes emit
 the capital number. Baseline-vs-candidate impact analysis remains a separate
 future artifact.
 
+## Boundary Flow
+
+```mermaid
+flowchart LR
+  input["DRC positions<br/>row book or class-specific Arrow"]
+  context["DrcCalculationContext<br/>profile, FX, evidence overlays"]
+  class["Risk-class route<br/>non-sec, sec non-CTP, CTP"]
+  kernel["DRC kernels<br/>gross JTD, netting, HBR, buckets"]
+  result["DrcCapitalResult<br/>categories + attribution records"]
+  summary["to_component_summary<br/>DRC handoff"]
+  orchestration["frtb-orchestration<br/>SA composition"]
+
+  input --> class
+  context --> class
+  class --> kernel --> result --> summary --> orchestration
+```
+
 ## Integration journey
 
 Code-first end-to-end flow (row multi-class vs per-class batch, automatic attribution,
