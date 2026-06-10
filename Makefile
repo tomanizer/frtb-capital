@@ -8,6 +8,7 @@ MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/implemented-packages.json
 COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_cva --cov=frtb_rrao
 MUTATION_DIST := dist/mutation
+NOTEBOOK_ENV := MPLBACKEND=Agg IPYTHONDIR=$(CURDIR)/.pytest_cache/ipython
 
 .PHONY: check ci-local ci-local-fast ci-local-full
 .PHONY: ci-local-pr ci-local-governance ci-local-performance ci-local-release
@@ -170,7 +171,11 @@ demo:
 examples-check: demo
 
 notebooks-check:
-	MPLBACKEND=Agg uv run --extra notebooks --directory packages/frtb-ima pytest --nbmake notebooks
+	$(NOTEBOOK_ENV) uv run pytest packages/frtb-sbm/tests/test_sbm_notebooks.py
+	$(NOTEBOOK_ENV) uv run --with pytest,nbmake --directory packages/frtb-drc pytest --nbmake notebooks
+	$(NOTEBOOK_ENV) uv run --extra notebooks --directory packages/frtb-ima pytest --nbmake notebooks
+	$(NOTEBOOK_ENV) uv run --all-extras --directory packages/frtb-rrao pytest --nbmake notebooks
+	$(NOTEBOOK_ENV) uv run pytest packages/frtb-cva/tests/test_cva_notebooks.py
 
 mutation:
 	mkdir -p $(MUTATION_DIST)/frtb-ima
