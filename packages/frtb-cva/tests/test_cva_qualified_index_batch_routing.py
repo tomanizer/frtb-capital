@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import cast
 
+import numpy as np
 import pytest
 from frtb_cva import (
     CvaSector,
@@ -171,3 +173,33 @@ def test_batch_and_row_qualified_index_routing_failures_match(
 
     assert batch_error.value.field == row_error.value.field
     assert batch_error.value.record_id == row_error.value.record_id
+
+
+def test_batch_optional_string_and_enum_nan_values_materialize_as_none() -> None:
+    sensitivity = _sensitivity(
+        "sens-nan-optionals",
+        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        "16",
+        "INDEX",
+        index_treatment=SaCvaIndexTreatment.QUALIFIED_INDEX,
+        hedge_id="hedge-1",
+        index_dominant_sector=CvaSector.FINANCIALS,
+        index_remap_bucket_id="1",
+    )
+    batch = build_sa_cva_sensitivity_batch_from_sensitivities((sensitivity,))
+    nan_batch = replace(
+        batch,
+        tenors=np.asarray([float("nan")], dtype=object),
+        hedge_ids=np.asarray([float("nan")], dtype=object),
+        index_treatments=np.asarray([float("nan")], dtype=object),
+        index_dominant_sectors=np.asarray([float("nan")], dtype=object),
+        index_remap_bucket_ids=np.asarray([float("nan")], dtype=object),
+    )
+
+    materialized = _sensitivity_from_batch_row(nan_batch, 0)
+
+    assert materialized.tenor is None
+    assert materialized.hedge_id is None
+    assert materialized.index_treatment is None
+    assert materialized.index_dominant_sector is None
+    assert materialized.index_remap_bucket_id is None
