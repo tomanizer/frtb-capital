@@ -10,6 +10,20 @@ remain in the IMA, SBM, DRC, RRAO, CVA, and orchestration packages.
 Attribution storage behavior and limitations are documented in
 [`ATTRIBUTION.md`](ATTRIBUTION.md).
 
+## End-to-end example
+
+Run the package demo to see a completed synthetic suite result handed to the
+store as a `ResultBundle`, committed through `DuckDbParquetResultStore`, and
+queried back for total capital, component breakdown, attribution records, and
+lineage:
+
+```bash
+uv run python packages/frtb-result-store/examples/run_demo.py
+```
+
+The demo uses only public `frtb_common` and `frtb_result_store` contracts. It
+writes to a temporary local Parquet store and removes it after the run.
+
 Current runtime support is deliberately narrow:
 
 - append-only `CalculationRun` bundles;
