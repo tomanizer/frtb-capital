@@ -10,6 +10,10 @@ The contract applies to the first DuckDB/Parquet backends (`local_parquet`,
 `s3_parquet`). `ducklake` remains reserved and fails closed until explicitly
 implemented.
 
+For a runnable public-API handoff from a completed synthetic suite result into a
+manifest-gated local store, see
+[`packages/frtb-result-store/examples/run_demo.py`](../../../packages/frtb-result-store/examples/run_demo.py).
+
 ## Role of the store
 
 The result store persists **calculation evidence** after capital engines finish.
