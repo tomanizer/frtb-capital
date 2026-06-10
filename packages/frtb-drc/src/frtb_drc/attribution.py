@@ -502,8 +502,11 @@ def _bucket_contributions(
                     profile_hash=profile_hash,
                 ),
             )
-        risk_weight = _net_risk_weight(net_jtd, risk_weights_by_position)
-        if risk_weight is None:
+        risk_weight, unsupported_reason = _net_risk_weight(
+            net_jtd,
+            risk_weights_by_position,
+        )
+        if unsupported_reason is not None:
             return (
                 _unsupported_record(
                     source_id=bucket.bucket_id,
@@ -511,15 +514,13 @@ def _bucket_contributions(
                     bucket_key=bucket.bucket_key,
                     category=category,
                     residual=category_factor * bucket.capital,
-                    reason=(
-                        "net JTD risk weight lineage is not unique; exact Euler "
-                        "attribution is unsupported"
-                    ),
+                    reason=unsupported_reason,
                     citations=bucket.citations,
                     input_hash=input_hash,
                     profile_hash=profile_hash,
                 ),
             )
+        assert risk_weight is not None
         if DefaultDirection(net_jtd.net_direction) == DefaultDirection.LONG:
             multiplier = category_factor * risk_weight
             multiplier -= weighted_short_factor * aggregate_short / denominator_sq
@@ -567,16 +568,44 @@ def _bucket_factor_items(
 def _net_risk_weight(
     net_jtd: NetJtd,
     risk_weights_by_position: Mapping[str, float],
-) -> float | None:
+) -> tuple[float | None, str | None]:
+    if not net_jtd.position_ids:
+        return (
+            None,
+            "net JTD has no position ids for risk-weight lineage; "
+            "exact Euler attribution is unsupported",
+        )
+
     weights: set[float] = set()
     for position_id in net_jtd.position_ids:
         risk_weight = risk_weights_by_position.get(position_id)
-        if risk_weight is None or not math.isfinite(risk_weight) or risk_weight < 0.0:
-            return None
+        if risk_weight is None:
+            return (
+                None,
+                f"missing risk weight for position {position_id}; "
+                "exact Euler attribution is unsupported",
+            )
+        if not math.isfinite(risk_weight):
+            return (
+                None,
+                f"non-finite risk weight for position {position_id}; "
+                "exact Euler attribution is unsupported",
+            )
+        if risk_weight < 0.0:
+            return (
+                None,
+                f"negative risk weight for position {position_id}; "
+                "exact Euler attribution is unsupported",
+            )
         weights.add(risk_weight)
     if len(weights) != 1:
-        return None
-    return next(iter(weights))
+        values = ", ".join(str(value) for value in sorted(weights))
+        return (
+            None,
+            f"non-unique risk weights for net JTD {net_jtd.net_jtd_id}: {values}; "
+            "exact Euler attribution is unsupported",
+        )
+    return next(iter(weights)), None
 
 
 def _unsupported_record(

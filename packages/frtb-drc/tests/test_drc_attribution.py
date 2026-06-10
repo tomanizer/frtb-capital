@@ -205,7 +205,79 @@ def test_missing_net_risk_weight_lineage_returns_unsupported_record() -> None:
     assert records[0].method is AttributionMethod.UNSUPPORTED
     assert records[0].source_level == "bucket"
     assert records[0].residual == pytest.approx(result.total_drc)
-    assert "risk weight lineage" in records[0].reason
+    assert "missing risk weight for position missing-lineage" in records[0].reason
+    assert records[0].reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
+    _assert_reconciles(records, result.total_drc)
+
+
+@pytest.mark.parametrize(
+    ("risk_weight", "expected_reason"),
+    (
+        (float("nan"), "non-finite risk weight for position invalid-lineage"),
+        (-0.01, "negative risk weight for position invalid-lineage"),
+    ),
+)
+def test_invalid_net_risk_weight_lineage_returns_specific_unsupported_record(
+    risk_weight: float,
+    expected_reason: str,
+) -> None:
+    result = calculate_drc_capital(
+        (
+            _nonsec_position(
+                "invalid-lineage",
+                DefaultDirection.LONG,
+                100.0,
+                issuer_id="issuer-invalid-lineage",
+            ),
+        ),
+        context=_context(),
+    )
+
+    records = calculate_drc_attribution(
+        result,
+        risk_weights_by_position={"invalid-lineage": risk_weight},
+    )
+
+    assert len(records) == 1
+    assert records[0].method is AttributionMethod.UNSUPPORTED
+    assert records[0].residual == pytest.approx(result.total_drc)
+    assert expected_reason in records[0].reason
+    assert records[0].reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
+    _assert_reconciles(records, result.total_drc)
+
+
+def test_non_unique_net_risk_weight_lineage_returns_specific_unsupported_record() -> None:
+    result = calculate_drc_capital(
+        (
+            _nonsec_position(
+                "multi-lineage-a",
+                DefaultDirection.LONG,
+                100.0,
+                issuer_id="issuer-multi-lineage",
+            ),
+            _nonsec_position(
+                "multi-lineage-b",
+                DefaultDirection.LONG,
+                50.0,
+                issuer_id="issuer-multi-lineage",
+            ),
+        ),
+        context=_context(),
+    )
+
+    records = calculate_drc_attribution(
+        result,
+        risk_weights_by_position={
+            "multi-lineage-a": 0.03,
+            "multi-lineage-b": 0.04,
+        },
+    )
+
+    assert len(records) == 1
+    assert records[0].method is AttributionMethod.UNSUPPORTED
+    assert records[0].residual == pytest.approx(result.total_drc)
+    assert "non-unique risk weights" in records[0].reason
+    assert "0.03, 0.04" in records[0].reason
     assert records[0].reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
     _assert_reconciles(records, result.total_drc)
 
