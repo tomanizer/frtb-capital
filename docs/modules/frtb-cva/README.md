@@ -24,6 +24,25 @@ comparison profiles under audit with profile-owned citations and hashes.
 MAR50.9 and analogous CCR-substitution alternatives remain unsupported and fail
 closed via explicit errors.
 
+## Boundary Flow
+
+```mermaid
+flowchart LR
+  inputs["CVA inputs<br/>counterparties, netting sets, hedges, sensitivities"]
+  context["CvaCalculationContext<br/>profile + method"]
+  scope{"Method scope valid?<br/>BA, SA, or mixed"}
+  fail["Fail closed<br/>input or unsupported-feature error"]
+  kernels["Selected CVA kernels<br/>BA-CVA, SA-CVA, mixed carve-out"]
+  result["CvaCapitalResult<br/>components, citations, hashes"]
+  explain["attribution / impact<br/>orchestration summary"]
+  store["frtb-result-store<br/>completed evidence"]
+
+  inputs --> scope
+  context --> scope
+  scope -- no --> fail
+  scope -- yes --> kernels --> result --> explain --> store
+```
+
 ## Integration journey
 
 End-to-end client flow (Arrow handoff, batch capital, attribution, orchestration

@@ -14,6 +14,24 @@ The package is importable and exposes `calculate_rrao_capital` for supported
 Basel MAR23, U.S. NPR 2.0, and EU CRR3 comparison-profile canonical inputs.
 Unsupported profiles and unsupported evidence paths fail closed.
 
+## Boundary Flow
+
+```mermaid
+flowchart LR
+  input["Residual-risk positions<br/>canonical rows or Arrow table"]
+  evidence["Classification evidence<br/>exotic, other, exclusions"]
+  profile["RraoCalculationContext<br/>profile + rule tables"]
+  classify["RRAO classification<br/>fail closed on unmapped evidence"]
+  result["RraoCapitalResult<br/>line add-ons + exclusions"]
+  explain["allocation reports<br/>to_component_summary"]
+  orchestration["frtb-orchestration<br/>SA composition"]
+
+  input --> classify
+  evidence --> classify
+  profile --> classify
+  classify --> result --> explain --> orchestration
+```
+
 ## Integration journey
 
 End-to-end client flow (Arrow handoff, batch capital, allocation reports,

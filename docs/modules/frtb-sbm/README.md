@@ -15,6 +15,21 @@ Basel MAR21 delta, vega, and curvature canonical inputs. Row-wise,
 package-owned batch, and Arrow batch paths are available for the supported
 matrix. Unsupported profiles and unmapped sub-features fail closed.
 
+## Boundary Flow
+
+```mermaid
+flowchart LR
+  risk["Risk engine<br/>sensitivity rows"]
+  arrow["Homogeneous Arrow tables<br/>risk_class + measure"]
+  batch["SbmSensitivityBatch<br/>package-owned NumPy arrays"]
+  kernel["SBM kernels<br/>weighting, buckets, scenarios"]
+  result["SbmCapitalResult<br/>risk-class capital"]
+  explain["attribution / replay<br/>to_component_summary"]
+  orchestration["frtb-orchestration<br/>SA composition"]
+
+  risk --> arrow --> batch --> kernel --> result --> explain --> orchestration
+```
+
 ## Integration journey
 
 End-to-end client flow (Arrow handoff, portfolio batch capital, attribution,
