@@ -150,7 +150,7 @@ def test_drc_risk_weight_evidence_arrow_rejects_invalid_structural_rows(
     ("overrides", "match"),
     [
         ({"source_profile_id": ["WRONG_PROFILE"]}, "source_profile_id|profile"),
-        ({"as_of_date": [date(2099, 1, 1)]}, "future"),
+        ({"as_of_date": [date(2099, 1, 1)]}, "after calculation_date"),
     ],
 )
 def test_drc_risk_weight_evidence_arrow_fails_closed_in_context_validation(
