@@ -19,7 +19,7 @@ from frtb_cva.data_models import (
     SaCvaRiskClass,
     SaCvaRiskMeasure,
 )
-from frtb_cva.sa_cva import _SUPPORTED_PATHS
+from frtb_cva.sa_cva import SA_CVA_PATH_REGISTRY
 from frtb_cva.validation import CvaInputError
 
 
@@ -62,7 +62,9 @@ _SUPPORTED_PROFILES = frozenset(
     }
 )
 _BASEL_SUPPORTED_METHODS = frozenset(CvaMethod)
-_BASEL_SUPPORTED_SA_PATHS = frozenset(_SUPPORTED_PATHS)
+_BASEL_SUPPORTED_SA_PATHS = frozenset(
+    key for key, spec in SA_CVA_PATH_REGISTRY.items() if spec.unsupported_message is None
+)
 _CCS_VEGA_PATH = (
     SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
     SaCvaRiskMeasure.VEGA,
