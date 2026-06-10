@@ -146,6 +146,7 @@ def build_ima_contribution_bundle(
     run_id = desk_records[0].run_id
     input_hash = desk_records[0].inputs_hash
     profile_hash = desk_records[0].policy_hash
+    desk_ids: set[str] = set()
     for record in desk_records:
         if record.run_id != run_id:
             raise ValueError("IMA contribution bundle records must share one run_id")
@@ -153,6 +154,11 @@ def build_ima_contribution_bundle(
             raise ValueError("IMA contribution bundle records must share one inputs_hash")
         if record.policy_hash != profile_hash:
             raise ValueError("IMA contribution bundle records must share one policy_hash")
+        if record.desk_id in desk_ids:
+            raise ValueError(
+                f"duplicate desk_id {record.desk_id!r} in IMA contribution bundle records"
+            )
+        desk_ids.add(record.desk_id)
 
     contributions = tuple(item for record in desk_records for item in desk_contributions(record))
     contribution_total = _contribution_total(contributions)
@@ -424,7 +430,9 @@ def _normalise_records(
     normalised: tuple[DeskAuditRecord, ...]
     if isinstance(records, DeskAuditRecord):
         normalised = (records,)
-    elif isinstance(records, Iterable) and not isinstance(records, (str, bytes, bytearray)):
+    elif isinstance(records, Iterable) and not isinstance(
+        records, (str, bytes, bytearray, Mapping)
+    ):
         normalised = tuple(records)
     else:
         raise ValueError("records must be a DeskAuditRecord or iterable of DeskAuditRecord")
