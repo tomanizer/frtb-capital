@@ -114,9 +114,9 @@ def test_drc_fair_value_cap_evidence_arrow_replays_basel_securitisation_non_ctp(
 
     validate_reconciliation(calculation.result)
     assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
-    assert _fair_value_cap_summary(calculation.result.fair_value_cap_evidence) == _fair_value_cap_summary(
-        row_result.fair_value_cap_evidence
-    )
+    actual = _fair_value_cap_summary(calculation.result.fair_value_cap_evidence)
+    expected = _fair_value_cap_summary(row_result.fair_value_cap_evidence)
+    assert actual == expected
 
 
 @pytest.mark.parametrize(
@@ -244,7 +244,9 @@ def _fair_value_cap_evidence_arrow_table(
     )
 
 
-def _risk_weight_summary(records: tuple[DrcRiskWeightEvidence, ...]) -> dict[str, tuple[object, ...]]:
+def _risk_weight_summary(
+    records: tuple[DrcRiskWeightEvidence, ...],
+) -> dict[str, tuple[object, ...]]:
     return {
         record.position_id: (
             _enum_value(record.risk_class),
