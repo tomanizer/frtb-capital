@@ -237,6 +237,41 @@ def test_reconcile_contribution_set_reports_partial_residual_status() -> None:
     assert reconciliation.is_reconciled
 
 
+def test_reconcile_contribution_set_marks_small_residual_partial() -> None:
+    contribution = CapitalContribution(
+        contribution_id="contrib-1",
+        source_id="pos-1",
+        source_level="position",
+        bucket_key="bucket-A",
+        category="GIRR",
+        base_amount=98.5,
+        marginal_multiplier=None,
+        contribution=98.5,
+        method=AttributionMethod.STANDALONE,
+    )
+    residual = CapitalContribution(
+        contribution_id="residual-1",
+        source_id="bucket-A",
+        source_level="bucket",
+        bucket_key="bucket-A",
+        category="GIRR",
+        base_amount=0.0,
+        marginal_multiplier=None,
+        contribution=None,
+        method=AttributionMethod.RESIDUAL,
+        residual=0.9,
+    )
+
+    reconciliation = reconcile_contribution_set(
+        (contribution, residual), capital_total=100.0, relative_tolerance=1e-2
+    )
+
+    assert reconciliation.difference == pytest.approx(-0.6)
+    assert reconciliation.tolerance == pytest.approx(1.0)
+    assert reconciliation.status == ReconciliationStatus.PARTIAL_RESIDUAL
+    assert reconciliation.is_reconciled
+
+
 def test_validate_contribution_reconciliation_raises_for_unreconciled_set() -> None:
     contribution = CapitalContribution(
         contribution_id="contrib-1",
