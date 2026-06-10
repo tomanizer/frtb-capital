@@ -60,12 +60,8 @@ def test_full_ba_fixture_covers_hedge_recognition_and_beta_floor() -> None:
         line = hedge_lines[hedge_id]
         assert line.r_hc == pytest.approx(expected_line["r_hc"])
         assert line.risk_weight == pytest.approx(expected_line["risk_weight"])
-        assert line.snh_contribution == pytest.approx(
-            expected_line["snh_contribution"]
-        )
-        assert line.hma_contribution == pytest.approx(
-            expected_line["hma_contribution"]
-        )
+        assert line.snh_contribution == pytest.approx(expected_line["snh_contribution"])
+        assert line.hma_contribution == pytest.approx(expected_line["hma_contribution"])
         assert line.index_contribution == pytest.approx(
             expected_line["index_contribution"]
         )
@@ -89,9 +85,7 @@ def test_mixed_fixture_covers_carve_out_component_assembly() -> None:
         expected["ba_cva_reduced"]["sum_scva"]
     )
 
-    components = {
-        item.method.value: item.total_capital for item in result.method_components
-    }
+    components = {item.method.value: item.total_capital for item in result.method_components}
     assert components == pytest.approx(expected["method_components"])
     audit_metadata = dict(result.audit_metadata)
     for key, expected_value in expected["audit_metadata"].items():
@@ -202,9 +196,7 @@ def _netting_sets(payloads: list[dict[str, Any]]) -> tuple[CvaNettingSet, ...]:
             uses_imm_ead=bool(payload["uses_imm_ead"]),
             source_row_id=str(payload["source_row_id"]),
             carved_out_to_ba_cva=bool(payload.get("carved_out_to_ba_cva", False)),
-            discount_factor_explicit=bool(
-                payload.get("discount_factor_explicit", False)
-            ),
+            discount_factor_explicit=bool(payload.get("discount_factor_explicit", False)),
             lineage=_lineage(payload),
         )
         for payload in payloads
