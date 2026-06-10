@@ -4,6 +4,27 @@ This directory is the suite-level documentation home for `frtb-capital`.
 Package-local evidence remains beside the package that owns the executable
 model.
 
+## Start Here for Users
+
+| Need | Start with | Then run or read |
+| --- | --- | --- |
+| Understand the upstream data contract | [Client integration guide](CLIENT_INTEGRATION.md) | `make demo`, then the relevant package journey below. |
+| See all package demos execute from the repo root | Root [`README.md`](../README.md#local-development) | `make demo` or `make examples-check`. |
+| Review notebook teaching and validation material | Package notebook READMEs | `make notebooks-check` for the current smoke-tested notebook set. |
+| Wire component outputs into SA or top-of-house suite capital | [Orchestration module](modules/frtb-orchestration/README.md) | [orchestration PACKAGE_JOURNEY.md](../packages/frtb-orchestration/docs/PACKAGE_JOURNEY.md). |
+| Persist capital results and attribution records | [Result-store module](modules/frtb-result-store/README.md) | [frtb-result-store README](../packages/frtb-result-store/README.md). |
+
+## Package Journeys
+
+| Package | Journey | Demo |
+| --- | --- | --- |
+| IMA | [packages/frtb-ima/docs/PACKAGE_JOURNEY.md](../packages/frtb-ima/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-ima/examples/run_demo.py` |
+| SBM | [packages/frtb-sbm/docs/PACKAGE_JOURNEY.md](../packages/frtb-sbm/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-sbm/examples/run_demo.py` |
+| DRC | [packages/frtb-drc/docs/PACKAGE_JOURNEY.md](../packages/frtb-drc/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-drc/examples/run_demo.py` |
+| RRAO | [packages/frtb-rrao/docs/PACKAGE_JOURNEY.md](../packages/frtb-rrao/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-rrao/examples/run_demo.py` |
+| CVA | [packages/frtb-cva/docs/PACKAGE_JOURNEY.md](../packages/frtb-cva/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-cva/examples/run_demo.py` |
+| Orchestration | [packages/frtb-orchestration/docs/PACKAGE_JOURNEY.md](../packages/frtb-orchestration/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-orchestration/examples/run_demo.py` |
+
 ## Primary Navigation
 
 | Area | Purpose |
