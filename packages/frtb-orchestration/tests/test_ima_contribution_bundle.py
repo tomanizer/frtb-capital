@@ -81,8 +81,7 @@ def test_orchestration_consumes_public_ima_contribution_bundle() -> None:
     )
     assert [item.category for item in ima_bundle.contributions] == ["IMCC", "SES"]
     assert all(
-        item.method is AttributionMethod.ANALYTICAL_EULER
-        for item in ima_bundle.contributions
+        item.method is AttributionMethod.ANALYTICAL_EULER for item in ima_bundle.contributions
     )
 
 
