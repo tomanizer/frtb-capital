@@ -53,45 +53,51 @@ def test_basel_sa_paths_match_sa_cva_module() -> None:
 
 
 @pytest.mark.parametrize("profile", _COMPARISON_PROFILES)
-def test_non_basel_profiles_fail_closed_until_profile_fixtures_exist(
+def test_non_basel_profiles_are_supported_comparison_profiles(
     profile: CvaRegulatoryProfile,
 ) -> None:
-    assert cva_profile_support_status(profile) is CvaProfileSupportStatus.COMPARISON_FAIL_CLOSED
-    assert cva_capital_supported_methods(profile) == frozenset()
-    assert cva_sa_cva_supported_paths(profile) == frozenset()
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile-specific"):
-        ensure_cva_profile_method_supported(profile, CvaMethod.BA_CVA_REDUCED)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile-specific"):
-        ensure_cva_sa_cva_path_supported(
-            profile,
-            SaCvaRiskClass.GIRR,
-            SaCvaRiskMeasure.DELTA,
-        )
+    assert cva_profile_support_status(profile) is CvaProfileSupportStatus.CAPITAL_PRODUCING
+    assert cva_capital_supported_methods(profile) == frozenset(CvaMethod)
+    assert cva_sa_cva_supported_paths(profile) == frozenset(_SUPPORTED_PATHS)
+    ensure_cva_profile_method_supported(profile, CvaMethod.BA_CVA_REDUCED)
+    ensure_cva_sa_cva_path_supported(
+        profile,
+        SaCvaRiskClass.GIRR,
+        SaCvaRiskMeasure.DELTA,
+    )
 
 
 @pytest.mark.parametrize("profile", _COMPARISON_PROFILES)
-def test_non_basel_matrix_cells_record_fixture_evidence_blocker(
+def test_non_basel_matrix_cells_record_evidenced_support(
     profile: CvaRegulatoryProfile,
 ) -> None:
+    method_ids = {method.value for method in CvaMethod}
+    ccs_vega_path = (
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+    )
     cells = [
         cell
         for cell in cva_profile_support_matrix()
         if cell.profile is profile
-        and (cell.method in {method.value for method in CvaMethod} or cell.risk_class is not None)
+        and cell.method in method_ids
+        and (cell.risk_class, cell.risk_measure) != ccs_vega_path
     ]
     assert cells
-    assert {cell.status for cell in cells} == {CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED}
-    assert {cell.blocker for cell in cells} == {"profile_fixture_evidence"}
+    assert {cell.status for cell in cells} == {CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT}
+    assert {cell.blocker for cell in cells} == {"none"}
+    assert all("test_cva_profile_evidence_fixture.py" in " ".join(cell.tests) for cell in cells)
 
 
-def test_basel_ccs_vega_matrix_row_is_regulatory_absence() -> None:
+@pytest.mark.parametrize("profile", list(CvaRegulatoryProfile))
+def test_ccs_vega_matrix_row_is_regulatory_absence(profile: CvaRegulatoryProfile) -> None:
     cells = {
         (cell.profile, cell.method, cell.risk_class, cell.risk_measure): cell
         for cell in cva_profile_support_matrix()
     }
     cell = cells[
         (
-            CvaRegulatoryProfile.BASEL_MAR50_2020,
+            profile,
             CvaMethod.SA_CVA.value,
             SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
             SaCvaRiskMeasure.VEGA,
@@ -101,7 +107,7 @@ def test_basel_ccs_vega_matrix_row_is_regulatory_absence() -> None:
     assert cell.blocker == "regulatory_absence"
     with pytest.raises(CvaInputError, match="CCS vega"):
         ensure_cva_sa_cva_path_supported(
-            CvaRegulatoryProfile.BASEL_MAR50_2020,
+            profile,
             SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
             SaCvaRiskMeasure.VEGA,
         )
@@ -175,4 +181,4 @@ def test_traceability_documents_boundary_status_taxonomy() -> None:
         assert f"`{status.value}`" in traceability
     assert SA_CVA_APPROVAL_GOVERNANCE_POLICY in traceability
     assert EXPOSURE_SENSITIVITY_GENERATION_POLICY in traceability
-    assert "profile_fixture_evidence" in traceability
+    assert "ccr_boundary" in traceability
