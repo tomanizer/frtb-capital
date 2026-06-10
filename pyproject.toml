@@ -45,7 +45,7 @@ dev = [
     "pytest-cov>=7.1,<7.2",
     "ruff>=0.15,<0.16",
     "scipy>=1.16,<1.17",
-    "towncrier>=24.8,<25.0",
+    "towncrier>=24.8,<26.0",
 ]
 
 [tool.importlinter]
