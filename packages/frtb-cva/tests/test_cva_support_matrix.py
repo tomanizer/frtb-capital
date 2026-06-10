@@ -22,12 +22,16 @@ from frtb_cva import (
     get_cva_rule_profile,
     resolve_calculation_method,
 )
-from frtb_cva.sa_cva import _SUPPORTED_PATHS
+from frtb_cva.sa_cva import SA_CVA_PATH_REGISTRY
 from frtb_cva.support_matrix import (
     EXPOSURE_SENSITIVITY_GENERATION_POLICY,
     SA_CVA_APPROVAL_GOVERNANCE_POLICY,
 )
 from frtb_cva.validation import CvaInputError
+
+_SUPPORTED_PATHS = frozenset(
+    key for key, spec in SA_CVA_PATH_REGISTRY.items() if spec.unsupported_message is None
+)
 
 
 def test_basel_methods_match_supported_set() -> None:

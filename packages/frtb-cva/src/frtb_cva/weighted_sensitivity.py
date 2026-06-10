@@ -5,6 +5,8 @@ SA-CVA weighted sensitivity calculation.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass
 
 from frtb_cva.data_models import (
     CvaHedge,
@@ -38,6 +40,20 @@ from frtb_cva.sa_cva_reference_data import (
     sa_cva_vega_risk_weight,
 )
 from frtb_cva.validation import CvaInputError
+
+_WeightingFn = Callable[..., tuple[SaCvaWeightedSensitivity, ...]]
+
+
+@dataclass(frozen=True)
+class SaCvaWeightingSpec:
+    """Table entry for one SA-CVA weighted-sensitivity calculation path."""
+
+    risk_class: SaCvaRiskClass
+    risk_measure: SaCvaRiskMeasure
+    weight_fn: _WeightingFn | None
+    requires_reporting_currency: bool = False
+    requires_volatility: bool = False
+    unsupported_message: str | None = None
 
 
 def _risk_factor_key(
@@ -185,93 +201,75 @@ def compute_weighted_sensitivities(
         ),
     )
 
-    if risk_class is SaCvaRiskClass.GIRR and risk_measure is SaCvaRiskMeasure.DELTA:
-        return _weight_girr_delta(
-            keys,
-            grouped_cva,
-            grouped_hedge,
-            grouped_ids,
-            reporting_currency=reporting_currency,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.GIRR and risk_measure is SaCvaRiskMeasure.VEGA:
-        return _weight_girr_vega(
-            keys,
-            grouped_cva,
-            grouped_hedge,
-            grouped_ids,
-            grouped_volatility,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.FX and risk_measure is SaCvaRiskMeasure.DELTA:
-        return _weight_fx_delta(
-            keys,
-            grouped_cva,
-            grouped_hedge,
-            grouped_ids,
-            reporting_currency=reporting_currency,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.FX and risk_measure is SaCvaRiskMeasure.VEGA:
-        return _weight_fx_vega(
-            keys,
-            grouped_cva,
-            grouped_hedge,
-            grouped_ids,
-            grouped_volatility,
-            profile=profile,
-        )
-    if (
-        risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD
-        and risk_measure is SaCvaRiskMeasure.DELTA
-    ):
-        return _weight_ccs_delta(keys, grouped_cva, grouped_hedge, grouped_ids, profile=profile)
-    if (
-        risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD
-        and risk_measure is SaCvaRiskMeasure.DELTA
-    ):
-        return _weight_rcs_delta(keys, grouped_cva, grouped_hedge, grouped_ids, profile=profile)
-    if (
-        risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD
-        and risk_measure is SaCvaRiskMeasure.VEGA
-    ):
-        return _weight_rcs_vega(
-            keys,
-            grouped_cva,
-            grouped_hedge,
-            grouped_ids,
-            grouped_volatility,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.EQUITY and risk_measure is SaCvaRiskMeasure.DELTA:
-        return _weight_equity_delta(keys, grouped_cva, grouped_hedge, grouped_ids, profile=profile)
-    if risk_class is SaCvaRiskClass.EQUITY and risk_measure is SaCvaRiskMeasure.VEGA:
-        return _weight_equity_vega(
-            keys,
-            grouped_cva,
-            grouped_hedge,
-            grouped_ids,
-            grouped_volatility,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.COMMODITY and risk_measure is SaCvaRiskMeasure.DELTA:
-        return _weight_commodity_delta(
-            keys, grouped_cva, grouped_hedge, grouped_ids, profile=profile
-        )
-    if risk_class is SaCvaRiskClass.COMMODITY and risk_measure is SaCvaRiskMeasure.VEGA:
-        return _weight_commodity_vega(
-            keys,
-            grouped_cva,
-            grouped_hedge,
-            grouped_ids,
-            grouped_volatility,
-            profile=profile,
-        )
-
-    raise CvaInputError(
-        f"unsupported SA-CVA risk class/measure: {risk_class.value}/{risk_measure.value}",
-        field="risk_class",
+    return weight_grouped_sa_cva_sensitivities(
+        keys,
+        grouped_cva,
+        grouped_hedge,
+        grouped_ids,
+        grouped_volatility,
+        risk_class=risk_class,
+        risk_measure=risk_measure,
+        reporting_currency=reporting_currency,
+        profile=profile,
     )
+
+
+def weight_grouped_sa_cva_sensitivities(
+    keys: list[SaCvaRiskFactorKey],
+    grouped_cva: dict[SaCvaRiskFactorKey, float],
+    grouped_hedge: dict[SaCvaRiskFactorKey, float],
+    grouped_ids: dict[SaCvaRiskFactorKey, list[str]],
+    grouped_volatility: dict[SaCvaRiskFactorKey, float | None],
+    *,
+    risk_class: SaCvaRiskClass,
+    risk_measure: SaCvaRiskMeasure,
+    reporting_currency: str,
+    profile: CvaRegulatoryProfile | str,
+) -> tuple[SaCvaWeightedSensitivity, ...]:
+    """Dispatch grouped SA-CVA sensitivities through the weighting registry."""
+
+    spec = _weighting_spec_for(risk_class, risk_measure)
+    weight_fn = spec.weight_fn
+    if weight_fn is None:
+        raise CvaInputError(
+            spec.unsupported_message
+            or f"unsupported SA-CVA risk class/measure: {risk_class.value}/{risk_measure.value}",
+            field="risk_class",
+        )
+    if spec.requires_volatility:
+        return weight_fn(
+            keys,
+            grouped_cva,
+            grouped_hedge,
+            grouped_ids,
+            grouped_volatility,
+            profile=profile,
+        )
+    if spec.requires_reporting_currency:
+        return weight_fn(
+            keys,
+            grouped_cva,
+            grouped_hedge,
+            grouped_ids,
+            reporting_currency=reporting_currency,
+            profile=profile,
+        )
+    return weight_fn(keys, grouped_cva, grouped_hedge, grouped_ids, profile=profile)
+
+
+def _weighting_spec_for(
+    risk_class: SaCvaRiskClass,
+    risk_measure: SaCvaRiskMeasure,
+) -> SaCvaWeightingSpec:
+    spec = SA_CVA_WEIGHTING_REGISTRY.get((risk_class, risk_measure))
+    if spec is None:
+        raise CvaInputError(
+            f"unsupported SA-CVA risk class/measure: {risk_class.value}/{risk_measure.value}",
+            field="risk_class",
+        )
+    if spec.unsupported_message is not None:
+        raise CvaInputError(spec.unsupported_message, field="risk_class")
+    return spec
 
 
 def _require_volatility(
@@ -606,6 +604,90 @@ def _weight_commodity_vega(
     return tuple(weighted)
 
 
+SA_CVA_WEIGHTING_REGISTRY: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], SaCvaWeightingSpec] = {
+    (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.DELTA): SaCvaWeightingSpec(
+        SaCvaRiskClass.GIRR,
+        SaCvaRiskMeasure.DELTA,
+        _weight_girr_delta,
+        requires_reporting_currency=True,
+    ),
+    (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.VEGA): SaCvaWeightingSpec(
+        SaCvaRiskClass.GIRR,
+        SaCvaRiskMeasure.VEGA,
+        _weight_girr_vega,
+        requires_volatility=True,
+    ),
+    (SaCvaRiskClass.FX, SaCvaRiskMeasure.DELTA): SaCvaWeightingSpec(
+        SaCvaRiskClass.FX,
+        SaCvaRiskMeasure.DELTA,
+        _weight_fx_delta,
+        requires_reporting_currency=True,
+    ),
+    (SaCvaRiskClass.FX, SaCvaRiskMeasure.VEGA): SaCvaWeightingSpec(
+        SaCvaRiskClass.FX,
+        SaCvaRiskMeasure.VEGA,
+        _weight_fx_vega,
+        requires_volatility=True,
+    ),
+    (
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.DELTA,
+    ): SaCvaWeightingSpec(
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.DELTA,
+        _weight_ccs_delta,
+    ),
+    (
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+    ): SaCvaWeightingSpec(
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+        None,
+        unsupported_message="CCS vega capital is not permitted under MAR50.45 and MAR50.63",
+    ),
+    (
+        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        SaCvaRiskMeasure.DELTA,
+    ): SaCvaWeightingSpec(
+        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        SaCvaRiskMeasure.DELTA,
+        _weight_rcs_delta,
+    ),
+    (
+        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+    ): SaCvaWeightingSpec(
+        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+        _weight_rcs_vega,
+        requires_volatility=True,
+    ),
+    (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.DELTA): SaCvaWeightingSpec(
+        SaCvaRiskClass.EQUITY,
+        SaCvaRiskMeasure.DELTA,
+        _weight_equity_delta,
+    ),
+    (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.VEGA): SaCvaWeightingSpec(
+        SaCvaRiskClass.EQUITY,
+        SaCvaRiskMeasure.VEGA,
+        _weight_equity_vega,
+        requires_volatility=True,
+    ),
+    (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.DELTA): SaCvaWeightingSpec(
+        SaCvaRiskClass.COMMODITY,
+        SaCvaRiskMeasure.DELTA,
+        _weight_commodity_delta,
+    ),
+    (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.VEGA): SaCvaWeightingSpec(
+        SaCvaRiskClass.COMMODITY,
+        SaCvaRiskMeasure.VEGA,
+        _weight_commodity_vega,
+        requires_volatility=True,
+    ),
+}
+
+
 def sort_weighted_sensitivities(
     weighted_sensitivities: tuple[SaCvaWeightedSensitivity, ...],
 ) -> tuple[SaCvaWeightedSensitivity, ...]:
@@ -634,6 +716,9 @@ def sort_weighted_sensitivities(
 
 
 __all__ = [
+    "SA_CVA_WEIGHTING_REGISTRY",
+    "SaCvaWeightingSpec",
     "compute_weighted_sensitivities",
     "sort_weighted_sensitivities",
+    "weight_grouped_sa_cva_sensitivities",
 ]
