@@ -57,7 +57,9 @@ def test_multi_risk_class_delta_euler_records_reconcile_by_risk_class() -> None:
         for risk_class in result.risk_classes
     }
     for risk_class, selected_capital in capital_by_risk_class.items():
-        risk_class_records = tuple(record for record in records if record.category == risk_class)
+        risk_class_records = tuple(
+            record for record in records if record.category == risk_class
+        )
         assert _record_total(risk_class_records) == pytest.approx(
             selected_capital,
             rel=1e-6,
@@ -134,7 +136,9 @@ def test_negative_girr_sensitivity_can_reduce_euler_capital_contribution() -> No
     result = calculate_sbm_capital(sensitivities, context=_context("negative-euler"))
     records = calculate_sbm_attribution(result)
     euler = tuple(
-        record for record in records if record.method is AttributionMethod.ANALYTICAL_EULER
+        record
+        for record in records
+        if record.method is AttributionMethod.ANALYTICAL_EULER
     )
 
     assert len(euler) == 2
@@ -242,7 +246,9 @@ def _girr_delta(
         amount=amount,
         amount_currency="USD",
         sign_convention=(
-            SbmSignConvention.SHORT if amount < 0.0 else SbmSignConvention.RECEIVE
+            SbmSignConvention.SHORT
+            if amount < 0.0
+            else SbmSignConvention.RECEIVE
         ),
         lineage=_lineage(sensitivity_id),
     )
@@ -272,4 +278,6 @@ def _fx_delta(
 
 
 def _record_total(records: tuple[CapitalContribution, ...]) -> float:
-    return math.fsum((record.contribution or 0.0) + record.residual for record in records)
+    return math.fsum(
+        (record.contribution or 0.0) + record.residual for record in records
+    )
