@@ -77,6 +77,31 @@ For per-package integration surfaces, see
 [RRAO PUBLIC_API.md](modules/frtb-rrao/PUBLIC_API.md), and
 [IMA CLIENT_DELIVERY.md](modules/frtb-ima/CLIENT_DELIVERY.md).
 
+## IMA delivery flow
+
+```mermaid
+flowchart LR
+    risk["Risk engine"]
+    cube["Dense scenario P&L cube<br/>NumPy .npz / ScenarioCube"]
+    tabular["Arrow lineage tables<br/>metadata, RFET observations, manifest"]
+    manifest["CapitalRunInputManifest<br/>checksums and row counts"]
+    kernels["IMA NumPy kernels<br/>ES, LHA, IMCC, SES, PLA, backtesting"]
+    result["IMA capital result<br/>audit log, hashes, desk eligibility"]
+    orchestration["frtb-orchestration<br/>IMA summary + SA fallback routing"]
+
+    risk --> cube
+    risk --> tabular
+    tabular --> manifest
+    cube --> kernels
+    manifest --> kernels
+    kernels --> result
+    result --> orchestration
+```
+
+IMA is the exception to an all-Arrow mental model: dense scenario vectors stay
+NumPy-native for capital kernels, while Arrow is used for lineage-heavy tabular
+evidence and manifest checks.
+
 ## Standardised Approach run flow
 
 ```mermaid
