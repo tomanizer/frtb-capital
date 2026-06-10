@@ -341,7 +341,9 @@ def validate_calculation_context(context: object) -> CvaCalculationContext:
         raise UnsupportedRegulatoryFeatureError(MAR50_9_UNSUPPORTED_MESSAGE)
     for netting_set_id in context.carve_out_netting_set_ids:
         _require_text(netting_set_id, "carve_out_netting_set_ids")
-    if context.sa_cva_sensitivity_scope_evidence_id is not None:
+    if context.method is CvaMethod.MIXED_CARVE_OUT:
+        _require_mixed_sensitivity_scope_evidence(context.sa_cva_sensitivity_scope_evidence_id)
+    elif context.sa_cva_sensitivity_scope_evidence_id is not None:
         _require_text(
             context.sa_cva_sensitivity_scope_evidence_id,
             "sa_cva_sensitivity_scope_evidence_id",
@@ -614,6 +616,15 @@ def validate_m_cva_multiplier(value: object) -> float:
 def _require_text(value: object, field: str, record_id: str = "") -> str:
     if not isinstance(value, str) or not value.strip():
         raise CvaInputError("non-empty text is required", field=field, record_id=record_id)
+    return value
+
+
+def _require_mixed_sensitivity_scope_evidence(value: object) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise CvaInputError(
+            "mixed carve-out requires SA-CVA sensitivity scope evidence for the non-carved slice",
+            field="sa_cva_sensitivity_scope_evidence_id",
+        )
     return value
 
 

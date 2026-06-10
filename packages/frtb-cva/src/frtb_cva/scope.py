@@ -151,7 +151,8 @@ def require_mixed_sensitivity_scope_evidence(context: CvaCalculationContext) -> 
     SA-CVA sensitivities represent the non-carved slice rather than the full book.
     """
 
-    if context.sa_cva_sensitivity_scope_evidence_id is None:
+    evidence_id = context.sa_cva_sensitivity_scope_evidence_id
+    if not isinstance(evidence_id, str) or not evidence_id.strip():
         raise CvaInputError(
             "mixed carve-out requires SA-CVA sensitivity scope evidence for the non-carved slice",
             field="sa_cva_sensitivity_scope_evidence_id",
