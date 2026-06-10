@@ -11,9 +11,9 @@ supervisory approval, production monitoring, or final regulatory capital.
 
 | Fixture or test | Scope | Evidence |
 | --- | --- | --- |
-| `packages/frtb-cva/tests/fixtures/ba_cva_reduced_v1/` | Reduced BA-CVA | Synthetic cases, expected outputs, and deterministic replay. |
+| `packages/frtb-cva/tests/fixtures/ba_cva_reduced_v1/` | Reduced BA-CVA | Synthetic single-counterparty cases with committed challenger outputs derived from MAR50.14-MAR50.16 scalars, risk weights, maturity, EAD, discount factor, and alpha. |
 | `packages/frtb-cva/tests/fixtures/sa_cva_girr_delta_v1/` | SA-CVA GIRR delta | GIRR delta buckets, eligible hedge offset, ineligible hedge rejection, invalid tenor cases, and deterministic replay. |
-| `packages/frtb-cva/tests/test_cva_ba_cva_fixture_workflow.py` | BA-CVA fixture workflow | Reduced BA-CVA fixture loading, expected capital, audit payloads, invalid-case failures, and determinism. |
+| `packages/frtb-cva/tests/test_cva_ba_cva_fixture_workflow.py` | BA-CVA fixture workflow | Reduced BA-CVA fixture loading, expected standalone SCVA, reduced portfolio capital, audit payloads, invalid-case failures, and determinism. |
 | `packages/frtb-cva/tests/test_cva_sa_cva_fixture_workflow.py` | SA-CVA fixture workflow | Expected capital, weighted-sensitivity payloads, invalid-case failures, and determinism. |
 | `packages/frtb-cva/tests/test_cva_arrow_batch.py` | Arrow and batch boundary | Row/batch/handoff parity for BA-CVA and SA-CVA fixture cases. |
 | `packages/frtb-cva/tests/test_cva_unsupported_features.py` | Profile comparison runs | `US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA` public API runs assert profile-owned citations and hashes for BA-CVA, SA-CVA, mixed carve-out, hedge handling, and batch paths. |
