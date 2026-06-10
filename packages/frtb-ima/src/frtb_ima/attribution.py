@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import replace
 from numbers import Real
+from typing import Any
 
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
 
@@ -32,6 +33,15 @@ _COMPONENT_MAP_KEYS = (
 )
 _COMPONENT_VALUE_KEYS = ("capital", "amount", "contribution", "value")
 _CATEGORY_TOKEN_PATTERN = re.compile(r"[^0-9A-Za-z]+")
+_SEQUENCE_TYPES = (str, bytes, bytearray)
+_NMRF_EXPLAIN_REASON = (
+    "NMRF SES risk-factor amount is branch-local evidence only; the SES "
+    "square-root aggregation is not emitted as additive Euler capital."
+)
+_LHA_EXPLAIN_REASON = (
+    "Liquidity-horizon ES amount is branch-local evidence only; the LHA "
+    "square-root aggregation is not emitted as additive Euler capital."
+)
 
 
 def desk_contributions(record: DeskAuditRecord) -> tuple[CapitalContribution, ...]:
@@ -47,6 +57,10 @@ def desk_contributions(record: DeskAuditRecord) -> tuple[CapitalContribution, ..
     instead of the aggregate. If a max/floor branch is indicated, the unattributed
     difference is emitted as an explicit residual with ``PARTIAL_RESIDUAL`` status.
 
+    NMRF risk-factor SES and liquidity-horizon ES audit details are emitted as
+    explicit ``UNSUPPORTED`` explain records because their square-root and
+    scenario-selection mechanics are not additive Euler contributions.
+
     Parameters
     ----------
     record : DeskAuditRecord
@@ -59,14 +73,16 @@ def desk_contributions(record: DeskAuditRecord) -> tuple[CapitalContribution, ..
     """
     total = _capital_total(record.capital)
     component_records = _component_records(record)
+    explain_records = _explain_records(record)
     component_total = _record_total(component_records)
     tolerance = _RECONCILIATION_TOLERANCE * max(abs(total), 1.0)
     residual = total - component_total
 
     if abs(residual) <= tolerance:
-        return tuple(
+        reconciled = tuple(
             _with_status(item, ReconciliationStatus.RECONCILED) for item in component_records
         )
+        return reconciled + explain_records
 
     status = (
         ReconciliationStatus.PARTIAL_RESIDUAL
@@ -99,7 +115,7 @@ def desk_contributions(record: DeskAuditRecord) -> tuple[CapitalContribution, ..
             reconciliation_status=status,
         )
     )
-    return tuple(records)
+    return tuple(records) + explain_records
 
 
 def _component_records(record: DeskAuditRecord) -> list[CapitalContribution]:
@@ -124,6 +140,152 @@ def _component_records(record: DeskAuditRecord) -> list[CapitalContribution]:
             )
         )
     return records
+
+
+def _explain_records(record: DeskAuditRecord) -> tuple[CapitalContribution, ...]:
+    return _nmrf_explain_records(record) + _lha_explain_records(record)
+
+
+def _nmrf_explain_records(record: DeskAuditRecord) -> tuple[CapitalContribution, ...]:
+    ses = record.ses if isinstance(record.ses, Mapping) else None
+    if ses is None:
+        return ()
+
+    records: list[CapitalContribution] = []
+    records.extend(_nmrf_result_records(record, ses.get("type_a_results"), "TYPE_A"))
+    records.extend(_nmrf_result_records(record, ses.get("type_b_results"), "TYPE_B"))
+    return tuple(records)
+
+
+def _nmrf_result_records(
+    record: DeskAuditRecord,
+    raw_results: object,
+    route: str,
+) -> tuple[CapitalContribution, ...]:
+    records: list[CapitalContribution] = []
+    for index, raw_item in enumerate(_sequence_items(raw_results)):
+        if not isinstance(raw_item, Mapping):
+            continue
+        amount = _optional_number(raw_item, "ses")
+        if amount is None:
+            continue
+        risk_factor = _source_name(raw_item, ("risk_factor_name", "risk_factor", "name"), index)
+        method = str(raw_item.get("method", "UNKNOWN"))
+        source = str(raw_item.get("source", "")).strip()
+        reason = _NMRF_EXPLAIN_REASON
+        if method != "UNKNOWN" or source:
+            reason = f"{reason} Upstream method={method}; source={source or 'not provided'}."
+        records.append(
+            _unsupported_explain_record(
+                record,
+                source_id=risk_factor,
+                source_level="risk_factor",
+                category=f"SES_NMRF_{route}",
+                base_amount=amount,
+                reason=reason,
+            )
+        )
+    return tuple(records)
+
+
+def _lha_explain_records(record: DeskAuditRecord) -> tuple[CapitalContribution, ...]:
+    imcc = record.imcc if isinstance(record.imcc, Mapping) else None
+    if imcc is None:
+        return ()
+
+    records: list[CapitalContribution] = []
+    unconstrained = imcc.get("unconstrained")
+    if isinstance(unconstrained, Mapping):
+        records.extend(
+            _lha_component_records(
+                record,
+                raw_components=unconstrained.get("components"),
+                category="IMCC_LH_UNCONSTRAINED",
+                source_prefix="UNCONSTRAINED",
+            )
+        )
+
+    for raw_component in _sequence_items(imcc.get("constrained_components")):
+        if not isinstance(raw_component, Mapping):
+            continue
+        risk_class = _source_name(raw_component, ("risk_class", "name"), 0)
+        lha_result = raw_component.get("lha_es_result")
+        if not isinstance(lha_result, Mapping):
+            continue
+        records.extend(
+            _lha_component_records(
+                record,
+                raw_components=lha_result.get("components"),
+                category="IMCC_LH_CONSTRAINED",
+                source_prefix=f"CONSTRAINED:{risk_class}",
+            )
+        )
+    return tuple(records)
+
+
+def _lha_component_records(
+    record: DeskAuditRecord,
+    *,
+    raw_components: object,
+    category: str,
+    source_prefix: str,
+) -> tuple[CapitalContribution, ...]:
+    records: list[CapitalContribution] = []
+    for index, raw_item in enumerate(_sequence_items(raw_components)):
+        if not isinstance(raw_item, Mapping):
+            continue
+        present = raw_item.get("present", True)
+        if present is False:
+            continue
+        amount = _optional_number(raw_item, "expected_shortfall")
+        if amount is None:
+            continue
+        horizon = _source_name(raw_item, ("liquidity_horizon", "horizon", "name"), index)
+        weighted_square = raw_item.get("weighted_square")
+        reason = _LHA_EXPLAIN_REASON
+        if weighted_square is not None:
+            square = _required_number(weighted_square, "weighted_square")
+            reason = f"{reason} Weighted square={square:.6g}."
+        records.append(
+            _unsupported_explain_record(
+                record,
+                source_id=f"{source_prefix}:{horizon}",
+                source_level="liquidity_horizon",
+                category=category,
+                base_amount=amount,
+                reason=reason,
+            )
+        )
+    return tuple(records)
+
+
+def _unsupported_explain_record(
+    record: DeskAuditRecord,
+    *,
+    source_id: str,
+    source_level: str,
+    category: str,
+    base_amount: float,
+    reason: str,
+) -> CapitalContribution:
+    source_token = _category_token(source_id)
+    return CapitalContribution(
+        contribution_id=f"ima:{record.run_id}:{record.desk_id}:{category}:{source_token}",
+        source_id=source_id,
+        source_level=source_level,
+        bucket_key=record.run_id,
+        category=category,
+        base_amount=base_amount,
+        marginal_multiplier=None,
+        contribution=None,
+        method=AttributionMethod.UNSUPPORTED,
+        residual=0.0,
+        reason=reason,
+        citations=_ATTRIBUTION_CITATIONS,
+        input_hash=record.inputs_hash,
+        profile_hash=record.policy_hash,
+        reconciliation_status=ReconciliationStatus.UNKNOWN,
+    )
 
 
 def _desk_components(record: DeskAuditRecord) -> tuple[tuple[str, float], ...]:
@@ -204,6 +366,37 @@ def _component_amount(value: object, field_name: str) -> float | None:
     return _required_number(value, field_name)
 
 
+def _sequence_items(value: object) -> tuple[object, ...]:
+    if isinstance(value, Sequence) and not isinstance(value, _SEQUENCE_TYPES):
+        return tuple(value)
+    return ()
+
+
+def _source_name(
+    values: Mapping[object, object],
+    keys: tuple[str, ...],
+    fallback_index: int,
+) -> str:
+    for key in keys:
+        name = _source_name_value(values.get(key), keys)
+        if name is not None:
+            return name
+    return f"item_{fallback_index}"
+
+
+def _source_name_value(value: object, keys: tuple[str, ...]) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, Mapping):
+        for key in keys:
+            name = _source_name_value(value.get(key), keys)
+            if name is not None:
+                return name
+        return None
+    text = str(value).strip()
+    return text or None
+
+
 def _category_token(value: object) -> str:
     token = _CATEGORY_TOKEN_PATTERN.sub("_", str(value).strip()).strip("_").upper()
     if not token:
@@ -220,7 +413,7 @@ def _capital_total(capital: Mapping[str, object]) -> float:
     raise ValueError(f"DeskAuditRecord.capital must include one of: {allowed}")
 
 
-def _optional_number(values: Mapping[str, object] | None, key: str) -> float | None:
+def _optional_number(values: Mapping[Any, object] | None, key: str) -> float | None:
     if values is None or key not in values:
         return None
     value = values[key]

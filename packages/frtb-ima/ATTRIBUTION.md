@@ -24,6 +24,8 @@ for the deepest defensible desk grain available in `DeskAuditRecord`:
   reconciles to `pla_addon`;
 - aggregate `IMCC`, `SES`, and `PLA_ADDON` records when no reconciling child
   map is available;
+- non-additive `UNSUPPORTED` explain records for retained NMRF Type A / Type B
+  SES risk-factor amounts and liquidity-horizon ES components;
 - `IMA_RC_RESIDUAL`, when a floor, max branch, binding-term effect, or
   unexplained reconciliation difference exists.
 
@@ -40,6 +42,13 @@ The helper will use nested component maps under keys such as `components`,
 the numeric child values sum back to the aggregate IMCC, SES, or PLA amount
 within `1e-6`. Non-reconciling child maps are treated as insufficient evidence
 and the aggregate component is emitted instead.
+
+NMRF and liquidity-horizon records are emitted only as branch-local explain
+evidence with `AttributionMethod.UNSUPPORTED`, `contribution=None`, and
+`residual=0.0`. Their `base_amount` carries the retained SES or ES amount and
+their `reason` explains why the record is not additive capital: NMRF SES uses
+Type A / Type B square-root aggregation, and LHA uses nested liquidity-horizon
+square-root aggregation over scenario vectors.
 
 If component records do not sum to the selected desk capital within `1e-6`,
 the helper emits one residual record:
@@ -66,7 +75,7 @@ records as `input_hash` and `profile_hash`.
 
 ## Allocation Grain
 
-The supported grain is retained desk component:
+The supported additive grain is retained desk component:
 
 - `source_level="desk"`
 - `source_id=<desk_id>`
@@ -75,10 +84,19 @@ The supported grain is retained desk component:
   `IMCC_CURRENT_ES`, `SES_RATES`, `PLA_ADDON_AMBER_SHORTFALL`, or
   `IMA_RC_RESIDUAL`
 
+Branch-local explain records use narrower source levels without contributing to
+the reconciliation total:
+
+- `source_level="risk_factor"` for `SES_NMRF_TYPE_A` and `SES_NMRF_TYPE_B`
+- `source_level="liquidity_horizon"` for `IMCC_LH_UNCONSTRAINED` and
+  `IMCC_LH_CONSTRAINED`
+
 ## Limitations
 
-- No trade-level, risk-factor-level, scenario-level, liquidity-horizon-level,
-  NMRF-level, or PLA-observation-level attribution is implemented.
+- No trade-level, scenario-level, PLA-observation-level, or smooth risk-factor
+  Euler attribution is implemented.
+- NMRF and liquidity-horizon records are explain evidence, not additive capital
+  allocation records.
 - The method does not differentiate through ES, IMCC, SES, PLA, backtesting, or
   RFET mechanics.
 - Floor, max-branch, and binding-term effects are not forced into component

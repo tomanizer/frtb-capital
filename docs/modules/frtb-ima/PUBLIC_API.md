@@ -21,7 +21,7 @@ capital.
 | RFET | `assess_rfet_evidence`, `assess_rfet_observation_batch`, `RFETEvidenceAssessment`, `RFETObservationBatch` | Modellability classification and evidence audit trail. |
 | PLA | `pla_addon`, `PLAAddonResult`, `SpearmanPlaResult` | PLA diagnostics for supported regimes. |
 | Audit | `CapitalRunAuditLog`, `DeskAuditRecord`, `audit_records_to_ndjson`, `render_capital_run_audit_report`, `write_capital_run_audit_report` | NDJSON audit records and deterministic Markdown reports. |
-| Attribution | `desk_contributions` | Read-only projection from completed `DeskAuditRecord` objects to shared `CapitalContribution` records, using retained IMCC/SES/PLA child components when they reconcile and explicit residuals otherwise. |
+| Attribution | `desk_contributions` | Read-only projection from completed `DeskAuditRecord` objects to shared `CapitalContribution` records, using retained IMCC/SES/PLA child components when they reconcile, branch-local NMRF/LHA explain records when retained evidence exists, and explicit residuals otherwise. |
 | Arrow handoffs | `IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS`, `IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS`, `IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS`, `build_capital_run_input_manifest_from_arrow`, `build_rfet_observation_batch_from_arrow`, `build_scenario_metadata_batch_from_arrow` | Tabular lineage and manifest ingress; scenario cubes remain NumPy-native. |
 | Errors | `IMAIneligibleError`, `UnsupportedRegulatoryFeature`, `UnsupportedRegulatoryFeatureError` | Fail-closed desk ineligibility and unsupported regulatory paths. |
 
