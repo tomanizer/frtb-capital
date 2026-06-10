@@ -10,17 +10,19 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import replace
 from numbers import Real
 from typing import Any
 
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
+from frtb_common.contribution_bundle import ComponentContributionBundle
 
 from frtb_ima.audit import DeskAuditRecord
 
 _RECONCILIATION_TOLERANCE = 1e-6
 _ATTRIBUTION_CITATIONS = ("adr_0038",)
+_COMPONENT_NAME = "frtb_ima"
 _CAPITAL_TOTAL_KEYS = ("total", "models_based_capital", "ima_rc", "IMA_RC")
 _COMPONENT_MAP_KEYS = (
     "components",
@@ -116,6 +118,56 @@ def desk_contributions(record: DeskAuditRecord) -> tuple[CapitalContribution, ..
         )
     )
     return tuple(records) + explain_records
+
+
+def build_ima_contribution_bundle(
+    records: DeskAuditRecord | Iterable[DeskAuditRecord],
+    *,
+    total_ima_capital: float | None = None,
+) -> ComponentContributionBundle:
+    """Return an orchestration-ready IMA contribution bundle.
+
+    Parameters
+    ----------
+    records : DeskAuditRecord or iterable of DeskAuditRecord
+        Completed IMA desk audit records from one run and policy profile.
+    total_ima_capital : float, optional
+        Expected IMA summary total, for example
+        ``ImaCapitalSummary.total_ima_capital``. When omitted, the helper uses
+        the sum of the emitted additive contribution and residual amounts.
+
+    Returns
+    -------
+    ComponentContributionBundle
+        Shared suite attribution bundle with ``component="frtb_ima"``.
+    """
+
+    desk_records = _normalise_records(records)
+    run_id = desk_records[0].run_id
+    input_hash = desk_records[0].inputs_hash
+    profile_hash = desk_records[0].policy_hash
+    for record in desk_records:
+        if record.run_id != run_id:
+            raise ValueError("IMA contribution bundle records must share one run_id")
+        if record.inputs_hash != input_hash:
+            raise ValueError("IMA contribution bundle records must share one inputs_hash")
+        if record.policy_hash != profile_hash:
+            raise ValueError("IMA contribution bundle records must share one policy_hash")
+
+    contributions = tuple(item for record in desk_records for item in desk_contributions(record))
+    contribution_total = _contribution_total(contributions)
+    component_total = contribution_total
+    if total_ima_capital is not None:
+        component_total = _required_number(total_ima_capital, "total_ima_capital")
+        _validate_contribution_total(contributions, component_total)
+
+    return ComponentContributionBundle(
+        component=_COMPONENT_NAME,
+        contributions=contributions,
+        component_total=component_total,
+        component_input_hash=input_hash,
+        component_profile_hash=profile_hash,
+    )
 
 
 def _component_records(record: DeskAuditRecord) -> list[CapitalContribution]:
@@ -366,6 +418,39 @@ def _component_amount(value: object, field_name: str) -> float | None:
     return _required_number(value, field_name)
 
 
+def _normalise_records(
+    records: DeskAuditRecord | Iterable[DeskAuditRecord],
+) -> tuple[DeskAuditRecord, ...]:
+    if isinstance(records, DeskAuditRecord):
+        normalised = (records,)
+    elif isinstance(records, Iterable) and not isinstance(records, (str, bytes, bytearray)):
+        normalised = tuple(records)
+    else:
+        raise ValueError("records must be a DeskAuditRecord or iterable of DeskAuditRecord")
+    if not normalised:
+        raise ValueError("records must include at least one DeskAuditRecord")
+    if not all(isinstance(record, DeskAuditRecord) for record in normalised):
+        raise ValueError("records must contain only DeskAuditRecord instances")
+    return normalised
+
+
+def _validate_contribution_total(
+    records: tuple[CapitalContribution, ...],
+    component_total: float,
+) -> None:
+    contribution_total = _contribution_total(records)
+    tolerance = _RECONCILIATION_TOLERANCE * max(abs(component_total), 1.0)
+    if abs(contribution_total - component_total) > tolerance:
+        raise ValueError(
+            "IMA contribution records do not reconcile to total_ima_capital: "
+            f"{contribution_total:.6g} != {component_total:.6g}"
+        )
+
+
+def _contribution_total(records: tuple[CapitalContribution, ...]) -> float:
+    return sum((item.contribution or 0.0) + item.residual for item in records)
+
+
 def _sequence_items(value: object) -> tuple[object, ...]:
     if isinstance(value, Sequence) and not isinstance(value, _SEQUENCE_TYPES):
         return tuple(value)
@@ -457,4 +542,4 @@ def _with_status(
     return replace(record, reconciliation_status=status)
 
 
-__all__ = ["desk_contributions"]
+__all__ = ["build_ima_contribution_bundle", "desk_contributions"]
