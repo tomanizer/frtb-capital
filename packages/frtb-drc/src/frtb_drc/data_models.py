@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from datetime import date
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Any, TypeVar
+from typing import TypeVar
 
-from frtb_common import jsonable
+from frtb_common import dataclass_as_dict
 from frtb_common.attribution import CapitalContribution
 
 
@@ -107,12 +107,24 @@ def _coerce_enum(value: EnumT | str, enum_type: type[EnumT], field_name: str) ->
         raise ValueError(f"{field_name} must be one of: {allowed}") from exc
 
 
-def _as_dict(record: Any) -> dict[str, object]:
-    return {field.name: jsonable(getattr(record, field.name)) for field in fields(record)}
+class _DrcAsDictMixin:
+    """Provide the public DRC dataclass ``as_dict`` contract."""
+
+    __slots__ = ()
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable mapping of dataclass fields.
+
+        Returns
+        -------
+        dict[str, object]
+            Field names mapped through the shared dataclass serializer.
+        """
+        return dataclass_as_dict(self)
 
 
 @dataclass(frozen=True)
-class DrcCitation:
+class DrcCitation(_DrcAsDictMixin):
     """Paragraph-level regulatory or design citation."""
 
     citation_id: str
@@ -121,19 +133,9 @@ class DrcCitation:
     url: str
     note: str = ""
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class DrcSourceLineage:
+class DrcSourceLineage(_DrcAsDictMixin):
     """Source-system lineage for a canonical DRC input row."""
 
     source_system: str
@@ -148,19 +150,9 @@ class DrcSourceLineage:
             MappingProxyType(dict(self.source_column_map)),
         )
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class DrcFxRate:
+class DrcFxRate(_DrcAsDictMixin):
     """Explicit FX rate supplied for translating DRC amounts into the base currency."""
 
     source_currency: str
@@ -174,19 +166,9 @@ class DrcFxRate:
     def __post_init__(self) -> None:
         object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class DrcFxConversion:
+class DrcFxConversion(_DrcAsDictMixin):
     """FX conversion lineage applied to one source currency in a calculation run."""
 
     source_currency: str
@@ -201,19 +183,9 @@ class DrcFxConversion:
     def __post_init__(self) -> None:
         object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class DrcRiskWeightEvidence:
+class DrcRiskWeightEvidence(_DrcAsDictMixin):
     """Typed upstream securitisation or CTP risk-weight derivation evidence."""
 
     position_id: str
@@ -238,19 +210,9 @@ class DrcRiskWeightEvidence:
         object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
         object.__setattr__(self, "validation_flags", tuple(self.validation_flags))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class DrcFairValueCapEvidence:
+class DrcFairValueCapEvidence(_DrcAsDictMixin):
     """Typed evidence for optional securitisation non-CTP fair-value cap treatment."""
 
     position_id: str
@@ -269,19 +231,9 @@ class DrcFairValueCapEvidence:
         object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
         object.__setattr__(self, "validation_flags", tuple(self.validation_flags))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class DrcCalculationContext:
+class DrcCalculationContext(_DrcAsDictMixin):
     """Run-scoped calculation metadata supplied to the public API."""
 
     run_id: str
@@ -342,19 +294,9 @@ class DrcCalculationContext:
             MappingProxyType(dict(self.ctp_offset_groups)),
         )
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class BranchMetadata:
+class BranchMetadata(_DrcAsDictMixin):
     """A branch choice that can affect audit or future attribution."""
 
     branch_id: str
@@ -372,19 +314,9 @@ class BranchMetadata:
         )
         object.__setattr__(self, "citations", tuple(self.citations))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class DrcPosition:
+class DrcPosition(_DrcAsDictMixin):
     """Canonical default-risk exposure before calculation."""
 
     position_id: str
@@ -443,19 +375,9 @@ class DrcPosition:
             )
         object.__setattr__(self, "citation_ids", tuple(self.citation_ids))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class GrossJtd:
+class GrossJtd(_DrcAsDictMixin):
     """Position-level gross jump-to-default amount."""
 
     gross_jtd_id: str
@@ -486,19 +408,9 @@ class GrossJtd:
         object.__setattr__(self, "citations", tuple(self.citations))
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class MaturityScaledJtd:
+class MaturityScaledJtd(_DrcAsDictMixin):
     """Gross JTD after maturity weighting."""
 
     scaled_jtd_id: str
@@ -516,19 +428,9 @@ class MaturityScaledJtd:
         object.__setattr__(self, "citations", tuple(self.citations))
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class RejectedOffset:
+class RejectedOffset(_DrcAsDictMixin):
     """Audit record for an offset that was not permitted."""
 
     rejection_id: str
@@ -540,19 +442,9 @@ class RejectedOffset:
     def __post_init__(self) -> None:
         object.__setattr__(self, "citations", tuple(self.citations))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class NetJtd:
+class NetJtd(_DrcAsDictMixin):
     """Net default exposure after permitted offsetting."""
 
     net_jtd_id: str
@@ -588,19 +480,9 @@ class NetJtd:
         object.__setattr__(self, "rejected_offsets", tuple(self.rejected_offsets))
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class HedgeBenefitRatio:
+class HedgeBenefitRatio(_DrcAsDictMixin):
     """Bucket-level hedge benefit ratio."""
 
     hbr_id: str
@@ -616,19 +498,9 @@ class HedgeBenefitRatio:
         object.__setattr__(self, "citations", tuple(self.citations))
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class BucketDrc:
+class BucketDrc(_DrcAsDictMixin):
     """Bucket-level DRC capital result."""
 
     bucket_id: str
@@ -653,19 +525,9 @@ class BucketDrc:
         object.__setattr__(self, "citations", tuple(self.citations))
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class CategoryDrc:
+class CategoryDrc(_DrcAsDictMixin):
     """Category-level DRC capital result."""
 
     category_id: str
@@ -685,19 +547,9 @@ class CategoryDrc:
         object.__setattr__(self, "unsupported_features", tuple(self.unsupported_features))
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
 
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
-
 
 @dataclass(frozen=True)
-class DrcCapitalResult:
+class DrcCapitalResult(_DrcAsDictMixin):
     """Run-level DRC capital result."""
 
     result_id: str
@@ -742,13 +594,3 @@ class DrcCapitalResult:
             tuple(self.fair_value_cap_evidence),
         )
         object.__setattr__(self, "attribution_records", tuple(self.attribution_records))
-
-    def as_dict(self) -> dict[str, object]:
-        """Return a JSON-serialisable mapping of dataclass fields.
-
-        Returns
-        -------
-        dict[str, object]
-            Field names mapped through the package ``_as_dict`` helper.
-        """
-        return _as_dict(self)
