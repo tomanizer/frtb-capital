@@ -5,12 +5,18 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
-from frtb_common import ComponentCapitalSummary, StandardisedComponent
+from frtb_common import (
+    CapitalContribution,
+    ComponentCapitalSummary,
+    ComponentContributionBundle,
+    StandardisedComponent,
+)
 from frtb_common.attribution import AttributionMethod, ReconciliationStatus
 from frtb_ima import DeskAuditRecord, build_ima_contribution_bundle
 from frtb_orchestration import (
     CvaCapitalSummary,
     ImaCapitalSummary,
+    StandardisedApproachCapitalResult,
     SuiteAttributionResult,
     calculate_suite_capital,
     compose_standardised_approach_capital,
@@ -76,9 +82,7 @@ def test_orchestration_consumes_public_ima_contribution_bundle() -> None:
     assert all(item.method is AttributionMethod.ANALYTICAL_EULER for item in ima_bundle.contributions)
 
 
-def _zero_component_bundle(component: str):
-    from frtb_common import CapitalContribution, ComponentContributionBundle
-
+def _zero_component_bundle(component: str) -> ComponentContributionBundle:
     record = CapitalContribution(
         contribution_id=f"{component}:zero",
         source_id=component,
@@ -103,7 +107,7 @@ def _zero_component_bundle(component: str):
     )
 
 
-def _zero_sa_result():
+def _zero_sa_result() -> StandardisedApproachCapitalResult:
     return compose_standardised_approach_capital(
         sbm_summary=_component_summary(StandardisedComponent.SBM, "frtb-sbm"),
         drc_summary=_component_summary(StandardisedComponent.DRC, "frtb-drc"),
