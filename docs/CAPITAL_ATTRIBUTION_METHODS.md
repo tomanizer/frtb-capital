@@ -10,6 +10,36 @@ result. It must not change the capital number. Capital kernels produce the
 audited result and branch metadata; attribution modules consume that result and
 emit contribution, residual, unsupported, or impact records.
 
+## Suite Attribution Flow
+
+```mermaid
+flowchart TD
+    result[Audited capital result] --> metadata{Stable branch metadata and lineage retained?}
+    metadata -- no --> unsupported[UNSUPPORTED attribution record]
+    metadata -- yes --> smooth{Smooth homogeneous branch?}
+    smooth -- yes --> euler[ANALYTICAL_EULER contribution]
+    smooth -- no --> additive{Additive or standalone charge?}
+    additive -- yes --> standalone[STANDALONE contribution]
+    additive -- no --> residual{Known explicit reconciliation remainder?}
+    residual -- yes --> branch_residual[RESIDUAL contribution]
+    residual -- no --> unsupported
+
+    euler --> reconcile[Reconcile to attributed capital]
+    standalone --> reconcile
+    branch_residual --> reconcile
+    unsupported --> disclose[Carry unsupported reason and unattributed amount]
+    reconcile --> report[Component or suite attribution report]
+    disclose --> report
+
+    baseline[Baseline completed run] --> impact[FINITE_DIFFERENCE impact]
+    candidate[Candidate completed run] --> impact
+    impact --> report
+```
+
+The decision is made after the capital result exists. The method label must
+match the evidence retained by the package; attribution code must not use a
+residual or allocation to hide an unsupported derivative.
+
 ## Method Selection
 
 | Method | Use when | Do not use when |
