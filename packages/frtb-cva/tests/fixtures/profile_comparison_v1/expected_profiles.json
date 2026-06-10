@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "fixture_id": "profile_comparison_v1",
+  "description": "Synthetic profile evidence for non-Basel CVA comparison profiles. The fixture verifies profile-owned source ids, citation ids, runtime reference payloads, support-matrix rows, and deterministic content hashes; it is not final regulatory capital evidence.",
+  "profiles": {
+    "US_NPR20_VB": {
+      "requirement_id": "CVA-US-001",
+      "source_ids": ["us_npr20_91fr14952"],
+      "ba_cva_citation_id": "us_npr20_vb_ba_cva",
+      "sa_cva_citation_id": "us_npr20_vb_sa_cva",
+      "hedge_citation_id": "us_npr20_vb_hedges",
+      "materiality_citation_id": "us_npr20_vb_materiality",
+      "method_citations": {
+        "BA_CVA_REDUCED": "U.S. NPR 2.0 91 FR 14952 section V.B",
+        "BA_CVA_FULL": "U.S. NPR 2.0 91 FR 14952 section V.B",
+        "SA_CVA": "U.S. NPR 2.0 91 FR 14952 section V.B",
+        "MIXED_CARVE_OUT": "U.S. NPR 2.0 91 FR 14952 section V.B"
+      },
+      "sa_cva_path_citation": "U.S. NPR 2.0 91 FR 14952 section V.B"
+    },
+    "EU_CRR3_CVA": {
+      "requirement_id": "CVA-EU-001",
+      "source_ids": ["eu_crr3_2024_1623"],
+      "ba_cva_citation_id": "eu_crr3_article_384",
+      "sa_cva_citation_id": "eu_crr3_articles_383a_383z",
+      "hedge_citation_id": "eu_crr3_article_386",
+      "materiality_citation_id": "eu_crr3_article_385",
+      "method_citations": {
+        "BA_CVA_REDUCED": "Regulation (EU) 2024/1623 Article 384",
+        "BA_CVA_FULL": "Regulation (EU) 2024/1623 Article 384",
+        "SA_CVA": "Regulation (EU) 2024/1623 Articles 383-383z",
+        "MIXED_CARVE_OUT": "Regulation (EU) 2024/1623 Article 382"
+      },
+      "sa_cva_path_citation": "Regulation (EU) 2024/1623 Articles 383-383z"
+    },
+    "UK_PRA_CVA": {
+      "requirement_id": "CVA-UK-001",
+      "source_ids": ["uk_pra_ps1_26", "uk_pra_cva_risk_part"],
+      "ba_cva_citation_id": "uk_pra_cva_risk_ba",
+      "sa_cva_citation_id": "uk_pra_cva_risk_sa",
+      "hedge_citation_id": "uk_pra_cva_risk_hedges",
+      "materiality_citation_id": "uk_pra_cva_risk_aa",
+      "method_citations": {
+        "BA_CVA_REDUCED": "PRA PS1/26; PRA Rulebook CVA Risk Part BA-CVA",
+        "BA_CVA_FULL": "PRA PS1/26; PRA Rulebook CVA Risk Part BA-CVA",
+        "SA_CVA": "PRA PS1/26; PRA Rulebook CVA Risk Part SA-CVA",
+        "MIXED_CARVE_OUT": "PRA PS1/26; PRA Rulebook CVA Risk Part"
+      },
+      "sa_cva_path_citation": "PRA PS1/26; PRA Rulebook CVA Risk Part SA-CVA"
+    }
+  }
+}
