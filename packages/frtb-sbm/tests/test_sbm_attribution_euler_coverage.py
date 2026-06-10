@@ -23,8 +23,20 @@ from frtb_sbm.attribution import calculate_sbm_attribution
 
 def test_multi_risk_class_delta_euler_records_reconcile_by_risk_class() -> None:
     sensitivities = (
-        _girr_delta("girr-eur-1y", bucket="1", risk_factor="EUR", tenor="1y", amount=1_000_000.0),
-        _girr_delta("girr-usd-5y", bucket="2", risk_factor="USD", tenor="5y", amount=700_000.0),
+        _girr_delta(
+            "girr-eur-1y",
+            bucket="1",
+            risk_factor="EUR",
+            tenor="1y",
+            amount=1_000_000.0,
+        ),
+        _girr_delta(
+            "girr-usd-5y",
+            bucket="2",
+            risk_factor="USD",
+            tenor="5y",
+            amount=700_000.0,
+        ),
         _fx_delta("fx-eur", bucket="EUR", risk_factor="EUR", amount=350_000.0),
         _fx_delta("fx-usd", bucket="USD", risk_factor="USD", amount=450_000.0),
     )
@@ -34,23 +46,48 @@ def test_multi_risk_class_delta_euler_records_reconcile_by_risk_class() -> None:
 
     assert {record.category for record in records} == {"FX", "GIRR"}
     assert all(record.method is AttributionMethod.ANALYTICAL_EULER for record in records)
-    assert _record_total(records) == pytest.approx(result.total_capital, rel=1e-6, abs=1e-6)
+    assert _record_total(records) == pytest.approx(
+        result.total_capital,
+        rel=1e-6,
+        abs=1e-6,
+    )
 
     capital_by_risk_class = {
-        str(risk_class.risk_class): risk_class.selected_capital for risk_class in result.risk_classes
+        str(risk_class.risk_class): risk_class.selected_capital
+        for risk_class in result.risk_classes
     }
     for risk_class, selected_capital in capital_by_risk_class.items():
         risk_class_records = tuple(record for record in records if record.category == risk_class)
         assert _record_total(risk_class_records) == pytest.approx(
-            selected_capital, rel=1e-6, abs=1e-6
+            selected_capital,
+            rel=1e-6,
+            abs=1e-6,
         )
 
 
 def test_selected_scenario_matches_maximum_scenario_total_for_girr_delta() -> None:
     sensitivities = (
-        _girr_delta("girr-eur-1y", bucket="1", risk_factor="EUR", tenor="1y", amount=1_000_000.0),
-        _girr_delta("girr-usd-5y", bucket="2", risk_factor="USD", tenor="5y", amount=700_000.0),
-        _girr_delta("girr-gbp-10y", bucket="3", risk_factor="GBP", tenor="10y", amount=500_000.0),
+        _girr_delta(
+            "girr-eur-1y",
+            bucket="1",
+            risk_factor="EUR",
+            tenor="1y",
+            amount=1_000_000.0,
+        ),
+        _girr_delta(
+            "girr-usd-5y",
+            bucket="2",
+            risk_factor="USD",
+            tenor="5y",
+            amount=700_000.0,
+        ),
+        _girr_delta(
+            "girr-gbp-10y",
+            bucket="3",
+            risk_factor="GBP",
+            tenor="10y",
+            amount=500_000.0,
+        ),
     )
 
     result = calculate_sbm_capital(sensitivities, context=_context("scenario-stability"))
@@ -69,13 +106,29 @@ def test_selected_scenario_matches_maximum_scenario_total_for_girr_delta() -> No
     }
 
     records = calculate_sbm_attribution(result)
-    assert _record_total(records) == pytest.approx(risk_class.selected_capital, rel=1e-6, abs=1e-6)
+    assert _record_total(records) == pytest.approx(
+        risk_class.selected_capital,
+        rel=1e-6,
+        abs=1e-6,
+    )
 
 
 def test_negative_girr_sensitivity_can_reduce_euler_capital_contribution() -> None:
     sensitivities = (
-        _girr_delta("girr-eur-1y-long", bucket="1", risk_factor="EUR", tenor="1y", amount=2_000_000.0),
-        _girr_delta("girr-eur-2y-short", bucket="1", risk_factor="EUR", tenor="2y", amount=-500_000.0),
+        _girr_delta(
+            "girr-eur-1y-long",
+            bucket="1",
+            risk_factor="EUR",
+            tenor="1y",
+            amount=2_000_000.0,
+        ),
+        _girr_delta(
+            "girr-eur-2y-short",
+            bucket="1",
+            risk_factor="EUR",
+            tenor="2y",
+            amount=-500_000.0,
+        ),
     )
 
     result = calculate_sbm_capital(sensitivities, context=_context("negative-euler"))
@@ -84,13 +137,29 @@ def test_negative_girr_sensitivity_can_reduce_euler_capital_contribution() -> No
 
     assert len(euler) == 2
     assert any(record.contribution is not None and record.contribution < 0.0 for record in euler)
-    assert _record_total(records) == pytest.approx(result.total_capital, rel=1e-6, abs=1e-6)
+    assert _record_total(records) == pytest.approx(
+        result.total_capital,
+        rel=1e-6,
+        abs=1e-6,
+    )
 
 
 def test_multi_risk_class_finite_difference_matches_euler_derivatives() -> None:
     sensitivities = (
-        _girr_delta("girr-eur-1y", bucket="1", risk_factor="EUR", tenor="1y", amount=900_000.0),
-        _girr_delta("girr-usd-5y", bucket="2", risk_factor="USD", tenor="5y", amount=650_000.0),
+        _girr_delta(
+            "girr-eur-1y",
+            bucket="1",
+            risk_factor="EUR",
+            tenor="1y",
+            amount=900_000.0,
+        ),
+        _girr_delta(
+            "girr-usd-5y",
+            bucket="2",
+            risk_factor="USD",
+            tenor="5y",
+            amount=650_000.0,
+        ),
         _fx_delta("fx-eur", bucket="EUR", risk_factor="EUR", amount=300_000.0),
     )
 
