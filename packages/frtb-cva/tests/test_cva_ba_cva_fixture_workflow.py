@@ -105,17 +105,12 @@ def _assert_reduced_result_matches(actual: Any, expected: dict[str, Any]) -> Non
         assert actual_line.netting_set_id == expected_line["netting_set_id"]
         assert actual_line.counterparty_id == expected_line["counterparty_id"]
         assert actual_line.ead == pytest.approx(expected_line["ead"])
-        assert actual_line.effective_maturity == pytest.approx(
-            expected_line["effective_maturity"]
-        )
-        expected_discount_factor = pytest.approx(expected_line["discount_factor"])
-        assert actual_line.discount_factor == expected_discount_factor
+        assert actual_line.effective_maturity == pytest.approx(expected_line["effective_maturity"])
+        assert actual_line.discount_factor == pytest.approx(expected_line["discount_factor"])
         assert expected_risk_weight is not None, missing_weight_msg
         assert actual_line.risk_weight == pytest.approx(expected_risk_weight)
         assert actual_line.alpha == pytest.approx(expected["alpha"])
-        assert actual_line.standalone_capital == pytest.approx(
-            expected_line["standalone_capital"]
-        )
+        assert actual_line.standalone_capital == pytest.approx(expected_line["standalone_capital"])
 
     actual_counterparties = sorted(
         actual.counterparty_capitals,
@@ -131,10 +126,7 @@ def _assert_reduced_result_matches(actual: Any, expected: dict[str, Any]) -> Non
         expected_counterparties,
         strict=True,
     ):
-        assert (
-            actual_counterparty.counterparty_id
-            == expected_counterparty["counterparty_id"]
-        )
+        assert actual_counterparty.counterparty_id == expected_counterparty["counterparty_id"]
         assert actual_counterparty.standalone_capital == pytest.approx(
             expected_counterparty["standalone_capital"]
         )
