@@ -10,6 +10,37 @@ documentation lives here so IMA is navigated consistently with the planned
 and implemented sibling component modules: `frtb-sbm`, `frtb-drc`,
 `frtb-rrao`, and `frtb-cva`.
 
+## Boundary Flow
+
+```mermaid
+flowchart LR
+    risk["Risk engine<br/>scenario P&L, RFET, PLA, backtesting"]
+    cube["ScenarioCube / NumPy arrays<br/>dense vectors stay in IMA"]
+    tabular["Arrow lineage tables<br/>metadata, RFET observations, manifest"]
+    manifest["CapitalRunInputManifest<br/>checksums and row counts"]
+    public_api["frtb_ima public API<br/>run and component entrypoints"]
+    components["IMA components<br/>ES, IMCC, RFET, NMRF, PLA, backtesting"]
+    result["IMA capital result<br/>audit log and desk eligibility"]
+    orchestration["frtb-orchestration<br/>IMA summary and SA fallback routing"]
+    reject["Fail closed<br/>unsupported profile or missing evidence"]
+
+    risk --> cube
+    risk --> tabular
+    tabular --> manifest
+    cube --> public_api
+    manifest --> public_api
+    public_api --> components
+    components --> result
+    result --> orchestration
+    public_api -. validation .-> reject
+    components -. validation .-> reject
+```
+
+The module boundary stays summary-contract centric: dense scenario vectors feed
+IMA kernels directly, Arrow carries tabular lineage and manifest evidence, and
+orchestration consumes the final IMA result plus desk eligibility signal rather
+than coordinating internal IMA stages.
+
 ## Documentation
 
 | Document | Purpose |
