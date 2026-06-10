@@ -23,6 +23,24 @@ The suite therefore represents SA through three component packages:
 SA capital = SBM capital + DRC capital + RRAO capital
 ```
 
+```mermaid
+flowchart LR
+  sbm["SBM<br/>sensitivities-based method"]
+  drc["DRC<br/>default risk capital"]
+  rrao["RRAO<br/>residual risk add-on"]
+  handoff["ComponentCapitalSummary<br/>per component"]
+  compose["compose_standardised_approach_capital"]
+  sa["StandardisedApproachCapitalResult<br/>SBM + DRC + RRAO"]
+  fallback["IMA fallback desk routes<br/>when supplied"]
+
+  sbm --> handoff
+  drc --> handoff
+  rrao --> handoff
+  handoff --> compose
+  fallback --> compose
+  compose --> sa
+```
+
 Current orchestration validates supplied SBM, DRC, and RRAO
 `frtb_common.ComponentCapitalSummary` records for component slot,
 jurisdiction-family, calculation-date, and base-currency consistency, then
