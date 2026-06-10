@@ -233,6 +233,7 @@ def test_missing_packages_directory_reports_registry_mismatch(
         profile="shared",
         component_type="shared",
         required_tests=(),
+        attribution_status=None,
     )
     _write_registry(tmp_path, [entry])
     monkeypatch.syspath_prepend(str(tmp_path))
@@ -296,6 +297,87 @@ def test_missing_required_test_path_fails(tmp_path: Path, monkeypatch) -> None:
     result = _single_result(tmp_path)
 
     assert "required-test-path:public-api" in result.failed_requirement_ids
+
+
+def test_capital_package_requires_attribution_status(tmp_path: Path, monkeypatch) -> None:
+    entry = _make_package(
+        tmp_path,
+        package="qc-attribution-status",
+        import_name="qc_attribution_status",
+        profile="implemented",
+        implementation="IMPLEMENTED",
+        validation="AVAILABLE",
+        required_tests=("public-api",),
+    ).replace('attribution_status = "documentation_only"\n', "")
+    _write_registry(tmp_path, [entry])
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = _single_result(tmp_path)
+
+    assert "attribution-status" in result.failed_requirement_ids
+
+
+def test_capital_package_requires_attribution_doc(tmp_path: Path, monkeypatch) -> None:
+    entry = _make_package(
+        tmp_path,
+        package="qc-attribution-doc",
+        import_name="qc_attribution_doc",
+        profile="implemented",
+        implementation="IMPLEMENTED",
+        validation="AVAILABLE",
+        required_tests=("public-api",),
+    )
+    (tmp_path / "packages/qc-attribution-doc/ATTRIBUTION.md").unlink()
+    _write_registry(tmp_path, [entry])
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = _single_result(tmp_path)
+
+    assert "attribution-doc" in result.failed_requirement_ids
+
+
+def test_claimed_attribution_support_requires_real_evidence(tmp_path: Path, monkeypatch) -> None:
+    entry = _make_package(
+        tmp_path,
+        package="qc-attribution-evidence",
+        import_name="qc_attribution_evidence",
+        profile="implemented",
+        implementation="IMPLEMENTED",
+        validation="AVAILABLE",
+        required_tests=("public-api", "attribution"),
+        attribution_status="full_bundle",
+    )
+    _write_registry(tmp_path, [entry])
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = _single_result(tmp_path)
+
+    assert "required-test:attribution-bundle" in result.failed_requirement_ids
+    assert "required-test:attribution-reconciliation" in result.failed_requirement_ids
+    assert "required-test:attribution-unsupported-branches" in result.failed_requirement_ids
+    assert "attribution-test-placeholder:attribution" in result.failed_requirement_ids
+
+
+def test_attribution_status_mapping_must_cover_supported_status(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    entry = _make_package(
+        tmp_path,
+        package="qc-attribution-internal",
+        import_name="qc_attribution_internal",
+        profile="implemented",
+        implementation="IMPLEMENTED",
+        validation="AVAILABLE",
+        required_tests=("public-api",),
+        attribution_status="allocation_only",
+    )
+    _write_registry(tmp_path, [entry])
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.delitem(maturity.ATTRIBUTION_REQUIRED_TEST_IDS, "allocation_only")
+
+    with pytest.raises(maturity.MaturityCheckError, match="allocation_only"):
+        maturity.check_registry(maturity.load_registry(root=tmp_path), root=tmp_path)
 
 
 def test_requirement_registry_accepts_yaml_extension(tmp_path: Path, monkeypatch) -> None:
@@ -391,6 +473,7 @@ def _make_package(
     metadata_package_name: str | None = None,
     write_required_tests: bool = True,
     requirement_extension: str = ".yml",
+    attribution_status: str | None = None,
 ) -> str:
     package_dir = root / "packages" / package
     source_dir = package_dir / "src" / import_name
@@ -398,6 +481,14 @@ def _make_package(
     for filename in ("README.md", "CHANGELOG.md", "AGENTS.md"):
         (package_dir / filename).write_text(f"# {package}\n", encoding="utf-8")
     (source_dir / "__init__.py").write_text("", encoding="utf-8")
+
+    if attribution_status is None and component_type in {"capital", "orchestration"}:
+        attribution_status = "documentation_only"
+    if attribution_status is not None:
+        (package_dir / "ATTRIBUTION.md").write_text(
+            f"# {package} attribution\n",
+            encoding="utf-8",
+        )
 
     module_docs = root / "docs/modules" / package
     module_docs.mkdir(parents=True)
@@ -466,10 +557,13 @@ def _make_package(
         profile=profile,
         component_type=component_type,
         required_tests=required_tests,
+        attribution_status=attribution_status,
     )
 
 
 def _test_path(package_dir: Path, import_name: str, profile: str, test_id: str) -> Path:
+    if test_id.startswith("attribution"):
+        return package_dir / "tests/test_attribution.py"
     if profile == "partial_runtime" and test_id in {"public-api", "unsupported-runtime-paths"}:
         return package_dir / "tests/test_drc_public_api.py"
     if profile == "orchestration_partial":
@@ -523,6 +617,7 @@ def _registry_entry(
     profile: str,
     component_type: str,
     required_tests: Iterable[str],
+    attribution_status: str | None,
 ) -> str:
     lines = [
         "[[packages]]",
@@ -541,6 +636,8 @@ def _registry_entry(
                 f'calculation_entrypoint = "{import_name}:calculate_capital"',
             ]
         )
+    if attribution_status is not None:
+        lines.append(f'attribution_status = "{attribution_status}"')
     for test_id in required_tests:
         required_test_path = _test_path(
             Path("packages") / package,
