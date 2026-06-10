@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 from pathlib import Path
+from typing import Any
 
 import pytest
 from frtb_cva import calculate_cva_capital
@@ -15,19 +16,23 @@ _loader_spec = importlib.util.spec_from_file_location(
 )
 _loader_module = importlib.util.module_from_spec(_loader_spec)  # type: ignore[arg-type]
 _loader_spec.loader.exec_module(_loader_module)  # type: ignore[union-attr]
+load_expected_outputs = _loader_module.load_expected_outputs
 load_fixture_cases = _loader_module.load_fixture_cases
 load_fixture_context = _loader_module.load_fixture_context
 load_invalid_cases = _loader_module.load_invalid_cases
 
 
-def test_fixture_cases_produce_deterministic_capital() -> None:
+def test_fixture_cases_match_independent_challenger_outputs() -> None:
     context = load_fixture_context()
-    totals: list[float] = []
+    expected = load_expected_outputs()
+    assert set(expected) == {case_id for case_id, _, _ in load_fixture_cases()}
+
     for case_id, counterparties, netting_sets in load_fixture_cases():
         result = calculate_cva_capital(context, counterparties, netting_sets)
-        assert result.total_cva_capital > 0.0, case_id
-        totals.append(result.total_cva_capital)
-    assert len(set(totals)) == len(totals)
+        case_expected = expected[case_id]
+        assert result.total_cva_capital == pytest.approx(case_expected["k_reduced"])
+        assert result.ba_cva_reduced is not None
+        _assert_reduced_result_matches(result.ba_cva_reduced, case_expected)
 
 
 def test_invalid_fixture_cases_fail_before_capital() -> None:
@@ -35,6 +40,14 @@ def test_invalid_fixture_cases_fail_before_capital() -> None:
     for case_id, expected_match, counterparties, netting_sets in load_invalid_cases():
         with pytest.raises(Exception, match=expected_match):
             calculate_cva_capital(context, counterparties, netting_sets)
+
+
+def test_fixture_cases_are_deterministic() -> None:
+    context = load_fixture_context()
+    for case_id, counterparties, netting_sets in load_fixture_cases():
+        first = calculate_cva_capital(context, counterparties, netting_sets)
+        second = calculate_cva_capital(context, counterparties, netting_sets)
+        assert first.as_dict() == second.as_dict(), case_id
 
 
 def test_package_does_not_import_sibling_capital_packages() -> None:
@@ -58,3 +71,41 @@ def test_package_does_not_import_sibling_capital_packages() -> None:
         for prefix in forbidden_prefixes:
             assert prefix not in source
     assert package.__name__ == "frtb_cva"
+
+
+def _assert_reduced_result_matches(actual: Any, expected: dict[str, Any]) -> None:
+    assert actual.rho == pytest.approx(expected["rho"])
+    assert actual.d_ba_cva == pytest.approx(expected["d_ba_cva"])
+    assert actual.alpha == pytest.approx(expected["alpha"])
+    assert actual.sum_scva == pytest.approx(expected["sum_scva"])
+    assert actual.k_portfolio == pytest.approx(expected["k_portfolio"])
+    assert actual.k_reduced == pytest.approx(expected["k_reduced"])
+
+    assert len(actual.netting_set_lines) == len(expected["netting_set_lines"])
+    for actual_line, expected_line in zip(
+        actual.netting_set_lines, expected["netting_set_lines"], strict=True
+    ):
+        assert actual_line.netting_set_id == expected_line["netting_set_id"]
+        assert actual_line.counterparty_id == expected_line["counterparty_id"]
+        assert actual_line.ead == pytest.approx(expected_line["ead"])
+        assert actual_line.effective_maturity == pytest.approx(
+            expected_line["effective_maturity"]
+        )
+        assert actual_line.discount_factor == pytest.approx(expected_line["discount_factor"])
+        assert actual_line.risk_weight == pytest.approx(expected["risk_weight"])
+        assert actual_line.alpha == pytest.approx(expected["alpha"])
+        assert actual_line.standalone_capital == pytest.approx(
+            expected_line["standalone_capital"]
+        )
+
+    assert len(actual.counterparty_capitals) == len(expected["counterparty_capitals"])
+    for actual_counterparty, expected_counterparty in zip(
+        actual.counterparty_capitals, expected["counterparty_capitals"], strict=True
+    ):
+        assert actual_counterparty.counterparty_id == expected_counterparty["counterparty_id"]
+        assert actual_counterparty.standalone_capital == pytest.approx(
+            expected_counterparty["standalone_capital"]
+        )
+        assert list(actual_counterparty.netting_set_ids) == expected_counterparty[
+            "netting_set_ids"
+        ]
