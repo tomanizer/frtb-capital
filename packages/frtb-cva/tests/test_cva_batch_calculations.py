@@ -288,6 +288,7 @@ def test_mixed_carve_out_missing_sensitivities() -> None:
         method=CvaMethod.MIXED_CARVE_OUT,
         sa_cva_approved=True,
         carve_out_netting_set_ids=("ns-1",),
+        sa_cva_sensitivity_scope_evidence_id="missing-sensitivity-scope-evidence",
     )
     with pytest.raises(CvaInputError, match="mixed carve-out requires SA-CVA sensitivities"):
         calculate_cva_capital_from_batches(

@@ -1984,6 +1984,7 @@ def _resolve_scope_for_batches(
                 "mixed carve-out requires carve_out_netting_set_ids",
                 field="carve_out_netting_set_ids",
             )
+        require_mixed_sensitivity_scope_evidence(context)
         _validate_carve_out_batch_evidence(context.carve_out_netting_set_ids, netting_sets)
         audit_metadata.append(("resolved_method", CvaMethod.MIXED_CARVE_OUT.value))
         audit_metadata.extend(mixed_sensitivity_scope_metadata(context))
