@@ -115,6 +115,10 @@ Each package-level `ATTRIBUTION.md` should state:
   analysis rather than exact Euler attribution;
 - tests or evidence that cover reconciliation and unsupported behavior.
 
+The suite matrix for current implementation status is:
+
+- [Attribution implementation matrix](ATTRIBUTION_IMPLEMENTATION_MATRIX.md)
+
 The current package guides are:
 
 - [frtb-common attribution contract](../packages/frtb-common/ATTRIBUTION.md)
