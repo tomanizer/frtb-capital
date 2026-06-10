@@ -1,7 +1,16 @@
 """Tests for unified CapitalContribution primitives."""
 
+import math
+
 import pytest
-from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
+from frtb_common.attribution import (
+    AttributionMethod,
+    CapitalContribution,
+    ContributionReconciliation,
+    ReconciliationStatus,
+    reconcile_contribution_set,
+    validate_contribution_reconciliation,
+)
 
 
 def test_capital_contribution_creation() -> None:
@@ -162,3 +171,125 @@ def test_capital_contribution_audit_fields() -> None:
     assert d["input_hash"] == "abc123"
     assert d["profile_hash"] == "def456"
     assert d["reconciliation_status"] == "RECONCILED"
+
+
+def test_reconcile_contribution_set_reports_reconciled_status() -> None:
+    contribution = CapitalContribution(
+        contribution_id="contrib-1",
+        source_id="pos-1",
+        source_level="position",
+        bucket_key="bucket-A",
+        category="GIRR",
+        base_amount=100.0,
+        marginal_multiplier=1.0,
+        contribution=100.0,
+        method=AttributionMethod.ANALYTICAL_EULER,
+    )
+
+    reconciliation = reconcile_contribution_set((contribution,), capital_total=100.0)
+
+    assert isinstance(reconciliation, ContributionReconciliation)
+    assert reconciliation.record_count == 1
+    assert reconciliation.contribution_sum == pytest.approx(100.0)
+    assert reconciliation.residual_sum == pytest.approx(0.0)
+    assert reconciliation.explained_total == pytest.approx(100.0)
+    assert reconciliation.difference == pytest.approx(0.0)
+    assert reconciliation.status == ReconciliationStatus.RECONCILED
+    assert reconciliation.is_reconciled
+    assert reconciliation.as_dict()["status"] == "RECONCILED"
+
+
+def test_reconcile_contribution_set_reports_partial_residual_status() -> None:
+    contribution = CapitalContribution(
+        contribution_id="contrib-1",
+        source_id="pos-1",
+        source_level="position",
+        bucket_key="bucket-A",
+        category="GIRR",
+        base_amount=90.0,
+        marginal_multiplier=None,
+        contribution=90.0,
+        method=AttributionMethod.STANDALONE,
+    )
+    residual = CapitalContribution(
+        contribution_id="residual-1",
+        source_id="bucket-A",
+        source_level="bucket",
+        bucket_key="bucket-A",
+        category="GIRR",
+        base_amount=0.0,
+        marginal_multiplier=None,
+        contribution=None,
+        method=AttributionMethod.RESIDUAL,
+        residual=10.0,
+    )
+
+    reconciliation = reconcile_contribution_set(
+        (contribution, residual), capital_total=100.0
+    )
+
+    assert reconciliation.contribution_sum == pytest.approx(90.0)
+    assert reconciliation.residual_sum == pytest.approx(10.0)
+    assert reconciliation.status == ReconciliationStatus.PARTIAL_RESIDUAL
+    assert reconciliation.is_reconciled
+
+
+def test_validate_contribution_reconciliation_raises_for_unreconciled_set() -> None:
+    contribution = CapitalContribution(
+        contribution_id="contrib-1",
+        source_id="pos-1",
+        source_level="position",
+        bucket_key="bucket-A",
+        category="GIRR",
+        base_amount=90.0,
+        marginal_multiplier=None,
+        contribution=90.0,
+        method=AttributionMethod.STANDALONE,
+    )
+
+    reconciliation = reconcile_contribution_set((contribution,), capital_total=100.0)
+    assert reconciliation.status == ReconciliationStatus.UNRECONCILED
+    assert not reconciliation.is_reconciled
+
+    with pytest.raises(ValueError, match="does not match capital_total"):
+        validate_contribution_reconciliation((contribution,), capital_total=100.0)
+
+
+def test_reconcile_contribution_set_scales_zero_capital_tolerance() -> None:
+    contribution = CapitalContribution(
+        contribution_id="contrib-1",
+        source_id="pos-1",
+        source_level="position",
+        bucket_key="bucket-A",
+        category="GIRR",
+        base_amount=0.0,
+        marginal_multiplier=None,
+        contribution=5e-7,
+        method=AttributionMethod.STANDALONE,
+    )
+
+    reconciliation = reconcile_contribution_set((contribution,), capital_total=0.0)
+
+    assert reconciliation.tolerance == pytest.approx(1e-6)
+    assert reconciliation.status == ReconciliationStatus.RECONCILED
+
+
+def test_reconcile_contribution_set_rejects_non_finite_values() -> None:
+    contribution = CapitalContribution(
+        contribution_id="contrib-1",
+        source_id="pos-1",
+        source_level="position",
+        bucket_key="bucket-A",
+        category="GIRR",
+        base_amount=100.0,
+        marginal_multiplier=None,
+        contribution=math.inf,
+        method=AttributionMethod.STANDALONE,
+    )
+
+    with pytest.raises(ValueError, match="contribution contrib-1 must be finite"):
+        reconcile_contribution_set((contribution,), capital_total=100.0)
+    with pytest.raises(ValueError, match="capital_total must be finite"):
+        reconcile_contribution_set((), capital_total=math.inf)
+    with pytest.raises(ValueError, match="relative_tolerance must be non-negative"):
+        reconcile_contribution_set((), capital_total=100.0, relative_tolerance=-1e-6)
