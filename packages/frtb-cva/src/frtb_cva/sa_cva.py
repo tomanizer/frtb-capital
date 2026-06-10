@@ -294,19 +294,13 @@ def sa_cva_aggregation_config(
     ) -> SaCvaAggregationConfig:
         return girr_delta_aggregation_config(profile=active_profile)
 
-    def _girr_vega_config_for(
-        active_profile: CvaRegulatoryProfile | str,
-    ) -> SaCvaAggregationConfig:
+    def _girr_vega_config_for(active_profile: CvaRegulatoryProfile | str) -> SaCvaAggregationConfig:
         return girr_vega_aggregation_config(profile=active_profile)
 
-    def _rcs_delta_config_for(
-        active_profile: CvaRegulatoryProfile | str,
-    ) -> SaCvaAggregationConfig:
+    def _rcs_delta_config_for(active_profile: CvaRegulatoryProfile | str) -> SaCvaAggregationConfig:
         return _rcs_config(SaCvaRiskMeasure.DELTA, profile=active_profile)
 
-    def _rcs_vega_config_for(
-        active_profile: CvaRegulatoryProfile | str,
-    ) -> SaCvaAggregationConfig:
+    def _rcs_vega_config_for(active_profile: CvaRegulatoryProfile | str) -> SaCvaAggregationConfig:
         return _rcs_config(SaCvaRiskMeasure.VEGA, profile=active_profile)
 
     def _equity_delta_config_for(
