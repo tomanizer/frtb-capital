@@ -11,8 +11,8 @@ Outputs are not final regulatory capital.
 | Category | Symbols | Rationale |
 | --- | --- | --- |
 | Identity | `PACKAGE_METADATA`, `__version__` | Workspace discovery and status reporting. |
-| Row capital (Tier 3) | `calculate_cva_capital`, `CvaCounterparty`, `CvaNettingSet`, `CvaHedge`, `SaCvaSensitivity`, `CvaCalculationContext`, `CvaCapitalResult`, `CvaMethod`, `CvaRegulatoryProfile` | Small books, tests, notebooks, and fixture workflows. |
-| Batch capital (Tier 1) | `CvaCounterpartyBatch`, `CvaNettingSetBatch`, `CvaHedgeBatch`, `SaCvaSensitivityBatch`, `calculate_cva_capital_from_batches`, `calculate_reduced_portfolio_from_batches`, `calculate_full_portfolio_from_batches`, `calculate_sa_cva_capital_from_batch`, `build_cva_counterparty_batch_from_arrow`, `build_cva_netting_set_batch_from_arrow`, `build_cva_hedge_batch_from_arrow`, `build_sa_cva_sensitivity_batch_from_arrow`, `build_*_batch_from_columns` | Production path from normalized Arrow tables to package-owned NumPy batches. |
+| Row capital (Tier 3) | `calculate_cva_capital`, `CvaCounterparty`, `CvaNettingSet`, `CvaHedge`, `SaCvaSensitivity`, `CvaCalculationContext`, `CvaCapitalResult`, `CvaMethod`, `CvaRegulatoryProfile` | Small books, tests, notebooks, and fixture workflows. The row path adapts inputs into canonical batches before calculation. |
+| Batch capital (Tier 1) | `CvaCounterpartyBatch`, `CvaNettingSetBatch`, `CvaHedgeBatch`, `SaCvaSensitivityBatch`, `calculate_cva_capital_from_batches`, `build_cva_counterparty_batch_from_arrow`, `build_cva_netting_set_batch_from_arrow`, `build_cva_hedge_batch_from_arrow`, `build_sa_cva_sensitivity_batch_from_arrow`, `build_*_batch_from_columns`, `build_*_batch_from_*dataclasses` | Production path from normalized Arrow tables to package-owned NumPy batches and the canonical capital engine. |
 | Handoff specs | `CVA_COUNTERPARTY_ARROW_COLUMN_SPECS`, `CVA_NETTING_SET_ARROW_COLUMN_SPECS`, `CVA_HEDGE_ARROW_COLUMN_SPECS`, `SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS` | Client schema alignment and generated schema export. |
 | Normalize | `normalize_cva_counterparty_arrow_table`, `normalize_cva_netting_set_arrow_table`, `normalize_cva_hedge_arrow_table`, `normalize_sa_cva_sensitivity_arrow_table` | Ingress from raw Arrow tables to `NormalizedArrowTable`. |
 | CRIF adapter (Tier 2) | `adapt_cva_records`, `CvaAdapterResult` | CRIF-shaped input compatibility where supported. |
@@ -26,9 +26,9 @@ The high-volume batch boundary is summarized in
 
 | Tier | Client input | CVA path | Notes |
 | --- | --- | --- | --- |
-| 1 - Arrow/Parquet table | One or more tables matching the selected method | `normalize_cva_*_arrow_table` -> `build_*_batch_from_arrow` -> `calculate_cva_capital_from_batches` or SA-CVA batch calculator | Recommended production path. |
-| 2 - CRIF/vendor rows | Iterable mapping rows | `adapt_cva_records` -> canonical or batch path | Adapter path with explicit diagnostics. |
-| 3 - Canonical dataclasses | Counterparty, netting-set, hedge, and sensitivity dataclasses plus context | `calculate_cva_capital` | Small books, tests, and notebooks. |
+| 1 - Arrow/Parquet table | One or more tables matching the selected method | `normalize_cva_*_arrow_table` -> `build_*_batch_from_arrow` -> `calculate_cva_capital_from_batches` | Recommended production path. |
+| 2 - CRIF/vendor rows | Iterable mapping rows | `adapt_cva_records` -> canonical row adapter or batch path | Adapter path with explicit diagnostics. |
+| 3 - Canonical dataclasses | Counterparty, netting-set, hedge, and sensitivity dataclasses plus context | `calculate_cva_capital` -> canonical batches -> `calculate_cva_capital_from_batches` | Small books, tests, and notebooks. |
 
 Clients must supply all tables required by the selected `CvaMethod`:
 
@@ -83,6 +83,7 @@ the shared unsupported-feature error type where applicable.
 Clients should not depend on:
 
 - private batch validation helpers;
+- low-level BA-CVA or SA-CVA batch kernels;
 - low-level qualified-index remapping internals;
 - reference-data implementation details not exported from the top-level package;
 - internal profile warning helpers.

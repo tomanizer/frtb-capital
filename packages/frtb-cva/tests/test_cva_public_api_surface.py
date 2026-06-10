@@ -21,6 +21,13 @@ HANDOFF_SURFACE = (
     "calculate_cva_capital_from_batches",
 )
 
+LOW_LEVEL_BATCH_INTERNALS = (
+    "_validate_netting_set_batch",
+    "calculate_reduced_portfolio_from_batches",
+    "calculate_full_portfolio_from_batches",
+    "calculate_sa_cva_capital_from_batch",
+)
+
 
 def test_documented_handoff_surface_is_top_level_importable() -> None:
     exported = set(frtb_cva.__all__)
@@ -29,6 +36,20 @@ def test_documented_handoff_surface_is_top_level_importable() -> None:
         assert name in exported
         assert hasattr(frtb_cva, name)
         assert f"`{name}`" in documented
+
+
+def test_low_level_batch_internals_are_not_public_api() -> None:
+    import frtb_cva.batch
+
+    exported = set(frtb_cva.__all__)
+    batch_exported = set(frtb_cva.batch.__all__)
+    documented = _public_api_doc()
+    for name in LOW_LEVEL_BATCH_INTERNALS:
+        assert name not in exported
+        assert not hasattr(frtb_cva, name)
+        assert name not in batch_exported
+        assert not hasattr(frtb_cva.batch, name)
+        assert f"`{name}`" not in documented
 
 
 def test_minimal_handoff_fixtures_round_trip_to_batches() -> None:

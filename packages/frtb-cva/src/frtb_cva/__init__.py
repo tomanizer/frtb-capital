@@ -43,9 +43,6 @@ from frtb_cva.batch import (
     build_sa_cva_sensitivity_batch_from_columns,
     build_sa_cva_sensitivity_batch_from_sensitivities,
     calculate_cva_capital_from_batches,
-    calculate_full_portfolio_from_batches,
-    calculate_reduced_portfolio_from_batches,
-    calculate_sa_cva_capital_from_batch,
     input_hash_for_cva_batches,
 )
 from frtb_cva.capital import calculate_cva_capital
@@ -208,11 +205,8 @@ __all__ = [
     "calculate_cva_capital",
     "calculate_cva_capital_from_batches",
     "calculate_full_portfolio",
-    "calculate_full_portfolio_from_batches",
     "calculate_netting_set_standalone",
     "calculate_reduced_portfolio",
-    "calculate_reduced_portfolio_from_batches",
-    "calculate_sa_cva_capital_from_batch",
     "compute_non_imm_discount_factor",
     "cva_capital_supported_methods",
     "cva_profile_support_matrix",

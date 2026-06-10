@@ -16,7 +16,7 @@ Related references:
 
 ---
 
-## What counts as one “CVA run”
+## What counts as one "CVA run"
 
 A **CVA run** is a single method-selected calculation keyed by
 `CvaCalculationContext`, producing a frozen **`CvaCapitalResult`**.
@@ -41,16 +41,16 @@ those steps after capital is computed.
 
 | Tier | Typical client input | Entry path | Best for |
 | --- | --- | --- | --- |
-| **1 — Arrow / Parquet** | PyArrow tables aligned to column specs | `normalize_*` → `build_*_batch_from_arrow` → `calculate_cva_capital_from_batches` | Production volume, datacontract-driven pipelines |
-| **2 — CRIF / vendor rows** | Iterable mapping records | `adapt_cva_records` → row or batch path | Legacy CRIF-shaped feeds |
-| **3 — Canonical rows** | `CvaCounterparty`, `CvaNettingSet`, … dataclasses | `calculate_cva_capital` | Tests, small books, notebooks |
+| **1 - Arrow / Parquet** | PyArrow tables aligned to column specs | `normalize_*` -> `build_*_batch_from_arrow` -> `calculate_cva_capital_from_batches` | Production volume, datacontract-driven pipelines |
+| **2 - CRIF / vendor rows** | Iterable mapping records | `adapt_cva_records` -> canonical row adapter or batch path | Legacy CRIF-shaped feeds |
+| **3 - Canonical rows** | `CvaCounterparty`, `CvaNettingSet`, ... dataclasses | `calculate_cva_capital` -> canonical batches -> `calculate_cva_capital_from_batches` | Tests, small books, notebooks |
 
-Tier 1 is the recommended production journey below. Tiers 2 and 3 share the same
-capital semantics once inputs are validated.
+Tier 1 is the recommended production journey below. Tiers 2 and 3 adapt into the
+same canonical batch engine once inputs are validated.
 
 ---
 
-## Method selects the engines (not “BA then SA always”)
+## Method selects the engines (not "BA then SA always")
 
 `context.method` (after scope validation) decides which kernels run in one call.
 You do **not** always execute BA-CVA and then SA-CVA.
@@ -70,11 +70,11 @@ capital-producing under audit with profile-owned citations and hashes.
 
 ---
 
-## End-to-end journey (Tier 1 — Arrow)
+## End-to-end journey (Tier 1 - Arrow)
 
 ```mermaid
 flowchart TB
-  subgraph ingest["1 — Client ingress"]
+  subgraph ingest["1 - Client ingress"]
     DC["Datacontract / risk engine\nPyArrow tables"]
     T_CP["counterparty table"]
     T_NS["netting-set table"]
@@ -82,7 +82,7 @@ flowchart TB
     T_SA["SA-CVA sensitivity table optional"]
   end
 
-  subgraph normalize["2 — Schema alignment at frtb-common boundary"]
+  subgraph normalize["2 - Schema alignment at frtb-common boundary"]
     N_CP["normalize_cva_counterparty_arrow_table"]
     N_NS["normalize_cva_netting_set_arrow_table"]
     N_HG["normalize_cva_hedge_arrow_table"]
@@ -90,7 +90,7 @@ flowchart TB
     NAT["NormalizedArrowTable\n+ handoff hash"]
   end
 
-  subgraph batch["3 — Package-owned NumPy batches"]
+  subgraph batch["3 - Package-owned NumPy batches"]
     B_CP["build_cva_counterparty_batch_from_arrow"]
     B_NS["build_cva_netting_set_batch_from_arrow"]
     B_HG["build_cva_hedge_batch_from_arrow"]
@@ -98,27 +98,27 @@ flowchart TB
     BATCH["Cva*Batch column arrays"]
   end
 
-  subgraph run["4 — Run context and scope"]
+  subgraph run["4 - Run context and scope"]
     CTX["CvaCalculationContext"]
     SCOPE["validate_method_selection\npartition_mixed_method_inputs"]
   end
 
-  subgraph calc["5 — Capital calculation"]
+  subgraph calc["5 - Canonical capital calculation"]
     ENTRY["calculate_cva_capital_from_batches"]
     BA["BA-CVA kernels\nreduced / full from batches"]
     SA["SA-CVA kernel\nfrom sensitivity batch"]
     RES["CvaCapitalResult"]
   end
 
-  subgraph post["6 — Post-capital in frtb-cva"]
+  subgraph post["6 - Post-capital in frtb-cva"]
     RECON["validate_cva_result_reconciliation"]
     SER["serialize_cva_result"]
     ATTR["attribute_cva_capital\nproject_cva_attribution"]
   end
 
-  subgraph external["7 — Outside frtb-cva optional"]
+  subgraph external["7 - Outside frtb-cva optional"]
     ORCH["recognise_cva_summary"]
-    STORE["ResultBundle → frtb-result-store"]
+    STORE["ResultBundle -> frtb-result-store"]
   end
 
   DC --> T_CP & T_NS & T_HG & T_SA
@@ -135,28 +135,28 @@ flowchart TB
   RES --> ORCH --> STORE
 ```
 
-### Step 1 — Client ingress
+### Step 1 - Client ingress
 
 The risk engine (or datacontract export) supplies **one or more Arrow tables**.
 Column names may differ from the package spec when aliases are declared in
-`CVA_*_ARROW_COLUMN_SPECS` (for example `counterpartyId` → `counterparty_id`).
+`CVA_*_ARROW_COLUMN_SPECS` (for example `counterpartyId` -> `counterparty_id`).
 
-Required tables depend on method — see
-[PUBLIC_API.md — Client integration](../../../docs/modules/frtb-cva/PUBLIC_API.md#client-integration).
+Required tables depend on method - see
+[PUBLIC_API.md - Client integration](../../../docs/modules/frtb-cva/PUBLIC_API.md#client-integration).
 
-### Step 2 — Normalize
+### Step 2 - Normalize
 
 Each table passes through a `normalize_cva_*_arrow_table` helper. This uses
 `frtb_common.normalize_arrow_table` with package `ColumnSpec` definitions:
 
-- coerce logical types (string, numeric, date, …)
+- coerce logical types (string, numeric, date, ...)
 - enforce null policies
 - collect adapter diagnostics
 
 Output is a **`NormalizedArrowTable`**, still on the Arrow handoff boundary (ADR
 0023). Kernels do not import PyArrow.
 
-### Step 3 — Build batches
+### Step 3 - Build batches
 
 `build_*_batch_from_arrow` reads normalized columns into **immutable NumPy batch
 objects** (`CvaCounterpartyBatch`, `CvaNettingSetBatch`, `CvaHedgeBatch`,
@@ -164,9 +164,9 @@ objects** (`CvaCounterpartyBatch`, `CvaNettingSetBatch`, `CvaHedgeBatch`,
 
 The production path **does not** materialize per-row `CvaCounterparty` /
 `CvaNettingSet` dataclasses during calculation. Audit outputs remain structured
-dataclasses (`CvaCapitalResult`, stand-alone lines, hedge recognition lines, …).
+dataclasses (`CvaCapitalResult`, stand-alone lines, hedge recognition lines, ...).
 
-### Step 4 — Run context and scope
+### Step 4 - Run context and scope
 
 `CvaCalculationContext` carries run identity and controls, for example:
 
@@ -178,19 +178,20 @@ dataclasses (`CvaCapitalResult`, stand-alone lines, hedge recognition lines, …
 Scope helpers fail closed when method and supplied tables disagree (for example
 SA-CVA must not receive counterparty or netting-set batches).
 
-### Step 5 — Calculate capital
+### Step 5 - Calculate capital
 
-**Single entry (batch):** `calculate_cva_capital_from_batches`
+`calculate_cva_capital_from_batches` is the canonical orchestration engine for
+non-live CVA capital. The dataclass entrypoint `calculate_cva_capital` materializes
+row inputs, builds the same batch contracts, delegates to that engine, and
+returns the `CvaCapitalResult`.
 
-**Single entry (row):** `calculate_cva_capital`
+The canonical engine:
 
-Both paths:
-
-1. validate context, inputs, and profile
+1. validates context, inputs, and profile
 2. run only the BA and/or SA branches required by method
-3. assemble `CvaCapitalResult` (totals, component breakdowns, citations, warnings,
-   `input_hash`, `profile_hash`)
-4. call `validate_cva_result_reconciliation` before returning
+3. assembles `CvaCapitalResult` (totals, component breakdowns, citations,
+   warnings, `input_hash`, `profile_hash`)
+4. calls `validate_cva_result_reconciliation` before returning
 
 For `MIXED_CARVE_OUT`, SA-CVA runs on an evidenced sensitivity batch for the
 non-carved slice; reduced BA-CVA runs on the partitioned carve-out
@@ -198,13 +199,13 @@ counterparty/netting-set subset; totals sum both components
 (`method_components` records each part). Mixed runs fail closed when SA-CVA
 sensitivities are supplied without `sa_cva_sensitivity_scope_evidence_id`.
 
-### Step 6 — Post-capital (same package)
+### Step 6 - Post-capital (same package)
 
 | Step | Symbol | Role |
 | --- | --- | --- |
 | Reconciliation | `validate_cva_result_reconciliation` | Internal consistency checks on the result object |
 | Replay / evidence | `serialize_cva_result`, `input_hash` | Deterministic serialization and input fingerprinting |
-| Attribution | `attribute_cva_capital` → `project_cva_attribution` | Standalone explain rows plus unsupported/residual shared projection |
+| Attribution | `attribute_cva_capital` -> `project_cva_attribution` | Standalone explain rows plus unsupported/residual shared projection |
 | Impact | `assess_cva_capital_impact` | Scenario-style impact where supported |
 
 **Attribution is not a backward pass through the calculator.** Capital is fixed
@@ -215,7 +216,7 @@ hedged full BA, SA risk-class sqrt) and beta floor behavior are listed in
 emits `UNSUPPORTED` markers and a `RESIDUAL` row so the projected records still
 reconcile to total CVA capital. See ADR 0012.
 
-### Step 7 — Suite and storage (callers)
+### Step 7 - Suite and storage (callers)
 
 ```mermaid
 sequenceDiagram
@@ -248,25 +249,26 @@ into `ResultBundle` rows and artifacts.
 
 ```mermaid
 flowchart LR
-  A["Build CvaCounterparty,\nCvaNettingSet, … dataclasses"]
+  A["Build CvaCounterparty,\nCvaNettingSet, ... dataclasses"]
   B["CvaCalculationContext"]
   C["calculate_cva_capital"]
+  X["canonical Cva*Batch adapters"]
   D["CvaCapitalResult"]
   E["attribute_cva_capital"]
 
   A --> C
   B --> C
-  C --> D --> E
+  C --> X --> D --> E
 ```
 
-Same semantics as the batch path; useful for unit tests and teaching examples in
-`packages/frtb-cva/tests/`.
+Same engine semantics as the batch path; useful for unit tests and teaching
+examples in `packages/frtb-cva/tests/`.
 
 ---
 
 ## Minimal code sketch (batch path)
 
-Illustrative only — see tests and `PUBLIC_API.md` for complete fixtures.
+Illustrative only - see tests and `PUBLIC_API.md` for complete fixtures.
 
 ```python
 from datetime import date
@@ -302,7 +304,7 @@ calc = calculate_cva_capital_from_batches(
 result = calc.result
 
 attribution = attribute_cva_capital(result)
-# project_cva_attribution(attribution, result) → suite CapitalContribution rows
+# project_cva_attribution(attribution, result) -> suite CapitalContribution rows
 ```
 
 ---
@@ -311,14 +313,14 @@ attribution = attribute_cva_capital(result)
 
 Use this outline when authoring `examples/` or package notebooks:
 
-1. **Run identity** — `run_id`, date, profile, method, carve-out ids.
-2. **Load tables** — synthetic Parquet or datacontract-aligned Arrow.
-3. **Normalize and batch** — show diagnostics and handoff hashes.
-4. **Calculate** — inspect `method_components`, BA lines, SA risk-class totals.
-5. **Reconcile** — `validate_cva_result_reconciliation`.
-6. **Attribute** — contributions, `unsupported_branches`, residual.
-7. **Suite hook (optional)** — `recognise_cva_summary` + `calculate_suite_capital`.
-8. **Persist (optional)** — sketch `ResultBundle` mapping; link to result-store tests.
+1. **Run identity** - `run_id`, date, profile, method, carve-out ids.
+2. **Load tables** - synthetic Parquet or datacontract-aligned Arrow.
+3. **Normalize and batch** - show diagnostics and handoff hashes.
+4. **Calculate** - inspect `method_components`, BA lines, SA risk-class totals.
+5. **Reconcile** - `validate_cva_result_reconciliation`.
+6. **Attribute** - contributions, `unsupported_branches`, residual.
+7. **Suite hook (optional)** - `recognise_cva_summary` + `calculate_suite_capital`.
+8. **Persist (optional)** - sketch `ResultBundle` mapping; link to result-store tests.
 
 Keep **persistence** and **full desk orchestration** in separate chapters so
 package boundaries stay clear.
