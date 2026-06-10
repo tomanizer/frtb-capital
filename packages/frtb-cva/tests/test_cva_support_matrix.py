@@ -77,10 +77,7 @@ def test_non_basel_matrix_cells_record_fixture_evidence_blocker(
         cell
         for cell in cva_profile_support_matrix()
         if cell.profile is profile
-        and (
-            cell.method in {method.value for method in CvaMethod}
-            or cell.risk_class is not None
-        )
+        and (cell.method in {method.value for method in CvaMethod} or cell.risk_class is not None)
     ]
     assert cells
     assert {cell.status for cell in cells} == {CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED}
