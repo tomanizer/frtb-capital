@@ -65,6 +65,21 @@ def mart_rows_for_bundle(
     *,
     lifecycle_status: RunStatus,
 ) -> dict[str, list[dict[str, object]]]:
+    """Project one result bundle into every persisted reporting mart.
+
+    Parameters
+    ----------
+    bundle:
+        Validated run result bundle to serialize.
+    lifecycle_status:
+        Current append-only lifecycle state to stamp into summary-level marts.
+
+    Returns
+    -------
+    dict[str, list[dict[str, object]]]
+        Mapping from mart name to storage-ready row dictionaries.
+    """
+
     return {
         "capital_summary": [_capital_summary_row(bundle, lifecycle_status=lifecycle_status)],
         "capital_tree": _capital_tree_rows(bundle),
@@ -83,18 +98,26 @@ def mart_rows_for_bundle(
 
 
 def capital_summary_from_row(row: Sequence[object]) -> CapitalSummaryRow:
+    """Deserialize one persisted capital-summary mart row."""
+
     return _capital_summary_from_row(row)
 
 
 def capital_tree_mart_from_row(row: Sequence[object]) -> CapitalTreeMartRow:
+    """Deserialize one persisted capital-tree mart row."""
+
     return _capital_tree_mart_from_row(row)
 
 
 def component_breakdown_from_row(row: Sequence[object]) -> ComponentBreakdownRow:
+    """Deserialize one persisted component-breakdown mart row."""
+
     return _component_breakdown_from_row(row)
 
 
 def movement_summary_from_row(row: Sequence[object]) -> MovementSummaryRow:
+    """Deserialize one persisted movement-summary mart row."""
+
     return _movement_summary_from_row(row)
 
 

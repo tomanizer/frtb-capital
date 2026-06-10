@@ -58,13 +58,14 @@ def capital_summary_row(
 
     total_measure = _measure_for_node(bundle.measures, node_id="total")
     currency = total_measure.currency if total_measure is not None else bundle.run.base_currency
+    suggested_status = _suggested_status(bundle.events)
     row = CapitalSummaryRow(
         run_id=bundle.run.run_id,
         as_of_date=bundle.run.as_of_date,
         regime_id=bundle.run.regime_id,
         base_currency=bundle.run.base_currency,
         lifecycle_status=lifecycle_status,
-        suggested_status=_suggested_status(bundle.events),
+        suggested_status=suggested_status,
         total_capital=0.0 if total_measure is None else total_measure.amount,
         currency=currency,
         node_count=len(bundle.nodes),
@@ -77,9 +78,7 @@ def capital_summary_row(
         "regime_id": row.regime_id,
         "base_currency": row.base_currency,
         "lifecycle_status": _stored_value(row.lifecycle_status),
-        "suggested_status": None
-        if row.suggested_status is None
-        else _stored_value(row.suggested_status),
+        "suggested_status": _stored_value(suggested_status),
         "total_capital": row.total_capital,
         "currency": row.currency,
         "node_count": row.node_count,
@@ -110,6 +109,8 @@ def regime_comparison_row(
 
     total_measure = _measure_for_node(bundle.measures, node_id="total")
     currency = total_measure.currency if total_measure is not None else bundle.run.base_currency
+    # ``regime_comparison`` has no public row dataclass; keep this schema-shaped
+    # dict local to the persisted mart projection and let Arrow enforce columns.
     return {
         "run_group_id": bundle.run.run_group_id or f"run:{bundle.run.run_id}",
         "run_id": bundle.run.run_id,
