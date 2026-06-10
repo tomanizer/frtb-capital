@@ -13,6 +13,7 @@ import re
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
 from numbers import Real
+from typing import Any
 
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
 
@@ -399,7 +400,7 @@ def _capital_total(capital: Mapping[str, object]) -> float:
     raise ValueError(f"DeskAuditRecord.capital must include one of: {allowed}")
 
 
-def _optional_number(values: Mapping[object, object] | None, key: str) -> float | None:
+def _optional_number(values: Mapping[Any, object] | None, key: str) -> float | None:
     if values is None or key not in values:
         return None
     value = values[key]
