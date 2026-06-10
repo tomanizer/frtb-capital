@@ -89,8 +89,6 @@ from frtb_drc.data_models import (
     DrcSourceLineage,
     GrossJtd,
     HedgeBenefitRatio,
-    LgdRule,
-    MaturityPolicy,
     MaturityScaledJtd,
     NetJtd,
     RejectedOffset,
