@@ -92,7 +92,9 @@ def test_mixed_fixture_covers_carve_out_component_assembly() -> None:
 
     components = {item.method.value: item.total_capital for item in result.method_components}
     assert components == pytest.approx(expected["method_components"])
-    assert dict(result.audit_metadata) >= expected["audit_metadata"]
+    audit_metadata = dict(result.audit_metadata)
+    for key, expected_value in expected["audit_metadata"].items():
+        assert audit_metadata[key] == expected_value
     _assert_sa_capitals(result.sa_cva_risk_class_capitals, expected)
 
 
@@ -107,7 +109,10 @@ def test_sa_multi_risk_fixture_covers_expected_outputs_and_index_routing() -> No
     assert result.total_cva_capital == pytest.approx(expected["total_cva_capital"])
     _assert_sa_capitals(result.sa_cva_risk_class_capitals, expected)
 
-    ccs = _risk_class_capital(result.sa_cva_risk_class_capitals, "COUNTERPARTY_CREDIT_SPREAD/DELTA")
+    ccs = _risk_class_capital(
+        result.sa_cva_risk_class_capitals,
+        "COUNTERPARTY_CREDIT_SPREAD/DELTA",
+    )
     assert tuple(bucket.bucket_id for bucket in ccs.bucket_capitals) == ("3",)
 
 
@@ -215,7 +220,9 @@ def _hedge(payload: dict[str, Any]) -> CvaHedge:
         hedge_id=str(payload["hedge_id"]),
         source_row_id=str(payload["source_row_id"]),
         counterparty_id=str(payload["counterparty_id"]),
-        hedge_type=BaCvaHedgeType(str(hedge_type)) if hedge_type is not None else None,
+        hedge_type=(
+            BaCvaHedgeType(str(hedge_type)) if hedge_type is not None else None
+        ),
         notional=float(payload["notional"]),
         remaining_maturity=float(payload["remaining_maturity"]),
         discount_factor=float(payload["discount_factor"]),
@@ -252,16 +259,20 @@ def _sensitivity(payload: dict[str, Any]) -> SaCvaSensitivity:
         tenor=payload.get("tenor"),
         volatility_input=payload.get("volatility_input"),
         hedge_id=payload.get("hedge_id"),
-        index_treatment=SaCvaIndexTreatment(str(index_treatment))
-        if index_treatment is not None
-        else None,
+        index_treatment=(
+            SaCvaIndexTreatment(str(index_treatment))
+            if index_treatment is not None
+            else None
+        ),
         index_max_sector_weight=payload.get("index_max_sector_weight"),
         index_homogeneous_sector_quality=bool(
             payload.get("index_homogeneous_sector_quality", False)
         ),
-        index_dominant_sector=CvaSector(str(index_dominant_sector))
-        if index_dominant_sector is not None
-        else None,
+        index_dominant_sector=(
+            CvaSector(str(index_dominant_sector))
+            if index_dominant_sector is not None
+            else None
+        ),
         index_remap_bucket_id=payload.get("index_remap_bucket_id"),
         lineage=_lineage(payload),
     )
