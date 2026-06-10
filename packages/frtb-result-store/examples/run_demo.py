@@ -96,6 +96,26 @@ def build_suite_result_bundle() -> ResultBundle:
     artifacts = (
         ArtifactRef(
             run_id=run.run_id,
+            artifact_id="ima-pnl-vector",
+            component=FrtbComponent.IMA,
+            artifact_type=ArtifactType.IMA_PNL_VECTOR,
+            uri="s3://example-frtb-results/ima-pnl-vector.parquet",
+            format="parquet",
+            row_count=250,
+            metadata={"source": "demo synthetic IMA P&L vector"},
+        ),
+        ArtifactRef(
+            run_id=run.run_id,
+            artifact_id="cva-exposure-table",
+            component=FrtbComponent.CVA,
+            artifact_type=ArtifactType.CVA_EXPOSURE_TABLE,
+            uri="s3://example-frtb-results/cva-exposure-table.parquet",
+            format="parquet",
+            row_count=25,
+            metadata={"source": "demo synthetic CVA exposure table"},
+        ),
+        ArtifactRef(
+            run_id=run.run_id,
             artifact_id="suite-attribution-vector",
             component=FrtbComponent.TOP_OF_HOUSE,
             artifact_type=ArtifactType.ATTRIBUTION_VECTOR,
