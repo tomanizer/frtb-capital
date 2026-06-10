@@ -722,7 +722,8 @@ def _summary_status(records: tuple[CapitalContribution, ...]) -> ReconciliationS
     statuses = {ReconciliationStatus(record.reconciliation_status) for record in records}
     if ReconciliationStatus.UNRECONCILED in statuses:
         return ReconciliationStatus.UNRECONCILED
-    if any(record.method in {AttributionMethod.RESIDUAL, AttributionMethod.UNSUPPORTED} for record in records):
+    residual_methods = {AttributionMethod.RESIDUAL, AttributionMethod.UNSUPPORTED}
+    if any(record.method in residual_methods for record in records):
         return ReconciliationStatus.PARTIAL_RESIDUAL
     if any(abs(record.residual) > 0.0 for record in records):
         return ReconciliationStatus.PARTIAL_RESIDUAL
