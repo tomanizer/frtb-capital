@@ -21,7 +21,7 @@ from frtb_ima.arrow_batch import (
     normalize_ima_rfet_observation_arrow_table,
     normalize_ima_scenario_metadata_arrow_table,
 )
-from frtb_ima.attribution import desk_contributions
+from frtb_ima.attribution import build_ima_contribution_bundle, desk_contributions
 from frtb_ima.audit import (
     CapitalRunAuditLog,
     DeskAuditRecord,
@@ -337,6 +337,7 @@ __all__ = [
     "assess_rfet_observation_batch",
     "audit_records_to_ndjson",
     "build_capital_run_input_manifest_from_arrow",
+    "build_ima_contribution_bundle",
     "build_nmrf_valuation_run_request",
     "build_nmrf_valuation_spec",
     "build_nmrf_valuation_specs",

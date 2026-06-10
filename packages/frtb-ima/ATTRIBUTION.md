@@ -7,10 +7,10 @@ capital charge.
 
 ## Current Support
 
-Public helper:
+Public helpers:
 
 ```python
-from frtb_ima import desk_contributions
+from frtb_ima import build_ima_contribution_bundle, desk_contributions
 ```
 
 `desk_contributions(record)` returns `frtb_common.CapitalContribution` records
@@ -28,6 +28,14 @@ for the deepest defensible desk grain available in `DeskAuditRecord`:
   SES risk-factor amounts and liquidity-horizon ES components;
 - `IMA_RC_RESIDUAL`, when a floor, max branch, binding-term effect, or
   unexplained reconciliation difference exists.
+
+`build_ima_contribution_bundle(records, total_ima_capital=...)` wraps one or
+more completed desk records in a shared
+`frtb_common.contribution_bundle.ComponentContributionBundle` with
+`component="frtb_ima"`. The helper validates that all desk records belong to one
+run, input hash, and policy hash. When `total_ima_capital` is supplied from an
+IMA summary, the emitted additive contribution plus residual total must
+reconcile to that summary total before the bundle is returned.
 
 ## Method
 
@@ -59,7 +67,7 @@ the helper emits one residual record:
 
 ## Inputs Used
 
-The helper consumes:
+The helpers consume:
 
 - `DeskAuditRecord.run_id`
 - `DeskAuditRecord.desk_id`
@@ -71,7 +79,8 @@ The helper consumes:
 - `DeskAuditRecord.policy_hash`
 
 `inputs_hash` and `policy_hash` are propagated to the shared attribution
-records as `input_hash` and `profile_hash`.
+records as `input_hash` and `profile_hash`; bundle-level hashes are taken from
+the same run-level values.
 
 ## Allocation Grain
 
@@ -109,6 +118,7 @@ the reconciliation total:
 Tests:
 
 - `packages/frtb-ima/tests/test_attribution.py`
+- `packages/frtb-orchestration/tests/test_ima_contribution_bundle.py`
 
 Design references:
 
