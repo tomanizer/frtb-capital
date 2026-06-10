@@ -7,8 +7,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from frtb_common import UnsupportedRegulatoryFeatureError
-
 from frtb_cva._unsupported import (
     EXPOSURE_SENSITIVITY_GENERATION_POLICY,
     MAR50_9_MATERIALITY_POLICY,
@@ -55,24 +53,27 @@ class CvaSupportCell:
     risk_measure: SaCvaRiskMeasure | None = None
 
 
-_CAPITAL_PRODUCING_PROFILE = CvaRegulatoryProfile.BASEL_MAR50_2020
-_COMPARISON_FAIL_CLOSED_PROFILES = frozenset(
+_BASEL_PROFILE = CvaRegulatoryProfile.BASEL_MAR50_2020
+_COMPARISON_PROFILES = frozenset(
     {
         CvaRegulatoryProfile.US_NPR20_VB,
         CvaRegulatoryProfile.EU_CRR3_CVA,
         CvaRegulatoryProfile.UK_PRA_CVA,
     }
 )
-_SUPPORTED_PROFILES = frozenset({_CAPITAL_PRODUCING_PROFILE}) | _COMPARISON_FAIL_CLOSED_PROFILES
-_BASEL_SUPPORTED_METHODS = frozenset(CvaMethod)
-_BASEL_SUPPORTED_SA_PATHS = frozenset(
+_SUPPORTED_PROFILES = frozenset({_BASEL_PROFILE}) | _COMPARISON_PROFILES
+_SUPPORTED_METHODS = frozenset(CvaMethod)
+_SUPPORTED_SA_PATHS = frozenset(
     key for key, spec in SA_CVA_PATH_REGISTRY.items() if spec.unsupported_message is None
 )
 _CCS_VEGA_PATH = (
     SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
     SaCvaRiskMeasure.VEGA,
 )
-_PROFILE_FIXTURE_BLOCKER = "profile_fixture_evidence"
+_SUPPORT_MATRIX_TESTS = (
+    "packages/frtb-cva/tests/test_cva_support_matrix.py",
+    "packages/frtb-cva/tests/test_cva_profile_evidence_fixture.py",
+)
 
 
 def cva_profile_support_status(
@@ -90,10 +91,8 @@ def cva_profile_support_status(
     CvaProfileSupportStatus
         Result of ``cva_profile_support_status`` for audit and downstream aggregation."""
 
-    resolved = _resolve_profile_id(profile)
-    if resolved is _CAPITAL_PRODUCING_PROFILE:
-        return CvaProfileSupportStatus.CAPITAL_PRODUCING
-    return CvaProfileSupportStatus.COMPARISON_FAIL_CLOSED
+    _resolve_profile_id(profile)
+    return CvaProfileSupportStatus.CAPITAL_PRODUCING
 
 
 def cva_capital_supported_methods(profile: CvaRegulatoryProfile | str) -> frozenset[CvaMethod]:
@@ -109,10 +108,8 @@ def cva_capital_supported_methods(profile: CvaRegulatoryProfile | str) -> frozen
     frozenset[CvaMethod]
         Result of ``cva_capital_supported_methods`` for audit and downstream aggregation."""
 
-    resolved = _resolve_profile_id(profile)
-    if resolved is _CAPITAL_PRODUCING_PROFILE:
-        return _BASEL_SUPPORTED_METHODS
-    return frozenset()
+    _resolve_profile_id(profile)
+    return _SUPPORTED_METHODS
 
 
 def cva_sa_cva_supported_paths(
@@ -130,10 +127,8 @@ def cva_sa_cva_supported_paths(
     frozenset[tuple[SaCvaRiskClass, SaCvaRiskMeasure]]
         Result of ``cva_sa_cva_supported_paths`` for audit and downstream aggregation."""
 
-    resolved = _resolve_profile_id(profile)
-    if resolved is _CAPITAL_PRODUCING_PROFILE:
-        return _BASEL_SUPPORTED_SA_PATHS
-    return frozenset()
+    _resolve_profile_id(profile)
+    return _SUPPORTED_SA_PATHS
 
 
 def ensure_cva_profile_method_supported(
@@ -154,9 +149,9 @@ def ensure_cva_profile_method_supported(
     resolved_method = _resolve_method_id(method)
     if resolved_method in cva_capital_supported_methods(resolved):
         return
-    raise UnsupportedRegulatoryFeatureError(
-        f"CVA method {resolved_method.value} is unsupported for profile {resolved.value}; "
-        "profile-specific reference-data fixtures are not yet evidenced."
+    raise CvaInputError(
+        f"unsupported CVA method {resolved_method.value} for profile {resolved.value}",
+        field="method",
     )
 
 
@@ -184,13 +179,6 @@ def ensure_cva_sa_cva_path_supported(
     path = (resolved_risk_class, resolved_risk_measure)
     if path in cva_sa_cva_supported_paths(resolved):
         return
-    if resolved is not _CAPITAL_PRODUCING_PROFILE:
-        raise UnsupportedRegulatoryFeatureError(
-            "CVA SA-CVA path "
-            f"{resolved_risk_class.value}/{resolved_risk_measure.value} is unsupported "
-            f"for profile {resolved.value}; profile-specific reference-data fixtures "
-            "are not yet evidenced."
-        )
     if path == _CCS_VEGA_PATH:
         raise CvaInputError(
             "CCS vega capital is not permitted for the selected CVA profile",
@@ -212,14 +200,20 @@ def cva_profile_support_matrix() -> tuple[CvaSupportCell, ...]:
 
     rows: list[CvaSupportCell] = []
     for profile in sorted(_SUPPORTED_PROFILES, key=lambda item: item.value):
-        if profile is _CAPITAL_PRODUCING_PROFILE:
-            status = CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT
-            blocker = "none"
-        else:
-            status = CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED
-            blocker = _PROFILE_FIXTURE_BLOCKER
-        rows.extend(_method_rows(profile, status=status, blocker=blocker))
-        rows.extend(_sa_path_rows(profile, status=status, blocker=blocker))
+        rows.extend(
+            _method_rows(
+                profile,
+                status=CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT,
+                blocker="none",
+            )
+        )
+        rows.extend(
+            _sa_path_rows(
+                profile,
+                status=CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT,
+                blocker="none",
+            )
+        )
         rows.append(_ccs_vega_row(profile))
         rows.append(_materiality_row(profile))
         rows.extend(_out_of_scope_rows(profile))
@@ -240,9 +234,9 @@ def _method_rows(
             status=status,
             citation=citations[method],
             blocker=blocker,
-            tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
+            tests=_SUPPORT_MATRIX_TESTS,
         )
-        for method in sorted(_BASEL_SUPPORTED_METHODS, key=lambda item: item.value)
+        for method in sorted(_SUPPORTED_METHODS, key=lambda item: item.value)
     )
 
 
@@ -286,9 +280,9 @@ def _sa_path_rows(
             status=status,
             citation=_sa_path_citation(profile),
             blocker=blocker,
-            tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
+            tests=_SUPPORT_MATRIX_TESTS,
         )
-        for risk_class, risk_measure in sorted(_BASEL_SUPPORTED_SA_PATHS, key=_path_sort_key)
+        for risk_class, risk_measure in sorted(_SUPPORTED_SA_PATHS, key=_path_sort_key)
     )
 
 
@@ -303,21 +297,15 @@ def _sa_path_citation(profile: CvaRegulatoryProfile) -> str:
 
 
 def _ccs_vega_row(profile: CvaRegulatoryProfile) -> CvaSupportCell:
-    if profile is _CAPITAL_PRODUCING_PROFILE:
-        status = CvaSupportStatus.REGULATORY_ABSENCE
-        blocker = "regulatory_absence"
-    else:
-        status = CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED
-        blocker = _PROFILE_FIXTURE_BLOCKER
     return CvaSupportCell(
         profile=profile,
         method=CvaMethod.SA_CVA.value,
         risk_class=_CCS_VEGA_PATH[0],
         risk_measure=_CCS_VEGA_PATH[1],
-        status=status,
+        status=CvaSupportStatus.REGULATORY_ABSENCE,
         citation=_ccs_vega_citation(profile),
-        blocker=blocker,
-        tests=("packages/frtb-cva/tests/test_cva_support_matrix.py",),
+        blocker="regulatory_absence",
+        tests=_SUPPORT_MATRIX_TESTS,
     )
 
 
@@ -395,12 +383,15 @@ def _exposure_generation_citation(profile: CvaRegulatoryProfile) -> str:
 
 def _resolve_profile_id(profile: CvaRegulatoryProfile | str) -> CvaRegulatoryProfile:
     try:
-        return CvaRegulatoryProfile(profile)
+        resolved = CvaRegulatoryProfile(profile)
     except ValueError as exc:
         raise CvaInputError(
             f"unknown CVA regulatory profile: {profile!r}",
             field="profile",
         ) from exc
+    if resolved not in _SUPPORTED_PROFILES:
+        raise CvaInputError(f"unsupported CVA regulatory profile: {profile!r}", field="profile")
+    return resolved
 
 
 def _resolve_method_id(method: CvaMethod | str) -> CvaMethod:
