@@ -31,30 +31,35 @@ reference overlays.
 
 ## Dependency graph
 
-```
-                         ┌────────────────────────┐
-                         │   frtb-result-store    │
-                         │ DuckDB/Parquet serving │
-                         └───────────┬────────────┘
-                                     │
-                         ┌────────────────────────┐
-                         │   frtb-orchestration   │
-                         │ aggregation + fallback │
-                         └───────────┬────────────┘
-                                     │
-       ┌─────────────┬───────────────┼───────────────┬─────────────┐
-       ▼             ▼               ▼               ▼             ▼
-   ┌────────┐   ┌──────────┐    ┌──────────┐    ┌──────────┐  ┌────────┐
-   │ frtb-  │   │ frtb-    │    │ frtb-    │    │ frtb-    │  │ frtb-  │
-   │  ima   │   │  sbm     │    │  drc     │    │  rrao    │  │  cva   │
-   └───┬────┘   └────┬─────┘    └────┬─────┘    └────┬─────┘  └───┬────┘
-       │             │               │               │            │
-       └─────────────┴───────────────┼───────────────┴────────────┘
-                                     ▼
-                              ┌───────────┐
-                              │ frtb-     │
-                              │  common   │
-                              └───────────┘
+```mermaid
+flowchart TB
+    common["frtb-common\nshared contracts, Arrow handoff, citations"]
+
+    subgraph components["Capital component packages"]
+        ima["frtb-ima\nIMA capital + audit"]
+        sbm["frtb-sbm\nSBM component capital"]
+        drc["frtb-drc\nDRC component capital"]
+        rrao["frtb-rrao\nRRAO component capital"]
+        cva["frtb-cva\nCVA capital"]
+    end
+
+    orchestration["frtb-orchestration\nSA composition, IMA fallback, suite aggregation"]
+    store["frtb-result-store\nDuckDB/Parquet evidence serving"]
+
+    common --> ima
+    common --> sbm
+    common --> drc
+    common --> rrao
+    common --> cva
+    common --> orchestration
+    common --> store
+
+    ima --> orchestration
+    sbm --> orchestration
+    drc --> orchestration
+    rrao --> orchestration
+    cva --> orchestration
+    orchestration --> store
 ```
 
 **Allowed imports:** `frtb-*` capital components may import from `frtb-common`. `frtb-orchestration` is the only package allowed to depend on multiple capital components, but current runtime modules consume shared handoffs or structural summaries and must not import sibling package internals. `frtb-result-store` sits above orchestration and capital packages so future public adapters can serialize suite results, but capital packages and orchestration must not import storage. **No other cross-package imports are allowed.** The root `import-linter` layers contract (`make import-lint`, part of `make quality-control`) enforces this graph in CI, and orchestration tests add a stricter runtime import guard.
