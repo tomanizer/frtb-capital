@@ -14,19 +14,18 @@ component packages: `frtb-sbm`, `frtb-drc`, and `frtb-rrao`. See the
 
 For a first integration pass, start with the suite-level
 [client integration guide](../CLIENT_INTEGRATION.md), run `make demo` from the
-repo root, then follow the package journey for the component you are wiring.
-The journey documents are the user-facing bridge between raw input shapes,
-public package entrypoints, orchestration handoffs, attribution, and result
-storage.
+repo root, then follow the package guide for the component you are wiring. The
+guides are the user-facing bridge between raw input shapes, public package
+entrypoints, orchestration handoffs, attribution, and result storage.
 
-| Package | Journey | Demo |
+| Package | Guide | Demo |
 | --- | --- | --- |
-| IMA | [packages/frtb-ima/docs/PACKAGE_JOURNEY.md](../../packages/frtb-ima/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-ima/examples/run_demo.py` |
+| IMA | [frtb-ima/CLIENT_DELIVERY.md](frtb-ima/CLIENT_DELIVERY.md) | `uv run python packages/frtb-ima/examples/run_demo.py` |
 | SBM | [packages/frtb-sbm/docs/PACKAGE_JOURNEY.md](../../packages/frtb-sbm/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-sbm/examples/run_demo.py` |
 | DRC | [packages/frtb-drc/docs/PACKAGE_JOURNEY.md](../../packages/frtb-drc/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-drc/examples/run_demo.py` |
 | RRAO | [packages/frtb-rrao/docs/PACKAGE_JOURNEY.md](../../packages/frtb-rrao/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-rrao/examples/run_demo.py` |
 | CVA | [packages/frtb-cva/docs/PACKAGE_JOURNEY.md](../../packages/frtb-cva/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-cva/examples/run_demo.py` |
-| Orchestration | [packages/frtb-orchestration/docs/PACKAGE_JOURNEY.md](../../packages/frtb-orchestration/docs/PACKAGE_JOURNEY.md) | `uv run python packages/frtb-orchestration/examples/run_demo.py` |
+| Orchestration | [frtb-orchestration/README.md](frtb-orchestration/README.md) | `uv run python packages/frtb-orchestration/examples/run_demo.py` |
 
 Use `make examples-check` for CI-equivalent example smoke coverage and
 `make notebooks-check` for the current notebook smoke suite.
