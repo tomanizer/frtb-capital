@@ -43,9 +43,7 @@ class ComponentContributionBundle:
                 relative_tolerance=DEFAULT_RECONCILIATION_TOLERANCE,
             )
         except ValueError as exc:
-            raise ValueError(
-                f"ComponentContributionBundle for '{self.component}': {exc}"
-            ) from exc
+            raise ValueError(f"ComponentContributionBundle for '{self.component}': {exc}") from exc
         if not reconciliation.is_reconciled:
             raise ValueError(
                 f"ComponentContributionBundle for '{self.component}': "
