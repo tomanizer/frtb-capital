@@ -229,6 +229,33 @@ def read_arrow_columns(
     return columns
 
 
+def unique_non_null_text_values(table: pa.Table, column_name: str) -> tuple[str, ...]:
+    """Return distinct non-null Arrow column values as strings.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Source Arrow table.
+    column_name : str
+        Canonical column name to inspect.
+
+    Returns
+    -------
+    tuple of str
+        Distinct non-null values in Arrow's stable unique order.
+    """
+
+    if not isinstance(table, pa.Table):
+        raise NormalizedTableError("table must be a pyarrow.Table")
+    if column_name not in table.column_names:
+        raise NormalizedTableError(f"Required column {column_name!r} is missing")
+    try:
+        unique_values = pc.drop_null(pc.unique(table[column_name]))
+    except pa.ArrowException as exc:
+        raise NormalizedTableError(str(exc)) from exc
+    return tuple(str(unique_values[index].as_py()) for index in range(len(unique_values)))
+
+
 def _read_arrow_column(
     table: pa.Table,
     spec: ColumnSpec,
@@ -412,4 +439,5 @@ __all__ = [
     "arrow_float64_array_with_nulls",
     "arrow_object_array",
     "read_arrow_columns",
+    "unique_non_null_text_values",
 ]
