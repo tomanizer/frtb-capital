@@ -16,6 +16,7 @@ Outputs are prototype engineering evidence, not final regulatory capital.
 | Document | Purpose |
 | --- | --- |
 | [Module README](../../docs/modules/frtb-orchestration/README.md) | Package status, examples, validation evidence, limitations, Arrow boundary |
+| [Notebook README](notebooks/README.md) | Runnable suite aggregation quickstart with Mermaid flow, summary handoffs, attribution, and error path |
 | [ATTRIBUTION.md](ATTRIBUTION.md) | Suite attribution aggregation, component bundle rules, and residual behavior |
 | [PUBLIC_API.md](../../docs/modules/frtb-orchestration/PUBLIC_API.md) | Stable top-level exports, suite handoffs, manifest table keys, and unsupported paths |
 | [ADR 0039](../../docs/decisions/0039-orchestration-suite-capital-aggregation.md) | Top-of-house suite aggregation decision |
@@ -100,6 +101,11 @@ boundary (the only package allowed to depend on multiple capital components):
 ```bash
 uv run python packages/frtb-orchestration/examples/run_demo.py
 ```
+
+For a notebook-first teaching flow, open
+[`notebooks/00_suite_aggregation.ipynb`](notebooks/00_suite_aggregation.ipynb).
+It demonstrates the same public summary handoff path, top-of-house suite
+aggregation, attribution report construction, and mixed-jurisdiction rejection.
 
 See `tests/test_orchestration_scaffold.py` for scaffold tests and sample
 builders. Manifest-based routing (`run_standardised_approach_from_manifest`)

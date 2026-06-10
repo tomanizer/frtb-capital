@@ -107,6 +107,21 @@ SA profile, or CVA profile string to a canonical family label (`"BASEL"`,
 `"US_NPR"`, or `"EU_CRR3"`). Components from different families cannot be
 composed into a single suite result.
 
+### Teaching notebook
+
+The runnable notebook
+[`packages/frtb-orchestration/notebooks/00_suite_aggregation.ipynb`](../../../packages/frtb-orchestration/notebooks/00_suite_aggregation.ipynb)
+shows the summary handoff path with Mermaid suite flow, synthetic
+`ComponentCapitalSummary`, `ImaCapitalSummary`, and `CvaCapitalSummary` inputs,
+SA composition, top-of-house suite aggregation, attribution report construction,
+and mixed-jurisdiction rejection.
+
+Run it through the root notebook target or directly:
+
+```bash
+MPLBACKEND=Agg IPYTHONDIR=$PWD/.pytest_cache/ipython uv run --with pytest,nbmake --directory packages/frtb-orchestration pytest --nbmake notebooks
+```
+
 ### Result-store handoff
 
 `SuiteCapitalResult` and `StandardisedApproachCapitalResult` carry stable run
@@ -131,6 +146,8 @@ has been calculated.
   expected-output hash across two independent runs.
 - `SuiteCapitalResult.__post_init__` enforces `total_capital == ima + sa + cva`
   to within `rel_tol=1e-12`.
+- `make notebooks-check` smoke-tests the orchestration suite aggregation
+  teaching notebook.
 
 ## Limitations
 

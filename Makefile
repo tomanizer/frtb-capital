@@ -176,6 +176,7 @@ notebooks-check:
 	$(NOTEBOOK_ENV) uv run --extra notebooks --directory packages/frtb-ima pytest --nbmake notebooks
 	$(NOTEBOOK_ENV) uv run --all-extras --directory packages/frtb-rrao pytest --nbmake notebooks
 	$(NOTEBOOK_ENV) uv run pytest packages/frtb-cva/tests/test_cva_notebooks.py
+	$(NOTEBOOK_ENV) uv run --with pytest,nbmake --directory packages/frtb-orchestration pytest --nbmake notebooks
 
 mutation:
 	mkdir -p $(MUTATION_DIST)/frtb-ima
