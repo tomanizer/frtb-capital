@@ -26,9 +26,9 @@ def test_issuer_summaries_preserve_net_jtd_and_issuer_lineage() -> None:
     result = _result()
 
     summaries = summarize_drc_attribution_by_issuer(result)
-    by_key = {summary.key: summary for summary in summaries}
+    by_key = _by_key(summaries)
 
-    assert [summary.key for summary in summaries] == [
+    assert _keys(summaries) == [
         "clo-2026-1|mezz",
         "issuer-a",
         "UNALLOCATED",
@@ -67,25 +67,22 @@ def test_bucket_category_and_risk_class_summaries_reconcile_to_source_records() 
     risk_class_summaries = summarize_drc_attribution_by_risk_class(result)
 
     for summaries in (bucket_summaries, category_summaries, risk_class_summaries):
-        total = sum(summary.total for summary in summaries)
-        record_count = sum(summary.record_count for summary in summaries)
-        assert total == pytest.approx(result.total_drc)
-        assert record_count == len(result.attribution_records)
+        assert _total(summaries) == pytest.approx(result.total_drc)
+        assert _record_count(summaries) == len(result.attribution_records)
 
-    bucket = {summary.key: summary for summary in bucket_summaries}
-    sec_bucket = bucket["SEC_CLO_NORTH_AMERICA"]
+    sec_bucket = _by_key(bucket_summaries)["SEC_CLO_NORTH_AMERICA"]
     assert sec_bucket.contribution == pytest.approx(20.0)
     assert sec_bucket.residual == pytest.approx(3.0)
     assert sec_bucket.total == pytest.approx(23.0)
     assert sec_bucket.reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
 
-    categories = {summary.key: summary for summary in category_summaries}
+    categories = _by_key(category_summaries)
     sec_category = categories[str(DrcRiskClass.SECURITISATION_NON_CTP)]
     ctp_category = categories[str(DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)]
     assert sec_category.total == pytest.approx(23.0)
     assert ctp_category.total == pytest.approx(-1.5)
 
-    risk_classes = {summary.key: summary for summary in risk_class_summaries}
+    risk_classes = _by_key(risk_class_summaries)
     nonsec_risk_class = risk_classes[str(DrcRiskClass.NON_SECURITISATION)]
     sec_risk_class = risk_classes[str(DrcRiskClass.SECURITISATION_NON_CTP)]
     assert nonsec_risk_class.total == pytest.approx(5.0)
@@ -99,8 +96,7 @@ def test_generic_and_top_summary_helpers_are_stable_and_validate_limit() -> None
     top = top_drc_attribution_summaries(result, grain="issuer", limit=2)
 
     assert top == generic[:2]
-    top_keys = [summary.key for summary in top]
-    assert top_keys == ["clo-2026-1|mezz", "issuer-a"]
+    assert _keys(top) == ["clo-2026-1|mezz", "issuer-a"]
     assert top[0].summary_id == "drc-attr-issuer-clo-2026-1-mezz"
     assert top[0].as_dict()["key"] == "clo-2026-1|mezz"
     assert top_drc_attribution_summaries(result, grain="issuer", limit=0) == ()
@@ -110,9 +106,10 @@ def test_generic_and_top_summary_helpers_are_stable_and_validate_limit() -> None
 
 def _result() -> DrcCapitalResult:
     records = _records()
-    total_drc = sum(
-        (record.contribution or 0.0) + record.residual for record in records
-    )
+    total_drc = 0.0
+    for record in records:
+        total_drc += (record.contribution or 0.0) + record.residual
+
     return DrcCapitalResult(
         result_id="drc-summary",
         run_id="run-drc-summary",
@@ -272,3 +269,31 @@ def _net_jtd(
         position_ids=(f"position-{net_jtd_id}",),
         scaled_jtd_ids=(f"scaled-{net_jtd_id}",),
     )
+
+
+def _by_key(summaries):
+    by_key = {}
+    for summary in summaries:
+        by_key[summary.key] = summary
+    return by_key
+
+
+def _keys(summaries):
+    keys = []
+    for summary in summaries:
+        keys.append(summary.key)
+    return keys
+
+
+def _total(summaries):
+    total = 0.0
+    for summary in summaries:
+        total += summary.total
+    return total
+
+
+def _record_count(summaries):
+    count = 0
+    for summary in summaries:
+        count += summary.record_count
+    return count
