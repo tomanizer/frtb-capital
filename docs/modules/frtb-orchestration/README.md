@@ -59,7 +59,7 @@ flowchart LR
     total --> attribution[build_suite_attribution_report]
     total --> result_store[caller-owned result-store handoff]
 
-    mismatch[Date, currency, or jurisdiction mismatch] --> reject[OrchestrationInputError]
+    mismatch{Date, currency, or jurisdiction mismatch} --> reject[OrchestrationInputError]
     ima_summary -. validation .-> mismatch
     sa_result -. validation .-> mismatch
     cva_summary -. validation .-> mismatch
