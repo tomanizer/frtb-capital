@@ -19,6 +19,28 @@ It writes a synthetic suite `ResultBundle`, commits it through
 `DuckDbParquetResultStore`, and reads back total capital, component breakdown,
 attribution records, and lineage.
 
+## Evidence Flow
+
+```mermaid
+flowchart LR
+  suite["Completed suite result<br/>capital, lineage, attribution"]
+  bundle["ResultBundle<br/>runs, graph, measures, artifacts"]
+  manifest{"Manifest valid?<br/>hashes + write set"}
+  reject["Reject or roll back<br/>no partial committed run"]
+  parquet["Append-only Parquet tables<br/>run evidence"]
+  duckdb["DuckDB query layer"]
+  api["Read-only API / CLI<br/>capital tree + drilldown"]
+  audit["Audit consumers<br/>attribution, lineage, unsupported rows"]
+
+  suite --> bundle
+  bundle --> manifest
+  manifest -- no --> reject
+  manifest -- yes --> parquet
+  parquet --> duckdb
+  duckdb --> api
+  api --> audit
+```
+
 The first implementation uses DuckDB over local Parquet files. A stored run is
 append-only and contains:
 
