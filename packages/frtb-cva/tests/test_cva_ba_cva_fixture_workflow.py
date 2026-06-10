@@ -51,7 +51,13 @@ def test_fixture_cases_are_deterministic() -> None:
 
 
 def test_package_does_not_import_sibling_capital_packages() -> None:
-    forbidden_prefixes = ("frtb_rrao", "frtb_sbm", "frtb_drc", "frtb_ima", "frtb_orchestration")
+    forbidden_prefixes = (
+        "frtb_rrao",
+        "frtb_sbm",
+        "frtb_drc",
+        "frtb_ima",
+        "frtb_orchestration",
+    )
     package = importlib.import_module("frtb_cva")
     for module_name in (
         "frtb_cva.data_models",
@@ -100,9 +106,14 @@ def _assert_reduced_result_matches(actual: Any, expected: dict[str, Any]) -> Non
 
     assert len(actual.counterparty_capitals) == len(expected["counterparty_capitals"])
     for actual_counterparty, expected_counterparty in zip(
-        actual.counterparty_capitals, expected["counterparty_capitals"], strict=True
+        actual.counterparty_capitals,
+        expected["counterparty_capitals"],
+        strict=True,
     ):
-        assert actual_counterparty.counterparty_id == expected_counterparty["counterparty_id"]
+        assert (
+            actual_counterparty.counterparty_id
+            == expected_counterparty["counterparty_id"]
+        )
         assert actual_counterparty.standalone_capital == pytest.approx(
             expected_counterparty["standalone_capital"]
         )
