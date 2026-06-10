@@ -421,6 +421,7 @@ def _component_amount(value: object, field_name: str) -> float | None:
 def _normalise_records(
     records: DeskAuditRecord | Iterable[DeskAuditRecord],
 ) -> tuple[DeskAuditRecord, ...]:
+    normalised: tuple[DeskAuditRecord, ...]
     if isinstance(records, DeskAuditRecord):
         normalised = (records,)
     elif isinstance(records, Iterable) and not isinstance(records, (str, bytes, bytearray)):
