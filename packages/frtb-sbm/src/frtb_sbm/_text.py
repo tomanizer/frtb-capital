@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from frtb_sbm.validation import SbmInputError
+from frtb_sbm._errors import SbmInputError
 
 
 def require_text(value: object, field: str, sensitivity_id: str = "") -> str:

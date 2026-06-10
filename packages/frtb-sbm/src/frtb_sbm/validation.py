@@ -14,6 +14,8 @@ from typing import TypeVar
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_sbm._errors import SbmInputError
+from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import (
     SbmCalculationContext,
     SbmPairwiseEvidenceMode,
@@ -110,17 +112,6 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
 
 
 _CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"
-
-
-class SbmInputError(ValueError):
-    """Raised when canonical SBM inputs fail deterministic validation."""
-
-    def __init__(self, message: str, *, field: str = "", sensitivity_id: str = "") -> None:
-        self.field = field
-        self.sensitivity_id = sensitivity_id
-        prefix = f"sensitivity {sensitivity_id}: " if sensitivity_id else ""
-        suffix = f" [{field}]" if field else ""
-        super().__init__(f"{prefix}{message}{suffix}")
 
 
 def normalise_sensitivity_amount(value: float, *, sensitivity_id: str = "") -> float:
@@ -889,16 +880,6 @@ def _finite_float(value: object, *, field: str, sensitivity_id: str = "") -> flo
     if not math.isfinite(number):
         raise SbmInputError("value must be finite", field=field, sensitivity_id=sensitivity_id)
     return number
-
-
-def _require_text(value: object, field: str, sensitivity_id: str = "") -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise SbmInputError(
-            "non-empty text is required",
-            field=field,
-            sensitivity_id=sensitivity_id,
-        )
-    return value.strip()
 
 
 def _is_blank(value: str | None) -> bool:
