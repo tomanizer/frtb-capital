@@ -103,8 +103,12 @@ def _assert_reduced_result_matches(actual: Any, expected: dict[str, Any]) -> Non
         assert actual_line.effective_maturity == pytest.approx(
             expected_line["effective_maturity"]
         )
-        assert actual_line.discount_factor == pytest.approx(expected_line["discount_factor"])
-        expected_risk_weight = expected_line.get("risk_weight", expected.get("risk_weight"))
+        assert actual_line.discount_factor == pytest.approx(
+            expected_line["discount_factor"]
+        )
+        expected_risk_weight = expected_line.get(
+            "risk_weight", expected.get("risk_weight")
+        )
         assert expected_risk_weight is not None, (
             f"risk_weight missing for netting set {actual_line.netting_set_id}"
         )
