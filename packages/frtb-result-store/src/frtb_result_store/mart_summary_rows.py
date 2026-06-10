@@ -1,4 +1,21 @@
-"""Capital summary mart row builders for persisted result-store projections."""
+"""Capital-summary and regime-comparison mart row builders.
+
+This module owns the serialisation logic for the two summary-level mart
+projections written by the result-store: `capital_summary` (one row per run,
+used by the lifecycle dashboard) and `regime_comparison` (one row per run
+grouped by `run_group_id`, used for cross-regime comparison views).
+
+Both projections derive their `lifecycle_status` from the caller and compute
+`suggested_status` from the event log via ``_suggested_status`` — the rule that
+maps any ``ResultEventSeverity.ERROR`` event to ``RunStatus.REJECTED`` (all
+others to ``RunStatus.VALIDATED``). This rule is written into persisted mart
+rows and must be stable across schema versions.
+
+The module also holds `_components` (non-top-level component enumeration from a
+node collection) and `_measure_for_node` (capital measure lookup by node id).
+These helpers support both row builders and are intentionally kept here rather
+than in ``marts.py`` so that all summary-projection logic is co-located.
+"""
 
 from __future__ import annotations
 
@@ -19,7 +36,7 @@ from frtb_result_store.model import (
 )
 
 
-def _capital_summary_row(
+def capital_summary_row(
     bundle: ResultBundle,
     *,
     lifecycle_status: RunStatus,
@@ -58,7 +75,7 @@ def _capital_summary_row(
     }
 
 
-def _regime_comparison_row(
+def regime_comparison_row(
     bundle: ResultBundle,
     *,
     lifecycle_status: RunStatus,
@@ -101,6 +118,7 @@ def _measure_for_node(
     *,
     node_id: str,
 ) -> CapitalMeasure | None:
+    """Return the first ``capital`` measure for ``node_id``, or ``None``."""
     for measure in measures:
         if measure.node_id == node_id and measure.measure_name == "capital":
             return measure
@@ -108,6 +126,13 @@ def _measure_for_node(
 
 
 def _suggested_status(events: Sequence[ResultEvent]) -> RunStatus:
+    """Map the event log to a suggested lifecycle status.
+
+    Returns ``RunStatus.REJECTED`` when any event carries
+    ``ResultEventSeverity.ERROR``; otherwise returns ``RunStatus.VALIDATED``.
+    This rule is written into persisted mart rows and must not change without a
+    schema migration.
+    """
     if any(event.severity is ResultEventSeverity.ERROR for event in events):
         return RunStatus.REJECTED
     return RunStatus.VALIDATED

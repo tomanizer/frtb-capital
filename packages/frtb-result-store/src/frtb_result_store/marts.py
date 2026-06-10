@@ -32,8 +32,10 @@ from frtb_result_store.mart_row_codecs import (
     movement_summary_from_row as _movement_summary_from_row,
 )
 from frtb_result_store.mart_summary_rows import (
-    _capital_summary_row,
-    _regime_comparison_row,
+    capital_summary_row as _capital_summary_row,
+)
+from frtb_result_store.mart_summary_rows import (
+    regime_comparison_row as _regime_comparison_row,
 )
 from frtb_result_store.model import (
     CapitalAttributionRecord,
