@@ -29,6 +29,8 @@ capital kernels.
   attribution behavior.
 - Use the package guide linked in the first column for the exact branch rules,
   citations, and limitations.
+- Keep `attribution_status` in `docs/quality/package_maturity.toml` aligned
+  with this matrix and the [attribution maturity gates](quality/attribution_maturity.md).
 - Keep finite-difference impact separate from marginal or standalone attribution.
 - Do not close an unsupported branch by adding silent pro-rata allocation; either
   implement a defensible method or keep an explicit unsupported/residual record.
