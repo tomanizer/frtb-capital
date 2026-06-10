@@ -23,12 +23,16 @@ UK PRA comparison profiles:
 - **Qualified-index routing** (MAR50.50): CCS bucket 8, RCS buckets 16/17,
   and equity buckets 12/13 when the input supplies required metadata.
 
-Public entry point: `calculate_cva_capital`. Unsupported methods and risk
-classes fail closed with `UnsupportedRegulatoryFeatureError` or `CvaInputError`.
-The `EU_CRR3_CVA` profile is also the runtime target for ECB shorthand; there is
-no separate ECB profile id.
+Public entry points: `calculate_cva_capital` for canonical dataclass inputs and
+`calculate_cva_capital_from_batches` for normalized batch inputs. Both use the
+canonical batch orchestration engine; the dataclass entry point is an adapter
+into package-owned batch contracts rather than a separate formula path.
+Unsupported methods and risk classes fail closed with
+`UnsupportedRegulatoryFeatureError` or `CvaInputError`. The `EU_CRR3_CVA`
+profile is also the runtime target for ECB shorthand; there is no separate ECB
+profile id.
 
-**Integration journey (Arrow → capital → attribution → suite/store):**
+**Integration journey (Arrow -> capital -> attribution -> suite/store):**
 [`docs/PACKAGE_JOURNEY.md`](docs/PACKAGE_JOURNEY.md)
 
 Capital attribution method, inputs, supported grains, and limitations are
@@ -52,7 +56,9 @@ package-local requirement registry is
 See `examples/run_demo.py` for a self-contained synthetic demo that constructs
 `CvaCounterparty` / `CvaNettingSet` / `CvaHedge` / `SaCvaSensitivity` inputs and
 exercises `calculate_cva_capital` for BA-CVA Reduced, Full (with hedges), SA-CVA
-(GIRR delta), and Mixed carve-out paths.
+(GIRR delta), and Mixed carve-out paths. The production-volume path normalizes
+Arrow tables, builds `Cva*Batch` objects, and calls
+`calculate_cva_capital_from_batches`.
 
 ```bash
 uv run python packages/frtb-cva/examples/run_demo.py
