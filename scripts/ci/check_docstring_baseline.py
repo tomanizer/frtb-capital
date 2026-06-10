@@ -18,7 +18,15 @@ except ImportError:  # pragma: no cover - exercised by direct script execution.
     from docstring_inventory import DEFAULT_PATHS, DocstringFinding, scan_repo
 
 DEFAULT_BASELINE = Path("docs/quality/docstrings/baseline.json")
-HARD_RULES = frozenset({"MISSING_MODULE_DOCSTRING", "MISSING_PUBLIC_DOCSTRING"})
+HARD_RULES = frozenset(
+    {
+        "MISSING_MODULE_DOCSTRING",
+        "MISSING_PUBLIC_DOCSTRING",
+        "MISSING_PARAMETERS_SECTION",
+        "MISSING_RETURNS_SECTION",
+    }
+)
+REPORT_ONLY_RULES = frozenset({"TRIVIAL_DOCSTRING"})
 REQUIRED_FINDING_FIELDS = {
     "package",
     "path",
