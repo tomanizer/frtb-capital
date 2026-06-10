@@ -27,7 +27,27 @@ def calculate_drc_impact(
     *,
     tolerance: float = _TOLERANCE,
 ) -> DrcImpactAnalysis:
-    """Compare two DRC capital results without changing either capital number."""
+    """Compare two DRC capital results without changing either capital number.
+
+    Parameters
+    ----------
+    baseline : DrcCapitalResult
+        Completed baseline DRC result graph.
+    candidate : DrcCapitalResult
+        Completed candidate DRC result graph.
+    tolerance : float, optional
+        Absolute reconciliation tolerance for record sums versus total delta.
+
+    Returns
+    -------
+    DrcImpactAnalysis
+        Total impact record and deterministic DRC branch records.
+
+    Raises
+    ------
+    DrcInputError
+        If the result pair is incompatible or generated records do not reconcile.
+    """
 
     _validate_result_pair(baseline, candidate)
     total_impact = CapitalImpact(
@@ -72,7 +92,22 @@ def validate_drc_impact_reconciliation(
     *,
     tolerance: float | None = None,
 ) -> None:
-    """Validate that DRC impact records reconcile or explicitly state residual impact."""
+    """Validate that DRC impact records reconcile or explicitly state residual impact.
+
+    Parameters
+    ----------
+    analysis : DrcImpactAnalysis
+        Impact analysis to validate.
+    tolerance : float | None, optional
+        Override reconciliation tolerance. When omitted, ``analysis.tolerance``
+        is used.
+
+    Raises
+    ------
+    DrcInputError
+        If records do not reconcile to the total delta or the analysis is marked
+        unreconciled.
+    """
 
     limit = analysis.tolerance if tolerance is None else tolerance
     if abs(analysis.delta - record_delta_sum(analysis.records)) > limit:

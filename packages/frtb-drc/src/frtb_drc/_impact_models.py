@@ -60,7 +60,13 @@ class DrcImpactRecord:
         object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
 
     def as_dict(self) -> dict[str, object]:
-        """Return a JSON-ready representation of the impact record."""
+        """Return a JSON-ready representation of the impact record.
+
+        Returns
+        -------
+        dict[str, object]
+            Mapping of record field names to JSON-ready values.
+        """
 
         return {field.name: jsonable(getattr(self, field.name)) for field in fields(self)}
 
@@ -85,24 +91,49 @@ class DrcImpactAnalysis:
 
     @property
     def baseline_total(self) -> float:
-        """Baseline DRC capital total."""
+        """Baseline DRC capital total.
+
+        Returns
+        -------
+        float
+            Baseline total default risk charge.
+        """
 
         return self.total_impact.baseline_total
 
     @property
     def candidate_total(self) -> float:
-        """Candidate DRC capital total."""
+        """Candidate DRC capital total.
+
+        Returns
+        -------
+        float
+            Candidate total default risk charge.
+        """
 
         return self.total_impact.candidate_total
 
     @property
     def delta(self) -> float:
-        """Candidate minus baseline total DRC."""
+        """Candidate minus baseline total DRC.
+
+        Returns
+        -------
+        float
+            Candidate total default risk charge minus baseline total default
+            risk charge.
+        """
 
         return self.total_impact.delta
 
     def as_dict(self) -> dict[str, object]:
-        """Return a JSON-ready representation of the impact analysis."""
+        """Return a JSON-ready representation of the impact analysis.
+
+        Returns
+        -------
+        dict[str, object]
+            Mapping of analysis field names to JSON-ready values.
+        """
 
         return {field.name: jsonable(getattr(self, field.name)) for field in fields(self)}
 

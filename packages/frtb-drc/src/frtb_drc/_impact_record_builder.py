@@ -24,7 +24,20 @@ def impact_records(
     baseline: DrcCapitalResult,
     candidate: DrcCapitalResult,
 ) -> tuple[DrcImpactRecord, ...]:
-    """Build DRC-specific impact records for a compatible result pair."""
+    """Build DRC-specific impact records for a compatible result pair.
+
+    Parameters
+    ----------
+    baseline : DrcCapitalResult
+        Completed baseline DRC result graph.
+    candidate : DrcCapitalResult
+        Completed candidate DRC result graph.
+
+    Returns
+    -------
+    tuple[DrcImpactRecord, ...]
+        Deterministically ordered DRC impact records.
+    """
 
     records: list[DrcImpactRecord] = []
     records.extend(_profile_change_records(baseline, candidate))

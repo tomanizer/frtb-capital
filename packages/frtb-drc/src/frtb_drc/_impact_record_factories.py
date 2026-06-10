@@ -27,7 +27,40 @@ def finite_difference_record(
     candidate_bucket_key: str | None = None,
     branch_metadata: Iterable[BranchMetadata] = (),
 ) -> DrcImpactRecord:
-    """Create a reconciled finite-difference impact record."""
+    """Create a reconciled finite-difference impact record.
+
+    Parameters
+    ----------
+    baseline : DrcCapitalResult
+        Completed baseline DRC result graph.
+    candidate : DrcCapitalResult
+        Completed candidate DRC result graph.
+    source_id : str
+        Stable result-graph source identifier.
+    source_level : str
+        Source grain, such as ``bucket`` or ``category``.
+    baseline_capital : float | None
+        Baseline capital at the source grain.
+    candidate_capital : float | None
+        Candidate capital at the source grain.
+    reason : str
+        Explanation for the impact classification.
+    baseline_category : str | None, optional
+        Baseline DRC category label when available.
+    candidate_category : str | None, optional
+        Candidate DRC category label when available.
+    baseline_bucket_key : str | None, optional
+        Baseline DRC bucket key when available.
+    candidate_bucket_key : str | None, optional
+        Candidate DRC bucket key when available.
+    branch_metadata : Iterable[BranchMetadata], optional
+        Branch metadata retained from compared result graph nodes.
+
+    Returns
+    -------
+    DrcImpactRecord
+        Reconciled finite-difference impact record.
+    """
 
     baseline_amount = 0.0 if baseline_capital is None else baseline_capital
     candidate_amount = 0.0 if candidate_capital is None else candidate_capital
@@ -69,7 +102,42 @@ def unsupported_record(
     branch_metadata: Iterable[BranchMetadata] = (),
     metadata: Mapping[str, object] | None = None,
 ) -> DrcImpactRecord:
-    """Create an unsupported impact record with preserved result metadata."""
+    """Create an unsupported impact record with preserved result metadata.
+
+    Parameters
+    ----------
+    baseline : DrcCapitalResult
+        Completed baseline DRC result graph.
+    candidate : DrcCapitalResult
+        Completed candidate DRC result graph.
+    source_id : str
+        Stable result-graph source identifier.
+    source_level : str
+        Source grain, such as ``profile``, ``position``, or ``bucket``.
+    baseline_capital : float | None
+        Baseline capital at the source grain when available.
+    candidate_capital : float | None
+        Candidate capital at the source grain when available.
+    reason : str
+        Explanation for why exact impact decomposition is unsupported.
+    baseline_category : str | None, optional
+        Baseline DRC category label when available.
+    candidate_category : str | None, optional
+        Candidate DRC category label when available.
+    baseline_bucket_key : str | None, optional
+        Baseline DRC bucket key when available.
+    candidate_bucket_key : str | None, optional
+        Candidate DRC bucket key when available.
+    branch_metadata : Iterable[BranchMetadata], optional
+        Branch metadata retained from compared result graph nodes.
+    metadata : Mapping[str, object] | None, optional
+        Extra structured explanation fields for the unsupported record.
+
+    Returns
+    -------
+    DrcImpactRecord
+        Unsupported impact record carrying preserved metadata.
+    """
 
     return DrcImpactRecord(
         impact_id=f"impact-unsupported-{source_level}-{_slug(source_id)}",
@@ -101,7 +169,24 @@ def residual_record(
     residual: float,
     reason: str,
 ) -> DrcImpactRecord:
-    """Create the total residual record for unexplained capital delta."""
+    """Create the total residual record for unexplained capital delta.
+
+    Parameters
+    ----------
+    baseline : DrcCapitalResult
+        Completed baseline DRC result graph.
+    candidate : DrcCapitalResult
+        Completed candidate DRC result graph.
+    residual : float
+        Remaining total delta after finite-difference records are summed.
+    reason : str
+        Explanation for the residual record.
+
+    Returns
+    -------
+    DrcImpactRecord
+        Residual impact record that reconciles total capital delta.
+    """
 
     return DrcImpactRecord(
         impact_id="impact-residual-total",
@@ -121,13 +206,35 @@ def residual_record(
 
 
 def record_delta_sum(records: tuple[DrcImpactRecord, ...]) -> float:
-    """Sum numeric deltas, ignoring unsupported records with no delta."""
+    """Sum numeric deltas, ignoring unsupported records with no delta.
+
+    Parameters
+    ----------
+    records : tuple[DrcImpactRecord, ...]
+        Impact records to sum.
+
+    Returns
+    -------
+    float
+        Sum of numeric record deltas.
+    """
 
     return math.fsum(record.delta or 0.0 for record in records)
 
 
 def reconciled_delta(records: tuple[DrcImpactRecord, ...]) -> float:
-    """Sum deltas from finite-difference records only."""
+    """Sum deltas from finite-difference records only.
+
+    Parameters
+    ----------
+    records : tuple[DrcImpactRecord, ...]
+        Impact records to inspect.
+
+    Returns
+    -------
+    float
+        Sum of finite-difference record deltas.
+    """
 
     return math.fsum(
         record.delta or 0.0
@@ -137,7 +244,20 @@ def reconciled_delta(records: tuple[DrcImpactRecord, ...]) -> float:
 
 
 def has_unsupported_branch(*records: object) -> bool:
-    """Return true when any record carries a branch unsupported for impact."""
+    """Return true when any record carries a branch unsupported for impact.
+
+    Parameters
+    ----------
+    *records : object
+        Result graph nodes that may carry ``branch_metadata`` or
+        ``floor_applied`` attributes.
+
+    Returns
+    -------
+    bool
+        True when any node carries a branch that prevents exact impact
+        decomposition.
+    """
 
     unsupported = {
         BranchType.FLOOR,
