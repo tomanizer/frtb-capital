@@ -204,6 +204,7 @@ def calculate_drc_impact(
         notes=_run_notes(baseline, candidate),
     )
 
+    records: tuple[DrcImpactRecord, ...]
     if baseline.profile_id != candidate.profile_id:
         records = (
             _result_record(
