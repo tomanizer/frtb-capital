@@ -35,6 +35,10 @@ from frtb_cva.risk_classes.rcs import calculate_rcs_delta_capital, calculate_rcs
 from frtb_cva.validation import CvaInputError, validate_m_cva_multiplier
 
 _CapitalPathFn = Callable[..., SaCvaRiskClassCapital]
+_AggregationConfigFn = Callable[
+    [CvaRegulatoryProfile | str],
+    "SaCvaAggregationConfig",
+]
 
 
 @dataclass(frozen=True)
@@ -307,39 +311,67 @@ def sa_cva_aggregation_config(
     from frtb_cva.risk_classes.fx import _fx_delta_config, _fx_vega_config
     from frtb_cva.risk_classes.rcs import _rcs_config
 
-    registry = {
-        (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.DELTA): lambda active_profile: girr_delta_aggregation_config(
-            profile=active_profile
-        ),
-        (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.VEGA): lambda active_profile: girr_vega_aggregation_config(
-            profile=active_profile
-        ),
+    def _girr_delta_config_for(
+        active_profile: CvaRegulatoryProfile | str,
+    ) -> SaCvaAggregationConfig:
+        return girr_delta_aggregation_config(profile=active_profile)
+
+    def _girr_vega_config_for(
+        active_profile: CvaRegulatoryProfile | str,
+    ) -> SaCvaAggregationConfig:
+        return girr_vega_aggregation_config(profile=active_profile)
+
+    def _rcs_delta_config_for(
+        active_profile: CvaRegulatoryProfile | str,
+    ) -> SaCvaAggregationConfig:
+        return _rcs_config(SaCvaRiskMeasure.DELTA, profile=active_profile)
+
+    def _rcs_vega_config_for(
+        active_profile: CvaRegulatoryProfile | str,
+    ) -> SaCvaAggregationConfig:
+        return _rcs_config(SaCvaRiskMeasure.VEGA, profile=active_profile)
+
+    def _equity_delta_config_for(
+        active_profile: CvaRegulatoryProfile | str,
+    ) -> SaCvaAggregationConfig:
+        return _equity_config(SaCvaRiskMeasure.DELTA, profile=active_profile)
+
+    def _equity_vega_config_for(
+        active_profile: CvaRegulatoryProfile | str,
+    ) -> SaCvaAggregationConfig:
+        return _equity_config(SaCvaRiskMeasure.VEGA, profile=active_profile)
+
+    def _commodity_delta_config_for(
+        active_profile: CvaRegulatoryProfile | str,
+    ) -> SaCvaAggregationConfig:
+        return _commodity_config(SaCvaRiskMeasure.DELTA, profile=active_profile)
+
+    def _commodity_vega_config_for(
+        active_profile: CvaRegulatoryProfile | str,
+    ) -> SaCvaAggregationConfig:
+        return _commodity_config(SaCvaRiskMeasure.VEGA, profile=active_profile)
+
+    registry: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], _AggregationConfigFn] = {
+        (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.DELTA): _girr_delta_config_for,
+        (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.VEGA): _girr_vega_config_for,
         (SaCvaRiskClass.FX, SaCvaRiskMeasure.DELTA): _fx_delta_config,
         (SaCvaRiskClass.FX, SaCvaRiskMeasure.VEGA): _fx_vega_config,
-        (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): _ccs_delta_config,
-        (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): lambda active_profile: _rcs_config(
-            SaCvaRiskMeasure.DELTA,
-            profile=active_profile,
+        (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): (
+            _ccs_delta_config
         ),
-        (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA): lambda active_profile: _rcs_config(
-            SaCvaRiskMeasure.VEGA,
-            profile=active_profile,
+        (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): (
+            _rcs_delta_config_for
         ),
-        (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.DELTA): lambda active_profile: _equity_config(
-            SaCvaRiskMeasure.DELTA,
-            profile=active_profile,
+        (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA): (
+            _rcs_vega_config_for
         ),
-        (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.VEGA): lambda active_profile: _equity_config(
-            SaCvaRiskMeasure.VEGA,
-            profile=active_profile,
+        (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.DELTA): _equity_delta_config_for,
+        (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.VEGA): _equity_vega_config_for,
+        (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.DELTA): (
+            _commodity_delta_config_for
         ),
-        (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.DELTA): lambda active_profile: _commodity_config(
-            SaCvaRiskMeasure.DELTA,
-            profile=active_profile,
-        ),
-        (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.VEGA): lambda active_profile: _commodity_config(
-            SaCvaRiskMeasure.VEGA,
-            profile=active_profile,
+        (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.VEGA): (
+            _commodity_vega_config_for
         ),
     }
     config_fn = registry.get((risk_class, risk_measure))
