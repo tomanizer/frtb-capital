@@ -13,6 +13,12 @@ a non-test object-store backend. Historical issue sequencing remains in
 [ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md); earlier target design notes remain in
 [FIRST_PASS_DESIGN.md](FIRST_PASS_DESIGN.md).
 
+For a runnable user-facing handoff, run
+[`packages/frtb-result-store/examples/run_demo.py`](../../../packages/frtb-result-store/examples/run_demo.py).
+It writes a synthetic suite `ResultBundle`, commits it through
+`DuckDbParquetResultStore`, and reads back total capital, component breakdown,
+attribution records, and lineage.
+
 The first implementation uses DuckDB over local Parquet files. A stored run is
 append-only and contains:
 
