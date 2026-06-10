@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
+from enum import StrEnum
 
+from frtb_common import dataclass_as_dict
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
 
 from frtb_drc._identifiers import slug_path as _slug
@@ -20,6 +23,90 @@ from frtb_drc.data_models import (
 from frtb_drc.validation import DrcInputError
 
 _TOLERANCE = 1e-9
+_UNALLOCATED_KEY = "UNALLOCATED"
+_UNCATEGORISED_KEY = "UNCATEGORISED"
+
+
+class DrcAttributionGrain(StrEnum):
+    """Supported DRC attribution summary grains."""
+
+    ISSUER = "issuer"
+    BUCKET = "bucket"
+    CATEGORY = "category"
+    RISK_CLASS = "risk_class"
+
+
+@dataclass(frozen=True)
+class DrcAttributionSummary:
+    """Deterministic grouped projection of DRC attribution records.
+
+    Parameters
+    ----------
+    summary_id : str
+        Stable identifier derived from the grain and grouped key.
+    grain : DrcAttributionGrain
+        Grouping grain used for the projection.
+    key : str
+        Grouping key, such as issuer, bucket, category, or risk class.
+    risk_class : str | None
+        Risk class represented by the group when unique.
+    bucket_key : str | None
+        Bucket represented by the group when unique.
+    contribution : float
+        Sum of non-null analytical contribution amounts.
+    residual : float
+        Sum of residual amounts, including unsupported records.
+    total : float
+        ``contribution + residual``.
+    record_count : int
+        Number of source ``CapitalContribution`` records in the group.
+    source_ids : tuple[str, ...]
+        Deterministic source contribution identifiers included in the group.
+    net_jtd_ids : tuple[str, ...]
+        Net-JTD source ids included in the group.
+    methods : tuple[str, ...]
+        Attribution methods present in the group.
+    citations : tuple[str, ...]
+        Union of source citations.
+    reasons : tuple[str, ...]
+        Stable non-empty reason strings represented by the group.
+    reconciliation_status : ReconciliationStatus
+        Reconciliation state implied by the grouped source records.
+    """
+
+    summary_id: str
+    grain: DrcAttributionGrain
+    key: str
+    risk_class: str | None
+    bucket_key: str | None
+    contribution: float
+    residual: float
+    total: float
+    record_count: int
+    source_ids: tuple[str, ...]
+    net_jtd_ids: tuple[str, ...]
+    methods: tuple[str, ...]
+    citations: tuple[str, ...]
+    reasons: tuple[str, ...]
+    reconciliation_status: ReconciliationStatus
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "source_ids", tuple(self.source_ids))
+        object.__setattr__(self, "net_jtd_ids", tuple(self.net_jtd_ids))
+        object.__setattr__(self, "methods", tuple(self.methods))
+        object.__setattr__(self, "citations", tuple(self.citations))
+        object.__setattr__(self, "reasons", tuple(self.reasons))
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable dictionary representation.
+
+        Returns
+        -------
+        dict[str, object]
+            Dataclass field names mapped through the shared serializer.
+        """
+
+        return dataclass_as_dict(self)
 
 
 def calculate_drc_attribution(
@@ -96,6 +183,183 @@ def validate_attribution_reconciliation(
     )
     if abs(total - result.total_drc) > tolerance:
         raise DrcInputError("DRC attribution records do not reconcile to total capital")
+
+
+def summarize_drc_attribution(
+    result: DrcCapitalResult,
+    *,
+    grain: DrcAttributionGrain | str,
+    records: Sequence[CapitalContribution] | None = None,
+) -> tuple[DrcAttributionSummary, ...]:
+    """Group DRC attribution records without recalculating capital.
+
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        Completed DRC result whose retained net-JTD graph supplies issuer and
+        risk-class lineage for analytical net-JTD records.
+    grain : DrcAttributionGrain | str
+        Projection grain: issuer, bucket, category, or risk_class.
+    records : Sequence[CapitalContribution] | None, optional
+        Source records to summarize. Defaults to ``result.attribution_records``.
+
+    Returns
+    -------
+    tuple[DrcAttributionSummary, ...]
+        Stable-sorted grouped summaries. Records with no issuer or bucket lineage
+        are retained under ``UNALLOCATED`` instead of being dropped.
+    """
+
+    projection_grain = DrcAttributionGrain(grain)
+    attribution_records = tuple(result.attribution_records if records is None else records)
+    net_by_id = {record.net_jtd_id: record for record in result.net_jtds}
+    grouped: dict[str, list[CapitalContribution]] = {}
+    for record in attribution_records:
+        key = _grouping_key(record, projection_grain, net_by_id)
+        grouped.setdefault(key, []).append(record)
+
+    summaries = tuple(
+        _summary_from_records(
+            key=key,
+            grain=projection_grain,
+            records=tuple(items),
+            net_by_id=net_by_id,
+        )
+        for key, items in grouped.items()
+    )
+    return tuple(sorted(summaries, key=_summary_sort_key))
+
+
+def summarize_drc_attribution_by_issuer(
+    result: DrcCapitalResult,
+    *,
+    records: Sequence[CapitalContribution] | None = None,
+) -> tuple[DrcAttributionSummary, ...]:
+    """Return issuer or unallocated DRC attribution summaries.
+
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        Completed DRC result with retained ``net_jtds`` lineage.
+    records : Sequence[CapitalContribution] | None, optional
+        Source attribution records; defaults to ``result.attribution_records``.
+
+    Returns
+    -------
+    tuple[DrcAttributionSummary, ...]
+        Stable-sorted issuer summaries.
+    """
+
+    return summarize_drc_attribution(result, grain=DrcAttributionGrain.ISSUER, records=records)
+
+
+def summarize_drc_attribution_by_bucket(
+    result: DrcCapitalResult,
+    *,
+    records: Sequence[CapitalContribution] | None = None,
+) -> tuple[DrcAttributionSummary, ...]:
+    """Return bucket-level DRC attribution summaries.
+
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        Completed DRC result.
+    records : Sequence[CapitalContribution] | None, optional
+        Source attribution records; defaults to ``result.attribution_records``.
+
+    Returns
+    -------
+    tuple[DrcAttributionSummary, ...]
+        Stable-sorted bucket summaries.
+    """
+
+    return summarize_drc_attribution(result, grain=DrcAttributionGrain.BUCKET, records=records)
+
+
+def summarize_drc_attribution_by_category(
+    result: DrcCapitalResult,
+    *,
+    records: Sequence[CapitalContribution] | None = None,
+) -> tuple[DrcAttributionSummary, ...]:
+    """Return DRC category summaries.
+
+    DRC result categories currently align to risk-class capital stacks, but this
+    helper is kept separate so report callers can depend on an explicit category
+    projection contract.
+
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        Completed DRC result.
+    records : Sequence[CapitalContribution] | None, optional
+        Source attribution records; defaults to ``result.attribution_records``.
+
+    Returns
+    -------
+    tuple[DrcAttributionSummary, ...]
+        Stable-sorted category summaries.
+    """
+
+    return summarize_drc_attribution(result, grain=DrcAttributionGrain.CATEGORY, records=records)
+
+
+def summarize_drc_attribution_by_risk_class(
+    result: DrcCapitalResult,
+    *,
+    records: Sequence[CapitalContribution] | None = None,
+) -> tuple[DrcAttributionSummary, ...]:
+    """Return DRC risk-class summaries.
+
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        Completed DRC result with retained net-JTD lineage.
+    records : Sequence[CapitalContribution] | None, optional
+        Source attribution records; defaults to ``result.attribution_records``.
+
+    Returns
+    -------
+    tuple[DrcAttributionSummary, ...]
+        Stable-sorted risk-class summaries.
+    """
+
+    return summarize_drc_attribution(result, grain=DrcAttributionGrain.RISK_CLASS, records=records)
+
+
+def top_drc_attribution_summaries(
+    result: DrcCapitalResult,
+    *,
+    grain: DrcAttributionGrain | str,
+    limit: int = 10,
+    records: Sequence[CapitalContribution] | None = None,
+) -> tuple[DrcAttributionSummary, ...]:
+    """Return the largest DRC attribution summary groups by absolute total.
+
+    Parameters
+    ----------
+    result : DrcCapitalResult
+        Completed DRC result.
+    grain : DrcAttributionGrain | str
+        Projection grain: issuer, bucket, category, or risk_class.
+    limit : int, optional
+        Maximum number of groups to return. Must be non-negative.
+    records : Sequence[CapitalContribution] | None, optional
+        Source attribution records; defaults to ``result.attribution_records``.
+
+    Returns
+    -------
+    tuple[DrcAttributionSummary, ...]
+        Stable top-contributor summaries.
+
+    Raises
+    ------
+    ValueError
+        If ``limit`` is negative.
+    """
+
+    if limit < 0:
+        raise ValueError("limit must be non-negative")
+    return summarize_drc_attribution(result, grain=grain, records=records)[:limit]
 
 
 def _category_contributions(
@@ -386,7 +650,113 @@ def _has_branch(record: object, branch_type: BranchType) -> bool:
     return any(BranchType(branch.branch_type) == branch_type for branch in branches)
 
 
+def _grouping_key(
+    record: CapitalContribution,
+    grain: DrcAttributionGrain,
+    net_by_id: Mapping[str, NetJtd],
+) -> str:
+    if grain == DrcAttributionGrain.ISSUER:
+        if record.source_level == "net_jtd":
+            net_jtd = net_by_id.get(record.source_id)
+            if net_jtd is not None and net_jtd.obligor_or_tranche_key:
+                return net_jtd.obligor_or_tranche_key
+        return _UNALLOCATED_KEY
+    if grain == DrcAttributionGrain.BUCKET:
+        return record.bucket_key or _UNALLOCATED_KEY
+    if grain == DrcAttributionGrain.CATEGORY:
+        return record.category or _UNCATEGORISED_KEY
+    if grain == DrcAttributionGrain.RISK_CLASS:
+        if record.source_level == "net_jtd":
+            net_jtd = net_by_id.get(record.source_id)
+            if net_jtd is not None:
+                return str(net_jtd.risk_class)
+        return record.category or _UNCATEGORISED_KEY
+    raise ValueError(f"unsupported DRC attribution grain: {grain}")
+
+
+def _summary_from_records(
+    *,
+    key: str,
+    grain: DrcAttributionGrain,
+    records: tuple[CapitalContribution, ...],
+    net_by_id: Mapping[str, NetJtd],
+) -> DrcAttributionSummary:
+    contribution = math.fsum(
+        0.0 if record.contribution is None else record.contribution for record in records
+    )
+    residual = math.fsum(record.residual for record in records)
+    source_ids = _sorted_unique(record.source_id for record in records)
+    net_jtd_ids = _sorted_unique(
+        record.source_id for record in records if record.source_level == "net_jtd"
+    )
+    risk_classes = _sorted_unique(_record_risk_class(record, net_by_id) for record in records)
+    bucket_keys = _sorted_unique(record.bucket_key for record in records if record.bucket_key)
+    return DrcAttributionSummary(
+        summary_id=f"drc-attr-{grain.value}-{_summary_slug(key)}",
+        grain=grain,
+        key=key,
+        risk_class=risk_classes[0] if len(risk_classes) == 1 else None,
+        bucket_key=bucket_keys[0] if len(bucket_keys) == 1 else None,
+        contribution=contribution,
+        residual=residual,
+        total=contribution + residual,
+        record_count=len(records),
+        source_ids=source_ids,
+        net_jtd_ids=net_jtd_ids,
+        methods=_sorted_unique(str(record.method) for record in records),
+        citations=_sorted_unique(citation for record in records for citation in record.citations),
+        reasons=_sorted_unique(record.reason for record in records if record.reason),
+        reconciliation_status=_summary_status(records),
+    )
+
+
+def _record_risk_class(
+    record: CapitalContribution,
+    net_by_id: Mapping[str, NetJtd],
+) -> str:
+    net_jtd = net_by_id.get(record.source_id) if record.source_level == "net_jtd" else None
+    if net_jtd is not None:
+        return str(net_jtd.risk_class)
+    return record.category or _UNCATEGORISED_KEY
+
+
+def _summary_status(records: tuple[CapitalContribution, ...]) -> ReconciliationStatus:
+    statuses = {ReconciliationStatus(record.reconciliation_status) for record in records}
+    if ReconciliationStatus.UNRECONCILED in statuses:
+        return ReconciliationStatus.UNRECONCILED
+    residual_methods = {AttributionMethod.RESIDUAL, AttributionMethod.UNSUPPORTED}
+    if any(record.method in residual_methods for record in records):
+        return ReconciliationStatus.PARTIAL_RESIDUAL
+    if any(abs(record.residual) > 0.0 for record in records):
+        return ReconciliationStatus.PARTIAL_RESIDUAL
+    if statuses == {ReconciliationStatus.RECONCILED}:
+        return ReconciliationStatus.RECONCILED
+    if ReconciliationStatus.PARTIAL_RESIDUAL in statuses:
+        return ReconciliationStatus.PARTIAL_RESIDUAL
+    return ReconciliationStatus.UNKNOWN
+
+
+def _summary_sort_key(summary: DrcAttributionSummary) -> tuple[float, str, str, str]:
+    return (-abs(summary.total), summary.grain.value, summary.key, summary.summary_id)
+
+
+def _summary_slug(value: str) -> str:
+    return _slug(value).replace("|", "-")
+
+
+def _sorted_unique(values: Iterable[object]) -> tuple[str, ...]:
+    return tuple(sorted({str(value) for value in values if value is not None and str(value) != ""}))
+
+
 __all__ = [
+    "DrcAttributionGrain",
+    "DrcAttributionSummary",
     "calculate_drc_attribution",
+    "summarize_drc_attribution",
+    "summarize_drc_attribution_by_bucket",
+    "summarize_drc_attribution_by_category",
+    "summarize_drc_attribution_by_issuer",
+    "summarize_drc_attribution_by_risk_class",
+    "top_drc_attribution_summaries",
     "validate_attribution_reconciliation",
 ]

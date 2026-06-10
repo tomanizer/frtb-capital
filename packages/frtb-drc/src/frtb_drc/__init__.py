@@ -14,7 +14,18 @@ from frtb_drc.arrow_batch import (
     normalize_drc_nonsec_arrow_table,
     normalize_drc_securitisation_non_ctp_arrow_table,
 )
-from frtb_drc.attribution import calculate_drc_attribution, validate_attribution_reconciliation
+from frtb_drc.attribution import (
+    DrcAttributionGrain,
+    DrcAttributionSummary,
+    calculate_drc_attribution,
+    summarize_drc_attribution,
+    summarize_drc_attribution_by_bucket,
+    summarize_drc_attribution_by_category,
+    summarize_drc_attribution_by_issuer,
+    summarize_drc_attribution_by_risk_class,
+    top_drc_attribution_summaries,
+    validate_attribution_reconciliation,
+)
 from frtb_drc.audit import (
     input_snapshot_hash,
     result_json,
@@ -147,6 +158,8 @@ __all__ = [
     "CtpCapitalInput",
     "CtpNettingInput",
     "DefaultDirection",
+    "DrcAttributionGrain",
+    "DrcAttributionSummary",
     "DrcBatchCapitalCalculation",
     "DrcBucketType",
     "DrcCalculationContext",
@@ -232,7 +245,13 @@ __all__ = [
     "scale_gross_jtd",
     "scale_gross_jtds",
     "serialize_result",
+    "summarize_drc_attribution",
+    "summarize_drc_attribution_by_bucket",
+    "summarize_drc_attribution_by_category",
+    "summarize_drc_attribution_by_issuer",
+    "summarize_drc_attribution_by_risk_class",
     "to_component_summary",
+    "top_drc_attribution_summaries",
     "validate_attribution_reconciliation",
     "validate_ctp_context",
     "validate_position",
