@@ -216,7 +216,7 @@ def _assert_result_parity(row_result: CvaCapitalResult, batch_result: CvaCapital
     assert batch_result.method is row_result.method
     assert batch_result.total_cva_capital == pytest.approx(row_result.total_cva_capital)
     assert batch_result.citations
-    assert set(batch_result.citations) == set(row_result.citations)
+    assert batch_result.citations == row_result.citations
     assert len(batch_result.method_components) == len(row_result.method_components)
     for row_component, batch_component in zip(
         row_result.method_components,
@@ -225,7 +225,7 @@ def _assert_result_parity(row_result: CvaCapitalResult, batch_result: CvaCapital
     ):
         assert batch_component.method is row_component.method
         assert batch_component.total_capital == pytest.approx(row_component.total_capital)
-        assert set(batch_component.citations) == set(row_component.citations)
+        assert batch_component.citations == row_component.citations
 
 
 def _sensitivity(
