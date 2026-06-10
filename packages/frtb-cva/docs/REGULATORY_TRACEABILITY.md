@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document maps `frtb-cva` package code to Basel MAR50 and supported
-comparison profiles. It is a traceability aid for implementation and review; it
-is not legal advice and it does not make outputs final regulatory capital.
+This document maps `frtb-cva` package code to Basel MAR50 and comparison
+profiles. It is a traceability aid for implementation and review; it is not
+legal advice and it does not make outputs final regulatory capital.
 
 Companion source manifest: [`regulatory_sources.yml`](regulatory_sources.yml).
 
@@ -26,6 +26,13 @@ Runtime support-matrix rows use lower-case status values:
 | `unsupported_fail_closed` | Requested path is recognised but raises before capital is produced. |
 | `regulatory_absence` | No capital path is defined by the cited rule text. |
 | `out_of_scope` | Boundary item belongs to upstream systems, governance, or orchestration rather than the CVA capital kernel. |
+
+Runtime profile status values:
+
+| Profile status | Meaning |
+| --- | --- |
+| `capital_producing` | Profile has package-local reference data, tests, and audit evidence for capital-producing CVA methods. |
+| `comparison_fail_closed` | Profile is source-mapped for comparison, but capital-producing support is blocked until profile-specific fixtures or an explicit equivalence decision exist. |
 
 ## Delivered slice (implemented modules)
 
@@ -61,14 +68,14 @@ July 2020 calibration revision notes: `m_CVA = 1.0`, `D_BA-CVA = 0.65`.
 ## Profile x method support matrix
 
 Runtime source of truth: `frtb_cva.support_matrix.cva_profile_support_matrix`.
-`BASEL_MAR50_2020`, `US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA` are
-capital-producing under audit for the Basel-aligned BA-CVA, SA-CVA, and mixed
-carve-out methods. MAR50.9 / simplified CCR-substitution alternatives still
-fail closed before capital calculation. Non-Basel profiles use profile-owned
-citations and content hashes; ECB shorthand is normalised to `EU_CRR3_CVA`, not
-a separate runtime profile. SA-CVA supervisory approval workflow and exposure /
-sensitivity generation are out of scope package-boundary rows for every
-supported profile.
+`BASEL_MAR50_2020` is the only capital-producing CVA profile in this package
+until comparison profiles have profile-specific reference-data fixtures or an
+explicit documented equivalence decision. `US_NPR20_VB`, `EU_CRR3_CVA`, and
+`UK_PRA_CVA` remain visible for source mapping and client planning, but they fail
+closed before capital calculation with `profile_fixture_evidence` as the blocker.
+ECB shorthand is normalised to `EU_CRR3_CVA`, not a separate runtime profile.
+SA-CVA supervisory approval workflow and exposure / sensitivity generation are
+out of scope package-boundary rows for every profile.
 
 | Profile | Method or policy | Status | Citation | Blocker |
 | --- | --- | --- | --- | --- |
@@ -77,11 +84,11 @@ supported profile.
 | `BASEL_MAR50_2020` | `SA_CVA` | `implemented_under_audit` | MAR50.42-MAR50.77 | none |
 | `BASEL_MAR50_2020` | `MIXED_CARVE_OUT` | `implemented_under_audit` | MAR50.8 | none |
 | `BASEL_MAR50_2020` | `MAR50.9_MATERIALITY_THRESHOLD_CCR` | `unsupported_fail_closed` | MAR50.9 | CCR input and orchestration boundary |
-| `US_NPR20_VB` | all CVA methods | `implemented_under_audit` | U.S. NPR 2.0 91 FR 14952 section V.B | none; proposed-rule comparison profile |
+| `US_NPR20_VB` | all CVA methods and SA-CVA paths | `unsupported_fail_closed` | U.S. NPR 2.0 91 FR 14952 section V.B | `profile_fixture_evidence` |
 | `US_NPR20_VB` | materiality / simplified CCR substitution | `unsupported_fail_closed` | U.S. NPR 2.0 91 FR 14952 section V.B | CCR input and orchestration boundary |
-| `EU_CRR3_CVA` | all CVA methods | `implemented_under_audit` | Regulation (EU) 2024/1623 Articles 381-386 and 383a-383z | none; ECB shorthand routes here |
+| `EU_CRR3_CVA` | all CVA methods and SA-CVA paths | `unsupported_fail_closed` | Regulation (EU) 2024/1623 Articles 381-386 and 383a-383z | `profile_fixture_evidence` |
 | `EU_CRR3_CVA` | materiality / simplified CCR substitution | `unsupported_fail_closed` | Regulation (EU) 2024/1623 Article 385 | CCR input and orchestration boundary |
-| `UK_PRA_CVA` | all CVA methods | `implemented_under_audit` | PRA PS1/26; PRA Rulebook CVA Risk Part | none |
+| `UK_PRA_CVA` | all CVA methods and SA-CVA paths | `unsupported_fail_closed` | PRA PS1/26; PRA Rulebook CVA Risk Part | `profile_fixture_evidence` |
 | `UK_PRA_CVA` | materiality / alternative approach | `unsupported_fail_closed` | PRA Rulebook CVA Risk Part AA-CVA provisions | CCR input and orchestration boundary |
 | all supported profiles | `SA_CVA_APPROVAL_GOVERNANCE_WORKFLOW` | `out_of_scope` | profile-specific SA-CVA approval sources | supervisory approval boundary |
 | all supported profiles | `EXPOSURE_SIMULATION_AND_SENSITIVITY_GENERATION` | `out_of_scope` | profile-specific CVA exposure and sensitivity sources | upstream exposure/sensitivity boundary |
@@ -105,6 +112,9 @@ supported profile.
 
 ## Unsupported and out of scope in the delivered slice
 
+- `unsupported_fail_closed`: U.S. NPR, EU CRR3, and UK PRA comparison-profile
+  capital cells until profile-specific fixtures or an explicit equivalence
+  decision support capital-producing status.
 - `unsupported_fail_closed`: materiality-threshold alternative (MAR50.9).
 - `unsupported_fail_closed`: analogous simplified CCR-substitution alternatives
   in non-Basel profiles.
