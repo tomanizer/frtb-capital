@@ -74,38 +74,26 @@ SA_CVA_PATH_REGISTRY: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], SaCvaPathSpe
         "FX vega",
         calculate_fx_vega_capital,
     ),
-    (
-        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
-        SaCvaRiskMeasure.DELTA,
-    ): SaCvaPathSpec(
+    (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): SaCvaPathSpec(
         SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
         SaCvaRiskMeasure.DELTA,
         "CCS delta",
         calculate_ccs_delta_capital,
     ),
-    (
-        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
-        SaCvaRiskMeasure.VEGA,
-    ): SaCvaPathSpec(
+    (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA): SaCvaPathSpec(
         SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
         SaCvaRiskMeasure.VEGA,
         "CCS vega",
         None,
         unsupported_message="CCS vega capital is not permitted under MAR50.45 and MAR50.63",
     ),
-    (
-        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
-        SaCvaRiskMeasure.DELTA,
-    ): SaCvaPathSpec(
+    (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): SaCvaPathSpec(
         SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
         SaCvaRiskMeasure.DELTA,
         "RCS delta",
         calculate_rcs_delta_capital,
     ),
-    (
-        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
-        SaCvaRiskMeasure.VEGA,
-    ): SaCvaPathSpec(
+    (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA): SaCvaPathSpec(
         SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
         SaCvaRiskMeasure.VEGA,
         "RCS vega",
@@ -347,9 +335,7 @@ def sa_cva_aggregation_config(
         (SaCvaRiskClass.FX, SaCvaRiskMeasure.DELTA): _fx_delta_config,
         (SaCvaRiskClass.FX, SaCvaRiskMeasure.VEGA): _fx_vega_config,
         (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): _ccs_delta_config,
-        (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): (
-            _rcs_delta_config_for
-        ),
+        (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): _rcs_delta_config_for,
         (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA): _rcs_vega_config_for,
         (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.DELTA): _equity_delta_config_for,
         (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.VEGA): _equity_vega_config_for,
