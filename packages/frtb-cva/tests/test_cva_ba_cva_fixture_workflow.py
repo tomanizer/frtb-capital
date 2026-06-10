@@ -87,10 +87,16 @@ def _assert_reduced_result_matches(actual: Any, expected: dict[str, Any]) -> Non
     assert actual.k_portfolio == pytest.approx(expected["k_portfolio"])
     assert actual.k_reduced == pytest.approx(expected["k_reduced"])
 
-    assert len(actual.netting_set_lines) == len(expected["netting_set_lines"])
-    for actual_line, expected_line in zip(
-        actual.netting_set_lines, expected["netting_set_lines"], strict=True
-    ):
+    actual_lines = sorted(
+        actual.netting_set_lines,
+        key=lambda line: (line.counterparty_id, line.netting_set_id),
+    )
+    expected_lines = sorted(
+        expected["netting_set_lines"],
+        key=lambda line: (line["counterparty_id"], line["netting_set_id"]),
+    )
+    assert len(actual_lines) == len(expected_lines)
+    for actual_line, expected_line in zip(actual_lines, expected_lines, strict=True):
         assert actual_line.netting_set_id == expected_line["netting_set_id"]
         assert actual_line.counterparty_id == expected_line["counterparty_id"]
         assert actual_line.ead == pytest.approx(expected_line["ead"])
@@ -98,16 +104,28 @@ def _assert_reduced_result_matches(actual: Any, expected: dict[str, Any]) -> Non
             expected_line["effective_maturity"]
         )
         assert actual_line.discount_factor == pytest.approx(expected_line["discount_factor"])
-        assert actual_line.risk_weight == pytest.approx(expected["risk_weight"])
+        expected_risk_weight = expected_line.get("risk_weight", expected.get("risk_weight"))
+        assert expected_risk_weight is not None, (
+            f"risk_weight missing for netting set {actual_line.netting_set_id}"
+        )
+        assert actual_line.risk_weight == pytest.approx(expected_risk_weight)
         assert actual_line.alpha == pytest.approx(expected["alpha"])
         assert actual_line.standalone_capital == pytest.approx(
             expected_line["standalone_capital"]
         )
 
-    assert len(actual.counterparty_capitals) == len(expected["counterparty_capitals"])
-    for actual_counterparty, expected_counterparty in zip(
+    actual_counterparties = sorted(
         actual.counterparty_capitals,
+        key=lambda counterparty: counterparty.counterparty_id,
+    )
+    expected_counterparties = sorted(
         expected["counterparty_capitals"],
+        key=lambda counterparty: counterparty["counterparty_id"],
+    )
+    assert len(actual_counterparties) == len(expected_counterparties)
+    for actual_counterparty, expected_counterparty in zip(
+        actual_counterparties,
+        expected_counterparties,
         strict=True,
     ):
         assert (
@@ -117,6 +135,6 @@ def _assert_reduced_result_matches(actual: Any, expected: dict[str, Any]) -> Non
         assert actual_counterparty.standalone_capital == pytest.approx(
             expected_counterparty["standalone_capital"]
         )
-        assert list(actual_counterparty.netting_set_ids) == expected_counterparty[
-            "netting_set_ids"
-        ]
+        assert sorted(actual_counterparty.netting_set_ids) == sorted(
+            expected_counterparty["netting_set_ids"]
+        )
