@@ -24,7 +24,7 @@ from frtb_orchestration import (
 
 _CALCULATION_DATE = date(2026, 3, 31)
 _INPUT_HASH = "1" * 64
-_POLICY_HASH = "policy-hash"
+_POLICY_HASH = "2" * 64
 
 
 def test_orchestration_consumes_public_ima_contribution_bundle() -> None:
