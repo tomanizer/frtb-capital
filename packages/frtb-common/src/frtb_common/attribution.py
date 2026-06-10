@@ -189,22 +189,25 @@ def reconcile_contribution_set(
     """
 
     tolerance = _absolute_reconciliation_tolerance(capital_total, relative_tolerance)
-    contribution_sum = 0.0
-    residual_sum = 0.0
+    contribution_amounts = []
+    residual_amounts = []
     for record in contributions:
         contribution_amount = 0.0 if record.contribution is None else record.contribution
         _require_finite(contribution_amount, f"contribution {record.contribution_id}")
         _require_finite(record.residual, f"residual {record.contribution_id}")
-        contribution_sum += contribution_amount
-        residual_sum += record.residual
+        contribution_amounts.append(contribution_amount)
+        residual_amounts.append(record.residual)
 
+    contribution_sum = math.fsum(contribution_amounts)
+    residual_sum = math.fsum(residual_amounts)
     explained_total = contribution_sum + residual_sum
     difference = explained_total - capital_total
     reconciled = abs(difference) <= tolerance
+    contributions_reconciled = abs(contribution_sum - capital_total) <= tolerance
     status = (
-        ReconciliationStatus.PARTIAL_RESIDUAL
-        if reconciled and abs(residual_sum) > tolerance
-        else ReconciliationStatus.RECONCILED
+        ReconciliationStatus.RECONCILED
+        if contributions_reconciled
+        else ReconciliationStatus.PARTIAL_RESIDUAL
         if reconciled
         else ReconciliationStatus.UNRECONCILED
     )
