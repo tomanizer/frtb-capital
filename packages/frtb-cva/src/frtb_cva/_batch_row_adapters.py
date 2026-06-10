@@ -20,6 +20,7 @@ from frtb_cva.data_models import (
     CvaCounterparty,
     CvaHedge,
     CvaNettingSet,
+    CvaSourceLineage,
     SaCvaSensitivity,
 )
 from frtb_cva.validation import (
@@ -29,6 +30,17 @@ from frtb_cva.validation import (
     validate_cva_netting_sets,
     validate_sa_cva_sensitivities,
 )
+
+_DEFAULT_ROW_SOURCE_SYSTEM = "canonical-dataclass"
+_DEFAULT_ROW_SOURCE_FILE = "dataclass-input"
+
+
+def _lineage_source_system(lineage: CvaSourceLineage | None) -> str:
+    return _DEFAULT_ROW_SOURCE_SYSTEM if lineage is None else lineage.source_system
+
+
+def _lineage_source_file(lineage: CvaSourceLineage | None) -> str:
+    return _DEFAULT_ROW_SOURCE_FILE if lineage is None else lineage.source_file
 
 
 def build_cva_counterparty_batch_from_counterparties(
@@ -73,12 +85,8 @@ def build_cva_counterparty_batch_from_counterparties(
         credit_qualities=[item.credit_quality.value for item in validated],
         regions=[item.region for item in validated],
         source_row_ids=[item.source_row_id for item in validated],
-        lineage_source_systems=[
-            "" if item.lineage is None else item.lineage.source_system for item in validated
-        ],
-        lineage_source_files=[
-            "" if item.lineage is None else item.lineage.source_file for item in validated
-        ],
+        lineage_source_systems=[_lineage_source_system(item.lineage) for item in validated],
+        lineage_source_files=[_lineage_source_file(item.lineage) for item in validated],
         lineage_source_row_ids=[
             item.source_row_id if item.lineage is None else item.lineage.source_row_id
             for item in validated
@@ -144,12 +152,8 @@ def build_cva_netting_set_batch_from_netting_sets(
         source_row_ids=[item.source_row_id for item in validated],
         carved_out_to_ba_cva=[item.carved_out_to_ba_cva for item in validated],
         discount_factor_explicit=[item.discount_factor_explicit for item in validated],
-        lineage_source_systems=[
-            "" if item.lineage is None else item.lineage.source_system for item in validated
-        ],
-        lineage_source_files=[
-            "" if item.lineage is None else item.lineage.source_file for item in validated
-        ],
+        lineage_source_systems=[_lineage_source_system(item.lineage) for item in validated],
+        lineage_source_files=[_lineage_source_file(item.lineage) for item in validated],
         lineage_source_row_ids=[
             item.source_row_id if item.lineage is None else item.lineage.source_row_id
             for item in validated
@@ -229,12 +233,8 @@ def build_cva_hedge_batch_from_hedges(
         ],
         eligibility_evidence_ids=[item.eligibility_evidence_id for item in validated],
         rejection_reasons=[item.rejection_reason for item in validated],
-        lineage_source_systems=[
-            "" if item.lineage is None else item.lineage.source_system for item in validated
-        ],
-        lineage_source_files=[
-            "" if item.lineage is None else item.lineage.source_file for item in validated
-        ],
+        lineage_source_systems=[_lineage_source_system(item.lineage) for item in validated],
+        lineage_source_files=[_lineage_source_file(item.lineage) for item in validated],
         lineage_source_row_ids=[
             item.source_row_id if item.lineage is None else item.lineage.source_row_id
             for item in validated
@@ -309,12 +309,8 @@ def build_sa_cva_sensitivity_batch_from_sensitivities(
             for item in validated
         ],
         index_remap_bucket_ids=[item.index_remap_bucket_id for item in validated],
-        lineage_source_systems=[
-            "" if item.lineage is None else item.lineage.source_system for item in validated
-        ],
-        lineage_source_files=[
-            "" if item.lineage is None else item.lineage.source_file for item in validated
-        ],
+        lineage_source_systems=[_lineage_source_system(item.lineage) for item in validated],
+        lineage_source_files=[_lineage_source_file(item.lineage) for item in validated],
         lineage_source_row_ids=[
             item.source_row_id if item.lineage is None else item.lineage.source_row_id
             for item in validated

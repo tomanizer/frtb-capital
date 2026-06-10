@@ -10,8 +10,10 @@ from frtb_cva import (
     SaCvaRiskMeasure,
     SaCvaSensitivity,
     SensitivityTag,
+    build_sa_cva_sensitivity_batch_from_sensitivities,
     calculate_cva_capital,
     input_hash,
+    input_hash_for_cva_batches,
     profile_content_hash,
 )
 
@@ -66,8 +68,12 @@ def test_sa_cva_repeated_runs_are_deterministic() -> None:
         sign_convention="positive_loss",
         source_row_id="row-sens-girr-5y",
     )
+    sensitivity_batch = build_sa_cva_sensitivity_batch_from_sensitivities((sensitivity,))
     first = calculate_cva_capital(context, (), (), sensitivities=(sensitivity,))
     second = calculate_cva_capital(context, (), (), sensitivities=(sensitivity,))
     assert first.total_cva_capital == second.total_cva_capital
     assert first.input_hash == second.input_hash
-    assert first.input_hash == input_hash(context, (), (), sensitivities=(sensitivity,))
+    assert first.input_hash == input_hash_for_cva_batches(
+        context,
+        sensitivities=sensitivity_batch,
+    )

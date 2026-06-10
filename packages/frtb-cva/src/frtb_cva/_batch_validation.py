@@ -6,6 +6,7 @@ import math
 from typing import cast
 
 import numpy as np
+from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_cva._batch_columns import (
     _require_unique,
@@ -17,6 +18,7 @@ from frtb_cva._batch_contracts import (
     CvaNettingSetBatch,
     SaCvaSensitivityBatch,
 )
+from frtb_cva._unsupported import MAR50_9_UNSUPPORTED_MESSAGE
 from frtb_cva.data_models import (
     CvaCalculationContext,
     CvaMethod,
@@ -194,6 +196,8 @@ def _resolve_scope_for_batches(
         ("requested_method", context.method.value),
         ("sa_cva_approved", str(context.sa_cva_approved)),
     ]
+    if context.materiality_threshold_elected:
+        raise UnsupportedRegulatoryFeatureError(MAR50_9_UNSUPPORTED_MESSAGE)
     if context.method is CvaMethod.BA_CVA_FULL:
         audit_metadata.append(("resolved_method", CvaMethod.BA_CVA_FULL.value))
         return ScopeResolution(
