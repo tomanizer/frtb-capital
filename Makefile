@@ -176,6 +176,7 @@ notebooks-check:
 	$(NOTEBOOK_ENV) uv run --extra notebooks --directory packages/frtb-ima pytest --nbmake notebooks
 	$(NOTEBOOK_ENV) uv run --all-extras --directory packages/frtb-rrao pytest --nbmake notebooks
 	$(NOTEBOOK_ENV) uv run pytest packages/frtb-cva/tests/test_cva_notebooks.py
+	$(NOTEBOOK_ENV) uv run --with pytest,nbmake --directory packages/frtb-orchestration pytest --nbmake notebooks
 
 mutation:
 	mkdir -p $(MUTATION_DIST)/frtb-ima
@@ -218,88 +219,3 @@ benchmark-suite:
 	uv run python scripts/ci/run_benchmark_suite.py
 
 benchmark-budget-check:
-	uv run python scripts/ci/check_benchmark_budgets.py
-
-audit-deps:
-	uv run pip-audit
-
-sbom:
-	mkdir -p dist/sbom
-	uv run cyclonedx-py environment .venv --pyproject pyproject.toml --output-reproducible --of JSON -o dist/sbom/frtb-capital.cdx.json
-
-checksums: build sbom
-	uv run python scripts/release_checksums.py --artifacts dist/release --sbom dist/sbom/frtb-capital.cdx.json --output dist/release/SHA256SUMS --json-output dist/release/release-checksums.json
-
-release-artifacts: checksums
-
-repo-controls-snapshot:
-	uv run python scripts/capture_repo_controls.py --repo $(REPO) --branch $(BRANCH) --output dist/repo-controls
-
-replay-fixture:
-	mkdir -p dist/replay
-	uv run python packages/frtb-ima/scripts/render_audit_report.py --output dist/replay/capital_run_v1_audit_report.md --ndjson dist/replay/capital_run_v1_desk_records.ndjson
-	uv run python -m frtb_ima.replay --audit dist/replay/capital_run_v1_desk_records.ndjson --fixture packages/frtb-ima/tests/fixtures/capital_run_v1 --json-output dist/replay/capital_run_v1_replay_report.json
-
-validation-pack:
-	$(MAKE) -C packages/frtb-ima PYTHON_BIN="uv run --extra notebooks python" validation-pack
-
-# Agent workspace helpers
-AGENT ?= codex
-TASK ?=
-
-agent-setup:
-	$(PYTHON_BIN) scripts/agent_worktree.py install-hooks
-
-agent-sync-main:
-	$(PYTHON_BIN) scripts/agent_worktree.py sync-main
-
-agent-new:
-	@test -n "$(TASK)" || \
-		(echo "TASK is required, for example: make agent-new AGENT=codex TASK=drc-scenarios"; exit 1)
-	$(PYTHON_BIN) scripts/agent_worktree.py new --agent "$(AGENT)" "$(TASK)"
-
-agent-ensure:
-	@test -n "$(AGENT)" || \
-		(echo "AGENT is required, for example: make agent-ensure AGENT=grok TASK=drc-scenarios"; exit 1)
-	@test -n "$(TASK)" || \
-		(echo "TASK is required, for example: make agent-ensure AGENT=grok TASK=drc-scenarios"; exit 1)
-	$(PYTHON_BIN) scripts/agent_worktree.py ensure --agent "$(AGENT)" "$(TASK)"
-
-agent-guard:
-	$(PYTHON_BIN) scripts/agent_worktree.py guard
-
-agent-worktrees:
-	$(PYTHON_BIN) scripts/agent_worktree.py list
-
-agent-doctor:
-	$(PYTHON_BIN) scripts/agent_worktree.py doctor
-
-# Per-package shortcuts
-ima:
-	uv run pytest packages/frtb-ima/tests
-
-sa: sbm drc rrao
-
-sbm:
-	@test -d packages/frtb-sbm || (echo "frtb-sbm package not yet created"; exit 1)
-	uv run pytest packages/frtb-sbm/tests
-
-drc:
-	@test -d packages/frtb-drc || (echo "frtb-drc package not yet created"; exit 1)
-	uv run pytest packages/frtb-drc/tests
-
-rrao:
-	@test -d packages/frtb-rrao || (echo "frtb-rrao package not yet created"; exit 1)
-	uv run pytest packages/frtb-rrao/tests
-
-cva:
-	@test -d packages/frtb-cva || (echo "frtb-cva package not yet created"; exit 1)
-	uv run pytest packages/frtb-cva/tests
-
-orchestration:
-	@test -d packages/frtb-orchestration || (echo "frtb-orchestration package not yet created"; exit 1)
-	uv run pytest packages/frtb-orchestration/tests
-
-clean:
-	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage build dist *.egg-info
-	find packages -name "__pycache__" -type d -exec rm -rf {} +
