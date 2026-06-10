@@ -87,7 +87,8 @@ flowchart TD
   SCOPE -- no --> FAIL
   SCOPE -- yes --> MATERIALITY
   MATERIALITY -- yes --> FAIL
-  MATERIALITY -- no --> CALC --> RESULT
+  MATERIALITY -- no --> CALC
+  CALC --> RESULT
 ```
 
 ---
