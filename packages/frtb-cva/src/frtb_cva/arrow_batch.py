@@ -8,7 +8,7 @@ This module normalises vendor Arrow inputs through
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any, cast
+from typing import Any, TypeVar
 
 import pyarrow as pa  # type: ignore[import-untyped]
 from frtb_common import (
@@ -38,6 +38,8 @@ from frtb_cva.batch import (
     SaCvaSensitivityBatch,
 )
 from frtb_cva.validation import CvaInputError
+
+T = TypeVar("T")
 
 
 def normalize_cva_counterparty_arrow_table(
@@ -212,10 +214,7 @@ def build_cva_counterparty_batch_from_arrow(
     CvaInputError
         If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
     """
-    return cast(
-        CvaCounterpartyBatch,
-        build_cva_batch_from_arrow(handoff, CVA_COUNTERPARTY_ENTITY_SPEC),
-    )
+    return build_cva_batch_from_arrow(handoff, CVA_COUNTERPARTY_ENTITY_SPEC)
 
 
 def build_cva_netting_set_batch_from_arrow(
@@ -238,10 +237,7 @@ def build_cva_netting_set_batch_from_arrow(
     CvaInputError
         If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
     """
-    return cast(
-        CvaNettingSetBatch,
-        build_cva_batch_from_arrow(handoff, CVA_NETTING_SET_ENTITY_SPEC),
-    )
+    return build_cva_batch_from_arrow(handoff, CVA_NETTING_SET_ENTITY_SPEC)
 
 
 def build_cva_hedge_batch_from_arrow(handoff: NormalizedArrowTable) -> CvaHedgeBatch:
@@ -262,7 +258,7 @@ def build_cva_hedge_batch_from_arrow(handoff: NormalizedArrowTable) -> CvaHedgeB
     CvaInputError
         If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
     """
-    return cast(CvaHedgeBatch, build_cva_batch_from_arrow(handoff, CVA_HEDGE_ENTITY_SPEC))
+    return build_cva_batch_from_arrow(handoff, CVA_HEDGE_ENTITY_SPEC)
 
 
 def build_sa_cva_sensitivity_batch_from_arrow(
@@ -285,15 +281,12 @@ def build_sa_cva_sensitivity_batch_from_arrow(
     CvaInputError
         If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
     """
-    return cast(
-        SaCvaSensitivityBatch,
-        build_cva_batch_from_arrow(handoff, SA_CVA_SENSITIVITY_ENTITY_SPEC),
-    )
+    return build_cva_batch_from_arrow(handoff, SA_CVA_SENSITIVITY_ENTITY_SPEC)
 
 
 def normalize_cva_arrow_table(
     table: pa.Table,
-    spec: EntityBatchSpec,
+    spec: EntityBatchSpec[Any],
     *,
     diagnostics: Sequence[AdapterDiagnostic] = (),
     metadata: Mapping[str, str] | None = None,
@@ -327,7 +320,7 @@ def normalize_cva_arrow_table(
     )
 
 
-def build_cva_batch_from_arrow(handoff: NormalizedArrowTable, spec: EntityBatchSpec) -> object:
+def build_cva_batch_from_arrow(handoff: NormalizedArrowTable, spec: EntityBatchSpec[T]) -> T:
     """Materialise a CVA batch from a normalized Arrow handoff and entity spec.
 
     Parameters
@@ -339,7 +332,7 @@ def build_cva_batch_from_arrow(handoff: NormalizedArrowTable, spec: EntityBatchS
 
     Returns
     -------
-    object
+    T
         Validated package-local batch produced by ``spec.build_from_columns``.
 
     Raises

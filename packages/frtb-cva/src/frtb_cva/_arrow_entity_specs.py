@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from typing import Any, Generic, TypeVar
 
 from frtb_common import ColumnSpec, TabularLogicalType
 
@@ -14,15 +15,21 @@ from frtb_cva._arrow_ba_column_specs import (
 from frtb_cva._arrow_hedge_column_specs import CVA_HEDGE_ARROW_COLUMN_SPECS
 from frtb_cva._arrow_sa_column_specs import SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS
 from frtb_cva.batch import (
+    CvaCounterpartyBatch,
+    CvaHedgeBatch,
+    CvaNettingSetBatch,
+    SaCvaSensitivityBatch,
     build_cva_counterparty_batch_from_columns,
     build_cva_hedge_batch_from_columns,
     build_cva_netting_set_batch_from_columns,
     build_sa_cva_sensitivity_batch_from_columns,
 )
 
+T = TypeVar("T")
+
 
 @dataclass(frozen=True)
-class EntityBatchSpec:
+class EntityBatchSpec(Generic[T]):
     """CVA Arrow ingress contract for one batch entity.
 
     Parameters
@@ -33,17 +40,17 @@ class EntityBatchSpec:
         Normalized Arrow column contract for the entity.
     column_to_argument : Mapping[str, str]
         Mapping from normalized Arrow column names to the column-builder keyword names.
-    build_from_columns : Callable[..., object]
+    build_from_columns : Callable[..., T]
         Package-local column builder that materialises and validates the batch contract.
-    validate_batch : Callable[[object], None] or None, optional
+    validate_batch : Callable[[T], None] or None, optional
         Optional post-build validator for future entity-specific checks.
     """
 
     entity: str
     column_specs: tuple[ColumnSpec, ...]
     column_to_argument: Mapping[str, str]
-    build_from_columns: Callable[..., object]
-    validate_batch: Callable[[object], None] | None = None
+    build_from_columns: Callable[..., T]
+    validate_batch: Callable[[T], None] | None = None
 
     @property
     def required_columns(self) -> tuple[str, ...]:
@@ -145,7 +152,7 @@ def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
         spec.name
         for spec_group in spec_groups
         for spec in spec_group
-        if spec.logical_type is TabularLogicalType.UNKNOWN
+        if spec.logical_type == TabularLogicalType.UNKNOWN
     )
     if unknown:
         raise RuntimeError("CVA Arrow specs must declare logical_type: " + ", ".join(unknown))
@@ -158,32 +165,32 @@ _ensure_explicit_logical_types(
     SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS,
 )
 
-CVA_COUNTERPARTY_ENTITY_SPEC = EntityBatchSpec(
+CVA_COUNTERPARTY_ENTITY_SPEC: EntityBatchSpec[CvaCounterpartyBatch] = EntityBatchSpec(
     entity="counterparty",
     column_specs=CVA_COUNTERPARTY_ARROW_COLUMN_SPECS,
     column_to_argument=_CVA_COUNTERPARTY_BATCH_COLUMN_ARGS,
     build_from_columns=build_cva_counterparty_batch_from_columns,
 )
-CVA_NETTING_SET_ENTITY_SPEC = EntityBatchSpec(
+CVA_NETTING_SET_ENTITY_SPEC: EntityBatchSpec[CvaNettingSetBatch] = EntityBatchSpec(
     entity="netting_set",
     column_specs=CVA_NETTING_SET_ARROW_COLUMN_SPECS,
     column_to_argument=_CVA_NETTING_SET_BATCH_COLUMN_ARGS,
     build_from_columns=build_cva_netting_set_batch_from_columns,
 )
-CVA_HEDGE_ENTITY_SPEC = EntityBatchSpec(
+CVA_HEDGE_ENTITY_SPEC: EntityBatchSpec[CvaHedgeBatch] = EntityBatchSpec(
     entity="hedge",
     column_specs=CVA_HEDGE_ARROW_COLUMN_SPECS,
     column_to_argument=_CVA_HEDGE_BATCH_COLUMN_ARGS,
     build_from_columns=build_cva_hedge_batch_from_columns,
 )
-SA_CVA_SENSITIVITY_ENTITY_SPEC = EntityBatchSpec(
+SA_CVA_SENSITIVITY_ENTITY_SPEC: EntityBatchSpec[SaCvaSensitivityBatch] = EntityBatchSpec(
     entity="sa_cva_sensitivity",
     column_specs=SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS,
     column_to_argument=_SA_CVA_SENSITIVITY_BATCH_COLUMN_ARGS,
     build_from_columns=build_sa_cva_sensitivity_batch_from_columns,
 )
 
-CVA_ENTITY_BATCH_SPECS: Mapping[str, EntityBatchSpec] = {
+CVA_ENTITY_BATCH_SPECS: Mapping[str, EntityBatchSpec[Any]] = {
     spec.entity: spec
     for spec in (
         CVA_COUNTERPARTY_ENTITY_SPEC,
