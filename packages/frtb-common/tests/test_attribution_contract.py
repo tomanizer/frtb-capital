@@ -282,6 +282,20 @@ def test_capital_impact_as_dict() -> None:
         notes=("note-1", "note-2"),
     )
     d = impact.as_dict()
+    assert list(d) == [
+        "baseline_run_id",
+        "candidate_run_id",
+        "component",
+        "baseline_total",
+        "candidate_total",
+        "delta",
+        "method",
+        "baseline_input_hash",
+        "candidate_input_hash",
+        "baseline_profile_hash",
+        "candidate_profile_hash",
+        "notes",
+    ]
     assert d["delta"] == 10.0
     assert d["method"] == "FINITE_DIFFERENCE"
     assert d["notes"] == ["note-1", "note-2"]
@@ -345,6 +359,35 @@ def test_bundle_as_dict() -> None:
         component_profile_hash="p3",
     )
     d = bundle.as_dict()
+    assert list(d) == [
+        "component",
+        "contributions",
+        "component_total",
+        "component_input_hash",
+        "component_profile_hash",
+    ]
     assert d["component"] == "frtb_cva"
     assert isinstance(d["contributions"], list)
     assert len(d["contributions"]) == 1
+
+
+def test_capital_contribution_as_dict_field_contract() -> None:
+    c1 = _make_euler("c1", contribution=100.0)
+
+    assert list(c1.as_dict()) == [
+        "contribution_id",
+        "source_id",
+        "source_level",
+        "bucket_key",
+        "category",
+        "base_amount",
+        "marginal_multiplier",
+        "contribution",
+        "method",
+        "residual",
+        "reason",
+        "citations",
+        "input_hash",
+        "profile_hash",
+        "reconciliation_status",
+    ]

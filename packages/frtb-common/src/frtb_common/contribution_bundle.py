@@ -7,10 +7,10 @@ the individual records.  See ADR 0038.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 
 from frtb_common.attribution import CapitalContribution
-from frtb_common.serialization import jsonable
+from frtb_common.serialization import dataclass_as_dict
 
 _RECONCILIATION_TOLERANCE = 1e-6
 
@@ -52,7 +52,7 @@ class ComponentContributionBundle:
         dict[str, object]
             Dataclass field names mapped through :func:`frtb_common.serialization.jsonable`.
         """
-        return {field.name: jsonable(getattr(self, field.name)) for field in fields(self)}
+        return dataclass_as_dict(self)
 
 
 __all__ = ["ComponentContributionBundle"]

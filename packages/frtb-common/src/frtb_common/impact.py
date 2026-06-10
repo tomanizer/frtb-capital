@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from enum import StrEnum
 
-from frtb_common.serialization import jsonable
+from frtb_common.serialization import dataclass_as_dict
 
 
 class ImpactMethod(StrEnum):
@@ -58,7 +58,7 @@ class CapitalImpact:
         dict[str, object]
             Dataclass field names mapped through :func:`frtb_common.serialization.jsonable`.
         """
-        return {field.name: jsonable(getattr(self, field.name)) for field in fields(self)}
+        return dataclass_as_dict(self)
 
 
 __all__ = ["CapitalImpact", "ImpactMethod"]

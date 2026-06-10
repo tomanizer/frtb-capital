@@ -70,7 +70,7 @@ from frtb_common.regulatory import (
     MissingRegulatoryCitationsError,
     assert_policy_has_regulatory_citations,
 )
-from frtb_common.serialization import jsonable
+from frtb_common.serialization import dataclass_as_dict, jsonable
 from frtb_common.status import (
     CapitalComponentMetadata,
     ImplementationStatus,
@@ -123,6 +123,7 @@ __all__ = [
     "column_specs_to_arrow_schema",
     "column_specs_to_json_schema",
     "crif_records_to_arrow_table",
+    "dataclass_as_dict",
     "dictionary_code_chunks",
     "dictionary_code_column",
     "is_sha256_hex",
