@@ -10,6 +10,34 @@ RRAO` under Basel MAR20.4. The implementation taxonomy therefore uses three
 component packages: `frtb-sbm`, `frtb-drc`, and `frtb-rrao`. See the
 [Standardised Approach composition note](standardised-approach.md).
 
+## Suite Module Flow
+
+```mermaid
+flowchart LR
+  client["Client risk engine<br/>Arrow / dataclass inputs"]
+  common["frtb-common<br/>handoff contracts + citations"]
+  ima["frtb-ima<br/>IMA capital"]
+  sbm["frtb-sbm<br/>SBM"]
+  drc["frtb-drc<br/>DRC"]
+  rrao["frtb-rrao<br/>RRAO"]
+  cva["frtb-cva<br/>CVA"]
+  orch["frtb-orchestration<br/>SA + top-of-house"]
+  store["frtb-result-store<br/>run evidence"]
+
+  client --> common
+  common --> ima
+  common --> sbm
+  common --> drc
+  common --> rrao
+  common --> cva
+  sbm --> orch
+  drc --> orch
+  rrao --> orch
+  ima --> orch
+  cva --> orch
+  orch --> store
+```
+
 ## Teaching Entrypoints
 
 For a first integration pass, start with the suite-level
