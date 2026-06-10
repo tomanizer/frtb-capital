@@ -62,25 +62,21 @@ from frtb_result_store.run_metadata_io import (
     telemetry_row as _telemetry_row,
 )
 from frtb_result_store.store_hierarchy_rows import (
-    _hierarchy_definition_from_row as _hierarchy_definition_from_row,
-)
-from frtb_result_store.store_hierarchy_rows import (
+    _hierarchy_definition_from_row,
     _hierarchy_definition_row,
-)
-from frtb_result_store.store_hierarchy_rows import (
-    _hierarchy_level_from_mapping as _hierarchy_level_from_mapping,
-)
-from frtb_result_store.store_hierarchy_rows import (
-    _hierarchy_node_from_row as _hierarchy_node_from_row,
-)
-from frtb_result_store.store_hierarchy_rows import (
+    _hierarchy_level_from_mapping,
+    _hierarchy_node_from_row,
     _hierarchy_node_row,
+    _hierarchy_path_item_from_mapping,
+    _json_object_list,
 )
-from frtb_result_store.store_hierarchy_rows import (
-    _hierarchy_path_item_from_mapping as _hierarchy_path_item_from_mapping,
-)
-from frtb_result_store.store_hierarchy_rows import (
-    _json_object_list as _json_object_list,
+
+_HIERARCHY_ROW_COMPATIBILITY_EXPORTS = (
+    _hierarchy_definition_from_row,
+    _hierarchy_level_from_mapping,
+    _hierarchy_node_from_row,
+    _hierarchy_path_item_from_mapping,
+    _json_object_list,
 )
 
 
