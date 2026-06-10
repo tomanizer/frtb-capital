@@ -57,6 +57,7 @@ rejection semantics.
 
 ```bash
 make check          # lint + typecheck + coverage-gated tests across the workspace
+make demo           # run every package examples/run_demo.py with concise summaries
 make ima            # work on the IMA package only
 make mutation       # run the focused IMA mutation-testing baseline
 make mutation-rrao  # run the focused RRAO mutation-testing baseline
@@ -64,6 +65,8 @@ make mutation-score-check  # verify exported mutmut CI stats (run mutation targe
 ```
 
 Per-package targets are available from each package's own `Makefile` or via `uv run`.
+`make examples-check` reuses the same demo runner for CI smoke coverage of the
+user-facing package examples.
 
 ## Documentation
 

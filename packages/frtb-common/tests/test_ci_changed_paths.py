@@ -105,6 +105,22 @@ def test_package_example_python_pr_runs_runtime_tests() -> None:
     assert outputs["test"] is True
 
 
+def test_root_demo_runner_change_runs_examples_job() -> None:
+    outputs = classify({"scripts/run_package_demos.py"})
+
+    assert outputs["code"] is True
+    assert outputs["test"] is True
+    assert outputs["examples"] is True
+
+
+def test_makefile_change_runs_examples_job() -> None:
+    outputs = classify({"Makefile"})
+
+    assert outputs["code"] is True
+    assert outputs["test"] is True
+    assert outputs["examples"] is True
+
+
 def test_package_script_python_pr_runs_runtime_tests() -> None:
     outputs = classify({"packages/frtb-drc/scripts/generate_fixture.py"})
 

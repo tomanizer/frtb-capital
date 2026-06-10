@@ -385,8 +385,8 @@ jobs:
       - name: Sync workspace
         run: uv sync --locked --python 3.11
 
-      - name: Run IMA demo
-        run: uv run python packages/frtb-ima/examples/run_demo.py
+      - name: Run package demos
+        run: make examples-check
 
   notebooks:
     needs: changes
