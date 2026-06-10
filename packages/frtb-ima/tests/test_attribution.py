@@ -100,7 +100,7 @@ def test_desk_contributions_emit_nmrf_branch_local_explain_records() -> None:
             "total_ses": 25.0,
             "type_a_results": [
                 {
-                    "risk_factor_name": "csr.alpha",
+                    "risk_factor": {"name": "csr.alpha"},
                     "ses": 9.0,
                     "method": "DIRECT",
                     "source": "risk-engine",
