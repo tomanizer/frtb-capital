@@ -6,7 +6,8 @@ import math
 from dataclasses import replace
 from datetime import date
 
-from frtb_common.attribution import AttributionMethod
+import pytest
+from frtb_common.attribution import AttributionMethod, CapitalContribution
 from frtb_sbm import (
     SbmCalculationContext,
     SbmRiskClass,
@@ -33,14 +34,16 @@ def test_multi_risk_class_delta_euler_records_reconcile_by_risk_class() -> None:
 
     assert {record.category for record in records} == {"FX", "GIRR"}
     assert all(record.method is AttributionMethod.ANALYTICAL_EULER for record in records)
-    assert _record_total(records) == pytest_approx(result.total_capital)
+    assert _record_total(records) == pytest.approx(result.total_capital, rel=1e-6, abs=1e-6)
 
     capital_by_risk_class = {
         str(risk_class.risk_class): risk_class.selected_capital for risk_class in result.risk_classes
     }
     for risk_class, selected_capital in capital_by_risk_class.items():
         risk_class_records = tuple(record for record in records if record.category == risk_class)
-        assert _record_total(risk_class_records) == pytest_approx(selected_capital)
+        assert _record_total(risk_class_records) == pytest.approx(
+            selected_capital, rel=1e-6, abs=1e-6
+        )
 
 
 def test_selected_scenario_matches_maximum_scenario_total_for_girr_delta() -> None:
@@ -58,7 +61,7 @@ def test_selected_scenario_matches_maximum_scenario_total_for_girr_delta() -> No
 
     selected_total = risk_class.scenario_totals[risk_class.selected_scenario]
     maximum_total = max(risk_class.scenario_totals.values())
-    assert selected_total == pytest_approx(maximum_total)
+    assert selected_total == pytest.approx(maximum_total, rel=1e-6, abs=1e-6)
     assert risk_class.selected_scenario in {
         SbmScenarioLabel.LOW,
         SbmScenarioLabel.MEDIUM,
@@ -66,7 +69,7 @@ def test_selected_scenario_matches_maximum_scenario_total_for_girr_delta() -> No
     }
 
     records = calculate_sbm_attribution(result)
-    assert _record_total(records) == pytest_approx(risk_class.selected_capital)
+    assert _record_total(records) == pytest.approx(risk_class.selected_capital, rel=1e-6, abs=1e-6)
 
 
 def test_negative_girr_sensitivity_can_reduce_euler_capital_contribution() -> None:
@@ -81,7 +84,7 @@ def test_negative_girr_sensitivity_can_reduce_euler_capital_contribution() -> No
 
     assert len(euler) == 2
     assert any(record.contribution is not None and record.contribution < 0.0 for record in euler)
-    assert _record_total(records) == pytest_approx(result.total_capital)
+    assert _record_total(records) == pytest.approx(result.total_capital, rel=1e-6, abs=1e-6)
 
 
 def test_multi_risk_class_finite_difference_matches_euler_derivatives() -> None:
@@ -162,7 +165,9 @@ def _girr_delta(
         tenor=tenor,
         amount=amount,
         amount_currency="USD",
-        sign_convention=SbmSignConvention.RECEIVE,
+        sign_convention=(
+            SbmSignConvention.SHORT if amount < 0.0 else SbmSignConvention.RECEIVE
+        ),
         lineage=_lineage(sensitivity_id),
     )
 
@@ -190,14 +195,5 @@ def _fx_delta(
     )
 
 
-def _record_total(records: tuple[object, ...]) -> float:
-    return math.fsum(
-        (getattr(record, "contribution") or 0.0) + getattr(record, "residual")
-        for record in records
-    )
-
-
-def pytest_approx(value: float) -> object:
-    import pytest
-
-    return pytest.approx(value, rel=1e-6, abs=1e-6)
+def _record_total(records: tuple[CapitalContribution, ...]) -> float:
+    return math.fsum((record.contribution or 0.0) + record.residual for record in records)
