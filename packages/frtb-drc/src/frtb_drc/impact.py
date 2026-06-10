@@ -229,9 +229,7 @@ def calculate_drc_impact(
         residual = run_impact.delta - record_delta
 
     if abs(residual) > tolerance:
-        raise DrcInputError(
-            "DRC impact records do not reconcile to total capital delta"
-        )
+        raise DrcInputError("DRC impact records do not reconcile to total capital delta")
 
     return DrcImpactAnalysis(
         run_impact=run_impact,
@@ -258,9 +256,7 @@ def validate_drc_impact_reconciliation(
 
     record_delta = math.fsum(record.delta for record in analysis.records)
     if abs(record_delta - analysis.run_impact.delta) > tolerance:
-        raise DrcInputError(
-            "DRC impact records do not reconcile to total capital delta"
-        )
+        raise DrcInputError("DRC impact records do not reconcile to total capital delta")
 
 
 def _bucket_records(
@@ -364,10 +360,7 @@ def _record(
     citations: tuple[str, ...] = (),
 ) -> DrcImpactRecord:
     return DrcImpactRecord(
-        impact_id=(
-            f"drc-impact-{method.value.lower()}-"
-            f"{_slug(source_level)}-{_slug(source_id)}"
-        ),
+        impact_id=(f"drc-impact-{method.value.lower()}-{_slug(source_level)}-{_slug(source_id)}"),
         source_id=source_id,
         source_level=source_level,
         bucket_key=bucket_key,
@@ -418,10 +411,7 @@ def _residual_record(
     residual: float,
 ) -> DrcImpactRecord:
     return DrcImpactRecord(
-        impact_id=(
-            f"drc-impact-residual-{_slug(baseline.result_id)}-"
-            f"{_slug(candidate.result_id)}"
-        ),
+        impact_id=(f"drc-impact-residual-{_slug(baseline.result_id)}-{_slug(candidate.result_id)}"),
         source_id=f"{baseline.result_id}->{candidate.result_id}",
         source_level="result",
         bucket_key=None,
@@ -519,9 +509,7 @@ def _citations(
         if bucket is not None:
             citations.extend(bucket.citations)
             citations.extend(
-                citation
-                for branch in bucket.branch_metadata
-                for citation in branch.citations
+                citation for branch in bucket.branch_metadata for citation in branch.citations
             )
     return _sorted_unique(citations)
 
@@ -551,15 +539,7 @@ def _validate_result(result: DrcCapitalResult, label: str) -> None:
 
 
 def _sorted_unique(values: Iterable[object]) -> tuple[str, ...]:
-    return tuple(
-        sorted(
-            {
-                str(value)
-                for value in values
-                if value is not None and str(value) != ""
-            }
-        )
-    )
+    return tuple(sorted({str(value) for value in values if value is not None and str(value) != ""}))
 
 
 __all__ = [
