@@ -106,7 +106,17 @@ def _validate_sensitivity_batch(batch: SaCvaSensitivityBatch) -> None:
                 field="sign_convention",
                 record_id=record_id,
             )
-        normalise_sensitivity_amount(float(batch.amounts[index]))
+        amount = float(batch.amounts[index])
+        normalised_amount = normalise_sensitivity_amount(
+            amount,
+            source_sign_convention=sign_convention,  # type: ignore[arg-type]
+        )
+        if normalised_amount != amount:
+            raise CvaInputError(
+                "sensitivity amount must be stored after sign-convention normalisation",
+                field="amount",
+                record_id=record_id,
+            )
         risk_class = SaCvaRiskClass(cast(str, batch.risk_classes[index]))
         risk_measure = SaCvaRiskMeasure(cast(str, batch.risk_measures[index]))
         tenor = batch.tenors[index]

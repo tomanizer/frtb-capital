@@ -45,8 +45,9 @@ def _recognise_batch_hedges(
             profile=profile,
         )
         hedge_lines.append(line)
-        snh_by_counterparty[line.counterparty_id] += line.snh_contribution
-        hma_by_counterparty[line.counterparty_id] += line.hma_contribution
+        if line.counterparty_id in snh_by_counterparty:
+            snh_by_counterparty[line.counterparty_id] += line.snh_contribution
+            hma_by_counterparty[line.counterparty_id] += line.hma_contribution
         ih += line.index_contribution
     return snh_by_counterparty, hma_by_counterparty, ih, hedge_lines
 

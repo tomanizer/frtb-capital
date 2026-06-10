@@ -172,17 +172,17 @@ def _subset_hedges(batch: CvaHedgeBatch, indices: list[int]) -> CvaHedgeBatch:
 
 
 def _take_object(values: ObjectArray, indices: list[int]) -> ObjectArray:
-    return _batch_arrays.object_array([values[index] for index in indices], copy=True)
+    return _batch_arrays.object_array(values[indices], copy=True)
 
 
 def _take_float(values: FloatArray, indices: list[int]) -> FloatArray:
-    array = np.asarray([values[index] for index in indices], dtype=np.float64)
+    array = values[indices].copy()
     array.setflags(write=False)
     return array
 
 
 def _take_bool(values: BoolArray, indices: list[int]) -> BoolArray:
-    array = np.asarray([values[index] for index in indices], dtype=np.bool_)
+    array = values[indices].copy()
     array.setflags(write=False)
     return array
 
