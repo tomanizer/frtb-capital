@@ -46,9 +46,12 @@ def _optional_text_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    if values is None:
-        return _batch_arrays.object_array([None] * row_count, copy=copy)
-    return _batch_arrays.object_array([_optional_text(value) for value in values], copy=copy)
+    return _batch_arrays.optional_text_array(
+        values,
+        row_count,
+        copy=copy,
+        optional_text=_optional_text,
+    )
 
 
 def _text_array_with_default(
@@ -58,11 +61,12 @@ def _text_array_with_default(
     default: str,
     copy: bool,
 ) -> ObjectArray:
-    if values is None:
-        return _batch_arrays.object_array([default] * row_count, copy=copy)
-    return _batch_arrays.object_array(
-        [_optional_text(value) or default for value in values],
+    return _batch_arrays.text_array_with_default(
+        values,
+        row_count,
+        default=default,
         copy=copy,
+        optional_text=_optional_text,
     )
 
 
@@ -73,10 +77,10 @@ def _enum_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    return _batch_arrays.object_array(
-        [_coerce_enum_value(value, enum_type, field_name) for value in values],
-        copy=copy,
-    )
+    try:
+        return _batch_arrays.enum_array(values, enum_type, field_name, copy=copy)
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise DrcInputError(str(exc)) from exc
 
 
 def _nullable_enum_array(
@@ -87,17 +91,17 @@ def _nullable_enum_array(
     *,
     copy: bool,
 ) -> ObjectArray:
-    if values is None:
-        return _batch_arrays.object_array([None] * row_count, copy=copy)
-    return _batch_arrays.object_array(
-        [
-            None
-            if _optional_text(value) is None
-            else _coerce_enum_value(value, enum_type, field_name)
-            for value in values
-        ],
-        copy=copy,
-    )
+    try:
+        return _batch_arrays.nullable_enum_array(
+            values,
+            enum_type,
+            field_name,
+            row_count,
+            copy=copy,
+            optional_text=_optional_text,
+        )
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise DrcInputError(str(exc)) from exc
 
 
 def _required_float_array(values: ColumnInput, field_name: str, *, copy: bool) -> FloatArray:
@@ -114,13 +118,10 @@ def _optional_float_array(
     *,
     copy: bool,
 ) -> FloatArray:
-    if values is None:
-        array = np.full(row_count, np.nan, dtype=np.float64)
-    elif (fast_array := _float_array_from_numpy(values, copy=copy)) is not None:
-        return fast_array
-    else:
-        array = np.asarray([_optional_float(value) for value in values], dtype=np.float64)
-    return _batch_arrays.readonly_array(array, copy=copy)
+    try:
+        return _batch_arrays.optional_float_array(values, row_count, copy=copy)
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise DrcInputError(str(exc)) from exc
 
 
 def _bool_array(
@@ -167,40 +168,21 @@ def _required_float(value: object, field_name: str) -> float:
 
 
 def _optional_float(value: object | None) -> float:
-    if value is None:
-        return math.nan
-    if isinstance(value, float) and math.isnan(value):
-        return math.nan
-    if isinstance(value, str) and not value.strip():
-        return math.nan
-    return _required_float(value, "optional numeric field")
-
-
-def _coerce_enum_value(
-    value: object | None,
-    enum_type: type[EnumT],
-    field_name: str,
-) -> str:
-    text = _required_text(value, field_name)
     try:
-        return enum_type(text).value
-    except ValueError as exc:
-        raise DrcInputError(f"{field_name} contains unsupported value: {text}") from exc
+        return _batch_arrays.optional_float_value(value)
+    except _batch_arrays.BatchArrayCoercionError as exc:
+        raise DrcInputError(str(exc)) from exc
 
 
 def _freeze_source_column_maps(
     values: Sequence[Sequence[tuple[str, str]]] | None,
     row_count: int,
 ) -> tuple[tuple[tuple[str, str], ...], ...]:
-    if values is None:
-        return tuple(() for _ in range(row_count))
-    frozen: list[tuple[tuple[str, str], ...]] = []
-    for row in values:
-        pairs: list[tuple[str, str]] = []
-        for source, target in row:
-            pairs.append((str(source), str(target)))
-        frozen.append(tuple(sorted(pairs)))
-    return tuple(frozen)
+    return _batch_arrays.freeze_source_column_maps(
+        values,
+        row_count,
+        sort_pairs=True,
+    )
 
 
 def _freeze_citation_ids(
