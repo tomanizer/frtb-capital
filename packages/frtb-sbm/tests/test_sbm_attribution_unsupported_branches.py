@@ -13,7 +13,6 @@ from frtb_common.attribution import (
 from frtb_sbm import (
     BucketCapital,
     IntraBucketScenarioRecord,
-    PairwiseCorrelationRecord,
     PairwiseCorrelationSummary,
     RiskClassCapital,
     RiskClassScenarioDetail,
@@ -30,6 +29,7 @@ from frtb_sbm.attribution import (
     summarize_sbm_attribution_by_risk_class,
     summarize_sbm_attribution_by_sensitivity,
 )
+from frtb_sbm.data_models import PairwiseCorrelationRecord
 
 
 def test_curvature_branch_reports_unsupported_residual() -> None:
