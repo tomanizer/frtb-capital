@@ -28,6 +28,26 @@ Current runtime contents are deliberately small and package-neutral:
 - `jsonable` serialization for common domain values;
 - regulatory citation test helpers for package policy objects.
 
+## Shared Boundary Flow
+
+```mermaid
+flowchart LR
+  source["Client source rows<br/>CRIF, vendor, or Arrow"]
+  common["frtb-common boundary<br/>normalize, validate columns, hash"]
+  diagnostics["Accepted / rejected tables<br/>adapter diagnostics"]
+  adapter["Package adapter<br/>RiskType and regulatory semantics"]
+  kernel["Package-owned NumPy kernel<br/>IMA, SBM, DRC, RRAO, CVA"]
+  summary["Neutral handoff<br/>ComponentCapitalSummary or result summary"]
+  orchestration["frtb-orchestration<br/>SA and suite aggregation"]
+
+  source --> common
+  common --> diagnostics
+  common --> adapter
+  adapter --> kernel
+  kernel --> summary
+  summary --> orchestration
+```
+
 Capital packages still own RiskType meaning, regulatory validation, typed input
 batches, NumPy kernels, audit records, and package-specific policy objects.
 `frtb-common` does not encode IMA, SBM, DRC, RRAO, or CVA regulatory semantics.
