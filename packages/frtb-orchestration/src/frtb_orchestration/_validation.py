@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from datetime import date
 
 
@@ -63,6 +64,37 @@ def required_text_attr(result: object, field: str, *, component: str) -> str:
     return value
 
 
+def required_text_alias_attr(result: object, fields: Sequence[str], *, component: str) -> str:
+    """Return the first non-empty text attribute from an alias list.
+
+    Parameters
+    ----------
+    result : object
+        Duck-typed component result or audit object to inspect.
+    fields : Sequence[str]
+        Attribute names to try in priority order.
+    component : str
+        Component label used in validation errors.
+
+    Returns
+    -------
+    str
+        First non-empty text value found on the object.
+    """
+
+    for field in fields:
+        if hasattr(result, field):
+            value = getattr(result, field)
+            str_value = getattr(value, "value", value)
+            if isinstance(str_value, str) and str_value:
+                return str_value
+    label = " or ".join(repr(field) for field in fields)
+    raise OrchestrationInputError(
+        f"{component} result missing required field {label}",
+        field=fields[0] if fields else "",
+    )
+
+
 def required_date_attr(result: object, field: str, *, component: str) -> date:
     if not hasattr(result, field):
         raise OrchestrationInputError(
@@ -78,6 +110,36 @@ def required_date_attr(result: object, field: str, *, component: str) -> date:
     return value
 
 
+def required_date_alias_attr(result: object, fields: Sequence[str], *, component: str) -> date:
+    """Return the first date-like attribute from an alias list.
+
+    Parameters
+    ----------
+    result : object
+        Duck-typed component result or audit object to inspect.
+    fields : Sequence[str]
+        Attribute names to try in priority order.
+    component : str
+        Component label used in validation errors.
+
+    Returns
+    -------
+    date
+        First date value found on the object.
+    """
+
+    for field in fields:
+        if hasattr(result, field):
+            value = getattr(result, field)
+            if isinstance(value, date):
+                return value.date() if hasattr(value, "date") else value
+    label = " or ".join(repr(field) for field in fields)
+    raise OrchestrationInputError(
+        f"{component} result missing required date field {label}",
+        field=fields[0] if fields else "",
+    )
+
+
 def required_finite_number_attr(result: object, field: str, *, component: str) -> float:
     if not hasattr(result, field):
         raise OrchestrationInputError(
@@ -91,6 +153,55 @@ def required_finite_number_attr(result: object, field: str, *, component: str) -
             field=field,
         )
     return float(value)
+
+
+def required_non_negative_finite_number_alias_attr(
+    result: object, fields: Sequence[str], *, component: str
+) -> float:
+    """Return the first finite non-negative numeric attribute from aliases.
+
+    Parameters
+    ----------
+    result : object
+        Duck-typed component result or audit object to inspect.
+    fields : Sequence[str]
+        Attribute names to try in priority order.
+    component : str
+        Component label used in validation errors.
+
+    Returns
+    -------
+    float
+        First finite non-negative numeric value found on the object.
+    """
+
+    for field in fields:
+        if hasattr(result, field):
+            value = getattr(result, field)
+            if value is None:
+                continue
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                raise OrchestrationInputError(
+                    f"{component} result field {field!r} must be numeric",
+                    field=field,
+                )
+            number = float(value)
+            if not math.isfinite(number):
+                raise OrchestrationInputError(
+                    f"{component} result field {field!r} must be finite",
+                    field=field,
+                )
+            if number < 0.0:
+                raise OrchestrationInputError(
+                    f"{component} result field {field!r} must be non-negative",
+                    field=field,
+                )
+            return number
+    label = " or ".join(repr(field) for field in fields)
+    raise OrchestrationInputError(
+        f"{component} result missing required numeric field {label}",
+        field=fields[0] if fields else "",
+    )
 
 
 def optional_object_attr(result: object, field: str, *, component: str) -> object | None:
@@ -109,10 +220,64 @@ def optional_sequence_attr(result: object, field: str, *, component: str) -> tup
     return tuple(value)
 
 
-def text_tuple_attr(result: object, field: str, *, component: str) -> tuple[str, ...]:
+def optional_text_attr(result: object, field: str) -> str | None:
+    """Return an optional non-empty text attribute when present.
+
+    Parameters
+    ----------
+    result : object
+        Duck-typed component result or audit object to inspect.
+    field : str
+        Attribute name to read.
+
+    Returns
+    -------
+    str or None
+        Non-empty text value, or ``None`` when the attribute is absent or blank.
+    """
+
+    if not hasattr(result, field):
+        return None
+    value = getattr(result, field)
+    str_value = getattr(value, "value", value)
+    if isinstance(str_value, str) and str_value:
+        return str_value
+    return None
+
+
+def optional_non_negative_int_attr(result: object, field: str) -> int | None:
+    """Return an optional non-negative integer attribute when present.
+
+    Parameters
+    ----------
+    result : object
+        Duck-typed component result or audit object to inspect.
+    field : str
+        Attribute name to read.
+
+    Returns
+    -------
+    int or None
+        Non-negative integer value, or ``None`` when absent or invalid.
+    """
+
+    if not hasattr(result, field):
+        return None
+    value = getattr(result, field)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return None
+    return value
+
+
+def text_tuple_attr(result: object, field: str, *, component: str = "") -> tuple[str, ...]:
     if not hasattr(result, field):
         return ()
     value = getattr(result, field)
     if value is None:
         return ()
-    return tuple(str(item) for item in value)
+    if isinstance(value, str):
+        return (value,)
+    try:
+        return tuple(str(item) for item in value)
+    except TypeError:
+        return (str(value),)

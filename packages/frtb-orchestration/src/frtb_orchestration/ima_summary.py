@@ -2,11 +2,22 @@
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from datetime import date
 
-from frtb_orchestration.standardised import OrchestrationInputError
+from frtb_orchestration._validation import OrchestrationInputError
+from frtb_orchestration._validation import optional_non_negative_int_attr as _optional_int_attr
+from frtb_orchestration._validation import optional_text_attr as _optional_text_attr
+from frtb_orchestration._validation import require_non_empty_text as _require_non_empty_text
+from frtb_orchestration._validation import require_non_negative_finite_number as _require_number
+from frtb_orchestration._validation import require_non_negative_int as _require_non_negative_int
+from frtb_orchestration._validation import require_text_tuple as _require_text_tuple
+from frtb_orchestration._validation import required_date_alias_attr as _required_date_attr
+from frtb_orchestration._validation import (
+    required_non_negative_finite_number_alias_attr as _required_number_attr,
+)
+from frtb_orchestration._validation import required_text_alias_attr as _required_text_attr
+from frtb_orchestration._validation import text_tuple_attr as _text_tuple_attr
 
 _IMA_ELIGIBLE = "IMA_ELIGIBLE"
 _SA_FALLBACK = "SA_FALLBACK"
@@ -52,7 +63,7 @@ class ImaCapitalSummary:
         object.__setattr__(
             self,
             "total_ima_capital",
-            _require_non_negative_finite_number(self.total_ima_capital, "total_ima_capital"),
+            _require_number(self.total_ima_capital, "total_ima_capital"),
         )
         _require_non_negative_int(self.ima_eligible_desk_count, "ima_eligible_desk_count")
         _require_non_negative_int(self.sa_fallback_desk_count, "sa_fallback_desk_count")
@@ -125,7 +136,7 @@ def recognise_ima_summary(result: object) -> ImaCapitalSummary:
     )
     base_currency = _required_text_attr(result, ["base_currency"], component="IMA")
     profile_id = _required_text_attr(result, ["profile_id", "regime"], component="IMA")
-    total_ima_capital = _required_finite_non_negative_attr(
+    total_ima_capital = _required_number_attr(
         result, ["total_ima_capital", "total_market_risk_capital"], component="IMA"
     )
     policy_hash = _required_text_attr(result, ["policy_hash"], component="IMA")
@@ -176,9 +187,9 @@ def _desk_counts_from(result: object) -> tuple[int, int]:
                 ) from exc
             return eligible, fallback
 
-    maybe_eligible = _optional_non_negative_int_attr(result, "ima_eligible_desk_count")
-    maybe_fallback = _optional_non_negative_int_attr(result, "sa_fallback_desk_count")
-    desk_count = _optional_non_negative_int_attr(result, "desk_count")
+    maybe_eligible = _optional_int_attr(result, "ima_eligible_desk_count")
+    maybe_fallback = _optional_int_attr(result, "sa_fallback_desk_count")
+    desk_count = _optional_int_attr(result, "desk_count")
 
     if maybe_eligible is not None and maybe_fallback is not None:
         return maybe_eligible, maybe_fallback
@@ -192,124 +203,6 @@ def _desk_counts_from(result: object) -> tuple[int, int]:
             )
         return resolved_eligible, resolved_fallback
     return 0, 0
-
-
-def _required_text_attr(result: object, fields: list[str], *, component: str) -> str:
-    for field in fields:
-        if hasattr(result, field):
-            value = getattr(result, field)
-            str_value = getattr(value, "value", value)
-            if isinstance(str_value, str) and str_value:
-                return str_value
-    label = " or ".join(repr(f) for f in fields)
-    raise OrchestrationInputError(
-        f"{component} result missing required field {label}",
-        field=fields[0],
-    )
-
-
-def _required_date_attr(result: object, fields: list[str], *, component: str) -> date:
-    for field in fields:
-        if hasattr(result, field):
-            value = getattr(result, field)
-            if isinstance(value, date):
-                return value.date() if hasattr(value, "date") else value
-    label = " or ".join(repr(f) for f in fields)
-    raise OrchestrationInputError(
-        f"{component} result missing required date field {label}",
-        field=fields[0],
-    )
-
-
-def _required_finite_non_negative_attr(
-    result: object, fields: list[str], *, component: str
-) -> float:
-    for field in fields:
-        if hasattr(result, field):
-            value = getattr(result, field)
-            if value is None:
-                continue
-            if not isinstance(value, (int, float)) or isinstance(value, bool):
-                raise OrchestrationInputError(
-                    f"{component} result field {field!r} must be numeric",
-                    field=field,
-                )
-            number = float(value)
-            if not math.isfinite(number):
-                raise OrchestrationInputError(
-                    f"{component} result field {field!r} must be finite",
-                    field=field,
-                )
-            if number < 0.0:
-                raise OrchestrationInputError(
-                    f"{component} result field {field!r} must be non-negative",
-                    field=field,
-                )
-            return number
-    label = " or ".join(repr(f) for f in fields)
-    raise OrchestrationInputError(
-        f"{component} result missing required numeric field {label}",
-        field=fields[0],
-    )
-
-
-def _optional_text_attr(result: object, field: str) -> str | None:
-    if not hasattr(result, field):
-        return None
-    value = getattr(result, field)
-    str_value = getattr(value, "value", value)
-    if isinstance(str_value, str) and str_value:
-        return str_value
-    return None
-
-
-def _optional_non_negative_int_attr(result: object, field: str) -> int | None:
-    if not hasattr(result, field):
-        return None
-    value = getattr(result, field)
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-        return None
-    return value
-
-
-def _text_tuple_attr(result: object, field: str) -> tuple[str, ...]:
-    if not hasattr(result, field):
-        return ()
-    value = getattr(result, field)
-    if value is None:
-        return ()
-    if isinstance(value, str):
-        return (value,)
-    try:
-        return tuple(str(item) for item in value)
-    except TypeError:
-        return (str(value),)
-
-
-def _require_non_empty_text(value: object, field: str) -> None:
-    if not isinstance(value, str) or not value:
-        raise OrchestrationInputError(f"{field} must be non-empty text", field=field)
-
-
-def _require_non_negative_finite_number(value: object, field: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise OrchestrationInputError(f"{field} must be numeric", field=field)
-    number = float(value)
-    if not math.isfinite(number):
-        raise OrchestrationInputError(f"{field} must be finite", field=field)
-    if number < 0.0:
-        raise OrchestrationInputError(f"{field} must be non-negative", field=field)
-    return number
-
-
-def _require_non_negative_int(value: object, field: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-        raise OrchestrationInputError(f"{field} must be a non-negative integer", field=field)
-
-
-def _require_text_tuple(value: object, field: str) -> None:
-    if not isinstance(value, tuple) or not all(isinstance(item, str) for item in value):
-        raise OrchestrationInputError(f"{field} must be a tuple of text values", field=field)
 
 
 __all__ = [
