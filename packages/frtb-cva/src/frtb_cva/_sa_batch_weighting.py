@@ -18,19 +18,7 @@ from frtb_cva.data_models import (
     SensitivityTag,
 )
 from frtb_cva.validation import CvaInputError
-from frtb_cva.weighted_sensitivity import (
-    _weight_ccs_delta,
-    _weight_commodity_delta,
-    _weight_commodity_vega,
-    _weight_equity_delta,
-    _weight_equity_vega,
-    _weight_fx_delta,
-    _weight_fx_vega,
-    _weight_girr_delta,
-    _weight_girr_vega,
-    _weight_rcs_delta,
-    _weight_rcs_vega,
-)
+from frtb_cva.weighted_sensitivity import weight_grouped_sa_cva_sensitivities
 
 
 @dataclass(frozen=True)
@@ -143,125 +131,14 @@ def _weight_grouped_sensitivities(
 ) -> tuple[SaCvaWeightedSensitivity, ...]:
     risk_class = grouped.keys[0].risk_class
     risk_measure = grouped.keys[0].risk_measure
-    if risk_measure is SaCvaRiskMeasure.DELTA:
-        return _weight_delta_group(grouped, risk_class, reporting_currency, profile)
-    if risk_measure is SaCvaRiskMeasure.VEGA:
-        return _weight_vega_group(grouped, risk_class, profile)
-    raise CvaInputError(
-        f"unsupported SA-CVA risk class/measure: {risk_class.value}/{risk_measure.value}",
-        field="risk_class",
-    )
-
-
-def _weight_delta_group(
-    grouped: _GroupedSensitivities,
-    risk_class: SaCvaRiskClass,
-    reporting_currency: str,
-    profile: CvaRegulatoryProfile | str,
-) -> tuple[SaCvaWeightedSensitivity, ...]:
-    if risk_class is SaCvaRiskClass.GIRR:
-        return _weight_girr_delta(
-            grouped.keys,
-            grouped.cva,
-            grouped.hedge,
-            grouped.ids,
-            reporting_currency=reporting_currency,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.FX:
-        return _weight_fx_delta(
-            grouped.keys,
-            grouped.cva,
-            grouped.hedge,
-            grouped.ids,
-            reporting_currency=reporting_currency,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD:
-        return _weight_ccs_delta(
-            grouped.keys,
-            grouped.cva,
-            grouped.hedge,
-            grouped.ids,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD:
-        return _weight_rcs_delta(
-            grouped.keys,
-            grouped.cva,
-            grouped.hedge,
-            grouped.ids,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.EQUITY:
-        return _weight_equity_delta(
-            grouped.keys,
-            grouped.cva,
-            grouped.hedge,
-            grouped.ids,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.COMMODITY:
-        return _weight_commodity_delta(
-            grouped.keys, grouped.cva, grouped.hedge, grouped.ids, profile=profile
-        )
-    raise CvaInputError(
-        f"unsupported SA-CVA delta risk class: {risk_class.value}",
-        field="risk_class",
-    )
-
-
-def _weight_vega_group(
-    grouped: _GroupedSensitivities,
-    risk_class: SaCvaRiskClass,
-    profile: CvaRegulatoryProfile | str,
-) -> tuple[SaCvaWeightedSensitivity, ...]:
-    if risk_class is SaCvaRiskClass.GIRR:
-        return _weight_girr_vega(
-            grouped.keys,
-            grouped.cva,
-            grouped.hedge,
-            grouped.ids,
-            grouped.volatility,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.FX:
-        return _weight_fx_vega(
-            grouped.keys,
-            grouped.cva,
-            grouped.hedge,
-            grouped.ids,
-            grouped.volatility,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD:
-        return _weight_rcs_vega(
-            grouped.keys,
-            grouped.cva,
-            grouped.hedge,
-            grouped.ids,
-            grouped.volatility,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.EQUITY:
-        return _weight_equity_vega(
-            grouped.keys,
-            grouped.cva,
-            grouped.hedge,
-            grouped.ids,
-            grouped.volatility,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.COMMODITY:
-        return _weight_commodity_vega(
-            grouped.keys,
-            grouped.cva,
-            grouped.hedge,
-            grouped.ids,
-            grouped.volatility,
-            profile=profile,
-        )
-    raise CvaInputError(
-        f"unsupported SA-CVA vega risk class: {risk_class.value}",
-        field="risk_class",
+    return weight_grouped_sa_cva_sensitivities(
+        grouped.keys,
+        grouped.cva,
+        grouped.hedge,
+        grouped.ids,
+        grouped.volatility,
+        risk_class=risk_class,
+        risk_measure=risk_measure,
+        reporting_currency=reporting_currency,
+        profile=profile,
     )
