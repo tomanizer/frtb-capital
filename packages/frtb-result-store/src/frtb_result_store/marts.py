@@ -31,9 +31,12 @@ from frtb_result_store.mart_row_codecs import (
 from frtb_result_store.mart_row_codecs import (
     movement_summary_from_row as _movement_summary_from_row,
 )
+from frtb_result_store.mart_summary_rows import (
+    capital_summary_row,
+    regime_comparison_row,
+)
 from frtb_result_store.model import (
     CapitalAttributionRecord,
-    CapitalMeasure,
     CapitalNode,
     CapitalSummaryRow,
     CapitalTreeMartRow,
@@ -42,8 +45,6 @@ from frtb_result_store.model import (
     MovementResult,
     MovementSummaryRow,
     ResultBundle,
-    ResultEvent,
-    ResultEventSeverity,
     ResultStoreContractError,
     RunStatus,
 )
@@ -62,14 +63,29 @@ def mart_rows_for_bundle(
     *,
     lifecycle_status: RunStatus,
 ) -> dict[str, list[dict[str, object]]]:
+    """Project one result bundle into every persisted reporting mart.
+
+    Parameters
+    ----------
+    bundle:
+        Validated run result bundle to serialize.
+    lifecycle_status:
+        Current append-only lifecycle state to stamp into summary-level marts.
+
+    Returns
+    -------
+    dict[str, list[dict[str, object]]]
+        Mapping from mart name to storage-ready row dictionaries.
+    """
+
     return {
-        "capital_summary": [_capital_summary_row(bundle, lifecycle_status=lifecycle_status)],
+        "capital_summary": [capital_summary_row(bundle, lifecycle_status=lifecycle_status)],
         "capital_tree": _capital_tree_rows(bundle),
         "top_contributors": _top_contributor_rows(bundle),
         "residual_attribution": _residual_attribution_rows(bundle),
         "unsupported_attribution": _unsupported_attribution_rows(bundle),
         "movement_summary": _movement_summary_rows(bundle),
-        "regime_comparison": [_regime_comparison_row(bundle, lifecycle_status=lifecycle_status)],
+        "regime_comparison": [regime_comparison_row(bundle, lifecycle_status=lifecycle_status)],
         "component_breakdown": _component_breakdown_rows(bundle),
         "ima_desk_dashboard": _ima_desk_dashboard_rows(bundle),
         "sbm_bucket_ladder": _sbm_bucket_ladder_rows(bundle),
@@ -80,56 +96,71 @@ def mart_rows_for_bundle(
 
 
 def capital_summary_from_row(row: Sequence[object]) -> CapitalSummaryRow:
+    """Deserialize one persisted capital-summary mart row.
+
+    Parameters
+    ----------
+    row:
+        Storage-order field sequence read from the ``capital_summary`` mart.
+
+    Returns
+    -------
+    CapitalSummaryRow
+        Typed capital-summary projection row.
+    """
+
     return _capital_summary_from_row(row)
 
 
 def capital_tree_mart_from_row(row: Sequence[object]) -> CapitalTreeMartRow:
+    """Deserialize one persisted capital-tree mart row.
+
+    Parameters
+    ----------
+    row:
+        Storage-order field sequence read from the ``capital_tree`` mart.
+
+    Returns
+    -------
+    CapitalTreeMartRow
+        Typed flattened capital-tree projection row.
+    """
+
     return _capital_tree_mart_from_row(row)
 
 
 def component_breakdown_from_row(row: Sequence[object]) -> ComponentBreakdownRow:
+    """Deserialize one persisted component-breakdown mart row.
+
+    Parameters
+    ----------
+    row:
+        Storage-order field sequence read from the ``component_breakdown`` mart.
+
+    Returns
+    -------
+    ComponentBreakdownRow
+        Typed component-level capital total projection row.
+    """
+
     return _component_breakdown_from_row(row)
 
 
 def movement_summary_from_row(row: Sequence[object]) -> MovementSummaryRow:
+    """Deserialize one persisted movement-summary mart row.
+
+    Parameters
+    ----------
+    row:
+        Storage-order field sequence read from the ``movement_summary`` mart.
+
+    Returns
+    -------
+    MovementSummaryRow
+        Typed capital movement projection row.
+    """
+
     return _movement_summary_from_row(row)
-
-
-def _capital_summary_row(
-    bundle: ResultBundle,
-    *,
-    lifecycle_status: RunStatus,
-) -> dict[str, object]:
-    total_measure = _measure_for_node(bundle.measures, node_id="total")
-    currency = total_measure.currency if total_measure is not None else bundle.run.base_currency
-    row = CapitalSummaryRow(
-        run_id=bundle.run.run_id,
-        as_of_date=bundle.run.as_of_date,
-        regime_id=bundle.run.regime_id,
-        base_currency=bundle.run.base_currency,
-        lifecycle_status=lifecycle_status,
-        suggested_status=_suggested_status(bundle.events),
-        total_capital=0.0 if total_measure is None else total_measure.amount,
-        currency=currency,
-        node_count=len(bundle.nodes),
-        measure_count=len(bundle.measures),
-        component_count=len(_components(bundle.nodes)),
-    )
-    return {
-        "run_id": row.run_id,
-        "as_of_date": row.as_of_date.isoformat(),
-        "regime_id": row.regime_id,
-        "base_currency": row.base_currency,
-        "lifecycle_status": _stored_value(row.lifecycle_status),
-        "suggested_status": None
-        if row.suggested_status is None
-        else _stored_value(row.suggested_status),
-        "total_capital": row.total_capital,
-        "currency": row.currency,
-        "node_count": row.node_count,
-        "measure_count": row.measure_count,
-        "component_count": row.component_count,
-    }
 
 
 def _capital_tree_rows(bundle: ResultBundle) -> list[dict[str, object]]:
@@ -321,27 +352,6 @@ def _attribution_projection_rows(
     return rows
 
 
-def _regime_comparison_row(
-    bundle: ResultBundle,
-    *,
-    lifecycle_status: RunStatus,
-) -> dict[str, object]:
-    total_measure = _measure_for_node(bundle.measures, node_id="total")
-    currency = total_measure.currency if total_measure is not None else bundle.run.base_currency
-    return {
-        "run_group_id": bundle.run.run_group_id or f"run:{bundle.run.run_id}",
-        "run_id": bundle.run.run_id,
-        "as_of_date": bundle.run.as_of_date.isoformat(),
-        "regime_id": bundle.run.regime_id,
-        "base_currency": bundle.run.base_currency,
-        "lifecycle_status": _stored_value(lifecycle_status),
-        "suggested_status": _stored_value(_suggested_status(bundle.events)),
-        "total_capital": 0.0 if total_measure is None else total_measure.amount,
-        "currency": currency,
-        "component_count": len(_components(bundle.nodes)),
-    }
-
-
 def _capital_tree_row(row: CapitalTreeMartRow) -> dict[str, object]:
     return {
         "run_id": row.run_id,
@@ -365,39 +375,9 @@ def _capital_tree_row(row: CapitalTreeMartRow) -> dict[str, object]:
     }
 
 
-def _measure_for_node(
-    measures: Sequence[CapitalMeasure],
-    *,
-    node_id: str,
-) -> CapitalMeasure | None:
-    for measure in measures:
-        if measure.node_id == node_id and measure.measure_name == "capital":
-            return measure
-    return None
-
-
 def _attribution_amount(attribution: CapitalAttributionRecord) -> float:
     return (0.0 if attribution.contribution is None else float(attribution.contribution)) + float(
         attribution.residual
-    )
-
-
-def _suggested_status(events: Sequence[ResultEvent]) -> RunStatus:
-    if any(event.severity is ResultEventSeverity.ERROR for event in events):
-        return RunStatus.REJECTED
-    return RunStatus.VALIDATED
-
-
-def _components(nodes: Sequence[CapitalNode]) -> tuple[FrtbComponent, ...]:
-    return tuple(
-        sorted(
-            {
-                component
-                for node in nodes
-                if (component := FrtbComponent(node.component)) is not FrtbComponent.TOP_OF_HOUSE
-            },
-            key=lambda item: item.value,
-        )
     )
 
 

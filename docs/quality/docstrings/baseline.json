@@ -3,11 +3,11 @@
   "metrics": {
     "findings_by_rule": {
       "MISSING_PARAMETERS_SECTION": 24,
-      "MISSING_PUBLIC_DOCSTRING": 71,
+      "MISSING_PUBLIC_DOCSTRING": 66,
       "MISSING_RETURNS_SECTION": 35
     },
     "packages_with_findings": 5,
-    "total_findings": 130
+    "total_findings": 125
   },
   "packages": {
     "frtb-drc": {
@@ -471,7 +471,7 @@
       ]
     },
     "frtb-result-store": {
-      "finding_count": 45,
+      "finding_count": 40,
       "findings": [
         {
           "line": 28,
@@ -759,51 +759,6 @@
           "object_type": "function",
           "package": "frtb-result-store",
           "path": "packages/frtb-result-store/src/frtb_result_store/mart_schemas.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 56,
-          "message": "Public function is missing a docstring.",
-          "object_name": "mart_rows_for_bundle",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/marts.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 88,
-          "message": "Public function is missing a docstring.",
-          "object_name": "capital_summary_from_row",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/marts.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 104,
-          "message": "Public function is missing a docstring.",
-          "object_name": "capital_tree_mart_from_row",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/marts.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 127,
-          "message": "Public function is missing a docstring.",
-          "object_name": "component_breakdown_from_row",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/marts.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 138,
-          "message": "Public function is missing a docstring.",
-          "object_name": "movement_summary_from_row",
-          "object_type": "function",
-          "package": "frtb-result-store",
-          "path": "packages/frtb-result-store/src/frtb_result_store/marts.py",
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
