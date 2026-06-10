@@ -96,25 +96,69 @@ def mart_rows_for_bundle(
 
 
 def capital_summary_from_row(row: Sequence[object]) -> CapitalSummaryRow:
-    """Deserialize one persisted capital-summary mart row."""
+    """Deserialize one persisted capital-summary mart row.
+
+    Parameters
+    ----------
+    row:
+        Storage-order field sequence read from the ``capital_summary`` mart.
+
+    Returns
+    -------
+    CapitalSummaryRow
+        Typed capital-summary projection row.
+    """
 
     return _capital_summary_from_row(row)
 
 
 def capital_tree_mart_from_row(row: Sequence[object]) -> CapitalTreeMartRow:
-    """Deserialize one persisted capital-tree mart row."""
+    """Deserialize one persisted capital-tree mart row.
+
+    Parameters
+    ----------
+    row:
+        Storage-order field sequence read from the ``capital_tree`` mart.
+
+    Returns
+    -------
+    CapitalTreeMartRow
+        Typed flattened capital-tree projection row.
+    """
 
     return _capital_tree_mart_from_row(row)
 
 
 def component_breakdown_from_row(row: Sequence[object]) -> ComponentBreakdownRow:
-    """Deserialize one persisted component-breakdown mart row."""
+    """Deserialize one persisted component-breakdown mart row.
+
+    Parameters
+    ----------
+    row:
+        Storage-order field sequence read from the ``component_breakdown`` mart.
+
+    Returns
+    -------
+    ComponentBreakdownRow
+        Typed component-level capital total projection row.
+    """
 
     return _component_breakdown_from_row(row)
 
 
 def movement_summary_from_row(row: Sequence[object]) -> MovementSummaryRow:
-    """Deserialize one persisted movement-summary mart row."""
+    """Deserialize one persisted movement-summary mart row.
+
+    Parameters
+    ----------
+    row:
+        Storage-order field sequence read from the ``movement_summary`` mart.
+
+    Returns
+    -------
+    MovementSummaryRow
+        Typed capital movement projection row.
+    """
 
     return _movement_summary_from_row(row)
 
