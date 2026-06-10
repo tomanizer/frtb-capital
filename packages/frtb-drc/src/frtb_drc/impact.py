@@ -545,7 +545,11 @@ def _validate_result(result: DrcCapitalResult, label: str) -> None:
 
 
 def _sorted_unique(values: Iterable[object]) -> tuple[str, ...]:
-    return tuple(sorted({str(value) for value in values if value is not None and str(value) != ""}))
+    return tuple(
+        sorted(
+            {str(value) for value in values if value is not None and str(value) != ""}
+        )
+    )
 
 
 __all__ = [
