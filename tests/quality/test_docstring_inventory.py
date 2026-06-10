@@ -385,8 +385,9 @@ def test_docstring_baseline_blocks_new_missing_public_docstrings(
     assert "new hard-gated docstring gap" in capsys.readouterr().err
 
 
-def test_docstring_baseline_keeps_numpy_sections_report_only(
+def test_docstring_baseline_blocks_new_numpy_section_gaps(
     tmp_path: Path,
+    capsys,
 ) -> None:
     _base_package(tmp_path)
     baseline_path = tmp_path / "docs" / "quality" / "docstrings" / "baseline.json"
@@ -449,8 +450,9 @@ def test_docstring_baseline_keeps_numpy_sections_report_only(
                 "--quiet",
             ]
         )
-        == 0
+        == 1
     )
+    assert "new hard-gated docstring gap" in capsys.readouterr().err
 
 
 def test_docstring_baseline_blocks_stale_hard_gaps(

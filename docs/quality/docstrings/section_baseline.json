@@ -1,0 +1,374 @@
+{
+  "description": "Runtime package docstring section-rule baseline supplement.",
+  "metrics": {
+    "findings_by_rule": {
+      "MISSING_PARAMETERS_SECTION": 18,
+      "MISSING_RETURNS_SECTION": 20
+    },
+    "packages_with_findings": 3,
+    "total_findings": 38
+  },
+  "packages": {
+    "frtb-common": {
+      "finding_count": 18,
+      "findings": [
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "enum_array",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "enum_array",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "freeze_source_column_maps",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "freeze_source_column_maps",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "nullable_enum_array",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "nullable_enum_array",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "optional_float_array",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "optional_float_array",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "optional_float_value",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "optional_float_value",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "optional_text_array",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "optional_text_array",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "optional_text_value",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "optional_text_value",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "required_float_value",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "required_float_value",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "text_array_with_default",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "text_array_with_default",
+          "object_type": "function",
+          "package": "frtb-common",
+          "path": "packages/frtb-common/src/frtb_common/batch_arrays.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        }
+      ]
+    },
+    "frtb-cva": {
+      "finding_count": 8,
+      "findings": [
+        {
+          "line": 1,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "EntityBatchSpec.optional_columns",
+          "object_type": "method",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/_arrow_entity_specs.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public method returns a value but no NumPy Returns section.",
+          "object_name": "EntityBatchSpec.required_columns",
+          "object_type": "method",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/_arrow_entity_specs.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "build_cva_hedge_batch_from_columns",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/_batch_hedge_adapter.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "mixed_sensitivity_scope_metadata",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/scope.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "mixed_sensitivity_scope_metadata",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/scope.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "require_mixed_sensitivity_scope_evidence",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/scope.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "weight_grouped_sa_cva_sensitivities",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/weighted_sensitivity.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "weight_grouped_sa_cva_sensitivities",
+          "object_type": "function",
+          "package": "frtb-cva",
+          "path": "packages/frtb-cva/src/frtb_cva/weighted_sensitivity.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        }
+      ]
+    },
+    "frtb-rrao": {
+      "finding_count": 12,
+      "findings": [
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "gross_notional_mismatch_mask",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "gross_notional_mismatch_mask",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "invalid_fund_notional_mask",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "invalid_fund_notional_mask",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "invalid_included_exposure_ratio_mask",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "invalid_included_exposure_ratio_mask",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "investment_fund_descriptor_present_mask",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "investment_fund_descriptor_present_mask",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "investment_fund_path_mask",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "investment_fund_path_mask",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function has parameters but no NumPy Parameters section.",
+          "object_name": "validate_investment_fund_rule_values",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_PARAMETERS_SECTION"
+        },
+        {
+          "line": 1,
+          "message": "Public function returns a value but no NumPy Returns section.",
+          "object_name": "validate_investment_fund_rule_values",
+          "object_type": "function",
+          "package": "frtb-rrao",
+          "path": "packages/frtb-rrao/src/frtb_rrao/_investment_fund_validation.py",
+          "rule": "MISSING_RETURNS_SECTION"
+        }
+      ]
+    }
+  },
+  "paths": [
+    "packages"
+  ],
+  "schema_version": 1
+}

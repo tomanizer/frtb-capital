@@ -18,7 +18,16 @@ except ImportError:  # pragma: no cover - exercised by direct script execution.
     from docstring_inventory import DEFAULT_PATHS, DocstringFinding, scan_repo
 
 DEFAULT_BASELINE = Path("docs/quality/docstrings/baseline.json")
-HARD_RULES = frozenset({"MISSING_MODULE_DOCSTRING", "MISSING_PUBLIC_DOCSTRING"})
+DEFAULT_SECTION_BASELINE = Path("docs/quality/docstrings/section_baseline.json")
+HARD_RULES = frozenset(
+    {
+        "MISSING_MODULE_DOCSTRING",
+        "MISSING_PUBLIC_DOCSTRING",
+        "MISSING_PARAMETERS_SECTION",
+        "MISSING_RETURNS_SECTION",
+    }
+)
+REPORT_ONLY_RULES = frozenset({"TRIVIAL_DOCSTRING"})
 REQUIRED_FINDING_FIELDS = {
     "package",
     "path",
@@ -64,6 +73,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--baseline", type=Path, default=DEFAULT_BASELINE)
+    parser.add_argument("--section-baseline", type=Path, default=DEFAULT_SECTION_BASELINE)
     parser.add_argument("--json-output", type=Path)
     parser.add_argument("--paths", nargs="*", default=list(DEFAULT_PATHS))
     parser.add_argument(
@@ -76,6 +86,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     root = args.root.resolve()
     baseline_path = _resolve_path(root, args.baseline)
+    section_baseline_path = _resolve_path(root, args.section_baseline)
     findings = scan_repo(root, paths=args.paths)
     report = build_report(findings, paths=args.paths)
     if args.json_output:
@@ -83,17 +94,19 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.update_baseline:
         _write_json(baseline_path, report)
+        if not section_baseline_path.exists():
+            _write_json(section_baseline_path, build_report((), paths=args.paths))
         if not args.quiet:
             print(f"updated docstring baseline: {baseline_path}")
         return 0
 
     try:
-        baseline = load_baseline(baseline_path)
+        baselines = [load_baseline(baseline_path), load_baseline(section_baseline_path)]
     except BaselineError as exc:
         print(f"Docstring baseline guard failed: {exc}", file=sys.stderr)
         return 1
 
-    comparison = compare_to_baseline(findings, baseline)
+    comparison = compare_to_baseline(findings, baselines)
     if comparison.has_errors:
         _print_comparison_errors(comparison)
         return 1
@@ -186,16 +199,16 @@ def validate_baseline(payload: object) -> None:
 
 def compare_to_baseline(
     findings: Sequence[DocstringFinding],
-    baseline: Mapping[str, Any],
+    baseline: Mapping[str, Any] | Sequence[Mapping[str, Any]],
 ) -> BaselineComparison:
-    """Compare current hard-gated findings with the committed baseline.
+    """Compare current hard-gated findings with committed baseline reports.
 
     Parameters
     ----------
     findings : Sequence[DocstringFinding]
         Current inventory findings from the AST scanner.
-    baseline : Mapping[str, Any]
-        Validated baseline report payload.
+    baseline : Mapping[str, Any] | Sequence[Mapping[str, Any]]
+        Validated baseline report payload or payloads.
 
     Returns
     -------
@@ -204,7 +217,8 @@ def compare_to_baseline(
     """
 
     current_keys = _hard_keys_from_findings(findings)
-    baseline_keys = _hard_keys_from_report(baseline)
+    baseline_reports = [baseline] if isinstance(baseline, Mapping) else baseline
+    baseline_keys = _hard_keys_from_reports(baseline_reports)
     return BaselineComparison(
         new_findings=tuple(sorted(current_keys - baseline_keys)),
         stale_findings=tuple(sorted(baseline_keys - current_keys)),
@@ -246,6 +260,13 @@ def _hard_keys_from_findings(findings: Sequence[DocstringFinding]) -> set[Findin
         for finding in findings
         if finding.rule in HARD_RULES
     }
+
+
+def _hard_keys_from_reports(reports: Sequence[Mapping[str, Any]]) -> set[FindingKey]:
+    keys: set[FindingKey] = set()
+    for report in reports:
+        keys.update(_hard_keys_from_report(report))
+    return keys
 
 
 def _hard_keys_from_report(report: Mapping[str, Any]) -> set[FindingKey]:

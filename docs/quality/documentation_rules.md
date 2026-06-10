@@ -135,13 +135,18 @@ as a substitute for paragraph-level traceability.
 
 ## Automation Rollout
 
-The repository should enforce these rules in stages:
+The repository enforces these rules in stages:
 
 1. document the standard in this file and point agents and contributors here;
 2. add an AST-based inventory checker in report mode;
 3. commit an initial baseline of existing findings;
-4. fail CI only on newly introduced missing module or public API docstrings;
-5. ratchet stricter checks after false positives are understood.
+4. fail CI on newly introduced missing module or public API docstrings;
+5. fail CI on newly introduced missing NumPy `Parameters` and `Returns` sections
+   for public callables while preserving the reviewed baseline for existing
+   gaps;
+6. keep trivial-docstring and domain-significant private-helper quality checks
+   in review/report mode until the false-positive rate is low enough for a
+   later ratchet.
 
 The checker should be conservative about public/private classification. It
 should not force blanket docstrings on every private helper, and it should not
@@ -156,9 +161,10 @@ The report-mode inventory command is:
 make docstring-inventory
 ```
 
-By default, the command exits zero even when it finds gaps. This keeps the first
-automation slice report-only. Use `--fail-on-findings` only for local tests,
-experiments, or a later baseline ratchet.
+By default, the command exits zero even when it finds gaps. This keeps the full
+inventory report available without requiring immediate full-repo cleanup. Use
+`--fail-on-findings` only for local tests, experiments, or a later baseline
+ratchet.
 
 The checker scans runtime Python modules under `packages/*/src` and reports:
 
@@ -179,27 +185,51 @@ low-noise heuristic is available.
 
 ## Baseline Ratchet
 
-The committed baseline lives at:
+The committed full inventory baseline lives at:
 
 ```text
 docs/quality/docstrings/baseline.json
 ```
 
-Refresh it after an intentional documentation cleanup or checker change:
+The focused section-rule supplement lives at:
+
+```text
+docs/quality/docstrings/section_baseline.json
+```
+
+The baseline guard loads both files. The supplement records reviewed
+`MISSING_PARAMETERS_SECTION` and `MISSING_RETURNS_SECTION` findings that were
+introduced after the initial full baseline, so the ratchet can promote those
+objective rules without rewriting unrelated inventory evidence. A later reviewed
+full-baseline refresh may fold the supplement into `baseline.json` and remove the
+separate allowance.
+
+Refresh the full inventory baseline after an intentional documentation cleanup
+or checker change:
 
 ```bash
 make docstring-baseline
 ```
 
 The baseline stores the full inventory so package cleanup issues can be opened
-from stable package-scoped evidence. The initial CI ratchet is narrower:
+from stable package-scoped evidence. The current CI ratchet uses the committed
+baselines for objective no-new-gap enforcement:
 
 - new missing runtime module docstrings fail;
 - new missing public class, function, and method docstrings fail;
+- new missing NumPy `Parameters` sections on public callables fail;
+- new missing NumPy `Returns` sections on public callables with meaningful
+  return values fail;
 - stale hard-gated baseline entries fail so fixed gaps are removed from the
-  allowance in the same reviewed change;
-- missing `Parameters`, missing `Returns`, and trivial-docstring findings remain
-  report-only until the false-positive rate is low enough for a later ratchet.
+  allowance in the same reviewed change.
+
+The remaining baseline is intentional. Existing gaps stay visible in
+`docs/quality/docstrings/baseline.json`,
+`docs/quality/docstrings/section_baseline.json`, and CI artifacts so they can be
+removed by focused cleanup PRs, but they do not block unrelated work.
+`TRIVIAL_DOCSTRING` findings remain report-only because the heuristic is more
+subjective than the missing-section rules and needs more review evidence before
+becoming a hard quality gate.
 
 `make quality-control` runs the ratchet through `make docstring-check` and writes
 the current report to `dist/quality/docstring-baseline-report.json` for CI
