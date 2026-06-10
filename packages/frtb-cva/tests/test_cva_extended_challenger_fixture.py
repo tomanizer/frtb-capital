@@ -308,4 +308,5 @@ def _load_json(name: str) -> dict[str, Any]:
         try:
             return json.load(handle)
         except ValueError as exc:
-            raise ValueError(f"failed to parse CVA challenger fixture {name}: {exc}") from exc
+            message = f"failed to parse CVA challenger fixture {name}: {exc}"
+            raise ValueError(message) from exc
