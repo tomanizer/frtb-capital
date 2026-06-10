@@ -8,6 +8,7 @@ model.
 
 | Need | Start with | Then run or read |
 | --- | --- | --- |
+| First five-minute path through the suite | [Getting-started quickstart](getting-started/quickstart.ipynb) | `make demo`, then the relevant package guide below. |
 | Understand the upstream data contract | [Client integration guide](CLIENT_INTEGRATION.md) | `make demo`, then the relevant package guide below. |
 | See all package demos execute from the repo root | Root [`README.md`](../README.md#local-development) | `make demo` or `make examples-check`. |
 | Review notebook teaching and validation material | Package notebook READMEs | `make notebooks-check` for the current smoke-tested notebook set. |
@@ -29,6 +30,7 @@ model.
 
 | Area | Purpose |
 | --- | --- |
+| [Getting started](getting-started/README.md) | Quickstart notebook and first-run path for upstream risk-engine integration. |
 | [Architecture](ARCHITECTURE.md) | Workspace structure, package boundaries, dependency rules, and orchestration ownership. |
 | [Capital attribution methods](CAPITAL_ATTRIBUTION_METHODS.md) | Suite-level guide to Euler attribution, residuals, unsupported branches, standalone contribution, and finite-difference impact. |
 | [Attribution implementation matrix](ATTRIBUTION_IMPLEMENTATION_MATRIX.md) | Package-by-package attribution support, grains, public helpers, unsupported branches, and test evidence. |
