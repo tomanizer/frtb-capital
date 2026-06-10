@@ -82,8 +82,14 @@ def test_bucket_category_and_risk_class_summaries_reconcile_to_source_records() 
     categories = {
         summary.key: summary for summary in summarize_drc_attribution_by_category(result)
     }
-    assert categories[str(DrcRiskClass.SECURITISATION_NON_CTP)].total == pytest.approx(23.0)
-    assert categories[str(DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)].total == pytest.approx(-1.5)
+    assert categories[str(DrcRiskClass.SECURITISATION_NON_CTP)].total == pytest.approx(
+        23.0,
+    )
+    assert categories[
+        str(DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
+    ].total == pytest.approx(
+        -1.5,
+    )
 
     risk_classes = {
         summary.key: summary for summary in summarize_drc_attribution_by_risk_class(result)
@@ -121,7 +127,9 @@ def _result() -> DrcCapitalResult:
         profile_hash="profile-hash",
         input_hash="input-hash",
         categories=(),
-        total_drc=sum((record.contribution or 0.0) + record.residual for record in records),
+        total_drc=sum(
+            (record.contribution or 0.0) + record.residual for record in records
+        ),
         citations=("US_NPR_210_SCOPE",),
         net_jtds=_net_jtds(),
         attribution_records=records,
