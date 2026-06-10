@@ -262,7 +262,10 @@ def validate_contribution_reconciliation(
     return reconciliation
 
 
-def _absolute_reconciliation_tolerance(capital_total: float, relative_tolerance: float) -> float:
+def _absolute_reconciliation_tolerance(
+    capital_total: float,
+    relative_tolerance: float,
+) -> float:
     _require_finite(capital_total, "capital_total")
     _require_finite(relative_tolerance, "relative_tolerance")
     if relative_tolerance < 0.0:
