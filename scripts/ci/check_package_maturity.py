@@ -73,6 +73,10 @@ REQUIRED_TEST_IDS = {
 }
 
 
+class MaturityCheckError(ValueError):
+    """Internal maturity-check configuration error."""
+
+
 @dataclass(frozen=True)
 class RequiredTest:
     """Required package-local test evidence from the registry."""
@@ -454,32 +458,37 @@ def _attribution_failures(entry: PackageEntry, *, root: Path) -> list[str]:
         return failures
 
     if entry.attribution_status is None:
-        return ["attribution-status"]
-    if entry.attribution_status not in SUPPORTED_ATTRIBUTION_STATUSES:
+        failures.append("attribution-status")
+    elif entry.attribution_status not in SUPPORTED_ATTRIBUTION_STATUSES:
         failures.append("known-attribution-status")
-        return failures
+
     if not (root / entry.path / "ATTRIBUTION.md").exists():
         failures.append("attribution-doc")
 
-    required_ids = ATTRIBUTION_REQUIRED_TEST_IDS[entry.attribution_status]
-    entry_test_ids = entry.required_test_ids()
-    for required_id in sorted(required_ids.difference(entry_test_ids)):
-        failures.append(f"required-test:{required_id}")
-    for required_test in entry.required_tests:
-        if (
-            required_test.id in required_ids
-            and _looks_like_placeholder_test(root / required_test.path)
-        ):
-            failures.append(f"attribution-test-placeholder:{required_test.id}")
+    if entry.attribution_status in SUPPORTED_ATTRIBUTION_STATUSES:
+        required_ids = ATTRIBUTION_REQUIRED_TEST_IDS.get(entry.attribution_status)
+        if required_ids is None:
+            raise MaturityCheckError(
+                f"missing attribution test requirements for status: {entry.attribution_status}"
+            )
+        entry_test_ids = entry.required_test_ids()
+        for required_id in sorted(required_ids.difference(entry_test_ids)):
+            failures.append(f"required-test:{required_id}")
+        for required_test in entry.required_tests:
+            if (
+                required_test.id in required_ids
+                and _looks_like_placeholder_test(root / required_test.path)
+            ):
+                failures.append(f"attribution-test-placeholder:{required_test.id}")
     return failures
 
 
 def _looks_like_placeholder_test(path: Path) -> bool:
     try:
-        text = path.read_text(encoding="utf-8").lower()
+        text = path.read_text(encoding="utf-8", errors="ignore").lower()
     except OSError:
         return False
-    return "test_placeholder" in text or "assert true" in text or "placeholder" in text
+    return "test_placeholder" in text or "assert true" in text
 
 
 def _implemented_failures(entry: PackageEntry, *, root: Path) -> list[str]:
