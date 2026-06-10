@@ -26,6 +26,8 @@ from frtb_cva.data_models import (
     CvaSourceLineage,
     HedgeEligibility,
     HedgeReferenceRelation,
+    SaCvaHedgeInstrumentType,
+    SaCvaHedgePurpose,
     SaCvaRiskClass,
     SaCvaRiskMeasure,
     SaCvaSensitivity,
@@ -440,7 +442,7 @@ def _validate_hedge(hedge: CvaHedge, seen_ids: set[str]) -> None:
     _require_text(hedge.source_row_id, "source_row_id", record_id)
     _require_text(hedge.counterparty_id, "counterparty_id", record_id)
     _require_text(hedge.reference_region, "reference_region", record_id)
-    if not isinstance(hedge.hedge_type, BaCvaHedgeType):
+    if hedge.hedge_type is not None and not isinstance(hedge.hedge_type, BaCvaHedgeType):
         raise CvaInputError("invalid hedge type", field="hedge_type", record_id=record_id)
     if not isinstance(hedge.eligibility, HedgeEligibility):
         raise CvaInputError("invalid hedge eligibility", field="eligibility", record_id=record_id)
@@ -457,6 +459,33 @@ def _validate_hedge(hedge: CvaHedge, seen_ids: set[str]) -> None:
         raise CvaInputError(
             "invalid SA-CVA risk class assignment",
             field="sa_cva_risk_class",
+            record_id=record_id,
+        )
+    if hedge.sa_cva_hedge_purpose is not None and not isinstance(
+        hedge.sa_cva_hedge_purpose,
+        SaCvaHedgePurpose,
+    ):
+        raise CvaInputError(
+            "invalid SA-CVA hedge purpose",
+            field="sa_cva_hedge_purpose",
+            record_id=record_id,
+        )
+    if hedge.sa_cva_hedge_instrument_type is not None and not isinstance(
+        hedge.sa_cva_hedge_instrument_type,
+        SaCvaHedgeInstrumentType,
+    ):
+        raise CvaInputError(
+            "invalid SA-CVA hedge instrument type",
+            field="sa_cva_hedge_instrument_type",
+            record_id=record_id,
+        )
+    if hedge.market_risk_ima_eligible is not None and not isinstance(
+        hedge.market_risk_ima_eligible,
+        bool,
+    ):
+        raise CvaInputError(
+            "market_risk_ima_eligible must be a bool when supplied",
+            field="market_risk_ima_eligible",
             record_id=record_id,
         )
     notional = _finite_float(hedge.notional, field="notional")
@@ -476,6 +505,13 @@ def _validate_hedge(hedge: CvaHedge, seen_ids: set[str]) -> None:
         _require_text(hedge.eligibility_evidence_id, "eligibility_evidence_id", record_id)
     if hedge.eligibility is HedgeEligibility.INELIGIBLE:
         _require_text(hedge.rejection_reason, "rejection_reason", record_id)
+    if hedge.eligibility is HedgeEligibility.EXCLUDED:
+        _require_text(hedge.rejection_reason, "rejection_reason", record_id)
+        _require_text(
+            hedge.market_risk_ima_exclusion_reason,
+            "market_risk_ima_exclusion_reason",
+            record_id,
+        )
     _validate_lineage(hedge.lineage, record_id)
 
 

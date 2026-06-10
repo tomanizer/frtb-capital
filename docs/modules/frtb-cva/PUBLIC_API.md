@@ -65,7 +65,7 @@ The Python `ColumnSpec` tuples are the source of truth.
 | --- | --- | --- |
 | `CVA_COUNTERPARTY_ARROW_COLUMN_SPECS` | Counterparty id, desk, legal entity, sector, credit quality, region, source row id, lineage | Client owns counterparty mastering and sector/quality classification keys. |
 | `CVA_NETTING_SET_ARROW_COLUMN_SPECS` | Netting-set id, counterparty id, EAD, maturity, discount factor, currency, sign convention, IMM flag, source row id, lineage | EAD must be non-negative after sign normalization; discount factor must be positive. |
-| `CVA_HEDGE_ARROW_COLUMN_SPECS` | Hedge id, counterparty id, hedge type, notional, maturity, discount factor, reference metadata, eligibility, internal flag, lineage | Eligible hedges require `eligibility_evidence_id`; ineligible hedges require rejection evidence. |
+| `CVA_HEDGE_ARROW_COLUMN_SPECS` | Hedge id, counterparty id, nullable BA hedge type, notional, maturity, discount factor, reference metadata, SA-CVA hedge purpose/instrument metadata, eligibility, internal flag, lineage | BA-CVA full requires a BA hedge type (`SINGLE_NAME_CDS`, `SINGLE_NAME_CONTINGENT_CDS`, or `INDEX_CDS`). Eligible SA-CVA hedges require `eligibility_evidence_id`, `sa_cva_hedge_purpose`, `sa_cva_hedge_instrument_type`, `whole_transaction_evidence_id`, and `market_risk_ima_eligible=True`; excluded SA-CVA hedges require market-risk exclusion evidence. |
 | `SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS` | Sensitivity id, risk class, measure, tag, bucket, risk factor, amount, currency, sign convention, source row id, lineage | GIRR delta requires tenor; vega requires volatility input. Index metadata is optional but required for qualified-index remapping paths. |
 
 ## Unsupported paths

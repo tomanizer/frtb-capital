@@ -95,7 +95,7 @@
           "hedge_id": "hedge-usd-5y",
           "source_row_id": "row-hedge-usd-5y",
           "counterparty_id": "ctp-1",
-          "hedge_type": "SINGLE_NAME_CDS",
+          "hedge_type": null,
           "notional": 1000000.0,
           "remaining_maturity": 2.0,
           "discount_factor": 1.0,
@@ -104,6 +104,11 @@
           "reference_relation": "DIRECT",
           "eligibility": "ELIGIBLE",
           "is_internal": false,
+          "sa_cva_risk_class": "GIRR",
+          "sa_cva_hedge_purpose": "EXPOSURE_COMPONENT",
+          "sa_cva_hedge_instrument_type": "INTEREST_RATE",
+          "whole_transaction_evidence_id": "whole-transaction-hedge-usd-5y",
+          "market_risk_ima_eligible": true,
           "eligibility_evidence_id": "evidence-hedge-usd-5y"
         }
       ]

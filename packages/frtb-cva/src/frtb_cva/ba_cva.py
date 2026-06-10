@@ -339,6 +339,12 @@ def calculate_full_portfolio(
     hedge_lines: list[BaCvaHedgeRecognitionLine] = []
 
     for hedge in sorted(hedges, key=lambda item: item.hedge_id):
+        if hedge.hedge_type is None:
+            raise CvaInputError(
+                "BA-CVA hedge requires hedge_type",
+                field="hedge_type",
+                record_id=hedge.hedge_id,
+            )
         decision = assess_ba_cva_hedge_eligibility(hedge, profile=profile)
         if decision.eligibility is not HedgeEligibility.ELIGIBLE:
             hedge_lines.append(

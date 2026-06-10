@@ -20,6 +20,8 @@ from frtb_cva.data_models import (
     CvaSourceLineage,
     HedgeEligibility,
     HedgeReferenceRelation,
+    SaCvaHedgeInstrumentType,
+    SaCvaHedgePurpose,
     SaCvaRiskClass,
     SaCvaRiskMeasure,
     SaCvaSensitivity,
@@ -227,6 +229,25 @@ def _optional_float(value: object | None, default: float) -> float:
     return float(value)
 
 
+def _optional_bool(value: object | None, default: bool, *, field: str) -> bool:
+    if value is None or value == "":
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        if value == 1:
+            return True
+        if value == 0:
+            return False
+    if isinstance(value, str):
+        normalised = value.strip().casefold()
+        if normalised in {"true", "t", "1", "yes", "y"}:
+            return True
+        if normalised in {"false", "f", "0", "no", "n"}:
+            return False
+    raise CvaInputError("boolean field contains unsupported value", field=field)
+
+
 def _lineage(
     source_row_id: str,
     *,
@@ -303,8 +324,12 @@ def _netting_set_from_record(
         discount_factor=_optional_float(record.get("discount_factor"), 1.0),
         currency=str(record.get("currency") or "USD"),
         sign_convention=str(record.get("sign_convention") or "non_negative"),
-        uses_imm_ead=bool(record.get("uses_imm_ead", True)),
-        carved_out_to_ba_cva=bool(record.get("carved_out_to_ba_cva", False)),
+        uses_imm_ead=_optional_bool(record.get("uses_imm_ead"), True, field="uses_imm_ead"),
+        carved_out_to_ba_cva=_optional_bool(
+            record.get("carved_out_to_ba_cva"),
+            False,
+            field="carved_out_to_ba_cva",
+        ),
         source_row_id=source_row_id,
         lineage=_lineage(
             source_row_id,
@@ -329,11 +354,15 @@ def _hedge_from_record(
             *_COUNTERPARTY_ID_FIELDS,
             field_name="counterparty_id",
         ),
-        hedge_type=BaCvaHedgeType(str(record.get("hedge_type") or "SINGLE_NAME_CDS")),
+        hedge_type=BaCvaHedgeType(str(record["hedge_type"])) if record.get("hedge_type") else None,
         notional=_optional_float(record.get("notional"), 0.0),
         remaining_maturity=_optional_float(record.get("remaining_maturity"), 1.0),
         discount_factor=_optional_float(record.get("discount_factor"), 1.0),
-        discount_factor_explicit=bool(record.get("discount_factor_explicit", False)),
+        discount_factor_explicit=_optional_bool(
+            record.get("discount_factor_explicit"),
+            False,
+            field="discount_factor_explicit",
+        ),
         reference_sector=CvaSector(str(record.get("reference_sector") or "SOVEREIGN")),
         reference_credit_quality=CreditQuality(
             str(record.get("reference_credit_quality") or "INVESTMENT_GRADE")
@@ -343,9 +372,36 @@ def _hedge_from_record(
             str(record.get("reference_relation") or "DIRECT")
         ),
         eligibility=HedgeEligibility(str(record.get("eligibility") or "ELIGIBLE")),
-        is_internal=bool(record.get("is_internal", False)),
+        is_internal=_optional_bool(record.get("is_internal"), False, field="is_internal"),
+        sa_cva_risk_class=SaCvaRiskClass(str(record["sa_cva_risk_class"]))
+        if record.get("sa_cva_risk_class")
+        else None,
+        sa_cva_hedge_purpose=SaCvaHedgePurpose(str(record["sa_cva_hedge_purpose"]))
+        if record.get("sa_cva_hedge_purpose")
+        else None,
+        sa_cva_hedge_instrument_type=SaCvaHedgeInstrumentType(
+            str(record["sa_cva_hedge_instrument_type"])
+        )
+        if record.get("sa_cva_hedge_instrument_type")
+        else None,
+        whole_transaction_evidence_id=str(record["whole_transaction_evidence_id"])
+        if record.get("whole_transaction_evidence_id")
+        else None,
+        market_risk_ima_eligible=_optional_bool(
+            record.get("market_risk_ima_eligible"),
+            False,
+            field="market_risk_ima_eligible",
+        )
+        if record.get("market_risk_ima_eligible") is not None
+        else None,
+        market_risk_ima_exclusion_reason=str(record["market_risk_ima_exclusion_reason"])
+        if record.get("market_risk_ima_exclusion_reason")
+        else None,
         eligibility_evidence_id=str(record["eligibility_evidence_id"])
         if record.get("eligibility_evidence_id")
+        else None,
+        rejection_reason=str(record["rejection_reason"])
+        if record.get("rejection_reason")
         else None,
         lineage=_lineage(
             source_row_id,
