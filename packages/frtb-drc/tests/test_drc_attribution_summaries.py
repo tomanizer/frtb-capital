@@ -62,34 +62,30 @@ def test_issuer_summaries_preserve_net_jtd_and_issuer_lineage() -> None:
 def test_bucket_category_and_risk_class_summaries_reconcile_to_source_records() -> None:
     result = _result()
 
-    for summaries in (
-        summarize_drc_attribution_by_bucket(result),
-        summarize_drc_attribution_by_category(result),
-        summarize_drc_attribution_by_risk_class(result),
-    ):
+    bucket_summaries = summarize_drc_attribution_by_bucket(result)
+    category_summaries = summarize_drc_attribution_by_category(result)
+    risk_class_summaries = summarize_drc_attribution_by_risk_class(result)
+
+    for summaries in (bucket_summaries, category_summaries, risk_class_summaries):
         total = sum(summary.total for summary in summaries)
         record_count = sum(summary.record_count for summary in summaries)
         assert total == pytest.approx(result.total_drc)
         assert record_count == len(result.attribution_records)
 
-    bucket = {summary.key: summary for summary in summarize_drc_attribution_by_bucket(result)}
+    bucket = {summary.key: summary for summary in bucket_summaries}
     sec_bucket = bucket["SEC_CLO_NORTH_AMERICA"]
     assert sec_bucket.contribution == pytest.approx(20.0)
     assert sec_bucket.residual == pytest.approx(3.0)
     assert sec_bucket.total == pytest.approx(23.0)
     assert sec_bucket.reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
 
-    categories = {
-        summary.key: summary for summary in summarize_drc_attribution_by_category(result)
-    }
+    categories = {summary.key: summary for summary in category_summaries}
     sec_category = categories[str(DrcRiskClass.SECURITISATION_NON_CTP)]
     ctp_category = categories[str(DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)]
     assert sec_category.total == pytest.approx(23.0)
     assert ctp_category.total == pytest.approx(-1.5)
 
-    risk_classes = {
-        summary.key: summary for summary in summarize_drc_attribution_by_risk_class(result)
-    }
+    risk_classes = {summary.key: summary for summary in risk_class_summaries}
     nonsec_risk_class = risk_classes[str(DrcRiskClass.NON_SECURITISATION)]
     sec_risk_class = risk_classes[str(DrcRiskClass.SECURITISATION_NON_CTP)]
     assert nonsec_risk_class.total == pytest.approx(5.0)
@@ -114,7 +110,9 @@ def test_generic_and_top_summary_helpers_are_stable_and_validate_limit() -> None
 
 def _result() -> DrcCapitalResult:
     records = _records()
-    total_drc = sum((record.contribution or 0.0) + record.residual for record in records)
+    total_drc = sum(
+        (record.contribution or 0.0) + record.residual for record in records
+    )
     return DrcCapitalResult(
         result_id="drc-summary",
         run_id="run-drc-summary",
