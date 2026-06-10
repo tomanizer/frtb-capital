@@ -5,7 +5,8 @@
   "profiles": {
     "US_NPR20_VB": {
       "requirement_id": "CVA-US-001",
-      "source_ids": ["us_npr20_91fr14952"],
+      "citation_source_ids": ["us_npr20_91fr14952"],
+      "crosswalk_source_refs": ["us_npr20_91fr14952"],
       "ba_cva_citation_id": "us_npr20_vb_ba_cva",
       "sa_cva_citation_id": "us_npr20_vb_sa_cva",
       "hedge_citation_id": "us_npr20_vb_hedges",
@@ -20,7 +21,8 @@
     },
     "EU_CRR3_CVA": {
       "requirement_id": "CVA-EU-001",
-      "source_ids": ["eu_crr3_2024_1623"],
+      "citation_source_ids": ["eu_crr3_2024_1623"],
+      "crosswalk_source_refs": ["eu_crr3_2024_1623"],
       "ba_cva_citation_id": "eu_crr3_article_384",
       "sa_cva_citation_id": "eu_crr3_articles_383a_383z",
       "hedge_citation_id": "eu_crr3_article_386",
@@ -35,7 +37,11 @@
     },
     "UK_PRA_CVA": {
       "requirement_id": "CVA-UK-001",
-      "source_ids": ["uk_pra_ps1_26", "uk_pra_cva_risk_part"],
+      "citation_source_ids": ["uk_pra_ps1_26", "uk_pra_cva_risk_part"],
+      "crosswalk_source_refs": [
+        "uk_pra_ps1_26_basel_3_1_final_rules",
+        "uk_pra_cva_risk_part"
+      ],
       "ba_cva_citation_id": "uk_pra_cva_risk_ba",
       "sa_cva_citation_id": "uk_pra_cva_risk_sa",
       "hedge_citation_id": "uk_pra_cva_risk_hedges",
