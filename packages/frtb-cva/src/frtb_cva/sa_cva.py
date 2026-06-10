@@ -29,9 +29,18 @@ from frtb_cva.risk_classes.equity import (
     calculate_equity_delta_capital,
     calculate_equity_vega_capital,
 )
-from frtb_cva.risk_classes.fx import calculate_fx_delta_capital, calculate_fx_vega_capital
-from frtb_cva.risk_classes.girr import calculate_girr_delta_capital, calculate_girr_vega_capital
-from frtb_cva.risk_classes.rcs import calculate_rcs_delta_capital, calculate_rcs_vega_capital
+from frtb_cva.risk_classes.fx import (
+    calculate_fx_delta_capital,
+    calculate_fx_vega_capital,
+)
+from frtb_cva.risk_classes.girr import (
+    calculate_girr_delta_capital,
+    calculate_girr_vega_capital,
+)
+from frtb_cva.risk_classes.rcs import (
+    calculate_rcs_delta_capital,
+    calculate_rcs_vega_capital,
+)
 from frtb_cva.validation import CvaInputError, validate_m_cva_multiplier
 
 _CapitalPathFn = Callable[..., SaCvaRiskClassCapital]
@@ -52,7 +61,9 @@ class SaCvaPathSpec:
     unsupported_message: str | None = None
 
 
-SA_CVA_PATH_REGISTRY: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], SaCvaPathSpec] = {
+SA_CVA_PATH_REGISTRY: dict[
+    tuple[SaCvaRiskClass, SaCvaRiskMeasure], SaCvaPathSpec
+] = {
     (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.DELTA): SaCvaPathSpec(
         SaCvaRiskClass.GIRR,
         SaCvaRiskMeasure.DELTA,
@@ -175,11 +186,13 @@ def calculate_sa_cva_capital(
 
     validated_m_cva = validate_m_cva_multiplier(m_cva)
     if not sensitivities:
-        raise CvaInputError("SA-CVA requires at least one sensitivity", field="sensitivities")
+        raise CvaInputError(
+            "SA-CVA requires at least one sensitivity", field="sensitivities"
+        )
 
-    grouped: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], list[SaCvaSensitivity]] = defaultdict(
-        list
-    )
+    grouped: dict[
+        tuple[SaCvaRiskClass, SaCvaRiskMeasure], list[SaCvaSensitivity]
+    ] = defaultdict(list)
     for item in sensitivities:
         grouped[(item.risk_class, item.risk_measure)].append(item)
 
@@ -349,23 +362,28 @@ def sa_cva_aggregation_config(
         (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.VEGA): _girr_vega_config_for,
         (SaCvaRiskClass.FX, SaCvaRiskMeasure.DELTA): _fx_delta_config,
         (SaCvaRiskClass.FX, SaCvaRiskMeasure.VEGA): _fx_vega_config,
-        (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): (
-            _ccs_delta_config
-        ),
-        (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): (
-            _rcs_delta_config_for
-        ),
-        (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA): (
-            _rcs_vega_config_for
-        ),
+        (
+            SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+            SaCvaRiskMeasure.DELTA,
+        ): _ccs_delta_config,
+        (
+            SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+            SaCvaRiskMeasure.DELTA,
+        ): _rcs_delta_config_for,
+        (
+            SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+            SaCvaRiskMeasure.VEGA,
+        ): _rcs_vega_config_for,
         (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.DELTA): _equity_delta_config_for,
         (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.VEGA): _equity_vega_config_for,
-        (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.DELTA): (
-            _commodity_delta_config_for
-        ),
-        (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.VEGA): (
-            _commodity_vega_config_for
-        ),
+        (
+            SaCvaRiskClass.COMMODITY,
+            SaCvaRiskMeasure.DELTA,
+        ): _commodity_delta_config_for,
+        (
+            SaCvaRiskClass.COMMODITY,
+            SaCvaRiskMeasure.VEGA,
+        ): _commodity_vega_config_for,
     }
     config_fn = registry.get((risk_class, risk_measure))
     if config_fn is None:
