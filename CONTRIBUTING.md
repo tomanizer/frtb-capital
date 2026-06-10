@@ -42,6 +42,12 @@ sections where applicable, and private helpers need docstrings when they carry
 regulatory, audit, aggregation, unsupported-feature, or attribution behavior.
 Tiny obvious private helpers do not need prose solely to satisfy a metric.
 
+Diagrams and notebook charts follow the Mermaid-first visual standard in
+[`docs/visuals.md`](docs/visuals.md). Use Mermaid for process, decision,
+architecture, handoff, and fail-closed flows; use Matplotlib or tables for
+quantitative evidence such as capital by component, bucket, desk, profile, or
+attribution source.
+
 ### Closing issues via PR
 
 GitHub only closes issues that are explicitly named in the PR body with
