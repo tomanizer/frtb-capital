@@ -148,6 +148,27 @@ The policy is:
 - Missing required reference evidence, unsupported regulatory features, or
   mixed incompatible DRC classes fail closed.
 
+```mermaid
+sequenceDiagram
+    participant Client as Client ETL
+    participant Adapter as Package normalizer
+    participant Harness as Validation harness
+    participant Kernel as Capital kernel
+
+    Client->>Adapter: Arrow table plus run context
+    Adapter->>Adapter: Check schema, nulls, row ids, and reference evidence
+    alt Accepted input rows only
+        Adapter-->>Harness: NormalizedArrowTable with accepted rows and hashes
+        Harness->>Kernel: Build package batch and calculate capital
+    else Rejected rows or error diagnostics
+        Adapter-->>Harness: accepted rows, rejected rows, diagnostics, hashes
+        Harness-->>Client: Non-zero validation result with rejection evidence
+    else Unsupported profile or feature
+        Adapter-->>Harness: UnsupportedRegulatoryFeatureError or manifest error
+        Harness-->>Client: Fail-closed result; no silent zero capital
+    end
+```
+
 ## Wire formats
 
 Supported interchange formats at the client boundary are:
