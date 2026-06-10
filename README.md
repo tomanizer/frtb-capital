@@ -45,6 +45,13 @@ uv sync
 
 This installs the full workspace in editable mode plus dev dependencies.
 
+## Quickstart for integrators
+
+1. Read [`docs/CLIENT_INTEGRATION.md`](docs/CLIENT_INTEGRATION.md) for the Arrow/Parquet handoff contract, required run context, hashing, and rejection semantics.
+2. Run `make demo` to execute every package `examples/run_demo.py` and see the public entrypoints produce synthetic capital outputs.
+3. Use the component guide matching your integration path: [IMA delivery](docs/modules/frtb-ima/CLIENT_DELIVERY.md), [SBM journey](packages/frtb-sbm/docs/PACKAGE_JOURNEY.md), [DRC journey](packages/frtb-drc/docs/PACKAGE_JOURNEY.md), [RRAO journey](packages/frtb-rrao/docs/PACKAGE_JOURNEY.md), [CVA journey](packages/frtb-cva/docs/PACKAGE_JOURNEY.md), or [orchestration module](docs/modules/frtb-orchestration/README.md).
+4. Run `make examples-check` and `make notebooks-check` when changing teaching examples or notebooks.
+
 ## Integrating
 
 Client risk engines should use the Arrow/Parquet handoff path as the default
