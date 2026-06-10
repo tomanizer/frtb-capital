@@ -19,7 +19,9 @@ from frtb_cva import (
 from frtb_cva.reference_data import citations_for_profile, profile_reference_payload
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-FIXTURE_PATH = Path(__file__).parent / "fixtures" / "profile_comparison_v1" / "expected_profiles.json"
+FIXTURE_PATH = (
+    Path(__file__).parent / "fixtures" / "profile_comparison_v1" / "expected_profiles.json"
+)
 CROSSWALK_PATH = _REPO_ROOT / "docs" / "regulatory" / "crosswalk" / "frtb-cva.yml"
 
 
@@ -66,7 +68,9 @@ def test_profile_fixture_matches_citation_source_ids(profile_id: str) -> None:
     profile = CvaRegulatoryProfile(profile_id)
     citations = citations_for_profile(profile)
 
-    source_ids = {citations[citation_id].source_id for citation_id in _fixture_citation_ids(fixture)}
+    source_ids = {
+        citations[citation_id].source_id for citation_id in _fixture_citation_ids(fixture)
+    }
     assert source_ids <= set(fixture["citation_source_ids"])
 
 
@@ -78,7 +82,7 @@ def test_profile_fixture_matches_crosswalk_source_refs(profile_id: str) -> None:
 
     assert set(fixture["crosswalk_source_refs"]) <= set(requirement["source_refs"])
     assert requirement["coverage_status"] == "implemented_under_audit"
-    assert "comparison" in requirement["notes"]
+    assert "comparison profile" in requirement["topic"]
 
 
 @pytest.mark.parametrize("profile_id", sorted(_load_fixture()["profiles"]))
