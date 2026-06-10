@@ -347,19 +347,19 @@ def test_batch_scope_resolution_rejects_missing_approvals_and_carve_out_evidence
         (
             {
                 "risk_classes": ["REFERENCE_CREDIT_SPREAD"],
-                "bucket_ids": ["8"],
+                "bucket_ids": ["16"],
                 "risk_factor_keys": ["INDEX"],
             },
-            "RCS qualified index requires QUALIFIED_INDEX treatment",
+            "RCS qualified-index buckets 16/17 require QUALIFIED_INDEX treatment",
         ),
         (
             {
                 "risk_classes": ["REFERENCE_CREDIT_SPREAD"],
-                "bucket_ids": ["1"],
+                "bucket_ids": ["8"],
                 "risk_factor_keys": ["INDEX"],
                 "index_treatments": ["QUALIFIED_INDEX"],
             },
-            "RCS qualified index must use bucket 8",
+            "RCS qualified index must use buckets 16 or 17",
         ),
         (
             {
@@ -415,12 +415,12 @@ def test_batch_scope_resolution_rejects_missing_approvals_and_carve_out_evidence
         (
             {
                 "risk_classes": ["REFERENCE_CREDIT_SPREAD"],
-                "bucket_ids": ["8"],
+                "bucket_ids": ["16"],
                 "risk_factor_keys": ["INDEX"],
                 "index_treatments": ["QUALIFIED_INDEX"],
                 "index_max_sector_weights": [0.8],
                 "index_homogeneous_sector_quality": [True],
-                "index_remap_bucket_ids": ["8"],
+                "index_remap_bucket_ids": ["16"],
             },
             "is not a single-name bucket",
         ),
@@ -452,11 +452,32 @@ def test_batch_sa_cva_ccs_sector_concentration_can_use_dominant_sector_bucket() 
     assert result.sa_cva_risk_class_capitals[0].bucket_capitals[0].bucket_id == "3"
 
 
+def test_batch_sa_cva_rcs_bucket_eight_is_single_name_bucket() -> None:
+    result = _sa_batch_result(
+        risk_classes=["REFERENCE_CREDIT_SPREAD"],
+        bucket_ids=["8"],
+        risk_factor_keys=["SOVEREIGN|HIGH_YIELD_OR_NOT_RATED"],
+    )
+    assert result.total_cva_capital > 0.0
+    assert result.sa_cva_risk_class_capitals[0].bucket_capitals[0].bucket_id == "8"
+
+
+def test_batch_sa_cva_rcs_qualified_index_uses_buckets_sixteen_or_seventeen() -> None:
+    result = _sa_batch_result(
+        risk_classes=["REFERENCE_CREDIT_SPREAD"],
+        bucket_ids=["17"],
+        risk_factor_keys=["INDEX"],
+        index_treatments=["QUALIFIED_INDEX"],
+    )
+    assert result.total_cva_capital > 0.0
+    assert result.sa_cva_risk_class_capitals[0].bucket_capitals[0].bucket_id == "17"
+
+
 def test_batch_sa_cva_rcs_concentration_requires_explicit_remap_bucket() -> None:
     batch = build_sa_cva_sensitivity_batch_from_columns(
         **_sensitivity_columns(
             risk_classes=["REFERENCE_CREDIT_SPREAD"],
-            bucket_ids=["8"],
+            bucket_ids=["16"],
             risk_factor_keys=["INDEX"],
             index_treatments=["QUALIFIED_INDEX"],
             index_max_sector_weights=[0.8],

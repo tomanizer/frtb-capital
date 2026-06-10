@@ -107,9 +107,37 @@ def test_sa_ref_ccs_delta_intra_bucket_correlation() -> None:
     assert val8 == 0.36
 
 
+@pytest.mark.parametrize(
+    ("bucket_id", "expected"),
+    [
+        ("1", 0.005),
+        ("2", 0.01),
+        ("3", 0.05),
+        ("4", 0.03),
+        ("5", 0.03),
+        ("6", 0.02),
+        ("7", 0.015),
+        ("8", 0.02),
+        ("9", 0.04),
+        ("10", 0.12),
+        ("11", 0.07),
+        ("12", 0.085),
+        ("13", 0.055),
+        ("14", 0.05),
+        ("15", 0.12),
+        ("16", 0.015),
+        ("17", 0.05),
+    ],
+)
+def test_sa_ref_rcs_delta_risk_weight_matches_mar50_68_table_10(
+    bucket_id: str, expected: float
+) -> None:
+    val, citation = sa_ref.rcs_delta_risk_weight(bucket_id)
+    assert val == pytest.approx(expected)
+    assert citation == "basel_mar50_68"
+
+
 def test_sa_ref_rcs_delta_risk_weight_unmapped() -> None:
-    val, _ = sa_ref.rcs_delta_risk_weight("1")
-    assert val > 0.0
     with pytest.raises(CvaInputError, match="no RCS delta risk weight"):
         sa_ref.rcs_delta_risk_weight("99")
 
@@ -117,7 +145,13 @@ def test_sa_ref_rcs_delta_risk_weight_unmapped() -> None:
 def test_sa_ref_rcs_inter_bucket_correlation_unmapped() -> None:
     # coordinate halving
     val_ig_hy, _ = sa_ref.rcs_inter_bucket_correlation("1", "9")  # 1 is IG, 9 is HY/NR
-    assert val_ig_hy > 0.0
+    assert val_ig_hy == pytest.approx(0.375)
+    val_index_pair, _ = sa_ref.rcs_inter_bucket_correlation("16", "17")
+    assert val_index_pair == pytest.approx(0.75)
+    val_ig_to_hy_index, _ = sa_ref.rcs_inter_bucket_correlation("1", "17")
+    assert val_ig_to_hy_index == pytest.approx(0.45)
+    val_hy_to_ig_index, _ = sa_ref.rcs_inter_bucket_correlation("8", "16")
+    assert val_hy_to_ig_index == pytest.approx(0.45)
     with pytest.raises(CvaInputError, match="no RCS table coordinate"):
         sa_ref.rcs_inter_bucket_correlation("99", "1")
 

@@ -93,7 +93,8 @@ from frtb_cva.sa_cva_reference_data import (
     CCS_QUALIFIED_INDEX_BUCKET,
     CCS_SINGLE_NAME_BUCKETS,
     EQUITY_QUALIFIED_INDEX_BUCKETS,
-    RCS_DELTA_RISK_WEIGHTS,
+    RCS_QUALIFIED_INDEX_BUCKETS,
+    RCS_SINGLE_NAME_BUCKETS,
     ccs_single_name_bucket_for_sector,
     parse_ccs_entity_key,
 )
@@ -2445,17 +2446,17 @@ def _resolve_rcs_bucket(
     treatment: SaCvaIndexTreatment | None,
 ) -> str:
     record_id = cast(str, batch.sensitivity_ids[index])
-    if bucket == "8":
+    if bucket in RCS_QUALIFIED_INDEX_BUCKETS:
         if treatment is not SaCvaIndexTreatment.QUALIFIED_INDEX:
             raise CvaInputError(
-                "RCS qualified index requires QUALIFIED_INDEX treatment",
+                "RCS qualified-index buckets 16/17 require QUALIFIED_INDEX treatment",
                 field="index_treatment",
                 record_id=record_id,
             )
         return _sector_concentration_bucket(batch, index, default_bucket=bucket)
     if treatment is SaCvaIndexTreatment.QUALIFIED_INDEX:
         raise CvaInputError(
-            "RCS qualified index must use bucket 8",
+            "RCS qualified index must use buckets 16 or 17",
             field="bucket_id",
             record_id=record_id,
         )
@@ -2560,8 +2561,7 @@ def _validate_remap_bucket(
                 record_id=record_id,
             )
     if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD:
-        single_name_buckets = frozenset(RCS_DELTA_RISK_WEIGHTS) - {CCS_QUALIFIED_INDEX_BUCKET}
-        if bucket not in single_name_buckets:
+        if bucket not in RCS_SINGLE_NAME_BUCKETS:
             raise CvaInputError(
                 f"RCS index remap bucket {bucket} is not a single-name bucket",
                 field="index_remap_bucket_id",

@@ -46,6 +46,11 @@ def test_rcs_delta_single_bucket_reconciles() -> None:
     assert capital.post_multiplier_capital == pytest.approx(2_000_000.0 * 0.05)
 
 
+def test_rcs_delta_hy_nr_sovereign_bucket_uses_revised_mar50_68_weight() -> None:
+    capital = calculate_rcs_delta_capital((_rcs_sensitivity(bucket="8", amount=2_000_000.0),))
+    assert capital.post_multiplier_capital == pytest.approx(2_000_000.0 * 0.02)
+
+
 def test_rcs_delta_distinct_reference_names_use_mar50_68_rho() -> None:
     """MAR50.68: rho_kl = 0.50 when reference names differ within the same bucket."""
     capital = calculate_rcs_delta_capital(
@@ -67,7 +72,7 @@ def test_rcs_cross_quality_gamma_is_halved() -> None:
         ),
     )
     kb_ig = 1_000_000.0 * 0.05
-    kb_hy = 1_000_000.0 * 0.085
+    kb_hy = 1_000_000.0 * 0.12
     sb_ig = kb_ig
     sb_hy = kb_hy
     gamma = 0.5

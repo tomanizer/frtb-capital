@@ -135,7 +135,7 @@ def test_rcs_qualified_index_resolves() -> None:
         risk_class=SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
         risk_measure=SaCvaRiskMeasure.DELTA,
         sensitivity_tag=SensitivityTag.CVA,
-        bucket_id="8",
+        bucket_id="16",
         risk_factor_key="INDEX",
         tenor="5y",
         amount=1_000_000.0,
@@ -145,7 +145,7 @@ def test_rcs_qualified_index_resolves() -> None:
         index_treatment=SaCvaIndexTreatment.QUALIFIED_INDEX,
     )
     bucket, citations = resolve_sa_cva_bucket(sens)
-    assert bucket == "8"
+    assert bucket == "16"
     assert "basel_mar50_50" in citations
 
     sens_remap = SaCvaSensitivity(
@@ -153,7 +153,7 @@ def test_rcs_qualified_index_resolves() -> None:
         risk_class=SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
         risk_measure=SaCvaRiskMeasure.DELTA,
         sensitivity_tag=SensitivityTag.CVA,
-        bucket_id="8",
+        bucket_id="17",
         risk_factor_key="INDEX",
         tenor="5y",
         amount=1_000_000.0,
@@ -167,6 +167,25 @@ def test_rcs_qualified_index_resolves() -> None:
     )
     bucket, _ = resolve_sa_cva_bucket(sens_remap)
     assert bucket == "1"
+
+
+def test_rcs_bucket_eight_resolves_as_single_name_bucket() -> None:
+    sens = SaCvaSensitivity(
+        sensitivity_id="sens-rcs-hynr-sovereign",
+        risk_class=SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        sensitivity_tag=SensitivityTag.CVA,
+        bucket_id="8",
+        risk_factor_key="SOVEREIGN|HIGH_YIELD_OR_NOT_RATED",
+        tenor="5y",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="row-rcs-hynr-sovereign",
+    )
+    bucket, citations = resolve_sa_cva_bucket(sens)
+    assert bucket == "8"
+    assert not citations
 
 
 def test_rcs_qualified_index_wrong_bucket() -> None:
@@ -184,7 +203,26 @@ def test_rcs_qualified_index_wrong_bucket() -> None:
         source_row_id="row-rcs-index",
         index_treatment=SaCvaIndexTreatment.QUALIFIED_INDEX,
     )
-    with pytest.raises(CvaInputError, match="RCS qualified index must use bucket 8"):
+    with pytest.raises(CvaInputError, match="RCS qualified index must use buckets 16 or 17"):
+        resolve_sa_cva_bucket(sens)
+
+
+def test_rcs_bucket_eight_rejects_qualified_index_treatment() -> None:
+    sens = SaCvaSensitivity(
+        sensitivity_id="sens-rcs-hynr-index",
+        risk_class=SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        sensitivity_tag=SensitivityTag.CVA,
+        bucket_id="8",
+        risk_factor_key="INDEX",
+        tenor="5y",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="row-rcs-hynr-index",
+        index_treatment=SaCvaIndexTreatment.QUALIFIED_INDEX,
+    )
+    with pytest.raises(CvaInputError, match="RCS qualified index must use buckets 16 or 17"):
         resolve_sa_cva_bucket(sens)
 
 
@@ -251,7 +289,7 @@ def test_rcs_homogeneous_without_remap_bucket_fails() -> None:
         risk_class=SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
         risk_measure=SaCvaRiskMeasure.DELTA,
         sensitivity_tag=SensitivityTag.CVA,
-        bucket_id="8",
+        bucket_id="16",
         risk_factor_key="INDEX",
         tenor="5y",
         amount=1_000_000.0,
@@ -281,7 +319,7 @@ def test_rcs_remap_not_single_name() -> None:
         risk_class=SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
         risk_measure=SaCvaRiskMeasure.DELTA,
         sensitivity_tag=SensitivityTag.CVA,
-        bucket_id="8",
+        bucket_id="16",
         risk_factor_key="INDEX",
         tenor="5y",
         amount=1_000_000.0,
@@ -291,7 +329,7 @@ def test_rcs_remap_not_single_name() -> None:
         index_treatment=SaCvaIndexTreatment.QUALIFIED_INDEX,
         index_max_sector_weight=0.8,
         index_homogeneous_sector_quality=True,
-        index_remap_bucket_id="8",
+        index_remap_bucket_id="17",
     )
     with pytest.raises(CvaInputError, match="is not a single-name bucket"):
         resolve_sa_cva_bucket(sens)

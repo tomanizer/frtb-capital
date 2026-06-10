@@ -16,8 +16,8 @@ UK PRA comparison profiles:
   CCS vega is not defined by MAR50.45/MAR50.63 and fails explicitly.
 - **Mixed carve-out** (MAR50.8): SA-CVA plus BA-CVA netting-set carve-outs with
   component totals and reconciliation.
-- **Qualified-index routing** (MAR50.50): CCS bucket 8, RCS, and equity
-  qualified-index handling when the input supplies required metadata.
+- **Qualified-index routing** (MAR50.50): CCS bucket 8, RCS buckets 16/17,
+  and equity buckets 12/13 when the input supplies required metadata.
 
 Public entry point: `calculate_cva_capital`. Unsupported methods and risk
 classes fail closed with `UnsupportedRegulatoryFeatureError` or `CvaInputError`.
