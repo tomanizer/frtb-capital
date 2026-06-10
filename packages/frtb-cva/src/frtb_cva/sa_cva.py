@@ -49,7 +49,6 @@ class SaCvaPathSpec:
     risk_measure: SaCvaRiskMeasure
     label: str
     capital_fn: _CapitalPathFn | None
-    requires_reporting_currency: bool = False
     unsupported_message: str | None = None
 
 
@@ -59,28 +58,24 @@ SA_CVA_PATH_REGISTRY: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], SaCvaPathSpe
         SaCvaRiskMeasure.DELTA,
         "GIRR delta",
         calculate_girr_delta_capital,
-        requires_reporting_currency=True,
     ),
     (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.VEGA): SaCvaPathSpec(
         SaCvaRiskClass.GIRR,
         SaCvaRiskMeasure.VEGA,
         "GIRR vega",
         calculate_girr_vega_capital,
-        requires_reporting_currency=True,
     ),
     (SaCvaRiskClass.FX, SaCvaRiskMeasure.DELTA): SaCvaPathSpec(
         SaCvaRiskClass.FX,
         SaCvaRiskMeasure.DELTA,
         "FX delta",
         calculate_fx_delta_capital,
-        requires_reporting_currency=True,
     ),
     (SaCvaRiskClass.FX, SaCvaRiskMeasure.VEGA): SaCvaPathSpec(
         SaCvaRiskClass.FX,
         SaCvaRiskMeasure.VEGA,
         "FX vega",
         calculate_fx_vega_capital,
-        requires_reporting_currency=True,
     ),
     (
         SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
@@ -245,15 +240,13 @@ def _calculate_path(
             or f"unsupported SA-CVA path: {risk_class.value}/{risk_measure.value}",
             field="sensitivities",
         )
-    if spec.requires_reporting_currency:
-        return capital_fn(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            reporting_currency=reporting_currency,
-            profile=profile,
-        )
-    return capital_fn(sensitivities, hedges=hedges, m_cva=m_cva, profile=profile)
+    return capital_fn(
+        sensitivities,
+        hedges=hedges,
+        m_cva=m_cva,
+        reporting_currency=reporting_currency,
+        profile=profile,
+    )
 
 
 def _capital_path_spec_for(
