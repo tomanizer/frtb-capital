@@ -81,6 +81,12 @@ include:
 - missing, invalid, or non-unique risk-weight lineage for the positions inside
   a net JTD record.
 
+Risk-weight lineage diagnostics use stable reason prefixes for the failed
+precondition: `missing risk weight`, `non-finite risk weight`, `negative risk
+weight`, and `non-unique risk weights`. The unsupported record keeps the bucket
+residual so reconciliation remains visible while the failed input condition is
+explicit.
+
 The helper emits `RESIDUAL` records for empty category residuals or remaining
 category capital needed to reconcile analytical records to capital.
 
