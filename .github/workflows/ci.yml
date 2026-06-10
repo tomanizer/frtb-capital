@@ -413,20 +413,11 @@ jobs:
             packages/*/pyproject.toml
           cache-suffix: py3.11-notebooks
 
-      - name: Sync workspace and IMA notebooks extra
-        run: uv sync --locked --python 3.11 --package frtb-ima --extra notebooks
+      - name: Sync workspace
+        run: uv sync --locked --python 3.11
 
-      - name: Build IMA validation pack
-        working-directory: packages/frtb-ima
-        run: MPLBACKEND=Agg uv run --no-sync pytest --nbmake notebooks
-
-      - name: Upload validation pack
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ima-validation-pack
-          path: packages/frtb-ima/build/validation/
-          if-no-files-found: warn
+      - name: Run notebook smoke checks
+        run: make notebooks-check
 
   version-bump-guard:
     runs-on: ubuntu-latest
