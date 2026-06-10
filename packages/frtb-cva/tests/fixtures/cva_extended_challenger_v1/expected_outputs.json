@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "cases": {
+    "full_ba_hedge_floor": {
+      "total_cva_capital": 12767.857142857143,
+      "k_full": 12767.857142857143,
+      "k_reduced": 23214.28571428572,
+      "k_hedged": 9285.714285714284,
+      "k_portfolio_hedged": 14285.714285714282,
+      "beta": 0.25,
+      "beta_floor_term": 5803.57142857143,
+      "beta_floor_binding": false,
+      "counterparty_adjusted_standalone": {
+        "ctp-full-ig": -14285.714285714282
+      },
+      "hedge_lines": {
+        "hedge-direct-full-ig": {
+          "r_hc": 1.0,
+          "risk_weight": 0.05,
+          "snh_contribution": 50000.0,
+          "hma_contribution": 0.0,
+          "index_contribution": 0.0,
+          "reason_code": "eligible_ba_cva_credit_spread_hedge"
+        }
+      }
+    },
+    "mixed_carve_out": {
+      "total_cva_capital": 12625.0,
+      "method_components": {
+        "SA_CVA": 11000.0,
+        "BA_CVA_REDUCED": 1625.0
+      },
+      "ba_cva_reduced": {
+        "k_reduced": 1625.0,
+        "sum_scva": 2500.0
+      },
+      "sa_cva_risk_class_capitals": {
+        "FX/DELTA": {
+          "post_multiplier_capital": 11000.0,
+          "bucket_capitals": {
+            "EUR": {
+              "k_b": 11000.0,
+              "s_b": 11000.0
+            }
+          }
+        }
+      },
+      "audit_metadata": {
+        "sa_cva_sensitivity_scope_evidence_id": "evidence-sa-slice-mixed-v1"
+      }
+    },
+    "sa_multi_risk_qualified_index": {
+      "total_cva_capital": 21400.0,
+      "sa_cva_risk_class_capitals": {
+        "COUNTERPARTY_CREDIT_SPREAD/DELTA": {
+          "post_multiplier_capital": 3000.0,
+          "bucket_capitals": {
+            "3": {
+              "k_b": 3000.0,
+              "s_b": 3000.0
+            }
+          }
+        },
+        "FX/DELTA": {
+          "post_multiplier_capital": 11000.0,
+          "bucket_capitals": {
+            "EUR": {
+              "k_b": 11000.0,
+              "s_b": 11000.0
+            }
+          }
+        },
+        "GIRR/DELTA": {
+          "post_multiplier_capital": 7400.0,
+          "bucket_capitals": {
+            "USD": {
+              "k_b": 7400.0,
+              "s_b": 7400.0
+            }
+          }
+        }
+      }
+    }
+  }
+}
