@@ -9,6 +9,7 @@ Regulatory traceability:
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Mapping
 from dataclasses import replace
 from numbers import Real
@@ -20,6 +21,17 @@ from frtb_ima.audit import DeskAuditRecord
 _RECONCILIATION_TOLERANCE = 1e-6
 _ATTRIBUTION_CITATIONS = ("adr_0038",)
 _CAPITAL_TOTAL_KEYS = ("total", "models_based_capital", "ima_rc", "IMA_RC")
+_COMPONENT_MAP_KEYS = (
+    "components",
+    "component_breakdown",
+    "component_capitals",
+    "risk_class_components",
+    "risk_class_capitals",
+    "bucket_components",
+    "bucket_capitals",
+)
+_COMPONENT_VALUE_KEYS = ("capital", "amount", "contribution", "value")
+_CATEGORY_TOKEN_PATTERN = re.compile(r"[^0-9A-Za-z]+")
 
 
 def desk_contributions(record: DeskAuditRecord) -> tuple[CapitalContribution, ...]:
@@ -29,19 +41,21 @@ def desk_contributions(record: DeskAuditRecord) -> tuple[CapitalContribution, ..
     maps and does not recalculate IMA capital. ``input_hash`` is propagated from
     ``record.inputs_hash`` on every emitted record as required by ADR 0038.
 
-    For standard non-floor paths, IMCC, SES, and any PLA add-on must reconcile
-    to the desk total within ε = 1e-6. If a max/floor branch is indicated, the
-    unattributed difference is emitted as an explicit residual with
-    ``PARTIAL_RESIDUAL`` status.
+    For standard non-floor paths, retained IMCC, SES, and PLA component records
+    must reconcile to the desk total within epsilon = 1e-6. If the audit record
+    carries reconciling nested component maps, those child components are emitted
+    instead of the aggregate. If a max/floor branch is indicated, the unattributed
+    difference is emitted as an explicit residual with ``PARTIAL_RESIDUAL`` status.
+
     Parameters
     ----------
     record : DeskAuditRecord
-        Record.
+        Completed desk audit record.
 
     Returns
     -------
     tuple[CapitalContribution, ...]
-        Result of the operation.
+        Read-only attribution records for the deepest retained desk grain.
     """
     total = _capital_total(record.capital)
     component_records = _component_records(record)
@@ -118,21 +132,81 @@ def _desk_components(record: DeskAuditRecord) -> tuple[tuple[str, float], ...]:
     if imcc is None:
         imcc = _optional_number(record.imcc, "imcc")
     if imcc is not None:
-        components.append(("IMCC", imcc))
+        components.extend(_detail_components_or_aggregate(record.imcc, "IMCC", imcc))
 
     ses = _optional_number(record.capital, "ses_t_minus_1")
     if ses is None:
         ses = _optional_number(record.ses, "total_ses")
     if ses is not None:
-        components.append(("SES", ses))
+        components.extend(_detail_components_or_aggregate(record.ses, "SES", ses))
 
     pla_addon = _optional_number(record.capital, "pla_addon")
     if pla_addon is not None:
-        components.append(("PLA_ADDON", pla_addon))
+        components.extend(_detail_components_or_aggregate(record.pla, "PLA_ADDON", pla_addon))
 
     if not components:
         raise ValueError("DeskAuditRecord must expose at least one IMCC, SES, or PLA component")
     return tuple(components)
+
+
+def _detail_components_or_aggregate(
+    values: Mapping[str, object],
+    prefix: str,
+    aggregate_amount: float,
+) -> tuple[tuple[str, float], ...]:
+    details = _reconciling_detail_components(values, prefix, aggregate_amount)
+    if details:
+        return details
+    return ((prefix, aggregate_amount),)
+
+
+def _reconciling_detail_components(
+    values: Mapping[str, object],
+    prefix: str,
+    aggregate_amount: float,
+) -> tuple[tuple[str, float], ...]:
+    for key in _COMPONENT_MAP_KEYS:
+        raw_components = values.get(key)
+        if not isinstance(raw_components, Mapping):
+            continue
+        details = _detail_component_items(raw_components, prefix, key)
+        if not details:
+            continue
+        detail_total = sum(amount for _, amount in details)
+        tolerance = _RECONCILIATION_TOLERANCE * max(abs(aggregate_amount), 1.0)
+        if abs(detail_total - aggregate_amount) <= tolerance:
+            return details
+    return ()
+
+
+def _detail_component_items(
+    raw_components: Mapping[object, object],
+    prefix: str,
+    map_key: str,
+) -> tuple[tuple[str, float], ...]:
+    details: list[tuple[str, float]] = []
+    for raw_name, raw_amount in raw_components.items():
+        amount = _component_amount(raw_amount, f"{map_key}.{raw_name}")
+        if amount is None:
+            continue
+        details.append((f"{prefix}_{_category_token(raw_name)}", amount))
+    return tuple(details)
+
+
+def _component_amount(value: object, field_name: str) -> float | None:
+    if isinstance(value, Mapping):
+        for key in _COMPONENT_VALUE_KEYS:
+            if key in value:
+                return _required_number(value[key], f"{field_name}.{key}")
+        return None
+    return _required_number(value, field_name)
+
+
+def _category_token(value: object) -> str:
+    token = _CATEGORY_TOKEN_PATTERN.sub("_", str(value).strip()).strip("_").upper()
+    if not token:
+        raise ValueError("component breakdown keys must be non-empty")
+    return token
 
 
 def _capital_total(capital: Mapping[str, object]) -> float:
@@ -150,11 +224,15 @@ def _optional_number(values: Mapping[str, object] | None, key: str) -> float | N
     value = values[key]
     if value is None:
         return None
+    return _required_number(value, key)
+
+
+def _required_number(value: object, field_name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, Real):
-        raise ValueError(f"{key} must be a finite numeric value")
+        raise ValueError(f"{field_name} must be a finite numeric value")
     amount = float(value)
     if not math.isfinite(amount):
-        raise ValueError(f"{key} must be finite")
+        raise ValueError(f"{field_name} must be finite")
     return amount
 
 
