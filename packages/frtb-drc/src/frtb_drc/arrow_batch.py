@@ -1,4 +1,4 @@
-"""Arrow batch adapters for DRC batches."""
+"""Arrow batch adapters for DRC batches and evidence handoffs."""
 
 from __future__ import annotations
 
@@ -61,11 +61,7 @@ DRC_NONSEC_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("desk_id", aliases=("deskId",), logical_type=TabularLogicalType.STRING),
     ColumnSpec("legal_entity", aliases=("legalEntity",), logical_type=TabularLogicalType.STRING),
     ColumnSpec("risk_class", aliases=("riskClass",), logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "instrument_type",
-        aliases=("instrumentType",),
-        logical_type=TabularLogicalType.STRING,
-    ),
+    ColumnSpec("instrument_type", aliases=("instrumentType",), logical_type=TabularLogicalType.STRING),
     ColumnSpec(
         "default_direction",
         aliases=("defaultDirection",),
@@ -88,11 +84,7 @@ DRC_NONSEC_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ),
     ColumnSpec("bucket_key", aliases=("bucketKey",), logical_type=TabularLogicalType.STRING),
     ColumnSpec("seniority", logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "credit_quality",
-        aliases=("creditQuality",),
-        logical_type=TabularLogicalType.STRING,
-    ),
+    ColumnSpec("credit_quality", aliases=("creditQuality",), logical_type=TabularLogicalType.STRING),
     ColumnSpec("notional", logical_type=TabularLogicalType.FLOAT),
     ColumnSpec(
         "market_value",
@@ -108,11 +100,7 @@ DRC_NONSEC_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
-    ColumnSpec(
-        "maturity_years",
-        aliases=("maturityYears",),
-        logical_type=TabularLogicalType.FLOAT,
-    ),
+    ColumnSpec("maturity_years", aliases=("maturityYears",), logical_type=TabularLogicalType.FLOAT),
     ColumnSpec("currency", logical_type=TabularLogicalType.STRING),
     ColumnSpec(
         "lgd_override",
@@ -169,11 +157,7 @@ DRC_NONSEC_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
 )
 
 DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = tuple(
-    _replace_column_spec(
-        spec,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    )
+    _replace_column_spec(spec, required=False, null_policy=NullPolicy.ALLOW)
     if spec.name in {"seniority", "credit_quality"}
     else _replace_column_spec(spec, required=True, null_policy=NullPolicy.ALLOW)
     if spec.name == "issuer_id"
@@ -182,11 +166,7 @@ DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = tuple(
 )
 
 DRC_CTP_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = tuple(
-    _replace_column_spec(
-        spec,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    )
+    _replace_column_spec(spec, required=False, null_policy=NullPolicy.ALLOW)
     if spec.name in {"seniority", "credit_quality", "issuer_id"}
     else spec
     for spec in DRC_NONSEC_ARROW_COLUMN_SPECS
@@ -207,7 +187,7 @@ DRC_RISK_WEIGHT_EVIDENCE_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         aliases=("effectiveRiskWeight", "risk_weight", "riskWeight"),
         logical_type=TabularLogicalType.FLOAT,
     ),
-    ColumnSpec("as_of_date", aliases=("asOfDate",), logical_type=TabularLogicalType.DATE),
+    ColumnSpec("as_of_date", aliases=("asOfDate",), logical_type=TabularLogicalType.STRING),
     ColumnSpec("source_id", aliases=("sourceId",), logical_type=TabularLogicalType.STRING),
     ColumnSpec(
         "lineage_source_system",
@@ -261,7 +241,7 @@ DRC_FAIR_VALUE_CAP_EVIDENCE_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         aliases=("eligibilityReason",),
         logical_type=TabularLogicalType.STRING,
     ),
-    ColumnSpec("as_of_date", aliases=("asOfDate",), logical_type=TabularLogicalType.DATE),
+    ColumnSpec("as_of_date", aliases=("asOfDate",), logical_type=TabularLogicalType.STRING),
     ColumnSpec("source_id", aliases=("sourceId",), logical_type=TabularLogicalType.STRING),
     ColumnSpec(
         "lineage_source_system",
@@ -352,35 +332,9 @@ def normalize_drc_nonsec_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the DRC non-securitisation input table contract.
-    Parameters
-    ----------
-    table : pa.Table
-        Arrow table or normalized handoff to convert.
-    diagnostics : Sequence[AdapterDiagnostic], optional
-        Adapter diagnostics attached to the batch.
-    metadata : Mapping[str, str] | None, optional
-        Metadata.
-    rejected : pa.Table | None, optional
-        Rejected.
-    source_hash : str | None, optional
-        Source hash.
+    """Normalize a raw Arrow table to the DRC non-securitisation contract."""
 
-    Returns
-    -------
-    NormalizedArrowTable
-        Result of the operation.
-    """
-
-    return normalize_arrow_table(
-        table,
-        column_specs=DRC_NONSEC_ARROW_COLUMN_SPECS,
-        rejected=rejected,
-        diagnostics=diagnostics,
-        metadata={} if metadata is None else metadata,
-        source_hash=source_hash,
-        require_unique_row_ids=False,
-    )
+    return _normalize_drc_arrow_table(table, DRC_NONSEC_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash)
 
 
 def normalize_drc_securitisation_non_ctp_arrow_table(
@@ -391,34 +345,15 @@ def normalize_drc_securitisation_non_ctp_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the DRC securitisation non-CTP input table contract.
-    Parameters
-    ----------
-    table : pa.Table
-        Arrow table or normalized handoff to convert.
-    diagnostics : Sequence[AdapterDiagnostic], optional
-        Adapter diagnostics attached to the batch.
-    metadata : Mapping[str, str] | None, optional
-        Metadata.
-    rejected : pa.Table | None, optional
-        Rejected.
-    source_hash : str | None, optional
-        Source hash.
+    """Normalize a raw Arrow table to the DRC securitisation non-CTP contract."""
 
-    Returns
-    -------
-    NormalizedArrowTable
-        Result of the operation.
-    """
-
-    return normalize_arrow_table(
+    return _normalize_drc_arrow_table(
         table,
-        column_specs=DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS,
-        rejected=rejected,
-        diagnostics=diagnostics,
-        metadata={} if metadata is None else metadata,
-        source_hash=source_hash,
-        require_unique_row_ids=False,
+        DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS,
+        diagnostics,
+        metadata,
+        rejected,
+        source_hash,
     )
 
 
@@ -430,35 +365,9 @@ def normalize_drc_ctp_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize a raw Arrow table to the DRC CTP input table contract.
-    Parameters
-    ----------
-    table : pa.Table
-        Arrow table or normalized handoff to convert.
-    diagnostics : Sequence[AdapterDiagnostic], optional
-        Adapter diagnostics attached to the batch.
-    metadata : Mapping[str, str] | None, optional
-        Metadata.
-    rejected : pa.Table | None, optional
-        Rejected.
-    source_hash : str | None, optional
-        Source hash.
+    """Normalize a raw Arrow table to the DRC CTP input contract."""
 
-    Returns
-    -------
-    NormalizedArrowTable
-        Result of the operation.
-    """
-
-    return normalize_arrow_table(
-        table,
-        column_specs=DRC_CTP_ARROW_COLUMN_SPECS,
-        rejected=rejected,
-        diagnostics=diagnostics,
-        metadata={} if metadata is None else metadata,
-        source_hash=source_hash,
-        require_unique_row_ids=False,
-    )
+    return _normalize_drc_arrow_table(table, DRC_CTP_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash)
 
 
 def normalize_drc_risk_weight_evidence_arrow_table(
@@ -469,35 +378,26 @@ def normalize_drc_risk_weight_evidence_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize Arrow risk-weight evidence for DRC securitisation and CTP contexts.
+    """Normalize Arrow risk-weight evidence for DRC securitisation and CTP.
 
     Parameters
     ----------
     table : pa.Table
-        Source Arrow evidence table.
-    diagnostics : Sequence[AdapterDiagnostic], optional
-        Adapter diagnostics attached to the handoff.
-    metadata : Mapping[str, str] | None, optional
-        Handoff metadata.
-    rejected : pa.Table | None, optional
-        Rejected evidence rows.
-    source_hash : str | None, optional
-        Precomputed source hash.
+        Raw client evidence table.
 
     Returns
     -------
     NormalizedArrowTable
-        Evidence handoff with canonical DRC evidence columns.
+        Canonical evidence handoff for context-map construction.
     """
 
-    return normalize_arrow_table(
+    return _normalize_drc_arrow_table(
         table,
-        column_specs=DRC_RISK_WEIGHT_EVIDENCE_ARROW_COLUMN_SPECS,
-        rejected=rejected,
-        diagnostics=diagnostics,
-        metadata={} if metadata is None else metadata,
-        source_hash=source_hash,
-        require_unique_row_ids=False,
+        DRC_RISK_WEIGHT_EVIDENCE_ARROW_COLUMN_SPECS,
+        diagnostics,
+        metadata,
+        rejected,
+        source_hash,
     )
 
 
@@ -509,30 +409,40 @@ def normalize_drc_fair_value_cap_evidence_arrow_table(
     rejected: pa.Table | None = None,
     source_hash: str | None = None,
 ) -> NormalizedArrowTable:
-    """Normalize Arrow fair-value-cap evidence for DRC securitisation contexts.
+    """Normalize Arrow fair-value-cap evidence for DRC securitisation.
 
     Parameters
     ----------
     table : pa.Table
-        Source Arrow evidence table.
-    diagnostics : Sequence[AdapterDiagnostic], optional
-        Adapter diagnostics attached to the handoff.
-    metadata : Mapping[str, str] | None, optional
-        Handoff metadata.
-    rejected : pa.Table | None, optional
-        Rejected evidence rows.
-    source_hash : str | None, optional
-        Precomputed source hash.
+        Raw client evidence table.
 
     Returns
     -------
     NormalizedArrowTable
-        Evidence handoff with canonical fair-value-cap evidence columns.
+        Canonical evidence handoff for context-map construction.
     """
 
+    return _normalize_drc_arrow_table(
+        table,
+        DRC_FAIR_VALUE_CAP_EVIDENCE_ARROW_COLUMN_SPECS,
+        diagnostics,
+        metadata,
+        rejected,
+        source_hash,
+    )
+
+
+def _normalize_drc_arrow_table(
+    table: pa.Table,
+    column_specs: tuple[ColumnSpec, ...],
+    diagnostics: Sequence[AdapterDiagnostic],
+    metadata: Mapping[str, str] | None,
+    rejected: pa.Table | None,
+    source_hash: str | None,
+) -> NormalizedArrowTable:
     return normalize_arrow_table(
         table,
-        column_specs=DRC_FAIR_VALUE_CAP_EVIDENCE_ARROW_COLUMN_SPECS,
+        column_specs=column_specs,
         rejected=rejected,
         diagnostics=diagnostics,
         metadata={} if metadata is None else metadata,
@@ -546,32 +456,16 @@ def build_drc_nonsec_batch_from_arrow(
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> DrcPositionBatch:
-    """Build a DRC-owned non-securitisation batch from a normalized Arrow table.
-    Parameters
-    ----------
-    handoff : NormalizedArrowTable
-        Handoff.
-    profile_id : str, optional
-        Active DRC rule profile identifier.
+    """Build a DRC-owned non-securitisation batch from a normalized Arrow table."""
 
-    Returns
-    -------
-    DrcPositionBatch
-        Result of the operation.
-    """
-
-    if not isinstance(handoff, NormalizedArrowTable):
-        raise DrcInputError("handoff must be NormalizedArrowTable")
-    table = handoff.accepted
-    columns = read_arrow_columns(table, DRC_NONSEC_ARROW_COLUMN_SPECS, error=_drc_error)
-    diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
+    table, columns = _read_position_columns(handoff, DRC_NONSEC_ARROW_COLUMN_SPECS)
     return build_drc_nonsec_batch_from_columns(
         **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
         citation_ids=_citation_ids_column(columns.get("citation_ids")),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_arrow_table_hash(handoff),
-        diagnostics=diagnostics,
+        diagnostics=_diagnostics_payload(handoff),
         copy_arrays=False,
         profile_id=profile_id,
     )
@@ -580,65 +474,31 @@ def build_drc_nonsec_batch_from_arrow(
 def build_drc_securitisation_non_ctp_batch_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> DrcPositionBatch:
-    """Build a DRC-owned securitisation non-CTP batch from a normalized Arrow table.
-    Parameters
-    ----------
-    handoff : NormalizedArrowTable
-        Handoff.
+    """Build a DRC-owned securitisation non-CTP batch from normalized Arrow."""
 
-    Returns
-    -------
-    DrcPositionBatch
-        Result of the operation.
-    """
-
-    if not isinstance(handoff, NormalizedArrowTable):
-        raise DrcInputError("handoff must be NormalizedArrowTable")
-    table = handoff.accepted
-    columns = read_arrow_columns(
-        table,
-        DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS,
-        error=_drc_error,
-    )
-    diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
+    table, columns = _read_position_columns(handoff, DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS)
     return build_drc_securitisation_non_ctp_batch_from_columns(
         **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
         citation_ids=_citation_ids_column(columns.get("citation_ids")),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_arrow_table_hash(handoff),
-        diagnostics=diagnostics,
+        diagnostics=_diagnostics_payload(handoff),
         copy_arrays=False,
     )
 
 
-def build_drc_ctp_batch_from_arrow(
-    handoff: NormalizedArrowTable,
-) -> DrcPositionBatch:
-    """Build a DRC-owned CTP batch from a normalized Arrow table.
-    Parameters
-    ----------
-    handoff : NormalizedArrowTable
-        Handoff.
+def build_drc_ctp_batch_from_arrow(handoff: NormalizedArrowTable) -> DrcPositionBatch:
+    """Build a DRC-owned CTP batch from a normalized Arrow table."""
 
-    Returns
-    -------
-    DrcPositionBatch
-        Result of the operation.
-    """
-
-    if not isinstance(handoff, NormalizedArrowTable):
-        raise DrcInputError("handoff must be NormalizedArrowTable")
-    table = handoff.accepted
-    columns = read_arrow_columns(table, DRC_CTP_ARROW_COLUMN_SPECS, error=_drc_error)
-    diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
+    table, columns = _read_position_columns(handoff, DRC_CTP_ARROW_COLUMN_SPECS)
     return build_drc_ctp_batch_from_columns(
         **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
         citation_ids=_citation_ids_column(columns.get("citation_ids")),
         source_hash=handoff.source_hash,
         handoff_hash=normalized_arrow_table_hash(handoff),
-        diagnostics=diagnostics,
+        diagnostics=_diagnostics_payload(handoff),
         copy_arrays=False,
     )
 
@@ -646,18 +506,7 @@ def build_drc_ctp_batch_from_arrow(
 def build_drc_risk_weight_evidence_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> dict[str, DrcRiskWeightEvidence]:
-    """Build typed DRC risk-weight evidence records from an Arrow handoff.
-
-    Parameters
-    ----------
-    handoff : NormalizedArrowTable
-        Normalized DRC risk-weight evidence handoff.
-
-    Returns
-    -------
-    dict[str, DrcRiskWeightEvidence]
-        Evidence keyed by ``position_id`` for insertion into ``DrcCalculationContext``.
-    """
+    """Build typed DRC risk-weight evidence records from an Arrow handoff."""
 
     return _build_drc_risk_weight_evidence_from_arrow(handoff, expected_risk_class=None)
 
@@ -665,18 +514,7 @@ def build_drc_risk_weight_evidence_from_arrow(
 def build_drc_securitisation_non_ctp_risk_weight_evidence_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> dict[str, DrcRiskWeightEvidence]:
-    """Build securitisation non-CTP risk-weight evidence from an Arrow handoff.
-
-    Parameters
-    ----------
-    handoff : NormalizedArrowTable
-        Normalized DRC risk-weight evidence handoff.
-
-    Returns
-    -------
-    dict[str, DrcRiskWeightEvidence]
-        Evidence keyed by ``position_id`` for ``securitisation_non_ctp_risk_weight_evidence``.
-    """
+    """Build securitisation non-CTP risk-weight evidence from Arrow."""
 
     return _build_drc_risk_weight_evidence_from_arrow(
         handoff,
@@ -687,18 +525,7 @@ def build_drc_securitisation_non_ctp_risk_weight_evidence_from_arrow(
 def build_drc_ctp_risk_weight_evidence_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> dict[str, DrcRiskWeightEvidence]:
-    """Build CTP risk-weight evidence from an Arrow handoff.
-
-    Parameters
-    ----------
-    handoff : NormalizedArrowTable
-        Normalized DRC risk-weight evidence handoff.
-
-    Returns
-    -------
-    dict[str, DrcRiskWeightEvidence]
-        Evidence keyed by ``position_id`` for ``ctp_risk_weight_evidence``.
-    """
+    """Build CTP risk-weight evidence from an Arrow handoff."""
 
     return _build_drc_risk_weight_evidence_from_arrow(
         handoff,
@@ -709,41 +536,15 @@ def build_drc_ctp_risk_weight_evidence_from_arrow(
 def build_drc_fair_value_cap_evidence_from_arrow(
     handoff: NormalizedArrowTable,
 ) -> dict[str, DrcFairValueCapEvidence]:
-    """Build typed DRC fair-value-cap evidence records from an Arrow handoff.
+    """Build typed DRC fair-value-cap evidence records from an Arrow handoff."""
 
-    Parameters
-    ----------
-    handoff : NormalizedArrowTable
-        Normalized DRC fair-value-cap evidence handoff.
-
-    Returns
-    -------
-    dict[str, DrcFairValueCapEvidence]
-        Evidence keyed by ``position_id`` for ``securitisation_non_ctp_fair_value_cap_evidence``.
-    """
-
-    table, columns = _read_evidence_columns(
-        handoff,
-        DRC_FAIR_VALUE_CAP_EVIDENCE_ARROW_COLUMN_SPECS,
-    )
+    table, columns = _read_evidence_columns(handoff, DRC_FAIR_VALUE_CAP_EVIDENCE_ARROW_COLUMN_SPECS)
     records: list[DrcFairValueCapEvidence] = []
     for index in range(table.num_rows):
         position_id = _required_text(columns, "position_id", index)
         eligible = _required_bool(columns, "eligible", index)
         fair_value_cap_amount = _optional_float(columns, "fair_value_cap_amount", index)
-        if eligible:
-            if fair_value_cap_amount is None:
-                raise DrcInputError(
-                    f"fair_value_cap_amount is required for eligible evidence {position_id!r}"
-                )
-            if fair_value_cap_amount < 0.0:
-                raise DrcInputError(
-                    f"fair_value_cap_amount must be non-negative for {position_id!r}"
-                )
-        elif fair_value_cap_amount is not None:
-            raise DrcInputError(
-                f"fair_value_cap_amount must be empty for ineligible evidence {position_id!r}"
-            )
+        _validate_fair_value_cap_amount(position_id, eligible, fair_value_cap_amount)
         if _optional_bool(columns, "is_stale", index):
             raise DrcInputError(f"fair-value-cap evidence for {position_id!r} is stale")
         records.append(
@@ -769,10 +570,7 @@ def _build_drc_risk_weight_evidence_from_arrow(
     *,
     expected_risk_class: DrcRiskClass | None,
 ) -> dict[str, DrcRiskWeightEvidence]:
-    table, columns = _read_evidence_columns(
-        handoff,
-        DRC_RISK_WEIGHT_EVIDENCE_ARROW_COLUMN_SPECS,
-    )
+    table, columns = _read_evidence_columns(handoff, DRC_RISK_WEIGHT_EVIDENCE_ARROW_COLUMN_SPECS)
     records: list[DrcRiskWeightEvidence] = []
     for index in range(table.num_rows):
         position_id = _required_text(columns, "position_id", index)
@@ -782,11 +580,6 @@ def _build_drc_risk_weight_evidence_from_arrow(
                 f"risk-weight evidence for {position_id!r} has risk_class "
                 f"{risk_class.value!r}; expected {expected_risk_class.value!r}"
             )
-        effective_risk_weight = _required_non_negative_float(
-            columns,
-            "effective_risk_weight",
-            index,
-        )
         if _optional_bool(columns, "is_stale", index):
             raise DrcInputError(f"risk-weight evidence for {position_id!r} is stale")
         records.append(
@@ -796,7 +589,11 @@ def _build_drc_risk_weight_evidence_from_arrow(
                 source_profile_id=_required_text(columns, "source_profile_id", index),
                 source_table=_required_text(columns, "source_table", index),
                 source_method=_required_text(columns, "source_method", index),
-                effective_risk_weight=effective_risk_weight,
+                effective_risk_weight=_required_non_negative_float(
+                    columns,
+                    "effective_risk_weight",
+                    index,
+                ),
                 as_of_date=_required_date(columns, "as_of_date", index),
                 source_id=_required_text(columns, "source_id", index),
                 lineage=_lineage_from_columns(columns, index),
@@ -808,7 +605,21 @@ def _build_drc_risk_weight_evidence_from_arrow(
     return risk_weight_evidence_by_position(records)
 
 
+def _read_position_columns(
+    handoff: NormalizedArrowTable,
+    specs: tuple[ColumnSpec, ...],
+) -> tuple[pa.Table, dict[str, npt.NDArray[Any]]]:
+    return _read_handoff_columns(handoff, specs)
+
+
 def _read_evidence_columns(
+    handoff: NormalizedArrowTable,
+    specs: tuple[ColumnSpec, ...],
+) -> tuple[pa.Table, dict[str, npt.NDArray[Any]]]:
+    return _read_handoff_columns(handoff, specs)
+
+
+def _read_handoff_columns(
     handoff: NormalizedArrowTable,
     specs: tuple[ColumnSpec, ...],
 ) -> tuple[pa.Table, dict[str, npt.NDArray[Any]]]:
@@ -817,6 +628,10 @@ def _read_evidence_columns(
     table = handoff.accepted
     columns = read_arrow_columns(table, specs, error=_drc_error)
     return table, columns
+
+
+def _diagnostics_payload(handoff: NormalizedArrowTable) -> tuple[dict[str, object], ...]:
+    return tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
 
 
 def _drc_batch_column_kwargs(columns: Mapping[str, object]) -> dict[str, Any]:
@@ -945,23 +760,42 @@ def _float_value(value: object, field: str) -> float | None:
     if value is None:
         return None
     result = float(value)
+    if np.isnan(result):
+        return None
     if not np.isfinite(result):
-        return None if np.isnan(result) else _raise_non_finite_float(field)
+        raise DrcInputError(f"{field} must be finite")
     return result
 
 
-def _raise_non_finite_float(field: str) -> None:
-    raise DrcInputError(f"{field} must be finite")
+def _validate_fair_value_cap_amount(
+    position_id: str,
+    eligible: bool,
+    fair_value_cap_amount: float | None,
+) -> None:
+    if eligible and fair_value_cap_amount is None:
+        raise DrcInputError(f"fair_value_cap_amount is required for eligible evidence {position_id!r}")
+    if eligible and fair_value_cap_amount is not None and fair_value_cap_amount < 0.0:
+        raise DrcInputError(f"fair_value_cap_amount must be non-negative for {position_id!r}")
+    if not eligible and fair_value_cap_amount is not None:
+        raise DrcInputError(f"fair_value_cap_amount must be empty for ineligible evidence {position_id!r}")
 
 
-def _required_ids(columns: Mapping[str, npt.NDArray[Any]], field: str, index: int) -> tuple[str, ...]:
+def _required_ids(
+    columns: Mapping[str, npt.NDArray[Any]],
+    field: str,
+    index: int,
+) -> tuple[str, ...]:
     ids = _optional_ids(columns, field, index)
     if not ids:
         raise DrcInputError(f"{field} must contain at least one non-empty id")
     return ids
 
 
-def _optional_ids(columns: Mapping[str, npt.NDArray[Any]], field: str, index: int) -> tuple[str, ...]:
+def _optional_ids(
+    columns: Mapping[str, npt.NDArray[Any]],
+    field: str,
+    index: int,
+) -> tuple[str, ...]:
     value = _value(columns, field, index)
     if value is None:
         return ()
