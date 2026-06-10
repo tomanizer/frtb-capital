@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from frtb_cva._citations import collect_ba_citations as _collect_ba_citations
 from frtb_cva._citations import merge_citations as _merge_citations
 from frtb_cva._profile_warnings import profile_warnings as _profile_warnings
 from frtb_cva.audit import _input_hash_from_validated, validate_cva_result_reconciliation
@@ -189,7 +190,7 @@ def calculate_cva_capital(
     if ba_cva_reduced is not None:
         citations = _merge_citations(
             citations,
-            _collect_citations(ba_cva_reduced.citations, ba_cva_netting_set_lines),
+            _collect_ba_citations(ba_cva_reduced.citations, ba_cva_netting_set_lines),
         )
     if sa_cva_risk_class_capitals:
         sa_citations = [
@@ -227,16 +228,6 @@ def calculate_cva_capital(
     )
     validate_cva_result_reconciliation(result)
     return result
-
-
-def _collect_citations(
-    reduced_citations: tuple[str, ...],
-    netting_set_lines: tuple[BaCvaStandAloneLine, ...],
-) -> tuple[str, ...]:
-    return _merge_citations(
-        reduced_citations,
-        tuple(citation for line in netting_set_lines for citation in line.citations),
-    )
 
 
 __all__ = ["calculate_cva_capital"]
