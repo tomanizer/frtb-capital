@@ -23,6 +23,28 @@ SUPPORTED_PROFILES = {
     "shared",
 }
 SUPPORTED_COMPONENT_TYPES = {"capital", "orchestration", "result_store", "shared"}
+ATTRIBUTION_COMPONENT_TYPES = {"capital", "orchestration"}
+SUPPORTED_ATTRIBUTION_STATUSES = {
+    "documentation_only",
+    "allocation_only",
+    "shared_projection",
+    "full_bundle",
+}
+ATTRIBUTION_REQUIRED_TEST_IDS: dict[str, set[str]] = {
+    "documentation_only": set(),
+    "allocation_only": {"attribution", "attribution-reconciliation"},
+    "shared_projection": {
+        "attribution",
+        "attribution-reconciliation",
+        "attribution-unsupported-branches",
+    },
+    "full_bundle": {
+        "attribution",
+        "attribution-reconciliation",
+        "attribution-unsupported-branches",
+        "attribution-bundle",
+    },
+}
 
 EXPECTED_IMPLEMENTATION_STATUS = {
     "implemented": ImplementationStatus.IMPLEMENTED,
@@ -71,6 +93,7 @@ class PackageEntry:
     component_type: str
     metadata_object: str | None
     calculation_entrypoint: str | None
+    attribution_status: str | None
     required_tests: tuple[RequiredTest, ...]
     notes: str | None = None
 
@@ -245,6 +268,12 @@ def _package_entry_from_raw(
             index=index,
             field="calculation_entrypoint",
         ),
+        attribution_status=_optional_string(
+            raw_package.get("attribution_status"),
+            registry_path=registry_path,
+            index=index,
+            field="attribution_status",
+        ),
         required_tests=tuple(tests),
         notes=_optional_string(
             raw_package.get("notes"),
@@ -325,6 +354,7 @@ def _entry_requirement_failures(entry: PackageEntry, *, root: Path) -> list[str]
     failures: list[str] = []
     failures.extend(_basic_registry_failures(entry, root=root))
     failures.extend(_metadata_failures(entry))
+    failures.extend(_attribution_failures(entry, root=root))
 
     profile_checks = {
         "implemented": _implemented_failures,
@@ -414,6 +444,39 @@ def _metadata_failures(entry: PackageEntry) -> list[str]:
         if getattr(metadata, "validation_status", None) is not expected_validation:
             failures.append("metadata-validation-status")
     return failures
+
+
+def _attribution_failures(entry: PackageEntry, *, root: Path) -> list[str]:
+    failures: list[str] = []
+    if entry.component_type not in ATTRIBUTION_COMPONENT_TYPES:
+        if entry.attribution_status is not None:
+            failures.append("attribution-status-not-applicable")
+        return failures
+
+    if entry.attribution_status is None:
+        return ["attribution-status"]
+    if entry.attribution_status not in SUPPORTED_ATTRIBUTION_STATUSES:
+        failures.append("known-attribution-status")
+        return failures
+    if not (root / entry.path / "ATTRIBUTION.md").exists():
+        failures.append("attribution-doc")
+
+    required_ids = ATTRIBUTION_REQUIRED_TEST_IDS[entry.attribution_status]
+    entry_test_ids = entry.required_test_ids()
+    for required_id in sorted(required_ids.difference(entry_test_ids)):
+        failures.append(f"required-test:{required_id}")
+    for required_test in entry.required_tests:
+        if required_test.id in required_ids and _looks_like_placeholder_test(root / required_test.path):
+            failures.append(f"attribution-test-placeholder:{required_test.id}")
+    return failures
+
+
+def _looks_like_placeholder_test(path: Path) -> bool:
+    try:
+        text = path.read_text(encoding="utf-8").lower()
+    except OSError:
+        return False
+    return "test_placeholder" in text or "assert true" in text or "placeholder" in text
 
 
 def _implemented_failures(entry: PackageEntry, *, root: Path) -> list[str]:
