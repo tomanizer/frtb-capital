@@ -6,6 +6,7 @@ from dataclasses import replace
 from datetime import date
 
 import pytest
+from frtb_common import stable_json_hash
 from frtb_sbm import (
     SbmCalculationContext,
     SbmInputError,
@@ -21,6 +22,7 @@ from frtb_sbm import (
     serialize_sbm_result,
     validate_sbm_result_reconciliation,
 )
+from frtb_sbm.audit import _hash_payload as audit_hash_payload
 
 
 def sample_lineage(row_id: str) -> SbmSourceLineage:
@@ -83,6 +85,12 @@ def test_input_hash_is_deterministic_and_input_sensitive() -> None:
     assert re.fullmatch(r"[0-9a-f]{64}", digest)
     assert digest == input_hash_for_sensitivities(same_sensitivities)
     assert digest != input_hash_for_sensitivities(reordered)
+
+
+def test_audit_hash_payload_uses_common_stable_json_hash() -> None:
+    payload = {"z": 1, "a": [{"b": "text", "c": None}]}
+
+    assert audit_hash_payload(payload) == stable_json_hash(payload)
 
 
 def test_result_serialization_is_json_stable() -> None:

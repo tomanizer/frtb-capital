@@ -8,12 +8,10 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Mapping
 from datetime import date
 
-from frtb_common import UnsupportedRegulatoryFeatureError
+from frtb_common import UnsupportedRegulatoryFeatureError, stable_json_hash
 
 from frtb_sbm.data_models import (
     SbmRegulatoryProfile,
@@ -250,8 +248,7 @@ def supported_risk_class_measures(
 
 
 def _hash_payload(payload: Mapping[str, object]) -> str:
-    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return stable_json_hash(payload)
 
 
 def _metadata_date(value: object, field: str) -> date:
