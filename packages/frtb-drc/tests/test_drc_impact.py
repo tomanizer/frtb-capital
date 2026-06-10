@@ -101,7 +101,10 @@ def test_floor_branch_reports_unsupported_bucket_impact() -> None:
 
 def test_bucket_move_reports_unsupported_impact_records() -> None:
     baseline = _result(run_id="baseline", bucket_capital=10.0, total_drc=10.0)
-    moved_bucket = replace(_bucket(bucket_key="SOVEREIGN", capital=14.0), bucket_id="bucket-corporate")
+    moved_bucket = replace(
+        _bucket(bucket_key="SOVEREIGN", capital=14.0),
+        bucket_id="bucket-corporate",
+    )
     candidate = _result(
         run_id="candidate",
         bucket_capital=14.0,
