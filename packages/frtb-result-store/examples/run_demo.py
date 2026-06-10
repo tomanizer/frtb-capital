@@ -76,6 +76,7 @@ def build_suite_result_bundle() -> ResultBundle:
             sort_key=3,
         ),
     )
+    component_node_ids = ("ima-summary", "sa-summary", "cva-summary")
     edges = tuple(
         CapitalEdge(
             run_id=run.run_id,
@@ -84,7 +85,7 @@ def build_suite_result_bundle() -> ResultBundle:
             edge_type=EdgeType.AGGREGATES,
             sort_key=sort_key,
         )
-        for sort_key, node_id in enumerate(("ima-summary", "sa-summary", "cva-summary"), start=1)
+        for sort_key, node_id in enumerate(component_node_ids, start=1)
     )
     measures = (
         _capital_measure(run.run_id, "total", 142.0, "Suite total capital"),
