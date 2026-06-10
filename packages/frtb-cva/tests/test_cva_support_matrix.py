@@ -72,24 +72,21 @@ def test_non_basel_matrix_cells_record_evidenced_support(
     profile: CvaRegulatoryProfile,
 ) -> None:
     method_ids = {method.value for method in CvaMethod}
+    ccs_vega_path = (
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+    )
     cells = [
         cell
         for cell in cva_profile_support_matrix()
         if cell.profile is profile
         and cell.method in method_ids
-        and not _is_ccs_vega_cell(cell)
+        and (cell.risk_class, cell.risk_measure) != ccs_vega_path
     ]
     assert cells
     assert {cell.status for cell in cells} == {CvaSupportStatus.IMPLEMENTED_UNDER_AUDIT}
     assert {cell.blocker for cell in cells} == {"none"}
     assert all("test_cva_profile_evidence_fixture.py" in " ".join(cell.tests) for cell in cells)
-
-
-def _is_ccs_vega_cell(cell: object) -> bool:
-    return (
-        getattr(cell, "risk_measure", None) is SaCvaRiskMeasure.VEGA
-        and getattr(cell, "risk_class", None) is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD
-    )
 
 
 @pytest.mark.parametrize("profile", list(CvaRegulatoryProfile))
