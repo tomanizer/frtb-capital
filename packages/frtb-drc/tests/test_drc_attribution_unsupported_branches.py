@@ -148,7 +148,9 @@ def test_category_residual_reconciles_analytical_records_to_capital() -> None:
         risk_weights_by_position={"position-long": 0.2},
     )
 
-    analytical = [record for record in records if record.method is AttributionMethod.ANALYTICAL_EULER]
+    analytical = [
+        record for record in records if record.method is AttributionMethod.ANALYTICAL_EULER
+    ]
     residual = [record for record in records if record.method is AttributionMethod.RESIDUAL]
     assert len(analytical) == 1
     assert len(residual) == 1
@@ -231,7 +233,7 @@ def _bucket(
 
 
 def _hbr(*, denominator: float = 100.0, ratio: float = 0.0) -> HedgeBenefitRatio:
-    branch_metadata = ()
+    branch_metadata: tuple[BranchMetadata, ...] = ()
     if denominator == 0.0:
         branch_metadata = (_branch(BranchType.ZERO_DENOMINATOR, "hbr-corporate"),)
     return HedgeBenefitRatio(
