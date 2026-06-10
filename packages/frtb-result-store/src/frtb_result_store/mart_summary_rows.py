@@ -41,7 +41,20 @@ def capital_summary_row(
     *,
     lifecycle_status: RunStatus,
 ) -> dict[str, object]:
-    """Return the persisted dashboard summary row for one result bundle."""
+    """Return the persisted dashboard summary row for one result bundle.
+
+    Parameters
+    ----------
+    bundle:
+        The result bundle to project.
+    lifecycle_status:
+        Caller-supplied lifecycle state (e.g. ``RunStatus.COMMITTED``).
+
+    Returns
+    -------
+    dict[str, object]
+        Row dict ready for insertion into the ``capital_summary`` mart table.
+    """
 
     total_measure = _measure_for_node(bundle.measures, node_id="total")
     currency = total_measure.currency if total_measure is not None else bundle.run.base_currency
@@ -80,7 +93,20 @@ def regime_comparison_row(
     *,
     lifecycle_status: RunStatus,
 ) -> dict[str, object]:
-    """Return the persisted regime-comparison summary row for one result bundle."""
+    """Return the persisted regime-comparison summary row for one result bundle.
+
+    Parameters
+    ----------
+    bundle:
+        The result bundle to project.
+    lifecycle_status:
+        Caller-supplied lifecycle state (e.g. ``RunStatus.COMMITTED``).
+
+    Returns
+    -------
+    dict[str, object]
+        Row dict ready for insertion into the ``regime_comparison`` mart table.
+    """
 
     total_measure = _measure_for_node(bundle.measures, node_id="total")
     currency = total_measure.currency if total_measure is not None else bundle.run.base_currency
