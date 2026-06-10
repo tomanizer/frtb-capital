@@ -16,6 +16,24 @@ package.
 | Scenario cube | NumPy `.npz` artifacts / `ScenarioCube` arrays | ES, LHA, IMCC, NMRF, PLA, and backtesting numerical kernels. |
 | Tabular handoff | Arrow tables matching IMA handoff specs | Scenario metadata, RFET observations, and capital-run input manifest lineage. |
 
+```mermaid
+flowchart LR
+  upstream["Upstream risk engine<br/>pricing, scenarios, evidence"]
+  cube["Scenario cube artifacts<br/>NumPy .npz / ScenarioCube"]
+  tabular["Tabular lineage handoffs<br/>Arrow tables"]
+  metadata["Scenario metadata<br/>RFET observations<br/>input manifest"]
+  kernels["IMA NumPy kernels<br/>ES, LHA, IMCC, NMRF, PLA, backtesting"]
+  manifest["CapitalRunInputManifest<br/>checksums + record counts"]
+  result["IMA capital result<br/>audit log + hashes"]
+
+  upstream --> cube
+  upstream --> tabular
+  tabular --> metadata --> manifest
+  cube --> kernels
+  manifest --> kernels
+  kernels --> result
+```
+
 Do not put scenario P&L vectors into Arrow batch for capital kernels. Scenario
 vectors remain dense NumPy arrays so expected shortfall, liquidity-horizon
 adjustment, IMCC, NMRF, PLA, and backtesting kernels stay NumPy-native.
