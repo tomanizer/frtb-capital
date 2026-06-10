@@ -119,15 +119,15 @@ def _is_notebook_related_path(path: str) -> bool:
         if not path.startswith(package_prefix):
             continue
         package_relative = path.removeprefix(package_prefix)
+        notebook_test = (
+            package_relative.startswith("tests/") and "notebook" in Path(package_relative).name
+        )
         return (
             package_relative.startswith("notebooks/")
             or package_relative.startswith("src/")
             or package_relative.startswith("tests/fixtures/")
             or package_relative.startswith("examples/")
-            or (
-                package_relative.startswith("tests/")
-                and "notebook" in Path(package_relative).name
-            )
+            or notebook_test
             or package_relative.startswith("scripts/")
         )
     return False
