@@ -8,7 +8,7 @@ and multi-profile comparison. They are not final regulatory capital outputs.
 Smoke-test the notebook code cells from the repository root with:
 
 ```bash
-MPLBACKEND=Agg uv run --extra notebooks --directory packages/frtb-rrao pytest --nbmake notebooks
+MPLBACKEND=Agg uv run --all-extras --directory packages/frtb-rrao pytest --nbmake notebooks
 ```
 
 Open them interactively with any local Jupyter environment that can import the

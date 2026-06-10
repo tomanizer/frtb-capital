@@ -9,7 +9,7 @@ not final regulatory capital outputs.
 Smoke-test the notebook code cells from the repository root with:
 
 ```bash
-MPLBACKEND=Agg uv run --with nbmake --directory packages/frtb-drc pytest --nbmake notebooks
+MPLBACKEND=Agg uv run --with pytest,nbmake --directory packages/frtb-drc pytest --nbmake notebooks
 ```
 
 Open them interactively with any local Jupyter environment that can import the
