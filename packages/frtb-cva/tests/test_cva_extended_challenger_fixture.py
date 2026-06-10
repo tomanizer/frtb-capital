@@ -305,4 +305,7 @@ def _load_payload() -> dict[str, Any]:
 
 def _load_json(name: str) -> dict[str, Any]:
     with (FIXTURE_DIR / name).open(encoding="utf-8") as handle:
-        return json.load(handle)
+        try:
+            return json.load(handle)
+        except ValueError as exc:
+            raise ValueError(f"failed to parse CVA challenger fixture {name}: {exc}") from exc
