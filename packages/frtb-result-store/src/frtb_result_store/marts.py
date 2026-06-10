@@ -32,10 +32,8 @@ from frtb_result_store.mart_row_codecs import (
     movement_summary_from_row as _movement_summary_from_row,
 )
 from frtb_result_store.mart_summary_rows import (
-    capital_summary_row as _capital_summary_row,
-)
-from frtb_result_store.mart_summary_rows import (
-    regime_comparison_row as _regime_comparison_row,
+    capital_summary_row,
+    regime_comparison_row,
 )
 from frtb_result_store.model import (
     CapitalAttributionRecord,
@@ -81,13 +79,13 @@ def mart_rows_for_bundle(
     """
 
     return {
-        "capital_summary": [_capital_summary_row(bundle, lifecycle_status=lifecycle_status)],
+        "capital_summary": [capital_summary_row(bundle, lifecycle_status=lifecycle_status)],
         "capital_tree": _capital_tree_rows(bundle),
         "top_contributors": _top_contributor_rows(bundle),
         "residual_attribution": _residual_attribution_rows(bundle),
         "unsupported_attribution": _unsupported_attribution_rows(bundle),
         "movement_summary": _movement_summary_rows(bundle),
-        "regime_comparison": [_regime_comparison_row(bundle, lifecycle_status=lifecycle_status)],
+        "regime_comparison": [regime_comparison_row(bundle, lifecycle_status=lifecycle_status)],
         "component_breakdown": _component_breakdown_rows(bundle),
         "ima_desk_dashboard": _ima_desk_dashboard_rows(bundle),
         "sbm_bucket_ladder": _sbm_bucket_ladder_rows(bundle),
