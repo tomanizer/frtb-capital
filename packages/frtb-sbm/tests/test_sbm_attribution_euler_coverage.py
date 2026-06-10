@@ -47,7 +47,7 @@ def test_multi_risk_class_delta_euler_records_reconcile_by_risk_class() -> None:
     categories = set()
     for record in records:
         categories.add(record.category)
-        assert record.method is AttributionMethod.ANALYTICAL_EULER
+        assert record.method == AttributionMethod.ANALYTICAL_EULER
     assert categories == {"FX", "GIRR"}
     assert _record_total(records) == pytest.approx(
         result.total_capital,
@@ -94,12 +94,13 @@ def test_selected_scenario_matches_maximum_scenario_total_for_girr_delta() -> No
 
     result = calculate_sbm_capital(sensitivities, context=_context("scenario-stability"))
     risk_class = result.risk_classes[0]
-    assert risk_class.risk_class is SbmRiskClass.GIRR
+    assert risk_class.risk_class == SbmRiskClass.GIRR
     assert risk_class.selected_scenario is not None
-    assert risk_class.scenario_totals is not None
+    scenario_totals = risk_class.scenario_totals
+    assert scenario_totals is not None
 
-    selected_total = risk_class.scenario_totals[risk_class.selected_scenario]
-    maximum_total = max(risk_class.scenario_totals.values())
+    selected_total = scenario_totals[risk_class.selected_scenario]
+    maximum_total = max(scenario_totals.values())
     assert selected_total == pytest.approx(maximum_total, rel=1e-6, abs=1e-6)
     assert risk_class.selected_scenario in {
         SbmScenarioLabel.LOW,
@@ -137,7 +138,7 @@ def test_negative_girr_sensitivity_can_reduce_euler_capital_contribution() -> No
     records = calculate_sbm_attribution(result)
     euler: list[CapitalContribution] = []
     for record in records:
-        if record.method is AttributionMethod.ANALYTICAL_EULER:
+        if record.method == AttributionMethod.ANALYTICAL_EULER:
             euler.append(record)
 
     negative_contribution_found = False
@@ -176,7 +177,7 @@ def test_multi_risk_class_finite_difference_matches_euler_derivatives() -> None:
     result = calculate_sbm_capital(sensitivities, context=_context("finite-diff"))
     records: list[CapitalContribution] = []
     for record in calculate_sbm_attribution(result):
-        if record.method is AttributionMethod.ANALYTICAL_EULER:
+        if record.method == AttributionMethod.ANALYTICAL_EULER:
             records.append(record)
 
     raw_amount_by_id = {}
@@ -202,11 +203,10 @@ def test_multi_risk_class_finite_difference_matches_euler_derivatives() -> None:
         )
         finite_difference = (bumped_result.total_capital - result.total_capital) / bump
         analytical_raw_derivative = record.marginal_multiplier * risk_weight
-        assert math.isclose(
-            finite_difference,
+        assert finite_difference == pytest.approx(
             analytical_raw_derivative,
-            rel_tol=1e-4,
-            abs_tol=1e-6,
+            rel=1e-4,
+            abs=1e-6,
         )
 
 
