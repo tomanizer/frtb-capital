@@ -117,8 +117,8 @@ def test_desk_contributions_fall_back_when_detail_breakdown_does_not_reconcile()
 
 def test_desk_contributions_detail_breakdown_keeps_binding_term_residual_explicit() -> None:
     record = _desk_record(
-        imcc={"components": {"current_es": 70.0, "stress_scaling": 30.0}},
-        ses={"components": {"nmrf_ses": 25.0}},
+        imcc={"imcc": 100.0, "components": {"current_es": 70.0, "stress_scaling": 30.0}},
+        ses={"total_ses": 25.0, "components": {"nmrf_ses": 25.0}},
         capital={"total": 150.0, "binding_term": "AVERAGE"},
     )
 
