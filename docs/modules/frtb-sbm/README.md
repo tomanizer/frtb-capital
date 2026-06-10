@@ -6,7 +6,7 @@
 
 - Package directory: `packages/frtb-sbm`
 - Import name: `frtb_sbm`
-- Implementation status: partial runtime - BASEL_MAR21 delta, vega, and
+- Implementation status: partial runtime — BASEL_MAR21 delta, vega, and
   curvature paths implemented under audit across all seven SBM risk classes
 - Validation status: deterministic fixture, audit, replay, and public API tests available
 
@@ -50,8 +50,8 @@ End-to-end client flow (Arrow handoff, portfolio batch capital, attribution,
 - [Product requirements](PRD.md)
 - [Regulatory requirements](REGULATORY_REQUIREMENTS.md)
 - [Detailed requirements](DETAILED_REQUIREMENTS.md)
-- [Non-Basel profile design](NON_BASEL_PROFILE_DESIGN.md) - AUDIT-IMP-003 / #501
-- [Non-Basel profile requirements](NON_BASEL_PROFILE_REQUIREMENTS.md) - `SBM-NBP-*`
+- [Non-Basel profile design](NON_BASEL_PROFILE_DESIGN.md) — AUDIT-IMP-003 / #501
+- [Non-Basel profile requirements](NON_BASEL_PROFILE_REQUIREMENTS.md) — `SBM-NBP-*`
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
 - [Decisions and plan](DECISIONS_AND_PLAN.md)
 - [Issue breakdown](ISSUE_BREAKDOWN.md)
@@ -61,14 +61,14 @@ End-to-end client flow (Arrow handoff, portfolio batch capital, attribution,
 
 Parent: [#151](https://github.com/tomanizer/frtb-capital/issues/151)
 
-1. #152 - model documentation and traceability skeleton
-2. #153 - canonical data models and validation gates
-3. #154 - cited rule profile and GIRR delta reference data
-4. #155 - GIRR delta weighted sensitivities
-5. #156 - shared intra-bucket aggregation
-6. #157 - inter-bucket aggregation and scenario selection
-7. #158 - public GIRR delta capital API
-8. #159 - audit/replay records and synthetic GIRR fixtures
+1. #152 — model documentation and traceability skeleton
+2. #153 — canonical data models and validation gates
+3. #154 — cited rule profile and GIRR delta reference data
+4. #155 — GIRR delta weighted sensitivities
+5. #156 — shared intra-bucket aggregation
+6. #157 — inter-bucket aggregation and scenario selection
+7. #158 — public GIRR delta capital API
+8. #159 — audit/replay records and synthetic GIRR fixtures
 
 Follow-on issues #160, #161, #166, #169, #226, #244, and the later
 vectorisation sprint are reconciled in the support matrix and closed-issue audit
