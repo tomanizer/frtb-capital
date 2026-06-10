@@ -242,7 +242,7 @@ def hedge_payload(hedge: CvaHedge) -> dict[str, object]:
     return {
         "hedge_id": hedge.hedge_id,
         "source_row_id": hedge.source_row_id,
-        "hedge_type": hedge.hedge_type.value,
+        "hedge_type": None if hedge.hedge_type is None else hedge.hedge_type.value,
         "eligibility": hedge.eligibility.value,
         "counterparty_id": hedge.counterparty_id,
         "reference_sector": hedge.reference_sector.value,
@@ -255,6 +255,15 @@ def hedge_payload(hedge: CvaHedge) -> dict[str, object]:
         "discount_factor_explicit": hedge.discount_factor_explicit,
         "is_internal": hedge.is_internal,
         "internal_desk_counterparty_id": hedge.internal_desk_counterparty_id,
+        "sa_cva_hedge_purpose": None
+        if hedge.sa_cva_hedge_purpose is None
+        else hedge.sa_cva_hedge_purpose.value,
+        "sa_cva_hedge_instrument_type": None
+        if hedge.sa_cva_hedge_instrument_type is None
+        else hedge.sa_cva_hedge_instrument_type.value,
+        "whole_transaction_evidence_id": hedge.whole_transaction_evidence_id,
+        "market_risk_ima_eligible": hedge.market_risk_ima_eligible,
+        "market_risk_ima_exclusion_reason": hedge.market_risk_ima_exclusion_reason,
         "eligibility_evidence_id": hedge.eligibility_evidence_id,
         "rejection_reason": hedge.rejection_reason,
         "sa_cva_risk_class": hedge.sa_cva_risk_class.value
@@ -416,6 +425,11 @@ def batch_hedge_payload(batch: Any, index: int) -> dict[str, object]:
         "discount_factor_explicit": bool(batch.discount_factor_explicit[index]),
         "is_internal": bool(batch.is_internal[index]),
         "internal_desk_counterparty_id": batch.internal_desk_counterparty_ids[index],
+        "sa_cva_hedge_purpose": batch.sa_cva_hedge_purposes[index],
+        "sa_cva_hedge_instrument_type": batch.sa_cva_hedge_instrument_types[index],
+        "whole_transaction_evidence_id": batch.whole_transaction_evidence_ids[index],
+        "market_risk_ima_eligible": batch.market_risk_ima_eligibilities[index],
+        "market_risk_ima_exclusion_reason": batch.market_risk_ima_exclusion_reasons[index],
         "eligibility_evidence_id": batch.eligibility_evidence_ids[index],
         "rejection_reason": batch.rejection_reasons[index],
         "sa_cva_risk_class": batch.sa_cva_risk_classes[index],

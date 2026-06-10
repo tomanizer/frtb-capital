@@ -16,6 +16,8 @@ from frtb_cva import (
     CvaSourceLineage,
     HedgeEligibility,
     HedgeReferenceRelation,
+    SaCvaHedgeInstrumentType,
+    SaCvaHedgePurpose,
     SaCvaRiskClass,
     SaCvaRiskMeasure,
     SaCvaSensitivity,
@@ -109,7 +111,9 @@ def _hedge_from_payload(payload: dict[str, Any]) -> CvaHedge:
         hedge_id=str(payload["hedge_id"]),
         source_row_id=source_row_id,
         counterparty_id=str(payload["counterparty_id"]),
-        hedge_type=BaCvaHedgeType(str(payload["hedge_type"])),
+        hedge_type=None
+        if payload.get("hedge_type") is None
+        else BaCvaHedgeType(str(payload["hedge_type"])),
         notional=float(payload["notional"]),
         remaining_maturity=float(payload["remaining_maturity"]),
         discount_factor=float(payload["discount_factor"]),
@@ -121,6 +125,26 @@ def _hedge_from_payload(payload: dict[str, Any]) -> CvaHedge:
         reference_relation=HedgeReferenceRelation(str(payload["reference_relation"])),
         eligibility=HedgeEligibility(str(payload["eligibility"])),
         is_internal=bool(payload["is_internal"]),
+        sa_cva_risk_class=SaCvaRiskClass(str(payload["sa_cva_risk_class"]))
+        if payload.get("sa_cva_risk_class") is not None
+        else None,
+        sa_cva_hedge_purpose=SaCvaHedgePurpose(str(payload["sa_cva_hedge_purpose"]))
+        if payload.get("sa_cva_hedge_purpose") is not None
+        else None,
+        sa_cva_hedge_instrument_type=SaCvaHedgeInstrumentType(
+            str(payload["sa_cva_hedge_instrument_type"])
+        )
+        if payload.get("sa_cva_hedge_instrument_type") is not None
+        else None,
+        whole_transaction_evidence_id=str(payload["whole_transaction_evidence_id"])
+        if payload.get("whole_transaction_evidence_id") is not None
+        else None,
+        market_risk_ima_eligible=bool(payload["market_risk_ima_eligible"])
+        if payload.get("market_risk_ima_eligible") is not None
+        else None,
+        market_risk_ima_exclusion_reason=str(payload["market_risk_ima_exclusion_reason"])
+        if payload.get("market_risk_ima_exclusion_reason") is not None
+        else None,
         eligibility_evidence_id=str(payload["eligibility_evidence_id"])
         if payload.get("eligibility_evidence_id") is not None
         else None,

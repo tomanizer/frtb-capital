@@ -2,11 +2,19 @@ from __future__ import annotations
 
 import pytest
 from frtb_cva import (
+    CreditQuality,
+    CvaHedge,
+    CvaSector,
+    HedgeEligibility,
+    HedgeReferenceRelation,
+    SaCvaHedgeInstrumentType,
+    SaCvaHedgePurpose,
     SaCvaRiskClass,
     SaCvaRiskMeasure,
     SaCvaSensitivity,
     SensitivityTag,
 )
+from frtb_cva.hedges import eligible_sa_cva_hedge_ids
 from frtb_cva.reference_data import girr_delta_risk_weight
 from frtb_cva.weighted_sensitivity import compute_weighted_sensitivities
 
@@ -33,6 +41,30 @@ def _sensitivity(
         sign_convention="positive_loss",
         source_row_id=f"row-{sensitivity_id}",
         hedge_id=hedge_id,
+    )
+
+
+def _sa_exposure_component_hedge() -> CvaHedge:
+    return CvaHedge(
+        hedge_id="hedge-A",
+        source_row_id="row-hedge-A",
+        counterparty_id="ctp-1",
+        hedge_type=None,
+        notional=100_000.0,
+        remaining_maturity=2.0,
+        discount_factor=1.0,
+        reference_sector=CvaSector.SOVEREIGN,
+        reference_credit_quality=CreditQuality.INVESTMENT_GRADE,
+        reference_region="EMEA",
+        reference_relation=HedgeReferenceRelation.DIRECT,
+        eligibility=HedgeEligibility.ELIGIBLE,
+        is_internal=False,
+        sa_cva_risk_class=SaCvaRiskClass.GIRR,
+        sa_cva_hedge_purpose=SaCvaHedgePurpose.EXPOSURE_COMPONENT,
+        sa_cva_hedge_instrument_type=SaCvaHedgeInstrumentType.INTEREST_RATE,
+        whole_transaction_evidence_id="whole-transaction-1",
+        market_risk_ima_eligible=True,
+        eligibility_evidence_id="evidence-1",
     )
 
 
@@ -83,6 +115,24 @@ def test_hdg_sensitivity_filtered_by_hedge_id_not_sensitivity_id() -> None:
     )
     assert len(weighted) == 1
     assert weighted[0].gross_hedge_amount == pytest.approx(250_000.0)
+
+
+def test_sa_exposure_component_hedge_without_ba_type_offsets_hdg_sensitivity() -> None:
+    hedge_ids = eligible_sa_cva_hedge_ids((_sa_exposure_component_hedge(),))
+    weighted = compute_weighted_sensitivities(
+        (
+            _sensitivity(sensitivity_id="cva-1", tag=SensitivityTag.CVA, amount=1_000_000.0),
+            _sensitivity(
+                sensitivity_id="s-hdg-1",
+                tag=SensitivityTag.HDG,
+                amount=250_000.0,
+                hedge_id="hedge-A",
+            ),
+        ),
+        eligible_hedge_ids=hedge_ids,
+    )
+    assert weighted[0].gross_hedge_amount == pytest.approx(250_000.0)
+    assert weighted[0].net_amount == pytest.approx(750_000.0)
 
 
 def test_hdg_sensitivity_dropped_when_no_eligible_hedges_provided() -> None:

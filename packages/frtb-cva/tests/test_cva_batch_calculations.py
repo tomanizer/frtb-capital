@@ -30,6 +30,7 @@ from frtb_cva import (
     calculate_cva_capital_from_batches,
     calculate_full_portfolio,
     calculate_reduced_portfolio,
+    calculate_sa_cva_capital_from_batch,
     normalize_cva_netting_set_arrow_table,
 )
 from frtb_cva.audit import validate_cva_result_reconciliation
@@ -596,6 +597,10 @@ def test_sa_cva_vega_weight_batch() -> None:
         is_internal=[False],
         eligibility_evidence_ids=["evidence-1"],
         sa_cva_risk_classes=["GIRR"],  # Eligible for GIRR
+        sa_cva_hedge_purposes=["EXPOSURE_COMPONENT"],
+        sa_cva_hedge_instrument_types=["INTEREST_RATE"],
+        whole_transaction_evidence_ids=["whole-transaction-1"],
+        market_risk_ima_eligibilities=[True],
         lineage_source_systems=["synthetic"],
         lineage_source_files=["hedges.csv"],
     )
@@ -615,6 +620,68 @@ def test_sa_cva_vega_weight_batch() -> None:
         hedges=hedge_batch,
     )
     assert calc.result.total_cva_capital > 0.0
+
+
+def test_sa_cva_batch_exposure_component_hedge_without_ba_type_offsets_hdg() -> None:
+    sens_batch = build_sa_cva_sensitivity_batch_from_columns(
+        sensitivity_ids=["sens-cva", "sens-hdg"],
+        risk_classes=["GIRR", "GIRR"],
+        risk_measures=["DELTA", "DELTA"],
+        sensitivity_tags=["CVA", "HDG"],
+        bucket_ids=["USD", "USD"],
+        risk_factor_keys=["5y", "5y"],
+        amounts=[1000.0, 250.0],
+        amount_currencies=["USD", "USD"],
+        sign_conventions=["positive_loss", "positive_loss"],
+        source_row_ids=["sens-row-cva", "sens-row-hdg"],
+        tenors=["5y", "5y"],
+        hedge_ids=[None, "h-exposure"],
+        lineage_source_systems=["synthetic", "synthetic"],
+        lineage_source_files=["sens.csv", "sens.csv"],
+    )
+    hedge_batch = build_cva_hedge_batch_from_columns(
+        hedge_ids=["h-exposure"],
+        source_row_ids=["h-row-exposure"],
+        counterparty_ids=["cp-1"],
+        hedge_types=[None],
+        notionals=[200_000.0],
+        remaining_maturities=[5.0],
+        discount_factors=[1.0],
+        reference_sectors=["SOVEREIGN"],
+        reference_credit_qualities=["INVESTMENT_GRADE"],
+        reference_regions=["EMEA"],
+        reference_relations=["DIRECT"],
+        eligibilities=["ELIGIBLE"],
+        is_internal=[False],
+        eligibility_evidence_ids=["evidence-1"],
+        sa_cva_risk_classes=["GIRR"],
+        sa_cva_hedge_purposes=["EXPOSURE_COMPONENT"],
+        sa_cva_hedge_instrument_types=["INTEREST_RATE"],
+        whole_transaction_evidence_ids=["whole-transaction-1"],
+        market_risk_ima_eligibilities=[True],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["hedges.csv"],
+    )
+
+    unhedged = calculate_sa_cva_capital_from_batch(
+        build_sa_cva_sensitivity_batch_from_columns(
+            sensitivity_ids=["sens-cva"],
+            risk_classes=["GIRR"],
+            risk_measures=["DELTA"],
+            sensitivity_tags=["CVA"],
+            bucket_ids=["USD"],
+            risk_factor_keys=["5y"],
+            amounts=[1000.0],
+            amount_currencies=["USD"],
+            sign_conventions=["positive_loss"],
+            source_row_ids=["sens-row-cva"],
+            tenors=["5y"],
+            lineage_source_systems=["synthetic"],
+            lineage_source_files=["sens.csv"],
+        )
+    )
+    hedged = calculate_sa_cva_capital_from_batch(sens_batch, hedges=hedge_batch)
+    assert hedged[0].post_multiplier_capital < unhedged[0].post_multiplier_capital
 
 
 def test_sa_cva_conflicting_volatility_inputs() -> None:

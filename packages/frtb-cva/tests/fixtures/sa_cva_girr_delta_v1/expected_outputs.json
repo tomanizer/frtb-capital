@@ -165,7 +165,7 @@
   },
   "offsetting_hedge": {
     "total_cva_capital": 740.0,
-    "input_hash": "c226908924d60f1391d8292aac32eff2e4a746772ab54f3e9196d7caf7042ea8",
+    "input_hash": "50c82dcb6f25b0993e6cf1bd5381105fb0551ad66f6439c144a3bbd83e7f5ce5",
     "weighted_sensitivities": [
       {
         "risk_class": "GIRR",
@@ -228,7 +228,7 @@
   },
   "ineligible_hedge_rejected": {
     "total_cva_capital": 7400.0,
-    "input_hash": "287f062ee6cde4d7bd065771c9769ad1861deb30be22d503a82d4a39a78e40a0",
+    "input_hash": "bcc9853423eafbeec802f1eb2c75a73792eba90543f565cdfc60f558d2bd2013",
     "weighted_sensitivities": [
       {
         "risk_class": "GIRR",

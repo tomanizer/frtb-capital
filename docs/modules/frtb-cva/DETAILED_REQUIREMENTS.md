@@ -174,15 +174,21 @@ Basel anchors: MAR50.8, MAR50.12, MAR50.15. U.S. anchor: NPR 2.0 section V.B.3.
 Each hedge record must carry, at minimum:
 
 - stable `hedge_id`, `source_row_id`, and hedge-to-counterparty or index mapping;
-- `hedge_type` and instrument descriptors required by the active method;
+- BA-CVA `hedge_type` when the active method is BA-CVA full, limited to
+  single-name CDS, single-name contingent CDS, or index CDS (Basel
+  MAR50.18-MAR50.19);
+- separate SA-CVA hedge purpose and instrument descriptors when the active
+  method is SA-CVA, including whether the whole transaction hedges counterparty
+  credit spread or an exposure component (Basel MAR50.38-MAR50.39);
 - reference-entity sector and `region` where indirect hedge eligibility applies
   (Basel MAR50.19(3), MAR50.26);
 - `notional`, `remaining_maturity`, and discount-factor inputs for BA-CVA full
   version (Basel MAR50.23–MAR50.25);
 - internal vs external flag and internal-desk counterparty reference for transfer
   treatment (Basel MAR50.11);
-- eligibility evidence: purpose, management desk, whole-transaction flag, and
-  rejected-eligibility reason when ineligible;
+- eligibility evidence: purpose, management desk or equivalent evidence,
+  `whole_transaction_evidence_id`, market-risk IMA eligibility/exclusion
+  evidence, and rejected-eligibility reason when ineligible or excluded;
 - SA-CVA risk-class assignment for credit-spread hedges (counterparty credit
   spread vs reference credit spread, entire instrument, no split — Basel
   MAR50.44);

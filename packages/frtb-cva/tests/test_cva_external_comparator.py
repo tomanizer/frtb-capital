@@ -4,9 +4,16 @@ import math
 from datetime import date
 
 from frtb_cva import (
+    CreditQuality,
     CvaCalculationContext,
+    CvaHedge,
     CvaMethod,
     CvaRegulatoryProfile,
+    CvaSector,
+    HedgeEligibility,
+    HedgeReferenceRelation,
+    SaCvaHedgeInstrumentType,
+    SaCvaHedgePurpose,
     SaCvaRiskClass,
     SaCvaRiskMeasure,
     SaCvaSensitivity,
@@ -73,20 +80,11 @@ def test_offsetting_hedge_reconciles_to_mar50_55_disallowance_floor() -> None:
     weighted_hedge = amount * risk_weight
     expected = math.sqrt(HEDGING_DISALLOWANCE_R * weighted_hedge * weighted_hedge)
 
-    from frtb_cva import (
-        BaCvaHedgeType,
-        CreditQuality,
-        CvaHedge,
-        CvaSector,
-        HedgeEligibility,
-        HedgeReferenceRelation,
-    )
-
     hedge = CvaHedge(
         hedge_id="hedge-usd-5y",
         source_row_id="row-hedge-usd-5y",
         counterparty_id="ctp-1",
-        hedge_type=BaCvaHedgeType.SINGLE_NAME_CDS,
+        hedge_type=None,
         notional=amount,
         remaining_maturity=2.0,
         discount_factor=1.0,
@@ -96,6 +94,11 @@ def test_offsetting_hedge_reconciles_to_mar50_55_disallowance_floor() -> None:
         reference_relation=HedgeReferenceRelation.DIRECT,
         eligibility=HedgeEligibility.ELIGIBLE,
         is_internal=False,
+        sa_cva_risk_class=SaCvaRiskClass.GIRR,
+        sa_cva_hedge_purpose=SaCvaHedgePurpose.EXPOSURE_COMPONENT,
+        sa_cva_hedge_instrument_type=SaCvaHedgeInstrumentType.INTEREST_RATE,
+        whole_transaction_evidence_id="whole-transaction-hedge-usd-5y",
+        market_risk_ima_eligible=True,
         eligibility_evidence_id="evidence-hedge-usd-5y",
     )
     hedge_sensitivity = SaCvaSensitivity(

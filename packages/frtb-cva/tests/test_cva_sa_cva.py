@@ -2,7 +2,14 @@ from __future__ import annotations
 
 import pytest
 from frtb_cva import (
+    CreditQuality,
+    CvaHedge,
     CvaInputError,
+    CvaSector,
+    HedgeEligibility,
+    HedgeReferenceRelation,
+    SaCvaHedgeInstrumentType,
+    SaCvaHedgePurpose,
     SaCvaRiskClass,
     SaCvaRiskMeasure,
     SaCvaSensitivity,
@@ -25,6 +32,47 @@ def _girr_delta(amount: float = 1_000_000.0) -> SaCvaSensitivity:
         amount_currency="USD",
         sign_convention="positive_loss",
         source_row_id="row-girr-5y",
+    )
+
+
+def _girr_hdg(amount: float = 250_000.0, hedge_id: str = "h-girr") -> SaCvaSensitivity:
+    return SaCvaSensitivity(
+        sensitivity_id="sens-girr-hdg-5y",
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        sensitivity_tag=SensitivityTag.HDG,
+        bucket_id="USD",
+        risk_factor_key="5y",
+        tenor="5y",
+        amount=amount,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="row-girr-hdg-5y",
+        hedge_id=hedge_id,
+    )
+
+
+def _sa_exposure_component_hedge(hedge_id: str = "h-girr") -> CvaHedge:
+    return CvaHedge(
+        hedge_id=hedge_id,
+        source_row_id=f"row-{hedge_id}",
+        counterparty_id="ctp-1",
+        hedge_type=None,
+        notional=100_000.0,
+        remaining_maturity=2.0,
+        discount_factor=1.0,
+        reference_sector=CvaSector.SOVEREIGN,
+        reference_credit_quality=CreditQuality.INVESTMENT_GRADE,
+        reference_region="EMEA",
+        reference_relation=HedgeReferenceRelation.DIRECT,
+        eligibility=HedgeEligibility.ELIGIBLE,
+        is_internal=False,
+        sa_cva_risk_class=SaCvaRiskClass.GIRR,
+        sa_cva_hedge_purpose=SaCvaHedgePurpose.EXPOSURE_COMPONENT,
+        sa_cva_hedge_instrument_type=SaCvaHedgeInstrumentType.INTEREST_RATE,
+        whole_transaction_evidence_id="whole-transaction-1",
+        market_risk_ima_eligible=True,
+        eligibility_evidence_id="evidence-1",
     )
 
 
@@ -56,6 +104,17 @@ def test_sa_cva_total_sums_supported_risk_classes() -> None:
     assert total == pytest.approx(
         girr_capital.post_multiplier_capital + fx_capital.post_multiplier_capital
     )
+
+
+def test_sa_cva_exposure_component_hedge_without_ba_type_reduces_girr_delta() -> None:
+    unhedged = calculate_sa_cva_capital((_girr_delta(),))
+    hedged = calculate_sa_cva_capital(
+        (_girr_delta(), _girr_hdg()),
+        hedges=(_sa_exposure_component_hedge(),),
+    )
+    assert len(hedged) == 1
+    assert hedged[0].risk_class is SaCvaRiskClass.GIRR
+    assert hedged[0].post_multiplier_capital < unhedged[0].post_multiplier_capital
 
 
 def test_sa_cva_delta_and_vega_paths_sum() -> None:

@@ -14,6 +14,9 @@ UK PRA comparison profiles:
   across GIRR, FX, counterparty credit spread, reference credit spread, equity,
   and commodity where MAR50 defines the risk measure and `sa_cva_approved=True`.
   CCS vega is not defined by MAR50.45/MAR50.63 and fails explicitly.
+  SA-CVA hedge records use separate purpose and instrument metadata for
+  whole-transaction hedge evidence; they do not need to pretend to be BA-CVA CDS
+  hedges when they hedge an exposure component.
 - **Mixed carve-out** (MAR50.8): SA-CVA on an evidenced non-carved sensitivity
   slice plus BA-CVA netting-set carve-outs with component totals and
   reconciliation.

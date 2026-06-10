@@ -122,6 +122,73 @@ def test_adapt_hedge_records() -> None:
     assert result.hedges[0].is_internal is True
 
 
+def test_adapt_sa_cva_hedge_record_preserves_nullable_ba_type_and_string_bool() -> None:
+    result = adapt_cva_records(
+        (
+            {
+                "hedge_id": "h-sa",
+                "counterparty_id": "ctp-1",
+                "hedge_type": None,
+                "notional": 200_000.0,
+                "remaining_maturity": 1.5,
+                "discount_factor": 0.98,
+                "reference_sector": "SOVEREIGN",
+                "reference_credit_quality": "INVESTMENT_GRADE",
+                "reference_region": "EMEA",
+                "reference_relation": "DIRECT",
+                "eligibility": "EXCLUDED",
+                "rejection_reason": "market_risk_model_scope",
+                "is_internal": "False",
+                "sa_cva_risk_class": "GIRR",
+                "sa_cva_hedge_purpose": "EXPOSURE_COMPONENT",
+                "sa_cva_hedge_instrument_type": "INTEREST_RATE",
+                "whole_transaction_evidence_id": "whole-transaction-1",
+                "market_risk_ima_eligible": "False",
+                "market_risk_ima_exclusion_reason": "not_market_risk_ima_eligible",
+                "source_row_id": "row-sa",
+            },
+        ),
+        record_kind="hedge",
+    )
+    hedge = result.hedges[0]
+    assert hedge.hedge_type is None
+    assert hedge.is_internal is False
+    assert hedge.market_risk_ima_eligible is False
+
+
+def test_adapt_sa_cva_hedge_record_accepts_integer_bool_values() -> None:
+    result = adapt_cva_records(
+        (
+            {
+                "hedge_id": "h-sa",
+                "counterparty_id": "ctp-1",
+                "hedge_type": None,
+                "notional": 200_000.0,
+                "remaining_maturity": 1.5,
+                "discount_factor": 0.98,
+                "reference_sector": "SOVEREIGN",
+                "reference_credit_quality": "INVESTMENT_GRADE",
+                "reference_region": "EMEA",
+                "reference_relation": "DIRECT",
+                "eligibility": "ELIGIBLE",
+                "is_internal": 0,
+                "sa_cva_risk_class": "GIRR",
+                "sa_cva_hedge_purpose": "EXPOSURE_COMPONENT",
+                "sa_cva_hedge_instrument_type": "INTEREST_RATE",
+                "whole_transaction_evidence_id": "whole-transaction-1",
+                "market_risk_ima_eligible": 1,
+                "eligibility_evidence_id": "evidence-1",
+                "source_row_id": "row-sa",
+            },
+        ),
+        record_kind="hedge",
+    )
+
+    hedge = result.hedges[0]
+    assert hedge.is_internal is False
+    assert hedge.market_risk_ima_eligible is True
+
+
 def test_non_mapping_row_rejected() -> None:
     result = adapt_cva_records(
         [None, 123],

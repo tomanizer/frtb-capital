@@ -64,6 +64,8 @@ from frtb_cva.data_models import (
     CvaSector,
     HedgeEligibility,
     HedgeReferenceRelation,
+    SaCvaHedgeInstrumentType,
+    SaCvaHedgePurpose,
     SaCvaIndexTreatment,
     SaCvaRiskClass,
     SaCvaRiskClassCapital,
@@ -218,6 +220,11 @@ class CvaHedgeBatch:
     discount_factor_explicit: BoolArray
     internal_desk_counterparty_ids: ObjectArray
     sa_cva_risk_classes: ObjectArray
+    sa_cva_hedge_purposes: ObjectArray
+    sa_cva_hedge_instrument_types: ObjectArray
+    whole_transaction_evidence_ids: ObjectArray
+    market_risk_ima_eligibilities: ObjectArray
+    market_risk_ima_exclusion_reasons: ObjectArray
     eligibility_evidence_ids: ObjectArray
     rejection_reasons: ObjectArray
     lineage_source_systems: ObjectArray
@@ -456,7 +463,9 @@ def build_cva_hedge_batch_from_hedges(
         hedge_ids=[item.hedge_id for item in validated],
         source_row_ids=[item.source_row_id for item in validated],
         counterparty_ids=[item.counterparty_id for item in validated],
-        hedge_types=[item.hedge_type.value for item in validated],
+        hedge_types=[
+            None if item.hedge_type is None else item.hedge_type.value for item in validated
+        ],
         notionals=[item.notional for item in validated],
         remaining_maturities=[item.remaining_maturity for item in validated],
         discount_factors=[item.discount_factor for item in validated],
@@ -471,6 +480,21 @@ def build_cva_hedge_batch_from_hedges(
         sa_cva_risk_classes=[
             None if item.sa_cva_risk_class is None else item.sa_cva_risk_class.value
             for item in validated
+        ],
+        sa_cva_hedge_purposes=[
+            None if item.sa_cva_hedge_purpose is None else item.sa_cva_hedge_purpose.value
+            for item in validated
+        ],
+        sa_cva_hedge_instrument_types=[
+            None
+            if item.sa_cva_hedge_instrument_type is None
+            else item.sa_cva_hedge_instrument_type.value
+            for item in validated
+        ],
+        whole_transaction_evidence_ids=[item.whole_transaction_evidence_id for item in validated],
+        market_risk_ima_eligibilities=[item.market_risk_ima_eligible for item in validated],
+        market_risk_ima_exclusion_reasons=[
+            item.market_risk_ima_exclusion_reason for item in validated
         ],
         eligibility_evidence_ids=[item.eligibility_evidence_id for item in validated],
         rejection_reasons=[item.rejection_reason for item in validated],
@@ -831,6 +855,11 @@ def build_cva_hedge_batch_from_columns(
     discount_factor_explicit: ColumnInput | None = None,
     internal_desk_counterparty_ids: NullableColumnInput | None = None,
     sa_cva_risk_classes: NullableColumnInput | None = None,
+    sa_cva_hedge_purposes: NullableColumnInput | None = None,
+    sa_cva_hedge_instrument_types: NullableColumnInput | None = None,
+    whole_transaction_evidence_ids: NullableColumnInput | None = None,
+    market_risk_ima_eligibilities: NullableColumnInput | None = None,
+    market_risk_ima_exclusion_reasons: NullableColumnInput | None = None,
     eligibility_evidence_ids: NullableColumnInput | None = None,
     rejection_reasons: NullableColumnInput | None = None,
     lineage_source_systems: ColumnInput | None = None,
@@ -891,6 +920,11 @@ def build_cva_hedge_batch_from_columns(
         discount_factor_explicit=discount_factor_explicit,
         internal_desk_counterparty_ids=internal_desk_counterparty_ids,
         sa_cva_risk_classes=sa_cva_risk_classes,
+        sa_cva_hedge_purposes=sa_cva_hedge_purposes,
+        sa_cva_hedge_instrument_types=sa_cva_hedge_instrument_types,
+        whole_transaction_evidence_ids=whole_transaction_evidence_ids,
+        market_risk_ima_eligibilities=market_risk_ima_eligibilities,
+        market_risk_ima_exclusion_reasons=market_risk_ima_exclusion_reasons,
         eligibility_evidence_ids=eligibility_evidence_ids,
         rejection_reasons=rejection_reasons,
         lineage_source_systems=lineage_source_systems,
@@ -904,7 +938,13 @@ def build_cva_hedge_batch_from_columns(
         counterparty_ids=_required_text_array(
             counterparty_ids, "counterparty_id", copy=copy_arrays
         ),
-        hedge_types=_enum_array(hedge_types, BaCvaHedgeType, "hedge_type", copy=copy_arrays),
+        hedge_types=_optional_enum_array(
+            hedge_types,
+            row_count,
+            BaCvaHedgeType,
+            "hedge_type",
+            copy=copy_arrays,
+        ),
         notionals=_float_array(notionals, "notional", copy=copy_arrays),
         remaining_maturities=_float_array(
             remaining_maturities,
@@ -946,12 +986,15 @@ def build_cva_hedge_batch_from_columns(
             row_count,
             copy=copy_arrays,
         ),
-        sa_cva_risk_classes=_optional_enum_array(
-            sa_cva_risk_classes,
-            row_count,
-            SaCvaRiskClass,
-            "sa_cva_risk_class",
-            copy=copy_arrays,
+        **_sa_cva_hedge_metadata_arrays(
+            row_count=row_count,
+            sa_cva_risk_classes=sa_cva_risk_classes,
+            sa_cva_hedge_purposes=sa_cva_hedge_purposes,
+            sa_cva_hedge_instrument_types=sa_cva_hedge_instrument_types,
+            whole_transaction_evidence_ids=whole_transaction_evidence_ids,
+            market_risk_ima_eligibilities=market_risk_ima_eligibilities,
+            market_risk_ima_exclusion_reasons=market_risk_ima_exclusion_reasons,
+            copy_arrays=copy_arrays,
         ),
         eligibility_evidence_ids=_optional_text_array(
             eligibility_evidence_ids,
@@ -981,6 +1024,57 @@ def build_cva_hedge_batch_from_columns(
     )
     _validate_hedge_batch(batch)
     return batch
+
+
+def _sa_cva_hedge_metadata_arrays(
+    *,
+    row_count: int,
+    sa_cva_risk_classes: NullableColumnInput | None,
+    sa_cva_hedge_purposes: NullableColumnInput | None,
+    sa_cva_hedge_instrument_types: NullableColumnInput | None,
+    whole_transaction_evidence_ids: NullableColumnInput | None,
+    market_risk_ima_eligibilities: NullableColumnInput | None,
+    market_risk_ima_exclusion_reasons: NullableColumnInput | None,
+    copy_arrays: bool,
+) -> dict[str, ObjectArray]:
+    return {
+        "sa_cva_risk_classes": _optional_enum_array(
+            sa_cva_risk_classes,
+            row_count,
+            SaCvaRiskClass,
+            "sa_cva_risk_class",
+            copy=copy_arrays,
+        ),
+        "sa_cva_hedge_purposes": _optional_enum_array(
+            sa_cva_hedge_purposes,
+            row_count,
+            SaCvaHedgePurpose,
+            "sa_cva_hedge_purpose",
+            copy=copy_arrays,
+        ),
+        "sa_cva_hedge_instrument_types": _optional_enum_array(
+            sa_cva_hedge_instrument_types,
+            row_count,
+            SaCvaHedgeInstrumentType,
+            "sa_cva_hedge_instrument_type",
+            copy=copy_arrays,
+        ),
+        "whole_transaction_evidence_ids": _optional_text_array(
+            whole_transaction_evidence_ids,
+            row_count,
+            copy=copy_arrays,
+        ),
+        "market_risk_ima_eligibilities": _batch_arrays.optional_bool_object_array(
+            market_risk_ima_eligibilities,
+            row_count,
+            copy=copy_arrays,
+        ),
+        "market_risk_ima_exclusion_reasons": _optional_text_array(
+            market_risk_ima_exclusion_reasons,
+            row_count,
+            copy=copy_arrays,
+        ),
+    }
 
 
 def build_sa_cva_sensitivity_batch_from_columns(
@@ -1506,7 +1600,14 @@ def calculate_full_portfolio_from_batches(
     for hedge_index in _sorted_indices(hedge_batch.hedge_ids):
         decision = _assess_ba_cva_hedge_eligibility(hedge_batch, hedge_index, profile=profile)
         counterparty_id = cast(str, hedge_batch.counterparty_ids[hedge_index])
-        hedge_type = BaCvaHedgeType(cast(str, hedge_batch.hedge_types[hedge_index]))
+        hedge_type_value = hedge_batch.hedge_types[hedge_index]
+        if hedge_type_value is None:
+            raise CvaInputError(
+                "BA-CVA hedge requires hedge_type",
+                field="hedge_type",
+                record_id=cast(str, hedge_batch.hedge_ids[hedge_index]),
+            )
+        hedge_type = BaCvaHedgeType(cast(str, hedge_type_value))
         reference_relation = HedgeReferenceRelation(
             cast(str, hedge_batch.reference_relations[hedge_index])
         )
@@ -1861,6 +1962,13 @@ def _validate_hedge_batch(batch: CvaHedgeBatch) -> None:
             )
         if HedgeEligibility(cast(str, batch.eligibilities[index])) is HedgeEligibility.INELIGIBLE:
             _required_text(batch.rejection_reasons[index], "rejection_reason", record_id)
+        if HedgeEligibility(cast(str, batch.eligibilities[index])) is HedgeEligibility.EXCLUDED:
+            _required_text(batch.rejection_reasons[index], "rejection_reason", record_id)
+            _required_text(
+                batch.market_risk_ima_exclusion_reasons[index],
+                "market_risk_ima_exclusion_reason",
+                record_id,
+            )
 
 
 def _validate_sensitivity_batch(batch: SaCvaSensitivityBatch) -> None:
@@ -2141,6 +2249,75 @@ def _assess_sa_cva_hedge_eligibility(
     profile: CvaRegulatoryProfile | str,
 ) -> HedgeEligibilityDecision:
     hedge_id = cast(str, batch.hedge_ids[index])
+    sa_risk_class = (
+        None
+        if batch.sa_cva_risk_classes[index] is None
+        else SaCvaRiskClass(cast(str, batch.sa_cva_risk_classes[index]))
+    )
+    base_decision = _assess_base_hedge_eligibility(batch, index, profile=profile)
+    if base_decision.eligibility is not HedgeEligibility.ELIGIBLE:
+        return base_decision
+    _validate_sa_cva_hedge_batch_metadata(batch, index)
+    return HedgeEligibilityDecision(
+        hedge_id=hedge_id,
+        eligibility=HedgeEligibility.ELIGIBLE,
+        sa_cva_risk_class=sa_risk_class,
+        reason_code="eligible_whole_transaction_hedge",
+        citations=profile_citation_ids(("basel_mar50_37", "basel_mar50_38"), profile),
+    )
+
+
+def _assess_ba_cva_hedge_eligibility(
+    batch: CvaHedgeBatch,
+    index: int,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> HedgeEligibilityDecision:
+    hedge_id = cast(str, batch.hedge_ids[index])
+    hedge_type_value = batch.hedge_types[index]
+    if hedge_type_value is None:
+        return HedgeEligibilityDecision(
+            hedge_id=hedge_id,
+            eligibility=HedgeEligibility.INELIGIBLE,
+            sa_cva_risk_class=None,
+            reason_code="instrument_type_not_eligible_for_ba_cva",
+            citations=profile_citation_ids(("basel_mar50_18",), profile),
+        )
+    hedge_type = BaCvaHedgeType(cast(str, hedge_type_value))
+    if hedge_type not in {
+        BaCvaHedgeType.SINGLE_NAME_CDS,
+        BaCvaHedgeType.SINGLE_NAME_CONTINGENT_CDS,
+        BaCvaHedgeType.INDEX_CDS,
+    }:
+        return HedgeEligibilityDecision(
+            hedge_id=hedge_id,
+            eligibility=HedgeEligibility.INELIGIBLE,
+            sa_cva_risk_class=None,
+            reason_code="instrument_type_not_eligible_for_ba_cva",
+            citations=profile_citation_ids(("basel_mar50_18",), profile),
+        )
+    base_decision = _assess_base_hedge_eligibility(batch, index, profile=profile)
+    if base_decision.eligibility is not HedgeEligibility.ELIGIBLE:
+        return replace(base_decision, eligibility=HedgeEligibility.INELIGIBLE)
+    return HedgeEligibilityDecision(
+        hedge_id=hedge_id,
+        eligibility=HedgeEligibility.ELIGIBLE,
+        sa_cva_risk_class=base_decision.sa_cva_risk_class,
+        reason_code="eligible_ba_cva_credit_spread_hedge",
+        citations=profile_citation_ids(
+            ("basel_mar50_18", "basel_mar50_19", "basel_mar50_37"),
+            profile,
+        ),
+    )
+
+
+def _assess_base_hedge_eligibility(
+    batch: CvaHedgeBatch,
+    index: int,
+    *,
+    profile: CvaRegulatoryProfile | str,
+) -> HedgeEligibilityDecision:
+    hedge_id = cast(str, batch.hedge_ids[index])
     eligibility = HedgeEligibility(cast(str, batch.eligibilities[index]))
     sa_risk_class = (
         None
@@ -2161,7 +2338,8 @@ def _assess_sa_cva_hedge_eligibility(
             hedge_id=hedge_id,
             eligibility=HedgeEligibility.EXCLUDED,
             sa_cva_risk_class=sa_risk_class,
-            reason_code="hedge_excluded_from_sa_cva",
+            reason_code=cast(str | None, batch.market_risk_ima_exclusion_reasons[index])
+            or "hedge_excluded_from_sa_cva",
             citations=profile_citation_ids(("basel_mar50_39",), profile),
         )
     if bool(batch.is_internal[index]) and not batch.eligibility_evidence_ids[index]:
@@ -2172,48 +2350,74 @@ def _assess_sa_cva_hedge_eligibility(
             reason_code="internal_hedge_missing_back_to_back_evidence",
             citations=profile_citation_ids(("basel_mar50_11", "basel_mar50_39"), profile),
         )
+    if not batch.eligibility_evidence_ids[index]:
+        raise CvaInputError(
+            "eligible hedge requires eligibility_evidence_id",
+            field="eligibility_evidence_id",
+            record_id=hedge_id,
+        )
     return HedgeEligibilityDecision(
         hedge_id=hedge_id,
         eligibility=HedgeEligibility.ELIGIBLE,
         sa_cva_risk_class=sa_risk_class,
-        reason_code="eligible_whole_transaction_hedge",
-        citations=profile_citation_ids(("basel_mar50_37", "basel_mar50_38"), profile),
+        reason_code="eligible_hedge",
+        citations=profile_citation_ids(("basel_mar50_37",), profile),
     )
 
 
-def _assess_ba_cva_hedge_eligibility(
-    batch: CvaHedgeBatch,
-    index: int,
-    *,
-    profile: CvaRegulatoryProfile | str,
-) -> HedgeEligibilityDecision:
-    hedge_type = BaCvaHedgeType(cast(str, batch.hedge_types[index]))
+def _validate_sa_cva_hedge_batch_metadata(batch: CvaHedgeBatch, index: int) -> None:
     hedge_id = cast(str, batch.hedge_ids[index])
-    if hedge_type not in {
-        BaCvaHedgeType.SINGLE_NAME_CDS,
-        BaCvaHedgeType.SINGLE_NAME_CONTINGENT_CDS,
-        BaCvaHedgeType.INDEX_CDS,
-    }:
-        return HedgeEligibilityDecision(
-            hedge_id=hedge_id,
-            eligibility=HedgeEligibility.INELIGIBLE,
-            sa_cva_risk_class=None,
-            reason_code="instrument_type_not_eligible_for_ba_cva",
-            citations=profile_citation_ids(("basel_mar50_18",), profile),
+    purpose_value = batch.sa_cva_hedge_purposes[index]
+    instrument_value = batch.sa_cva_hedge_instrument_types[index]
+    if purpose_value is None:
+        raise CvaInputError(
+            "eligible SA-CVA hedge requires sa_cva_hedge_purpose",
+            field="sa_cva_hedge_purpose",
+            record_id=hedge_id,
         )
-    sa_decision = _assess_sa_cva_hedge_eligibility(batch, index, profile=profile)
-    if sa_decision.eligibility is not HedgeEligibility.ELIGIBLE:
-        return replace(sa_decision, eligibility=HedgeEligibility.INELIGIBLE)
-    return HedgeEligibilityDecision(
-        hedge_id=hedge_id,
-        eligibility=HedgeEligibility.ELIGIBLE,
-        sa_cva_risk_class=sa_decision.sa_cva_risk_class,
-        reason_code="eligible_ba_cva_credit_spread_hedge",
-        citations=profile_citation_ids(
-            ("basel_mar50_18", "basel_mar50_19", "basel_mar50_37"),
-            profile,
-        ),
+    if instrument_value is None:
+        raise CvaInputError(
+            "eligible SA-CVA hedge requires sa_cva_hedge_instrument_type",
+            field="sa_cva_hedge_instrument_type",
+            record_id=hedge_id,
+        )
+    if not batch.whole_transaction_evidence_ids[index]:
+        raise CvaInputError(
+            "eligible SA-CVA hedge requires whole_transaction_evidence_id",
+            field="whole_transaction_evidence_id",
+            record_id=hedge_id,
+        )
+    if batch.market_risk_ima_eligibilities[index] is not True:
+        raise CvaInputError(
+            "eligible SA-CVA hedge requires market_risk_ima_eligible=True",
+            field="market_risk_ima_eligible",
+            record_id=hedge_id,
+        )
+    purpose = SaCvaHedgePurpose(cast(str, purpose_value))
+    sa_risk_class = (
+        None
+        if batch.sa_cva_risk_classes[index] is None
+        else SaCvaRiskClass(cast(str, batch.sa_cva_risk_classes[index]))
     )
+    if purpose is SaCvaHedgePurpose.COUNTERPARTY_CREDIT_SPREAD:
+        if sa_risk_class not in {
+            SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+            SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        }:
+            raise CvaInputError(
+                "credit-spread SA-CVA hedge requires whole-instrument CCS or RCS assignment",
+                field="sa_cva_risk_class",
+                record_id=hedge_id,
+            )
+    elif sa_risk_class in {
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+    }:
+        raise CvaInputError(
+            "exposure-component SA-CVA hedge cannot use CCS or RCS assignment",
+            field="sa_cva_risk_class",
+            record_id=hedge_id,
+        )
 
 
 def _eligible_sa_cva_hedge_ids(
@@ -2644,6 +2848,11 @@ def _empty_hedge_batch() -> CvaHedgeBatch:
         discount_factor_explicit=_empty_bool_array(),
         internal_desk_counterparty_ids=_batch_arrays.object_array([], copy=True),
         sa_cva_risk_classes=_batch_arrays.object_array([], copy=True),
+        sa_cva_hedge_purposes=_batch_arrays.object_array([], copy=True),
+        sa_cva_hedge_instrument_types=_batch_arrays.object_array([], copy=True),
+        whole_transaction_evidence_ids=_batch_arrays.object_array([], copy=True),
+        market_risk_ima_eligibilities=_batch_arrays.object_array([], copy=True),
+        market_risk_ima_exclusion_reasons=_batch_arrays.object_array([], copy=True),
         eligibility_evidence_ids=_batch_arrays.object_array([], copy=True),
         rejection_reasons=_batch_arrays.object_array([], copy=True),
         lineage_source_systems=_batch_arrays.object_array([], copy=True),
@@ -2713,6 +2922,14 @@ def _subset_hedges(batch: CvaHedgeBatch, indices: list[int]) -> CvaHedgeBatch:
         discount_factor_explicit=_take_bool(batch.discount_factor_explicit, indices),
         internal_desk_counterparty_ids=_take_object(batch.internal_desk_counterparty_ids, indices),
         sa_cva_risk_classes=_take_object(batch.sa_cva_risk_classes, indices),
+        sa_cva_hedge_purposes=_take_object(batch.sa_cva_hedge_purposes, indices),
+        sa_cva_hedge_instrument_types=_take_object(batch.sa_cva_hedge_instrument_types, indices),
+        whole_transaction_evidence_ids=_take_object(batch.whole_transaction_evidence_ids, indices),
+        market_risk_ima_eligibilities=_take_object(batch.market_risk_ima_eligibilities, indices),
+        market_risk_ima_exclusion_reasons=_take_object(
+            batch.market_risk_ima_exclusion_reasons,
+            indices,
+        ),
         eligibility_evidence_ids=_take_object(batch.eligibility_evidence_ids, indices),
         rejection_reasons=_take_object(batch.rejection_reasons, indices),
         lineage_source_systems=_take_object(batch.lineage_source_systems, indices),

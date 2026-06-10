@@ -75,6 +75,24 @@ class BaCvaHedgeType(StrEnum):
     INDEX_CDS = "INDEX_CDS"
 
 
+class SaCvaHedgePurpose(StrEnum):
+    """SA-CVA hedge purpose under Basel MAR50.38."""
+
+    COUNTERPARTY_CREDIT_SPREAD = "COUNTERPARTY_CREDIT_SPREAD"
+    EXPOSURE_COMPONENT = "EXPOSURE_COMPONENT"
+
+
+class SaCvaHedgeInstrumentType(StrEnum):
+    """SA-CVA hedge instrument classification for whole-transaction audit."""
+
+    CREDIT_SPREAD_INSTRUMENT = "CREDIT_SPREAD_INSTRUMENT"
+    INTEREST_RATE = "INTEREST_RATE"
+    FOREIGN_EXCHANGE = "FOREIGN_EXCHANGE"
+    EQUITY = "EQUITY"
+    COMMODITY = "COMMODITY"
+    OTHER_EXPOSURE_COMPONENT = "OTHER_EXPOSURE_COMPONENT"
+
+
 class HedgeEligibility(StrEnum):
     """Hedge eligibility outcome."""
 
@@ -167,7 +185,7 @@ class CvaHedge:
     hedge_id: str
     source_row_id: str
     counterparty_id: str
-    hedge_type: BaCvaHedgeType
+    hedge_type: BaCvaHedgeType | None
     notional: float
     remaining_maturity: float
     discount_factor: float
@@ -180,6 +198,11 @@ class CvaHedge:
     discount_factor_explicit: bool = False
     internal_desk_counterparty_id: str | None = None
     sa_cva_risk_class: SaCvaRiskClass | None = None
+    sa_cva_hedge_purpose: SaCvaHedgePurpose | None = None
+    sa_cva_hedge_instrument_type: SaCvaHedgeInstrumentType | None = None
+    whole_transaction_evidence_id: str | None = None
+    market_risk_ima_eligible: bool | None = None
+    market_risk_ima_exclusion_reason: str | None = None
     eligibility_evidence_id: str | None = None
     rejection_reason: str | None = None
     lineage: CvaSourceLineage | None = None
@@ -453,6 +476,8 @@ __all__ = [
     "HedgeEligibility",
     "HedgeReferenceRelation",
     "SaCvaBucketCapital",
+    "SaCvaHedgeInstrumentType",
+    "SaCvaHedgePurpose",
     "SaCvaIndexTreatment",
     "SaCvaRiskClass",
     "SaCvaRiskClassCapital",
