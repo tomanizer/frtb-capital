@@ -133,7 +133,9 @@ def test_negative_girr_sensitivity_can_reduce_euler_capital_contribution() -> No
 
     result = calculate_sbm_capital(sensitivities, context=_context("negative-euler"))
     records = calculate_sbm_attribution(result)
-    euler = tuple(record for record in records if record.method is AttributionMethod.ANALYTICAL_EULER)
+    euler = tuple(
+        record for record in records if record.method is AttributionMethod.ANALYTICAL_EULER
+    )
 
     assert len(euler) == 2
     assert any(record.contribution is not None and record.contribution < 0.0 for record in euler)
@@ -169,7 +171,9 @@ def test_multi_risk_class_finite_difference_matches_euler_derivatives() -> None:
         for record in calculate_sbm_attribution(result)
         if record.method is AttributionMethod.ANALYTICAL_EULER
     )
-    raw_amount_by_id = {sensitivity.sensitivity_id: sensitivity.amount for sensitivity in sensitivities}
+    raw_amount_by_id = {
+        sensitivity.sensitivity_id: sensitivity.amount for sensitivity in sensitivities
+    }
     bump = 100.0
 
     for record in records:
@@ -183,7 +187,10 @@ def test_multi_risk_class_finite_difference_matches_euler_derivatives() -> None:
             else sensitivity
             for sensitivity in sensitivities
         )
-        bumped_result = calculate_sbm_capital(bumped, context=_context(f"bumped-{record.source_id}"))
+        bumped_result = calculate_sbm_capital(
+            bumped,
+            context=_context(f"bumped-{record.source_id}"),
+        )
         finite_difference = (bumped_result.total_capital - result.total_capital) / bump
         analytical_raw_derivative = record.marginal_multiplier * risk_weight
         assert math.isclose(
