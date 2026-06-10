@@ -67,38 +67,33 @@ def test_bucket_category_and_risk_class_summaries_reconcile_to_source_records() 
         summarize_drc_attribution_by_category(result),
         summarize_drc_attribution_by_risk_class(result),
     ):
-        assert sum(summary.total for summary in summaries) == pytest.approx(result.total_drc)
-        assert sum(summary.record_count for summary in summaries) == len(result.attribution_records)
+        total = sum(summary.total for summary in summaries)
+        record_count = sum(summary.record_count for summary in summaries)
+        assert total == pytest.approx(result.total_drc)
+        assert record_count == len(result.attribution_records)
 
     bucket = {summary.key: summary for summary in summarize_drc_attribution_by_bucket(result)}
-    assert bucket["SEC_CLO_NORTH_AMERICA"].contribution == pytest.approx(20.0)
-    assert bucket["SEC_CLO_NORTH_AMERICA"].residual == pytest.approx(3.0)
-    assert bucket["SEC_CLO_NORTH_AMERICA"].total == pytest.approx(23.0)
-    assert (
-        bucket["SEC_CLO_NORTH_AMERICA"].reconciliation_status
-        is ReconciliationStatus.PARTIAL_RESIDUAL
-    )
+    sec_bucket = bucket["SEC_CLO_NORTH_AMERICA"]
+    assert sec_bucket.contribution == pytest.approx(20.0)
+    assert sec_bucket.residual == pytest.approx(3.0)
+    assert sec_bucket.total == pytest.approx(23.0)
+    assert sec_bucket.reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
 
     categories = {
         summary.key: summary for summary in summarize_drc_attribution_by_category(result)
     }
-    assert categories[str(DrcRiskClass.SECURITISATION_NON_CTP)].total == pytest.approx(
-        23.0,
-    )
-    assert categories[
-        str(DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
-    ].total == pytest.approx(
-        -1.5,
-    )
+    sec_category = categories[str(DrcRiskClass.SECURITISATION_NON_CTP)]
+    ctp_category = categories[str(DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)]
+    assert sec_category.total == pytest.approx(23.0)
+    assert ctp_category.total == pytest.approx(-1.5)
 
     risk_classes = {
         summary.key: summary for summary in summarize_drc_attribution_by_risk_class(result)
     }
-    assert risk_classes[str(DrcRiskClass.NON_SECURITISATION)].total == pytest.approx(5.0)
-    assert risk_classes[str(DrcRiskClass.SECURITISATION_NON_CTP)].source_ids == (
-        "bucket-sec-floor",
-        "net-sec",
-    )
+    nonsec_risk_class = risk_classes[str(DrcRiskClass.NON_SECURITISATION)]
+    sec_risk_class = risk_classes[str(DrcRiskClass.SECURITISATION_NON_CTP)]
+    assert nonsec_risk_class.total == pytest.approx(5.0)
+    assert sec_risk_class.source_ids == ("bucket-sec-floor", "net-sec")
 
 
 def test_generic_and_top_summary_helpers_are_stable_and_validate_limit() -> None:
@@ -108,7 +103,8 @@ def test_generic_and_top_summary_helpers_are_stable_and_validate_limit() -> None
     top = top_drc_attribution_summaries(result, grain="issuer", limit=2)
 
     assert top == generic[:2]
-    assert [summary.key for summary in top] == ["clo-2026-1|mezz", "issuer-a"]
+    top_keys = [summary.key for summary in top]
+    assert top_keys == ["clo-2026-1|mezz", "issuer-a"]
     assert top[0].summary_id == "drc-attr-issuer-clo-2026-1-mezz"
     assert top[0].as_dict()["key"] == "clo-2026-1|mezz"
     assert top_drc_attribution_summaries(result, grain="issuer", limit=0) == ()
@@ -118,6 +114,7 @@ def test_generic_and_top_summary_helpers_are_stable_and_validate_limit() -> None
 
 def _result() -> DrcCapitalResult:
     records = _records()
+    total_drc = sum((record.contribution or 0.0) + record.residual for record in records)
     return DrcCapitalResult(
         result_id="drc-summary",
         run_id="run-drc-summary",
@@ -127,9 +124,7 @@ def _result() -> DrcCapitalResult:
         profile_hash="profile-hash",
         input_hash="input-hash",
         categories=(),
-        total_drc=sum(
-            (record.contribution or 0.0) + record.residual for record in records
-        ),
+        total_drc=total_drc,
         citations=("US_NPR_210_SCOPE",),
         net_jtds=_net_jtds(),
         attribution_records=records,
