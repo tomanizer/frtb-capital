@@ -7,14 +7,24 @@ does not alter the SBM capital number.
 
 ## Current Support
 
-Package helper:
+Package helpers:
 
 ```python
-from frtb_sbm.attribution import calculate_sbm_attribution
+from frtb_sbm.attribution import (
+    calculate_sbm_attribution,
+    summarize_sbm_attribution_by_bucket,
+    summarize_sbm_attribution_by_risk_class,
+    summarize_sbm_attribution_by_sensitivity,
+    top_sbm_attribution_summaries,
+)
 ```
 
 `calculate_sbm_attribution(result)` returns
 `frtb_common.CapitalContribution` records for all risk classes in the result.
+
+The summary helpers consume existing `CapitalContribution` records and group
+them for analyst-facing explain views. They do not re-run SBM capital or the
+Euler attribution formula.
 
 ## Method
 
@@ -81,6 +91,30 @@ The attribution helper consumes only fields already present on the
 - Residual records: `source_level="risk_class"`, one explicit reconciliation
   residual when needed.
 
+## Contributor Summaries
+
+`SbmAttributionSummary` is a deterministic grouped projection over existing
+`CapitalContribution` records. It carries:
+
+- the grouping grain and stable summary id;
+- contribution, residual, and total amounts;
+- source ids and sensitivity ids represented by the group;
+- methods, citations, non-empty reason strings, and reconciliation status.
+
+Supported grains are:
+
+- `sensitivity` via `summarize_sbm_attribution_by_sensitivity(records)`;
+- `bucket` via `summarize_sbm_attribution_by_bucket(records)`;
+- `risk_class` via `summarize_sbm_attribution_by_risk_class(records)`.
+
+Summary rows are sorted by descending absolute total, then grain, key, and
+summary id. Unsupported and residual records are retained in the projection:
+source-level summaries keep their own `source_id`, while bucket summaries place
+records without a bucket under `UNALLOCATED`.
+
+Use `top_sbm_attribution_summaries(records, grain="bucket", limit=10)` for a
+stable top-contributor view.
+
 ## Limitations
 
 - Attribution is available only after a successful capital calculation.
@@ -88,6 +122,8 @@ The attribution helper consumes only fields already present on the
   attribution can run.
 - Curvature attribution is deliberately not approximated as Euler attribution in
   the current implementation.
+- Summary helpers are projections over already-created records, not new capital
+  or attribution calculations.
 - Finite-difference impact is a separate `impact.py` concern and is not
   reported as marginal contribution.
 
@@ -96,6 +132,7 @@ The attribution helper consumes only fields already present on the
 Tests:
 
 - `packages/frtb-sbm/tests/test_sbm_attribution_impact.py`
+- `packages/frtb-sbm/tests/test_sbm_attribution_summaries.py`
 
 Design and regulatory references:
 
