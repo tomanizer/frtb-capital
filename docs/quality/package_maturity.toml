@@ -22,6 +22,7 @@ maturity = "implemented"
 component_type = "capital"
 metadata_object = "frtb_cva:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_cva:calculate_cva_capital"
+attribution_status = "shared_projection"
 
 [[packages.required_tests]]
 id = "public-api"
@@ -71,6 +72,18 @@ path = "packages/frtb-cva/tests/test_cva_properties.py"
 id = "external-comparator"
 path = "packages/frtb-cva/tests/test_cva_external_comparator.py"
 
+[[packages.required_tests]]
+id = "attribution"
+path = "packages/frtb-cva/tests/test_cva_attribution.py"
+
+[[packages.required_tests]]
+id = "attribution-reconciliation"
+path = "packages/frtb-cva/tests/test_cva_attribution.py"
+
+[[packages.required_tests]]
+id = "attribution-unsupported-branches"
+path = "packages/frtb-cva/tests/test_cva_attribution.py"
+
 [[packages]]
 package = "frtb-drc"
 import_name = "frtb_drc"
@@ -80,6 +93,7 @@ maturity = "partial_runtime"
 component_type = "capital"
 metadata_object = "frtb_drc:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_drc:calculate_drc_capital"
+attribution_status = "shared_projection"
 
 [[packages.required_tests]]
 id = "public-api"
@@ -88,6 +102,18 @@ path = "packages/frtb-drc/tests/test_drc_public_api.py"
 [[packages.required_tests]]
 id = "unsupported-runtime-paths"
 path = "packages/frtb-drc/tests/test_drc_public_api.py"
+
+[[packages.required_tests]]
+id = "attribution"
+path = "packages/frtb-drc/tests/test_drc_attribution.py"
+
+[[packages.required_tests]]
+id = "attribution-reconciliation"
+path = "packages/frtb-drc/tests/test_drc_attribution.py"
+
+[[packages.required_tests]]
+id = "attribution-unsupported-branches"
+path = "packages/frtb-drc/tests/test_drc_attribution.py"
 
 [[packages]]
 package = "frtb-ima"
@@ -98,11 +124,24 @@ maturity = "implemented"
 component_type = "capital"
 metadata_object = "frtb_ima:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_ima:models_based_capital_for_policy"
+attribution_status = "shared_projection"
 mutation_floor = 75.12
 
 [[packages.required_tests]]
 id = "public-api"
 path = "packages/frtb-ima/tests/test_public_api.py"
+
+[[packages.required_tests]]
+id = "attribution"
+path = "packages/frtb-ima/tests/test_attribution.py"
+
+[[packages.required_tests]]
+id = "attribution-reconciliation"
+path = "packages/frtb-ima/tests/test_attribution.py"
+
+[[packages.required_tests]]
+id = "attribution-unsupported-branches"
+path = "packages/frtb-ima/tests/test_attribution.py"
 
 [[packages]]
 package = "frtb-orchestration"
@@ -113,6 +152,7 @@ maturity = "orchestration_implemented"
 component_type = "orchestration"
 metadata_object = "frtb_orchestration:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_orchestration:calculate_suite_capital"
+attribution_status = "full_bundle"
 
 [[packages.required_tests]]
 id = "orchestration-boundary"
@@ -120,6 +160,22 @@ path = "packages/frtb-orchestration/tests/test_orchestration_scaffold.py"
 
 [[packages.required_tests]]
 id = "suite-capital-end-to-end"
+path = "packages/frtb-orchestration/tests/test_suite_capital.py"
+
+[[packages.required_tests]]
+id = "attribution"
+path = "packages/frtb-orchestration/tests/test_suite_capital.py"
+
+[[packages.required_tests]]
+id = "attribution-reconciliation"
+path = "packages/frtb-orchestration/tests/test_suite_capital.py"
+
+[[packages.required_tests]]
+id = "attribution-unsupported-branches"
+path = "packages/frtb-orchestration/tests/test_suite_capital.py"
+
+[[packages.required_tests]]
+id = "attribution-bundle"
 path = "packages/frtb-orchestration/tests/test_suite_capital.py"
 
 [[packages]]
@@ -149,11 +205,28 @@ maturity = "implemented"
 component_type = "capital"
 metadata_object = "frtb_rrao:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_rrao:calculate_rrao_capital"
+attribution_status = "full_bundle"
 mutation_floor = 85.47
 
 [[packages.required_tests]]
 id = "public-api"
 path = "packages/frtb-rrao/tests/test_rrao_public_api.py"
+
+[[packages.required_tests]]
+id = "attribution"
+path = "packages/frtb-rrao/tests/test_rrao_attribution.py"
+
+[[packages.required_tests]]
+id = "attribution-reconciliation"
+path = "packages/frtb-rrao/tests/test_rrao_attribution.py"
+
+[[packages.required_tests]]
+id = "attribution-unsupported-branches"
+path = "packages/frtb-rrao/tests/test_rrao_attribution.py"
+
+[[packages.required_tests]]
+id = "attribution-bundle"
+path = "packages/frtb-rrao/tests/test_rrao_attribution.py"
 
 [[packages]]
 package = "frtb-sbm"
@@ -164,6 +237,7 @@ maturity = "partial_runtime"
 component_type = "capital"
 metadata_object = "frtb_sbm:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_sbm:calculate_sbm_capital"
+attribution_status = "shared_projection"
 
 [[packages.required_tests]]
 id = "public-api"
@@ -176,3 +250,15 @@ path = "packages/frtb-sbm/tests/test_sbm_unsupported_features.py"
 [[packages.required_tests]]
 id = "support-matrix"
 path = "packages/frtb-sbm/tests/test_sbm_support_matrix.py"
+
+[[packages.required_tests]]
+id = "attribution"
+path = "packages/frtb-sbm/tests/test_sbm_attribution_impact.py"
+
+[[packages.required_tests]]
+id = "attribution-reconciliation"
+path = "packages/frtb-sbm/tests/test_sbm_attribution_impact.py"
+
+[[packages.required_tests]]
+id = "attribution-unsupported-branches"
+path = "packages/frtb-sbm/tests/test_sbm_attribution_impact.py"
