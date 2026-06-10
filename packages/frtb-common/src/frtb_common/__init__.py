@@ -45,6 +45,7 @@ from frtb_common.attribution import (
     AttributionMethod,
     CapitalContribution,
     ContributionReconciliation,
+    ReconciliationStatus,
     reconcile_contribution_set,
     validate_contribution_reconciliation,
 )
@@ -113,6 +114,7 @@ __all__ = [
     "NormalizedTableError",
     "NotImplementedCapitalComponentError",
     "NullPolicy",
+    "ReconciliationStatus",
     "StandardisedComponent",
     "TabularLogicalType",
     "UnsupportedRegulatoryFeatureError",
