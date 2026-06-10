@@ -75,8 +75,9 @@ def test_orchestration_consumes_public_ima_contribution_bundle() -> None:
     assert isinstance(result.attribution_result, SuiteAttributionResult)
     assert result.attribution_result.component_bundles[0] is ima_bundle
     assert result.attribution_result.suite_residual.residual == pytest.approx(0.0)
-    assert result.attribution_result.suite_residual.reconciliation_status is (
-        ReconciliationStatus.RECONCILED
+    assert (
+        result.attribution_result.suite_residual.reconciliation_status
+        is ReconciliationStatus.RECONCILED
     )
     assert [item.category for item in ima_bundle.contributions] == ["IMCC", "SES"]
     assert all(
