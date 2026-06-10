@@ -170,11 +170,16 @@ def test_float_array_from_numpy_validates_shape_and_finite_options() -> None:
 def test_optional_float_array_preserves_missing_values_and_fast_path() -> None:
     from_sequence = optional_float_array([None, "", np.nan, "1.5"], 4, copy=True)
     from_numpy = optional_float_array(np.array([1.0, np.nan]), 2, copy=True)
+    from_custom = optional_float_array(
+        ["missing", "2.0"], 2, copy=True, optional_float=float_or_nan
+    )
 
     assert np.isnan(from_sequence[:3]).all()
     assert from_sequence[3] == 1.5
     assert from_numpy[0] == 1.0
     assert np.isnan(from_numpy[1])
+    assert np.isnan(from_custom[0])
+    assert from_custom[1] == 2.0
     with pytest.raises(BatchArrayCoercionError, match="optional numeric field must be numeric"):
         optional_float_array(["bad"], 1, copy=True)
 
@@ -244,3 +249,9 @@ def test_freeze_source_column_maps_accepts_source_and_target_coercers() -> None:
     )
 
     assert result == ((("source:raw", "target:canonical"),),)
+
+
+def float_or_nan(value: object | None) -> float:
+    if value == "missing":
+        return np.nan
+    return float(value)
