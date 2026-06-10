@@ -103,6 +103,33 @@ def test_build_ima_contribution_bundle_rejects_mixed_hashes() -> None:
         build_ima_contribution_bundle((first, second), total_ima_capital=140.0)
 
 
+def test_build_ima_contribution_bundle_rejects_duplicate_desks() -> None:
+    first = _desk_record(
+        imcc={"imcc": 100.0},
+        ses={"total_ses": 25.0},
+        capital={"total": 125.0, "binding_term": "SPOT"},
+    )
+    second = _desk_record(
+        imcc={"imcc": 10.0},
+        ses={"total_ses": 5.0},
+        capital={"total": 15.0, "binding_term": "SPOT"},
+    )
+
+    with pytest.raises(ValueError, match="duplicate desk_id"):
+        build_ima_contribution_bundle((first, second), total_ima_capital=140.0)
+
+
+def test_build_ima_contribution_bundle_rejects_mapping_inputs() -> None:
+    record = _desk_record(
+        imcc={"imcc": 100.0},
+        ses={"total_ses": 25.0},
+        capital={"total": 125.0, "binding_term": "SPOT"},
+    )
+
+    with pytest.raises(ValueError, match="DeskAuditRecord or iterable"):
+        build_ima_contribution_bundle({"desk-1": record})  # type: ignore[arg-type]
+
+
 def test_desk_contributions_use_capital_breakdown_when_present() -> None:
     record = _desk_record(
         imcc={"imcc": 999.0},
