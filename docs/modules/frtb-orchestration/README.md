@@ -29,6 +29,47 @@ packages. It owns the cross-component boundary and implements:
   component summaries so unsupported or residual branches remain explainable
   after suite aggregation.
 
+## Suite Flow
+
+```mermaid
+flowchart LR
+    subgraph Client[Client or component layer]
+        ima[IMA capital run]
+        sbm[SBM capital]
+        drc[DRC capital]
+        rrao[RRAO capital]
+        cva[CVA capital]
+    end
+
+    ima --> ima_summary[ImaCapitalSummary]
+    sbm --> sbm_summary[ComponentCapitalSummary: SBM]
+    drc --> drc_summary[ComponentCapitalSummary: DRC]
+    rrao --> rrao_summary[ComponentCapitalSummary: RRAO]
+    cva --> cva_summary[CvaCapitalSummary]
+
+    sbm_summary --> sa[compose_standardised_approach_capital]
+    drc_summary --> sa
+    rrao_summary --> sa
+    sa --> sa_result[StandardisedApproachCapitalResult]
+
+    ima_summary --> suite[calculate_suite_capital]
+    sa_result --> suite
+    cva_summary --> suite
+    suite --> total[SuiteCapitalResult: IMA + SA + CVA]
+    total --> attribution[build_suite_attribution_report]
+    total --> result_store[caller-owned result-store handoff]
+
+    mismatch[Date, currency, or jurisdiction mismatch] --> reject[OrchestrationInputError]
+    ima_summary -. validation .-> mismatch
+    sa_result -. validation .-> mismatch
+    cva_summary -. validation .-> mismatch
+```
+
+The diagram is intentionally summary-contract centric. Component packages own
+raw table validation, regulatory method selection, and kernel execution before
+orchestration receives the frozen summaries. Orchestration rejects inconsistent
+run context instead of coercing dates, currencies, or jurisdiction families.
+
 ## Public API
 
 The stable top-level integration surface is defined in
