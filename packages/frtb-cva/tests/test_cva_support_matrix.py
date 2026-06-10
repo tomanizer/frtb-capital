@@ -37,10 +37,7 @@ _SUPPORTED_PATHS = frozenset(
 def test_basel_methods_match_supported_set() -> None:
     methods = cva_capital_supported_methods(CvaRegulatoryProfile.BASEL_MAR50_2020)
     assert methods == frozenset(CvaMethod)
-    assert (
-        get_cva_rule_profile(CvaRegulatoryProfile.BASEL_MAR50_2020).supported_methods
-        == methods
-    )
+    assert get_cva_rule_profile(CvaRegulatoryProfile.BASEL_MAR50_2020).supported_methods == methods
 
 
 def test_basel_sa_paths_match_sa_cva_module() -> None:
