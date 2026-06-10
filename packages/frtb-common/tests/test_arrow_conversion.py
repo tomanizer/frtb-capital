@@ -19,6 +19,7 @@ from frtb_common import (
     arrow_float64_array_with_nulls,
     arrow_object_array,
     read_arrow_columns,
+    unique_non_null_text_values,
 )
 
 
@@ -280,6 +281,26 @@ def test_read_arrow_columns_uses_float_zero_copy_when_nulls_are_allowed_but_abse
     arrow_view = table.column("amount").chunk(0).to_numpy(zero_copy_only=True)
     assert np.shares_memory(columns["amount"], arrow_view)
     assert not columns["amount"].flags.writeable
+
+
+def test_unique_non_null_text_values_handles_chunked_dictionary_columns() -> None:
+    table = pa.table(
+        {
+            "risk_class": pa.chunked_array(
+                [
+                    pa.array(["GIRR", None, "GIRR"]).dictionary_encode(),
+                    pa.array(["FX", "GIRR"]).dictionary_encode(),
+                ]
+            )
+        }
+    )
+
+    assert unique_non_null_text_values(table, "risk_class") == ("GIRR", "FX")
+
+
+def test_unique_non_null_text_values_rejects_missing_columns() -> None:
+    with pytest.raises(NormalizedTableError, match="Required column 'risk_class' is missing"):
+        unique_non_null_text_values(pa.table({"other": pa.array(["GIRR"])}), "risk_class")
 
 
 def test_read_arrow_columns_rejects_required_missing_column() -> None:

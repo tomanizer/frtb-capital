@@ -8,6 +8,7 @@ from frtb_common.arrow_conversion import (
     arrow_float64_array_with_nulls,
     arrow_object_array,
     read_arrow_columns,
+    unique_non_null_text_values,
 )
 from frtb_common.arrow_table import (
     DEFAULT_ROW_ID_COLUMN,
@@ -135,6 +136,7 @@ __all__ = [
     "source_content_hash",
     "stable_json_dumps",
     "stable_json_hash",
+    "unique_non_null_text_values",
     "validate_arrow_table",
     "validate_column_specs",
 ]

@@ -16,17 +16,18 @@ from dataclasses import replace
 from typing import Any, cast
 
 import pyarrow as pa  # type: ignore[import-untyped]
-import pyarrow.compute as pc  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
     NormalizedArrowTable,
+    NormalizedTableError,
     NullPolicy,
     TabularLogicalType,
     UnsupportedRegulatoryFeatureError,
     normalize_arrow_table,
     normalized_arrow_table_hash,
     read_arrow_columns,
+    unique_non_null_text_values,
 )
 
 from frtb_sbm.batch import (
@@ -2141,10 +2142,10 @@ def _unique_arrow_text_values(
             f"arrow table {index} required column {column_name!r} is missing",
             field=column_name,
         )
-    unique_values = pc.drop_null(pc.unique(table[column_name]))
-    text_values = tuple(
-        str(unique_values[item_index].as_py()) for item_index in range(len(unique_values))
-    )
+    try:
+        text_values = unique_non_null_text_values(table, column_name)
+    except NormalizedTableError as exc:
+        raise SbmInputError(str(exc), field=column_name) from exc
     if not text_values:
         raise SbmInputError(
             f"arrow table {index} {column_name} must contain one non-null value",
