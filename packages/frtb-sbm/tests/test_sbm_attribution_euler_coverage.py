@@ -136,13 +136,13 @@ def test_negative_girr_sensitivity_can_reduce_euler_capital_contribution() -> No
     result = calculate_sbm_capital(sensitivities, context=_context("negative-euler"))
     records = calculate_sbm_attribution(result)
     euler = tuple(
-        record
-        for record in records
-        if record.method is AttributionMethod.ANALYTICAL_EULER
+        record for record in records if record.method is AttributionMethod.ANALYTICAL_EULER
     )
 
     assert len(euler) == 2
-    assert any(record.contribution is not None and record.contribution < 0.0 for record in euler)
+    assert any(
+        record.contribution is not None and record.contribution < 0.0 for record in euler
+    )
     assert _record_total(records) == pytest.approx(
         result.total_capital,
         rel=1e-6,
@@ -246,9 +246,7 @@ def _girr_delta(
         amount=amount,
         amount_currency="USD",
         sign_convention=(
-            SbmSignConvention.SHORT
-            if amount < 0.0
-            else SbmSignConvention.RECEIVE
+            SbmSignConvention.SHORT if amount < 0.0 else SbmSignConvention.RECEIVE
         ),
         lineage=_lineage(sensitivity_id),
     )
@@ -278,6 +276,4 @@ def _fx_delta(
 
 
 def _record_total(records: tuple[CapitalContribution, ...]) -> float:
-    return math.fsum(
-        (record.contribution or 0.0) + record.residual for record in records
-    )
+    return math.fsum((record.contribution or 0.0) + record.residual for record in records)
