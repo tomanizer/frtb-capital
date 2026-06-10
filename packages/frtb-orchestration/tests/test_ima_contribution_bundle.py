@@ -79,7 +79,10 @@ def test_orchestration_consumes_public_ima_contribution_bundle() -> None:
         ReconciliationStatus.RECONCILED
     )
     assert [item.category for item in ima_bundle.contributions] == ["IMCC", "SES"]
-    assert all(item.method is AttributionMethod.ANALYTICAL_EULER for item in ima_bundle.contributions)
+    assert all(
+        item.method is AttributionMethod.ANALYTICAL_EULER
+        for item in ima_bundle.contributions
+    )
 
 
 def _zero_component_bundle(component: str) -> ComponentContributionBundle:
@@ -116,7 +119,10 @@ def _zero_sa_result() -> StandardisedApproachCapitalResult:
     )
 
 
-def _component_summary(component: StandardisedComponent, package_name: str) -> ComponentCapitalSummary:
+def _component_summary(
+    component: StandardisedComponent,
+    package_name: str,
+) -> ComponentCapitalSummary:
     return ComponentCapitalSummary(
         component=component,
         package_name=package_name,
