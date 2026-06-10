@@ -5,6 +5,8 @@ SA-CVA orchestration for supported public API slices.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -32,18 +34,111 @@ from frtb_cva.risk_classes.girr import calculate_girr_delta_capital, calculate_g
 from frtb_cva.risk_classes.rcs import calculate_rcs_delta_capital, calculate_rcs_vega_capital
 from frtb_cva.validation import CvaInputError, validate_m_cva_multiplier
 
-_SUPPORTED_PATHS: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], str] = {
-    (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.DELTA): "GIRR delta",
-    (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.VEGA): "GIRR vega",
-    (SaCvaRiskClass.FX, SaCvaRiskMeasure.DELTA): "FX delta",
-    (SaCvaRiskClass.FX, SaCvaRiskMeasure.VEGA): "FX vega",
-    (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): "CCS delta",
-    (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): "RCS delta",
-    (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA): "RCS vega",
-    (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.DELTA): "equity delta",
-    (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.VEGA): "equity vega",
-    (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.DELTA): "commodity delta",
-    (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.VEGA): "commodity vega",
+_CapitalPathFn = Callable[..., SaCvaRiskClassCapital]
+
+
+@dataclass(frozen=True)
+class SaCvaPathSpec:
+    """Table entry for one supported or explicitly unsupported SA-CVA path."""
+
+    risk_class: SaCvaRiskClass
+    risk_measure: SaCvaRiskMeasure
+    label: str
+    capital_fn: _CapitalPathFn | None
+    requires_reporting_currency: bool = False
+    unsupported_message: str | None = None
+
+
+SA_CVA_PATH_REGISTRY: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], SaCvaPathSpec] = {
+    (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.DELTA): SaCvaPathSpec(
+        SaCvaRiskClass.GIRR,
+        SaCvaRiskMeasure.DELTA,
+        "GIRR delta",
+        calculate_girr_delta_capital,
+        requires_reporting_currency=True,
+    ),
+    (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.VEGA): SaCvaPathSpec(
+        SaCvaRiskClass.GIRR,
+        SaCvaRiskMeasure.VEGA,
+        "GIRR vega",
+        calculate_girr_vega_capital,
+        requires_reporting_currency=True,
+    ),
+    (SaCvaRiskClass.FX, SaCvaRiskMeasure.DELTA): SaCvaPathSpec(
+        SaCvaRiskClass.FX,
+        SaCvaRiskMeasure.DELTA,
+        "FX delta",
+        calculate_fx_delta_capital,
+        requires_reporting_currency=True,
+    ),
+    (SaCvaRiskClass.FX, SaCvaRiskMeasure.VEGA): SaCvaPathSpec(
+        SaCvaRiskClass.FX,
+        SaCvaRiskMeasure.VEGA,
+        "FX vega",
+        calculate_fx_vega_capital,
+        requires_reporting_currency=True,
+    ),
+    (
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.DELTA,
+    ): SaCvaPathSpec(
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.DELTA,
+        "CCS delta",
+        calculate_ccs_delta_capital,
+    ),
+    (
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+    ): SaCvaPathSpec(
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+        "CCS vega",
+        None,
+        unsupported_message="CCS vega capital is not permitted under MAR50.45 and MAR50.63",
+    ),
+    (
+        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        SaCvaRiskMeasure.DELTA,
+    ): SaCvaPathSpec(
+        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        SaCvaRiskMeasure.DELTA,
+        "RCS delta",
+        calculate_rcs_delta_capital,
+    ),
+    (
+        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+    ): SaCvaPathSpec(
+        SaCvaRiskClass.REFERENCE_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+        "RCS vega",
+        calculate_rcs_vega_capital,
+    ),
+    (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.DELTA): SaCvaPathSpec(
+        SaCvaRiskClass.EQUITY,
+        SaCvaRiskMeasure.DELTA,
+        "equity delta",
+        calculate_equity_delta_capital,
+    ),
+    (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.VEGA): SaCvaPathSpec(
+        SaCvaRiskClass.EQUITY,
+        SaCvaRiskMeasure.VEGA,
+        "equity vega",
+        calculate_equity_vega_capital,
+    ),
+    (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.DELTA): SaCvaPathSpec(
+        SaCvaRiskClass.COMMODITY,
+        SaCvaRiskMeasure.DELTA,
+        "commodity delta",
+        calculate_commodity_delta_capital,
+    ),
+    (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.VEGA): SaCvaPathSpec(
+        SaCvaRiskClass.COMMODITY,
+        SaCvaRiskMeasure.VEGA,
+        "commodity vega",
+        calculate_commodity_vega_capital,
+    ),
 }
 
 
@@ -89,22 +184,7 @@ def calculate_sa_cva_capital(
     for item in sensitivities:
         grouped[(item.risk_class, item.risk_measure)].append(item)
 
-    if (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA) in grouped:
-        raise CvaInputError(
-            "CCS vega capital is not permitted under MAR50.45 and MAR50.63",
-            field="sensitivities",
-        )
-
-    unsupported = {key for key in grouped if key not in _SUPPORTED_PATHS}
-    if unsupported:
-        labels = ", ".join(
-            f"{risk_class.value}/{risk_measure.value}"
-            for risk_class, risk_measure in sorted(unsupported, key=str)
-        )
-        raise CvaInputError(
-            f"unsupported SA-CVA risk classes: {labels}",
-            field="sensitivities",
-        )
+    _validate_grouped_paths(grouped)
 
     results: list[SaCvaRiskClassCapital] = []
     for (risk_class, risk_measure), items in sorted(grouped.items(), key=str):
@@ -121,6 +201,28 @@ def calculate_sa_cva_capital(
     return tuple(results)
 
 
+def _validate_grouped_paths(
+    grouped: dict[tuple[SaCvaRiskClass, SaCvaRiskMeasure], list[SaCvaSensitivity]],
+) -> None:
+    unsupported: set[tuple[SaCvaRiskClass, SaCvaRiskMeasure]] = set()
+    for risk_class, risk_measure in grouped:
+        spec = SA_CVA_PATH_REGISTRY.get((risk_class, risk_measure))
+        if spec is None:
+            unsupported.add((risk_class, risk_measure))
+            continue
+        if spec.unsupported_message is not None:
+            raise CvaInputError(spec.unsupported_message, field="sensitivities")
+    if unsupported:
+        labels = ", ".join(
+            f"{risk_class.value}/{risk_measure.value}"
+            for risk_class, risk_measure in sorted(unsupported, key=str)
+        )
+        raise CvaInputError(
+            f"unsupported SA-CVA risk classes: {labels}",
+            field="sensitivities",
+        )
+
+
 def _calculate_path(
     risk_class: SaCvaRiskClass,
     risk_measure: SaCvaRiskMeasure,
@@ -131,103 +233,44 @@ def _calculate_path(
     reporting_currency: str,
     profile: CvaRegulatoryProfile | str,
 ) -> SaCvaRiskClassCapital:
-    if risk_class is SaCvaRiskClass.GIRR and risk_measure is SaCvaRiskMeasure.DELTA:
-        return calculate_girr_delta_capital(
+    spec = _capital_path_spec_for(risk_class, risk_measure)
+    capital_fn = spec.capital_fn
+    if capital_fn is None:
+        raise CvaInputError(
+            spec.unsupported_message
+            or f"unsupported SA-CVA path: {risk_class.value}/{risk_measure.value}",
+            field="sensitivities",
+        )
+    if spec.requires_reporting_currency:
+        return capital_fn(
             sensitivities,
             hedges=hedges,
             m_cva=m_cva,
             reporting_currency=reporting_currency,
             profile=profile,
         )
-    if risk_class is SaCvaRiskClass.GIRR and risk_measure is SaCvaRiskMeasure.VEGA:
-        return calculate_girr_vega_capital(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            reporting_currency=reporting_currency,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.FX and risk_measure is SaCvaRiskMeasure.DELTA:
-        return calculate_fx_delta_capital(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            reporting_currency=reporting_currency,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.FX and risk_measure is SaCvaRiskMeasure.VEGA:
-        return calculate_fx_vega_capital(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            reporting_currency=reporting_currency,
-            profile=profile,
-        )
-    if (
-        risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD
-        and risk_measure is SaCvaRiskMeasure.DELTA
-    ):
-        return calculate_ccs_delta_capital(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            profile=profile,
-        )
-    if (
-        risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD
-        and risk_measure is SaCvaRiskMeasure.DELTA
-    ):
-        return calculate_rcs_delta_capital(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            profile=profile,
-        )
-    if (
-        risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD
-        and risk_measure is SaCvaRiskMeasure.VEGA
-    ):
-        return calculate_rcs_vega_capital(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.EQUITY and risk_measure is SaCvaRiskMeasure.DELTA:
-        return calculate_equity_delta_capital(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.EQUITY and risk_measure is SaCvaRiskMeasure.VEGA:
-        return calculate_equity_vega_capital(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.COMMODITY and risk_measure is SaCvaRiskMeasure.DELTA:
-        return calculate_commodity_delta_capital(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            profile=profile,
-        )
-    if risk_class is SaCvaRiskClass.COMMODITY and risk_measure is SaCvaRiskMeasure.VEGA:
-        return calculate_commodity_vega_capital(
-            sensitivities,
-            hedges=hedges,
-            m_cva=m_cva,
-            profile=profile,
-        )
-    raise CvaInputError(
-        f"unsupported SA-CVA path: {risk_class.value}/{risk_measure.value}",
-        field="sensitivities",
-    )
+    return capital_fn(sensitivities, hedges=hedges, m_cva=m_cva, profile=profile)
 
 
-__all__ = ["calculate_sa_cva_capital", "sa_cva_aggregation_config"]
+def _capital_path_spec_for(
+    risk_class: SaCvaRiskClass,
+    risk_measure: SaCvaRiskMeasure,
+) -> SaCvaPathSpec:
+    spec = SA_CVA_PATH_REGISTRY.get((risk_class, risk_measure))
+    if spec is None:
+        raise CvaInputError(
+            f"unsupported SA-CVA path: {risk_class.value}/{risk_measure.value}",
+            field="sensitivities",
+        )
+    return spec
+
+
+__all__ = [
+    "SA_CVA_PATH_REGISTRY",
+    "SaCvaPathSpec",
+    "calculate_sa_cva_capital",
+    "sa_cva_aggregation_config",
+]
 
 
 def sa_cva_aggregation_config(
@@ -264,26 +307,45 @@ def sa_cva_aggregation_config(
     from frtb_cva.risk_classes.fx import _fx_delta_config, _fx_vega_config
     from frtb_cva.risk_classes.rcs import _rcs_config
 
-    if risk_class is SaCvaRiskClass.GIRR and risk_measure is SaCvaRiskMeasure.DELTA:
-        return girr_delta_aggregation_config(profile=profile)
-    if risk_class is SaCvaRiskClass.GIRR and risk_measure is SaCvaRiskMeasure.VEGA:
-        return girr_vega_aggregation_config(profile=profile)
-    if risk_class is SaCvaRiskClass.FX and risk_measure is SaCvaRiskMeasure.DELTA:
-        return _fx_delta_config(profile)
-    if risk_class is SaCvaRiskClass.FX and risk_measure is SaCvaRiskMeasure.VEGA:
-        return _fx_vega_config(profile)
-    if (
-        risk_class is SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD
-        and risk_measure is SaCvaRiskMeasure.DELTA
-    ):
-        return _ccs_delta_config(profile)
-    if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD:
-        return _rcs_config(risk_measure, profile=profile)
-    if risk_class is SaCvaRiskClass.EQUITY:
-        return _equity_config(risk_measure, profile=profile)
-    if risk_class is SaCvaRiskClass.COMMODITY:
-        return _commodity_config(risk_measure, profile=profile)
-    raise CvaInputError(
-        f"unsupported SA-CVA aggregation config: {risk_class.value}/{risk_measure.value}",
-        field="risk_class",
-    )
+    registry = {
+        (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.DELTA): lambda active_profile: girr_delta_aggregation_config(
+            profile=active_profile
+        ),
+        (SaCvaRiskClass.GIRR, SaCvaRiskMeasure.VEGA): lambda active_profile: girr_vega_aggregation_config(
+            profile=active_profile
+        ),
+        (SaCvaRiskClass.FX, SaCvaRiskMeasure.DELTA): _fx_delta_config,
+        (SaCvaRiskClass.FX, SaCvaRiskMeasure.VEGA): _fx_vega_config,
+        (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): _ccs_delta_config,
+        (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.DELTA): lambda active_profile: _rcs_config(
+            SaCvaRiskMeasure.DELTA,
+            profile=active_profile,
+        ),
+        (SaCvaRiskClass.REFERENCE_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA): lambda active_profile: _rcs_config(
+            SaCvaRiskMeasure.VEGA,
+            profile=active_profile,
+        ),
+        (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.DELTA): lambda active_profile: _equity_config(
+            SaCvaRiskMeasure.DELTA,
+            profile=active_profile,
+        ),
+        (SaCvaRiskClass.EQUITY, SaCvaRiskMeasure.VEGA): lambda active_profile: _equity_config(
+            SaCvaRiskMeasure.VEGA,
+            profile=active_profile,
+        ),
+        (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.DELTA): lambda active_profile: _commodity_config(
+            SaCvaRiskMeasure.DELTA,
+            profile=active_profile,
+        ),
+        (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.VEGA): lambda active_profile: _commodity_config(
+            SaCvaRiskMeasure.VEGA,
+            profile=active_profile,
+        ),
+    }
+    config_fn = registry.get((risk_class, risk_measure))
+    if config_fn is None:
+        raise CvaInputError(
+            f"unsupported SA-CVA aggregation config: {risk_class.value}/{risk_measure.value}",
+            field="risk_class",
+        )
+    return config_fn(profile)
