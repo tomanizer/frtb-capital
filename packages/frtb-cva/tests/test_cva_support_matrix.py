@@ -39,14 +39,20 @@ _SUPPORTED_PATHS = frozenset(
 def test_basel_methods_match_supported_set() -> None:
     methods = cva_capital_supported_methods(CvaRegulatoryProfile.BASEL_MAR50_2020)
     assert methods == frozenset(CvaMethod)
-    assert get_cva_rule_profile(CvaRegulatoryProfile.BASEL_MAR50_2020).supported_methods == methods
+    assert (
+        get_cva_rule_profile(CvaRegulatoryProfile.BASEL_MAR50_2020).supported_methods
+        == methods
+    )
 
 
 def test_basel_sa_paths_match_sa_cva_module() -> None:
     paths = cva_sa_cva_supported_paths(CvaRegulatoryProfile.BASEL_MAR50_2020)
     assert paths == frozenset(_SUPPORTED_PATHS)
     assert len(paths) == 11
-    assert (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA) not in paths
+    assert (
+        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
+        SaCvaRiskMeasure.VEGA,
+    ) not in paths
 
 
 @pytest.mark.parametrize(
@@ -102,7 +108,11 @@ def test_ccs_vega_matrix_row_is_regulatory_absence(profile: CvaRegulatoryProfile
 
 
 def test_mar50_9_materiality_policy_unsupported() -> None:
-    cells = [cell for cell in cva_profile_support_matrix() if cell.method.startswith("MAR50.9")]
+    cells = [
+        cell
+        for cell in cva_profile_support_matrix()
+        if cell.method.startswith("MAR50.9")
+    ]
     assert len(cells) == len(CvaRegulatoryProfile)
     assert {cell.profile for cell in cells} == set(CvaRegulatoryProfile)
     assert all(cell.status is CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED for cell in cells)
