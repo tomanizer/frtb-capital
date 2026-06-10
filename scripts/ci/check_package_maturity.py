@@ -466,7 +466,10 @@ def _attribution_failures(entry: PackageEntry, *, root: Path) -> list[str]:
     for required_id in sorted(required_ids.difference(entry_test_ids)):
         failures.append(f"required-test:{required_id}")
     for required_test in entry.required_tests:
-        if required_test.id in required_ids and _looks_like_placeholder_test(root / required_test.path):
+        if (
+            required_test.id in required_ids
+            and _looks_like_placeholder_test(root / required_test.path)
+        ):
             failures.append(f"attribution-test-placeholder:{required_test.id}")
     return failures
 
