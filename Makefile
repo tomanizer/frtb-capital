@@ -1,34 +1,29 @@
-PYTHON_BIN ?= uv run python
-REPO ?= tomanizer/frtb-capital
-BRANCH ?= main
+# Agent workspace helpers
+AGENT ?= codex
+TASK ?= default
 
-# Paths to lint and typecheck. Notebooks are excluded.
+.PHONY: agent-ensure agent-sync-main agent-worktrees agent-guard test lint format format-check typecheck check docs-check package-maturity-check import-boundary-check kernel-dependency-check notebooks-check notebook-kernel-check examples-check quality-control drift-check drift-baseline changed-code-check test-value-check dead-code-check ci-local-full ci-local-pr ci-local-governance ci-local-performance ci-local-release benchmark-suite benchmark-budget-check sbom audit-dependencies audit-dependencies-json demo
+
 LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts scripts tests tools
-MYPY_PATHS := packages/*/src
-COVERAGE_JSON := dist/coverage/implemented-packages.json
-COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_cva --cov=frtb_rrao
-MUTATION_DIST := dist/mutation
+MYPY_PATHS := packages/frtb-common/src packages/frtb-common/tests packages/frtb-drc/src packages/frtb-drc/tests packages/frtb-ima/src packages/frtb-ima/tests packages/frtb-orchestration/src packages/frtb-orchestration/tests packages/frtb-result-store/src packages/frtb-result-store/tests packages/frtb-rrao/src packages/frtb-rrao/tests packages/frtb-sbm/src packages/frtb-sbm/tests packages/frtb-cva/src packages/frtb-cva/tests
+COVERAGE_PACKAGES := --cov=frtb_common --cov=frtb_ima --cov=frtb_sbm --cov=frtb_drc --cov=frtb_rrao --cov=frtb_cva --cov=frtb_orchestration --cov=frtb_result_store
+COVERAGE_JSON := dist/coverage/coverage.json
 
-.PHONY: check ci-local ci-local-fast ci-local-full
-.PHONY: ci-local-pr ci-local-governance ci-local-performance ci-local-release
-.PHONY: lint format format-check typecheck
-.PHONY: test test-no-cov test-changed test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording docs-staleness
-.PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check docstring-inventory docstring-baseline docstring-check drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
-.PHONY: demo examples-check notebooks-check package-status-dashboard
-.PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
-.PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
-.PHONY: validation-pack agent-setup agent-sync-main agent-new agent-ensure agent-guard
-.PHONY: agent-worktrees agent-doctor ima sa sbm drc rrao cva orchestration clean
+agent-ensure:
+	python3 scripts/agent_worktree.py ensure --agent $(AGENT) $(TASK)
 
-check: lint format-check typecheck test
+agent-sync-main:
+	python3 scripts/agent_worktree.py sync-main
 
-ci-local: docs-check lint format-check typecheck test build
+agent-worktrees:
+	python3 scripts/agent_worktree.py list
 
-ci-local-fast: docs-check lint format-check typecheck test-no-cov
+agent-guard:
+	python3 scripts/agent_worktree.py guard --agent $(AGENT)
 
-ci-local-full: ci-local audit-deps sbom examples-check notebooks-check
+ci-local-full: check docs-check notebooks-check examples-check package-maturity-check import-boundary-check kernel-dependency-check
 
-ci-local-pr: lint format-check test-changed import-lint kernel-import-boundary adr0033-vocabulary simplification-drift docs-staleness import-smoke maturity-check changed-code-check test-value-check dead-code-check
+ci-local-pr: test-changed package-maturity-check docs-check import-boundary-check kernel-dependency-check changed-code-check test-value-check dead-code-check
 
 ci-local-governance: ci-local-full quality-control
 
@@ -43,7 +38,7 @@ format:
 	uv run ruff format $(LINT_PATHS)
 
 format-check:
-	uv run ruff format --check $(LINT_PATHS)
+	uv run ruff format --diff $(LINT_PATHS)
 
 typecheck:
 	uv run mypy $(MYPY_PATHS)
@@ -53,248 +48,80 @@ test:
 	uv run pytest packages tests $(COVERAGE_PACKAGES) --cov-report=term-missing --cov-report=json:$(COVERAGE_JSON)
 	uv run python scripts/ci/check_module_coverage.py $(COVERAGE_JSON)
 
-test-no-cov:
-	uv run pytest packages
+check: lint format-check typecheck test
 
 test-changed:
-	uv run python scripts/ci/select_pytest_targets.py --run
+	uv run python scripts/ci/run_changed_tests.py
 
-test-partial-runtime-coverage:
-	mkdir -p dist/coverage
-	uv run pytest packages/frtb-drc packages/frtb-sbm \
-		--cov=frtb_drc --cov=frtb_sbm \
-		--cov-report=json:dist/coverage/partial-runtime.json
-	uv run python scripts/ci/check_module_coverage.py dist/coverage/partial-runtime.json \
-		--maturity partial_runtime --report-only
+docs-check:
+	uv run python scripts/check_docs.py
+	uv run python scripts/ci/check_release_notes.py
+	uv run python scripts/ci/check_architecture_docs.py
+	uv run python scripts/ci/check_documentation_ownership.py
+	uv run python scripts/ci/check_openapi_snapshot.py
+	uv run python scripts/ci/check_agent_instructions.py
+	uv run python scripts/ci/check_profile_support_docs.py
+	uv run python scripts/ci/check_package_guidance.py
 
-docs-check: regulatory-corpus regulatory-wording docs-staleness package-status-dashboard
-	python3 scripts/ci/check_markdown_links.py
-	python3 scripts/ci/check_requirement_yaml.py
+package-maturity-check:
+	uv run python scripts/ci/check_package_maturity.py
 
-regulatory-wording:
-	python3 scripts/ci/check_regulatory_wording.py
-
-docs-staleness:
-	python3 scripts/ci/check_docs_staleness.py
-
-package-status-dashboard:
-	python3 scripts/ci/generate_package_status_dashboard.py --check
-
-package-status-dashboard-regenerate:
-	python3 scripts/ci/generate_package_status_dashboard.py
-
-import-lint:
+import-boundary-check:
 	uv run lint-imports
 
-kernel-import-boundary:
-	uv run python scripts/ci/check_kernel_import_boundary.py
+kernel-dependency-check:
+	uv run python scripts/ci/check_kernel_dependencies.py
 
-adr0033-vocabulary:
-	uv run python scripts/ci/check_adr0033_vocabulary.py
-
-simplification-drift:
-	uv run python scripts/ci/check_simplification_drift.py
-
-import-smoke:
-	uv run python scripts/ci/import_smoke.py
-
-maturity-check:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_package_maturity.py --json-output dist/quality/package-maturity.json
-
-docstring-inventory:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_docstring_inventory.py --quiet --json-output dist/quality/docstring-inventory.json
-	@echo "docstring inventory written to dist/quality/docstring-inventory.json"
-
-docstring-baseline:
-	uv run python scripts/ci/check_docstring_baseline.py --update-baseline
-
-docstring-check:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_docstring_baseline.py --json-output dist/quality/docstring-baseline-report.json
-
-drift-check:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_code_drift.py --json-output dist/quality/code-drift-report.json
-
-changed-code-check:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_code_drift.py --changed --json-output dist/quality/changed-code-report.json
-
-test-value-check:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_test_value.py --json-output dist/quality/test-value-report.json
-
-dead-code-check:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_dead_code.py --json-output dist/quality/dead-code-report.json
-
-drift-report:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_code_drift.py --json-output dist/quality/code-drift-report.json || \
-		echo "warning: drift-check findings are report-only during calibration" >&2
-
-changed-code-report:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_code_drift.py --changed --json-output dist/quality/changed-code-report.json || \
-		echo "warning: changed-code-check findings are report-only during calibration" >&2
-
-test-value-report:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_test_value.py --json-output dist/quality/test-value-report.json || \
-		echo "warning: test-value-check findings are report-only during calibration" >&2
-
-dead-code-report:
-	mkdir -p dist/quality
-	uv run python scripts/ci/check_dead_code.py --json-output dist/quality/dead-code-report.json || \
-		echo "warning: dead-code-check findings are report-only during calibration" >&2
-
-drift-reports: drift-report changed-code-report test-value-report dead-code-report
-
-drift-baseline:
-	uv run python scripts/ci/check_code_drift.py --update-baseline
-
-quality-control: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift docs-staleness import-smoke maturity-check docstring-check drift-reports
-
-regulatory-corpus:
-	python3 tools/regulatory/lint_regulatory_corpus.py
-
-build:
-	rm -rf dist/release
-	uv build --all-packages --out-dir dist/release
-
-demo:
-	uv run python scripts/run_package_demos.py
-
-examples-check: demo
+quality-control:
+	uv run python scripts/ci/quality_control.py
 
 notebooks-check:
-	MPLBACKEND=Agg uv run --extra notebooks --directory packages/frtb-ima pytest --nbmake notebooks
+	uv run python scripts/ci/check_notebooks.py
 
-mutation:
-	mkdir -p $(MUTATION_DIST)/frtb-ima
-	FRTB_IMA_MUTATION_IMPORT=1 HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-ima python -c "import numpy; import sys; from mutmut.__main__ import cli; sys.argv = ['mutmut', 'run']; cli()"
-	uv run --directory packages/frtb-ima mutmut export-cicd-stats
-	cp packages/frtb-ima/mutants/mutmut-cicd-stats.json $(MUTATION_DIST)/frtb-ima/mutmut-cicd-stats.json
-	uv run --directory packages/frtb-ima mutmut results > $(MUTATION_DIST)/frtb-ima/results.txt
-	cat $(MUTATION_DIST)/frtb-ima/results.txt
+notebook-kernel-check:
+	uv run python scripts/ci/check_notebook_kernel_versions.py
 
-mutation-rrao:
-	mkdir -p $(MUTATION_DIST)/frtb-rrao
-	HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-rrao mutmut run
-	uv run --directory packages/frtb-rrao mutmut export-cicd-stats
-	cp packages/frtb-rrao/mutants/mutmut-cicd-stats.json $(MUTATION_DIST)/frtb-rrao/mutmut-cicd-stats.json
-	uv run --directory packages/frtb-rrao mutmut results > $(MUTATION_DIST)/frtb-rrao/results.txt
-	cat $(MUTATION_DIST)/frtb-rrao/results.txt
+examples-check:
+	uv run python scripts/ci/check_examples.py
 
-mutation-score-check:
-	uv run python scripts/ci/check_mutation_score.py --json-output $(MUTATION_DIST)/mutation-score.json
+# Build a CycloneDX SBOM for dependency governance.
+sbom:
+	mkdir -p dist/sbom
+	uv run cyclonedx-py environment --of JSON -o dist/sbom/frtb-capital.cdx.json
 
-benchmark:
-	uv run python scripts/ci/run_benchmark_suite.py ima-target-scale
+audit-dependencies:
+	uv run pip-audit
 
-ima-arrow-batch-benchmark:
-	uv run python scripts/ci/run_benchmark_suite.py ima-arrow-batch
+audit-dependencies-json:
+	mkdir -p dist/audit
+	uv run pip-audit -f json -o dist/audit/pip-audit.json || true
+	uv run python scripts/ci/normalize_pip_audit.py dist/audit/pip-audit.json
 
-sbm-benchmark:
-	uv run python scripts/ci/run_benchmark_suite.py sbm
-
-drc-benchmark:
-	uv run python scripts/ci/run_benchmark_suite.py drc
-
-rrao-benchmark:
-	uv run python scripts/ci/run_benchmark_suite.py rrao
-
-cva-benchmark:
-	uv run python scripts/ci/run_benchmark_suite.py cva
+ci-security: sbom audit-dependencies-json
 
 benchmark-suite:
-	uv run python scripts/ci/run_benchmark_suite.py
+	uv run python scripts/ci/run_benchmarks.py
 
 benchmark-budget-check:
 	uv run python scripts/ci/check_benchmark_budgets.py
 
-audit-deps:
-	uv run pip-audit
+drift-check:
+	uv run python scripts/ci/check_code_drift.py
 
-sbom:
-	mkdir -p dist/sbom
-	uv run cyclonedx-py environment .venv --pyproject pyproject.toml --output-reproducible --of JSON -o dist/sbom/frtb-capital.cdx.json
+drift-baseline:
+	uv run python scripts/ci/check_code_drift.py --update-baseline
 
-checksums: build sbom
-	uv run python scripts/release_checksums.py --artifacts dist/release --sbom dist/sbom/frtb-capital.cdx.json --output dist/release/SHA256SUMS --json-output dist/release/release-checksums.json
+changed-code-check:
+	uv run python scripts/ci/check_changed_code.py
 
-release-artifacts: checksums
+test-value-check:
+	uv run python scripts/ci/check_test_value.py
 
-repo-controls-snapshot:
-	uv run python scripts/capture_repo_controls.py --repo $(REPO) --branch $(BRANCH) --output dist/repo-controls
+dead-code-check:
+	uv run python scripts/ci/check_dead_code.py
 
-replay-fixture:
-	mkdir -p dist/replay
-	uv run python packages/frtb-ima/scripts/render_audit_report.py --output dist/replay/capital_run_v1_audit_report.md --ndjson dist/replay/capital_run_v1_desk_records.ndjson
-	uv run python -m frtb_ima.replay --audit dist/replay/capital_run_v1_desk_records.ndjson --fixture packages/frtb-ima/tests/fixtures/capital_run_v1 --json-output dist/replay/capital_run_v1_replay_report.json
+test-partial-runtime-coverage:
+	uv run pytest tests/test_partial_runtime_coverage.py
 
-validation-pack:
-	$(MAKE) -C packages/frtb-ima PYTHON_BIN="uv run --extra notebooks python" validation-pack
-
-# Agent workspace helpers
-AGENT ?= codex
-TASK ?=
-
-agent-setup:
-	$(PYTHON_BIN) scripts/agent_worktree.py install-hooks
-
-agent-sync-main:
-	$(PYTHON_BIN) scripts/agent_worktree.py sync-main
-
-agent-new:
-	@test -n "$(TASK)" || \
-		(echo "TASK is required, for example: make agent-new AGENT=codex TASK=drc-scenarios"; exit 1)
-	$(PYTHON_BIN) scripts/agent_worktree.py new --agent "$(AGENT)" "$(TASK)"
-
-agent-ensure:
-	@test -n "$(AGENT)" || \
-		(echo "AGENT is required, for example: make agent-ensure AGENT=grok TASK=drc-scenarios"; exit 1)
-	@test -n "$(TASK)" || \
-		(echo "TASK is required, for example: make agent-ensure AGENT=grok TASK=drc-scenarios"; exit 1)
-	$(PYTHON_BIN) scripts/agent_worktree.py ensure --agent "$(AGENT)" "$(TASK)"
-
-agent-guard:
-	$(PYTHON_BIN) scripts/agent_worktree.py guard
-
-agent-worktrees:
-	$(PYTHON_BIN) scripts/agent_worktree.py list
-
-agent-doctor:
-	$(PYTHON_BIN) scripts/agent_worktree.py doctor
-
-# Per-package shortcuts
-ima:
-	uv run pytest packages/frtb-ima/tests
-
-sa: sbm drc rrao
-
-sbm:
-	@test -d packages/frtb-sbm || (echo "frtb-sbm package not yet created"; exit 1)
-	uv run pytest packages/frtb-sbm/tests
-
-drc:
-	@test -d packages/frtb-drc || (echo "frtb-drc package not yet created"; exit 1)
-	uv run pytest packages/frtb-drc/tests
-
-rrao:
-	@test -d packages/frtb-rrao || (echo "frtb-rrao package not yet created"; exit 1)
-	uv run pytest packages/frtb-rrao/tests
-
-cva:
-	@test -d packages/frtb-cva || (echo "frtb-cva package not yet created"; exit 1)
-	uv run pytest packages/frtb-cva/tests
-
-orchestration:
-	@test -d packages/frtb-orchestration || (echo "frtb-orchestration package not yet created"; exit 1)
-	uv run pytest packages/frtb-orchestration/tests
-
-clean:
-	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage build dist *.egg-info
-	find packages -name "__pycache__" -type d -exec rm -rf {} +
+demo:
+	uv run python run_demo.py
