@@ -192,7 +192,8 @@ def run_mixed_demo() -> CvaCapitalResult:
         profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
         method=CvaMethod.MIXED_CARVE_OUT,
         sa_cva_approved=True,
-        carve_out_netting_set_ids=("ns-0-0",),  # carve some to SA
+        carve_out_netting_set_ids=("ns-0-0",),
+        sa_cva_sensitivity_scope_evidence_id="demo-sa-slice-non-carved",
     )
     ctps = make_synthetic_counterparties(3)
     nss = make_synthetic_netting_sets(ctps, n_per=2)

@@ -199,6 +199,7 @@ def test_non_basel_profiles_calculate_mixed_carve_out(
         method=CvaMethod.MIXED_CARVE_OUT,
         sa_cva_approved=True,
         carve_out_netting_set_ids=(carved.netting_set_id,),
+        sa_cva_sensitivity_scope_evidence_id=f"{profile.value.lower()}-sa-slice-evidence",
     )
 
     result = calculate_cva_capital(

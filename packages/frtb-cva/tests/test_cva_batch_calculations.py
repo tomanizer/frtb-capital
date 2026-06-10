@@ -120,6 +120,79 @@ def test_full_portfolio_with_hedges_batch() -> None:
 
 def test_mixed_carve_out_batch() -> None:
     counterparty_batch = build_cva_counterparty_batch_from_columns(
+        counterparty_ids=["cp-1", "cp-2"],
+        desk_ids=["desk-1", "desk-1"],
+        legal_entities=["LE-001", "LE-001"],
+        sectors=["SOVEREIGN", "FINANCIALS"],
+        credit_qualities=["INVESTMENT_GRADE", "INVESTMENT_GRADE"],
+        regions=["EMEA", "EMEA"],
+        source_row_ids=["cp-row-1", "cp-row-2"],
+        lineage_source_systems=["synthetic", "synthetic"],
+        lineage_source_files=["counterparties.csv", "counterparties.csv"],
+    )
+
+    netting_set_batch = build_cva_netting_set_batch_from_columns(
+        netting_set_ids=["ns-1", "ns-2"],
+        counterparty_ids=["cp-1", "cp-2"],
+        eads=[100_000.0, 200_000.0],
+        effective_maturities=[2.5, 1.5],
+        discount_factors=[0.98, 0.99],
+        currencies=["USD", "USD"],
+        sign_conventions=["non_negative", "non_negative"],
+        uses_imm_eads=[False, False],
+        carved_out_to_ba_cva=[True, False],
+        source_row_ids=["ns-row-1", "ns-row-2"],
+        lineage_source_systems=["synthetic", "synthetic"],
+        lineage_source_files=["netting-sets.csv", "netting-sets.csv"],
+    )
+
+    sens_batch = build_sa_cva_sensitivity_batch_from_columns(
+        sensitivity_ids=["sens-1"],
+        risk_classes=["GIRR"],
+        risk_measures=["DELTA"],
+        sensitivity_tags=["CVA"],
+        bucket_ids=["USD"],
+        risk_factor_keys=["5y"],
+        amounts=[1000.0],
+        amount_currencies=["USD"],
+        sign_conventions=["positive_loss"],
+        source_row_ids=["sens-row-1"],
+        tenors=["5y"],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["sens.csv"],
+    )
+
+    context = CvaCalculationContext(
+        run_id="run-mixed",
+        calculation_date=date(2026, 6, 1),
+        base_currency="USD",
+        profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
+        method=CvaMethod.MIXED_CARVE_OUT,
+        sa_cva_approved=True,
+        carve_out_netting_set_ids=("ns-1",),
+        sa_cva_sensitivity_scope_evidence_id="sa-slice-non-carved-ledger-2026-06-01",
+    )
+
+    calc = calculate_cva_capital_from_batches(
+        context,
+        counterparty_batch,
+        netting_set_batch,
+        sensitivities=sens_batch,
+    )
+    assert calc.result.total_cva_capital > 0.0
+    assert (
+        "sa_cva_sensitivity_scope_evidence_id",
+        "sa-slice-non-carved-ledger-2026-06-01",
+    ) in calc.result.audit_metadata
+    assert calc.result.ba_cva_reduced is not None
+    assert {line.netting_set_id for line in calc.result.ba_cva_reduced.netting_set_lines} == {
+        "ns-1"
+    }
+    validate_cva_result_reconciliation(calc.result)
+
+
+def test_mixed_carve_out_batch_rejects_unaudited_sa_sensitivity_scope() -> None:
+    counterparty_batch = build_cva_counterparty_batch_from_columns(
         counterparty_ids=["cp-1"],
         desk_ids=["desk-1"],
         legal_entities=["LE-001"],
@@ -163,7 +236,7 @@ def test_mixed_carve_out_batch() -> None:
     )
 
     context = CvaCalculationContext(
-        run_id="run-mixed",
+        run_id="run-mixed-double-count",
         calculation_date=date(2026, 6, 1),
         base_currency="USD",
         profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
@@ -172,14 +245,13 @@ def test_mixed_carve_out_batch() -> None:
         carve_out_netting_set_ids=("ns-1",),
     )
 
-    calc = calculate_cva_capital_from_batches(
-        context,
-        counterparty_batch,
-        netting_set_batch,
-        sensitivities=sens_batch,
-    )
-    assert calc.result.total_cva_capital > 0.0
-    validate_cva_result_reconciliation(calc.result)
+    with pytest.raises(CvaInputError, match="sensitivity scope evidence"):
+        calculate_cva_capital_from_batches(
+            context,
+            counterparty_batch,
+            netting_set_batch,
+            sensitivities=sens_batch,
+        )
 
 
 def test_mixed_carve_out_missing_sensitivities() -> None:
@@ -216,6 +288,7 @@ def test_mixed_carve_out_missing_sensitivities() -> None:
         method=CvaMethod.MIXED_CARVE_OUT,
         sa_cva_approved=True,
         carve_out_netting_set_ids=("ns-1",),
+        sa_cva_sensitivity_scope_evidence_id="missing-sensitivity-scope-evidence",
     )
     with pytest.raises(CvaInputError, match="mixed carve-out requires SA-CVA sensitivities"):
         calculate_cva_capital_from_batches(

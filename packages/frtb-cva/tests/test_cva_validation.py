@@ -354,6 +354,20 @@ def test_validate_calculation_context_errors() -> None:
             )
         )
 
+    with pytest.raises(CvaInputError, match="sa_cva_sensitivity_scope_evidence_id"):
+        validate_calculation_context(
+            CvaCalculationContext(
+                run_id="r1",
+                calculation_date=None,  # type: ignore
+                base_currency="USD",
+                profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
+                method=CvaMethod.MIXED_CARVE_OUT,
+                sa_cva_approved=True,
+                carve_out_netting_set_ids=("ns-1",),
+                sa_cva_sensitivity_scope_evidence_id=" ",
+            )
+        )
+
 
 def test_validate_netting_set_errors(sovereign_counterparty) -> None:
     ns_neg_maturity = CvaNettingSet(

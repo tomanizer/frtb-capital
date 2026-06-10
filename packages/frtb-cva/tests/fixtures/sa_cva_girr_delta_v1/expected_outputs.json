@@ -1,7 +1,7 @@
 {
   "single_usd_5y": {
     "total_cva_capital": 7400.0,
-    "input_hash": "9afd22670f2a8b5f96a80e0909f4afdd315e0fa83817d1f9493275eef4ee35d7",
+    "input_hash": "8d7eda9be4f7dce1a64b665d5512196fe849b40ee57906dadc1a4de7468c2566",
     "weighted_sensitivities": [
       {
         "risk_class": "GIRR",
@@ -62,7 +62,7 @@
   },
   "usd_eur_two_bucket": {
     "total_cva_capital": 9789.279850938985,
-    "input_hash": "59d53f6df64caf1307d2b291ff111b391e9bcca3357b082f34797e552fe3265c",
+    "input_hash": "a03849e3fed14a8283f8557871d1e21e7aed28769fcf1f3d3b49064800f98883",
     "weighted_sensitivities": [
       {
         "risk_class": "GIRR",
@@ -165,7 +165,7 @@
   },
   "offsetting_hedge": {
     "total_cva_capital": 740.0,
-    "input_hash": "7afd2e83774cd7abf2c20c33d4f5edc21f29d5c6b7fadae9cdb116aa0145ad8e",
+    "input_hash": "c226908924d60f1391d8292aac32eff2e4a746772ab54f3e9196d7caf7042ea8",
     "weighted_sensitivities": [
       {
         "risk_class": "GIRR",
@@ -228,7 +228,7 @@
   },
   "ineligible_hedge_rejected": {
     "total_cva_capital": 7400.0,
-    "input_hash": "9987aaa783a54a039d62d623adbb207ad6ba72261579a0c269fafb1113d7f4f3",
+    "input_hash": "287f062ee6cde4d7bd065771c9769ad1861deb30be22d503a82d4a39a78e40a0",
     "weighted_sensitivities": [
       {
         "risk_class": "GIRR",
@@ -289,7 +289,7 @@
   },
   "chf_other_currency": {
     "total_cva_capital": 10360.0,
-    "input_hash": "d489bddfd17c6ad1ecc97bc95e45234f207f74cbe79ead815763e35f044cc849",
+    "input_hash": "52c4ab0f44fa55643c3fdb4a5a470088621f0a069480e57542d09d97aa27504b",
     "weighted_sensitivities": [
       {
         "risk_class": "GIRR",

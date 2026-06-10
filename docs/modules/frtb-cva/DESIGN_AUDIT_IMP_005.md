@@ -97,7 +97,7 @@ calculate_cva_capital
 | `BA_CVA_REDUCED` | MAR50.14–MAR50.16 | Implemented | Fixture `ba_cva_reduced_v1`; no hedge recognition |
 | `BA_CVA_FULL` | MAR50.17–MAR50.26 | Implemented | SNH/IH/HMA/beta floor |
 | `SA_CVA` | MAR50.42–MAR50.77 | Implemented | Requires `sa_cva_approved=True` |
-| `MIXED_CARVE_OUT` | MAR50.8 | Implemented | Carve-out evidence on netting sets |
+| `MIXED_CARVE_OUT` | MAR50.8 | Implemented | Carve-out evidence on netting sets and SA sensitivity slice evidence |
 | MAR50.9 100% CCR alternative | MAR50.9 | **Unsupported** | `materiality_threshold_elected=True` |
 
 **Runtime vs profile metadata:** `capital.py` and `scope.py` already produce capital for

@@ -77,6 +77,7 @@ def _context(
     *,
     sa_cva_approved: bool = False,
     carve_out_netting_set_ids: tuple[str, ...] = (),
+    sa_cva_sensitivity_scope_evidence_id: str | None = None,
 ) -> CvaCalculationContext:
     return CvaCalculationContext(
         run_id=f"run-{method.value.lower()}",
@@ -86,6 +87,7 @@ def _context(
         method=method,
         sa_cva_approved=sa_cva_approved,
         carve_out_netting_set_ids=carve_out_netting_set_ids,
+        sa_cva_sensitivity_scope_evidence_id=sa_cva_sensitivity_scope_evidence_id,
     )
 
 
@@ -245,13 +247,21 @@ def test_batch_scope_resolution_rejects_missing_approvals_and_carve_out_evidence
 
     with pytest.raises(CvaInputError, match="mixed carve-out requires sa_cva_approved=True"):
         calculate_cva_capital_from_batches(
-            _context(CvaMethod.MIXED_CARVE_OUT, carve_out_netting_set_ids=("ns-1",)),
+            _context(
+                CvaMethod.MIXED_CARVE_OUT,
+                carve_out_netting_set_ids=("ns-1",),
+                sa_cva_sensitivity_scope_evidence_id="guardrail-sa-slice-evidence",
+            ),
             _counterparty_batch(),
             _netting_set_batch(carved_out_to_ba_cva=[True]),
         )
     with pytest.raises(CvaInputError, match="mixed carve-out requires carve_out_netting_set_ids"):
         calculate_cva_capital_from_batches(
-            _context(CvaMethod.MIXED_CARVE_OUT, sa_cva_approved=True),
+            _context(
+                CvaMethod.MIXED_CARVE_OUT,
+                sa_cva_approved=True,
+                sa_cva_sensitivity_scope_evidence_id="guardrail-sa-slice-evidence",
+            ),
             _counterparty_batch(),
             _netting_set_batch(),
         )
@@ -267,6 +277,7 @@ def test_batch_scope_resolution_rejects_missing_approvals_and_carve_out_evidence
                 CvaMethod.MIXED_CARVE_OUT,
                 sa_cva_approved=True,
                 carve_out_netting_set_ids=("ns-1",),
+                sa_cva_sensitivity_scope_evidence_id="guardrail-sa-slice-evidence",
             ),
             _counterparty_batch(),
             _netting_set_batch(carved_out_to_ba_cva=[False]),
@@ -277,6 +288,7 @@ def test_batch_scope_resolution_rejects_missing_approvals_and_carve_out_evidence
                 CvaMethod.MIXED_CARVE_OUT,
                 sa_cva_approved=True,
                 carve_out_netting_set_ids=("ns-2",),
+                sa_cva_sensitivity_scope_evidence_id="guardrail-sa-slice-evidence",
             ),
             _counterparty_batch(),
             _netting_set_batch(

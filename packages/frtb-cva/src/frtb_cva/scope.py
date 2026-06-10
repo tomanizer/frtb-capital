@@ -16,7 +16,7 @@ from frtb_cva.data_models import (
     CvaMethod,
     CvaNettingSet,
 )
-from frtb_cva.validation import CvaInputError
+from frtb_cva.validation import CvaInputError, _require_mixed_sensitivity_scope_evidence
 
 
 @dataclass(frozen=True)
@@ -91,6 +91,8 @@ def _resolved_scope(
     unsupported_flags: list[str],
 ) -> ScopeResolution:
     audit_metadata.append(("resolved_method", resolved_method.value))
+    if resolved_method is CvaMethod.MIXED_CARVE_OUT:
+        audit_metadata.extend(mixed_sensitivity_scope_metadata(context))
     return ScopeResolution(
         method=resolved_method,
         carve_out_netting_set_ids=context.carve_out_netting_set_ids,
@@ -138,6 +140,33 @@ def validate_method_selection(
         Result of ``validate_method_selection`` for audit and downstream aggregation."""
 
     return resolve_calculation_method(context, netting_sets=netting_sets)
+
+
+def require_mixed_sensitivity_scope_evidence(context: CvaCalculationContext) -> None:
+    """Require explicit SA-CVA slice evidence for mixed carve-out sensitivities.
+
+    Basel MAR50.8 permits approved SA-CVA banks to carve selected netting sets
+    out to BA-CVA. The runtime sensitivity model is portfolio-aggregate, so a
+    mixed calculation must carry an auditable evidence id proving the supplied
+    SA-CVA sensitivities represent the non-carved slice rather than the full book.
+    """
+
+    _require_mixed_sensitivity_scope_evidence(context.sa_cva_sensitivity_scope_evidence_id)
+
+
+def mixed_sensitivity_scope_metadata(
+    context: CvaCalculationContext,
+) -> tuple[tuple[str, str], ...]:
+    """Return deterministic audit metadata for mixed-method SA-CVA slice evidence."""
+
+    if context.sa_cva_sensitivity_scope_evidence_id is None:
+        return ()
+    return (
+        (
+            "sa_cva_sensitivity_scope_evidence_id",
+            context.sa_cva_sensitivity_scope_evidence_id,
+        ),
+    )
 
 
 def _validate_carve_out_ids(
@@ -242,7 +271,9 @@ def partition_mixed_method_inputs(
 
 __all__ = [
     "ScopeResolution",
+    "mixed_sensitivity_scope_metadata",
     "partition_mixed_method_inputs",
+    "require_mixed_sensitivity_scope_evidence",
     "resolve_calculation_method",
     "validate_method_selection",
 ]

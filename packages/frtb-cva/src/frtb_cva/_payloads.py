@@ -160,6 +160,7 @@ def context_payload(context: CvaCalculationContext) -> dict[str, object]:
         "sa_cva_approved": context.sa_cva_approved,
         "materiality_threshold_elected": context.materiality_threshold_elected,
         "carve_out_netting_set_ids": list(context.carve_out_netting_set_ids),
+        "sa_cva_sensitivity_scope_evidence_id": context.sa_cva_sensitivity_scope_evidence_id,
         "desk_id": context.desk_id,
         "legal_entity": context.legal_entity,
         "citation_policy": context.citation_policy,

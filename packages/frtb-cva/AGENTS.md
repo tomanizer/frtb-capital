@@ -14,7 +14,8 @@ before editing this package.
 - Reduced and full BA-CVA (`BA_CVA_REDUCED`, `BA_CVA_FULL`) per MAR50.14–26.
 - SA-CVA across all six delta risk classes and five vega risk classes per
   MAR50.42–MAR50.77 when `sa_cva_approved=True`.
-- Mixed SA-CVA with BA-CVA netting-set carve-outs (`MIXED_CARVE_OUT`) per MAR50.8.
+- Mixed SA-CVA with BA-CVA netting-set carve-outs (`MIXED_CARVE_OUT`) per MAR50.8;
+  SA-CVA sensitivities must carry context-level evidence for the non-carved slice.
 - CCS qualified-index bucket 8, RCS qualified-index buckets 16/17, equity
   qualified-index buckets 12/13, and MAR50.50 routing where metadata is supplied.
 - Optional CRIF adapter (`crif.py`), attribution (`attribution.py`), and impact

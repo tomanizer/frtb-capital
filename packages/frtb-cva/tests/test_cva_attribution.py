@@ -334,6 +334,7 @@ def test_project_cva_attribution_mixed_carve_out_reconciles_projection(
         method=CvaMethod.MIXED_CARVE_OUT,
         sa_cva_approved=True,
         carve_out_netting_set_ids=(carved.netting_set_id,),
+        sa_cva_sensitivity_scope_evidence_id="attribution-sa-slice-evidence",
     )
     sensitivity = SaCvaSensitivity(
         sensitivity_id="sens-girr-5y",

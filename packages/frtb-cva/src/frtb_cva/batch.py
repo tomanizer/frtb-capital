@@ -98,7 +98,11 @@ from frtb_cva.sa_cva_reference_data import (
     ccs_single_name_bucket_for_sector,
     parse_ccs_entity_key,
 )
-from frtb_cva.scope import ScopeResolution
+from frtb_cva.scope import (
+    ScopeResolution,
+    mixed_sensitivity_scope_metadata,
+    require_mixed_sensitivity_scope_evidence,
+)
 from frtb_cva.validation import (
     VALID_AMOUNT_SIGN_CONVENTIONS,
     VALID_EAD_SIGN_CONVENTIONS,
@@ -1210,6 +1214,7 @@ def calculate_cva_capital_from_batches(
                 "mixed carve-out requires SA-CVA sensitivities",
                 field="sensitivities",
             )
+        require_mixed_sensitivity_scope_evidence(validated_context)
         ba_counterparties, ba_netting_sets, sa_hedges = _partition_mixed_batches(
             counterparty_batch,
             netting_set_batch,
@@ -1979,8 +1984,10 @@ def _resolve_scope_for_batches(
                 "mixed carve-out requires carve_out_netting_set_ids",
                 field="carve_out_netting_set_ids",
             )
+        require_mixed_sensitivity_scope_evidence(context)
         _validate_carve_out_batch_evidence(context.carve_out_netting_set_ids, netting_sets)
         audit_metadata.append(("resolved_method", CvaMethod.MIXED_CARVE_OUT.value))
+        audit_metadata.extend(mixed_sensitivity_scope_metadata(context))
         return ScopeResolution(
             context.method,
             context.carve_out_netting_set_ids,

@@ -29,6 +29,7 @@ def _audit_context(
     *,
     sa_cva_approved: bool = False,
     carve_out_netting_set_ids: tuple[str, ...] = (),
+    sa_cva_sensitivity_scope_evidence_id: str | None = None,
 ) -> CvaCalculationContext:
     return CvaCalculationContext(
         run_id=f"run-audit-{method.value.lower()}",
@@ -38,6 +39,7 @@ def _audit_context(
         method=method,
         sa_cva_approved=sa_cva_approved,
         carve_out_netting_set_ids=carve_out_netting_set_ids,
+        sa_cva_sensitivity_scope_evidence_id=sa_cva_sensitivity_scope_evidence_id,
     )
 
 
@@ -213,6 +215,7 @@ def test_audit_reconciliation_rejects_tampered_mixed_method_results() -> None:
             CvaMethod.MIXED_CARVE_OUT,
             sa_cva_approved=True,
             carve_out_netting_set_ids=("ns-1",),
+            sa_cva_sensitivity_scope_evidence_id="audit-sa-slice-evidence",
         ),
         _audit_counterparty_batch(),
         _audit_netting_set_batch(),
