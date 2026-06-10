@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
+
 import frtb_common
 import numpy as np
 import pytest
@@ -9,11 +11,22 @@ from frtb_common.batch_arrays import (
     BatchArrayCoercionError,
     bool_array,
     coerce_bool_value,
+    enum_array,
     float_array_from_numpy,
+    freeze_source_column_maps,
+    nullable_enum_array,
     object_array,
     optional_bool_object_array,
+    optional_float_array,
+    optional_text_array,
     readonly_array,
+    text_array_with_default,
 )
+
+
+class SampleEnum(StrEnum):
+    LEFT = "LEFT"
+    RIGHT = "RIGHT"
 
 
 @pytest.mark.parametrize(
@@ -22,12 +35,18 @@ from frtb_common.batch_arrays import (
         "BatchArrayCoercionError",
         "bool_array",
         "coerce_bool_value",
+        "enum_array",
+        "freeze_source_column_maps",
         "float_array_from_numpy",
         "immutable_float_array",
         "immutable_object_array",
+        "nullable_enum_array",
         "object_array",
         "optional_bool_object_array",
+        "optional_float_array",
+        "optional_text_array",
         "readonly_array",
+        "text_array_with_default",
     ],
 )
 def test_batch_helpers_are_not_top_level_exports(name: str) -> None:
@@ -53,6 +72,26 @@ def test_object_array_is_readonly() -> None:
 
     assert objects.dtype == np.dtype(object)
     assert objects.flags.writeable is False
+
+
+def test_text_arrays_normalise_missing_and_defaults() -> None:
+    optional = optional_text_array([None, " desk ", ""], 3, copy=True)
+    defaulted = text_array_with_default([None, " file ", ""], 3, default="source", copy=True)
+
+    assert optional.tolist() == [None, "desk", None]
+    assert defaulted.tolist() == ["source", "file", "source"]
+    assert optional.flags.writeable is False
+    assert defaulted.flags.writeable is False
+
+
+def test_enum_arrays_coerce_and_reject_values() -> None:
+    required = enum_array(["LEFT"], SampleEnum, "side", copy=True)
+    nullable = nullable_enum_array([None, "RIGHT", ""], SampleEnum, "side", 3, copy=True)
+
+    assert required.tolist() == ["LEFT"]
+    assert nullable.tolist() == [None, "RIGHT", None]
+    with pytest.raises(BatchArrayCoercionError, match="side contains unsupported value"):
+        enum_array(["MIDDLE"], SampleEnum, "side", copy=True)
 
 
 def test_float_array_from_numpy_accepts_numeric_numpy_fast_path() -> None:
@@ -119,6 +158,18 @@ def test_float_array_from_numpy_validates_shape_and_finite_options() -> None:
     assert result.shape == (1, 1)
 
 
+def test_optional_float_array_preserves_missing_values_and_fast_path() -> None:
+    from_sequence = optional_float_array([None, "", np.nan, "1.5"], 4, copy=True)
+    from_numpy = optional_float_array(np.array([1.0, np.nan]), 2, copy=True)
+
+    assert np.isnan(from_sequence[:3]).all()
+    assert from_sequence[3] == 1.5
+    assert from_numpy[0] == 1.0
+    assert np.isnan(from_numpy[1])
+    with pytest.raises(BatchArrayCoercionError, match="optional numeric field must be numeric"):
+        optional_float_array(["bad"], 1, copy=True)
+
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
@@ -162,3 +213,14 @@ def test_optional_bool_object_array_preserves_nulls_blanks_and_nan() -> None:
     assert explicit.tolist() == [None, None, None, True, False]
     assert explicit.dtype == np.dtype(object)
     assert explicit.flags.writeable is False
+
+
+def test_freeze_source_column_maps_can_sort_and_coerce_pairs() -> None:
+    result = freeze_source_column_maps(
+        [[("b", "canonical_b"), ("a", "canonical_a")]],
+        1,
+        sort_pairs=True,
+    )
+
+    assert result == ((("a", "canonical_a"), ("b", "canonical_b")),)
+    assert freeze_source_column_maps(None, 2) == ((), ())

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import math
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, TypeVar
+from enum import StrEnum
+from typing import Any, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -16,6 +18,7 @@ ArrayInput = npt.NDArray[Any]
 ColumnInput = Sequence[object] | ArrayInput
 NullableColumnInput = Sequence[object | None] | ArrayInput
 ArrayScalarT = TypeVar("ArrayScalarT", bound=np.generic)
+EnumT = TypeVar("EnumT", bound=StrEnum)
 
 
 @dataclass(frozen=True)
@@ -74,6 +77,107 @@ def object_array(values: NullableColumnInput, *, copy: bool) -> ObjectArray:
     return readonly_array(array, copy=copy and array is values)
 
 
+def required_text_value(value: object | None, field: str) -> str:
+    """Return stripped non-empty text or raise a package-neutral error.
+
+    Parameters
+    ----------
+    value : object or None
+        Candidate scalar text value.
+    field : str
+        Field label for error metadata and messages.
+
+    Returns
+    -------
+    str
+        Stripped non-empty text.
+    """
+
+    text = optional_text_value(value)
+    if text is None:
+        raise BatchArrayCoercionError(f"{field} must be non-empty", field=field)
+    return text
+
+
+def optional_text_value(value: object | None) -> str | None:
+    """Return stripped optional text, normalising ``None`` and blanks to ``None``."""
+
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def optional_text_array(
+    values: NullableColumnInput | None,
+    row_count: int,
+    *,
+    copy: bool,
+    optional_text: Callable[[object | None], str | None] = optional_text_value,
+) -> ObjectArray:
+    """Return a nullable text object array using a caller-supplied null policy."""
+
+    if values is None:
+        return object_array([None] * row_count, copy=copy)
+    return object_array([optional_text(value) for value in values], copy=copy)
+
+
+def text_array_with_default(
+    values: ColumnInput | None,
+    row_count: int,
+    *,
+    default: str,
+    copy: bool,
+    optional_text: Callable[[object | None], str | None] = optional_text_value,
+) -> ObjectArray:
+    """Return a text object array, filling missing or blank values with *default*."""
+
+    if values is None:
+        return object_array([default] * row_count, copy=copy)
+    return object_array([optional_text(value) or default for value in values], copy=copy)
+
+
+def enum_array(
+    values: NullableColumnInput,
+    enum_type: type[EnumT],
+    field: str,
+    *,
+    copy: bool,
+    required_text: Callable[[object | None, str], str] = required_text_value,
+) -> ObjectArray:
+    """Return a required enum value array containing canonical enum values."""
+
+    return object_array(
+        [_coerce_enum_value(value, enum_type, field, required_text) for value in values],
+        copy=copy,
+    )
+
+
+def nullable_enum_array(
+    values: NullableColumnInput | None,
+    enum_type: type[EnumT],
+    field: str,
+    row_count: int,
+    *,
+    copy: bool,
+    optional_text: Callable[[object | None], str | None] = optional_text_value,
+    required_text: Callable[[object | None, str], str] = required_text_value,
+) -> ObjectArray:
+    """Return a nullable enum value array containing canonical enum values."""
+
+    if values is None:
+        return object_array([None] * row_count, copy=copy)
+    return object_array(
+        [
+            None
+            if optional_text(value) is None
+            else _coerce_enum_value(value, enum_type, field, required_text)
+            for value in values
+        ],
+        copy=copy,
+    )
+
+
 def float_array_from_numpy(
     values: ColumnInput | NullableColumnInput,
     *,
@@ -116,6 +220,76 @@ def float_array_from_numpy(
         if bool(np.any(invalid)):
             raise BatchArrayCoercionError("value must be finite", field=field)
     return readonly_array(array, copy=copy and array is values)
+
+
+def required_float_value(
+    value: object,
+    field: str,
+    *,
+    allow_bool: bool = True,
+) -> float:
+    """Return a finite float using package-neutral batch error reporting."""
+
+    if value is None:
+        raise BatchArrayCoercionError(f"{field} must be provided", field=field)
+    if not allow_bool and isinstance(value, (bool, np.bool_)):
+        raise BatchArrayCoercionError(f"{field} must be numeric", field=field)
+    try:
+        number = float(cast(Any, value))
+    except (TypeError, ValueError) as exc:
+        raise BatchArrayCoercionError(f"{field} must be numeric", field=field) from exc
+    if not math.isfinite(number):
+        raise BatchArrayCoercionError(f"{field} must be finite", field=field)
+    return number
+
+
+def optional_float_value(
+    value: object | None,
+    *,
+    field: str = "optional numeric field",
+    allow_bool: bool = True,
+) -> float:
+    """Return a nullable scalar float encoded as ``NaN`` for missing values."""
+
+    if value is None:
+        return math.nan
+    if isinstance(value, (float, np.floating)) and math.isnan(float(value)):
+        return math.nan
+    if isinstance(value, str) and not value.strip():
+        return math.nan
+    return required_float_value(value, field, allow_bool=allow_bool)
+
+
+def optional_float_array(
+    values: NullableColumnInput | None,
+    row_count: int,
+    *,
+    copy: bool,
+    field: str = "optional numeric field",
+    allow_bool: bool = True,
+    require_1d_fast_path: bool = False,
+) -> FloatArray:
+    """Return a read-only float array with missing optional values as ``NaN``."""
+
+    if values is None:
+        array = np.full(row_count, np.nan, dtype=np.float64)
+    elif (
+        fast_array := float_array_from_numpy(
+            values,
+            field=field,
+            copy=copy,
+            allow_nan=True,
+            require_1d=require_1d_fast_path,
+            require_finite=False,
+        )
+    ) is not None:
+        return fast_array
+    else:
+        array = np.asarray(
+            [optional_float_value(value, field=field, allow_bool=allow_bool) for value in values],
+            dtype=np.float64,
+        )
+    return readonly_array(array, copy=False)
 
 
 def coerce_bool_value(value: object) -> bool:
@@ -227,3 +401,37 @@ def _optional_bool_value(value: object | None) -> bool | None:
     if isinstance(value, str) and not value.strip():
         return None
     return coerce_bool_value(value)
+
+
+def freeze_source_column_maps(
+    values: Sequence[Sequence[tuple[object, object]]] | None,
+    row_count: int,
+    *,
+    text_coercer: Callable[[object], str] = str,
+    sort_pairs: bool = False,
+) -> tuple[tuple[tuple[str, str], ...], ...]:
+    """Freeze source-to-canonical column mappings for audit payloads."""
+
+    if values is None:
+        return tuple(() for _ in range(row_count))
+    frozen: list[tuple[tuple[str, str], ...]] = []
+    for row in values:
+        pairs = tuple((text_coercer(source), text_coercer(target)) for source, target in row)
+        frozen.append(tuple(sorted(pairs)) if sort_pairs else pairs)
+    return tuple(frozen)
+
+
+def _coerce_enum_value(
+    value: object | None,
+    enum_type: type[EnumT],
+    field: str,
+    required_text: Callable[[object | None, str], str],
+) -> str:
+    text = required_text(value, field)
+    try:
+        return enum_type(text).value
+    except ValueError as exc:
+        raise BatchArrayCoercionError(
+            f"{field} contains unsupported value: {text}",
+            field=field,
+        ) from exc
