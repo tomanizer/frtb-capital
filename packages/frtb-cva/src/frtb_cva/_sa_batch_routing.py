@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from enum import StrEnum
 from typing import TypeVar, cast
 
@@ -57,14 +58,14 @@ def _sensitivity_from_batch_row(batch: SaCvaSensitivityBatch, index: int) -> SaC
         amount_currency=cast(str, batch.amount_currencies[index]),
         sign_convention=cast(str, batch.sign_conventions[index]),
         source_row_id=cast(str, batch.source_row_ids[index]),
-        tenor=cast(str | None, batch.tenors[index]),
+        tenor=_optional_str(batch.tenors[index]),
         volatility_input=_optional_float_value(batch.volatility_inputs[index]),
-        hedge_id=cast(str | None, batch.hedge_ids[index]),
+        hedge_id=_optional_str(batch.hedge_ids[index]),
         index_treatment=_optional_enum(batch.index_treatments[index], SaCvaIndexTreatment),
         index_max_sector_weight=_optional_float_value(batch.index_max_sector_weights[index]),
         index_homogeneous_sector_quality=bool(batch.index_homogeneous_sector_quality[index]),
         index_dominant_sector=_optional_enum(batch.index_dominant_sectors[index], CvaSector),
-        index_remap_bucket_id=cast(str | None, batch.index_remap_bucket_ids[index]),
+        index_remap_bucket_id=_optional_str(batch.index_remap_bucket_ids[index]),
         lineage=CvaSourceLineage(
             source_system=cast(str, batch.lineage_source_systems[index]),
             source_file=cast(str, batch.lineage_source_files[index]),
@@ -74,7 +75,14 @@ def _sensitivity_from_batch_row(batch: SaCvaSensitivityBatch, index: int) -> SaC
     )
 
 
-def _optional_enum(value: object, enum_type: type[_OptionalEnum]) -> _OptionalEnum | None:
-    if value is None:
+def _optional_str(value: object) -> str | None:
+    if value is None or (isinstance(value, float) and math.isnan(value)):
         return None
-    return enum_type(str(value))
+    return str(value)
+
+
+def _optional_enum(value: object, enum_type: type[_OptionalEnum]) -> _OptionalEnum | None:
+    text = _optional_str(value)
+    if text is None:
+        return None
+    return enum_type(text)
