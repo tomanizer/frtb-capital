@@ -50,17 +50,20 @@ non-securitisation, securitisation non-CTP, and CTP.
 | Non-securitisation LGD | HYBRID | Row field or package default by seniority/profile | Non-sec rows | Client override is accepted only through documented fields; invalid values fail closed. |
 | Gross JTD inputs, notional, P&L, maturity | CLIENT | DRC input_table columns | All classes | Client signs and scales values before input_table. |
 | Currency and base currency | HYBRID | Row `currency`; `DrcCalculationContext.base_currency`; `fx_rates` map | Any non-base-currency row | `fx_rates` keys are source currency codes. Missing `source_currency -> base_currency` rate or missing lineage raises `DrcInputError`. |
-| `securitisation_non_ctp_risk_weights` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` | Securitisation non-CTP rows | Mandatory for each position; unused keys and missing keys fail closed. |
-| `securitisation_non_ctp_risk_weight_evidence` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` | Securitisation non-CTP rows | Evidence records carry source profile, source id, lineage, and citation ids. Missing or stale evidence fails closed. |
-| `securitisation_non_ctp_fair_value_cap_evidence` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` | Securitisation non-CTP rows where fair-value cap applies | Profile must allow the cap; incomplete or unused evidence fails closed. |
+| `securitisation_non_ctp_risk_weights` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` | Securitisation non-CTP rows | Mandatory for each position when typed evidence is not supplied for a supported profile; unused keys and missing keys fail closed. |
+| `securitisation_non_ctp_risk_weight_evidence` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id`, optionally built from `DRC_RISK_WEIGHT_EVIDENCE_ARROW_COLUMN_SPECS` through `build_drc_securitisation_non_ctp_risk_weight_evidence_from_arrow` | Securitisation non-CTP rows | Evidence records carry source profile, source table/method, source id, lineage, citation ids, and validation flags. Missing, stale, uncited, future-dated, profile-mismatched, or wrong-class evidence fails closed. |
+| `securitisation_non_ctp_fair_value_cap_evidence` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id`, optionally built from `DRC_FAIR_VALUE_CAP_EVIDENCE_ARROW_COLUMN_SPECS` through `build_drc_fair_value_cap_evidence_from_arrow` | Securitisation non-CTP rows where fair-value cap applies | Profile must allow the cap; incomplete, stale, future-dated, uncited, or unused evidence fails closed. |
 | `securitisation_non_ctp_offset_groups` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` to offset group | Securitisation non-CTP netting | Client supplies decomposition/replication grouping evidence. Missing explicit group can fall back only to supported row evidence; unsupported offsets fail closed. |
-| `ctp_risk_weights` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` | CTP rows | Mandatory for every CTP position; missing or unused keys fail closed. |
-| `ctp_risk_weight_evidence` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` | CTP rows | Evidence must include source, lineage, and citation ids. |
+| `ctp_risk_weights` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` | CTP rows | Mandatory for every CTP position when typed evidence is not supplied for a supported profile; missing or unused keys fail closed. |
+| `ctp_risk_weight_evidence` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id`, optionally built from `DRC_RISK_WEIGHT_EVIDENCE_ARROW_COLUMN_SPECS` through `build_drc_ctp_risk_weight_evidence_from_arrow` | CTP rows | Evidence must include source, lineage, and citation ids. Missing, stale, uncited, future-dated, profile-mismatched, or wrong-class evidence fails closed. |
 | `ctp_offset_groups` | HYBRID | `DrcCalculationContext` mapping keyed by `position_id` | CTP offset grouping | Optional only where package rules can derive a supported group; unsupported decomposition evidence fails closed. |
 
 Key rule: DRC run-scoped maps are keyed by stable `position_id` unless the
 specific context type documents a narrower key. The package validates missing
-and unused map entries to prevent accidental stale attachments.
+and unused map entries to prevent accidental stale attachments. Arrow evidence
+handoffs are adapter-layer conveniences for building those same maps; they do
+not derive internal banking-book risk weights and do not bypass context
+validation.
 
 ## RRAO
 
@@ -109,10 +112,12 @@ match them to component input_tables:
 | Logical attachment | Intended content | Hash expectation |
 | --- | --- | --- |
 | `drc.fx_rates` | FX rates with source and target currency, source id, lineage, and citation ids | Stable hash of rates used for the run. |
-| `drc.securitisation_non_ctp.risk_weights` | Position-id keyed risk weights and evidence | Stable hash included in DRC context input hash. |
-| `drc.securitisation_non_ctp.fair_value_cap` | Position-id keyed fair-value cap evidence | Stable hash included when cap evidence applies. |
+| `drc.securitisation_non_ctp.risk_weights` | Position-id keyed raw risk weights where supported | Stable hash included in DRC context input hash. |
+| `drc.securitisation_non_ctp.risk_weight_evidence` | Arrow or mapping-backed typed securitisation non-CTP risk-weight evidence | Stable hash included in DRC context input hash. |
+| `drc.securitisation_non_ctp.fair_value_cap` | Arrow or mapping-backed position-id keyed fair-value cap evidence | Stable hash included when cap evidence applies. |
 | `drc.securitisation_non_ctp.offset_groups` | Position-id keyed decomposition or replication groups | Stable hash of groups used for netting. |
-| `drc.ctp.risk_weights` | Position-id keyed CTP risk weights and evidence | Stable hash included in CTP context input hash. |
+| `drc.ctp.risk_weights` | Position-id keyed raw CTP risk weights where supported | Stable hash included in CTP context input hash. |
+| `drc.ctp.risk_weight_evidence` | Arrow or mapping-backed typed CTP risk-weight evidence | Stable hash included in CTP context input hash. |
 | `drc.ctp.offset_groups` | Position-id keyed CTP offset groups | Stable hash of groups used for CTP netting. |
 | `cva.counterparty_reference` | Optional client counterparty sector, credit-quality, and region attachment | Stable hash if supplied outside the counterparty table. |
 | `rrao.classification_evidence` | Optional evidence catalog referenced by flat RRAO row columns | Stable hash if supplied outside the positions table. |
