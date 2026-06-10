@@ -226,9 +226,7 @@ def test_reconcile_contribution_set_reports_partial_residual_status() -> None:
         residual=10.0,
     )
 
-    reconciliation = reconcile_contribution_set(
-        (contribution, residual), capital_total=100.0
-    )
+    reconciliation = reconcile_contribution_set((contribution, residual), capital_total=100.0)
 
     assert reconciliation.contribution_sum == pytest.approx(90.0)
     assert reconciliation.residual_sum == pytest.approx(10.0)
@@ -262,7 +260,9 @@ def test_reconcile_contribution_set_marks_small_residual_partial() -> None:
     )
 
     reconciliation = reconcile_contribution_set(
-        (contribution, residual), capital_total=100.0, relative_tolerance=1e-2
+        (contribution, residual),
+        capital_total=100.0,
+        relative_tolerance=1e-2,
     )
 
     assert reconciliation.difference == pytest.approx(-0.6)
