@@ -68,6 +68,29 @@ election, and analogous CCR-substitution alternatives fail closed with
 `US_NPR20_VB`, `EU_CRR3_CVA`, and `UK_PRA_CVA` comparison profiles are
 capital-producing under audit with profile-owned citations and hashes.
 
+```mermaid
+flowchart TD
+  CTX["CvaCalculationContext\nprofile + method + controls"]
+  PROFILE{"Profile mapped to\nCVA rule tables?"}
+  METHOD{"Method implemented\nfor supplied inputs?"}
+  SCOPE{"Tables match method\nand carve-out evidence?"}
+  MATERIALITY{"Materiality / CCR alternative\nrequires unsupported election?"}
+  CALC["Run selected BA-CVA, SA-CVA,\nor mixed carve-out engines"]
+  FAIL["Fail closed\nCvaInputError or UnsupportedRegulatoryFeatureError"]
+  RESULT["CvaCapitalResult\nwith citations, hashes, reconciliation"]
+
+  CTX --> PROFILE
+  PROFILE -- no --> FAIL
+  PROFILE -- yes --> METHOD
+  METHOD -- no --> FAIL
+  METHOD -- yes --> SCOPE
+  SCOPE -- no --> FAIL
+  SCOPE -- yes --> MATERIALITY
+  MATERIALITY -- yes --> FAIL
+  MATERIALITY -- no --> CALC
+  CALC --> RESULT
+```
+
 ---
 
 ## End-to-end journey (Tier 1 - Arrow)
