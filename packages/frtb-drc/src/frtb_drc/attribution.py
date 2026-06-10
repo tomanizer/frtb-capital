@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -44,7 +44,7 @@ class DrcAttributionSummary:
     ----------
     summary_id : str
         Stable identifier derived from the grain and grouped key.
-    grain : DrcAttributionGrain | str
+    grain : DrcAttributionGrain
         Grouping grain used for the projection.
     key : str
         Grouping key, such as issuer, bucket, category, or risk class.
@@ -70,12 +70,12 @@ class DrcAttributionSummary:
         Union of source citations.
     reasons : tuple[str, ...]
         Stable non-empty reason strings represented by the group.
-    reconciliation_status : ReconciliationStatus | str
+    reconciliation_status : ReconciliationStatus
         Reconciliation state implied by the grouped source records.
     """
 
     summary_id: str
-    grain: DrcAttributionGrain | str
+    grain: DrcAttributionGrain
     key: str
     risk_class: str | None
     bucket_key: str | None
@@ -88,15 +88,9 @@ class DrcAttributionSummary:
     methods: tuple[str, ...]
     citations: tuple[str, ...]
     reasons: tuple[str, ...]
-    reconciliation_status: ReconciliationStatus | str
+    reconciliation_status: ReconciliationStatus
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "grain", DrcAttributionGrain(self.grain))
-        object.__setattr__(
-            self,
-            "reconciliation_status",
-            ReconciliationStatus(self.reconciliation_status),
-        )
         object.__setattr__(self, "source_ids", tuple(self.source_ids))
         object.__setattr__(self, "net_jtd_ids", tuple(self.net_jtd_ids))
         object.__setattr__(self, "methods", tuple(self.methods))
@@ -221,7 +215,8 @@ def summarize_drc_attribution(
     net_by_id = {record.net_jtd_id: record for record in result.net_jtds}
     grouped: dict[str, list[CapitalContribution]] = {}
     for record in attribution_records:
-        grouped.setdefault(_grouping_key(record, projection_grain, net_by_id), []).append(record)
+        key = _grouping_key(record, projection_grain, net_by_id)
+        grouped.setdefault(key, []).append(record)
 
     summaries = tuple(
         _summary_from_records(
@@ -671,8 +666,11 @@ def _grouping_key(
     if grain == DrcAttributionGrain.CATEGORY:
         return record.category or _UNCATEGORISED_KEY
     if grain == DrcAttributionGrain.RISK_CLASS:
-        net_jtd = net_by_id.get(record.source_id) if record.source_level == "net_jtd" else None
-        return str(net_jtd.risk_class) if net_jtd is not None else record.category or _UNCATEGORISED_KEY
+        if record.source_level == "net_jtd":
+            net_jtd = net_by_id.get(record.source_id)
+            if net_jtd is not None:
+                return str(net_jtd.risk_class)
+        return record.category or _UNCATEGORISED_KEY
     raise ValueError(f"unsupported DRC attribution grain: {grain}")
 
 
@@ -683,7 +681,9 @@ def _summary_from_records(
     records: tuple[CapitalContribution, ...],
     net_by_id: Mapping[str, NetJtd],
 ) -> DrcAttributionSummary:
-    contribution = math.fsum(0.0 if record.contribution is None else record.contribution for record in records)
+    contribution = math.fsum(
+        0.0 if record.contribution is None else record.contribution for record in records
+    )
     residual = math.fsum(record.residual for record in records)
     source_ids = _sorted_unique(record.source_id for record in records)
     net_jtd_ids = _sorted_unique(
@@ -692,7 +692,7 @@ def _summary_from_records(
     risk_classes = _sorted_unique(_record_risk_class(record, net_by_id) for record in records)
     bucket_keys = _sorted_unique(record.bucket_key for record in records if record.bucket_key)
     return DrcAttributionSummary(
-        summary_id=f"drc-attr-{grain.value}-{_slug(key)}",
+        summary_id=f"drc-attr-{grain.value}-{_summary_slug(key)}",
         grain=grain,
         key=key,
         risk_class=risk_classes[0] if len(risk_classes) == 1 else None,
@@ -737,7 +737,11 @@ def _summary_sort_key(summary: DrcAttributionSummary) -> tuple[float, str, str, 
     return (-abs(summary.total), summary.grain.value, summary.key, summary.summary_id)
 
 
-def _sorted_unique(values: object) -> tuple[str, ...]:
+def _summary_slug(value: str) -> str:
+    return _slug(value).replace("|", "-")
+
+
+def _sorted_unique(values: Iterable[object]) -> tuple[str, ...]:
     return tuple(sorted({str(value) for value in values if value is not None and str(value) != ""}))
 
 
