@@ -8,10 +8,10 @@ import pytest
 from frtb_common import (
     CapitalContribution,
     ComponentCapitalSummary,
-    ComponentContributionBundle,
     StandardisedComponent,
 )
 from frtb_common.attribution import AttributionMethod, ReconciliationStatus
+from frtb_common.contribution_bundle import ComponentContributionBundle
 from frtb_ima import DeskAuditRecord, build_ima_contribution_bundle
 from frtb_orchestration import (
     CvaCapitalSummary,
