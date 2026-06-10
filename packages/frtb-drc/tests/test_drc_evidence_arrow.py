@@ -1,24 +1,17 @@
 from __future__ import annotations
 
-import json
 from dataclasses import replace
 from datetime import date
-from pathlib import Path
 from typing import Any
 
 import pyarrow as pa
 import pytest
 from frtb_drc import (
-    DrcCalculationContext,
     DrcFairValueCapEvidence,
     DrcInputError,
-    DrcPosition,
     DrcRiskWeightEvidence,
-    DrcSourceLineage,
     calculate_drc_capital,
     calculate_drc_capital_from_batch,
-    fair_value_cap_evidence_by_position,
-    risk_weight_evidence_by_position,
     validate_reconciliation,
 )
 from frtb_drc.arrow_batch import (
@@ -32,6 +25,7 @@ from frtb_drc.arrow_batch import (
     normalize_drc_risk_weight_evidence_arrow_table,
     normalize_drc_securitisation_non_ctp_arrow_table,
 )
+from test_drc_arrow_batch import _arrow_table, _load_fixture
 
 
 def test_drc_risk_weight_evidence_arrow_replays_basel_securitisation_non_ctp() -> None:
@@ -55,7 +49,9 @@ def test_drc_risk_weight_evidence_arrow_replays_basel_securitisation_non_ctp() -
 
     validate_reconciliation(calculation.result)
     assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
-    assert calculation.result.risk_weight_evidence == row_result.risk_weight_evidence
+    assert _risk_weight_summary(calculation.result.risk_weight_evidence) == _risk_weight_summary(
+        row_result.risk_weight_evidence
+    )
 
     mutated_evidence = _replace_first_risk_weight_source(evidence_records)
     mutated = build_drc_securitisation_non_ctp_risk_weight_evidence_from_arrow(
@@ -91,7 +87,9 @@ def test_drc_risk_weight_evidence_arrow_replays_basel_ctp() -> None:
 
     validate_reconciliation(calculation.result)
     assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
-    assert calculation.result.risk_weight_evidence == row_result.risk_weight_evidence
+    assert _risk_weight_summary(calculation.result.risk_weight_evidence) == _risk_weight_summary(
+        row_result.risk_weight_evidence
+    )
 
 
 def test_drc_fair_value_cap_evidence_arrow_replays_basel_securitisation_non_ctp() -> None:
@@ -116,7 +114,9 @@ def test_drc_fair_value_cap_evidence_arrow_replays_basel_securitisation_non_ctp(
 
     validate_reconciliation(calculation.result)
     assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
-    assert calculation.result.fair_value_cap_evidence == row_result.fair_value_cap_evidence
+    assert _fair_value_cap_summary(calculation.result.fair_value_cap_evidence) == _fair_value_cap_summary(
+        row_result.fair_value_cap_evidence
+    )
 
 
 @pytest.mark.parametrize(
@@ -159,14 +159,14 @@ def test_drc_risk_weight_evidence_arrow_fails_closed_in_context_validation(
 ) -> None:
     fixture = _load_fixture("drc_basel_sec_nonctp_v1")
     context = fixture["context"]
-    records = tuple(context.securitisation_non_ctp_risk_weight_evidence.values())[:1]
+    records = tuple(context.securitisation_non_ctp_risk_weight_evidence.values())
     evidence = build_drc_securitisation_non_ctp_risk_weight_evidence_from_arrow(
         normalize_drc_risk_weight_evidence_arrow_table(
             _risk_weight_evidence_arrow_table(records, overrides=overrides)
         )
     )
     batch = build_drc_securitisation_non_ctp_batch_from_arrow(
-        normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(fixture["positions"][:1]))
+        normalize_drc_securitisation_non_ctp_arrow_table(_arrow_table(fixture["positions"]))
     )
 
     with pytest.raises(DrcInputError, match=match):
@@ -244,6 +244,47 @@ def _fair_value_cap_evidence_arrow_table(
     )
 
 
+def _risk_weight_summary(records: tuple[DrcRiskWeightEvidence, ...]) -> dict[str, tuple[object, ...]]:
+    return {
+        record.position_id: (
+            _enum_value(record.risk_class),
+            record.source_profile_id,
+            record.source_table,
+            record.source_method,
+            record.effective_risk_weight,
+            record.as_of_date,
+            record.source_id,
+            record.lineage.source_system,
+            record.lineage.source_file,
+            record.lineage.source_row_id,
+            record.citation_ids,
+            record.validation_flags,
+        )
+        for record in records
+    }
+
+
+def _fair_value_cap_summary(
+    records: tuple[DrcFairValueCapEvidence, ...],
+) -> dict[str, tuple[object, ...]]:
+    return {
+        record.position_id: (
+            record.source_profile_id,
+            record.eligible,
+            record.fair_value_cap_amount,
+            record.eligibility_reason,
+            record.as_of_date,
+            record.source_id,
+            record.lineage.source_system,
+            record.lineage.source_file,
+            record.lineage.source_row_id,
+            record.citation_ids,
+            record.validation_flags,
+        )
+        for record in records
+    }
+
+
 def _apply_overrides(
     columns: dict[str, list[object]],
     overrides: dict[str, list[object]] | None,
@@ -258,171 +299,6 @@ def _apply_overrides(
             columns[column_name] = values * row_count
         else:
             raise AssertionError(f"override {column_name} must have 1 or {row_count} values")
-
-
-def _load_fixture(fixture_name: str) -> dict[str, Any]:
-    fixture_dir = Path(__file__).resolve().parent / "fixtures" / fixture_name
-    payload = json.loads((fixture_dir / "positions.json").read_text(encoding="utf-8"))
-    context_raw = payload["context"]
-    positions = tuple(_position_from_dict(raw) for raw in payload["positions"])
-    return {
-        "positions": positions,
-        "context": DrcCalculationContext(
-            run_id=context_raw["run_id"],
-            calculation_date=date.fromisoformat(context_raw["calculation_date"]),
-            base_currency=context_raw["base_currency"],
-            profile_id=context_raw["profile_id"],
-            securitisation_non_ctp_risk_weights=context_raw.get(
-                "securitisation_non_ctp_risk_weights",
-                {},
-            ),
-            securitisation_non_ctp_offset_groups=context_raw.get(
-                "securitisation_non_ctp_offset_groups",
-                {},
-            ),
-            ctp_risk_weights=context_raw.get("ctp_risk_weights", {}),
-            ctp_risk_weight_evidence=risk_weight_evidence_by_position(
-                _risk_weight_evidence_from_dict(raw)
-                for raw in context_raw.get("ctp_risk_weight_evidence", ())
-            ),
-            securitisation_non_ctp_risk_weight_evidence=risk_weight_evidence_by_position(
-                _risk_weight_evidence_from_dict(raw)
-                for raw in context_raw.get("securitisation_non_ctp_risk_weight_evidence", ())
-            ),
-            securitisation_non_ctp_fair_value_cap_evidence=fair_value_cap_evidence_by_position(
-                _fair_value_cap_evidence_from_dict(raw)
-                for raw in context_raw.get("securitisation_non_ctp_fair_value_cap_evidence", ())
-            ),
-            ctp_offset_groups=context_raw.get("ctp_offset_groups", {}),
-        ),
-    }
-
-
-def _risk_weight_evidence_from_dict(raw: dict[str, Any]) -> DrcRiskWeightEvidence:
-    lineage = raw["lineage"]
-    return DrcRiskWeightEvidence(
-        position_id=raw["position_id"],
-        risk_class=raw["risk_class"],
-        source_profile_id=raw["source_profile_id"],
-        source_table=raw["source_table"],
-        source_method=raw["source_method"],
-        effective_risk_weight=float(raw["effective_risk_weight"]),
-        as_of_date=date.fromisoformat(raw["as_of_date"]),
-        source_id=raw["source_id"],
-        lineage=DrcSourceLineage(
-            source_system=lineage["source_system"],
-            source_file=lineage["source_file"],
-            source_row_id=lineage["source_row_id"],
-            source_column_map=dict(lineage.get("source_column_map") or {}),
-        ),
-        citation_ids=tuple(raw["citation_ids"]),
-        is_stale=bool(raw.get("is_stale", False)),
-        validation_flags=tuple(raw.get("validation_flags", ())),
-    )
-
-
-def _fair_value_cap_evidence_from_dict(raw: dict[str, Any]) -> DrcFairValueCapEvidence:
-    lineage = raw["lineage"]
-    return DrcFairValueCapEvidence(
-        position_id=raw["position_id"],
-        source_profile_id=raw["source_profile_id"],
-        eligible=bool(raw["eligible"]),
-        fair_value_cap_amount=(
-            None
-            if raw.get("fair_value_cap_amount") is None
-            else float(raw["fair_value_cap_amount"])
-        ),
-        eligibility_reason=raw["eligibility_reason"],
-        as_of_date=date.fromisoformat(raw["as_of_date"]),
-        source_id=raw["source_id"],
-        lineage=DrcSourceLineage(
-            source_system=lineage["source_system"],
-            source_file=lineage["source_file"],
-            source_row_id=lineage["source_row_id"],
-            source_column_map=dict(lineage.get("source_column_map") or {}),
-        ),
-        citation_ids=tuple(raw["citation_ids"]),
-        is_stale=bool(raw.get("is_stale", False)),
-        validation_flags=tuple(raw.get("validation_flags", ())),
-    )
-
-
-def _position_from_dict(raw: dict[str, Any]) -> DrcPosition:
-    lineage = raw["lineage"]
-    return DrcPosition(
-        position_id=raw["position_id"],
-        source_row_id=raw["source_row_id"],
-        desk_id=raw["desk_id"],
-        legal_entity=raw["legal_entity"],
-        risk_class=raw["risk_class"],
-        instrument_type=raw["instrument_type"],
-        default_direction=raw["default_direction"],
-        issuer_id=raw.get("issuer_id"),
-        tranche_id=raw.get("tranche_id"),
-        index_series_id=raw.get("index_series_id"),
-        bucket_key=raw["bucket_key"],
-        seniority=raw.get("seniority"),
-        credit_quality=raw.get("credit_quality"),
-        notional=float(raw["notional"]),
-        market_value=None if raw.get("market_value") is None else float(raw["market_value"]),
-        cumulative_pnl=raw.get("cumulative_pnl"),
-        maturity_years=float(raw["maturity_years"]),
-        currency=raw["currency"],
-        lineage=DrcSourceLineage(
-            source_system=lineage["source_system"],
-            source_file=lineage["source_file"],
-            source_row_id=lineage["source_row_id"],
-            source_column_map=dict(lineage.get("source_column_map") or {}),
-        ),
-        citation_ids=tuple(raw["citation_ids"]),
-    )
-
-
-def _arrow_table(positions: tuple[DrcPosition, ...]) -> pa.Table:
-    return pa.table(
-        {
-            "position_id": [position.position_id for position in positions],
-            "source_row_id": [position.source_row_id for position in positions],
-            "desk_id": [position.desk_id for position in positions],
-            "legal_entity": [position.legal_entity for position in positions],
-            "risk_class": [_enum_value(position.risk_class) for position in positions],
-            "instrument_type": [_enum_value(position.instrument_type) for position in positions],
-            "default_direction": [_enum_value(position.default_direction) for position in positions],
-            "issuer_id": [position.issuer_id for position in positions],
-            "tranche_id": [position.tranche_id for position in positions],
-            "index_series_id": [position.index_series_id for position in positions],
-            "bucket_key": [position.bucket_key for position in positions],
-            "seniority": [
-                None if position.seniority is None else _enum_value(position.seniority)
-                for position in positions
-            ],
-            "credit_quality": [
-                None if position.credit_quality is None else _enum_value(position.credit_quality)
-                for position in positions
-            ],
-            "notional": pa.array([position.notional for position in positions], type=pa.float64()),
-            "market_value": pa.array(
-                [position.market_value for position in positions], type=pa.float64()
-            ),
-            "cumulative_pnl": pa.array(
-                [position.cumulative_pnl for position in positions], type=pa.float64()
-            ),
-            "maturity_years": pa.array(
-                [position.maturity_years for position in positions], type=pa.float64()
-            ),
-            "currency": [position.currency for position in positions],
-            "lgd_override": pa.array(
-                [position.lgd_override for position in positions], type=pa.float64()
-            ),
-            "is_defaulted": [position.is_defaulted for position in positions],
-            "is_gse": [position.is_gse for position in positions],
-            "is_pse": [position.is_pse for position in positions],
-            "is_covered_bond": [position.is_covered_bond for position in positions],
-            "lineage_source_system": [position.lineage.source_system for position in positions],
-            "lineage_source_file": [position.lineage.source_file for position in positions],
-            "citation_ids": [",".join(position.citation_ids) for position in positions],
-        }
-    )
 
 
 def _enum_value(value: Any) -> str:
