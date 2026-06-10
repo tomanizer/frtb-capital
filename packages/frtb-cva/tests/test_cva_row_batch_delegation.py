@@ -91,7 +91,7 @@ def test_materiality_threshold_fails_closed_in_row_and_batch_paths(
 ) -> None:
     context = replace(reduced_context, materiality_threshold_elected=True)
     counterparty_batch = build_cva_counterparty_batch_from_counterparties(
-        (sovereign_counterparty,)
+        (sovereign_counterparty,),
     )
     netting_set_batch = build_cva_netting_set_batch_from_netting_sets(
         (sovereign_netting_set,),
@@ -99,7 +99,11 @@ def test_materiality_threshold_fails_closed_in_row_and_batch_paths(
     )
 
     with pytest.raises(UnsupportedRegulatoryFeatureError, match=r"MAR50\.9"):
-        calculate_cva_capital(context, (sovereign_counterparty,), (sovereign_netting_set,))
+        calculate_cva_capital(
+            context,
+            (sovereign_counterparty,),
+            (sovereign_netting_set,),
+        )
 
     with pytest.raises(UnsupportedRegulatoryFeatureError, match=r"MAR50\.9"):
         calculate_cva_capital_from_batches(context, counterparty_batch, netting_set_batch)
