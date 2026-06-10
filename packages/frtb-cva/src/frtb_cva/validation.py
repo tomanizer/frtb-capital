@@ -341,6 +341,11 @@ def validate_calculation_context(context: object) -> CvaCalculationContext:
         raise UnsupportedRegulatoryFeatureError(MAR50_9_UNSUPPORTED_MESSAGE)
     for netting_set_id in context.carve_out_netting_set_ids:
         _require_text(netting_set_id, "carve_out_netting_set_ids")
+    if context.sa_cva_sensitivity_scope_evidence_id is not None:
+        _require_text(
+            context.sa_cva_sensitivity_scope_evidence_id,
+            "sa_cva_sensitivity_scope_evidence_id",
+        )
     return context
 
 

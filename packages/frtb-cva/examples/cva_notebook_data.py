@@ -102,6 +102,7 @@ def notebook_context(
     run_id: str = "cva-notebook-demo",
     sa_cva_approved: bool = False,
     carve_out_netting_set_ids: tuple[str, ...] = (),
+    sa_cva_sensitivity_scope_evidence_id: str | None = None,
 ) -> CvaCalculationContext:
     """Return a deterministic Basel MAR50 context for notebook examples."""
 
@@ -113,6 +114,7 @@ def notebook_context(
         method=method,
         sa_cva_approved=sa_cva_approved,
         carve_out_netting_set_ids=carve_out_netting_set_ids,
+        sa_cva_sensitivity_scope_evidence_id=sa_cva_sensitivity_scope_evidence_id,
         desk_id="desk-cva",
         legal_entity="LE-CVA",
     )
@@ -368,16 +370,19 @@ def sample_mixed_inputs() -> tuple[
 ]:
     """Return a minimal mixed SA-CVA plus BA-CVA carve-out data set."""
 
-    counterparties = (sample_counterparties()[0],)
-    carved = replace(sample_netting_sets(counterparties)[0], carved_out_to_ba_cva=True)
+    counterparties = sample_counterparties()[:2]
+    netting_sets = sample_netting_sets(counterparties)
+    carved = replace(netting_sets[0], carved_out_to_ba_cva=True)
+    non_carved = netting_sets[1]
     sensitivities = (sample_sa_sensitivities()[0], sample_sa_sensitivities()[2])
     context = notebook_context(
         method=CvaMethod.MIXED_CARVE_OUT,
         run_id="cva-notebook-mixed",
         sa_cva_approved=True,
         carve_out_netting_set_ids=(carved.netting_set_id,),
+        sa_cva_sensitivity_scope_evidence_id="notebook-sa-slice-non-carved",
     )
-    return counterparties, (carved,), sensitivities, context
+    return counterparties, (carved, non_carved), sensitivities, context
 
 
 def load_ba_fixture(fixture_name: str = "ba_cva_reduced_v1") -> LoadedBaFixture:

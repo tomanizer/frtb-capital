@@ -37,7 +37,7 @@ Clients must supply all tables required by the selected `CvaMethod`:
 | Reduced BA-CVA | Counterparty and netting-set tables | None | Materiality-threshold alternative is unsupported. |
 | Full BA-CVA | Counterparty, netting-set, and hedge tables | None | Hedge eligibility metadata must be explicit. |
 | SA-CVA | SA-CVA sensitivity table | Hedge identifiers when sensitivity tag is `HDG` | Unsupported SA-CVA paths fail closed; GIRR delta requires tenor and vega requires volatility input. |
-| Mixed carve-out | SA-CVA sensitivity table plus BA-CVA carve-out netting-set context | Counterparty and netting-set tables for carved-out BA-CVA | Carve-out ids must match supplied netting sets. |
+| Mixed carve-out | SA-CVA sensitivity table plus BA-CVA carve-out netting-set context and `sa_cva_sensitivity_scope_evidence_id` | Counterparty and netting-set tables for carved-out BA-CVA | Carve-out ids must match supplied netting sets; SA-CVA sensitivities must be evidenced as the non-carved slice. |
 
 ## Attribution and impact
 

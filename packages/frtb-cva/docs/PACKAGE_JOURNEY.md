@@ -60,7 +60,7 @@ You do **not** always execute BA-CVA and then SA-CVA.
 | `BA_CVA_REDUCED` | Counterparties + netting sets | Reduced BA-CVA portfolio |
 | `BA_CVA_FULL` | Counterparties + netting sets + hedges | Full BA-CVA (hedge recognition + reduced core) |
 | `SA_CVA` | SA-CVA sensitivities (+ hedges when tag is `HDG`) | SA-CVA risk-class capital only |
-| `MIXED_CARVE_OUT` | Sensitivities + BA carve-out netting sets | SA-CVA on full book **plus** reduced BA-CVA on carved-out netting sets |
+| `MIXED_CARVE_OUT` | Sensitivities + BA carve-out netting sets + SA slice evidence | SA-CVA on evidenced non-carved slice **plus** reduced BA-CVA on carved-out netting sets |
 
 Unsupported methods, unmapped future profiles, MAR50.9 materiality-threshold
 election, and analogous CCR-substitution alternatives fail closed with
@@ -172,7 +172,8 @@ dataclasses (`CvaCapitalResult`, stand-alone lines, hedge recognition lines, …
 
 - `run_id`, `calculation_date`, `base_currency`
 - `profile` (`CvaRegulatoryProfile`, resolved via `get_cva_rule_profile`)
-- `method`, `sa_cva_approved`, `carve_out_netting_set_ids` (mixed carve-out)
+- `method`, `sa_cva_approved`, `carve_out_netting_set_ids`, and
+  `sa_cva_sensitivity_scope_evidence_id` (mixed carve-out)
 
 Scope helpers fail closed when method and supplied tables disagree (for example
 SA-CVA must not receive counterparty or netting-set batches).
@@ -191,9 +192,11 @@ Both paths:
    `input_hash`, `profile_hash`)
 4. call `validate_cva_result_reconciliation` before returning
 
-For `MIXED_CARVE_OUT`, SA-CVA runs on the sensitivity batch; reduced BA-CVA runs
-on the partitioned carve-out counterparty/netting-set subset; totals sum both
-components (`method_components` records each part).
+For `MIXED_CARVE_OUT`, SA-CVA runs on an evidenced sensitivity batch for the
+non-carved slice; reduced BA-CVA runs on the partitioned carve-out
+counterparty/netting-set subset; totals sum both components
+(`method_components` records each part). Mixed runs fail closed when SA-CVA
+sensitivities are supplied without `sa_cva_sensitivity_scope_evidence_id`.
 
 ### Step 6 — Post-capital (same package)
 

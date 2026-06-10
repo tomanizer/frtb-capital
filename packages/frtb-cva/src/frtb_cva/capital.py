@@ -27,7 +27,11 @@ from frtb_cva.data_models import (
 )
 from frtb_cva.regimes import get_cva_rule_profile
 from frtb_cva.sa_cva import calculate_sa_cva_capital
-from frtb_cva.scope import partition_mixed_method_inputs, validate_method_selection
+from frtb_cva.scope import (
+    partition_mixed_method_inputs,
+    require_mixed_sensitivity_scope_evidence,
+    validate_method_selection,
+)
 from frtb_cva.validation import (
     CvaInputError,
     validate_calculation_context,
@@ -109,6 +113,7 @@ def calculate_cva_capital(
                 "mixed carve-out requires SA-CVA sensitivities",
                 field="sensitivities",
             )
+        require_mixed_sensitivity_scope_evidence(validated_context)
         sa_cva_risk_class_capitals = calculate_sa_cva_capital(
             validated_sensitivities,
             hedges=sa_hedges,

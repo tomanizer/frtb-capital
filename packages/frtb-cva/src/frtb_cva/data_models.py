@@ -242,6 +242,7 @@ class CvaCalculationContext:
     sa_cva_approved: bool = False
     materiality_threshold_elected: bool = False
     carve_out_netting_set_ids: tuple[str, ...] = ()
+    sa_cva_sensitivity_scope_evidence_id: str | None = None
     desk_id: str = ""
     legal_entity: str = ""
     citation_policy: str = "strict"

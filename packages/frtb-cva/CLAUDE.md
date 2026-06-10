@@ -15,7 +15,8 @@ Review `frtb-cva` as the owner of CVA capital only.
   MAR50.42-MAR50.77 when `sa_cva_approved=True`; CCS vega is explicitly
   rejected because MAR50.45 and MAR50.63 do not define a CCS vega capital path.
 - Mixed SA-CVA with BA-CVA netting-set carve-outs (`MIXED_CARVE_OUT`) per
-  MAR50.8.
+  MAR50.8; SA-CVA sensitivities must carry context-level evidence for the
+  non-carved slice.
 - Qualified-index routing for CCS bucket 8, RCS buckets 16/17, and equity
   buckets 12/13 where MAR50.50 metadata is supplied.
 - Optional CRIF adapter, Arrow/batch handoff, attribution, impact, deterministic
