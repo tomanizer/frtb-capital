@@ -98,14 +98,24 @@ def run_demo(root: Path, demo_script: Path, runner: Sequence[str]) -> DemoResult
 
     relative_demo = demo_script.relative_to(root)
     command = (*runner, str(relative_demo))
-    completed = subprocess.run(
-        command,
-        cwd=root,
-        check=False,
-        text=True,
-        encoding="utf-8",
-        capture_output=True,
-    )
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=root,
+            check=False,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+        )
+    except FileNotFoundError as exc:
+        return DemoResult(
+            package=package_name(demo_script),
+            command=tuple(command),
+            returncode=127,
+            stdout="",
+            stderr=f"Runner executable not found: {exc}",
+        )
     return DemoResult(
         package=package_name(demo_script),
         command=tuple(command),
@@ -122,9 +132,15 @@ def print_result(result: DemoResult, *, summary_limit: int) -> None:
     print(f"\n== {result.package} ==")
     print(f"command: {shell_join(result.command)}")
     print(f"status: {status}")
-    for line in summary_lines(result.stdout, limit=summary_limit):
-        print(f"  {line}")
-    if not result.passed and result.stderr.strip():
+    if result.passed:
+        for line in summary_lines(result.stdout, limit=summary_limit):
+            print(f"  {line}")
+        return
+    if result.stdout.strip():
+        print("stdout:")
+        for line in result.stdout.strip().splitlines():
+            print(f"  {line}")
+    if result.stderr.strip():
         print("stderr:")
         for line in result.stderr.strip().splitlines():
             print(f"  {line}")
