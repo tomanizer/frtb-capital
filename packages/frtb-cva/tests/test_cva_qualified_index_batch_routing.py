@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
 from frtb_cva import (
     CvaSector,
@@ -56,14 +58,20 @@ def _sensitivity(
 
 
 def _ccs_sensitivity(**overrides: object) -> SaCvaSensitivity:
+    base: dict[str, object] = {
+        "sensitivity_id": "sens-ccs-index",
+        "bucket_id": "8",
+        "index_treatment": SaCvaIndexTreatment.QUALIFIED_INDEX,
+        "index_homogeneous_sector_quality": True,
+    }
+    base.update(overrides)
     return _sensitivity(
-        "sens-ccs-index",
+        cast(str, base.pop("sensitivity_id")),
         SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
-        "8",
+        cast(str, base.pop("bucket_id")),
         "INDEX|INVESTMENT_GRADE",
-        index_treatment=SaCvaIndexTreatment.QUALIFIED_INDEX,
-        index_homogeneous_sector_quality=True,
-        **overrides,
+        index_treatment=cast(SaCvaIndexTreatment | None, base.pop("index_treatment")),
+        **base,
     )
 
 
