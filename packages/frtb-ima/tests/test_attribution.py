@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import pytest
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
+from frtb_common.contribution_bundle import ComponentContributionBundle
 
-from frtb_ima.attribution import desk_contributions
+from frtb_ima.attribution import build_ima_contribution_bundle, desk_contributions
 from frtb_ima.audit import DeskAuditRecord
 
 TEST_INPUTS_HASH = "1" * 64
@@ -29,6 +30,76 @@ def test_desk_contributions_reconcile_standard_path() -> None:
         item.reconciliation_status is ReconciliationStatus.RECONCILED for item in contributions
     )
     assert all(item.method is AttributionMethod.ANALYTICAL_EULER for item in contributions)
+
+
+def test_build_ima_contribution_bundle_reconciles_to_summary_total() -> None:
+    record = _desk_record(
+        imcc={"imcc": 100.0},
+        ses={"total_ses": 25.0},
+        capital={"total": 125.0, "binding_term": "SPOT"},
+    )
+
+    bundle = build_ima_contribution_bundle(record, total_ima_capital=125.0)
+
+    assert isinstance(bundle, ComponentContributionBundle)
+    assert bundle.component == "frtb_ima"
+    assert bundle.component_total == pytest.approx(125.0)
+    assert bundle.component_input_hash == record.inputs_hash
+    assert bundle.component_profile_hash == record.policy_hash
+    assert _total(bundle.contributions) == pytest.approx(125.0)
+
+
+def test_build_ima_contribution_bundle_combines_run_desk_records() -> None:
+    first = _desk_record(
+        imcc={"imcc": 70.0},
+        ses={"total_ses": 10.0},
+        capital={"total": 80.0, "binding_term": "SPOT"},
+    )
+    second = _desk_record(
+        desk_id="desk-2",
+        imcc={"imcc": 20.0},
+        ses={"total_ses": 5.0},
+        capital={"total": 25.0, "binding_term": "SPOT"},
+    )
+
+    bundle = build_ima_contribution_bundle((first, second), total_ima_capital=105.0)
+
+    assert bundle.component == "frtb_ima"
+    assert bundle.component_total == pytest.approx(105.0)
+    assert [item.source_id for item in bundle.contributions if item.category == "IMCC"] == [
+        "desk-1",
+        "desk-2",
+    ]
+    assert _total(bundle.contributions) == pytest.approx(105.0)
+
+
+def test_build_ima_contribution_bundle_rejects_summary_mismatch() -> None:
+    record = _desk_record(
+        imcc={"imcc": 100.0},
+        ses={"total_ses": 25.0},
+        capital={"total": 125.0, "binding_term": "SPOT"},
+    )
+
+    with pytest.raises(ValueError, match="do not reconcile to total_ima_capital"):
+        build_ima_contribution_bundle(record, total_ima_capital=130.0)
+
+
+def test_build_ima_contribution_bundle_rejects_mixed_hashes() -> None:
+    first = _desk_record(
+        imcc={"imcc": 100.0},
+        ses={"total_ses": 25.0},
+        capital={"total": 125.0, "binding_term": "SPOT"},
+    )
+    second = _desk_record(
+        desk_id="desk-2",
+        inputs_hash="2" * 64,
+        imcc={"imcc": 10.0},
+        ses={"total_ses": 5.0},
+        capital={"total": 15.0, "binding_term": "SPOT"},
+    )
+
+    with pytest.raises(ValueError, match="must share one inputs_hash"):
+        build_ima_contribution_bundle((first, second), total_ima_capital=140.0)
 
 
 def test_desk_contributions_use_capital_breakdown_when_present() -> None:
@@ -320,18 +391,22 @@ def _desk_record(
     ses: dict[str, object],
     capital: dict[str, object],
     pla: dict[str, object] | None = None,
+    desk_id: str = "desk-1",
+    inputs_hash: str = TEST_INPUTS_HASH,
+    policy_hash: str = "policy-hash",
 ) -> DeskAuditRecord:
     return DeskAuditRecord(
         run_id="run-1",
-        desk_id="desk-1",
+        desk_id=desk_id,
         regime="FED_NPR_2_0",
-        inputs_hash=TEST_INPUTS_HASH,
+        inputs_hash=inputs_hash,
         imcc=imcc,
         ses=ses,
         pla=pla if pla is not None else {"zone": "GREEN"},
         backtesting={"model_eligible": True},
         capital=capital,
         elapsed_seconds=0.0,
+        policy_hash=policy_hash,
     )
 
 
