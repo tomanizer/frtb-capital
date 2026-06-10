@@ -5,7 +5,11 @@ from __future__ import annotations
 from dataclasses import replace
 
 import pytest
-from frtb_common.attribution import AttributionMethod, ReconciliationStatus
+from frtb_common.attribution import (
+    AttributionMethod,
+    CapitalContribution,
+    ReconciliationStatus,
+)
 from frtb_sbm import (
     BucketCapital,
     IntraBucketScenarioRecord,
@@ -141,7 +145,7 @@ def test_unsupported_records_remain_visible_in_summary_projections() -> None:
         assert summary.methods == (str(AttributionMethod.UNSUPPORTED),)
         assert summary.residual == pytest.approx(_SELECTED_CAPITAL)
         assert summary.total == pytest.approx(_SELECTED_CAPITAL)
-        assert summary.reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
+        assert summary.reconciliation_status == ReconciliationStatus.PARTIAL_RESIDUAL
         assert "Floor active in bucket '1'" in summary.reasons[0]
 
 
@@ -149,17 +153,21 @@ _SELECTED_CAPITAL = 123.0
 _CITATIONS = ("basel_mar21_4_intra_bucket",)
 
 
-def _unsupported_record(rc: RiskClassCapital):
+def _unsupported_record(rc: RiskClassCapital) -> CapitalContribution:
     records = calculate_sbm_attribution(_result(rc))
     assert len(records) == 1
     return records[0]
 
 
-def _assert_unsupported(record, *, reason_contains: str) -> None:
-    assert record.method is AttributionMethod.UNSUPPORTED
+def _assert_unsupported(
+    record: CapitalContribution,
+    *,
+    reason_contains: str,
+) -> None:
+    assert record.method == AttributionMethod.UNSUPPORTED
     assert record.contribution is None
     assert record.residual == pytest.approx(_SELECTED_CAPITAL)
-    assert record.reconciliation_status is ReconciliationStatus.PARTIAL_RESIDUAL
+    assert record.reconciliation_status == ReconciliationStatus.PARTIAL_RESIDUAL
     assert reason_contains in record.reason
 
 
