@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
 from frtb_sbm.attribution import (
     SbmAttributionGrain,
