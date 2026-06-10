@@ -370,7 +370,7 @@ def test_standalone_capital_finite_check() -> None:
         lineage_source_systems=["synthetic"],
         lineage_source_files=["netting-sets.csv"],
     )
-    with mock.patch("frtb_cva.batch.math.isfinite", return_value=False):
+    with mock.patch("frtb_cva._ba_reduced_batch_kernel.math.isfinite", return_value=False):
         with pytest.raises(CvaInputError, match="standalone capital must be finite"):
             calculate_cva_capital_from_batches(
                 CvaCalculationContext(
@@ -441,6 +441,73 @@ def test_full_portfolio_hedge_counterparty_mismatch() -> None:
             netting_set_batch,
             hedges=hedge_batch,
         )
+
+
+def test_full_portfolio_ineligible_unknown_counterparty_hedge_has_zero_benefit() -> None:
+    counterparty_batch = build_cva_counterparty_batch_from_columns(
+        counterparty_ids=["cp-1"],
+        desk_ids=["desk-1"],
+        legal_entities=["LE-001"],
+        sectors=["SOVEREIGN"],
+        credit_qualities=["INVESTMENT_GRADE"],
+        regions=["EMEA"],
+        source_row_ids=["cp-row-1"],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["counterparties.csv"],
+    )
+    netting_set_batch = build_cva_netting_set_batch_from_columns(
+        netting_set_ids=["ns-1"],
+        counterparty_ids=["cp-1"],
+        eads=[100_000.0],
+        effective_maturities=[2.5],
+        discount_factors=[0.98],
+        currencies=["USD"],
+        sign_conventions=["non_negative"],
+        uses_imm_eads=[False],
+        source_row_ids=["ns-row-1"],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["netting-sets.csv"],
+    )
+    hedge_batch = build_cva_hedge_batch_from_columns(
+        hedge_ids=["h-1"],
+        source_row_ids=["h-row-1"],
+        counterparty_ids=["cp-missing"],
+        hedge_types=["SINGLE_NAME_CDS"],
+        notionals=[50_000.0],
+        remaining_maturities=[2.0],
+        discount_factors=[0.99],
+        reference_sectors=["SOVEREIGN"],
+        reference_credit_qualities=["INVESTMENT_GRADE"],
+        reference_regions=["EMEA"],
+        reference_relations=["DIRECT"],
+        eligibilities=["INELIGIBLE"],
+        is_internal=[False],
+        rejection_reasons=["hedge_marked_ineligible"],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["hedges.csv"],
+    )
+
+    calculation = calculate_cva_capital_from_batches(
+        CvaCalculationContext(
+            run_id="run-ineligible-missing",
+            calculation_date=date(2026, 6, 1),
+            base_currency="USD",
+            profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
+            method=CvaMethod.BA_CVA_FULL,
+        ),
+        counterparty_batch,
+        netting_set_batch,
+        hedges=hedge_batch,
+    )
+
+    full = calculation.result.ba_cva_full
+    assert full is not None
+    assert full.hedge_lines[0].counterparty_id == "cp-missing"
+    assert full.hedge_lines[0].snh_contribution == 0.0
+    assert full.hedge_lines[0].hma_contribution == 0.0
+    assert full.counterparty_adjusted_standalone == (
+        ("cp-1", full.reduced.counterparty_capitals[0].standalone_capital),
+    )
 
 
 def test_sa_cva_capital_batch_zero_sensitivities() -> None:
