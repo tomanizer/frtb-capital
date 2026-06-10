@@ -342,9 +342,10 @@ Every capital-producing result must carry:
 - requirement ids and citation ids;
 - gross JTD, scaled JTD, net JTD, HBR, risk-weight, bucket, category, and total
   records sufficient to reproduce the capital number.
-- lineage, branch metadata, and attribution records sufficient to explain
-  stable analytical Euler contributions now and finite-difference impact in a
-  later slice without changing the capital calculation API.
+- lineage, branch metadata, attribution records, and impact-ready ids
+  sufficient to explain stable analytical Euler contributions and
+  baseline-vs-candidate finite-difference impact without changing the capital
+  calculation API.
 
 Audit serialization must be JSON/Markdown ready and deterministic.
 
@@ -377,11 +378,17 @@ labelled as an impact method rather than a marginal contribution.
 
 ### DRC-FUNC-018: Change impact assessment
 
-The package must be structured so a later `impact.py` module can compare a
+The package must expose `calculate_drc_impact` in `impact.py` to compare a
 baseline `DrcCapitalResult` with a candidate `DrcCapitalResult` and explain
-capital deltas by stable ids. The first implementation must therefore retain
-stable ids and deterministic ordering across position, gross JTD, scaled JTD,
-netting group, bucket, category, and total records.
+capital deltas by stable ids. The implementation must retain stable ids and
+deterministic ordering across position, gross JTD, scaled JTD, netting group,
+bucket, category, and total records.
+
+Stable bucket branches may emit `FINITE_DIFFERENCE` impact records. Profile
+changes, position bucket/category moves, category moves, floors, zero HBR
+denominators, rejected offsets, and unsupported feature branches must emit
+`UNSUPPORTED` records plus an explicit `RESIDUAL` record where needed to
+reconcile records to the total capital delta.
 
 Impact records are not regulatory capital outputs. They are explainability and
 change-control artifacts, and must not change the capital number.

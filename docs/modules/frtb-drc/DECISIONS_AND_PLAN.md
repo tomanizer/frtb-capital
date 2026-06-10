@@ -92,7 +92,8 @@ attribution records outside the capital kernel. Analytical Euler is used where
 the active branch is stable; explicit residual or unsupported records are used
 where floors, zero HBR denominators, missing risk-weight lineage, or unsupported
 branch shapes prevent exact Euler decomposition. Baseline-vs-candidate impact
-remains a later enhancement.
+analysis is implemented separately from attribution as a change-control
+artifact over two compatible capital results.
 
 **Reason:** The package first needs a stable capital chain. Euler allocation is
 useful for explainability and change control but should not delay the cited
@@ -104,7 +105,9 @@ method can be trusted.
 position through total result. `attribution.py` follows
 [ADR 0012](../../decisions/0012-capital-impact-attribution.md) and
 [ADR 0031](../../decisions/0031-drc-attribution-method-contract.md);
-`impact.py` remains future work.
+`impact.py` follows the finite-difference impact boundary from
+[ADR 0038](../../decisions/0038-suite-wide-attribution-impact-contract.md) and
+[ADR 0044](../../decisions/0044-drc-baseline-impact-analysis.md).
 
 ### DRC-DEC-008: Securitisation and CTP fail closed until cited evidence exists
 
@@ -144,7 +147,7 @@ paths still fail closed.
 12. Implement CTP.
 13. Add optional CRIF adapter, validation notebooks, performance checks, and
     analytical Euler attribution.
-14. Add finite-difference impact assessment in a later issue.
+14. Add finite-difference impact assessment.
 
 ## Documentation deliverables
 
@@ -182,8 +185,8 @@ Basel MAR22 securitisation non-CTP and CTP row/batch paths, Arrow/batch fast
 paths, EU CRR3 non-securitisation row/batch paths, and attribution records.
 Remaining gaps are deliberate: EU CRR3 securitisation non-CTP and CTP, PRA UK
 CRR, internal banking-book securitisation risk-weight derivation, and
-baseline-vs-candidate impact analysis remain outside the current implemented
-scope.
+additional branch-specific impact decomposition beyond explicit
+finite-difference, unsupported, and residual records.
 
 ## Open design questions
 

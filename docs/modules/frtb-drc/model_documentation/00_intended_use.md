@@ -65,7 +65,8 @@ Regulatory anchors for the supported path are recorded in
 - internal derivation of banking-book securitisation risk weights;
 - inferred securitisation fair-value caps without typed evidence and profile
   permission;
-- baseline-vs-candidate impact analysis;
+- treating baseline-vs-candidate impact analysis as regulatory capital,
+  marginal contribution, or supervisory reporting;
 - silent fallback when required inputs or regulatory features are unsupported.
 
 ## Prototype Caution

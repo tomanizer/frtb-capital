@@ -33,7 +33,7 @@ SA composition, or top-of-house aggregation.
 | `netting.py` | Same-obligor, seniority-aware, maturity-weighted net JTD aggregation. |
 | `capital.py` | HBR, bucket capital, category totals, and public calculation entry point. |
 | `attribution.py` | Analytical Euler, residual, and unsupported attribution over the audited capital graph. |
-| `impact.py` | Future baseline-vs-candidate capital deltas for change assessment. Not part of the current runtime. |
+| `impact.py` | Baseline-vs-candidate capital deltas for change-control reporting. Not part of the capital kernel. |
 | `securitisation.py` | U.S. NPR 2.0 and Basel MAR22 securitisation non-CTP market-value gross default exposure, optional fair-value cap evidence, offsetting, HBR, bucket, and category capital paths. Unsupported profiles fail closed. |
 | `ctp.py` | U.S. NPR 2.0 CTP market-value gross default exposure, replication-group netting, CTP-wide HBR, bucket recognition, and category capital path. Unsupported profiles fail closed. |
 | `crif.py` | Optional CRIF-to-canonical mapping. Not imported by kernels. |
@@ -98,12 +98,13 @@ and tranche mechanics package-local.
 5. Serialize deterministic audit records.
 6. Return a frozen result.
 
-### Stage 7: Attribution and future impact
+### Stage 7: Attribution and impact
 
 Attribution is implemented under
 [ADR 0012](../../decisions/0012-capital-impact-attribution.md) and
 [ADR 0031](../../decisions/0031-drc-attribution-method-contract.md). Impact
-analysis remains future work.
+analysis follows the suite-wide `CapitalImpact` boundary from
+[ADR 0038](../../decisions/0038-suite-wide-attribution-impact-contract.md).
 
 1. Consume the capital result and audit graph.
 2. Calculate analytical Euler contributions where the DRC formula is
@@ -114,6 +115,11 @@ analysis remains future work.
    number.
 5. Report residuals explicitly when floors, caps, branch changes, or bucket
    moves prevent exact Euler reconciliation.
+6. Compare compatible baseline and candidate `DrcCapitalResult` objects for
+   change-control impact without mutating either capital result.
+7. Label stable branch deltas as finite-difference impact, and label profile,
+   bucket, category, floor, and unsupported branch changes separately from
+   analytical contribution.
 
 ## Proposed enums
 
@@ -371,10 +377,11 @@ class DrcCapitalResult:
 The public result should expose `as_dict()` for audit/reporting, following the
 IMA package style.
 
-### Attribution and future impact records
+### Attribution and impact records
 
-DRC results emit `DrcCapitalContribution` records now. Impact records remain
-future baseline-vs-candidate artifacts.
+DRC results emit `DrcCapitalContribution` records for analytical attribution.
+`calculate_drc_impact` emits separate baseline-vs-candidate impact records over
+two compatible capital results.
 
 ```python
 class AttributionMethod(StrEnum):
@@ -397,19 +404,23 @@ class DrcCapitalContribution:
     reason: str = ""
 
 @dataclass(frozen=True)
-class DrcBucketImpactDelta:
-    bucket_key: str
-    baseline_capital: float
-    candidate_capital: float
-    delta: float
+class DrcImpactRecord:
+    impact_id: str
+    source_id: str
+    source_level: str
+    baseline_capital: float | None
+    candidate_capital: float | None
+    delta: float | None
+    method: DrcImpactMethod
+    reconciliation_status: ReconciliationStatus
+    reason: str
 
 @dataclass(frozen=True)
-class DrcImpactResult:
-    baseline_run_id: str
-    candidate_run_id: str
-    total_delta: float
-    bucket_deltas: tuple[DrcBucketImpactDelta, ...]
-    contribution_records: tuple[DrcCapitalContribution, ...] = ()
+class DrcImpactAnalysis:
+    total_impact: CapitalImpact
+    records: tuple[DrcImpactRecord, ...]
+    residual: float
+    reconciliation_status: ReconciliationStatus
 ```
 
 For non-securitisation DRC, analytical Euler is expected to be tractable for
@@ -482,6 +493,9 @@ The test suite should mirror calculation layers:
   aggregation, and fail-closed validation paths.
 - `test_drc_attribution.py`: analytical, residual, unsupported, row, batch,
   securitisation non-CTP, CTP, and reconciliation-failure attribution paths.
+- `test_drc_impact.py`: stable bucket deltas, floors, profile changes,
+  bucket/category moves, unsupported branches, metadata serialization, and
+  unchanged capital totals during impact generation.
 - `test_drc_arrow_batch.py`: Arrow batch normalization and batch parity for
   non-securitisation, securitisation non-CTP, and CTP inputs.
 - `test_drc_audit.py`: profile hash, input hash, deterministic ordering,
@@ -491,8 +505,8 @@ The test suite should mirror calculation layers:
 - `test_drc_nonsec_fixture.py`, `test_drc_nonsec_v2_fixture.py`, and fixture
   packs under `tests/fixtures/`: committed synthetic validation fixtures.
 
-Future impact tests should be added with the impact implementation rather than
-listed as current package coverage.
+Impact tests are package-local because impact records consume DRC branch
+metadata and stable ids.
 
 ## Example and validation artifacts
 
