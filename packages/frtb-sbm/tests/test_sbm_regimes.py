@@ -4,7 +4,7 @@ import re
 from datetime import date
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
+from frtb_common import UnsupportedRegulatoryFeatureError, stable_json_hash
 from frtb_sbm import (
     SbmInputError,
     SbmRegulatoryProfile,
@@ -13,6 +13,9 @@ from frtb_sbm import (
     get_sbm_rule_profile,
     profile_content_hash,
     resolve_sbm_profile,
+)
+from frtb_sbm.regimes import (
+    _hash_payload as regime_hash_payload,
 )
 from frtb_sbm.regimes import (
     ensure_profile_supports_risk_class_measure,
@@ -64,6 +67,12 @@ def test_profile_content_hash_is_deterministic_and_profile_specific() -> None:
     assert re.fullmatch(r"[0-9a-f]{64}", us_npr_profile.content_hash)
     assert us_npr_profile.content_hash == profile_content_hash(SbmRegulatoryProfile.US_NPR_2_0)
     assert us_npr_profile.content_hash != basel_profile.content_hash
+
+
+def test_regime_hash_payload_uses_common_stable_json_hash() -> None:
+    payload = {"supported_measures": {"GIRR": ["DELTA"]}, "profile_id": "BASEL_MAR21"}
+
+    assert regime_hash_payload(payload) == stable_json_hash(payload)
 
 
 def test_get_sbm_rule_profile_returns_partial_us_npr_profile() -> None:

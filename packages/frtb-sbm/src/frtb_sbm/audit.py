@@ -8,8 +8,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-import hashlib
-import json
+from frtb_common import stable_json_hash
 
 from frtb_sbm.data_models import (
     BucketCapital,
@@ -386,8 +385,7 @@ def _lineage_payload(lineage: SbmSourceLineage) -> dict[str, object]:
 
 
 def _hash_payload(payload: dict[str, object]) -> str:
-    encoded = bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")), "utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return stable_json_hash(payload)
 
 
 __all__ = [
