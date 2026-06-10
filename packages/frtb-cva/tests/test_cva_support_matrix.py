@@ -32,6 +32,11 @@ from frtb_cva.validation import CvaInputError
 _SUPPORTED_PATHS = frozenset(
     key for key, spec in SA_CVA_PATH_REGISTRY.items() if spec.unsupported_message is None
 )
+_COMPARISON_PROFILES = (
+    CvaRegulatoryProfile.US_NPR20_VB,
+    CvaRegulatoryProfile.EU_CRR3_CVA,
+    CvaRegulatoryProfile.UK_PRA_CVA,
+)
 
 
 def test_basel_methods_match_supported_set() -> None:
@@ -47,43 +52,49 @@ def test_basel_sa_paths_match_sa_cva_module() -> None:
     assert (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA) not in paths
 
 
-@pytest.mark.parametrize(
-    "profile",
-    [
-        CvaRegulatoryProfile.US_NPR20_VB,
-        CvaRegulatoryProfile.EU_CRR3_CVA,
-        CvaRegulatoryProfile.UK_PRA_CVA,
-    ],
-)
-def test_non_basel_profiles_support_basel_aligned_methods_and_paths(
+@pytest.mark.parametrize("profile", _COMPARISON_PROFILES)
+def test_non_basel_profiles_fail_closed_until_profile_fixtures_exist(
     profile: CvaRegulatoryProfile,
 ) -> None:
-    assert cva_profile_support_status(profile) is CvaProfileSupportStatus.CAPITAL_PRODUCING
-    assert cva_capital_supported_methods(profile) == frozenset(CvaMethod)
-    assert cva_sa_cva_supported_paths(profile) == frozenset(_SUPPORTED_PATHS)
-    ensure_cva_profile_method_supported(profile, CvaMethod.BA_CVA_REDUCED)
-    ensure_cva_sa_cva_path_supported(
-        profile,
-        SaCvaRiskClass.GIRR,
-        SaCvaRiskMeasure.DELTA,
-    )
-    with pytest.raises(CvaInputError, match="CCS vega"):
+    assert cva_profile_support_status(profile) is CvaProfileSupportStatus.COMPARISON_FAIL_CLOSED
+    assert cva_capital_supported_methods(profile) == frozenset()
+    assert cva_sa_cva_supported_paths(profile) == frozenset()
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile-specific"):
+        ensure_cva_profile_method_supported(profile, CvaMethod.BA_CVA_REDUCED)
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile-specific"):
         ensure_cva_sa_cva_path_supported(
             profile,
-            SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
-            SaCvaRiskMeasure.VEGA,
+            SaCvaRiskClass.GIRR,
+            SaCvaRiskMeasure.DELTA,
         )
 
 
-@pytest.mark.parametrize("profile", list(CvaRegulatoryProfile))
-def test_ccs_vega_matrix_row_is_regulatory_absence(profile: CvaRegulatoryProfile) -> None:
+@pytest.mark.parametrize("profile", _COMPARISON_PROFILES)
+def test_non_basel_matrix_cells_record_fixture_evidence_blocker(
+    profile: CvaRegulatoryProfile,
+) -> None:
+    cells = [
+        cell
+        for cell in cva_profile_support_matrix()
+        if cell.profile is profile
+        and (
+            cell.method in {method.value for method in CvaMethod}
+            or cell.risk_class is not None
+        )
+    ]
+    assert cells
+    assert {cell.status for cell in cells} == {CvaSupportStatus.UNSUPPORTED_FAIL_CLOSED}
+    assert {cell.blocker for cell in cells} == {"profile_fixture_evidence"}
+
+
+def test_basel_ccs_vega_matrix_row_is_regulatory_absence() -> None:
     cells = {
         (cell.profile, cell.method, cell.risk_class, cell.risk_measure): cell
         for cell in cva_profile_support_matrix()
     }
     cell = cells[
         (
-            profile,
+            CvaRegulatoryProfile.BASEL_MAR50_2020,
             CvaMethod.SA_CVA.value,
             SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
             SaCvaRiskMeasure.VEGA,
@@ -93,7 +104,7 @@ def test_ccs_vega_matrix_row_is_regulatory_absence(profile: CvaRegulatoryProfile
     assert cell.blocker == "regulatory_absence"
     with pytest.raises(CvaInputError, match="CCS vega"):
         ensure_cva_sa_cva_path_supported(
-            profile,
+            CvaRegulatoryProfile.BASEL_MAR50_2020,
             SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
             SaCvaRiskMeasure.VEGA,
         )
@@ -167,3 +178,4 @@ def test_traceability_documents_boundary_status_taxonomy() -> None:
         assert f"`{status.value}`" in traceability
     assert SA_CVA_APPROVAL_GOVERNANCE_POLICY in traceability
     assert EXPOSURE_SENSITIVITY_GENERATION_POLICY in traceability
+    assert "profile_fixture_evidence" in traceability
