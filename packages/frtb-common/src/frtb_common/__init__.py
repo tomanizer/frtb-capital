@@ -40,7 +40,14 @@ from frtb_common.arrow_table_schema import (
     column_specs_to_arrow_schema,
     column_specs_to_json_schema,
 )
-from frtb_common.attribution import AttributionMethod, CapitalContribution
+from frtb_common.attribution import (
+    DEFAULT_RECONCILIATION_TOLERANCE,
+    AttributionMethod,
+    CapitalContribution,
+    ContributionReconciliation,
+    reconcile_contribution_set,
+    validate_contribution_reconciliation,
+)
 from frtb_common.component_summary import (
     ComponentCapitalSummary,
     ComponentSummaryError,
@@ -84,6 +91,7 @@ __all__ = [
     "CRIF_SOURCE_ROW_ID_COLUMN",
     "CRIF_SOURCE_SYSTEM",
     "DEFAULT_CRIF_COLUMN_SPECS",
+    "DEFAULT_RECONCILIATION_TOLERANCE",
     "DEFAULT_ROW_ID_COLUMN",
     "AdapterDiagnostic",
     "AttributionMethod",
@@ -93,6 +101,7 @@ __all__ = [
     "ColumnSpec",
     "ComponentCapitalSummary",
     "ComponentSummaryError",
+    "ContributionReconciliation",
     "CrifColumnSpec",
     "CrifRiskTypeMapper",
     "CrifRiskTypeMapping",
@@ -134,6 +143,7 @@ __all__ = [
     "normalize_crif_records",
     "normalized_arrow_table_hash",
     "read_arrow_columns",
+    "reconcile_contribution_set",
     "require_sha256_hex",
     "resolve_column_name",
     "resolve_crif_column_name",
@@ -144,4 +154,5 @@ __all__ = [
     "unique_non_null_text_values",
     "validate_arrow_table",
     "validate_column_specs",
+    "validate_contribution_reconciliation",
 ]
