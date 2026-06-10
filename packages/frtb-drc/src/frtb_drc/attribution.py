@@ -715,7 +715,9 @@ def _record_risk_class(
     net_by_id: Mapping[str, NetJtd],
 ) -> str:
     net_jtd = net_by_id.get(record.source_id) if record.source_level == "net_jtd" else None
-    return str(net_jtd.risk_class) if net_jtd is not None else record.category
+    if net_jtd is not None:
+        return str(net_jtd.risk_class)
+    return record.category or _UNCATEGORISED_KEY
 
 
 def _summary_status(records: tuple[CapitalContribution, ...]) -> ReconciliationStatus:
