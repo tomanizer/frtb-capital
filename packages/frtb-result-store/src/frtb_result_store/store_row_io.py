@@ -7,10 +7,10 @@ from collections.abc import Sequence
 from datetime import date, datetime
 from typing import cast
 
-import frtb_result_store.store_hierarchy_rows as _store_hierarchy_rows
 from frtb_common import AttributionMethod
 from frtb_common.hashing import stable_json_dumps
 
+import frtb_result_store.store_hierarchy_rows as _store_hierarchy_rows
 from frtb_result_store._row_codecs import (
     float_value as _float_value,
 )
