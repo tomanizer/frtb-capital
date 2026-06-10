@@ -84,13 +84,13 @@ generation are out of scope package-boundary rows for every profile.
 | `BASEL_MAR50_2020` | `BA_CVA_FULL` | `implemented_under_audit` | MAR50.17-MAR50.26 | none |
 | `BASEL_MAR50_2020` | `SA_CVA` | `implemented_under_audit` | MAR50.42-MAR50.77 | none |
 | `BASEL_MAR50_2020` | `MIXED_CARVE_OUT` | `implemented_under_audit` | MAR50.8 | none |
-| `BASEL_MAR50_2020` | `MAR50.9_MATERIALITY_THRESHOLD_CCR` | `unsupported_fail_closed` | MAR50.9 | CCR input and orchestration boundary |
+| `BASEL_MAR50_2020` | `MAR50.9_MATERIALITY_THRESHOLD_CCR` | `unsupported_fail_closed` | MAR50.9 | `ccr_boundary` |
 | `US_NPR20_VB` | all CVA methods and supported SA-CVA paths | `implemented_under_audit` | U.S. NPR 2.0 91 FR 14952 section V.B | none |
-| `US_NPR20_VB` | materiality / simplified CCR substitution | `unsupported_fail_closed` | U.S. NPR 2.0 91 FR 14952 section V.B | CCR input and orchestration boundary |
+| `US_NPR20_VB` | materiality / simplified CCR substitution | `unsupported_fail_closed` | U.S. NPR 2.0 91 FR 14952 section V.B | `ccr_boundary` |
 | `EU_CRR3_CVA` | all CVA methods and supported SA-CVA paths | `implemented_under_audit` | Regulation (EU) 2024/1623 Articles 381-386 and 383a-383z | none |
-| `EU_CRR3_CVA` | materiality / simplified CCR substitution | `unsupported_fail_closed` | Regulation (EU) 2024/1623 Article 385 | CCR input and orchestration boundary |
+| `EU_CRR3_CVA` | materiality / simplified CCR substitution | `unsupported_fail_closed` | Regulation (EU) 2024/1623 Article 385 | `ccr_boundary` |
 | `UK_PRA_CVA` | all CVA methods and supported SA-CVA paths | `implemented_under_audit` | PRA PS1/26; PRA Rulebook CVA Risk Part | none |
-| `UK_PRA_CVA` | materiality / alternative approach | `unsupported_fail_closed` | PRA Rulebook CVA Risk Part AA-CVA provisions | CCR input and orchestration boundary |
+| `UK_PRA_CVA` | materiality / alternative approach | `unsupported_fail_closed` | PRA Rulebook CVA Risk Part AA-CVA provisions | `ccr_boundary` |
 | all supported profiles | `SA_CVA_APPROVAL_GOVERNANCE_WORKFLOW` | `out_of_scope` | profile-specific SA-CVA approval sources | supervisory approval boundary |
 | all supported profiles | `EXPOSURE_SIMULATION_AND_SENSITIVITY_GENERATION` | `out_of_scope` | profile-specific CVA exposure and sensitivity sources | upstream exposure/sensitivity boundary |
 
@@ -113,9 +113,10 @@ generation are out of scope package-boundary rows for every profile.
 
 ## Unsupported and out of scope in the delivered slice
 
-- `unsupported_fail_closed`: materiality-threshold alternative (MAR50.9).
+- `unsupported_fail_closed`: materiality-threshold alternative (MAR50.9), with
+  runtime blocker `ccr_boundary`.
 - `unsupported_fail_closed`: analogous simplified CCR-substitution alternatives
-  in non-Basel profiles.
+  in non-Basel profiles, with runtime blocker `ccr_boundary`.
 - `regulatory_absence`: CCS vega capital, because MAR50.45 and MAR50.63 define
   CCS delta but no CCS vega path.
 - `out_of_scope`: SA-CVA approval or governance workflow.
