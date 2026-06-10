@@ -11,6 +11,11 @@ from __future__ import annotations
 import math
 from typing import Literal
 
+from frtb_rrao._investment_fund_validation import (
+    InvestmentFundRuleFailure,
+    InvestmentFundRuleValues,
+    validate_investment_fund_rule_values,
+)
 from frtb_rrao._validation_rules import (
     BACK_TO_BACK_CROSS_REFERENCE_MESSAGE,
     BACK_TO_BACK_MATCHING_CURRENCY_MESSAGE,
@@ -22,16 +27,7 @@ from frtb_rrao._validation_rules import (
     EXCLUDED_CLASSIFICATION_REQUIRES_REASON_MESSAGE,
     EXCLUSION_REASON_REQUIRES_EXPLICIT_EVIDENCE_MESSAGE,
     EXPLICIT_EXCLUSION_REQUIRES_REASON_MESSAGE,
-    FUND_GROSS_NOTIONAL_POSITIVE_MESSAGE,
-    GROSS_NOTIONAL_MATCHES_FUND_PORTION_MESSAGE,
     GROSS_NOTIONAL_NON_NEGATIVE_MESSAGE,
-    INCLUDED_EXPOSURE_RATIO_RANGE_MESSAGE,
-    INVESTMENT_FUND_BACKSTOP_METHOD_REQUIRED_MESSAGE,
-    INVESTMENT_FUND_DESCRIPTOR_REQUIRED_MESSAGE,
-    INVESTMENT_FUND_EVIDENCE_TYPE_REQUIRED_MESSAGE,
-    INVESTMENT_FUND_FLAG_REQUIRED_MESSAGE,
-    INVESTMENT_FUND_MANDATE_ALLOWS_RRAO_MESSAGE,
-    INVESTMENT_FUND_NON_LOOK_THROUGH_MESSAGE,
     SOURCE_LINEAGE_REQUIRED_MESSAGE,
     UNDERLYING_COUNT_INTEGER_MESSAGE,
     UNDERLYING_COUNT_NON_NEGATIVE_MESSAGE,
@@ -41,9 +37,6 @@ from frtb_rrao._validation_rules import (
     excluded_classification_requires_reason,
     exclusion_reason_requires_explicit_evidence,
     explicit_exclusion_requires_reason,
-    fund_gross_notional_is_positive,
-    gross_notional_matches_included_fund_portion,
-    included_exposure_ratio_is_valid,
     investment_fund_path_required,
     is_unsupported_classification_hint,
     is_valid_underlying_count,
@@ -417,25 +410,27 @@ def _validate_investment_fund_fields(position: RraoPosition) -> None:
     if not is_fund_path:
         return
 
-    if not position.is_investment_fund_exposure:
-        raise RraoInputError(
-            INVESTMENT_FUND_FLAG_REQUIRED_MESSAGE,
-            field="is_investment_fund_exposure",
-            position_id=position.position_id,
+    _raise_investment_fund_failure(
+        validate_investment_fund_rule_values(
+            InvestmentFundRuleValues(
+                position_id=position.position_id,
+                gross_effective_notional=position.gross_effective_notional,
+                is_investment_fund_exposure=position.is_investment_fund_exposure,
+                evidence_type=position.evidence_type,
+                descriptor_present=position.investment_fund_descriptor is not None,
+                section_205_method_value=None,
+                fund_gross_effective_notional=None,
+                included_exposure_ratio=None,
+                look_through_available=None,
+                mandate_allows_rrao_exposures=None,
+            ),
+            check_descriptor_values=False,
         )
-    if position.evidence_type is not RraoEvidenceType.INVESTMENT_FUND_EXPOSURE:
-        raise RraoInputError(
-            INVESTMENT_FUND_EVIDENCE_TYPE_REQUIRED_MESSAGE,
-            field="evidence_type",
-            position_id=position.position_id,
-        )
+    )
+
     descriptor = position.investment_fund_descriptor
     if descriptor is None:
-        raise RraoInputError(
-            INVESTMENT_FUND_DESCRIPTOR_REQUIRED_MESSAGE,
-            field="investment_fund_descriptor",
-            position_id=position.position_id,
-        )
+        return
     if not isinstance(descriptor, RraoInvestmentFundDescriptor):
         raise RraoInputError(
             "invalid investment fund descriptor",
@@ -460,12 +455,6 @@ def _validate_investment_fund_fields(position: RraoPosition) -> None:
             field="investment_fund_descriptor.section_205_method",
             position_id=position.position_id,
         )
-    if descriptor.section_205_method is not RraoInvestmentFundMethod.BACKSTOP_FUND_METHOD:
-        raise RraoInputError(
-            INVESTMENT_FUND_BACKSTOP_METHOD_REQUIRED_MESSAGE,
-            field="investment_fund_descriptor.section_205_method",
-            position_id=position.position_id,
-        )
     if not isinstance(descriptor.included_exposure_type, RraoInvestmentFundExposureType):
         raise RraoInputError(
             "invalid investment fund exposure type",
@@ -478,21 +467,9 @@ def _validate_investment_fund_fields(position: RraoPosition) -> None:
             field="investment_fund_descriptor.look_through_available",
             position_id=position.position_id,
         )
-    if descriptor.look_through_available:
-        raise RraoInputError(
-            INVESTMENT_FUND_NON_LOOK_THROUGH_MESSAGE,
-            field="investment_fund_descriptor.look_through_available",
-            position_id=position.position_id,
-        )
     if not isinstance(descriptor.mandate_allows_rrao_exposures, bool):
         raise RraoInputError(
             "mandate RRAO exposure flag must be a bool",
-            field="investment_fund_descriptor.mandate_allows_rrao_exposures",
-            position_id=position.position_id,
-        )
-    if not descriptor.mandate_allows_rrao_exposures:
-        raise RraoInputError(
-            INVESTMENT_FUND_MANDATE_ALLOWS_RRAO_MESSAGE,
             field="investment_fund_descriptor.mandate_allows_rrao_exposures",
             position_id=position.position_id,
         )
@@ -501,31 +478,34 @@ def _validate_investment_fund_fields(position: RraoPosition) -> None:
         descriptor.fund_gross_effective_notional,
         field="investment_fund_descriptor.fund_gross_effective_notional",
     )
-    if not fund_gross_notional_is_positive(fund_notional):
-        raise RraoInputError(
-            FUND_GROSS_NOTIONAL_POSITIVE_MESSAGE,
-            field="investment_fund_descriptor.fund_gross_effective_notional",
-            position_id=position.position_id,
-        )
     ratio = _finite_float(
         descriptor.included_exposure_ratio,
         field="investment_fund_descriptor.included_exposure_ratio",
     )
-    if not included_exposure_ratio_is_valid(ratio):
-        raise RraoInputError(
-            INCLUDED_EXPOSURE_RATIO_RANGE_MESSAGE,
-            field="investment_fund_descriptor.included_exposure_ratio",
-            position_id=position.position_id,
+    _raise_investment_fund_failure(
+        validate_investment_fund_rule_values(
+            InvestmentFundRuleValues(
+                position_id=position.position_id,
+                gross_effective_notional=position.gross_effective_notional,
+                is_investment_fund_exposure=position.is_investment_fund_exposure,
+                evidence_type=position.evidence_type,
+                descriptor_present=True,
+                section_205_method_value=descriptor.section_205_method.value,
+                fund_gross_effective_notional=fund_notional,
+                included_exposure_ratio=ratio,
+                look_through_available=descriptor.look_through_available,
+                mandate_allows_rrao_exposures=descriptor.mandate_allows_rrao_exposures,
+            )
         )
-    if not gross_notional_matches_included_fund_portion(
-        position.gross_effective_notional,
-        fund_notional,
-        ratio,
-    ):
+    )
+
+
+def _raise_investment_fund_failure(failure: InvestmentFundRuleFailure | None) -> None:
+    if failure is not None:
         raise RraoInputError(
-            GROSS_NOTIONAL_MATCHES_FUND_PORTION_MESSAGE,
-            field="gross_effective_notional",
-            position_id=position.position_id,
+            failure.message,
+            field=failure.field,
+            position_id=failure.position_id,
         )
 
 
