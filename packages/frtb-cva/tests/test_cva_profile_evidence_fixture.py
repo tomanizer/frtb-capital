@@ -121,7 +121,12 @@ def _fixture_citation_ids(fixture: dict[str, Any]) -> tuple[str, ...]:
 
 
 def _method_cell(matrix: list[Any], method: CvaMethod) -> Any:
-    return next(cell for cell in matrix if cell.method == method.value and cell.risk_class is None)
+    cell = next(
+        (cell for cell in matrix if cell.method == method.value and cell.risk_class is None),
+        None,
+    )
+    assert cell is not None, f"method cell {method.value} not found in support matrix"
+    return cell
 
 
 def _sa_cva_cell(
@@ -129,10 +134,17 @@ def _sa_cva_cell(
     risk_class: SaCvaRiskClass,
     risk_measure: SaCvaRiskMeasure,
 ) -> Any:
-    return next(
-        cell
-        for cell in matrix
-        if cell.method == CvaMethod.SA_CVA.value
-        and cell.risk_class is risk_class
-        and cell.risk_measure is risk_measure
+    cell = next(
+        (
+            cell
+            for cell in matrix
+            if cell.method == CvaMethod.SA_CVA.value
+            and cell.risk_class is risk_class
+            and cell.risk_measure is risk_measure
+        ),
+        None,
     )
+    assert cell is not None, (
+        f"SA-CVA cell {risk_class.value}/{risk_measure.value} not found in support matrix"
+    )
+    return cell
