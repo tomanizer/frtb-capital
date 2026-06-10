@@ -72,4 +72,3 @@ _SUPPORTED_SA_CVA_PATHS: frozenset[tuple[SaCvaRiskClass, SaCvaRiskMeasure]] = fr
         (SaCvaRiskClass.COMMODITY, SaCvaRiskMeasure.VEGA),
     }
 )
-

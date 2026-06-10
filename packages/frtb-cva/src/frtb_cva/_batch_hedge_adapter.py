@@ -303,9 +303,7 @@ def _hedge_evidence_and_lineage_fields(
             "lineage.source_row_id",
             copy=copy_arrays,
         ),
-        "source_column_maps": _freeze_source_column_maps(
-            columns["source_column_maps"], row_count
-        ),
+        "source_column_maps": _freeze_source_column_maps(columns["source_column_maps"], row_count),
         "source_hash": source_hash,
         "handoff_hash": handoff_hash,
         "diagnostics": tuple(dict(item) for item in diagnostics),

@@ -87,9 +87,7 @@ def _hedge_recognition_line(
         * discount_factor
     )
     line_factory = (
-        _index_hedge_line
-        if hedge_type is BaCvaHedgeType.INDEX_CDS
-        else _single_name_hedge_line
+        _index_hedge_line if hedge_type is BaCvaHedgeType.INDEX_CDS else _single_name_hedge_line
     )
     return line_factory(
         hedge_batch,

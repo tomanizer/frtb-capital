@@ -39,7 +39,7 @@ class _GroupedSensitivities:
     hedge: dict[SaCvaRiskFactorKey, float]
     ids: dict[SaCvaRiskFactorKey, list[str]]
     volatility: dict[SaCvaRiskFactorKey, float | None]
-    keys: tuple[SaCvaRiskFactorKey, ...]
+    keys: list[SaCvaRiskFactorKey]
 
 
 def _compute_weighted_sensitivities_from_batch(
@@ -96,11 +96,9 @@ def _group_sensitivities(
         hedge=grouped_hedge,
         ids=grouped_ids,
         volatility=grouped_volatility,
-        keys=tuple(
-            sorted(
-                set(grouped_cva) | set(grouped_hedge),
-                key=lambda item: (item.bucket_id, item.risk_factor_key, item.tenor or ""),
-            )
+        keys=sorted(
+            set(grouped_cva) | set(grouped_hedge),
+            key=lambda item: (item.bucket_id, item.risk_factor_key, item.tenor or ""),
         ),
     )
 

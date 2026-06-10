@@ -272,4 +272,3 @@ def _validate_carve_out_batch_evidence(
                 field="carve_out_netting_set_ids",
                 record_id=netting_set_id,
             )
-

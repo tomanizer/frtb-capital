@@ -96,6 +96,7 @@ def calculate_full_portfolio_from_batches(
         ),
     )
 
+
 def _k_portfolio_hedged(
     scva_by_counterparty: dict[str, float],
     *,
