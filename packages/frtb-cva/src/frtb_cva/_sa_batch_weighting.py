@@ -124,9 +124,8 @@ def _risk_factor_key_from_batch(
     *,
     profile: CvaRegulatoryProfile | str,
 ) -> SaCvaRiskFactorKey:
-    del profile
     risk_class = SaCvaRiskClass(cast(str, batch.risk_classes[index]))
-    bucket_id = _resolve_sa_cva_bucket_from_batch(batch, index)
+    bucket_id = _resolve_sa_cva_bucket_from_batch(batch, index, profile=profile)
     return SaCvaRiskFactorKey(
         risk_class=risk_class,
         risk_measure=SaCvaRiskMeasure(cast(str, batch.risk_measures[index])),
