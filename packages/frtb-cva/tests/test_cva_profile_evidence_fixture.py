@@ -18,8 +18,9 @@ from frtb_cva import (
 )
 from frtb_cva.reference_data import citations_for_profile, profile_reference_payload
 
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "profile_comparison_v1" / "expected_profiles.json"
-CROSSWALK_PATH = Path(__file__).resolve().parents[2] / ".." / "docs" / "regulatory" / "crosswalk" / "frtb-cva.yml"
+CROSSWALK_PATH = _REPO_ROOT / "docs" / "regulatory" / "crosswalk" / "frtb-cva.yml"
 
 
 def _load_fixture() -> dict[str, Any]:
@@ -30,7 +31,7 @@ def _load_fixture() -> dict[str, Any]:
 
 
 def _load_crosswalk_requirements() -> dict[str, dict[str, Any]]:
-    with CROSSWALK_PATH.resolve().open(encoding="utf-8") as handle:
+    with CROSSWALK_PATH.open(encoding="utf-8") as handle:
         payload = yaml.safe_load(handle)
     return {str(requirement["id"]): requirement for requirement in payload["requirements"]}
 
