@@ -68,14 +68,15 @@ July 2020 calibration revision notes: `m_CVA = 1.0`, `D_BA-CVA = 0.65`.
 ## Profile x method support matrix
 
 Runtime source of truth: `frtb_cva.support_matrix.cva_profile_support_matrix`.
-`BASEL_MAR50_2020` is the only capital-producing CVA profile in this package
-until comparison profiles have profile-specific reference-data fixtures or an
-explicit documented equivalence decision. `US_NPR20_VB`, `EU_CRR3_CVA`, and
-`UK_PRA_CVA` remain visible for source mapping and client planning, but they fail
-closed before capital calculation with `profile_fixture_evidence` as the blocker.
-ECB shorthand is normalised to `EU_CRR3_CVA`, not a separate runtime profile.
-SA-CVA supervisory approval workflow and exposure / sensitivity generation are
-out of scope package-boundary rows for every profile.
+`BASEL_MAR50_2020` is the calibration anchor. `US_NPR20_VB`, `EU_CRR3_CVA`, and
+`UK_PRA_CVA` are capital-producing comparison profiles under audit: they use
+package-local profile citation maps, deterministic profile hashes, and the
+`profile_comparison_v1` fixture to evidence BA-CVA and SA-CVA source ids,
+citation ids, support-matrix rows, and crosswalk source refs. These comparison
+outputs remain proposed-rule or jurisdiction-specific audit evidence, not final
+regulatory capital. ECB shorthand is normalised to `EU_CRR3_CVA`, not a separate
+runtime profile. SA-CVA supervisory approval workflow and exposure / sensitivity
+generation are out of scope package-boundary rows for every profile.
 
 | Profile | Method or policy | Status | Citation | Blocker |
 | --- | --- | --- | --- | --- |
@@ -84,11 +85,11 @@ out of scope package-boundary rows for every profile.
 | `BASEL_MAR50_2020` | `SA_CVA` | `implemented_under_audit` | MAR50.42-MAR50.77 | none |
 | `BASEL_MAR50_2020` | `MIXED_CARVE_OUT` | `implemented_under_audit` | MAR50.8 | none |
 | `BASEL_MAR50_2020` | `MAR50.9_MATERIALITY_THRESHOLD_CCR` | `unsupported_fail_closed` | MAR50.9 | CCR input and orchestration boundary |
-| `US_NPR20_VB` | all CVA methods and SA-CVA paths | `unsupported_fail_closed` | U.S. NPR 2.0 91 FR 14952 section V.B | `profile_fixture_evidence` |
+| `US_NPR20_VB` | all CVA methods and supported SA-CVA paths | `implemented_under_audit` | U.S. NPR 2.0 91 FR 14952 section V.B | none |
 | `US_NPR20_VB` | materiality / simplified CCR substitution | `unsupported_fail_closed` | U.S. NPR 2.0 91 FR 14952 section V.B | CCR input and orchestration boundary |
-| `EU_CRR3_CVA` | all CVA methods and SA-CVA paths | `unsupported_fail_closed` | Regulation (EU) 2024/1623 Articles 381-386 and 383a-383z | `profile_fixture_evidence` |
+| `EU_CRR3_CVA` | all CVA methods and supported SA-CVA paths | `implemented_under_audit` | Regulation (EU) 2024/1623 Articles 381-386 and 383a-383z | none |
 | `EU_CRR3_CVA` | materiality / simplified CCR substitution | `unsupported_fail_closed` | Regulation (EU) 2024/1623 Article 385 | CCR input and orchestration boundary |
-| `UK_PRA_CVA` | all CVA methods and SA-CVA paths | `unsupported_fail_closed` | PRA PS1/26; PRA Rulebook CVA Risk Part | `profile_fixture_evidence` |
+| `UK_PRA_CVA` | all CVA methods and supported SA-CVA paths | `implemented_under_audit` | PRA PS1/26; PRA Rulebook CVA Risk Part | none |
 | `UK_PRA_CVA` | materiality / alternative approach | `unsupported_fail_closed` | PRA Rulebook CVA Risk Part AA-CVA provisions | CCR input and orchestration boundary |
 | all supported profiles | `SA_CVA_APPROVAL_GOVERNANCE_WORKFLOW` | `out_of_scope` | profile-specific SA-CVA approval sources | supervisory approval boundary |
 | all supported profiles | `EXPOSURE_SIMULATION_AND_SENSITIVITY_GENERATION` | `out_of_scope` | profile-specific CVA exposure and sensitivity sources | upstream exposure/sensitivity boundary |
@@ -112,9 +113,6 @@ out of scope package-boundary rows for every profile.
 
 ## Unsupported and out of scope in the delivered slice
 
-- `unsupported_fail_closed`: U.S. NPR, EU CRR3, and UK PRA comparison-profile
-  capital cells until profile-specific fixtures or an explicit equivalence
-  decision support capital-producing status.
 - `unsupported_fail_closed`: materiality-threshold alternative (MAR50.9).
 - `unsupported_fail_closed`: analogous simplified CCR-substitution alternatives
   in non-Basel profiles.
