@@ -116,6 +116,11 @@ lineage refs, and attribution records. Orchestration does not write storage
 artifacts directly; callers hand completed suite results to
 `frtb-result-store` adapters after component calculations finish.
 
+See the result-store demo
+[`packages/frtb-result-store/examples/run_demo.py`](../../../packages/frtb-result-store/examples/run_demo.py)
+for a runnable synthetic `ResultBundle` write/read pattern after suite capital
+has been calculated.
+
 ## Validation Evidence
 
 - All 70 orchestration tests pass (`make check`).
