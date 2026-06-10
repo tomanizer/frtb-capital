@@ -23,6 +23,10 @@ def load_fixture_payload() -> dict[str, Any]:
     return _load_json("inputs.json")
 
 
+def load_expected_outputs() -> dict[str, Any]:
+    return _load_json("expected_outputs.json")
+
+
 def load_fixture_context() -> CvaCalculationContext:
     context = load_fixture_payload()["context"]
     return CvaCalculationContext(
