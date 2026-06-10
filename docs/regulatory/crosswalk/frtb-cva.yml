@@ -39,6 +39,7 @@ requirements:
     test_refs:
       - packages/frtb-cva/tests/test_cva_ba_cva_reduced.py
       - packages/frtb-cva/tests/test_cva_ba_cva_full.py
+      - packages/frtb-cva/tests/test_cva_extended_challenger_fixture.py
     coverage_status: implemented_under_audit
     notes: Reduced and full BA-CVA are capital-producing for supported Basel MAR50 and comparison-profile inputs, including eligible hedge recognition and beta-floor mechanics.
   - id: CVA-SA-001
@@ -52,6 +53,7 @@ requirements:
     test_refs:
       - packages/frtb-cva/tests/test_cva_weighted_sensitivity.py
       - packages/frtb-cva/tests/test_cva_aggregation.py
+      - packages/frtb-cva/tests/test_cva_extended_challenger_fixture.py
     coverage_status: implemented_under_audit
     notes: Weighted sensitivity netting and shared aggregation are implemented for supported SA-CVA paths; net WS uses the minus sign under the positive CVA convention (MAR50.52).
   - id: CVA-SA-RISK-001
@@ -63,6 +65,7 @@ requirements:
       - packages/frtb-cva/src/frtb_cva/risk_classes
     test_refs:
       - packages/frtb-cva/tests/risk_classes
+      - packages/frtb-cva/tests/test_cva_extended_challenger_fixture.py
     coverage_status: implemented_under_audit
     notes: SA-CVA supports GIRR, FX, RCS, equity, and commodity delta/vega plus CCS delta; CCS vega is explicitly unsupported because MAR50.45 and MAR50.63 do not define it.
   - id: CVA-HEDGE-001
@@ -77,6 +80,7 @@ requirements:
       - packages/frtb-cva/src/frtb_cva/hedges.py
     test_refs:
       - packages/frtb-cva/tests/test_cva_hedges.py
+      - packages/frtb-cva/tests/test_cva_extended_challenger_fixture.py
     coverage_status: implemented_under_audit
     notes: BA-CVA and SA-CVA hedge benefit is explicit and cited for Basel MAR50 plus the supported U.S. NPR, EU CRR3, and UK PRA comparison profiles.
   - id: CVA-US-001
