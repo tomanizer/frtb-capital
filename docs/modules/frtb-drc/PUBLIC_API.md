@@ -22,6 +22,7 @@ documented in [PROFILE_SUPPORT_MATRIX.md](PROFILE_SUPPORT_MATRIX.md).
 | Reference overlays | `DrcCalculationContext`, `DrcFxRate`, `DrcRiskWeightEvidence`, `DrcFairValueCapEvidence` | Run-scoped FX rates, securitisation risk weights, fair-value cap evidence, and offset groups. |
 | Profile support | `drc_profile_support_matrix`, `DrcProfileSupportCell`, `get_rule_profile`, `ensure_risk_class_supported` | Runtime-readable support and fail-closed profile contract. |
 | Audit and attribution | `validate_reconciliation`, `calculate_drc_attribution`, `validate_attribution_reconciliation`, `to_component_summary` | Replay, reconciliation, attribution, and SA orchestration handoff. |
+| Impact analysis | `frtb_drc.impact.calculate_drc_impact`, `frtb_drc.impact.validate_drc_impact_reconciliation`, `DrcImpactAnalysis`, `DrcImpactRecord` | Baseline-vs-candidate capital delta explanation over completed DRC results; not a capital calculation or Euler attribution. |
 | Errors | `DrcInputError` | Public fail-closed input error carrying field context. |
 
 Reference overlays are documented in
@@ -89,6 +90,15 @@ mandatory position-id keyed risk weights, stale fair-value cap evidence, missing
 FX rates, and unsupported decomposition evidence fail closed rather than
 defaulting to zero capital.
 
+## Impact analysis
+
+`frtb_drc.impact.calculate_drc_impact(baseline, candidate)` compares two
+completed `DrcCapitalResult` objects and returns a `DrcImpactAnalysis`. The
+analysis uses the shared `CapitalImpact` run-level contract and DRC-specific
+records for stable bucket finite differences, unsupported profile/floor/move
+branches, and residual reconciliation. It must not be presented as regulatory
+capital or marginal Euler attribution.
+
 ## Submodule-only surface
 
 Clients should not depend on:
@@ -99,4 +109,5 @@ Clients should not depend on:
 - internal risk-weight evidence hashing helpers.
 
 Tests may import submodule helpers for coverage. Client integrations should use
-the top-level symbols listed here.
+the top-level symbols listed here or the explicitly documented `frtb_drc.impact`
+submodule for impact analysis.
