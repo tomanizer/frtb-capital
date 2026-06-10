@@ -38,6 +38,7 @@ from frtb_cva._batch_columns import (
     _required_text,
     _required_text_array,
 )
+from frtb_cva._citations import collect_ba_citations as _collect_ba_citations
 from frtb_cva._citations import merge_citations as _merge_citations
 from frtb_cva._payloads import batch_input_payload as _batch_input_payload
 from frtb_cva._payloads import hash_payload as _hash_payload
@@ -2778,16 +2779,6 @@ def _validate_remap_bucket(
                 field="index_remap_bucket_id",
                 record_id=record_id,
             )
-
-
-def _collect_ba_citations(
-    reduced_citations: tuple[str, ...],
-    netting_set_lines: tuple[BaCvaStandAloneLine, ...],
-) -> tuple[str, ...]:
-    return _merge_citations(
-        reduced_citations,
-        tuple(citation for line in netting_set_lines for citation in line.citations),
-    )
 
 
 def _sorted_indices(values: ObjectArray) -> list[int]:
