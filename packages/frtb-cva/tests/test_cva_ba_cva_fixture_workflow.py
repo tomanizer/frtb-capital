@@ -97,21 +97,20 @@ def _assert_reduced_result_matches(actual: Any, expected: dict[str, Any]) -> Non
     )
     assert len(actual_lines) == len(expected_lines)
     for actual_line, expected_line in zip(actual_lines, expected_lines, strict=True):
+        expected_risk_weight = expected_line.get("risk_weight")
+        if expected_risk_weight is None:
+            expected_risk_weight = expected.get("risk_weight")
+        missing_weight_msg = f"risk_weight missing for {actual_line.netting_set_id}"
+
         assert actual_line.netting_set_id == expected_line["netting_set_id"]
         assert actual_line.counterparty_id == expected_line["counterparty_id"]
         assert actual_line.ead == pytest.approx(expected_line["ead"])
         assert actual_line.effective_maturity == pytest.approx(
             expected_line["effective_maturity"]
         )
-        assert actual_line.discount_factor == pytest.approx(
-            expected_line["discount_factor"]
-        )
-        expected_risk_weight = expected_line.get(
-            "risk_weight", expected.get("risk_weight")
-        )
-        assert expected_risk_weight is not None, (
-            f"risk_weight missing for netting set {actual_line.netting_set_id}"
-        )
+        expected_discount_factor = pytest.approx(expected_line["discount_factor"])
+        assert actual_line.discount_factor == expected_discount_factor
+        assert expected_risk_weight is not None, missing_weight_msg
         assert actual_line.risk_weight == pytest.approx(expected_risk_weight)
         assert actual_line.alpha == pytest.approx(expected["alpha"])
         assert actual_line.standalone_capital == pytest.approx(
