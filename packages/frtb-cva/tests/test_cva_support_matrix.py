@@ -42,30 +42,21 @@ _COMPARISON_PROFILES = (
 def test_basel_methods_match_supported_set() -> None:
     methods = cva_capital_supported_methods(CvaRegulatoryProfile.BASEL_MAR50_2020)
     assert methods == frozenset(CvaMethod)
-    assert (
-        get_cva_rule_profile(CvaRegulatoryProfile.BASEL_MAR50_2020).supported_methods
-        == methods
-    )
+    assert get_cva_rule_profile(CvaRegulatoryProfile.BASEL_MAR50_2020).supported_methods == methods
 
 
 def test_basel_sa_paths_match_sa_cva_module() -> None:
     paths = cva_sa_cva_supported_paths(CvaRegulatoryProfile.BASEL_MAR50_2020)
     assert paths == frozenset(_SUPPORTED_PATHS)
     assert len(paths) == 11
-    assert (
-        SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD,
-        SaCvaRiskMeasure.VEGA,
-    ) not in paths
+    assert (SaCvaRiskClass.COUNTERPARTY_CREDIT_SPREAD, SaCvaRiskMeasure.VEGA) not in paths
 
 
 @pytest.mark.parametrize("profile", _COMPARISON_PROFILES)
 def test_non_basel_profiles_fail_closed_until_profile_fixtures_exist(
     profile: CvaRegulatoryProfile,
 ) -> None:
-    assert (
-        cva_profile_support_status(profile)
-        is CvaProfileSupportStatus.COMPARISON_FAIL_CLOSED
-    )
+    assert cva_profile_support_status(profile) is CvaProfileSupportStatus.COMPARISON_FAIL_CLOSED
     assert cva_capital_supported_methods(profile) == frozenset()
     assert cva_sa_cva_supported_paths(profile) == frozenset()
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile-specific"):
