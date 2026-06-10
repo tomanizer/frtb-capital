@@ -9,10 +9,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from frtb_common.attribution import CapitalContribution
+from frtb_common.attribution import (
+    DEFAULT_RECONCILIATION_TOLERANCE,
+    CapitalContribution,
+    reconcile_contribution_set,
+)
 from frtb_common.serialization import dataclass_as_dict
-
-_RECONCILIATION_TOLERANCE = 1e-6
 
 
 @dataclass(frozen=True)
@@ -34,14 +36,20 @@ class ComponentContributionBundle:
     component_profile_hash: str
 
     def __post_init__(self) -> None:
-        contributions_sum = sum((r.contribution or 0.0) + r.residual for r in self.contributions)
-        total = self.component_total
-        tol = _RECONCILIATION_TOLERANCE * max(abs(total), 1.0)
-        if abs(contributions_sum - total) > tol:
+        try:
+            reconciliation = reconcile_contribution_set(
+                self.contributions,
+                self.component_total,
+                relative_tolerance=DEFAULT_RECONCILIATION_TOLERANCE,
+            )
+        except ValueError as exc:
+            raise ValueError(f"ComponentContributionBundle for '{self.component}': {exc}") from exc
+        if not reconciliation.is_reconciled:
             raise ValueError(
                 f"ComponentContributionBundle for '{self.component}': "
-                f"sum of contributions + residuals ({contributions_sum:.6g}) "
-                f"does not match component_total ({total:.6g}) within tolerance {tol:.2e}"
+                "sum of contributions + residuals "
+                f"({reconciliation.explained_total:.6g}) does not match component_total "
+                f"({self.component_total:.6g}) within tolerance {reconciliation.tolerance:.2e}"
             )
 
     def as_dict(self) -> dict[str, object]:
