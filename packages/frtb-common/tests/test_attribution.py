@@ -3,6 +3,7 @@
 import math
 
 import pytest
+
 from frtb_common.attribution import (
     AttributionMethod,
     CapitalContribution,
@@ -114,7 +115,8 @@ def test_capital_contribution_method_coercion() -> None:
 def test_capital_contribution_analytical_euler_validation() -> None:
     # Requires marginal_multiplier
     with pytest.raises(
-        ValueError, match="marginal_multiplier must not be None when method is ANALYTICAL_EULER"
+        ValueError,
+        match="marginal_multiplier must not be None when method is ANALYTICAL_EULER",
     ):
         CapitalContribution(
             contribution_id="contrib-1",
@@ -130,7 +132,8 @@ def test_capital_contribution_analytical_euler_validation() -> None:
 
     # Requires contribution
     with pytest.raises(
-        ValueError, match="contribution must not be None when method is ANALYTICAL_EULER"
+        ValueError,
+        match="contribution must not be None when method is ANALYTICAL_EULER",
     ):
         CapitalContribution(
             contribution_id="contrib-1",
