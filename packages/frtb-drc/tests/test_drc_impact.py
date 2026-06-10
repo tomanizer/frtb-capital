@@ -44,6 +44,7 @@ def test_drc_impact_reconciles_stable_bucket_branch_without_changing_capital() -
 
     assert baseline.total_drc == baseline_total
     assert candidate.total_drc == candidate_total
+    assert analysis.total_impact.component == "frtb_drc"
     assert analysis.total_impact.method is ImpactMethod.FINITE_DIFFERENCE
     assert analysis.delta == pytest.approx(candidate.total_drc - baseline.total_drc)
     assert analysis.reconciliation_status is ReconciliationStatus.RECONCILED

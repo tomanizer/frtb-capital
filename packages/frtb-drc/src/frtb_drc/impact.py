@@ -33,7 +33,7 @@ def calculate_drc_impact(
     total_impact = CapitalImpact(
         baseline_run_id=baseline.run_id,
         candidate_run_id=candidate.run_id,
-        component="DRC",
+        component="frtb_drc",
         baseline_total=baseline.total_drc,
         candidate_total=candidate.total_drc,
         delta=candidate.total_drc - baseline.total_drc,
