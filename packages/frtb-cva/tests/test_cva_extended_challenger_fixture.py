@@ -62,9 +62,7 @@ def test_full_ba_fixture_covers_hedge_recognition_and_beta_floor() -> None:
         assert line.risk_weight == pytest.approx(expected_line["risk_weight"])
         assert line.snh_contribution == pytest.approx(expected_line["snh_contribution"])
         assert line.hma_contribution == pytest.approx(expected_line["hma_contribution"])
-        assert line.index_contribution == pytest.approx(
-            expected_line["index_contribution"]
-        )
+        assert line.index_contribution == pytest.approx(expected_line["index_contribution"])
         assert line.reason_code == expected_line["reason_code"]
 
 
@@ -78,12 +76,8 @@ def test_mixed_fixture_covers_carve_out_component_assembly() -> None:
     assert result.method is CvaMethod.MIXED_CARVE_OUT
     assert result.total_cva_capital == pytest.approx(expected["total_cva_capital"])
     assert result.ba_cva_reduced is not None
-    assert result.ba_cva_reduced.k_reduced == pytest.approx(
-        expected["ba_cva_reduced"]["k_reduced"]
-    )
-    assert result.ba_cva_reduced.sum_scva == pytest.approx(
-        expected["ba_cva_reduced"]["sum_scva"]
-    )
+    assert result.ba_cva_reduced.k_reduced == pytest.approx(expected["ba_cva_reduced"]["k_reduced"])
+    assert result.ba_cva_reduced.sum_scva == pytest.approx(expected["ba_cva_reduced"]["sum_scva"])
 
     components = {item.method.value: item.total_capital for item in result.method_components}
     assert components == pytest.approx(expected["method_components"])
@@ -161,9 +155,7 @@ def _context(payload: dict[str, Any]) -> CvaCalculationContext:
         method=CvaMethod(str(payload["method"])),
         sa_cva_approved=bool(payload["sa_cva_approved"]),
         carve_out_netting_set_ids=tuple(payload.get("carve_out_netting_set_ids", ())),
-        sa_cva_sensitivity_scope_evidence_id=payload.get(
-            "sa_cva_sensitivity_scope_evidence_id"
-        ),
+        sa_cva_sensitivity_scope_evidence_id=payload.get("sa_cva_sensitivity_scope_evidence_id"),
     )
 
 
