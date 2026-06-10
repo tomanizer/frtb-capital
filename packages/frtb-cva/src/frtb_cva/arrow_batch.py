@@ -1,479 +1,45 @@
 """Arrow handoff adapters for CVA counterparty, netting-set, hedge, and sensitivity batches.
 
-This module declares package-owned :class:`~frtb_common.arrow_table.ColumnSpec`
-tables, normalises vendor Arrow inputs through :func:`frtb_common.normalize_arrow_table`,
-and materialises :mod:`frtb_cva.batch` columnar batches for kernel entrypoints.
+This module normalises vendor Arrow inputs through
+:func:`frtb_common.normalize_arrow_table` and materialises
+:mod:`frtb_cva.batch` columnar batches through package-owned entity specs.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, TypeVar
 
 import pyarrow as pa  # type: ignore[import-untyped]
 from frtb_common import (
     AdapterDiagnostic,
-    ColumnSpec,
     NormalizedArrowTable,
-    NullPolicy,
-    TabularLogicalType,
     normalize_arrow_table,
     normalized_arrow_table_hash,
     read_arrow_columns,
 )
 
+from frtb_cva._arrow_entity_specs import (
+    CVA_COUNTERPARTY_ARROW_COLUMN_SPECS,
+    CVA_COUNTERPARTY_ENTITY_SPEC,
+    CVA_ENTITY_BATCH_SPECS,
+    CVA_HEDGE_ARROW_COLUMN_SPECS,
+    CVA_HEDGE_ENTITY_SPEC,
+    CVA_NETTING_SET_ARROW_COLUMN_SPECS,
+    CVA_NETTING_SET_ENTITY_SPEC,
+    SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS,
+    SA_CVA_SENSITIVITY_ENTITY_SPEC,
+    EntityBatchSpec,
+)
 from frtb_cva.batch import (
     CvaCounterpartyBatch,
     CvaHedgeBatch,
     CvaNettingSetBatch,
     SaCvaSensitivityBatch,
-    build_cva_counterparty_batch_from_columns,
-    build_cva_hedge_batch_from_columns,
-    build_cva_netting_set_batch_from_columns,
-    build_sa_cva_sensitivity_batch_from_columns,
 )
 from frtb_cva.validation import CvaInputError
 
-CVA_COUNTERPARTY_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
-    ColumnSpec(
-        "counterparty_id",
-        aliases=("counterpartyId", "CounterpartyID"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec("desk_id", aliases=("deskId", "DeskID"), logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "legal_entity",
-        aliases=("legalEntity", "LegalEntity"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec("sector", logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "credit_quality", aliases=("creditQuality",), logical_type=TabularLogicalType.STRING
-    ),
-    ColumnSpec("region", logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "source_row_id",
-        aliases=("sourceRowId", "RowID"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "lineage_source_system",
-        aliases=("source_system", "sourceSystem"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "lineage_source_file",
-        aliases=("source_file", "sourceFile"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "lineage_source_row_id",
-        aliases=("lineageSourceRowId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-)
-
-CVA_NETTING_SET_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
-    ColumnSpec(
-        "netting_set_id",
-        aliases=("nettingSetId", "NettingSetID"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "counterparty_id",
-        aliases=("counterpartyId", "CounterpartyID"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec("ead", aliases=("EAD", "exposure"), logical_type=TabularLogicalType.FLOAT),
-    ColumnSpec(
-        "effective_maturity",
-        aliases=("effectiveMaturity", "maturity"),
-        logical_type=TabularLogicalType.FLOAT,
-    ),
-    ColumnSpec(
-        "discount_factor", aliases=("discountFactor",), logical_type=TabularLogicalType.FLOAT
-    ),
-    ColumnSpec("currency", logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "sign_convention", aliases=("signConvention",), logical_type=TabularLogicalType.STRING
-    ),
-    ColumnSpec("uses_imm_ead", aliases=("usesImmEad",), logical_type=TabularLogicalType.BOOLEAN),
-    ColumnSpec(
-        "source_row_id",
-        aliases=("sourceRowId", "RowID"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "carved_out_to_ba_cva",
-        aliases=("carvedOutToBaCva",),
-        logical_type=TabularLogicalType.BOOLEAN,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "discount_factor_explicit",
-        aliases=("discountFactorExplicit",),
-        logical_type=TabularLogicalType.BOOLEAN,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "lineage_source_system",
-        aliases=("source_system", "sourceSystem"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "lineage_source_file",
-        aliases=("source_file", "sourceFile"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "lineage_source_row_id",
-        aliases=("lineageSourceRowId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-)
-
-CVA_HEDGE_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
-    ColumnSpec("hedge_id", aliases=("hedgeId", "HedgeID"), logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "source_row_id",
-        aliases=("sourceRowId", "RowID"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "counterparty_id",
-        aliases=("counterpartyId", "CounterpartyID"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "hedge_type",
-        aliases=("hedgeType",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec("notional", logical_type=TabularLogicalType.FLOAT),
-    ColumnSpec(
-        "remaining_maturity", aliases=("remainingMaturity",), logical_type=TabularLogicalType.FLOAT
-    ),
-    ColumnSpec(
-        "discount_factor", aliases=("discountFactor",), logical_type=TabularLogicalType.FLOAT
-    ),
-    ColumnSpec(
-        "reference_sector", aliases=("referenceSector",), logical_type=TabularLogicalType.STRING
-    ),
-    ColumnSpec(
-        "reference_credit_quality",
-        aliases=("referenceCreditQuality",),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "reference_region", aliases=("referenceRegion",), logical_type=TabularLogicalType.STRING
-    ),
-    ColumnSpec(
-        "reference_relation", aliases=("referenceRelation",), logical_type=TabularLogicalType.STRING
-    ),
-    ColumnSpec("eligibility", logical_type=TabularLogicalType.STRING),
-    ColumnSpec("is_internal", aliases=("isInternal",), logical_type=TabularLogicalType.BOOLEAN),
-    ColumnSpec(
-        "discount_factor_explicit",
-        aliases=("discountFactorExplicit",),
-        logical_type=TabularLogicalType.BOOLEAN,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "internal_desk_counterparty_id",
-        aliases=("internalDeskCounterpartyId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "sa_cva_risk_class",
-        aliases=("saCvaRiskClass",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "sa_cva_hedge_purpose",
-        aliases=("saCvaHedgePurpose",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "sa_cva_hedge_instrument_type",
-        aliases=("saCvaHedgeInstrumentType",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "whole_transaction_evidence_id",
-        aliases=("wholeTransactionEvidenceId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "market_risk_ima_eligible",
-        aliases=("marketRiskImaEligible",),
-        logical_type=TabularLogicalType.BOOLEAN,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "market_risk_ima_exclusion_reason",
-        aliases=("marketRiskImaExclusionReason",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "eligibility_evidence_id",
-        aliases=("eligibilityEvidenceId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "rejection_reason",
-        aliases=("rejectionReason",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "lineage_source_system",
-        aliases=("source_system", "sourceSystem"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "lineage_source_file",
-        aliases=("source_file", "sourceFile"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "lineage_source_row_id",
-        aliases=("lineageSourceRowId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-)
-
-SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
-    ColumnSpec(
-        "sensitivity_id",
-        aliases=("sensitivityId", "SensitivityID", "RiskFactorID"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec("risk_class", aliases=("riskClass",), logical_type=TabularLogicalType.STRING),
-    ColumnSpec("risk_measure", aliases=("riskMeasure",), logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "sensitivity_tag", aliases=("sensitivityTag", "tag"), logical_type=TabularLogicalType.STRING
-    ),
-    ColumnSpec("bucket_id", aliases=("bucketId", "bucket"), logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "risk_factor_key",
-        aliases=("riskFactorKey", "qualifier"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec("amount", aliases=("Amount",), logical_type=TabularLogicalType.FLOAT),
-    ColumnSpec(
-        "amount_currency",
-        aliases=("amountCurrency", "currency"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "sign_convention", aliases=("signConvention",), logical_type=TabularLogicalType.STRING
-    ),
-    ColumnSpec(
-        "source_row_id",
-        aliases=("sourceRowId", "RowID"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "tenor",
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "volatility_input",
-        aliases=("volatilityInput",),
-        logical_type=TabularLogicalType.FLOAT,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "hedge_id",
-        aliases=("hedgeId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "index_treatment",
-        aliases=("indexTreatment",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "index_max_sector_weight",
-        aliases=("indexMaxSectorWeight",),
-        logical_type=TabularLogicalType.FLOAT,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "index_homogeneous_sector_quality",
-        aliases=("indexHomogeneousSectorQuality",),
-        logical_type=TabularLogicalType.BOOLEAN,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "index_dominant_sector",
-        aliases=("indexDominantSector",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "index_remap_bucket_id",
-        aliases=("indexRemapBucketId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "lineage_source_system",
-        aliases=("source_system", "sourceSystem"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "lineage_source_file",
-        aliases=("source_file", "sourceFile"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "lineage_source_row_id",
-        aliases=("lineageSourceRowId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-)
-_CVA_COUNTERPARTY_BATCH_COLUMN_ARGS: Mapping[str, str] = {
-    "counterparty_id": "counterparty_ids",
-    "desk_id": "desk_ids",
-    "legal_entity": "legal_entities",
-    "sector": "sectors",
-    "credit_quality": "credit_qualities",
-    "region": "regions",
-    "source_row_id": "source_row_ids",
-    "lineage_source_system": "lineage_source_systems",
-    "lineage_source_file": "lineage_source_files",
-    "lineage_source_row_id": "lineage_source_row_ids",
-}
-
-_CVA_NETTING_SET_BATCH_COLUMN_ARGS: Mapping[str, str] = {
-    "netting_set_id": "netting_set_ids",
-    "counterparty_id": "counterparty_ids",
-    "ead": "eads",
-    "effective_maturity": "effective_maturities",
-    "discount_factor": "discount_factors",
-    "currency": "currencies",
-    "sign_convention": "sign_conventions",
-    "uses_imm_ead": "uses_imm_eads",
-    "source_row_id": "source_row_ids",
-    "carved_out_to_ba_cva": "carved_out_to_ba_cva",
-    "discount_factor_explicit": "discount_factor_explicit",
-    "lineage_source_system": "lineage_source_systems",
-    "lineage_source_file": "lineage_source_files",
-    "lineage_source_row_id": "lineage_source_row_ids",
-}
-
-_CVA_HEDGE_BATCH_COLUMN_ARGS: Mapping[str, str] = {
-    "hedge_id": "hedge_ids",
-    "source_row_id": "source_row_ids",
-    "counterparty_id": "counterparty_ids",
-    "hedge_type": "hedge_types",
-    "notional": "notionals",
-    "remaining_maturity": "remaining_maturities",
-    "discount_factor": "discount_factors",
-    "reference_sector": "reference_sectors",
-    "reference_credit_quality": "reference_credit_qualities",
-    "reference_region": "reference_regions",
-    "reference_relation": "reference_relations",
-    "eligibility": "eligibilities",
-    "is_internal": "is_internal",
-    "discount_factor_explicit": "discount_factor_explicit",
-    "internal_desk_counterparty_id": "internal_desk_counterparty_ids",
-    "sa_cva_risk_class": "sa_cva_risk_classes",
-    "sa_cva_hedge_purpose": "sa_cva_hedge_purposes",
-    "sa_cva_hedge_instrument_type": "sa_cva_hedge_instrument_types",
-    "whole_transaction_evidence_id": "whole_transaction_evidence_ids",
-    "market_risk_ima_eligible": "market_risk_ima_eligibilities",
-    "market_risk_ima_exclusion_reason": "market_risk_ima_exclusion_reasons",
-    "eligibility_evidence_id": "eligibility_evidence_ids",
-    "rejection_reason": "rejection_reasons",
-    "lineage_source_system": "lineage_source_systems",
-    "lineage_source_file": "lineage_source_files",
-    "lineage_source_row_id": "lineage_source_row_ids",
-}
-
-_SA_CVA_SENSITIVITY_BATCH_COLUMN_ARGS: Mapping[str, str] = {
-    "sensitivity_id": "sensitivity_ids",
-    "risk_class": "risk_classes",
-    "risk_measure": "risk_measures",
-    "sensitivity_tag": "sensitivity_tags",
-    "bucket_id": "bucket_ids",
-    "risk_factor_key": "risk_factor_keys",
-    "amount": "amounts",
-    "amount_currency": "amount_currencies",
-    "sign_convention": "sign_conventions",
-    "source_row_id": "source_row_ids",
-    "tenor": "tenors",
-    "volatility_input": "volatility_inputs",
-    "hedge_id": "hedge_ids",
-    "index_treatment": "index_treatments",
-    "index_max_sector_weight": "index_max_sector_weights",
-    "index_homogeneous_sector_quality": "index_homogeneous_sector_quality",
-    "index_dominant_sector": "index_dominant_sectors",
-    "index_remap_bucket_id": "index_remap_bucket_ids",
-    "lineage_source_system": "lineage_source_systems",
-    "lineage_source_file": "lineage_source_files",
-    "lineage_source_row_id": "lineage_source_row_ids",
-}
-
-
-def _ensure_explicit_logical_types(*spec_groups: Sequence[ColumnSpec]) -> None:
-    unknown = tuple(
-        spec.name
-        for spec_group in spec_groups
-        for spec in spec_group
-        if spec.logical_type is TabularLogicalType.UNKNOWN
-    )
-    if unknown:
-        raise RuntimeError("CVA Arrow specs must declare logical_type: " + ", ".join(unknown))
-
-
-_ensure_explicit_logical_types(
-    CVA_COUNTERPARTY_ARROW_COLUMN_SPECS,
-    CVA_NETTING_SET_ARROW_COLUMN_SPECS,
-    CVA_HEDGE_ARROW_COLUMN_SPECS,
-    SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS,
-)
+T = TypeVar("T")
 
 
 def normalize_cva_counterparty_arrow_table(
@@ -504,8 +70,13 @@ def normalize_cva_counterparty_arrow_table(
     NormalizedArrowTable
         Accepted/rejected partition with CVA counterparty column specs applied.
     """
-    return _normalize(
-        table, CVA_COUNTERPARTY_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
+    return normalize_cva_arrow_table(
+        table,
+        CVA_COUNTERPARTY_ENTITY_SPEC,
+        diagnostics=diagnostics,
+        metadata=metadata,
+        rejected=rejected,
+        source_hash=source_hash,
     )
 
 
@@ -537,8 +108,13 @@ def normalize_cva_netting_set_arrow_table(
     NormalizedArrowTable
         Accepted/rejected partition with CVA netting-set column specs applied.
     """
-    return _normalize(
-        table, CVA_NETTING_SET_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
+    return normalize_cva_arrow_table(
+        table,
+        CVA_NETTING_SET_ENTITY_SPEC,
+        diagnostics=diagnostics,
+        metadata=metadata,
+        rejected=rejected,
+        source_hash=source_hash,
     )
 
 
@@ -570,8 +146,13 @@ def normalize_cva_hedge_arrow_table(
     NormalizedArrowTable
         Accepted/rejected partition with CVA hedge column specs applied.
     """
-    return _normalize(
-        table, CVA_HEDGE_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
+    return normalize_cva_arrow_table(
+        table,
+        CVA_HEDGE_ENTITY_SPEC,
+        diagnostics=diagnostics,
+        metadata=metadata,
+        rejected=rejected,
+        source_hash=source_hash,
     )
 
 
@@ -603,8 +184,13 @@ def normalize_sa_cva_sensitivity_arrow_table(
     NormalizedArrowTable
         Accepted/rejected partition with SA-CVA sensitivity column specs applied.
     """
-    return _normalize(
-        table, SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS, diagnostics, metadata, rejected, source_hash
+    return normalize_cva_arrow_table(
+        table,
+        SA_CVA_SENSITIVITY_ENTITY_SPEC,
+        diagnostics=diagnostics,
+        metadata=metadata,
+        rejected=rejected,
+        source_hash=source_hash,
     )
 
 
@@ -628,17 +214,7 @@ def build_cva_counterparty_batch_from_arrow(
     CvaInputError
         If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
     """
-    if not isinstance(handoff, NormalizedArrowTable):
-        raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
-    table = handoff.accepted
-    columns = read_arrow_columns(table, CVA_COUNTERPARTY_ARROW_COLUMN_SPECS, error=_cva_error)
-    return build_cva_counterparty_batch_from_columns(
-        **_cva_batch_column_kwargs(columns, _CVA_COUNTERPARTY_BATCH_COLUMN_ARGS),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_arrow_table_hash(handoff),
-        diagnostics=_diagnostics(handoff),
-        copy_arrays=False,
-    )
+    return build_cva_batch_from_arrow(handoff, CVA_COUNTERPARTY_ENTITY_SPEC)
 
 
 def build_cva_netting_set_batch_from_arrow(
@@ -661,17 +237,7 @@ def build_cva_netting_set_batch_from_arrow(
     CvaInputError
         If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
     """
-    if not isinstance(handoff, NormalizedArrowTable):
-        raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
-    table = handoff.accepted
-    columns = read_arrow_columns(table, CVA_NETTING_SET_ARROW_COLUMN_SPECS, error=_cva_error)
-    return build_cva_netting_set_batch_from_columns(
-        **_cva_batch_column_kwargs(columns, _CVA_NETTING_SET_BATCH_COLUMN_ARGS),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_arrow_table_hash(handoff),
-        diagnostics=_diagnostics(handoff),
-        copy_arrays=False,
-    )
+    return build_cva_batch_from_arrow(handoff, CVA_NETTING_SET_ENTITY_SPEC)
 
 
 def build_cva_hedge_batch_from_arrow(handoff: NormalizedArrowTable) -> CvaHedgeBatch:
@@ -692,17 +258,7 @@ def build_cva_hedge_batch_from_arrow(handoff: NormalizedArrowTable) -> CvaHedgeB
     CvaInputError
         If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
     """
-    if not isinstance(handoff, NormalizedArrowTable):
-        raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
-    table = handoff.accepted
-    columns = read_arrow_columns(table, CVA_HEDGE_ARROW_COLUMN_SPECS, error=_cva_error)
-    return build_cva_hedge_batch_from_columns(
-        **_cva_batch_column_kwargs(columns, _CVA_HEDGE_BATCH_COLUMN_ARGS),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_arrow_table_hash(handoff),
-        diagnostics=_diagnostics(handoff),
-        copy_arrays=False,
-    )
+    return build_cva_batch_from_arrow(handoff, CVA_HEDGE_ENTITY_SPEC)
 
 
 def build_sa_cva_sensitivity_batch_from_arrow(
@@ -725,40 +281,78 @@ def build_sa_cva_sensitivity_batch_from_arrow(
     CvaInputError
         If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
     """
-    if not isinstance(handoff, NormalizedArrowTable):
-        raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
-    table = handoff.accepted
-    columns = read_arrow_columns(
-        table,
-        SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS,
-        error=_cva_error,
-    )
-    return build_sa_cva_sensitivity_batch_from_columns(
-        **_cva_batch_column_kwargs(columns, _SA_CVA_SENSITIVITY_BATCH_COLUMN_ARGS),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_arrow_table_hash(handoff),
-        diagnostics=_diagnostics(handoff),
-        copy_arrays=False,
-    )
+    return build_cva_batch_from_arrow(handoff, SA_CVA_SENSITIVITY_ENTITY_SPEC)
 
 
-def _normalize(
+def normalize_cva_arrow_table(
     table: pa.Table,
-    column_specs: tuple[ColumnSpec, ...],
-    diagnostics: Sequence[AdapterDiagnostic],
-    metadata: Mapping[str, str] | None,
-    rejected: pa.Table | None,
-    source_hash: str | None,
+    spec: EntityBatchSpec[Any],
+    *,
+    diagnostics: Sequence[AdapterDiagnostic] = (),
+    metadata: Mapping[str, str] | None = None,
+    rejected: pa.Table | None = None,
+    source_hash: str | None = None,
 ) -> NormalizedArrowTable:
+    """Normalise a CVA Arrow table using an entity batch spec.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        Raw vendor table for the entity.
+    spec : EntityBatchSpec
+        CVA entity column contract and builder dispatch metadata.
+    diagnostics, metadata, rejected, source_hash : optional
+        Handoff diagnostics, audit metadata, rejected partition, and source hash.
+
+    Returns
+    -------
+    NormalizedArrowTable
+        Accepted/rejected partition with the entity column specs applied.
+    """
     return normalize_arrow_table(
         table,
-        column_specs=column_specs,
+        column_specs=spec.column_specs,
         rejected=rejected,
         diagnostics=diagnostics,
         metadata={} if metadata is None else metadata,
         source_hash=source_hash,
         require_unique_row_ids=False,
     )
+
+
+def build_cva_batch_from_arrow(handoff: NormalizedArrowTable, spec: EntityBatchSpec[T]) -> T:
+    """Materialise a CVA batch from a normalized Arrow handoff and entity spec.
+
+    Parameters
+    ----------
+    handoff : NormalizedArrowTable
+        Accepted entity rows produced by :func:`normalize_cva_arrow_table`.
+    spec : EntityBatchSpec
+        CVA entity column contract and column-builder dispatch metadata.
+
+    Returns
+    -------
+    T
+        Validated package-local batch produced by ``spec.build_from_columns``.
+
+    Raises
+    ------
+    CvaInputError
+        If ``handoff`` is not a :class:`~frtb_common.arrow_table.NormalizedArrowTable`.
+    """
+    if not isinstance(handoff, NormalizedArrowTable):
+        raise CvaInputError("handoff must be NormalizedArrowTable", field="handoff")
+    columns = read_arrow_columns(handoff.accepted, spec.column_specs, error=_cva_error)
+    batch = spec.build_from_columns(
+        **_cva_batch_column_kwargs(columns, spec.column_to_argument),
+        source_hash=handoff.source_hash,
+        handoff_hash=normalized_arrow_table_hash(handoff),
+        diagnostics=_diagnostics(handoff),
+        copy_arrays=False,
+    )
+    if spec.validate_batch is not None:
+        spec.validate_batch(batch)
+    return batch
 
 
 def _cva_batch_column_kwargs(
@@ -782,13 +376,21 @@ def _diagnostics(handoff: NormalizedArrowTable) -> tuple[Mapping[str, object], .
 
 __all__ = [
     "CVA_COUNTERPARTY_ARROW_COLUMN_SPECS",
+    "CVA_COUNTERPARTY_ENTITY_SPEC",
+    "CVA_ENTITY_BATCH_SPECS",
     "CVA_HEDGE_ARROW_COLUMN_SPECS",
+    "CVA_HEDGE_ENTITY_SPEC",
     "CVA_NETTING_SET_ARROW_COLUMN_SPECS",
+    "CVA_NETTING_SET_ENTITY_SPEC",
     "SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS",
+    "SA_CVA_SENSITIVITY_ENTITY_SPEC",
+    "EntityBatchSpec",
+    "build_cva_batch_from_arrow",
     "build_cva_counterparty_batch_from_arrow",
     "build_cva_hedge_batch_from_arrow",
     "build_cva_netting_set_batch_from_arrow",
     "build_sa_cva_sensitivity_batch_from_arrow",
+    "normalize_cva_arrow_table",
     "normalize_cva_counterparty_arrow_table",
     "normalize_cva_hedge_arrow_table",
     "normalize_cva_netting_set_arrow_table",
