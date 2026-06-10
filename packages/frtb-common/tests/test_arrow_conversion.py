@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import UTC, date, datetime
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 import frtb_common.arrow_conversion as arrow_conversion_module
 import numpy as np
@@ -15,9 +17,11 @@ from frtb_common import (
     TabularLogicalType,
     arrow_bool_array,
     arrow_bool_or_object_array,
+    arrow_date_array,
     arrow_float64_array,
     arrow_float64_array_with_nulls,
     arrow_object_array,
+    arrow_timestamp_array,
     read_arrow_columns,
     unique_non_null_text_values,
 )
@@ -115,6 +119,72 @@ def test_arrow_bool_or_object_array_preserves_non_boolean_values() -> None:
 
     assert values.dtype == np.dtype(object)
     assert values.tolist() == ["Y", False, "N"]
+
+
+def test_arrow_date_array_handles_arrow_and_iso_text_values() -> None:
+    arrow_dates = arrow_date_array(
+        pa.chunked_array([pa.array([date(2026, 6, 10)], type=pa.date32())]),
+        field="as_of_date",
+    )
+    text_dates = arrow_date_array(
+        pa.chunked_array([pa.array(["2026-06-10"]), pa.array(["2026-06-11"])]),
+        field="as_of_date",
+    )
+
+    assert arrow_dates.dtype == np.dtype("datetime64[D]")
+    assert arrow_dates.tolist() == [date(2026, 6, 10)]
+    assert text_dates.tolist() == [date(2026, 6, 10), date(2026, 6, 11)]
+
+
+def test_arrow_timestamp_array_handles_nullable_arrow_timestamps() -> None:
+    values = arrow_timestamp_array(
+        pa.chunked_array(
+            [
+                pa.array(
+                    [datetime(2026, 6, 10, 12, 30, tzinfo=UTC), None],
+                    type=pa.timestamp("us", tz="UTC"),
+                ),
+            ]
+        ),
+        field="observation_timestamp",
+    )
+
+    assert values.dtype == np.dtype("datetime64[us]")
+    assert values[0] == np.datetime64("2026-06-10T12:30:00", "us")
+    assert np.isnat(values[1])
+
+
+def test_arrow_timestamp_array_normalizes_timezone_aware_arrow_timestamps() -> None:
+    values = arrow_timestamp_array(
+        pa.chunked_array(
+            [
+                pa.array(
+                    [datetime(2026, 6, 10, 8, 30, tzinfo=ZoneInfo("America/New_York"))],
+                    type=pa.timestamp("us", tz="America/New_York"),
+                ),
+            ]
+        ),
+        field="observation_timestamp",
+    )
+
+    assert values.dtype == np.dtype("datetime64[us]")
+    assert values[0] == np.datetime64("2026-06-10T12:30:00", "us")
+
+
+def test_arrow_timestamp_array_handles_chunked_iso_text_values() -> None:
+    values = arrow_timestamp_array(
+        pa.chunked_array(
+            [
+                pa.array(["2026-06-10T13:30:00Z"], type=pa.utf8()),
+                pa.array([None], type=pa.utf8()),
+            ]
+        ),
+        field="observation_timestamp",
+    )
+
+    assert values.dtype == np.dtype("datetime64[us]")
+    assert values[0] == np.datetime64("2026-06-10T13:30:00", "us")
+    assert np.isnat(values[1])
 
 
 class ReaderError(Exception):
