@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import TypeVar
 
 from frtb_common.serialization import dataclass_as_dict
+
+DEFAULT_RECONCILIATION_TOLERANCE = 1e-6
 
 
 class AttributionMethod(StrEnum):
@@ -22,7 +26,7 @@ class ReconciliationStatus(StrEnum):
     """Reconciliation state for a set of contribution records at one aggregation level.
 
     A set is RECONCILED when ``sum(contribution) + sum(residual) == capital``
-    within ε = 1e-6 (relative to total capital).
+    within epsilon = 1e-6 (relative to total capital).
     """
 
     RECONCILED = "RECONCILED"
@@ -98,3 +102,185 @@ class CapitalContribution:
             Dataclass field names mapped through :func:`frtb_common.serialization.jsonable`.
         """
         return dataclass_as_dict(self)
+
+
+@dataclass(frozen=True)
+class ContributionReconciliation:
+    """Package-neutral reconciliation report for a contribution set.
+
+    Parameters
+    ----------
+    record_count : int
+        Number of contribution records assessed.
+    contribution_sum : float
+        Sum of non-null ``contribution`` values.
+    residual_sum : float
+        Sum of ``residual`` values.
+    explained_total : float
+        ``contribution_sum + residual_sum``.
+    capital_total : float
+        Target capital amount supplied by the caller.
+    difference : float
+        ``explained_total - capital_total``.
+    tolerance : float
+        Absolute tolerance applied to the comparison.
+    status : ReconciliationStatus
+        ``RECONCILED`` when no residual is needed, ``PARTIAL_RESIDUAL`` when
+        residual records reconcile the set, otherwise ``UNRECONCILED``.
+    """
+
+    record_count: int
+    contribution_sum: float
+    residual_sum: float
+    explained_total: float
+    capital_total: float
+    difference: float
+    tolerance: float
+    status: ReconciliationStatus
+
+    @property
+    def is_reconciled(self) -> bool:
+        """Return whether the contribution set reconciles within tolerance."""
+
+        return self.status in {
+            ReconciliationStatus.RECONCILED,
+            ReconciliationStatus.PARTIAL_RESIDUAL,
+        }
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serialisable dictionary representation.
+
+        Returns
+        -------
+        dict[str, object]
+            Dataclass field names mapped through :func:`frtb_common.serialization.jsonable`.
+        """
+
+        return dataclass_as_dict(self)
+
+
+def reconcile_contribution_set(
+    contributions: Sequence[CapitalContribution],
+    capital_total: float,
+    *,
+    relative_tolerance: float = DEFAULT_RECONCILIATION_TOLERANCE,
+) -> ContributionReconciliation:
+    """Return package-neutral reconciliation details for contribution records.
+
+    Parameters
+    ----------
+    contributions : Sequence[CapitalContribution]
+        Contribution, residual, and unsupported records to compare with the
+        target capital amount. ``None`` contributions are treated as zero.
+    capital_total : float
+        Target capital amount for the contribution set.
+    relative_tolerance : float, optional
+        Relative tolerance scaled by ``max(abs(capital_total), 1.0)``.
+
+    Returns
+    -------
+    ContributionReconciliation
+        Reconciliation report with sums, tolerance, difference, and status.
+
+    Raises
+    ------
+    ValueError
+        If any supplied numeric value or tolerance is non-finite.
+    """
+
+    tolerance = _absolute_reconciliation_tolerance(capital_total, relative_tolerance)
+    contribution_sum = 0.0
+    residual_sum = 0.0
+    for record in contributions:
+        contribution_amount = 0.0 if record.contribution is None else record.contribution
+        _require_finite(contribution_amount, f"contribution {record.contribution_id}")
+        _require_finite(record.residual, f"residual {record.contribution_id}")
+        contribution_sum += contribution_amount
+        residual_sum += record.residual
+
+    explained_total = contribution_sum + residual_sum
+    difference = explained_total - capital_total
+    reconciled = abs(difference) <= tolerance
+    status = (
+        ReconciliationStatus.PARTIAL_RESIDUAL
+        if reconciled and abs(residual_sum) > tolerance
+        else ReconciliationStatus.RECONCILED
+        if reconciled
+        else ReconciliationStatus.UNRECONCILED
+    )
+    return ContributionReconciliation(
+        record_count=len(contributions),
+        contribution_sum=contribution_sum,
+        residual_sum=residual_sum,
+        explained_total=explained_total,
+        capital_total=capital_total,
+        difference=difference,
+        tolerance=tolerance,
+        status=status,
+    )
+
+
+def validate_contribution_reconciliation(
+    contributions: Sequence[CapitalContribution],
+    capital_total: float,
+    *,
+    relative_tolerance: float = DEFAULT_RECONCILIATION_TOLERANCE,
+) -> ContributionReconciliation:
+    """Validate that contribution plus residual amounts reconcile to capital.
+
+    Parameters
+    ----------
+    contributions : Sequence[CapitalContribution]
+        Contribution, residual, and unsupported records to validate.
+    capital_total : float
+        Target capital amount for the contribution set.
+    relative_tolerance : float, optional
+        Relative tolerance scaled by ``max(abs(capital_total), 1.0)``.
+
+    Returns
+    -------
+    ContributionReconciliation
+        Reconciliation report when the contribution set reconciles.
+
+    Raises
+    ------
+    ValueError
+        If the set is unreconciled or contains non-finite values.
+    """
+
+    reconciliation = reconcile_contribution_set(
+        contributions,
+        capital_total,
+        relative_tolerance=relative_tolerance,
+    )
+    if not reconciliation.is_reconciled:
+        raise ValueError(
+            "sum of contributions + residuals "
+            f"({reconciliation.explained_total:.6g}) does not match capital_total "
+            f"({capital_total:.6g}) within tolerance {reconciliation.tolerance:.2e}"
+        )
+    return reconciliation
+
+
+def _absolute_reconciliation_tolerance(capital_total: float, relative_tolerance: float) -> float:
+    _require_finite(capital_total, "capital_total")
+    _require_finite(relative_tolerance, "relative_tolerance")
+    if relative_tolerance < 0.0:
+        raise ValueError("relative_tolerance must be non-negative")
+    return relative_tolerance * max(abs(capital_total), 1.0)
+
+
+def _require_finite(value: float, field_name: str) -> None:
+    if not math.isfinite(value):
+        raise ValueError(f"{field_name} must be finite")
+
+
+__all__ = [
+    "DEFAULT_RECONCILIATION_TOLERANCE",
+    "AttributionMethod",
+    "CapitalContribution",
+    "ContributionReconciliation",
+    "ReconciliationStatus",
+    "reconcile_contribution_set",
+    "validate_contribution_reconciliation",
+]
