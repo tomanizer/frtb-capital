@@ -35,12 +35,55 @@ from frtb_cva import (
     validate_cva_result_reconciliation,
 )
 from frtb_cva.arrow_batch import (
+    CVA_COUNTERPARTY_ENTITY_SPEC,
+    CVA_ENTITY_BATCH_SPECS,
+    build_cva_batch_from_arrow,
     build_sa_cva_sensitivity_batch_from_arrow,
+    normalize_cva_arrow_table,
     normalize_sa_cva_sensitivity_arrow_table,
 )
+from frtb_cva.batch import CvaCounterpartyBatch
 
 BA_FIXTURE_DIR = Path(__file__).parent / "fixtures" / "ba_cva_reduced_v1"
 SA_FIXTURE_DIR = Path(__file__).parent / "fixtures" / "sa_cva_girr_delta_v1"
+
+
+def test_cva_entity_batch_specs_drive_arrow_ingress_contracts() -> None:
+    assert set(CVA_ENTITY_BATCH_SPECS) == {
+        "counterparty",
+        "netting_set",
+        "hedge",
+        "sa_cva_sensitivity",
+    }
+
+    for spec in CVA_ENTITY_BATCH_SPECS.values():
+        spec_column_names = {column.name for column in spec.column_specs}
+        assert set(spec.column_to_argument) == spec_column_names
+        assert set(spec.required_columns).isdisjoint(spec.optional_columns)
+        assert spec.required_columns
+        assert "lineage_source_row_id" in spec.optional_columns
+
+    handoff = normalize_cva_arrow_table(
+        pa.table(
+            {
+                "counterparty_id": ["cp-1"],
+                "desk_id": ["desk-cva"],
+                "legal_entity": ["LE-001"],
+                "sector": ["SOVEREIGN"],
+                "credit_quality": ["INVESTMENT_GRADE"],
+                "region": ["EMEA"],
+                "source_row_id": ["cp-row-1"],
+                "lineage_source_system": ["synthetic"],
+                "lineage_source_file": ["counterparties.csv"],
+            }
+        ),
+        CVA_COUNTERPARTY_ENTITY_SPEC,
+    )
+    batch = build_cva_batch_from_arrow(handoff, CVA_COUNTERPARTY_ENTITY_SPEC)
+
+    assert isinstance(batch, CvaCounterpartyBatch)
+    assert batch.counterparty_ids.tolist() == ["cp-1"]
+    assert batch.handoff_hash is not None
 
 
 def test_ba_cva_batch_matches_row_fixture_cases() -> None:
