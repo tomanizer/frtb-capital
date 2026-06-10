@@ -116,7 +116,9 @@ RCS_DELTA_RISK_WEIGHTS: dict[str, float] = {
 
 RCS_QUALIFIED_INDEX_BUCKETS = frozenset({"16", "17"})
 RCS_SINGLE_NAME_BUCKETS = frozenset(RCS_DELTA_RISK_WEIGHTS) - RCS_QUALIFIED_INDEX_BUCKETS
-RCS_CROSS_QUALITY_HALVING_BUCKETS = frozenset(str(bucket) for bucket in range(1, 15))
+RCS_CROSS_QUALITY_HALVING_BUCKETS = frozenset(
+    {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"}
+)
 RCS_IG_BUCKETS = frozenset({"1", "2", "3", "4", "5", "6", "7", "16"})
 RCS_HY_NR_BUCKETS = frozenset({"8", "9", "10", "11", "12", "13", "14", "15", "17"})
 
