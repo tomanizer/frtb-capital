@@ -7,6 +7,14 @@ import os
 import subprocess
 from pathlib import Path
 
+NOTEBOOK_PACKAGES = (
+    "packages/frtb-cva/",
+    "packages/frtb-drc/",
+    "packages/frtb-ima/",
+    "packages/frtb-rrao/",
+    "packages/frtb-sbm/",
+)
+
 
 def _git_lines(args: list[str]) -> list[str]:
     result = subprocess.run(
@@ -102,6 +110,29 @@ def _is_runtime_or_test_path(path: str) -> bool:
     )
 
 
+def _is_notebook_related_path(path: str) -> bool:
+    if path in {"Makefile", "uv.lock"}:
+        return True
+    if path.endswith("/pyproject.toml") and path.startswith(NOTEBOOK_PACKAGES):
+        return True
+    for package_prefix in NOTEBOOK_PACKAGES:
+        if not path.startswith(package_prefix):
+            continue
+        package_relative = path.removeprefix(package_prefix)
+        return (
+            package_relative.startswith("notebooks/")
+            or package_relative.startswith("src/")
+            or package_relative.startswith("tests/fixtures/")
+            or package_relative.startswith("examples/")
+            or (
+                package_relative.startswith("tests/")
+                and "notebook" in Path(package_relative).name
+            )
+            or package_relative.startswith("scripts/")
+        )
+    return False
+
+
 def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
     if event_name == "schedule":
         return {
@@ -147,14 +178,7 @@ def _classify(paths: set[str], event_name: str) -> dict[str, bool]:
         or _is_agent_instruction_path(path)
         for path in paths
     )
-    notebooks = any(
-        path.startswith("packages/frtb-ima/notebooks/")
-        or path.startswith("packages/frtb-ima/tests/fixtures/")
-        or path.startswith("packages/frtb-ima/src/")
-        or path in {"packages/frtb-ima/pyproject.toml", "uv.lock"}
-        or path.startswith("packages/frtb-ima/scripts/")
-        for path in paths
-    )
+    notebooks = any(_is_notebook_related_path(path) for path in paths)
     examples = any(
         path.startswith("packages/frtb-ima/examples/")
         or path.startswith("packages/frtb-ima/src/")
