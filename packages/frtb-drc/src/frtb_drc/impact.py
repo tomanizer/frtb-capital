@@ -7,17 +7,12 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 
-from frtb_common import CapitalImpact, ImpactMethod, dataclass_as_dict
+from frtb_common import dataclass_as_dict
 from frtb_common.attribution import ReconciliationStatus
+from frtb_common.impact import CapitalImpact, ImpactMethod
 
 from frtb_drc._identifiers import slug_path as _slug
-from frtb_drc.data_models import (
-    BranchType,
-    BucketDrc,
-    CategoryDrc,
-    DrcCapitalResult,
-    DrcRiskClass,
-)
+from frtb_drc.data_models import BranchType, BucketDrc, CategoryDrc, DrcCapitalResult
 from frtb_drc.validation import DrcInputError
 
 _TOLERANCE = 1e-9
@@ -99,7 +94,11 @@ class DrcImpactRecord:
         )
         object.__setattr__(self, "citations", tuple(self.citations))
         expected = self.candidate_amount - self.baseline_amount
-        tolerance = 1e-12 * max(abs(self.baseline_amount), abs(self.candidate_amount), 1.0)
+        tolerance = 1e-12 * max(
+            abs(self.baseline_amount),
+            abs(self.candidate_amount),
+            1.0,
+        )
         if abs(self.delta - expected) > tolerance:
             raise ValueError(
                 f"delta {self.delta!r} does not equal candidate_amount - baseline_amount "
@@ -319,9 +318,9 @@ def _bucket_method_reason(
     baseline_locations: Mapping[str, tuple[str, str]],
     candidate_locations: Mapping[str, tuple[str, str]],
 ) -> tuple[DrcImpactMethod, str]:
-    if _has_unsupported_branch(baseline_category, baseline_bucket) or _has_unsupported_branch(
-        candidate_category, candidate_bucket
-    ):
+    baseline_unsupported = _has_unsupported_branch(baseline_category, baseline_bucket)
+    candidate_unsupported = _has_unsupported_branch(candidate_category, candidate_bucket)
+    if baseline_unsupported or candidate_unsupported:
         return (
             DrcImpactMethod.UNSUPPORTED,
             "floor or unsupported branch metadata makes granular DRC impact unsupported",
@@ -360,7 +359,10 @@ def _record(
     citations: tuple[str, ...] = (),
 ) -> DrcImpactRecord:
     return DrcImpactRecord(
-        impact_id=f"drc-impact-{method.value.lower()}-{_slug(source_level)}-{_slug(source_id)}",
+        impact_id=(
+            f"drc-impact-{method.value.lower()}-"
+            f"{_slug(source_level)}-{_slug(source_id)}"
+        ),
         source_id=source_id,
         source_level=source_level,
         bucket_key=bucket_key,
@@ -411,7 +413,10 @@ def _residual_record(
     residual: float,
 ) -> DrcImpactRecord:
     return DrcImpactRecord(
-        impact_id=f"drc-impact-residual-{_slug(baseline.result_id)}-{_slug(candidate.result_id)}",
+        impact_id=(
+            f"drc-impact-residual-{_slug(baseline.result_id)}-"
+            f"{_slug(candidate.result_id)}"
+        ),
         source_id=f"{baseline.result_id}->{candidate.result_id}",
         source_level="result",
         bucket_key=None,
@@ -471,7 +476,9 @@ def _has_unsupported_branch(
     if category is not None and category.unsupported_features:
         return True
     nodes: tuple[object, ...] = tuple(
-        item for item in (category, bucket, None if bucket is None else bucket.hbr) if item is not None
+        item
+        for item in (category, bucket, None if bucket is None else bucket.hbr)
+        if item is not None
     )
     for node in nodes:
         if getattr(node, "floor_applied", False):
@@ -506,7 +513,9 @@ def _citations(
     for bucket in (baseline_bucket, candidate_bucket):
         if bucket is not None:
             citations.extend(bucket.citations)
-            citations.extend(citation for branch in bucket.branch_metadata for citation in branch.citations)
+            citations.extend(
+                citation for branch in bucket.branch_metadata for citation in branch.citations
+            )
     return _sorted_unique(citations)
 
 
