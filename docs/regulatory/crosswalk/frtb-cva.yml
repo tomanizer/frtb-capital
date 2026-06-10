@@ -24,6 +24,7 @@ requirements:
       - packages/frtb-cva/tests/test_cva_scope.py
       - packages/frtb-cva/tests/test_cva_regimes.py
       - packages/frtb-cva/tests/test_cva_support_matrix.py
+      - packages/frtb-cva/tests/test_cva_profile_evidence_fixture.py
     coverage_status: implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
@@ -91,6 +92,7 @@ requirements:
       - packages/frtb-cva/tests/test_cva_support_matrix.py
       - packages/frtb-cva/tests/test_cva_regimes.py
       - packages/frtb-cva/tests/test_cva_reference_data.py
+      - packages/frtb-cva/tests/test_cva_profile_evidence_fixture.py
     coverage_status: implemented_under_audit
     notes: Proposed U.S. section V.B profile has package-local citations, metadata, support-matrix rows, and synthetic BA-CVA/SA-CVA public API runs. Outputs are comparison evidence, not final U.S. regulatory capital.
   - id: CVA-EU-001
@@ -107,6 +109,7 @@ requirements:
       - packages/frtb-cva/tests/test_cva_support_matrix.py
       - packages/frtb-cva/tests/test_cva_regimes.py
       - packages/frtb-cva/tests/test_cva_reference_data.py
+      - packages/frtb-cva/tests/test_cva_profile_evidence_fixture.py
     coverage_status: implemented_under_audit
     notes: EU_CRR3_CVA maps Articles 381-386 and inserted SA-CVA Articles 383a-383z into profile-owned citation ids. ECB shorthand is not a separate profile.
   - id: CVA-UK-001
@@ -124,5 +127,6 @@ requirements:
       - packages/frtb-cva/tests/test_cva_support_matrix.py
       - packages/frtb-cva/tests/test_cva_regimes.py
       - packages/frtb-cva/tests/test_cva_reference_data.py
+      - packages/frtb-cva/tests/test_cva_profile_evidence_fixture.py
     coverage_status: implemented_under_audit
     notes: UK_PRA_CVA maps PRA PS1/26 and the PRA Rulebook CVA Risk Part into profile-owned citation ids with 1 January 2027 effective-date metadata.
