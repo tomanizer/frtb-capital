@@ -102,18 +102,23 @@ RCS_DELTA_RISK_WEIGHTS: dict[str, float] = {
     "5": 0.03,
     "6": 0.02,
     "7": 0.015,
-    "8": 0.12,
-    "9": 0.07,
-    "10": 0.085,
-    "11": 0.055,
-    "12": 0.05,
-    "13": 0.12,
+    "8": 0.02,
+    "9": 0.04,
+    "10": 0.12,
+    "11": 0.07,
+    "12": 0.085,
+    "13": 0.055,
     "14": 0.05,
     "15": 0.12,
     "16": 0.015,
     "17": 0.05,
 }
 
+RCS_QUALIFIED_INDEX_BUCKETS = frozenset({"16", "17"})
+RCS_SINGLE_NAME_BUCKETS = frozenset(RCS_DELTA_RISK_WEIGHTS) - RCS_QUALIFIED_INDEX_BUCKETS
+RCS_CROSS_QUALITY_HALVING_BUCKETS = frozenset(
+    {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"}
+)
 RCS_IG_BUCKETS = frozenset({"1", "2", "3", "4", "5", "6", "7", "16"})
 RCS_HY_NR_BUCKETS = frozenset({"8", "9", "10", "11", "12", "13", "14", "15", "17"})
 
@@ -573,7 +578,11 @@ def rcs_inter_bucket_correlation(
     gamma = _symmetric_gamma_lookup(RCS_GAMMA_BY_COORDINATE, left_coord, right_coord)
     left_ig = left in RCS_IG_BUCKETS
     right_ig = right in RCS_IG_BUCKETS
-    if left_ig != right_ig:
+    if (
+        left in RCS_CROSS_QUALITY_HALVING_BUCKETS
+        and right in RCS_CROSS_QUALITY_HALVING_BUCKETS
+        and left_ig != right_ig
+    ):
         gamma *= 0.5
     return gamma, _cite("basel_mar50_67", resolved_profile)
 
@@ -996,9 +1005,12 @@ __all__ = [
     "FX_INTER_BUCKET_CORRELATION",
     "GIRR_VEGA_INFLATION_FACTOR",
     "GIRR_VEGA_RATE_FACTOR",
+    "RCS_CROSS_QUALITY_HALVING_BUCKETS",
     "RCS_DELTA_RISK_WEIGHTS",
     "RCS_HY_NR_BUCKETS",
     "RCS_IG_BUCKETS",
+    "RCS_QUALIFIED_INDEX_BUCKETS",
+    "RCS_SINGLE_NAME_BUCKETS",
     "SA_CVA_VEGA_RW_SIGMA",
     "ccs_delta_intra_bucket_correlation",
     "ccs_delta_risk_weight",

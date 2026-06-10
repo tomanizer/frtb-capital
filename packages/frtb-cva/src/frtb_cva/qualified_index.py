@@ -17,7 +17,8 @@ from frtb_cva.sa_cva_reference_data import (
     CCS_QUALIFIED_INDEX_BUCKET,
     CCS_SINGLE_NAME_BUCKETS,
     EQUITY_QUALIFIED_INDEX_BUCKETS,
-    RCS_DELTA_RISK_WEIGHTS,
+    RCS_QUALIFIED_INDEX_BUCKETS,
+    RCS_SINGLE_NAME_BUCKETS,
     ccs_single_name_bucket_for_sector,
     parse_ccs_entity_key,
 )
@@ -25,7 +26,6 @@ from frtb_cva.validation import CvaInputError
 
 _SECTOR_CONCENTRATION_THRESHOLD = 0.75
 _CCS_INDEX_BUCKETS = frozenset({"1", "2", "3", "4", "5", "6", "7", CCS_QUALIFIED_INDEX_BUCKET})
-_RCS_SINGLE_NAME_BUCKETS = frozenset(RCS_DELTA_RISK_WEIGHTS) - {CCS_QUALIFIED_INDEX_BUCKET}
 
 
 def resolve_sa_cva_bucket(
@@ -114,10 +114,10 @@ def _resolve_rcs_bucket(
     *,
     profile: CvaRegulatoryProfile | str,
 ) -> tuple[str, tuple[str, ...]]:
-    if bucket == "8":
+    if bucket in RCS_QUALIFIED_INDEX_BUCKETS:
         if sensitivity.index_treatment is not SaCvaIndexTreatment.QUALIFIED_INDEX:
             raise CvaInputError(
-                "RCS qualified index requires QUALIFIED_INDEX treatment",
+                "RCS qualified-index buckets 16/17 require QUALIFIED_INDEX treatment",
                 field="index_treatment",
                 record_id=sensitivity.sensitivity_id,
             )
@@ -125,7 +125,7 @@ def _resolve_rcs_bucket(
         return remapped, (profile_citation_id("basel_mar50_50", profile),)
     if sensitivity.index_treatment is SaCvaIndexTreatment.QUALIFIED_INDEX:
         raise CvaInputError(
-            "RCS qualified index must use bucket 8",
+            "RCS qualified index must use buckets 16 or 17",
             field="bucket_id",
             record_id=sensitivity.sensitivity_id,
         )
@@ -232,7 +232,7 @@ def _validate_remap_bucket(
             )
         return
     if risk_class is SaCvaRiskClass.REFERENCE_CREDIT_SPREAD:
-        if bucket not in _RCS_SINGLE_NAME_BUCKETS:
+        if bucket not in RCS_SINGLE_NAME_BUCKETS:
             raise CvaInputError(
                 f"RCS index remap bucket {bucket} is not a single-name bucket",
                 field="index_remap_bucket_id",
