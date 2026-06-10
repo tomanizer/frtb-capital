@@ -38,7 +38,7 @@ format:
 	uv run ruff format $(LINT_PATHS)
 
 format-check:
-	uv run ruff format --diff $(LINT_PATHS)
+	uv run ruff format --check $(LINT_PATHS)
 
 typecheck:
 	uv run mypy $(MYPY_PATHS)
