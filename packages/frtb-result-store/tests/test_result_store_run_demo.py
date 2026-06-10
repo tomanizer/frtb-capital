@@ -12,11 +12,12 @@ def test_result_store_run_demo_smoke() -> None:
     completed = subprocess.run(
         [sys.executable, str(demo)],
         cwd=repo_root,
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
     )
 
+    assert completed.returncode == 0, completed.stdout + completed.stderr
     assert "Result-store demo complete" in completed.stdout
     assert "total capital: 142.00 USD" in completed.stdout
     assert "attribution records: 3" in completed.stdout
