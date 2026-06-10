@@ -13,10 +13,16 @@ from frtb_result_store._row_codecs import (
     stored_value as _stored_value,
 )
 from frtb_result_store.mart_row_codecs import (
-    capital_summary_from_row,
-    capital_tree_mart_from_row,
-    component_breakdown_from_row,
-    movement_summary_from_row,
+    capital_summary_from_row as _capital_summary_from_row,
+)
+from frtb_result_store.mart_row_codecs import (
+    capital_tree_mart_from_row as _capital_tree_mart_from_row,
+)
+from frtb_result_store.mart_row_codecs import (
+    component_breakdown_from_row as _component_breakdown_from_row,
+)
+from frtb_result_store.mart_row_codecs import (
+    movement_summary_from_row as _movement_summary_from_row,
 )
 from frtb_result_store.model import (
     ArtifactRef,
@@ -76,6 +82,22 @@ def mart_rows_for_bundle(
         ),
         "rrao_exposure_summary": _rrao_exposure_summary_rows(bundle),
     }
+
+
+def capital_summary_from_row(row: Sequence[object]) -> CapitalSummaryRow:
+    return _capital_summary_from_row(row)
+
+
+def capital_tree_mart_from_row(row: Sequence[object]) -> CapitalTreeMartRow:
+    return _capital_tree_mart_from_row(row)
+
+
+def component_breakdown_from_row(row: Sequence[object]) -> ComponentBreakdownRow:
+    return _component_breakdown_from_row(row)
+
+
+def movement_summary_from_row(row: Sequence[object]) -> MovementSummaryRow:
+    return _movement_summary_from_row(row)
 
 
 def _capital_summary_row(
