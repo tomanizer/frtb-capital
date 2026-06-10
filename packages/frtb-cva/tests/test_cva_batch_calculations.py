@@ -370,7 +370,7 @@ def test_standalone_capital_finite_check() -> None:
         lineage_source_systems=["synthetic"],
         lineage_source_files=["netting-sets.csv"],
     )
-    with mock.patch("frtb_cva.batch.math.isfinite", return_value=False):
+    with mock.patch("frtb_cva._ba_reduced_batch_kernel.math.isfinite", return_value=False):
         with pytest.raises(CvaInputError, match="standalone capital must be finite"):
             calculate_cva_capital_from_batches(
                 CvaCalculationContext(
