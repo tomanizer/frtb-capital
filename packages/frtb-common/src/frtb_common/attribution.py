@@ -140,7 +140,13 @@ class ContributionReconciliation:
 
     @property
     def is_reconciled(self) -> bool:
-        """Return whether the contribution set reconciles within tolerance."""
+        """Return whether the contribution set reconciles within tolerance.
+
+        Returns
+        -------
+        bool
+            True when status is `RECONCILED` or `PARTIAL_RESIDUAL`.
+        """
 
         return self.status in {
             ReconciliationStatus.RECONCILED,
