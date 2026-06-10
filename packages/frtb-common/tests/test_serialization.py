@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum, StrEnum
 
-from frtb_common.serialization import jsonable
+import pytest
+from frtb_common.serialization import dataclass_as_dict, jsonable
 
 
 class _Color(Enum):
@@ -15,6 +17,13 @@ class _Color(Enum):
 
 class _Status(StrEnum):
     OPEN = "open"
+
+
+@dataclass(frozen=True)
+class _ExampleRecord:
+    name: str
+    color: _Color
+    dates: tuple[date, ...]
 
 
 def _round_trip(value: object) -> object:
@@ -94,3 +103,24 @@ def test_jsonable_is_exported_from_top_level_package() -> None:
     from frtb_common import jsonable as top_level_jsonable
 
     assert top_level_jsonable is jsonable
+
+
+def test_dataclass_as_dict_serializes_fields_with_jsonable_values() -> None:
+    record = _ExampleRecord("example", _Color.RED, (date(2024, 1, 15),))
+
+    assert dataclass_as_dict(record) == {
+        "name": "example",
+        "color": "red",
+        "dates": ["2024-01-15"],
+    }
+
+
+def test_dataclass_as_dict_rejects_non_dataclass_instances() -> None:
+    with pytest.raises(TypeError, match="dataclass instance"):
+        dataclass_as_dict({"name": "not-a-dataclass"})
+
+
+def test_dataclass_as_dict_is_exported_from_top_level_package() -> None:
+    from frtb_common import dataclass_as_dict as top_level_dataclass_as_dict
+
+    assert top_level_dataclass_as_dict is dataclass_as_dict

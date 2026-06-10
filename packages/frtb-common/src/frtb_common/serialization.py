@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
+from dataclasses import fields, is_dataclass
 from datetime import date, datetime
 from enum import Enum
 from types import TracebackType
@@ -46,3 +47,26 @@ def jsonable(value: Any) -> object:
     except TypeError:
         return str(value)
     return value
+
+
+def dataclass_as_dict(value: Any) -> dict[str, object]:
+    """Return dataclass fields as a JSON-compatible dictionary.
+
+    Parameters
+    ----------
+    value : Any
+        Dataclass instance whose fields should be serialized.
+
+    Returns
+    -------
+    dict[str, object]
+        Dataclass field names mapped through :func:`jsonable`.
+
+    Raises
+    ------
+    TypeError
+        If *value* is not a dataclass instance.
+    """
+    if not is_dataclass(value) or isinstance(value, type):
+        raise TypeError("dataclass_as_dict requires a dataclass instance")
+    return {field.name: jsonable(getattr(value, field.name)) for field in fields(value)}
