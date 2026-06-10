@@ -16,19 +16,19 @@ and which public calls to wire first:
 
 1. Run `make demo` from the repo root to execute every package
    `examples/run_demo.py` with synthetic inputs and concise output summaries.
-2. Pick the component you are integrating and follow its package journey:
-   [IMA](../packages/frtb-ima/docs/PACKAGE_JOURNEY.md),
-   [SBM](../packages/frtb-sbm/docs/PACKAGE_JOURNEY.md),
-   [DRC](../packages/frtb-drc/docs/PACKAGE_JOURNEY.md),
-   [RRAO](../packages/frtb-rrao/docs/PACKAGE_JOURNEY.md),
-   [CVA](../packages/frtb-cva/docs/PACKAGE_JOURNEY.md), or
-   [orchestration](../packages/frtb-orchestration/docs/PACKAGE_JOURNEY.md).
+2. Pick the component you are integrating and follow its package guide:
+   [IMA delivery](modules/frtb-ima/CLIENT_DELIVERY.md),
+   [SBM journey](../packages/frtb-sbm/docs/PACKAGE_JOURNEY.md),
+   [DRC journey](../packages/frtb-drc/docs/PACKAGE_JOURNEY.md),
+   [RRAO journey](../packages/frtb-rrao/docs/PACKAGE_JOURNEY.md),
+   [CVA journey](../packages/frtb-cva/docs/PACKAGE_JOURNEY.md), or
+   [orchestration module](modules/frtb-orchestration/README.md).
 3. Use the table below to map your raw Arrow/Parquet tables to public
    normalizers, batch builders, and capital entrypoints.
 4. Run `make examples-check` before changing demos and `make notebooks-check`
    before changing notebook teaching material.
 
-The package journeys and demos are teaching material only; the contract below
+The package guides and demos are teaching material only; the contract below
 remains the integration source of truth for Tier 1 handoff, run context,
 lineage, hashing, and rejection semantics.
 
