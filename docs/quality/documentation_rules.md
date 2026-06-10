@@ -185,21 +185,35 @@ low-noise heuristic is available.
 
 ## Baseline Ratchet
 
-The committed baseline lives at:
+The committed full inventory baseline lives at:
 
 ```text
 docs/quality/docstrings/baseline.json
 ```
 
-Refresh it after an intentional documentation cleanup or checker change:
+The focused section-rule supplement lives at:
+
+```text
+docs/quality/docstrings/section_baseline.json
+```
+
+The baseline guard loads both files. The supplement records reviewed
+`MISSING_PARAMETERS_SECTION` and `MISSING_RETURNS_SECTION` findings that were
+introduced after the initial full baseline, so the ratchet can promote those
+objective rules without rewriting unrelated inventory evidence. A later reviewed
+full-baseline refresh may fold the supplement into `baseline.json` and remove the
+separate allowance.
+
+Refresh the full inventory baseline after an intentional documentation cleanup
+or checker change:
 
 ```bash
 make docstring-baseline
 ```
 
 The baseline stores the full inventory so package cleanup issues can be opened
-from stable package-scoped evidence. The current CI ratchet uses that baseline
-for objective no-new-gap enforcement:
+from stable package-scoped evidence. The current CI ratchet uses the committed
+baselines for objective no-new-gap enforcement:
 
 - new missing runtime module docstrings fail;
 - new missing public class, function, and method docstrings fail;
@@ -210,11 +224,12 @@ for objective no-new-gap enforcement:
   allowance in the same reviewed change.
 
 The remaining baseline is intentional. Existing gaps stay visible in
-`docs/quality/docstrings/baseline.json` and CI artifacts so they can be removed
-by focused cleanup PRs, but they do not block unrelated work. `TRIVIAL_DOCSTRING`
-findings remain report-only because the heuristic is more subjective than the
-missing-section rules and needs more review evidence before becoming a hard
-quality gate.
+`docs/quality/docstrings/baseline.json`,
+`docs/quality/docstrings/section_baseline.json`, and CI artifacts so they can be
+removed by focused cleanup PRs, but they do not block unrelated work.
+`TRIVIAL_DOCSTRING` findings remain report-only because the heuristic is more
+subjective than the missing-section rules and needs more review evidence before
+becoming a hard quality gate.
 
 `make quality-control` runs the ratchet through `make docstring-check` and writes
 the current report to `dist/quality/docstring-baseline-report.json` for CI
