@@ -144,7 +144,7 @@ def test_desk_contributions_reject_non_finite_detail_breakdown() -> None:
         capital={"total": 125.0, "imcc_t_minus_1": 100.0, "binding_term": "SPOT"},
     )
 
-    with pytest.raises(ValueError, match="components.current_es must be finite"):
+    with pytest.raises(ValueError, match=r"components\.current_es must be finite"):
         desk_contributions(record)
 
 
