@@ -10,6 +10,7 @@ from frtb_ima.attribution import build_ima_contribution_bundle, desk_contributio
 from frtb_ima.audit import DeskAuditRecord
 
 TEST_INPUTS_HASH = "1" * 64
+TEST_POLICY_HASH = "2" * 64
 
 
 def test_desk_contributions_reconcile_standard_path() -> None:
@@ -393,7 +394,7 @@ def _desk_record(
     pla: dict[str, object] | None = None,
     desk_id: str = "desk-1",
     inputs_hash: str = TEST_INPUTS_HASH,
-    policy_hash: str = "policy-hash",
+    policy_hash: str = TEST_POLICY_HASH,
 ) -> DeskAuditRecord:
     return DeskAuditRecord(
         run_id="run-1",
