@@ -33,6 +33,13 @@ from frtb_rrao._batch_columns import (
     _text_array_with_default,
 )
 from frtb_rrao._citations import merged_citation_ids
+from frtb_rrao._investment_fund_validation import (
+    gross_notional_mismatch_mask,
+    invalid_fund_notional_mask,
+    invalid_included_exposure_ratio_mask,
+    investment_fund_descriptor_present_mask,
+    investment_fund_path_mask,
+)
 from frtb_rrao._payloads import batch_position_payload, hash_position_payloads
 from frtb_rrao._result_assembly import (
     collect_line_citations,
@@ -971,19 +978,19 @@ def _validate_exact_back_to_back_pair(
 
 
 def _validate_investment_fund_fields(batch: RraoPositionBatch) -> None:
-    descriptor_present = (
-        (batch.investment_fund_ids != None)  # noqa: E711
-        | (batch.investment_fund_section_205_methods != None)  # noqa: E711
-        | (batch.investment_fund_included_exposure_types != None)  # noqa: E711
-        | (batch.investment_fund_mandate_evidence_ids != None)  # noqa: E711
-        | (batch.investment_fund_section_205_evidence_ids != None)  # noqa: E711
-        | ~np.isnan(batch.investment_fund_gross_effective_notionals)
-        | ~np.isnan(batch.investment_fund_included_exposure_ratios)
+    descriptor_present = investment_fund_descriptor_present_mask(
+        fund_ids=batch.investment_fund_ids,
+        section_205_methods=batch.investment_fund_section_205_methods,
+        included_exposure_types=batch.investment_fund_included_exposure_types,
+        mandate_evidence_ids=batch.investment_fund_mandate_evidence_ids,
+        section_205_evidence_ids=batch.investment_fund_section_205_evidence_ids,
+        fund_gross_effective_notionals=batch.investment_fund_gross_effective_notionals,
+        included_exposure_ratios=batch.investment_fund_included_exposure_ratios,
     )
-    is_fund_path = (
-        batch.is_investment_fund_exposures
-        | (batch.evidence_types == RraoEvidenceType.INVESTMENT_FUND_EXPOSURE.value)
-        | descriptor_present
+    is_fund_path = investment_fund_path_mask(
+        batch.is_investment_fund_exposures,
+        batch.evidence_types,
+        descriptor_present,
     )
     missing_flag = is_fund_path & ~batch.is_investment_fund_exposures
     if bool(np.any(missing_flag)):
@@ -1064,34 +1071,29 @@ def _validate_investment_fund_fields(batch: RraoPositionBatch) -> None:
             field="investment_fund_descriptor.mandate_allows_rrao_exposures",
             position_id=_position_id_at_first(batch, mandate_disallowed),
         )
-    missing_fund_notional = is_fund_path & np.isnan(batch.investment_fund_gross_effective_notionals)
-    if bool(np.any(missing_fund_notional)):
+    invalid_fund_notional = invalid_fund_notional_mask(
+        is_fund_path,
+        batch.investment_fund_gross_effective_notionals,
+    )
+    if bool(np.any(invalid_fund_notional)):
         raise RraoInputError(
             _vr.FUND_GROSS_NOTIONAL_POSITIVE_MESSAGE,
             field="investment_fund_descriptor.fund_gross_effective_notional",
-            position_id=_position_id_at_first(batch, missing_fund_notional),
-        )
-    non_positive_fund = is_fund_path & (batch.investment_fund_gross_effective_notionals <= 0.0)
-    if bool(np.any(non_positive_fund)):
-        raise RraoInputError(
-            _vr.FUND_GROSS_NOTIONAL_POSITIVE_MESSAGE,
-            field="investment_fund_descriptor.fund_gross_effective_notional",
-            position_id=_position_id_at_first(batch, non_positive_fund),
+            position_id=_position_id_at_first(batch, invalid_fund_notional),
         )
     ratio = batch.investment_fund_included_exposure_ratios
-    invalid_ratio = is_fund_path & (np.isnan(ratio) | (ratio <= 0.0) | (ratio > 1.0))
+    invalid_ratio = invalid_included_exposure_ratio_mask(is_fund_path, ratio)
     if bool(np.any(invalid_ratio)):
         raise RraoInputError(
             _vr.INCLUDED_EXPOSURE_RATIO_RANGE_MESSAGE,
             field="investment_fund_descriptor.included_exposure_ratio",
             position_id=_position_id_at_first(batch, invalid_ratio),
         )
-    expected_notionals = batch.investment_fund_gross_effective_notionals * ratio
-    mismatch = is_fund_path & ~np.isclose(
-        batch.gross_effective_notionals,
-        expected_notionals,
-        rtol=_vr.NOTIONAL_RECONCILIATION_REL_TOL,
-        atol=_vr.NOTIONAL_RECONCILIATION_ABS_TOL,
+    mismatch = gross_notional_mismatch_mask(
+        is_fund_path=is_fund_path,
+        gross_effective_notionals=batch.gross_effective_notionals,
+        fund_gross_effective_notionals=batch.investment_fund_gross_effective_notionals,
+        included_exposure_ratios=ratio,
     )
     if bool(np.any(mismatch)):
         raise RraoInputError(
