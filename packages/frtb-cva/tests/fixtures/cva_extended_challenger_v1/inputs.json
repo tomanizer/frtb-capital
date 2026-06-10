@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "cases": {
+    "full_ba_hedge_floor": {
+      "context": {
+        "run_id": "fixture-cva-extended-full-ba",
+        "calculation_date": "2026-06-10",
+        "base_currency": "USD",
+        "profile": "BASEL_MAR50_2020",
+        "method": "BA_CVA_FULL",
+        "sa_cva_approved": false
+      },
+      "counterparties": [
+        {
+          "counterparty_id": "ctp-full-ig",
+          "desk_id": "desk-cva",
+          "legal_entity": "LE-CVA",
+          "sector": "FINANCIALS",
+          "credit_quality": "INVESTMENT_GRADE",
+          "region": "EMEA",
+          "source_row_id": "row-ctp-full-ig"
+        }
+      ],
+      "netting_sets": [
+        {
+          "netting_set_id": "ns-full-ig",
+          "counterparty_id": "ctp-full-ig",
+          "ead": 1000000.0,
+          "effective_maturity": 1.0,
+          "discount_factor": 1.0,
+          "currency": "USD",
+          "sign_convention": "non_negative",
+          "uses_imm_ead": false,
+          "discount_factor_explicit": true,
+          "source_row_id": "row-ns-full-ig"
+        }
+      ],
+      "hedges": [
+        {
+          "hedge_id": "hedge-direct-full-ig",
+          "source_row_id": "row-hedge-direct-full-ig",
+          "counterparty_id": "ctp-full-ig",
+          "hedge_type": "SINGLE_NAME_CDS",
+          "notional": 1000000.0,
+          "remaining_maturity": 1.0,
+          "discount_factor": 1.0,
+          "discount_factor_explicit": true,
+          "reference_sector": "FINANCIALS",
+          "reference_credit_quality": "INVESTMENT_GRADE",
+          "reference_region": "EMEA",
+          "reference_relation": "DIRECT",
+          "eligibility": "ELIGIBLE",
+          "is_internal": false,
+          "eligibility_evidence_id": "evidence-hedge-direct-full-ig"
+        }
+      ],
+      "sensitivities": []
+    },
+    "mixed_carve_out": {
+      "context": {
+        "run_id": "fixture-cva-extended-mixed",
+        "calculation_date": "2026-06-10",
+        "base_currency": "USD",
+        "profile": "BASEL_MAR50_2020",
+        "method": "MIXED_CARVE_OUT",
+        "sa_cva_approved": true,
+        "carve_out_netting_set_ids": ["ns-mixed-ba"],
+        "sa_cva_sensitivity_scope_evidence_id": "evidence-sa-slice-mixed-v1"
+      },
+      "counterparties": [
+        {
+          "counterparty_id": "ctp-mixed-ba",
+          "desk_id": "desk-cva",
+          "legal_entity": "LE-CVA",
+          "sector": "SOVEREIGN",
+          "credit_quality": "INVESTMENT_GRADE",
+          "region": "EMEA",
+          "source_row_id": "row-ctp-mixed-ba"
+        }
+      ],
+      "netting_sets": [
+        {
+          "netting_set_id": "ns-mixed-ba",
+          "counterparty_id": "ctp-mixed-ba",
+          "ead": 700000.0,
+          "effective_maturity": 1.0,
+          "discount_factor": 1.0,
+          "currency": "USD",
+          "sign_convention": "non_negative",
+          "uses_imm_ead": false,
+          "discount_factor_explicit": true,
+          "carved_out_to_ba_cva": true,
+          "source_row_id": "row-ns-mixed-ba"
+        }
+      ],
+      "hedges": [],
+      "sensitivities": [
+        {
+          "sensitivity_id": "sens-mixed-fx-eur",
+          "risk_class": "FX",
+          "risk_measure": "DELTA",
+          "sensitivity_tag": "CVA",
+          "bucket_id": "EUR",
+          "risk_factor_key": "EUR",
+          "amount": 100000.0,
+          "amount_currency": "EUR",
+          "sign_convention": "positive_loss",
+          "source_row_id": "row-sens-mixed-fx-eur"
+        }
+      ]
+    },
+    "sa_multi_risk_qualified_index": {
+      "context": {
+        "run_id": "fixture-cva-extended-sa-multi",
+        "calculation_date": "2026-06-10",
+        "base_currency": "USD",
+        "profile": "BASEL_MAR50_2020",
+        "method": "SA_CVA",
+        "sa_cva_approved": true
+      },
+      "counterparties": [],
+      "netting_sets": [],
+      "hedges": [],
+      "sensitivities": [
+        {
+          "sensitivity_id": "sens-sa-girr-usd-5y",
+          "risk_class": "GIRR",
+          "risk_measure": "DELTA",
+          "sensitivity_tag": "CVA",
+          "bucket_id": "USD",
+          "risk_factor_key": "5y",
+          "tenor": "5y",
+          "amount": 1000000.0,
+          "amount_currency": "USD",
+          "sign_convention": "positive_loss",
+          "source_row_id": "row-sens-sa-girr-usd-5y"
+        },
+        {
+          "sensitivity_id": "sens-sa-fx-eur",
+          "risk_class": "FX",
+          "risk_measure": "DELTA",
+          "sensitivity_tag": "CVA",
+          "bucket_id": "EUR",
+          "risk_factor_key": "EUR",
+          "amount": 100000.0,
+          "amount_currency": "EUR",
+          "sign_convention": "positive_loss",
+          "source_row_id": "row-sens-sa-fx-eur"
+        },
+        {
+          "sensitivity_id": "sens-sa-ccs-qualified-index",
+          "risk_class": "COUNTERPARTY_CREDIT_SPREAD",
+          "risk_measure": "DELTA",
+          "sensitivity_tag": "CVA",
+          "bucket_id": "8",
+          "risk_factor_key": "idx-fin|INVESTMENT_GRADE",
+          "tenor": "5y",
+          "amount": 100000.0,
+          "amount_currency": "USD",
+          "sign_convention": "positive_loss",
+          "source_row_id": "row-sens-sa-ccs-qualified-index",
+          "index_treatment": "QUALIFIED_INDEX",
+          "index_max_sector_weight": 0.8,
+          "index_homogeneous_sector_quality": true,
+          "index_dominant_sector": "FINANCIALS"
+        }
+      ]
+    }
+  },
+  "invalid_cases": {
+    "qualified_index_missing_remap_metadata": {
+      "context": {
+        "run_id": "fixture-cva-extended-invalid-index",
+        "calculation_date": "2026-06-10",
+        "base_currency": "USD",
+        "profile": "BASEL_MAR50_2020",
+        "method": "SA_CVA",
+        "sa_cva_approved": true
+      },
+      "expected_error_match": "single-name bucket",
+      "counterparties": [],
+      "netting_sets": [],
+      "hedges": [],
+      "sensitivities": [
+        {
+          "sensitivity_id": "sens-invalid-ccs-qualified-index",
+          "risk_class": "COUNTERPARTY_CREDIT_SPREAD",
+          "risk_measure": "DELTA",
+          "sensitivity_tag": "CVA",
+          "bucket_id": "8",
+          "risk_factor_key": "idx-fin|INVESTMENT_GRADE",
+          "tenor": "5y",
+          "amount": 100000.0,
+          "amount_currency": "USD",
+          "sign_convention": "positive_loss",
+          "source_row_id": "row-sens-invalid-ccs-qualified-index",
+          "index_treatment": "QUALIFIED_INDEX",
+          "index_max_sector_weight": 0.8,
+          "index_homogeneous_sector_quality": false
+        }
+      ]
+    }
+  }
+}
