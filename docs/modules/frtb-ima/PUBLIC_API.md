@@ -75,6 +75,9 @@ import path for existing public callers.
 RFET columnar batch assessment setup physically lives under
 `frtb_ima.validation.rfet_batch`; `frtb_ima.rfet_evidence` remains the
 compatibility import path for `assess_rfet_observation_batch`.
+Backtesting exception classification helpers physically live under
+`frtb_ima.validation.backtesting_stages`; `frtb_ima.backtesting` remains the
+public import path for backtesting entrypoints and result records.
 
 ## References
 
