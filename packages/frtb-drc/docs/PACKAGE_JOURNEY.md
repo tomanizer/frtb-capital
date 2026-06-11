@@ -2,8 +2,8 @@
 
 This document describes how a **DRC capital run** works in `frtb-drc` as implemented
 today. It is grounded in the runtime entrypoints in `scaffold.py`, `batch.py`,
-`adapters/positions.py`, `regimes.py`, and `attribution.py`, not planning-only
-module text.
+`adapters/positions.py`, `adapters/arrow.py`, `regimes.py`, and `attribution.py`,
+not planning-only module text.
 
 Outputs are **engineering and validation evidence**, not final regulatory capital.
 Profile and risk-class support are enforced in code via `ensure_risk_class_supported`
@@ -70,6 +70,9 @@ when **multiple DRC risk classes** must be capitalised in **one** audited result
 The column and canonical-position batch builders physically live under
 `frtb_drc.adapters.positions`; `frtb_drc.batch` remains the public compatibility
 surface for the batch type, hash, and capital calculation entrypoint.
+Arrow table normalization and Arrow-to-batch builders physically live under
+`frtb_drc.adapters.arrow`; `frtb_drc.arrow_batch` remains a compatibility import
+path.
 
 ---
 

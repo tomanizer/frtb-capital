@@ -110,6 +110,28 @@ def test_batch_builder_adapter_compatibility_exports() -> None:
         assert getattr(frtb_drc, name) is getattr(positions, name)
 
 
+def test_arrow_adapter_compatibility_exports() -> None:
+    import frtb_drc.adapters.arrow as adapter
+    import frtb_drc.arrow_batch as compatibility
+
+    names = (
+        "DRC_NONSEC_ARROW_COLUMN_SPECS",
+        "DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS",
+        "DRC_CTP_ARROW_COLUMN_SPECS",
+        "normalize_drc_nonsec_arrow_table",
+        "normalize_drc_securitisation_non_ctp_arrow_table",
+        "normalize_drc_ctp_arrow_table",
+        "build_drc_nonsec_batch_from_arrow",
+        "build_drc_securitisation_non_ctp_batch_from_arrow",
+        "build_drc_ctp_batch_from_arrow",
+        "build_drc_risk_weight_evidence_from_arrow",
+        "build_drc_fair_value_cap_evidence_from_arrow",
+    )
+    for name in names:
+        assert getattr(compatibility, name) is getattr(adapter, name)
+        assert getattr(frtb_drc, name) is getattr(adapter, name)
+
+
 def _public_api_doc() -> str:
     root = Path(__file__).resolve().parents[3]
     return (root / "docs/modules/frtb-drc/PUBLIC_API.md").read_text()

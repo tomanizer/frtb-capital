@@ -32,6 +32,9 @@ high-volume batch boundary is summarized in
 Column and position batch builders physically live in
 `frtb_drc.adapters.positions`; `frtb_drc.batch` and the top-level `frtb_drc`
 module remain stable import paths for existing callers.
+Arrow table normalization and Arrow-to-batch builders physically live in
+`frtb_drc.adapters.arrow`; `frtb_drc.arrow_batch` remains a compatibility
+import path.
 
 ## Client integration
 
