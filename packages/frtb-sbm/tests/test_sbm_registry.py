@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
+import frtb_sbm.registry as registry
 import pyarrow as pa
 import pytest
 from frtb_sbm import (
@@ -9,6 +10,7 @@ from frtb_sbm import (
     SBM_BATCH_SPECS,
     SbmBatchSpec,
     SbmCalculationContext,
+    SbmInputError,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
@@ -38,6 +40,16 @@ def test_sbm_registry_covers_supported_matrix() -> None:
         assert spec.path == path
         assert spec.path_key == f"{path[0].value.lower()}_{path[1].value.lower()}"
         assert spec.label
+
+
+def test_sbm_batch_spec_raises_domain_error_for_registry_skew(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = (SbmRiskClass.FX, SbmRiskMeasure.DELTA)
+    monkeypatch.delitem(registry._SBM_BATCH_SPEC_DATA, path)
+
+    with pytest.raises(SbmInputError, match="unsupported SBM batch path"):
+        registry.sbm_batch_spec(*path)
 
 
 def test_generic_batch_capital_path_matches_row_api() -> None:

@@ -11,6 +11,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
+from frtb_sbm._errors import SbmInputError
 from frtb_sbm.data_models import SbmRiskClass, SbmRiskMeasure
 
 SbmBatchPath = tuple[SbmRiskClass, SbmRiskMeasure]
@@ -182,7 +183,14 @@ def sbm_batch_spec(risk_class: SbmRiskClass, risk_measure: SbmRiskMeasure) -> Sb
     SbmBatchSpec
     """
 
-    return SBM_BATCH_SPECS[(risk_class, risk_measure)]
+    try:
+        return SBM_BATCH_SPECS[(risk_class, risk_measure)]
+    except KeyError as exc:
+        raise SbmInputError(
+            "unsupported SBM batch path "
+            f"risk_class={risk_class.value}, risk_measure={risk_measure.value}",
+            field="risk_class,risk_measure",
+        ) from exc
 
 
 __all__ = [
