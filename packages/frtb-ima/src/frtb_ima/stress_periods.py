@@ -43,6 +43,12 @@ from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall_from_sor
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.nmrf_stress_spec import NMRFStressPeriodSpec
 from frtb_ima.regimes import RegulatoryPolicy, RegulatoryRegime
+from frtb_ima.validation.observation_windows import (
+    require_positive_observation_count as _require_positive_observation_count,
+)
+from frtb_ima.validation.observation_windows import (
+    require_window_minimum_pair as _require_window_minimum_pair,
+)
 
 FloatVector = Sequence[float] | npt.NDArray[np.float64]
 logger = logging.getLogger(__name__)
@@ -801,12 +807,22 @@ def _validate_selection_parameters(
     es_estimator: ESEstimator,
     tie_break: StressPeriodTieBreak | None = None,
 ) -> None:
-    if window_observations <= 0:
-        raise ValueError("window_observations must be positive")
-    if minimum_observations <= 0:
-        raise ValueError("minimum_observations must be positive")
-    if minimum_observations < window_observations:
-        raise ValueError("minimum_observations cannot be less than window_observations")
+    _require_positive_observation_count(
+        window_observations,
+        field="window_observations",
+        include_value=False,
+    )
+    _require_positive_observation_count(
+        minimum_observations,
+        field="minimum_observations",
+        include_value=False,
+    )
+    _require_window_minimum_pair(
+        window_value=window_observations,
+        minimum_value=minimum_observations,
+        window_field="window_observations",
+        minimum_field="minimum_observations",
+    )
     if not isinstance(severity_metric, StressSeverityMetric):
         raise TypeError("severity_metric must be a StressSeverityMetric")
     if not (0.0 < confidence_level < 1.0):

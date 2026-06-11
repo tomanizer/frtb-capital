@@ -36,15 +36,21 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_ima._array_utils import finite_1d_float_array as _as_finite_1d_array
-from frtb_ima._observation_utils import (
-    select_recent_observation_window as _select_recent_observation_window,
-)
-from frtb_ima._observation_utils import (
-    validate_observation_dates as _validate_observation_dates,
-)
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import DEFAULT_BACKTESTING_EXCEPTION_LIMITS, RegulatoryPolicy
+from frtb_ima.validation.observation_windows import (
+    require_positive_observation_count as _require_positive_observation_count,
+)
+from frtb_ima.validation.observation_windows import (
+    require_positive_optional_observation_count as _require_positive_optional_observation_count,
+)
+from frtb_ima.validation.observation_windows import (
+    select_recent_observation_window as _select_recent_observation_window,
+)
+from frtb_ima.validation.observation_windows import (
+    validate_observation_dates as _validate_observation_dates,
+)
 
 # Basel MAR32/MAR99 backtesting traffic-light thresholds over 250 observations.
 GREEN_MAX = 4
@@ -468,10 +474,8 @@ def backtest(
     BacktestResult
         Result of the operation.
     """
-    if window <= 0:
-        raise ValueError(f"window must be positive, got {window}")
-    if minimum_history is not None and minimum_history <= 0:
-        raise ValueError(f"minimum_history must be positive when provided, got {minimum_history}")
+    _require_positive_observation_count(window, field="window")
+    _require_positive_optional_observation_count(minimum_history, field="minimum_history")
 
     apl_arr = _as_finite_1d_array(apl, "apl")
     hpl_arr = _as_finite_1d_array(hpl, "hpl")
@@ -614,10 +618,8 @@ def trading_desk_backtest_trace(
     TradingDeskBacktestTraceResult
         Result of the operation.
     """
-    if window <= 0:
-        raise ValueError(f"window must be positive, got {window}")
-    if minimum_history is not None and minimum_history <= 0:
-        raise ValueError(f"minimum_history must be positive when provided, got {minimum_history}")
+    _require_positive_observation_count(window, field="window")
+    _require_positive_optional_observation_count(minimum_history, field="minimum_history")
 
     apl_arr = _as_1d_array_allowing_missing(apl, "apl")
     hpl_arr = _as_1d_array_allowing_missing(hpl, "hpl")
