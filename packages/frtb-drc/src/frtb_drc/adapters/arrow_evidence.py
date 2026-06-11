@@ -31,6 +31,11 @@ from frtb_drc.fair_value_cap import fair_value_cap_evidence_by_position
 from frtb_drc.risk_weight_evidence import risk_weight_evidence_by_position
 from frtb_drc.validation import DrcInputError
 
+__all__ = [
+    "DRC_FAIR_VALUE_CAP_EVIDENCE_ARROW_COLUMN_SPECS",
+    "DRC_RISK_WEIGHT_EVIDENCE_ARROW_COLUMN_SPECS",
+]
+
 
 def normalize_drc_risk_weight_evidence_arrow_table(
     table: pa.Table,
