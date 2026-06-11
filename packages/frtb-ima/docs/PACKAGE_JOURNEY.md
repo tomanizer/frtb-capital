@@ -66,7 +66,8 @@ and lineage-heavy.
    validation status for replay.
 4. IMA kernels compute expected shortfall, liquidity-horizon adjustment, IMCC,
    NMRF/SES, PLA, backtesting metrics, and capital assembly from validated
-   inputs.
+   inputs. RFET representativeness controls are isolated under
+   `frtb_ima.validation.rfet_qualitative`.
 5. The result records audit evidence, input hashes, policy metadata, and desk
    eligibility.
 6. `frtb-orchestration` consumes only the final IMA result or summary signal for
