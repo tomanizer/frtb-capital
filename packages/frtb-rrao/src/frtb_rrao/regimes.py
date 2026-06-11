@@ -14,7 +14,7 @@ from datetime import date
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
-from frtb_rrao._payloads import hash_payload
+from frtb_rrao.assembly.payloads import hash_payload
 from frtb_rrao.data_models import (
     RraoClassification,
     RraoEvidenceType,

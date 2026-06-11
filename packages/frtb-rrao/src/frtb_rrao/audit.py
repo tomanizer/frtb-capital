@@ -8,11 +8,8 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from frtb_rrao._payloads import (
-    hash_position_payloads,
-    lineage_payload,
-    position_payload,
-)
+from frtb_rrao.assembly._payload_components import lineage_payload
+from frtb_rrao.assembly.payloads import hash_position_payloads, position_payload
 from frtb_rrao.capital import build_rrao_subtotals, included_rrao_total
 from frtb_rrao.data_models import (
     RraoCapitalLine,

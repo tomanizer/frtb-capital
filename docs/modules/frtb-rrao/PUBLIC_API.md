@@ -21,6 +21,10 @@ their owning submodule only and are not part of the v1 compatibility contract.
 | Classification/profile helpers | `classify_rrao_position`, `classify_rrao_positions`, `RraoRuleProfile`, `get_rrao_rule_profile`, `validate_rrao_positions` | Public validation, classification, and supported profile metadata. |
 | Errors | `RraoInputError` | Public fail-closed input error carrying field and position context. |
 
+Audit payload assembly physically lives under `frtb_rrao.assembly.payloads`;
+`frtb_rrao._payloads` remains a private compatibility import path for existing
+package-internal callers and tests.
+
 ## Client Integration
 
 RRAO is the template package for client-facing public API docs. The suite-level

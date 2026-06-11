@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import frtb_rrao
+import frtb_rrao._payloads as payload_compat
+import frtb_rrao.assembly.payloads as payload_assembly
 import frtb_rrao.validation as validation
 from frtb_rrao.validation import position as position_validation
 
@@ -76,3 +78,10 @@ def test_validation_package_preserves_public_compatibility_path() -> None:
         is position_validation.normalise_gross_effective_notional
     )
     assert validation.validate_rrao_positions is position_validation.validate_rrao_positions
+
+
+def test_payload_assembly_preserves_private_compatibility_path() -> None:
+    assert payload_compat.batch_position_payload is payload_assembly.batch_position_payload
+    assert payload_compat.hash_payload is payload_assembly.hash_payload
+    assert payload_compat.hash_position_payloads is payload_assembly.hash_position_payloads
+    assert payload_compat.position_payload is payload_assembly.position_payload
