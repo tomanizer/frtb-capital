@@ -15,8 +15,8 @@ from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
+from frtb_common import stable_json_hash
 
-from frtb_sbm.audit import _hash_payload
 from frtb_sbm.data_models import (
     SbmRiskClass,
     SbmRiskMeasure,
@@ -1584,7 +1584,7 @@ def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
     str
     """
 
-    return _hash_payload({"sensitivities": list(_sensitivity_payloads_from_batch(batch))})
+    return stable_json_hash({"sensitivities": list(_sensitivity_payloads_from_batch(batch))})
 
 
 def input_hash_for_batch(batch: SbmSensitivityBatch) -> str:
@@ -1616,7 +1616,7 @@ def input_hash_for_sbm_batches(batches: object) -> str:
     """
 
     validated = coerce_sbm_batch_sequence(batches)
-    return _hash_payload(
+    return stable_json_hash(
         {
             "sensitivities": [
                 payload

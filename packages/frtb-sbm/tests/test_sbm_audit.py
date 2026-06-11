@@ -22,7 +22,6 @@ from frtb_sbm import (
     serialize_sbm_result,
     validate_sbm_result_reconciliation,
 )
-from frtb_sbm.audit import _hash_payload as audit_hash_payload
 
 
 def sample_lineage(row_id: str) -> SbmSourceLineage:
@@ -87,10 +86,35 @@ def test_input_hash_is_deterministic_and_input_sensitive() -> None:
     assert digest != input_hash_for_sensitivities(reordered)
 
 
-def test_audit_hash_payload_uses_common_stable_json_hash() -> None:
-    payload = {"z": 1, "a": [{"b": "text", "c": None}]}
+def test_input_hash_uses_common_stable_json_hash() -> None:
+    sensitivity = sample_sensitivity(sensitivity_id="sens-001", source_row_id="row-001")
+    payload = {
+        "sensitivities": [
+            {
+                "sensitivity_id": "sens-001",
+                "source_row_id": "row-001",
+                "desk_id": "rates-desk",
+                "legal_entity": "LE-001",
+                "risk_class": "GIRR",
+                "risk_measure": "DELTA",
+                "bucket": "1",
+                "risk_factor": "EUR",
+                "amount": 1_000_000.0,
+                "amount_currency": "USD",
+                "sign_convention": "RECEIVE",
+                "lineage": {
+                    "source_system": "synthetic-risk",
+                    "source_file": "sbm.csv",
+                    "source_row_id": "row-001",
+                    "source_column_map": [],
+                },
+                "mapping_citation_ids": [],
+                "tenor": "1y",
+            }
+        ]
+    }
 
-    assert audit_hash_payload(payload) == stable_json_hash(payload)
+    assert input_hash_for_sensitivities((sensitivity,)) == stable_json_hash(payload)
 
 
 def test_result_serialization_is_json_stable() -> None:

@@ -14,9 +14,7 @@ from frtb_sbm import (
     profile_content_hash,
     resolve_sbm_profile,
 )
-from frtb_sbm.regimes import (
-    _hash_payload as regime_hash_payload,
-)
+from frtb_sbm.reference_data import profile_reference_payload
 from frtb_sbm.regimes import (
     ensure_profile_supports_risk_class_measure,
     profile_supports_risk_class_measure,
@@ -69,10 +67,23 @@ def test_profile_content_hash_is_deterministic_and_profile_specific() -> None:
     assert us_npr_profile.content_hash != basel_profile.content_hash
 
 
-def test_regime_hash_payload_uses_common_stable_json_hash() -> None:
-    payload = {"supported_measures": {"GIRR": ["DELTA"]}, "profile_id": "BASEL_MAR21"}
+def test_profile_content_hash_uses_common_stable_json_hash() -> None:
+    payload = {
+        "metadata": {
+            "effective_date": None,
+            "publication_date": "2026-03-27",
+            "regulator": (
+                "Office of the Comptroller of the Currency, Board of Governors of the "
+                "Federal Reserve System, and Federal Deposit Insurance Corporation"
+            ),
+            "status": "supported_us_npr_girr_delta_comparison_slice",
+            "version": "Federal Register 91 FR 14952 proposed market-risk rule",
+        },
+        "supported_measures": {"GIRR": ["DELTA"]},
+        "reference_data": profile_reference_payload(SbmRegulatoryProfile.US_NPR_2_0),
+    }
 
-    assert regime_hash_payload(payload) == stable_json_hash(payload)
+    assert profile_content_hash(SbmRegulatoryProfile.US_NPR_2_0) == stable_json_hash(payload)
 
 
 def test_get_sbm_rule_profile_returns_partial_us_npr_profile() -> None:

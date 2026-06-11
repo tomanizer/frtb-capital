@@ -45,7 +45,7 @@ def _input_hash_for_validated_sensitivities(
 ) -> str:
     """Return an input hash for an already validated sensitivity tuple."""
 
-    return _hash_payload(
+    return stable_json_hash(
         {"sensitivities": [_sensitivity_payload(sensitivity) for sensitivity in sensitivities]}
     )
 
@@ -382,10 +382,6 @@ def _lineage_payload(lineage: SbmSourceLineage) -> dict[str, object]:
         "source_row_id": lineage.source_row_id,
         "source_column_map": [list(pair) for pair in lineage.source_column_map],
     }
-
-
-def _hash_payload(payload: dict[str, object]) -> str:
-    return stable_json_hash(payload)
 
 
 __all__ = [
