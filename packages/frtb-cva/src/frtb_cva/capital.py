@@ -13,7 +13,7 @@ from frtb_cva._batch_contracts import (
     CvaNettingSetBatch,
     SaCvaSensitivityBatch,
 )
-from frtb_cva._batch_row_adapters import (
+from frtb_cva.adapters.rows import (
     build_cva_counterparty_batch_from_counterparties,
     build_cva_hedge_batch_from_hedges,
     build_cva_netting_set_batch_from_netting_sets,

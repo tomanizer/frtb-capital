@@ -14,14 +14,18 @@ from frtb_cva._arrow_ba_column_specs import (
 )
 from frtb_cva._arrow_hedge_column_specs import CVA_HEDGE_ARROW_COLUMN_SPECS
 from frtb_cva._arrow_sa_column_specs import SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS
-from frtb_cva.batch import (
+from frtb_cva._batch_contracts import (
     CvaCounterpartyBatch,
     CvaHedgeBatch,
     CvaNettingSetBatch,
     SaCvaSensitivityBatch,
+)
+from frtb_cva.adapters.columns import (
     build_cva_counterparty_batch_from_columns,
     build_cva_hedge_batch_from_columns,
     build_cva_netting_set_batch_from_columns,
+)
+from frtb_cva.adapters.sensitivity import (
     build_sa_cva_sensitivity_batch_from_columns,
 )
 

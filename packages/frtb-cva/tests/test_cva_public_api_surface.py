@@ -64,6 +64,37 @@ def test_arrow_adapter_compatibility_path_exports_same_surface() -> None:
         assert name in arrow_batch.__all__
 
 
+def test_batch_adapter_compatibility_paths_export_same_builders() -> None:
+    import frtb_cva._batch_adapters as legacy_columns
+    import frtb_cva._batch_counterparty_adapter as legacy_counterparty
+    import frtb_cva._batch_hedge_adapter as legacy_hedge
+    import frtb_cva._batch_netting_set_adapter as legacy_netting_set
+    import frtb_cva._batch_row_adapters as legacy_rows
+    import frtb_cva._batch_sensitivity_adapters as legacy_sensitivity
+    import frtb_cva.adapters.columns as columns
+    import frtb_cva.adapters.counterparty as counterparty
+    import frtb_cva.adapters.hedge as hedge
+    import frtb_cva.adapters.netting_set as netting_set
+    import frtb_cva.adapters.rows as rows
+    import frtb_cva.adapters.sensitivity as sensitivity
+
+    pairs = (
+        (legacy_columns, columns, "build_cva_counterparty_batch_from_columns"),
+        (legacy_columns, columns, "build_cva_netting_set_batch_from_columns"),
+        (legacy_columns, columns, "build_cva_hedge_batch_from_columns"),
+        (legacy_counterparty, counterparty, "build_cva_counterparty_batch_from_columns"),
+        (legacy_netting_set, netting_set, "build_cva_netting_set_batch_from_columns"),
+        (legacy_hedge, hedge, "build_cva_hedge_batch_from_columns"),
+        (legacy_sensitivity, sensitivity, "build_sa_cva_sensitivity_batch_from_columns"),
+        (legacy_rows, rows, "build_cva_counterparty_batch_from_counterparties"),
+        (legacy_rows, rows, "build_cva_netting_set_batch_from_netting_sets"),
+        (legacy_rows, rows, "build_cva_hedge_batch_from_hedges"),
+        (legacy_rows, rows, "build_sa_cva_sensitivity_batch_from_sensitivities"),
+    )
+    for legacy_module, adapter_module, name in pairs:
+        assert getattr(legacy_module, name) is getattr(adapter_module, name)
+
+
 def test_low_level_batch_internals_are_not_public_api() -> None:
     import frtb_cva.batch
 
