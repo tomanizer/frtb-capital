@@ -70,7 +70,7 @@ risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN
 | `_batch_validation.py` | Package-local batch input rules. |
 | `_batch_assembly.py`, `_ba_*_batch_kernel.py`, `_sa_batch_kernel.py` | Kernel math and result assembly. |
 | `_batch_payloads.py`, `_payloads.py` | Deterministic hash inputs via `stable_json_hash`. |
-| `arrow_batch.py` | Arrow tabular handoff normalisation under ADR 0023. |
+| `adapters/arrow.py` | Arrow tabular handoff normalisation under ADR 0023; `arrow_batch.py` remains a compatibility shim. |
 | `audit.py` | Deterministic result serialisation, input hash, profile hash, and reconciliation. |
 | `attribution.py` | Additive attribution for supported branches with explicit unsupported nonlinear residuals. |
 | `impact.py` | Baseline-vs-candidate finite-difference capital deltas. |

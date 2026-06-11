@@ -38,6 +38,32 @@ def test_documented_handoff_surface_is_top_level_importable() -> None:
         assert f"`{name}`" in documented
 
 
+def test_arrow_adapter_compatibility_path_exports_same_surface() -> None:
+    import frtb_cva.adapters.arrow as arrow_adapter
+    import frtb_cva.arrow_batch as arrow_batch
+
+    names = (
+        "CVA_COUNTERPARTY_ARROW_COLUMN_SPECS",
+        "CVA_NETTING_SET_ARROW_COLUMN_SPECS",
+        "CVA_HEDGE_ARROW_COLUMN_SPECS",
+        "SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS",
+        "normalize_cva_counterparty_arrow_table",
+        "normalize_cva_netting_set_arrow_table",
+        "normalize_cva_hedge_arrow_table",
+        "normalize_sa_cva_sensitivity_arrow_table",
+        "build_cva_counterparty_batch_from_arrow",
+        "build_cva_netting_set_batch_from_arrow",
+        "build_cva_hedge_batch_from_arrow",
+        "build_sa_cva_sensitivity_batch_from_arrow",
+        "normalize_cva_arrow_table",
+        "build_cva_batch_from_arrow",
+    )
+    for name in names:
+        assert getattr(arrow_batch, name) is getattr(arrow_adapter, name)
+        assert name in arrow_adapter.__all__
+        assert name in arrow_batch.__all__
+
+
 def test_low_level_batch_internals_are_not_public_api() -> None:
     import frtb_cva.batch
 

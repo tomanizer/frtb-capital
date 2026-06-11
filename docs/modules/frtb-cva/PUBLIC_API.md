@@ -21,6 +21,8 @@ Outputs are not final regulatory capital.
 
 The high-volume batch boundary is summarized in
 [`docs/performance/frtb-cva-arrow-batch-triage.md`](../../performance/frtb-cva-arrow-batch-triage.md).
+Arrow ingress physically lives under `frtb_cva.adapters.arrow`;
+`frtb_cva.arrow_batch` remains a compatibility import path for existing callers.
 
 ## Client integration
 
