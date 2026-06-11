@@ -10,7 +10,8 @@ SA default risk charge. Issuer, securitisation, CTP, and HBR semantics remain he
 
 | Module | Lines (approx.) | Notes |
 | --- | ---: | --- |
-| `batch.py` | 2197 | Batch + hashing + arrays |
+| `batch.py` | 2392 | Batch + hashing + arrays |
+| `adapters/`, `kernel/`, `assembly/` | — | Partial ADR 0045 stage split |
 | `securitisation.py` | 903 | Sec non-CTP |
 | `ctp.py` | 758 | CTP path |
 | `regimes.py` | 674 | Profile matrix |
@@ -24,7 +25,7 @@ SA default risk charge. Issuer, securitisation, CTP, and HBR semantics remain he
 | `_require_text` / citation merge scattered (SBM has `_text`/`_citations`; DRC does not) | package-local | P1 |
 | Rejected-group + risk-weight helpers in batch/CTP/securitisation | package-local | P1 |
 | Row vs batch duplicate capital-input helpers | package-local | P0 |
-| `_hash_payload` local vs `stable_json_hash` | `frtb-common` | P1 |
+| `_hashing.hash_payload` delegates to `stable_json_hash` | package-local | done |
 | One-line `as_dict` repeats in `data_models.py` | package-local | P3 |
 
 ## Dead or storage-only code
@@ -66,4 +67,4 @@ DRC fixtures (non-sec v2, sec, CTP), Arrow batch, audit replay; Python 3.11 for 
 
 ## Tracking
 
-GitHub issue: [#539](https://github.com/tomanizer/frtb-capital/issues/539)
+Consolidation: [#718](https://github.com/tomanizer/frtb-capital/issues/718) (ADR 0045 epic [#725](https://github.com/tomanizer/frtb-capital/issues/725)).

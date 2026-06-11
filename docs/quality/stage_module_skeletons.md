@@ -1,6 +1,6 @@
-# ADR 0044 Stage Module Skeleton Constraints
+# ADR 0045 Stage Module Skeleton Constraints
 
-ADR 0044 targets a common capital-package layout:
+ADR 0045 targets a common capital-package layout:
 
 ```text
 adapters -> CanonicalBatch -> validation -> kernel -> assembly

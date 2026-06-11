@@ -10,7 +10,7 @@ Residual risk add-on. Canonical row and batch paths; fail-closed unsupported sco
 
 | Module | Lines (approx.) | Notes |
 | --- | ---: | --- |
-| `batch.py` | 1336+ | Batch kernel |
+| `batch.py` | 1463 | Batch kernel |
 | `reference_data.py` | 781 | Evidence rules |
 | `capital.py` / `classification.py` | — | Row path |
 | `arrow_batch.py` | 522 | Arrow bridge |
@@ -63,4 +63,4 @@ RRAO capital, validation, audit, Arrow, handoff, hash parity tests.
 
 ## Tracking
 
-GitHub issue: [#543](https://github.com/tomanizer/frtb-capital/issues/543)
+Consolidation: [#720](https://github.com/tomanizer/frtb-capital/issues/720) (ADR 0045 epic [#725](https://github.com/tomanizer/frtb-capital/issues/725)).

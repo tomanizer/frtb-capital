@@ -61,4 +61,4 @@ SA composition routing, IMA fallback policy, top-of-house aggregation decisions.
 
 ## Tracking
 
-GitHub issue: [#541](https://github.com/tomanizer/frtb-capital/issues/541)
+Consolidation: [#723](https://github.com/tomanizer/frtb-capital/issues/723) (ADR 0045 epic [#725](https://github.com/tomanizer/frtb-capital/issues/725)).

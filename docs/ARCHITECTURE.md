@@ -197,6 +197,25 @@ Status: partial result-store backend. The first implementation is append-only
 local DuckDB/Parquet. S3 Parquet and DuckLake are reserved backend modes. The
 package does not calculate capital and must not be imported by capital kernels.
 
+## Capital package runtime shape
+
+Capital-producing packages are consolidating to a **canonical batch pipeline with
+adapter ingress** ([ADR 0045](decisions/0045-canonical-batch-pipeline-with-adapter-ingress.md)).
+Ingress (CRIF, Arrow, columns, rows) adapts into one package-owned regulatory
+batch; validation, kernel, and assembly run in separate stage modules; mechanical
+variation is table-driven rather than copy-pasted per risk class.
+
+**Progress (2026-06):** `frtb-cva` split batch logic into `_batch_*` stage modules
+with a thin `batch.py` public facade. `frtb-drc` has partial `adapters/`,
+`kernel/`, and `assembly/` packages. `frtb-sbm` has an initial `registry.py`.
+SBM, RRAO, and IMA monoliths remain the largest consolidation targets.
+
+Phased execution: [`quality/CONSOLIDATION_ROADMAP.md`](quality/CONSOLIDATION_ROADMAP.md).
+
+The suite is non-live; structural refactors may break and rename public
+entrypoints without deprecation periods unless a change alters cited regulatory
+outputs under ADR 0005.
+
 ## Why a monorepo
 
 See [`decisions/0002-monorepo-structure.md`](decisions/0002-monorepo-structure.md). In short: one team, one product line, atomic cross-cutting changes, shared abstractions, consistent style. Per-package versioning and ADR-driven change control preserve SR 11-7 / PRA SS 1/23 model boundaries.

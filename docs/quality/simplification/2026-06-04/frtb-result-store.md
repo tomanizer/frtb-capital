@@ -61,4 +61,4 @@ Capital formulas, sibling capital imports, mutable run semantics.
 
 ## Tracking
 
-GitHub issue: [#542](https://github.com/tomanizer/frtb-capital/issues/542)
+Consolidation: [#724](https://github.com/tomanizer/frtb-capital/issues/724) (ADR 0045 epic [#725](https://github.com/tomanizer/frtb-capital/issues/725)).

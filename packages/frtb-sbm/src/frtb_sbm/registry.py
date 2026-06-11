@@ -1,7 +1,7 @@
 """Canonical SBM batch-path registry.
 
 Regulatory traceability:
-    ADR 0044 canonical batch pipeline consolidation; Basel MAR21 delta, vega,
+    ADR 0045 canonical batch pipeline consolidation; Basel MAR21 delta, vega,
     and curvature paths implemented by this package.
 """
 

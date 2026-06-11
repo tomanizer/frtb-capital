@@ -1,12 +1,12 @@
 # Stable hash migration guide
 
-Issue: #537
+Epic: [#725](https://github.com/tomanizer/frtb-capital/issues/725) (ADR 0045 consolidation)
 
 This guide records the shared `frtb-common` contract for replacing package-local
 `_hash_payload` helpers with `frtb_common.stable_json_hash`. Migrations should
-remain package-scoped: use the package tracking issues for `frtb-cva` (#538),
-`frtb-drc` (#539), and `frtb-sbm` (#544), and avoid bundling multiple capital
-packages in one PR unless an ADR explicitly covers the cross-cutting change.
+remain package-scoped: use the package consolidation issues below, and avoid
+bundling multiple capital packages in one PR unless an ADR explicitly covers the
+cross-cutting change.
 
 ## Shared contract
 
@@ -76,13 +76,22 @@ a later design explicitly covers streaming hash envelopes. RRAO's package-local
 `hash_payload` wrapper already delegates ordinary payload hashing to
 `stable_json_hash`.
 
-## Current package order
+## Migration status (2026-06-11)
 
-| Package | Tracking issue | First target |
+| Package | Status | Remaining work |
 | --- | --- | --- |
-| `frtb-sbm` | #544 | profile and audit helpers after fixture hash checks |
-| `frtb-drc` | #539 | helpers that already coerce with `jsonable` |
-| `frtb-cva` | #538 | `_payloads.hash_payload` after row/batch alignment checks |
+| `frtb-cva` | done | `_payloads.hash_payload` delegates to `stable_json_hash` |
+| `frtb-drc` | done | `_hashing.hash_payload` delegates to `stable_json_hash` |
+| `frtb-rrao` | done | `_payloads` delegates to `stable_json_hash` |
+| `frtb-result-store` | done | storage helpers use `stable_json_hash` |
+| `frtb-sbm` | mostly done | `audit.py` / `regimes.py` thin `_hash_payload` wrappers remain — [#706](https://github.com/tomanizer/frtb-capital/issues/706) |
+| `frtb-ima` | N/A | binary/NumPy envelopes stay package-local by design |
 
-`frtb-rrao` and `frtb-result-store` already use `stable_json_hash` through their
-package-local payload or storage helpers.
+## Tracking issues
+
+| Package | Consolidation issue |
+| --- | --- |
+| `frtb-sbm` | [#717](https://github.com/tomanizer/frtb-capital/issues/717) (hash cleanup: [#706](https://github.com/tomanizer/frtb-capital/issues/706)) |
+| `frtb-drc` | [#718](https://github.com/tomanizer/frtb-capital/issues/718) |
+| `frtb-cva` | [#719](https://github.com/tomanizer/frtb-capital/issues/719) |
+| `frtb-common` | [#714](https://github.com/tomanizer/frtb-capital/issues/714), [#722](https://github.com/tomanizer/frtb-capital/issues/722) |

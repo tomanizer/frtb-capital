@@ -1,6 +1,6 @@
 # frtb-cva simplification audit
 
-Date: 2026-06-04
+Date: 2026-06-04 (updated 2026-06-11 for batch split)
 
 ## Scope
 
@@ -11,19 +11,20 @@ semantics stay package-local.
 
 | Module | Lines (approx.) | Notes |
 | --- | ---: | --- |
-| `batch.py` | 2390 | Largest monolith; down from ~2814 |
-| `reference_data.py` | 779 | Profiles and tables |
-| `sa_cva_reference_data.py` | 625 | SA-CVA weights |
-| `arrow_batch.py` | 612 | Arrow boundary |
-| `audit.py` | 556 | Reconciliation (partially staged) |
+| `_batch_*` modules (total) | ~3200 | Informal stage split landed |
+| `batch.py` | 46 | Public compatibility facade (re-exports) |
+| `reference_data.py` | 1146 | Profiles and tables |
+| `sa_cva_reference_data.py` | 1032 | SA-CVA weights |
+| `arrow_batch.py` | 398 | Arrow boundary |
+| `audit.py` | — | Reconciliation (partially staged) |
 
 ## Duplicated code
 
 | Finding | Scope | Priority |
 | --- | --- | --- |
-| `_hash_payload` in `audit.py` and `batch.py` | package-local | P0 |
-| Context/counterparty/hedge/sensitivity payloads duplicated audit vs batch | package-local | P1 |
-| `_merge_citations`, `_profile_warnings` in capital + batch | package-local | P1 |
+| `_hash_payload` via `_payloads.hash_payload` → `stable_json_hash` | package-local | done |
+| Context/counterparty/hedge/sensitivity payloads | package-local | done (`_payloads.py`) |
+| `_merge_citations`, `_profile_warnings` in capital + batch | package-local | done (`_citations.py`, `_profile_warnings.py`) |
 | `_hedge_risk_weight` in BA-CVA + batch | package-local | P2 |
 
 ## Dead or storage-only code
@@ -32,17 +33,18 @@ No dead runtime paths. Keep impact/attribution explicitly unsupported.
 
 ## `frtb-common` candidates
 
-`stable_json_hash`; Arrow/batch array helpers at handoff boundary.
+Arrow/batch array helpers at handoff boundary.
 
 ## Package-local factoring candidates
 
-- `frtb_cva._payloads` — single source for audit/batch hash inputs.
-- `frtb_cva._citations` — merge helpers.
-- Split `batch.py`: schema/arrays, validation, BA kernel, SA kernel, assembly.
+- Rename `_batch_*` modules to ADR 0045 stage directories (`adapters/`, `validation/`, `kernel/`, `assembly/`).
+- Add `registry.py` for entity-type dispatch.
+- Collapse `_ba_batch_kernel.py` re-export shim if no longer needed.
 
 ## Over-complexity
 
-`batch.py` mixes unrelated concerns; hardest file to review in suite.
+Stage logic is navigable across `_batch_*` modules; remaining cost is naming
+alignment with ADR 0045 and registry collapse.
 
 ## Wrappers and readability
 
@@ -55,10 +57,10 @@ MAR50 profiles, BA-CVA/SA-CVA formulas, hedge eligibility, carve-out rules.
 
 ## Recommended sequence
 
-1. Unify payloads + hashes (tests first).
-2. Extract citations/warnings helpers.
-3. Migrate to `stable_json_hash`.
-4. Split `batch.py`.
+1. ~~Unify payloads + hashes (tests first).~~ done
+2. ~~Extract citations/warnings helpers.~~ done
+3. ~~Migrate to `stable_json_hash`.~~ done
+4. Rename informal `_batch_*` split to ADR 0045 stage layout; add registry.
 
 ## Validation required
 
@@ -66,4 +68,4 @@ CVA public API, BA/SA fixtures, Arrow batch, hash compatibility tests; `make qua
 
 ## Tracking
 
-GitHub issue: [#538](https://github.com/tomanizer/frtb-capital/issues/538)
+Consolidation: [#719](https://github.com/tomanizer/frtb-capital/issues/719) (ADR 0045 epic [#725](https://github.com/tomanizer/frtb-capital/issues/725)).

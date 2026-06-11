@@ -64,4 +64,4 @@ policy.
 
 ## Tracking
 
-GitHub issue: [#537](https://github.com/tomanizer/frtb-capital/issues/537)
+Consolidation: [#714](https://github.com/tomanizer/frtb-capital/issues/714), [#722](https://github.com/tomanizer/frtb-capital/issues/722) (ADR 0045 epic [#725](https://github.com/tomanizer/frtb-capital/issues/725)).
