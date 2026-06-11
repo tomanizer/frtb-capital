@@ -243,12 +243,6 @@ def run_benchmark(config: RraoBenchmarkConfig) -> dict[str, object]:
             "arrow_payload_hash": audit_payload_hash(serialize_rrao_result(arrow_result)),
             "batch_absolute_delta": abs(result.total_rrao - batch_result.total_rrao),
             "arrow_absolute_delta": abs(result.total_rrao - arrow_result.total_rrao),
-            "batch_accepted_row_dataclasses_materialized": (
-                batch_calculation.accepted_row_dataclasses_materialized
-            ),
-            "arrow_accepted_row_dataclasses_materialized": (
-                arrow_calculation.accepted_row_dataclasses_materialized
-            ),
         },
     }
 

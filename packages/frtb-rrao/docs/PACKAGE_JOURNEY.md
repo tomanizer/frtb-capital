@@ -90,7 +90,7 @@ What changes is the **profile-specific rule tables** applied after validation.
 | --- | --- |
 | Ingress / normalize | `frtb_common.normalize_arrow_table` + `RRAO_ARROW_COLUMN_SPECS`; identity, notional, evidence, lineage columns per [`PUBLIC_API.md`](../../../docs/modules/frtb-rrao/PUBLIC_API.md#rrao-input_table-column-summary) |
 | Validate | `frtb_rrao.validation.position.validate_rrao_positions` (row) or batch invariants (finite non-negative `gross_effective_notional`, lineage, duplicate ids); `frtb_rrao.validation` remains the compatibility import path |
-| Batch | `RraoPositionBatch` NumPy columns; fast path keeps `accepted_row_dataclasses_materialized` at zero |
+| Batch | `RraoPositionBatch` NumPy columns for high-volume calculation |
 | Classify | `classify_rrao_position` / vectorised batch classification from `evidence_type`, flags, and profile tables |
 | Capital | Additive line add-ons (`EXOTIC` 1.0%, `OTHER_RESIDUAL_RISK` 0.1%, supervisor-directed where cited); exclusions and EU Article 3 cases as **zero-capital audit lines** |
 | Result shape | `RraoCapitalResult` with `lines`, `excluded_lines`, `subtotals`, `total_rrao`, citations, warnings |
@@ -209,8 +209,8 @@ Arrow ingestion and `RraoPosition` row adapters, so the public builders project
 into the same canonical column names before validation and hashing.
 
 The fast path **does not** materialize accepted `RraoPosition` dataclasses per row
-during calculation (`accepted_row_dataclasses_materialized` stays zero). Audit outputs
-remain structured dataclasses (`RraoCapitalResult`, `RraoCapitalLine`, subtotals, …).
+during calculation. Audit outputs remain structured dataclasses (`RraoCapitalResult`,
+`RraoCapitalLine`, subtotals, …).
 
 ### Step 4 — Run context
 
