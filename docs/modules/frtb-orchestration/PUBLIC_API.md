@@ -45,6 +45,11 @@ fallback results for incompatible inputs.
 
 ## Suite attribution reports
 
+The stable public import path remains `frtb_orchestration.suite` and the
+package top level. Internally, suite attribution result records live under
+`frtb_orchestration._suite_attribution_models`, while validation and report
+assembly live under `frtb_orchestration._suite_attribution_builders`.
+
 `aggregate_suite_attribution` is the low-level suite attribution validator. It
 preserves incoming `ComponentContributionBundle` records unchanged and emits one
 suite residual record.
