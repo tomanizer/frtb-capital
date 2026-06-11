@@ -4,6 +4,7 @@ import subprocess
 import sys
 from datetime import UTC, date, datetime
 
+import frtb_result_store.mart_capital_tree_rows as mart_capital_tree_rows
 import frtb_result_store.mart_component_breakdown_rows as mart_component_breakdown_rows
 import frtb_result_store.mart_movement_rows as mart_movement_rows
 import frtb_result_store.marts as marts
@@ -96,6 +97,10 @@ def test_mart_component_breakdown_rows_preserve_marts_compatibility_path() -> No
     assert (
         marts._component_breakdown_rows is mart_component_breakdown_rows._component_breakdown_rows
     )
+
+
+def test_mart_capital_tree_rows_preserve_marts_compatibility_path() -> None:
+    assert marts._capital_tree_rows is mart_capital_tree_rows._capital_tree_rows
 
 
 def test_store_status_rows_parse_datetime_values_without_string_round_trip() -> None:
