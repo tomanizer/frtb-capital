@@ -95,6 +95,21 @@ def test_top_level_public_api_surface_remains_bounded() -> None:
     assert len(frtb_drc.__all__) < 140
 
 
+def test_batch_builder_adapter_compatibility_exports() -> None:
+    import frtb_drc.adapters.positions as positions
+    import frtb_drc.batch as batch
+
+    names = (
+        "build_drc_nonsec_batch_from_positions",
+        "build_drc_nonsec_batch_from_columns",
+        "build_drc_securitisation_non_ctp_batch_from_columns",
+        "build_drc_ctp_batch_from_columns",
+    )
+    for name in names:
+        assert getattr(batch, name) is getattr(positions, name)
+        assert getattr(frtb_drc, name) is getattr(positions, name)
+
+
 def _public_api_doc() -> str:
     root = Path(__file__).resolve().parents[3]
     return (root / "docs/modules/frtb-drc/PUBLIC_API.md").read_text()

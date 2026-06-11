@@ -29,6 +29,9 @@ Reference overlays are documented in
 [`docs/CLIENT_REFERENCE_DATA.md`](../../CLIENT_REFERENCE_DATA.md). The
 high-volume batch boundary is summarized in
 [`docs/performance/frtb-drc-arrow-batch-triage.md`](../../performance/frtb-drc-arrow-batch-triage.md).
+Column and position batch builders physically live in
+`frtb_drc.adapters.positions`; `frtb_drc.batch` and the top-level `frtb_drc`
+module remain stable import paths for existing callers.
 
 ## Client integration
 
