@@ -61,6 +61,9 @@ Reference-data implementation physically lives under focused modules including
 `frtb_sbm.fx_reference_data`, `frtb_sbm.vega_reference_data`,
 `frtb_sbm.curvature_reference_data`, and `frtb_sbm.reference_payload`;
 `frtb_sbm.reference_data` remains the compatibility and public import path.
+Curvature correlation helpers physically live under
+`frtb_sbm.curvature_correlations`; `frtb_sbm.curvature` remains the public
+capital, branch-selection, and compatibility import path.
 Validation helpers physically live under the `frtb_sbm.validation` package, including
 `batch`, `batch_arrays`, `batch_lineage`, `coercion`, `context`,
 `risk_class_fields`, and `sensitivity`;
