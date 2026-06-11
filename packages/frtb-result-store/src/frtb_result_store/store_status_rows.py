@@ -8,7 +8,12 @@ from datetime import datetime
 from typing import cast
 
 from frtb_result_store._row_codecs import optional_text as _optional_text
-from frtb_result_store.model import CalculationRun, RunStatus, RunStatusEvent
+from frtb_result_store.model import (
+    CalculationRun,
+    ResultStoreContractError,
+    RunStatus,
+    RunStatusEvent,
+)
 
 
 def _elapsed_ms(started_at: float) -> float:
@@ -50,12 +55,24 @@ def _status_event_from_row(row: Sequence[object]) -> RunStatusEvent:
         run_id=str(row[1]),
         from_status=None if not from_status_text else RunStatus(from_status_text),
         to_status=RunStatus(str(row[3])),
-        event_time=datetime.fromisoformat(str(row[4])),
+        event_time=_status_event_time_from_row(row[4]),
         actor=str(row[5]),
         reason_code=str(row[6]),
         reason_text=str(row[7]),
         external_evidence_ref=_optional_text(row[8]),
     )
+
+
+def _status_event_time_from_row(value: object) -> datetime:
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value))
+    except ValueError as exc:
+        raise ResultStoreContractError(
+            f"invalid status event_time: {value}",
+            field="event_time",
+        ) from exc
 
 
 __all__ = [

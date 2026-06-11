@@ -80,6 +80,42 @@ def test_store_status_rows_preserve_row_io_compatibility_path() -> None:
     assert store_row_io._status_event_row is store_status_rows._status_event_row
 
 
+def test_store_status_rows_parse_datetime_values_without_string_round_trip() -> None:
+    event_time = datetime(2026, 6, 3, 12, 0, tzinfo=UTC)
+    event = store_status_rows._status_event_from_row(
+        (
+            "status-event-001",
+            "run-001",
+            None,
+            RunStatus.CANDIDATE.value,
+            event_time,
+            "result-store",
+            "RUN_COMMITTED",
+            "Run committed to result store",
+            None,
+        )
+    )
+
+    assert event.event_time is event_time
+
+
+def test_store_status_rows_reject_malformed_event_time_with_contract_error() -> None:
+    with pytest.raises(ResultStoreContractError, match="invalid status event_time"):
+        store_status_rows._status_event_from_row(
+            (
+                "status-event-001",
+                "run-001",
+                None,
+                RunStatus.CANDIDATE.value,
+                "not-a-datetime",
+                "result-store",
+                "RUN_COMMITTED",
+                "Run committed to result store",
+                None,
+            )
+        )
+
+
 def test_canonical_run_identity_uses_full_stable_digest() -> None:
     payload = canonical_run_identity_payload(
         as_of_date=date(2026, 6, 3),
