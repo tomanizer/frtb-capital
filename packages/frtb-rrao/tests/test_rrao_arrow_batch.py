@@ -33,10 +33,12 @@ from frtb_rrao import (
     validate_rrao_result_reconciliation,
 )
 from frtb_rrao.arrow_batch import (
+    RRAO_ARROW_COLUMN_SPECS,
     build_rrao_batch_from_arrow,
     normalize_rrao_arrow_table,
 )
 from frtb_rrao.batch import build_rrao_batch_from_columns, build_rrao_batch_from_positions
+from frtb_rrao.batch_registry import RRAO_BATCH_SPEC, rrao_position_column_kwargs
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "rrao_v1"
 
@@ -53,6 +55,19 @@ def test_rrao_position_batch_from_rows_matches_row_input_hash() -> None:
     assert batch.input_hash == input_hash_for_positions(positions)
     assert not batch.position_ids.flags.writeable
     assert not batch.gross_effective_notionals.flags.writeable
+
+
+def test_rrao_batch_registry_projects_positions_into_column_builder() -> None:
+    positions = (_investment_fund_position(),)
+    registry_batch = build_rrao_batch_from_columns(**rrao_position_column_kwargs(positions))
+    position_batch = build_rrao_batch_from_positions(positions)
+    arrow_column_names = {spec.name for spec in RRAO_ARROW_COLUMN_SPECS}
+
+    assert registry_batch.input_hash == position_batch.input_hash
+    assert RRAO_BATCH_SPEC.name == "rrao_position"
+    assert set(RRAO_BATCH_SPEC.arrow_column_to_argument) <= arrow_column_names
+    assert RRAO_BATCH_SPEC.arrow_column_to_argument["position_id"] == "position_ids"
+    assert "lineage_present" in RRAO_BATCH_SPEC.builder_arguments
 
 
 def test_rrao_row_entrypoint_returns_batch_kernel_result() -> None:

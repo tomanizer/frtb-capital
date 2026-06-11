@@ -204,6 +204,10 @@ Calculation kernels do not import PyArrow.
 `build_rrao_batch_from_arrow` reads normalized columns into **`RraoPositionBatch`**
 (immutable NumPy column arrays).
 
+The package-internal `frtb_rrao.batch_registry` owns the field matrix shared by
+Arrow ingestion and `RraoPosition` row adapters, so the public builders project
+into the same canonical column names before validation and hashing.
+
 The fast path **does not** materialize accepted `RraoPosition` dataclasses per row
 during calculation (`accepted_row_dataclasses_materialized` stays zero). Audit outputs
 remain structured dataclasses (`RraoCapitalResult`, `RraoCapitalLine`, subtotals, …).

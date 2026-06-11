@@ -19,6 +19,7 @@ from frtb_common import (
 )
 
 from frtb_rrao.batch import RraoPositionBatch, build_rrao_batch_from_columns
+from frtb_rrao.batch_registry import RRAO_BATCH_SPEC
 from frtb_rrao.validation import RraoInputError
 
 ArrowColumnArray = npt.NDArray[Any]
@@ -236,44 +237,6 @@ RRAO_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         null_policy=NullPolicy.ALLOW,
     ),
 )
-_RRAO_BATCH_COLUMN_ARGS: Mapping[str, str] = {
-    "position_id": "position_ids",
-    "source_row_id": "source_row_ids",
-    "desk_id": "desk_ids",
-    "legal_entity": "legal_entities",
-    "gross_effective_notional": "gross_effective_notionals",
-    "currency": "currencies",
-    "evidence_type": "evidence_types",
-    "evidence_label": "evidence_labels",
-    "classification_hint": "classification_hints",
-    "exclusion_reason": "exclusion_reasons",
-    "exclusion_evidence_id": "exclusion_evidence_ids",
-    "back_to_back_match_group_id": "back_to_back_match_group_ids",
-    "back_to_back_matched_position_id": "back_to_back_matched_position_ids",
-    "supervisor_directive_id": "supervisor_directive_ids",
-    "underlying_count": "underlying_counts",
-    "is_path_dependent": "is_path_dependents",
-    "has_maturity": "has_maturities",
-    "has_strike_or_barrier": "has_strike_or_barriers",
-    "has_multiple_strikes_or_barriers": "has_multiple_strikes_or_barriers",
-    "is_ctp_hedge": "is_ctp_hedges",
-    "is_investment_fund_exposure": "is_investment_fund_exposures",
-    "investment_fund_id": "investment_fund_ids",
-    "investment_fund_section_205_method": "investment_fund_section_205_methods",
-    "investment_fund_included_exposure_type": "investment_fund_included_exposure_types",
-    "investment_fund_mandate_evidence_id": "investment_fund_mandate_evidence_ids",
-    "investment_fund_section_205_evidence_id": "investment_fund_section_205_evidence_ids",
-    "investment_fund_gross_effective_notional": "investment_fund_gross_effective_notionals",
-    "investment_fund_included_exposure_ratio": "investment_fund_included_exposure_ratios",
-    "investment_fund_look_through_available": "investment_fund_look_through_availables",
-    "investment_fund_mandate_allows_rrao_exposures": (
-        "investment_fund_mandate_allows_rrao_exposures"
-    ),
-    "notional_source": "notional_sources",
-    "lineage_source_system": "lineage_source_systems",
-    "lineage_source_file": "lineage_source_files",
-    "lineage_source_row_id": "lineage_source_row_ids",
-}
 _OPTIONAL_BOOL_OBJECT_COLUMNS = frozenset(
     {
         "is_path_dependent",
@@ -382,7 +345,7 @@ def build_rrao_batch_from_arrow(
 def _rrao_batch_column_kwargs(columns: Mapping[str, object]) -> dict[str, Any]:
     return {
         argument_name: columns.get(column_name)
-        for column_name, argument_name in _RRAO_BATCH_COLUMN_ARGS.items()
+        for column_name, argument_name in RRAO_BATCH_SPEC.arrow_column_to_argument.items()
     }
 
 
