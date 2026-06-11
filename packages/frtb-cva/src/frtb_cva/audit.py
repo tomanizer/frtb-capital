@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from frtb_cva._payloads import hash_payload as _hash_payload
-from frtb_cva._payloads import input_payload as _input_payload
 from frtb_cva.aggregation import aggregate_inter_bucket
+from frtb_cva.assembly.payloads import hash_payload as _hash_payload
+from frtb_cva.assembly.payloads import input_payload as _input_payload
 from frtb_cva.data_models import (
     BaCvaCounterpartyCapital,
     BaCvaFullPortfolioResult,

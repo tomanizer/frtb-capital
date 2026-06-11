@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from frtb_cva._payloads import hash_payload as _hash_payload
+from frtb_cva.assembly.payloads import hash_payload as _hash_payload
 from frtb_cva.data_models import CvaMethod, CvaRegulatoryProfile, SaCvaRiskClass
 from frtb_cva.reference_data import citations_for_profile, profile_reference_payload
 from frtb_cva.validation import CvaInputError

@@ -95,6 +95,25 @@ def test_batch_adapter_compatibility_paths_export_same_builders() -> None:
         assert getattr(legacy_module, name) is getattr(adapter_module, name)
 
 
+def test_assembly_compatibility_paths_export_same_helpers() -> None:
+    import frtb_cva._batch_assembly as legacy_assembly
+    import frtb_cva._batch_payloads as legacy_batch_payloads
+    import frtb_cva._payloads as legacy_payloads
+    import frtb_cva.assembly.batch_payloads as batch_payloads
+    import frtb_cva.assembly.batches as batches
+    import frtb_cva.assembly.payloads as payloads
+
+    pairs = (
+        (legacy_assembly, batches, "calculate_cva_capital_from_batches"),
+        (legacy_batch_payloads, batch_payloads, "input_hash_for_cva_batches"),
+        (legacy_payloads, payloads, "hash_payload"),
+        (legacy_payloads, payloads, "input_payload"),
+        (legacy_payloads, payloads, "batch_input_payload"),
+    )
+    for legacy_module, assembly_module, name in pairs:
+        assert getattr(legacy_module, name) is getattr(assembly_module, name)
+
+
 def test_low_level_batch_internals_are_not_public_api() -> None:
     import frtb_cva.batch
 

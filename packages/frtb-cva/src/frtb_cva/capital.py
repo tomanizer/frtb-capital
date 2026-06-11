@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from frtb_cva._batch_assembly import calculate_cva_capital_from_batches
 from frtb_cva._batch_contracts import (
     CvaCounterpartyBatch,
     CvaHedgeBatch,
@@ -19,6 +18,7 @@ from frtb_cva.adapters.rows import (
     build_cva_netting_set_batch_from_netting_sets,
     build_sa_cva_sensitivity_batch_from_sensitivities,
 )
+from frtb_cva.assembly.batches import calculate_cva_capital_from_batches
 from frtb_cva.data_models import (
     CvaCalculationContext,
     CvaCapitalResult,

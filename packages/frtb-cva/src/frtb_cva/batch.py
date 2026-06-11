@@ -4,7 +4,6 @@ Public CVA batch contracts, adapters, and canonical capital entrypoint.
 
 from __future__ import annotations
 
-from frtb_cva._batch_assembly import calculate_cva_capital_from_batches
 from frtb_cva._batch_contracts import (
     CvaBatchCapitalCalculation,
     CvaCounterpartyBatch,
@@ -12,7 +11,6 @@ from frtb_cva._batch_contracts import (
     CvaNettingSetBatch,
     SaCvaSensitivityBatch,
 )
-from frtb_cva._batch_payloads import input_hash_for_cva_batches
 from frtb_cva.adapters.columns import (
     build_cva_counterparty_batch_from_columns,
     build_cva_hedge_batch_from_columns,
@@ -25,6 +23,8 @@ from frtb_cva.adapters.rows import (
     build_sa_cva_sensitivity_batch_from_sensitivities,
 )
 from frtb_cva.adapters.sensitivity import build_sa_cva_sensitivity_batch_from_columns
+from frtb_cva.assembly.batch_payloads import input_hash_for_cva_batches
+from frtb_cva.assembly.batches import calculate_cva_capital_from_batches
 
 __all__ = [
     "CvaBatchCapitalCalculation",
