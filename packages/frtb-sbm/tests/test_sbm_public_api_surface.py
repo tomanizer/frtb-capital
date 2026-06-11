@@ -12,6 +12,9 @@ import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
 import frtb_sbm.kernel.portfolio as portfolio
 import frtb_sbm.kernel.weighting as kernel_weighting
+import frtb_sbm.risk_classes.commodity_weighting as commodity_weighting
+import frtb_sbm.risk_classes.equity_weighting as equity_weighting
+import frtb_sbm.risk_classes.fx_weighting as fx_weighting
 import frtb_sbm.risk_classes.girr as girr
 import frtb_sbm.risk_classes.girr_weighting as girr_weighting
 import frtb_sbm.risk_classes.vega_validation as vega_validation
@@ -189,12 +192,24 @@ def test_weighting_stage_modules_back_compatibility_surface() -> None:
         assert name in girr_weighting.__all__
         assert getattr(weighted_sensitivity, name) is getattr(girr_weighting, name)
 
-    for name in (
-        "weight_non_girr_vega_sensitivities",
-        "weight_non_girr_vega_sensitivity_batch",
+    for module, names in (
+        (fx_weighting, ("weight_fx_delta_sensitivities", "weight_fx_delta_sensitivity_batch")),
+        (
+            equity_weighting,
+            ("weight_equity_delta_sensitivities", "weight_equity_delta_sensitivity_batch"),
+        ),
+        (
+            commodity_weighting,
+            ("weight_commodity_delta_sensitivities", "weight_commodity_delta_sensitivity_batch"),
+        ),
+        (
+            vega_weighting,
+            ("weight_non_girr_vega_sensitivities", "weight_non_girr_vega_sensitivity_batch"),
+        ),
     ):
-        assert name in vega_weighting.__all__
-        assert getattr(weighted_sensitivity, name) is getattr(vega_weighting, name)
+        for name in names:
+            assert name in module.__all__
+            assert getattr(weighted_sensitivity, name) is getattr(module, name)
 
     assert callable(vega_validation._validate_non_girr_vega_sensitivity)
     assert callable(vega_validation._validate_non_girr_vega_batch_row)

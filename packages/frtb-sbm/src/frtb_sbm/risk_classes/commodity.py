@@ -38,7 +38,7 @@ from frtb_sbm.data_models import (
     SbmSensitivity,
     WeightedSensitivity,
 )
-from frtb_sbm.weighted_sensitivity import weight_commodity_delta_sensitivity_batch
+from frtb_sbm.risk_classes.commodity_weighting import weight_commodity_delta_sensitivity_batch
 
 
 def calculate_commodity_delta_risk_class_capital(

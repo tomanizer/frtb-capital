@@ -37,7 +37,7 @@ from frtb_sbm.equity_reference_data import (
     equity_delta_intra_bucket_correlation,
     equity_inter_bucket_correlation,
 )
-from frtb_sbm.weighted_sensitivity import weight_equity_delta_sensitivity_batch
+from frtb_sbm.risk_classes.equity_weighting import weight_equity_delta_sensitivity_batch
 
 _MAR21_EQUITY_OTHER_SECTOR_CITATION = ("basel_mar21_79",)
 
