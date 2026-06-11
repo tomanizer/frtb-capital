@@ -17,6 +17,7 @@ import frtb_sbm.capital as capital
 import frtb_sbm.crif as crif
 import frtb_sbm.curvature as curvature
 import frtb_sbm.curvature_correlations as curvature_correlations
+import frtb_sbm.curvature_factors as curvature_factors
 import frtb_sbm.curvature_reference_data as curvature_reference_data
 import frtb_sbm.fx_reference_data as fx_reference_data
 import frtb_sbm.girr_reference_data as girr_reference_data
@@ -284,6 +285,20 @@ def test_curvature_module_reexports_correlation_stage_helpers() -> None:
     ):
         assert name in curvature_correlations.__all__
         assert getattr(curvature, name) is getattr(curvature_correlations, name)
+
+
+def test_curvature_module_reexports_factor_stage_helpers() -> None:
+    for name in (
+        "FX_CURVATURE_SCALAR_1_5_FLAG",
+        "_CurvatureFactor",
+        "_curvature_factor_key",
+        "_curvature_factor_risk_factor",
+        "_curvature_factor_qualifier",
+        "_required_curvature_shock",
+        "_scaled_curvature_shock",
+    ):
+        assert name in curvature_factors.__all__
+        assert getattr(curvature, name) is getattr(curvature_factors, name)
 
 
 def test_crif_module_reexports_adapter_stage_surface() -> None:
