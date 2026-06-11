@@ -4,6 +4,7 @@ import subprocess
 import sys
 from datetime import UTC, date, datetime
 
+import frtb_result_store.store_bundle_rows as store_bundle_rows
 import frtb_result_store.store_row_io as store_row_io
 import frtb_result_store.store_status_rows as store_status_rows
 import pytest
@@ -78,6 +79,10 @@ def test_store_status_rows_preserve_row_io_compatibility_path() -> None:
     assert store_row_io._initial_status_event is store_status_rows._initial_status_event
     assert store_row_io._status_event_from_row is store_status_rows._status_event_from_row
     assert store_row_io._status_event_row is store_status_rows._status_event_row
+
+
+def test_store_bundle_rows_preserve_row_io_compatibility_path() -> None:
+    assert store_row_io._rows_for_bundle is store_bundle_rows._rows_for_bundle
 
 
 def test_store_status_rows_parse_datetime_values_without_string_round_trip() -> None:

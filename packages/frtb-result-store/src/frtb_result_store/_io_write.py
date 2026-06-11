@@ -38,9 +38,9 @@ from frtb_result_store.run_metadata_io import (
 from frtb_result_store.run_metadata_io import (
     generated_telemetry_rows as _generated_telemetry_rows,
 )
+from frtb_result_store.store_bundle_rows import _rows_for_bundle
 from frtb_result_store.store_config import RUN_TABLE_NAMES, ResultStoreWriteError
 from frtb_result_store.store_paths import _artifact_id_for_request, _safe_run_id
-from frtb_result_store.store_row_io import _rows_for_bundle
 from frtb_result_store.store_schemas import _TABLE_SCHEMAS, _arrow_table
 from frtb_result_store.store_status_rows import (
     _elapsed_ms,
