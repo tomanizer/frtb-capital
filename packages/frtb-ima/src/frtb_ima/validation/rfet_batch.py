@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, timedelta
 
@@ -106,5 +107,5 @@ def _rfet_batch_required_observations(
     )
 
 
-def _date64_set(values: tuple[date, ...]) -> frozenset[np.datetime64]:
+def _date64_set(values: Iterable[date]) -> frozenset[np.datetime64]:
     return frozenset(np.datetime64(item, "D") for item in values)
