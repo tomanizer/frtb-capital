@@ -56,6 +56,11 @@ Input, batch, and profile hash payload assembly physically lives under
 `input_hash_for_sensitivities`, `input_hash_for_batch`, and profile helpers.
 CRIF adapter implementation physically lives under `frtb_sbm.adapters.crif_*`;
 `frtb_sbm.crif` remains the public compatibility import path.
+Reference-data implementation physically lives under focused modules including
+`frtb_sbm.reference_profiles`, `frtb_sbm.girr_reference_data`,
+`frtb_sbm.fx_reference_data`, `frtb_sbm.vega_reference_data`,
+`frtb_sbm.curvature_reference_data`, and `frtb_sbm.reference_payload`;
+`frtb_sbm.reference_data` remains the compatibility and public import path.
 Validation helpers physically live under the `frtb_sbm.validation` package, including
 `batch`, `batch_arrays`, `batch_lineage`, `coercion`, `context`,
 `risk_class_fields`, and `sensitivity`;

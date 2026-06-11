@@ -15,12 +15,19 @@ import frtb_sbm.audit as audit
 import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
 import frtb_sbm.crif as crif
+import frtb_sbm.curvature_reference_data as curvature_reference_data
+import frtb_sbm.fx_reference_data as fx_reference_data
+import frtb_sbm.girr_reference_data as girr_reference_data
 import frtb_sbm.kernel.aggregation as kernel_aggregation
 import frtb_sbm.kernel.correlation_scenarios as kernel_correlation_scenarios
 import frtb_sbm.kernel.pairwise_evidence as kernel_pairwise_evidence
 import frtb_sbm.kernel.portfolio as portfolio
 import frtb_sbm.kernel.scenario_alignment as kernel_scenario_alignment
 import frtb_sbm.kernel.weighting as kernel_weighting
+import frtb_sbm.reference_data as reference_data
+import frtb_sbm.reference_payload as reference_payload
+import frtb_sbm.reference_profiles as reference_profiles
+import frtb_sbm.reference_types as reference_types
 import frtb_sbm.risk_classes.commodity_weighting as commodity_weighting
 import frtb_sbm.risk_classes.equity_weighting as equity_weighting
 import frtb_sbm.risk_classes.fx_weighting as fx_weighting
@@ -37,6 +44,7 @@ import frtb_sbm.validation.batch_lineage as validation_batch_lineage
 import frtb_sbm.validation.coercion as validation_coercion
 import frtb_sbm.validation.context as validation_context
 import frtb_sbm.validation.sensitivity as validation_sensitivity
+import frtb_sbm.vega_reference_data as vega_reference_data
 import frtb_sbm.weighted_sensitivity as weighted_sensitivity
 
 HANDOFF_SPECS = (
@@ -276,6 +284,26 @@ def test_crif_module_reexports_adapter_stage_surface() -> None:
         crif.normalize_girr_delta_crif_records
         is adapter_crif_arrow.normalize_girr_delta_crif_records
     )
+
+
+def test_reference_data_module_reexports_split_stage_surface() -> None:
+    assert reference_data.SbmGirrBucketDefinition is reference_types.SbmGirrBucketDefinition
+    assert reference_data.SbmFxBucketDefinition is reference_types.SbmFxBucketDefinition
+    assert (
+        reference_data.SbmCorrelationScenarioDefinition
+        is reference_types.SbmCorrelationScenarioDefinition
+    )
+    assert reference_data.citations_for_profile is reference_profiles.citations_for_profile
+    assert reference_data.girr_bucket_definition is girr_reference_data.girr_bucket_definition
+    assert reference_data.girr_delta_risk_weight is girr_reference_data.girr_delta_risk_weight
+    assert reference_data.fx_delta_risk_weight is fx_reference_data.fx_delta_risk_weight
+    assert (
+        reference_data.normalise_fx_delta_currency_code
+        is fx_reference_data.normalise_fx_delta_currency_code
+    )
+    assert reference_data.vega_risk_weight is vega_reference_data.vega_risk_weight
+    assert reference_data.curvature_risk_weight is curvature_reference_data.curvature_risk_weight
+    assert reference_data.profile_reference_payload is reference_payload.profile_reference_payload
 
 
 def test_hash_assembly_module_backs_compatibility_paths() -> None:
