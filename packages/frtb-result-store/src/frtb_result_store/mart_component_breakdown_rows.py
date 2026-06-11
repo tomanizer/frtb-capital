@@ -6,6 +6,7 @@ from frtb_result_store._row_codecs import (
     stored_value as _stored_value,
 )
 from frtb_result_store.model import (
+    CapitalMeasure,
     CapitalNode,
     ComponentBreakdownRow,
     FrtbComponent,
@@ -15,19 +16,26 @@ from frtb_result_store.model import (
 
 def _component_breakdown_rows(bundle: ResultBundle) -> list[dict[str, object]]:
     nodes_by_component: dict[FrtbComponent, list[CapitalNode]] = {}
+    component_by_node: dict[str, FrtbComponent] = {}
     for node in bundle.nodes:
         component = FrtbComponent(node.component)
         if component is FrtbComponent.TOP_OF_HOUSE:
             continue
         nodes_by_component.setdefault(component, []).append(node)
+        component_by_node[node.node_id] = component
+
+    measures_by_component: dict[FrtbComponent, list[CapitalMeasure]] = {}
+    for measure in bundle.measures:
+        if measure.measure_name != "capital":
+            continue
+        measure_component = component_by_node.get(measure.node_id)
+        if measure_component is not None:
+            measures_by_component.setdefault(measure_component, []).append(measure)
+
     rows: list[dict[str, object]] = []
     for component in sorted(nodes_by_component, key=lambda item: item.value):
         node_ids = {node.node_id for node in nodes_by_component[component]}
-        measures = [
-            measure
-            for measure in bundle.measures
-            if measure.node_id in node_ids and measure.measure_name == "capital"
-        ]
+        measures = measures_by_component.get(component, [])
         currency = measures[0].currency if measures else bundle.run.base_currency
         row = ComponentBreakdownRow(
             run_id=bundle.run.run_id,
