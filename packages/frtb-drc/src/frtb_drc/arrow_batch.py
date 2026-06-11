@@ -20,12 +20,12 @@ from frtb_common import (
     read_arrow_columns,
 )
 
-from frtb_drc.batch import (
-    DrcPositionBatch,
+from frtb_drc.adapters.positions import (
     build_drc_ctp_batch_from_columns,
     build_drc_nonsec_batch_from_columns,
     build_drc_securitisation_non_ctp_batch_from_columns,
 )
+from frtb_drc.batch import DrcPositionBatch
 from frtb_drc.data_models import (
     DrcFairValueCapEvidence,
     DrcRiskClass,

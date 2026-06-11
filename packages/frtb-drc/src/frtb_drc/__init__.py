@@ -3,6 +3,12 @@
 from frtb_common.attribution import AttributionMethod, CapitalContribution, ReconciliationStatus
 
 from frtb_drc._version import __version__
+from frtb_drc.adapters.positions import (
+    build_drc_ctp_batch_from_columns,
+    build_drc_nonsec_batch_from_columns,
+    build_drc_nonsec_batch_from_positions,
+    build_drc_securitisation_non_ctp_batch_from_columns,
+)
 from frtb_drc.arrow_batch import (
     DRC_CTP_ARROW_COLUMN_SPECS,
     DRC_FAIR_VALUE_CAP_EVIDENCE_ARROW_COLUMN_SPECS,
@@ -44,10 +50,6 @@ from frtb_drc.audit import (
 from frtb_drc.batch import (
     DrcBatchCapitalCalculation,
     DrcPositionBatch,
-    build_drc_ctp_batch_from_columns,
-    build_drc_nonsec_batch_from_columns,
-    build_drc_nonsec_batch_from_positions,
-    build_drc_securitisation_non_ctp_batch_from_columns,
     calculate_drc_capital_from_batch,
     input_hash_for_drc_batch,
 )
