@@ -19,22 +19,10 @@ from frtb_ima.pla import (
     spearman_pla_assessment,
 )
 from frtb_ima.regimes import PLAMetricsRequired, RegulatoryPolicy, RegulatoryRegime, get_policy
+from tests.ima_helpers import business_dates
 
 PLA_GREEN_THRESHOLD = 0.09
 PLA_AMBER_THRESHOLD = 0.12
-
-
-def _business_dates(
-    count: int, *, start: date, holidays: set[date] | None = None
-) -> tuple[date, ...]:
-    holidays = set() if holidays is None else holidays
-    days: list[date] = []
-    current = start
-    while len(days) < count:
-        if current.weekday() < 5 and current not in holidays:
-            days.append(current)
-        current += timedelta(days=1)
-    return tuple(days)
 
 
 def _diagnostics() -> PlaWindowDiagnostics:
@@ -306,7 +294,7 @@ def test_pla_assessment_for_policy_with_diagnostics_reports_window() -> None:
 def test_pla_policy_calendar_validates_business_window_and_reports_holidays() -> None:
     policy = get_policy()
     holiday = date(2025, 12, 25)
-    dates = _business_dates(300, start=date(2025, 1, 1), holidays={holiday})
+    dates = business_dates(300, start=date(2025, 1, 1), holidays={holiday})
     calendar = BusinessCalendar(
         business_dates=dates,
         official_holidays=(holiday,),
@@ -332,7 +320,7 @@ def test_pla_policy_calendar_validates_business_window_and_reports_holidays() ->
 
 def test_pla_policy_calendar_uses_actual_short_window_size() -> None:
     policy = replace(get_policy(), pla_window_days=10, pla_minimum_history_days=5)
-    dates = _business_dates(6, start=date(2025, 1, 1))
+    dates = business_dates(6, start=date(2025, 1, 1))
     calendar = BusinessCalendar(
         business_dates=dates,
         source="FED",

@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any
 
 from frtb_ima._version import __version__
-from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.capital import (
     models_based_capital,
     supervisory_multiplier_for_policy,
@@ -29,6 +28,7 @@ from frtb_ima.capital_run_fixture import (
     _filtered_cube,
     as_of_date_from_fixture,
     classifications_from_fixture,
+    input_hash_for_capital_run_fixture,
     load_capital_run_v1_fixture,
     nmrf_artifacts_from_fixture,
     nmrf_direct_shocks_from_fixture,
@@ -70,19 +70,6 @@ def _parse_args() -> argparse.Namespace:
         help="JSON output path. Defaults to ./sensitivity_sweep_results.json.",
     )
     return parser.parse_args()
-
-
-def _fixture_inputs_hash(fixture: Any) -> str:
-    return compute_inputs_hash(
-        params=fixture.params,
-        risk_factors=fixture.risk_factors,
-        rfet_evidence=fixture.rfet_evidence,
-        scenario_cube=fixture.scenario_cube,
-        stress_histories=fixture.stress_histories,
-        nmrf_evidence=fixture.nmrf_evidence,
-        nmrf_artifacts=fixture.nmrf_artifacts,
-        pla_bt_vectors=fixture.pla_bt_vectors,
-    )
 
 
 def _build_nmrf_capital(fixture: Any, policy: Any) -> Any:
@@ -296,7 +283,7 @@ def build_results(fixture: Any, base_policy: Any) -> dict[str, Any]:
     return {
         "metadata": {
             "fixture_root": str(fixture.root),
-            "inputs_hash": _fixture_inputs_hash(fixture),
+            "inputs_hash": input_hash_for_capital_run_fixture(fixture),
             "policy_profile": base_policy.regime.value,
             "policy_hash": base_policy.policy_hash,
             "code_version": __version__,
