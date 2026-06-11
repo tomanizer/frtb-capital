@@ -36,6 +36,27 @@ self-declares as not independently validated. Synthetic fixture packs prove
 internal consistency only; they are not Basel QIS or other external regulatory
 vectors. Do not clear `PENDING` without a genuine model-validation exercise.
 
+## ADR 0045 target layout
+
+Epic [#725](https://github.com/tomanizer/frtb-capital/issues/725) tracks the
+[`ADR 0045`](../../docs/decisions/0045-canonical-batch-pipeline-with-adapter-ingress.md)
+canonical batch pipeline consolidation. Review SBM refactors toward this layout:
+
+```text
+adapters/ -> validation/ -> kernel/ -> assembly/ -> registry.py
+```
+
+Adapters own Arrow, CRIF, row, and column ingress into the package-owned SBM
+batch; validation modules own package-local input rules and public errors;
+kernels own cited regulatory math and must not import Arrow or dataframes;
+assembly owns result records, hashes, citations, and audit payloads; and
+`registry.py` owns risk-class and measure dispatch instead of wrapper matrices.
+
+Reject empty stage packages that shadow existing modules. Use
+[`stage_module_skeletons.md`](../../docs/quality/stage_module_skeletons.md) as
+the import-shadowing guardrail before adding `adapters/`, `validation/`,
+`kernel/`, or `assembly/`.
+
 ## Engineering rules
 
 - Reject sibling capital-package imports; shared abstractions belong in

@@ -17,6 +17,27 @@ and EU CRR3 non-securitisation row and batch paths. EU CRR3 securitisation
 non-CTP, EU CRR3 CTP, and all PRA UK CRR paths must fail explicitly until cited
 profile mappings and deterministic tests exist.
 
+## ADR 0045 target layout
+
+Epic [#725](https://github.com/tomanizer/frtb-capital/issues/725) tracks the
+[`ADR 0045`](../../docs/decisions/0045-canonical-batch-pipeline-with-adapter-ingress.md)
+canonical batch pipeline consolidation. The intended end state for DRC runtime
+code is:
+
+```text
+adapters/ -> validation/ -> kernel/ -> assembly/ -> registry.py
+```
+
+Use adapters for row, batch, Arrow, and any future CRIF-like ingress into the
+package-owned DRC batch; keep profile/path validation separate from kernels;
+keep default-risk math in kernel modules without Arrow/dataframe imports;
+assemble citations, hashes, audit, and public result records after the kernel;
+and use `registry.py` for non-securitisation, securitisation, and CTP dispatch.
+
+Do not add empty stage packages that shadow existing modules. Follow
+[`stage_module_skeletons.md`](../../docs/quality/stage_module_skeletons.md) when
+introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
+
 ## Rules
 
 - May depend on `frtb-common`.

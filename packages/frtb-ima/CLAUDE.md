@@ -111,6 +111,31 @@ Every calculator accepts explicit scalar parameters and is testable in isolation
 
 `rfet.py` is the fast scalar classification path (MODELLABLE / TYPE_A_NMRF / TYPE_B_NMRF) based on unique real-price observation counts. `rfet_evidence.py` is the audit-grade path: it processes an `RFETEvidence` package, applies source de-duplication, one-count-per-date, bucket representativeness, and returns an `RFETEvidenceAssessment` with a full exclusion trail. Do not merge these; their separation is intentional.
 
+### ADR 0045 target layout
+
+Epic [#725](https://github.com/tomanizer/frtb-capital/issues/725) tracks the
+[`ADR 0045`](../../docs/decisions/0045-canonical-batch-pipeline-with-adapter-ingress.md)
+canonical batch pipeline consolidation. For IMA, review this layout as a target
+for batch/adapter ingress and extracted RFET or observation-validation stages
+only; do not force scenario-cube, IMCC, NMRF, PLA, or backtesting kernels into a
+standardised-approach batch shape without a package-specific ADR.
+
+```text
+adapters/ -> validation/ -> kernel/ -> assembly/ -> registry.py
+```
+
+Adapters own Arrow or columnar handoff into package-owned IMA records;
+validation modules own RFET evidence, observation-window, and handoff checks;
+kernels own NumPy-native capital math and must not import Arrow or dataframes;
+assembly owns desk/run result records, hashes, citations, and audit payloads;
+and `registry.py` is appropriate only where IMA dispatch tables remove real
+adapter or validation duplication.
+
+Reject empty stage packages that shadow existing modules. Use
+[`stage_module_skeletons.md`](../../docs/quality/stage_module_skeletons.md) as
+the import-shadowing guardrail before adding `adapters/`, `validation/`,
+`kernel/`, or `assembly/`.
+
 ### Nested-LH-vector invariant
 
 Nested LH vectors are subsets of risk factors, not scaled copies of a single vector. `LH10` contains all selected factors; `LH20` contains only factors with assigned LH ≥ 20 days; and so on. `LH10` must always be present — `nested_lh_vectors_from_cube` raises if it is missing. The LHA ES formula then combines ES values from these nested subsets: `sqrt(sum(weight_i * ES(P_LHi)^2))`. The scalar approximation in `liquidity_horizon.py` is a labelled toy; it must never appear outside its own module's comparison tests.

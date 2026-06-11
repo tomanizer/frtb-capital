@@ -30,6 +30,27 @@ Review `frtb-cva` as the owner of CVA capital only.
 - SA-CVA calls that accept BA-CVA counterparty/netting-set inputs without error.
 - Documentation that presents outputs as final regulatory capital.
 
+## ADR 0045 target layout
+
+Epic [#725](https://github.com/tomanizer/frtb-capital/issues/725) tracks the
+[`ADR 0045`](../../docs/decisions/0045-canonical-batch-pipeline-with-adapter-ingress.md)
+canonical batch pipeline consolidation. Review CVA refactors toward this layout:
+
+```text
+adapters/ -> validation/ -> kernel/ -> assembly/ -> registry.py
+```
+
+Adapters own row, batch, Arrow, and CRIF ingress into package-owned CVA batches;
+validation modules own BA-CVA, SA-CVA, and mixed-method input rules and public
+errors; kernels own cited capital math and must not import Arrow or dataframes;
+assembly owns result records, hashes, citations, and audit payloads; and
+`registry.py` owns method, entity, and risk-class dispatch.
+
+Reject empty stage packages that shadow existing modules. Use
+[`stage_module_skeletons.md`](../../docs/quality/stage_module_skeletons.md) as
+the import-shadowing guardrail before adding `adapters/`, `validation/`,
+`kernel/`, or `assembly/`.
+
 ## Unsupported (fail closed)
 
 - MAR50.9 materiality-threshold alternative.

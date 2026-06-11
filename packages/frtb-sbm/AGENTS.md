@@ -27,6 +27,27 @@ reference data exists.
 Package-local traceability lives under `packages/frtb-sbm/docs/`. See
 `REGULATORY_TRACEABILITY.md` for implemented/unsupported status by area.
 
+## ADR 0045 target layout
+
+Epic [#725](https://github.com/tomanizer/frtb-capital/issues/725) tracks the
+[`ADR 0045`](../../docs/decisions/0045-canonical-batch-pipeline-with-adapter-ingress.md)
+canonical batch pipeline consolidation. The intended end state for SBM runtime
+code is:
+
+```text
+adapters/ -> validation/ -> kernel/ -> assembly/ -> registry.py
+```
+
+Use adapters for Arrow, CRIF, row, and column ingress into the package-owned SBM
+batch; keep validation rules out of kernels; keep regulatory math in kernel
+modules without Arrow/dataframe imports; assemble citations, hashes, audit, and
+public result records after the kernel; and use `registry.py` for risk-class and
+measure dispatch instead of wrapper matrices.
+
+Do not add empty stage packages that shadow existing modules. Follow
+[`stage_module_skeletons.md`](../../docs/quality/stage_module_skeletons.md) when
+introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
+
 ## Rules
 
 - May depend on `frtb-common`.

@@ -18,3 +18,24 @@ profile mappings and deterministic tests exist.
 Reject silent zero-capital placeholders, sibling capital-package imports,
 uncited capital-producing inputs, scoped runs that mix desks or legal entities,
 and issuer aggregation shortcuts that would hide missing DRC mechanics.
+
+## ADR 0045 target layout
+
+Epic [#725](https://github.com/tomanizer/frtb-capital/issues/725) tracks the
+[`ADR 0045`](../../docs/decisions/0045-canonical-batch-pipeline-with-adapter-ingress.md)
+canonical batch pipeline consolidation. Review DRC refactors toward this layout:
+
+```text
+adapters/ -> validation/ -> kernel/ -> assembly/ -> registry.py
+```
+
+Adapters own row, batch, Arrow, and future CRIF-like ingress into the
+package-owned DRC batch; validation modules own profile/path input rules and
+public errors; kernels own cited default-risk math and must not import Arrow or
+dataframes; assembly owns result records, hashes, citations, and audit payloads;
+and `registry.py` owns non-securitisation, securitisation, and CTP dispatch.
+
+Reject empty stage packages that shadow existing modules. Use
+[`stage_module_skeletons.md`](../../docs/quality/stage_module_skeletons.md) as
+the import-shadowing guardrail before adding `adapters/`, `validation/`,
+`kernel/`, or `assembly/`.
