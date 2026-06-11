@@ -3,10 +3,10 @@
   "metrics": {
     "findings_by_rule": {
       "MISSING_PARAMETERS_SECTION": 18,
-      "MISSING_RETURNS_SECTION": 19
+      "MISSING_RETURNS_SECTION": 17
     },
     "packages_with_findings": 3,
-    "total_findings": 37
+    "total_findings": 35
   },
   "packages": {
     "frtb-common": {
@@ -177,26 +177,8 @@
       ]
     },
     "frtb-cva": {
-      "finding_count": 7,
+      "finding_count": 5,
       "findings": [
-        {
-          "line": 1,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "EntityBatchSpec.optional_columns",
-          "object_type": "method",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_arrow_entity_specs.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 1,
-          "message": "Public method returns a value but no NumPy Returns section.",
-          "object_name": "EntityBatchSpec.required_columns",
-          "object_type": "method",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_arrow_entity_specs.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
         {
           "line": 1,
           "message": "Public function has parameters but no NumPy Parameters section.",
