@@ -114,6 +114,16 @@ from frtb_drc.kernel.ctp import (
     calculate_ctp_net_jtds,
     validate_ctp_context,
 )
+from frtb_drc.kernel.securitisation import (
+    SecuritisationNonCtpCalculation,
+    SecuritisationNonCtpCapitalInput,
+    SecuritisationNonCtpNettingInput,
+    calculate_securitisation_non_ctp_category_drc,
+    calculate_securitisation_non_ctp_drc,
+    calculate_securitisation_non_ctp_gross_jtd,
+    calculate_securitisation_non_ctp_net_jtds,
+    validate_securitisation_non_ctp_context,
+)
 from frtb_drc.maturity import calculate_maturity_weight, scale_gross_jtd, scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.reference_data import (
@@ -143,16 +153,6 @@ from frtb_drc.regimes import (
 )
 from frtb_drc.risk_weight_evidence import risk_weight_evidence_by_position
 from frtb_drc.scaffold import PACKAGE_METADATA, calculate_drc_capital
-from frtb_drc.securitisation import (
-    SecuritisationNonCtpCalculation,
-    SecuritisationNonCtpCapitalInput,
-    SecuritisationNonCtpNettingInput,
-    calculate_securitisation_non_ctp_category_drc,
-    calculate_securitisation_non_ctp_drc,
-    calculate_securitisation_non_ctp_gross_jtd,
-    calculate_securitisation_non_ctp_net_jtds,
-    validate_securitisation_non_ctp_context,
-)
 from frtb_drc.validation import DrcInputError, validate_position, validate_positions
 
 __all__ = [

@@ -179,6 +179,39 @@ def test_ctp_kernel_compatibility_exports() -> None:
         assert getattr(frtb_drc, name) is getattr(kernel, name)
 
 
+def test_securitisation_kernel_compatibility_exports() -> None:
+    import frtb_drc.kernel.securitisation as kernel
+    import frtb_drc.securitisation as compatibility
+
+    names = (
+        "SecuritisationNonCtpCalculation",
+        "SecuritisationNonCtpCapitalInput",
+        "SecuritisationNonCtpNettingInput",
+        "calculate_securitisation_non_ctp_category_drc",
+        "calculate_securitisation_non_ctp_drc",
+        "calculate_securitisation_non_ctp_gross_jtd",
+        "calculate_securitisation_non_ctp_net_jtds",
+        "securitisation_non_ctp_context_input_hash",
+        "validate_securitisation_non_ctp_context",
+    )
+
+    assert set(compatibility.__all__) == set(kernel.__all__)
+    for name in names:
+        assert getattr(compatibility, name) is getattr(kernel, name)
+
+    top_level_names = set(names) - {"securitisation_non_ctp_context_input_hash"}
+    for name in top_level_names:
+        assert getattr(frtb_drc, name) is getattr(kernel, name)
+
+
+def test_securitisation_stage_helpers_are_bounded() -> None:
+    import frtb_drc.kernel.securitisation_context as context
+    import frtb_drc.kernel.securitisation_gross as gross
+
+    assert "validate_securitisation_non_ctp_context_for_positions" in context.__all__
+    assert "fair_value_capped_gross_jtd" in gross.__all__
+
+
 def _public_api_doc() -> str:
     root = Path(__file__).resolve().parents[3]
     return (root / "docs/modules/frtb-drc/PUBLIC_API.md").read_text()

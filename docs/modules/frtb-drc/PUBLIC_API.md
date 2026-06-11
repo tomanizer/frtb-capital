@@ -43,6 +43,11 @@ Batch net-JTD array kernels physically live in `frtb_drc.kernel.net_jtd`;
 capital entrypoint.
 CTP row-path calculation helpers physically live in `frtb_drc.kernel.ctp`;
 `frtb_drc.ctp` remains a compatibility import path for existing callers.
+Securitisation non-CTP row-path calculation helpers physically live in
+`frtb_drc.kernel.securitisation`, with context/hash helpers in
+`frtb_drc.kernel.securitisation_context` and fair-value-cap gross branching in
+`frtb_drc.kernel.securitisation_gross`; `frtb_drc.securitisation` remains a
+compatibility import path for existing callers.
 
 ## Client integration
 
