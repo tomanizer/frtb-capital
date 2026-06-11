@@ -21,6 +21,7 @@ from frtb_drc._batch_columns import (
     _required_text_array,
     _text_array_with_default,
 )
+from frtb_drc.batch_validation import validate_batch_columns
 from frtb_drc.data_models import (
     CreditQuality,
     DefaultDirection,
@@ -196,7 +197,7 @@ def build_drc_nonsec_batch_from_columns(
         Validated batch with ``input_hash`` populated.
     """
 
-    from frtb_drc.batch import DrcPositionBatch, _validate_batch, input_hash_for_drc_batch
+    from frtb_drc.batch import DrcPositionBatch, input_hash_for_drc_batch
 
     row_count = len(position_ids)
     if row_count == 0:
@@ -313,7 +314,11 @@ def build_drc_nonsec_batch_from_columns(
         handoff_hash=handoff_hash,
         diagnostics=tuple(dict(item) for item in diagnostics),
     )
-    _validate_batch(batch, expected_risk_class=_expected_risk_class, profile_id=profile_id)
+    validate_batch_columns(
+        batch,
+        expected_risk_class=_expected_risk_class,
+        profile_id=profile_id,
+    )
     return replace(batch, input_hash=input_hash_for_drc_batch(batch))
 
 

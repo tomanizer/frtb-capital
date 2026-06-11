@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import math
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
-from typing import Any, cast
+from typing import cast
 
 import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
@@ -15,14 +14,55 @@ from frtb_drc._identifiers import slug_path as _slug
 from frtb_drc._netting_helpers import (
     risk_weights_for_net_jtd as _risk_weights_for_net_jtd,
 )
-from frtb_drc._validation_utils import require_text as _required_text
 from frtb_drc._version import __version__
+from frtb_drc.assembly.citations import (
+    batch_api_citations as _batch_api_citations,
+)
+from frtb_drc.assembly.citations import (
+    collect_batch_citations as _collect_batch_citations,
+)
+from frtb_drc.assembly.citations import (
+    ctp_batch_citations as _ctp_batch_citations,
+)
+from frtb_drc.assembly.citations import (
+    ctp_netting_citations as _ctp_netting_citations,
+)
+from frtb_drc.assembly.citations import (
+    nonsec_formula_citations as _nonsec_formula_citations,
+)
+from frtb_drc.assembly.citations import (
+    nonsec_netting_citation as _nonsec_netting_citation,
+)
+from frtb_drc.assembly.citations import (
+    sec_non_ctp_batch_citations as _sec_non_ctp_batch_citations,
+)
+from frtb_drc.assembly.citations import (
+    sec_non_ctp_netting_citations as _sec_non_ctp_netting_citations,
+)
+from frtb_drc.assembly.citations import (
+    zero_nonsec_category_citation as _zero_nonsec_category_citation,
+)
+from frtb_drc.assembly.fair_value_cap import (
+    batch_fair_value_cap_citations as _batch_fair_value_cap_citations,
+)
+from frtb_drc.assembly.fair_value_cap import (
+    fair_value_cap_branch_metadata_for_batch as _fair_value_cap_branch_metadata_for_batch,
+)
 from frtb_drc.assembly.hashes import (
     context_input_hash_for_drc_batch as _context_input_hash_for_batch,
 )
 from frtb_drc.assembly.hashes import input_hash_for_drc_batch
 from frtb_drc.attribution import calculate_drc_attribution
 from frtb_drc.audit import validate_reconciliation
+from frtb_drc.batch_validation import (
+    batch_risk_class as _batch_risk_class,
+)
+from frtb_drc.batch_validation import (
+    validate_batch_context as _validate_context,
+)
+from frtb_drc.batch_validation import (
+    validate_supported_batch_run as _validate_supported_batch_run,
+)
 from frtb_drc.capital import CapitalInput, calculate_category_drc
 from frtb_drc.data_models import (
     BranchMetadata,
@@ -40,7 +80,6 @@ from frtb_drc.data_models import (
 )
 from frtb_drc.fair_value_cap import (
     used_fair_value_cap_evidence_for_position_ids,
-    validate_fair_value_cap_evidence,
 )
 from frtb_drc.fx import (
     fx_branch_metadata,
@@ -48,7 +87,6 @@ from frtb_drc.fx import (
     fx_conversion_records,
     input_hash_with_fx,
     require_fx_rate,
-    validate_fx_rates,
 )
 from frtb_drc.kernel import net_jtd as _net_jtd_kernel
 from frtb_drc.kernel.ctp import CtpCapitalInput, calculate_ctp_category_drc
@@ -62,89 +100,12 @@ from frtb_drc.reference_data import (
     get_risk_weight_rule,
     iter_lgd_rules,
 )
-from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
+from frtb_drc.regimes import get_rule_profile
 from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
     used_risk_weight_evidence_for_position_ids,
 )
-from frtb_drc.validation import (
-    BASEL_MAR22_PROFILE_ID,
-    EU_CRR3_PROFILE_ID,
-    US_NPR_2_0_PROFILE_ID,
-    DrcInputError,
-    chargeable_non_securitisation_bucket_keys,
-    chargeable_securitisation_non_ctp_bucket_keys,
-    ensure_chargeable_credit_quality,
-    ensure_chargeable_non_securitisation_bucket,
-    ensure_chargeable_securitisation_non_ctp_bucket,
-)
-
-_US_NPR_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
-_BASEL_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
-_EU_CRR3_FORMULA_CITATIONS = ("EU_CRR3_ARTICLE_325W",)
-_US_NPR_NETTING_CITATION = "US_NPR_210_B_2"
-_BASEL_NETTING_CITATION = "BASEL_MAR22_19"
-_EU_CRR3_NETTING_CITATION = "EU_CRR3_ARTICLE_325X"
-_US_NPR_ZERO_CATEGORY_CITATION = "US_NPR_210_B_3_III"
-_BASEL_ZERO_CATEGORY_CITATION = "BASEL_MAR22_26"
-_EU_CRR3_ZERO_CATEGORY_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
-_SEC_NON_CTP_GROSS_CITATIONS = ("US_NPR_210_C_1", "BASEL_MAR22_27")
-_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS = ("US_NPR_210_C_3_III", "BASEL_MAR22_34")
-_SEC_NON_CTP_NETTING_CITATIONS = (
-    "US_NPR_210_C_2",
-    "BASEL_MAR22_28",
-    "BASEL_MAR22_29",
-    "BASEL_MAR22_30",
-)
-_SEC_NON_CTP_BATCH_CITATIONS = (
-    *_SEC_NON_CTP_GROSS_CITATIONS,
-    *_SEC_NON_CTP_NETTING_CITATIONS,
-    "US_NPR_210_C_3_I_II",
-    "US_NPR_210_C_3_III",
-    "US_NPR_210_C_3_IV",
-    "BASEL_MAR22_31",
-    "BASEL_MAR22_32",
-    "BASEL_MAR22_33",
-    "BASEL_MAR22_34",
-    "BASEL_MAR22_35",
-)
-_BASEL_SEC_NON_CTP_GROSS_CITATIONS = ("BASEL_MAR22_27",)
-_BASEL_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS = ("BASEL_MAR22_34",)
-_BASEL_SEC_NON_CTP_NETTING_CITATIONS = (
-    "BASEL_MAR22_28",
-    "BASEL_MAR22_29",
-    "BASEL_MAR22_30",
-)
-_BASEL_SEC_NON_CTP_BATCH_CITATIONS = (
-    *_BASEL_SEC_NON_CTP_GROSS_CITATIONS,
-    *_BASEL_SEC_NON_CTP_NETTING_CITATIONS,
-    "BASEL_MAR22_31",
-    "BASEL_MAR22_32",
-    "BASEL_MAR22_33",
-    "BASEL_MAR22_34",
-    "BASEL_MAR22_35",
-)
-_CTP_GROSS_CITATIONS = ("US_NPR_210_D_1",)
-_BASEL_CTP_GROSS_CITATIONS = ("BASEL_MAR22_36", "BASEL_MAR22_37")
-_CTP_NETTING_CITATIONS = ("US_NPR_210_D_2",)
-_BASEL_CTP_NETTING_CITATIONS = ("BASEL_MAR22_39",)
-_CTP_BATCH_CITATIONS = (
-    *_CTP_GROSS_CITATIONS,
-    *_CTP_NETTING_CITATIONS,
-    "US_NPR_210_D_3_I_III",
-    "US_NPR_210_D_3_IV",
-    "US_NPR_210_D_3_IV_D",
-    "US_NPR_210_D_3_V",
-)
-_BASEL_CTP_BATCH_CITATIONS = (
-    *_BASEL_CTP_GROSS_CITATIONS,
-    *_BASEL_CTP_NETTING_CITATIONS,
-    "BASEL_MAR22_40",
-    "BASEL_MAR22_41",
-    "BASEL_MAR22_42",
-    "BASEL_MAR22_44",
-    "BASEL_MAR22_45",
-)
+from frtb_drc.validation import DrcInputError
 
 
 @dataclass(frozen=True)
@@ -426,143 +387,6 @@ def calculate_drc_capital_from_batch(
     )
 
 
-def _validate_context(context: DrcCalculationContext) -> None:
-    if context.run_id.strip() == "":
-        raise DrcInputError("run_id must be non-empty")
-    if context.base_currency.strip() == "":
-        raise DrcInputError("base_currency must be non-empty")
-    if context.profile_id.strip() == "":
-        raise DrcInputError("profile_id must be non-empty")
-    if context.citation_policy.strip() == "":
-        raise DrcInputError("citation_policy must be non-empty")
-    if context.citation_policy.strip().lower() != "strict":
-        raise DrcInputError(f"unsupported citation_policy: {context.citation_policy}")
-    validate_fx_rates(context)
-    effective_risk_weights(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
-    validate_fair_value_cap_evidence(
-        context.securitisation_non_ctp_fair_value_cap_evidence,
-        context=context,
-    )
-    _validate_context_text_map(
-        context.securitisation_non_ctp_offset_groups,
-        field_name="context.securitisation_non_ctp_offset_groups",
-    )
-    effective_risk_weights(context, risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
-    _validate_context_text_map(context.ctp_offset_groups, field_name="context.ctp_offset_groups")
-
-
-def _validate_context_risk_weight_map(values: Mapping[str, float], *, field_name: str) -> None:
-    for position_id, risk_weight in values.items():
-        _required_text(position_id, f"{field_name} position_id")
-        _coerce_finite_non_negative_float(
-            risk_weight,
-            field_name=f"{field_name}[{position_id!r}]",
-        )
-
-
-def _validate_context_text_map(values: Mapping[str, str], *, field_name: str) -> None:
-    for position_id, value in values.items():
-        _required_text(position_id, f"{field_name} position_id")
-        _required_text(value, f"{field_name}[{position_id!r}]")
-
-
-def _validate_supported_batch_run(
-    batch: DrcPositionBatch,
-    *,
-    context: DrcCalculationContext,
-    profile: DrcRuleProfile,
-) -> None:
-    risk_class = _batch_risk_class(batch)
-    ensure_risk_class_supported(profile, risk_class)
-    scoped_desk_id = context.desk_id.strip()
-    scoped_legal_entity = context.legal_entity.strip()
-    if scoped_desk_id:
-        _raise_first_mismatch(
-            batch.desk_ids,
-            scoped_desk_id,
-            message=lambda index: (
-                f"position {batch.position_ids[index]} desk_id {batch.desk_ids[index]} "
-                f"does not match context desk_id {scoped_desk_id}"
-            ),
-        )
-    if scoped_legal_entity:
-        _raise_first_mismatch(
-            batch.legal_entities,
-            scoped_legal_entity,
-            message=lambda index: (
-                f"position {batch.position_ids[index]} legal_entity "
-                f"{batch.legal_entities[index]} does not match context legal_entity "
-                f"{scoped_legal_entity}"
-            ),
-        )
-    if risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
-        risk_weights = effective_risk_weights(
-            context,
-            risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
-        )
-        _validate_context_position_map(
-            batch,
-            risk_weights,
-            field_name="context.securitisation_non_ctp_risk_weights",
-        )
-        _validate_context_position_map(
-            batch,
-            context.securitisation_non_ctp_offset_groups,
-            field_name="context.securitisation_non_ctp_offset_groups",
-            require_all=False,
-        )
-        _validate_context_position_map(
-            batch,
-            context.securitisation_non_ctp_fair_value_cap_evidence,
-            field_name="context.securitisation_non_ctp_fair_value_cap_evidence",
-            require_all=False,
-        )
-    elif risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
-        risk_weights = effective_risk_weights(
-            context,
-            risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
-        )
-        _validate_context_position_map(
-            batch,
-            risk_weights,
-            field_name="context.ctp_risk_weights",
-        )
-        _validate_context_position_map(
-            batch,
-            context.ctp_offset_groups,
-            field_name="context.ctp_offset_groups",
-            require_all=False,
-        )
-
-
-def _batch_risk_class(batch: DrcPositionBatch) -> DrcRiskClass:
-    unique = tuple(sorted(np.unique(batch.risk_classes)))
-    if len(unique) != 1:
-        raise DrcInputError(
-            "DRC batch calculation requires one risk_class; mixed risk classes must "
-            "be split into class-specific batches"
-        )
-    return DrcRiskClass(cast(str, unique[0]))
-
-
-def _validate_context_position_map(
-    batch: DrcPositionBatch,
-    values: Mapping[str, object],
-    *,
-    field_name: str,
-    require_all: bool = True,
-) -> None:
-    position_ids = {cast(str, position_id) for position_id in batch.position_ids.tolist()}
-    keys = {str(position_id) for position_id in values}
-    if require_all:
-        missing = sorted(position_ids - keys)
-        if missing:
-            raise DrcInputError(f"{field_name} is required for positions: " + ", ".join(missing))
-    unused = sorted(keys - position_ids)
-    if unused:
-        raise DrcInputError(f"{field_name} contains unused position ids: " + ", ".join(unused))
-
-
 def _convert_batch_to_base_currency(
     batch: DrcPositionBatch,
     *,
@@ -611,138 +435,6 @@ def _convert_batch_to_base_currency(
         input_hash=input_hash_with_fx(batch.input_hash, conversions),
     )
     return converted, conversions
-
-
-def _validate_batch(
-    batch: DrcPositionBatch,
-    *,
-    expected_risk_class: DrcRiskClass,
-    profile_id: str,
-) -> None:
-    if not np.all(batch.risk_classes == expected_risk_class.value):
-        unique = ", ".join(str(value) for value in sorted(np.unique(batch.risk_classes)))
-        raise DrcInputError(
-            "DRC batch builder requires a single supported risk_class "
-            f"{expected_risk_class.value}; received {unique}"
-        )
-    _validate_common_batch_fields(batch)
-    if expected_risk_class is DrcRiskClass.NON_SECURITISATION:
-        _validate_nonsec_batch(batch, profile_id=profile_id)
-    elif expected_risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
-        _validate_securitisation_non_ctp_batch(batch)
-    elif expected_risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
-        _validate_ctp_batch(batch)
-    else:  # pragma: no cover - all enum values are handled above.
-        raise DrcInputError(f"unsupported DRC batch risk_class: {expected_risk_class.value}")
-
-
-def _validate_common_batch_fields(batch: DrcPositionBatch) -> None:
-    if not np.all(np.isfinite(batch.notionals)):
-        raise DrcInputError("notional values must be finite")
-    if not np.all(np.isfinite(batch.maturity_years)):
-        raise DrcInputError("maturity_years values must be finite")
-    if np.any(batch.maturity_years < 0.0):
-        raise DrcInputError("maturity_years values must be non-negative")
-    for field_name, values in (
-        ("market_value", batch.market_values),
-        ("cumulative_pnl", batch.cumulative_pnls),
-        ("lgd_override", batch.lgd_overrides),
-    ):
-        mask = ~np.isnan(values)
-        if bool(np.any(mask & ~np.isfinite(values))):
-            raise DrcInputError(f"{field_name} values must be finite when present")
-    if bool(np.any(~batch.lineage_present)):
-        raise DrcInputError("lineage is required")
-    _raise_first_mismatch(
-        batch.lineage_source_systems,
-        "",
-        mismatch_when_equal=True,
-        message=lambda _index: "lineage.source_system must be non-empty",
-    )
-    _raise_first_mismatch(
-        batch.lineage_source_files,
-        "",
-        mismatch_when_equal=True,
-        message=lambda _index: "lineage.source_file must be non-empty",
-    )
-
-
-def _validate_nonsec_batch(batch: DrcPositionBatch, *, profile_id: str) -> None:
-    if np.any(batch.issuer_ids == None):  # noqa: E711
-        raise DrcInputError("issuer_id is required for non-securitisation DRC batch")
-    if np.any(batch.seniorities == None):  # noqa: E711
-        raise DrcInputError("seniority is required for non-securitisation DRC batch")
-    if np.any(batch.credit_qualities == None):  # noqa: E711
-        raise DrcInputError("credit_quality is required for non-securitisation DRC batch")
-    bucket_mask = np.isin(
-        batch.bucket_keys,
-        chargeable_non_securitisation_bucket_keys(profile_id=profile_id),
-    )
-    if not bool(np.all(bucket_mask)):
-        first = int(np.argmax(~bucket_mask))
-        ensure_chargeable_non_securitisation_bucket(
-            cast(str, batch.bucket_keys[first]),
-            position_id=cast(str, batch.position_ids[first]),
-            profile_id=profile_id,
-        )
-    for quality in sorted(set(cast(str, item) for item in batch.credit_qualities.tolist())):
-        first = int(np.argmax(batch.credit_qualities == quality))
-        ensure_chargeable_credit_quality(
-            quality,
-            position_id=cast(str, batch.position_ids[first]),
-            profile_id=profile_id,
-        )
-
-
-def _validate_securitisation_non_ctp_batch(batch: DrcPositionBatch) -> None:
-    if np.any(batch.tranche_ids == None):  # noqa: E711
-        raise DrcInputError("tranche_id is required for securitisation non-CTP DRC batch")
-    bucket_mask = np.isin(
-        batch.bucket_keys,
-        chargeable_securitisation_non_ctp_bucket_keys(),
-    )
-    if not bool(np.all(bucket_mask)):
-        first = int(np.argmax(~bucket_mask))
-        ensure_chargeable_securitisation_non_ctp_bucket(
-            cast(str, batch.bucket_keys[first]),
-            position_id=cast(str, batch.position_ids[first]),
-        )
-    _validate_market_value_default_exposure_batch(
-        batch,
-        risk_class_label="securitisation non-CTP",
-    )
-
-
-def _validate_ctp_batch(batch: DrcPositionBatch) -> None:
-    missing_identity = (
-        (batch.tranche_ids == None)  # noqa: E711
-        & (batch.index_series_ids == None)  # noqa: E711
-        & (batch.issuer_ids == None)  # noqa: E711
-    )
-    if bool(np.any(missing_identity)):
-        first = int(np.nonzero(missing_identity)[0][0])
-        raise DrcInputError(
-            "CTP positions require tranche_id, index_series_id, or issuer_id: "
-            f"{batch.position_ids[first]}"
-        )
-    _validate_market_value_default_exposure_batch(batch, risk_class_label="CTP")
-
-
-def _validate_market_value_default_exposure_batch(
-    batch: DrcPositionBatch,
-    *,
-    risk_class_label: str,
-) -> None:
-    missing_market_value = np.isnan(batch.market_values)
-    if bool(np.any(missing_market_value)):
-        first = int(np.nonzero(missing_market_value)[0][0])
-        raise DrcInputError(
-            f"{risk_class_label} position {batch.position_ids[first]} requires market_value"
-        )
-    if bool(np.any(~np.isnan(batch.lgd_overrides))):
-        raise DrcInputError(
-            f"{risk_class_label} gross JTD uses market value; lgd_override is not supported"
-        )
 
 
 def _gross_jtd_array(
@@ -927,16 +619,6 @@ def _ctp_capital_inputs_from_batch(
     return tuple(inputs)
 
 
-def _coerce_finite_non_negative_float(value: object, *, field_name: str) -> float:
-    try:
-        result = float(cast(Any, value))
-    except (ValueError, TypeError) as exc:
-        raise DrcInputError(f"{field_name} must be a valid finite number") from exc
-    if not math.isfinite(result) or result < 0.0:
-        raise DrcInputError(f"{field_name} must be finite and non-negative")
-    return result
-
-
 def _credit_quality_for_net_jtd(
     net_jtd: NetJtd,
     credit_quality_by_position: Mapping[str, CreditQuality],
@@ -966,81 +648,6 @@ def _zero_nonsec_category(profile_id: str) -> CategoryDrc:
             ),
         ),
     )
-
-
-def _collect_batch_citations(
-    batch: DrcPositionBatch,
-    *,
-    category: CategoryDrc,
-    net_jtds: tuple[NetJtd, ...],
-    formula_citations: tuple[str, ...],
-    profile_id: str,
-    fx_citations: tuple[str, ...] = (),
-) -> tuple[str, ...]:
-    citation_ids = {*formula_citations, *fx_citations}
-    if profile_id == US_NPR_2_0_PROFILE_ID:
-        citation_ids.add("US_NPR_210_SCOPE")
-    for group in batch.citation_ids:
-        citation_ids.update(group)
-    citation_ids.update(_branch_citations(category.branch_metadata))
-    for bucket in category.bucket_results:
-        citation_ids.update(bucket.citations)
-        citation_ids.update(bucket.hbr.citations)
-        citation_ids.update(_branch_citations(bucket.branch_metadata))
-        citation_ids.update(_branch_citations(bucket.hbr.branch_metadata))
-    for net_jtd in net_jtds:
-        citation_ids.update(_branch_citations(net_jtd.branch_metadata))
-        for rejected_offset in net_jtd.rejected_offsets:
-            citation_ids.update(rejected_offset.citations)
-    return tuple(sorted(citation_ids))
-
-
-def _batch_api_citations(profile_id: str, risk_class: DrcRiskClass) -> tuple[str, ...]:
-    if profile_id == EU_CRR3_PROFILE_ID and risk_class is DrcRiskClass.NON_SECURITISATION:
-        return (
-            "EU_CRR3_ARTICLE_325W",
-            "EU_CRR3_ARTICLE_325X",
-            "EU_CRR3_ARTICLE_325Y_1_2",
-            "EU_CRR3_ARTICLE_325Y_3_5",
-            "EU_CRR3_ARTICLE_325Y_6",
-            "EU_CRR3_ECAI_CQS_MAPPING",
-        )
-    if profile_id == BASEL_MAR22_PROFILE_ID and risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
-        return _BASEL_SEC_NON_CTP_BATCH_CITATIONS
-    if (
-        profile_id == BASEL_MAR22_PROFILE_ID
-        and risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
-    ):
-        return _BASEL_CTP_BATCH_CITATIONS
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return ()
-    if profile_id == EU_CRR3_PROFILE_ID:
-        return ()
-    return ("US_NPR_210_SCOPE",)
-
-
-def _nonsec_formula_citations(profile_id: str) -> tuple[str, ...]:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_FORMULA_CITATIONS
-    if profile_id == EU_CRR3_PROFILE_ID:
-        return _EU_CRR3_FORMULA_CITATIONS
-    return _US_NPR_FORMULA_CITATIONS
-
-
-def _nonsec_netting_citation(profile_id: str) -> str:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_NETTING_CITATION
-    if profile_id == EU_CRR3_PROFILE_ID:
-        return _EU_CRR3_NETTING_CITATION
-    return _US_NPR_NETTING_CITATION
-
-
-def _zero_nonsec_category_citation(profile_id: str) -> str:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_ZERO_CATEGORY_CITATION
-    if profile_id == EU_CRR3_PROFILE_ID:
-        return _EU_CRR3_ZERO_CATEGORY_CITATION
-    return _US_NPR_ZERO_CATEGORY_CITATION
 
 
 def _batch_risk_weights_by_position(
@@ -1074,164 +681,6 @@ def _batch_risk_weights_by_position(
             )
         )
     return {}
-
-
-def _batch_fair_value_cap_citations(
-    batch: DrcPositionBatch,
-    *,
-    context: DrcCalculationContext,
-) -> tuple[str, ...]:
-    citation_ids: set[str] = set()
-    for position_id in batch.position_ids:
-        evidence = context.securitisation_non_ctp_fair_value_cap_evidence.get(
-            cast(str, position_id)
-        )
-        if evidence is not None:
-            citation_ids.update(_sec_non_ctp_fair_value_cap_citations(context.profile_id))
-            citation_ids.update(evidence.citation_ids)
-    return tuple(sorted(citation_ids))
-
-
-def _fair_value_cap_branch_metadata_for_batch(
-    batch: DrcPositionBatch,
-    *,
-    context: DrcCalculationContext,
-    risk_class: DrcRiskClass,
-) -> tuple[BranchMetadata, ...]:
-    if risk_class is not DrcRiskClass.SECURITISATION_NON_CTP:
-        return ()
-    gross_jtd = _market_value_gross_jtd_array(batch)
-    branches: list[BranchMetadata] = []
-    evidence = context.securitisation_non_ctp_fair_value_cap_evidence
-    if not evidence:
-        return (
-            BranchMetadata(
-                branch_id="drc-securitisation-non-ctp-batch-no-fair-value-cap",
-                branch_type=BranchType.NORMAL,
-                source_id=context.profile_id,
-                selected=True,
-                reason=(
-                    "batch securitisation non-CTP gross default exposure used market value; "
-                    "no fair-value cap evidence was supplied"
-                ),
-                citations=_sec_non_ctp_gross_citations(context.profile_id),
-            ),
-        )
-    for index in _sorted_indices(batch):
-        position_id = cast(str, batch.position_ids[index])
-        record = evidence.get(position_id)
-        if record is None:
-            branches.append(
-                BranchMetadata(
-                    branch_id=f"batch-sec-non-ctp-no-fair-value-cap-{_slug(position_id)}",
-                    branch_type=BranchType.NORMAL,
-                    source_id=position_id,
-                    selected=True,
-                    reason=(
-                        "batch securitisation non-CTP position used market value; "
-                        "no fair-value cap evidence was supplied"
-                    ),
-                    citations=_sec_non_ctp_gross_citations(context.profile_id),
-                )
-            )
-            continue
-        citations = tuple(
-            sorted(
-                {
-                    *_sec_non_ctp_fair_value_cap_citations(context.profile_id),
-                    *record.citation_ids,
-                }
-            )
-        )
-        if not record.eligible:
-            branch_type = BranchType.NORMAL
-            reason = (
-                "batch fair-value cap evidence marked the position ineligible; "
-                f"reason: {record.eligibility_reason}"
-            )
-        elif record.fair_value_cap_amount is not None and record.fair_value_cap_amount < float(
-            gross_jtd[index]
-        ):
-            branch_type = BranchType.CAP
-            reason = (
-                "batch fair-value cap applied to securitisation non-CTP gross default "
-                f"exposure: market_value={float(gross_jtd[index])}, "
-                f"cap_amount={record.fair_value_cap_amount}"
-            )
-        else:
-            branch_type = BranchType.NORMAL
-            reason = (
-                "batch fair-value cap evidence was eligible but not binding: "
-                f"market_value={float(gross_jtd[index])}, "
-                f"cap_amount={record.fair_value_cap_amount}"
-            )
-        branches.append(
-            BranchMetadata(
-                branch_id=f"batch-sec-non-ctp-fair-value-cap-{_slug(position_id)}",
-                branch_type=branch_type,
-                source_id=record.source_id,
-                selected=True,
-                reason=reason,
-                citations=citations,
-            )
-        )
-    return tuple(branches)
-
-
-def _sec_non_ctp_gross_citations(profile_id: str) -> tuple[str, ...]:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_SEC_NON_CTP_GROSS_CITATIONS
-    return _SEC_NON_CTP_GROSS_CITATIONS
-
-
-def _sec_non_ctp_fair_value_cap_citations(profile_id: str) -> tuple[str, ...]:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS
-    return _SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS
-
-
-def _sec_non_ctp_netting_citations(profile_id: str) -> tuple[str, ...]:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_SEC_NON_CTP_NETTING_CITATIONS
-    return _SEC_NON_CTP_NETTING_CITATIONS
-
-
-def _sec_non_ctp_batch_citations(profile_id: str) -> tuple[str, ...]:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_SEC_NON_CTP_BATCH_CITATIONS
-    return _SEC_NON_CTP_BATCH_CITATIONS
-
-
-def _ctp_netting_citations(profile_id: str) -> tuple[str, ...]:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_CTP_NETTING_CITATIONS
-    return _CTP_NETTING_CITATIONS
-
-
-def _ctp_batch_citations(profile_id: str) -> tuple[str, ...]:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_CTP_BATCH_CITATIONS
-    return _CTP_BATCH_CITATIONS
-
-
-def _branch_citations(branches: tuple[BranchMetadata, ...]) -> set[str]:
-    citation_ids: set[str] = set()
-    for branch in branches:
-        citation_ids.update(branch.citations)
-    return citation_ids
-
-
-def _raise_first_mismatch(
-    values: ObjectArray,
-    expected: str,
-    *,
-    mismatch_when_equal: bool = False,
-    message: Callable[[int], str],
-) -> None:
-    mismatch = values == expected if mismatch_when_equal else values != expected
-    if bool(np.any(mismatch)):
-        index = int(np.nonzero(mismatch)[0][0])
-        raise DrcInputError(message(index))
 
 
 def _sorted_indices(batch: DrcPositionBatch) -> tuple[int, ...]:
