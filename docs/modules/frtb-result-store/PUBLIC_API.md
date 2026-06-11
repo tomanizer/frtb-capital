@@ -77,3 +77,7 @@ Attribution projection helpers and endpoints are storage-only:
 `CapitalAttributionRecord`, including `contribution`, `residual`, `method`,
 `source_id`, `source_level`, `target_id`, and `unsupported_reason`. They do not
 implement capital or attribution formulae.
+
+Internal capital-tree mart row assembly lives in
+`frtb_result_store.mart_capital_tree_rows`; `frtb_result_store.marts` remains
+the public reporting-mart facade and compatibility import path.
