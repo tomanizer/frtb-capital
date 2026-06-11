@@ -140,6 +140,20 @@ def test_hash_assembly_compatibility_exports() -> None:
     assert frtb_drc.input_hash_for_drc_batch is hashes.input_hash_for_drc_batch
 
 
+def test_net_jtd_kernel_stage_exports() -> None:
+    import frtb_drc.kernel.net_jtd as net_jtd
+
+    names = (
+        "calculate_nonsec_net_jtds_from_arrays",
+        "calculate_securitisation_non_ctp_net_jtds_from_arrays",
+        "calculate_ctp_net_jtds_from_arrays",
+    )
+
+    assert set(net_jtd.__all__) == set(names)
+    for name in names:
+        assert callable(getattr(net_jtd, name))
+
+
 def _public_api_doc() -> str:
     root = Path(__file__).resolve().parents[3]
     return (root / "docs/modules/frtb-drc/PUBLIC_API.md").read_text()

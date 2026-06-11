@@ -38,6 +38,9 @@ import path.
 Batch and context hash assembly physically lives in `frtb_drc.assembly.hashes`;
 `frtb_drc.batch` remains the compatibility import path for
 `input_hash_for_drc_batch`.
+Batch net-JTD array kernels physically live in `frtb_drc.kernel.net_jtd`;
+`frtb_drc.batch.calculate_drc_capital_from_batch` remains the public batch
+capital entrypoint.
 
 ## Client integration
 
