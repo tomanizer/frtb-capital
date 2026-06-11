@@ -54,13 +54,10 @@ def rrao_position_column_kwargs(
         Keyword arguments for ``build_rrao_batch_from_columns``.
     """
 
-    columns: dict[str, list[object]] = {
-        spec.argument_name: [] for spec in RRAO_BATCH_POSITION_COLUMN_SPECS
+    return {
+        spec.argument_name: [spec.position_value(position) for position in positions]
+        for spec in RRAO_BATCH_POSITION_COLUMN_SPECS
     }
-    for position in positions:
-        for spec in RRAO_BATCH_POSITION_COLUMN_SPECS:
-            columns[spec.argument_name].append(spec.position_value(position))
-    return columns
 
 
 def _lineage_source_system(position: RraoPosition) -> str:
@@ -316,11 +313,13 @@ RRAO_BATCH_POSITION_COLUMN_SPECS: tuple[RraoBatchPositionColumnSpec, ...] = (
 
 
 def _arrow_column_to_argument() -> Mapping[str, str]:
-    mapping: dict[str, str] = {}
-    for spec in RRAO_BATCH_POSITION_COLUMN_SPECS:
-        if spec.arrow_column_name is not None:
-            mapping[spec.arrow_column_name] = spec.argument_name
-    return MappingProxyType(mapping)
+    return MappingProxyType(
+        {
+            spec.arrow_column_name: spec.argument_name
+            for spec in RRAO_BATCH_POSITION_COLUMN_SPECS
+            if spec.arrow_column_name is not None
+        }
+    )
 
 
 RRAO_BATCH_SPEC = RraoBatchSpec(
