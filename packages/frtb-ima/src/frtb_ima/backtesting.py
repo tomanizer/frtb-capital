@@ -39,6 +39,11 @@ from frtb_ima._array_utils import finite_1d_float_array as _as_finite_1d_array
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import DEFAULT_BACKTESTING_EXCEPTION_LIMITS, RegulatoryPolicy
+from frtb_ima.validation.backtesting_stages import (
+    _exception_flags_regulatory,
+    _exception_reason,
+    _zone,
+)
 from frtb_ima.validation.observation_windows import (
     require_positive_observation_count as _require_positive_observation_count,
 )
@@ -52,9 +57,6 @@ from frtb_ima.validation.observation_windows import (
     validate_observation_dates as _validate_observation_dates,
 )
 
-# Basel MAR32/MAR99 backtesting traffic-light thresholds over 250 observations.
-GREEN_MAX = 4
-AMBER_MAX = 9
 FloatVector = Sequence[float] | npt.NDArray[np.float64]
 BoolVector = Sequence[bool] | npt.NDArray[np.bool_]
 logger = logging.getLogger(__name__)
@@ -331,14 +333,6 @@ def _float_or_none(value: float) -> float | None:
     return None
 
 
-def _zone(count: int) -> str:
-    if count <= GREEN_MAX:
-        return "GREEN"
-    elif count <= AMBER_MAX:
-        return "AMBER"
-    return "RED"
-
-
 def count_exceptions(
     pnl: FloatVector,
     var_estimates: FloatVector,
@@ -382,58 +376,6 @@ def count_exceptions(
         raise ValueError("var_estimates must contain only positive values")
 
     return int(np.sum(-pnl_arr > var_arr))
-
-
-def _count_exceptions_regulatory(
-    pnl: npt.NDArray[np.float64],
-    var_estimates: npt.NDArray[np.float64],
-    official_holiday_mask: npt.NDArray[np.bool_] | None,
-) -> int:
-    """
-    Count exceptions with NPR missing-data treatment.
-
-    Missing P&L or VaR values count as exceptions unless the missing value is
-    related to an official holiday. This function assumes inputs have already
-    been windowed and length-aligned.
-    """
-    return int(np.sum(_exception_flags_regulatory(pnl, var_estimates, official_holiday_mask)))
-
-
-def _exception_flags_regulatory(
-    pnl: npt.NDArray[np.float64],
-    var_estimates: npt.NDArray[np.float64],
-    official_holiday_mask: npt.NDArray[np.bool_] | None,
-) -> npt.NDArray[np.bool_]:
-    finite_pnl = np.isfinite(pnl)
-    finite_var = np.isfinite(var_estimates)
-    missing = ~(finite_pnl & finite_var)
-    loss_exceeds_var = finite_pnl & finite_var & (-pnl > var_estimates)
-
-    exceptions = missing | loss_exceeds_var
-    if official_holiday_mask is not None:
-        exceptions = exceptions & ~official_holiday_mask
-    return exceptions.astype(np.bool_, copy=False)
-
-
-def _exception_reason(
-    pnl_value: float,
-    var_value: float,
-    official_holiday: bool,
-    is_exception: bool,
-) -> str:
-    if official_holiday:
-        return "official_holiday"
-    finite_pnl = bool(np.isfinite(pnl_value))
-    finite_var = bool(np.isfinite(var_value))
-    if not finite_pnl and not finite_var:
-        return "missing_pnl_and_var"
-    if not finite_pnl:
-        return "missing_pnl"
-    if not finite_var:
-        return "missing_var"
-    if is_exception:
-        return "loss_exceeds_var"
-    return "none"
 
 
 def backtest(

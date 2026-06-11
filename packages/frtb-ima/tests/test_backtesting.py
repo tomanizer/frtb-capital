@@ -3,6 +3,7 @@
 import math
 from datetime import date, timedelta
 
+import numpy as np
 import pytest
 
 from frtb_ima.backtesting import (
@@ -14,6 +15,12 @@ from frtb_ima.backtesting import (
 )
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.regimes import get_policy
+from frtb_ima.validation.backtesting_stages import (
+    _count_exceptions_regulatory,
+    _exception_flags_regulatory,
+    _exception_reason,
+    _zone,
+)
 
 
 def _business_dates(
@@ -96,6 +103,25 @@ def test_backtest_exception_zones() -> None:
     assert result.hpl_exceptions == 3
     assert result.apl_zone == "AMBER"
     assert result.hpl_zone == "GREEN"
+
+
+def test_backtesting_exception_stage_classifies_missing_and_holiday_values() -> None:
+    pnl = np.array([math.nan, -200.0, math.nan, 100.0])
+    var = np.array([100.0, 100.0, math.nan, 100.0])
+    holidays = np.array([False, False, True, False])
+
+    flags = _exception_flags_regulatory(pnl, var, holidays)
+
+    assert flags.tolist() == [True, True, False, False]
+    assert _count_exceptions_regulatory(pnl, var, holidays) == 2
+    assert _exception_reason(math.nan, 100.0, False, True) == "missing_pnl"
+    assert _exception_reason(math.nan, math.nan, False, True) == "missing_pnl_and_var"
+    assert _exception_reason(100.0, 100.0, True, False) == "official_holiday"
+    assert _exception_reason(-200.0, 100.0, False, True) == "loss_exceeds_var"
+    assert _exception_reason(100.0, 100.0, False, False) == "none"
+    assert _zone(4) == "GREEN"
+    assert _zone(9) == "AMBER"
+    assert _zone(10) == "RED"
 
 
 def test_backtest_red_zone() -> None:

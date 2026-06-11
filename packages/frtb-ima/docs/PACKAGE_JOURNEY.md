@@ -74,7 +74,8 @@ and lineage-heavy.
    `frtb_ima.validation.rfet_qualitative`, and
    `frtb_ima.validation.rfet_quantitative`, with columnar setup under
    `frtb_ima.validation.rfet_batch` and RFET result assembly under
-   `frtb_ima.assembly.rfet`.
+   `frtb_ima.assembly.rfet`. Backtesting exception classification lives under
+   `frtb_ima.validation.backtesting_stages`.
 5. The result records audit evidence, input hashes, policy metadata, and desk
    eligibility.
 6. `frtb-orchestration` consumes only the final IMA result or summary signal for
