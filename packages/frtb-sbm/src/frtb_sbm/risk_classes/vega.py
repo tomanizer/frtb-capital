@@ -9,9 +9,6 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-import numpy as np
-import numpy.typing as npt
-
 from frtb_sbm._batch_lookup import (
     batch_optional_text_by_id as _batch_optional_text_by_id,
 )
@@ -27,34 +24,8 @@ from frtb_sbm.aggregation import (
     select_max_correlation_scenario,
 )
 from frtb_sbm.batch import SbmSensitivityBatch
-from frtb_sbm.commodity_reference_data import (
-    commodity_bucket_definition,
-    commodity_delta_intra_bucket_correlation,
-)
-from frtb_sbm.csr_nonsec_reference_data import (
-    CSR_DIFFERENT_CURVE_CORRELATION,
-    CSR_INDEX_NAME_CORRELATION,
-    CSR_NAME_CORRELATION,
-    CSR_OTHER_SECTOR_BUCKET,
-    CSR_SAME_CURVE_CORRELATION,
-    csr_nonsec_bucket_definition,
-    csr_nonsec_delta_intra_bucket_correlation,
-)
-from frtb_sbm.csr_sec_ctp_reference_data import (
-    CSR_CTP_DIFFERENT_BASIS_CORRELATION,
-    CSR_CTP_SAME_BASIS_CORRELATION,
-    csr_sec_ctp_bucket_definition,
-    csr_sec_ctp_delta_intra_bucket_correlation,
-)
-from frtb_sbm.csr_sec_nonctp_reference_data import (
-    CSR_SEC_DIFFERENT_BASIS_CORRELATION,
-    CSR_SEC_OTHER_SECTOR_BUCKET,
-    CSR_SEC_SAME_BASIS_CORRELATION,
-    CSR_SEC_TRANCHE_DIFFERENT_CORRELATION,
-    CSR_SEC_TRANCHE_SAME_CORRELATION,
-    csr_sec_nonctp_bucket_definition,
-    csr_sec_nonctp_delta_intra_bucket_correlation,
-)
+from frtb_sbm.csr_nonsec_reference_data import CSR_OTHER_SECTOR_BUCKET
+from frtb_sbm.csr_sec_nonctp_reference_data import CSR_SEC_OTHER_SECTOR_BUCKET
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
@@ -67,25 +38,21 @@ from frtb_sbm.data_models import (
     SbmSensitivity,
     WeightedSensitivity,
 )
-from frtb_sbm.equity_reference_data import (
-    EQUITY_OTHER_SECTOR_BUCKET,
-    EQUITY_SPOT_RISK_FACTOR,
-    equity_delta_intra_bucket_correlation,
-)
-from frtb_sbm.reference_data import (
-    FX_INTRA_BUCKET_CORRELATION,
-    GIRR_VEGA_INTRA_BUCKET_CONSTANT,
-    fx_delta_intra_bucket_correlation,
-    girr_vega_option_tenor_definition,
-    vega_option_tenor_correlation,
-)
-from frtb_sbm.risk_classes.commodity import build_commodity_inter_bucket_correlation_map
-from frtb_sbm.risk_classes.csr_nonsec import build_csr_nonsec_inter_bucket_correlation_map
+from frtb_sbm.equity_reference_data import EQUITY_OTHER_SECTOR_BUCKET
 from frtb_sbm.risk_classes.csr_sec_nonctp import (
     build_csr_sec_nonctp_inter_bucket_correlation_map,
 )
-from frtb_sbm.risk_classes.equity import build_equity_inter_bucket_correlation_map
-from frtb_sbm.risk_classes.fx import build_fx_inter_bucket_correlation_map
+from frtb_sbm.risk_classes.vega_correlation_common import (
+    _MAR21_VEGA_INTER_CITATION,
+    _MAR21_VEGA_INTRA_CITATION,
+    _uses_absolute_weight_intra_bucket,
+)
+from frtb_sbm.risk_classes.vega_correlations import (
+    build_non_girr_vega_inter_bucket_correlation_map,
+    build_non_girr_vega_intra_bucket_correlation_matrix,
+    non_girr_vega_intra_bucket_correlation,
+)
+from frtb_sbm.risk_classes.vega_errors import UnsupportedNonGirrVegaPathError
 from frtb_sbm.risk_classes.vega_weighting import (
     weight_non_girr_vega_sensitivities,
     weight_non_girr_vega_sensitivity_batch,
@@ -103,14 +70,10 @@ _NON_GIRR_VEGA_RISK_CLASSES = frozenset(
     }
 )
 
-_MAR21_VEGA_INTRA_CITATION = ("basel_mar21_4_intra_bucket", "basel_mar21_94")
-_MAR21_VEGA_INTER_CITATION = ("basel_mar21_4_inter_bucket", "basel_mar21_95")
 _MAR21_SCENARIO_CITATION = (
     "basel_mar21_6_correlation_scenarios",
     "basel_mar21_7_scenario_selection",
 )
-_VEGA_NEUTRAL_TENOR = "1y"
-_VEGA_NEUTRAL_LOCATION = "__VEGA_NO_DELIVERY_LOCATION__"
 
 
 def calculate_non_girr_vega_risk_class_capital(
@@ -279,264 +242,6 @@ def aggregate_non_girr_vega_measure_capital(
     )
 
 
-def build_non_girr_vega_intra_bucket_correlation_matrix(
-    ordered: Sequence[WeightedSensitivity],
-    *,
-    profile_id: str,
-    risk_class: SbmRiskClass,
-    bucket_id: str,
-    risk_factor_by_id: Mapping[str, str],
-    qualifier_by_id: Mapping[str, str],
-    option_tenor_by_id: Mapping[str, str],
-) -> npt.NDArray[np.float64]:
-    """Return MAR21.94 non-GIRR vega intra-bucket correlations.
-    Parameters
-    ----------
-    ordered, profile_id, risk_class, bucket_id, risk_factor_by_id, qualifier_by_id,
-    option_tenor_by_id :
-        See function signature for types and defaults.
-
-    Returns
-    -------
-    npt.NDArray[np.float64]
-    """
-
-    size = len(ordered)
-    if size == 0:
-        return np.zeros((0, 0), dtype=np.float64)
-    if _uses_absolute_weight_intra_bucket(risk_class, bucket_id):
-        return np.eye(size, dtype=np.float64)
-    return _build_vectorized_non_girr_vega_intra_bucket_correlation_matrix(
-        ordered,
-        profile_id=profile_id,
-        risk_class=risk_class,
-        bucket_id=bucket_id,
-        risk_factor_by_id=risk_factor_by_id,
-        qualifier_by_id=qualifier_by_id,
-        option_tenor_by_id=option_tenor_by_id,
-    )
-
-
-def _build_vectorized_non_girr_vega_intra_bucket_correlation_matrix(
-    ordered: Sequence[WeightedSensitivity],
-    *,
-    profile_id: str,
-    risk_class: SbmRiskClass,
-    bucket_id: str,
-    risk_factor_by_id: Mapping[str, str],
-    qualifier_by_id: Mapping[str, str],
-    option_tenor_by_id: Mapping[str, str],
-) -> npt.NDArray[np.float64]:
-    ids = tuple(item.sensitivity_id for item in ordered)
-    risk_factors = np.array(
-        [_lookup_axis(risk_factor_by_id, sensitivity_id, "risk_factor") for sensitivity_id in ids],
-        dtype=object,
-    )
-    qualifiers = np.array(
-        [qualifier_by_id.get(sensitivity_id, "") for sensitivity_id in ids],
-        dtype=object,
-    )
-    option_tenors = tuple(
-        _lookup_axis(option_tenor_by_id, sensitivity_id, "option_tenor") for sensitivity_id in ids
-    )
-    option_matrix = _vega_option_tenor_correlation_matrix(
-        profile_id,
-        option_tenors=option_tenors,
-    )
-    delta_matrix = _non_girr_vega_delta_correlation_matrix(
-        profile_id,
-        risk_class=risk_class,
-        bucket_id=bucket_id,
-        risk_factors=risk_factors,
-        qualifiers=qualifiers,
-    )
-    matrix = np.minimum(1.0, delta_matrix * option_matrix)
-    np.fill_diagonal(matrix, 1.0)
-    return matrix
-
-
-def _vega_option_tenor_correlation_matrix(
-    profile_id: str,
-    *,
-    option_tenors: Sequence[str],
-) -> npt.NDArray[np.float64]:
-    maturities_by_tenor = {
-        tenor: girr_vega_option_tenor_definition(profile_id, tenor).maturity_years
-        for tenor in set(option_tenors)
-    }
-    maturities = np.array([maturities_by_tenor[tenor] for tenor in option_tenors], dtype=np.float64)
-    minimum = np.minimum.outer(maturities, maturities)
-    difference = np.abs(maturities[:, None] - maturities[None, :])
-    with np.errstate(divide="ignore", invalid="ignore"):
-        exponent = -GIRR_VEGA_INTRA_BUCKET_CONSTANT * difference / minimum
-    matrix = np.exp(exponent)
-    matrix[minimum <= 0.0] = 1.0
-    np.fill_diagonal(matrix, 1.0)
-    return matrix
-
-
-def _non_girr_vega_delta_correlation_matrix(
-    profile_id: str,
-    *,
-    risk_class: SbmRiskClass,
-    bucket_id: str,
-    risk_factors: npt.NDArray[np.object_],
-    qualifiers: npt.NDArray[np.object_],
-) -> npt.NDArray[np.float64]:
-    size = len(risk_factors)
-    if risk_class is SbmRiskClass.FX:
-        fx_delta_intra_bucket_correlation(profile_id, bucket1=bucket_id, bucket2=bucket_id)
-        return np.full((size, size), FX_INTRA_BUCKET_CORRELATION, dtype=np.float64)
-    if risk_class is SbmRiskClass.EQUITY:
-        same_issuer = qualifiers[:, None] == qualifiers[None, :]
-        different_issuer, _ = equity_delta_intra_bucket_correlation(
-            profile_id,
-            bucket_id=bucket_id,
-            risk_factor_a=EQUITY_SPOT_RISK_FACTOR,
-            risk_factor_b=EQUITY_SPOT_RISK_FACTOR,
-            issuer_a="__A__",
-            issuer_b="__B__",
-        )
-        return np.where(same_issuer, 1.0, different_issuer).astype(np.float64)
-    if risk_class is SbmRiskClass.COMMODITY:
-        commodity_bucket = commodity_bucket_definition(profile_id, bucket_id)
-        same_commodity = risk_factors[:, None] == risk_factors[None, :]
-        return np.where(same_commodity, 1.0, commodity_bucket.commodity_correlation).astype(
-            np.float64
-        )
-    if risk_class is SbmRiskClass.CSR_NONSEC:
-        csr_bucket = csr_nonsec_bucket_definition(profile_id, bucket_id)
-        name_rho = (
-            CSR_INDEX_NAME_CORRELATION if csr_bucket.is_index_bucket else CSR_NAME_CORRELATION
-        )
-        same_issuer = qualifiers[:, None] == qualifiers[None, :]
-        same_basis = risk_factors[:, None] == risk_factors[None, :]
-        return (
-            np.where(same_issuer, 1.0, name_rho)
-            * np.where(same_basis, CSR_SAME_CURVE_CORRELATION, CSR_DIFFERENT_CURVE_CORRELATION)
-        ).astype(np.float64)
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        csr_sec_nonctp_bucket_definition(profile_id, bucket_id)
-        same_tranche = qualifiers[:, None] == qualifiers[None, :]
-        same_basis = risk_factors[:, None] == risk_factors[None, :]
-        return (
-            np.where(
-                same_tranche,
-                CSR_SEC_TRANCHE_SAME_CORRELATION,
-                CSR_SEC_TRANCHE_DIFFERENT_CORRELATION,
-            )
-            * np.where(
-                same_basis,
-                CSR_SEC_SAME_BASIS_CORRELATION,
-                CSR_SEC_DIFFERENT_BASIS_CORRELATION,
-            )
-        ).astype(np.float64)
-    if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        csr_sec_ctp_bucket_definition(profile_id, bucket_id)
-        same_name = qualifiers[:, None] == qualifiers[None, :]
-        same_basis = risk_factors[:, None] == risk_factors[None, :]
-        return (
-            np.where(same_name, 1.0, CSR_NAME_CORRELATION)
-            * np.where(
-                same_basis,
-                CSR_CTP_SAME_BASIS_CORRELATION,
-                CSR_CTP_DIFFERENT_BASIS_CORRELATION,
-            )
-        ).astype(np.float64)
-    raise UnsupportedNonGirrVegaPathError(
-        f"non-GIRR vega intra-bucket correlations do not support {risk_class.value}"
-    )
-
-
-def non_girr_vega_intra_bucket_correlation(
-    profile_id: str,
-    *,
-    risk_class: SbmRiskClass,
-    bucket_id: str,
-    risk_factor_a: str,
-    risk_factor_b: str,
-    qualifier_a: str = "",
-    qualifier_b: str = "",
-    option_tenor_a: str,
-    option_tenor_b: str,
-) -> tuple[float, tuple[str, ...]]:
-    """Return min(1, corresponding delta rho * option-tenor rho) per MAR21.94.
-    Parameters
-    ----------
-    profile_id, risk_class, bucket_id, risk_factor_a, risk_factor_b, qualifier_a, qualifier_b,
-    option_tenor_a, option_tenor_b :
-        See function signature for types and defaults.
-
-    Returns
-    -------
-    tuple[float, tuple[str, ...]]
-    """
-
-    delta_correlation, delta_citations = _corresponding_delta_correlation(
-        profile_id,
-        risk_class=risk_class,
-        bucket_id=bucket_id,
-        risk_factor_a=risk_factor_a,
-        risk_factor_b=risk_factor_b,
-        qualifier_a=qualifier_a,
-        qualifier_b=qualifier_b,
-    )
-    option_correlation, option_citations = vega_option_tenor_correlation(
-        profile_id,
-        option_tenor1=option_tenor_a,
-        option_tenor2=option_tenor_b,
-    )
-    return (
-        min(1.0, delta_correlation * option_correlation),
-        _merge_citation_ids(_MAR21_VEGA_INTRA_CITATION, delta_citations, option_citations),
-    )
-
-
-def build_non_girr_vega_inter_bucket_correlation_map(
-    risk_class: SbmRiskClass,
-    bucket_ids: Sequence[str],
-    *,
-    profile_id: str,
-) -> dict[tuple[str, str], float]:
-    """Return MAR21.95 vega inter-bucket correlations from delta gamma tables.
-    Parameters
-    ----------
-    risk_class : SbmRiskClass
-        See signature.
-    bucket_ids : Sequence[str]
-        See signature.
-    profile_id : str
-        See signature.
-
-    Returns
-    -------
-    dict[tuple[str, str], float]
-    """
-
-    if risk_class is SbmRiskClass.FX:
-        return build_fx_inter_bucket_correlation_map(bucket_ids, profile_id=profile_id)
-    if risk_class is SbmRiskClass.EQUITY:
-        return build_equity_inter_bucket_correlation_map(bucket_ids, profile_id=profile_id)
-    if risk_class is SbmRiskClass.COMMODITY:
-        return build_commodity_inter_bucket_correlation_map(bucket_ids, profile_id=profile_id)
-    if risk_class is SbmRiskClass.CSR_NONSEC:
-        return build_csr_nonsec_inter_bucket_correlation_map(bucket_ids, profile_id=profile_id)
-    if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        return build_csr_nonsec_inter_bucket_correlation_map(bucket_ids, profile_id=profile_id)
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        return build_csr_sec_nonctp_inter_bucket_correlation_map(
-            bucket_ids,
-            profile_id=profile_id,
-        )
-    raise UnsupportedNonGirrVegaPathError(
-        f"non-GIRR vega inter-bucket correlations do not support {risk_class.value}"
-    )
-
-
-class UnsupportedNonGirrVegaPathError(SbmInputError):
-    """Raised for inconsistent non-GIRR vega path requests."""
-
-
 def _aggregate_csr_sec_nonctp_vega_measure_capital(
     weighted: tuple[WeightedSensitivity, ...],
     *,
@@ -681,90 +386,6 @@ def _aggregate_csr_sec_nonctp_vega_measure_capital(
     )
 
 
-def _corresponding_delta_correlation(
-    profile_id: str,
-    *,
-    risk_class: SbmRiskClass,
-    bucket_id: str,
-    risk_factor_a: str,
-    risk_factor_b: str,
-    qualifier_a: str,
-    qualifier_b: str,
-) -> tuple[float, tuple[str, ...]]:
-    if risk_class is SbmRiskClass.FX:
-        return fx_delta_intra_bucket_correlation(
-            profile_id,
-            bucket1=bucket_id,
-            bucket2=bucket_id,
-        )
-    if risk_class is SbmRiskClass.EQUITY:
-        return equity_delta_intra_bucket_correlation(
-            profile_id,
-            bucket_id=bucket_id,
-            risk_factor_a=EQUITY_SPOT_RISK_FACTOR,
-            risk_factor_b=EQUITY_SPOT_RISK_FACTOR,
-            issuer_a=qualifier_a,
-            issuer_b=qualifier_b,
-        )
-    if risk_class is SbmRiskClass.COMMODITY:
-        return commodity_delta_intra_bucket_correlation(
-            profile_id,
-            bucket_id=bucket_id,
-            commodity_a=risk_factor_a,
-            commodity_b=risk_factor_b,
-            tenor_a=_VEGA_NEUTRAL_TENOR,
-            tenor_b=_VEGA_NEUTRAL_TENOR,
-            location_a=_VEGA_NEUTRAL_LOCATION,
-            location_b=_VEGA_NEUTRAL_LOCATION,
-        )
-    if risk_class is SbmRiskClass.CSR_NONSEC:
-        return csr_nonsec_delta_intra_bucket_correlation(
-            profile_id,
-            bucket_id=bucket_id,
-            risk_factor_a=risk_factor_a,
-            risk_factor_b=risk_factor_b,
-            issuer_a=qualifier_a,
-            issuer_b=qualifier_b,
-            tenor_a=_VEGA_NEUTRAL_TENOR,
-            tenor_b=_VEGA_NEUTRAL_TENOR,
-        )
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        return csr_sec_nonctp_delta_intra_bucket_correlation(
-            profile_id,
-            bucket_id=bucket_id,
-            tranche_a=qualifier_a,
-            tranche_b=qualifier_b,
-            tenor_a=_VEGA_NEUTRAL_TENOR,
-            tenor_b=_VEGA_NEUTRAL_TENOR,
-            risk_factor_a=risk_factor_a,
-            risk_factor_b=risk_factor_b,
-        )
-    if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        return csr_sec_ctp_delta_intra_bucket_correlation(
-            profile_id,
-            bucket_id=bucket_id,
-            name_a=qualifier_a,
-            name_b=qualifier_b,
-            tenor_a=_VEGA_NEUTRAL_TENOR,
-            tenor_b=_VEGA_NEUTRAL_TENOR,
-            risk_factor_a=risk_factor_a,
-            risk_factor_b=risk_factor_b,
-        )
-    raise UnsupportedNonGirrVegaPathError(
-        f"non-GIRR vega intra-bucket correlations do not support {risk_class.value}"
-    )
-
-
-def _uses_absolute_weight_intra_bucket(risk_class: SbmRiskClass, bucket_id: str) -> bool:
-    if risk_class is SbmRiskClass.EQUITY:
-        return bucket_id == EQUITY_OTHER_SECTOR_BUCKET
-    if risk_class is SbmRiskClass.CSR_NONSEC:
-        return bucket_id == CSR_OTHER_SECTOR_BUCKET
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        return bucket_id == CSR_SEC_OTHER_SECTOR_BUCKET
-    return False
-
-
 def _absolute_weight_citations(risk_class: SbmRiskClass, bucket_id: str) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.EQUITY and bucket_id == EQUITY_OTHER_SECTOR_BUCKET:
         return ("basel_mar21_79",)
@@ -829,18 +450,6 @@ def _optional_text_by_id(sensitivities: Sequence[SbmSensitivity], field: str) ->
             sensitivity.sensitivity_id,
         )
     return values
-
-
-def _lookup_axis(values: Mapping[str, str], sensitivity_id: str, field: str) -> str:
-    try:
-        value = values[sensitivity_id]
-    except KeyError as exc:
-        raise SbmInputError(
-            f"missing non-GIRR vega {field} for weighted sensitivity",
-            field=field,
-            sensitivity_id=sensitivity_id,
-        ) from exc
-    return _require_text(value, field, sensitivity_id)
 
 
 __all__ = [

@@ -43,7 +43,10 @@ GIRR delta and vega risk-class kernels physically live under
 `frtb_sbm.risk_classes.girr`; `frtb_sbm.capital` remains the public dispatcher
 for row and batch capital runs. GIRR weighting formulas physically live under
 `frtb_sbm.risk_classes.girr_weighting`; non-GIRR vega weighting lives under
-`frtb_sbm.risk_classes.vega_weighting`; FX, equity, and commodity delta
+`frtb_sbm.risk_classes.vega_weighting`; non-GIRR vega correlation helpers
+physically live under `frtb_sbm.risk_classes.vega_correlations`;
+`frtb_sbm.risk_classes.vega` remains the public compatibility path for
+vega capital and correlation callers. FX, equity, and commodity delta
 weighting live under their matching `frtb_sbm.risk_classes.*_weighting`
 modules; shared weighting sort and batch-axis helpers live under
 `frtb_sbm.kernel.weighting`; `frtb_sbm.weighted_sensitivity`
