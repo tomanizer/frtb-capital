@@ -38,6 +38,12 @@ from frtb_ima.validation.rfet_quantitative import (
 from frtb_ima.validation.rfet_quantitative import (
     _rfet_quantitative_stage as _validation_rfet_quantitative_stage,
 )
+from frtb_ima.validation.rfet_thresholds import (
+    base_required_observation_count as _validation_base_required_observation_count,
+)
+from frtb_ima.validation.rfet_thresholds import (
+    prorated_required_observation_count as _validation_prorated_required_observation_count,
+)
 from frtb_ima.validation.rfet_window import (
     _rfet_observation_window as _validation_rfet_observation_window,
 )
@@ -100,6 +106,11 @@ def test_base_required_observation_count_uses_policy_thresholds() -> None:
     policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
     assert base_required_observation_count(_risk_factor(LiquidityHorizon.LH10), policy) == 24
     assert base_required_observation_count(_risk_factor(LiquidityHorizon.LH40), policy) == 16
+
+
+def test_rfet_threshold_stage_keeps_compatibility_imports() -> None:
+    assert base_required_observation_count is _validation_base_required_observation_count
+    assert prorated_required_observation_count is _validation_prorated_required_observation_count
 
 
 def test_assess_rfet_evidence_passes_with_required_unique_dates() -> None:
