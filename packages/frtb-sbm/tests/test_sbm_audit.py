@@ -183,7 +183,7 @@ def test_audit_normalisation_helpers_are_json_ready() -> None:
         "items": (SbmRiskClass.GIRR,),
     }
 
-    from audit_normalise import normalise_audit_value
+    from tests._helpers import normalise_audit_value
 
     assert normalise_audit_value(payload) == {
         "date": "2026-05-30",
