@@ -154,6 +154,31 @@ def test_net_jtd_kernel_stage_exports() -> None:
         assert callable(getattr(net_jtd, name))
 
 
+def test_ctp_kernel_compatibility_exports() -> None:
+    import frtb_drc.ctp as compatibility
+    import frtb_drc.kernel.ctp as kernel
+
+    names = (
+        "CtpCalculation",
+        "CtpCapitalInput",
+        "CtpNettingInput",
+        "calculate_ctp_category_drc",
+        "calculate_ctp_drc",
+        "calculate_ctp_gross_jtd",
+        "calculate_ctp_net_jtds",
+        "ctp_context_input_hash",
+        "validate_ctp_context",
+    )
+
+    assert set(compatibility.__all__) == set(kernel.__all__)
+    for name in names:
+        assert getattr(compatibility, name) is getattr(kernel, name)
+
+    top_level_names = set(names) - {"ctp_context_input_hash"}
+    for name in top_level_names:
+        assert getattr(frtb_drc, name) is getattr(kernel, name)
+
+
 def _public_api_doc() -> str:
     root = Path(__file__).resolve().parents[3]
     return (root / "docs/modules/frtb-drc/PUBLIC_API.md").read_text()
