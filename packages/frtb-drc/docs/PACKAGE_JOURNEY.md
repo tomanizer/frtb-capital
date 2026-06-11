@@ -74,7 +74,9 @@ The column and canonical-position batch builders physically live under
 surface for the batch type, hash, and capital calculation entrypoint.
 Arrow table normalization and Arrow-to-batch builders physically live under
 `frtb_drc.adapters.arrow`; `frtb_drc.arrow_batch` remains a compatibility import
-path.
+path. Arrow evidence normalizers and evidence-map builders physically live
+under `frtb_drc.adapters.arrow_evidence` and are re-exported by the same
+compatibility paths.
 Batch and context hash assembly physically lives under `frtb_drc.assembly.hashes`;
 `frtb_drc.batch` remains the compatibility import path for existing callers.
 Batch column/run validation physically lives under `frtb_drc.batch_validation`,
