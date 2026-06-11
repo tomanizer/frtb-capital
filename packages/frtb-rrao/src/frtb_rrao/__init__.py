@@ -14,6 +14,7 @@ from frtb_rrao.arrow_batch import (
     build_rrao_batch_from_arrow,
     normalize_rrao_arrow_table,
 )
+from frtb_rrao.assembly.hashes import input_hash_for_rrao_batch
 from frtb_rrao.attribution import (
     build_rrao_contribution_bundle,
     calculate_rrao_attribution,
@@ -30,7 +31,6 @@ from frtb_rrao.batch import (
     build_rrao_batch_from_columns,
     build_rrao_batch_from_positions,
     calculate_rrao_capital_from_batch,
-    input_hash_for_rrao_batch,
 )
 from frtb_rrao.classification import classify_rrao_position, classify_rrao_positions
 from frtb_rrao.component_summary import to_component_summary

@@ -22,6 +22,7 @@ their owning submodule only and are not part of the v1 compatibility contract.
 | Errors | `RraoInputError` | Public fail-closed input error carrying field and position context. |
 
 Audit payload assembly physically lives under `frtb_rrao.assembly.payloads`;
+batch input hash assembly physically lives under `frtb_rrao.assembly.hashes`;
 result assembly helpers physically live under `frtb_rrao.assembly.results`.
 `frtb_rrao._payloads` and `frtb_rrao._result_assembly` remain private
 compatibility import paths for existing package-internal callers and tests.
