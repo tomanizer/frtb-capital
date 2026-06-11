@@ -32,7 +32,7 @@ and other package docs should copy the integration checklist in
 | --- | --- | --- | --- |
 | 1 - Arrow/Parquet input_table | Position table matching `RRAO_ARROW_COLUMN_SPECS` | `normalize_rrao_arrow_table` -> `build_rrao_batch_from_arrow` -> `calculate_rrao_capital_from_batch` | Recommended production path. |
 | 2 - CRIF/FNet/vendor rows | Iterable mapping rows | `adapt_crif_records`, `adapt_fnet_records`, or `adapt_rrao_records` | Adapter path with explicit rejected rows and diagnostics. |
-| 3 - Canonical dataclasses | `tuple[RraoPosition, ...]` plus `RraoCalculationContext` | `calculate_rrao_capital` | Small books, tests, notebooks, and fixture workflows. |
+| 3 - Canonical dataclasses | `tuple[RraoPosition, ...]` plus `RraoCalculationContext` | `calculate_rrao_capital` -> `build_rrao_batch_from_positions` -> `calculate_rrao_capital_from_batch` | Small books, tests, notebooks, and fixture workflows; row input is an adapter over the same batch kernel. |
 
 The machine-readable schema artifact for this contract is
 [`docs/schemas/input_table/frtb_rrao.positions.schema.json`](../../schemas/input_table/frtb_rrao.positions.schema.json),
