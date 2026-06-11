@@ -6,6 +6,8 @@ import frtb_sbm
 import frtb_sbm.adapters.arrow as adapter_arrow
 import frtb_sbm.adapters.sensitivities as adapter_sensitivities
 import frtb_sbm.arrow_batch as arrow_batch
+import frtb_sbm.assembly.hashes as assembly_hashes
+import frtb_sbm.audit as audit
 import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
 import frtb_sbm.kernel.portfolio as portfolio
@@ -97,6 +99,22 @@ def test_capital_module_reexports_portfolio_kernel_surface() -> None:
         capital.calculate_sbm_portfolio_capital_from_batches
         is portfolio.calculate_sbm_portfolio_capital_from_batches
     )
+
+
+def test_hash_assembly_module_backs_compatibility_paths() -> None:
+    assert (
+        audit._input_hash_for_validated_sensitivities
+        is assembly_hashes.input_hash_for_validated_sensitivities
+    )
+    assert batch.input_hash_for_sbm_batch.__module__ == "frtb_sbm.batch"
+    assert batch.input_hash_for_sbm_batches.__module__ == "frtb_sbm.batch"
+    for name in (
+        "input_hash_for_sbm_batch",
+        "input_hash_for_sbm_batches",
+        "input_hash_for_validated_sensitivities",
+        "profile_content_hash_from_parts",
+    ):
+        assert name in assembly_hashes.__all__
 
 
 def _public_api_doc() -> str:

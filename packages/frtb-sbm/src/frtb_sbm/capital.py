@@ -26,10 +26,8 @@ from frtb_sbm.aggregation import (
     group_weighted_sensitivities_by_bucket,
     select_portfolio_correlation_scenario,
 )
-from frtb_sbm.audit import (
-    _input_hash_for_validated_sensitivities,
-    validate_sbm_result_reconciliation,
-)
+from frtb_sbm.assembly.hashes import input_hash_for_validated_sensitivities
+from frtb_sbm.audit import validate_sbm_result_reconciliation
 from frtb_sbm.batch import (
     SbmSensitivityBatch,
     build_girr_delta_batch_from_sensitivities,
@@ -311,7 +309,7 @@ def calculate_sbm_capital(
         risk_class_results,
         rule_profile=rule_profile,
         context=context,
-        input_hash=_input_hash_for_validated_sensitivities(validated),
+        input_hash=input_hash_for_validated_sensitivities(validated),
         input_count=len(validated),
     )
 

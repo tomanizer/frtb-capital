@@ -33,6 +33,9 @@ batch callers.
 Portfolio dispatch physically lives under `frtb_sbm.kernel.portfolio`;
 `frtb_sbm.capital` remains the compatibility and public import path for existing
 capital callers.
+Input, batch, and profile hash payload assembly physically lives under
+`frtb_sbm.assembly.hashes`; public callers should continue to use
+`input_hash_for_sensitivities`, `input_hash_for_batch`, and profile helpers.
 The public API surface test caps `frtb_sbm.__all__` below 400 names and requires
 every documented input_table symbol to remain importable.
 
