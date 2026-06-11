@@ -18,13 +18,7 @@ from frtb_sbm import (
     SbmSensitivityBatch,
     SbmSignConvention,
     SbmSourceLineage,
-    build_commodity_curvature_batch_from_sensitivities,
-    build_csr_nonsec_curvature_batch_from_sensitivities,
-    build_csr_sec_ctp_curvature_batch_from_sensitivities,
-    build_csr_sec_nonctp_curvature_batch_from_sensitivities,
-    build_equity_curvature_batch_from_sensitivities,
-    build_fx_curvature_batch_from_sensitivities,
-    build_girr_curvature_batch_from_sensitivities,
+    build_sbm_batch,
     calculate_sbm_capital,
     calculate_sbm_capital_from_batch,
     input_hash_for_sensitivities,
@@ -83,6 +77,42 @@ class HandoffCalculator(Protocol):
         *,
         context: SbmCalculationContext | None = None,
     ) -> SbmCapitalResult: ...
+
+
+def build_girr_curvature_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE)
+
+
+def build_fx_curvature_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.FX, SbmRiskMeasure.CURVATURE)
+
+
+def build_equity_curvature_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE)
+
+
+def build_commodity_curvature_batch_from_sensitivities(
+    sensitivities: object,
+):
+    return build_sbm_batch(sensitivities, SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE)
+
+
+def build_csr_nonsec_curvature_batch_from_sensitivities(
+    sensitivities: object,
+):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE)
+
+
+def build_csr_sec_nonctp_curvature_batch_from_sensitivities(
+    sensitivities: object,
+):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE)
+
+
+def build_csr_sec_ctp_curvature_batch_from_sensitivities(
+    sensitivities: object,
+):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE)
 
 
 def sample_context(run_id: str) -> SbmCalculationContext:

@@ -73,6 +73,27 @@ BATCH_INGRESS_SURFACE = (
     "build_sbm_batch_from_columns",
 )
 
+
+REMOVED_PATH_BATCH_BUILDERS = (
+    "build_girr_delta_batch_from_sensitivities",
+    "build_girr_vega_batch_from_sensitivities",
+    "build_fx_delta_batch_from_sensitivities",
+    "build_equity_delta_batch_from_sensitivities",
+    "build_commodity_delta_batch_from_sensitivities",
+    "build_csr_nonsec_delta_batch_from_sensitivities",
+    "build_csr_sec_nonctp_delta_batch_from_sensitivities",
+    "build_csr_sec_ctp_delta_batch_from_sensitivities",
+    "build_girr_delta_batch_from_columns",
+    "build_girr_vega_batch_from_columns",
+    "build_girr_curvature_batch_from_columns",
+    "build_fx_delta_batch_from_columns",
+    "build_equity_delta_batch_from_columns",
+    "build_commodity_delta_batch_from_columns",
+    "build_csr_nonsec_delta_batch_from_columns",
+    "build_csr_sec_nonctp_delta_batch_from_columns",
+    "build_csr_sec_ctp_delta_batch_from_columns",
+)
+
 VALIDATION_SURFACE = (
     "coerce_risk_class",
     "coerce_risk_measure",
@@ -110,6 +131,14 @@ def test_batch_module_reexports_sensitivity_adapter_surface() -> None:
         assert name in adapter_sensitivities.__all__
         assert name in batch.__all__
         assert getattr(batch, name) is getattr(adapter_sensitivities, name)
+
+
+def test_path_specific_batch_builder_wrappers_are_not_exported() -> None:
+    for name in REMOVED_PATH_BATCH_BUILDERS:
+        assert name not in frtb_sbm.__all__
+        assert name not in batch.__all__
+        assert not hasattr(frtb_sbm, name)
+        assert not hasattr(batch, name)
 
 
 def test_validation_package_reexports_stage_surface() -> None:

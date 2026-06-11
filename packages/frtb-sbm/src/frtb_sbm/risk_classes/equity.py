@@ -15,12 +15,13 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_sbm._batch_lookup import batch_text_by_id as _batch_text_by_id
+from frtb_sbm.adapters.sensitivities import build_sbm_batch
 from frtb_sbm.aggregation import (
     IntraBucketScenarioSpec,
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
-from frtb_sbm.batch import SbmSensitivityBatch, build_equity_delta_batch_from_sensitivities
+from frtb_sbm.batch import SbmSensitivityBatch
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
@@ -59,7 +60,7 @@ def calculate_equity_delta_risk_class_capital(
     RiskClassCapital
     """
 
-    batch = build_equity_delta_batch_from_sensitivities(sensitivities)
+    batch = build_sbm_batch(sensitivities, SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA)
     return calculate_equity_delta_risk_class_capital_from_batch(
         batch,
         profile_id=profile_id,

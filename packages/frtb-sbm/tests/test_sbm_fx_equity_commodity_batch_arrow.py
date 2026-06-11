@@ -15,9 +15,7 @@ from frtb_sbm import (
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
-    build_commodity_delta_batch_from_sensitivities,
-    build_equity_delta_batch_from_sensitivities,
-    build_fx_delta_batch_from_sensitivities,
+    build_sbm_batch,
     calculate_sbm_capital,
     calculate_sbm_capital_from_batch,
     input_hash_for_sensitivities,
@@ -39,6 +37,18 @@ from sbm_registry_helpers import (
     calculate_sbm_capital_from_path_arrow,
     normalize_sbm_path,
 )
+
+
+def build_fx_delta_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.FX, SbmRiskMeasure.DELTA)
+
+
+def build_equity_delta_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA)
+
+
+def build_commodity_delta_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA)
 
 
 def sample_context(run_id: str) -> SbmCalculationContext:

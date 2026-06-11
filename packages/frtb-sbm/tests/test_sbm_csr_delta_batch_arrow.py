@@ -16,9 +16,7 @@ from frtb_sbm import (
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
-    build_csr_nonsec_delta_batch_from_sensitivities,
-    build_csr_sec_ctp_delta_batch_from_sensitivities,
-    build_csr_sec_nonctp_delta_batch_from_sensitivities,
+    build_sbm_batch,
     calculate_sbm_capital,
     calculate_sbm_capital_from_batch,
     input_hash_for_sensitivities,
@@ -55,6 +53,20 @@ from sbm_registry_helpers import (
     calculate_sbm_capital_from_path_arrow,
     normalize_sbm_path,
 )
+
+
+def build_csr_nonsec_delta_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA)
+
+
+def build_csr_sec_nonctp_delta_batch_from_sensitivities(
+    sensitivities: object,
+):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA)
+
+
+def build_csr_sec_ctp_delta_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA)
 
 
 def sample_context(run_id: str) -> SbmCalculationContext:

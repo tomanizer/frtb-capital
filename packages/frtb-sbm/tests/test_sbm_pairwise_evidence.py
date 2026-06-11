@@ -16,11 +16,15 @@ from frtb_sbm import (
     SbmSignConvention,
     SbmSourceLineage,
     WeightedSensitivity,
-    build_girr_curvature_batch_from_sensitivities,
+    build_sbm_batch,
     calculate_sbm_capital,
     calculate_sbm_capital_from_batch,
 )
 from frtb_sbm.aggregation import aggregate_intra_bucket
+
+
+def build_girr_curvature_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE)
 
 
 def _weighted(sensitivity_id: str, scaled_amount: float = 100.0) -> WeightedSensitivity:

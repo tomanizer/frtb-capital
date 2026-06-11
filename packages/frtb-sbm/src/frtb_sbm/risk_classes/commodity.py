@@ -15,12 +15,13 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_sbm._batch_lookup import batch_text_by_id as _batch_text_by_id
+from frtb_sbm.adapters.sensitivities import build_sbm_batch
 from frtb_sbm.aggregation import (
     IntraBucketScenarioSpec,
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
-from frtb_sbm.batch import SbmSensitivityBatch, build_commodity_delta_batch_from_sensitivities
+from frtb_sbm.batch import SbmSensitivityBatch
 from frtb_sbm.commodity_reference_data import (
     _require_commodity_bucket_number,
     commodity_delta_intra_bucket_correlation,
@@ -58,7 +59,7 @@ def calculate_commodity_delta_risk_class_capital(
     RiskClassCapital
     """
 
-    batch = build_commodity_delta_batch_from_sensitivities(sensitivities)
+    batch = build_sbm_batch(sensitivities, SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA)
     return calculate_commodity_delta_risk_class_capital_from_batch(
         batch,
         profile_id=profile_id,

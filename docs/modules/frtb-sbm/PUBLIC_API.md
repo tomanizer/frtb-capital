@@ -22,8 +22,9 @@ BASEL_MAR21 slices.
 | Errors and support guards | `SbmInputError`, `SbmUnsupportedFeature`, `ensure_sbm_run_supported`, `ensure_sbm_risk_class_measure_supported`, `phase1_capital_supported_paths` | Fail-closed unsupported profiles and input diagnostics. |
 
 The registry-driven API is the client surface. Per-path Arrow normalizer,
-Arrow batch builder, batch capital, and batch hash wrappers are intentionally
-not exported; callers select a path with `SbmRiskClass` and `SbmRiskMeasure`.
+Arrow batch builder, row/column batch builder, batch capital, and batch hash
+wrappers are intentionally not exported; callers select a path with
+`SbmRiskClass` and `SbmRiskMeasure`.
 Arrow ingress implementation lives in `frtb_sbm.adapters.arrow`;
 `frtb_sbm.arrow_batch` remains a compatibility import path for the same public
 Arrow symbols.
