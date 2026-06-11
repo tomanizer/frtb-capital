@@ -7,6 +7,7 @@ import frtb_rrao.assembly.hashes as hash_assembly
 import frtb_rrao.assembly.payloads as payload_assembly
 import frtb_rrao.assembly.results as result_assembly
 import frtb_rrao.batch as batch
+import frtb_rrao.kernel.classification as batch_classification
 import frtb_rrao.validation as validation
 from frtb_rrao.validation import batch as batch_validation
 from frtb_rrao.validation import position as position_validation
@@ -103,3 +104,8 @@ def test_result_assembly_preserves_private_compatibility_path() -> None:
 def test_batch_hash_assembly_preserves_public_compatibility_path() -> None:
     assert batch.input_hash_for_rrao_batch is hash_assembly.input_hash_for_rrao_batch
     assert frtb_rrao.input_hash_for_rrao_batch is hash_assembly.input_hash_for_rrao_batch
+
+
+def test_batch_classification_kernel_is_available_from_physical_stage() -> None:
+    assert callable(batch_classification.decision_arrays_for_batch)
+    assert batch_classification.RraoDecisionArrays.__name__ == "RraoDecisionArrays"
