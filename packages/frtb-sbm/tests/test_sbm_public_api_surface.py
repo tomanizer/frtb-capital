@@ -11,6 +11,10 @@ import frtb_sbm.audit as audit
 import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
 import frtb_sbm.kernel.portfolio as portfolio
+import frtb_sbm.validation as validation
+import frtb_sbm.validation.coercion as validation_coercion
+import frtb_sbm.validation.context as validation_context
+import frtb_sbm.validation.sensitivity as validation_sensitivity
 
 HANDOFF_SPECS = (
     "GIRR_DELTA_ARROW_COLUMN_SPECS",
@@ -66,6 +70,17 @@ BATCH_INGRESS_SURFACE = (
     "build_sbm_batch_from_columns",
 )
 
+VALIDATION_SURFACE = (
+    "coerce_risk_class",
+    "coerce_risk_measure",
+    "coerce_sign_convention",
+    "ensure_sbm_run_supported",
+    "normalise_currency_code",
+    "phase1_capital_supported_paths",
+    "validate_sbm_calculation_context",
+    "validate_sbm_sensitivities",
+)
+
 
 def test_documented_handoff_surface_is_top_level_importable() -> None:
     exported = set(frtb_sbm.__all__)
@@ -92,6 +107,19 @@ def test_batch_module_reexports_sensitivity_adapter_surface() -> None:
         assert name in adapter_sensitivities.__all__
         assert name in batch.__all__
         assert getattr(batch, name) is getattr(adapter_sensitivities, name)
+
+
+def test_validation_package_reexports_stage_surface() -> None:
+    for name in VALIDATION_SURFACE:
+        assert name in validation.__all__
+
+    assert validation.coerce_risk_class is validation_coercion.coerce_risk_class
+    assert validation.validate_sbm_calculation_context is (
+        validation_context.validate_sbm_calculation_context
+    )
+    assert (
+        validation.validate_sbm_sensitivities is validation_sensitivity.validate_sbm_sensitivities
+    )
 
 
 def test_capital_module_reexports_portfolio_kernel_surface() -> None:
