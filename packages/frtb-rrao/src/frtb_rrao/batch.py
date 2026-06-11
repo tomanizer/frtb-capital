@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
-from typing import cast
+from typing import Any, cast
 
 import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
@@ -48,6 +48,7 @@ from frtb_rrao._result_assembly import (
 )
 from frtb_rrao.assembly.payloads import batch_position_payload, hash_position_payloads
 from frtb_rrao.audit import validate_rrao_result_reconciliation
+from frtb_rrao.batch_registry import rrao_position_column_kwargs
 from frtb_rrao.capital import build_rrao_subtotals, included_rrao_total
 from frtb_rrao.data_models import (
     RraoCalculationContext,
@@ -172,121 +173,9 @@ def build_rrao_batch_from_positions(
     validated = validate_rrao_positions(positions)
     if not validated:
         raise RraoInputError("RRAO batch requires at least one position", field="positions")
+    column_kwargs = cast(Any, rrao_position_column_kwargs(validated))
     return build_rrao_batch_from_columns(
-        position_ids=[position.position_id for position in validated],
-        source_row_ids=[position.source_row_id for position in validated],
-        desk_ids=[position.desk_id for position in validated],
-        legal_entities=[position.legal_entity for position in validated],
-        gross_effective_notionals=[position.gross_effective_notional for position in validated],
-        currencies=[position.currency for position in validated],
-        evidence_types=[position.evidence_type.value for position in validated],
-        evidence_labels=[position.evidence_label for position in validated],
-        classification_hints=[
-            None if position.classification_hint is None else position.classification_hint.value
-            for position in validated
-        ],
-        exclusion_reasons=[
-            None if position.exclusion_reason is None else position.exclusion_reason.value
-            for position in validated
-        ],
-        exclusion_evidence_ids=[position.exclusion_evidence_id for position in validated],
-        back_to_back_match_group_ids=[
-            None
-            if position.back_to_back_match is None
-            else position.back_to_back_match.match_group_id
-            for position in validated
-        ],
-        back_to_back_matched_position_ids=[
-            None
-            if position.back_to_back_match is None
-            else position.back_to_back_match.matched_position_id
-            for position in validated
-        ],
-        supervisor_directive_ids=[position.supervisor_directive_id for position in validated],
-        underlying_counts=[position.underlying_count for position in validated],
-        is_path_dependents=[position.is_path_dependent for position in validated],
-        has_maturities=[position.has_maturity for position in validated],
-        has_strike_or_barriers=[position.has_strike_or_barrier for position in validated],
-        has_multiple_strikes_or_barriers=[
-            position.has_multiple_strikes_or_barriers for position in validated
-        ],
-        is_ctp_hedges=[position.is_ctp_hedge for position in validated],
-        is_investment_fund_exposures=[
-            position.is_investment_fund_exposure for position in validated
-        ],
-        investment_fund_ids=[
-            None
-            if position.investment_fund_descriptor is None
-            else position.investment_fund_descriptor.fund_id
-            for position in validated
-        ],
-        investment_fund_section_205_methods=[
-            None
-            if position.investment_fund_descriptor is None
-            else position.investment_fund_descriptor.section_205_method.value
-            for position in validated
-        ],
-        investment_fund_included_exposure_types=[
-            None
-            if position.investment_fund_descriptor is None
-            else position.investment_fund_descriptor.included_exposure_type.value
-            for position in validated
-        ],
-        investment_fund_mandate_evidence_ids=[
-            None
-            if position.investment_fund_descriptor is None
-            else position.investment_fund_descriptor.mandate_evidence_id
-            for position in validated
-        ],
-        investment_fund_section_205_evidence_ids=[
-            None
-            if position.investment_fund_descriptor is None
-            else position.investment_fund_descriptor.section_205_evidence_id
-            for position in validated
-        ],
-        investment_fund_gross_effective_notionals=[
-            None
-            if position.investment_fund_descriptor is None
-            else position.investment_fund_descriptor.fund_gross_effective_notional
-            for position in validated
-        ],
-        investment_fund_included_exposure_ratios=[
-            None
-            if position.investment_fund_descriptor is None
-            else position.investment_fund_descriptor.included_exposure_ratio
-            for position in validated
-        ],
-        investment_fund_look_through_availables=[
-            False
-            if position.investment_fund_descriptor is None
-            else position.investment_fund_descriptor.look_through_available
-            for position in validated
-        ],
-        investment_fund_mandate_allows_rrao_exposures=[
-            True
-            if position.investment_fund_descriptor is None
-            else position.investment_fund_descriptor.mandate_allows_rrao_exposures
-            for position in validated
-        ],
-        notional_sources=[position.notional_source for position in validated],
-        lineage_source_systems=[
-            "" if position.lineage is None else position.lineage.source_system
-            for position in validated
-        ],
-        lineage_source_files=[
-            "" if position.lineage is None else position.lineage.source_file
-            for position in validated
-        ],
-        lineage_source_row_ids=[
-            "" if position.lineage is None else position.lineage.source_row_id
-            for position in validated
-        ],
-        lineage_present=[position.lineage is not None for position in validated],
-        source_column_maps=[
-            () if position.lineage is None else tuple(position.lineage.source_column_map)
-            for position in validated
-        ],
-        citations=[position.citations for position in validated],
+        **column_kwargs,
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,

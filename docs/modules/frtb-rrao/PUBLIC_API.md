@@ -25,6 +25,11 @@ Audit payload assembly physically lives under `frtb_rrao.assembly.payloads`;
 `frtb_rrao._payloads` remains a private compatibility import path for existing
 package-internal callers and tests.
 
+RRAO batch ingress field mapping is owned by package-internal
+`frtb_rrao.batch_registry`; the public builders remain
+`build_rrao_batch_from_positions`, `build_rrao_batch_from_columns`, and
+`build_rrao_batch_from_arrow`.
+
 ## Client Integration
 
 RRAO is the template package for client-facing public API docs. The suite-level
