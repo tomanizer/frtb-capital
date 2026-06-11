@@ -49,6 +49,12 @@ from frtb_ima.validation.rfet_quantitative import (
 from frtb_ima.validation.rfet_quantitative import (
     _rfet_quantitative_stage,
 )
+from frtb_ima.validation.rfet_window import (
+    _rfet_observation_window as _rfet_observation_window,
+)
+from frtb_ima.validation.rfet_window import (
+    _RFETObservationWindow as _RFETObservationWindow,
+)
 
 BooleanArray = npt.NDArray[np.bool_]
 DateArray = npt.NDArray[np.datetime64]
@@ -261,19 +267,6 @@ class RFETObservationBatch:
         """
 
         return tuple(_observation_at(self, index) for index in range(self.observation_count))
-
-
-@dataclass(frozen=True)
-class _RFETObservationWindow:
-    lookback_start: date
-    lookback_end: date
-    lookback_basis: str
-    calendar_source: str
-    calendar_version: str
-    official_holiday_count: int
-    missing_business_dates: tuple[date, ...]
-    business_dates: frozenset[date] | None
-    official_holidays: frozenset[date]
 
 
 @dataclass(frozen=True)
@@ -657,47 +650,6 @@ def _status_from_tests(
     if quantitative_pass:
         return ModellabilityStatus.MODELLABLE
     return ModellabilityStatus.TYPE_A_NMRF
-
-
-def _rfet_observation_window(
-    as_of_date: date,
-    policy: RegulatoryPolicy,
-    *,
-    calendar: BusinessCalendar | None = None,
-    shifted_start_date: date | None = None,
-    shifted_end_date: date | None = None,
-    shift_reason: str = "",
-) -> _RFETObservationWindow:
-    if calendar is None:
-        return _RFETObservationWindow(
-            lookback_start=as_of_date - timedelta(days=policy.rfet_lookback_days),
-            lookback_end=as_of_date,
-            lookback_basis=ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value,
-            calendar_source="",
-            calendar_version="",
-            official_holiday_count=0,
-            missing_business_dates=(),
-            business_dates=None,
-            official_holidays=frozenset(),
-        )
-
-    window = calendar.exact_twelve_month_window(
-        as_of_date,
-        shifted_start_date=shifted_start_date,
-        shifted_end_date=shifted_end_date,
-        shift_reason=shift_reason,
-    )
-    return _RFETObservationWindow(
-        lookback_start=window.start_date,
-        lookback_end=window.end_date,
-        lookback_basis=window.basis.value,
-        calendar_source=window.calendar_source,
-        calendar_version=window.calendar_version,
-        official_holiday_count=window.official_holiday_count,
-        missing_business_dates=window.missing_business_dates,
-        business_dates=frozenset(window.business_dates),
-        official_holidays=frozenset(window.official_holidays),
-    )
 
 
 def _rfet_required_observations(

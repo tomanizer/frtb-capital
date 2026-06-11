@@ -38,6 +38,9 @@ from frtb_ima.validation.rfet_quantitative import (
 from frtb_ima.validation.rfet_quantitative import (
     _rfet_quantitative_stage as _validation_rfet_quantitative_stage,
 )
+from frtb_ima.validation.rfet_window import (
+    _rfet_observation_window as _validation_rfet_observation_window,
+)
 
 AS_OF = date(2025, 6, 30)
 
@@ -240,6 +243,10 @@ def test_rfet_observation_window_stage_keeps_calendar_metadata() -> None:
     assert window.official_holiday_count == 1
     assert holiday in window.official_holidays
     assert date(2025, 1, 4) not in window.business_dates
+
+
+def test_rfet_observation_window_stage_keeps_compatibility_import() -> None:
+    assert _rfet_observation_window is _validation_rfet_observation_window
 
 
 def test_rfet_qualitative_stage_isolates_representativeness_controls() -> None:
