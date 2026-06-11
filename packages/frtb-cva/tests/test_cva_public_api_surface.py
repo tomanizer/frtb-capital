@@ -114,6 +114,27 @@ def test_assembly_compatibility_paths_export_same_helpers() -> None:
         assert getattr(legacy_module, name) is getattr(assembly_module, name)
 
 
+def test_kernel_compatibility_paths_export_same_helpers() -> None:
+    import frtb_cva._ba_batch_kernel as legacy_ba
+    import frtb_cva._ba_full_batch_kernel as legacy_ba_full
+    import frtb_cva._ba_reduced_batch_kernel as legacy_ba_reduced
+    import frtb_cva._sa_batch_kernel as legacy_sa
+    import frtb_cva.kernel.ba as ba
+    import frtb_cva.kernel.ba_full as ba_full
+    import frtb_cva.kernel.ba_reduced as ba_reduced
+    import frtb_cva.kernel.sa as sa
+
+    pairs = (
+        (legacy_ba, ba, "calculate_full_portfolio_from_batches"),
+        (legacy_ba, ba, "calculate_reduced_portfolio_from_batches"),
+        (legacy_ba_full, ba_full, "calculate_full_portfolio_from_batches"),
+        (legacy_ba_reduced, ba_reduced, "calculate_reduced_portfolio_from_batches"),
+        (legacy_sa, sa, "calculate_sa_cva_capital_from_batch"),
+    )
+    for legacy_module, kernel_module, name in pairs:
+        assert getattr(legacy_module, name) is getattr(kernel_module, name)
+
+
 def test_low_level_batch_internals_are_not_public_api() -> None:
     import frtb_cva.batch
 
