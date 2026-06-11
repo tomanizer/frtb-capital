@@ -236,7 +236,8 @@ The shared kernel then:
 1. validate context and positions (or batch invariants)
 2. classify each position under the selected profile tables
 3. build additive capital lines and excluded zero-capital lines
-4. assemble audit hash payloads in `frtb_rrao.assembly.payloads`
+4. assemble audit payloads in `frtb_rrao.assembly.payloads` and batch input
+   hashes in `frtb_rrao.assembly.hashes`
 5. assemble `RraoCapitalResult` with subtotals, `total_rrao`, citations, warnings,
    `input_hash`, and `profile_hash` via `frtb_rrao.assembly.results`
 6. call `validate_rrao_result_reconciliation` before returning

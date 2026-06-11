@@ -3,8 +3,10 @@ from __future__ import annotations
 import frtb_rrao
 import frtb_rrao._payloads as payload_compat
 import frtb_rrao._result_assembly as result_compat
+import frtb_rrao.assembly.hashes as hash_assembly
 import frtb_rrao.assembly.payloads as payload_assembly
 import frtb_rrao.assembly.results as result_assembly
+import frtb_rrao.batch as batch
 import frtb_rrao.validation as validation
 from frtb_rrao.validation import position as position_validation
 
@@ -94,3 +96,8 @@ def test_result_assembly_preserves_private_compatibility_path() -> None:
     assert result_compat.partition_lines is result_assembly.partition_lines
     assert result_compat.profile_warnings is result_assembly.profile_warnings
     assert result_compat.validate_context is result_assembly.validate_context
+
+
+def test_batch_hash_assembly_preserves_public_compatibility_path() -> None:
+    assert batch.input_hash_for_rrao_batch is hash_assembly.input_hash_for_rrao_batch
+    assert frtb_rrao.input_hash_for_rrao_batch is hash_assembly.input_hash_for_rrao_batch
