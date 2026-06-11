@@ -69,7 +69,7 @@ risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN
 | `adapters/columns.py`, `adapters/rows.py`, `adapters/{counterparty,netting_set,hedge,sensitivity}.py` | Column and row adapters -> canonical batches; private `_batch_*adapter.py` paths remain compatibility shims. |
 | `_batch_validation.py` | Package-local batch input rules. |
 | `assembly/batches.py`, `assembly/batch_payloads.py`, `assembly/payloads.py` | Result assembly and deterministic hash inputs; private `_batch_assembly.py`, `_batch_payloads.py`, and `_payloads.py` remain compatibility shims. |
-| `_ba_*_batch_kernel.py`, `_sa_batch_kernel.py` | Kernel math pending the ADR 0045 kernel package split. |
+| `kernel/ba.py`, `kernel/ba_full.py`, `kernel/ba_reduced.py`, `kernel/sa.py` | BA-CVA and SA-CVA batch capital kernels; private `_ba_*_batch_kernel.py` and `_sa_batch_kernel.py` paths remain compatibility shims. |
 | `adapters/arrow.py` | Arrow tabular handoff normalisation under ADR 0023; `arrow_batch.py` remains a compatibility shim. |
 | `audit.py` | Deterministic result serialisation, input hash, profile hash, and reconciliation. |
 | `attribution.py` | Additive attribution for supported branches with explicit unsupported nonlinear residuals. |

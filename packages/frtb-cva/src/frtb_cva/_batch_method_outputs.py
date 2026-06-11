@@ -5,10 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import cast
 
-from frtb_cva._ba_batch_kernel import (
-    calculate_full_portfolio_from_batches,
-    calculate_reduced_portfolio_from_batches,
-)
 from frtb_cva._batch_contracts import (
     CvaCounterpartyBatch,
     CvaHedgeBatch,
@@ -20,7 +16,6 @@ from frtb_cva._batch_utils import (
     _subset_hedges,
     _subset_netting_sets,
 )
-from frtb_cva._sa_batch_kernel import calculate_sa_cva_capital_from_batch
 from frtb_cva.data_models import (
     BaCvaCounterpartyCapital,
     BaCvaFullPortfolioResult,
@@ -32,6 +27,11 @@ from frtb_cva.data_models import (
     CvaRegulatoryProfile,
     SaCvaRiskClassCapital,
 )
+from frtb_cva.kernel.ba import (
+    calculate_full_portfolio_from_batches,
+    calculate_reduced_portfolio_from_batches,
+)
+from frtb_cva.kernel.sa import calculate_sa_cva_capital_from_batch
 from frtb_cva.scope import require_mixed_sensitivity_scope_evidence
 from frtb_cva.validation import CvaInputError
 
