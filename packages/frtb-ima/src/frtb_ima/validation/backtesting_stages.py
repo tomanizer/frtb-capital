@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import numpy.typing as npt
 
@@ -41,7 +43,8 @@ def _exception_flags_regulatory(
     finite_pnl = np.isfinite(pnl)
     finite_var = np.isfinite(var_estimates)
     missing = ~(finite_pnl & finite_var)
-    loss_exceeds_var = finite_pnl & finite_var & (-pnl > var_estimates)
+    with np.errstate(invalid="ignore"):
+        loss_exceeds_var = finite_pnl & finite_var & (-pnl > var_estimates)
 
     exceptions = missing | loss_exceeds_var
     if official_holiday_mask is not None:
@@ -57,8 +60,8 @@ def _exception_reason(
 ) -> str:
     if official_holiday:
         return "official_holiday"
-    finite_pnl = bool(np.isfinite(pnl_value))
-    finite_var = bool(np.isfinite(var_value))
+    finite_pnl = math.isfinite(pnl_value)
+    finite_var = math.isfinite(var_value)
     if not finite_pnl and not finite_var:
         return "missing_pnl_and_var"
     if not finite_pnl:
