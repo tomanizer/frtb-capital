@@ -38,6 +38,11 @@ import path.
 Batch and context hash assembly physically lives in `frtb_drc.assembly.hashes`;
 `frtb_drc.batch` remains the compatibility import path for
 `input_hash_for_drc_batch`.
+Batch column/run validation physically lives in `frtb_drc.batch_validation`, and
+batch citation/branch metadata assembly physically lives in
+`frtb_drc.assembly.citations`, with fair-value-cap branch assembly in
+`frtb_drc.assembly.fair_value_cap`; `frtb_drc.batch` remains the public
+capital orchestration surface.
 Batch net-JTD array kernels physically live in `frtb_drc.kernel.net_jtd`;
 `frtb_drc.batch.calculate_drc_capital_from_batch` remains the public batch
 capital entrypoint.

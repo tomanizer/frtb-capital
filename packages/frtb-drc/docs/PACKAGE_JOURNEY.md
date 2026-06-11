@@ -77,6 +77,11 @@ Arrow table normalization and Arrow-to-batch builders physically live under
 path.
 Batch and context hash assembly physically lives under `frtb_drc.assembly.hashes`;
 `frtb_drc.batch` remains the compatibility import path for existing callers.
+Batch column/run validation physically lives under `frtb_drc.batch_validation`,
+and batch citation/branch metadata assembly physically lives under
+`frtb_drc.assembly.citations`, with fair-value-cap branch assembly under
+`frtb_drc.assembly.fair_value_cap`; `frtb_drc.batch` remains the public
+capital orchestration surface.
 Batch net-JTD array kernels physically live under `frtb_drc.kernel.net_jtd`;
 `frtb_drc.batch` remains the public capital orchestration surface.
 CTP row-path calculation helpers physically live under `frtb_drc.kernel.ctp`;

@@ -140,6 +140,26 @@ def test_hash_assembly_compatibility_exports() -> None:
     assert frtb_drc.input_hash_for_drc_batch is hashes.input_hash_for_drc_batch
 
 
+def test_batch_validation_and_citation_stages_are_bounded() -> None:
+    import frtb_drc.assembly.citations as citations
+    import frtb_drc.assembly.fair_value_cap as fair_value_cap
+    import frtb_drc.batch_validation as validation
+
+    assert set(validation.__all__) == {
+        "batch_risk_class",
+        "validate_batch_columns",
+        "validate_batch_context",
+        "validate_supported_batch_run",
+    }
+    assert "collect_batch_citations" in citations.__all__
+    assert "batch_fair_value_cap_citations" in fair_value_cap.__all__
+    assert "fair_value_cap_branch_metadata_for_batch" in fair_value_cap.__all__
+
+    root = Path(__file__).resolve().parents[3]
+    batch_lines = (root / "packages/frtb-drc/src/frtb_drc/batch.py").read_text().splitlines()
+    assert len(batch_lines) < 800
+
+
 def test_net_jtd_kernel_stage_exports() -> None:
     import frtb_drc.kernel.net_jtd as net_jtd
 
