@@ -343,7 +343,7 @@ These should become **clearer** after consolidation, not hidden.
 
 | Metric | Current (approx.) | Target |
 | --- | ---: | ---: |
-| AST duplicate function groups | 35 | ≤ 20 |
+| AST duplicate function groups | 36 | ≤ 20 |
 | SBM `build_*` wrapper count | 32 | 0 (registry only) |
 | Largest `batch.py` LOC | ~3013 | ≤ 800 per stage file |
 | Packages with dual row/batch kernels | 4 | 0 |

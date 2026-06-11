@@ -468,15 +468,15 @@
   },
   "metrics": {
     "drift_marker_matches": 31,
-    "duplicate_function_groups": 35,
-    "duplicate_function_instances": 60,
+    "duplicate_function_groups": 36,
+    "duplicate_function_instances": 61,
     "large_function_count": 58,
-    "other_python_loc": 6239,
-    "python_files": 661,
+    "other_python_loc": 6308,
+    "python_files": 663,
     "script_python_loc": 6575,
     "source_python_loc": 68420,
-    "test_python_loc": 51733,
-    "total_python_loc": 132967
+    "test_python_loc": 51738,
+    "total_python_loc": 133041
   },
   "oversized_files": {
     "packages/frtb-common/src/frtb_common/crif.py": {
