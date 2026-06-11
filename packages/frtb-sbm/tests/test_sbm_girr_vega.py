@@ -21,7 +21,7 @@ from frtb_sbm import (
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
-    build_girr_vega_batch_from_sensitivities,
+    build_sbm_batch,
     calculate_sbm_capital,
     calculate_sbm_capital_from_batch,
     girr_vega_intra_bucket_correlation,
@@ -205,7 +205,7 @@ def test_girr_vega_batch_and_handoff_match_row_capital() -> None:
     )
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
-    row_batch = build_girr_vega_batch_from_sensitivities(sensitivities)
+    row_batch = build_sbm_batch(sensitivities, SbmRiskClass.GIRR, SbmRiskMeasure.VEGA)
     arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, handoff)
     batch_result = calculate_sbm_capital_from_batch(arrow_batch, context=context)
     handoff_result = calculate_sbm_capital_from_path_arrow(
@@ -228,7 +228,7 @@ def test_girr_vega_batch_and_handoff_match_row_capital() -> None:
 
 def test_girr_vega_batch_keeps_option_and_underlying_tenor_axes() -> None:
     sensitivities = sample_vega_sensitivities()
-    batch = build_girr_vega_batch_from_sensitivities(sensitivities)
+    batch = build_sbm_batch(sensitivities, SbmRiskClass.GIRR, SbmRiskMeasure.VEGA)
 
     weighted = weight_girr_vega_sensitivity_batch(
         batch,
@@ -246,7 +246,7 @@ def test_girr_vega_batch_keeps_option_and_underlying_tenor_axes() -> None:
 
 
 def test_girr_vega_batch_rejects_context_scope_mismatch() -> None:
-    batch = build_girr_vega_batch_from_sensitivities(sample_vega_sensitivities())
+    batch = build_sbm_batch(sample_vega_sensitivities(), SbmRiskClass.GIRR, SbmRiskMeasure.VEGA)
     context = replace(sample_context(), desk_id="different-desk")
 
     with pytest.raises(ValueError, match="desk_id"):

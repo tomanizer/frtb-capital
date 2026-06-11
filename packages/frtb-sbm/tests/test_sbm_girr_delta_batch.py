@@ -19,8 +19,7 @@ from frtb_sbm import (
     SbmSensitivityBatch,
     SbmSignConvention,
     SbmSourceLineage,
-    build_girr_delta_batch_from_columns,
-    build_girr_delta_batch_from_sensitivities,
+    build_sbm_batch,
     build_sbm_batch_from_columns,
     calculate_sbm_capital,
     calculate_sbm_capital_from_batch,
@@ -129,6 +128,20 @@ def _batch_columns(sensitivities: tuple[SbmSensitivity, ...]) -> dict[str, list[
     }
 
 
+def _build_girr_delta_batch_from_sensitivities(
+    sensitivities: object,
+) -> SbmSensitivityBatch:
+    return build_sbm_batch(sensitivities, SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)
+
+
+def _build_girr_delta_batch_from_columns(**columns: object) -> SbmSensitivityBatch:
+    return build_sbm_batch_from_columns(
+        expected_risk_class=SbmRiskClass.GIRR,
+        expected_risk_measure=SbmRiskMeasure.DELTA,
+        **columns,
+    )
+
+
 def _dictionary(values: list[str | None]) -> pa.Array:
     return pa.array(values).dictionary_encode()
 
@@ -136,7 +149,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
 def test_row_builder_produces_immutable_numpy_batch_and_row_equivalent_hash() -> None:
     sensitivities = _sensitivities()
 
-    batch = build_girr_delta_batch_from_sensitivities(sensitivities)
+    batch = _build_girr_delta_batch_from_sensitivities(sensitivities)
 
     assert isinstance(batch, SbmSensitivityBatch)
     assert batch.row_count == len(sensitivities)
@@ -234,7 +247,7 @@ def test_generic_column_builder_rejects_mixed_homogeneous_path_columns() -> None
 
 def test_arrow_batch_batch_matches_row_batch_and_preserves_handoff_metadata() -> None:
     sensitivities = _sensitivities()
-    row_batch = build_girr_delta_batch_from_sensitivities(sensitivities)
+    row_batch = _build_girr_delta_batch_from_sensitivities(sensitivities)
     source_hash = source_content_hash("synthetic GIRR delta source")
     diagnostic = AdapterDiagnostic(
         code="sbm.girr_delta.synthetic",
@@ -301,7 +314,7 @@ def test_arrow_batch_handles_chunked_dictionary_text_columns() -> None:
             _arrow_table(sensitivities[2:]),
         ]
     )
-    row_batch = build_girr_delta_batch_from_sensitivities(sensitivities)
+    row_batch = _build_girr_delta_batch_from_sensitivities(sensitivities)
 
     arrow_batch = build_sbm_path_from_arrow(
         SbmRiskClass.GIRR,
@@ -331,7 +344,7 @@ def test_column_builder_rejects_malformed_source_column_maps() -> None:
     columns = _batch_columns(_sensitivities()[:1])
 
     with pytest.raises(SbmInputError, match="source column map entries must be field pairs"):
-        build_girr_delta_batch_from_columns(
+        _build_girr_delta_batch_from_columns(
             **columns,
             source_column_maps=(("bad",),),
         )
@@ -341,7 +354,7 @@ def test_column_builder_rejects_string_mapping_citation_rows() -> None:
     columns = _batch_columns(_sensitivities()[:1])
 
     with pytest.raises(SbmInputError, match="mapping_citation_ids rows"):
-        build_girr_delta_batch_from_columns(
+        _build_girr_delta_batch_from_columns(
             **columns,
             mapping_citation_ids=("abc",),
         )

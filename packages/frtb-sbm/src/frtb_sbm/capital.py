@@ -20,6 +20,7 @@ import numpy.typing as npt
 from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._batch_lookup import batch_text_by_id as _batch_text_by_id
+from frtb_sbm.adapters.sensitivities import build_sbm_batch
 from frtb_sbm.aggregation import (
     IntraBucketScenarioSpec,
     aggregate_risk_class_with_scenarios,
@@ -28,11 +29,7 @@ from frtb_sbm.aggregation import (
 )
 from frtb_sbm.assembly.hashes import input_hash_for_validated_sensitivities
 from frtb_sbm.audit import validate_sbm_result_reconciliation
-from frtb_sbm.batch import (
-    SbmSensitivityBatch,
-    build_girr_delta_batch_from_sensitivities,
-    build_girr_vega_batch_from_sensitivities,
-)
+from frtb_sbm.batch import SbmSensitivityBatch
 from frtb_sbm.curvature import (
     calculate_curvature_risk_class_capital,
     calculate_curvature_risk_class_capital_from_batch,
@@ -500,7 +497,7 @@ def _calculate_girr_delta_risk_class_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    batch = build_girr_delta_batch_from_sensitivities(sensitivities)
+    batch = build_sbm_batch(sensitivities, SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)
     return _calculate_girr_delta_risk_class_capital_from_batch(
         batch,
         profile_id=profile_id,
@@ -795,7 +792,7 @@ def _calculate_girr_vega_risk_class_capital(
     pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
 ) -> RiskClassCapital:
-    batch = build_girr_vega_batch_from_sensitivities(sensitivities)
+    batch = build_sbm_batch(sensitivities, SbmRiskClass.GIRR, SbmRiskMeasure.VEGA)
     return _calculate_girr_vega_risk_class_capital_from_batch(
         batch,
         profile_id=profile_id,

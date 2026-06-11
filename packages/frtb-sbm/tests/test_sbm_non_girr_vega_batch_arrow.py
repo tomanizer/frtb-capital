@@ -18,12 +18,7 @@ from frtb_sbm import (
     SbmSensitivityBatch,
     SbmSignConvention,
     SbmSourceLineage,
-    build_commodity_vega_batch_from_sensitivities,
-    build_csr_nonsec_vega_batch_from_sensitivities,
-    build_csr_sec_ctp_vega_batch_from_sensitivities,
-    build_csr_sec_nonctp_vega_batch_from_sensitivities,
-    build_equity_vega_batch_from_sensitivities,
-    build_fx_vega_batch_from_sensitivities,
+    build_sbm_batch,
     calculate_sbm_capital,
     calculate_sbm_capital_from_batch,
     input_hash_for_sensitivities,
@@ -83,6 +78,32 @@ class HandoffCalculator(Protocol):
         *,
         context: SbmCalculationContext | None = None,
     ) -> SbmCapitalResult: ...
+
+
+def build_fx_vega_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.FX, SbmRiskMeasure.VEGA)
+
+
+def build_equity_vega_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA)
+
+
+def build_commodity_vega_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA)
+
+
+def build_csr_nonsec_vega_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA)
+
+
+def build_csr_sec_nonctp_vega_batch_from_sensitivities(
+    sensitivities: object,
+):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA)
+
+
+def build_csr_sec_ctp_vega_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA)
 
 
 def sample_context(run_id: str) -> SbmCalculationContext:

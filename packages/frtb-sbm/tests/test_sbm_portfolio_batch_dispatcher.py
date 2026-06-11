@@ -16,7 +16,7 @@ from frtb_sbm import (
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
-    build_fx_delta_batch_from_sensitivities,
+    build_sbm_batch,
     calculate_sbm_capital,
     calculate_sbm_portfolio_capital_from_batches,
     input_hash_for_sensitivities,
@@ -174,7 +174,7 @@ def test_row_compatibility_batches_report_materialized_input_dataclasses() -> No
         sample_sensitivity(1, risk_class=SbmRiskClass.FX, risk_measure=SbmRiskMeasure.DELTA),
         sample_sensitivity(2, risk_class=SbmRiskClass.FX, risk_measure=SbmRiskMeasure.DELTA),
     )
-    batch = build_fx_delta_batch_from_sensitivities(sensitivities)
+    batch = build_sbm_batch(sensitivities, SbmRiskClass.FX, SbmRiskMeasure.DELTA)
 
     calculation = calculate_sbm_portfolio_capital_from_batches((batch,), context=context)
 

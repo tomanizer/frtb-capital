@@ -21,7 +21,7 @@ from frtb_sbm import (
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
-    build_girr_curvature_batch_from_sensitivities,
+    build_sbm_batch,
     calculate_curvature_risk_class_capital,
     calculate_girr_curvature_risk_class_capital,
     calculate_sbm_capital,
@@ -52,6 +52,10 @@ CURVATURE_CITATIONS = (
     "basel_mar21_100",
     "basel_mar21_101",
 )
+
+
+def build_girr_curvature_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE)
 
 
 def sample_lineage() -> SbmSourceLineage:
