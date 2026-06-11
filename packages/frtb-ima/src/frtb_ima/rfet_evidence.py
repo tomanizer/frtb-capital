@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 
 import numpy as np
 import numpy.typing as npt
@@ -41,6 +41,10 @@ from frtb_ima.data_contracts import (
 )
 from frtb_ima.data_models import RealPriceObservation
 from frtb_ima.regimes import RegulatoryPolicy
+from frtb_ima.validation.rfet_batch import (
+    _rfet_batch_observation_window,
+    _rfet_batch_required_observations,
+)
 from frtb_ima.validation.rfet_qualitative import (
     _representativeness_result_from_controls,
     _rfet_qualitative_stage,
@@ -312,65 +316,31 @@ def assess_rfet_observation_batch(
     if not isinstance(qualitative_pass, bool):
         raise TypeError("qualitative_pass must be a bool")
 
-    if calendar is None:
-        lookback_start = as_of_date - timedelta(days=policy.rfet_lookback_days)
-        lookback_end = as_of_date
-        lookback_basis = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
-        calendar_source = ""
-        calendar_version = ""
-        official_holiday_count = 0
-        missing_business_dates: tuple[date, ...] = ()
-        business_dates: set[np.datetime64] | None = None
-        official_holidays: set[np.datetime64] = set()
-    else:
-        window = calendar.exact_twelve_month_window(
-            as_of_date,
-            shifted_start_date=shifted_start_date,
-            shifted_end_date=shifted_end_date,
-            shift_reason=shift_reason,
-        )
-        lookback_start = window.start_date
-        lookback_end = window.end_date
-        lookback_basis = window.basis.value
-        calendar_source = window.calendar_source
-        calendar_version = window.calendar_version
-        official_holiday_count = window.official_holiday_count
-        missing_business_dates = window.missing_business_dates
-        business_dates = _date64_set(window.business_dates)
-        official_holidays = _date64_set(window.official_holidays)
-
-    base_required = base_required_observation_count(risk_factor, policy)
-    new_issuance_prorated = False
-    required = base_required
-    effective_issue_date = new_issuance.issue_date if new_issuance is not None else issue_date
-    if (
-        new_issuance is not None
-        and new_issuance.prorating_approved
-        and effective_issue_date is not None
-    ):
-        required = prorated_required_observation_count(
-            base_required,
-            lookback_start=lookback_start,
-            as_of_date=as_of_date,
-            issue_date=effective_issue_date,
-        )
-        new_issuance_prorated = required != base_required
-    elif effective_issue_date is not None and allow_new_issuance_prorating:
-        required = prorated_required_observation_count(
-            base_required,
-            lookback_start=lookback_start,
-            as_of_date=as_of_date,
-            issue_date=effective_issue_date,
-        )
-        new_issuance_prorated = required != base_required
+    window = _rfet_batch_observation_window(
+        as_of_date,
+        policy,
+        calendar=calendar,
+        shifted_start_date=shifted_start_date,
+        shifted_end_date=shifted_end_date,
+        shift_reason=shift_reason,
+    )
+    required_observations = _rfet_batch_required_observations(
+        risk_factor,
+        policy,
+        window,
+        as_of_date=as_of_date,
+        new_issuance=new_issuance,
+        issue_date=issue_date,
+        allow_new_issuance_prorating=allow_new_issuance_prorating,
+    )
 
     bucket_representative, representative_items = _representativeness_result_from_controls(
         risk_factor,
         bucket_id,
         representativeness,
     )
-    lookback_start64 = np.datetime64(lookback_start, "D")
-    lookback_end64 = np.datetime64(lookback_end, "D")
+    lookback_start64 = np.datetime64(window.lookback_start, "D")
+    lookback_end64 = np.datetime64(window.lookback_end, "D")
     as_of64 = np.datetime64(as_of_date, "D")
     indices = observations.indices_for_risk_factor(risk_factor.name)
     if indices.size:
@@ -396,9 +366,9 @@ def assess_rfet_observation_batch(
             reason = RFETExclusionReason.FUTURE_OBSERVATION
         elif observation_date < lookback_start64 or observation_date > lookback_end64:
             reason = RFETExclusionReason.OUTSIDE_LOOKBACK
-        elif observation_date in official_holidays:
+        elif observation_date in window.official_holidays:
             reason = RFETExclusionReason.OFFICIAL_HOLIDAY
-        elif business_dates is not None and observation_date not in business_dates:
+        elif window.business_dates is not None and observation_date not in window.business_dates:
             reason = RFETExclusionReason.NON_BUSINESS_DATE
         elif require_source and not observations.sources[index]:
             reason = RFETExclusionReason.MISSING_SOURCE
@@ -436,30 +406,31 @@ def assess_rfet_observation_batch(
             eligible_vendors.append(vendor_id)
 
     eligible_count = len(eligible_dates)
-    quantitative_pass = eligible_count >= required
+    quantitative_pass = eligible_count >= required_observations.required
     status = _status_from_tests(qualitative_pass, quantitative_pass)
 
     return RFETEvidenceAssessment(
         risk_factor_name=risk_factor.name,
         as_of_date=as_of_date,
-        lookback_start=lookback_start,
-        base_required_observations=base_required,
-        required_observations=required,
+        lookback_start=window.lookback_start,
+        base_required_observations=required_observations.base_required,
+        required_observations=required_observations.required,
         eligible_observation_count=eligible_count,
         eligible_observation_dates=tuple(eligible_dates),
         source_count=len(eligible_sources),
         qualitative_pass=qualitative_pass,
         quantitative_pass=quantitative_pass,
         bucket_representative=bucket_representative,
-        new_issuance_prorated=new_issuance_prorated,
+        new_issuance_prorated=required_observations.new_issuance_prorated,
         modellability_status=status,
-        lookback_basis=lookback_basis,
-        calendar_source=calendar_source,
-        calendar_version=calendar_version,
-        official_holiday_count=official_holiday_count,
-        missing_business_dates=missing_business_dates,
+        lookback_basis=window.lookback_basis,
+        calendar_source=window.calendar_source,
+        calendar_version=window.calendar_version,
+        official_holiday_count=window.official_holiday_count,
+        missing_business_dates=window.missing_business_dates,
         shift_reason=shift_reason
-        if lookback_basis == ObservationWindowBasis.SHIFTED_TWELVE_MONTH_BUSINESS_CALENDAR.value
+        if window.lookback_basis
+        == ObservationWindowBasis.SHIFTED_TWELVE_MONTH_BUSINESS_CALENDAR.value
         else "",
         source_counts=_count_pairs(str(observations.sources[index]) for index in ordered_indices),
         vendor_counts=_count_pairs(eligible_vendors),
@@ -644,10 +615,6 @@ def _readonly_datetime_array(values: object, field_name: str) -> DatetimeArray:
         raise ValueError(f"{field_name} must be one-dimensional")
     array.flags.writeable = False
     return array
-
-
-def _date64_set(values: Sequence[date]) -> set[np.datetime64]:
-    return {np.datetime64(item, "D") for item in values}
 
 
 def _datetime_from_datetime64(value: np.datetime64) -> datetime | None:

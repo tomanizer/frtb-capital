@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, date, datetime, timedelta
 
+import numpy as np
 import pyarrow as pa
 import pytest
 from frtb_common import normalized_arrow_table_hash, source_content_hash
@@ -29,6 +30,10 @@ from frtb_ima import (
     input_hash_for_scenario_metadata_batch,
     normalize_ima_rfet_observation_arrow_table,
     normalize_ima_scenario_metadata_arrow_table,
+)
+from frtb_ima.validation.rfet_batch import (
+    _rfet_batch_observation_window,
+    _rfet_batch_required_observations,
 )
 
 AS_OF = date(2025, 6, 30)
@@ -352,6 +357,37 @@ def test_rfet_observation_batch_matches_row_path_for_calendar_and_new_issuance()
     )
 
     assert batch_result.as_dict() == row_result.as_dict()
+
+
+def test_rfet_observation_batch_stage_computes_calendar_and_thresholds() -> None:
+    risk_factor = _risk_factor()
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    holiday = date(2024, 12, 25)
+    calendar = BusinessCalendar(
+        business_dates=_weekdays(date(2024, 7, 1), AS_OF, holidays={holiday}),
+        official_holidays=(holiday,),
+        source="FED",
+        version="2026.1",
+    )
+    window = _rfet_batch_observation_window(AS_OF, policy, calendar=calendar)
+    required = _rfet_batch_required_observations(
+        risk_factor,
+        policy,
+        window,
+        as_of_date=AS_OF,
+        new_issuance=RFETNewIssuanceEvidence(
+            issue_date=date(2025, 6, 1),
+            prorating_approved=True,
+            policy_citation="internal-policy-rfet-new-issuance",
+        ),
+    )
+
+    assert window.calendar_source == "FED"
+    assert window.official_holiday_count == 1
+    assert np.datetime64(holiday, "D") in window.official_holidays
+    assert required.base_required == 24
+    assert required.required == 2
+    assert required.new_issuance_prorated is True
 
 
 def test_rfet_observation_batch_matches_row_path_for_representativeness_evidence() -> None:

@@ -72,6 +72,9 @@ compatibility import path for existing public callers.
 RFET assessment result assembly physically lives under
 `frtb_ima.assembly.rfet`; `frtb_ima.rfet_evidence` remains the compatibility
 import path for existing public callers.
+RFET columnar batch assessment setup physically lives under
+`frtb_ima.validation.rfet_batch`; `frtb_ima.rfet_evidence` remains the
+compatibility import path for `assess_rfet_observation_batch`.
 
 ## References
 
