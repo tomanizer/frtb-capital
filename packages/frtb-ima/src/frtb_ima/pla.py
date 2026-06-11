@@ -37,17 +37,20 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_ima._array_utils import finite_1d_float_array
-from frtb_ima._observation_utils import (
-    select_recent_observation_window as _select_recent_observation_window,
-)
-from frtb_ima._observation_utils import (
-    validate_observation_dates as _validate_observation_dates,
-)
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.logging import calculation_log_extra
 from frtb_ima.regimes import (
     PLAMetricsRequired,
     RegulatoryPolicy,
+)
+from frtb_ima.validation.observation_windows import (
+    require_positive_observation_count as _require_positive_observation_count,
+)
+from frtb_ima.validation.observation_windows import (
+    select_recent_observation_window as _select_recent_observation_window,
+)
+from frtb_ima.validation.observation_windows import (
+    validate_observation_dates as _validate_observation_dates,
 )
 
 DEFAULT_ZONE_LABELS: tuple[str, str, str] = ("GREEN", "AMBER", "RED")
@@ -547,12 +550,11 @@ def pla_assessment_for_policy_with_diagnostics(
     PlaPolicyAssessmentResult
         Result of the operation.
     """
-    if policy.pla_window_days <= 0:
-        raise ValueError(f"pla_window_days must be positive, got {policy.pla_window_days}")
-    if policy.pla_minimum_history_days <= 0:
-        raise ValueError(
-            f"pla_minimum_history_days must be positive, got {policy.pla_minimum_history_days}"
-        )
+    _require_positive_observation_count(policy.pla_window_days, field="pla_window_days")
+    _require_positive_observation_count(
+        policy.pla_minimum_history_days,
+        field="pla_minimum_history_days",
+    )
 
     hpl_arr = _as_finite_1d_array(hpl, "hpl")
     rtpl_arr = _as_finite_1d_array(rtpl, "rtpl")

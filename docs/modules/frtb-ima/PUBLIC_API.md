@@ -52,7 +52,9 @@ Arrow tabular handoffs.
 ## Submodule-only surface
 
 Clients should not depend on private `_array_utils`, `_mapping_utils`, or
-`_observation_utils` modules. Tests may import internal helpers for coverage.
+`_observation_utils` modules. Observation-window validation helpers physically
+live under `frtb_ima.validation.observation_windows`; `_observation_utils`
+remains a compatibility path for package-local coverage tests.
 
 ## References
 
