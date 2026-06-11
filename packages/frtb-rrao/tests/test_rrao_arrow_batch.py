@@ -111,7 +111,6 @@ def test_rrao_arrow_batch_batch_matches_v1_row_capital() -> None:
     validate_rrao_result_reconciliation(calculation.result)
     assert batch.source_hash == source_hash
     assert batch.handoff_hash is not None
-    assert calculation.accepted_row_dataclasses_materialized == 0
     assert calculation.result.profile_hash == row_result.profile_hash
     assert calculation.result.total_rrao == pytest.approx(row_result.total_rrao)
     assert _line_outputs(calculation.result.lines) == _line_outputs(row_result.lines)
@@ -298,7 +297,6 @@ def test_rrao_arrow_batch_batch_matches_investment_fund_row_capital() -> None:
     batch = build_rrao_batch_from_arrow(normalize_rrao_arrow_table(_arrow_table((position,))))
     calculation = calculate_rrao_capital_from_batch(batch, context=context)
 
-    assert calculation.accepted_row_dataclasses_materialized == 0
     assert _line_outputs(calculation.result.lines) == _line_outputs(row_result.lines)
     assert calculation.result.total_rrao == pytest.approx(row_result.total_rrao)
 
@@ -362,7 +360,7 @@ def test_rrao_column_batch_accepts_numpy_scalar_ints_and_bools() -> None:
     assert batch.is_investment_fund_exposures.tolist() == [False]
 
 
-def test_rrao_column_batch_high_volume_path_reports_zero_row_dataclasses() -> None:
+def test_rrao_column_batch_high_volume_path_avoids_row_dataclasses() -> None:
     row_count = 1_000
     batch = build_rrao_batch_from_columns(**_minimal_column_payload(row_count=row_count))
 
@@ -370,7 +368,6 @@ def test_rrao_column_batch_high_volume_path_reports_zero_row_dataclasses() -> No
 
     assert batch.row_count == row_count
     assert not any(isinstance(value, RraoPosition) for value in batch.__dict__.values())
-    assert calculation.accepted_row_dataclasses_materialized == 0
     assert len(calculation.result.lines) == row_count
     assert calculation.result.excluded_lines == ()
 
@@ -392,7 +389,6 @@ def test_rrao_batch_decision_lookup_uses_profile_masks(
 
     calculation = calculate_rrao_capital_from_batch(batch, context=_sample_context())
 
-    assert calculation.accepted_row_dataclasses_materialized == 0
     assert len(calls) == 1
     assert len(calculation.result.lines) == 250
 

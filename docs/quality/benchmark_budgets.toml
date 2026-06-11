@@ -217,16 +217,6 @@ path = ["timings", "arrow_positions_per_second"]
 min = 1500.0
 
 [[benchmarks.metrics]]
-name = "batch accepted-row dataclasses"
-path = ["result", "batch_accepted_row_dataclasses_materialized"]
-max = 0.0
-
-[[benchmarks.metrics]]
-name = "Arrow accepted-row dataclasses"
-path = ["result", "arrow_accepted_row_dataclasses_materialized"]
-max = 0.0
-
-[[benchmarks.metrics]]
 name = "batch capital delta"
 path = ["result", "batch_absolute_delta"]
 max = 0.000000001

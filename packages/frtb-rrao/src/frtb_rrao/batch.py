@@ -131,7 +131,6 @@ class RraoBatchCapitalCalculation:
     classifications: ObjectArray
     risk_weights: FloatArray
     add_ons: FloatArray
-    accepted_row_dataclasses_materialized: int = 0
 
 
 @dataclass(frozen=True)
@@ -627,7 +626,6 @@ def calculate_rrao_capital_from_batch(
             np.asarray(add_ons, dtype=np.float64).copy(),
             copy=False,
         ),
-        accepted_row_dataclasses_materialized=0,
     )
 
 
