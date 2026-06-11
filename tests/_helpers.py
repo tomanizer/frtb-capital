@@ -1,4 +1,4 @@
-"""Test-only helpers for JSON-ready audit payload normalisation."""
+"""Shared test-only helpers for suite-level fixture assertions."""
 
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ from typing import Any
 
 
 def normalise_audit_value(value: object) -> Any:
+    """Return a JSON-ready representation of audit assertion payloads."""
+
     if isinstance(value, dict):
         return {
             str(key): normalise_audit_value(item)

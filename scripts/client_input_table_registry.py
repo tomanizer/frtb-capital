@@ -77,8 +77,8 @@ def input_table_registry() -> Mapping[tuple[str, str], InputTableEntry]:
             package="frtb_sbm",
             input_table_id="girr_delta",
             column_specs=frtb_sbm.GIRR_DELTA_ARROW_COLUMN_SPECS,
-            normalize=frtb_sbm.normalize_girr_delta_arrow_table,
-            build_batch=frtb_sbm.build_girr_delta_batch_from_arrow,
+            normalize=_normalize_sbm_girr_delta_arrow_table,
+            build_batch=_build_sbm_girr_delta_batch_from_arrow,
         ),
         InputTableEntry(
             package="frtb_ima",
@@ -96,6 +96,26 @@ def input_table_registry() -> Mapping[tuple[str, str], InputTableEntry]:
         ),
     )
     return {(entry.package, entry.input_table_id): entry for entry in entries}
+
+
+def _normalize_sbm_girr_delta_arrow_table(table: pa.Table) -> NormalizedArrowTable:
+    import frtb_sbm
+
+    return frtb_sbm.normalize_sbm_arrow_table(
+        table,
+        frtb_sbm.SbmRiskClass.GIRR,
+        frtb_sbm.SbmRiskMeasure.DELTA,
+    )
+
+
+def _build_sbm_girr_delta_batch_from_arrow(handoff: NormalizedArrowTable) -> object:
+    import frtb_sbm
+
+    return frtb_sbm.build_sbm_batch_from_arrow(
+        handoff,
+        frtb_sbm.SbmRiskClass.GIRR,
+        frtb_sbm.SbmRiskMeasure.DELTA,
+    )
 
 
 def resolve_input_table_entry(package: str, input_table_id: str) -> InputTableEntry:
