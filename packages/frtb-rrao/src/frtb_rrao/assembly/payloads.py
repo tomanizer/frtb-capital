@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import cast
-
 from frtb_rrao.assembly._hashing import hash_payload, hash_position_payloads
 from frtb_rrao.assembly._payload_components import (
     back_to_back_match_payload,
@@ -16,6 +14,15 @@ from frtb_rrao.assembly._payload_components import (
     lineage_payload_from_values,
 )
 from frtb_rrao.data_models import RraoPosition
+
+_BatchIdentityValues = tuple[object, object, object, object, object, object, object, object]
+_BatchLineageValues = tuple[object, object, object, tuple[tuple[str, str], ...]]
+_BatchClassificationValues = tuple[object, object, object, object]
+_BatchShapeValues = tuple[object, object, object, object, object, object]
+_BatchFundValues = tuple[
+    object, object, object, object, object, object, object, object, object, object
+]
+_BatchAuditValues = tuple[object, tuple[str, ...], object, object]
 
 
 def position_payload(position: RraoPosition) -> dict[str, object]:
@@ -114,54 +121,127 @@ def batch_position_payload(
     dict[str, object]
         JSON-stable position payload.
     """
-    return _batch_position_payload_from_mapping(locals())
+    # fmt: off
+    return _batch_position_payload_from_groups(
+        identity=(position_id, source_row_id, desk_id, legal_entity,
+                  gross_effective_notional, currency, evidence_type, evidence_label),
+        lineage=(lineage_source_system, lineage_source_file, lineage_source_row_id,
+                 source_column_map),
+        classification=(classification_hint, exclusion_reason, exclusion_evidence_id,
+                        supervisor_directive_id),
+        shape=(underlying_count, is_path_dependent, has_maturity, has_strike_or_barrier,
+               has_multiple_strikes_or_barriers, is_ctp_hedge),
+        fund=(
+            is_investment_fund_exposure, investment_fund_id, investment_fund_section_205_method,
+            investment_fund_included_exposure_type, investment_fund_mandate_evidence_id,
+            investment_fund_section_205_evidence_id, investment_fund_gross_effective_notional,
+            investment_fund_included_exposure_ratio, investment_fund_look_through_available,
+            investment_fund_mandate_allows_rrao_exposures,
+        ),
+        audit=(notional_source, citations, back_to_back_match_group_id,
+               back_to_back_matched_position_id),
+    )
+    # fmt: on
 
 
-def _batch_position_payload_from_mapping(values: dict[str, object]) -> dict[str, object]:
+def _batch_position_payload_from_groups(
+    *,
+    identity: _BatchIdentityValues,
+    lineage: _BatchLineageValues,
+    classification: _BatchClassificationValues,
+    shape: _BatchShapeValues,
+    fund: _BatchFundValues,
+    audit: _BatchAuditValues,
+) -> dict[str, object]:
+    (
+        position_id,
+        source_row_id,
+        desk_id,
+        legal_entity,
+        gross_effective_notional,
+        currency,
+        evidence_type,
+        evidence_label,
+    ) = identity
+    lineage_source_system, lineage_source_file, lineage_source_row_id, source_column_map = lineage
+    classification_hint, exclusion_reason, exclusion_evidence_id, supervisor_directive_id = (
+        classification
+    )
+    (
+        underlying_count,
+        is_path_dependent,
+        has_maturity,
+        has_strike_or_barrier,
+        has_multiple_strikes_or_barriers,
+        is_ctp_hedge,
+    ) = shape
+    is_investment_fund_exposure = fund[0]
+    notional_source, citations, _, _ = audit
     return position_payload_from_values(
-        position_id=values["position_id"],
-        source_row_id=values["source_row_id"],
-        desk_id=values["desk_id"],
-        legal_entity=values["legal_entity"],
-        gross_effective_notional=float_value(values["gross_effective_notional"]),
-        currency=values["currency"],
-        evidence_type=values["evidence_type"],
-        evidence_label=values["evidence_label"],
+        position_id=position_id,
+        source_row_id=source_row_id,
+        desk_id=desk_id,
+        legal_entity=legal_entity,
+        gross_effective_notional=float_value(gross_effective_notional),
+        currency=currency,
+        evidence_type=evidence_type,
+        evidence_label=evidence_label,
         lineage=lineage_payload_from_values(
-            source_system=values["lineage_source_system"],
-            source_file=values["lineage_source_file"],
-            source_row_id=values["lineage_source_row_id"],
-            source_column_map=cast(tuple[tuple[str, str], ...], values["source_column_map"]),
+            source_system=lineage_source_system,
+            source_file=lineage_source_file,
+            source_row_id=lineage_source_row_id,
+            source_column_map=source_column_map,
         ),
-        classification_hint=values["classification_hint"],
-        exclusion_reason=values["exclusion_reason"],
-        exclusion_evidence_id=values["exclusion_evidence_id"],
-        supervisor_directive_id=values["supervisor_directive_id"],
-        underlying_count=values["underlying_count"],
-        is_path_dependent=values["is_path_dependent"],
-        has_maturity=values["has_maturity"],
-        has_strike_or_barrier=values["has_strike_or_barrier"],
-        has_multiple_strikes_or_barriers=values["has_multiple_strikes_or_barriers"],
-        is_ctp_hedge=bool(values["is_ctp_hedge"]),
-        is_investment_fund_exposure=bool(values["is_investment_fund_exposure"]),
-        investment_fund_descriptor=investment_fund_descriptor_payload_from_values(
-            is_investment_fund_exposure=bool(values["is_investment_fund_exposure"]),
-            fund_id=values["investment_fund_id"],
-            section_205_method=values["investment_fund_section_205_method"],
-            included_exposure_type=values["investment_fund_included_exposure_type"],
-            mandate_evidence_id=values["investment_fund_mandate_evidence_id"],
-            section_205_evidence_id=values["investment_fund_section_205_evidence_id"],
-            fund_gross_effective_notional=values["investment_fund_gross_effective_notional"],
-            included_exposure_ratio=values["investment_fund_included_exposure_ratio"],
-            look_through_available=values["investment_fund_look_through_available"],
-            mandate_allows_rrao_exposures=values["investment_fund_mandate_allows_rrao_exposures"],
-        ),
-        notional_source=values["notional_source"],
-        citations=cast(tuple[str, ...], values["citations"]),
-        back_to_back_match=back_to_back_match_payload_from_values(
-            match_group_id=values["back_to_back_match_group_id"],
-            matched_position_id=values["back_to_back_matched_position_id"],
-        ),
+        classification_hint=classification_hint,
+        exclusion_reason=exclusion_reason,
+        exclusion_evidence_id=exclusion_evidence_id,
+        supervisor_directive_id=supervisor_directive_id,
+        underlying_count=underlying_count,
+        is_path_dependent=is_path_dependent,
+        has_maturity=has_maturity,
+        has_strike_or_barrier=has_strike_or_barrier,
+        has_multiple_strikes_or_barriers=has_multiple_strikes_or_barriers,
+        is_ctp_hedge=bool(is_ctp_hedge),
+        is_investment_fund_exposure=bool(is_investment_fund_exposure),
+        investment_fund_descriptor=_batch_fund_payload(fund),
+        notional_source=notional_source,
+        citations=citations,
+        back_to_back_match=_batch_match_payload(audit),
+    )
+
+
+def _batch_fund_payload(fund: _BatchFundValues) -> dict[str, object] | None:
+    (
+        is_investment_fund_exposure,
+        investment_fund_id,
+        investment_fund_section_205_method,
+        investment_fund_included_exposure_type,
+        investment_fund_mandate_evidence_id,
+        investment_fund_section_205_evidence_id,
+        investment_fund_gross_effective_notional,
+        investment_fund_included_exposure_ratio,
+        investment_fund_look_through_available,
+        investment_fund_mandate_allows_rrao_exposures,
+    ) = fund
+    return investment_fund_descriptor_payload_from_values(
+        is_investment_fund_exposure=bool(is_investment_fund_exposure),
+        fund_id=investment_fund_id,
+        section_205_method=investment_fund_section_205_method,
+        included_exposure_type=investment_fund_included_exposure_type,
+        mandate_evidence_id=investment_fund_mandate_evidence_id,
+        section_205_evidence_id=investment_fund_section_205_evidence_id,
+        fund_gross_effective_notional=investment_fund_gross_effective_notional,
+        included_exposure_ratio=investment_fund_included_exposure_ratio,
+        look_through_available=investment_fund_look_through_available,
+        mandate_allows_rrao_exposures=investment_fund_mandate_allows_rrao_exposures,
+    )
+
+
+def _batch_match_payload(audit: _BatchAuditValues) -> dict[str, object] | None:
+    _, _, back_to_back_match_group_id, back_to_back_matched_position_id = audit
+    return back_to_back_match_payload_from_values(
+        match_group_id=back_to_back_match_group_id,
+        matched_position_id=back_to_back_matched_position_id,
     )
 
 
