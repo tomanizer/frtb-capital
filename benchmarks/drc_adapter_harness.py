@@ -129,18 +129,7 @@ def run_benchmark(config: DrcBenchmarkConfig) -> dict[str, object]:
             },
             "materialized_dataclass_count": {
                 "row_compatibility_path": config.row_count,
-                "arrow_batch_path": batch_result.value.accepted_row_dataclasses_materialized,
-                "non_securitisation_arrow_batch_path": (
-                    batch_result.value.accepted_row_dataclasses_materialized
-                ),
-                "securitisation_non_ctp_arrow_batch_path": (
-                    sec_case.value["accepted_row_dataclasses_materialized"]
-                ),
-                "ctp_arrow_batch_path": ctp_case.value["accepted_row_dataclasses_materialized"],
             },
-            "accepted_row_dataclasses_avoided": (
-                batch_result.value.accepted_row_dataclasses_materialized == 0
-            ),
             "tracemalloc_peak_bytes": peak_bytes,
             "capital": {
                 "row_total": row_result.value.total_drc,
@@ -260,9 +249,6 @@ def _run_securitisation_non_ctp_case(config: DrcBenchmarkConfig) -> dict[str, ob
     _require_matching_capital(row_result, batch_result.result)
     return {
         "row_count": len(positions),
-        "accepted_row_dataclasses_materialized": (
-            batch_result.accepted_row_dataclasses_materialized
-        ),
         "absolute_delta": abs(row_result.total_drc - batch_result.result.total_drc),
         "net_jtd_count": len(batch_result.result.net_jtds),
         "bucket_count": len(batch_result.result.categories[0].bucket_results),
@@ -289,9 +275,6 @@ def _run_ctp_case(config: DrcBenchmarkConfig) -> dict[str, object]:
     _require_matching_capital(row_result, batch_result.result)
     return {
         "row_count": len(positions),
-        "accepted_row_dataclasses_materialized": (
-            batch_result.accepted_row_dataclasses_materialized
-        ),
         "absolute_delta": abs(row_result.total_drc - batch_result.result.total_drc),
         "net_jtd_count": len(batch_result.result.net_jtds),
         "bucket_count": len(batch_result.result.categories[0].bucket_results),
