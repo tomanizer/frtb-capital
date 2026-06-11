@@ -17,12 +17,9 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm.batch import (
     SbmSensitivityBatch,
-    sorted_commodity_delta_batch_indices,
     sorted_csr_nonsec_delta_batch_indices,
     sorted_csr_sec_ctp_delta_batch_indices,
     sorted_csr_sec_nonctp_delta_batch_indices,
-    sorted_equity_delta_batch_indices,
-    sorted_fx_delta_batch_indices,
 )
 from frtb_sbm.data_models import (
     SbmRiskClass,
@@ -31,24 +28,29 @@ from frtb_sbm.data_models import (
     WeightedSensitivity,
 )
 from frtb_sbm.kernel.weighting import (
-    _optional_axis_value,
     _required_optional_axis_value,
     sort_weighted_sensitivities_deterministic,
     weighted_sensitivity_sort_key,
 )
 from frtb_sbm.reference_data import (
-    commodity_bucket_definition,
-    commodity_delta_risk_weight,
     csr_nonsec_delta_risk_weight,
     csr_nonsec_validate_delta_inputs,
-    equity_bucket_definition,
-    equity_delta_risk_weight,
-    fx_bucket_definition,
-    fx_delta_risk_weight,
 )
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
+from frtb_sbm.risk_classes.commodity_weighting import (
+    weight_commodity_delta_sensitivities,
+    weight_commodity_delta_sensitivity_batch,
+)
 from frtb_sbm.risk_classes.csr_sec_ctp_weighting import (
     _ensure_csr_sec_ctp_decomposition_evidence_for_batch,
+)
+from frtb_sbm.risk_classes.equity_weighting import (
+    weight_equity_delta_sensitivities,
+    weight_equity_delta_sensitivity_batch,
+)
+from frtb_sbm.risk_classes.fx_weighting import (
+    weight_fx_delta_sensitivities,
+    weight_fx_delta_sensitivity_batch,
 )
 from frtb_sbm.risk_classes.girr_weighting import (
     weight_girr_delta_sensitivities,
@@ -59,7 +61,7 @@ from frtb_sbm.risk_classes.vega_weighting import (
     weight_non_girr_vega_sensitivities,
     weight_non_girr_vega_sensitivity_batch,
 )
-from frtb_sbm.validation import SbmInputError, sort_sensitivities_deterministic
+from frtb_sbm.validation import sort_sensitivities_deterministic
 
 
 def compute_weighted_sensitivities(
@@ -144,192 +146,6 @@ def compute_weighted_sensitivities(
         "frtb-sbm weighted sensitivity lookup does not support "
         f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
     )
-
-
-def weight_fx_delta_sensitivity_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-    reporting_currency: str,
-) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted FX delta sensitivities from a package-owned batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    profile_id : str
-        See signature.
-    reporting_currency : str
-        See signature.
-
-    Returns
-    -------
-    tuple[WeightedSensitivity, ...]
-    """
-
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        SbmRiskClass.FX,
-        SbmRiskMeasure.DELTA,
-    )
-    if batch.risk_class is not SbmRiskClass.FX:
-        raise UnsupportedRegulatoryFeatureError(
-            f"frtb-sbm FX delta weighting does not support risk_class={batch.risk_class.value}"
-        )
-    if batch.risk_measure is not SbmRiskMeasure.DELTA:
-        raise UnsupportedRegulatoryFeatureError(
-            f"frtb-sbm FX delta weighting does not support risk_measure={batch.risk_measure.value}"
-        )
-    weighted: list[WeightedSensitivity] = []
-    for row_index in sorted_fx_delta_batch_indices(batch):
-        index = int(row_index)
-        bucket = fx_bucket_definition(profile_id, cast(str, batch.buckets[index]))
-        risk_factor = cast(str, batch.risk_factors[index]).strip().upper()
-        if bucket.currency != risk_factor:
-            raise SbmInputError(
-                "FX bucket must match risk_factor currency",
-                field="bucket",
-                sensitivity_id=cast(str, batch.sensitivity_ids[index]),
-            )
-        risk_weight, citation_ids = fx_delta_risk_weight(
-            profile_id,
-            currency=bucket.currency,
-            reporting_currency=reporting_currency,
-        )
-        amount = float(batch.amounts[index])
-        weighted.append(
-            WeightedSensitivity(
-                sensitivity_id=cast(str, batch.sensitivity_ids[index]),
-                risk_class=SbmRiskClass.FX,
-                risk_measure=SbmRiskMeasure.DELTA,
-                bucket=cast(str, batch.buckets[index]),
-                raw_amount=amount,
-                risk_weight=risk_weight,
-                scaled_amount=amount * risk_weight,
-                citation_ids=citation_ids,
-                qualifier=_optional_axis_value(batch.qualifiers, index),
-            )
-        )
-    return tuple(weighted)
-
-
-def weight_equity_delta_sensitivity_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted equity delta sensitivities from a package-owned batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    profile_id : str
-        See signature.
-
-    Returns
-    -------
-    tuple[WeightedSensitivity, ...]
-    """
-
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        SbmRiskClass.EQUITY,
-        SbmRiskMeasure.DELTA,
-    )
-    if batch.risk_class is not SbmRiskClass.EQUITY:
-        raise UnsupportedRegulatoryFeatureError(
-            f"frtb-sbm equity delta weighting does not support risk_class={batch.risk_class.value}"
-        )
-    if batch.risk_measure is not SbmRiskMeasure.DELTA:
-        raise UnsupportedRegulatoryFeatureError(
-            "frtb-sbm equity delta weighting does not support "
-            f"risk_measure={batch.risk_measure.value}"
-        )
-    weighted: list[WeightedSensitivity] = []
-    for row_index in sorted_equity_delta_batch_indices(batch):
-        index = int(row_index)
-        bucket_id = cast(str, batch.buckets[index])
-        risk_factor = cast(str, batch.risk_factors[index])
-        equity_bucket_definition(profile_id, bucket_id)
-        risk_weight, citation_ids = equity_delta_risk_weight(
-            profile_id,
-            bucket_id=bucket_id,
-            risk_factor=risk_factor,
-        )
-        amount = float(batch.amounts[index])
-        weighted.append(
-            WeightedSensitivity(
-                sensitivity_id=cast(str, batch.sensitivity_ids[index]),
-                risk_class=SbmRiskClass.EQUITY,
-                risk_measure=SbmRiskMeasure.DELTA,
-                bucket=bucket_id,
-                raw_amount=amount,
-                risk_weight=risk_weight,
-                scaled_amount=amount * risk_weight,
-                citation_ids=citation_ids,
-                qualifier=_required_optional_axis_value(batch.qualifiers, index, "qualifier"),
-            )
-        )
-    return tuple(weighted)
-
-
-def weight_commodity_delta_sensitivity_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted commodity delta sensitivities from a package-owned batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    profile_id : str
-        See signature.
-
-    Returns
-    -------
-    tuple[WeightedSensitivity, ...]
-    """
-
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        SbmRiskClass.COMMODITY,
-        SbmRiskMeasure.DELTA,
-    )
-    if batch.risk_class is not SbmRiskClass.COMMODITY:
-        raise UnsupportedRegulatoryFeatureError(
-            "frtb-sbm commodity delta weighting does not support "
-            f"risk_class={batch.risk_class.value}"
-        )
-    if batch.risk_measure is not SbmRiskMeasure.DELTA:
-        raise UnsupportedRegulatoryFeatureError(
-            "frtb-sbm commodity delta weighting does not support "
-            f"risk_measure={batch.risk_measure.value}"
-        )
-    weighted: list[WeightedSensitivity] = []
-    for row_index in sorted_commodity_delta_batch_indices(batch):
-        index = int(row_index)
-        bucket_id = cast(str, batch.buckets[index])
-        commodity_bucket_definition(profile_id, bucket_id)
-        risk_weight, citation_ids = commodity_delta_risk_weight(
-            profile_id,
-            bucket_id=bucket_id,
-        )
-        amount = float(batch.amounts[index])
-        weighted.append(
-            WeightedSensitivity(
-                sensitivity_id=cast(str, batch.sensitivity_ids[index]),
-                risk_class=SbmRiskClass.COMMODITY,
-                risk_measure=SbmRiskMeasure.DELTA,
-                bucket=bucket_id,
-                raw_amount=amount,
-                risk_weight=risk_weight,
-                scaled_amount=amount * risk_weight,
-                citation_ids=citation_ids,
-                qualifier=_required_optional_axis_value(batch.qualifiers, index, "qualifier"),
-            )
-        )
-    return tuple(weighted)
 
 
 def weight_csr_nonsec_delta_sensitivity_batch(
@@ -542,188 +358,6 @@ def weight_csr_sec_ctp_delta_sensitivity_batch(
                 scaled_amount=amount * risk_weight,
                 citation_ids=citation_ids,
                 qualifier=qualifier,
-            )
-        )
-    return tuple(weighted)
-
-
-def weight_fx_delta_sensitivities(
-    sensitivities: Sequence[SbmSensitivity],
-    *,
-    profile_id: str,
-    reporting_currency: str,
-) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted FX delta sensitivities for a supported profile.
-    Parameters
-    ----------
-    sensitivities : Sequence[SbmSensitivity]
-        See signature.
-    profile_id : str
-        See signature.
-    reporting_currency : str
-        See signature.
-
-    Returns
-    -------
-    tuple[WeightedSensitivity, ...]
-    """
-
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        SbmRiskClass.FX,
-        SbmRiskMeasure.DELTA,
-    )
-    weighted: list[WeightedSensitivity] = []
-    for sensitivity in sort_sensitivities_deterministic(sensitivities):
-        if sensitivity.risk_class is not SbmRiskClass.FX:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm FX delta weighting does not support "
-                f"risk_class={sensitivity.risk_class.value}"
-            )
-        if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm FX delta weighting does not support "
-                f"risk_measure={sensitivity.risk_measure.value}"
-            )
-        bucket = fx_bucket_definition(profile_id, sensitivity.bucket)
-        if bucket.currency != sensitivity.risk_factor.strip().upper():
-            raise SbmInputError(
-                "FX bucket must match risk_factor currency",
-                field="bucket",
-                sensitivity_id=sensitivity.sensitivity_id,
-            )
-        risk_weight, citation_ids = fx_delta_risk_weight(
-            profile_id,
-            currency=bucket.currency,
-            reporting_currency=reporting_currency,
-        )
-        scaled_amount = sensitivity.amount * risk_weight
-        weighted.append(
-            WeightedSensitivity(
-                sensitivity_id=sensitivity.sensitivity_id,
-                risk_class=SbmRiskClass.FX,
-                risk_measure=SbmRiskMeasure.DELTA,
-                bucket=sensitivity.bucket,
-                raw_amount=sensitivity.amount,
-                risk_weight=risk_weight,
-                scaled_amount=scaled_amount,
-                citation_ids=citation_ids,
-                qualifier=sensitivity.qualifier,
-            )
-        )
-    return tuple(weighted)
-
-
-def weight_equity_delta_sensitivities(
-    sensitivities: Sequence[SbmSensitivity],
-    *,
-    profile_id: str,
-) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted equity delta sensitivities for a supported profile.
-    Parameters
-    ----------
-    sensitivities : Sequence[SbmSensitivity]
-        See signature.
-    profile_id : str
-        See signature.
-
-    Returns
-    -------
-    tuple[WeightedSensitivity, ...]
-    """
-
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        SbmRiskClass.EQUITY,
-        SbmRiskMeasure.DELTA,
-    )
-    weighted: list[WeightedSensitivity] = []
-    for sensitivity in sort_sensitivities_deterministic(sensitivities):
-        if sensitivity.risk_class is not SbmRiskClass.EQUITY:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm equity delta weighting does not support "
-                f"risk_class={sensitivity.risk_class.value}"
-            )
-        if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm equity delta weighting does not support "
-                f"risk_measure={sensitivity.risk_measure.value}"
-            )
-        equity_bucket_definition(profile_id, sensitivity.bucket)
-        risk_weight, citation_ids = equity_delta_risk_weight(
-            profile_id,
-            bucket_id=sensitivity.bucket,
-            risk_factor=sensitivity.risk_factor,
-        )
-        scaled_amount = sensitivity.amount * risk_weight
-        weighted.append(
-            WeightedSensitivity(
-                sensitivity_id=sensitivity.sensitivity_id,
-                risk_class=SbmRiskClass.EQUITY,
-                risk_measure=SbmRiskMeasure.DELTA,
-                bucket=sensitivity.bucket,
-                raw_amount=sensitivity.amount,
-                risk_weight=risk_weight,
-                scaled_amount=scaled_amount,
-                citation_ids=citation_ids,
-                qualifier=sensitivity.qualifier,
-            )
-        )
-    return tuple(weighted)
-
-
-def weight_commodity_delta_sensitivities(
-    sensitivities: Sequence[SbmSensitivity],
-    *,
-    profile_id: str,
-) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted commodity delta sensitivities for a supported profile.
-    Parameters
-    ----------
-    sensitivities : Sequence[SbmSensitivity]
-        See signature.
-    profile_id : str
-        See signature.
-
-    Returns
-    -------
-    tuple[WeightedSensitivity, ...]
-    """
-
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        SbmRiskClass.COMMODITY,
-        SbmRiskMeasure.DELTA,
-    )
-    weighted: list[WeightedSensitivity] = []
-    for sensitivity in sort_sensitivities_deterministic(sensitivities):
-        if sensitivity.risk_class is not SbmRiskClass.COMMODITY:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm commodity delta weighting does not support "
-                f"risk_class={sensitivity.risk_class.value}"
-            )
-        if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm commodity delta weighting does not support "
-                f"risk_measure={sensitivity.risk_measure.value}"
-            )
-        commodity_bucket_definition(profile_id, sensitivity.bucket)
-        risk_weight, citation_ids = commodity_delta_risk_weight(
-            profile_id,
-            bucket_id=sensitivity.bucket,
-        )
-        scaled_amount = sensitivity.amount * risk_weight
-        weighted.append(
-            WeightedSensitivity(
-                sensitivity_id=sensitivity.sensitivity_id,
-                risk_class=SbmRiskClass.COMMODITY,
-                risk_measure=SbmRiskMeasure.DELTA,
-                bucket=sensitivity.bucket,
-                raw_amount=sensitivity.amount,
-                risk_weight=risk_weight,
-                scaled_amount=scaled_amount,
-                citation_ids=citation_ids,
-                qualifier=sensitivity.qualifier,
             )
         )
     return tuple(weighted)

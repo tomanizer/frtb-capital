@@ -34,7 +34,7 @@ from frtb_sbm.reference_data import (
     fx_delta_intra_bucket_correlation,
     fx_inter_bucket_correlation,
 )
-from frtb_sbm.weighted_sensitivity import weight_fx_delta_sensitivity_batch
+from frtb_sbm.risk_classes.fx_weighting import weight_fx_delta_sensitivity_batch
 
 
 def calculate_fx_delta_risk_class_capital(
