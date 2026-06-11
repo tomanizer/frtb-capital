@@ -11,11 +11,8 @@ Regulatory traceability:
 from __future__ import annotations
 
 from collections.abc import Sequence
-from numbers import Integral
 from typing import cast
 
-import numpy as np
-import numpy.typing as npt
 from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
@@ -28,7 +25,6 @@ from frtb_sbm.batch import (
     sorted_csr_sec_nonctp_delta_batch_indices,
     sorted_equity_delta_batch_indices,
     sorted_fx_delta_batch_indices,
-    sorted_girr_vega_batch_indices,
     sorted_sbm_batch_indices,
 )
 from frtb_sbm.data_models import (
@@ -36,6 +32,13 @@ from frtb_sbm.data_models import (
     SbmRiskMeasure,
     SbmSensitivity,
     WeightedSensitivity,
+)
+from frtb_sbm.kernel.weighting import (
+    _liquidity_horizon_at,
+    _optional_axis_value,
+    _required_optional_axis_value,
+    sort_weighted_sensitivities_deterministic,
+    weighted_sensitivity_sort_key,
 )
 from frtb_sbm.reference_data import (
     commodity_bucket_definition,
@@ -47,53 +50,18 @@ from frtb_sbm.reference_data import (
     equity_delta_risk_weight,
     fx_bucket_definition,
     fx_delta_risk_weight,
-    girr_bucket_definition,
-    girr_delta_risk_weight,
-    girr_vega_liquidity_horizon_days,
     girr_vega_option_tenor_definition,
     normalise_fx_delta_currency_code,
     vega_liquidity_horizon_days,
     vega_risk_weight,
 )
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
+from frtb_sbm.risk_classes.girr_weighting import (
+    weight_girr_delta_sensitivities,
+    weight_girr_vega_sensitivities,
+    weight_girr_vega_sensitivity_batch,
+)
 from frtb_sbm.validation import SbmInputError, sort_sensitivities_deterministic
-
-
-def weighted_sensitivity_sort_key(item: WeightedSensitivity) -> tuple[str, str, str, str]:
-    """Return a deterministic ordering key for one weighted sensitivity.
-    Parameters
-    ----------
-    item : WeightedSensitivity
-        See signature.
-
-    Returns
-    -------
-    tuple[str, str, str, str]
-    """
-
-    return (
-        item.risk_class.value,
-        item.risk_measure.value,
-        item.bucket,
-        item.sensitivity_id,
-    )
-
-
-def sort_weighted_sensitivities_deterministic(
-    weighted_sensitivities: Sequence[WeightedSensitivity],
-) -> tuple[WeightedSensitivity, ...]:
-    """Return weighted sensitivities in stable risk-class, bucket, and id order.
-    Parameters
-    ----------
-    weighted_sensitivities : Sequence[WeightedSensitivity]
-        See signature.
-
-    Returns
-    -------
-    tuple[WeightedSensitivity, ...]
-    """
-
-    return tuple(sorted(weighted_sensitivities, key=weighted_sensitivity_sort_key))
 
 
 def compute_weighted_sensitivities(
@@ -178,194 +146,6 @@ def compute_weighted_sensitivities(
         "frtb-sbm weighted sensitivity lookup does not support "
         f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
     )
-
-
-def weight_girr_delta_sensitivities(
-    sensitivities: Sequence[SbmSensitivity],
-    *,
-    profile_id: str,
-    reporting_currency: str,
-) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted GIRR delta sensitivities for a supported profile.
-    Parameters
-    ----------
-    sensitivities : Sequence[SbmSensitivity]
-        See signature.
-    profile_id : str
-        See signature.
-    reporting_currency : str
-        See signature.
-
-    Returns
-    -------
-    tuple[WeightedSensitivity, ...]
-    """
-
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.DELTA,
-    )
-    weighted: list[WeightedSensitivity] = []
-    for sensitivity in sort_sensitivities_deterministic(sensitivities):
-        if sensitivity.risk_class is not SbmRiskClass.GIRR:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm GIRR delta weighting does not support "
-                f"risk_class={sensitivity.risk_class.value}"
-            )
-        if sensitivity.risk_measure is not SbmRiskMeasure.DELTA:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm GIRR delta weighting does not support "
-                f"risk_measure={sensitivity.risk_measure.value}"
-            )
-        bucket = girr_bucket_definition(profile_id, sensitivity.bucket)
-        risk_weight, citation_ids = girr_delta_risk_weight(
-            profile_id,
-            tenor=sensitivity.tenor or "",
-            currency=bucket.currency,
-            reporting_currency=reporting_currency,
-        )
-        scaled_amount = sensitivity.amount * risk_weight
-        weighted.append(
-            WeightedSensitivity(
-                sensitivity_id=sensitivity.sensitivity_id,
-                risk_class=SbmRiskClass.GIRR,
-                risk_measure=SbmRiskMeasure.DELTA,
-                bucket=sensitivity.bucket,
-                raw_amount=sensitivity.amount,
-                risk_weight=risk_weight,
-                scaled_amount=scaled_amount,
-                citation_ids=citation_ids,
-                qualifier=sensitivity.tenor,
-            )
-        )
-    return tuple(weighted)
-
-
-def weight_girr_vega_sensitivities(
-    sensitivities: Sequence[SbmSensitivity],
-    *,
-    profile_id: str,
-) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted GIRR vega sensitivities for a supported profile.
-    Parameters
-    ----------
-    sensitivities : Sequence[SbmSensitivity]
-        See signature.
-    profile_id : str
-        See signature.
-
-    Returns
-    -------
-    tuple[WeightedSensitivity, ...]
-    """
-
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.VEGA,
-    )
-    default_horizon = girr_vega_liquidity_horizon_days(profile_id)
-    weighted: list[WeightedSensitivity] = []
-    for sensitivity in sort_sensitivities_deterministic(sensitivities):
-        if sensitivity.risk_class is not SbmRiskClass.GIRR:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm GIRR vega weighting does not support "
-                f"risk_class={sensitivity.risk_class.value}"
-            )
-        if sensitivity.risk_measure is not SbmRiskMeasure.VEGA:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm GIRR vega weighting does not support "
-                f"risk_measure={sensitivity.risk_measure.value}"
-            )
-        girr_bucket_definition(profile_id, sensitivity.bucket)
-        horizon = (
-            sensitivity.liquidity_horizon_days
-            if sensitivity.liquidity_horizon_days is not None
-            else default_horizon
-        )
-        risk_weight, citation_ids = vega_risk_weight(
-            profile_id,
-            liquidity_horizon_days=horizon,
-        )
-        scaled_amount = sensitivity.amount * risk_weight
-        weighted.append(
-            WeightedSensitivity(
-                sensitivity_id=sensitivity.sensitivity_id,
-                risk_class=SbmRiskClass.GIRR,
-                risk_measure=SbmRiskMeasure.VEGA,
-                bucket=sensitivity.bucket,
-                raw_amount=sensitivity.amount,
-                risk_weight=risk_weight,
-                scaled_amount=scaled_amount,
-                citation_ids=citation_ids,
-                qualifier=sensitivity.option_tenor,
-                liquidity_horizon_days=horizon,
-            )
-        )
-    return tuple(weighted)
-
-
-def weight_girr_vega_sensitivity_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-) -> tuple[WeightedSensitivity, ...]:
-    """Return cited weighted GIRR vega sensitivities from a package-owned batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    profile_id : str
-        See signature.
-
-    Returns
-    -------
-    tuple[WeightedSensitivity, ...]
-    """
-
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.VEGA,
-    )
-    if batch.risk_class is not SbmRiskClass.GIRR:
-        raise UnsupportedRegulatoryFeatureError(
-            f"frtb-sbm GIRR vega weighting does not support risk_class={batch.risk_class.value}"
-        )
-    if batch.risk_measure is not SbmRiskMeasure.VEGA:
-        raise UnsupportedRegulatoryFeatureError(
-            f"frtb-sbm GIRR vega weighting does not support risk_measure={batch.risk_measure.value}"
-        )
-    default_horizon = girr_vega_liquidity_horizon_days(profile_id)
-    weighted: list[WeightedSensitivity] = []
-    for row_index in sorted_girr_vega_batch_indices(batch):
-        index = int(row_index)
-        horizon = _liquidity_horizon_at(
-            batch,
-            index,
-            default_horizon=default_horizon,
-        )
-        risk_weight, citation_ids = vega_risk_weight(
-            profile_id,
-            liquidity_horizon_days=horizon,
-        )
-        amount = float(batch.amounts[index])
-        weighted.append(
-            WeightedSensitivity(
-                sensitivity_id=cast(str, batch.sensitivity_ids[index]),
-                risk_class=SbmRiskClass.GIRR,
-                risk_measure=SbmRiskMeasure.VEGA,
-                bucket=cast(str, batch.buckets[index]),
-                raw_amount=amount,
-                risk_weight=risk_weight,
-                scaled_amount=amount * risk_weight,
-                citation_ids=citation_ids,
-                qualifier=_required_optional_axis_value(batch.option_tenors, index, "option_tenor"),
-                liquidity_horizon_days=horizon,
-            )
-        )
-    return tuple(weighted)
 
 
 def weight_non_girr_vega_sensitivities(
@@ -1173,58 +953,6 @@ def _ensure_csr_sec_ctp_decomposition_evidence_for_batch(
         "index constituent decomposition is requested; "
         f"sensitivity_id={cast(str, batch.sensitivity_ids[row_index])!r}"
     )
-
-
-def _liquidity_horizon_at(
-    batch: SbmSensitivityBatch,
-    row_index: int,
-    *,
-    default_horizon: int,
-) -> int:
-    if batch.liquidity_horizon_days is None:
-        return default_horizon
-    value = batch.liquidity_horizon_days[row_index]
-    if value is None:
-        return default_horizon
-    if isinstance(value, bool) or not isinstance(value, Integral):
-        raise SbmInputError(
-            "value must be a positive integer",
-            field="liquidity_horizon_days",
-            sensitivity_id=cast(str, batch.sensitivity_ids[row_index]),
-        )
-    horizon = int(value)
-    if horizon <= 0:
-        raise SbmInputError(
-            "value must be a positive integer",
-            field="liquidity_horizon_days",
-            sensitivity_id=cast(str, batch.sensitivity_ids[row_index]),
-        )
-    return horizon
-
-
-def _required_optional_axis_value(
-    values: npt.NDArray[np.object_] | None,
-    row_index: int,
-    field: str,
-) -> str:
-    if values is None:
-        raise SbmInputError(f"{field} is required", field=field)
-    value = values[row_index]
-    if not isinstance(value, str) or not value.strip():
-        raise SbmInputError("non-empty text is required", field=field)
-    return value
-
-
-def _optional_axis_value(
-    values: npt.NDArray[np.object_] | None,
-    row_index: int,
-) -> str | None:
-    if values is None:
-        return None
-    value = values[row_index]
-    if value is None:
-        return None
-    return cast(str, value)
 
 
 def weight_fx_delta_sensitivities(

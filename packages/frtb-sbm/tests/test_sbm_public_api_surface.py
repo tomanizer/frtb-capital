@@ -11,7 +11,9 @@ import frtb_sbm.audit as audit
 import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
 import frtb_sbm.kernel.portfolio as portfolio
+import frtb_sbm.kernel.weighting as kernel_weighting
 import frtb_sbm.risk_classes.girr as girr
+import frtb_sbm.risk_classes.girr_weighting as girr_weighting
 import frtb_sbm.validation as validation
 import frtb_sbm.validation.batch as validation_batch
 import frtb_sbm.validation.batch_arrays as validation_batch_arrays
@@ -19,6 +21,7 @@ import frtb_sbm.validation.batch_lineage as validation_batch_lineage
 import frtb_sbm.validation.coercion as validation_coercion
 import frtb_sbm.validation.context as validation_context
 import frtb_sbm.validation.sensitivity as validation_sensitivity
+import frtb_sbm.weighted_sensitivity as weighted_sensitivity
 
 HANDOFF_SPECS = (
     "GIRR_DELTA_ARROW_COLUMN_SPECS",
@@ -173,6 +176,25 @@ def test_girr_risk_class_kernel_stage_is_importable() -> None:
     assert callable(girr.calculate_girr_vega_risk_class_capital_from_batch)
     assert "calculate_girr_delta_risk_class_capital_from_batch" in girr.__all__
     assert "calculate_girr_vega_risk_class_capital_from_batch" in girr.__all__
+
+
+def test_weighting_stage_modules_back_compatibility_surface() -> None:
+    for name in (
+        "weight_girr_delta_sensitivities",
+        "weight_girr_vega_sensitivities",
+        "weight_girr_vega_sensitivity_batch",
+    ):
+        assert name in girr_weighting.__all__
+        assert getattr(weighted_sensitivity, name) is getattr(girr_weighting, name)
+
+    assert (
+        weighted_sensitivity.sort_weighted_sensitivities_deterministic
+        is kernel_weighting.sort_weighted_sensitivities_deterministic
+    )
+    assert (
+        weighted_sensitivity.weighted_sensitivity_sort_key
+        is kernel_weighting.weighted_sensitivity_sort_key
+    )
 
 
 def test_hash_assembly_module_backs_compatibility_paths() -> None:
