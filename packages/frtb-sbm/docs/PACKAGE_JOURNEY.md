@@ -220,9 +220,9 @@ Portfolio dispatch physically lives under `frtb_sbm.kernel.portfolio`;
 Input, batch, and profile hash payload assembly physically lives under
 `frtb_sbm.assembly.hashes`; public callers continue to use the stable hash
 helpers from `frtb_sbm` and `frtb_sbm.batch`.
-Validation helpers physically live under `frtb_sbm.validation.coercion`,
-`frtb_sbm.validation.context`, `frtb_sbm.validation.risk_class_fields`, and
-`frtb_sbm.validation.sensitivity`;
+Validation helpers physically live under the `frtb_sbm.validation` package, including
+`batch`, `batch_arrays`, `batch_lineage`, `coercion`, `context`,
+`risk_class_fields`, and `sensitivity`;
 `frtb_sbm.validation` remains the compatibility and public import path.
 
 The portfolio path **does not** materialize accepted `SbmSensitivity` dataclasses

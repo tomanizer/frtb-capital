@@ -12,6 +12,9 @@ import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
 import frtb_sbm.kernel.portfolio as portfolio
 import frtb_sbm.validation as validation
+import frtb_sbm.validation.batch as validation_batch
+import frtb_sbm.validation.batch_arrays as validation_batch_arrays
+import frtb_sbm.validation.batch_lineage as validation_batch_lineage
 import frtb_sbm.validation.coercion as validation_coercion
 import frtb_sbm.validation.context as validation_context
 import frtb_sbm.validation.sensitivity as validation_sensitivity
@@ -120,6 +123,12 @@ def test_validation_package_reexports_stage_surface() -> None:
     assert (
         validation.validate_sbm_sensitivities is validation_sensitivity.validate_sbm_sensitivities
     )
+
+
+def test_batch_validation_stage_modules_are_importable() -> None:
+    assert callable(validation_batch.validate_homogeneous_batch_arrays)
+    assert callable(validation_batch_arrays.object_array)
+    assert callable(validation_batch_lineage.validate_source_column_maps)
 
 
 def test_capital_module_reexports_portfolio_kernel_surface() -> None:
