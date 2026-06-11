@@ -26,7 +26,8 @@ batch input hash assembly physically lives under `frtb_rrao.assembly.hashes`;
 result assembly helpers physically live under `frtb_rrao.assembly.results`.
 Canonical batch validation physically lives under `frtb_rrao.validation.batch`.
 Batch classification decision arrays physically live under
-`frtb_rrao.kernel.classification`.
+`frtb_rrao.kernel.classification`; public row classification helpers
+delegate to that kernel after canonical batch construction.
 `frtb_rrao._payloads` and `frtb_rrao._result_assembly` remain private
 compatibility import paths for existing package-internal callers and tests.
 

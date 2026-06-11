@@ -1,5 +1,4 @@
-"""
-RRAO classification and exclusion decisions.
+"""RRAO classification and exclusion decisions.
 
 Regulatory traceability:
     See docs/REGULATORY_TRACEABILITY.md rows for classification.py, Basel
@@ -9,25 +8,20 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from frtb_rrao._citations import merged_citation_ids
-from frtb_rrao._validation_rules import (
-    EXCLUDED_CLASSIFICATION_REQUIRES_REASON_MESSAGE,
-    INVESTMENT_FUND_DESCRIPTOR_REQUIRED_MESSAGE,
-)
 from frtb_rrao.data_models import (
     RraoClassification,
     RraoClassificationDecision,
     RraoEvidenceType,
+    RraoExclusionReason,
     RraoPosition,
     RraoRegulatoryProfile,
 )
-from frtb_rrao.reference_data import (
-    evidence_rule_for,
-    exclusion_rule_for,
-    investment_fund_rule_for,
-)
+from frtb_rrao.kernel.classification import RraoDecisionArrays, decision_arrays_for_batch
 from frtb_rrao.regimes import get_rrao_rule_profile
-from frtb_rrao.validation import RraoInputError, validate_rrao_positions
+from frtb_rrao.validation import validate_rrao_positions
 
 
 def classify_rrao_positions(
@@ -51,6 +45,8 @@ def classify_rrao_positions(
 
     rule_profile = get_rrao_rule_profile(profile)
     validated = validate_rrao_positions(positions)
+    if not validated:
+        return ()
     return _classify_validated_rrao_positions(validated, profile=rule_profile.profile)
 
 
@@ -59,9 +55,16 @@ def _classify_validated_rrao_positions(
     *,
     profile: RraoRegulatoryProfile,
 ) -> tuple[RraoClassificationDecision, ...]:
-    """Classify an already validated tuple of RRAO positions."""
+    if not positions:
+        return ()
+    from frtb_rrao.batch import build_rrao_batch_from_positions
 
-    return tuple(_classify_validated_position(position, profile=profile) for position in positions)
+    batch = build_rrao_batch_from_positions(positions)
+    decisions = decision_arrays_for_batch(batch, profile=profile)
+    return tuple(
+        _classification_decision_from_batch(batch, decisions, index=index)
+        for index in range(batch.row_count)
+    )
 
 
 def classify_rrao_position(
@@ -83,104 +86,29 @@ def classify_rrao_position(
         Result of the operation.
     """
 
-    rule_profile = get_rrao_rule_profile(profile)
-    validated = validate_rrao_positions((position,))[0]
-    return _classify_validated_position(validated, profile=rule_profile.profile)
+    return classify_rrao_positions((position,), profile=profile)[0]
 
 
-def _classify_validated_position(
-    position: RraoPosition,
-    profile: RraoRegulatoryProfile,
+def _classification_decision_from_batch(
+    batch: Any,
+    decisions: RraoDecisionArrays,
+    *,
+    index: int,
 ) -> RraoClassificationDecision:
-    if _is_exclusion_path(position):
-        return _excluded_decision(position, profile)
-    if position.evidence_type is RraoEvidenceType.INVESTMENT_FUND_EXPOSURE:
-        return _investment_fund_decision(position, profile)
-
-    rule = evidence_rule_for(profile, position.evidence_type)
-    _check_hint_compatibility(position, rule.classification)
     return RraoClassificationDecision(
-        position_id=position.position_id,
-        classification=rule.classification,
-        evidence_type=position.evidence_type,
-        reason_code=rule.reason_code,
-        risk_weight_key=rule.risk_weight_key,
-        citations=merged_citation_ids((rule.citation_id,), position.citations),
-        supervisor_directive_id=position.supervisor_directive_id,
-    )
-
-
-def _excluded_decision(
-    position: RraoPosition,
-    profile: RraoRegulatoryProfile,
-) -> RraoClassificationDecision:
-    if position.exclusion_reason is None:
-        raise RraoInputError(
-            EXCLUDED_CLASSIFICATION_REQUIRES_REASON_MESSAGE,
-            field="exclusion_reason",
-            position_id=position.position_id,
-        )
-    rule = exclusion_rule_for(profile, position.exclusion_reason)
-    return RraoClassificationDecision(
-        position_id=position.position_id,
-        classification=RraoClassification.EXCLUDED,
-        evidence_type=position.evidence_type,
-        reason_code=rule.reason_code,
-        risk_weight_key=rule.risk_weight_key,
-        citations=merged_citation_ids((rule.citation_id,), position.citations),
-        exclusion_reason=position.exclusion_reason,
-        exclusion_evidence_id=position.exclusion_evidence_id,
-    )
-
-
-def _investment_fund_decision(
-    position: RraoPosition,
-    profile: RraoRegulatoryProfile,
-) -> RraoClassificationDecision:
-    if position.investment_fund_descriptor is None:
-        raise RraoInputError(
-            INVESTMENT_FUND_DESCRIPTOR_REQUIRED_MESSAGE,
-            field="investment_fund_descriptor",
-            position_id=position.position_id,
-        )
-    rule = investment_fund_rule_for(
-        profile,
-        position.investment_fund_descriptor.included_exposure_type,
-    )
-    _check_hint_compatibility(position, rule.classification)
-    return RraoClassificationDecision(
-        position_id=position.position_id,
-        classification=rule.classification,
-        evidence_type=position.evidence_type,
-        reason_code=rule.reason_code,
-        risk_weight_key=rule.risk_weight_key,
-        citations=merged_citation_ids(rule.citation_ids, position.citations),
-    )
-
-
-def _check_hint_compatibility(
-    position: RraoPosition,
-    classification: RraoClassification,
-) -> None:
-    if position.classification_hint is None:
-        return
-    if position.classification_hint is classification:
-        return
-    raise RraoInputError(
-        (
-            "classification hint conflicts with profile evidence rule: "
-            f"{position.classification_hint.value} != {classification.value}"
+        position_id=cast(str, batch.position_ids[index]),
+        classification=RraoClassification(cast(str, decisions.classifications[index])),
+        evidence_type=RraoEvidenceType(cast(str, batch.evidence_types[index])),
+        reason_code=cast(str, decisions.reason_codes[index]),
+        risk_weight_key=cast(str, decisions.risk_weight_keys[index]),
+        citations=merged_citation_ids(decisions.decision_citations[index], batch.citations[index]),
+        exclusion_reason=(
+            None
+            if batch.exclusion_reasons[index] is None
+            else RraoExclusionReason(cast(str, batch.exclusion_reasons[index]))
         ),
-        field="classification_hint",
-        position_id=position.position_id,
-    )
-
-
-def _is_exclusion_path(position: RraoPosition) -> bool:
-    return (
-        position.classification_hint is RraoClassification.EXCLUDED
-        or position.exclusion_reason is not None
-        or position.evidence_type is RraoEvidenceType.EXPLICIT_EXCLUSION
+        exclusion_evidence_id=cast(str | None, batch.exclusion_evidence_ids[index]),
+        supervisor_directive_id=cast(str | None, batch.supervisor_directive_ids[index]),
     )
 
 
