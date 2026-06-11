@@ -51,7 +51,7 @@ Callers wire those steps after RRAO capital is computed.
 | --- | --- | --- | --- |
 | **1 — Arrow / Parquet** | One positions table matching `RRAO_ARROW_COLUMN_SPECS` | `normalize_rrao_arrow_table` → `build_rrao_batch_from_arrow` → `calculate_rrao_capital_from_batch` | Production volume, datacontract-driven pipelines |
 | **2 — CRIF / FNet / vendor rows** | Iterable mapping records | `adapt_crif_records`, `adapt_fnet_records`, or `adapt_rrao_records` → row or batch path | Legacy vendor-shaped feeds |
-| **3 — Canonical rows** | `tuple[RraoPosition, ...]` | `calculate_rrao_capital` | Tests, small books, notebooks |
+| **3 — Canonical rows** | `tuple[RraoPosition, ...]` | `calculate_rrao_capital` → `build_rrao_batch_from_positions` → `calculate_rrao_capital_from_batch` | Tests, small books, notebooks |
 
 Tier 1 is the recommended production journey below. Tiers 2 and 3 share the same
 capital semantics once inputs are validated.
@@ -223,9 +223,11 @@ investment-fund cell.
 | Entry | When to use |
 | --- | --- |
 | `calculate_rrao_capital_from_batch` | Normalized Arrow batch (Tier 1) |
-| `calculate_rrao_capital` | Tier 3 row dataclasses |
+| `calculate_rrao_capital` | Tier 3 row dataclasses; adapter over the same batch kernel |
 
-Both paths:
+Both paths use `calculate_rrao_capital_from_batch` for capital assembly. The row
+entrypoint first builds `RraoPositionBatch` with `build_rrao_batch_from_positions`.
+The shared kernel then:
 
 1. validate context and positions (or batch invariants)
 2. classify each position under the selected profile tables

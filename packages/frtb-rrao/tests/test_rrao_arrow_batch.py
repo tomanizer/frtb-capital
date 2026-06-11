@@ -55,6 +55,18 @@ def test_rrao_position_batch_from_rows_matches_row_input_hash() -> None:
     assert not batch.gross_effective_notionals.flags.writeable
 
 
+def test_rrao_row_entrypoint_returns_batch_kernel_result() -> None:
+    loader = _load_fixture_module()
+    positions = loader.load_fixture_positions()
+    context = loader.load_fixture_context()
+
+    row_result = calculate_rrao_capital(positions, context=context)
+    batch = build_rrao_batch_from_positions(positions)
+    batch_result = calculate_rrao_capital_from_batch(batch, context=context).result
+
+    assert serialize_rrao_result(row_result) == serialize_rrao_result(batch_result)
+
+
 def test_rrao_position_batch_preserves_distinct_lineage_source_row_hash() -> None:
     position = _investment_fund_position()
     lineage = cast(RraoSourceLineage, position.lineage)
