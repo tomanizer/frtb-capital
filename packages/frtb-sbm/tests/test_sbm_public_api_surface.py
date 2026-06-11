@@ -11,6 +11,7 @@ import frtb_sbm.audit as audit
 import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
 import frtb_sbm.kernel.portfolio as portfolio
+import frtb_sbm.risk_classes.girr as girr
 import frtb_sbm.validation as validation
 import frtb_sbm.validation.batch as validation_batch
 import frtb_sbm.validation.batch_arrays as validation_batch_arrays
@@ -165,6 +166,13 @@ def test_capital_module_reexports_portfolio_kernel_surface() -> None:
         capital.calculate_sbm_portfolio_capital_from_batches
         is portfolio.calculate_sbm_portfolio_capital_from_batches
     )
+
+
+def test_girr_risk_class_kernel_stage_is_importable() -> None:
+    assert callable(girr.calculate_girr_delta_risk_class_capital_from_batch)
+    assert callable(girr.calculate_girr_vega_risk_class_capital_from_batch)
+    assert "calculate_girr_delta_risk_class_capital_from_batch" in girr.__all__
+    assert "calculate_girr_vega_risk_class_capital_from_batch" in girr.__all__
 
 
 def test_hash_assembly_module_backs_compatibility_paths() -> None:

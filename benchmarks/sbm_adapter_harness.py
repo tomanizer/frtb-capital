@@ -43,7 +43,9 @@ from frtb_sbm.adapters.arrow import (
     normalize_sbm_arrow_table,
 )
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
-from frtb_sbm.capital import _build_girr_delta_intra_bucket_correlation_matrix
+from frtb_sbm.risk_classes.girr_delta_correlations import (
+    _build_girr_delta_intra_bucket_correlation_matrix,
+)
 
 DEFAULT_OUTPUT = Path("dist/benchmarks/frtb-sbm-batch-arrow.json")
 DEFAULT_ROW_COUNT = 720

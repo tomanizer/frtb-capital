@@ -34,6 +34,9 @@ batch callers.
 Portfolio dispatch physically lives under `frtb_sbm.kernel.portfolio`;
 `frtb_sbm.capital` remains the compatibility and public import path for existing
 capital callers.
+GIRR delta and vega risk-class kernels physically live under
+`frtb_sbm.risk_classes.girr`; `frtb_sbm.capital` remains the public dispatcher
+for row and batch capital runs.
 Input, batch, and profile hash payload assembly physically lives under
 `frtb_sbm.assembly.hashes`; public callers should continue to use
 `input_hash_for_sensitivities`, `input_hash_for_batch`, and profile helpers.

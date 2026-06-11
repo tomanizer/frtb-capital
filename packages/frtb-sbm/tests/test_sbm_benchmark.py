@@ -18,7 +18,9 @@ from frtb_sbm import (
     calculate_sbm_capital,
 )
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
-from frtb_sbm.capital import _build_girr_delta_intra_bucket_correlation_matrix
+from frtb_sbm.risk_classes.girr_delta_correlations import (
+    _build_girr_delta_intra_bucket_correlation_matrix,
+)
 from sbm_registry_helpers import (
     calculate_sbm_capital_from_commodity_delta_arrow,
     calculate_sbm_capital_from_equity_delta_arrow,
