@@ -32,6 +32,12 @@ from frtb_ima.rfet_evidence import (
 from frtb_ima.validation.rfet_qualitative import (
     _rfet_qualitative_stage as _validation_rfet_qualitative_stage,
 )
+from frtb_ima.validation.rfet_quantitative import (
+    RFETExclusionReason as _validation_RFETExclusionReason,
+)
+from frtb_ima.validation.rfet_quantitative import (
+    _rfet_quantitative_stage as _validation_rfet_quantitative_stage,
+)
 
 AS_OF = date(2025, 6, 30)
 
@@ -300,6 +306,11 @@ def test_rfet_quantitative_stage_records_window_and_dedup_exclusions() -> None:
         RFETExclusionReason.OUTSIDE_LOOKBACK,
         RFETExclusionReason.DUPLICATE_SOURCE_VENDOR,
     ]
+
+
+def test_rfet_quantitative_stage_keeps_compatibility_imports() -> None:
+    assert _rfet_quantitative_stage is _validation_rfet_quantitative_stage
+    assert RFETExclusionReason is _validation_RFETExclusionReason
 
 
 def test_assess_rfet_evidence_requires_representative_bucket() -> None:
