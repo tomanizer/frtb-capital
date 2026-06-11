@@ -37,6 +37,9 @@ Arrow table normalization and Arrow-to-batch builders physically live in
 import path. Arrow evidence normalizers and evidence-map builders physically
 live in `frtb_drc.adapters.arrow_evidence` and are re-exported by the same
 compatibility paths.
+DRC path metadata for non-securitisation, securitisation non-CTP, and CTP batch
+ingress lives in `frtb_drc.adapters.path_registry`; public per-path Arrow and
+column wrapper names remain stable for existing callers.
 Batch and context hash assembly physically lives in `frtb_drc.assembly.hashes`;
 `frtb_drc.batch` remains the compatibility import path for
 `input_hash_for_drc_batch`.

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 import numpy as np
@@ -12,7 +12,6 @@ from frtb_common import (
     AdapterDiagnostic,
     ColumnSpec,
     NormalizedArrowTable,
-    NullPolicy,
     TabularLogicalType,
     normalize_arrow_table,
     normalized_arrow_table_hash,
@@ -29,6 +28,16 @@ from frtb_drc.adapters.arrow_evidence import (
     normalize_drc_fair_value_cap_evidence_arrow_table,
     normalize_drc_risk_weight_evidence_arrow_table,
 )
+from frtb_drc.adapters.path_registry import (
+    DRC_CTP_ARROW_COLUMN_SPECS,
+    DRC_CTP_PATH,
+    DRC_NONSEC_ARROW_COLUMN_SPECS,
+    DRC_NONSEC_PATH,
+    DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS,
+    DRC_SECURITISATION_NON_CTP_PATH,
+    DrcPathSpec,
+    get_drc_path_spec,
+)
 from frtb_drc.adapters.positions import (
     build_drc_ctp_batch_from_columns,
     build_drc_nonsec_batch_from_columns,
@@ -37,149 +46,6 @@ from frtb_drc.adapters.positions import (
 from frtb_drc.batch import DrcPositionBatch
 from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID
 from frtb_drc.validation import DrcInputError
-
-
-def _replace_column_spec(
-    spec: ColumnSpec,
-    *,
-    required: bool,
-    null_policy: NullPolicy,
-) -> ColumnSpec:
-    return ColumnSpec(
-        spec.name,
-        aliases=spec.aliases,
-        logical_type=spec.logical_type,
-        required=required,
-        null_policy=null_policy,
-        chunk_policy=spec.chunk_policy,
-        dictionary_policy=spec.dictionary_policy,
-    )
-
-
-DRC_NONSEC_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
-    ColumnSpec("position_id", aliases=("positionId",), logical_type=TabularLogicalType.STRING),
-    ColumnSpec("source_row_id", aliases=("sourceRowId",), logical_type=TabularLogicalType.STRING),
-    ColumnSpec("desk_id", aliases=("deskId",), logical_type=TabularLogicalType.STRING),
-    ColumnSpec("legal_entity", aliases=("legalEntity",), logical_type=TabularLogicalType.STRING),
-    ColumnSpec("risk_class", aliases=("riskClass",), logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "instrument_type",
-        aliases=("instrumentType",),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "default_direction",
-        aliases=("defaultDirection",),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec("issuer_id", aliases=("issuerId",), logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "tranche_id",
-        aliases=("trancheId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "index_series_id",
-        aliases=("indexSeriesId",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec("bucket_key", aliases=("bucketKey",), logical_type=TabularLogicalType.STRING),
-    ColumnSpec("seniority", logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "credit_quality",
-        aliases=("creditQuality",),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec("notional", logical_type=TabularLogicalType.FLOAT),
-    ColumnSpec(
-        "market_value",
-        aliases=("marketValue",),
-        logical_type=TabularLogicalType.FLOAT,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "cumulative_pnl",
-        aliases=("cumulativePnl", "cumulativePnL"),
-        logical_type=TabularLogicalType.FLOAT,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec("maturity_years", aliases=("maturityYears",), logical_type=TabularLogicalType.FLOAT),
-    ColumnSpec("currency", logical_type=TabularLogicalType.STRING),
-    ColumnSpec(
-        "lgd_override",
-        aliases=("lgdOverride",),
-        logical_type=TabularLogicalType.FLOAT,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "is_defaulted",
-        aliases=("isDefaulted",),
-        logical_type=TabularLogicalType.BOOLEAN,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "is_gse",
-        aliases=("isGse",),
-        logical_type=TabularLogicalType.BOOLEAN,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "is_pse",
-        aliases=("isPse",),
-        logical_type=TabularLogicalType.BOOLEAN,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "is_covered_bond",
-        aliases=("isCoveredBond",),
-        logical_type=TabularLogicalType.BOOLEAN,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-    ColumnSpec(
-        "lineage_source_system",
-        aliases=("source_system", "sourceSystem"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "lineage_source_file",
-        aliases=("source_file", "sourceFile"),
-        logical_type=TabularLogicalType.STRING,
-    ),
-    ColumnSpec(
-        "citation_ids",
-        aliases=("citationIds",),
-        logical_type=TabularLogicalType.STRING,
-        required=False,
-        null_policy=NullPolicy.ALLOW,
-    ),
-)
-
-DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = tuple(
-    _replace_column_spec(spec, required=False, null_policy=NullPolicy.ALLOW)
-    if spec.name in {"seniority", "credit_quality"}
-    else _replace_column_spec(spec, required=True, null_policy=NullPolicy.ALLOW)
-    if spec.name == "issuer_id"
-    else spec
-    for spec in DRC_NONSEC_ARROW_COLUMN_SPECS
-)
-
-DRC_CTP_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = tuple(
-    _replace_column_spec(spec, required=False, null_policy=NullPolicy.ALLOW)
-    if spec.name in {"seniority", "credit_quality", "issuer_id"}
-    else spec
-    for spec in DRC_NONSEC_ARROW_COLUMN_SPECS
-)
 
 _DRC_BATCH_COLUMN_ARGS: Mapping[str, str] = {
     "position_id": "position_ids",
@@ -207,6 +73,12 @@ _DRC_BATCH_COLUMN_ARGS: Mapping[str, str] = {
     "is_covered_bond": "is_covered_bond",
     "lineage_source_system": "lineage_source_systems",
     "lineage_source_file": "lineage_source_files",
+}
+
+_DRC_PATH_COLUMN_BUILDERS: Mapping[str, Callable[..., DrcPositionBatch]] = {
+    DRC_NONSEC_PATH: build_drc_nonsec_batch_from_columns,
+    DRC_SECURITISATION_NON_CTP_PATH: build_drc_securitisation_non_ctp_batch_from_columns,
+    DRC_CTP_PATH: build_drc_ctp_batch_from_columns,
 }
 
 
@@ -251,9 +123,9 @@ def normalize_drc_nonsec_arrow_table(
         Canonical DRC non-securitisation position handoff.
     """
 
-    return _normalize_drc_arrow_table(
+    return _normalize_drc_path_arrow_table(
         table,
-        DRC_NONSEC_ARROW_COLUMN_SPECS,
+        get_drc_path_spec(DRC_NONSEC_PATH),
         diagnostics,
         metadata,
         rejected,
@@ -282,9 +154,9 @@ def normalize_drc_securitisation_non_ctp_arrow_table(
         Canonical DRC securitisation non-CTP position handoff.
     """
 
-    return _normalize_drc_arrow_table(
+    return _normalize_drc_path_arrow_table(
         table,
-        DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS,
+        get_drc_path_spec(DRC_SECURITISATION_NON_CTP_PATH),
         diagnostics,
         metadata,
         rejected,
@@ -313,9 +185,9 @@ def normalize_drc_ctp_arrow_table(
         Canonical DRC CTP position handoff.
     """
 
-    return _normalize_drc_arrow_table(
+    return _normalize_drc_path_arrow_table(
         table,
-        DRC_CTP_ARROW_COLUMN_SPECS,
+        get_drc_path_spec(DRC_CTP_PATH),
         diagnostics,
         metadata,
         rejected,
@@ -323,9 +195,9 @@ def normalize_drc_ctp_arrow_table(
     )
 
 
-def _normalize_drc_arrow_table(
+def _normalize_drc_path_arrow_table(
     table: pa.Table,
-    column_specs: tuple[ColumnSpec, ...],
+    path_spec: DrcPathSpec,
     diagnostics: Sequence[AdapterDiagnostic],
     metadata: Mapping[str, str] | None,
     rejected: pa.Table | None,
@@ -333,7 +205,7 @@ def _normalize_drc_arrow_table(
 ) -> NormalizedArrowTable:
     return normalize_arrow_table(
         table,
-        column_specs=column_specs,
+        column_specs=path_spec.arrow_column_specs,
         rejected=rejected,
         diagnostics=diagnostics,
         metadata={} if metadata is None else metadata,
@@ -360,15 +232,9 @@ def build_drc_nonsec_batch_from_arrow(
         Typed DRC position batch for the non-securitisation calculation path.
     """
 
-    table, columns = _read_position_columns(handoff, DRC_NONSEC_ARROW_COLUMN_SPECS)
-    return build_drc_nonsec_batch_from_columns(
-        **_drc_batch_column_kwargs(columns),
-        lineage_present=np.ones(table.num_rows, dtype=np.bool_),
-        citation_ids=_citation_ids_column(columns.get("citation_ids")),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_arrow_table_hash(handoff),
-        diagnostics=_diagnostics_payload(handoff),
-        copy_arrays=False,
+    return _build_drc_path_batch_from_arrow(
+        handoff,
+        get_drc_path_spec(DRC_NONSEC_PATH),
         profile_id=profile_id,
     )
 
@@ -389,15 +255,9 @@ def build_drc_securitisation_non_ctp_batch_from_arrow(
         Typed DRC position batch for securitisation non-CTP calculation.
     """
 
-    table, columns = _read_position_columns(handoff, DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS)
-    return build_drc_securitisation_non_ctp_batch_from_columns(
-        **_drc_batch_column_kwargs(columns),
-        lineage_present=np.ones(table.num_rows, dtype=np.bool_),
-        citation_ids=_citation_ids_column(columns.get("citation_ids")),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_arrow_table_hash(handoff),
-        diagnostics=_diagnostics_payload(handoff),
-        copy_arrays=False,
+    return _build_drc_path_batch_from_arrow(
+        handoff,
+        get_drc_path_spec(DRC_SECURITISATION_NON_CTP_PATH),
     )
 
 
@@ -415,8 +275,17 @@ def build_drc_ctp_batch_from_arrow(handoff: NormalizedArrowTable) -> DrcPosition
         Typed DRC position batch for correlation trading portfolio calculation.
     """
 
-    table, columns = _read_position_columns(handoff, DRC_CTP_ARROW_COLUMN_SPECS)
-    return build_drc_ctp_batch_from_columns(
+    return _build_drc_path_batch_from_arrow(handoff, get_drc_path_spec(DRC_CTP_PATH))
+
+
+def _build_drc_path_batch_from_arrow(
+    handoff: NormalizedArrowTable,
+    path_spec: DrcPathSpec,
+    *,
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
+) -> DrcPositionBatch:
+    table, columns = _read_position_columns(handoff, path_spec.arrow_column_specs)
+    kwargs = dict(
         **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
         citation_ids=_citation_ids_column(columns.get("citation_ids")),
@@ -425,6 +294,9 @@ def build_drc_ctp_batch_from_arrow(handoff: NormalizedArrowTable) -> DrcPosition
         diagnostics=_diagnostics_payload(handoff),
         copy_arrays=False,
     )
+    if path_spec.path == DRC_NONSEC_PATH:
+        kwargs["profile_id"] = profile_id
+    return _DRC_PATH_COLUMN_BUILDERS[path_spec.path](**kwargs)
 
 
 def _read_position_columns(

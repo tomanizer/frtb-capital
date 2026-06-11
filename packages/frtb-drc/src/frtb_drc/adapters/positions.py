@@ -21,6 +21,12 @@ from frtb_drc._batch_columns import (
     _required_text_array,
     _text_array_with_default,
 )
+from frtb_drc.adapters.path_registry import (
+    DRC_CTP_PATH,
+    DRC_NONSEC_PATH,
+    DRC_SECURITISATION_NON_CTP_PATH,
+    get_drc_path_spec,
+)
 from frtb_drc.batch_validation import validate_batch_columns
 from frtb_drc.data_models import (
     CreditQuality,
@@ -164,7 +170,7 @@ def build_drc_nonsec_batch_from_columns(
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
-    _expected_risk_class: DrcRiskClass = DrcRiskClass.NON_SECURITISATION,
+    _expected_risk_class: DrcRiskClass = get_drc_path_spec(DRC_NONSEC_PATH).risk_class,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> DrcPositionBatch:
     """Build a validated non-securitisation DRC batch from columnar inputs.
@@ -407,7 +413,7 @@ def build_drc_securitisation_non_ctp_batch_from_columns(
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
         copy_arrays=copy_arrays,
-        _expected_risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+        _expected_risk_class=get_drc_path_spec(DRC_SECURITISATION_NON_CTP_PATH).risk_class,
         profile_id=US_NPR_2_0_PROFILE_ID,
     )
 
@@ -497,7 +503,7 @@ def build_drc_ctp_batch_from_columns(
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
         copy_arrays=copy_arrays,
-        _expected_risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        _expected_risk_class=get_drc_path_spec(DRC_CTP_PATH).risk_class,
     )
 
 

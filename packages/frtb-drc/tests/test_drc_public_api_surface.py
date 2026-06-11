@@ -113,6 +113,7 @@ def test_batch_builder_adapter_compatibility_exports() -> None:
 def test_arrow_adapter_compatibility_exports() -> None:
     import frtb_drc.adapters.arrow as adapter
     import frtb_drc.adapters.arrow_evidence as evidence
+    import frtb_drc.adapters.path_registry as paths
     import frtb_drc.arrow_batch as compatibility
 
     names = (
@@ -146,6 +147,22 @@ def test_arrow_adapter_compatibility_exports() -> None:
         assert getattr(adapter, name) is getattr(evidence, name)
         assert getattr(compatibility, name) is getattr(evidence, name)
         assert getattr(frtb_drc, name) is getattr(evidence, name)
+
+    assert (
+        adapter.DRC_NONSEC_ARROW_COLUMN_SPECS
+        is paths.get_drc_path_spec(paths.DRC_NONSEC_PATH).arrow_column_specs
+    )
+    assert (
+        adapter.DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS
+        is paths.get_drc_path_spec(paths.DRC_SECURITISATION_NON_CTP_PATH).arrow_column_specs
+    )
+    assert (
+        adapter.DRC_CTP_ARROW_COLUMN_SPECS
+        is paths.get_drc_path_spec(paths.DRC_CTP_PATH).arrow_column_specs
+    )
+    assert paths.drc_path_spec_for_risk_class(
+        frtb_drc.DrcRiskClass.NON_SECURITISATION
+    ) is paths.get_drc_path_spec(paths.DRC_NONSEC_PATH)
 
 
 def test_hash_assembly_compatibility_exports() -> None:
