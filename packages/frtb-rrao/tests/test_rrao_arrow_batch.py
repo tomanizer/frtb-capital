@@ -375,17 +375,19 @@ def test_rrao_column_batch_high_volume_path_avoids_row_dataclasses() -> None:
 def test_rrao_batch_decision_lookup_uses_profile_masks(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import frtb_rrao.batch as batch_module
+    import frtb_rrao.kernel.classification as classification_module
 
     batch = build_rrao_batch_from_columns(**_minimal_column_payload(row_count=250))
     calls: list[object] = []
-    original_evidence_rules = batch_module.evidence_rules_for_profile
+    original_evidence_rules = classification_module.evidence_rules_for_profile
 
     def counting_evidence_rules(*args: object, **kwargs: object) -> object:
         calls.append((args, kwargs))
         return original_evidence_rules(*args, **kwargs)
 
-    monkeypatch.setattr(batch_module, "evidence_rules_for_profile", counting_evidence_rules)
+    monkeypatch.setattr(
+        classification_module, "evidence_rules_for_profile", counting_evidence_rules
+    )
 
     calculation = calculate_rrao_capital_from_batch(batch, context=_sample_context())
 

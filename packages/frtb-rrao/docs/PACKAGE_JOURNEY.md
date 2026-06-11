@@ -91,7 +91,7 @@ What changes is the **profile-specific rule tables** applied after validation.
 | Ingress / normalize | `frtb_common.normalize_arrow_table` + `RRAO_ARROW_COLUMN_SPECS`; identity, notional, evidence, lineage columns per [`PUBLIC_API.md`](../../../docs/modules/frtb-rrao/PUBLIC_API.md#rrao-input_table-column-summary) |
 | Validate | `frtb_rrao.validation.position.validate_rrao_positions` (row) or batch invariants (finite non-negative `gross_effective_notional`, lineage, duplicate ids); `frtb_rrao.validation` remains the compatibility import path |
 | Batch | `RraoPositionBatch` NumPy columns for high-volume calculation |
-| Classify | `classify_rrao_position` / vectorised batch classification from `evidence_type`, flags, and profile tables |
+| Classify | `classify_rrao_position` / vectorised batch classification in `frtb_rrao.kernel.classification` from `evidence_type`, flags, and profile tables |
 | Capital | Additive line add-ons (`EXOTIC` 1.0%, `OTHER_RESIDUAL_RISK` 0.1%, supervisor-directed where cited); exclusions and EU Article 3 cases as **zero-capital audit lines** |
 | Result shape | `RraoCapitalResult` with `lines`, `excluded_lines`, `subtotals`, `total_rrao`, citations, warnings |
 | Explain | `build_rrao_allocation_report(s)` — additive buckets only; no Euler pass through the calculator |
