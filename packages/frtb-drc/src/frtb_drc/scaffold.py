@@ -39,6 +39,11 @@ from frtb_drc.kernel.ctp import (
     ctp_context_input_hash,
     validate_ctp_context,
 )
+from frtb_drc.kernel.securitisation import (
+    calculate_securitisation_non_ctp_drc,
+    securitisation_non_ctp_context_input_hash,
+    validate_securitisation_non_ctp_context,
+)
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.reference_data import get_risk_weight_rule
@@ -51,11 +56,6 @@ from frtb_drc.regimes import (
     get_rule_profile,
 )
 from frtb_drc.risk_weight_evidence import effective_risk_weights, used_risk_weight_evidence
-from frtb_drc.securitisation import (
-    calculate_securitisation_non_ctp_drc,
-    securitisation_non_ctp_context_input_hash,
-    validate_securitisation_non_ctp_context,
-)
 from frtb_drc.validation import DrcInputError, validate_positions
 
 PACKAGE_METADATA = CapitalComponentMetadata(

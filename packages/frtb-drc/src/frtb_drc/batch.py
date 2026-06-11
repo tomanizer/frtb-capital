@@ -52,6 +52,10 @@ from frtb_drc.fx import (
 )
 from frtb_drc.kernel import net_jtd as _net_jtd_kernel
 from frtb_drc.kernel.ctp import CtpCapitalInput, calculate_ctp_category_drc
+from frtb_drc.kernel.securitisation import (
+    SecuritisationNonCtpCapitalInput,
+    calculate_securitisation_non_ctp_category_drc,
+)
 from frtb_drc.reference_data import (
     get_lgd_rule,
     get_maturity_policy,
@@ -62,10 +66,6 @@ from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_ru
 from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
     used_risk_weight_evidence_for_position_ids,
-)
-from frtb_drc.securitisation import (
-    SecuritisationNonCtpCapitalInput,
-    calculate_securitisation_non_ctp_category_drc,
 )
 from frtb_drc.validation import (
     BASEL_MAR22_PROFILE_ID,

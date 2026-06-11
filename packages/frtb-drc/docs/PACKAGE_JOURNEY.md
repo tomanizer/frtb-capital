@@ -3,7 +3,8 @@
 This document describes how a **DRC capital run** works in `frtb-drc` as implemented
 today. It is grounded in the runtime entrypoints in `scaffold.py`, `batch.py`,
 `adapters/positions.py`, `adapters/arrow.py`, `regimes.py`, `attribution.py`, and
-`assembly/hashes.py`, plus the CTP row-path kernel in `kernel/ctp.py` and batch
+`assembly/hashes.py`, plus the CTP row-path kernel in `kernel/ctp.py`,
+securitisation non-CTP row-path stages in `kernel/securitisation*.py`, and batch
 net-JTD kernels in `kernel/net_jtd.py`, not planning-only module text.
 
 Outputs are **engineering and validation evidence**, not final regulatory capital.
@@ -80,6 +81,11 @@ Batch net-JTD array kernels physically live under `frtb_drc.kernel.net_jtd`;
 `frtb_drc.batch` remains the public capital orchestration surface.
 CTP row-path calculation helpers physically live under `frtb_drc.kernel.ctp`;
 `frtb_drc.ctp` remains the compatibility import path for existing callers.
+Securitisation non-CTP row-path calculation helpers physically live under
+`frtb_drc.kernel.securitisation`; context/hash helpers live under
+`frtb_drc.kernel.securitisation_context`, fair-value-cap gross branching lives
+under `frtb_drc.kernel.securitisation_gross`, and `frtb_drc.securitisation`
+remains the compatibility import path for existing callers.
 
 ---
 
