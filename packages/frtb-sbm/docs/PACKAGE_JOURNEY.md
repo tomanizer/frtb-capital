@@ -215,6 +215,8 @@ Calculation kernels do not import PyArrow.
 **`SbmSensitivityBatch`** objects (immutable NumPy column arrays per path).
 Batch ingress builders physically live under `frtb_sbm.adapters.sensitivities`;
 `frtb_sbm.batch` remains the compatibility and public import path.
+Portfolio dispatch physically lives under `frtb_sbm.kernel.portfolio`;
+`frtb_sbm.capital` remains the compatibility and public import path.
 
 The portfolio path **does not** materialize accepted `SbmSensitivity` dataclasses
 per row during calculation (`accepted_row_dataclasses_materialized` stays zero on

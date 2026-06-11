@@ -33,7 +33,6 @@ from frtb_sbm.adapters.sensitivities import build_sbm_batch_from_columns
 from frtb_sbm.batch import SbmSensitivityBatch
 from frtb_sbm.capital import (
     calculate_sbm_capital_from_batch,
-    calculate_sbm_portfolio_capital_from_batches,
 )
 from frtb_sbm.data_models import (
     SbmBatchPortfolioCalculation,
@@ -42,6 +41,7 @@ from frtb_sbm.data_models import (
     SbmRiskClass,
     SbmRiskMeasure,
 )
+from frtb_sbm.kernel.portfolio import calculate_sbm_portfolio_capital_from_batches
 from frtb_sbm.registry import sbm_batch_spec
 from frtb_sbm.validation import SbmInputError, coerce_risk_class, coerce_risk_measure
 

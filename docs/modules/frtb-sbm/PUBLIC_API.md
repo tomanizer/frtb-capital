@@ -30,6 +30,9 @@ Arrow symbols.
 Batch ingress builders physically live under `frtb_sbm.adapters.sensitivities`;
 `frtb_sbm.batch` remains the compatibility and public import path for existing
 batch callers.
+Portfolio dispatch physically lives under `frtb_sbm.kernel.portfolio`;
+`frtb_sbm.capital` remains the compatibility and public import path for existing
+capital callers.
 The public API surface test caps `frtb_sbm.__all__` below 400 names and requires
 every documented input_table symbol to remain importable.
 

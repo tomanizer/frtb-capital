@@ -7,6 +7,8 @@ import frtb_sbm.adapters.arrow as adapter_arrow
 import frtb_sbm.adapters.sensitivities as adapter_sensitivities
 import frtb_sbm.arrow_batch as arrow_batch
 import frtb_sbm.batch as batch
+import frtb_sbm.capital as capital
+import frtb_sbm.kernel.portfolio as portfolio
 
 HANDOFF_SPECS = (
     "GIRR_DELTA_ARROW_COLUMN_SPECS",
@@ -88,6 +90,13 @@ def test_batch_module_reexports_sensitivity_adapter_surface() -> None:
         assert name in adapter_sensitivities.__all__
         assert name in batch.__all__
         assert getattr(batch, name) is getattr(adapter_sensitivities, name)
+
+
+def test_capital_module_reexports_portfolio_kernel_surface() -> None:
+    assert (
+        capital.calculate_sbm_portfolio_capital_from_batches
+        is portfolio.calculate_sbm_portfolio_capital_from_batches
+    )
 
 
 def _public_api_doc() -> str:

@@ -33,9 +33,6 @@ from frtb_sbm.batch import (
     SbmSensitivityBatch,
     build_girr_delta_batch_from_sensitivities,
     build_girr_vega_batch_from_sensitivities,
-    coerce_sbm_batch_sequence,
-    concatenate_sbm_batches,
-    input_hash_for_sbm_batches,
 )
 from frtb_sbm.curvature import (
     calculate_curvature_risk_class_capital,
@@ -44,8 +41,6 @@ from frtb_sbm.curvature import (
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
-    SbmBatchPathDiagnostic,
-    SbmBatchPortfolioCalculation,
     SbmBranchMetadata,
     SbmCalculationContext,
     SbmCapitalResult,
@@ -312,80 +307,6 @@ def calculate_sbm_capital(
         context=context,
         input_hash=_input_hash_for_validated_sensitivities(validated),
         input_count=len(validated),
-    )
-
-
-def calculate_sbm_portfolio_capital_from_batches(
-    batches: object | None = None,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmBatchPortfolioCalculation:
-    """Calculate portfolio-level SBM capital from package-owned columnar batches.
-
-    The dispatcher groups batches by ``(risk_class, risk_measure)`` metadata and
-    concatenates split batches for the same path before capital aggregation, so
-    correlations are calculated over the full path population without accepted
-    input-row dataclass materialization.
-    Parameters
-    ----------
-    batches : object | None, optional
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmBatchPortfolioCalculation
-    """
-
-    if batches is None:
-        raise SbmInputError("batches are required", field="batches")
-    if context is None:
-        raise SbmInputError("calculation context is required", field="context")
-    if not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
-        )
-
-    validated_batches = coerce_sbm_batch_sequence(batches)
-    validate_sbm_calculation_context(context)
-    rule_profile = get_sbm_rule_profile(context.profile_id)
-    grouped = _group_batches_by_capital_path(validated_batches, profile_id=context.profile_id)
-
-    risk_class_results: list[RiskClassCapital] = []
-    diagnostics: list[SbmBatchPathDiagnostic] = []
-    ordered_paths = _ordered_supported_batch_paths(
-        tuple(grouped.keys()),
-        profile_id=context.profile_id,
-    )
-    for path in ordered_paths:
-        path_batches = tuple(grouped[path])
-        batch = concatenate_sbm_batches(path_batches)
-        risk_class_results.append(_calculate_batch_risk_class_capital(batch, context=context))
-        diagnostics.append(
-            SbmBatchPathDiagnostic(
-                risk_class=path[0],
-                risk_measure=path[1],
-                input_count=batch.row_count,
-                batch_count=len(path_batches),
-                accepted_row_dataclasses_materialized=(batch.accepted_row_dataclasses_materialized),
-            )
-        )
-
-    result = _build_sbm_capital_result(
-        risk_class_results,
-        rule_profile=rule_profile,
-        context=context,
-        input_hash=input_hash_for_sbm_batches(validated_batches),
-        input_count=sum(batch.row_count for batch in validated_batches),
-    )
-    return SbmBatchPortfolioCalculation(
-        result=result,
-        path_diagnostics=tuple(diagnostics),
-        accepted_row_dataclasses_materialized=sum(
-            item.accepted_row_dataclasses_materialized for item in diagnostics
-        ),
     )
 
 
@@ -1191,34 +1112,6 @@ def _append_citation(citation_ids: list[str], seen: set[str], citation_id: str) 
         seen.add(citation_id)
 
 
-def _group_batches_by_capital_path(
-    batches: Sequence[SbmSensitivityBatch],
-    *,
-    profile_id: str,
-) -> dict[tuple[SbmRiskClass, SbmRiskMeasure], list[SbmSensitivityBatch]]:
-    grouped: dict[tuple[SbmRiskClass, SbmRiskMeasure], list[SbmSensitivityBatch]] = {}
-    for batch in batches:
-        if batch.row_count == 0:
-            raise SbmInputError("batch must not be empty", field="batch")
-        risk_class = batch.risk_class
-        risk_measure = batch.risk_measure
-        ensure_sbm_risk_class_measure_supported(profile_id, risk_class, risk_measure)
-        grouped.setdefault((risk_class, risk_measure), []).append(batch)
-    return grouped
-
-
-def _ordered_supported_batch_paths(
-    present_paths: Sequence[tuple[SbmRiskClass, SbmRiskMeasure]],
-    *,
-    profile_id: str,
-) -> tuple[tuple[SbmRiskClass, SbmRiskMeasure], ...]:
-    supported = phase1_capital_supported_paths(profile_id)
-    present = {path for path in present_paths if path in supported}
-    ordered = tuple(path for path in _SBM_CAPITAL_PATH_ORDER if path in present)
-    remaining = tuple(sorted(present - set(ordered), key=lambda p: (p[0].value, p[1].value)))
-    return ordered + remaining
-
-
 def _ordered_supported_paths(
     sensitivities: Sequence[SbmSensitivity],
     *,
@@ -1247,6 +1140,8 @@ def _profile_warnings(profile_id: str) -> tuple[str, ...]:
     del profile_id
     return ()
 
+
+from frtb_sbm.kernel.portfolio import calculate_sbm_portfolio_capital_from_batches  # noqa: E402
 
 __all__ = [
     "calculate_sbm_capital",

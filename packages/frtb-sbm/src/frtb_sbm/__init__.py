@@ -100,7 +100,6 @@ from frtb_sbm.batch import (
 from frtb_sbm.capital import (
     calculate_sbm_capital,
     calculate_sbm_capital_from_batch,
-    calculate_sbm_portfolio_capital_from_batches,
 )
 from frtb_sbm.component_summary import to_component_summary
 from frtb_sbm.curvature import (
@@ -155,6 +154,7 @@ from frtb_sbm.data_models import (
     WeightedSensitivity,
 )
 from frtb_sbm.impact import calculate_sbm_capital_impact
+from frtb_sbm.kernel.portfolio import calculate_sbm_portfolio_capital_from_batches
 from frtb_sbm.reference_data import (
     FX_DELTA_RISK_WEIGHT,
     FX_INTER_BUCKET_CORRELATION,
