@@ -132,6 +132,14 @@ def test_arrow_adapter_compatibility_exports() -> None:
         assert getattr(frtb_drc, name) is getattr(adapter, name)
 
 
+def test_hash_assembly_compatibility_exports() -> None:
+    import frtb_drc.assembly.hashes as hashes
+    import frtb_drc.batch as batch
+
+    assert batch.input_hash_for_drc_batch is hashes.input_hash_for_drc_batch
+    assert frtb_drc.input_hash_for_drc_batch is hashes.input_hash_for_drc_batch
+
+
 def _public_api_doc() -> str:
     root = Path(__file__).resolve().parents[3]
     return (root / "docs/modules/frtb-drc/PUBLIC_API.md").read_text()

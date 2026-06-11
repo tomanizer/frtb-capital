@@ -12,7 +12,6 @@ import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
 
 from frtb_drc._batch_columns import BoolArray, FloatArray, ObjectArray
-from frtb_drc._hashing import hash_payload as _stable_hash_payload
 from frtb_drc._identifiers import slug_path as _slug
 from frtb_drc._netting_helpers import (
     bounded_rejected_group_offsets as _bounded_rejected_group_offsets,
@@ -23,6 +22,10 @@ from frtb_drc._netting_helpers import (
 from frtb_drc._validation_utils import optional_text as _optional_text
 from frtb_drc._validation_utils import require_text as _required_text
 from frtb_drc._version import __version__
+from frtb_drc.assembly.hashes import (
+    context_input_hash_for_drc_batch as _context_input_hash_for_batch,
+)
+from frtb_drc.assembly.hashes import input_hash_for_drc_batch
 from frtb_drc.attribution import calculate_drc_attribution
 from frtb_drc.audit import validate_reconciliation
 from frtb_drc.capital import CapitalInput, calculate_category_drc
@@ -43,7 +46,6 @@ from frtb_drc.data_models import (
     RejectedOffset,
 )
 from frtb_drc.fair_value_cap import (
-    fair_value_cap_hash_payload,
     used_fair_value_cap_evidence_for_position_ids,
     validate_fair_value_cap_evidence,
 )
@@ -64,7 +66,6 @@ from frtb_drc.reference_data import (
 from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported, get_rule_profile
 from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
-    risk_weight_evidence_hash_payload,
     used_risk_weight_evidence_for_position_ids,
 )
 from frtb_drc.securitisation import (
@@ -220,24 +221,6 @@ class DrcBatchCapitalCalculation:
     maturity_weights: FloatArray
     scaled_jtd: FloatArray
     accepted_row_dataclasses_materialized: int = 0
-
-
-def input_hash_for_drc_batch(batch: DrcPositionBatch) -> str:
-    """Hash canonical DRC batch inputs in deterministic position-id order.
-
-    Parameters
-    ----------
-    batch : DrcPositionBatch
-        Columnar batch whose fields are serialised in sorted position order.
-
-    Returns
-    -------
-    str
-        Lowercase SHA-256 hex digest of the canonical payload.
-    """
-
-    payload = [_position_payload(batch, index) for index in _sorted_indices(batch)]
-    return _hash_payload(payload)
 
 
 def calculate_drc_capital_from_batch(
@@ -1557,48 +1540,6 @@ def _zero_nonsec_category_citation(profile_id: str) -> str:
     return _US_NPR_ZERO_CATEGORY_CITATION
 
 
-def _context_input_hash_for_batch(
-    input_hash: str,
-    batch: DrcPositionBatch,
-    *,
-    context: DrcCalculationContext,
-    risk_class: DrcRiskClass,
-) -> str:
-    if risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
-        return _hash_context_position_maps(
-            input_hash,
-            batch,
-            risk_weights=effective_risk_weights(
-                context,
-                risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
-            ),
-            offset_groups=context.securitisation_non_ctp_offset_groups,
-            risk_weight_key="securitisation_non_ctp_risk_weights",
-            risk_weight_evidence_key="securitisation_non_ctp_risk_weight_evidence",
-            fair_value_cap_evidence_key="securitisation_non_ctp_fair_value_cap_evidence",
-            offset_group_key="securitisation_non_ctp_offset_groups",
-            context=context,
-            risk_class=risk_class,
-        )
-    if risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
-        return _hash_context_position_maps(
-            input_hash,
-            batch,
-            risk_weights=effective_risk_weights(
-                context,
-                risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
-            ),
-            offset_groups=context.ctp_offset_groups,
-            risk_weight_key="ctp_risk_weights",
-            risk_weight_evidence_key="ctp_risk_weight_evidence",
-            fair_value_cap_evidence_key="",
-            offset_group_key="ctp_offset_groups",
-            context=context,
-            risk_class=risk_class,
-        )
-    return input_hash
-
-
 def _batch_risk_weights_by_position(
     batch: DrcPositionBatch,
     *,
@@ -1630,42 +1571,6 @@ def _batch_risk_weights_by_position(
             )
         )
     return {}
-
-
-def _hash_context_position_maps(
-    input_hash: str,
-    batch: DrcPositionBatch,
-    *,
-    risk_weights: Mapping[str, float],
-    offset_groups: Mapping[str, str],
-    risk_weight_key: str,
-    risk_weight_evidence_key: str,
-    fair_value_cap_evidence_key: str,
-    offset_group_key: str,
-    context: DrcCalculationContext,
-    risk_class: DrcRiskClass,
-) -> str:
-    position_ids = tuple(sorted(cast(str, position_id) for position_id in batch.position_ids))
-    payload = {
-        "input_hash": input_hash,
-        risk_weight_key: {position_id: risk_weights[position_id] for position_id in position_ids},
-        risk_weight_evidence_key: risk_weight_evidence_hash_payload(
-            position_ids,
-            context,
-            risk_class=risk_class,
-        ),
-        offset_group_key: {
-            position_id: offset_groups[position_id]
-            for position_id in position_ids
-            if position_id in offset_groups
-        },
-    }
-    if fair_value_cap_evidence_key:
-        payload[fair_value_cap_evidence_key] = fair_value_cap_hash_payload(
-            position_ids,
-            context,
-        )
-    return _hash_payload(payload)
 
 
 def _batch_fair_value_cap_citations(
@@ -1811,52 +1716,6 @@ def _branch_citations(branches: tuple[BranchMetadata, ...]) -> set[str]:
     for branch in branches:
         citation_ids.update(branch.citations)
     return citation_ids
-
-
-def _position_payload(batch: DrcPositionBatch, index: int) -> dict[str, object]:
-    lineage = None
-    if bool(batch.lineage_present[index]):
-        lineage = {
-            "source_system": batch.lineage_source_systems[index],
-            "source_file": batch.lineage_source_files[index],
-            "source_row_id": batch.source_row_ids[index],
-            "source_column_map": dict(batch.source_column_maps[index]),
-        }
-    return {
-        "position_id": batch.position_ids[index],
-        "source_row_id": batch.source_row_ids[index],
-        "desk_id": batch.desk_ids[index],
-        "legal_entity": batch.legal_entities[index],
-        "risk_class": batch.risk_classes[index],
-        "instrument_type": batch.instrument_types[index],
-        "default_direction": batch.default_directions[index],
-        "issuer_id": batch.issuer_ids[index],
-        "tranche_id": batch.tranche_ids[index],
-        "index_series_id": batch.index_series_ids[index],
-        "bucket_key": batch.bucket_keys[index],
-        "seniority": batch.seniorities[index],
-        "credit_quality": batch.credit_qualities[index],
-        "notional": float(batch.notionals[index]),
-        "market_value": _optional_float_payload(batch.market_values[index]),
-        "cumulative_pnl": _optional_float_payload(batch.cumulative_pnls[index]),
-        "maturity_years": float(batch.maturity_years[index]),
-        "currency": batch.currencies[index],
-        "lgd_override": _optional_float_payload(batch.lgd_overrides[index]),
-        "is_defaulted": bool(batch.is_defaulted[index]),
-        "is_gse": bool(batch.is_gse[index]),
-        "is_pse": bool(batch.is_pse[index]),
-        "is_covered_bond": bool(batch.is_covered_bond[index]),
-        "lineage": lineage,
-        "citation_ids": list(batch.citation_ids[index]),
-    }
-
-
-def _optional_float_payload(value: float) -> float | None:
-    return None if math.isnan(float(value)) else float(value)
-
-
-def _hash_payload(payload: object) -> str:
-    return _stable_hash_payload(payload)
 
 
 def _raise_first_mismatch(
