@@ -55,7 +55,8 @@ Callers wire those steps after RRAO capital is computed.
 
 Tier 1 is the recommended production journey below. Tiers 2 and 3 share the same
 capital semantics once inputs are validated. Public row classification helpers also
-build the canonical batch before using the vectorised classification kernel.
+build the canonical batch before using the vectorised classification kernel;
+submodule row capital-line helpers use the same batch capital-line assembly.
 
 ---
 
