@@ -165,7 +165,6 @@ class DrcBatchCapitalCalculation:
     gross_jtd: FloatArray
     maturity_weights: FloatArray
     scaled_jtd: FloatArray
-    accepted_row_dataclasses_materialized: int = 0
 
 
 def calculate_drc_capital_from_batch(
@@ -383,7 +382,6 @@ def calculate_drc_capital_from_batch(
             np.asarray(scaled_jtd, dtype=np.float64).copy(),
             copy=False,
         ),
-        accepted_row_dataclasses_materialized=0,
     )
 
 

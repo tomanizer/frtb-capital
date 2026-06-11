@@ -153,26 +153,6 @@ name = "calculate phase"
 path = ["summary", "timings_seconds", "batch_calculation"]
 
 [[benchmarks.metrics]]
-name = "Arrow accepted-row dataclasses"
-path = ["summary", "materialized_dataclass_count", "arrow_batch_path"]
-max = 0.0
-
-[[benchmarks.metrics]]
-name = "DRC non-sec Arrow accepted-row dataclasses"
-path = ["summary", "materialized_dataclass_count", "non_securitisation_arrow_batch_path"]
-max = 0.0
-
-[[benchmarks.metrics]]
-name = "DRC sec non-CTP Arrow accepted-row dataclasses"
-path = ["summary", "materialized_dataclass_count", "securitisation_non_ctp_arrow_batch_path"]
-max = 0.0
-
-[[benchmarks.metrics]]
-name = "DRC CTP Arrow accepted-row dataclasses"
-path = ["summary", "materialized_dataclass_count", "ctp_arrow_batch_path"]
-max = 0.0
-
-[[benchmarks.metrics]]
 name = "row/batch capital delta"
 path = ["summary", "capital", "absolute_delta"]
 max = 0.000000001

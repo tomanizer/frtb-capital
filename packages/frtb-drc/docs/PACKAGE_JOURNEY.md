@@ -33,7 +33,7 @@ sum of category capital.
 | Entry | Multi-class in one call | Typical result shape |
 | --- | --- | --- |
 | **`calculate_drc_capital`** (row) | **Yes** — positions may mix `risk_class` values; the public API splits by class, runs each supported kernel, and sums categories | Full audit expansion: `input_positions`, `gross_jtds`, `maturity_scaled_jtds`, `net_jtds`, overlay evidence, **`attribution_records`** |
-| **`calculate_drc_capital_from_batch`** (Arrow) | **No** — each batch must be **homogeneous** (`_batch_risk_class` fails closed on mixed classes) | One category per call; fast path keeps `accepted_row_dataclasses_materialized` at zero; **`gross_jtds` / `maturity_scaled_jtds` / `input_positions` are empty** on the result; `net_jtds` and attribution still populated |
+| **`calculate_drc_capital_from_batch`** (Arrow) | **No** — each batch must be **homogeneous** (`_batch_risk_class` fails closed on mixed classes) | One category per call; **`gross_jtds` / `maturity_scaled_jtds` / `input_positions` are empty** on the result; `net_jtds` and attribution still populated |
 
 There is **no** package-level portfolio dispatcher that accepts three class-specific
 Arrow tables in one function (unlike `frtb-sbm` portfolio helpers). Production

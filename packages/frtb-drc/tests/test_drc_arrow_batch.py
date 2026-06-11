@@ -158,7 +158,6 @@ def test_drc_arrow_batch_batch_matches_nonsec_v2_row_capital() -> None:
     validate_reconciliation(calculation.result)
     assert batch.source_hash == source_hash
     assert batch.handoff_hash is not None
-    assert calculation.accepted_row_dataclasses_materialized == 0
     assert calculation.result.input_positions == ()
     assert calculation.result.gross_jtds == ()
     assert calculation.result.maturity_scaled_jtds == ()
@@ -192,7 +191,6 @@ def test_drc_arrow_batch_batch_matches_securitisation_non_ctp_row_capital() -> N
     calculation = calculate_drc_capital_from_batch(batch, context=fixture["context"])
 
     validate_reconciliation(calculation.result)
-    assert calculation.accepted_row_dataclasses_materialized == 0
     assert calculation.result.input_positions == ()
     assert calculation.result.gross_jtds == ()
     assert calculation.result.maturity_scaled_jtds == ()
@@ -226,7 +224,6 @@ def test_drc_arrow_batch_matches_basel_securitisation_non_ctp_row_capital() -> N
 
     validate_reconciliation(calculation.result)
     assert calculation.result.profile_id == BASEL_MAR22_PROFILE_ID
-    assert calculation.accepted_row_dataclasses_materialized == 0
     assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
     assert calculation.result.total_drc == pytest.approx(expected["total_drc"])
     assert _net_outputs(calculation.result.net_jtds) == _net_outputs(row_result.net_jtds)
@@ -277,7 +274,6 @@ def test_drc_arrow_batch_batch_matches_ctp_row_capital() -> None:
     calculation = calculate_drc_capital_from_batch(batch, context=fixture["context"])
 
     validate_reconciliation(calculation.result)
-    assert calculation.accepted_row_dataclasses_materialized == 0
     assert calculation.result.input_positions == ()
     assert calculation.result.gross_jtds == ()
     assert calculation.result.maturity_scaled_jtds == ()
@@ -446,9 +442,8 @@ def test_drc_batch_lgd_lookup_is_by_seniority_and_default_mask(
 
     monkeypatch.setattr(batch_module, "get_lgd_rule", counting_get_lgd_rule)
 
-    calculation = calculate_drc_capital_from_batch(batch, context=fixture.context)
+    calculate_drc_capital_from_batch(batch, context=fixture.context)
 
-    assert calculation.accepted_row_dataclasses_materialized == 0
     assert len(calls) == 1
 
 
@@ -711,7 +706,6 @@ def test_drc_batch_translates_multi_currency_book_without_row_materialization() 
             batch.position_ids.tolist(), calculation.gross_jtd, strict=True
         )
     }
-    assert calculation.accepted_row_dataclasses_materialized == 0
     assert gross_by_position == pytest.approx({"usd": 75.0, "eur": 90.0})
     assert calculation.result.total_drc == pytest.approx((75.0 + 90.0) * 0.041)
     assert calculation.result.fx_conversions[0].source_currency == "EUR"
