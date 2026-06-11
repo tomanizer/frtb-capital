@@ -17,7 +17,6 @@ from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
-from enum import StrEnum
 
 import numpy as np
 import numpy.typing as npt
@@ -40,59 +39,21 @@ from frtb_ima.regimes import RegulatoryPolicy
 from frtb_ima.validation.rfet_qualitative import (
     _representativeness_result_from_controls,
     _rfet_qualitative_stage,
-    _RFETQualitativeStage,
+)
+from frtb_ima.validation.rfet_quantitative import (
+    RFETExclusionReason as RFETExclusionReason,
+)
+from frtb_ima.validation.rfet_quantitative import (
+    RFETObservationExclusion as RFETObservationExclusion,
+)
+from frtb_ima.validation.rfet_quantitative import (
+    _rfet_quantitative_stage,
 )
 
 BooleanArray = npt.NDArray[np.bool_]
 DateArray = npt.NDArray[np.datetime64]
 DatetimeArray = npt.NDArray[np.datetime64]
 StringArray = npt.NDArray[np.str_]
-
-
-class RFETExclusionReason(StrEnum):
-    """Why a real-price observation did not count for RFET."""
-
-    DUPLICATE_DATE = "DUPLICATE_DATE"
-    DUPLICATE_SOURCE_VENDOR = "DUPLICATE_SOURCE_VENDOR"
-    FUTURE_OBSERVATION = "FUTURE_OBSERVATION"
-    MISSING_DATE_NORMALIZATION_EVIDENCE = "MISSING_DATE_NORMALIZATION_EVIDENCE"
-    MISSING_SOURCE = "MISSING_SOURCE"
-    MISSING_VENDOR_AUDIT_EVIDENCE = "MISSING_VENDOR_AUDIT_EVIDENCE"
-    NON_BUSINESS_DATE = "NON_BUSINESS_DATE"
-    NON_REPRESENTATIVE_BUCKET = "NON_REPRESENTATIVE_BUCKET"
-    NON_REPRESENTATIVE_EVIDENCE = "NON_REPRESENTATIVE_EVIDENCE"
-    OFFICIAL_HOLIDAY = "OFFICIAL_HOLIDAY"
-    OUTSIDE_LOOKBACK = "OUTSIDE_LOOKBACK"
-    UNVERIFIABLE_PRICE = "UNVERIFIABLE_PRICE"
-
-
-@dataclass(frozen=True)
-class RFETObservationExclusion:
-    """One excluded observation with reason for audit review."""
-
-    observation: RealPriceObservation
-    reason: RFETExclusionReason
-
-    def as_dict(self) -> dict[str, object]:
-        """Return a serialisable dictionary for reporting and audit trails.
-        Returns
-        -------
-        dict[str, object]
-            Result of the operation.
-        """
-        return {
-            "observation": {
-                "risk_factor_name": self.observation.risk_factor_name,
-                "observation_date": self.observation.observation_date.isoformat(),
-                "source": self.observation.source,
-                "vendor_id": self.observation.vendor_id,
-                "venue": self.observation.venue,
-                "feed": self.observation.feed,
-                "data_pool_id": self.observation.data_pool_id,
-                "vendor_audit_evidence_id": self.observation.vendor_audit_evidence_id,
-            },
-            "reason": self.reason.value,
-        }
 
 
 @dataclass(frozen=True)
@@ -320,14 +281,6 @@ class _RFETRequiredObservations:
     base_required: int
     required: int
     new_issuance_prorated: bool
-
-
-@dataclass(frozen=True)
-class _RFETQuantitativeStage:
-    eligible_dates: tuple[date, ...]
-    eligible_sources: frozenset[str]
-    eligible_vendors: tuple[str, ...]
-    exclusions: tuple[RFETObservationExclusion, ...]
 
 
 def input_hash_for_rfet_observation_batch(batch: RFETObservationBatch) -> str:
@@ -687,42 +640,6 @@ def _exclusion_count_pairs(
     return _count_pairs(exclusion.reason.value for exclusion in exclusions)
 
 
-def _lineage_key(observation: RealPriceObservation) -> tuple[object, ...]:
-    return (
-        observation.observation_date,
-        observation.source,
-        observation.vendor_id,
-        observation.venue,
-        observation.feed,
-        observation.data_pool_id,
-    )
-
-
-def _has_vendor_audit_evidence(
-    observation: RealPriceObservation,
-    evidence: RFETEvidence,
-) -> bool:
-    if not observation.vendor_id:
-        return True
-    if observation.vendor_audit_evidence_id:
-        return True
-    for pool in evidence.data_pools:
-        if observation.data_pool_id and pool.pool_id == observation.data_pool_id:
-            return True
-        if pool.vendor_id == observation.vendor_id:
-            return True
-    return False
-
-
-def _requires_date_normalization_evidence(observation: RealPriceObservation) -> bool:
-    timestamp = observation.observation_timestamp
-    return (
-        timestamp is not None
-        and timestamp.date() != observation.observation_date
-        and not observation.date_normalization_evidence
-    )
-
-
 def _new_issuance_policy_basis(new_issuance: RFETNewIssuanceEvidence | None) -> str:
     if new_issuance is None:
         return ""
@@ -815,76 +732,6 @@ def _rfet_required_observations(
         base_required=base_required,
         required=required,
         new_issuance_prorated=required != base_required,
-    )
-
-
-def _rfet_quantitative_stage(
-    evidence: RFETEvidence,
-    window: _RFETObservationWindow,
-    qualitative: _RFETQualitativeStage,
-    *,
-    require_source: bool = True,
-) -> _RFETQuantitativeStage:
-    seen_dates: set[date] = set()
-    seen_lineage_keys: set[tuple[object, ...]] = set()
-    eligible_dates: list[date] = []
-    eligible_sources: set[str] = set()
-    eligible_vendors: list[str] = []
-    exclusions: list[RFETObservationExclusion] = []
-
-    for observation in sorted(evidence.observations, key=lambda obs: obs.observation_date):
-        reason: RFETExclusionReason | None = None
-        lineage_key = _lineage_key(observation)
-        if observation.observation_date > evidence.as_of_date:
-            reason = RFETExclusionReason.FUTURE_OBSERVATION
-        elif (
-            observation.observation_date < window.lookback_start
-            or observation.observation_date > window.lookback_end
-        ):
-            reason = RFETExclusionReason.OUTSIDE_LOOKBACK
-        elif observation.observation_date in window.official_holidays:
-            reason = RFETExclusionReason.OFFICIAL_HOLIDAY
-        elif (
-            window.business_dates is not None
-            and observation.observation_date not in window.business_dates
-        ):
-            reason = RFETExclusionReason.NON_BUSINESS_DATE
-        elif require_source and not observation.source:
-            reason = RFETExclusionReason.MISSING_SOURCE
-        elif not observation.verifiable:
-            reason = RFETExclusionReason.UNVERIFIABLE_PRICE
-        elif _requires_date_normalization_evidence(observation):
-            reason = RFETExclusionReason.MISSING_DATE_NORMALIZATION_EVIDENCE
-        elif not _has_vendor_audit_evidence(observation, evidence):
-            reason = RFETExclusionReason.MISSING_VENDOR_AUDIT_EVIDENCE
-        elif not qualitative.bucket_representative:
-            reason = (
-                RFETExclusionReason.NON_REPRESENTATIVE_EVIDENCE
-                if qualitative.representativeness
-                else RFETExclusionReason.NON_REPRESENTATIVE_BUCKET
-            )
-        elif lineage_key in seen_lineage_keys:
-            reason = RFETExclusionReason.DUPLICATE_SOURCE_VENDOR
-        elif observation.observation_date in seen_dates:
-            reason = RFETExclusionReason.DUPLICATE_DATE
-
-        if reason is not None:
-            exclusions.append(RFETObservationExclusion(observation, reason))
-            continue
-
-        seen_lineage_keys.add(lineage_key)
-        seen_dates.add(observation.observation_date)
-        eligible_dates.append(observation.observation_date)
-        if observation.source:
-            eligible_sources.add(observation.source)
-        if observation.vendor_id:
-            eligible_vendors.append(observation.vendor_id)
-
-    return _RFETQuantitativeStage(
-        eligible_dates=tuple(eligible_dates),
-        eligible_sources=frozenset(eligible_sources),
-        eligible_vendors=tuple(eligible_vendors),
-        exclusions=tuple(exclusions),
     )
 
 

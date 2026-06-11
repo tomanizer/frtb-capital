@@ -60,6 +60,9 @@ Arrow ingress helpers physically live under `frtb_ima.adapters.arrow`;
 RFET qualitative stage helpers physically live under
 `frtb_ima.validation.rfet_qualitative`; `frtb_ima.rfet_evidence` remains the
 compatibility import path for existing package-local tests.
+RFET quantitative observation filtering physically lives under
+`frtb_ima.validation.rfet_quantitative`; `frtb_ima.rfet_evidence` remains the
+compatibility import path for RFET exclusion records and stage helpers.
 
 ## References
 
