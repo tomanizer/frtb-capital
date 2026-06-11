@@ -81,10 +81,11 @@ The full normalizer → builder → capital-entry mapping lives in
 ## Risk-class routing (same journey, different kernels)
 
 Integration is **identical** across asset classes: one homogeneous table per path,
-path-specific normalize/build/calculate symbols, then portfolio grouping by
+the generic enum-driven normalize/build/calculate helpers, then portfolio grouping by
 `(risk_class, risk_measure)`. What changes is the **regulatory kernel** invoked
 after the batch is built — weights, buckets, correlations, and required input
-columns differ by class and measure.
+columns differ by class and measure. GIRR delta and vega batch kernels live in
+`frtb_sbm.risk_classes.girr`; `frtb_sbm.capital` remains the public dispatcher.
 
 ### Shared pipeline (all seven risk classes)
 
@@ -120,9 +121,10 @@ even if Basel paths would succeed under `BASEL_MAR21`.
 
 1. Tag each sensitivity row with `risk_class` and `risk_measure` before export.
 2. Split Arrow exports so each table is homogeneous (see profile section above).
-3. Call the matching `normalize_*` / `calculate_sbm_capital_from_*` pair from
-   [PUBLIC_API.md](../../../docs/modules/frtb-sbm/PUBLIC_API.md#inputtable-specs-and-normalizers),
-   or pass multiple normalized tables to `calculate_sbm_portfolio_capital_from_arrow_tables`.
+3. Call `normalize_sbm_arrow_table(..., risk_class, measure)` and either
+   `build_sbm_batch_from_arrow(..., risk_class, measure)` plus batch capital, or
+   `calculate_sbm_capital_from_arrow(..., risk_class, measure)`. For multi-path
+   runs, pass normalized tables to `calculate_sbm_portfolio_capital_from_arrow_tables`.
 4. For regulatory thresholds, weights, and citation ids per cell, use
    [`REGULATORY_TRACEABILITY.md`](REGULATORY_TRACEABILITY.md) (support matrix) and
    [`REGULATORY_ASSUMPTIONS.md`](REGULATORY_ASSUMPTIONS.md) (boundary assumptions).
@@ -144,12 +146,12 @@ flowchart TB
   end
 
   subgraph normalize["2 — Schema alignment at frtb-common boundary"]
-    N["normalize_*_arrow_table per table"]
+    N["normalize_sbm_arrow_table per path"]
     NAT["NormalizedArrowTable\n+ handoff hash per path"]
   end
 
   subgraph batch["3 — Package-owned NumPy batches"]
-    B["build_*_batch_from_arrow per path"]
+    B["build_sbm_batch_from_arrow per path"]
     GRP["Portfolio dispatcher groups by\n(risk_class, risk_measure)"]
     BATCH["SbmSensitivityBatch column arrays"]
   end
