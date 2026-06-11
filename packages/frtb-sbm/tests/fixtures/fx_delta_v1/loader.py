@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -14,19 +13,13 @@ from frtb_sbm import (
     SbmSourceLineage,
 )
 
+from tests.sbm_fixture_helpers import load_sbm_fixture_context
+
 FIXTURE_DIR = Path(__file__).parent
 
 
 def load_fixture_context() -> SbmCalculationContext:
-    payload = _load_json("sensitivities.json")
-    context = payload["context"]
-    return SbmCalculationContext(
-        run_id=str(context["run_id"]),
-        calculation_date=date.fromisoformat(str(context["calculation_date"])),
-        base_currency=str(context["base_currency"]),
-        reporting_currency=str(context["reporting_currency"]),
-        profile_id=str(context["profile_id"]),
-    )
+    return load_sbm_fixture_context(_load_json("sensitivities.json"))
 
 
 def load_fixture_sensitivities() -> tuple[SbmSensitivity, ...]:
