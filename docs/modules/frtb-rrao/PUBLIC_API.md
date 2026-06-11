@@ -24,6 +24,7 @@ their owning submodule only and are not part of the v1 compatibility contract.
 Audit payload assembly physically lives under `frtb_rrao.assembly.payloads`;
 batch input hash assembly physically lives under `frtb_rrao.assembly.hashes`;
 result assembly helpers physically live under `frtb_rrao.assembly.results`.
+Canonical batch validation physically lives under `frtb_rrao.validation.batch`.
 `frtb_rrao._payloads` and `frtb_rrao._result_assembly` remain private
 compatibility import paths for existing package-internal callers and tests.
 
