@@ -28,6 +28,7 @@ from frtb_sbm.adapters.arrow import (
     calculate_sbm_portfolio_capital_from_arrow_tables,
     normalize_sbm_arrow_table,
 )
+from frtb_sbm.adapters.sensitivities import build_sbm_batch, build_sbm_batch_from_columns
 from frtb_sbm.aggregation import (
     InterBucketScenarioResult,
     IntraBucketAggregationResult,
@@ -80,8 +81,6 @@ from frtb_sbm.batch import (
     build_girr_delta_batch_from_sensitivities,
     build_girr_vega_batch_from_columns,
     build_girr_vega_batch_from_sensitivities,
-    build_sbm_batch,
-    build_sbm_batch_from_columns,
     build_sbm_batch_from_sensitivities,
     concatenate_sbm_batches,
     input_hash_for_batch,

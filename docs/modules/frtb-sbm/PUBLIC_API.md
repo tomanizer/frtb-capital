@@ -27,6 +27,9 @@ not exported; callers select a path with `SbmRiskClass` and `SbmRiskMeasure`.
 Arrow ingress implementation lives in `frtb_sbm.adapters.arrow`;
 `frtb_sbm.arrow_batch` remains a compatibility import path for the same public
 Arrow symbols.
+Batch ingress builders physically live under `frtb_sbm.adapters.sensitivities`;
+`frtb_sbm.batch` remains the compatibility and public import path for existing
+batch callers.
 The public API surface test caps `frtb_sbm.__all__` below 400 names and requires
 every documented input_table symbol to remain importable.
 

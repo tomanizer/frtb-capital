@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
-from types import MappingProxyType
 from typing import Any, cast
 
 import numpy as np
@@ -19,12 +18,10 @@ import numpy.typing as npt
 
 from frtb_sbm.audit import _hash_payload
 from frtb_sbm.data_models import (
-    SbmCalculationContext,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
 )
-from frtb_sbm.registry import sbm_batch_spec
 from frtb_sbm.validation import (
     SbmInputError,
     coerce_risk_class,
@@ -156,59 +153,6 @@ class SbmSensitivityBatch:
         if self.row_count == 0:
             raise SbmInputError("batch must not be empty", field="batch")
         return coerce_risk_measure(cast(SbmRiskMeasure | str, self.risk_measures[0]))
-
-
-def build_sbm_batch(
-    sensitivities: object,
-    risk_class: SbmRiskClass | str,
-    measure: SbmRiskMeasure | str,
-    *,
-    context: SbmCalculationContext | None = None,
-    source_hash: str | None = None,
-    handoff_hash: str | None = None,
-    diagnostics: Sequence[Mapping[str, object]] = (),
-) -> SbmSensitivityBatch:
-    """Build an SBM batch through the canonical path registry.
-
-    Parameters
-    ----------
-    sensitivities
-        Existing row-wise canonical sensitivities.
-    risk_class
-        Expected homogeneous SBM risk class.
-    measure
-        Expected homogeneous SBM risk measure.
-    context
-        Optional calculation context shape check. Scope filtering remains a
-        capital-stage concern.
-    source_hash
-        Optional source payload hash.
-    handoff_hash
-        Optional upstream handoff hash.
-    diagnostics
-        Adapter diagnostics to retain with the batch.
-
-    Returns
-    -------
-    SbmSensitivityBatch
-    """
-
-    expected_risk_class = coerce_risk_class(risk_class)
-    expected_risk_measure = coerce_risk_measure(measure)
-    sbm_batch_spec(expected_risk_class, expected_risk_measure)
-    if context is not None and not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
-        )
-    return build_sbm_batch_from_sensitivities(
-        sensitivities,
-        expected_risk_class=expected_risk_class,
-        expected_risk_measure=expected_risk_measure,
-        source_hash=source_hash,
-        handoff_hash=handoff_hash,
-        diagnostics=diagnostics,
-    )
 
 
 def build_sbm_batch_from_sensitivities(
@@ -921,176 +865,6 @@ def build_csr_sec_ctp_delta_batch_from_sensitivities(
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
     )
-
-
-def build_sbm_batch_from_columns(
-    *,
-    expected_risk_class: SbmRiskClass | str,
-    expected_risk_measure: SbmRiskMeasure | str,
-    sensitivity_ids: Iterable[object],
-    source_row_ids: Iterable[object],
-    desk_ids: Iterable[object],
-    legal_entities: Iterable[object],
-    risk_classes: Iterable[object],
-    risk_measures: Iterable[object],
-    buckets: Iterable[object],
-    risk_factors: Iterable[object],
-    amounts: Iterable[object],
-    amount_currencies: Iterable[object],
-    sign_conventions: Iterable[object],
-    tenors: Iterable[object],
-    lineage_source_systems: Iterable[object],
-    lineage_source_files: Iterable[object],
-    source_hash: str | None = None,
-    handoff_hash: str | None = None,
-    diagnostics: Sequence[Mapping[str, object]] = (),
-    position_ids: Iterable[object] | None = None,
-    qualifiers: Iterable[object] | None = None,
-    option_tenors: Iterable[object] | None = None,
-    liquidity_horizon_days: Iterable[object] | None = None,
-    maturities: Iterable[object] | None = None,
-    up_shock_amounts: Iterable[object] | None = None,
-    down_shock_amounts: Iterable[object] | None = None,
-    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
-    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
-    copy_arrays: bool = True,
-) -> SbmSensitivityBatch:
-    """Build a homogeneous SBM batch from columnar arrays owned by an adapter.
-    Parameters
-    ----------
-    expected_risk_class, expected_risk_measure, sensitivity_ids, source_row_ids, desk_ids,
-    legal_entities, risk_classes, risk_measures, buckets, risk_factors, amounts,
-    amount_currencies, sign_conventions, tenors, lineage_source_systems, lineage_source_files,
-    source_hash, handoff_hash, diagnostics, position_ids, qualifiers, option_tenors,
-    liquidity_horizon_days, maturities, up_shock_amounts, down_shock_amounts, source_column_maps,
-    mapping_citation_ids, copy_arrays :
-        See function signature for types and defaults.
-
-    Returns
-    -------
-    SbmSensitivityBatch
-    """
-
-    resolved_risk_class = coerce_risk_class(expected_risk_class)
-    resolved_risk_measure = coerce_risk_measure(expected_risk_measure)
-    arrays = {
-        "sensitivity_ids": _object_array(sensitivity_ids, "sensitivity_id", copy=copy_arrays),
-        "source_row_ids": _object_array(source_row_ids, "source_row_id", copy=copy_arrays),
-        "desk_ids": _object_array(desk_ids, "desk_id", copy=copy_arrays),
-        "legal_entities": _object_array(legal_entities, "legal_entity", copy=copy_arrays),
-        "risk_classes": _object_array(risk_classes, "risk_class", copy=copy_arrays),
-        "risk_measures": _object_array(risk_measures, "risk_measure", copy=copy_arrays),
-        "buckets": _object_array(buckets, "bucket", copy=copy_arrays),
-        "risk_factors": _object_array(risk_factors, "risk_factor", copy=copy_arrays),
-        "amount_currencies": _object_array(
-            amount_currencies,
-            "amount_currency",
-            copy=copy_arrays,
-        ),
-        "sign_conventions": _object_array(
-            sign_conventions,
-            "sign_convention",
-            copy=copy_arrays,
-        ),
-        "tenors": _object_array(tenors, "tenor", copy=copy_arrays),
-        "lineage_source_systems": _object_array(
-            lineage_source_systems,
-            "lineage_source_system",
-            copy=copy_arrays,
-        ),
-        "lineage_source_files": _object_array(
-            lineage_source_files,
-            "lineage_source_file",
-            copy=copy_arrays,
-        ),
-    }
-    amount_array = _float_array(amounts, "amount", copy=copy_arrays)
-    row_count = int(amount_array.shape[0])
-    _require_common_length(row_count, arrays)
-    _require_non_empty_length(row_count)
-    arrays["risk_classes"] = _normalise_risk_class_array(
-        arrays["risk_classes"],
-        sensitivity_ids=arrays["sensitivity_ids"],
-    )
-    arrays["risk_measures"] = _normalise_risk_measure_array(
-        arrays["risk_measures"],
-        sensitivity_ids=arrays["sensitivity_ids"],
-    )
-    arrays["sign_conventions"] = _normalise_sign_convention_array(
-        arrays["sign_conventions"],
-        sensitivity_ids=arrays["sensitivity_ids"],
-    )
-
-    optional = {
-        "position_ids": _optional_object_array(position_ids, "position_id", row_count, copy_arrays),
-        "qualifiers": _optional_object_array(qualifiers, "qualifier", row_count, copy_arrays),
-        "option_tenors": _optional_object_array(
-            option_tenors,
-            "option_tenor",
-            row_count,
-            copy_arrays,
-        ),
-        "liquidity_horizon_days": _optional_object_array(
-            liquidity_horizon_days,
-            "liquidity_horizon_days",
-            row_count,
-            copy_arrays,
-        ),
-        "maturities": _optional_object_array(maturities, "maturity", row_count, copy_arrays),
-        "up_shock_amounts": _optional_object_array(
-            up_shock_amounts,
-            "up_shock_amount",
-            row_count,
-            copy_arrays,
-        ),
-        "down_shock_amounts": _optional_object_array(
-            down_shock_amounts,
-            "down_shock_amount",
-            row_count,
-            copy_arrays,
-        ),
-    }
-
-    _validate_source_column_maps(source_column_maps, row_count)
-    _validate_mapping_citations(mapping_citation_ids, row_count)
-    _validate_homogeneous_batch_arrays(
-        arrays,
-        amount_array,
-        expected_risk_class=resolved_risk_class,
-        expected_risk_measure=resolved_risk_measure,
-        optional_arrays=optional,
-    )
-    diagnostic_payloads = tuple(MappingProxyType(dict(item)) for item in diagnostics)
-    batch_without_hash = SbmSensitivityBatch(
-        sensitivity_ids=arrays["sensitivity_ids"],
-        source_row_ids=arrays["source_row_ids"],
-        desk_ids=arrays["desk_ids"],
-        legal_entities=arrays["legal_entities"],
-        risk_classes=arrays["risk_classes"],
-        risk_measures=arrays["risk_measures"],
-        buckets=arrays["buckets"],
-        risk_factors=arrays["risk_factors"],
-        amounts=amount_array,
-        amount_currencies=arrays["amount_currencies"],
-        sign_conventions=arrays["sign_conventions"],
-        tenors=arrays["tenors"],
-        lineage_source_systems=arrays["lineage_source_systems"],
-        lineage_source_files=arrays["lineage_source_files"],
-        input_hash="",
-        source_hash=source_hash,
-        handoff_hash=handoff_hash,
-        diagnostics=diagnostic_payloads,
-        position_ids=optional["position_ids"],
-        qualifiers=optional["qualifiers"],
-        option_tenors=optional["option_tenors"],
-        liquidity_horizon_days=optional["liquidity_horizon_days"],
-        maturities=optional["maturities"],
-        up_shock_amounts=optional["up_shock_amounts"],
-        down_shock_amounts=optional["down_shock_amounts"],
-        source_column_maps=source_column_maps,
-        mapping_citation_ids=mapping_citation_ids,
-    )
-    return replace(batch_without_hash, input_hash=input_hash_for_sbm_batch(batch_without_hash))
 
 
 def build_girr_delta_batch_from_columns(
@@ -2833,6 +2607,11 @@ def _str_at(values: ObjectArray, row_index: int) -> str:
 def _freeze_array(array: npt.NDArray[Any]) -> None:
     array.setflags(write=False)
 
+
+from frtb_sbm.adapters.sensitivities import (  # noqa: E402
+    build_sbm_batch,
+    build_sbm_batch_from_columns,
+)
 
 __all__ = [
     "SbmSensitivityBatch",

@@ -4,7 +4,9 @@ from pathlib import Path
 
 import frtb_sbm
 import frtb_sbm.adapters.arrow as adapter_arrow
+import frtb_sbm.adapters.sensitivities as adapter_sensitivities
 import frtb_sbm.arrow_batch as arrow_batch
+import frtb_sbm.batch as batch
 
 HANDOFF_SPECS = (
     "GIRR_DELTA_ARROW_COLUMN_SPECS",
@@ -55,6 +57,11 @@ ARROW_ADAPTER_SURFACE = (
     "normalize_sbm_arrow_table",
 )
 
+BATCH_INGRESS_SURFACE = (
+    "build_sbm_batch",
+    "build_sbm_batch_from_columns",
+)
+
 
 def test_documented_handoff_surface_is_top_level_importable() -> None:
     exported = set(frtb_sbm.__all__)
@@ -74,6 +81,13 @@ def test_arrow_batch_shim_reexports_adapter_surface() -> None:
         assert name in adapter_arrow.__all__
         assert name in arrow_batch.__all__
         assert getattr(arrow_batch, name) is getattr(adapter_arrow, name)
+
+
+def test_batch_module_reexports_sensitivity_adapter_surface() -> None:
+    for name in BATCH_INGRESS_SURFACE:
+        assert name in adapter_sensitivities.__all__
+        assert name in batch.__all__
+        assert getattr(batch, name) is getattr(adapter_sensitivities, name)
 
 
 def _public_api_doc() -> str:

@@ -29,10 +29,8 @@ from frtb_common import (
     unique_non_null_text_values,
 )
 
-from frtb_sbm.batch import (
-    SbmSensitivityBatch,
-    build_sbm_batch_from_columns,
-)
+from frtb_sbm.adapters.sensitivities import build_sbm_batch_from_columns
+from frtb_sbm.batch import SbmSensitivityBatch
 from frtb_sbm.capital import (
     calculate_sbm_capital_from_batch,
     calculate_sbm_portfolio_capital_from_batches,
