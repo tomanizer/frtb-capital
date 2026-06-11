@@ -24,6 +24,8 @@ from frtb_result_store.store_row_io import (
     _hierarchy_definition_from_row,
     _hierarchy_node_from_row,
     _run_from_row,
+)
+from frtb_result_store.store_status_rows import (
     _status_event_from_row,
 )
 

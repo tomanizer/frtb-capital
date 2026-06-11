@@ -4,6 +4,8 @@ import subprocess
 import sys
 from datetime import UTC, date, datetime
 
+import frtb_result_store.store_row_io as store_row_io
+import frtb_result_store.store_status_rows as store_status_rows
 import pytest
 from frtb_common import (
     CapitalContribution,
@@ -69,6 +71,49 @@ def test_top_level_import_does_not_load_duckdb_backend() -> None:
     )
 
     assert result.stdout.strip() == "False False"
+
+
+def test_store_status_rows_preserve_row_io_compatibility_path() -> None:
+    assert store_row_io._elapsed_ms is store_status_rows._elapsed_ms
+    assert store_row_io._initial_status_event is store_status_rows._initial_status_event
+    assert store_row_io._status_event_from_row is store_status_rows._status_event_from_row
+    assert store_row_io._status_event_row is store_status_rows._status_event_row
+
+
+def test_store_status_rows_parse_datetime_values_without_string_round_trip() -> None:
+    event_time = datetime(2026, 6, 3, 12, 0, tzinfo=UTC)
+    event = store_status_rows._status_event_from_row(
+        (
+            "status-event-001",
+            "run-001",
+            None,
+            RunStatus.CANDIDATE.value,
+            event_time,
+            "result-store",
+            "RUN_COMMITTED",
+            "Run committed to result store",
+            None,
+        )
+    )
+
+    assert event.event_time is event_time
+
+
+def test_store_status_rows_reject_malformed_event_time_with_contract_error() -> None:
+    with pytest.raises(ResultStoreContractError, match="invalid status event_time"):
+        store_status_rows._status_event_from_row(
+            (
+                "status-event-001",
+                "run-001",
+                None,
+                RunStatus.CANDIDATE.value,
+                "not-a-datetime",
+                "result-store",
+                "RUN_COMMITTED",
+                "Run committed to result store",
+                None,
+            )
+        )
 
 
 def test_canonical_run_identity_uses_full_stable_digest() -> None:
