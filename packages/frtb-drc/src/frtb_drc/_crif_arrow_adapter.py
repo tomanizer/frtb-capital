@@ -9,7 +9,7 @@ import pyarrow as pa  # type: ignore[import-untyped]
 from frtb_common import NormalizedArrowTable
 
 from frtb_drc._crif_models import DrcCrifAdapterResult, DrcRejectedCrifRow
-from frtb_drc.arrow_batch import (
+from frtb_drc.adapters.arrow import (
     normalize_drc_ctp_arrow_table,
     normalize_drc_nonsec_arrow_table,
     normalize_drc_securitisation_non_ctp_arrow_table,
