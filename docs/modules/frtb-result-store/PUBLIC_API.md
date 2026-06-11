@@ -30,10 +30,11 @@ The API is FRTB-specific. Consumers should query capital trees, node measures,
 artifact references, lineage, attribution records, and attribution explain
 projections rather than treating the store as a generic table dump.
 
-Lifecycle status row serialization is an internal IO stage implemented in
-`frtb_result_store.store_status_rows`. The older
-`frtb_result_store.store_row_io` module remains an internal compatibility path
-for existing row helper imports.
+Base-table row assembly is split across internal IO stages:
+`frtb_result_store.store_bundle_rows` assembles one `ResultBundle` into table
+row groups, and `frtb_result_store.store_status_rows` owns lifecycle status row
+serialization. The older `frtb_result_store.store_row_io` module remains an
+internal compatibility path for existing row helper imports.
 
 `DuckDbParquetResultStore.refresh_catalog()` rebuilds `catalog.duckdb` as
 derived state over committed Parquet. `read_only_connection()` opens that
