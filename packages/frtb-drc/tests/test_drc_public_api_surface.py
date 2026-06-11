@@ -112,6 +112,7 @@ def test_batch_builder_adapter_compatibility_exports() -> None:
 
 def test_arrow_adapter_compatibility_exports() -> None:
     import frtb_drc.adapters.arrow as adapter
+    import frtb_drc.adapters.arrow_evidence as evidence
     import frtb_drc.arrow_batch as compatibility
 
     names = (
@@ -130,6 +131,21 @@ def test_arrow_adapter_compatibility_exports() -> None:
     for name in names:
         assert getattr(compatibility, name) is getattr(adapter, name)
         assert getattr(frtb_drc, name) is getattr(adapter, name)
+
+    evidence_names = (
+        "DRC_RISK_WEIGHT_EVIDENCE_ARROW_COLUMN_SPECS",
+        "DRC_FAIR_VALUE_CAP_EVIDENCE_ARROW_COLUMN_SPECS",
+        "normalize_drc_risk_weight_evidence_arrow_table",
+        "normalize_drc_fair_value_cap_evidence_arrow_table",
+        "build_drc_risk_weight_evidence_from_arrow",
+        "build_drc_securitisation_non_ctp_risk_weight_evidence_from_arrow",
+        "build_drc_ctp_risk_weight_evidence_from_arrow",
+        "build_drc_fair_value_cap_evidence_from_arrow",
+    )
+    for name in evidence_names:
+        assert getattr(adapter, name) is getattr(evidence, name)
+        assert getattr(compatibility, name) is getattr(evidence, name)
+        assert getattr(frtb_drc, name) is getattr(evidence, name)
 
 
 def test_hash_assembly_compatibility_exports() -> None:
