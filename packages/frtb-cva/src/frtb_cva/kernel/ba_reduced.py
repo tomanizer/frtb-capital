@@ -8,10 +8,6 @@ from typing import cast
 from frtb_cva._ba_batch_lines import _netting_set_line_from_batch
 from frtb_cva._batch_contracts import CvaCounterpartyBatch, CvaNettingSetBatch
 from frtb_cva._batch_utils import _sorted_indices
-from frtb_cva._batch_validation import (
-    _netting_indices_by_counterparty,
-    _validate_ba_relationships,
-)
 from frtb_cva.ba_cva import _unique_citations
 from frtb_cva.data_models import (
     BaCvaCounterpartyCapital,
@@ -29,6 +25,10 @@ from frtb_cva.reference_data import (
     profile_citation_id,
 )
 from frtb_cva.validation import CvaInputError
+from frtb_cva.validation.batches import (
+    _netting_indices_by_counterparty,
+    _validate_ba_relationships,
+)
 
 
 def calculate_reduced_portfolio_from_batches(

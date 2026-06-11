@@ -25,6 +25,7 @@ The high-volume batch boundary is summarized in
 Arrow ingress physically lives under `frtb_cva.adapters.arrow`;
 `frtb_cva.arrow_batch` remains a compatibility import path for existing callers.
 Entity registry dispatch physically lives under `frtb_cva.registry`; the private `frtb_cva._arrow_entity_specs` path remains a compatibility shim.
+Batch validation helpers physically live under `frtb_cva.validation.batches`; the private `frtb_cva._batch_validation` path remains a compatibility shim.
 
 ## Client integration
 

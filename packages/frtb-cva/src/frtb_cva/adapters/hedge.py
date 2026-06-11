@@ -23,7 +23,6 @@ from frtb_cva._batch_columns import (
     _required_text_array,
 )
 from frtb_cva._batch_contracts import CvaHedgeBatch
-from frtb_cva._batch_validation import _validate_hedge_batch
 from frtb_cva.data_models import (
     BaCvaHedgeType,
     CreditQuality,
@@ -34,6 +33,7 @@ from frtb_cva.data_models import (
     SaCvaHedgePurpose,
     SaCvaRiskClass,
 )
+from frtb_cva.validation.batches import _validate_hedge_batch
 
 
 def build_cva_hedge_batch_from_columns(

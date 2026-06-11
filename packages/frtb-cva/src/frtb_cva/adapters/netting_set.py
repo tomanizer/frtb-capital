@@ -17,8 +17,8 @@ from frtb_cva._batch_columns import (
     _required_text_array,
 )
 from frtb_cva._batch_contracts import CvaNettingSetBatch
-from frtb_cva._batch_validation import _validate_netting_set_batch
 from frtb_cva.validation import CvaInputError
+from frtb_cva.validation.batches import _validate_netting_set_batch
 
 
 def build_cva_netting_set_batch_from_columns(
