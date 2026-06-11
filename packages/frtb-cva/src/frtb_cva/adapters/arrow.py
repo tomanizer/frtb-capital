@@ -19,7 +19,13 @@ from frtb_common import (
     read_arrow_columns,
 )
 
-from frtb_cva._arrow_entity_specs import (
+from frtb_cva.batch import (
+    CvaCounterpartyBatch,
+    CvaHedgeBatch,
+    CvaNettingSetBatch,
+    SaCvaSensitivityBatch,
+)
+from frtb_cva.registry import (
     CVA_COUNTERPARTY_ARROW_COLUMN_SPECS,
     CVA_COUNTERPARTY_ENTITY_SPEC,
     CVA_ENTITY_BATCH_SPECS,
@@ -30,12 +36,6 @@ from frtb_cva._arrow_entity_specs import (
     SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS,
     SA_CVA_SENSITIVITY_ENTITY_SPEC,
     EntityBatchSpec,
-)
-from frtb_cva.batch import (
-    CvaCounterpartyBatch,
-    CvaHedgeBatch,
-    CvaNettingSetBatch,
-    SaCvaSensitivityBatch,
 )
 from frtb_cva.validation import CvaInputError
 

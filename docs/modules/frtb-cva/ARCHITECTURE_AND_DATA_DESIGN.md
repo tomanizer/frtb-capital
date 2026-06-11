@@ -66,6 +66,7 @@ risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN
 | `crif.py` | Optional CRIF/vendor-to-canonical mapping. No kernel imports. |
 | `batch.py` | Public compatibility facade re-exporting canonical batch contracts and entrypoints. |
 | `_batch_contracts.py` | Frozen batch dataclasses (`CvaCounterpartyBatch`, etc.). |
+| `registry.py` | Public `EntityBatchSpec` table for counterparty, netting-set, hedge, and SA-CVA sensitivity batch ingress; private `_arrow_entity_specs.py` remains a compatibility shim. |
 | `adapters/columns.py`, `adapters/rows.py`, `adapters/{counterparty,netting_set,hedge,sensitivity}.py` | Column and row adapters -> canonical batches; private `_batch_*adapter.py` paths remain compatibility shims. |
 | `_batch_validation.py` | Package-local batch input rules. |
 | `assembly/batches.py`, `assembly/batch_payloads.py`, `assembly/payloads.py` | Result assembly and deterministic hash inputs; private `_batch_assembly.py`, `_batch_payloads.py`, and `_payloads.py` remain compatibility shims. |

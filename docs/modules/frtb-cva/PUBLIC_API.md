@@ -14,6 +14,7 @@ Outputs are not final regulatory capital.
 | Row capital (Tier 3) | `calculate_cva_capital`, `CvaCounterparty`, `CvaNettingSet`, `CvaHedge`, `SaCvaSensitivity`, `CvaCalculationContext`, `CvaCapitalResult`, `CvaMethod`, `CvaRegulatoryProfile` | Small books, tests, notebooks, and fixture workflows. The row path adapts inputs into canonical batches before calculation. |
 | Batch capital (Tier 1) | `CvaCounterpartyBatch`, `CvaNettingSetBatch`, `CvaHedgeBatch`, `SaCvaSensitivityBatch`, `calculate_cva_capital_from_batches`, `build_cva_counterparty_batch_from_arrow`, `build_cva_netting_set_batch_from_arrow`, `build_cva_hedge_batch_from_arrow`, `build_sa_cva_sensitivity_batch_from_arrow`, `build_*_batch_from_columns`, `build_*_batch_from_*dataclasses` | Production path from normalized Arrow tables to package-owned NumPy batches and the canonical capital engine. |
 | Handoff specs | `CVA_COUNTERPARTY_ARROW_COLUMN_SPECS`, `CVA_NETTING_SET_ARROW_COLUMN_SPECS`, `CVA_HEDGE_ARROW_COLUMN_SPECS`, `SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS` | Client schema alignment and generated schema export. |
+| Entity registry | `EntityBatchSpec`, `CVA_ENTITY_BATCH_SPECS`, `CVA_COUNTERPARTY_ENTITY_SPEC`, `CVA_NETTING_SET_ENTITY_SPEC`, `CVA_HEDGE_ENTITY_SPEC`, `SA_CVA_SENSITIVITY_ENTITY_SPEC` | Canonical table-driven entity routing for Arrow and column ingress. |
 | Normalize | `normalize_cva_counterparty_arrow_table`, `normalize_cva_netting_set_arrow_table`, `normalize_cva_hedge_arrow_table`, `normalize_sa_cva_sensitivity_arrow_table` | Ingress from raw Arrow tables to `NormalizedArrowTable`. |
 | CRIF adapter (Tier 2) | `adapt_cva_records`, `CvaAdapterResult` | CRIF-shaped input compatibility where supported. |
 | Scope and unsupported features | `resolve_calculation_method`, `partition_mixed_method_inputs`, `validate_method_selection`, `CvaInputError` | Fail-closed method selection and unsupported feature diagnostics. |
@@ -23,6 +24,7 @@ The high-volume batch boundary is summarized in
 [`docs/performance/frtb-cva-arrow-batch-triage.md`](../../performance/frtb-cva-arrow-batch-triage.md).
 Arrow ingress physically lives under `frtb_cva.adapters.arrow`;
 `frtb_cva.arrow_batch` remains a compatibility import path for existing callers.
+Entity registry dispatch physically lives under `frtb_cva.registry`; the private `frtb_cva._arrow_entity_specs` path remains a compatibility shim.
 
 ## Client integration
 

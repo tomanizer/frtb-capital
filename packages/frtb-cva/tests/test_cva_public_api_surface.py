@@ -21,6 +21,15 @@ HANDOFF_SURFACE = (
     "calculate_cva_capital_from_batches",
 )
 
+REGISTRY_SURFACE = (
+    "CVA_COUNTERPARTY_ENTITY_SPEC",
+    "CVA_ENTITY_BATCH_SPECS",
+    "CVA_HEDGE_ENTITY_SPEC",
+    "CVA_NETTING_SET_ENTITY_SPEC",
+    "SA_CVA_SENSITIVITY_ENTITY_SPEC",
+    "EntityBatchSpec",
+)
+
 LOW_LEVEL_BATCH_INTERNALS = (
     "_validate_netting_set_batch",
     "calculate_reduced_portfolio_from_batches",
@@ -36,6 +45,27 @@ def test_documented_handoff_surface_is_top_level_importable() -> None:
         assert name in exported
         assert hasattr(frtb_cva, name)
         assert f"`{name}`" in documented
+
+
+def test_entity_registry_is_public_and_legacy_path_is_compatible() -> None:
+    import frtb_cva._arrow_entity_specs as legacy_registry
+    import frtb_cva.registry as registry
+
+    documented = _public_api_doc()
+    for name in REGISTRY_SURFACE:
+        assert name in frtb_cva.__all__
+        assert getattr(frtb_cva, name) is getattr(registry, name)
+        assert getattr(legacy_registry, name) is getattr(registry, name)
+        assert name in registry.__all__
+        assert name in legacy_registry.__all__
+        assert f"`{name}`" in documented
+
+    assert tuple(registry.CVA_ENTITY_BATCH_SPECS) == (
+        "counterparty",
+        "netting_set",
+        "hedge",
+        "sa_cva_sensitivity",
+    )
 
 
 def test_arrow_adapter_compatibility_path_exports_same_surface() -> None:
@@ -185,7 +215,7 @@ def test_minimal_handoff_fixtures_round_trip_to_batches() -> None:
 
 
 def test_top_level_public_api_surface_remains_bounded() -> None:
-    assert len(frtb_cva.__all__) < 125
+    assert len(frtb_cva.__all__) < 132
 
 
 def _public_api_doc() -> str:
