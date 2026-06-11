@@ -22,7 +22,7 @@ capital.
 | PLA | `pla_addon`, `PLAAddonResult`, `SpearmanPlaResult` | PLA diagnostics for supported regimes. |
 | Audit | `CapitalRunAuditLog`, `DeskAuditRecord`, `audit_records_to_ndjson`, `render_capital_run_audit_report`, `write_capital_run_audit_report` | NDJSON audit records and deterministic Markdown reports. |
 | Attribution | `desk_contributions`, `build_ima_contribution_bundle` | Read-only projection from completed `DeskAuditRecord` objects to shared `CapitalContribution` records, plus an orchestration-ready `ComponentContributionBundle(component="frtb_ima", ...)` that validates against an IMA summary total when supplied. |
-| Arrow handoffs | `IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS`, `IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS`, `IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS`, `build_capital_run_input_manifest_from_arrow`, `build_rfet_observation_batch_from_arrow`, `build_scenario_metadata_batch_from_arrow` | Tabular lineage and manifest ingress; scenario cubes remain NumPy-native. |
+| Arrow handoffs | `IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS`, `IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS`, `IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS`, `build_capital_run_input_manifest_from_arrow`, `build_rfet_observation_batch_from_arrow`, `build_scenario_metadata_batch_from_arrow` | Tabular lineage and manifest ingress through `frtb_ima.adapters.arrow`; scenario cubes remain NumPy-native. |
 | Errors | `IMAIneligibleError`, `UnsupportedRegulatoryFeature`, `UnsupportedRegulatoryFeatureError` | Fail-closed desk ineligibility and unsupported regulatory paths. |
 
 Audit record types (`CapitalRunAuditLog`, `DeskAuditRecord`) currently live in
@@ -55,6 +55,8 @@ Clients should not depend on private `_array_utils`, `_mapping_utils`, or
 `_observation_utils` modules. Observation-window validation helpers physically
 live under `frtb_ima.validation.observation_windows`; `_observation_utils`
 remains a compatibility path for package-local coverage tests.
+Arrow ingress helpers physically live under `frtb_ima.adapters.arrow`;
+`frtb_ima.arrow_batch` remains a compatibility import path.
 
 ## References
 

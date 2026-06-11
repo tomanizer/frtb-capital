@@ -10,7 +10,7 @@ and production governance remain outside this package.
 from frtb_common import CapitalComponentMetadata, ImplementationStatus, ValidationStatus
 
 from frtb_ima._version import __version__
-from frtb_ima.arrow_batch import (
+from frtb_ima.adapters.arrow import (
     IMA_INPUT_MANIFEST_ARROW_COLUMN_SPECS,
     IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS,
     IMA_SCENARIO_METADATA_ARROW_COLUMN_SPECS,
