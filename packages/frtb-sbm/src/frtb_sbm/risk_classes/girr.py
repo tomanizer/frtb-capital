@@ -25,8 +25,8 @@ from frtb_sbm.data_models import (
 )
 from frtb_sbm.factor_grid import net_girr_delta_sensitivity_batch
 from frtb_sbm.risk_classes.girr_correlations import _aggregate_girr_measure_capital
+from frtb_sbm.risk_classes.girr_weighting import weight_girr_vega_sensitivity_batch
 from frtb_sbm.validation import SbmInputError, normalise_currency_code
-from frtb_sbm.weighted_sensitivity import weight_girr_vega_sensitivity_batch
 
 
 def calculate_girr_delta_risk_class_capital(
