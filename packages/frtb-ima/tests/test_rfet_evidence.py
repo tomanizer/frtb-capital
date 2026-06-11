@@ -4,6 +4,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
+from frtb_ima.assembly.rfet import RFETEvidenceAssessment as _assembly_RFETEvidenceAssessment
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.data_contracts import (
     RFETDataPoolEvidence,
@@ -21,6 +22,7 @@ from frtb_ima.data_models import (
 )
 from frtb_ima.regimes import RegulatoryRegime, get_policy
 from frtb_ima.rfet_evidence import (
+    RFETEvidenceAssessment,
     RFETExclusionReason,
     _rfet_observation_window,
     _rfet_qualitative_stage,
@@ -111,6 +113,10 @@ def test_base_required_observation_count_uses_policy_thresholds() -> None:
 def test_rfet_threshold_stage_keeps_compatibility_imports() -> None:
     assert base_required_observation_count is _validation_base_required_observation_count
     assert prorated_required_observation_count is _validation_prorated_required_observation_count
+
+
+def test_rfet_assembly_stage_keeps_compatibility_imports() -> None:
+    assert RFETEvidenceAssessment is _assembly_RFETEvidenceAssessment
 
 
 def test_assess_rfet_evidence_passes_with_required_unique_dates() -> None:

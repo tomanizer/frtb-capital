@@ -69,6 +69,9 @@ compatibility import path for existing package-local tests.
 RFET required-observation threshold helpers physically live under
 `frtb_ima.validation.rfet_thresholds`; `frtb_ima.rfet_evidence` remains the
 compatibility import path for existing public callers.
+RFET assessment result assembly physically lives under
+`frtb_ima.assembly.rfet`; `frtb_ima.rfet_evidence` remains the compatibility
+import path for existing public callers.
 
 ## References
 
