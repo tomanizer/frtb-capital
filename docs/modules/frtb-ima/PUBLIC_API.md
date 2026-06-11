@@ -63,6 +63,9 @@ compatibility import path for existing package-local tests.
 RFET quantitative observation filtering physically lives under
 `frtb_ima.validation.rfet_quantitative`; `frtb_ima.rfet_evidence` remains the
 compatibility import path for RFET exclusion records and stage helpers.
+RFET observation-window stage helpers physically live under
+`frtb_ima.validation.rfet_window`; `frtb_ima.rfet_evidence` remains the
+compatibility import path for existing package-local tests.
 
 ## References
 
