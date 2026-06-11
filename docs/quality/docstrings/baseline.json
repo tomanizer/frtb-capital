@@ -2,12 +2,12 @@
   "description": "Runtime package docstring inventory report.",
   "metrics": {
     "findings_by_rule": {
-      "MISSING_PARAMETERS_SECTION": 24,
+      "MISSING_PARAMETERS_SECTION": 22,
       "MISSING_PUBLIC_DOCSTRING": 66,
-      "MISSING_RETURNS_SECTION": 35
+      "MISSING_RETURNS_SECTION": 33
     },
     "packages_with_findings": 5,
-    "total_findings": 125
+    "total_findings": 121
   },
   "packages": {
     "frtb-drc": {
@@ -836,7 +836,7 @@
       ]
     },
     "frtb-rrao": {
-      "finding_count": 22,
+      "finding_count": 18,
       "findings": [
         {
           "line": 6,
@@ -998,42 +998,6 @@
           "object_type": "function",
           "package": "frtb-rrao",
           "path": "packages/frtb-rrao/src/frtb_rrao/scaffold.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 79,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "normalise_gross_effective_notional",
-          "object_type": "function",
-          "package": "frtb-rrao",
-          "path": "packages/frtb-rrao/src/frtb_rrao/validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 79,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "normalise_gross_effective_notional",
-          "object_type": "function",
-          "package": "frtb-rrao",
-          "path": "packages/frtb-rrao/src/frtb_rrao/validation.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 102,
-          "message": "Public function has parameters but no NumPy Parameters section.",
-          "object_name": "validate_rrao_positions",
-          "object_type": "function",
-          "package": "frtb-rrao",
-          "path": "packages/frtb-rrao/src/frtb_rrao/validation.py",
-          "rule": "MISSING_PARAMETERS_SECTION"
-        },
-        {
-          "line": 102,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "validate_rrao_positions",
-          "object_type": "function",
-          "package": "frtb-rrao",
-          "path": "packages/frtb-rrao/src/frtb_rrao/validation.py",
           "rule": "MISSING_RETURNS_SECTION"
         }
       ]
