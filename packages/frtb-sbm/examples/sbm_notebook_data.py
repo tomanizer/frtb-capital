@@ -22,7 +22,7 @@ from frtb_sbm import (
     SbmSignConvention,
     SbmSourceLineage,
 )
-from frtb_sbm.arrow_batch import normalize_sbm_arrow_table
+from frtb_sbm.adapters.arrow import normalize_sbm_arrow_table
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = PACKAGE_ROOT / "tests" / "fixtures"

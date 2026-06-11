@@ -153,8 +153,9 @@ Path-specific input requirements are enforced by validation and batch builders:
 ## Arrow Handoff
 
 The public Arrow contract is defined by the package-owned `*_ARROW_COLUMN_SPECS`
-symbols in `frtb_sbm.arrow_batch`. For each supported risk-class and measure
-path, callers use:
+symbols in `frtb_sbm.adapters.arrow`. `frtb_sbm.arrow_batch` remains a
+compatibility import path for those symbols. For each supported risk-class and
+measure path, callers use:
 
 1. `normalize_sbm_arrow_table(table, risk_class, measure, ...)`
 2. `build_sbm_batch_from_arrow(handoff, risk_class, measure, ...)`

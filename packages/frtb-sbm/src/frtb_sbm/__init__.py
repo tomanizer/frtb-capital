@@ -1,21 +1,7 @@
 """Standardised Approach sensitivities-based method scaffold."""
 
 from frtb_sbm._version import __version__
-from frtb_sbm.aggregation import (
-    InterBucketScenarioResult,
-    IntraBucketAggregationResult,
-    IntraBucketScenarioSpec,
-    PairwiseCorrelationEvidence,
-    ScenarioSelectionResult,
-    adjust_correlation_for_scenario,
-    adjust_correlation_matrix_for_scenario,
-    aggregate_inter_bucket,
-    aggregate_intra_bucket,
-    aggregate_risk_class_with_scenarios,
-    group_weighted_sensitivities_by_bucket,
-    select_max_correlation_scenario,
-)
-from frtb_sbm.arrow_batch import (
+from frtb_sbm.adapters.arrow import (
     COMMODITY_CURVATURE_ARROW_COLUMN_SPECS,
     COMMODITY_DELTA_ARROW_COLUMN_SPECS,
     COMMODITY_VEGA_ARROW_COLUMN_SPECS,
@@ -41,6 +27,20 @@ from frtb_sbm.arrow_batch import (
     calculate_sbm_capital_from_arrow,
     calculate_sbm_portfolio_capital_from_arrow_tables,
     normalize_sbm_arrow_table,
+)
+from frtb_sbm.aggregation import (
+    InterBucketScenarioResult,
+    IntraBucketAggregationResult,
+    IntraBucketScenarioSpec,
+    PairwiseCorrelationEvidence,
+    ScenarioSelectionResult,
+    adjust_correlation_for_scenario,
+    adjust_correlation_matrix_for_scenario,
+    aggregate_inter_bucket,
+    aggregate_intra_bucket,
+    aggregate_risk_class_with_scenarios,
+    group_weighted_sensitivities_by_bucket,
+    select_max_correlation_scenario,
 )
 from frtb_sbm.attribution import calculate_sbm_attribution
 from frtb_sbm.audit import (

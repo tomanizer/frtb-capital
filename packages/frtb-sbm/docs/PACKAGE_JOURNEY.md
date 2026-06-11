@@ -205,6 +205,8 @@ Each table passes through `normalize_sbm_arrow_table` with explicit
 - collect adapter diagnostics
 
 Output is a **`NormalizedArrowTable`** on the Arrow handoff boundary (ADR 0023).
+The implementation lives in `frtb_sbm.adapters.arrow`; `frtb_sbm.arrow_batch`
+remains a compatibility import path.
 Calculation kernels do not import PyArrow.
 
 ### Step 3 — Build batches

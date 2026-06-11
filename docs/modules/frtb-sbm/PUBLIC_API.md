@@ -24,6 +24,9 @@ BASEL_MAR21 slices.
 The registry-driven API is the client surface. Per-path Arrow normalizer,
 Arrow batch builder, batch capital, and batch hash wrappers are intentionally
 not exported; callers select a path with `SbmRiskClass` and `SbmRiskMeasure`.
+Arrow ingress implementation lives in `frtb_sbm.adapters.arrow`;
+`frtb_sbm.arrow_batch` remains a compatibility import path for the same public
+Arrow symbols.
 The public API surface test caps `frtb_sbm.__all__` below 400 names and requires
 every documented input_table symbol to remain importable.
 
@@ -106,7 +109,7 @@ Generated JSON schemas from these specs are tracked by
 
 Clients should not depend on:
 
-- low-level normalization helpers inside `frtb_sbm.arrow_batch`;
+- low-level normalization helpers inside `frtb_sbm.adapters.arrow`;
 - private batch sorting and coercion helpers;
 - risk-class implementation modules under `frtb_sbm.risk_classes`;
 - reference-data implementation details not exported from the top-level package.

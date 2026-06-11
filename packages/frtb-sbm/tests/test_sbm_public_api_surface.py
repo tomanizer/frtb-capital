@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import frtb_sbm
+import frtb_sbm.adapters.arrow as adapter_arrow
+import frtb_sbm.arrow_batch as arrow_batch
 
 HANDOFF_SPECS = (
     "GIRR_DELTA_ARROW_COLUMN_SPECS",
@@ -45,6 +47,14 @@ REGISTRY_SURFACE = (
     "normalize_sbm_arrow_table",
 )
 
+ARROW_ADAPTER_SURFACE = (
+    *HANDOFF_SPECS,
+    "build_sbm_batch_from_arrow",
+    "calculate_sbm_capital_from_arrow",
+    "calculate_sbm_portfolio_capital_from_arrow_tables",
+    "normalize_sbm_arrow_table",
+)
+
 
 def test_documented_handoff_surface_is_top_level_importable() -> None:
     exported = set(frtb_sbm.__all__)
@@ -57,6 +67,13 @@ def test_documented_handoff_surface_is_top_level_importable() -> None:
 
 def test_top_level_public_api_surface_remains_bounded() -> None:
     assert len(frtb_sbm.__all__) < 400
+
+
+def test_arrow_batch_shim_reexports_adapter_surface() -> None:
+    for name in ARROW_ADAPTER_SURFACE:
+        assert name in adapter_arrow.__all__
+        assert name in arrow_batch.__all__
+        assert getattr(arrow_batch, name) is getattr(adapter_arrow, name)
 
 
 def _public_api_doc() -> str:
