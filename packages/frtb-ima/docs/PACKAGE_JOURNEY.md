@@ -67,12 +67,13 @@ and lineage-heavy.
 4. IMA kernels compute expected shortfall, liquidity-horizon adjustment, IMCC,
    NMRF/SES, PLA, backtesting metrics, and capital assembly from validated
    inputs. RFET observation-window selection, required-observation thresholds,
-   representativeness controls, row-level observation filtering, and assessment
-   result assembly are isolated under
+   representativeness controls, row-level observation filtering, columnar batch
+   assessment setup, and assessment result assembly are isolated under
    `frtb_ima.validation.rfet_window`,
    `frtb_ima.validation.rfet_thresholds`,
    `frtb_ima.validation.rfet_qualitative`, and
-   `frtb_ima.validation.rfet_quantitative`, with RFET result assembly under
+   `frtb_ima.validation.rfet_quantitative`, with columnar setup under
+   `frtb_ima.validation.rfet_batch` and RFET result assembly under
    `frtb_ima.assembly.rfet`.
 5. The result records audit evidence, input hashes, policy metadata, and desk
    eligibility.
