@@ -57,9 +57,10 @@ and lineage-heavy.
 
 1. The upstream risk engine produces dense scenario P&L vectors and supporting
    tabular evidence.
-2. Tabular evidence is normalized through IMA Arrow handoff specs for scenario
-   metadata, RFET observations, and input manifests. Shared PLA, backtesting,
-   and stress-period observation-window validation lives under
+2. Tabular evidence is normalized through IMA Arrow handoff specs in
+   `frtb_ima.adapters.arrow` for scenario metadata, RFET observations, and
+   input manifests. Shared PLA, backtesting, and stress-period
+   observation-window validation lives under
    `frtb_ima.validation.observation_windows`.
 3. The manifest records artifact ids, checksums, row counts, vector counts, and
    validation status for replay.
