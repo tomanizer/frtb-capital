@@ -11,7 +11,6 @@ from frtb_drc._identifiers import slug as _slug
 from frtb_drc._version import __version__
 from frtb_drc.attribution import calculate_drc_attribution
 from frtb_drc.audit import input_snapshot_hash, rule_profile_hash, validate_reconciliation
-from frtb_drc.capital import CapitalInput, calculate_category_drc
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -21,7 +20,6 @@ from frtb_drc.data_models import (
     DrcCapitalResult,
     DrcPosition,
     DrcRiskClass,
-    DrcSeniority,
     GrossJtd,
     MaturityScaledJtd,
     NetJtd,
@@ -33,23 +31,20 @@ from frtb_drc.fx import (
     input_hash_with_fx,
     validate_fx_rates,
 )
-from frtb_drc.gross_jtd import calculate_gross_jtds
 from frtb_drc.kernel.ctp import (
     calculate_ctp_drc,
     ctp_context_input_hash,
     validate_ctp_context,
 )
+from frtb_drc.kernel.nonsec import calculate_nonsec_drc, nonsec_netting_citation
 from frtb_drc.kernel.securitisation import (
     calculate_securitisation_non_ctp_drc,
     securitisation_non_ctp_context_input_hash,
     validate_securitisation_non_ctp_context,
 )
-from frtb_drc.maturity import scale_gross_jtds
-from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.reference_data import get_risk_weight_rule
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
-    EU_CRR3_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     DrcRuleProfile,
     ensure_risk_class_supported,
@@ -65,13 +60,6 @@ PACKAGE_METADATA = CapitalComponentMetadata(
     implementation_status=ImplementationStatus.PARTIAL,
     validation_status=ValidationStatus.PENDING,
 )
-
-_US_NPR_ZERO_CATEGORY_CITATION = "US_NPR_210_B_3_III"
-_BASEL_ZERO_CATEGORY_CITATION = "BASEL_MAR22_26"
-_EU_CRR3_ZERO_CATEGORY_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
-_US_NPR_NONSEC_NETTING_CITATION = "US_NPR_210_B_2"
-_BASEL_NONSEC_NETTING_CITATION = "BASEL_MAR22_19"
-_EU_CRR3_NONSEC_NETTING_CITATION = "EU_CRR3_ARTICLE_325X"
 
 
 def calculate_drc_capital(
@@ -117,14 +105,11 @@ def calculate_drc_capital(
     net_jtd_records: list[NetJtd] = []
 
     if nonsec_positions:
-        nonsec_category, gross_jtds, scaled_jtds, net_jtds = _calculate_nonsec_category(
-            nonsec_positions,
-            profile=profile,
-        )
-        categories.append(nonsec_category)
-        gross_jtd_records.extend(gross_jtds)
-        scaled_jtd_records.extend(scaled_jtds)
-        net_jtd_records.extend(net_jtds)
+        nonsec_calculation = calculate_nonsec_drc(nonsec_positions, profile_id=profile.profile_id)
+        categories.append(nonsec_calculation.category)
+        gross_jtd_records.extend(nonsec_calculation.gross_jtds)
+        scaled_jtd_records.extend(nonsec_calculation.maturity_scaled_jtds)
+        net_jtd_records.extend(nonsec_calculation.net_jtds)
 
     if securitisation_non_ctp_positions:
         securitisation_calculation = calculate_securitisation_non_ctp_drc(
@@ -266,100 +251,6 @@ def _validate_supported_run(
             )
 
 
-def _calculate_nonsec_category(
-    positions: tuple[DrcPosition, ...],
-    *,
-    profile: DrcRuleProfile,
-) -> tuple[CategoryDrc, tuple[GrossJtd, ...], tuple[MaturityScaledJtd, ...], tuple[NetJtd, ...]]:
-    gross_jtds = calculate_gross_jtds(positions, profile_id=profile.profile_id)
-    scaled_jtds = scale_gross_jtds(
-        (
-            (gross_jtd, position.maturity_years)
-            for gross_jtd, position in zip(gross_jtds, positions, strict=True)
-        ),
-        profile_id=profile.profile_id,
-    )
-    gross_by_position = {gross.position_id: gross for gross in gross_jtds}
-    scaled_by_position = {scaled.position_id: scaled for scaled in scaled_jtds}
-    net_jtds = calculate_net_jtds(
-        _netting_inputs(positions, gross_by_position, scaled_by_position),
-        profile_id=profile.profile_id,
-    )
-    capital_inputs = _capital_inputs(net_jtds, positions)
-    category = (
-        calculate_category_drc(capital_inputs, profile_id=profile.profile_id)
-        if capital_inputs
-        else _zero_nonsec_category(profile.profile_id)
-    )
-    return category, gross_jtds, scaled_jtds, net_jtds
-
-
-def _netting_inputs(
-    positions: tuple[DrcPosition, ...],
-    gross_by_position: dict[str, GrossJtd],
-    scaled_by_position: dict[str, MaturityScaledJtd],
-) -> tuple[NettingInput, ...]:
-    inputs: list[NettingInput] = []
-    for position in positions:
-        if position.seniority is None:  # pragma: no cover - validate_positions enforces this.
-            raise DrcInputError("seniority is required for non-securitisation positions")
-        inputs.append(
-            NettingInput(
-                gross_jtd=gross_by_position[position.position_id],
-                scaled_jtd=scaled_by_position[position.position_id],
-                seniority=DrcSeniority(position.seniority),
-            )
-        )
-    return tuple(inputs)
-
-
-def _capital_inputs(
-    net_jtds: tuple[NetJtd, ...],
-    positions: tuple[DrcPosition, ...],
-) -> tuple[CapitalInput, ...]:
-    positions_by_id = {position.position_id: position for position in positions}
-    return tuple(
-        CapitalInput(
-            net_jtd=net_jtd,
-            credit_quality=_credit_quality_for_net_jtd(net_jtd, positions_by_id),
-        )
-        for net_jtd in net_jtds
-    )
-
-
-def _credit_quality_for_net_jtd(
-    net_jtd: NetJtd,
-    positions_by_id: dict[str, DrcPosition],
-) -> CreditQuality:
-    credit_qualities: set[CreditQuality] = set()
-    for position_id in net_jtd.position_ids:
-        credit_quality = positions_by_id[position_id].credit_quality
-        if credit_quality is not None:
-            credit_qualities.add(CreditQuality(credit_quality))
-    if len(credit_qualities) != 1:
-        raise DrcInputError(f"net JTD must map to exactly one credit quality: {net_jtd.net_jtd_id}")
-    return next(iter(credit_qualities))
-
-
-def _zero_nonsec_category(profile_id: str) -> CategoryDrc:
-    return CategoryDrc(
-        category_id="category-drc-non-securitisation",
-        risk_class=DrcRiskClass.NON_SECURITISATION,
-        bucket_results=(),
-        capital=0.0,
-        branch_metadata=(
-            BranchMetadata(
-                branch_id="category-non-securitisation-zero",
-                branch_type=BranchType.ZERO_DENOMINATOR,
-                source_id=DrcRiskClass.NON_SECURITISATION.value,
-                selected=True,
-                reason="all supported net JTD records are zero",
-                citations=(_zero_nonsec_category_citation(profile_id),),
-            ),
-        ),
-    )
-
-
 def _collect_citations(
     *,
     gross_jtds: tuple[GrossJtd, ...],
@@ -374,7 +265,7 @@ def _collect_citations(
     if any(
         DrcRiskClass(record.risk_class) == DrcRiskClass.NON_SECURITISATION for record in net_jtds
     ):
-        citation_ids.add(_nonsec_netting_citation(profile_id))
+        citation_ids.add(nonsec_netting_citation(profile_id))
     if any(
         DrcRiskClass(record.risk_class) == DrcRiskClass.SECURITISATION_NON_CTP
         for record in net_jtds
@@ -406,22 +297,6 @@ def _collect_citations(
             citation_ids.update(_branch_citations(bucket.branch_metadata))
             citation_ids.update(_branch_citations(bucket.hbr.branch_metadata))
     return tuple(sorted(citation_ids))
-
-
-def _zero_nonsec_category_citation(profile_id: str) -> str:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_ZERO_CATEGORY_CITATION
-    if profile_id == EU_CRR3_PROFILE_ID:
-        return _EU_CRR3_ZERO_CATEGORY_CITATION
-    return _US_NPR_ZERO_CATEGORY_CITATION
-
-
-def _nonsec_netting_citation(profile_id: str) -> str:
-    if profile_id == BASEL_MAR22_PROFILE_ID:
-        return _BASEL_NONSEC_NETTING_CITATION
-    if profile_id == EU_CRR3_PROFILE_ID:
-        return _EU_CRR3_NONSEC_NETTING_CITATION
-    return _US_NPR_NONSEC_NETTING_CITATION
 
 
 def _branch_citations(branches: tuple[BranchMetadata, ...]) -> set[str]:
