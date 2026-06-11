@@ -57,6 +57,9 @@ live under `frtb_ima.validation.observation_windows`; `_observation_utils`
 remains a compatibility path for package-local coverage tests.
 Arrow ingress helpers physically live under `frtb_ima.adapters.arrow`;
 `frtb_ima.arrow_batch` remains a compatibility import path.
+RFET qualitative stage helpers physically live under
+`frtb_ima.validation.rfet_qualitative`; `frtb_ima.rfet_evidence` remains the
+compatibility import path for existing package-local tests.
 
 ## References
 
