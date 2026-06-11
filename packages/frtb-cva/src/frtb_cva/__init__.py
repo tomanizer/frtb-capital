@@ -1,7 +1,7 @@
 """Credit Valuation Adjustment capital package."""
 
 from frtb_cva._version import __version__
-from frtb_cva.arrow_batch import (
+from frtb_cva.adapters.arrow import (
     CVA_COUNTERPARTY_ARROW_COLUMN_SPECS,
     CVA_HEDGE_ARROW_COLUMN_SPECS,
     CVA_NETTING_SET_ARROW_COLUMN_SPECS,
