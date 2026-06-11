@@ -25,22 +25,20 @@ from frtb_sbm import (
     build_equity_vega_batch_from_sensitivities,
     build_fx_vega_batch_from_sensitivities,
     calculate_sbm_capital,
-    calculate_sbm_capital_from_commodity_vega_batch,
-    calculate_sbm_capital_from_csr_nonsec_vega_batch,
-    calculate_sbm_capital_from_csr_sec_ctp_vega_batch,
-    calculate_sbm_capital_from_csr_sec_nonctp_vega_batch,
-    calculate_sbm_capital_from_equity_vega_batch,
-    calculate_sbm_capital_from_fx_vega_batch,
+    calculate_sbm_capital_from_batch,
     input_hash_for_sensitivities,
     weight_non_girr_vega_sensitivity_batch,
 )
-from frtb_sbm.arrow_batch import (
+from frtb_sbm.csr_nonsec_reference_data import CSR_BOND_RISK_FACTOR
+from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
+from sbm_registry_helpers import (
     build_commodity_vega_batch_from_arrow,
     build_csr_nonsec_vega_batch_from_arrow,
     build_csr_sec_ctp_vega_batch_from_arrow,
     build_csr_sec_nonctp_vega_batch_from_arrow,
     build_equity_vega_batch_from_arrow,
     build_fx_vega_batch_from_arrow,
+    build_sbm_path_from_arrow,
     calculate_sbm_capital_from_commodity_vega_arrow,
     calculate_sbm_capital_from_csr_nonsec_vega_arrow,
     calculate_sbm_capital_from_csr_sec_ctp_vega_arrow,
@@ -53,9 +51,8 @@ from frtb_sbm.arrow_batch import (
     normalize_csr_sec_nonctp_vega_arrow_table,
     normalize_equity_vega_arrow_table,
     normalize_fx_vega_arrow_table,
+    normalize_sbm_path,
 )
-from frtb_sbm.csr_nonsec_reference_data import CSR_BOND_RISK_FACTOR
-from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
 
 BatchBuilder = Callable[[tuple[SbmSensitivity, ...]], SbmSensitivityBatch]
 HandoffBuilder = Callable[[NormalizedArrowTable], SbmSensitivityBatch]
@@ -318,7 +315,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_fx_vega_arrow_table,
             build_fx_vega_batch_from_sensitivities,
             build_fx_vega_batch_from_arrow,
-            calculate_sbm_capital_from_fx_vega_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_fx_vega_arrow,
         ),
         (
@@ -327,7 +324,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_equity_vega_arrow_table,
             build_equity_vega_batch_from_sensitivities,
             build_equity_vega_batch_from_arrow,
-            calculate_sbm_capital_from_equity_vega_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_equity_vega_arrow,
         ),
         (
@@ -336,7 +333,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_commodity_vega_arrow_table,
             build_commodity_vega_batch_from_sensitivities,
             build_commodity_vega_batch_from_arrow,
-            calculate_sbm_capital_from_commodity_vega_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_commodity_vega_arrow,
         ),
         (
@@ -345,7 +342,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_csr_nonsec_vega_arrow_table,
             build_csr_nonsec_vega_batch_from_sensitivities,
             build_csr_nonsec_vega_batch_from_arrow,
-            calculate_sbm_capital_from_csr_nonsec_vega_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_csr_nonsec_vega_arrow,
         ),
         (
@@ -354,7 +351,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_csr_sec_nonctp_vega_arrow_table,
             build_csr_sec_nonctp_vega_batch_from_sensitivities,
             build_csr_sec_nonctp_vega_batch_from_arrow,
-            calculate_sbm_capital_from_csr_sec_nonctp_vega_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_csr_sec_nonctp_vega_arrow,
         ),
         (
@@ -363,7 +360,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_csr_sec_ctp_vega_arrow_table,
             build_csr_sec_ctp_vega_batch_from_sensitivities,
             build_csr_sec_ctp_vega_batch_from_arrow,
-            calculate_sbm_capital_from_csr_sec_ctp_vega_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_csr_sec_ctp_vega_arrow,
         ),
     ],
@@ -422,12 +419,16 @@ def test_non_girr_vega_batch_and_handoff_match_row_capital(
 
 
 def test_commodity_vega_batch_does_not_require_qualifier() -> None:
-    batch = build_commodity_vega_batch_from_arrow(
-        normalize_commodity_vega_arrow_table(arrow_table(commodity_vega_sensitivities()))
+    batch = build_sbm_path_from_arrow(
+        SbmRiskClass.COMMODITY,
+        SbmRiskMeasure.VEGA,
+        normalize_sbm_path(
+            SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA, arrow_table(commodity_vega_sensitivities())
+        ),
     )
 
     assert batch.qualifiers is None
-    result = calculate_sbm_capital_from_commodity_vega_batch(
+    result = calculate_sbm_capital_from_batch(
         batch,
         context=sample_context("commodity-vega-no-qualifier"),
     )
@@ -438,4 +439,4 @@ def test_non_girr_vega_handoff_requires_option_tenor() -> None:
     table = arrow_table(fx_vega_sensitivities()).drop(["option_tenor"])
 
     with pytest.raises(ValueError, match="option_tenor"):
-        normalize_fx_vega_arrow_table(table)
+        normalize_sbm_path(SbmRiskClass.FX, SbmRiskMeasure.VEGA, table)

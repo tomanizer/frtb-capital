@@ -18,7 +18,7 @@ from frtb_sbm import (
     WeightedSensitivity,
     build_girr_curvature_batch_from_sensitivities,
     calculate_sbm_capital,
-    calculate_sbm_capital_from_girr_curvature_batch,
+    calculate_sbm_capital_from_batch,
 )
 from frtb_sbm.aggregation import aggregate_intra_bucket
 
@@ -207,7 +207,7 @@ def test_curvature_batch_summary_pairwise_evidence_mode_omits_materialized_recor
         for index in range(4)
     )
     batch = build_girr_curvature_batch_from_sensitivities(sensitivities)
-    result = calculate_sbm_capital_from_girr_curvature_batch(
+    result = calculate_sbm_capital_from_batch(
         batch,
         context=_context(
             run_controls=SbmRunControls(pairwise_evidence_mode=SbmPairwiseEvidenceMode.SUMMARY)

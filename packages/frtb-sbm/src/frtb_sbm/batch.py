@@ -19,10 +19,12 @@ import numpy.typing as npt
 
 from frtb_sbm.audit import _hash_payload
 from frtb_sbm.data_models import (
+    SbmCalculationContext,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
 )
+from frtb_sbm.registry import sbm_batch_spec
 from frtb_sbm.validation import (
     SbmInputError,
     coerce_risk_class,
@@ -154,6 +156,59 @@ class SbmSensitivityBatch:
         if self.row_count == 0:
             raise SbmInputError("batch must not be empty", field="batch")
         return coerce_risk_measure(cast(SbmRiskMeasure | str, self.risk_measures[0]))
+
+
+def build_sbm_batch(
+    sensitivities: object,
+    risk_class: SbmRiskClass | str,
+    measure: SbmRiskMeasure | str,
+    *,
+    context: SbmCalculationContext | None = None,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> SbmSensitivityBatch:
+    """Build an SBM batch through the canonical path registry.
+
+    Parameters
+    ----------
+    sensitivities
+        Existing row-wise canonical sensitivities.
+    risk_class
+        Expected homogeneous SBM risk class.
+    measure
+        Expected homogeneous SBM risk measure.
+    context
+        Optional calculation context shape check. Scope filtering remains a
+        capital-stage concern.
+    source_hash
+        Optional source payload hash.
+    handoff_hash
+        Optional upstream handoff hash.
+    diagnostics
+        Adapter diagnostics to retain with the batch.
+
+    Returns
+    -------
+    SbmSensitivityBatch
+    """
+
+    expected_risk_class = coerce_risk_class(risk_class)
+    expected_risk_measure = coerce_risk_measure(measure)
+    sbm_batch_spec(expected_risk_class, expected_risk_measure)
+    if context is not None and not isinstance(context, SbmCalculationContext):
+        raise SbmInputError(
+            "calculation context must be SbmCalculationContext",
+            field="context",
+        )
+    return build_sbm_batch_from_sensitivities(
+        sensitivities,
+        expected_risk_class=expected_risk_class,
+        expected_risk_measure=expected_risk_measure,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
 
 
 def build_sbm_batch_from_sensitivities(
@@ -1758,6 +1813,22 @@ def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
     return _hash_payload({"sensitivities": list(_sensitivity_payloads_from_batch(batch))})
 
 
+def input_hash_for_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the canonical row-equivalent input hash for an SBM batch.
+
+    Parameters
+    ----------
+    batch
+        Homogeneous SBM sensitivity batch.
+
+    Returns
+    -------
+    str
+    """
+
+    return input_hash_for_sbm_batch(batch)
+
+
 def input_hash_for_sbm_batches(batches: object) -> str:
     """Return the row-equivalent deterministic input hash for batch portfolios.
     Parameters
@@ -1849,195 +1920,6 @@ def concatenate_sbm_batches(batches: object) -> SbmSensitivityBatch:
             batch.accepted_row_dataclasses_materialized for batch in validated
         ),
     )
-
-
-def input_hash_for_girr_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a GIRR delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.GIRR,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="GIRR delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_girr_vega_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a GIRR vega batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.GIRR,
-        expected_risk_measure=SbmRiskMeasure.VEGA,
-        label="GIRR vega",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_girr_curvature_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a GIRR curvature batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.GIRR,
-        expected_risk_measure=SbmRiskMeasure.CURVATURE,
-        label="GIRR curvature",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_fx_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for an FX delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.FX,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="FX delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_equity_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for an equity delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.EQUITY,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="equity delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_commodity_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a commodity delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.COMMODITY,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="commodity delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_csr_nonsec_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a CSR non-sec delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.CSR_NONSEC,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="CSR non-securitisation delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_csr_sec_nonctp_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a CSR sec non-CTP batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="CSR securitisation non-CTP delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_csr_sec_ctp_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a CSR sec CTP batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="CSR securitisation CTP delta",
-    )
-    return input_hash_for_sbm_batch(batch)
 
 
 def sorted_sbm_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
@@ -2984,19 +2866,12 @@ __all__ = [
     "build_girr_delta_batch_from_sensitivities",
     "build_girr_vega_batch_from_columns",
     "build_girr_vega_batch_from_sensitivities",
+    "build_sbm_batch",
     "build_sbm_batch_from_columns",
     "build_sbm_batch_from_sensitivities",
     "coerce_sbm_batch_sequence",
     "concatenate_sbm_batches",
-    "input_hash_for_commodity_delta_batch",
-    "input_hash_for_csr_nonsec_delta_batch",
-    "input_hash_for_csr_sec_ctp_delta_batch",
-    "input_hash_for_csr_sec_nonctp_delta_batch",
-    "input_hash_for_equity_delta_batch",
-    "input_hash_for_fx_delta_batch",
-    "input_hash_for_girr_curvature_batch",
-    "input_hash_for_girr_delta_batch",
-    "input_hash_for_girr_vega_batch",
+    "input_hash_for_batch",
     "input_hash_for_sbm_batch",
     "input_hash_for_sbm_batches",
     "sorted_commodity_delta_batch_indices",

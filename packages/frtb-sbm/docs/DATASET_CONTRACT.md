@@ -156,9 +156,9 @@ The public Arrow contract is defined by the package-owned `*_ARROW_COLUMN_SPECS`
 symbols in `frtb_sbm.arrow_batch`. For each supported risk-class and measure
 path, callers use:
 
-1. `normalize_*_arrow_table(...)`
-2. `build_*_batch_from_arrow(...)`
-3. `calculate_sbm_capital_from_*_batch(...)`
+1. `normalize_sbm_arrow_table(table, risk_class, measure, ...)`
+2. `build_sbm_batch_from_arrow(handoff, risk_class, measure, ...)`
+3. `calculate_sbm_capital_from_batch(batch, context=...)`
 
 Portfolio callers can pass multiple normalised handoffs to
 `calculate_sbm_portfolio_capital_from_arrow_tables(...)`. The dispatcher groups

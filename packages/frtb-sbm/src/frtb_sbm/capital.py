@@ -12,7 +12,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -73,6 +73,7 @@ from frtb_sbm.reference_data import (
     girr_vega_intra_bucket_correlation,
 )
 from frtb_sbm.regimes import get_sbm_rule_profile
+from frtb_sbm.registry import SBM_BATCH_PATH_ORDER, sbm_batch_spec
 from frtb_sbm.risk_classes.commodity import (
     calculate_commodity_delta_risk_class_capital,
     calculate_commodity_delta_risk_class_capital_from_batch,
@@ -159,29 +160,7 @@ _PROFILE_PORTFOLIO_SCENARIO_CITATIONS = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_7_scenario_selection",),
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
 }
-_SBM_CAPITAL_PATH_ORDER = (
-    (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
-    (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
-    (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
-    (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
-    (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
-    (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
-    (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
-    (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
-    (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE),
-    (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
-    (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
-    (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE),
-    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
-    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA),
-    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE),
-    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
-    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA),
-    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE),
-    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
-    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA),
-    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE),
-)
+_SBM_CAPITAL_PATH_ORDER = SBM_BATCH_PATH_ORDER
 
 
 def calculate_sbm_capital(
@@ -383,7 +362,7 @@ def calculate_sbm_portfolio_capital_from_batches(
     for path in ordered_paths:
         path_batches = tuple(grouped[path])
         batch = concatenate_sbm_batches(path_batches)
-        risk_class_results.append(_calculate_dispatch_batch_path(batch, context=context))
+        risk_class_results.append(_calculate_batch_risk_class_capital(batch, context=context))
         diagnostics.append(
             SbmBatchPathDiagnostic(
                 risk_class=path[0],
@@ -410,18 +389,19 @@ def calculate_sbm_portfolio_capital_from_batches(
     )
 
 
-def calculate_sbm_capital_from_girr_delta_batch(
+def calculate_sbm_capital_from_batch(
     batch: SbmSensitivityBatch,
     *,
     context: SbmCalculationContext | None = None,
 ) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built GIRR delta sensitivity batch.
+    """Calculate SBM capital for a pre-built batch via the path registry.
+
     Parameters
     ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
+    batch
+        Homogeneous SBM sensitivity batch.
+    context
+        Calculation context for supported profile and scope validation.
 
     Returns
     -------
@@ -439,21 +419,8 @@ def calculate_sbm_capital_from_girr_delta_batch(
         raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
 
     validate_sbm_calculation_context(context)
-    ensure_sbm_risk_class_measure_supported(
-        context.profile_id,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.DELTA,
-    )
-    _ensure_girr_delta_batch_run_supported(context, batch)
     rule_profile = get_sbm_rule_profile(context.profile_id)
-    run_controls = context.run_controls or SbmRunControls()
-    risk_class = _calculate_girr_delta_risk_class_capital_from_batch(
-        batch,
-        profile_id=rule_profile.profile_id,
-        reporting_currency=context.reporting_currency,
-        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
-        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
-    )
+    risk_class = _calculate_batch_risk_class_capital(batch, context=context)
     return _build_sbm_capital_result(
         (risk_class,),
         rule_profile=rule_profile,
@@ -463,884 +430,140 @@ def calculate_sbm_capital_from_girr_delta_batch(
     )
 
 
-def calculate_sbm_capital_from_girr_vega_batch(
+def _calculate_batch_risk_class_capital(
     batch: SbmSensitivityBatch,
     *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built GIRR vega sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    if context is None:
-        raise SbmInputError("calculation context is required", field="context")
-    if not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
-        )
+    context: SbmCalculationContext,
+) -> RiskClassCapital:
     if not isinstance(batch, SbmSensitivityBatch):
         raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
+    if batch.row_count == 0:
+        raise SbmInputError("batch must not be empty", field="batch")
 
-    validate_sbm_calculation_context(context)
-    ensure_sbm_risk_class_measure_supported(
-        context.profile_id,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.VEGA,
-    )
-    _ensure_girr_vega_batch_run_supported(context, batch)
+    risk_class = batch.risk_class
+    risk_measure = batch.risk_measure
+    ensure_sbm_risk_class_measure_supported(context.profile_id, risk_class, risk_measure)
+    spec = sbm_batch_spec(risk_class, risk_measure)
+    _ensure_batch_run_supported(context, batch, label=spec.label)
+
     rule_profile = get_sbm_rule_profile(context.profile_id)
     run_controls = context.run_controls or SbmRunControls()
-    risk_class = _calculate_girr_vega_risk_class_capital_from_batch(
-        batch,
-        profile_id=rule_profile.profile_id,
-        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
-        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
-    )
-    return _build_sbm_capital_result(
-        (risk_class,),
-        rule_profile=rule_profile,
-        context=context,
-        input_hash=batch.input_hash,
-        input_count=batch.row_count,
-    )
-
-
-def calculate_sbm_capital_from_girr_curvature_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built GIRR curvature sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_curvature_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.GIRR,
-        label="GIRR curvature",
-    )
-
-
-def calculate_sbm_capital_from_fx_delta_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built FX delta sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    if context is None:
-        raise SbmInputError("calculation context is required", field="context")
-    if not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
+    pairwise_kwargs = {
+        "pairwise_evidence_mode": run_controls.pairwise_evidence_mode,
+        "pairwise_evidence_limit": run_controls.pairwise_evidence_limit,
+    }
+    if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.DELTA:
+        return _calculate_girr_delta_risk_class_capital_from_batch(
+            batch,
+            profile_id=rule_profile.profile_id,
+            reporting_currency=context.reporting_currency,
+            **pairwise_kwargs,
         )
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
-
-    validate_sbm_calculation_context(context)
-    ensure_sbm_risk_class_measure_supported(
-        context.profile_id,
-        SbmRiskClass.FX,
-        SbmRiskMeasure.DELTA,
-    )
-    _ensure_delta_batch_run_supported(
-        context,
-        batch,
-        expected_risk_class=SbmRiskClass.FX,
-        label="FX delta",
-    )
-    rule_profile = get_sbm_rule_profile(context.profile_id)
-    run_controls = context.run_controls or SbmRunControls()
-    risk_class = calculate_fx_delta_risk_class_capital_from_batch(
-        batch,
-        profile_id=rule_profile.profile_id,
-        reporting_currency=context.reporting_currency,
-        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
-        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
-    )
-    return _build_sbm_capital_result(
-        (risk_class,),
-        rule_profile=rule_profile,
-        context=context,
-        input_hash=batch.input_hash,
-        input_count=batch.row_count,
-    )
-
-
-def calculate_sbm_capital_from_equity_delta_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built equity delta sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    if context is None:
-        raise SbmInputError("calculation context is required", field="context")
-    if not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
+    if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.VEGA:
+        return _calculate_girr_vega_risk_class_capital_from_batch(
+            batch,
+            profile_id=rule_profile.profile_id,
+            **pairwise_kwargs,
         )
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
-
-    validate_sbm_calculation_context(context)
-    ensure_sbm_risk_class_measure_supported(
-        context.profile_id,
-        SbmRiskClass.EQUITY,
-        SbmRiskMeasure.DELTA,
-    )
-    _ensure_delta_batch_run_supported(
-        context,
-        batch,
-        expected_risk_class=SbmRiskClass.EQUITY,
-        label="equity delta",
-    )
-    rule_profile = get_sbm_rule_profile(context.profile_id)
-    run_controls = context.run_controls or SbmRunControls()
-    risk_class = calculate_equity_delta_risk_class_capital_from_batch(
-        batch,
-        profile_id=rule_profile.profile_id,
-        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
-        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
-    )
-    return _build_sbm_capital_result(
-        (risk_class,),
-        rule_profile=rule_profile,
-        context=context,
-        input_hash=batch.input_hash,
-        input_count=batch.row_count,
-    )
-
-
-def calculate_sbm_capital_from_commodity_delta_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built commodity delta sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    if context is None:
-        raise SbmInputError("calculation context is required", field="context")
-    if not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
+    if risk_measure is SbmRiskMeasure.VEGA:
+        return calculate_non_girr_vega_risk_class_capital_from_batch(
+            batch,
+            profile_id=rule_profile.profile_id,
+            **pairwise_kwargs,
         )
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
-
-    validate_sbm_calculation_context(context)
-    ensure_sbm_risk_class_measure_supported(
-        context.profile_id,
-        SbmRiskClass.COMMODITY,
-        SbmRiskMeasure.DELTA,
-    )
-    _ensure_delta_batch_run_supported(
-        context,
-        batch,
-        expected_risk_class=SbmRiskClass.COMMODITY,
-        label="commodity delta",
-    )
-    rule_profile = get_sbm_rule_profile(context.profile_id)
-    run_controls = context.run_controls or SbmRunControls()
-    risk_class = calculate_commodity_delta_risk_class_capital_from_batch(
-        batch,
-        profile_id=rule_profile.profile_id,
-        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
-        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
-    )
-    return _build_sbm_capital_result(
-        (risk_class,),
-        rule_profile=rule_profile,
-        context=context,
-        input_hash=batch.input_hash,
-        input_count=batch.row_count,
-    )
-
-
-def calculate_sbm_capital_from_csr_nonsec_delta_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR non-securitisation delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    if context is None:
-        raise SbmInputError("calculation context is required", field="context")
-    if not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
+    if risk_measure is SbmRiskMeasure.CURVATURE:
+        return calculate_curvature_risk_class_capital_from_batch(
+            batch,
+            profile_id=rule_profile.profile_id,
+            reporting_currency=context.reporting_currency,
+            expected_risk_class=risk_class,
+            **pairwise_kwargs,
         )
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
-
-    validate_sbm_calculation_context(context)
-    ensure_sbm_risk_class_measure_supported(
-        context.profile_id,
-        SbmRiskClass.CSR_NONSEC,
-        SbmRiskMeasure.DELTA,
-    )
-    _ensure_delta_batch_run_supported(
-        context,
-        batch,
-        expected_risk_class=SbmRiskClass.CSR_NONSEC,
-        label="CSR non-securitisation delta",
-    )
-    rule_profile = get_sbm_rule_profile(context.profile_id)
-    run_controls = context.run_controls or SbmRunControls()
-    risk_class = calculate_csr_nonsec_delta_risk_class_capital_from_batch(
-        batch,
-        profile_id=rule_profile.profile_id,
-        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
-        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
-    )
-    return _build_sbm_capital_result(
-        (risk_class,),
-        rule_profile=rule_profile,
-        context=context,
-        input_hash=batch.input_hash,
-        input_count=batch.row_count,
-    )
-
-
-def calculate_sbm_capital_from_csr_sec_nonctp_delta_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation non-CTP delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    if context is None:
-        raise SbmInputError("calculation context is required", field="context")
-    if not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
+    if risk_class is SbmRiskClass.FX and risk_measure is SbmRiskMeasure.DELTA:
+        return calculate_fx_delta_risk_class_capital_from_batch(
+            batch,
+            profile_id=rule_profile.profile_id,
+            reporting_currency=context.reporting_currency,
+            **pairwise_kwargs,
         )
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
-
-    validate_sbm_calculation_context(context)
-    ensure_sbm_risk_class_measure_supported(
-        context.profile_id,
-        SbmRiskClass.CSR_SEC_NONCTP,
-        SbmRiskMeasure.DELTA,
-    )
-    _ensure_delta_batch_run_supported(
-        context,
-        batch,
-        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
-        label="CSR securitisation non-CTP delta",
-    )
-    rule_profile = get_sbm_rule_profile(context.profile_id)
-    run_controls = context.run_controls or SbmRunControls()
-    risk_class = calculate_csr_sec_nonctp_delta_risk_class_capital_from_batch(
-        batch,
-        profile_id=rule_profile.profile_id,
-        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
-        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
-    )
-    return _build_sbm_capital_result(
-        (risk_class,),
-        rule_profile=rule_profile,
-        context=context,
-        input_hash=batch.input_hash,
-        input_count=batch.row_count,
-    )
-
-
-def calculate_sbm_capital_from_csr_sec_ctp_delta_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation CTP delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    if context is None:
-        raise SbmInputError("calculation context is required", field="context")
-    if not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
+    if risk_class is SbmRiskClass.EQUITY and risk_measure is SbmRiskMeasure.DELTA:
+        return calculate_equity_delta_risk_class_capital_from_batch(
+            batch,
+            profile_id=rule_profile.profile_id,
+            **pairwise_kwargs,
         )
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
-
-    validate_sbm_calculation_context(context)
-    ensure_sbm_risk_class_measure_supported(
-        context.profile_id,
-        SbmRiskClass.CSR_SEC_CTP,
-        SbmRiskMeasure.DELTA,
-    )
-    _ensure_delta_batch_run_supported(
-        context,
-        batch,
-        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
-        label="CSR securitisation CTP delta",
-    )
-    rule_profile = get_sbm_rule_profile(context.profile_id)
-    run_controls = context.run_controls or SbmRunControls()
-    risk_class = calculate_csr_sec_ctp_delta_risk_class_capital_from_batch(
-        batch,
-        profile_id=rule_profile.profile_id,
-        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
-        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
-    )
-    return _build_sbm_capital_result(
-        (risk_class,),
-        rule_profile=rule_profile,
-        context=context,
-        input_hash=batch.input_hash,
-        input_count=batch.row_count,
+    if risk_class is SbmRiskClass.COMMODITY and risk_measure is SbmRiskMeasure.DELTA:
+        return calculate_commodity_delta_risk_class_capital_from_batch(
+            batch,
+            profile_id=rule_profile.profile_id,
+            **pairwise_kwargs,
+        )
+    if risk_class is SbmRiskClass.CSR_NONSEC and risk_measure is SbmRiskMeasure.DELTA:
+        return calculate_csr_nonsec_delta_risk_class_capital_from_batch(
+            batch,
+            profile_id=rule_profile.profile_id,
+            **pairwise_kwargs,
+        )
+    if risk_class is SbmRiskClass.CSR_SEC_NONCTP and risk_measure is SbmRiskMeasure.DELTA:
+        return calculate_csr_sec_nonctp_delta_risk_class_capital_from_batch(
+            batch,
+            profile_id=rule_profile.profile_id,
+            **pairwise_kwargs,
+        )
+    if risk_class is SbmRiskClass.CSR_SEC_CTP and risk_measure is SbmRiskMeasure.DELTA:
+        return calculate_csr_sec_ctp_delta_risk_class_capital_from_batch(
+            batch,
+            profile_id=rule_profile.profile_id,
+            **pairwise_kwargs,
+        )
+    raise UnsupportedRegulatoryFeatureError(
+        "frtb-sbm batch capital does not support "
+        f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
     )
 
 
-def calculate_sbm_capital_from_fx_vega_batch(
+def _ensure_batch_run_supported(
+    context: SbmCalculationContext,
     batch: SbmSensitivityBatch,
     *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built FX vega sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_non_girr_vega_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.FX,
-        label="FX vega",
-    )
-
-
-def calculate_sbm_capital_from_equity_vega_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built equity vega sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_non_girr_vega_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.EQUITY,
-        label="equity vega",
-    )
-
-
-def calculate_sbm_capital_from_commodity_vega_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built commodity vega sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_non_girr_vega_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.COMMODITY,
-        label="commodity vega",
-    )
-
-
-def calculate_sbm_capital_from_csr_nonsec_vega_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR non-securitisation vega batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_non_girr_vega_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.CSR_NONSEC,
-        label="CSR non-securitisation vega",
-    )
-
-
-def calculate_sbm_capital_from_csr_sec_nonctp_vega_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation non-CTP vega batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_non_girr_vega_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
-        label="CSR securitisation non-CTP vega",
-    )
-
-
-def calculate_sbm_capital_from_csr_sec_ctp_vega_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation CTP vega batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_non_girr_vega_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
-        label="CSR securitisation CTP vega",
-    )
-
-
-def calculate_sbm_capital_from_fx_curvature_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built FX curvature sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_curvature_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.FX,
-        label="FX curvature",
-    )
-
-
-def calculate_sbm_capital_from_equity_curvature_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built equity curvature sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_curvature_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.EQUITY,
-        label="equity curvature",
-    )
-
-
-def calculate_sbm_capital_from_commodity_curvature_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built commodity curvature sensitivity batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_curvature_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.COMMODITY,
-        label="commodity curvature",
-    )
-
-
-def calculate_sbm_capital_from_csr_nonsec_curvature_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR non-securitisation curvature batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_curvature_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.CSR_NONSEC,
-        label="CSR non-securitisation curvature",
-    )
-
-
-def calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation non-CTP curvature batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_curvature_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
-        label="CSR securitisation non-CTP curvature",
-    )
-
-
-def calculate_sbm_capital_from_csr_sec_ctp_curvature_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None = None,
-) -> SbmCapitalResult:
-    """Calculate SBM capital for a pre-built CSR securitisation CTP curvature batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    context : SbmCalculationContext | None, optional
-        See signature.
-
-    Returns
-    -------
-    SbmCapitalResult
-    """
-
-    return _calculate_sbm_capital_from_curvature_batch(
-        batch,
-        context=context,
-        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
-        label="CSR securitisation CTP curvature",
-    )
-
-
-_BATCH_PATH_CAPITAL_DISPATCHERS: Mapping[
-    tuple[SbmRiskClass, SbmRiskMeasure],
-    Callable[..., SbmCapitalResult],
-] = {
-    (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA): calculate_sbm_capital_from_girr_delta_batch,
-    (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA): calculate_sbm_capital_from_girr_vega_batch,
-    (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE): calculate_sbm_capital_from_girr_curvature_batch,
-    (SbmRiskClass.FX, SbmRiskMeasure.DELTA): calculate_sbm_capital_from_fx_delta_batch,
-    (SbmRiskClass.FX, SbmRiskMeasure.VEGA): calculate_sbm_capital_from_fx_vega_batch,
-    (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE): calculate_sbm_capital_from_fx_curvature_batch,
-    (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA): calculate_sbm_capital_from_equity_delta_batch,
-    (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA): calculate_sbm_capital_from_equity_vega_batch,
-    (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE): (
-        calculate_sbm_capital_from_equity_curvature_batch
-    ),
-    (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA): (
-        calculate_sbm_capital_from_commodity_delta_batch
-    ),
-    (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA): (
-        calculate_sbm_capital_from_commodity_vega_batch
-    ),
-    (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE): (
-        calculate_sbm_capital_from_commodity_curvature_batch
-    ),
-    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA): (
-        calculate_sbm_capital_from_csr_nonsec_delta_batch
-    ),
-    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA): (
-        calculate_sbm_capital_from_csr_nonsec_vega_batch
-    ),
-    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE): (
-        calculate_sbm_capital_from_csr_nonsec_curvature_batch
-    ),
-    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA): (
-        calculate_sbm_capital_from_csr_sec_nonctp_delta_batch
-    ),
-    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA): (
-        calculate_sbm_capital_from_csr_sec_nonctp_vega_batch
-    ),
-    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE): (
-        calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch
-    ),
-    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA): (
-        calculate_sbm_capital_from_csr_sec_ctp_delta_batch
-    ),
-    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA): (
-        calculate_sbm_capital_from_csr_sec_ctp_vega_batch
-    ),
-    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE): (
-        calculate_sbm_capital_from_csr_sec_ctp_curvature_batch
-    ),
-}
-
-
-def _calculate_sbm_capital_from_curvature_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None,
-    expected_risk_class: SbmRiskClass,
     label: str,
-) -> SbmCapitalResult:
-    if context is None:
-        raise SbmInputError("calculation context is required", field="context")
-    if not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
+) -> None:
+    risk_class = batch.risk_class
+    risk_measure = batch.risk_measure
+    if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.DELTA:
+        _ensure_girr_delta_batch_run_supported(context, batch)
+        return
+    if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.VEGA:
+        _ensure_girr_vega_batch_run_supported(context, batch)
+        return
+    if risk_measure is SbmRiskMeasure.DELTA:
+        _ensure_delta_batch_run_supported(
+            context,
+            batch,
+            expected_risk_class=risk_class,
+            label=label,
         )
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
-
-    validate_sbm_calculation_context(context)
-    ensure_sbm_risk_class_measure_supported(
-        context.profile_id,
-        expected_risk_class,
-        SbmRiskMeasure.CURVATURE,
-    )
-    _ensure_curvature_batch_run_supported(
-        context,
-        batch,
-        expected_risk_class=expected_risk_class,
-        label=label,
-    )
-    rule_profile = get_sbm_rule_profile(context.profile_id)
-    run_controls = context.run_controls or SbmRunControls()
-    risk_class = calculate_curvature_risk_class_capital_from_batch(
-        batch,
-        profile_id=rule_profile.profile_id,
-        reporting_currency=context.reporting_currency,
-        expected_risk_class=expected_risk_class,
-        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
-        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
-    )
-    return _build_sbm_capital_result(
-        (risk_class,),
-        rule_profile=rule_profile,
-        context=context,
-        input_hash=batch.input_hash,
-        input_count=batch.row_count,
-    )
-
-
-def _calculate_sbm_capital_from_non_girr_vega_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext | None,
-    expected_risk_class: SbmRiskClass,
-    label: str,
-) -> SbmCapitalResult:
-    if context is None:
-        raise SbmInputError("calculation context is required", field="context")
-    if not isinstance(context, SbmCalculationContext):
-        raise SbmInputError(
-            "calculation context must be SbmCalculationContext",
-            field="context",
+        return
+    if risk_measure is SbmRiskMeasure.VEGA:
+        _ensure_vega_batch_run_supported(
+            context,
+            batch,
+            expected_risk_class=risk_class,
+            label=label,
         )
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
+        return
+    if risk_measure is SbmRiskMeasure.CURVATURE:
+        _ensure_curvature_batch_run_supported(
+            context,
+            batch,
+            expected_risk_class=risk_class,
+            label=label,
+        )
+        return
 
-    validate_sbm_calculation_context(context)
-    ensure_sbm_risk_class_measure_supported(
-        context.profile_id,
-        expected_risk_class,
-        SbmRiskMeasure.VEGA,
-    )
-    _ensure_vega_batch_run_supported(
-        context,
-        batch,
-        expected_risk_class=expected_risk_class,
-        label=label,
-    )
-    rule_profile = get_sbm_rule_profile(context.profile_id)
-    run_controls = context.run_controls or SbmRunControls()
-    risk_class = calculate_non_girr_vega_risk_class_capital_from_batch(
-        batch,
-        profile_id=rule_profile.profile_id,
-        pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
-        pairwise_evidence_limit=run_controls.pairwise_evidence_limit,
-    )
-    return _build_sbm_capital_result(
-        (risk_class,),
-        rule_profile=rule_profile,
-        context=context,
-        input_hash=batch.input_hash,
-        input_count=batch.row_count,
+    raise UnsupportedRegulatoryFeatureError(
+        "frtb-sbm batch capital does not support "
+        f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
     )
 
 
@@ -1996,22 +1219,6 @@ def _ordered_supported_batch_paths(
     return ordered + remaining
 
 
-def _calculate_dispatch_batch_path(
-    batch: SbmSensitivityBatch,
-    *,
-    context: SbmCalculationContext,
-) -> RiskClassCapital:
-    path = (batch.risk_class, batch.risk_measure)
-    dispatcher = _BATCH_PATH_CAPITAL_DISPATCHERS.get(path)
-    if dispatcher is not None:
-        return dispatcher(batch, context=context).risk_classes[0]
-
-    raise UnsupportedRegulatoryFeatureError(
-        "frtb-sbm batch portfolio dispatcher does not support "
-        f"risk_class={path[0].value}, risk_measure={path[1].value}"
-    )
-
-
 def _ordered_supported_paths(
     sensitivities: Sequence[SbmSensitivity],
     *,
@@ -2043,26 +1250,6 @@ def _profile_warnings(profile_id: str) -> tuple[str, ...]:
 
 __all__ = [
     "calculate_sbm_capital",
-    "calculate_sbm_capital_from_commodity_curvature_batch",
-    "calculate_sbm_capital_from_commodity_delta_batch",
-    "calculate_sbm_capital_from_commodity_vega_batch",
-    "calculate_sbm_capital_from_csr_nonsec_curvature_batch",
-    "calculate_sbm_capital_from_csr_nonsec_delta_batch",
-    "calculate_sbm_capital_from_csr_nonsec_vega_batch",
-    "calculate_sbm_capital_from_csr_sec_ctp_curvature_batch",
-    "calculate_sbm_capital_from_csr_sec_ctp_delta_batch",
-    "calculate_sbm_capital_from_csr_sec_ctp_vega_batch",
-    "calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch",
-    "calculate_sbm_capital_from_csr_sec_nonctp_delta_batch",
-    "calculate_sbm_capital_from_csr_sec_nonctp_vega_batch",
-    "calculate_sbm_capital_from_equity_curvature_batch",
-    "calculate_sbm_capital_from_equity_delta_batch",
-    "calculate_sbm_capital_from_equity_vega_batch",
-    "calculate_sbm_capital_from_fx_curvature_batch",
-    "calculate_sbm_capital_from_fx_delta_batch",
-    "calculate_sbm_capital_from_fx_vega_batch",
-    "calculate_sbm_capital_from_girr_curvature_batch",
-    "calculate_sbm_capital_from_girr_delta_batch",
-    "calculate_sbm_capital_from_girr_vega_batch",
+    "calculate_sbm_capital_from_batch",
     "calculate_sbm_portfolio_capital_from_batches",
 ]

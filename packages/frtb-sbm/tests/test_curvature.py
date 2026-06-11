@@ -38,9 +38,9 @@ from frtb_sbm import (
     validate_girr_curvature_batch,
     weight_girr_curvature_sensitivities,
 )
-from frtb_sbm.arrow_batch import (
-    build_girr_curvature_batch_from_arrow,
-    normalize_girr_curvature_arrow_table,
+from sbm_registry_helpers import (
+    build_sbm_path_from_arrow,
+    normalize_sbm_path,
 )
 
 CURVATURE_CITATIONS = (
@@ -214,9 +214,11 @@ def test_girr_curvature_batch_and_handoff_preserve_separate_shock_arrays() -> No
         ),
     )
     row_batch = build_girr_curvature_batch_from_sensitivities(sensitivities)
-    handoff = normalize_girr_curvature_arrow_table(sample_curvature_arrow_table(sensitivities))
+    handoff = normalize_sbm_path(
+        SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, sample_curvature_arrow_table(sensitivities)
+    )
 
-    arrow_batch = build_girr_curvature_batch_from_arrow(handoff)
+    arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, handoff)
 
     assert arrow_batch.input_hash == row_batch.input_hash
     assert arrow_batch.input_hash == input_hash_for_sensitivities(sensitivities)
@@ -247,8 +249,12 @@ def test_girr_curvature_branch_selection_from_batch_matches_row_helper() -> None
         ),
         sample_curvature_sensitivity(),
     )
-    batch = build_girr_curvature_batch_from_arrow(
-        normalize_girr_curvature_arrow_table(sample_curvature_arrow_table(sensitivities))
+    batch = build_sbm_path_from_arrow(
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.CURVATURE,
+        normalize_sbm_path(
+            SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, sample_curvature_arrow_table(sensitivities)
+        ),
     )
 
     records = select_girr_curvature_branches_from_batch(
@@ -272,7 +278,7 @@ def test_girr_curvature_handoff_rejects_missing_shock_column() -> None:
     )
 
     with pytest.raises(NormalizedTableError, match="Required column 'up_shock_amount'"):
-        normalize_girr_curvature_arrow_table(table)
+        normalize_sbm_path(SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, table)
 
 
 def test_girr_curvature_handoff_rejects_null_shock_column() -> None:
@@ -283,7 +289,7 @@ def test_girr_curvature_handoff_rejects_null_shock_column() -> None:
     )
 
     with pytest.raises(NormalizedTableError, match="Column 'down_shock_amount' contains nulls"):
-        normalize_girr_curvature_arrow_table(table)
+        normalize_sbm_path(SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, table)
 
 
 @pytest.mark.parametrize(
@@ -303,17 +309,21 @@ def test_girr_curvature_batch_build_rejects_bad_shock_values(
         column_name,
         values,
     )
-    handoff = normalize_girr_curvature_arrow_table(table)
+    handoff = normalize_sbm_path(SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, table)
 
     with pytest.raises(SbmInputError, match=expected):
-        build_girr_curvature_batch_from_arrow(handoff)
+        build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, handoff)
 
 
 def test_validate_girr_curvature_batch_and_support_gate_accept_curvature() -> None:
-    batch = build_girr_curvature_batch_from_arrow(
-        normalize_girr_curvature_arrow_table(
-            sample_curvature_arrow_table((sample_curvature_sensitivity(),))
-        )
+    batch = build_sbm_path_from_arrow(
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.CURVATURE,
+        normalize_sbm_path(
+            SbmRiskClass.GIRR,
+            SbmRiskMeasure.CURVATURE,
+            sample_curvature_arrow_table((sample_curvature_sensitivity(),)),
+        ),
     )
 
     assert (

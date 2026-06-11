@@ -12,24 +12,26 @@ BASEL_MAR21 slices.
 | --- | --- | --- |
 | Package identity | `PACKAGE_METADATA`, `__version__` | Workspace discovery and status reporting. |
 | Row entry (Tier 3) | `calculate_sbm_capital`, `SbmSensitivity`, `SbmCalculationContext`, `SbmCapitalResult`, `SbmRiskClass`, `SbmRiskMeasure`, `SbmRegulatoryProfile`, `SbmSourceLineage` | Small books, tests, notebooks, and fixture workflows. |
-| Batch entry (Tier 1) | `SbmSensitivityBatch`, `build_*_batch_from_columns`, `build_*_batch_from_arrow`, `calculate_sbm_capital_from_*_batch`, `calculate_sbm_portfolio_capital_from_batches`, `calculate_sbm_portfolio_capital_from_arrow_tables`, `input_hash_for_*_batch` | Production input table path from normalized Arrow tables to package-owned NumPy batches. |
+| Registry | `SBM_BATCH_SPECS`, `SBM_BATCH_PATH_ORDER`, `SbmBatchSpec` | Canonical `(SbmRiskClass, SbmRiskMeasure)` routing table for supported batch paths. |
+| Batch entry (Tier 1) | `SbmSensitivityBatch`, `build_sbm_batch`, `build_sbm_batch_from_arrow`, `calculate_sbm_capital_from_arrow`, `calculate_sbm_capital_from_batch`, `calculate_sbm_portfolio_capital_from_batches`, `calculate_sbm_portfolio_capital_from_arrow_tables`, `input_hash_for_batch` | Production input table path from normalized Arrow tables to package-owned NumPy batches. |
 | InputTable specs | All `*_ARROW_COLUMN_SPECS` symbols listed below | Client schema alignment and generated schema export. |
-| Normalize | All `normalize_*_arrow_table` symbols listed below | Ingress from raw Arrow tables to `NormalizedArrowTable`. |
+| Normalize | `normalize_sbm_arrow_table` | Ingress from raw Arrow tables to `NormalizedArrowTable` using explicit `SbmRiskClass` and `SbmRiskMeasure` values. |
 | CRIF adapter (Tier 2) | `adapt_crif_records`, `normalize_girr_delta_crif_arrow_table` from `frtb_sbm.crif` | CRIF-shaped input compatibility with explicit rejected rows. |
 | Audit and replay | `serialize_sbm_result`, `input_hash_for_sensitivities`, `validate_sbm_result_reconciliation`, `to_component_summary` | Deterministic replay, reconciliation, and SA orchestration input_table. |
 | Attribution and impact | `calculate_sbm_attribution`, `calculate_sbm_capital_impact` | Shared `CapitalContribution` Euler projection for supported delta/vega branches and finite-difference baseline-vs-candidate impact. |
 | Errors and support guards | `SbmInputError`, `SbmUnsupportedFeature`, `ensure_sbm_run_supported`, `ensure_sbm_risk_class_measure_supported`, `phase1_capital_supported_paths` | Fail-closed unsupported profiles and input diagnostics. |
 
-The top-level surface is intentionally broader than RRAO because SBM exposes a
-separate batch, input_table, and calculation symbol for each risk-class/measure
-path. The public API surface test caps `frtb_sbm.__all__` below 340 names and
-requires every documented input_table symbol to remain importable.
+The registry-driven API is the client surface. Per-path Arrow normalizer,
+Arrow batch builder, batch capital, and batch hash wrappers are intentionally
+not exported; callers select a path with `SbmRiskClass` and `SbmRiskMeasure`.
+The public API surface test caps `frtb_sbm.__all__` below 400 names and requires
+every documented input_table symbol to remain importable.
 
 ## Client integration
 
 | Tier | Client input | SBM path | Notes |
 | --- | --- | --- | --- |
-| 1 - Arrow/Parquet input table | Tables matching one of the input table specs below | `normalize_*_arrow_table` -> `build_*_batch_from_arrow` -> `calculate_sbm_capital_from_*_batch` or portfolio dispatcher | Recommended production path. |
+| 1 - Arrow/Parquet input table | Tables matching one of the input table specs below | `normalize_sbm_arrow_table(..., risk_class, measure)` -> `build_sbm_batch_from_arrow(..., risk_class, measure)` -> `calculate_sbm_capital_from_batch` or portfolio dispatcher | Recommended production path. |
 | 2 - CRIF/vendor rows | Iterable mapping rows or GIRR delta CRIF Arrow table | `adapt_crif_records` or `normalize_girr_delta_crif_arrow_table` | Adapter path with explicit rejected-row diagnostics. |
 | 3 - Canonical dataclasses | `tuple[SbmSensitivity, ...]` plus `SbmCalculationContext` | `calculate_sbm_capital` | Small books, tests, and notebooks only. |
 
@@ -48,31 +50,36 @@ reported as explicit unsupported residual records. `calculate_sbm_capital_impact
 compares two capital results by finite difference and must not be interpreted as
 a marginal contribution.
 
-## InputTable specs and normalizers
+## InputTable specs
 
-| Path | InputTable spec | Normalizer | Builder | Capital entry |
-| --- | --- | --- | --- | --- |
-| GIRR delta | `GIRR_DELTA_ARROW_COLUMN_SPECS` | `normalize_girr_delta_arrow_table` | `build_girr_delta_batch_from_arrow` | `calculate_sbm_capital_from_girr_delta_batch` |
-| GIRR vega | `GIRR_VEGA_ARROW_COLUMN_SPECS` | `normalize_girr_vega_arrow_table` | `build_girr_vega_batch_from_arrow` | `calculate_sbm_capital_from_girr_vega_batch` |
-| GIRR curvature | `GIRR_CURVATURE_ARROW_COLUMN_SPECS` | `normalize_girr_curvature_arrow_table` | `build_girr_curvature_batch_from_arrow` | `calculate_sbm_capital_from_girr_curvature_batch` |
-| FX delta | `FX_DELTA_ARROW_COLUMN_SPECS` | `normalize_fx_delta_arrow_table` | `build_fx_delta_batch_from_arrow` | `calculate_sbm_capital_from_fx_delta_batch` |
-| FX vega | `FX_VEGA_ARROW_COLUMN_SPECS` | `normalize_fx_vega_arrow_table` | `build_fx_vega_batch_from_arrow` | `calculate_sbm_capital_from_fx_vega_batch` |
-| FX curvature | `FX_CURVATURE_ARROW_COLUMN_SPECS` | `normalize_fx_curvature_arrow_table` | `build_fx_curvature_batch_from_arrow` | `calculate_sbm_capital_from_fx_curvature_batch` |
-| Equity delta | `EQUITY_DELTA_ARROW_COLUMN_SPECS` | `normalize_equity_delta_arrow_table` | `build_equity_delta_batch_from_arrow` | `calculate_sbm_capital_from_equity_delta_batch` |
-| Equity vega | `EQUITY_VEGA_ARROW_COLUMN_SPECS` | `normalize_equity_vega_arrow_table` | `build_equity_vega_batch_from_arrow` | `calculate_sbm_capital_from_equity_vega_batch` |
-| Equity curvature | `EQUITY_CURVATURE_ARROW_COLUMN_SPECS` | `normalize_equity_curvature_arrow_table` | `build_equity_curvature_batch_from_arrow` | `calculate_sbm_capital_from_equity_curvature_batch` |
-| Commodity delta | `COMMODITY_DELTA_ARROW_COLUMN_SPECS` | `normalize_commodity_delta_arrow_table` | `build_commodity_delta_batch_from_arrow` | `calculate_sbm_capital_from_commodity_delta_batch` |
-| Commodity vega | `COMMODITY_VEGA_ARROW_COLUMN_SPECS` | `normalize_commodity_vega_arrow_table` | `build_commodity_vega_batch_from_arrow` | `calculate_sbm_capital_from_commodity_vega_batch` |
-| Commodity curvature | `COMMODITY_CURVATURE_ARROW_COLUMN_SPECS` | `normalize_commodity_curvature_arrow_table` | `build_commodity_curvature_batch_from_arrow` | `calculate_sbm_capital_from_commodity_curvature_batch` |
-| CSR non-sec delta | `CSR_NONSEC_DELTA_ARROW_COLUMN_SPECS` | `normalize_csr_nonsec_delta_arrow_table` | `build_csr_nonsec_delta_batch_from_arrow` | `calculate_sbm_capital_from_csr_nonsec_delta_batch` |
-| CSR non-sec vega | `CSR_NONSEC_VEGA_ARROW_COLUMN_SPECS` | `normalize_csr_nonsec_vega_arrow_table` | `build_csr_nonsec_vega_batch_from_arrow` | `calculate_sbm_capital_from_csr_nonsec_vega_batch` |
-| CSR non-sec curvature | `CSR_NONSEC_CURVATURE_ARROW_COLUMN_SPECS` | `normalize_csr_nonsec_curvature_arrow_table` | `build_csr_nonsec_curvature_batch_from_arrow` | `calculate_sbm_capital_from_csr_nonsec_curvature_batch` |
-| CSR sec non-CTP delta | `CSR_SEC_NONCTP_DELTA_ARROW_COLUMN_SPECS` | `normalize_csr_sec_nonctp_delta_arrow_table` | `build_csr_sec_nonctp_delta_batch_from_arrow` | `calculate_sbm_capital_from_csr_sec_nonctp_delta_batch` |
-| CSR sec non-CTP vega | `CSR_SEC_NONCTP_VEGA_ARROW_COLUMN_SPECS` | `normalize_csr_sec_nonctp_vega_arrow_table` | `build_csr_sec_nonctp_vega_batch_from_arrow` | `calculate_sbm_capital_from_csr_sec_nonctp_vega_batch` |
-| CSR sec non-CTP curvature | `CSR_SEC_NONCTP_CURVATURE_ARROW_COLUMN_SPECS` | `normalize_csr_sec_nonctp_curvature_arrow_table` | `build_csr_sec_nonctp_curvature_batch_from_arrow` | `calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch` |
-| CSR sec CTP delta | `CSR_SEC_CTP_DELTA_ARROW_COLUMN_SPECS` | `normalize_csr_sec_ctp_delta_arrow_table` | `build_csr_sec_ctp_delta_batch_from_arrow` | `calculate_sbm_capital_from_csr_sec_ctp_delta_batch` |
-| CSR sec CTP vega | `CSR_SEC_CTP_VEGA_ARROW_COLUMN_SPECS` | `normalize_csr_sec_ctp_vega_arrow_table` | `build_csr_sec_ctp_vega_batch_from_arrow` | `calculate_sbm_capital_from_csr_sec_ctp_vega_batch` |
-| CSR sec CTP curvature | `CSR_SEC_CTP_CURVATURE_ARROW_COLUMN_SPECS` | `normalize_csr_sec_ctp_curvature_arrow_table` | `build_csr_sec_ctp_curvature_batch_from_arrow` | `calculate_sbm_capital_from_csr_sec_ctp_curvature_batch` |
+Use each spec with `normalize_sbm_arrow_table(table, risk_class, measure)`,
+`build_sbm_batch_from_arrow(handoff, risk_class, measure)`, and
+`calculate_sbm_capital_from_batch(batch, context=...)` or
+`calculate_sbm_capital_from_arrow(handoff, risk_class, measure, context=...)`.
+
+| Path | InputTable spec | Registry path |
+| --- | --- | --- |
+| GIRR delta | `GIRR_DELTA_ARROW_COLUMN_SPECS` | `SbmRiskClass.GIRR`, `SbmRiskMeasure.DELTA` |
+| GIRR vega | `GIRR_VEGA_ARROW_COLUMN_SPECS` | `SbmRiskClass.GIRR`, `SbmRiskMeasure.VEGA` |
+| GIRR curvature | `GIRR_CURVATURE_ARROW_COLUMN_SPECS` | `SbmRiskClass.GIRR`, `SbmRiskMeasure.CURVATURE` |
+| FX delta | `FX_DELTA_ARROW_COLUMN_SPECS` | `SbmRiskClass.FX`, `SbmRiskMeasure.DELTA` |
+| FX vega | `FX_VEGA_ARROW_COLUMN_SPECS` | `SbmRiskClass.FX`, `SbmRiskMeasure.VEGA` |
+| FX curvature | `FX_CURVATURE_ARROW_COLUMN_SPECS` | `SbmRiskClass.FX`, `SbmRiskMeasure.CURVATURE` |
+| Equity delta | `EQUITY_DELTA_ARROW_COLUMN_SPECS` | `SbmRiskClass.EQUITY`, `SbmRiskMeasure.DELTA` |
+| Equity vega | `EQUITY_VEGA_ARROW_COLUMN_SPECS` | `SbmRiskClass.EQUITY`, `SbmRiskMeasure.VEGA` |
+| Equity curvature | `EQUITY_CURVATURE_ARROW_COLUMN_SPECS` | `SbmRiskClass.EQUITY`, `SbmRiskMeasure.CURVATURE` |
+| Commodity delta | `COMMODITY_DELTA_ARROW_COLUMN_SPECS` | `SbmRiskClass.COMMODITY`, `SbmRiskMeasure.DELTA` |
+| Commodity vega | `COMMODITY_VEGA_ARROW_COLUMN_SPECS` | `SbmRiskClass.COMMODITY`, `SbmRiskMeasure.VEGA` |
+| Commodity curvature | `COMMODITY_CURVATURE_ARROW_COLUMN_SPECS` | `SbmRiskClass.COMMODITY`, `SbmRiskMeasure.CURVATURE` |
+| CSR non-sec delta | `CSR_NONSEC_DELTA_ARROW_COLUMN_SPECS` | `SbmRiskClass.CSR_NONSEC`, `SbmRiskMeasure.DELTA` |
+| CSR non-sec vega | `CSR_NONSEC_VEGA_ARROW_COLUMN_SPECS` | `SbmRiskClass.CSR_NONSEC`, `SbmRiskMeasure.VEGA` |
+| CSR non-sec curvature | `CSR_NONSEC_CURVATURE_ARROW_COLUMN_SPECS` | `SbmRiskClass.CSR_NONSEC`, `SbmRiskMeasure.CURVATURE` |
+| CSR sec non-CTP delta | `CSR_SEC_NONCTP_DELTA_ARROW_COLUMN_SPECS` | `SbmRiskClass.CSR_SEC_NONCTP`, `SbmRiskMeasure.DELTA` |
+| CSR sec non-CTP vega | `CSR_SEC_NONCTP_VEGA_ARROW_COLUMN_SPECS` | `SbmRiskClass.CSR_SEC_NONCTP`, `SbmRiskMeasure.VEGA` |
+| CSR sec non-CTP curvature | `CSR_SEC_NONCTP_CURVATURE_ARROW_COLUMN_SPECS` | `SbmRiskClass.CSR_SEC_NONCTP`, `SbmRiskMeasure.CURVATURE` |
+| CSR sec CTP delta | `CSR_SEC_CTP_DELTA_ARROW_COLUMN_SPECS` | `SbmRiskClass.CSR_SEC_CTP`, `SbmRiskMeasure.DELTA` |
+| CSR sec CTP vega | `CSR_SEC_CTP_VEGA_ARROW_COLUMN_SPECS` | `SbmRiskClass.CSR_SEC_CTP`, `SbmRiskMeasure.VEGA` |
+| CSR sec CTP curvature | `CSR_SEC_CTP_CURVATURE_ARROW_COLUMN_SPECS` | `SbmRiskClass.CSR_SEC_CTP`, `SbmRiskMeasure.CURVATURE` |
 
 Curvature input_tables are capital-producing for supported BASEL_MAR21 rows. The
 GIRR curvature input_table also supports validation and batch construction for

@@ -49,7 +49,7 @@ Callers wire those steps after SBM capital is computed.
 
 | Tier | Typical client input | Entry path | Best for |
 | --- | --- | --- | --- |
-| **1 — Arrow / Parquet** | One table per homogeneous `(risk_class, risk_measure)` path | `normalize_*_arrow_table` → `build_*_batch_from_arrow` → path capital helper, or portfolio dispatcher | Production volume, datacontract-driven pipelines |
+| **1 — Arrow / Parquet** | One table per homogeneous `(risk_class, risk_measure)` path | `normalize_sbm_arrow_table(..., risk_class, measure)` → `build_sbm_batch_from_arrow(..., risk_class, measure)` → generic capital helper, or portfolio dispatcher | Production volume, datacontract-driven pipelines |
 | **2 — CRIF / vendor rows** | Iterable mapping records or GIRR delta CRIF Arrow | `adapt_crif_records` / `normalize_girr_delta_crif_arrow_table` → row or batch path | Legacy CRIF-shaped feeds |
 | **3 — Canonical rows** | `tuple[SbmSensitivity, ...]` | `calculate_sbm_capital` | Tests, small books, notebooks |
 
@@ -196,8 +196,9 @@ declared on the path’s `*_ARROW_COLUMN_SPECS` (for example `sensitivityId` →
 
 ### Step 2 — Normalize
 
-Each table passes through the path-specific `normalize_*_arrow_table` helper via
-`frtb_common.normalize_arrow_table` and package `ColumnSpec` definitions:
+Each table passes through `normalize_sbm_arrow_table` with explicit
+`SbmRiskClass` and `SbmRiskMeasure` values. The helper delegates to
+`frtb_common.normalize_arrow_table` and the package `ColumnSpec` definitions:
 
 - coerce logical types (string, numeric, date, …)
 - enforce null policies
@@ -208,8 +209,8 @@ Calculation kernels do not import PyArrow.
 
 ### Step 3 — Build batches
 
-`build_*_batch_from_arrow` reads normalized columns into **`SbmSensitivityBatch`**
-objects (immutable NumPy column arrays per path).
+`build_sbm_batch_from_arrow` reads normalized columns into
+**`SbmSensitivityBatch`** objects (immutable NumPy column arrays per path).
 
 The portfolio path **does not** materialize accepted `SbmSensitivity` dataclasses
 per row during calculation (`accepted_row_dataclasses_materialized` stays zero on
@@ -233,7 +234,7 @@ implement a requested `(risk_class, risk_measure)` cell.
 | --- | --- |
 | `calculate_sbm_portfolio_capital_from_arrow_tables` | Several normalized tables in one call |
 | `calculate_sbm_portfolio_capital_from_batches` | Callers already built `SbmSensitivityBatch` objects |
-| `calculate_sbm_capital_from_<path>_arrow` | Single-path convenience (normalize + build + calculate) |
+| `calculate_sbm_capital_from_arrow` | Single-path enum-driven Arrow convenience |
 | `calculate_sbm_capital` | Tier 3 row dataclasses |
 
 Portfolio dispatcher behaviour:
@@ -297,20 +298,20 @@ Capital packages must not import the store; an integration adapter maps
 ## Single-path journey (one risk class / measure)
 
 When only one path is needed (for example GIRR delta only), skip the portfolio
-dispatcher and call the one-shot Arrow helper:
+dispatcher and call the one-shot Arrow helper with the path enums:
 
 ```mermaid
 flowchart LR
   T["GIRR delta Arrow table"]
-  N["normalize_girr_delta_arrow_table"]
-  C["calculate_sbm_capital_from_girr_delta_arrow"]
+  N["normalize_sbm_arrow_table(..., GIRR, DELTA)"]
+  C["calculate_sbm_capital_from_arrow(..., GIRR, DELTA)"]
   R["SbmCapitalResult"]
 
   T --> N --> C --> R
 ```
 
-Equivalent explicit steps: `normalize_*` → `build_*_batch_from_arrow` →
-`calculate_sbm_capital_from_*_batch`.
+Equivalent explicit steps: `normalize_sbm_arrow_table` →
+`build_sbm_batch_from_arrow` → `calculate_sbm_capital_from_batch`.
 
 ---
 
@@ -360,10 +361,11 @@ Illustrative only — see tests, notebooks, and `PUBLIC_API.md` for complete fix
 from datetime import date
 
 from frtb_sbm import (
+    SbmRiskClass,
+    SbmRiskMeasure,
     SbmCalculationContext,
     calculate_sbm_portfolio_capital_from_arrow_tables,
-    normalize_girr_delta_arrow_table,
-    normalize_girr_vega_arrow_table,
+    normalize_sbm_arrow_table,
     to_component_summary,
 )
 from frtb_sbm.attribution import calculate_sbm_attribution
@@ -377,8 +379,8 @@ context = SbmCalculationContext(
 )
 
 handoffs = (
-    normalize_girr_delta_arrow_table(girr_delta_table),
-    normalize_girr_vega_arrow_table(girr_vega_table),
+    normalize_sbm_arrow_table(girr_delta_table, SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+    normalize_sbm_arrow_table(girr_vega_table, SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
 )
 
 calc = calculate_sbm_portfolio_capital_from_arrow_tables(handoffs, context=context)

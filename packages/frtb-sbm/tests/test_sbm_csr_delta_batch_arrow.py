@@ -20,22 +20,9 @@ from frtb_sbm import (
     build_csr_sec_ctp_delta_batch_from_sensitivities,
     build_csr_sec_nonctp_delta_batch_from_sensitivities,
     calculate_sbm_capital,
-    calculate_sbm_capital_from_csr_nonsec_delta_batch,
-    calculate_sbm_capital_from_csr_sec_ctp_delta_batch,
-    calculate_sbm_capital_from_csr_sec_nonctp_delta_batch,
+    calculate_sbm_capital_from_batch,
     input_hash_for_sensitivities,
     weight_csr_sec_ctp_delta_sensitivity_batch,
-)
-from frtb_sbm.arrow_batch import (
-    build_csr_nonsec_delta_batch_from_arrow,
-    build_csr_sec_ctp_delta_batch_from_arrow,
-    build_csr_sec_nonctp_delta_batch_from_arrow,
-    calculate_sbm_capital_from_csr_nonsec_delta_arrow,
-    calculate_sbm_capital_from_csr_sec_ctp_delta_arrow,
-    calculate_sbm_capital_from_csr_sec_nonctp_delta_arrow,
-    normalize_csr_nonsec_delta_arrow_table,
-    normalize_csr_sec_ctp_delta_arrow_table,
-    normalize_csr_sec_nonctp_delta_arrow_table,
 )
 from frtb_sbm.csr_nonsec_reference_data import (
     CSR_BOND_RISK_FACTOR,
@@ -62,6 +49,11 @@ from frtb_sbm.risk_classes.csr_sec_ctp import (
 )
 from frtb_sbm.risk_classes.csr_sec_nonctp import (
     calculate_csr_sec_nonctp_delta_risk_class_capital_from_batch,
+)
+from sbm_registry_helpers import (
+    build_sbm_path_from_arrow,
+    calculate_sbm_capital_from_path_arrow,
+    normalize_sbm_path,
 )
 
 
@@ -249,19 +241,23 @@ def test_csr_nonsec_delta_batch_and_handoff_match_row_capital() -> None:
     context = sample_context("csr-nonsec-batch-run")
     sensitivities = csr_nonsec_sensitivities()
     source_hash = source_content_hash("synthetic CSR non-sec delta source")
-    handoff = normalize_csr_nonsec_delta_arrow_table(
+    handoff = normalize_sbm_path(
+        SbmRiskClass.CSR_NONSEC,
+        SbmRiskMeasure.DELTA,
         arrow_table(sensitivities),
         source_hash=source_hash,
     )
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_csr_nonsec_delta_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_csr_nonsec_delta_batch_from_arrow(handoff)
-    batch_result = calculate_sbm_capital_from_csr_nonsec_delta_batch(
+    arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA, handoff)
+    batch_result = calculate_sbm_capital_from_batch(
         arrow_batch,
         context=context,
     )
-    handoff_result = calculate_sbm_capital_from_csr_nonsec_delta_arrow(
+    handoff_result = calculate_sbm_capital_from_path_arrow(
+        SbmRiskClass.CSR_NONSEC,
+        SbmRiskMeasure.DELTA,
         handoff,
         context=context,
     )
@@ -279,19 +275,25 @@ def test_csr_nonsec_delta_batch_and_handoff_match_row_capital() -> None:
 def test_csr_sec_nonctp_delta_batch_and_handoff_match_row_capital() -> None:
     context = sample_context("csr-sec-nonctp-batch-run")
     sensitivities = csr_sec_nonctp_sensitivities()
-    handoff = normalize_csr_sec_nonctp_delta_arrow_table(
+    handoff = normalize_sbm_path(
+        SbmRiskClass.CSR_SEC_NONCTP,
+        SbmRiskMeasure.DELTA,
         arrow_table(sensitivities),
         source_hash=source_content_hash("synthetic CSR sec non-CTP delta source"),
     )
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_csr_sec_nonctp_delta_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_csr_sec_nonctp_delta_batch_from_arrow(handoff)
-    batch_result = calculate_sbm_capital_from_csr_sec_nonctp_delta_batch(
+    arrow_batch = build_sbm_path_from_arrow(
+        SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA, handoff
+    )
+    batch_result = calculate_sbm_capital_from_batch(
         arrow_batch,
         context=context,
     )
-    handoff_result = calculate_sbm_capital_from_csr_sec_nonctp_delta_arrow(
+    handoff_result = calculate_sbm_capital_from_path_arrow(
+        SbmRiskClass.CSR_SEC_NONCTP,
+        SbmRiskMeasure.DELTA,
         handoff,
         context=context,
     )
@@ -306,19 +308,23 @@ def test_csr_sec_nonctp_delta_batch_and_handoff_match_row_capital() -> None:
 def test_csr_sec_ctp_delta_batch_and_handoff_match_row_capital() -> None:
     context = sample_context("csr-sec-ctp-batch-run")
     sensitivities = csr_sec_ctp_sensitivities()
-    handoff = normalize_csr_sec_ctp_delta_arrow_table(
+    handoff = normalize_sbm_path(
+        SbmRiskClass.CSR_SEC_CTP,
+        SbmRiskMeasure.DELTA,
         arrow_table(sensitivities),
         source_hash=source_content_hash("synthetic CSR sec CTP delta source"),
     )
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_csr_sec_ctp_delta_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_csr_sec_ctp_delta_batch_from_arrow(handoff)
-    batch_result = calculate_sbm_capital_from_csr_sec_ctp_delta_batch(
+    arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA, handoff)
+    batch_result = calculate_sbm_capital_from_batch(
         arrow_batch,
         context=context,
     )
-    handoff_result = calculate_sbm_capital_from_csr_sec_ctp_delta_arrow(
+    handoff_result = calculate_sbm_capital_from_path_arrow(
+        SbmRiskClass.CSR_SEC_CTP,
+        SbmRiskMeasure.DELTA,
         handoff,
         context=context,
     )
@@ -517,11 +523,13 @@ def test_csr_delta_handoff_contracts_require_credit_axes() -> None:
     ctp_without_tenor = arrow_table(csr_sec_ctp_sensitivities()).drop(["tenor"])
 
     with pytest.raises(ValueError, match="tenor"):
-        normalize_csr_nonsec_delta_arrow_table(nonsec_without_tenor)
+        normalize_sbm_path(SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA, nonsec_without_tenor)
     with pytest.raises(ValueError, match="qualifier"):
-        normalize_csr_sec_nonctp_delta_arrow_table(nonctp_without_qualifier)
+        normalize_sbm_path(
+            SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA, nonctp_without_qualifier
+        )
     with pytest.raises(ValueError, match="tenor"):
-        normalize_csr_sec_ctp_delta_arrow_table(ctp_without_tenor)
+        normalize_sbm_path(SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA, ctp_without_tenor)
 
 
 def test_csr_arrow_batch_builders_do_not_construct_row_dataclasses() -> None:

@@ -23,7 +23,7 @@ from frtb_sbm import (
     SbmSourceLineage,
     build_girr_vega_batch_from_sensitivities,
     calculate_sbm_capital,
-    calculate_sbm_capital_from_girr_vega_batch,
+    calculate_sbm_capital_from_batch,
     girr_vega_intra_bucket_correlation,
     girr_vega_liquidity_horizon_days,
     input_hash_for_sensitivities,
@@ -32,10 +32,10 @@ from frtb_sbm import (
     weight_girr_vega_sensitivities,
     weight_girr_vega_sensitivity_batch,
 )
-from frtb_sbm.arrow_batch import (
-    build_girr_vega_batch_from_arrow,
-    calculate_sbm_capital_from_girr_vega_arrow,
-    normalize_girr_vega_arrow_table,
+from sbm_registry_helpers import (
+    build_sbm_path_from_arrow,
+    calculate_sbm_capital_from_path_arrow,
+    normalize_sbm_path,
 )
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "girr_vega_v1"
@@ -197,16 +197,20 @@ def test_girr_vega_batch_and_handoff_match_row_capital() -> None:
     context = sample_context()
     sensitivities = sample_vega_sensitivities()
     source_hash = source_content_hash("synthetic GIRR vega source")
-    handoff = normalize_girr_vega_arrow_table(
+    handoff = normalize_sbm_path(
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.VEGA,
         sample_vega_arrow_table(sensitivities),
         source_hash=source_hash,
     )
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_girr_vega_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_girr_vega_batch_from_arrow(handoff)
-    batch_result = calculate_sbm_capital_from_girr_vega_batch(arrow_batch, context=context)
-    handoff_result = calculate_sbm_capital_from_girr_vega_arrow(handoff, context=context)
+    arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, handoff)
+    batch_result = calculate_sbm_capital_from_batch(arrow_batch, context=context)
+    handoff_result = calculate_sbm_capital_from_path_arrow(
+        SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, handoff, context=context
+    )
 
     assert row_batch.input_hash == input_hash_for_sensitivities(sensitivities)
     assert arrow_batch.input_hash == row_batch.input_hash
@@ -246,14 +250,14 @@ def test_girr_vega_batch_rejects_context_scope_mismatch() -> None:
     context = replace(sample_context(), desk_id="different-desk")
 
     with pytest.raises(ValueError, match="desk_id"):
-        calculate_sbm_capital_from_girr_vega_batch(batch, context=context)
+        calculate_sbm_capital_from_batch(batch, context=context)
 
 
 def test_girr_vega_arrow_batch_rejects_missing_option_tenor() -> None:
     table = sample_vega_arrow_table(sample_vega_sensitivities()).drop(["option_tenor"])
 
     with pytest.raises(ValueError, match="option_tenor"):
-        normalize_girr_vega_arrow_table(table)
+        normalize_sbm_path(SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, table)
 
 
 def test_girr_vega_handoff_builder_does_not_construct_row_dataclasses() -> None:
