@@ -86,7 +86,8 @@ the generic enum-driven normalize/build/calculate helpers, then portfolio groupi
 after the batch is built — weights, buckets, correlations, and required input
 columns differ by class and measure. GIRR delta and vega batch kernels live in
 `frtb_sbm.risk_classes.girr`; GIRR weighting formulas live in
-`frtb_sbm.risk_classes.girr_weighting`; `frtb_sbm.capital` remains the public
+`frtb_sbm.risk_classes.girr_weighting`; non-GIRR vega weighting lives in
+`frtb_sbm.risk_classes.vega_weighting`; `frtb_sbm.capital` remains the public
 dispatcher.
 
 ### Shared pipeline (all seven risk classes)

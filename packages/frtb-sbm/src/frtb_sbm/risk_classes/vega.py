@@ -86,11 +86,11 @@ from frtb_sbm.risk_classes.csr_sec_nonctp import (
 )
 from frtb_sbm.risk_classes.equity import build_equity_inter_bucket_correlation_map
 from frtb_sbm.risk_classes.fx import build_fx_inter_bucket_correlation_map
-from frtb_sbm.validation import SbmInputError
-from frtb_sbm.weighted_sensitivity import (
+from frtb_sbm.risk_classes.vega_weighting import (
     weight_non_girr_vega_sensitivities,
     weight_non_girr_vega_sensitivity_batch,
 )
+from frtb_sbm.validation import SbmInputError
 
 _NON_GIRR_VEGA_RISK_CLASSES = frozenset(
     {

@@ -37,7 +37,8 @@ capital callers.
 GIRR delta and vega risk-class kernels physically live under
 `frtb_sbm.risk_classes.girr`; `frtb_sbm.capital` remains the public dispatcher
 for row and batch capital runs. GIRR weighting formulas physically live under
-`frtb_sbm.risk_classes.girr_weighting`; shared weighting sort and batch-axis
+`frtb_sbm.risk_classes.girr_weighting`; non-GIRR vega weighting lives under
+`frtb_sbm.risk_classes.vega_weighting`; shared weighting sort and batch-axis
 helpers live under `frtb_sbm.kernel.weighting`; `frtb_sbm.weighted_sensitivity`
 remains the compatibility and public import path.
 Input, batch, and profile hash payload assembly physically lives under

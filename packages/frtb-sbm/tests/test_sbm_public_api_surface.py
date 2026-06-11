@@ -14,6 +14,8 @@ import frtb_sbm.kernel.portfolio as portfolio
 import frtb_sbm.kernel.weighting as kernel_weighting
 import frtb_sbm.risk_classes.girr as girr
 import frtb_sbm.risk_classes.girr_weighting as girr_weighting
+import frtb_sbm.risk_classes.vega_validation as vega_validation
+import frtb_sbm.risk_classes.vega_weighting as vega_weighting
 import frtb_sbm.validation as validation
 import frtb_sbm.validation.batch as validation_batch
 import frtb_sbm.validation.batch_arrays as validation_batch_arrays
@@ -187,6 +189,15 @@ def test_weighting_stage_modules_back_compatibility_surface() -> None:
         assert name in girr_weighting.__all__
         assert getattr(weighted_sensitivity, name) is getattr(girr_weighting, name)
 
+    for name in (
+        "weight_non_girr_vega_sensitivities",
+        "weight_non_girr_vega_sensitivity_batch",
+    ):
+        assert name in vega_weighting.__all__
+        assert getattr(weighted_sensitivity, name) is getattr(vega_weighting, name)
+
+    assert callable(vega_validation._validate_non_girr_vega_sensitivity)
+    assert callable(vega_validation._validate_non_girr_vega_batch_row)
     assert (
         weighted_sensitivity.sort_weighted_sensitivities_deterministic
         is kernel_weighting.sort_weighted_sensitivities_deterministic
