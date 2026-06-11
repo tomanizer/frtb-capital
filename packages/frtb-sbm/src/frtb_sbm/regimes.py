@@ -8,7 +8,6 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from datetime import date
 
 from frtb_common import UnsupportedRegulatoryFeatureError, stable_json_hash
@@ -125,7 +124,7 @@ def get_sbm_rule_profile(profile: SbmRegulatoryProfile | str) -> SbmRuleProfile:
         supported_risk_classes=frozenset(supported_measures),
         supported_measures=supported_measures,
         citations=citations,
-        content_hash=_hash_payload(payload),
+        content_hash=stable_json_hash(payload),
     )
 
 
@@ -245,10 +244,6 @@ def supported_risk_class_measures(
     for risk_class, measures in PROFILE_SUPPORTED_MEASURES[resolved].items():
         supported.update((risk_class, measure) for measure in measures)
     return frozenset(supported)
-
-
-def _hash_payload(payload: Mapping[str, object]) -> str:
-    return stable_json_hash(payload)
 
 
 def _metadata_date(value: object, field: str) -> date:
