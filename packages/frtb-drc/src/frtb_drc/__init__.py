@@ -28,6 +28,9 @@ from frtb_drc.adapters.positions import (
     build_drc_nonsec_batch_from_positions,
     build_drc_securitisation_non_ctp_batch_from_columns,
 )
+from frtb_drc.assembly.hashes import (
+    input_hash_for_drc_batch,
+)
 from frtb_drc.attribution import (
     DrcAttributionGrain,
     DrcAttributionSummary,
@@ -51,7 +54,6 @@ from frtb_drc.batch import (
     DrcBatchCapitalCalculation,
     DrcPositionBatch,
     calculate_drc_capital_from_batch,
-    input_hash_for_drc_batch,
 )
 from frtb_drc.capital import (
     CapitalInput,

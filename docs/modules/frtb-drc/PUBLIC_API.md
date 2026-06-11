@@ -35,6 +35,9 @@ module remain stable import paths for existing callers.
 Arrow table normalization and Arrow-to-batch builders physically live in
 `frtb_drc.adapters.arrow`; `frtb_drc.arrow_batch` remains a compatibility
 import path.
+Batch and context hash assembly physically lives in `frtb_drc.assembly.hashes`;
+`frtb_drc.batch` remains the compatibility import path for
+`input_hash_for_drc_batch`.
 
 ## Client integration
 
