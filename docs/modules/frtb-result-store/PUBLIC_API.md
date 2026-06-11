@@ -36,6 +36,10 @@ row groups, and `frtb_result_store.store_status_rows` owns lifecycle status row
 serialization. The older `frtb_result_store.store_row_io` module remains an
 internal compatibility path for existing row helper imports.
 
+Reporting mart generation is also stage-split internally: movement-summary mart
+rows live in `frtb_result_store.mart_movement_rows`, while
+`frtb_result_store.marts` remains the public mart projection facade.
+
 `DuckDbParquetResultStore.refresh_catalog()` rebuilds `catalog.duckdb` as
 derived state over committed Parquet. `read_only_connection()` opens that
 derived catalog with DuckDB read-only mode where supported; callers must close
