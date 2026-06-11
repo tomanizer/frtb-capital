@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import replace
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from frtb_sbm.data_models import SbmCalculationContext, SbmRiskClass, SbmRiskMeasure
 from frtb_sbm.registry import sbm_batch_spec
@@ -136,7 +136,7 @@ def build_sbm_batch_from_columns(
     )
 
 
-def _batch_module() -> object:
+def _batch_module() -> Any:
     import frtb_sbm.batch as batch_module
 
     return batch_module
@@ -277,9 +277,12 @@ def _batch_with_hash(
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citation_ids,
     )
-    return replace(
-        batch_without_hash,
-        input_hash=batch_module.input_hash_for_sbm_batch(batch_without_hash),
+    return cast(
+        "SbmSensitivityBatch",
+        replace(
+            batch_without_hash,
+            input_hash=batch_module.input_hash_for_sbm_batch(batch_without_hash),
+        ),
     )
 
 

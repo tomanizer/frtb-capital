@@ -13,6 +13,7 @@ Regulatory traceability:
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from typing import TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -156,6 +157,11 @@ _PROFILE_PORTFOLIO_SCENARIO_CITATIONS = {
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
 }
 _SBM_CAPITAL_PATH_ORDER = SBM_BATCH_PATH_ORDER
+
+
+class _PairwiseEvidenceKwargs(TypedDict):
+    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str
+    pairwise_evidence_limit: int
 
 
 def calculate_sbm_capital(
@@ -369,7 +375,7 @@ def _calculate_batch_risk_class_capital(
 
     rule_profile = get_sbm_rule_profile(context.profile_id)
     run_controls = context.run_controls or SbmRunControls()
-    pairwise_kwargs = {
+    pairwise_kwargs: _PairwiseEvidenceKwargs = {
         "pairwise_evidence_mode": run_controls.pairwise_evidence_mode,
         "pairwise_evidence_limit": run_controls.pairwise_evidence_limit,
     }
