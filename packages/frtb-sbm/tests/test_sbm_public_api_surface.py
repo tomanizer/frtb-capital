@@ -15,6 +15,8 @@ import frtb_sbm.audit as audit
 import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
 import frtb_sbm.crif as crif
+import frtb_sbm.curvature as curvature
+import frtb_sbm.curvature_correlations as curvature_correlations
 import frtb_sbm.curvature_reference_data as curvature_reference_data
 import frtb_sbm.fx_reference_data as fx_reference_data
 import frtb_sbm.girr_reference_data as girr_reference_data
@@ -269,6 +271,19 @@ def test_vega_module_reexports_correlation_stage_surface() -> None:
         assert name in vega.__all__
         assert name in vega_correlations.__all__
         assert getattr(vega, name) is getattr(vega_correlations, name)
+
+
+def test_curvature_module_reexports_correlation_stage_helpers() -> None:
+    for name in (
+        "_build_curvature_inter_bucket_correlation_map",
+        "_build_curvature_intra_bucket_correlation_matrix",
+        "_build_vectorized_curvature_intra_bucket_correlation_matrix",
+        "_curvature_inter_citation_ids",
+        "_curvature_intra_bucket_correlation",
+        "_curvature_intra_citation_ids",
+    ):
+        assert name in curvature_correlations.__all__
+        assert getattr(curvature, name) is getattr(curvature_correlations, name)
 
 
 def test_crif_module_reexports_adapter_stage_surface() -> None:

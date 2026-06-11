@@ -30,41 +30,39 @@ from frtb_sbm.batch import (
     sorted_girr_curvature_batch_indices,
 )
 from frtb_sbm.commodity_reference_data import (
-    COMMODITY_LOCATION_CORRELATION,
-    _require_commodity_bucket_number,
     commodity_bucket_definition,
-    commodity_delta_intra_bucket_correlation,
-    commodity_inter_bucket_correlation,
 )
 from frtb_sbm.csr_nonsec_reference_data import (
     CSR_BOND_RISK_FACTOR,
     CSR_CDS_RISK_FACTOR,
-    CSR_DIFFERENT_CURVE_CORRELATION,
-    CSR_HY_INDEX_BUCKET,
-    CSR_IG_INDEX_BUCKET,
-    CSR_INDEX_NAME_CORRELATION,
-    CSR_NAME_CORRELATION,
-    CSR_OTHER_SECTOR_BUCKET,
-    CSR_SAME_CURVE_CORRELATION,
     csr_nonsec_bucket_definition,
-    csr_nonsec_inter_bucket_correlation,
 )
 from frtb_sbm.csr_sec_ctp_reference_data import (
-    CSR_CTP_DIFFERENT_BASIS_CORRELATION,
-    CSR_CTP_SAME_BASIS_CORRELATION,
     csr_sec_ctp_bucket_definition,
-    csr_sec_ctp_inter_bucket_correlation,
 )
 from frtb_sbm.csr_sec_nonctp_reference_data import (
     CSR_SEC_BOND_RISK_FACTOR,
     CSR_SEC_CDS_RISK_FACTOR,
-    CSR_SEC_DIFFERENT_BASIS_CORRELATION,
-    CSR_SEC_OTHER_SECTOR_BUCKET,
-    CSR_SEC_SAME_BASIS_CORRELATION,
-    CSR_SEC_TRANCHE_DIFFERENT_CORRELATION,
-    CSR_SEC_TRANCHE_SAME_CORRELATION,
     csr_sec_nonctp_bucket_definition,
-    csr_sec_nonctp_inter_bucket_correlation,
+)
+from frtb_sbm.curvature_correlations import (
+    _bucket_sort_key,
+    _build_curvature_inter_bucket_correlation_map,
+    _build_curvature_intra_bucket_correlation_matrix,
+    _curvature_inter_citation_ids,
+    _curvature_intra_citation_ids,
+)
+from frtb_sbm.curvature_correlations import (
+    _build_vectorized_curvature_intra_bucket_correlation_matrix as _build_vectorized_intra_matrix,
+)
+from frtb_sbm.curvature_correlations import (
+    _curvature_inter_bucket_correlation as _inter_bucket_correlation,
+)
+from frtb_sbm.curvature_correlations import (
+    _curvature_intra_bucket_correlation as _intra_bucket_correlation,
+)
+from frtb_sbm.curvature_correlations import (
+    _required_factor_qualifier as _factor_qualifier,
 )
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
@@ -86,24 +84,13 @@ from frtb_sbm.data_models import (
     WeightedSensitivity,
 )
 from frtb_sbm.equity_reference_data import (
-    EQUITY_OTHER_SECTOR_BUCKET,
     EQUITY_SPOT_RISK_FACTOR,
-    _require_equity_bucket_number,
     equity_bucket_definition,
-    equity_delta_intra_bucket_correlation,
-    equity_inter_bucket_correlation,
 )
 from frtb_sbm.reference_data import (
-    FX_INTRA_BUCKET_CORRELATION,
-    GIRR_DIFFERENT_CURVE_CORRELATION,
-    GIRR_SAME_CURVE_CORRELATION,
     curvature_citation_ids,
     curvature_risk_weight,
-    fx_delta_intra_bucket_correlation,
-    fx_inter_bucket_correlation,
     girr_bucket_definition,
-    girr_delta_intra_bucket_correlation,
-    girr_inter_bucket_correlation,
     normalise_fx_delta_currency_code,
 )
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
@@ -118,21 +105,11 @@ from frtb_sbm.validation import (
 CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"
 FX_CURVATURE_SCALAR_1_5_FLAG = "fx_curvature_scalar_1_5"
 
-_MAR21_CURVATURE_INTRA_CITATION = (
-    "basel_mar21_curvature",
-    "basel_mar21_100",
-)
-_MAR21_CURVATURE_INTER_CITATION = (
-    "basel_mar21_curvature",
-    "basel_mar21_101",
-)
 _MAR21_CURVATURE_FLOOR_CITATION = ("basel_mar21_curvature",)
 _MAR21_CURVATURE_SCENARIO_CITATION = (
     "basel_mar21_6_correlation_scenarios",
     "basel_mar21_7_scenario_selection",
 )
-_GIRR_CURVATURE_PARALLEL_TENOR = "3m"
-_COMMODITY_CURVATURE_PARALLEL_TENOR = "parallel"
 _CURVATURE_UP_BRANCH = "up"
 _CURVATURE_DOWN_BRANCH = "down"
 _DEFAULT_SCENARIOS: tuple[SbmScenarioLabel, ...] = (
@@ -141,6 +118,11 @@ _DEFAULT_SCENARIOS: tuple[SbmScenarioLabel, ...] = (
     SbmScenarioLabel.HIGH,
 )
 _SUPPORTED_CURVATURE_RISK_CLASSES: frozenset[SbmRiskClass] = frozenset(SbmRiskClass)
+
+_build_vectorized_curvature_intra_bucket_correlation_matrix = _build_vectorized_intra_matrix
+_curvature_inter_bucket_correlation = _inter_bucket_correlation
+_curvature_intra_bucket_correlation = _intra_bucket_correlation
+_required_factor_qualifier = _factor_qualifier
 
 
 @dataclass(frozen=True)
@@ -1519,321 +1501,6 @@ def _curvature_bucket_branch_record(
         floor_applied=bucket_scenario.selected.floor_applied,
         citation_ids=bucket_scenario.citation_ids,
     )
-
-
-def _build_curvature_intra_bucket_correlation_matrix(
-    ordered: Sequence[_CurvatureFactor],
-    *,
-    profile_id: str,
-    risk_class: SbmRiskClass,
-) -> npt.NDArray[np.float64]:
-    size = len(ordered)
-    if size == 0:
-        return np.zeros((0, 0), dtype=np.float64)
-    matrix = _build_vectorized_curvature_intra_bucket_correlation_matrix(
-        ordered,
-        profile_id=profile_id,
-        risk_class=risk_class,
-    )
-    np.fill_diagonal(matrix, 1.0)
-    return matrix
-
-
-def _build_vectorized_curvature_intra_bucket_correlation_matrix(
-    ordered: Sequence[_CurvatureFactor],
-    *,
-    profile_id: str,
-    risk_class: SbmRiskClass,
-) -> npt.NDArray[np.float64]:
-    risk_factors = np.array([factor.risk_factor for factor in ordered], dtype=object)
-    qualifiers = np.array([factor.qualifier or "" for factor in ordered], dtype=object)
-    size = len(ordered)
-    if risk_class is SbmRiskClass.GIRR:
-        girr_bucket_definition(profile_id, ordered[0].bucket_id)
-        same_curve = risk_factors[:, None] == risk_factors[None, :]
-        return (
-            np.where(
-                same_curve,
-                GIRR_SAME_CURVE_CORRELATION,
-                GIRR_DIFFERENT_CURVE_CORRELATION,
-            ).astype(np.float64)
-            ** 2
-        )
-    if risk_class is SbmRiskClass.FX:
-        fx_delta_intra_bucket_correlation(
-            profile_id,
-            bucket1=ordered[0].bucket_id,
-            bucket2=ordered[0].bucket_id,
-        )
-        return np.full((size, size), FX_INTRA_BUCKET_CORRELATION**2, dtype=np.float64)
-    if risk_class is SbmRiskClass.EQUITY:
-        bucket_id = ordered[0].bucket_id
-        if bucket_id == EQUITY_OTHER_SECTOR_BUCKET:
-            return np.eye(size, dtype=np.float64)
-        different_issuer, _ = equity_delta_intra_bucket_correlation(
-            profile_id,
-            bucket_id=bucket_id,
-            risk_factor_a=EQUITY_SPOT_RISK_FACTOR,
-            risk_factor_b=EQUITY_SPOT_RISK_FACTOR,
-            issuer_a="__A__",
-            issuer_b="__B__",
-        )
-        same_issuer = qualifiers[:, None] == qualifiers[None, :]
-        return np.where(same_issuer, 1.0, different_issuer).astype(np.float64) ** 2
-    if risk_class is SbmRiskClass.COMMODITY:
-        commodity_bucket = commodity_bucket_definition(profile_id, ordered[0].bucket_id)
-        same_commodity = risk_factors[:, None] == risk_factors[None, :]
-        same_location = qualifiers[:, None] == qualifiers[None, :]
-        delta = np.where(same_commodity, 1.0, commodity_bucket.commodity_correlation) * np.where(
-            same_location,
-            1.0,
-            COMMODITY_LOCATION_CORRELATION,
-        )
-        return delta.astype(np.float64) ** 2
-    if risk_class is SbmRiskClass.CSR_NONSEC:
-        csr_bucket = csr_nonsec_bucket_definition(profile_id, ordered[0].bucket_id)
-        if csr_bucket.bucket_id == CSR_OTHER_SECTOR_BUCKET:
-            return np.eye(size, dtype=np.float64)
-        name_rho = (
-            CSR_INDEX_NAME_CORRELATION if csr_bucket.is_index_bucket else CSR_NAME_CORRELATION
-        )
-        # CSR curvature factors collapse BOND/CDS to CREDIT_SPREAD_CURVE before aggregation.
-        same_name = qualifiers[:, None] == qualifiers[None, :]
-        # CSR curvature factors collapse to CREDIT_SPREAD_CURVE via
-        # _curvature_factor_risk_factor, so same_basis is inert for production capital.
-        same_basis = risk_factors[:, None] == risk_factors[None, :]
-        delta = np.where(same_name, 1.0, name_rho) * np.where(
-            same_basis,
-            CSR_SAME_CURVE_CORRELATION,
-            CSR_DIFFERENT_CURVE_CORRELATION,
-        )
-        return delta.astype(np.float64) ** 2
-    if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        csr_sec_ctp_bucket_definition(profile_id, ordered[0].bucket_id)
-        # CSR curvature factors collapse BOND/CDS to CREDIT_SPREAD_CURVE before aggregation.
-        same_name = qualifiers[:, None] == qualifiers[None, :]
-        same_basis = risk_factors[:, None] == risk_factors[None, :]
-        delta = np.where(same_name, 1.0, CSR_NAME_CORRELATION) * np.where(
-            same_basis,
-            CSR_CTP_SAME_BASIS_CORRELATION,
-            CSR_CTP_DIFFERENT_BASIS_CORRELATION,
-        )
-        return delta.astype(np.float64) ** 2
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        nonctp_bucket = csr_sec_nonctp_bucket_definition(profile_id, ordered[0].bucket_id)
-        if nonctp_bucket.bucket_id == CSR_SEC_OTHER_SECTOR_BUCKET:
-            return np.eye(size, dtype=np.float64)
-        # CSR curvature factors collapse BOND/CDS to CREDIT_SPREAD_CURVE before aggregation.
-        same_tranche = qualifiers[:, None] == qualifiers[None, :]
-        same_basis = risk_factors[:, None] == risk_factors[None, :]
-        delta = np.where(
-            same_tranche,
-            CSR_SEC_TRANCHE_SAME_CORRELATION,
-            CSR_SEC_TRANCHE_DIFFERENT_CORRELATION,
-        ) * np.where(
-            same_basis,
-            CSR_SEC_SAME_BASIS_CORRELATION,
-            CSR_SEC_DIFFERENT_BASIS_CORRELATION,
-        )
-        return delta.astype(np.float64) ** 2
-    raise UnsupportedRegulatoryFeatureError(
-        f"curvature intra-bucket correlation is unsupported for risk_class={risk_class.value}"
-    )
-
-
-def _curvature_intra_bucket_correlation(
-    profile_id: str,
-    *,
-    risk_class: SbmRiskClass,
-    factor_a: _CurvatureFactor,
-    factor_b: _CurvatureFactor,
-) -> float:
-    if risk_class is SbmRiskClass.GIRR:
-        same_curve = factor_a.risk_factor == factor_b.risk_factor
-        correlation, _ = girr_delta_intra_bucket_correlation(
-            profile_id,
-            tenor1=_GIRR_CURVATURE_PARALLEL_TENOR,
-            tenor2=_GIRR_CURVATURE_PARALLEL_TENOR,
-            same_curve=same_curve,
-        )
-        return correlation**2
-    if risk_class is SbmRiskClass.FX:
-        correlation, _ = fx_delta_intra_bucket_correlation(
-            profile_id,
-            bucket1=factor_a.bucket_id,
-            bucket2=factor_b.bucket_id,
-        )
-        return correlation**2
-    if risk_class is SbmRiskClass.EQUITY:
-        if factor_a.bucket_id == EQUITY_OTHER_SECTOR_BUCKET:
-            return 0.0
-        correlation, _ = equity_delta_intra_bucket_correlation(
-            profile_id,
-            bucket_id=factor_a.bucket_id,
-            risk_factor_a=EQUITY_SPOT_RISK_FACTOR,
-            risk_factor_b=EQUITY_SPOT_RISK_FACTOR,
-            issuer_a=_required_factor_qualifier(factor_a),
-            issuer_b=_required_factor_qualifier(factor_b),
-        )
-        return correlation**2
-    if risk_class is SbmRiskClass.COMMODITY:
-        correlation, _ = commodity_delta_intra_bucket_correlation(
-            profile_id,
-            bucket_id=factor_a.bucket_id,
-            commodity_a=factor_a.risk_factor,
-            commodity_b=factor_b.risk_factor,
-            tenor_a=_COMMODITY_CURVATURE_PARALLEL_TENOR,
-            tenor_b=_COMMODITY_CURVATURE_PARALLEL_TENOR,
-            location_a=_required_factor_qualifier(factor_a),
-            location_b=_required_factor_qualifier(factor_b),
-        )
-        return correlation**2
-    if risk_class is SbmRiskClass.CSR_NONSEC:
-        if factor_a.bucket_id == CSR_OTHER_SECTOR_BUCKET:
-            return 0.0
-        nonsec_bucket = csr_nonsec_bucket_definition(profile_id, factor_a.bucket_id)
-        if _required_factor_qualifier(factor_a) == _required_factor_qualifier(factor_b):
-            return 1.0
-        name_rho = (
-            CSR_INDEX_NAME_CORRELATION
-            if nonsec_bucket.bucket_id in {CSR_IG_INDEX_BUCKET, CSR_HY_INDEX_BUCKET}
-            else CSR_NAME_CORRELATION
-        )
-        return name_rho**2
-    if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        if _required_factor_qualifier(factor_a) == _required_factor_qualifier(factor_b):
-            return 1.0
-        return CSR_NAME_CORRELATION**2
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        nonctp_bucket = csr_sec_nonctp_bucket_definition(profile_id, factor_a.bucket_id)
-        if nonctp_bucket.bucket_id == CSR_SEC_OTHER_SECTOR_BUCKET:
-            return 0.0
-        if _required_factor_qualifier(factor_a) == _required_factor_qualifier(factor_b):
-            return 1.0
-        return CSR_SEC_TRANCHE_DIFFERENT_CORRELATION**2
-    raise UnsupportedRegulatoryFeatureError(
-        f"curvature intra-bucket correlation is unsupported for risk_class={risk_class.value}"
-    )
-
-
-def _build_curvature_inter_bucket_correlation_map(
-    bucket_ids: Sequence[str],
-    *,
-    profile_id: str,
-    risk_class: SbmRiskClass,
-) -> dict[tuple[str, str], float]:
-    correlations: dict[tuple[str, str], float] = {}
-    ordered_ids = tuple(sorted(bucket_ids, key=lambda item: _bucket_sort_key(risk_class, item)))
-    for left_index, bucket_a in enumerate(ordered_ids):
-        for bucket_b in ordered_ids[left_index + 1 :]:
-            gamma = _curvature_inter_bucket_correlation(
-                profile_id,
-                risk_class=risk_class,
-                bucket_a=bucket_a,
-                bucket_b=bucket_b,
-            )
-            correlations[(bucket_a, bucket_b)] = gamma**2
-    return correlations
-
-
-def _curvature_inter_bucket_correlation(
-    profile_id: str,
-    *,
-    risk_class: SbmRiskClass,
-    bucket_a: str,
-    bucket_b: str,
-) -> float:
-    if risk_class is SbmRiskClass.GIRR:
-        gamma, _ = girr_inter_bucket_correlation(profile_id, bucket1=bucket_a, bucket2=bucket_b)
-        return gamma
-    if risk_class is SbmRiskClass.FX:
-        gamma, _ = fx_inter_bucket_correlation(profile_id, bucket1=bucket_a, bucket2=bucket_b)
-        return gamma
-    if risk_class is SbmRiskClass.EQUITY:
-        gamma, _ = equity_inter_bucket_correlation(profile_id, bucket1=bucket_a, bucket2=bucket_b)
-        return gamma
-    if risk_class is SbmRiskClass.COMMODITY:
-        gamma, _ = commodity_inter_bucket_correlation(
-            profile_id,
-            bucket1=bucket_a,
-            bucket2=bucket_b,
-        )
-        return gamma
-    if risk_class is SbmRiskClass.CSR_NONSEC:
-        gamma, _ = csr_nonsec_inter_bucket_correlation(
-            profile_id,
-            bucket1=bucket_a,
-            bucket2=bucket_b,
-        )
-        return gamma
-    if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        gamma, _ = csr_sec_ctp_inter_bucket_correlation(
-            profile_id,
-            bucket1=bucket_a,
-            bucket2=bucket_b,
-        )
-        return gamma
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        gamma, _ = csr_sec_nonctp_inter_bucket_correlation(
-            profile_id,
-            bucket1=bucket_a,
-            bucket2=bucket_b,
-        )
-        return gamma
-    raise UnsupportedRegulatoryFeatureError(
-        f"curvature inter-bucket correlation is unsupported for risk_class={risk_class.value}"
-    )
-
-
-def _curvature_intra_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
-    if risk_class is SbmRiskClass.GIRR:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_45_49")
-    if risk_class is SbmRiskClass.FX:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_86")
-    if risk_class is SbmRiskClass.EQUITY:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_78", "basel_mar21_79")
-    if risk_class is SbmRiskClass.COMMODITY:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_83")
-    if risk_class is SbmRiskClass.CSR_NONSEC:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_54", "basel_mar21_55")
-    if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_58")
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_67", "basel_mar21_68")
-    return _MAR21_CURVATURE_INTRA_CITATION
-
-
-def _curvature_inter_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
-    if risk_class is SbmRiskClass.GIRR:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_50")
-    if risk_class is SbmRiskClass.FX:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_89")
-    if risk_class is SbmRiskClass.EQUITY:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_80")
-    if risk_class is SbmRiskClass.COMMODITY:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_85")
-    if risk_class in {SbmRiskClass.CSR_NONSEC, SbmRiskClass.CSR_SEC_CTP}:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_57")
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_70")
-    return _MAR21_CURVATURE_INTER_CITATION
-
-
-def _bucket_sort_key(risk_class: SbmRiskClass, bucket_id: str) -> tuple[int, str]:
-    if risk_class is SbmRiskClass.EQUITY:
-        return (_require_equity_bucket_number(bucket_id), bucket_id)
-    if risk_class is SbmRiskClass.COMMODITY:
-        return (_require_commodity_bucket_number(bucket_id), bucket_id)
-    try:
-        return (int(bucket_id), bucket_id)
-    except ValueError:
-        return (10_000, bucket_id)
-
-
-def _required_factor_qualifier(factor: _CurvatureFactor) -> str:
-    if factor.qualifier is None or not factor.qualifier.strip():
-        raise SbmInputError("curvature factor qualifier is required", field="qualifier")
-    return factor.qualifier.strip()
 
 
 def _curvature_weighted_qualifier(
