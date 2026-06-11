@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import pytest
+
+import frtb_rrao.capital as capital_module
 from frtb_rrao import (
     RraoClassification,
     RraoEvidenceType,
@@ -84,6 +87,44 @@ def test_build_rrao_capital_lines_applies_exotic_and_other_weights() -> None:
     assert lines[1].add_on == 2_000.0
     assert lines[1].citations == ("us_npr_211_a_2", "us_npr_211_c_1_ii")
     assert included_rrao_total(lines) == 12_000.0
+
+
+def test_build_rrao_capital_lines_uses_batch_capital_kernel(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[object] = []
+    original_batch_lines = capital_module._batch_capital_lines_from_validated
+
+    def counting_batch_lines(*args: object, **kwargs: object) -> object:
+        calls.append((args, kwargs))
+        return original_batch_lines(*args, **kwargs)
+
+    monkeypatch.setattr(capital_module, "_batch_capital_lines_from_validated", counting_batch_lines)
+
+    lines = build_rrao_capital_lines(
+        (
+            sample_position(
+                position_id="pos-001",
+                source_row_id="row-001",
+                gross_effective_notional=1_000_000.0,
+                evidence_type=RraoEvidenceType.EXOTIC_UNDERLYING,
+                evidence_label="weather derivative",
+                classification_hint=RraoClassification.EXOTIC,
+            ),
+            sample_position(
+                position_id="pos-002",
+                source_row_id="row-002",
+                gross_effective_notional=2_000_000.0,
+                evidence_type=RraoEvidenceType.GAP_RISK,
+                evidence_label="gap risk",
+                classification_hint=RraoClassification.OTHER_RESIDUAL_RISK,
+            ),
+        ),
+        profile=RraoRegulatoryProfile.US_NPR_2_0,
+    )
+
+    assert len(calls) == 1
+    assert [line.position_id for line in lines] == ["pos-001", "pos-002"]
 
 
 def test_excluded_lines_have_zero_add_on_and_remain_visible() -> None:

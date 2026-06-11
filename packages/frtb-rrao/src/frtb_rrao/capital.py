@@ -11,19 +11,14 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from frtb_rrao._citations import merged_citation_ids
-from frtb_rrao.classification import _classify_validated_rrao_positions
 from frtb_rrao.data_models import (
     RraoCapitalLine,
-    RraoClassification,
-    RraoClassificationDecision,
     RraoPosition,
     RraoRegulatoryProfile,
     RraoSubtotal,
 )
-from frtb_rrao.reference_data import risk_weight_rule_for
 from frtb_rrao.regimes import get_rrao_rule_profile
-from frtb_rrao.validation import RraoInputError, validate_rrao_positions
+from frtb_rrao.validation import validate_rrao_positions
 
 _SUBTOTAL_TYPE_ORDER = ("classification", "evidence_type", "desk_id", "legal_entity")
 
@@ -56,24 +51,23 @@ def build_rrao_capital_lines(
 
     rule_profile = get_rrao_rule_profile(profile)
     validated = validate_rrao_positions(positions)
-    return _build_rrao_capital_lines_from_validated(validated, profile=rule_profile.profile)
+    return _batch_capital_lines_from_validated(validated, profile=rule_profile.profile)
 
 
-def _build_rrao_capital_lines_from_validated(
+def _batch_capital_lines_from_validated(
     positions: tuple[RraoPosition, ...],
     *,
     profile: RraoRegulatoryProfile,
 ) -> tuple[RraoCapitalLine, ...]:
-    """Build line add-ons from an already validated tuple of RRAO positions."""
+    """Build line add-ons from the canonical batch capital kernel."""
 
-    decisions = _classify_validated_rrao_positions(positions, profile=profile)
-    if len(positions) != len(decisions):
-        raise RraoInputError("classification decision count does not match positions")
+    if not positions:
+        return ()
+    from frtb_rrao.batch import _capital_lines_from_batch, build_rrao_batch_from_positions
 
-    return tuple(
-        _capital_line_for_position(position, decision, profile=profile)
-        for position, decision in zip(positions, decisions, strict=True)
-    )
+    batch = build_rrao_batch_from_positions(positions)
+    lines, _, _, _ = _capital_lines_from_batch(batch, profile=profile)
+    return lines
 
 
 def build_rrao_subtotals(lines: Iterable[RraoCapitalLine]) -> tuple[RraoSubtotal, ...]:
@@ -130,41 +124,6 @@ def included_rrao_total(lines: Iterable[RraoCapitalLine]) -> float:
     """
 
     return sum(line.add_on for line in lines if not line.is_excluded)
-
-
-def _capital_line_for_position(
-    position: RraoPosition,
-    decision: RraoClassificationDecision,
-    *,
-    profile: RraoRegulatoryProfile | str,
-) -> RraoCapitalLine:
-    risk_weight_rule = risk_weight_rule_for(profile, decision.risk_weight_key)
-    if risk_weight_rule.classification is not decision.classification:
-        raise RraoInputError(
-            "risk-weight classification does not match decision",
-            field="risk_weight_key",
-            position_id=position.position_id,
-        )
-
-    add_on = position.gross_effective_notional * risk_weight_rule.risk_weight
-    is_excluded = decision.classification is RraoClassification.EXCLUDED
-    return RraoCapitalLine(
-        position_id=position.position_id,
-        classification=decision.classification,
-        evidence_type=decision.evidence_type,
-        gross_effective_notional=position.gross_effective_notional,
-        risk_weight=risk_weight_rule.risk_weight,
-        add_on=add_on,
-        currency=position.currency,
-        is_excluded=is_excluded,
-        reason_code=decision.reason_code,
-        citations=merged_citation_ids(decision.citations, (risk_weight_rule.citation_id,)),
-        desk_id=position.desk_id,
-        legal_entity=position.legal_entity,
-        source_row_id=position.source_row_id,
-        exclusion_reason=decision.exclusion_reason,
-        exclusion_evidence_id=decision.exclusion_evidence_id,
-    )
 
 
 def _append_subtotal_line(
