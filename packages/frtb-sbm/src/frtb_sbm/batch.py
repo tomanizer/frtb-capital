@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
-from types import MappingProxyType
 from typing import Any, cast
 
 import numpy as np
@@ -868,176 +867,6 @@ def build_csr_sec_ctp_delta_batch_from_sensitivities(
     )
 
 
-def build_sbm_batch_from_columns(
-    *,
-    expected_risk_class: SbmRiskClass | str,
-    expected_risk_measure: SbmRiskMeasure | str,
-    sensitivity_ids: Iterable[object],
-    source_row_ids: Iterable[object],
-    desk_ids: Iterable[object],
-    legal_entities: Iterable[object],
-    risk_classes: Iterable[object],
-    risk_measures: Iterable[object],
-    buckets: Iterable[object],
-    risk_factors: Iterable[object],
-    amounts: Iterable[object],
-    amount_currencies: Iterable[object],
-    sign_conventions: Iterable[object],
-    tenors: Iterable[object],
-    lineage_source_systems: Iterable[object],
-    lineage_source_files: Iterable[object],
-    source_hash: str | None = None,
-    handoff_hash: str | None = None,
-    diagnostics: Sequence[Mapping[str, object]] = (),
-    position_ids: Iterable[object] | None = None,
-    qualifiers: Iterable[object] | None = None,
-    option_tenors: Iterable[object] | None = None,
-    liquidity_horizon_days: Iterable[object] | None = None,
-    maturities: Iterable[object] | None = None,
-    up_shock_amounts: Iterable[object] | None = None,
-    down_shock_amounts: Iterable[object] | None = None,
-    source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
-    mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
-    copy_arrays: bool = True,
-) -> SbmSensitivityBatch:
-    """Build a homogeneous SBM batch from columnar arrays owned by an adapter.
-    Parameters
-    ----------
-    expected_risk_class, expected_risk_measure, sensitivity_ids, source_row_ids, desk_ids,
-    legal_entities, risk_classes, risk_measures, buckets, risk_factors, amounts,
-    amount_currencies, sign_conventions, tenors, lineage_source_systems, lineage_source_files,
-    source_hash, handoff_hash, diagnostics, position_ids, qualifiers, option_tenors,
-    liquidity_horizon_days, maturities, up_shock_amounts, down_shock_amounts, source_column_maps,
-    mapping_citation_ids, copy_arrays :
-        See function signature for types and defaults.
-
-    Returns
-    -------
-    SbmSensitivityBatch
-    """
-
-    resolved_risk_class = coerce_risk_class(expected_risk_class)
-    resolved_risk_measure = coerce_risk_measure(expected_risk_measure)
-    arrays = {
-        "sensitivity_ids": _object_array(sensitivity_ids, "sensitivity_id", copy=copy_arrays),
-        "source_row_ids": _object_array(source_row_ids, "source_row_id", copy=copy_arrays),
-        "desk_ids": _object_array(desk_ids, "desk_id", copy=copy_arrays),
-        "legal_entities": _object_array(legal_entities, "legal_entity", copy=copy_arrays),
-        "risk_classes": _object_array(risk_classes, "risk_class", copy=copy_arrays),
-        "risk_measures": _object_array(risk_measures, "risk_measure", copy=copy_arrays),
-        "buckets": _object_array(buckets, "bucket", copy=copy_arrays),
-        "risk_factors": _object_array(risk_factors, "risk_factor", copy=copy_arrays),
-        "amount_currencies": _object_array(
-            amount_currencies,
-            "amount_currency",
-            copy=copy_arrays,
-        ),
-        "sign_conventions": _object_array(
-            sign_conventions,
-            "sign_convention",
-            copy=copy_arrays,
-        ),
-        "tenors": _object_array(tenors, "tenor", copy=copy_arrays),
-        "lineage_source_systems": _object_array(
-            lineage_source_systems,
-            "lineage_source_system",
-            copy=copy_arrays,
-        ),
-        "lineage_source_files": _object_array(
-            lineage_source_files,
-            "lineage_source_file",
-            copy=copy_arrays,
-        ),
-    }
-    amount_array = _float_array(amounts, "amount", copy=copy_arrays)
-    row_count = int(amount_array.shape[0])
-    _require_common_length(row_count, arrays)
-    _require_non_empty_length(row_count)
-    arrays["risk_classes"] = _normalise_risk_class_array(
-        arrays["risk_classes"],
-        sensitivity_ids=arrays["sensitivity_ids"],
-    )
-    arrays["risk_measures"] = _normalise_risk_measure_array(
-        arrays["risk_measures"],
-        sensitivity_ids=arrays["sensitivity_ids"],
-    )
-    arrays["sign_conventions"] = _normalise_sign_convention_array(
-        arrays["sign_conventions"],
-        sensitivity_ids=arrays["sensitivity_ids"],
-    )
-
-    optional = {
-        "position_ids": _optional_object_array(position_ids, "position_id", row_count, copy_arrays),
-        "qualifiers": _optional_object_array(qualifiers, "qualifier", row_count, copy_arrays),
-        "option_tenors": _optional_object_array(
-            option_tenors,
-            "option_tenor",
-            row_count,
-            copy_arrays,
-        ),
-        "liquidity_horizon_days": _optional_object_array(
-            liquidity_horizon_days,
-            "liquidity_horizon_days",
-            row_count,
-            copy_arrays,
-        ),
-        "maturities": _optional_object_array(maturities, "maturity", row_count, copy_arrays),
-        "up_shock_amounts": _optional_object_array(
-            up_shock_amounts,
-            "up_shock_amount",
-            row_count,
-            copy_arrays,
-        ),
-        "down_shock_amounts": _optional_object_array(
-            down_shock_amounts,
-            "down_shock_amount",
-            row_count,
-            copy_arrays,
-        ),
-    }
-
-    _validate_source_column_maps(source_column_maps, row_count)
-    _validate_mapping_citations(mapping_citation_ids, row_count)
-    _validate_homogeneous_batch_arrays(
-        arrays,
-        amount_array,
-        expected_risk_class=resolved_risk_class,
-        expected_risk_measure=resolved_risk_measure,
-        optional_arrays=optional,
-    )
-    diagnostic_payloads = tuple(MappingProxyType(dict(item)) for item in diagnostics)
-    batch_without_hash = SbmSensitivityBatch(
-        sensitivity_ids=arrays["sensitivity_ids"],
-        source_row_ids=arrays["source_row_ids"],
-        desk_ids=arrays["desk_ids"],
-        legal_entities=arrays["legal_entities"],
-        risk_classes=arrays["risk_classes"],
-        risk_measures=arrays["risk_measures"],
-        buckets=arrays["buckets"],
-        risk_factors=arrays["risk_factors"],
-        amounts=amount_array,
-        amount_currencies=arrays["amount_currencies"],
-        sign_conventions=arrays["sign_conventions"],
-        tenors=arrays["tenors"],
-        lineage_source_systems=arrays["lineage_source_systems"],
-        lineage_source_files=arrays["lineage_source_files"],
-        input_hash="",
-        source_hash=source_hash,
-        handoff_hash=handoff_hash,
-        diagnostics=diagnostic_payloads,
-        position_ids=optional["position_ids"],
-        qualifiers=optional["qualifiers"],
-        option_tenors=optional["option_tenors"],
-        liquidity_horizon_days=optional["liquidity_horizon_days"],
-        maturities=optional["maturities"],
-        up_shock_amounts=optional["up_shock_amounts"],
-        down_shock_amounts=optional["down_shock_amounts"],
-        source_column_maps=source_column_maps,
-        mapping_citation_ids=mapping_citation_ids,
-    )
-    return replace(batch_without_hash, input_hash=input_hash_for_sbm_batch(batch_without_hash))
-
-
 def build_girr_delta_batch_from_columns(
     *,
     sensitivity_ids: Iterable[object],
@@ -1758,6 +1587,22 @@ def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
     return _hash_payload({"sensitivities": list(_sensitivity_payloads_from_batch(batch))})
 
 
+def input_hash_for_batch(batch: SbmSensitivityBatch) -> str:
+    """Return the canonical row-equivalent input hash for an SBM batch.
+
+    Parameters
+    ----------
+    batch
+        Homogeneous SBM sensitivity batch.
+
+    Returns
+    -------
+    str
+    """
+
+    return input_hash_for_sbm_batch(batch)
+
+
 def input_hash_for_sbm_batches(batches: object) -> str:
     """Return the row-equivalent deterministic input hash for batch portfolios.
     Parameters
@@ -1849,195 +1694,6 @@ def concatenate_sbm_batches(batches: object) -> SbmSensitivityBatch:
             batch.accepted_row_dataclasses_materialized for batch in validated
         ),
     )
-
-
-def input_hash_for_girr_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a GIRR delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.GIRR,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="GIRR delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_girr_vega_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a GIRR vega batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.GIRR,
-        expected_risk_measure=SbmRiskMeasure.VEGA,
-        label="GIRR vega",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_girr_curvature_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a GIRR curvature batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.GIRR,
-        expected_risk_measure=SbmRiskMeasure.CURVATURE,
-        label="GIRR curvature",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_fx_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for an FX delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.FX,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="FX delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_equity_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for an equity delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.EQUITY,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="equity delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_commodity_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a commodity delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.COMMODITY,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="commodity delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_csr_nonsec_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a CSR non-sec delta batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.CSR_NONSEC,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="CSR non-securitisation delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_csr_sec_nonctp_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a CSR sec non-CTP batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.CSR_SEC_NONCTP,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="CSR securitisation non-CTP delta",
-    )
-    return input_hash_for_sbm_batch(batch)
-
-
-def input_hash_for_csr_sec_ctp_delta_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a CSR sec CTP batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    _require_batch_path(
-        batch,
-        expected_risk_class=SbmRiskClass.CSR_SEC_CTP,
-        expected_risk_measure=SbmRiskMeasure.DELTA,
-        label="CSR securitisation CTP delta",
-    )
-    return input_hash_for_sbm_batch(batch)
 
 
 def sorted_sbm_batch_indices(batch: SbmSensitivityBatch) -> npt.NDArray[np.int64]:
@@ -2952,6 +2608,11 @@ def _freeze_array(array: npt.NDArray[Any]) -> None:
     array.setflags(write=False)
 
 
+from frtb_sbm.adapters.sensitivities import (  # noqa: E402
+    build_sbm_batch,
+    build_sbm_batch_from_columns,
+)
+
 __all__ = [
     "SbmSensitivityBatch",
     "build_commodity_curvature_batch_from_sensitivities",
@@ -2984,19 +2645,12 @@ __all__ = [
     "build_girr_delta_batch_from_sensitivities",
     "build_girr_vega_batch_from_columns",
     "build_girr_vega_batch_from_sensitivities",
+    "build_sbm_batch",
     "build_sbm_batch_from_columns",
     "build_sbm_batch_from_sensitivities",
     "coerce_sbm_batch_sequence",
     "concatenate_sbm_batches",
-    "input_hash_for_commodity_delta_batch",
-    "input_hash_for_csr_nonsec_delta_batch",
-    "input_hash_for_csr_sec_ctp_delta_batch",
-    "input_hash_for_csr_sec_nonctp_delta_batch",
-    "input_hash_for_equity_delta_batch",
-    "input_hash_for_fx_delta_batch",
-    "input_hash_for_girr_curvature_batch",
-    "input_hash_for_girr_delta_batch",
-    "input_hash_for_girr_vega_batch",
+    "input_hash_for_batch",
     "input_hash_for_sbm_batch",
     "input_hash_for_sbm_batches",
     "sorted_commodity_delta_batch_indices",

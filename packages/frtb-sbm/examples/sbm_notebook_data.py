@@ -22,29 +22,7 @@ from frtb_sbm import (
     SbmSignConvention,
     SbmSourceLineage,
 )
-from frtb_sbm.arrow_batch import (
-    normalize_commodity_curvature_arrow_table,
-    normalize_commodity_delta_arrow_table,
-    normalize_commodity_vega_arrow_table,
-    normalize_csr_nonsec_curvature_arrow_table,
-    normalize_csr_nonsec_delta_arrow_table,
-    normalize_csr_nonsec_vega_arrow_table,
-    normalize_csr_sec_ctp_curvature_arrow_table,
-    normalize_csr_sec_ctp_delta_arrow_table,
-    normalize_csr_sec_ctp_vega_arrow_table,
-    normalize_csr_sec_nonctp_curvature_arrow_table,
-    normalize_csr_sec_nonctp_delta_arrow_table,
-    normalize_csr_sec_nonctp_vega_arrow_table,
-    normalize_equity_curvature_arrow_table,
-    normalize_equity_delta_arrow_table,
-    normalize_equity_vega_arrow_table,
-    normalize_fx_curvature_arrow_table,
-    normalize_fx_delta_arrow_table,
-    normalize_fx_vega_arrow_table,
-    normalize_girr_curvature_arrow_table,
-    normalize_girr_delta_arrow_table,
-    normalize_girr_vega_arrow_table,
-)
+from frtb_sbm.adapters.arrow import normalize_sbm_arrow_table
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = PACKAGE_ROOT / "tests" / "fixtures"
@@ -147,35 +125,30 @@ SUPPORTED_PATHS: tuple[PathKey, ...] = (
 
 
 NORMALIZERS: dict[PathKey, NormalizeFn] = {
-    (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA): normalize_girr_delta_arrow_table,
-    (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA): normalize_girr_vega_arrow_table,
-    (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE): normalize_girr_curvature_arrow_table,
-    (SbmRiskClass.FX, SbmRiskMeasure.DELTA): normalize_fx_delta_arrow_table,
-    (SbmRiskClass.FX, SbmRiskMeasure.VEGA): normalize_fx_vega_arrow_table,
-    (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE): normalize_fx_curvature_arrow_table,
-    (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA): normalize_equity_delta_arrow_table,
-    (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA): normalize_equity_vega_arrow_table,
-    (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE): normalize_equity_curvature_arrow_table,
-    (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA): normalize_commodity_delta_arrow_table,
-    (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA): normalize_commodity_vega_arrow_table,
-    (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE): normalize_commodity_curvature_arrow_table,
-    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA): normalize_csr_nonsec_delta_arrow_table,
-    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA): normalize_csr_nonsec_vega_arrow_table,
-    (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE): (
-        normalize_csr_nonsec_curvature_arrow_table
-    ),
-    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA): (
-        normalize_csr_sec_nonctp_delta_arrow_table
-    ),
-    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA): (normalize_csr_sec_nonctp_vega_arrow_table),
-    (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE): (
-        normalize_csr_sec_nonctp_curvature_arrow_table
-    ),
-    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA): normalize_csr_sec_ctp_delta_arrow_table,
-    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA): normalize_csr_sec_ctp_vega_arrow_table,
-    (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE): (
-        normalize_csr_sec_ctp_curvature_arrow_table
-    ),
+    path: (lambda table, _path=path, **kwargs: normalize_sbm_arrow_table(table, *_path, **kwargs))
+    for path in (
+        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE),
+    )
 }
 
 

@@ -28,7 +28,7 @@ from frtb_common import (
     normalize_crif_records,
 )
 
-from frtb_sbm.arrow_batch import normalize_girr_delta_arrow_table
+from frtb_sbm.adapters.arrow import normalize_sbm_arrow_table
 from frtb_sbm.csr_nonsec_reference_data import CSR_BOND_RISK_FACTOR, CSR_CDS_RISK_FACTOR
 from frtb_sbm.csr_sec_nonctp_reference_data import (
     CSR_SEC_BOND_RISK_FACTOR,
@@ -416,8 +416,10 @@ def _girr_delta_handoff_from_normalized_crif(
             ),
         }
     )
-    return normalize_girr_delta_arrow_table(
+    return normalize_sbm_arrow_table(
         girr_table,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.DELTA,
         diagnostics=crif_handoff.diagnostics,
         metadata=crif_handoff.metadata,
         rejected=crif_handoff.rejected,

@@ -18,19 +18,17 @@ from frtb_sbm import (
     calculate_sbm_capital,
 )
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
-from frtb_sbm.arrow_batch import (
+from frtb_sbm.capital import _build_girr_delta_intra_bucket_correlation_matrix
+from sbm_registry_helpers import (
     calculate_sbm_capital_from_commodity_delta_arrow,
-    calculate_sbm_capital_from_csr_nonsec_delta_arrow,
     calculate_sbm_capital_from_equity_delta_arrow,
     calculate_sbm_capital_from_fx_delta_arrow,
-    calculate_sbm_capital_from_girr_vega_arrow,
+    calculate_sbm_capital_from_path_arrow,
     normalize_commodity_delta_arrow_table,
-    normalize_csr_nonsec_delta_arrow_table,
     normalize_equity_delta_arrow_table,
     normalize_fx_delta_arrow_table,
-    normalize_girr_vega_arrow_table,
+    normalize_sbm_path,
 )
-from frtb_sbm.capital import _build_girr_delta_intra_bucket_correlation_matrix
 
 
 def _large_girr_delta_portfolio(size: int) -> tuple[SbmSensitivity, ...]:
@@ -132,11 +130,13 @@ def test_girr_vega_arrow_batch_phase_benchmark(
     table = _large_girr_vega_arrow_table(row_count)
 
     ingestion_started = time.perf_counter()
-    handoff = normalize_girr_vega_arrow_table(table)
+    handoff = normalize_sbm_path(SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, table)
     ingestion_elapsed = time.perf_counter() - ingestion_started
 
     compute_started = time.perf_counter()
-    result = calculate_sbm_capital_from_girr_vega_arrow(handoff, context=context)
+    result = calculate_sbm_capital_from_path_arrow(
+        SbmRiskClass.GIRR, SbmRiskMeasure.VEGA, handoff, context=context
+    )
     compute_elapsed = time.perf_counter() - compute_started
 
     record_property("girr_vega_raw_row_count", row_count)
@@ -216,11 +216,13 @@ def test_csr_delta_arrow_batch_phase_benchmark(
     table = _large_csr_nonsec_delta_arrow_table(row_count)
 
     ingestion_started = time.perf_counter()
-    handoff = normalize_csr_nonsec_delta_arrow_table(table)
+    handoff = normalize_sbm_path(SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA, table)
     ingestion_elapsed = time.perf_counter() - ingestion_started
 
     compute_started = time.perf_counter()
-    result = calculate_sbm_capital_from_csr_nonsec_delta_arrow(handoff, context=context)
+    result = calculate_sbm_capital_from_path_arrow(
+        SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA, handoff, context=context
+    )
     compute_elapsed = time.perf_counter() - compute_started
 
     record_property("csr_nonsec_delta_raw_row_count", row_count)

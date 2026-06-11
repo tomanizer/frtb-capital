@@ -23,20 +23,20 @@ from frtb_sbm import (
     build_girr_delta_batch_from_sensitivities,
     build_sbm_batch_from_columns,
     calculate_sbm_capital,
-    calculate_sbm_capital_from_girr_delta_batch,
-    input_hash_for_sbm_batch,
+    calculate_sbm_capital_from_batch,
+    input_hash_for_batch,
     input_hash_for_sensitivities,
-)
-from frtb_sbm.arrow_batch import (
-    build_girr_delta_batch_from_arrow,
-    calculate_sbm_capital_from_girr_delta_arrow,
-    normalize_girr_delta_arrow_table,
 )
 from frtb_sbm.factor_grid import (
     net_girr_delta_sensitivity_batch,
     net_girr_delta_weighted_sensitivities,
 )
 from frtb_sbm.weighted_sensitivity import weight_girr_delta_sensitivities
+from sbm_registry_helpers import (
+    build_sbm_path_from_arrow,
+    calculate_sbm_capital_from_path_arrow,
+    normalize_sbm_path,
+)
 
 
 def _context() -> SbmCalculationContext:
@@ -141,7 +141,7 @@ def test_row_builder_produces_immutable_numpy_batch_and_row_equivalent_hash() ->
     assert isinstance(batch, SbmSensitivityBatch)
     assert batch.row_count == len(sensitivities)
     assert batch.input_hash == input_hash_for_sensitivities(sensitivities)
-    assert input_hash_for_sbm_batch(batch) == input_hash_for_sensitivities(sensitivities)
+    assert input_hash_for_batch(batch) == input_hash_for_sensitivities(sensitivities)
     assert batch.risk_class is SbmRiskClass.GIRR
     assert batch.risk_measure is SbmRiskMeasure.DELTA
     assert isinstance(batch.amounts, np.ndarray)
@@ -241,13 +241,15 @@ def test_arrow_batch_batch_matches_row_batch_and_preserves_handoff_metadata() ->
         message="synthetic test handoff",
         severity=DiagnosticSeverity.INFO,
     )
-    handoff = normalize_girr_delta_arrow_table(
+    handoff = normalize_sbm_path(
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.DELTA,
         _arrow_table(sensitivities),
         source_hash=source_hash,
         diagnostics=(diagnostic,),
     )
 
-    arrow_batch = build_girr_delta_batch_from_arrow(handoff)
+    arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, handoff)
 
     assert arrow_batch.input_hash == row_batch.input_hash
     assert arrow_batch.source_hash == source_hash
@@ -261,9 +263,11 @@ def test_arrow_batch_batch_matches_row_batch_and_preserves_handoff_metadata() ->
 
 def test_arrow_batch_uses_zero_copy_float64_amount_column_when_possible() -> None:
     sensitivities = _sensitivities()
-    handoff = normalize_girr_delta_arrow_table(_arrow_table(sensitivities))
+    handoff = normalize_sbm_path(
+        SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, _arrow_table(sensitivities)
+    )
 
-    arrow_batch = build_girr_delta_batch_from_arrow(handoff)
+    arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, handoff)
 
     amount_view = handoff.accepted.column("amount").chunk(0).to_numpy(zero_copy_only=True)
     assert np.shares_memory(arrow_batch.amounts, amount_view)
@@ -273,7 +277,9 @@ def test_arrow_batch_uses_zero_copy_float64_amount_column_when_possible() -> Non
 def test_sbm_handoff_wraps_arrow_object_conversion_errors(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    handoff = normalize_girr_delta_arrow_table(_arrow_table(_sensitivities()))
+    handoff = normalize_sbm_path(
+        SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, _arrow_table(_sensitivities())
+    )
 
     def fail_arrow_object_array(_column: pa.ChunkedArray) -> NoReturn:
         raise pa.ArrowInvalid("forced conversion failure")
@@ -281,7 +287,7 @@ def test_sbm_handoff_wraps_arrow_object_conversion_errors(
     monkeypatch.setattr(arrow_conversion_module, "arrow_object_array", fail_arrow_object_array)
 
     with pytest.raises(SbmInputError, match=r"forced conversion failure .*sensitivity_id") as exc:
-        build_girr_delta_batch_from_arrow(handoff)
+        build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, handoff)
 
     assert exc.value.field == "sensitivity_id"
     assert isinstance(exc.value.__cause__, pa.ArrowInvalid)
@@ -297,7 +303,11 @@ def test_arrow_batch_handles_chunked_dictionary_text_columns() -> None:
     )
     row_batch = build_girr_delta_batch_from_sensitivities(sensitivities)
 
-    arrow_batch = build_girr_delta_batch_from_arrow(normalize_girr_delta_arrow_table(table))
+    arrow_batch = build_sbm_path_from_arrow(
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.DELTA,
+        normalize_sbm_path(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, table),
+    )
 
     assert table.column("risk_class").num_chunks == 2
     assert arrow_batch.input_hash == row_batch.input_hash
@@ -311,10 +321,10 @@ def test_arrow_batch_rejects_non_finite_optional_float_columns() -> None:
         "up_shock_amount",
         pa.array([float("nan")], type=pa.float64()),
     )
-    handoff = normalize_girr_delta_arrow_table(table)
+    handoff = normalize_sbm_path(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, table)
 
     with pytest.raises(SbmInputError, match="value must be finite"):
-        build_girr_delta_batch_from_arrow(handoff)
+        build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, handoff)
 
 
 def test_column_builder_rejects_malformed_source_column_maps() -> None:
@@ -340,12 +350,16 @@ def test_column_builder_rejects_string_mapping_citation_rows() -> None:
 def test_row_and_arrow_calculation_paths_produce_same_girr_delta_capital() -> None:
     sensitivities = _sensitivities()
     context = _context()
-    handoff = normalize_girr_delta_arrow_table(_arrow_table(sensitivities))
-    arrow_batch = build_girr_delta_batch_from_arrow(handoff)
+    handoff = normalize_sbm_path(
+        SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, _arrow_table(sensitivities)
+    )
+    arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, handoff)
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
-    batch_result = calculate_sbm_capital_from_girr_delta_batch(arrow_batch, context=context)
-    handoff_result = calculate_sbm_capital_from_girr_delta_arrow(handoff, context=context)
+    batch_result = calculate_sbm_capital_from_batch(arrow_batch, context=context)
+    handoff_result = calculate_sbm_capital_from_path_arrow(
+        SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, handoff, context=context
+    )
 
     assert batch_result.total_capital == pytest.approx(row_result.total_capital)
     assert handoff_result.total_capital == pytest.approx(row_result.total_capital)
@@ -359,8 +373,10 @@ def test_row_and_arrow_calculation_paths_produce_same_girr_delta_capital() -> No
 
 def test_batch_factor_grid_converges_with_existing_row_factor_grid() -> None:
     sensitivities = _sensitivities()
-    batch = build_girr_delta_batch_from_arrow(
-        normalize_girr_delta_arrow_table(_arrow_table(sensitivities))
+    batch = build_sbm_path_from_arrow(
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.DELTA,
+        normalize_sbm_path(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, _arrow_table(sensitivities)),
     )
     row_weighted = weight_girr_delta_sensitivities(
         sensitivities,

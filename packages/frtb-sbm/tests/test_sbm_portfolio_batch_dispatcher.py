@@ -22,8 +22,10 @@ from frtb_sbm import (
     input_hash_for_sensitivities,
 )
 from frtb_sbm.arrow_batch import (
-    build_fx_delta_batch_from_arrow,
     calculate_sbm_portfolio_capital_from_arrow_tables,
+)
+from sbm_registry_helpers import (
+    build_sbm_path_from_arrow,
     normalize_commodity_curvature_arrow_table,
     normalize_commodity_delta_arrow_table,
     normalize_commodity_vega_arrow_table,
@@ -45,6 +47,7 @@ from frtb_sbm.arrow_batch import (
     normalize_girr_curvature_arrow_table,
     normalize_girr_delta_arrow_table,
     normalize_girr_vega_arrow_table,
+    normalize_sbm_path,
 )
 
 NormalizeFn = Callable[..., NormalizedArrowTable]
@@ -144,10 +147,14 @@ def test_batch_dispatcher_concatenates_split_same_path_batches_before_capital() 
         sample_sensitivity(1, risk_class=SbmRiskClass.FX, risk_measure=SbmRiskMeasure.DELTA),
         sample_sensitivity(2, risk_class=SbmRiskClass.FX, risk_measure=SbmRiskMeasure.DELTA),
     )
-    handoff_1 = normalize_fx_delta_arrow_table(arrow_table((sensitivities[0],)))
-    handoff_2 = normalize_fx_delta_arrow_table(arrow_table((sensitivities[1],)))
-    batch_1 = build_fx_delta_batch_from_arrow(handoff_1)
-    batch_2 = build_fx_delta_batch_from_arrow(handoff_2)
+    handoff_1 = normalize_sbm_path(
+        SbmRiskClass.FX, SbmRiskMeasure.DELTA, arrow_table((sensitivities[0],))
+    )
+    handoff_2 = normalize_sbm_path(
+        SbmRiskClass.FX, SbmRiskMeasure.DELTA, arrow_table((sensitivities[1],))
+    )
+    batch_1 = build_sbm_path_from_arrow(SbmRiskClass.FX, SbmRiskMeasure.DELTA, handoff_1)
+    batch_2 = build_sbm_path_from_arrow(SbmRiskClass.FX, SbmRiskMeasure.DELTA, handoff_2)
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     calculation = calculate_sbm_portfolio_capital_from_batches((batch_1, batch_2), context=context)
@@ -185,7 +192,9 @@ def test_arrow_table_dispatcher_rejects_mixed_path_table() -> None:
         sample_sensitivity(1, risk_class=SbmRiskClass.GIRR, risk_measure=SbmRiskMeasure.DELTA),
         fx_row,
     )
-    normalized_table = normalize_girr_delta_arrow_table(arrow_table(mixed_rows))
+    normalized_table = normalize_sbm_path(
+        SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, arrow_table(mixed_rows)
+    )
 
     with pytest.raises(
         SbmInputError,
@@ -207,7 +216,9 @@ def test_batch_dispatcher_reports_batch_field_for_invalid_batch_inputs() -> None
 
 
 def test_batch_dispatcher_fails_closed_for_unsupported_profile() -> None:
-    handoff = normalize_girr_delta_arrow_table(
+    handoff = normalize_sbm_path(
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.DELTA,
         arrow_table(
             (
                 sample_sensitivity(
@@ -216,7 +227,7 @@ def test_batch_dispatcher_fails_closed_for_unsupported_profile() -> None:
                     risk_measure=SbmRiskMeasure.DELTA,
                 ),
             )
-        )
+        ),
     )
     context = SbmCalculationContext(
         run_id="sbm-portfolio-dispatch-unsupported",

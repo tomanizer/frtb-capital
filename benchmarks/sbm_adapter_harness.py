@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any
 
 import pyarrow as pa
-from frtb_common import NormalizedArrowTable
 from frtb_sbm import (
     SbmCalculationContext,
     SbmCapitalResult,
@@ -33,74 +32,17 @@ from frtb_sbm import (
     SbmSourceLineage,
     WeightedSensitivity,
     calculate_sbm_capital,
-    calculate_sbm_capital_from_commodity_curvature_batch,
-    calculate_sbm_capital_from_commodity_delta_batch,
-    calculate_sbm_capital_from_commodity_vega_batch,
-    calculate_sbm_capital_from_csr_nonsec_curvature_batch,
-    calculate_sbm_capital_from_csr_nonsec_delta_batch,
-    calculate_sbm_capital_from_csr_nonsec_vega_batch,
-    calculate_sbm_capital_from_csr_sec_ctp_curvature_batch,
-    calculate_sbm_capital_from_csr_sec_ctp_delta_batch,
-    calculate_sbm_capital_from_csr_sec_ctp_vega_batch,
-    calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch,
-    calculate_sbm_capital_from_csr_sec_nonctp_delta_batch,
-    calculate_sbm_capital_from_csr_sec_nonctp_vega_batch,
-    calculate_sbm_capital_from_equity_curvature_batch,
-    calculate_sbm_capital_from_equity_delta_batch,
-    calculate_sbm_capital_from_equity_vega_batch,
-    calculate_sbm_capital_from_fx_curvature_batch,
-    calculate_sbm_capital_from_fx_delta_batch,
-    calculate_sbm_capital_from_fx_vega_batch,
-    calculate_sbm_capital_from_girr_curvature_batch,
-    calculate_sbm_capital_from_girr_vega_batch,
+    calculate_sbm_capital_from_batch,
     curvature_worst_branch,
     select_girr_curvature_branches_from_batch,
     serialize_sbm_result,
     validate_curvature_sensitivities,
 )
-from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
-from frtb_sbm.arrow_batch import (
-    build_commodity_curvature_batch_from_arrow,
-    build_commodity_delta_batch_from_arrow,
-    build_commodity_vega_batch_from_arrow,
-    build_csr_nonsec_curvature_batch_from_arrow,
-    build_csr_nonsec_delta_batch_from_arrow,
-    build_csr_nonsec_vega_batch_from_arrow,
-    build_csr_sec_ctp_curvature_batch_from_arrow,
-    build_csr_sec_ctp_delta_batch_from_arrow,
-    build_csr_sec_ctp_vega_batch_from_arrow,
-    build_csr_sec_nonctp_curvature_batch_from_arrow,
-    build_csr_sec_nonctp_delta_batch_from_arrow,
-    build_csr_sec_nonctp_vega_batch_from_arrow,
-    build_equity_curvature_batch_from_arrow,
-    build_equity_delta_batch_from_arrow,
-    build_equity_vega_batch_from_arrow,
-    build_fx_curvature_batch_from_arrow,
-    build_fx_delta_batch_from_arrow,
-    build_fx_vega_batch_from_arrow,
-    build_girr_curvature_batch_from_arrow,
-    build_girr_vega_batch_from_arrow,
-    normalize_commodity_curvature_arrow_table,
-    normalize_commodity_delta_arrow_table,
-    normalize_commodity_vega_arrow_table,
-    normalize_csr_nonsec_curvature_arrow_table,
-    normalize_csr_nonsec_delta_arrow_table,
-    normalize_csr_nonsec_vega_arrow_table,
-    normalize_csr_sec_ctp_curvature_arrow_table,
-    normalize_csr_sec_ctp_delta_arrow_table,
-    normalize_csr_sec_ctp_vega_arrow_table,
-    normalize_csr_sec_nonctp_curvature_arrow_table,
-    normalize_csr_sec_nonctp_delta_arrow_table,
-    normalize_csr_sec_nonctp_vega_arrow_table,
-    normalize_equity_curvature_arrow_table,
-    normalize_equity_delta_arrow_table,
-    normalize_equity_vega_arrow_table,
-    normalize_fx_curvature_arrow_table,
-    normalize_fx_delta_arrow_table,
-    normalize_fx_vega_arrow_table,
-    normalize_girr_curvature_arrow_table,
-    normalize_girr_vega_arrow_table,
+from frtb_sbm.adapters.arrow import (
+    build_sbm_batch_from_arrow,
+    normalize_sbm_arrow_table,
 )
+from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
 from frtb_sbm.capital import _build_girr_delta_intra_bucket_correlation_matrix
 
 DEFAULT_OUTPUT = Path("dist/benchmarks/frtb-sbm-batch-arrow.json")
@@ -113,10 +55,10 @@ TracedValue = tuple[Any, int]
 @dataclass(frozen=True)
 class CapitalPathSpec:
     label: str
+    risk_class: SbmRiskClass
+    risk_measure: SbmRiskMeasure
     row_factory: Callable[[int], SbmSensitivity]
     table_factory: Callable[[int], pa.Table]
-    normalize: Callable[[pa.Table], NormalizedArrowTable]
-    build_batch: Callable[[NormalizedArrowTable], SbmSensitivityBatch]
     calculate_batch: Callable[..., SbmCapitalResult]
     factor_axes: tuple[str, ...]
     desk_id: str
@@ -411,8 +353,12 @@ def _measure_arrow_batch_capital_path(
     context: SbmCalculationContext,
 ) -> tuple[SbmSensitivityBatch, SbmCapitalResult, float, float, float, float, float, str, str]:
     table, table_seconds = _timed(lambda: spec.table_factory(row_count))
-    handoff, normalize_seconds = _timed(lambda: spec.normalize(table))
-    batch, batch_seconds = _timed(lambda: spec.build_batch(handoff))
+    handoff, normalize_seconds = _timed(
+        lambda: normalize_sbm_arrow_table(table, spec.risk_class, spec.risk_measure)
+    )
+    batch, batch_seconds = _timed(
+        lambda: build_sbm_batch_from_arrow(handoff, spec.risk_class, spec.risk_measure)
+    )
     batch_result, batch_compute_seconds = _timed(
         lambda: spec.calculate_batch(batch, context=context)
     )
@@ -511,8 +457,20 @@ def _measure_arrow_batch_curvature_validation_path(
     profile_id: str,
 ) -> tuple[SbmSensitivityBatch, tuple[Any, ...], float, float, float, float]:
     table, table_seconds = _timed(lambda: _girr_curvature_table(row_count))
-    handoff, normalize_seconds = _timed(lambda: normalize_girr_curvature_arrow_table(table))
-    batch, batch_seconds = _timed(lambda: build_girr_curvature_batch_from_arrow(handoff))
+    handoff, normalize_seconds = _timed(
+        lambda: normalize_sbm_arrow_table(
+            table,
+            SbmRiskClass.GIRR,
+            SbmRiskMeasure.CURVATURE,
+        )
+    )
+    batch, batch_seconds = _timed(
+        lambda: build_sbm_batch_from_arrow(
+            handoff,
+            SbmRiskClass.GIRR,
+            SbmRiskMeasure.CURVATURE,
+        )
+    )
     branch_records, batch_branch_seconds = _timed(
         lambda: select_girr_curvature_branches_from_batch(batch, profile_id=profile_id)
     )
@@ -808,11 +766,11 @@ def _base_columns(size: int, *, prefix: str, desk_id: str, source_file: str) -> 
 def _girr_vega_spec() -> CapitalPathSpec:
     return CapitalPathSpec(
         label="girr_vega",
+        risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.VEGA,
         row_factory=_girr_vega_row,
         table_factory=_girr_vega_table,
-        normalize=normalize_girr_vega_arrow_table,
-        build_batch=build_girr_vega_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_girr_vega_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
         factor_axes=("buckets", "risk_factors", "tenors", "option_tenors"),
         desk_id="rates-desk",
     )
@@ -821,11 +779,11 @@ def _girr_vega_spec() -> CapitalPathSpec:
 def _fx_delta_spec() -> CapitalPathSpec:
     return CapitalPathSpec(
         label="fx_delta",
+        risk_class=SbmRiskClass.FX,
+        risk_measure=SbmRiskMeasure.DELTA,
         row_factory=_fx_delta_row,
         table_factory=_fx_delta_table,
-        normalize=normalize_fx_delta_arrow_table,
-        build_batch=build_fx_delta_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_fx_delta_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
         factor_axes=("buckets", "risk_factors"),
         desk_id="fx-desk",
     )
@@ -834,11 +792,11 @@ def _fx_delta_spec() -> CapitalPathSpec:
 def _equity_delta_spec() -> CapitalPathSpec:
     return CapitalPathSpec(
         label="equity_delta",
+        risk_class=SbmRiskClass.EQUITY,
+        risk_measure=SbmRiskMeasure.DELTA,
         row_factory=_equity_delta_row,
         table_factory=_equity_delta_table,
-        normalize=normalize_equity_delta_arrow_table,
-        build_batch=build_equity_delta_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_equity_delta_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
         factor_axes=("buckets", "qualifiers", "risk_factors"),
         desk_id="equity-desk",
     )
@@ -847,11 +805,11 @@ def _equity_delta_spec() -> CapitalPathSpec:
 def _commodity_delta_spec() -> CapitalPathSpec:
     return CapitalPathSpec(
         label="commodity_delta",
+        risk_class=SbmRiskClass.COMMODITY,
+        risk_measure=SbmRiskMeasure.DELTA,
         row_factory=_commodity_delta_row,
         table_factory=_commodity_delta_table,
-        normalize=normalize_commodity_delta_arrow_table,
-        build_batch=build_commodity_delta_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_commodity_delta_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
         factor_axes=("buckets", "risk_factors", "qualifiers", "tenors"),
         desk_id="commodity-desk",
     )
@@ -860,11 +818,11 @@ def _commodity_delta_spec() -> CapitalPathSpec:
 def _csr_nonsec_delta_spec() -> CapitalPathSpec:
     return CapitalPathSpec(
         label="csr_nonsec_delta",
+        risk_class=SbmRiskClass.CSR_NONSEC,
+        risk_measure=SbmRiskMeasure.DELTA,
         row_factory=_csr_nonsec_delta_row,
         table_factory=_csr_nonsec_delta_table,
-        normalize=normalize_csr_nonsec_delta_arrow_table,
-        build_batch=build_csr_nonsec_delta_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_csr_nonsec_delta_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
         factor_axes=("buckets", "qualifiers", "tenors", "risk_factors"),
         desk_id="credit-desk",
     )
@@ -873,11 +831,11 @@ def _csr_nonsec_delta_spec() -> CapitalPathSpec:
 def _csr_sec_nonctp_delta_spec() -> CapitalPathSpec:
     return CapitalPathSpec(
         label="csr_sec_nonctp_delta",
+        risk_class=SbmRiskClass.CSR_SEC_NONCTP,
+        risk_measure=SbmRiskMeasure.DELTA,
         row_factory=_csr_sec_nonctp_delta_row,
         table_factory=_csr_sec_nonctp_delta_table,
-        normalize=normalize_csr_sec_nonctp_delta_arrow_table,
-        build_batch=build_csr_sec_nonctp_delta_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_csr_sec_nonctp_delta_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
         factor_axes=("buckets", "qualifiers", "tenors", "risk_factors"),
         desk_id="credit-securitisation-desk",
     )
@@ -886,11 +844,11 @@ def _csr_sec_nonctp_delta_spec() -> CapitalPathSpec:
 def _csr_sec_ctp_delta_spec() -> CapitalPathSpec:
     return CapitalPathSpec(
         label="csr_sec_ctp_delta",
+        risk_class=SbmRiskClass.CSR_SEC_CTP,
+        risk_measure=SbmRiskMeasure.DELTA,
         row_factory=_csr_sec_ctp_delta_row,
         table_factory=_csr_sec_ctp_delta_table,
-        normalize=normalize_csr_sec_ctp_delta_arrow_table,
-        build_batch=build_csr_sec_ctp_delta_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_csr_sec_ctp_delta_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
         factor_axes=("buckets", "qualifiers", "tenors", "risk_factors"),
         desk_id="credit-ctp-desk",
     )
@@ -904,9 +862,7 @@ def _fx_vega_spec() -> CapitalPathSpec:
         buckets=("EUR", "GBP", "JPY", "AUD", "CAD", "CHF"),
         risk_factors=("EUR", "GBP", "JPY", "AUD", "CAD", "CHF"),
         qualifier_prefix=None,
-        normalize=normalize_fx_vega_arrow_table,
-        build_batch=build_fx_vega_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_fx_vega_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -918,9 +874,7 @@ def _equity_vega_spec() -> CapitalPathSpec:
         buckets=("5", "6", "7", "8"),
         risk_factors=("SPOT",),
         qualifier_prefix="ISS",
-        normalize=normalize_equity_vega_arrow_table,
-        build_batch=build_equity_vega_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_equity_vega_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -932,9 +886,7 @@ def _commodity_vega_spec() -> CapitalPathSpec:
         buckets=("2", "3", "5", "6", "10"),
         risk_factors=("WTI", "BRENT", "ALU", "GOLD", "POWER"),
         qualifier_prefix="LOC",
-        normalize=normalize_commodity_vega_arrow_table,
-        build_batch=build_commodity_vega_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_commodity_vega_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -946,9 +898,7 @@ def _csr_nonsec_vega_spec() -> CapitalPathSpec:
         buckets=("4", "5", "6", "12", "17"),
         risk_factors=("BOND", "CDS"),
         qualifier_prefix="ISS",
-        normalize=normalize_csr_nonsec_vega_arrow_table,
-        build_batch=build_csr_nonsec_vega_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_csr_nonsec_vega_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -960,9 +910,7 @@ def _csr_sec_nonctp_vega_spec() -> CapitalPathSpec:
         buckets=("1", "2", "3", "10", "25"),
         risk_factors=("BOND", "CDS"),
         qualifier_prefix="TR",
-        normalize=normalize_csr_sec_nonctp_vega_arrow_table,
-        build_batch=build_csr_sec_nonctp_vega_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_csr_sec_nonctp_vega_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -974,9 +922,7 @@ def _csr_sec_ctp_vega_spec() -> CapitalPathSpec:
         buckets=("1", "2", "3", "9", "12"),
         risk_factors=("BOND", "CDS"),
         qualifier_prefix="NAME",
-        normalize=normalize_csr_sec_ctp_vega_arrow_table,
-        build_batch=build_csr_sec_ctp_vega_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_csr_sec_ctp_vega_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -989,9 +935,7 @@ def _girr_curvature_spec() -> CapitalPathSpec:
         risk_factors=("USD", "EUR", "GBP", "JPY"),
         qualifier_prefix=None,
         tenors=("5y", "10y", "30y"),
-        normalize=normalize_girr_curvature_arrow_table,
-        build_batch=build_girr_curvature_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_girr_curvature_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -1005,9 +949,7 @@ def _fx_curvature_spec() -> CapitalPathSpec:
         risk_factors=currencies,
         qualifier_prefix=None,
         tenors=None,
-        normalize=normalize_fx_curvature_arrow_table,
-        build_batch=build_fx_curvature_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_fx_curvature_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -1020,9 +962,7 @@ def _equity_curvature_spec() -> CapitalPathSpec:
         risk_factors=("SPOT",),
         qualifier_prefix="ISS",
         tenors=None,
-        normalize=normalize_equity_curvature_arrow_table,
-        build_batch=build_equity_curvature_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_equity_curvature_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -1035,9 +975,7 @@ def _commodity_curvature_spec() -> CapitalPathSpec:
         risk_factors=("WTI", "BRENT", "ALU", "GOLD", "POWER"),
         qualifier_prefix="LOC",
         tenors=None,
-        normalize=normalize_commodity_curvature_arrow_table,
-        build_batch=build_commodity_curvature_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_commodity_curvature_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -1050,9 +988,7 @@ def _csr_nonsec_curvature_spec() -> CapitalPathSpec:
         risk_factors=("BOND", "CDS"),
         qualifier_prefix="ISS",
         tenors=None,
-        normalize=normalize_csr_nonsec_curvature_arrow_table,
-        build_batch=build_csr_nonsec_curvature_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_csr_nonsec_curvature_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -1065,9 +1001,7 @@ def _csr_sec_nonctp_curvature_spec() -> CapitalPathSpec:
         risk_factors=("BOND", "CDS"),
         qualifier_prefix="TR",
         tenors=None,
-        normalize=normalize_csr_sec_nonctp_curvature_arrow_table,
-        build_batch=build_csr_sec_nonctp_curvature_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -1080,9 +1014,7 @@ def _csr_sec_ctp_curvature_spec() -> CapitalPathSpec:
         risk_factors=("BOND", "CDS"),
         qualifier_prefix="NAME",
         tenors=None,
-        normalize=normalize_csr_sec_ctp_curvature_arrow_table,
-        build_batch=build_csr_sec_ctp_curvature_batch_from_arrow,
-        calculate_batch=calculate_sbm_capital_from_csr_sec_ctp_curvature_batch,
+        calculate_batch=calculate_sbm_capital_from_batch,
     )
 
 
@@ -1094,8 +1026,6 @@ def _vega_spec(
     buckets: tuple[str, ...],
     risk_factors: tuple[str, ...],
     qualifier_prefix: str | None,
-    normalize: Callable[[pa.Table], NormalizedArrowTable],
-    build_batch: Callable[[NormalizedArrowTable], SbmSensitivityBatch],
     calculate_batch: Callable[..., SbmCapitalResult],
 ) -> CapitalPathSpec:
     factor_axes = ("buckets", "risk_factors", "option_tenors")
@@ -1103,6 +1033,8 @@ def _vega_spec(
         factor_axes = (*factor_axes, "qualifiers")
     return CapitalPathSpec(
         label=label,
+        risk_class=risk_class,
+        risk_measure=SbmRiskMeasure.VEGA,
         row_factory=lambda index: _non_girr_vega_row(
             index,
             label=label,
@@ -1121,8 +1053,6 @@ def _vega_spec(
             risk_factors=risk_factors,
             qualifier_prefix=qualifier_prefix,
         ),
-        normalize=normalize,
-        build_batch=build_batch,
         calculate_batch=calculate_batch,
         factor_axes=factor_axes,
         desk_id=desk_id,
@@ -1138,8 +1068,6 @@ def _curvature_spec(
     risk_factors: tuple[str, ...],
     qualifier_prefix: str | None,
     tenors: tuple[str, ...] | None,
-    normalize: Callable[[pa.Table], NormalizedArrowTable],
-    build_batch: Callable[[NormalizedArrowTable], SbmSensitivityBatch],
     calculate_batch: Callable[..., SbmCapitalResult],
 ) -> CapitalPathSpec:
     factor_axes = ("buckets", "risk_factors")
@@ -1149,6 +1077,8 @@ def _curvature_spec(
         factor_axes = (*factor_axes, "tenors")
     return CapitalPathSpec(
         label=label,
+        risk_class=risk_class,
+        risk_measure=SbmRiskMeasure.CURVATURE,
         row_factory=lambda index: _curvature_capital_row(
             index,
             label=label,
@@ -1169,8 +1099,6 @@ def _curvature_spec(
             qualifier_prefix=qualifier_prefix,
             tenors=tenors,
         ),
-        normalize=normalize,
-        build_batch=build_batch,
         calculate_batch=calculate_batch,
         factor_axes=factor_axes,
         desk_id=desk_id,

@@ -26,16 +26,10 @@ from frtb_sbm import (
     build_fx_curvature_batch_from_sensitivities,
     build_girr_curvature_batch_from_sensitivities,
     calculate_sbm_capital,
-    calculate_sbm_capital_from_commodity_curvature_batch,
-    calculate_sbm_capital_from_csr_nonsec_curvature_batch,
-    calculate_sbm_capital_from_csr_sec_ctp_curvature_batch,
-    calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch,
-    calculate_sbm_capital_from_equity_curvature_batch,
-    calculate_sbm_capital_from_fx_curvature_batch,
-    calculate_sbm_capital_from_girr_curvature_batch,
+    calculate_sbm_capital_from_batch,
     input_hash_for_sensitivities,
 )
-from frtb_sbm.arrow_batch import (
+from sbm_registry_helpers import (
     build_commodity_curvature_batch_from_arrow,
     build_csr_nonsec_curvature_batch_from_arrow,
     build_csr_sec_ctp_curvature_batch_from_arrow,
@@ -57,6 +51,7 @@ from frtb_sbm.arrow_batch import (
     normalize_equity_curvature_arrow_table,
     normalize_fx_curvature_arrow_table,
     normalize_girr_curvature_arrow_table,
+    normalize_sbm_path,
 )
 
 BatchBuilder = Callable[[tuple[SbmSensitivity, ...]], SbmSensitivityBatch]
@@ -367,7 +362,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_girr_curvature_arrow_table,
             build_girr_curvature_batch_from_sensitivities,
             build_girr_curvature_batch_from_arrow,
-            calculate_sbm_capital_from_girr_curvature_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_girr_curvature_arrow,
         ),
         (
@@ -376,7 +371,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_fx_curvature_arrow_table,
             build_fx_curvature_batch_from_sensitivities,
             build_fx_curvature_batch_from_arrow,
-            calculate_sbm_capital_from_fx_curvature_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_fx_curvature_arrow,
         ),
         (
@@ -385,7 +380,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_equity_curvature_arrow_table,
             build_equity_curvature_batch_from_sensitivities,
             build_equity_curvature_batch_from_arrow,
-            calculate_sbm_capital_from_equity_curvature_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_equity_curvature_arrow,
         ),
         (
@@ -394,7 +389,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_commodity_curvature_arrow_table,
             build_commodity_curvature_batch_from_sensitivities,
             build_commodity_curvature_batch_from_arrow,
-            calculate_sbm_capital_from_commodity_curvature_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_commodity_curvature_arrow,
         ),
         (
@@ -403,7 +398,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_csr_nonsec_curvature_arrow_table,
             build_csr_nonsec_curvature_batch_from_sensitivities,
             build_csr_nonsec_curvature_batch_from_arrow,
-            calculate_sbm_capital_from_csr_nonsec_curvature_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_csr_nonsec_curvature_arrow,
         ),
         (
@@ -412,7 +407,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_csr_sec_nonctp_curvature_arrow_table,
             build_csr_sec_nonctp_curvature_batch_from_sensitivities,
             build_csr_sec_nonctp_curvature_batch_from_arrow,
-            calculate_sbm_capital_from_csr_sec_nonctp_curvature_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_csr_sec_nonctp_curvature_arrow,
         ),
         (
@@ -421,7 +416,7 @@ def _dictionary(values: list[str | None]) -> pa.Array:
             normalize_csr_sec_ctp_curvature_arrow_table,
             build_csr_sec_ctp_curvature_batch_from_sensitivities,
             build_csr_sec_ctp_curvature_batch_from_arrow,
-            calculate_sbm_capital_from_csr_sec_ctp_curvature_batch,
+            calculate_sbm_capital_from_batch,
             calculate_sbm_capital_from_csr_sec_ctp_curvature_arrow,
         ),
     ],
@@ -479,7 +474,7 @@ def test_fx_curvature_batch_preserves_scalar_mapping_evidence() -> None:
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     batch = build_fx_curvature_batch_from_sensitivities(sensitivities)
-    batch_result = calculate_sbm_capital_from_fx_curvature_batch(batch, context=context)
+    batch_result = calculate_sbm_capital_from_batch(batch, context=context)
 
     assert batch_result.total_capital == pytest.approx(row_result.total_capital)
     assert batch_result.risk_classes[0].buckets[0].weighted_sensitivities[0].scaled_amount == (
@@ -491,4 +486,4 @@ def test_curvature_handoff_requires_shock_columns() -> None:
     table = arrow_table(fx_curvature_sensitivities()).drop(["up_shock_amount"])
 
     with pytest.raises(ValueError, match="up_shock_amount"):
-        normalize_fx_curvature_arrow_table(table)
+        normalize_sbm_path(SbmRiskClass.FX, SbmRiskMeasure.CURVATURE, table)

@@ -19,24 +19,11 @@ from frtb_sbm import (
     build_equity_delta_batch_from_sensitivities,
     build_fx_delta_batch_from_sensitivities,
     calculate_sbm_capital,
-    calculate_sbm_capital_from_commodity_delta_batch,
-    calculate_sbm_capital_from_equity_delta_batch,
-    calculate_sbm_capital_from_fx_delta_batch,
+    calculate_sbm_capital_from_batch,
     input_hash_for_sensitivities,
     weight_commodity_delta_sensitivity_batch,
     weight_equity_delta_sensitivity_batch,
     weight_fx_delta_sensitivity_batch,
-)
-from frtb_sbm.arrow_batch import (
-    build_commodity_delta_batch_from_arrow,
-    build_equity_delta_batch_from_arrow,
-    build_fx_delta_batch_from_arrow,
-    calculate_sbm_capital_from_commodity_delta_arrow,
-    calculate_sbm_capital_from_equity_delta_arrow,
-    calculate_sbm_capital_from_fx_delta_arrow,
-    normalize_commodity_delta_arrow_table,
-    normalize_equity_delta_arrow_table,
-    normalize_fx_delta_arrow_table,
 )
 from frtb_sbm.equity_reference_data import (
     EQUITY_OTHER_SECTOR_BUCKET,
@@ -47,6 +34,11 @@ from frtb_sbm.risk_classes.commodity import (
     calculate_commodity_delta_risk_class_capital_from_batch,
 )
 from frtb_sbm.risk_classes.equity import calculate_equity_delta_risk_class_capital_from_batch
+from sbm_registry_helpers import (
+    build_sbm_path_from_arrow,
+    calculate_sbm_capital_from_path_arrow,
+    normalize_sbm_path,
+)
 
 
 def sample_context(run_id: str) -> SbmCalculationContext:
@@ -224,16 +216,20 @@ def test_fx_delta_batch_and_handoff_match_row_capital() -> None:
     context = sample_context("fx-batch-run")
     sensitivities = fx_sensitivities()
     source_hash = source_content_hash("synthetic FX delta source")
-    handoff = normalize_fx_delta_arrow_table(
+    handoff = normalize_sbm_path(
+        SbmRiskClass.FX,
+        SbmRiskMeasure.DELTA,
         arrow_table(sensitivities, include_tenor=False),
         source_hash=source_hash,
     )
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_fx_delta_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_fx_delta_batch_from_arrow(handoff)
-    batch_result = calculate_sbm_capital_from_fx_delta_batch(arrow_batch, context=context)
-    handoff_result = calculate_sbm_capital_from_fx_delta_arrow(handoff, context=context)
+    arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.FX, SbmRiskMeasure.DELTA, handoff)
+    batch_result = calculate_sbm_capital_from_batch(arrow_batch, context=context)
+    handoff_result = calculate_sbm_capital_from_path_arrow(
+        SbmRiskClass.FX, SbmRiskMeasure.DELTA, handoff, context=context
+    )
 
     assert row_batch.input_hash == input_hash_for_sensitivities(sensitivities)
     assert arrow_batch.input_hash == row_batch.input_hash
@@ -256,16 +252,20 @@ def test_fx_delta_batch_and_handoff_match_row_capital() -> None:
 def test_equity_delta_batch_and_handoff_match_row_capital() -> None:
     context = sample_context("equity-batch-run")
     sensitivities = equity_sensitivities()
-    handoff = normalize_equity_delta_arrow_table(
+    handoff = normalize_sbm_path(
+        SbmRiskClass.EQUITY,
+        SbmRiskMeasure.DELTA,
         arrow_table(sensitivities, include_tenor=False),
         source_hash=source_content_hash("synthetic equity delta source"),
     )
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_equity_delta_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_equity_delta_batch_from_arrow(handoff)
-    batch_result = calculate_sbm_capital_from_equity_delta_batch(arrow_batch, context=context)
-    handoff_result = calculate_sbm_capital_from_equity_delta_arrow(handoff, context=context)
+    arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, handoff)
+    batch_result = calculate_sbm_capital_from_batch(arrow_batch, context=context)
+    handoff_result = calculate_sbm_capital_from_path_arrow(
+        SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, handoff, context=context
+    )
 
     assert arrow_batch.input_hash == row_batch.input_hash
     np.testing.assert_array_equal(arrow_batch.qualifiers, row_batch.qualifiers)
@@ -285,16 +285,20 @@ def test_equity_delta_batch_and_handoff_match_row_capital() -> None:
 def test_commodity_delta_batch_and_handoff_match_row_capital() -> None:
     context = sample_context("commodity-batch-run")
     sensitivities = commodity_sensitivities()
-    handoff = normalize_commodity_delta_arrow_table(
+    handoff = normalize_sbm_path(
+        SbmRiskClass.COMMODITY,
+        SbmRiskMeasure.DELTA,
         arrow_table(sensitivities, include_tenor=True),
         source_hash=source_content_hash("synthetic commodity delta source"),
     )
 
     row_result = calculate_sbm_capital(sensitivities, context=context)
     row_batch = build_commodity_delta_batch_from_sensitivities(sensitivities)
-    arrow_batch = build_commodity_delta_batch_from_arrow(handoff)
-    batch_result = calculate_sbm_capital_from_commodity_delta_batch(arrow_batch, context=context)
-    handoff_result = calculate_sbm_capital_from_commodity_delta_arrow(handoff, context=context)
+    arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA, handoff)
+    batch_result = calculate_sbm_capital_from_batch(arrow_batch, context=context)
+    handoff_result = calculate_sbm_capital_from_path_arrow(
+        SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA, handoff, context=context
+    )
 
     assert arrow_batch.input_hash == row_batch.input_hash
     np.testing.assert_array_equal(arrow_batch.tenors, row_batch.tenors)
@@ -376,17 +380,19 @@ def test_equity_other_sector_batch_preserves_absolute_weight_treatment() -> None
 
 
 def test_delta_handoff_contracts_require_path_specific_axes() -> None:
-    fx_handoff = normalize_fx_delta_arrow_table(
-        arrow_table(fx_sensitivities(), include_tenor=False)
+    fx_handoff = normalize_sbm_path(
+        SbmRiskClass.FX, SbmRiskMeasure.DELTA, arrow_table(fx_sensitivities(), include_tenor=False)
     )
     equity_table = arrow_table(equity_sensitivities(), include_tenor=False).drop(["qualifier"])
     commodity_table = arrow_table(commodity_sensitivities(), include_tenor=True).drop(["tenor"])
 
-    assert build_fx_delta_batch_from_arrow(fx_handoff).tenors.tolist() == [None, None]
+    assert build_sbm_path_from_arrow(
+        SbmRiskClass.FX, SbmRiskMeasure.DELTA, fx_handoff
+    ).tenors.tolist() == [None, None]
     with pytest.raises(ValueError, match="qualifier"):
-        normalize_equity_delta_arrow_table(equity_table)
+        normalize_sbm_path(SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, equity_table)
     with pytest.raises(ValueError, match="tenor"):
-        normalize_commodity_delta_arrow_table(commodity_table)
+        normalize_sbm_path(SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA, commodity_table)
 
 
 def test_delta_arrow_batch_builders_do_not_construct_row_dataclasses() -> None:

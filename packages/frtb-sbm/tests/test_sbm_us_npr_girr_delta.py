@@ -9,14 +9,18 @@ import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
     SbmInputError,
+    SbmRiskClass,
+    SbmRiskMeasure,
     SbmSensitivity,
     build_girr_delta_batch_from_sensitivities,
     calculate_sbm_capital,
-    calculate_sbm_capital_from_girr_delta_arrow,
-    calculate_sbm_capital_from_girr_delta_batch,
-    normalize_girr_delta_arrow_table,
+    calculate_sbm_capital_from_batch,
     serialize_sbm_result,
     validate_sbm_result_reconciliation,
+)
+from sbm_registry_helpers import (
+    calculate_sbm_capital_from_path_arrow,
+    normalize_sbm_path,
 )
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "girr_delta_us_npr_v1"
@@ -83,12 +87,14 @@ def test_us_npr_girr_delta_batch_and_arrow_match_row_result() -> None:
 
     row_payload = serialize_sbm_result(calculate_sbm_capital(sensitivities, context=context))
     batch = build_girr_delta_batch_from_sensitivities(sensitivities)
-    batch_payload = serialize_sbm_result(
-        calculate_sbm_capital_from_girr_delta_batch(batch, context=context)
+    batch_payload = serialize_sbm_result(calculate_sbm_capital_from_batch(batch, context=context))
+    handoff = normalize_sbm_path(
+        SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, _arrow_table(sensitivities)
     )
-    handoff = normalize_girr_delta_arrow_table(_arrow_table(sensitivities))
     arrow_payload = serialize_sbm_result(
-        calculate_sbm_capital_from_girr_delta_arrow(handoff, context=context)
+        calculate_sbm_capital_from_path_arrow(
+            SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, handoff, context=context
+        )
     )
 
     assert batch_payload == row_payload
