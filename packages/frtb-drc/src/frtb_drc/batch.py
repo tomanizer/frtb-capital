@@ -24,7 +24,6 @@ from frtb_drc.assembly.hashes import input_hash_for_drc_batch
 from frtb_drc.attribution import calculate_drc_attribution
 from frtb_drc.audit import validate_reconciliation
 from frtb_drc.capital import CapitalInput, calculate_category_drc
-from frtb_drc.ctp import CtpCapitalInput, calculate_ctp_category_drc
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -52,6 +51,7 @@ from frtb_drc.fx import (
     validate_fx_rates,
 )
 from frtb_drc.kernel import net_jtd as _net_jtd_kernel
+from frtb_drc.kernel.ctp import CtpCapitalInput, calculate_ctp_category_drc
 from frtb_drc.reference_data import (
     get_lgd_rule,
     get_maturity_policy,

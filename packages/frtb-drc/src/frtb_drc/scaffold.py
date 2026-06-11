@@ -12,7 +12,6 @@ from frtb_drc._version import __version__
 from frtb_drc.attribution import calculate_drc_attribution
 from frtb_drc.audit import input_snapshot_hash, rule_profile_hash, validate_reconciliation
 from frtb_drc.capital import CapitalInput, calculate_category_drc
-from frtb_drc.ctp import calculate_ctp_drc, ctp_context_input_hash, validate_ctp_context
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -35,6 +34,11 @@ from frtb_drc.fx import (
     validate_fx_rates,
 )
 from frtb_drc.gross_jtd import calculate_gross_jtds
+from frtb_drc.kernel.ctp import (
+    calculate_ctp_drc,
+    ctp_context_input_hash,
+    validate_ctp_context,
+)
 from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.reference_data import get_risk_weight_rule

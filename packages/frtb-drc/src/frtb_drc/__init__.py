@@ -69,16 +69,6 @@ from frtb_drc.crif import (
     adapt_drc_crif_rows,
     drc_crif_result_to_arrow_tables,
 )
-from frtb_drc.ctp import (
-    CtpCalculation,
-    CtpCapitalInput,
-    CtpNettingInput,
-    calculate_ctp_category_drc,
-    calculate_ctp_drc,
-    calculate_ctp_gross_jtd,
-    calculate_ctp_net_jtds,
-    validate_ctp_context,
-)
 from frtb_drc.data_models import (
     BranchMetadata,
     BranchType,
@@ -113,6 +103,16 @@ from frtb_drc.impact import (
     DrcImpactRecord,
     calculate_drc_impact,
     validate_drc_impact_reconciliation,
+)
+from frtb_drc.kernel.ctp import (
+    CtpCalculation,
+    CtpCapitalInput,
+    CtpNettingInput,
+    calculate_ctp_category_drc,
+    calculate_ctp_drc,
+    calculate_ctp_gross_jtd,
+    calculate_ctp_net_jtds,
+    validate_ctp_context,
 )
 from frtb_drc.maturity import calculate_maturity_weight, scale_gross_jtd, scale_gross_jtds
 from frtb_drc.netting import NettingInput, calculate_net_jtds

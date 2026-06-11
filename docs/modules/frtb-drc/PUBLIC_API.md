@@ -41,6 +41,8 @@ Batch and context hash assembly physically lives in `frtb_drc.assembly.hashes`;
 Batch net-JTD array kernels physically live in `frtb_drc.kernel.net_jtd`;
 `frtb_drc.batch.calculate_drc_capital_from_batch` remains the public batch
 capital entrypoint.
+CTP row-path calculation helpers physically live in `frtb_drc.kernel.ctp`;
+`frtb_drc.ctp` remains a compatibility import path for existing callers.
 
 ## Client integration
 
