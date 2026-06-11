@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import frtb_rrao
+import frtb_rrao.validation as validation
+from frtb_rrao.validation import position as position_validation
 
 EXPECTED_PUBLIC_API = (
     "PACKAGE_METADATA",
@@ -65,3 +67,12 @@ EXPECTED_PUBLIC_API = (
 def test_top_level_public_api_surface_is_explicit_and_narrow() -> None:
     assert frtb_rrao.__all__ == list(EXPECTED_PUBLIC_API)
     assert len(frtb_rrao.__all__) < 60
+
+
+def test_validation_package_preserves_public_compatibility_path() -> None:
+    assert validation.RraoInputError is position_validation.RraoInputError
+    assert (
+        validation.normalise_gross_effective_notional
+        is position_validation.normalise_gross_effective_notional
+    )
+    assert validation.validate_rrao_positions is position_validation.validate_rrao_positions

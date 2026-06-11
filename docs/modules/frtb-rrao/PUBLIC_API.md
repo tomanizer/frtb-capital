@@ -102,7 +102,8 @@ or test-support details rather than stable v1 contracts:
 - rule-table dataclasses and lookups in `frtb_rrao.reference_data`;
 - low-level capital helpers in `frtb_rrao.capital`;
 - profile-hash and profile-resolution internals in `frtb_rrao.regimes`;
-- notional normalisation helpers in `frtb_rrao.validation`;
+- notional normalisation helpers in `frtb_rrao.validation.position`
+  (`frtb_rrao.validation` remains the compatibility import path);
 - numeric tolerance constants in `frtb_rrao.numeric`;
 - low-level Arrow normalisation internals in `frtb_rrao.arrow_batch`;
 - vectorised batch implementation details in `frtb_rrao.batch`.
