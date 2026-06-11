@@ -220,6 +220,10 @@ Portfolio dispatch physically lives under `frtb_sbm.kernel.portfolio`;
 Input, batch, and profile hash payload assembly physically lives under
 `frtb_sbm.assembly.hashes`; public callers continue to use the stable hash
 helpers from `frtb_sbm` and `frtb_sbm.batch`.
+Validation helpers physically live under `frtb_sbm.validation.coercion`,
+`frtb_sbm.validation.context`, `frtb_sbm.validation.risk_class_fields`, and
+`frtb_sbm.validation.sensitivity`;
+`frtb_sbm.validation` remains the compatibility and public import path.
 
 The portfolio path **does not** materialize accepted `SbmSensitivity` dataclasses
 per row during calculation (`accepted_row_dataclasses_materialized` stays zero on

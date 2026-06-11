@@ -36,6 +36,10 @@ capital callers.
 Input, batch, and profile hash payload assembly physically lives under
 `frtb_sbm.assembly.hashes`; public callers should continue to use
 `input_hash_for_sensitivities`, `input_hash_for_batch`, and profile helpers.
+Validation helpers physically live under `frtb_sbm.validation.coercion`,
+`frtb_sbm.validation.context`, `frtb_sbm.validation.risk_class_fields`, and
+`frtb_sbm.validation.sensitivity`;
+`frtb_sbm.validation` remains the compatibility and public import path.
 The public API surface test caps `frtb_sbm.__all__` below 400 names and requires
 every documented input_table symbol to remain importable.
 
