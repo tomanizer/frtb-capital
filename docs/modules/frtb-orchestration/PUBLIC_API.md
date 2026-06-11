@@ -76,6 +76,12 @@ or attribution methods.
 
 ## Standardised Approach composition
 
+The stable public import path remains `frtb_orchestration.standardised` and the
+package top level. Internally, SA composition result records live under
+`frtb_orchestration._standardised_models`, while component presence,
+jurisdiction-family, run-context, fallback-route, and run-id validation live
+under `frtb_orchestration._standardised_validation`.
+
 `compose_standardised_approach_capital` accepts public
 `ComponentCapitalSummary` objects from SBM, DRC, and RRAO. Those summaries are
 created by each component package's `to_component_summary` adapter. The function
