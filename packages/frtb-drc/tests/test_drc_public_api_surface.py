@@ -207,6 +207,20 @@ def test_net_jtd_kernel_stage_exports() -> None:
         assert callable(getattr(net_jtd, name))
 
 
+def test_nonsec_kernel_stage_exports() -> None:
+    import frtb_drc.kernel.nonsec as nonsec
+
+    names = (
+        "NonSecuritisationCalculation",
+        "calculate_nonsec_drc",
+        "nonsec_netting_citation",
+    )
+
+    assert set(nonsec.__all__) == set(names)
+    for name in names:
+        assert hasattr(nonsec, name)
+
+
 def test_ctp_kernel_compatibility_exports() -> None:
     import frtb_drc.ctp as compatibility
     import frtb_drc.kernel.ctp as kernel

@@ -89,6 +89,9 @@ and batch citation/branch metadata assembly physically lives under
 capital orchestration surface.
 Batch net-JTD array kernels physically live under `frtb_drc.kernel.net_jtd`;
 `frtb_drc.batch` remains the public capital orchestration surface.
+Non-securitisation row-path calculation helpers physically live under
+`frtb_drc.kernel.nonsec`; `frtb_drc.scaffold.calculate_drc_capital` remains the
+public multi-class row entrypoint.
 CTP row-path calculation helpers physically live under `frtb_drc.kernel.ctp`;
 `frtb_drc.ctp` remains the compatibility import path for existing callers.
 Securitisation non-CTP row-path calculation helpers physically live under
