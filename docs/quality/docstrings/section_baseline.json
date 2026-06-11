@@ -3,10 +3,10 @@
   "metrics": {
     "findings_by_rule": {
       "MISSING_PARAMETERS_SECTION": 18,
-      "MISSING_RETURNS_SECTION": 20
+      "MISSING_RETURNS_SECTION": 19
     },
     "packages_with_findings": 3,
-    "total_findings": 38
+    "total_findings": 37
   },
   "packages": {
     "frtb-common": {
@@ -177,7 +177,7 @@
       ]
     },
     "frtb-cva": {
-      "finding_count": 8,
+      "finding_count": 7,
       "findings": [
         {
           "line": 1,
@@ -195,15 +195,6 @@
           "object_type": "method",
           "package": "frtb-cva",
           "path": "packages/frtb-cva/src/frtb_cva/_arrow_entity_specs.py",
-          "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 1,
-          "message": "Public function returns a value but no NumPy Returns section.",
-          "object_name": "build_cva_hedge_batch_from_columns",
-          "object_type": "function",
-          "package": "frtb-cva",
-          "path": "packages/frtb-cva/src/frtb_cva/_batch_hedge_adapter.py",
           "rule": "MISSING_RETURNS_SECTION"
         },
         {
