@@ -10,11 +10,12 @@ Sensitivities-based method capital. Largest suite monoliths live here.
 
 | Module | Lines (approx.) | Notes |
 | --- | ---: | --- |
-| `batch.py` | 2490 | Builders, hashes, dispatch |
-| `arrow_batch.py` | 1951 | Arrow conversion |
-| `curvature.py` | 1897 | Curvature |
-| `capital.py` | 1759 | Portfolio assembly |
-| `reference_data.py` | 1599 | Reference tables |
+| `batch.py` | 3013 | Builders, hashes, dispatch |
+| `arrow_batch.py` | 2303 | Arrow conversion |
+| `curvature.py` | 2172 | Curvature |
+| `capital.py` | 2068 | Portfolio assembly |
+| `reference_data.py` | 2098 | Reference tables |
+| `registry.py` | — | Initial ADR 0045 dispatch (in progress) |
 
 ## Duplicated code
 
@@ -22,7 +23,7 @@ Sensitivities-based method capital. Largest suite monoliths live here.
 | --- | --- | --- |
 | ~20× `build_*_from_sensitivities` → `build_sbm_batch_from_sensitivities` | package-local | P1 |
 | Many `input_hash_for_*_batch` thin wrappers | package-local | P2 |
-| `_hash_payload` vs `stable_json_hash` | `frtb-common` | P1 |
+| `_hash_payload` wrappers delegate to `stable_json_hash` | package-local | P2 cleanup (#706) |
 | Progress: `_text`, `_citations`, `_batch_lookup` extracted | package-local | done |
 | `_require_text` still in some reference-data modules | package-local | P2 |
 
@@ -67,4 +68,4 @@ Full SBM tests; hash/audit replay; `test_sbm_support_matrix.py`; `make quality-c
 
 ## Tracking
 
-GitHub issue: [#544](https://github.com/tomanizer/frtb-capital/issues/544)
+Consolidation: [#717](https://github.com/tomanizer/frtb-capital/issues/717) (ADR 0045 epic [#725](https://github.com/tomanizer/frtb-capital/issues/725)).

@@ -10,7 +10,7 @@ Model-eligible desk IMA capital only. No SBM/DRC/RRAO/CVA calculations here.
 
 | Module | Lines (approx.) | Notes |
 | --- | ---: | --- |
-| `rfet_evidence.py` | 933 | `assess_rfet_evidence` ~280+ lines |
+| `rfet_evidence.py` | 1162 | `assess_rfet_evidence` ~280+ lines |
 | `stress_periods.py` | 760 | Stress selection |
 | `backtesting.py` | 757 | Backtesting traces |
 | `nmrf.py` | 743 | NMRF classification |
@@ -64,4 +64,4 @@ RFET, PLA, backtesting, NMRF, scenario, audit hash tests; mutation floor unchang
 
 ## Tracking
 
-GitHub issue: [#540](https://github.com/tomanizer/frtb-capital/issues/540)
+Consolidation: [#721](https://github.com/tomanizer/frtb-capital/issues/721) (ADR 0045 epic [#725](https://github.com/tomanizer/frtb-capital/issues/725)).

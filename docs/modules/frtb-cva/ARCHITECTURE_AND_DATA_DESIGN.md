@@ -64,12 +64,16 @@ risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN
 | `capital.py` | Public calculation entry point wiring validation, scope, profiles, BA/SA paths, mixed-method assembly. |
 | `numeric.py` | Reconciliation helpers for supported capital and attribution paths. |
 | `crif.py` | Optional CRIF/vendor-to-canonical mapping. No kernel imports. |
-| `batch.py` | Package-owned NumPy batches for BA-CVA, SA-CVA, and hedge inputs. |
+| `batch.py` | Public compatibility facade re-exporting canonical batch contracts and entrypoints. |
+| `_batch_contracts.py` | Frozen batch dataclasses (`CvaCounterpartyBatch`, etc.). |
+| `_batch_adapters.py`, `_batch_*_adapter.py` | Column and row adapters → canonical batches. |
+| `_batch_validation.py` | Package-local batch input rules. |
+| `_batch_assembly.py`, `_ba_*_batch_kernel.py`, `_sa_batch_kernel.py` | Kernel math and result assembly. |
+| `_batch_payloads.py`, `_payloads.py` | Deterministic hash inputs via `stable_json_hash`. |
 | `arrow_batch.py` | Arrow tabular handoff normalisation under ADR 0023. |
 | `audit.py` | Deterministic result serialisation, input hash, profile hash, and reconciliation. |
 | `attribution.py` | Additive attribution for supported branches with explicit unsupported nonlinear residuals. |
 | `impact.py` | Baseline-vs-candidate finite-difference capital deltas. |
-| `fixtures.py` | Synthetic fixture builders for tests and examples. |
 
 ## Calculation flow
 

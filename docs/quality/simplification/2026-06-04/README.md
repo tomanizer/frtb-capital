@@ -10,18 +10,24 @@ Skill: [`.grok/skills/frtb-simplify-audit/SKILL.md`](../../../../.grok/skills/fr
 
 ## Reports
 
-| Package | Report | Tracking issue |
+| Package | Report | Consolidation issue (ADR 0045) |
 | --- | --- | --- |
-| `frtb-common` | [frtb-common.md](frtb-common.md) | [#537](https://github.com/tomanizer/frtb-capital/issues/537) |
-| `frtb-cva` | [frtb-cva.md](frtb-cva.md) | [#538](https://github.com/tomanizer/frtb-capital/issues/538) |
-| `frtb-drc` | [frtb-drc.md](frtb-drc.md) | [#539](https://github.com/tomanizer/frtb-capital/issues/539) |
-| `frtb-ima` | [frtb-ima.md](frtb-ima.md) | [#540](https://github.com/tomanizer/frtb-capital/issues/540) |
-| `frtb-orchestration` | [frtb-orchestration.md](frtb-orchestration.md) | [#541](https://github.com/tomanizer/frtb-capital/issues/541) |
-| `frtb-result-store` | [frtb-result-store.md](frtb-result-store.md) | [#542](https://github.com/tomanizer/frtb-capital/issues/542) |
-| `frtb-rrao` | [frtb-rrao.md](frtb-rrao.md) | [#543](https://github.com/tomanizer/frtb-capital/issues/543) |
-| `frtb-sbm` | [frtb-sbm.md](frtb-sbm.md) | [#544](https://github.com/tomanizer/frtb-capital/issues/544) |
+| `frtb-common` | [frtb-common.md](frtb-common.md) | [#714](https://github.com/tomanizer/frtb-capital/issues/714), [#722](https://github.com/tomanizer/frtb-capital/issues/722) |
+| `frtb-cva` | [frtb-cva.md](frtb-cva.md) | [#719](https://github.com/tomanizer/frtb-capital/issues/719) |
+| `frtb-drc` | [frtb-drc.md](frtb-drc.md) | [#718](https://github.com/tomanizer/frtb-capital/issues/718) |
+| `frtb-ima` | [frtb-ima.md](frtb-ima.md) | [#721](https://github.com/tomanizer/frtb-capital/issues/721) |
+| `frtb-orchestration` | [frtb-orchestration.md](frtb-orchestration.md) | [#723](https://github.com/tomanizer/frtb-capital/issues/723) |
+| `frtb-result-store` | [frtb-result-store.md](frtb-result-store.md) | [#724](https://github.com/tomanizer/frtb-capital/issues/724) |
+| `frtb-rrao` | [frtb-rrao.md](frtb-rrao.md) | [#720](https://github.com/tomanizer/frtb-capital/issues/720) |
+| `frtb-sbm` | [frtb-sbm.md](frtb-sbm.md) | [#717](https://github.com/tomanizer/frtb-capital/issues/717) |
 
-Prior run: [`2026-06-02/`](../2026-06-02/). Live refactor queue:
+Epic: [#725](https://github.com/tomanizer/frtb-capital/issues/725). Roadmap:
+[`CONSOLIDATION_ROADMAP.md`](../../CONSOLIDATION_ROADMAP.md).
+
+Prior run: [`2026-06-02/`](../2026-06-02/). Execution policy:
+[ADR 0045](../../../decisions/0045-canonical-batch-pipeline-with-adapter-ingress.md),
+[`CONSOLIDATION_ROADMAP.md`](../../CONSOLIDATION_ROADMAP.md), epic
+[#725](https://github.com/tomanizer/frtb-capital/issues/725). Hotspots:
 [`REFACTOR_HOTSPOTS.md`](../../REFACTOR_HOTSPOTS.md).
 
 ## Suite-level findings
@@ -29,9 +35,9 @@ Prior run: [`2026-06-02/`](../2026-06-02/). Live refactor queue:
 | P | Scope | Finding | First follow-up |
 | --- | --- | --- | --- |
 | P0 | package-local | Row + batch duplicate business logic (SBM, DRC, RRAO, CVA) risks hash and capital drift | Regression tests on hashes/totals before merging paths |
-| P0 | `frtb-common` | SBM/DRC/CVA still use local `_hash_payload`; RRAO and result-store use `stable_json_hash` | Migrate one package per PR |
+| P1 | `frtb-sbm` | `regimes.py` / `audit.py` still expose `_hash_payload` wrappers (delegate to `stable_json_hash`) | Remove redundant wrappers in #706 |
 | P1 | package-local | SBM: ~20 near-identical `build_*_from_sensitivities` wrappers | Table-driven factory + stable public aliases |
-| P1 | package-local | `batch.py` monoliths (~2k–2.5k LOC) in SBM, DRC, CVA | Split: arrays → validate → kernel → assemble |
+| P1 | package-local | `batch.py` monoliths (~2k–3k LOC) in SBM, DRC; CVA split to `_batch_*` modules | Split: arrays → validate → kernel → assemble |
 | P1 | package-local | `frtb-result-store` `io.py` / `model_entities.py` god modules | Split by IO vs entity concerns |
 | P1 | package-local | RRAO dual kernel (dataclass vs batch) | Shared validation rules, then kernel decision |
 | P2 | package-local | Orchestration `suite.py` / `standardised.py` grew post–ADR 0039 | Extract jurisdiction/attribution helpers |
@@ -41,10 +47,12 @@ Prior run: [`2026-06-02/`](../2026-06-02/). Live refactor queue:
 ## Recommended implementation order
 
 1. Add/extend hash regression tests; run `check_simplification_drift.py` before each PR.
-2. Migrate `_hash_payload` → `frtb_common.stable_json_hash` (SBM, DRC, CVA);
-   use the [stable hash migration guide](hash-migration-guide.md).
-3. Package-local helper extraction (`_text`, `_citations`, `_payloads`) where not done.
-4. Collapse SBM sensitivity-builder wrappers; split largest `batch.py` files.
+2. Hash migration is largely complete (DRC/CVA/RRAO delegate to `stable_json_hash`);
+   finish SBM wrapper cleanup per [hash migration guide](hash-migration-guide.md).
+3. Package-local helper extraction (`_text`, `_citations`, `_payloads`) — CVA done;
+   continue in SBM/DRC.
+4. Collapse SBM sensitivity-builder wrappers; split largest `batch.py` files
+   (CVA informal split landed; rename to ADR 0045 stage dirs).
 5. RRAO shared validation module; decide single vs dual kernel.
 6. Result-store `io.py` split; orchestration `suite.py` helper extraction.
 7. IMA RFET evidence stage split per `REFACTOR_HOTSPOTS.md`.

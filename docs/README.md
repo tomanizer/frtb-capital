@@ -41,7 +41,7 @@ model.
 | [Validation packs](VALIDATION_PACK.md) | Suite index for validation evidence and package review bundles. |
 | [Regulatory corpus](regulatory/README.md) | Source register, jurisdictional profiles, and component regulatory crosswalks. |
 | [Quality](quality/) | Coverage, mutation-testing, and engineering-quality evidence. |
-| [ADR 0044 stage skeleton constraints](quality/stage_module_skeletons.md) | Import-shadowing guardrails for canonical batch pipeline stage packages. |
+| [ADR 0045 stage skeleton constraints](quality/stage_module_skeletons.md) | Import-shadowing guardrails for canonical batch pipeline stage packages. |
 | [Performance](performance/) | Benchmark baselines and target-scale evidence. |
 | [Release process](RELEASE_PROCESS.md) | Versioning, approval, tagging, and release-note policy. |
 | [Agent worktrees](AGENT_WORKTREE_POLICY.md) | Protected-main and per-agent worktree workflow. |
