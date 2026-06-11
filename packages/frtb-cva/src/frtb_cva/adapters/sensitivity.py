@@ -23,9 +23,6 @@ from frtb_cva._batch_columns import (
 from frtb_cva._batch_contracts import (
     SaCvaSensitivityBatch,
 )
-from frtb_cva._batch_validation import (
-    _validate_sensitivity_batch,
-)
 from frtb_cva.data_models import (
     CvaSector,
     SaCvaIndexTreatment,
@@ -35,6 +32,9 @@ from frtb_cva.data_models import (
 )
 from frtb_cva.validation import (
     CvaInputError,
+)
+from frtb_cva.validation.batches import (
+    _validate_sensitivity_batch,
 )
 
 

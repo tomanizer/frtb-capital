@@ -15,7 +15,6 @@ from frtb_cva._batch_utils import (
     _empty_hedge_batch,
     _empty_netting_set_batch,
 )
-from frtb_cva._batch_validation import _resolve_scope_for_batches
 from frtb_cva._citations import collect_ba_citations as _collect_ba_citations
 from frtb_cva._citations import merge_citations as _merge_citations
 from frtb_cva._profile_warnings import profile_warnings as _profile_warnings
@@ -27,6 +26,7 @@ from frtb_cva.data_models import (
 )
 from frtb_cva.regimes import get_cva_rule_profile
 from frtb_cva.validation import validate_calculation_context
+from frtb_cva.validation.batches import _resolve_scope_for_batches
 
 
 def calculate_cva_capital_from_batches(

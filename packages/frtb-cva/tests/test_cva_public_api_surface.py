@@ -125,6 +125,27 @@ def test_batch_adapter_compatibility_paths_export_same_builders() -> None:
         assert getattr(legacy_module, name) is getattr(adapter_module, name)
 
 
+def test_validation_stage_package_and_legacy_batch_path_are_compatible() -> None:
+    import frtb_cva._batch_validation as legacy_batch_validation
+    import frtb_cva.validation as validation
+    import frtb_cva.validation.batches as batch_validation
+
+    assert validation.CvaInputError is frtb_cva.CvaInputError
+
+    names = (
+        "_netting_indices_by_counterparty",
+        "_resolve_scope_for_batches",
+        "_validate_ba_relationships",
+        "_validate_hedge_batch",
+        "_validate_netting_set_batch",
+        "_validate_sensitivity_batch",
+    )
+    for name in names:
+        assert getattr(legacy_batch_validation, name) is getattr(batch_validation, name)
+        assert name in legacy_batch_validation.__all__
+        assert name in batch_validation.__all__
+
+
 def test_assembly_compatibility_paths_export_same_helpers() -> None:
     import frtb_cva._batch_assembly as legacy_assembly
     import frtb_cva._batch_payloads as legacy_batch_payloads
