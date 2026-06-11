@@ -106,8 +106,9 @@ def test_hash_assembly_module_backs_compatibility_paths() -> None:
         audit._input_hash_for_validated_sensitivities
         is assembly_hashes.input_hash_for_validated_sensitivities
     )
-    assert batch.input_hash_for_sbm_batch.__module__ == "frtb_sbm.batch"
+    assert batch.input_hash_for_batch.__module__ == "frtb_sbm.batch"
     assert batch.input_hash_for_sbm_batches.__module__ == "frtb_sbm.batch"
+    assert "input_hash_for_sbm_batch" not in batch.__all__
     for name in (
         "input_hash_for_sbm_batch",
         "input_hash_for_sbm_batches",

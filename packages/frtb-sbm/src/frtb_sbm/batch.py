@@ -1577,21 +1577,6 @@ def build_csr_sec_ctp_delta_batch_from_columns(
     )
 
 
-def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
-    """Return the row-equivalent deterministic input hash for a homogeneous batch.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    return _input_hash_for_sbm_batch(batch)
-
-
 def input_hash_for_batch(batch: SbmSensitivityBatch) -> str:
     """Return the canonical row-equivalent input hash for an SBM batch.
 
@@ -1605,7 +1590,7 @@ def input_hash_for_batch(batch: SbmSensitivityBatch) -> str:
     str
     """
 
-    return input_hash_for_sbm_batch(batch)
+    return _input_hash_for_sbm_batch(batch)
 
 
 def input_hash_for_sbm_batches(batches: object) -> str:
@@ -2563,7 +2548,6 @@ __all__ = [
     "coerce_sbm_batch_sequence",
     "concatenate_sbm_batches",
     "input_hash_for_batch",
-    "input_hash_for_sbm_batch",
     "input_hash_for_sbm_batches",
     "sorted_commodity_delta_batch_indices",
     "sorted_csr_nonsec_delta_batch_indices",
