@@ -4,6 +4,9 @@ from pathlib import Path
 
 import frtb_sbm
 import frtb_sbm.adapters.arrow as adapter_arrow
+import frtb_sbm.adapters.crif_arrow as adapter_crif_arrow
+import frtb_sbm.adapters.crif_models as adapter_crif_models
+import frtb_sbm.adapters.crif_rows as adapter_crif_rows
 import frtb_sbm.adapters.sensitivities as adapter_sensitivities
 import frtb_sbm.aggregation as aggregation
 import frtb_sbm.arrow_batch as arrow_batch
@@ -11,6 +14,7 @@ import frtb_sbm.assembly.hashes as assembly_hashes
 import frtb_sbm.audit as audit
 import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
+import frtb_sbm.crif as crif
 import frtb_sbm.kernel.aggregation as kernel_aggregation
 import frtb_sbm.kernel.correlation_scenarios as kernel_correlation_scenarios
 import frtb_sbm.kernel.pairwise_evidence as kernel_pairwise_evidence
@@ -257,6 +261,21 @@ def test_vega_module_reexports_correlation_stage_surface() -> None:
         assert name in vega.__all__
         assert name in vega_correlations.__all__
         assert getattr(vega, name) is getattr(vega_correlations, name)
+
+
+def test_crif_module_reexports_adapter_stage_surface() -> None:
+    assert crif.SbmAdapterResult is adapter_crif_models.SbmAdapterResult
+    assert crif.SbmAdapterWarning is adapter_crif_models.SbmAdapterWarning
+    assert crif.SbmRejectedRow is adapter_crif_models.SbmRejectedRow
+    assert crif.adapt_crif_records is adapter_crif_rows.adapt_crif_records
+    assert (
+        crif.normalize_girr_delta_crif_arrow_table
+        is adapter_crif_arrow.normalize_girr_delta_crif_arrow_table
+    )
+    assert (
+        crif.normalize_girr_delta_crif_records
+        is adapter_crif_arrow.normalize_girr_delta_crif_records
+    )
 
 
 def test_hash_assembly_module_backs_compatibility_paths() -> None:

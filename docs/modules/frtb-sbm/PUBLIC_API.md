@@ -54,6 +54,8 @@ remains the compatibility and public import path.
 Input, batch, and profile hash payload assembly physically lives under
 `frtb_sbm.assembly.hashes`; public callers should continue to use
 `input_hash_for_sensitivities`, `input_hash_for_batch`, and profile helpers.
+CRIF adapter implementation physically lives under `frtb_sbm.adapters.crif_*`;
+`frtb_sbm.crif` remains the public compatibility import path.
 Validation helpers physically live under the `frtb_sbm.validation` package, including
 `batch`, `batch_arrays`, `batch_lineage`, `coercion`, `context`,
 `risk_class_fields`, and `sensitivity`;
