@@ -34,6 +34,11 @@ batch callers.
 Portfolio dispatch physically lives under `frtb_sbm.kernel.portfolio`;
 `frtb_sbm.capital` remains the compatibility and public import path for existing
 capital callers.
+Shared aggregation kernels physically live under `frtb_sbm.kernel.bucket_aggregation`,
+`frtb_sbm.kernel.inter_bucket_aggregation`, `frtb_sbm.kernel.risk_class_aggregation`,
+`frtb_sbm.kernel.correlation_scenarios`, `frtb_sbm.kernel.pairwise_evidence`, and
+`frtb_sbm.kernel.scenario_alignment`; `frtb_sbm.kernel.aggregation` and
+`frtb_sbm.aggregation` remain compatibility import paths for existing aggregation callers.
 GIRR delta and vega risk-class kernels physically live under
 `frtb_sbm.risk_classes.girr`; `frtb_sbm.capital` remains the public dispatcher
 for row and batch capital runs. GIRR weighting formulas physically live under

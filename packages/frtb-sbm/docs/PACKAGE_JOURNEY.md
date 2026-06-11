@@ -97,7 +97,7 @@ remains the public dispatcher.
 | --- | --- |
 | Ingress / normalize | `frtb_common.normalize_arrow_table` + path `ColumnSpec`; identity, classification, amount, lineage columns per [`PUBLIC_API.md`](../../../docs/modules/frtb-sbm/PUBLIC_API.md#inputtable-column-summary) |
 | Batch | `SbmSensitivityBatch` NumPy columns; no per-row `SbmSensitivity` on the fast path |
-| Aggregation pattern | Weight sensitivities → intra-bucket `Kb` with correlation scenarios → inter-bucket / risk-class total (delta and vega); curvature uses MAR21.5 branch engine with up/down shocks |
+| Aggregation pattern | Weight sensitivities → intra-bucket `Kb` with correlation scenarios → inter-bucket / risk-class total (delta and vega); curvature uses MAR21.5 branch engine with up/down shocks. Shared aggregation implementation lives under focused `frtb_sbm.kernel.*_aggregation` modules, with `frtb_sbm.kernel.aggregation` and `frtb_sbm.aggregation` as compatibility import paths. |
 | Result shape | One `RiskClassCapital` per path in `SbmCapitalResult.risk_classes`; portfolio `total_capital` sums implemented paths |
 | Attribution | Delta and vega: analytical Euler on weighted lines; curvature: `UNSUPPORTED` for every class (CVR floor) |
 

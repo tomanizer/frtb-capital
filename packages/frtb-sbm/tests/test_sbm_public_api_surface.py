@@ -5,12 +5,17 @@ from pathlib import Path
 import frtb_sbm
 import frtb_sbm.adapters.arrow as adapter_arrow
 import frtb_sbm.adapters.sensitivities as adapter_sensitivities
+import frtb_sbm.aggregation as aggregation
 import frtb_sbm.arrow_batch as arrow_batch
 import frtb_sbm.assembly.hashes as assembly_hashes
 import frtb_sbm.audit as audit
 import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
+import frtb_sbm.kernel.aggregation as kernel_aggregation
+import frtb_sbm.kernel.correlation_scenarios as kernel_correlation_scenarios
+import frtb_sbm.kernel.pairwise_evidence as kernel_pairwise_evidence
 import frtb_sbm.kernel.portfolio as portfolio
+import frtb_sbm.kernel.scenario_alignment as kernel_scenario_alignment
 import frtb_sbm.kernel.weighting as kernel_weighting
 import frtb_sbm.risk_classes.commodity_weighting as commodity_weighting
 import frtb_sbm.risk_classes.equity_weighting as equity_weighting
@@ -173,6 +178,24 @@ def test_capital_module_reexports_portfolio_kernel_surface() -> None:
     assert (
         capital.calculate_sbm_portfolio_capital_from_batches
         is portfolio.calculate_sbm_portfolio_capital_from_batches
+    )
+
+
+def test_aggregation_module_reexports_kernel_surface() -> None:
+    assert weighted_sensitivity.sort_weighted_sensitivities_deterministic is (
+        kernel_weighting.sort_weighted_sensitivities_deterministic
+    )
+    assert frtb_sbm.aggregate_intra_bucket is kernel_aggregation.aggregate_intra_bucket
+    assert frtb_sbm.aggregate_inter_bucket is kernel_aggregation.aggregate_inter_bucket
+
+    assert frtb_sbm.adjust_correlation_matrix_for_scenario is (
+        kernel_correlation_scenarios.adjust_correlation_matrix_for_scenario
+    )
+    assert aggregation.pairwise_correlation_audit_from_matrix is (
+        kernel_pairwise_evidence.pairwise_correlation_audit_from_matrix
+    )
+    assert aggregation.select_portfolio_correlation_scenario is (
+        kernel_scenario_alignment.select_portfolio_correlation_scenario
     )
 
 
