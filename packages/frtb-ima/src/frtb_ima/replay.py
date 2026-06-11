@@ -11,7 +11,6 @@ from pathlib import Path
 
 from frtb_ima import capital_run_fixture as fixture_module
 from frtb_ima._version import __version__
-from frtb_ima.audit_inputs import compute_inputs_hash
 
 SCHEMA_VERSION = "frtb_ima_replay_report_v1"
 DEFAULT_FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "capital_run_v1"
@@ -235,16 +234,7 @@ def _recompute_fixture_capital_run(fixture_root: Path) -> dict[str, object]:
     backtesting = _as_mapping(outputs["backtesting"])
     capital = _as_mapping(outputs["capital"])
 
-    inputs_hash = compute_inputs_hash(
-        params=fixture.params,
-        risk_factors=fixture.risk_factors,
-        rfet_evidence=fixture.rfet_evidence,
-        scenario_cube=fixture.scenario_cube,
-        stress_histories=fixture.stress_histories,
-        nmrf_evidence=fixture.nmrf_evidence,
-        nmrf_artifacts=fixture.nmrf_artifacts,
-        pla_bt_vectors=fixture.pla_bt_vectors,
-    )
+    inputs_hash = fixture_module.input_hash_for_capital_run_fixture(fixture)
     regime = str(fixture.params["regime"])
     return {
         "run_id": run_id,

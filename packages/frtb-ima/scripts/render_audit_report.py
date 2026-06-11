@@ -15,7 +15,7 @@ from frtb_ima.audit import (
     write_audit_records_ndjson,
     write_capital_run_audit_report,
 )
-from frtb_ima.audit_inputs import compute_inputs_hash
+from frtb_ima.capital_run_fixture import input_hash_for_capital_run_fixture
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -69,7 +69,7 @@ def _audit_log_from_fixture(fixture_root: Path) -> CapitalRunAuditLog:
     as_of_date = date.fromisoformat(str(params["as_of_date"]))
     run_id = str(params["run_id"])
     regime = str(params["regime"])
-    inputs_hash = _fixture_inputs_hash(fixture)
+    inputs_hash = input_hash_for_capital_run_fixture(fixture)
 
     desk_record = DeskAuditRecord(
         run_id=run_id,
@@ -121,19 +121,6 @@ def _audit_log_from_fixture(fixture_root: Path) -> CapitalRunAuditLog:
             "fixture_root": fixture_display,
             "source": "tests/fixtures/capital_run_v1 expected_outputs.json",
         },
-    )
-
-
-def _fixture_inputs_hash(fixture: Any) -> str:
-    return compute_inputs_hash(
-        params=fixture.params,
-        risk_factors=fixture.risk_factors,
-        rfet_evidence=fixture.rfet_evidence,
-        scenario_cube=fixture.scenario_cube,
-        stress_histories=fixture.stress_histories,
-        nmrf_evidence=fixture.nmrf_evidence,
-        nmrf_artifacts=fixture.nmrf_artifacts,
-        pla_bt_vectors=fixture.pla_bt_vectors,
     )
 
 

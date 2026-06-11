@@ -33,6 +33,7 @@ from frtb_ima.stress_periods import (
     stress_period_specs_for_nmrf,
     validate_selected_stress_periods,
 )
+from tests.ima_helpers import business_dates
 
 CONFIDENCE_LEVEL = 0.975
 ES_ESTIMATOR = ESEstimator.DISCRETE_CEIL
@@ -40,19 +41,6 @@ ES_ESTIMATOR = ESEstimator.DISCRETE_CEIL
 
 def _dates(count: int, *, start: date = date(2020, 1, 1)) -> tuple[date, ...]:
     return tuple(start + timedelta(days=idx) for idx in range(count))
-
-
-def _business_dates(
-    count: int, *, start: date, holidays: set[date] | None = None
-) -> tuple[date, ...]:
-    holidays = set() if holidays is None else holidays
-    days: list[date] = []
-    current = start
-    while len(days) < count:
-        if current.weekday() < 5 and current not in holidays:
-            days.append(current)
-        current += timedelta(days=1)
-    return tuple(days)
 
 
 def _series(
@@ -221,7 +209,7 @@ def test_stress_period_selection_records_exact_calendar_window_basis() -> None:
     policy = get_policy()
     as_of_date = date(2025, 2, 28)
     holiday = date(2024, 12, 25)
-    calendar_dates = _business_dates(270, start=date(2024, 2, 29), holidays={holiday})
+    calendar_dates = business_dates(270, start=date(2024, 2, 29), holidays={holiday})
     calendar = BusinessCalendar(
         business_dates=calendar_dates,
         official_holidays=(holiday,),

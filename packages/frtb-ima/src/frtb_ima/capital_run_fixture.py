@@ -14,6 +14,7 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 
+from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.backtesting import trading_desk_backtest_trace_for_policy
 from frtb_ima.capital import models_based_capital, supervisory_multiplier_for_policy
 from frtb_ima.data_contracts import (
@@ -84,6 +85,31 @@ class CapitalRunFixture:
     nmrf_evidence: dict[str, Any]
     nmrf_artifacts: dict[str, npt.NDArray[Any]]
     pla_bt_vectors: dict[str, npt.NDArray[Any]]
+
+
+def input_hash_for_capital_run_fixture(fixture: CapitalRunFixture) -> str:
+    """Compute the canonical input hash for a loaded capital-run fixture.
+
+    Parameters
+    ----------
+    fixture : CapitalRunFixture
+        Loaded capital-run fixture inputs.
+
+    Returns
+    -------
+    str
+        SHA-256 digest over the fixture's input payloads.
+    """
+    return compute_inputs_hash(
+        params=fixture.params,
+        risk_factors=fixture.risk_factors,
+        rfet_evidence=fixture.rfet_evidence,
+        scenario_cube=fixture.scenario_cube,
+        stress_histories=fixture.stress_histories,
+        nmrf_evidence=fixture.nmrf_evidence,
+        nmrf_artifacts=fixture.nmrf_artifacts,
+        pla_bt_vectors=fixture.pla_bt_vectors,
+    )
 
 
 def load_capital_run_v1_fixture() -> CapitalRunFixture:

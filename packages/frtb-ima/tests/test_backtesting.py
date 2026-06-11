@@ -21,19 +21,7 @@ from frtb_ima.validation.backtesting_stages import (
     _exception_reason,
     _zone,
 )
-
-
-def _business_dates(
-    count: int, *, start: date, holidays: set[date] | None = None
-) -> tuple[date, ...]:
-    holidays = set() if holidays is None else holidays
-    days: list[date] = []
-    current = start
-    while len(days) < count:
-        if current.weekday() < 5 and current not in holidays:
-            days.append(current)
-        current += timedelta(days=1)
-    return tuple(days)
+from tests.ima_helpers import business_dates
 
 
 def test_count_exceptions_none() -> None:
@@ -321,7 +309,7 @@ def test_trading_desk_backtest_prorates_exception_limits_for_short_history() -> 
 
 def test_trading_desk_backtest_prorated_calendar_uses_actual_window_size() -> None:
     n = 125
-    dates = _business_dates(n, start=date(2025, 1, 1))
+    dates = business_dates(n, start=date(2025, 1, 1))
     calendar = BusinessCalendar(
         business_dates=dates,
         source="FED",
@@ -367,7 +355,7 @@ def test_trading_desk_backtest_trace_for_policy_uses_policy_window() -> None:
 def test_trading_desk_backtest_policy_calendar_validates_business_window() -> None:
     policy = get_policy()
     holiday = date(2025, 1, 20)
-    dates = _business_dates(
+    dates = business_dates(
         policy.backtesting_window_days, start=date(2025, 1, 1), holidays={holiday}
     )
     calendar = BusinessCalendar(
