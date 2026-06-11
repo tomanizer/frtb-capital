@@ -8,6 +8,7 @@ import frtb_rrao.assembly.payloads as payload_assembly
 import frtb_rrao.assembly.results as result_assembly
 import frtb_rrao.batch as batch
 import frtb_rrao.validation as validation
+from frtb_rrao.validation import batch as batch_validation
 from frtb_rrao.validation import position as position_validation
 
 EXPECTED_PUBLIC_API = (
@@ -82,6 +83,7 @@ def test_validation_package_preserves_public_compatibility_path() -> None:
         is position_validation.normalise_gross_effective_notional
     )
     assert validation.validate_rrao_positions is position_validation.validate_rrao_positions
+    assert callable(batch_validation.validate_rrao_batch)
 
 
 def test_payload_assembly_preserves_private_compatibility_path() -> None:

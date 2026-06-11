@@ -233,7 +233,8 @@ Both paths use `calculate_rrao_capital_from_batch` for capital assembly. The row
 entrypoint first builds `RraoPositionBatch` with `build_rrao_batch_from_positions`.
 The shared kernel then:
 
-1. validate context and positions (or batch invariants)
+1. validate context and positions (or batch invariants in
+   `frtb_rrao.validation.batch`)
 2. classify each position under the selected profile tables
 3. build additive capital lines and excluded zero-capital lines
 4. assemble audit payloads in `frtb_rrao.assembly.payloads` and batch input
