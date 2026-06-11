@@ -15,8 +15,13 @@ from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
-from frtb_common import stable_json_hash
 
+from frtb_sbm.assembly.hashes import (
+    input_hash_for_sbm_batch as _input_hash_for_sbm_batch,
+)
+from frtb_sbm.assembly.hashes import (
+    input_hash_for_sbm_batches as _input_hash_for_sbm_batches,
+)
 from frtb_sbm.data_models import (
     SbmRiskClass,
     SbmRiskMeasure,
@@ -1584,7 +1589,7 @@ def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
     str
     """
 
-    return stable_json_hash({"sensitivities": list(_sensitivity_payloads_from_batch(batch))})
+    return _input_hash_for_sbm_batch(batch)
 
 
 def input_hash_for_batch(batch: SbmSensitivityBatch) -> str:
@@ -1616,15 +1621,7 @@ def input_hash_for_sbm_batches(batches: object) -> str:
     """
 
     validated = coerce_sbm_batch_sequence(batches)
-    return stable_json_hash(
-        {
-            "sensitivities": [
-                payload
-                for batch in validated
-                for payload in _sensitivity_payloads_from_batch(batch)
-            ]
-        }
-    )
+    return _input_hash_for_sbm_batches(validated)
 
 
 def concatenate_sbm_batches(batches: object) -> SbmSensitivityBatch:
@@ -1963,87 +1960,6 @@ def _mapping_citations_from_sensitivities(
     if not any(mapping_citations):
         return None
     return mapping_citations
-
-
-def _sensitivity_payloads_from_batch(batch: SbmSensitivityBatch) -> Iterable[dict[str, object]]:
-    for row_index in range(batch.row_count):
-        sensitivity_id = _str_at(batch.sensitivity_ids, row_index)
-        source_row_id = _str_at(batch.source_row_ids, row_index)
-        payload: dict[str, object] = {
-            "sensitivity_id": sensitivity_id,
-            "source_row_id": source_row_id,
-            "desk_id": _str_at(batch.desk_ids, row_index),
-            "legal_entity": _str_at(batch.legal_entities, row_index),
-            "risk_class": _str_at(batch.risk_classes, row_index),
-            "risk_measure": _str_at(batch.risk_measures, row_index),
-            "bucket": _str_at(batch.buckets, row_index),
-            "risk_factor": _str_at(batch.risk_factors, row_index),
-            "amount": float(batch.amounts[row_index]),
-            "amount_currency": _str_at(batch.amount_currencies, row_index),
-            "sign_convention": _str_at(batch.sign_conventions, row_index),
-            "lineage": {
-                "source_system": _str_at(batch.lineage_source_systems, row_index),
-                "source_file": _str_at(batch.lineage_source_files, row_index),
-                "source_row_id": source_row_id,
-                "source_column_map": [
-                    list(pair) for pair in _source_column_map_at(batch, row_index)
-                ],
-            },
-            "mapping_citation_ids": list(_mapping_citation_ids_at(batch, row_index)),
-        }
-        _add_optional_payload_field(payload, "position_id", batch.position_ids, row_index)
-        _add_optional_payload_field(payload, "qualifier", batch.qualifiers, row_index)
-        _add_optional_payload_field(payload, "tenor", batch.tenors, row_index)
-        _add_optional_payload_field(payload, "option_tenor", batch.option_tenors, row_index)
-        _add_optional_payload_field(
-            payload,
-            "liquidity_horizon_days",
-            batch.liquidity_horizon_days,
-            row_index,
-        )
-        _add_optional_payload_field(payload, "maturity", batch.maturities, row_index)
-        _add_optional_payload_field(payload, "up_shock_amount", batch.up_shock_amounts, row_index)
-        _add_optional_payload_field(
-            payload,
-            "down_shock_amount",
-            batch.down_shock_amounts,
-            row_index,
-        )
-        yield payload
-
-
-def _add_optional_payload_field(
-    payload: dict[str, object],
-    field_name: str,
-    values: ObjectArray | None,
-    row_index: int,
-) -> None:
-    if values is None:
-        return
-    value = values[row_index]
-    if value is None:
-        return
-    if field_name in {"liquidity_horizon_days"}:
-        payload[field_name] = int(value)
-    elif field_name in {"up_shock_amount", "down_shock_amount"}:
-        payload[field_name] = float(value)
-    else:
-        payload[field_name] = cast(str, value)
-
-
-def _source_column_map_at(
-    batch: SbmSensitivityBatch,
-    row_index: int,
-) -> tuple[tuple[str, str], ...]:
-    if batch.source_column_maps is None:
-        return ()
-    return batch.source_column_maps[row_index]
-
-
-def _mapping_citation_ids_at(batch: SbmSensitivityBatch, row_index: int) -> tuple[str, ...]:
-    if batch.mapping_citation_ids is None:
-        return ()
-    return batch.mapping_citation_ids[row_index]
 
 
 def _homogeneous_path_from_sensitivities(
@@ -2598,10 +2514,6 @@ def _sensitivity_id_for_index(values: ObjectArray, row_index: int) -> str:
     if row_index < int(values.shape[0]) and isinstance(values[row_index], str):
         return cast(str, values[row_index])
     return ""
-
-
-def _str_at(values: ObjectArray, row_index: int) -> str:
-    return cast(str, values[row_index])
 
 
 def _freeze_array(array: npt.NDArray[Any]) -> None:

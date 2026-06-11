@@ -10,15 +10,16 @@ from __future__ import annotations
 
 from datetime import date
 
-from frtb_common import UnsupportedRegulatoryFeatureError, stable_json_hash
+from frtb_common import UnsupportedRegulatoryFeatureError
 
+from frtb_sbm.assembly.hashes import profile_content_hash_from_parts
 from frtb_sbm.data_models import (
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmRuleProfile,
 )
-from frtb_sbm.reference_data import citations_for_profile, profile_reference_payload
+from frtb_sbm.reference_data import citations_for_profile
 from frtb_sbm.validation import SbmInputError
 
 SUPPORTED_PROFILE_METADATA: dict[SbmRegulatoryProfile, dict[str, object]] = {
@@ -101,20 +102,6 @@ def get_sbm_rule_profile(profile: SbmRegulatoryProfile | str) -> SbmRuleProfile:
     metadata = SUPPORTED_PROFILE_METADATA[resolved]
     supported_measures = PROFILE_SUPPORTED_MEASURES[resolved]
     citations = citations_for_profile(resolved)
-    payload = {
-        "metadata": {
-            key: value.isoformat() if isinstance(value, date) else value
-            for key, value in sorted(metadata.items())
-        },
-        "supported_measures": {
-            risk_class.value: sorted(measure.value for measure in measures)
-            for risk_class, measures in sorted(
-                supported_measures.items(),
-                key=lambda item: item[0].value,
-            )
-        },
-        "reference_data": profile_reference_payload(resolved),
-    }
     return SbmRuleProfile(
         profile_id=resolved.value,
         regulator=str(metadata["regulator"]),
@@ -124,7 +111,11 @@ def get_sbm_rule_profile(profile: SbmRegulatoryProfile | str) -> SbmRuleProfile:
         supported_risk_classes=frozenset(supported_measures),
         supported_measures=supported_measures,
         citations=citations,
-        content_hash=stable_json_hash(payload),
+        content_hash=profile_content_hash_from_parts(
+            profile=resolved,
+            metadata=metadata,
+            supported_measures=supported_measures,
+        ),
     )
 
 

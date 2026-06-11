@@ -8,8 +8,9 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from frtb_common import stable_json_hash
-
+from frtb_sbm.assembly.hashes import (
+    input_hash_for_validated_sensitivities as _input_hash_for_validated_sensitivities,
+)
 from frtb_sbm.data_models import (
     BucketCapital,
     CurvatureBranchRecord,
@@ -23,8 +24,6 @@ from frtb_sbm.data_models import (
     SbmReconciliationMetadata,
     SbmRunContextSummary,
     SbmScenarioLabel,
-    SbmSensitivity,
-    SbmSourceLineage,
     WeightedSensitivity,
 )
 from frtb_sbm.numeric import is_reconciled
@@ -38,16 +37,6 @@ def input_hash_for_sensitivities(sensitivities: object) -> str:
 
     validated = validate_sbm_sensitivities(sensitivities)
     return _input_hash_for_validated_sensitivities(validated)
-
-
-def _input_hash_for_validated_sensitivities(
-    sensitivities: tuple[SbmSensitivity, ...],
-) -> str:
-    """Return an input hash for an already validated sensitivity tuple."""
-
-    return stable_json_hash(
-        {"sensitivities": [_sensitivity_payload(sensitivity) for sensitivity in sensitivities]}
-    )
 
 
 def serialize_sbm_result(result: SbmCapitalResult) -> dict[str, object]:
@@ -340,47 +329,6 @@ def _reconciliation_payload(
         "rejected_input_count": reconciliation.rejected_input_count,
         "requirement_ids": list(reconciliation.requirement_ids),
         "citation_ids": list(reconciliation.citation_ids),
-    }
-
-
-def _sensitivity_payload(sensitivity: SbmSensitivity) -> dict[str, object]:
-    payload: dict[str, object] = {
-        "sensitivity_id": sensitivity.sensitivity_id,
-        "source_row_id": sensitivity.source_row_id,
-        "desk_id": sensitivity.desk_id,
-        "legal_entity": sensitivity.legal_entity,
-        "risk_class": sensitivity.risk_class.value,
-        "risk_measure": sensitivity.risk_measure.value,
-        "bucket": sensitivity.bucket,
-        "risk_factor": sensitivity.risk_factor,
-        "amount": sensitivity.amount,
-        "amount_currency": sensitivity.amount_currency,
-        "sign_convention": sensitivity.sign_convention.value,
-        "lineage": _lineage_payload(sensitivity.lineage),
-        "mapping_citation_ids": list(sensitivity.mapping_citation_ids),
-    }
-    optional_fields = {
-        "position_id": sensitivity.position_id,
-        "qualifier": sensitivity.qualifier,
-        "tenor": sensitivity.tenor,
-        "option_tenor": sensitivity.option_tenor,
-        "liquidity_horizon_days": sensitivity.liquidity_horizon_days,
-        "maturity": sensitivity.maturity,
-        "up_shock_amount": sensitivity.up_shock_amount,
-        "down_shock_amount": sensitivity.down_shock_amount,
-    }
-    for field_name, value in optional_fields.items():
-        if value is not None:
-            payload[field_name] = value
-    return payload
-
-
-def _lineage_payload(lineage: SbmSourceLineage) -> dict[str, object]:
-    return {
-        "source_system": lineage.source_system,
-        "source_file": lineage.source_file,
-        "source_row_id": lineage.source_row_id,
-        "source_column_map": [list(pair) for pair in lineage.source_column_map],
     }
 
 
