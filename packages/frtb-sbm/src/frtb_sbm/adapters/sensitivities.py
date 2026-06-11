@@ -281,7 +281,7 @@ def _batch_with_hash(
         "SbmSensitivityBatch",
         replace(
             batch_without_hash,
-            input_hash=batch_module.input_hash_for_sbm_batch(batch_without_hash),
+            input_hash=batch_module.input_hash_for_batch(batch_without_hash),
         ),
     )
 
