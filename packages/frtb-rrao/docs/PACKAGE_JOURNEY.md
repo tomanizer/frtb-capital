@@ -54,7 +54,8 @@ Callers wire those steps after RRAO capital is computed.
 | **3 — Canonical rows** | `tuple[RraoPosition, ...]` | `calculate_rrao_capital` → `build_rrao_batch_from_positions` → `calculate_rrao_capital_from_batch` | Tests, small books, notebooks |
 
 Tier 1 is the recommended production journey below. Tiers 2 and 3 share the same
-capital semantics once inputs are validated.
+capital semantics once inputs are validated. Public row classification helpers also
+build the canonical batch before using the vectorised classification kernel.
 
 ---
 
