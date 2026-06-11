@@ -38,6 +38,30 @@ Key prototype assumptions:
 - Backtesting counts APL and HPL exceptions over 250 business days at both 97.5% and 99.0% VaR levels.
 - Runtime logging is structured and scalar-only at policy-wrapper boundaries; post-run audit records use serialisable dataclasses and NDJSON.
 
+## ADR 0045 target layout
+
+Epic [#725](https://github.com/tomanizer/frtb-capital/issues/725) tracks the
+[`ADR 0045`](../../docs/decisions/0045-canonical-batch-pipeline-with-adapter-ingress.md)
+canonical batch pipeline consolidation. For IMA, apply the target layout only to
+batch/adapter ingress and extracted RFET or observation-validation stages; do
+not force scenario-cube, IMCC, NMRF, PLA, or backtesting kernels into a
+standardised-approach batch shape without a package-specific ADR.
+
+```text
+adapters/ -> validation/ -> kernel/ -> assembly/ -> registry.py
+```
+
+Use adapters for Arrow or columnar handoff into package-owned IMA records;
+validation modules for RFET evidence, observation windows, and handoff checks;
+kernel modules for NumPy-native capital math without Arrow/dataframe imports;
+assembly modules for desk/run result records, hashes, citations, and audit
+payloads; and `registry.py` only where IMA dispatch tables reduce real adapter
+or validation duplication.
+
+Do not add empty stage packages that shadow existing modules. Follow
+[`stage_module_skeletons.md`](../../docs/quality/stage_module_skeletons.md) when
+introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
+
 ## Coding style
 
 - Use Python 3.11+.

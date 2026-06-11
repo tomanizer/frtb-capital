@@ -17,3 +17,25 @@ explicitly before a capital result is emitted.
 Reject silent zero-capital placeholders, sibling capital-package imports,
 free-form residual-risk classification shortcuts, and any documentation claim
 that treats U.S. NPR 2.0 output as final regulatory capital.
+
+## ADR 0045 target layout
+
+Epic [#725](https://github.com/tomanizer/frtb-capital/issues/725) tracks the
+[`ADR 0045`](../../docs/decisions/0045-canonical-batch-pipeline-with-adapter-ingress.md)
+canonical batch pipeline consolidation. Review RRAO refactors toward this
+layout:
+
+```text
+adapters/ -> validation/ -> kernel/ -> assembly/ -> registry.py
+```
+
+Adapters own row, batch, Arrow, and CRIF-like ingress into the package-owned
+RRAO batch; validation modules own classification/evidence rules and public
+errors; kernels own cited residual-risk add-on math and must not import Arrow or
+dataframes; assembly owns result records, hashes, citations, and audit payloads;
+and `registry.py` owns profile and factor-type dispatch.
+
+Reject empty stage packages that shadow existing modules. Use
+[`stage_module_skeletons.md`](../../docs/quality/stage_module_skeletons.md) as
+the import-shadowing guardrail before adding `adapters/`, `validation/`,
+`kernel/`, or `assembly/`.
