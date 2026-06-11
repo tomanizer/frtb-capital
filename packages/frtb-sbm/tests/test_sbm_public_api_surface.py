@@ -22,6 +22,8 @@ import frtb_sbm.risk_classes.equity_weighting as equity_weighting
 import frtb_sbm.risk_classes.fx_weighting as fx_weighting
 import frtb_sbm.risk_classes.girr as girr
 import frtb_sbm.risk_classes.girr_weighting as girr_weighting
+import frtb_sbm.risk_classes.vega as vega
+import frtb_sbm.risk_classes.vega_correlations as vega_correlations
 import frtb_sbm.risk_classes.vega_validation as vega_validation
 import frtb_sbm.risk_classes.vega_weighting as vega_weighting
 import frtb_sbm.validation as validation
@@ -244,6 +246,17 @@ def test_weighting_stage_modules_back_compatibility_surface() -> None:
         weighted_sensitivity.weighted_sensitivity_sort_key
         is kernel_weighting.weighted_sensitivity_sort_key
     )
+
+
+def test_vega_module_reexports_correlation_stage_surface() -> None:
+    for name in (
+        "build_non_girr_vega_inter_bucket_correlation_map",
+        "build_non_girr_vega_intra_bucket_correlation_matrix",
+        "non_girr_vega_intra_bucket_correlation",
+    ):
+        assert name in vega.__all__
+        assert name in vega_correlations.__all__
+        assert getattr(vega, name) is getattr(vega_correlations, name)
 
 
 def test_hash_assembly_module_backs_compatibility_paths() -> None:
