@@ -238,7 +238,7 @@ The shared kernel then:
 3. build additive capital lines and excluded zero-capital lines
 4. assemble audit hash payloads in `frtb_rrao.assembly.payloads`
 5. assemble `RraoCapitalResult` with subtotals, `total_rrao`, citations, warnings,
-   `input_hash`, and `profile_hash`
+   `input_hash`, and `profile_hash` via `frtb_rrao.assembly.results`
 6. call `validate_rrao_result_reconciliation` before returning
 
 Return type for the batch helper is **`RraoBatchCapitalCalculation`**; use `.result`

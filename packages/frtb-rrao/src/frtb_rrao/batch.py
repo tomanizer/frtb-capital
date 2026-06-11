@@ -40,13 +40,13 @@ from frtb_rrao._investment_fund_validation import (
     investment_fund_descriptor_present_mask,
     investment_fund_path_mask,
 )
-from frtb_rrao._result_assembly import (
+from frtb_rrao.assembly.payloads import batch_position_payload, hash_position_payloads
+from frtb_rrao.assembly.results import (
     collect_line_citations,
     partition_lines,
     profile_warnings,
     validate_context,
 )
-from frtb_rrao.assembly.payloads import batch_position_payload, hash_position_payloads
 from frtb_rrao.audit import validate_rrao_result_reconciliation
 from frtb_rrao.batch_registry import rrao_position_column_kwargs
 from frtb_rrao.capital import build_rrao_subtotals, included_rrao_total

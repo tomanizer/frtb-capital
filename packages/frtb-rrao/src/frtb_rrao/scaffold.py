@@ -11,7 +11,7 @@ from frtb_common import (
     ValidationStatus,
 )
 
-from frtb_rrao._result_assembly import validate_context
+from frtb_rrao.assembly.results import validate_context
 from frtb_rrao.batch import build_rrao_batch_from_positions, calculate_rrao_capital_from_batch
 from frtb_rrao.data_models import (
     RraoCalculationContext,

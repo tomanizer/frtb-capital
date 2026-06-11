@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import frtb_rrao
 import frtb_rrao._payloads as payload_compat
+import frtb_rrao._result_assembly as result_compat
 import frtb_rrao.assembly.payloads as payload_assembly
+import frtb_rrao.assembly.results as result_assembly
 import frtb_rrao.validation as validation
 from frtb_rrao.validation import position as position_validation
 
@@ -85,3 +87,10 @@ def test_payload_assembly_preserves_private_compatibility_path() -> None:
     assert payload_compat.hash_payload is payload_assembly.hash_payload
     assert payload_compat.hash_position_payloads is payload_assembly.hash_position_payloads
     assert payload_compat.position_payload is payload_assembly.position_payload
+
+
+def test_result_assembly_preserves_private_compatibility_path() -> None:
+    assert result_compat.collect_line_citations is result_assembly.collect_line_citations
+    assert result_compat.partition_lines is result_assembly.partition_lines
+    assert result_compat.profile_warnings is result_assembly.profile_warnings
+    assert result_compat.validate_context is result_assembly.validate_context
