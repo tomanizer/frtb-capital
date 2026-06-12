@@ -193,6 +193,15 @@ def test_batch_validation_and_citation_stages_are_bounded() -> None:
     assert len(batch_lines) < 800
 
 
+def test_public_result_assembly_compatibility_exports() -> None:
+    import frtb_drc.assembly.result as result
+    import frtb_drc.scaffold as scaffold
+
+    assert scaffold._collect_citations is result._collect_citations
+    assert scaffold._risk_weights_by_position is result._risk_weights_by_position
+    assert scaffold._run_branch_metadata is result._run_branch_metadata
+
+
 def test_net_jtd_kernel_stage_exports() -> None:
     import frtb_drc.kernel.net_jtd as net_jtd
 
