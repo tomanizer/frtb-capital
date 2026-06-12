@@ -356,15 +356,15 @@
   },
   "metrics": {
     "drift_marker_matches": 31,
-    "duplicate_function_groups": 24,
-    "duplicate_function_instances": 39,
+    "duplicate_function_groups": 20,
+    "duplicate_function_instances": 35,
     "large_function_count": 44,
     "other_python_loc": 6333,
-    "python_files": 813,
+    "python_files": 814,
     "script_python_loc": 6575,
     "source_python_loc": 70815,
-    "test_python_loc": 52084,
-    "total_python_loc": 135807
+    "test_python_loc": 52056,
+    "total_python_loc": 135779
   },
   "oversized_files": {
     "packages/frtb-cva/examples/cva_notebook_data.py": {
