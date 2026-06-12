@@ -67,6 +67,10 @@ capital, branch-selection, and compatibility import path.
 Curvature factor records and row-wise factor key helpers physically live under
 `frtb_sbm.curvature_factors`; `frtb_sbm.curvature` remains the compatibility
 path for existing curvature helper imports.
+Curvature row and batch input validation physically lives under
+`frtb_sbm.curvature_inputs`, `frtb_sbm.curvature_batch_inputs`, and
+`frtb_sbm.curvature_batch_mapping`; `frtb_sbm.curvature` remains the public
+compatibility path for existing curvature input and branch helpers.
 Validation helpers physically live under the `frtb_sbm.validation` package, including
 `batch`, `batch_arrays`, `batch_lineage`, `coercion`, `context`,
 `risk_class_fields`, and `sensitivity`;

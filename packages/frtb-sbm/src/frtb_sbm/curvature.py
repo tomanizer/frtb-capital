@@ -29,21 +29,16 @@ from frtb_sbm.batch import (
     sorted_curvature_batch_indices,
     sorted_girr_curvature_batch_indices,
 )
-from frtb_sbm.commodity_reference_data import (
-    commodity_bucket_definition,
-)
-from frtb_sbm.csr_nonsec_reference_data import (
-    CSR_BOND_RISK_FACTOR,
-    CSR_CDS_RISK_FACTOR,
-    csr_nonsec_bucket_definition,
-)
-from frtb_sbm.csr_sec_ctp_reference_data import (
-    csr_sec_ctp_bucket_definition,
-)
-from frtb_sbm.csr_sec_nonctp_reference_data import (
-    CSR_SEC_BOND_RISK_FACTOR,
-    CSR_SEC_CDS_RISK_FACTOR,
-    csr_sec_nonctp_bucket_definition,
+from frtb_sbm.curvature_batch_inputs import (
+    _curvature_input_branch_records_from_batch,
+    _optional_text_at,
+    _scaled_curvature_batch_shock,
+    _text_at,
+    _validate_and_get_curvature_shocks,
+    _validate_and_get_girr_curvature_shocks,
+    _validate_curvature_batch_for_capital,
+    validate_curvature_batch,
+    validate_girr_curvature_batch,
 )
 from frtb_sbm.curvature_correlations import (
     _bucket_sort_key,
@@ -71,16 +66,24 @@ from frtb_sbm.curvature_factors import (
     _curvature_factor_qualifier,
     _curvature_factor_risk_factor,
     _CurvatureFactor,
-    _required_curvature_shock,
     _scaled_curvature_shock,
-    _validate_fx_curvature_scalar_flag,
+)
+from frtb_sbm.curvature_factors import (
+    _required_curvature_shock as _required_curvature_shock,
+)
+from frtb_sbm.curvature_inputs import (
+    _curvature_input_branch_records,
+    _validate_curvature_capital_sensitivities,
+    curvature_worst_branch,
+    parse_curvature_input,
+    selected_curvature_shock_amount,
+    validate_curvature_sensitivities,
 )
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
     CurvatureBranchRecord,
     CurvatureBucketBranchRecord,
-    CurvatureInput,
     IntraBucketScenarioRecord,
     PairwiseCorrelationRecord,
     PairwiseCorrelationSummary,
@@ -96,21 +99,16 @@ from frtb_sbm.data_models import (
 )
 from frtb_sbm.equity_reference_data import (
     EQUITY_SPOT_RISK_FACTOR,
-    equity_bucket_definition,
 )
 from frtb_sbm.reference_data import (
     curvature_citation_ids,
-    curvature_risk_weight,
-    girr_bucket_definition,
     normalise_fx_delta_currency_code,
 )
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 from frtb_sbm.validation import (
     SbmInputError,
     ensure_sbm_profile_known,
-    normalise_sensitivity_amount,
     sensitivity_sort_key,
-    validate_sbm_sensitivities,
 )
 
 CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"
@@ -156,182 +154,6 @@ class _CurvatureBucketScenario:
     factors: tuple[_CurvatureFactor, ...]
     correlation_matrix: npt.NDArray[np.float64]
     citation_ids: tuple[str, ...]
-
-
-def parse_curvature_input(
-    sensitivity: SbmSensitivity,
-    *,
-    profile_id: str,
-) -> CurvatureInput:
-    """Build a canonical curvature input from one validated CURVATURE sensitivity.
-    Parameters
-    ----------
-    sensitivity : SbmSensitivity
-        See signature.
-    profile_id : str
-        See signature.
-
-    Returns
-    -------
-    CurvatureInput
-    """
-
-    ensure_sbm_profile_known(profile_id)
-    if sensitivity.risk_measure is not SbmRiskMeasure.CURVATURE:
-        raise SbmInputError(
-            "parse_curvature_input requires risk_measure=CURVATURE",
-            field="risk_measure",
-            sensitivity_id=sensitivity.sensitivity_id,
-        )
-    up_shock_amount = sensitivity.up_shock_amount
-    down_shock_amount = sensitivity.down_shock_amount
-    if up_shock_amount is None or down_shock_amount is None:
-        raise SbmInputError(
-            "curvature inputs require up_shock_amount and down_shock_amount",
-            field="up_shock_amount",
-            sensitivity_id=sensitivity.sensitivity_id,
-        )
-    return CurvatureInput(
-        sensitivity_id=sensitivity.sensitivity_id,
-        risk_class=sensitivity.risk_class,
-        bucket=sensitivity.bucket,
-        risk_factor=sensitivity.risk_factor,
-        amount_currency=sensitivity.amount_currency,
-        up_shock_amount=normalise_sensitivity_amount(
-            up_shock_amount,
-            sensitivity_id=sensitivity.sensitivity_id,
-        ),
-        down_shock_amount=normalise_sensitivity_amount(
-            down_shock_amount,
-            sensitivity_id=sensitivity.sensitivity_id,
-        ),
-        citation_ids=curvature_citation_ids(profile_id),
-    )
-
-
-def validate_curvature_sensitivities(
-    sensitivities: Sequence[SbmSensitivity],
-    *,
-    profile_id: str,
-) -> tuple[CurvatureInput, ...]:
-    """Validate curvature-only sensitivities and return canonical curvature inputs.
-    Parameters
-    ----------
-    sensitivities : Sequence[SbmSensitivity]
-        See signature.
-    profile_id : str
-        See signature.
-
-    Returns
-    -------
-    tuple[CurvatureInput, ...]
-    """
-
-    ensure_sbm_profile_known(profile_id)
-    if not sensitivities:
-        raise SbmInputError("sensitivities must not be empty", field="sensitivities")
-    for sensitivity in sensitivities:
-        if sensitivity.risk_measure is not SbmRiskMeasure.CURVATURE:
-            raise SbmInputError(
-                "validate_curvature_sensitivities accepts only CURVATURE rows",
-                field="risk_measure",
-                sensitivity_id=sensitivity.sensitivity_id,
-            )
-    validated = validate_sbm_sensitivities(sensitivities)
-    ordered = sorted(validated, key=sensitivity_sort_key)
-    return tuple(
-        parse_curvature_input(sensitivity, profile_id=profile_id) for sensitivity in ordered
-    )
-
-
-def curvature_worst_branch(up_shock_amount: float, down_shock_amount: float) -> str:
-    """Return the profile-prescribed worst-side branch label for up/down shocks.
-    Parameters
-    ----------
-    up_shock_amount : float
-        See signature.
-    down_shock_amount : float
-        See signature.
-
-    Returns
-    -------
-    str
-    """
-
-    up = normalise_sensitivity_amount(up_shock_amount)
-    down = normalise_sensitivity_amount(down_shock_amount)
-    if down < up:
-        return "down"
-    return "up"
-
-
-def selected_curvature_shock_amount(up_shock_amount: float, down_shock_amount: float) -> float:
-    """Return the more negative up/down shock amount for curvature weighting.
-    Parameters
-    ----------
-    up_shock_amount : float
-        See signature.
-    down_shock_amount : float
-        See signature.
-
-    Returns
-    -------
-    float
-    """
-
-    up = normalise_sensitivity_amount(up_shock_amount)
-    down = normalise_sensitivity_amount(down_shock_amount)
-    branch = curvature_worst_branch(up, down)
-    return down if branch == "down" else up
-
-
-def validate_girr_curvature_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-) -> SbmSensitivityBatch:
-    """Validate a GIRR curvature batch and its separate MAR21.5 shock arrays.
-    Parameters
-    ----------
-    batch : SbmSensitivityBatch
-        See signature.
-    profile_id : str
-        See signature.
-
-    Returns
-    -------
-    SbmSensitivityBatch
-    """
-
-    _validate_and_get_girr_curvature_shocks(batch, profile_id=profile_id)
-    return batch
-
-
-def validate_curvature_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-    reporting_currency: str,
-    expected_risk_class: SbmRiskClass | None = None,
-) -> SbmSensitivityBatch:
-    """Validate a curvature batch without materialising row dataclasses.
-    Parameters
-    ----------
-    batch, profile_id, reporting_currency, expected_risk_class :
-        See function signature for types and defaults.
-
-    Returns
-    -------
-    SbmSensitivityBatch
-    """
-
-    _validate_curvature_batch_for_capital(
-        batch,
-        profile_id=profile_id,
-        reporting_currency=reporting_currency,
-        expected_risk_class=expected_risk_class,
-    )
-    return batch
 
 
 def select_girr_curvature_branches_from_batch(
@@ -674,69 +496,6 @@ def curvature_capital_unsupported_feature(profile_id: str) -> SbmUnsupportedFeat
     )
 
 
-def _validate_curvature_capital_sensitivities(
-    sensitivities: tuple[SbmSensitivity, ...],
-    *,
-    profile_id: str,
-    reporting_currency: str,
-) -> tuple[SbmSensitivity, ...]:
-    ensure_sbm_profile_known(profile_id)
-    if not sensitivities:
-        raise SbmInputError("sensitivities must not be empty", field="sensitivities")
-    validated = tuple(sorted(validate_sbm_sensitivities(sensitivities), key=sensitivity_sort_key))
-    risk_classes = {item.risk_class for item in validated}
-    if len(risk_classes) != 1:
-        raise UnsupportedRegulatoryFeatureError(
-            "frtb-sbm curvature capital requires a homogeneous risk class"
-        )
-    risk_class = next(iter(risk_classes))
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        risk_class,
-        SbmRiskMeasure.CURVATURE,
-    )
-    for sensitivity in validated:
-        if sensitivity.risk_measure is not SbmRiskMeasure.CURVATURE:
-            raise UnsupportedRegulatoryFeatureError(
-                "frtb-sbm curvature capital does not support "
-                f"risk_measure={sensitivity.risk_measure.value}"
-            )
-        if sensitivity.up_shock_amount is None or sensitivity.down_shock_amount is None:
-            raise SbmInputError(
-                "curvature inputs require up_shock_amount and down_shock_amount",
-                field="up_shock_amount",
-                sensitivity_id=sensitivity.sensitivity_id,
-            )
-        _validate_curvature_mapping(
-            sensitivity,
-            profile_id=profile_id,
-            reporting_currency=reporting_currency,
-        )
-    return validated
-
-
-def _curvature_input_branch_records(
-    sensitivities: Sequence[SbmSensitivity],
-    *,
-    profile_id: str,
-) -> tuple[CurvatureBranchRecord, ...]:
-    citations = curvature_citation_ids(profile_id)
-    records: list[CurvatureBranchRecord] = []
-    for sensitivity in sensitivities:
-        up_shock = _required_curvature_shock(sensitivity, field="up_shock_amount")
-        down_shock = _required_curvature_shock(sensitivity, field="down_shock_amount")
-        records.append(
-            CurvatureBranchRecord(
-                sensitivity_id=sensitivity.sensitivity_id,
-                selected_branch=curvature_worst_branch(up_shock, down_shock),
-                up_shock_amount=up_shock,
-                down_shock_amount=down_shock,
-                citation_ids=citations,
-            )
-        )
-    return tuple(records)
-
-
 def _build_curvature_factors(
     sensitivities: Sequence[SbmSensitivity],
     *,
@@ -843,66 +602,6 @@ def _build_curvature_factors_from_batch(
             )
         )
     return tuple(factors)
-
-
-def _validate_curvature_mapping(
-    sensitivity: SbmSensitivity,
-    *,
-    profile_id: str,
-    reporting_currency: str,
-) -> None:
-    risk_class = sensitivity.risk_class
-    if risk_class is SbmRiskClass.GIRR:
-        girr_bucket_definition(profile_id, sensitivity.bucket)
-        if sensitivity.risk_factor.strip().upper() in {"INFL", "XCCY"}:
-            raise UnsupportedRegulatoryFeatureError(
-                "GIRR curvature has no capital requirement for inflation or "
-                "cross-currency basis risk factors (MAR21.8(5)(b))"
-            )
-        return
-    if risk_class is SbmRiskClass.FX:
-        bucket = normalise_fx_delta_currency_code(sensitivity.bucket)
-        risk_factor = normalise_fx_delta_currency_code(sensitivity.risk_factor)
-        reporting = normalise_fx_delta_currency_code(reporting_currency)
-        if bucket != risk_factor:
-            raise SbmInputError(
-                "FX curvature bucket must match risk_factor currency",
-                field="bucket",
-                sensitivity_id=sensitivity.sensitivity_id,
-            )
-        curvature_risk_weight(
-            profile_id,
-            risk_class=risk_class,
-            currency=risk_factor,
-            reporting_currency=reporting,
-        )
-        _validate_fx_curvature_scalar_flag(sensitivity, reporting_currency=reporting)
-        return
-    if risk_class is SbmRiskClass.EQUITY:
-        equity_bucket_definition(profile_id, sensitivity.bucket)
-        if sensitivity.risk_factor.strip().upper() != EQUITY_SPOT_RISK_FACTOR:
-            raise UnsupportedRegulatoryFeatureError(
-                "equity curvature has no capital requirement for equity repo rates (MAR21.12(3))"
-            )
-        return
-    if risk_class is SbmRiskClass.COMMODITY:
-        commodity_bucket_definition(profile_id, sensitivity.bucket)
-        return
-    if risk_class is SbmRiskClass.CSR_NONSEC:
-        csr_nonsec_bucket_definition(profile_id, sensitivity.bucket)
-        _normalise_csr_basis(sensitivity.risk_factor)
-        return
-    if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        csr_sec_ctp_bucket_definition(profile_id, sensitivity.bucket)
-        _normalise_csr_basis(sensitivity.risk_factor)
-        return
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        csr_sec_nonctp_bucket_definition(profile_id, sensitivity.bucket)
-        _normalise_csr_sec_basis(sensitivity.risk_factor)
-        return
-    raise UnsupportedRegulatoryFeatureError(
-        f"frtb-sbm curvature capital is unsupported for risk_class={risk_class.value}"
-    )
 
 
 def _curvature_factor_key_from_batch(
@@ -1345,309 +1044,6 @@ def _curvature_weighted_qualifier(
         parts.append(factor.qualifier)
     parts.extend([selected_branch, scenario.value])
     return ":".join(parts)
-
-
-def _normalise_csr_basis(risk_factor: str) -> str:
-    normalised = risk_factor.strip().upper()
-    if normalised not in {CSR_BOND_RISK_FACTOR, CSR_CDS_RISK_FACTOR}:
-        raise UnsupportedRegulatoryFeatureError(
-            "frtb-sbm CSR curvature supports BOND and CDS risk factors only; "
-            f"received risk_factor={normalised!r}"
-        )
-    return normalised
-
-
-def _normalise_csr_sec_basis(risk_factor: str) -> str:
-    normalised = risk_factor.strip().upper()
-    if normalised not in {CSR_SEC_BOND_RISK_FACTOR, CSR_SEC_CDS_RISK_FACTOR}:
-        raise UnsupportedRegulatoryFeatureError(
-            "frtb-sbm CSR securitisation curvature supports BOND and CDS risk factors only; "
-            f"received risk_factor={normalised!r}"
-        )
-    return normalised
-
-
-def _validate_curvature_batch_for_capital(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-    reporting_currency: str,
-    expected_risk_class: SbmRiskClass | None,
-) -> tuple[SbmRiskClass, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    ensure_sbm_profile_known(profile_id)
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
-    if batch.row_count == 0:
-        raise SbmInputError("curvature batch must not be empty", field="batch")
-    risk_class = batch.risk_class
-    if expected_risk_class is not None and risk_class is not expected_risk_class:
-        raise UnsupportedRegulatoryFeatureError(
-            "frtb-sbm curvature capital expected "
-            f"risk_class={expected_risk_class.value}; received risk_class={risk_class.value}"
-        )
-    if risk_class not in _SUPPORTED_CURVATURE_RISK_CLASSES:
-        raise UnsupportedRegulatoryFeatureError(
-            f"frtb-sbm curvature capital is unsupported for risk_class={risk_class.value}"
-        )
-    if batch.risk_measure is not SbmRiskMeasure.CURVATURE:
-        raise UnsupportedRegulatoryFeatureError(
-            f"frtb-sbm curvature capital does not support risk_measure={batch.risk_measure.value}"
-        )
-    ensure_profile_supports_risk_class_measure(
-        profile_id,
-        risk_class,
-        SbmRiskMeasure.CURVATURE,
-    )
-    up_shocks, down_shocks = _validate_and_get_curvature_shocks(
-        batch,
-        profile_id=profile_id,
-    )
-    reporting = normalise_fx_delta_currency_code(reporting_currency)
-    for row_index in sorted_curvature_batch_indices(batch):
-        _validate_curvature_mapping_from_batch(
-            batch,
-            int(row_index),
-            profile_id=profile_id,
-            reporting_currency=reporting,
-            risk_class=risk_class,
-        )
-    return risk_class, up_shocks, down_shocks
-
-
-def _validate_curvature_mapping_from_batch(
-    batch: SbmSensitivityBatch,
-    row_index: int,
-    *,
-    profile_id: str,
-    reporting_currency: str,
-    risk_class: SbmRiskClass,
-) -> None:
-    sensitivity_id = _text_at(batch.sensitivity_ids, row_index)
-    bucket = _text_at(batch.buckets, row_index)
-    risk_factor = _text_at(batch.risk_factors, row_index)
-    qualifier = _optional_text_at(batch.qualifiers, row_index)
-    if risk_class is SbmRiskClass.GIRR:
-        girr_bucket_definition(profile_id, bucket)
-        if risk_factor.strip().upper() in {"INFL", "XCCY"}:
-            raise UnsupportedRegulatoryFeatureError(
-                "GIRR curvature has no capital requirement for inflation or "
-                "cross-currency basis risk factors (MAR21.8(5)(b))"
-            )
-        return
-    if risk_class is SbmRiskClass.FX:
-        normalised_bucket = normalise_fx_delta_currency_code(bucket)
-        normalised_risk_factor = normalise_fx_delta_currency_code(risk_factor)
-        if normalised_bucket != normalised_risk_factor:
-            raise SbmInputError(
-                "FX curvature bucket must match risk_factor currency",
-                field="bucket",
-                sensitivity_id=sensitivity_id,
-            )
-        curvature_risk_weight(
-            profile_id,
-            risk_class=risk_class,
-            currency=normalised_risk_factor,
-            reporting_currency=reporting_currency,
-        )
-        _validate_fx_curvature_scalar_flag_from_values(
-            qualifier,
-            _mapping_citation_ids_from_batch(batch, row_index),
-            reporting_currency=reporting_currency,
-        )
-        return
-    if risk_class is SbmRiskClass.EQUITY:
-        equity_bucket_definition(profile_id, bucket)
-        if risk_factor.strip().upper() != EQUITY_SPOT_RISK_FACTOR:
-            raise UnsupportedRegulatoryFeatureError(
-                "equity curvature has no capital requirement for equity repo rates (MAR21.12(3))"
-            )
-        return
-    if risk_class is SbmRiskClass.COMMODITY:
-        commodity_bucket_definition(profile_id, bucket)
-        return
-    if risk_class is SbmRiskClass.CSR_NONSEC:
-        csr_nonsec_bucket_definition(profile_id, bucket)
-        _normalise_csr_basis(risk_factor)
-        return
-    if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        csr_sec_ctp_bucket_definition(profile_id, bucket)
-        _normalise_csr_basis(risk_factor)
-        return
-    if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        csr_sec_nonctp_bucket_definition(profile_id, bucket)
-        _normalise_csr_sec_basis(risk_factor)
-        return
-    raise UnsupportedRegulatoryFeatureError(
-        f"frtb-sbm curvature capital is unsupported for risk_class={risk_class.value}"
-    )
-
-
-def _curvature_input_branch_records_from_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    up_shocks: npt.NDArray[np.float64],
-    down_shocks: npt.NDArray[np.float64],
-    profile_id: str,
-) -> tuple[CurvatureBranchRecord, ...]:
-    citations = curvature_citation_ids(profile_id)
-    records: list[CurvatureBranchRecord] = []
-    for row_index in sorted_curvature_batch_indices(batch):
-        up_shock = float(up_shocks[row_index])
-        down_shock = float(down_shocks[row_index])
-        records.append(
-            CurvatureBranchRecord(
-                sensitivity_id=_text_at(batch.sensitivity_ids, int(row_index)),
-                selected_branch=curvature_worst_branch(up_shock, down_shock),
-                up_shock_amount=up_shock,
-                down_shock_amount=down_shock,
-                citation_ids=citations,
-            )
-        )
-    return tuple(records)
-
-
-def _scaled_curvature_batch_shock(
-    batch: SbmSensitivityBatch,
-    row_index: int,
-    shock: float,
-) -> float:
-    if (
-        batch.risk_class is SbmRiskClass.FX
-        and FX_CURVATURE_SCALAR_1_5_FLAG in _mapping_citation_ids_from_batch(batch, row_index)
-    ):
-        return float(shock) / 1.5
-    return float(shock)
-
-
-def _validate_fx_curvature_scalar_flag_from_values(
-    qualifier: str | None,
-    mapping_citation_ids: tuple[str, ...],
-    *,
-    reporting_currency: str,
-) -> None:
-    if FX_CURVATURE_SCALAR_1_5_FLAG not in mapping_citation_ids:
-        return
-    qualifier_text = qualifier.strip().upper() if qualifier else ""
-    if qualifier_text:
-        tokens = tuple(
-            token for token in qualifier_text.replace("/", " ").replace("-", " ").split() if token
-        )
-        if len(tokens) == 2 and all(len(token) == 3 and token.isalpha() for token in tokens):
-            if reporting_currency in tokens:
-                raise UnsupportedRegulatoryFeatureError(
-                    "FX curvature MAR21.98 scalar applies only when the option does not "
-                    "reference the reporting currency"
-                )
-            return
-    raise UnsupportedRegulatoryFeatureError(
-        "FX curvature MAR21.98 scalar requires a two-currency qualifier such as "
-        "'EUR/GBP' so audit evidence identifies the non-reporting-currency pair"
-    )
-
-
-def _text_at(values: npt.NDArray[np.object_], row_index: int) -> str:
-    return str(values[row_index])
-
-
-def _optional_text_at(values: npt.NDArray[np.object_] | None, row_index: int) -> str | None:
-    if values is None:
-        return None
-    value = values[row_index]
-    if value is None:
-        return None
-    return str(value)
-
-
-def _mapping_citation_ids_from_batch(
-    batch: SbmSensitivityBatch,
-    row_index: int,
-) -> tuple[str, ...]:
-    if batch.mapping_citation_ids is None:
-        return ()
-    return batch.mapping_citation_ids[row_index]
-
-
-def _require_girr_curvature_batch(batch: SbmSensitivityBatch) -> None:
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
-    if batch.risk_class is not SbmRiskClass.GIRR:
-        raise SbmInputError("GIRR curvature batch only accepts GIRR sensitivities")
-    if batch.risk_measure is not SbmRiskMeasure.CURVATURE:
-        raise SbmInputError("GIRR curvature batch only accepts CURVATURE sensitivities")
-    if batch.up_shock_amounts is None or batch.down_shock_amounts is None:
-        raise SbmInputError(
-            "curvature inputs require up_shock_amount and down_shock_amount",
-            field="up_shock_amount",
-        )
-
-
-def _validate_and_get_girr_curvature_shocks(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    ensure_sbm_profile_known(profile_id)
-    _require_girr_curvature_batch(batch)
-    return _validate_and_get_curvature_shocks(batch, profile_id=profile_id)
-
-
-def _validate_and_get_curvature_shocks(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    ensure_sbm_profile_known(profile_id)
-    if not isinstance(batch, SbmSensitivityBatch):
-        raise SbmInputError("batch must be SbmSensitivityBatch", field="batch")
-    if batch.risk_measure is not SbmRiskMeasure.CURVATURE:
-        raise SbmInputError("curvature batch only accepts CURVATURE sensitivities")
-    if batch.up_shock_amounts is None or batch.down_shock_amounts is None:
-        raise SbmInputError(
-            "curvature inputs require up_shock_amount and down_shock_amount",
-            field="up_shock_amount",
-        )
-    return (
-        _curvature_shock_float_array(batch, batch.up_shock_amounts, field="up_shock_amount"),
-        _curvature_shock_float_array(batch, batch.down_shock_amounts, field="down_shock_amount"),
-    )
-
-
-def _curvature_shock_float_array(
-    batch: SbmSensitivityBatch,
-    values: npt.NDArray[np.object_] | None,
-    *,
-    field: str,
-) -> npt.NDArray[np.float64]:
-    if values is None:
-        raise SbmInputError(
-            "curvature inputs require up_shock_amount and down_shock_amount",
-            field=field,
-        )
-    shocks = np.empty(batch.row_count, dtype=np.float64)
-    for row_index, value in enumerate(values):
-        sensitivity_id = str(batch.sensitivity_ids[row_index])
-        if value is None:
-            raise SbmInputError(
-                "curvature inputs require up_shock_amount and down_shock_amount",
-                field=field,
-                sensitivity_id=sensitivity_id,
-            )
-        try:
-            shocks[row_index] = float(value)
-        except (TypeError, ValueError) as exc:
-            raise SbmInputError(
-                "value must be numeric",
-                field=field,
-                sensitivity_id=sensitivity_id,
-            ) from exc
-        if not np.isfinite(shocks[row_index]):
-            raise SbmInputError(
-                "value must be finite",
-                field=field,
-                sensitivity_id=sensitivity_id,
-            )
-    shocks.setflags(write=False)
-    return shocks
 
 
 __all__ = [
