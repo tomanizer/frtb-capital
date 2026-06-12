@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from enum import StrEnum
+from functools import partial
 from typing import Any, TypeVar, cast
 
 import frtb_common.batch_arrays as _batch_arrays
@@ -59,20 +60,6 @@ def _required_text_array(
     return _batch_arrays.object_array(
         [_required_text(value, field_name) for value in values],
         copy=copy,
-    )
-
-
-def _optional_text_array(
-    values: NullableColumnInput | None,
-    row_count: int,
-    *,
-    copy: bool,
-) -> ObjectArray:
-    return _batch_arrays.optional_text_array(
-        values,
-        row_count,
-        copy=copy,
-        optional_text=_optional_text,
     )
 
 
@@ -226,6 +213,9 @@ def _optional_text(value: object | None) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+_optional_text_array = partial(_batch_arrays.optional_text_array, optional_text=_optional_text)
 
 
 def _required_float(value: object, field_name: str) -> float:

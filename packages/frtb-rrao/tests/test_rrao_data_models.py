@@ -4,6 +4,7 @@ from dataclasses import FrozenInstanceError
 from datetime import date
 
 import pytest
+from tests.rrao_fixture_helpers import sample_rrao_lineage as sample_lineage
 
 from frtb_rrao import (
     RraoBackToBackMatch,
@@ -20,21 +21,8 @@ from frtb_rrao import (
     RraoInvestmentFundMethod,
     RraoPosition,
     RraoRegulatoryProfile,
-    RraoSourceLineage,
     RraoSubtotal,
 )
-
-
-def sample_lineage() -> RraoSourceLineage:
-    return RraoSourceLineage(
-        source_system="synthetic-risk",
-        source_file="rrao.csv",
-        source_row_id="row-001",
-        source_column_map=(
-            ("RiskType", "evidence_type"),
-            ("AmountUSD", "gross_effective_notional"),
-        ),
-    )
 
 
 def sample_position() -> RraoPosition:

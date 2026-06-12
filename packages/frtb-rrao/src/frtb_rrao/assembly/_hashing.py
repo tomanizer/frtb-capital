@@ -8,22 +8,7 @@ from collections.abc import Iterable
 
 from frtb_common import stable_json_hash
 
-
-def hash_payload(payload: object) -> str:
-    """
-    Return the package-standard deterministic payload hash.
-
-    Parameters
-    ----------
-    payload : object
-        JSON-stable payload object.
-
-    Returns
-    -------
-    str
-        Deterministic payload hash.
-    """
-    return stable_json_hash(payload)
+hash_payload = stable_json_hash
 
 
 def hash_position_payloads(payloads: Iterable[dict[str, object]]) -> str:

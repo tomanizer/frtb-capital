@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from tests.rrao_fixture_helpers import sample_rrao_lineage as sample_lineage
 
 import frtb_rrao.classification as classification_module
 from frtb_rrao import (
@@ -9,22 +10,9 @@ from frtb_rrao import (
     RraoInputError,
     RraoPosition,
     RraoRegulatoryProfile,
-    RraoSourceLineage,
     classify_rrao_position,
     classify_rrao_positions,
 )
-
-
-def sample_lineage() -> RraoSourceLineage:
-    return RraoSourceLineage(
-        source_system="synthetic-risk",
-        source_file="rrao.csv",
-        source_row_id="row-001",
-        source_column_map=(
-            ("RiskType", "evidence_type"),
-            ("AmountUSD", "gross_effective_notional"),
-        ),
-    )
 
 
 def sample_position(**overrides: object) -> RraoPosition:

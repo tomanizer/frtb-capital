@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+import pytest
 from frtb_drc import DrcFairValueCapEvidence, DrcRiskWeightEvidence, DrcSourceLineage
 from frtb_drc.data_models import DrcPosition
 
@@ -89,3 +90,22 @@ def drc_fair_value_cap_evidence_from_dict(
         is_stale=bool(raw.get("is_stale", False)),
         validation_flags=tuple(raw.get("validation_flags", ())),
     )
+
+
+def assert_nested_close(actual: object, expected: object) -> None:
+    if isinstance(expected, dict):
+        assert isinstance(actual, dict)
+        assert actual.keys() == expected.keys()
+        for key, expected_value in expected.items():
+            assert_nested_close(actual[key], expected_value)
+        return
+    if isinstance(expected, list):
+        assert isinstance(actual, list)
+        assert len(actual) == len(expected)
+        for actual_value, expected_value in zip(actual, expected, strict=True):
+            assert_nested_close(actual_value, expected_value)
+        return
+    if isinstance(expected, float):
+        assert actual == pytest.approx(expected)
+        return
+    assert actual == expected

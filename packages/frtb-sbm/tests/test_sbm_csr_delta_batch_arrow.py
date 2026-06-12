@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import inspect
-from datetime import date
 
 import numpy as np
 import pyarrow as pa
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError, source_content_hash
 from frtb_sbm import (
-    SbmCalculationContext,
     SbmPairwiseEvidenceMode,
     SbmRegulatoryProfile,
     SbmRiskClass,
@@ -54,6 +52,8 @@ from sbm_registry_helpers import (
     normalize_sbm_path,
 )
 
+from tests.sbm_fixture_helpers import sample_sbm_basel_context as sample_context
+
 
 def build_csr_nonsec_delta_batch_from_sensitivities(sensitivities: object):
     return build_sbm_batch(sensitivities, SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA)
@@ -67,16 +67,6 @@ def build_csr_sec_nonctp_delta_batch_from_sensitivities(
 
 def build_csr_sec_ctp_delta_batch_from_sensitivities(sensitivities: object):
     return build_sbm_batch(sensitivities, SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA)
-
-
-def sample_context(run_id: str) -> SbmCalculationContext:
-    return SbmCalculationContext(
-        run_id=run_id,
-        calculation_date=date(2026, 5, 30),
-        base_currency="USD",
-        reporting_currency="USD",
-        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
-    )
 
 
 def sample_lineage(row_id: str) -> SbmSourceLineage:

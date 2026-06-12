@@ -6,6 +6,8 @@ import pytest
 from frtb_drc import calculate_drc_capital, result_json, validate_reconciliation
 from frtb_drc.demo_fixture import load_drc_nonsec_v2_fixture
 
+from tests.drc_fixture_helpers import assert_nested_close as _assert_nested_close
+
 
 def test_nonsec_v2_fixture_matches_expected_stage_outputs() -> None:
     fixture = load_drc_nonsec_v2_fixture()
@@ -48,25 +50,6 @@ def test_nonsec_v2_fixture_has_expected_bucket_coverage() -> None:
 def test_nonsec_v2_fixture_has_expected_position_count() -> None:
     fixture = load_drc_nonsec_v2_fixture()
     assert fixture.expected_outputs["input_count"] == 40
-
-
-def _assert_nested_close(actual: object, expected: object) -> None:
-    if isinstance(expected, dict):
-        assert isinstance(actual, dict)
-        assert actual.keys() == expected.keys()
-        for key, expected_value in expected.items():
-            _assert_nested_close(actual[key], expected_value)
-        return
-    if isinstance(expected, list):
-        assert isinstance(actual, list)
-        assert len(actual) == len(expected)
-        for actual_value, expected_value in zip(actual, expected, strict=True):
-            _assert_nested_close(actual_value, expected_value)
-        return
-    if isinstance(expected, float):
-        assert actual == pytest.approx(expected)
-        return
-    assert actual == expected
 
 
 def _selected_outputs(result: object) -> dict[str, object]:

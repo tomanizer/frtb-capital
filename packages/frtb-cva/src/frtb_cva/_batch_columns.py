@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence, Sized
 from enum import StrEnum
+from functools import partial
 from typing import Any, TypeVar, cast
 
 import frtb_common.batch_arrays as _batch_arrays
@@ -40,20 +41,6 @@ def _require_optional_lengths(row_count: int, **columns: Sized | None) -> None:
 
 def _required_text_array(values: ColumnInput, field: str, *, copy: bool) -> ObjectArray:
     return _batch_arrays.object_array([_required_text(value, field) for value in values], copy=copy)
-
-
-def _optional_text_array(
-    values: NullableColumnInput | None,
-    row_count: int,
-    *,
-    copy: bool,
-) -> ObjectArray:
-    return _batch_arrays.optional_text_array(
-        values,
-        row_count,
-        copy=copy,
-        optional_text=_optional_text,
-    )
 
 
 def _enum_array(
@@ -193,6 +180,9 @@ def _optional_text(value: object | None) -> str | None:
     if isinstance(value, str) and not value.strip():
         return None
     return _required_text(value, "optional text field")
+
+
+_optional_text_array = partial(_batch_arrays.optional_text_array, optional_text=_optional_text)
 
 
 def _optional_enum_text(value: object | None) -> str | None:

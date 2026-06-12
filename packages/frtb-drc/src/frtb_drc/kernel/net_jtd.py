@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, cast
 import frtb_common.batch_arrays as _batch_arrays
 
 from frtb_drc._batch_columns import FloatArray, ObjectArray
+from frtb_drc._batch_order import sorted_position_indices as _sorted_indices
 from frtb_drc._identifiers import slug_path as _slug
 from frtb_drc._netting_helpers import (
     bounded_rejected_group_offsets as _bounded_rejected_group_offsets,
@@ -587,18 +588,6 @@ def _rejected_seniority_offsets(
                         )
                     )
     return tuple(rejected)
-
-
-def _sorted_indices(batch: DrcPositionBatch) -> tuple[int, ...]:
-    return tuple(
-        sorted(
-            range(batch.row_count),
-            key=lambda index: (
-                cast(str, batch.position_ids[index]),
-                cast(str, batch.source_row_ids[index]),
-            ),
-        )
-    )
 
 
 def _short_can_offset(*, long_seniority: DrcSeniority, short_seniority: DrcSeniority) -> bool:
