@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import frtb_cva._ba_reference_data as ba_reference_data
+import frtb_cva._girr_reference_data as girr_reference_data
+import frtb_cva._reference_profile_data as reference_profile_data
+import frtb_cva._sa_cva_reference_payloads as sa_cva_reference_payloads
 import frtb_cva.reference_data as reference_data
+import frtb_cva.sa_cva_reference_data as sa_cva_reference_data
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_cva import (
@@ -25,6 +30,18 @@ from frtb_cva.reference_data import (
     profile_citation_id,
     profile_reference_payload,
 )
+
+
+def test_reference_data_shims_export_split_implementations() -> None:
+    assert reference_data.ba_cva_risk_weight is ba_reference_data.ba_cva_risk_weight
+    assert reference_data.girr_delta_risk_weight is girr_reference_data.girr_delta_risk_weight
+    assert (
+        reference_data.profile_reference_payload is reference_profile_data.profile_reference_payload
+    )
+    assert (
+        sa_cva_reference_data.sa_cva_reference_payload
+        is sa_cva_reference_payloads.sa_cva_reference_payload
+    )
 
 
 def test_table_1_entries_have_citations() -> None:
@@ -134,11 +151,11 @@ def test_profile_citation_mapping_fails_when_profile_map_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        reference_data,
+        reference_profile_data,
         "PROFILE_CITATION_ID_MAP",
         {
             profile: citation_map
-            for profile, citation_map in reference_data.PROFILE_CITATION_ID_MAP.items()
+            for profile, citation_map in reference_profile_data.PROFILE_CITATION_ID_MAP.items()
             if profile is not CvaRegulatoryProfile.EU_CRR3_CVA
         },
     )

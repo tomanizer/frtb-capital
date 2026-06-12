@@ -48,7 +48,7 @@ risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN
 | `data_models.py` | Frozen dataclasses and enums only. Canonical inputs, profile identity, intermediate and result records. |
 | `validation.py` | Input normalisation, invariant checks, error types, supported/unsupported gates, deterministic ordering helpers. |
 | `regimes.py` | Rule-profile identity, profile selection, supported-feature declarations, method policy hooks, profile hashing. |
-| `reference_data.py` | BA-CVA risk weights, BA-CVA scalars, SA-CVA bucket/tenor/risk-weight/correlation tables, multiplier defaults, citation tables. |
+| `reference_data.py`, `_reference_profile_data.py`, `_ba_reference_data.py`, `_girr_reference_data.py`, `sa_cva_reference_data.py`, `_sa_cva_reference_tables.py`, `_sa_cva_reference_payloads.py` | Public compatibility import paths plus package-private CVA reference-data families: profile citations/hashes, BA-CVA lookups, SA-CVA GIRR lookups, static SA-CVA tables, and deterministic reference payload assembly. |
 | `scope.py` | Covered-transaction scope metadata, method selection, carve-out routing, materiality-threshold fail-closed gates. |
 | `ba_cva.py` | Stand-alone counterparty capital, reduced portfolio aggregation, full BA-CVA hedge recognition and floor. |
 | `hedges.py` | Eligible / ineligible hedge checks, internal/external transfer evidence, CCS vs RCS assignment validation. |
@@ -241,8 +241,11 @@ class CvaRuleProfile:
     content_hash: str
 ```
 
-The profile owns identifiers and hashes. `reference_data.py` owns lookup tables
-keyed by `profile_id`.
+The profile owns identifiers and hashes. `reference_data.py` and
+`sa_cva_reference_data.py` preserve the public lookup import paths; their
+package-private reference modules own the profile citation registry, BA-CVA
+lookups, SA-CVA GIRR lookups, static SA-CVA tables, and deterministic payload
+assembly keyed by `profile_id`.
 
 ### Canonical counterparty
 
