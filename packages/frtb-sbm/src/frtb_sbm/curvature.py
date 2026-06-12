@@ -9,9 +9,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
@@ -19,9 +17,6 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
 from frtb_sbm.aggregation import (
-    adjust_correlation_for_scenario,
-    adjust_correlation_matrix_for_scenario,
-    pairwise_correlation_audit_from_matrix,
     select_max_correlation_scenario,
 )
 from frtb_sbm.batch import (
@@ -40,12 +35,23 @@ from frtb_sbm.curvature_batch_inputs import (
     validate_curvature_batch,
     validate_girr_curvature_batch,
 )
+from frtb_sbm.curvature_bucket_records import (
+    _curvature_bucket_branch_record,
+    _curvature_bucket_to_bucket_capital,
+    _curvature_bucket_to_intra_record,
+)
+from frtb_sbm.curvature_bucket_scenarios import (
+    _CurvatureBucketScenario,
+    _evaluate_curvature_bucket_scenario,
+)
 from frtb_sbm.curvature_correlations import (
     _bucket_sort_key,
     _build_curvature_inter_bucket_correlation_map,
-    _build_curvature_intra_bucket_correlation_matrix,
     _curvature_inter_citation_ids,
     _curvature_intra_citation_ids,
+)
+from frtb_sbm.curvature_correlations import (
+    _build_curvature_intra_bucket_correlation_matrix as _intra_matrix_compat,
 )
 from frtb_sbm.curvature_correlations import (
     _build_vectorized_curvature_intra_bucket_correlation_matrix as _build_vectorized_intra_matrix,
@@ -79,14 +85,11 @@ from frtb_sbm.curvature_inputs import (
     selected_curvature_shock_amount,
     validate_curvature_sensitivities,
 )
+from frtb_sbm.curvature_inter_bucket_aggregation import _aggregate_curvature_inter_bucket
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
-    BucketCapital,
     CurvatureBranchRecord,
     CurvatureBucketBranchRecord,
-    IntraBucketScenarioRecord,
-    PairwiseCorrelationRecord,
-    PairwiseCorrelationSummary,
     RiskClassCapital,
     RiskClassScenarioDetail,
     SbmPairwiseEvidenceMode,
@@ -118,8 +121,6 @@ _MAR21_CURVATURE_SCENARIO_CITATION = (
     "basel_mar21_6_correlation_scenarios",
     "basel_mar21_7_scenario_selection",
 )
-_CURVATURE_UP_BRANCH = "up"
-_CURVATURE_DOWN_BRANCH = "down"
 _DEFAULT_SCENARIOS: tuple[SbmScenarioLabel, ...] = (
     SbmScenarioLabel.LOW,
     SbmScenarioLabel.MEDIUM,
@@ -128,32 +129,10 @@ _DEFAULT_SCENARIOS: tuple[SbmScenarioLabel, ...] = (
 _SUPPORTED_CURVATURE_RISK_CLASSES: frozenset[SbmRiskClass] = frozenset(SbmRiskClass)
 
 _build_vectorized_curvature_intra_bucket_correlation_matrix = _build_vectorized_intra_matrix
+_build_curvature_intra_bucket_correlation_matrix = _intra_matrix_compat
 _curvature_inter_bucket_correlation = _inter_bucket_correlation
 _curvature_intra_bucket_correlation = _intra_bucket_correlation
 _required_factor_qualifier = _factor_qualifier
-
-
-@dataclass(frozen=True)
-class _CurvatureBranchEvaluation:
-    branch: str
-    bucket_capital: float
-    branch_sum: float
-    variance_before_floor: float
-    floor_applied: bool
-    psi_zero_count: int
-
-
-@dataclass(frozen=True)
-class _CurvatureBucketScenario:
-    bucket_id: str
-    scenario: SbmScenarioLabel
-    selected: _CurvatureBranchEvaluation
-    rejected: _CurvatureBranchEvaluation
-    up: _CurvatureBranchEvaluation
-    down: _CurvatureBranchEvaluation
-    factors: tuple[_CurvatureFactor, ...]
-    correlation_matrix: npt.NDArray[np.float64]
-    citation_ids: tuple[str, ...]
 
 
 def select_girr_curvature_branches_from_batch(
@@ -772,278 +751,6 @@ def _aggregate_curvature_factors(
         curvature_branches=curvature_branches,
         curvature_bucket_branches=tuple(bucket_branch_records),
     )
-
-
-def _evaluate_curvature_bucket_scenario(
-    bucket_id: str,
-    factors: tuple[_CurvatureFactor, ...],
-    *,
-    profile_id: str,
-    risk_class: SbmRiskClass,
-    scenario: SbmScenarioLabel,
-) -> _CurvatureBucketScenario:
-    base_matrix = _build_curvature_intra_bucket_correlation_matrix(
-        factors,
-        profile_id=profile_id,
-        risk_class=risk_class,
-    )
-    adjusted_matrix = adjust_correlation_matrix_for_scenario(
-        base_matrix,
-        scenario,
-        profile_id=profile_id,
-    )
-    up = _evaluate_curvature_branch(
-        tuple(factor.up_cvr for factor in factors),
-        adjusted_matrix,
-        branch=_CURVATURE_UP_BRANCH,
-    )
-    down = _evaluate_curvature_branch(
-        tuple(factor.down_cvr for factor in factors),
-        adjusted_matrix,
-        branch=_CURVATURE_DOWN_BRANCH,
-    )
-    selected, rejected = _select_curvature_bucket_branch(up, down)
-    return _CurvatureBucketScenario(
-        bucket_id=bucket_id,
-        scenario=scenario,
-        selected=selected,
-        rejected=rejected,
-        up=up,
-        down=down,
-        factors=factors,
-        correlation_matrix=adjusted_matrix,
-        citation_ids=_curvature_intra_citation_ids(risk_class),
-    )
-
-
-def _evaluate_curvature_branch(
-    values: Sequence[float],
-    correlation_matrix: npt.NDArray[np.float64],
-    *,
-    branch: str,
-) -> _CurvatureBranchEvaluation:
-    cvr = np.asarray(values, dtype=np.float64)
-    positive_diagonal = float(np.dot(np.maximum(cvr, 0.0), np.maximum(cvr, 0.0)))
-    if len(cvr) <= 1:
-        pair_contribution = 0.0
-        psi_zero_count = 0
-    else:
-        row_indices, col_indices = np.triu_indices(len(cvr), k=1)
-        left = cvr[row_indices]
-        right = cvr[col_indices]
-        psi = ~((left < 0.0) & (right < 0.0))
-        psi_zero_count = int(np.count_nonzero(~psi))
-        pair_contribution = float(
-            2.0 * np.sum(correlation_matrix[row_indices, col_indices] * left * right * psi)
-        )
-    variance = positive_diagonal + pair_contribution
-    return _CurvatureBranchEvaluation(
-        branch=branch,
-        bucket_capital=math.sqrt(max(0.0, variance)),
-        branch_sum=float(np.sum(cvr)),
-        variance_before_floor=variance,
-        floor_applied=variance < 0.0,
-        psi_zero_count=psi_zero_count,
-    )
-
-
-def _select_curvature_bucket_branch(
-    up: _CurvatureBranchEvaluation,
-    down: _CurvatureBranchEvaluation,
-) -> tuple[_CurvatureBranchEvaluation, _CurvatureBranchEvaluation]:
-    if not math.isclose(up.bucket_capital, down.bucket_capital, rel_tol=1e-12, abs_tol=1e-12):
-        return (up, down) if up.bucket_capital > down.bucket_capital else (down, up)
-    return (up, down) if up.branch_sum > down.branch_sum else (down, up)
-
-
-def _aggregate_curvature_inter_bucket(
-    bucket_scenarios: tuple[_CurvatureBucketScenario, ...],
-    inter_bucket_correlations: Mapping[tuple[str, str], float],
-    *,
-    scenario: SbmScenarioLabel,
-) -> tuple[float, tuple[tuple[str, str, float], ...]]:
-    bucket_ids = tuple(bucket.bucket_id for bucket in bucket_scenarios)
-    kb_values = np.array([bucket.selected.bucket_capital for bucket in bucket_scenarios])
-    sb_values = np.array([bucket.selected.branch_sum for bucket in bucket_scenarios])
-    gamma = _build_curvature_inter_bucket_gamma_matrix(
-        bucket_ids,
-        inter_bucket_correlations,
-        scenario=scenario,
-    )
-    psi = _curvature_psi_matrix(sb_values)
-    variance = float(np.dot(kb_values, kb_values) + sb_values @ (gamma * psi) @ sb_values)
-    capital = math.sqrt(max(0.0, variance))
-    return capital, _curvature_inter_bucket_correlation_audit(
-        bucket_ids,
-        inter_bucket_correlations,
-        scenario=scenario,
-    )
-
-
-def _curvature_psi_matrix(values: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-    size = len(values)
-    psi = np.ones((size, size), dtype=np.float64)
-    if size:
-        np.fill_diagonal(psi, 0.0)
-    if size <= 1:
-        return psi
-    row_indices, col_indices = np.triu_indices(size, k=1)
-    zero_mask = (values[row_indices] < 0.0) & (values[col_indices] < 0.0)
-    psi[row_indices[zero_mask], col_indices[zero_mask]] = 0.0
-    psi[col_indices[zero_mask], row_indices[zero_mask]] = 0.0
-    return psi
-
-
-def _build_curvature_inter_bucket_gamma_matrix(
-    bucket_ids: Sequence[str],
-    inter_bucket_correlations: Mapping[tuple[str, str], float],
-    *,
-    scenario: SbmScenarioLabel,
-) -> npt.NDArray[np.float64]:
-    size = len(bucket_ids)
-    gamma = np.zeros((size, size), dtype=np.float64)
-    index = {bucket_id: position for position, bucket_id in enumerate(bucket_ids)}
-    for (bucket_a, bucket_b), base_gamma in sorted(inter_bucket_correlations.items()):
-        if bucket_a not in index or bucket_b not in index:
-            continue
-        applied = adjust_correlation_for_scenario(base_gamma, scenario)
-        row = index[bucket_a]
-        col = index[bucket_b]
-        gamma[row, col] = applied
-        gamma[col, row] = applied
-    return gamma
-
-
-def _curvature_inter_bucket_correlation_audit(
-    bucket_ids: Sequence[str],
-    inter_bucket_correlations: Mapping[tuple[str, str], float],
-    *,
-    scenario: SbmScenarioLabel,
-) -> tuple[tuple[str, str, float], ...]:
-    return tuple(
-        (bucket_a, bucket_b, adjust_correlation_for_scenario(base_gamma, scenario))
-        for (bucket_a, bucket_b), base_gamma in sorted(inter_bucket_correlations.items())
-        if bucket_a in bucket_ids and bucket_b in bucket_ids
-    )
-
-
-def _curvature_bucket_to_intra_record(
-    bucket_scenario: _CurvatureBucketScenario,
-    *,
-    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str,
-    pairwise_evidence_limit: int,
-) -> IntraBucketScenarioRecord:
-    pairwise_records, summary = _curvature_pairwise_audit(
-        bucket_scenario,
-        pairwise_evidence_mode=pairwise_evidence_mode,
-        pairwise_evidence_limit=pairwise_evidence_limit,
-    )
-    return IntraBucketScenarioRecord(
-        bucket_id=bucket_scenario.bucket_id,
-        kb=bucket_scenario.selected.bucket_capital,
-        sb=bucket_scenario.selected.branch_sum,
-        floor_applied=bucket_scenario.selected.floor_applied,
-        pairwise_correlations=pairwise_records,
-        citation_ids=bucket_scenario.citation_ids,
-        pairwise_correlation_summary=summary,
-    )
-
-
-def _curvature_bucket_to_bucket_capital(
-    bucket_scenario: _CurvatureBucketScenario,
-) -> BucketCapital:
-    risk_class = bucket_scenario.factors[0].risk_class
-    return BucketCapital(
-        bucket_id=bucket_scenario.bucket_id,
-        risk_class=risk_class,
-        risk_measure=SbmRiskMeasure.CURVATURE,
-        kb=bucket_scenario.selected.bucket_capital,
-        weighted_sensitivities=tuple(
-            _curvature_factor_to_weighted_sensitivity(
-                factor,
-                selected_branch=bucket_scenario.selected.branch,
-                scenario=bucket_scenario.scenario,
-            )
-            for factor in bucket_scenario.factors
-        ),
-        citation_ids=bucket_scenario.citation_ids,
-        scenario=bucket_scenario.scenario,
-        sb=bucket_scenario.selected.branch_sum,
-        floor_applied=bucket_scenario.selected.floor_applied,
-    )
-
-
-def _curvature_factor_to_weighted_sensitivity(
-    factor: _CurvatureFactor,
-    *,
-    selected_branch: str,
-    scenario: SbmScenarioLabel,
-) -> WeightedSensitivity:
-    cvr = factor.up_cvr if selected_branch == _CURVATURE_UP_BRANCH else factor.down_cvr
-    return WeightedSensitivity(
-        sensitivity_id=factor.factor_id,
-        risk_class=factor.risk_class,
-        risk_measure=SbmRiskMeasure.CURVATURE,
-        bucket=factor.bucket_id,
-        raw_amount=cvr,
-        risk_weight=1.0,
-        scaled_amount=cvr,
-        citation_ids=factor.citation_ids,
-        qualifier=_curvature_weighted_qualifier(factor, selected_branch, scenario),
-        factor_key=tuple(factor.factor_id.split("|")),
-        contributing_sensitivity_ids=factor.sensitivity_ids,
-        contributing_source_row_ids=factor.source_row_ids,
-    )
-
-
-def _curvature_pairwise_audit(
-    bucket_scenario: _CurvatureBucketScenario,
-    *,
-    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str,
-    pairwise_evidence_limit: int,
-) -> tuple[tuple[PairwiseCorrelationRecord, ...], PairwiseCorrelationSummary]:
-    factors = bucket_scenario.factors
-    return pairwise_correlation_audit_from_matrix(
-        tuple(factor.factor_id for factor in factors),
-        bucket_scenario.correlation_matrix,
-        pairwise_evidence_mode=pairwise_evidence_mode,
-        pairwise_evidence_limit=pairwise_evidence_limit,
-    )
-
-
-def _curvature_bucket_branch_record(
-    bucket_scenario: _CurvatureBucketScenario,
-) -> CurvatureBucketBranchRecord:
-    return CurvatureBucketBranchRecord(
-        bucket_id=bucket_scenario.bucket_id,
-        scenario=bucket_scenario.scenario,
-        selected_branch=bucket_scenario.selected.branch,
-        rejected_branch=bucket_scenario.rejected.branch,
-        selected_bucket_capital=bucket_scenario.selected.bucket_capital,
-        rejected_bucket_capital=bucket_scenario.rejected.bucket_capital,
-        up_bucket_capital=bucket_scenario.up.bucket_capital,
-        down_bucket_capital=bucket_scenario.down.bucket_capital,
-        selected_sum=bucket_scenario.selected.branch_sum,
-        up_sum=bucket_scenario.up.branch_sum,
-        down_sum=bucket_scenario.down.branch_sum,
-        selected_psi_zero_count=bucket_scenario.selected.psi_zero_count,
-        up_psi_zero_count=bucket_scenario.up.psi_zero_count,
-        down_psi_zero_count=bucket_scenario.down.psi_zero_count,
-        floor_applied=bucket_scenario.selected.floor_applied,
-        citation_ids=bucket_scenario.citation_ids,
-    )
-
-
-def _curvature_weighted_qualifier(
-    factor: _CurvatureFactor,
-    selected_branch: str,
-    scenario: SbmScenarioLabel,
-) -> str:
-    parts = [factor.risk_factor]
-    if factor.qualifier:
-        parts.append(factor.qualifier)
-    parts.extend([selected_branch, scenario.value])
-    return ":".join(parts)
 
 
 __all__ = [
