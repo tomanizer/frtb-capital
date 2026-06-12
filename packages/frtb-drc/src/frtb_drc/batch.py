@@ -10,6 +10,7 @@ import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
 
 from frtb_drc._batch_columns import BoolArray, FloatArray, ObjectArray
+from frtb_drc._batch_order import sorted_position_indices as _sorted_indices
 from frtb_drc._identifiers import slug_path as _slug
 from frtb_drc._netting_helpers import (
     risk_weights_for_net_jtd as _risk_weights_for_net_jtd,
@@ -679,18 +680,6 @@ def _batch_risk_weights_by_position(
             )
         )
     return {}
-
-
-def _sorted_indices(batch: DrcPositionBatch) -> tuple[int, ...]:
-    return tuple(
-        sorted(
-            range(batch.row_count),
-            key=lambda index: (
-                cast(str, batch.position_ids[index]),
-                cast(str, batch.source_row_ids[index]),
-            ),
-        )
-    )
 
 
 from frtb_drc.adapters.positions import (  # noqa: E402, I001

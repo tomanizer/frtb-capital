@@ -6,6 +6,7 @@ import math
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, cast
 
+from frtb_drc._batch_order import sorted_position_indices as _sorted_indices
 from frtb_drc._hashing import hash_payload
 from frtb_drc.data_models import DrcCalculationContext, DrcRiskClass
 from frtb_drc.fair_value_cap import fair_value_cap_hash_payload
@@ -170,18 +171,6 @@ def _position_payload(batch: DrcPositionBatch, index: int) -> dict[str, object]:
 
 def _optional_float_payload(value: float) -> float | None:
     return None if math.isnan(float(value)) else float(value)
-
-
-def _sorted_indices(batch: DrcPositionBatch) -> tuple[int, ...]:
-    return tuple(
-        sorted(
-            range(batch.row_count),
-            key=lambda index: (
-                cast(str, batch.position_ids[index]),
-                cast(str, batch.source_row_ids[index]),
-            ),
-        )
-    )
 
 
 __all__ = [

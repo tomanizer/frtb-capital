@@ -9,7 +9,7 @@ only and does not perform regulatory capital calculations.
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from typing import Any, cast
 
 import numpy as np
@@ -26,22 +26,7 @@ from frtb_cva.data_models import (
 )
 from frtb_cva.validation import CvaInputError
 
-
-def hash_payload(payload: Mapping[str, object]) -> str:
-    """Return the stable SHA-256 JSON hash used by CVA audit contracts.
-
-    Parameters
-    ----------
-    payload : Mapping[str, object]
-        Canonical JSON-serialisable mapping from payload builders in this module.
-
-    Returns
-    -------
-    str
-        Hex-encoded digest from :func:`frtb_common.stable_json_hash`.
-    """
-
-    return stable_json_hash(payload)
+hash_payload = stable_json_hash
 
 
 def input_payload(

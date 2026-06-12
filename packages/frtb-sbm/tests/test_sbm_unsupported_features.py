@@ -1,18 +1,13 @@
 from __future__ import annotations
 
-from datetime import date
-
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
-    SbmCalculationContext,
     SbmInputError,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
-    SbmSignConvention,
-    SbmSourceLineage,
     ensure_sbm_capital_paths_supported,
     ensure_sbm_profile_known,
     ensure_sbm_risk_class_measure_supported,
@@ -20,45 +15,12 @@ from frtb_sbm import (
 )
 from frtb_sbm.capital import _portfolio_scenario_citations
 
-
-def sample_lineage() -> SbmSourceLineage:
-    return SbmSourceLineage(
-        source_system="synthetic-risk",
-        source_file="sbm.csv",
-        source_row_id="row-001",
-    )
-
-
-def sample_sensitivity(**overrides: object) -> SbmSensitivity:
-    fields = {
-        "sensitivity_id": "sens-001",
-        "source_row_id": "row-001",
-        "desk_id": "rates-desk",
-        "legal_entity": "LE-001",
-        "risk_class": SbmRiskClass.GIRR,
-        "risk_measure": SbmRiskMeasure.DELTA,
-        "bucket": "1",
-        "risk_factor": "USD",
-        "amount": 1_000_000.0,
-        "amount_currency": "USD",
-        "tenor": "5y",
-        "sign_convention": SbmSignConvention.RECEIVE,
-        "lineage": sample_lineage(),
-    }
-    fields.update(overrides)
-    return SbmSensitivity(**fields)  # type: ignore[arg-type]
-
-
-def sample_context(**overrides: object) -> SbmCalculationContext:
-    fields = {
-        "run_id": "run-001",
-        "calculation_date": date(2026, 5, 30),
-        "base_currency": "USD",
-        "reporting_currency": "USD",
-        "profile_id": SbmRegulatoryProfile.US_NPR_2_0.value,
-    }
-    fields.update(overrides)
-    return SbmCalculationContext(**fields)  # type: ignore[arg-type]
+from tests.sbm_fixture_helpers import (
+    sample_sbm_context as sample_context,
+)
+from tests.sbm_fixture_helpers import (
+    sample_sbm_sensitivity as sample_sensitivity,
+)
 
 
 @pytest.mark.parametrize(

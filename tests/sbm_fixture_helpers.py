@@ -8,11 +8,13 @@ from typing import Any
 
 from frtb_sbm import (
     SbmCalculationContext,
+    SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
     SbmSignConvention,
     SbmSourceLineage,
+    WeightedSensitivity,
 )
 
 SbmInvalidCase = tuple[str, str, tuple[SbmSensitivity, ...]]
@@ -101,4 +103,84 @@ def sbm_sensitivity_from_payload(
         ),
         mapping_citation_ids=tuple(payload.get("mapping_citation_ids", ())),
         **optional_fields,
+    )
+
+
+DEFAULT_SBM_SOURCE_COLUMN_MAP = (
+    ("RiskType", "risk_class"),
+    ("AmountUSD", "amount"),
+)
+
+
+def sample_sbm_lineage(
+    row_id: str = "row-001",
+    *,
+    source_file: str = "sbm.csv",
+    source_column_map: tuple[tuple[str, str], ...] = DEFAULT_SBM_SOURCE_COLUMN_MAP,
+) -> SbmSourceLineage:
+    return SbmSourceLineage(
+        source_system="synthetic-risk",
+        source_file=source_file,
+        source_row_id=row_id,
+        source_column_map=source_column_map,
+    )
+
+
+def sample_sbm_sensitivity(**overrides: object) -> SbmSensitivity:
+    fields = {
+        "sensitivity_id": "sens-001",
+        "source_row_id": "row-001",
+        "desk_id": "rates-desk",
+        "legal_entity": "LE-001",
+        "risk_class": SbmRiskClass.GIRR,
+        "risk_measure": SbmRiskMeasure.DELTA,
+        "bucket": "1",
+        "risk_factor": "USD",
+        "amount": 1_000_000.0,
+        "amount_currency": "USD",
+        "tenor": "5y",
+        "sign_convention": SbmSignConvention.RECEIVE,
+        "lineage": sample_sbm_lineage(),
+    }
+    fields.update(overrides)
+    return SbmSensitivity(**fields)  # type: ignore[arg-type]
+
+
+def sample_sbm_context(**overrides: object) -> SbmCalculationContext:
+    fields = {
+        "run_id": "run-001",
+        "calculation_date": date(2026, 5, 30),
+        "base_currency": "USD",
+        "reporting_currency": "USD",
+        "profile_id": SbmRegulatoryProfile.US_NPR_2_0.value,
+    }
+    fields.update(overrides)
+    return SbmCalculationContext(**fields)  # type: ignore[arg-type]
+
+
+def sample_sbm_basel_context(run_id: str) -> SbmCalculationContext:
+    return SbmCalculationContext(
+        run_id=run_id,
+        calculation_date=date(2026, 5, 30),
+        base_currency="USD",
+        reporting_currency="USD",
+        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
+    )
+
+
+def sample_sbm_weighted_sensitivity(
+    *,
+    sensitivity_id: str,
+    scaled_amount: float,
+    bucket: str = "USD",
+) -> WeightedSensitivity:
+    return WeightedSensitivity(
+        sensitivity_id=sensitivity_id,
+        risk_class=SbmRiskClass.GIRR,
+        risk_measure=SbmRiskMeasure.DELTA,
+        bucket=bucket,
+        raw_amount=scaled_amount,
+        risk_weight=1.0,
+        scaled_amount=scaled_amount,
+        citation_ids=("basel_mar21_girr",),
     )
