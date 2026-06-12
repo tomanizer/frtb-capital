@@ -8,10 +8,9 @@
 
 This repository is a `uv` workspace with one Python package per capital
 component, a shared common package, orchestration, and result-store
-infrastructure. IMA and RRAO have implemented public calculation paths, DRC has a partial
-non-securitisation runtime path, SBM has delta capital implemented for five
-risk classes (GIRR vega also implemented; curvature pending), and CVA has
-Reduced BA-CVA and SA-CVA GIRR delta implemented.
+infrastructure. IMA and RRAO have implemented public calculation paths. SBM,
+DRC, and CVA have partial runtime coverage with registry-driven batch ingress
+for the supported paths documented in their public API guides.
 
 The Standardised Approach is a composed calculation stack, not a standalone
 package. Planned SA capital is `frtb-sbm + frtb-drc + frtb-rrao`; suite
@@ -22,11 +21,11 @@ capital when a desk is not IMA-eligible.
 |---|---|---|
 | `packages/frtb-common` | Shared primitives: status metadata, unsupported-feature errors, serialization, and regulatory citation helpers | Shared |
 | `packages/frtb-ima` | Internal Models Approach capital for model-eligible trading desks | Implemented; migrated from `tomanizer/FRTB-IMA` |
-| `packages/frtb-sbm` | Standardised Approach sensitivities-based method component | Partial runtime; delta implemented for GIRR, FX, Equity, Commodity, CSR non-sec; GIRR vega implemented; curvature pending |
-| `packages/frtb-drc` | Standardised Approach default risk charge component | Partial runtime; supported non-securitisation path only |
-| `packages/frtb-rrao` | Standardised Approach residual risk add-on component | Implemented for supported canonical-input profiles |
-| `packages/frtb-cva` | Credit Valuation Adjustment capital | Partial runtime; Reduced BA-CVA and SA-CVA GIRR delta implemented; other SA-CVA risk classes and full hedge recognition unsupported |
-| `packages/frtb-orchestration` | Suite-level capital aggregation and firm-level consolidation | Partial; component handoff contracts exist, aggregation not implemented |
+| `packages/frtb-sbm` | Standardised Approach sensitivities-based method component | Partial runtime; registry-driven batch API for supported delta, vega, and curvature paths |
+| `packages/frtb-drc` | Standardised Approach default risk charge component | Partial runtime; class-specific non-securitisation, securitisation non-CTP, and CTP paths with path-registry ingress |
+| `packages/frtb-rrao` | Standardised Approach residual risk add-on component | Implemented for supported canonical-input profiles; row input adapts to the canonical batch kernel |
+| `packages/frtb-cva` | Credit Valuation Adjustment capital | Partial runtime; entity-registry batch API for reduced/full BA-CVA and supported SA-CVA paths |
+| `packages/frtb-orchestration` | Suite-level capital aggregation and firm-level consolidation | Partial; component handoff contracts and SA/IMA/CVA orchestration helpers exist |
 | `packages/frtb-result-store` | DuckDB/Parquet store for immutable FRTB runs, drilldown, artifacts, lineage, and attribution | Partial result-store backend; not a capital calculation package |
 
 ## Why a monorepo
@@ -55,10 +54,11 @@ This installs the full workspace in editable mode plus dev dependencies.
 ## Integrating
 
 Client risk engines should use the Arrow/Parquet handoff path as the default
-production ingress pattern. Start with
-[`docs/CLIENT_INTEGRATION.md`](docs/CLIENT_INTEGRATION.md) for the suite-level
-contract, component handoff symbols, run-context expectations, hashing, and
-rejection semantics.
+production ingress pattern. Where a package exposes a registry-driven API, prefer
+the parameterized normalizer/builder/capital functions over legacy per-path
+aliases. Start with [`docs/CLIENT_INTEGRATION.md`](docs/CLIENT_INTEGRATION.md)
+for the suite-level contract, component handoff symbols, run-context
+expectations, hashing, and rejection semantics.
 
 ## Local development
 
