@@ -83,6 +83,10 @@ NMRF record types, stress artifact conversion, SES aggregation, and capital
 routing physically live under focused `frtb_ima.nmrf_*` modules;
 `frtb_ima.nmrf` remains the compatibility import path for existing public
 callers.
+Stress-period records, rolling-window scoring, policy selection, and NMRF spec
+bridging physically live under focused `frtb_ima.stress_period_*` modules;
+`frtb_ima.stress_periods` remains the compatibility import path for existing
+public callers.
 
 ## References
 

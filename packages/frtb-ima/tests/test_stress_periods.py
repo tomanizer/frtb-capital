@@ -724,11 +724,11 @@ def test_rolling_window_raises_on_insufficient_data_and_invalid_metric(
 
     If selection-parameter validation semantics change, this test should be revisited.
     """
-    import frtb_ima.stress_periods as stress_periods_module
+    import frtb_ima.stress_period_windows as stress_period_windows
 
     # Disabling parameter validation is intentional: otherwise minimum/window and
     # metric-type checks fail earlier and these final guards cannot be executed.
-    monkeypatch.setattr(stress_periods_module, "_validate_selection_parameters", lambda **_: None)
+    monkeypatch.setattr(stress_period_windows, "_validate_selection_parameters", lambda **_: None)
 
     with pytest.raises(ValueError, match="window_observations"):
         rolling_window_severity_scores(
@@ -748,6 +748,30 @@ def test_rolling_window_raises_on_insufficient_data_and_invalid_metric(
             confidence_level=CONFIDENCE_LEVEL,
             es_estimator=ES_ESTIMATOR,
         )
+
+
+def test_stress_period_compatibility_imports_match_physical_modules() -> None:
+    import frtb_ima.stress_period_results as stress_period_results
+    import frtb_ima.stress_period_selection as stress_period_selection
+    import frtb_ima.stress_period_types as stress_period_types
+    import frtb_ima.stress_period_windows as stress_period_windows
+    import frtb_ima.stress_periods as stress_periods_module
+
+    compatibility_symbols = (
+        stress_periods_module.HistoricalStressSeries,
+        stress_periods_module.StressPeriodCandidate,
+        stress_periods_module.StressPeriodSelectionResult,
+        stress_periods_module.rolling_window_severity_scores,
+        stress_periods_module.select_stress_periods_by_risk_class,
+    )
+    physical_symbols = (
+        stress_period_types.HistoricalStressSeries,
+        stress_period_types.StressPeriodCandidate,
+        stress_period_results.StressPeriodSelectionResult,
+        stress_period_windows.rolling_window_severity_scores,
+        stress_period_selection.select_stress_periods_by_risk_class,
+    )
+    assert compatibility_symbols == physical_symbols
 
 
 def test_same_risk_class_nmrfs_use_common_selected_stress_period() -> None:
