@@ -455,3 +455,25 @@ def test_trading_desk_backtest_trace_validates_windowing_and_series_inputs() -> 
     bad_var[0.99][0] = 0.0
     with pytest.raises(ValueError, match="finite VaR"):
         trading_desk_backtest_trace([100.0] * n, [100.0] * n, bad_var)
+
+
+def test_backtesting_compatibility_imports_match_physical_modules() -> None:
+    import frtb_ima.backtesting as compatibility
+    import frtb_ima.backtesting_core as core
+    import frtb_ima.backtesting_policy as policy
+    import frtb_ima.backtesting_trace as trace
+    import frtb_ima.backtesting_types as types
+
+    assert (
+        compatibility.BacktestResult,
+        compatibility.TradingDeskBacktestResult,
+        compatibility.backtest,
+        compatibility.trading_desk_backtest_trace,
+        compatibility.trading_desk_backtest_trace_for_policy,
+    ) == (
+        types.BacktestResult,
+        types.TradingDeskBacktestResult,
+        core.backtest,
+        trace.trading_desk_backtest_trace,
+        policy.trading_desk_backtest_trace_for_policy,
+    )
