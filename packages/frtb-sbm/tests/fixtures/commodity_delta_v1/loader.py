@@ -4,16 +4,13 @@ import json
 from pathlib import Path
 from typing import Any
 
-from frtb_sbm import (
-    SbmCalculationContext,
-    SbmRiskClass,
-    SbmRiskMeasure,
-    SbmSensitivity,
-    SbmSignConvention,
-    SbmSourceLineage,
-)
+from frtb_sbm import SbmCalculationContext, SbmSensitivity
 
-from tests.sbm_fixture_helpers import load_sbm_fixture_context
+from tests.sbm_fixture_helpers import (
+    load_sbm_fixture_context,
+    load_sbm_invalid_cases,
+    sbm_sensitivity_from_payload,
+)
 
 FIXTURE_DIR = Path(__file__).parent
 
@@ -32,62 +29,15 @@ def load_expected_outputs() -> dict[str, object]:
 
 
 def load_invalid_cases() -> tuple[tuple[str, str, tuple[SbmSensitivity, ...]], ...]:
-    payload = _load_json("invalid_cases.json")
-    cases: list[tuple[str, str, tuple[SbmSensitivity, ...]]] = []
-    for case in payload:
-        sensitivities = [_sensitivity_from_payload(case["sensitivity"])]
-        if "duplicate_of" in case:
-            sensitivities.append(_sensitivity_from_payload(case["duplicate_of"]))
-        cases.append(
-            (
-                str(case["case_id"]),
-                str(case["expected_error_match"]),
-                tuple(sensitivities),
-            )
-        )
-    return tuple(cases)
+    return load_sbm_invalid_cases(_load_json("invalid_cases.json"), _sensitivity_from_payload)
 
 
 def _sensitivity_from_payload(payload: dict[str, Any]) -> SbmSensitivity:
-    source_row_id = str(payload["source_row_id"])
-    column_map: list[tuple[str, str]] = [("amount", "amount")]
-    if "qualifier" in payload:
-        column_map.append(("qualifier", "qualifier"))
-    if "option_tenor" in payload:
-        column_map.append(("option_tenor", "option_tenor"))
-    if "tenor" in payload:
-        column_map.append(("tenor", "tenor"))
-    optional_fields: dict[str, object] = {}
-    if "qualifier" in payload:
-        optional_fields["qualifier"] = str(payload["qualifier"])
-    if "tenor" in payload:
-        optional_fields["tenor"] = str(payload["tenor"])
-    if "option_tenor" in payload:
-        optional_fields["option_tenor"] = str(payload["option_tenor"])
-    if "up_shock_amount" in payload:
-        optional_fields["up_shock_amount"] = float(payload["up_shock_amount"])
-    if "down_shock_amount" in payload:
-        optional_fields["down_shock_amount"] = float(payload["down_shock_amount"])
-    return SbmSensitivity(
-        sensitivity_id=str(payload["sensitivity_id"]),
-        source_row_id=source_row_id,
-        desk_id=str(payload["desk_id"]),
-        legal_entity=str(payload["legal_entity"]),
-        risk_class=SbmRiskClass(str(payload["risk_class"])),
-        risk_measure=SbmRiskMeasure(str(payload["risk_measure"])),
-        bucket=str(payload["bucket"]),
-        risk_factor=str(payload["risk_factor"]),
-        amount=float(payload["amount"]),
-        amount_currency=str(payload["amount_currency"]),
-        sign_convention=SbmSignConvention(str(payload["sign_convention"])),
-        lineage=SbmSourceLineage(
-            source_system="synthetic-sbm-fixture",
-            source_file="sensitivities.json",
-            source_row_id=source_row_id,
-            source_column_map=tuple(column_map),
-        ),
-        mapping_citation_ids=tuple(payload.get("mapping_citation_ids", ())),
-        **optional_fields,
+    return sbm_sensitivity_from_payload(
+        payload,
+        text_fields=("qualifier", "option_tenor", "tenor"),
+        int_fields=(),
+        float_fields=("up_shock_amount", "down_shock_amount"),
     )
 
 
