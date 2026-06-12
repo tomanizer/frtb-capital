@@ -202,6 +202,21 @@ def test_public_result_assembly_compatibility_exports() -> None:
     assert scaffold._run_branch_metadata is result._run_branch_metadata
 
 
+def test_regime_citation_table_compatibility_exports() -> None:
+    import frtb_drc.regime_citations as citations
+    import frtb_drc.regimes as regimes
+
+    names = (
+        "BASEL_MAR22_CITATIONS",
+        "EU_CRR3_CITATIONS",
+        "PRA_UK_CRR_CITATIONS",
+        "US_NPR_2_0_CITATIONS",
+    )
+    assert set(citations.__all__) == set(names)
+    for name in names:
+        assert getattr(regimes, name) is getattr(citations, name)
+
+
 def test_net_jtd_kernel_stage_exports() -> None:
     import frtb_drc.kernel.net_jtd as net_jtd
 

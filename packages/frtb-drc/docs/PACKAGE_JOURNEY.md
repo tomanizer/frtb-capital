@@ -102,6 +102,8 @@ Securitisation non-CTP row-path calculation helpers physically live under
 `frtb_drc.kernel.securitisation_context`, fair-value-cap gross branching lives
 under `frtb_drc.kernel.securitisation_gross`, and `frtb_drc.securitisation`
 remains the compatibility import path for existing callers.
+DRC regime citation tables physically live under `frtb_drc.regime_citations`;
+`frtb_drc.regimes` remains the profile lookup and support-matrix import path.
 
 ---
 
