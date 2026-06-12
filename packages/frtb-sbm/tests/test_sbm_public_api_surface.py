@@ -16,8 +16,11 @@ import frtb_sbm.batch as batch
 import frtb_sbm.capital as capital
 import frtb_sbm.crif as crif
 import frtb_sbm.curvature as curvature
+import frtb_sbm.curvature_batch_inputs as curvature_batch_inputs
+import frtb_sbm.curvature_batch_mapping as curvature_batch_mapping
 import frtb_sbm.curvature_correlations as curvature_correlations
 import frtb_sbm.curvature_factors as curvature_factors
+import frtb_sbm.curvature_inputs as curvature_inputs
 import frtb_sbm.curvature_reference_data as curvature_reference_data
 import frtb_sbm.fx_reference_data as fx_reference_data
 import frtb_sbm.girr_reference_data as girr_reference_data
@@ -299,6 +302,36 @@ def test_curvature_module_reexports_factor_stage_helpers() -> None:
     ):
         assert name in curvature_factors.__all__
         assert getattr(curvature, name) is getattr(curvature_factors, name)
+
+
+def test_curvature_module_reexports_input_stage_helpers() -> None:
+    for name in (
+        "curvature_worst_branch",
+        "parse_curvature_input",
+        "selected_curvature_shock_amount",
+        "validate_curvature_sensitivities",
+        "_curvature_input_branch_records",
+        "_validate_curvature_capital_sensitivities",
+    ):
+        assert name in curvature_inputs.__all__
+        assert getattr(curvature, name) is getattr(curvature_inputs, name)
+
+    for name in (
+        "validate_curvature_batch",
+        "validate_girr_curvature_batch",
+        "_curvature_input_branch_records_from_batch",
+        "_validate_curvature_batch_for_capital",
+    ):
+        assert name in curvature_batch_inputs.__all__
+        assert getattr(curvature, name) is getattr(curvature_batch_inputs, name)
+
+    for name in (
+        "_scaled_curvature_batch_shock",
+        "_text_at",
+        "_optional_text_at",
+    ):
+        assert name in curvature_batch_mapping.__all__
+        assert getattr(curvature, name) is getattr(curvature_batch_mapping, name)
 
 
 def test_crif_module_reexports_adapter_stage_surface() -> None:
