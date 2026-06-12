@@ -79,6 +79,10 @@ the compatibility import path for `assess_rfet_observation_batch`.
 Backtesting exception classification helpers physically live under
 `frtb_ima.validation.backtesting_stages`; `frtb_ima.backtesting` remains the
 public import path for backtesting entrypoints and result records.
+NMRF record types, stress artifact conversion, SES aggregation, and capital
+routing physically live under focused `frtb_ima.nmrf_*` modules;
+`frtb_ima.nmrf` remains the compatibility import path for existing public
+callers.
 
 ## References
 
