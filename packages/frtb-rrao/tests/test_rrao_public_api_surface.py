@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import frtb_rrao
 import frtb_rrao._payloads as payload_compat
+import frtb_rrao._reference_citations as reference_citations
+import frtb_rrao._reference_evidence_rules as reference_evidence_rules
+import frtb_rrao._reference_exclusion_rules as reference_exclusion_rules
+import frtb_rrao._reference_risk_weight_rules as reference_risk_weight_rules
+import frtb_rrao._reference_rule_types as reference_rule_types
 import frtb_rrao._result_assembly as result_compat
 import frtb_rrao.assembly.hashes as hash_assembly
 import frtb_rrao.assembly.payloads as payload_assembly
 import frtb_rrao.assembly.results as result_assembly
 import frtb_rrao.batch as batch
 import frtb_rrao.kernel.classification as batch_classification
+import frtb_rrao.reference_data as reference_data
 import frtb_rrao.validation as validation
 from frtb_rrao.validation import batch as batch_validation
 from frtb_rrao.validation import position as position_validation
@@ -109,3 +115,23 @@ def test_batch_hash_assembly_preserves_public_compatibility_path() -> None:
 def test_batch_classification_kernel_is_available_from_physical_stage() -> None:
     assert callable(batch_classification.decision_arrays_for_batch)
     assert batch_classification.RraoDecisionArrays.__name__ == "RraoDecisionArrays"
+
+
+def test_reference_data_preserves_public_compatibility_path() -> None:
+    assert reference_data.RraoEvidenceRule is reference_rule_types.RraoEvidenceRule
+    assert reference_data.RraoExclusionRule is reference_rule_types.RraoExclusionRule
+    assert reference_data.RraoInvestmentFundRule is reference_rule_types.RraoInvestmentFundRule
+    assert reference_data.RraoRiskWeightRule is reference_rule_types.RraoRiskWeightRule
+    assert reference_data.PROFILE_CITATIONS is reference_citations.PROFILE_CITATIONS
+    assert reference_data.PROFILE_EVIDENCE_RULES is reference_evidence_rules.PROFILE_EVIDENCE_RULES
+    assert (
+        reference_data.PROFILE_INVESTMENT_FUND_RULES
+        is reference_evidence_rules.PROFILE_INVESTMENT_FUND_RULES
+    )
+    assert (
+        reference_data.PROFILE_EXCLUSION_RULES is reference_exclusion_rules.PROFILE_EXCLUSION_RULES
+    )
+    assert (
+        reference_data.PROFILE_RISK_WEIGHT_RULES
+        is reference_risk_weight_rules.PROFILE_RISK_WEIGHT_RULES
+    )

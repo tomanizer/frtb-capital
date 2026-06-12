@@ -115,7 +115,9 @@ summarizes the client-facing columns for onboarding and contract review.
 The following remain intentionally submodule-only because they are implementation
 or test-support details rather than stable v1 contracts:
 
-- rule-table dataclasses and lookups in `frtb_rrao.reference_data`;
+- rule-table dataclasses and lookups in `frtb_rrao.reference_data`; private
+  `_reference_*` modules own the physical cited tables and remain implementation
+  details;
 - low-level capital helpers in `frtb_rrao.capital`;
 - profile-hash and profile-resolution internals in `frtb_rrao.regimes`;
 - notional normalisation helpers in `frtb_rrao.validation.position`
