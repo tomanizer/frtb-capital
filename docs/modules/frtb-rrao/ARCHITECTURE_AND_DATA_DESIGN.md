@@ -29,7 +29,7 @@ top-of-house aggregation.
 | `data_models.py` | Frozen dataclasses and enums only. No business logic. |
 | `validation/` | Input and result invariant checks, error types, and normalisation guards. |
 | `regimes.py` | Rule-profile identity, supported-feature declarations, profile selection, and profile hashes. |
-| `reference_data.py` | Classification labels, exclusion rules, risk weights, evidence categories, and citation tables. |
+| `reference_data.py`, `_reference_*` modules | Public compatibility lookups and private classification-label, exclusion-rule, risk-weight, evidence-category, and citation tables. |
 | `classification.py` | Pure classification and exclusion decision functions. |
 | `capital.py` | Weighted notional line add-ons, subtotals, and total RRAO helpers. |
 | `scaffold.py` | Public `calculate_rrao_capital` entry point and package metadata. |
