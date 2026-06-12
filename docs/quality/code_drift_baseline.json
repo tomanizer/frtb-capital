@@ -1,22 +1,6 @@
 {
   "description": "Baseline for mechanical code-drift controls. Update only when the growth or duplication is intentional and reviewed.",
   "large_functions": {
-    "packages/frtb-common/src/frtb_common/crif.py:_normalize_crif_arrow_table_static_mapping": {
-      "end_line": 640,
-      "key": "packages/frtb-common/src/frtb_common/crif.py:_normalize_crif_arrow_table_static_mapping",
-      "line": 533,
-      "lines": 108,
-      "name": "_normalize_crif_arrow_table_static_mapping",
-      "path": "packages/frtb-common/src/frtb_common/crif.py"
-    },
-    "packages/frtb-common/src/frtb_common/crif.py:normalize_crif_arrow_table": {
-      "end_line": 427,
-      "key": "packages/frtb-common/src/frtb_common/crif.py:normalize_crif_arrow_table",
-      "line": 276,
-      "lines": 152,
-      "name": "normalize_crif_arrow_table",
-      "path": "packages/frtb-common/src/frtb_common/crif.py"
-    },
     "packages/frtb-common/src/frtb_common/regulatory/policy_citations.py:assert_policy_has_regulatory_citations": {
       "end_line": 136,
       "key": "packages/frtb-common/src/frtb_common/regulatory/policy_citations.py:assert_policy_has_regulatory_citations",
@@ -374,20 +358,15 @@
     "drift_marker_matches": 31,
     "duplicate_function_groups": 24,
     "duplicate_function_instances": 39,
-    "large_function_count": 46,
+    "large_function_count": 44,
     "other_python_loc": 6333,
-    "python_files": 803,
+    "python_files": 813,
     "script_python_loc": 6575,
-    "source_python_loc": 70553,
-    "test_python_loc": 52073,
-    "total_python_loc": 135534
+    "source_python_loc": 70815,
+    "test_python_loc": 52084,
+    "total_python_loc": 135807
   },
   "oversized_files": {
-    "packages/frtb-common/src/frtb_common/crif.py": {
-      "limit": 600,
-      "lines": 1306,
-      "role": "source"
-    },
     "packages/frtb-cva/examples/cva_notebook_data.py": {
       "limit": 600,
       "lines": 759,

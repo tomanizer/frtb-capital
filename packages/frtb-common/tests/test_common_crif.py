@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import math
 
+import frtb_common.crif as crif
+import frtb_common.crif_normalization_adapter as crif_normalization
+import frtb_common.crif_types as crif_types
 import pyarrow as pa
 import pytest
 from frtb_common import (
@@ -30,6 +33,16 @@ def _column_specs() -> tuple[CrifColumnSpec, ...]:
         CrifColumnSpec("risk_type", aliases=("RiskType",), required=True),
         CrifColumnSpec("amount", aliases=("Amount",), logical_type=TabularLogicalType.FLOAT),
     )
+
+
+def test_crif_compatibility_imports_match_physical_modules() -> None:
+    assert crif.CrifColumnSpec is crif_types.CrifColumnSpec
+    assert crif.CrifRiskTypeMapping is crif_types.CrifRiskTypeMapping
+    assert crif.normalise_crif_risk_type is crif_types.normalise_crif_risk_type
+    assert crif.crif_records_to_arrow_table is crif_normalization.crif_records_to_arrow_table
+    assert crif.normalize_crif_records is crif_normalization.normalize_crif_records
+    assert crif.normalize_crif_arrow_table is crif_normalization.normalize_crif_arrow_table
+    assert crif.resolve_crif_column_name is crif_normalization.resolve_crif_column_name
 
 
 def test_normalize_crif_arrow_table_partitions_rejections_and_diagnostics() -> None:

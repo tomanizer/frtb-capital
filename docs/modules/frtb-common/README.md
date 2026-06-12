@@ -24,7 +24,10 @@ Current runtime contents are deliberately small and package-neutral:
   hashes;
 - CRIF-to-Arrow normalization for source-column discovery, alias normalization,
   primitive coercion, accepted/rejected partitioning, diagnostics, metadata,
-  source hashes, and package-supplied RiskType mapping;
+  source hashes, and package-supplied RiskType mapping. The public
+  `frtb_common.crif` import path remains stable while the implementation is
+  physically split across CRIF type contracts, normalization orchestration, and
+  vectorized Arrow static-mapping modules;
 - `jsonable` serialization for common domain values;
 - regulatory citation test helpers for package policy objects.
 
