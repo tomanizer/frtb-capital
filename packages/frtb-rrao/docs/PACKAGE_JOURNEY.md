@@ -54,7 +54,9 @@ Callers wire those steps after RRAO capital is computed.
 | **3 — Canonical rows** | `tuple[RraoPosition, ...]` | `calculate_rrao_capital` → `build_rrao_batch_from_positions` → `calculate_rrao_capital_from_batch` | Tests, small books, notebooks |
 
 Tier 1 is the recommended production journey below. Tiers 2 and 3 share the same
-capital semantics once inputs are validated.
+capital semantics once inputs are validated. Public row classification helpers also
+build the canonical batch before using the vectorised classification kernel;
+submodule row capital-line helpers use the same batch capital-line assembly.
 
 ---
 
@@ -91,7 +93,7 @@ What changes is the **profile-specific rule tables** applied after validation.
 | Ingress / normalize | `frtb_common.normalize_arrow_table` + `RRAO_ARROW_COLUMN_SPECS`; identity, notional, evidence, lineage columns per [`PUBLIC_API.md`](../../../docs/modules/frtb-rrao/PUBLIC_API.md#rrao-input_table-column-summary) |
 | Validate | `frtb_rrao.validation.position.validate_rrao_positions` (row) or batch invariants (finite non-negative `gross_effective_notional`, lineage, duplicate ids); `frtb_rrao.validation` remains the compatibility import path |
 | Batch | `RraoPositionBatch` NumPy columns for high-volume calculation |
-| Classify | `classify_rrao_position` / vectorised batch classification from `evidence_type`, flags, and profile tables |
+| Classify | `classify_rrao_position` / vectorised batch classification in `frtb_rrao.kernel.classification` from `evidence_type`, flags, and profile tables |
 | Capital | Additive line add-ons (`EXOTIC` 1.0%, `OTHER_RESIDUAL_RISK` 0.1%, supervisor-directed where cited); exclusions and EU Article 3 cases as **zero-capital audit lines** |
 | Result shape | `RraoCapitalResult` with `lines`, `excluded_lines`, `subtotals`, `total_rrao`, citations, warnings |
 | Explain | `build_rrao_allocation_report(s)` — additive buckets only; no Euler pass through the calculator |
@@ -233,12 +235,14 @@ Both paths use `calculate_rrao_capital_from_batch` for capital assembly. The row
 entrypoint first builds `RraoPositionBatch` with `build_rrao_batch_from_positions`.
 The shared kernel then:
 
-1. validate context and positions (or batch invariants)
+1. validate context and positions (or batch invariants in
+   `frtb_rrao.validation.batch`)
 2. classify each position under the selected profile tables
 3. build additive capital lines and excluded zero-capital lines
-4. assemble audit hash payloads in `frtb_rrao.assembly.payloads`
+4. assemble audit payloads in `frtb_rrao.assembly.payloads` and batch input
+   hashes in `frtb_rrao.assembly.hashes`
 5. assemble `RraoCapitalResult` with subtotals, `total_rrao`, citations, warnings,
-   `input_hash`, and `profile_hash`
+   `input_hash`, and `profile_hash` via `frtb_rrao.assembly.results`
 6. call `validate_rrao_result_reconciliation` before returning
 
 Return type for the batch helper is **`RraoBatchCapitalCalculation`**; use `.result`

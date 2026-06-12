@@ -1,7 +1,7 @@
 """Credit Valuation Adjustment capital package."""
 
 from frtb_cva._version import __version__
-from frtb_cva.arrow_batch import (
+from frtb_cva.adapters.arrow import (
     CVA_COUNTERPARTY_ARROW_COLUMN_SPECS,
     CVA_HEDGE_ARROW_COLUMN_SPECS,
     CVA_NETTING_SET_ARROW_COLUMN_SPECS,
@@ -98,6 +98,14 @@ from frtb_cva.reference_data import (
     girr_specified_currencies,
 )
 from frtb_cva.regimes import CvaRuleProfile, get_cva_rule_profile, profile_content_hash
+from frtb_cva.registry import (
+    CVA_COUNTERPARTY_ENTITY_SPEC,
+    CVA_ENTITY_BATCH_SPECS,
+    CVA_HEDGE_ENTITY_SPEC,
+    CVA_NETTING_SET_ENTITY_SPEC,
+    SA_CVA_SENSITIVITY_ENTITY_SPEC,
+    EntityBatchSpec,
+)
 from frtb_cva.scaffold import PACKAGE_METADATA
 from frtb_cva.scope import (
     ScopeResolution,
@@ -129,10 +137,15 @@ from frtb_cva.validation import (
 
 __all__ = [
     "CVA_COUNTERPARTY_ARROW_COLUMN_SPECS",
+    "CVA_COUNTERPARTY_ENTITY_SPEC",
+    "CVA_ENTITY_BATCH_SPECS",
     "CVA_HEDGE_ARROW_COLUMN_SPECS",
+    "CVA_HEDGE_ENTITY_SPEC",
     "CVA_NETTING_SET_ARROW_COLUMN_SPECS",
+    "CVA_NETTING_SET_ENTITY_SPEC",
     "PACKAGE_METADATA",
     "SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS",
+    "SA_CVA_SENSITIVITY_ENTITY_SPEC",
     "BaCvaCounterpartyCapital",
     "BaCvaFullPortfolioResult",
     "BaCvaHedgeRecognitionLine",
@@ -165,6 +178,7 @@ __all__ = [
     "CvaSourceLineage",
     "CvaSupportCell",
     "CvaSupportStatus",
+    "EntityBatchSpec",
     "HedgeEligibility",
     "HedgeReferenceRelation",
     "SaCvaBucketCapital",

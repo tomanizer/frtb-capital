@@ -72,12 +72,25 @@ compatibility import path for existing public callers.
 RFET assessment result assembly physically lives under
 `frtb_ima.assembly.rfet`; `frtb_ima.rfet_evidence` remains the compatibility
 import path for existing public callers.
-RFET columnar batch assessment setup physically lives under
-`frtb_ima.validation.rfet_batch`; `frtb_ima.rfet_evidence` remains the
-compatibility import path for `assess_rfet_observation_batch`.
+RFET columnar batch data/setup physically lives under
+`frtb_ima.validation.rfet_batch`; batch assessment physically lives under
+`frtb_ima.validation.rfet_batch_assessment`; `frtb_ima.rfet_evidence` remains
+the compatibility import path for `assess_rfet_observation_batch`.
 Backtesting exception classification helpers physically live under
 `frtb_ima.validation.backtesting_stages`; `frtb_ima.backtesting` remains the
 public import path for backtesting entrypoints and result records.
+Backtesting result records, scalar kernels, trace assembly, and policy wrappers
+physically live under focused `frtb_ima.backtesting_*` modules;
+`frtb_ima.backtesting` remains the compatibility import path for existing
+public callers.
+NMRF record types, stress artifact conversion, SES aggregation, and capital
+routing physically live under focused `frtb_ima.nmrf_*` modules;
+`frtb_ima.nmrf` remains the compatibility import path for existing public
+callers.
+Stress-period records, rolling-window scoring, policy selection, and NMRF spec
+bridging physically live under focused `frtb_ima.stress_period_*` modules;
+`frtb_ima.stress_periods` remains the compatibility import path for existing
+public callers.
 
 ## References
 

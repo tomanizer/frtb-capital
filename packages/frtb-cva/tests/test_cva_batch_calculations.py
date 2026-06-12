@@ -33,9 +33,9 @@ from frtb_cva import (
     normalize_cva_netting_set_arrow_table,
 )
 from frtb_cva._batch_validation import _validate_netting_set_batch
-from frtb_cva._sa_batch_kernel import calculate_sa_cva_capital_from_batch
 from frtb_cva.audit import validate_cva_result_reconciliation
 from frtb_cva.batch import CvaNettingSetBatch, SaCvaSensitivityBatch
+from frtb_cva.kernel.sa import calculate_sa_cva_capital_from_batch
 
 
 def test_full_portfolio_with_hedges_batch() -> None:
@@ -367,7 +367,7 @@ def test_standalone_capital_finite_check() -> None:
         lineage_source_systems=["synthetic"],
         lineage_source_files=["netting-sets.csv"],
     )
-    with mock.patch("frtb_cva._ba_reduced_batch_kernel.math.isfinite", return_value=False):
+    with mock.patch("frtb_cva.kernel.ba_reduced.math.isfinite", return_value=False):
         with pytest.raises(CvaInputError, match="standalone capital must be finite"):
             calculate_cva_capital_from_batches(
                 CvaCalculationContext(

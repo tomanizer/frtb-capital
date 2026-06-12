@@ -14,12 +14,13 @@ from collections.abc import Sequence
 import numpy as np
 import numpy.typing as npt
 
+from frtb_sbm.adapters.sensitivities import build_sbm_batch
 from frtb_sbm.aggregation import (
     IntraBucketScenarioSpec,
     aggregate_risk_class_with_scenarios,
     group_weighted_sensitivities_by_bucket,
 )
-from frtb_sbm.batch import SbmSensitivityBatch, build_fx_delta_batch_from_sensitivities
+from frtb_sbm.batch import SbmSensitivityBatch
 from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
@@ -33,7 +34,7 @@ from frtb_sbm.reference_data import (
     fx_delta_intra_bucket_correlation,
     fx_inter_bucket_correlation,
 )
-from frtb_sbm.weighted_sensitivity import weight_fx_delta_sensitivity_batch
+from frtb_sbm.risk_classes.fx_weighting import weight_fx_delta_sensitivity_batch
 
 
 def calculate_fx_delta_risk_class_capital(
@@ -55,7 +56,7 @@ def calculate_fx_delta_risk_class_capital(
     RiskClassCapital
     """
 
-    batch = build_fx_delta_batch_from_sensitivities(sensitivities)
+    batch = build_sbm_batch(sensitivities, SbmRiskClass.FX, SbmRiskMeasure.DELTA)
     return calculate_fx_delta_risk_class_capital_from_batch(
         batch,
         profile_id=profile_id,

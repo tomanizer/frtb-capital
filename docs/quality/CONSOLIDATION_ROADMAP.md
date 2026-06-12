@@ -63,7 +63,7 @@ Egress to orchestration continues through `frtb_common.ComponentCapitalSummary`
 | **3** | Registry collapse | No risk-class wrapper matrix > 3 functions per ingress type |
 | **4** | Single kernel | No parallel row/batch business logic in SBM/DRC/RRAO/CVA |
 | **5** | Surface trim | Public API is parameterized core + documented ingress adapters |
-| **6** | Baseline reset | `code_drift_baseline.json` refreshed; duplicate groups trend < 20 |
+| **6** | Baseline reset | `code_drift_baseline.json` refreshed; remaining duplicate groups tracked to burn-down issues |
 
 ---
 
@@ -286,12 +286,18 @@ maturity registry public entrypoint lists in the same PRs.
 
 - Run `make drift-baseline` after consolidation waves.
 - Refresh `docs/quality/simplification/` with a post-consolidation audit.
-- Close phased slices (#706–#709, #714, #717–#724) as phases complete.
-- Add `make consolidation-check` (optional) — assert max LOC per stage module and
+- Close phased slices (#706-#709, #714, #717-#724) as phases complete.
+- Add `make consolidation-check` (optional) - assert max LOC per stage module and
   registry presence.
 
-**Exit criterion:** `duplicate_function_groups` ≤ 20; no oversized `batch.py` in
-capital packages; README/CLIENT_INTEGRATION reflects new API.
+**2026-06-12 status:** #850 refreshed the post-consolidation audit and drift
+baseline. The size target is met for capital-package `batch.py` and
+`arrow_batch.py` files, but duplicate-function groups remain above target
+(37 vs <= 20). The gap is explicitly tracked by #897, #898, and #899.
+
+**Exit criterion:** no oversized `batch.py` or `arrow_batch.py` in capital
+packages; README/CLIENT_INTEGRATION reflects registry-driven APIs; duplicate
+function groups are <= 20 or every remaining group has a documented follow-up.
 
 ---
 
@@ -343,11 +349,12 @@ These should become **clearer** after consolidation, not hidden.
 
 | Metric | Current (approx.) | Target |
 | --- | ---: | ---: |
-| AST duplicate function groups | 36 | ≤ 20 |
-| SBM `build_*` wrapper count | 32 | 0 (registry only) |
-| Largest `batch.py` LOC | ~3013 | ≤ 800 per stage file |
-| Packages with dual row/batch kernels | 4 | 0 |
-| Packages on legacy `_hash_payload` | 1 (SBM) | 0 |
+| AST duplicate function groups | 37 (2026-06-12 scan) | <= 20 |
+| SBM `build_*` wrapper count | 0 public wrapper matrix; registry API is canonical | 0 (registry only) |
+| Largest capital-package `batch.py` LOC | 734 (`frtb-sbm`), 713 (`frtb-drc`), 698 (`frtb-rrao`), 45 (`frtb-cva`) | <= 800 per stage file |
+| Largest capital-package `arrow_batch.py` LOC | 383 (`frtb-rrao`); others are compatibility shims | <= 800 per stage file |
+| Packages with duplicated row/batch formula kernels | No known duplicate cited formula pair; DRC row API intentionally preserves audit payload over shared kernels | 0 |
+| Packages on legacy `_hash_payload` | CVA/DRC/RRAO local wrappers remain as shared-mechanics follow-up #899 | 0 |
 
 ---
 
@@ -359,7 +366,7 @@ These should become **clearer** after consolidation, not hidden.
 | **P1** common handoff | [#706](https://github.com/tomanizer/frtb-capital/issues/706) SBM hash · [#707](https://github.com/tomanizer/frtb-capital/issues/707) batch columns · [#708](https://github.com/tomanizer/frtb-capital/issues/708) Arrow · [#714](https://github.com/tomanizer/frtb-capital/issues/714) attribution serializers · [#722](https://github.com/tomanizer/frtb-capital/issues/722) CRIF split (optional) |
 | **P2–P4** packages | [#717](https://github.com/tomanizer/frtb-capital/issues/717) SBM · [#719](https://github.com/tomanizer/frtb-capital/issues/719) CVA · [#718](https://github.com/tomanizer/frtb-capital/issues/718) DRC · [#720](https://github.com/tomanizer/frtb-capital/issues/720) RRAO · [#721](https://github.com/tomanizer/frtb-capital/issues/721) IMA · [#723](https://github.com/tomanizer/frtb-capital/issues/723) orchestration · [#724](https://github.com/tomanizer/frtb-capital/issues/724) result-store |
 | **P5** trim | [#709](https://github.com/tomanizer/frtb-capital/issues/709) test/fixture helpers |
-| **P6** metrics | #725 Phase 6 checklist (duplicate groups ≤ 20) |
+| **P6** metrics | [#850](https://github.com/tomanizer/frtb-capital/issues/850) audit/baseline; [#897](https://github.com/tomanizer/frtb-capital/issues/897) oversized modules; [#898](https://github.com/tomanizer/frtb-capital/issues/898) test fixtures; [#899](https://github.com/tomanizer/frtb-capital/issues/899) source mechanics |
 
 Superseded (closed): #705, #716, #544, #710–#713, #715.
 

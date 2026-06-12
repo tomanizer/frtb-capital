@@ -12,7 +12,7 @@ contract.
 | [Expected shortfall and IMCC](expected-shortfall-imcc.md) | Computes ES, liquidity-horizon adjusted ES, reduced-set ES, and IMCC. | `expected_shortfall.py`, `liquidity_horizon.py`, `lha_builder.py`, `imcc.py`, `reduced_set.py`. |
 | [NMRF and SES](nmrf-ses.md) | Routes non-modellable risk factors and computes stress-scenario capital. | `nmrf.py`, `nmrf_method_selection.py`, `nmrf_valuation_run.py`. |
 | [PLA](pla.md) | Calculates profit-and-loss attribution diagnostics for desk eligibility. | `pla.py`, `regimes.py`. |
-| [Backtesting](backtesting.md) | Calculates VaR exceptions and supervisory multiplier inputs. | `backtesting.py`. |
+| [Backtesting](backtesting.md) | Calculates VaR exceptions and supervisory multiplier inputs. | `backtesting.py` public path, focused `backtesting_*` modules. |
 | [Capital assembly](capital-assembly.md) | Combines IMCC, SES, multiplier, and PLA add-on into IMA capital. | `capital.py`, `audit.py`, `audit_inputs.py`. |
 
 The suite orchestrator sees IMA through package-level outputs, not through these

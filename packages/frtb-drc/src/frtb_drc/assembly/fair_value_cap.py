@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
+from frtb_drc._batch_order import sorted_position_indices as _sorted_indices
 from frtb_drc._identifiers import slug_path as _slug
 from frtb_drc.assembly.citations import (
     sec_non_ctp_fair_value_cap_citations,
@@ -184,18 +185,6 @@ def _fair_value_cap_branch_outcome(
 
 def _market_value_gross_jtd_array(batch: DrcPositionBatch) -> np.ndarray:
     return np.abs(batch.market_values).astype(np.float64)
-
-
-def _sorted_indices(batch: DrcPositionBatch) -> tuple[int, ...]:
-    return tuple(
-        sorted(
-            range(batch.row_count),
-            key=lambda index: (
-                cast(str, batch.position_ids[index]),
-                cast(str, batch.source_row_ids[index]),
-            ),
-        )
-    )
 
 
 __all__ = [

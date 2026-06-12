@@ -1,29 +1,18 @@
 from __future__ import annotations
 
 import pytest
+from tests.rrao_fixture_helpers import sample_rrao_lineage as sample_lineage
 
+import frtb_rrao.classification as classification_module
 from frtb_rrao import (
     RraoClassification,
     RraoEvidenceType,
     RraoInputError,
     RraoPosition,
     RraoRegulatoryProfile,
-    RraoSourceLineage,
     classify_rrao_position,
     classify_rrao_positions,
 )
-
-
-def sample_lineage() -> RraoSourceLineage:
-    return RraoSourceLineage(
-        source_system="synthetic-risk",
-        source_file="rrao.csv",
-        source_row_id="row-001",
-        source_column_map=(
-            ("RiskType", "evidence_type"),
-            ("AmountUSD", "gross_effective_notional"),
-        ),
-    )
 
 
 def sample_position(**overrides: object) -> RraoPosition:
@@ -101,6 +90,38 @@ def test_classify_rrao_positions_preserves_input_order() -> None:
     assert [decision.position_id for decision in decisions] == ["pos-001", "pos-002"]
     assert decisions[0].risk_weight_key == "EXOTIC_1_PERCENT"
     assert decisions[1].risk_weight_key == "OTHER_0_1_PERCENT"
+
+
+def test_public_classification_uses_batch_classification_kernel(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[object] = []
+    original_decision_arrays = classification_module.decision_arrays_for_batch
+
+    def counting_decision_arrays(*args: object, **kwargs: object) -> object:
+        calls.append((args, kwargs))
+        return original_decision_arrays(*args, **kwargs)
+
+    monkeypatch.setattr(
+        classification_module, "decision_arrays_for_batch", counting_decision_arrays
+    )
+
+    decisions = classify_rrao_positions(
+        (
+            sample_position(position_id="pos-001", source_row_id="row-001"),
+            sample_position(
+                position_id="pos-002",
+                source_row_id="row-002",
+                evidence_type=RraoEvidenceType.GAP_RISK,
+                evidence_label="gap risk",
+                classification_hint=RraoClassification.OTHER_RESIDUAL_RISK,
+            ),
+        ),
+        profile=RraoRegulatoryProfile.US_NPR_2_0,
+    )
+
+    assert len(calls) == 1
+    assert [decision.position_id for decision in decisions] == ["pos-001", "pos-002"]
 
 
 def test_supervisor_directed_position_requires_and_preserves_directive_id() -> None:

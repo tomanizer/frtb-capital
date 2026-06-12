@@ -27,12 +27,13 @@ top-of-house aggregation.
 | Module | Responsibility |
 | --- | --- |
 | `data_models.py` | Frozen dataclasses and enums only. No business logic. |
-| `validation.py` | Input and result invariant checks, error types, and normalisation guards. |
+| `validation/` | Input and result invariant checks, error types, and normalisation guards. |
 | `regimes.py` | Rule-profile identity, supported-feature declarations, profile selection, and profile hashes. |
-| `reference_data.py` | Classification labels, exclusion rules, risk weights, evidence categories, and citation tables. |
+| `reference_data.py`, `_reference_*` modules | Public compatibility lookups and private classification-label, exclusion-rule, risk-weight, evidence-category, and citation tables. |
 | `classification.py` | Pure classification and exclusion decision functions. |
 | `capital.py` | Weighted notional line add-ons, subtotals, and total RRAO helpers. |
-| `scaffold.py` | Public `calculate_rrao_capital` entry point, package metadata, supported-profile result assembly, and proposed-rule warnings. |
+| `scaffold.py` | Public `calculate_rrao_capital` entry point and package metadata. |
+| `assembly/payloads.py`, `assembly/results.py` | Deterministic audit hash payloads and result assembly helpers; private `_payloads.py` and `_result_assembly.py` paths remain compatibility shims. |
 | `batch.py` | NumPy-backed batch validation, hashing, and calculation for high-volume canonical columns. |
 | `arrow_batch.py` | Arrow tabular handoff normalisation under ADR 0023; kernels remain outside the Arrow expression layer. |
 | `audit.py` | Deterministic JSON-compatible serialization, profile/input hashes, and reconciliation. |

@@ -22,8 +22,15 @@ their owning submodule only and are not part of the v1 compatibility contract.
 | Errors | `RraoInputError` | Public fail-closed input error carrying field and position context. |
 
 Audit payload assembly physically lives under `frtb_rrao.assembly.payloads`;
-`frtb_rrao._payloads` remains a private compatibility import path for existing
-package-internal callers and tests.
+batch input hash assembly physically lives under `frtb_rrao.assembly.hashes`;
+result assembly helpers physically live under `frtb_rrao.assembly.results`.
+Canonical batch validation physically lives under `frtb_rrao.validation.batch`.
+Batch classification decision arrays physically live under
+`frtb_rrao.kernel.classification`; public row classification helpers
+delegate to that kernel after canonical batch construction. Submodule row
+capital-line helpers also delegate to the batch capital-line kernel.
+`frtb_rrao._payloads` and `frtb_rrao._result_assembly` remain private
+compatibility import paths for existing package-internal callers and tests.
 
 RRAO batch ingress field mapping is owned by package-internal
 `frtb_rrao.batch_registry`; the public builders remain
@@ -108,7 +115,9 @@ summarizes the client-facing columns for onboarding and contract review.
 The following remain intentionally submodule-only because they are implementation
 or test-support details rather than stable v1 contracts:
 
-- rule-table dataclasses and lookups in `frtb_rrao.reference_data`;
+- rule-table dataclasses and lookups in `frtb_rrao.reference_data`; private
+  `_reference_*` modules own the physical cited tables and remain implementation
+  details;
 - low-level capital helpers in `frtb_rrao.capital`;
 - profile-hash and profile-resolution internals in `frtb_rrao.regimes`;
 - notional normalisation helpers in `frtb_rrao.validation.position`

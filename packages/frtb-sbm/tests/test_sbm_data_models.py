@@ -23,23 +23,12 @@ from frtb_sbm import (
     SbmScenarioLabel,
     SbmSensitivity,
     SbmSignConvention,
-    SbmSourceLineage,
     SbmUnsupportedFeature,
     SbmWarning,
     WeightedSensitivity,
 )
 
-
-def sample_lineage() -> SbmSourceLineage:
-    return SbmSourceLineage(
-        source_system="synthetic-risk",
-        source_file="sbm.csv",
-        source_row_id="row-001",
-        source_column_map=(
-            ("RiskType", "risk_class"),
-            ("AmountUSD", "amount"),
-        ),
-    )
+from tests.sbm_fixture_helpers import sample_sbm_lineage as sample_lineage
 
 
 def sample_sensitivity() -> SbmSensitivity:

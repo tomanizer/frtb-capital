@@ -10,6 +10,23 @@ from typing import TYPE_CHECKING, Any, cast
 from frtb_sbm.data_models import SbmCalculationContext, SbmRiskClass, SbmRiskMeasure
 from frtb_sbm.registry import sbm_batch_spec
 from frtb_sbm.validation import SbmInputError, coerce_risk_class, coerce_risk_measure
+from frtb_sbm.validation.batch import validate_homogeneous_batch_arrays
+from frtb_sbm.validation.batch_arrays import (
+    FloatArray,
+    ObjectArray,
+    float_array,
+    normalise_risk_class_array,
+    normalise_risk_measure_array,
+    normalise_sign_convention_array,
+    object_array,
+    optional_object_array,
+    require_common_length,
+    require_non_empty_length,
+)
+from frtb_sbm.validation.batch_lineage import (
+    validate_mapping_citations,
+    validate_source_column_maps,
+)
 
 if TYPE_CHECKING:
     from frtb_sbm.batch import SbmSensitivityBatch
@@ -110,7 +127,7 @@ def build_sbm_batch_from_columns(
     resolved_risk_measure = coerce_risk_measure(expected_risk_measure)
     columns = locals()
     arrays = _required_arrays_from_columns(columns, copy_arrays=copy_arrays)
-    amount_array = _batch_module()._float_array(amounts, "amount", copy=copy_arrays)
+    amount_array = float_array(amounts, "amount", copy=copy_arrays)
     row_count = int(amount_array.shape[0])
     _validate_required_arrays(arrays, row_count)
     optional = _optional_arrays_from_columns(columns, row_count=row_count, copy_arrays=copy_arrays)
@@ -146,8 +163,7 @@ def _required_arrays_from_columns(
     columns: Mapping[str, object],
     *,
     copy_arrays: bool,
-) -> dict[str, object]:
-    batch_module = _batch_module()
+) -> dict[str, ObjectArray]:
     fields = (
         ("sensitivity_ids", "sensitivity_id"),
         ("source_row_ids", "source_row_id"),
@@ -164,27 +180,26 @@ def _required_arrays_from_columns(
         ("lineage_source_files", "lineage_source_file"),
     )
     return {
-        name: batch_module._object_array(columns[name], field, copy=copy_arrays)
+        name: object_array(cast(Iterable[object], columns[name]), field, copy=copy_arrays)
         for name, field in fields
     }
 
 
 def _validate_required_arrays(
-    arrays: dict[str, object],
+    arrays: dict[str, ObjectArray],
     row_count: int,
 ) -> None:
-    batch_module = _batch_module()
-    batch_module._require_common_length(row_count, arrays)
-    batch_module._require_non_empty_length(row_count)
-    arrays["risk_classes"] = batch_module._normalise_risk_class_array(
+    require_common_length(row_count, arrays)
+    require_non_empty_length(row_count)
+    arrays["risk_classes"] = normalise_risk_class_array(
         arrays["risk_classes"],
         sensitivity_ids=arrays["sensitivity_ids"],
     )
-    arrays["risk_measures"] = batch_module._normalise_risk_measure_array(
+    arrays["risk_measures"] = normalise_risk_measure_array(
         arrays["risk_measures"],
         sensitivity_ids=arrays["sensitivity_ids"],
     )
-    arrays["sign_conventions"] = batch_module._normalise_sign_convention_array(
+    arrays["sign_conventions"] = normalise_sign_convention_array(
         arrays["sign_conventions"],
         sensitivity_ids=arrays["sensitivity_ids"],
     )
@@ -195,9 +210,8 @@ def _optional_arrays_from_columns(
     *,
     row_count: int,
     copy_arrays: bool,
-) -> dict[str, object]:
-    batch_module = _batch_module()
-    optional_array = batch_module._optional_object_array
+) -> dict[str, ObjectArray | None]:
+    optional_array = optional_object_array
     fields = (
         ("position_ids", "position_id"),
         ("qualifiers", "qualifier"),
@@ -208,14 +222,17 @@ def _optional_arrays_from_columns(
         ("down_shock_amounts", "down_shock_amount"),
     )
     return {
-        name: optional_array(columns[name], field, row_count, copy_arrays) for name, field in fields
+        name: optional_array(
+            cast(Iterable[object] | None, columns[name]), field, row_count, copy_arrays
+        )
+        for name, field in fields
     }
 
 
 def _validate_batch_arrays(
-    arrays: dict[str, object],
-    amount_array: object,
-    optional: dict[str, object],
+    arrays: Mapping[str, ObjectArray],
+    amount_array: FloatArray,
+    optional: Mapping[str, ObjectArray | None],
     *,
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None,
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None,
@@ -223,10 +240,9 @@ def _validate_batch_arrays(
     expected_risk_class: SbmRiskClass,
     expected_risk_measure: SbmRiskMeasure,
 ) -> None:
-    batch_module = _batch_module()
-    batch_module._validate_source_column_maps(source_column_maps, row_count)
-    batch_module._validate_mapping_citations(mapping_citation_ids, row_count)
-    batch_module._validate_homogeneous_batch_arrays(
+    validate_source_column_maps(source_column_maps, row_count)
+    validate_mapping_citations(mapping_citation_ids, row_count)
+    validate_homogeneous_batch_arrays(
         arrays,
         amount_array,
         expected_risk_class=expected_risk_class,
@@ -236,9 +252,9 @@ def _validate_batch_arrays(
 
 
 def _batch_with_hash(
-    arrays: dict[str, object],
-    amount_array: object,
-    optional: dict[str, object],
+    arrays: Mapping[str, ObjectArray],
+    amount_array: FloatArray,
+    optional: Mapping[str, ObjectArray | None],
     *,
     source_hash: str | None,
     handoff_hash: str | None,

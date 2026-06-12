@@ -2,7 +2,7 @@
 
 This module maps iterable vendor record rows into validated
 :class:`~frtb_cva.data_models` inputs. It performs field aliasing and sign
-normalisation only; Arrow handoffs use :mod:`frtb_cva.arrow_batch` instead.
+normalisation only; Arrow handoffs use :mod:`frtb_cva.adapters.arrow` instead.
 """
 
 from __future__ import annotations

@@ -10,8 +10,10 @@ from frtb_sbm import (
     WeightedSensitivity,
 )
 from frtb_sbm.aggregation import adjust_correlation_matrix_for_scenario
-from frtb_sbm.capital import _build_girr_delta_intra_bucket_correlation_matrix
 from frtb_sbm.reference_data import apply_correlation_scenario, girr_delta_intra_bucket_correlation
+from frtb_sbm.risk_classes.girr_delta_correlations import (
+    _build_girr_delta_intra_bucket_correlation_matrix,
+)
 from frtb_sbm.validation import SbmInputError
 
 

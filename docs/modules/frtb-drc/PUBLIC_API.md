@@ -54,6 +54,9 @@ capital entrypoint.
 Non-securitisation row-path calculation helpers physically live in
 `frtb_drc.kernel.nonsec`; `frtb_drc.scaffold.calculate_drc_capital` remains the
 public multi-class row entrypoint.
+Public row-result citation, branch metadata, and attribution-support assembly
+physically lives in `frtb_drc.assembly.result`; `frtb_drc.scaffold` remains the
+public row entrypoint.
 CTP row-path calculation helpers physically live in `frtb_drc.kernel.ctp`;
 `frtb_drc.ctp` remains a compatibility import path for existing callers.
 Securitisation non-CTP row-path calculation helpers physically live in
@@ -61,6 +64,8 @@ Securitisation non-CTP row-path calculation helpers physically live in
 `frtb_drc.kernel.securitisation_context` and fair-value-cap gross branching in
 `frtb_drc.kernel.securitisation_gross`; `frtb_drc.securitisation` remains a
 compatibility import path for existing callers.
+DRC regime citation tables physically live in `frtb_drc.regime_citations`;
+`frtb_drc.regimes` remains the profile lookup and support-matrix import path.
 
 ## Client integration
 

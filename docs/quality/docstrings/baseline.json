@@ -3,11 +3,11 @@
   "metrics": {
     "findings_by_rule": {
       "MISSING_PARAMETERS_SECTION": 22,
-      "MISSING_PUBLIC_DOCSTRING": 66,
+      "MISSING_PUBLIC_DOCSTRING": 64,
       "MISSING_RETURNS_SECTION": 33
     },
     "packages_with_findings": 5,
-    "total_findings": 121
+    "total_findings": 119
   },
   "packages": {
     "frtb-drc": {
@@ -115,7 +115,7 @@
       ]
     },
     "frtb-orchestration": {
-      "finding_count": 39,
+      "finding_count": 38,
       "findings": [
         {
           "line": 41,
@@ -340,15 +340,6 @@
           "object_type": "method",
           "package": "frtb-orchestration",
           "path": "packages/frtb-orchestration/src/frtb_orchestration/manifest.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
-        },
-        {
-          "line": 97,
-          "message": "Public method is missing a docstring.",
-          "object_name": "StandardisedComponentSubtotal.from_summary",
-          "object_type": "method",
-          "package": "frtb-orchestration",
-          "path": "packages/frtb-orchestration/src/frtb_orchestration/standardised.py",
           "rule": "MISSING_PUBLIC_DOCSTRING"
         },
         {
@@ -1112,15 +1103,6 @@
           "package": "frtb-sbm",
           "path": "packages/frtb-sbm/src/frtb_sbm/numeric.py",
           "rule": "MISSING_RETURNS_SECTION"
-        },
-        {
-          "line": 908,
-          "message": "Public function is missing a docstring.",
-          "object_name": "require_positive_int",
-          "object_type": "function",
-          "package": "frtb-sbm",
-          "path": "packages/frtb-sbm/src/frtb_sbm/validation.py",
-          "rule": "MISSING_PUBLIC_DOCSTRING"
         }
       ]
     }

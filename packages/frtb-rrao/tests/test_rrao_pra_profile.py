@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+from tests.rrao_fixture_helpers import rrao_position_from_payload
 
 from frtb_rrao import (
     RraoBackToBackMatch,
@@ -118,51 +119,16 @@ def load_pra_fixture_context() -> RraoCalculationContext:
 def load_pra_fixture_positions() -> tuple[RraoPosition, ...]:
     positions = load_pra_fixture()["positions"]
     assert isinstance(positions, list)
-    return tuple(_position_from_payload(position) for position in positions)
+    return tuple(
+        rrao_position_from_payload(position, lineage_factory=sample_lineage)
+        for position in positions
+    )
 
 
 def load_pra_fixture_expected() -> dict[str, object]:
     expected = load_pra_fixture()["expected"]
     assert isinstance(expected, dict)
     return expected
-
-
-def _position_from_payload(payload: object) -> RraoPosition:
-    assert isinstance(payload, dict)
-    exclusion_reason = payload.get("exclusion_reason")
-    return RraoPosition(
-        position_id=str(payload["position_id"]),
-        source_row_id=str(payload["source_row_id"]),
-        desk_id=str(payload["desk_id"]),
-        legal_entity=str(payload["legal_entity"]),
-        gross_effective_notional=float(payload["gross_effective_notional"]),
-        currency=str(payload["currency"]),
-        evidence_type=RraoEvidenceType(str(payload["evidence_type"])),
-        evidence_label=str(payload["evidence_label"]),
-        classification_hint=RraoClassification(str(payload["classification_hint"])),
-        exclusion_reason=(
-            RraoExclusionReason(str(exclusion_reason)) if exclusion_reason is not None else None
-        ),
-        exclusion_evidence_id=_optional_str(payload.get("exclusion_evidence_id")),
-        back_to_back_match=_optional_back_to_back_match(payload.get("back_to_back_match")),
-        lineage=sample_lineage(str(payload["source_row_id"])),
-    )
-
-
-def _optional_back_to_back_match(value: object) -> RraoBackToBackMatch | None:
-    if value is None:
-        return None
-    assert isinstance(value, dict)
-    return RraoBackToBackMatch(
-        match_group_id=str(value["match_group_id"]),
-        matched_position_id=str(value["matched_position_id"]),
-    )
-
-
-def _optional_str(value: object) -> str | None:
-    if value is None:
-        return None
-    return str(value)
 
 
 def test_pra_profile_calculates_article_1_article_2_and_article_3_fixture() -> None:

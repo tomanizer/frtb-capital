@@ -92,6 +92,9 @@ Batch net-JTD array kernels physically live under `frtb_drc.kernel.net_jtd`;
 Non-securitisation row-path calculation helpers physically live under
 `frtb_drc.kernel.nonsec`; `frtb_drc.scaffold.calculate_drc_capital` remains the
 public multi-class row entrypoint.
+Public row-result citation, branch metadata, and attribution-support assembly
+physically lives under `frtb_drc.assembly.result`; `frtb_drc.scaffold` remains
+the public row entrypoint.
 CTP row-path calculation helpers physically live under `frtb_drc.kernel.ctp`;
 `frtb_drc.ctp` remains the compatibility import path for existing callers.
 Securitisation non-CTP row-path calculation helpers physically live under
@@ -99,6 +102,8 @@ Securitisation non-CTP row-path calculation helpers physically live under
 `frtb_drc.kernel.securitisation_context`, fair-value-cap gross branching lives
 under `frtb_drc.kernel.securitisation_gross`, and `frtb_drc.securitisation`
 remains the compatibility import path for existing callers.
+DRC regime citation tables physically live under `frtb_drc.regime_citations`;
+`frtb_drc.regimes` remains the profile lookup and support-matrix import path.
 
 ---
 

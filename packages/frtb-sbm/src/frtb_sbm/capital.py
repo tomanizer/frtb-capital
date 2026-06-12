@@ -12,33 +12,23 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from typing import TypedDict
 
 import numpy as np
-import numpy.typing as npt
 from frtb_common import UnsupportedRegulatoryFeatureError
 
-from frtb_sbm._batch_lookup import batch_text_by_id as _batch_text_by_id
 from frtb_sbm.aggregation import (
-    IntraBucketScenarioSpec,
-    aggregate_risk_class_with_scenarios,
-    group_weighted_sensitivities_by_bucket,
     select_portfolio_correlation_scenario,
 )
 from frtb_sbm.assembly.hashes import input_hash_for_validated_sensitivities
 from frtb_sbm.audit import validate_sbm_result_reconciliation
-from frtb_sbm.batch import (
-    SbmSensitivityBatch,
-    build_girr_delta_batch_from_sensitivities,
-    build_girr_vega_batch_from_sensitivities,
-)
+from frtb_sbm.batch import SbmSensitivityBatch
 from frtb_sbm.curvature import (
     calculate_curvature_risk_class_capital,
     calculate_curvature_risk_class_capital_from_batch,
 )
 from frtb_sbm.data_models import (
-    DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
     SbmBranchMetadata,
     SbmCalculationContext,
@@ -52,19 +42,6 @@ from frtb_sbm.data_models import (
     SbmRunContextSummary,
     SbmRunControls,
     SbmSensitivity,
-    WeightedSensitivity,
-)
-from frtb_sbm.factor_grid import net_girr_delta_sensitivity_batch
-from frtb_sbm.reference_data import (
-    GIRR_DELTA_INTRA_BUCKET_CONSTANT,
-    GIRR_DIFFERENT_CURVE_CORRELATION,
-    GIRR_INFLATION_DIFFERENT_TENOR_CORRELATION,
-    GIRR_INFLATION_SAME_TENOR_CORRELATION,
-    GIRR_INTRA_BUCKET_CORRELATION_FLOOR,
-    GIRR_SAME_CURVE_CORRELATION,
-    girr_inter_bucket_correlation,
-    girr_tenor_definition,
-    girr_vega_intra_bucket_correlation,
 )
 from frtb_sbm.regimes import get_sbm_rule_profile
 from frtb_sbm.registry import SBM_BATCH_PATH_ORDER, sbm_batch_spec
@@ -92,6 +69,14 @@ from frtb_sbm.risk_classes.fx import (
     calculate_fx_delta_risk_class_capital,
     calculate_fx_delta_risk_class_capital_from_batch,
 )
+from frtb_sbm.risk_classes.girr import (
+    _ensure_girr_delta_batch_run_supported,
+    _ensure_girr_vega_batch_run_supported,
+    calculate_girr_delta_risk_class_capital,
+    calculate_girr_delta_risk_class_capital_from_batch,
+    calculate_girr_vega_risk_class_capital,
+    calculate_girr_vega_risk_class_capital_from_batch,
+)
 from frtb_sbm.risk_classes.vega import (
     calculate_non_girr_vega_risk_class_capital,
     calculate_non_girr_vega_risk_class_capital_from_batch,
@@ -101,12 +86,8 @@ from frtb_sbm.validation import (
     ensure_sbm_capital_paths_supported,
     ensure_sbm_risk_class_measure_supported,
     ensure_sbm_run_supported,
-    normalise_currency_code,
     phase1_capital_supported_paths,
     validate_sbm_calculation_context,
-)
-from frtb_sbm.weighted_sensitivity import (
-    weight_girr_vega_sensitivity_batch,
 )
 
 _SBM_REQUIREMENT_IDS = (
@@ -123,33 +104,6 @@ _SBM_REQUIREMENT_IDS = (
     "SBM-CURV-001",
 )
 
-_MAR21_INTRA_BUCKET_CITATION = ("basel_mar21_4_intra_bucket",)
-_MAR21_INTER_BUCKET_CITATION = ("basel_mar21_4_inter_bucket",)
-_GIRR_DELTA_INTRA_CITATIONS = (*_MAR21_INTRA_BUCKET_CITATION, "basel_mar21_45_49")
-_GIRR_DELTA_INTER_CITATIONS = (*_MAR21_INTER_BUCKET_CITATION, "basel_mar21_50")
-_GIRR_VEGA_INTRA_CITATIONS = (*_MAR21_INTRA_BUCKET_CITATION, "basel_mar21_93")
-_GIRR_VEGA_INTER_CITATIONS = (*_MAR21_INTER_BUCKET_CITATION, "basel_mar21_95", "basel_mar21_50")
-_PROFILE_GIRR_DELTA_INTRA_CITATIONS = {
-    SbmRegulatoryProfile.BASEL_MAR21.value: _GIRR_DELTA_INTRA_CITATIONS,
-    SbmRegulatoryProfile.US_NPR_2_0.value: (
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_girr_intra",
-    ),
-}
-_PROFILE_GIRR_DELTA_INTER_CITATIONS = {
-    SbmRegulatoryProfile.BASEL_MAR21.value: _GIRR_DELTA_INTER_CITATIONS,
-    SbmRegulatoryProfile.US_NPR_2_0.value: (
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_girr_inter",
-    ),
-}
-_PROFILE_GIRR_DELTA_SCENARIO_CITATIONS = {
-    SbmRegulatoryProfile.BASEL_MAR21.value: (
-        "basel_mar21_6_correlation_scenarios",
-        "basel_mar21_7_scenario_selection",
-    ),
-    SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
-}
 _PROFILE_PORTFOLIO_SCENARIO_CITATIONS = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_7_scenario_selection",),
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
@@ -218,7 +172,7 @@ def calculate_sbm_capital(
             )
         elif risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.DELTA:
             risk_class_results.append(
-                _calculate_girr_delta_risk_class_capital(
+                calculate_girr_delta_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
                     reporting_currency=context.reporting_currency,
@@ -228,7 +182,7 @@ def calculate_sbm_capital(
             )
         elif risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.VEGA:
             risk_class_results.append(
-                _calculate_girr_vega_risk_class_capital(
+                calculate_girr_vega_risk_class_capital(
                     measure_sensitivities,
                     profile_id=rule_profile.profile_id,
                     pairwise_evidence_mode=run_controls.pairwise_evidence_mode,
@@ -378,14 +332,14 @@ def _calculate_batch_risk_class_capital(
         "pairwise_evidence_limit": run_controls.pairwise_evidence_limit,
     }
     if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.DELTA:
-        return _calculate_girr_delta_risk_class_capital_from_batch(
+        return calculate_girr_delta_risk_class_capital_from_batch(
             batch,
             profile_id=rule_profile.profile_id,
             reporting_currency=context.reporting_currency,
             **pairwise_kwargs,
         )
     if risk_class is SbmRiskClass.GIRR and risk_measure is SbmRiskMeasure.VEGA:
-        return _calculate_girr_vega_risk_class_capital_from_batch(
+        return calculate_girr_vega_risk_class_capital_from_batch(
             batch,
             profile_id=rule_profile.profile_id,
             **pairwise_kwargs,
@@ -490,115 +444,6 @@ def _ensure_batch_run_supported(
         "frtb-sbm batch capital does not support "
         f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
     )
-
-
-def _calculate_girr_delta_risk_class_capital(
-    sensitivities: tuple[SbmSensitivity, ...],
-    *,
-    profile_id: str,
-    reporting_currency: str,
-    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
-) -> RiskClassCapital:
-    batch = build_girr_delta_batch_from_sensitivities(sensitivities)
-    return _calculate_girr_delta_risk_class_capital_from_batch(
-        batch,
-        profile_id=profile_id,
-        reporting_currency=reporting_currency,
-        pairwise_evidence_mode=pairwise_evidence_mode,
-        pairwise_evidence_limit=pairwise_evidence_limit,
-    )
-
-
-def _calculate_girr_delta_risk_class_capital_from_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-    reporting_currency: str,
-    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
-) -> RiskClassCapital:
-    factor_grid = net_girr_delta_sensitivity_batch(
-        batch,
-        profile_id=profile_id,
-        reporting_currency=reporting_currency,
-    )
-    return _aggregate_girr_measure_capital(
-        factor_grid.weighted_sensitivities,
-        profile_id=profile_id,
-        risk_measure=SbmRiskMeasure.DELTA,
-        tenor_by_id=factor_grid.tenor_by_id,
-        risk_factor_by_id=factor_grid.risk_factor_by_id,
-        pairwise_evidence_mode=pairwise_evidence_mode,
-        pairwise_evidence_limit=pairwise_evidence_limit,
-    )
-
-
-def _ensure_girr_delta_batch_run_supported(
-    context: SbmCalculationContext,
-    batch: SbmSensitivityBatch,
-) -> None:
-    if batch.row_count == 0:
-        raise SbmInputError("GIRR delta batch must not be empty", field="batch")
-    normalise_currency_code(context.reporting_currency, field="reporting_currency")
-    scoped_desk_id = (context.desk_id or "").strip()
-    scoped_legal_entity = (context.legal_entity or "").strip()
-    for row_index in range(batch.row_count):
-        sensitivity_id = batch.sensitivity_ids[row_index]
-        if scoped_desk_id and batch.desk_ids[row_index] != scoped_desk_id:
-            raise SbmInputError(
-                f"desk_id {batch.desk_ids[row_index]} does not match "
-                f"context desk_id {scoped_desk_id}",
-                field="desk_id",
-                sensitivity_id=sensitivity_id,
-            )
-        if scoped_legal_entity and batch.legal_entities[row_index] != scoped_legal_entity:
-            raise SbmInputError(
-                f"legal_entity {batch.legal_entities[row_index]} does not match "
-                f"context legal_entity {scoped_legal_entity}",
-                field="legal_entity",
-                sensitivity_id=sensitivity_id,
-            )
-
-
-def _ensure_girr_vega_batch_run_supported(
-    context: SbmCalculationContext,
-    batch: SbmSensitivityBatch,
-) -> None:
-    if batch.row_count == 0:
-        raise SbmInputError("GIRR vega batch must not be empty", field="batch")
-    if batch.risk_class is not SbmRiskClass.GIRR:
-        raise SbmInputError(
-            "GIRR vega batch only accepts GIRR sensitivities",
-            field="risk_class",
-        )
-    if batch.risk_measure is not SbmRiskMeasure.VEGA:
-        raise SbmInputError(
-            "GIRR vega batch only accepts vega sensitivities",
-            field="risk_measure",
-        )
-    scoped_desk_id = (context.desk_id or "").strip()
-    scoped_legal_entity = (context.legal_entity or "").strip()
-    if scoped_desk_id:
-        mismatches = batch.desk_ids != scoped_desk_id
-        if np.any(mismatches):
-            row_index = int(np.flatnonzero(mismatches)[0])
-            raise SbmInputError(
-                f"desk_id {batch.desk_ids[row_index]} does not match "
-                f"context desk_id {scoped_desk_id}",
-                field="desk_id",
-                sensitivity_id=batch.sensitivity_ids[row_index],
-            )
-    if scoped_legal_entity:
-        mismatches = batch.legal_entities != scoped_legal_entity
-        if np.any(mismatches):
-            row_index = int(np.flatnonzero(mismatches)[0])
-            raise SbmInputError(
-                f"legal_entity {batch.legal_entities[row_index]} does not match "
-                f"context legal_entity {scoped_legal_entity}",
-                field="legal_entity",
-                sensitivity_id=batch.sensitivity_ids[row_index],
-            )
 
 
 def _ensure_delta_batch_run_supported(
@@ -786,297 +631,6 @@ def _portfolio_scenario_citations(profile_id: str) -> tuple[str, ...]:
         raise UnsupportedRegulatoryFeatureError(
             f"Portfolio scenario citations are unsupported for profile={profile_id}"
         ) from exc
-
-
-def _calculate_girr_vega_risk_class_capital(
-    sensitivities: tuple[SbmSensitivity, ...],
-    *,
-    profile_id: str,
-    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
-) -> RiskClassCapital:
-    batch = build_girr_vega_batch_from_sensitivities(sensitivities)
-    return _calculate_girr_vega_risk_class_capital_from_batch(
-        batch,
-        profile_id=profile_id,
-        pairwise_evidence_mode=pairwise_evidence_mode,
-        pairwise_evidence_limit=pairwise_evidence_limit,
-    )
-
-
-def _calculate_girr_vega_risk_class_capital_from_batch(
-    batch: SbmSensitivityBatch,
-    *,
-    profile_id: str,
-    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
-) -> RiskClassCapital:
-    weighted = weight_girr_vega_sensitivity_batch(
-        batch,
-        profile_id=profile_id,
-    )
-    option_tenor_by_id = _batch_text_by_id(batch, batch.option_tenors, "option_tenor")
-    tenor_by_id = _batch_text_by_id(batch, batch.tenors, "tenor")
-    return _aggregate_girr_measure_capital(
-        weighted,
-        profile_id=profile_id,
-        risk_measure=SbmRiskMeasure.VEGA,
-        tenor_by_id=tenor_by_id,
-        option_tenor_by_id=option_tenor_by_id,
-        pairwise_evidence_mode=pairwise_evidence_mode,
-        pairwise_evidence_limit=pairwise_evidence_limit,
-    )
-
-
-def _aggregate_girr_measure_capital(
-    weighted: tuple[WeightedSensitivity, ...],
-    *,
-    profile_id: str,
-    risk_measure: SbmRiskMeasure,
-    tenor_by_id: Mapping[str, str],
-    risk_factor_by_id: Mapping[str, str] | None = None,
-    option_tenor_by_id: Mapping[str, str] | None = None,
-    pairwise_evidence_mode: SbmPairwiseEvidenceMode | str = SbmPairwiseEvidenceMode.AUTO,
-    pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
-) -> RiskClassCapital:
-    grouped = group_weighted_sensitivities_by_bucket(weighted)
-
-    intra_specs: list[IntraBucketScenarioSpec] = []
-    for (_risk_class, _risk_measure, bucket_id), bucket_weighted in sorted(grouped.items()):
-        if risk_measure is SbmRiskMeasure.DELTA:
-            matrix = _build_girr_delta_intra_bucket_correlation_matrix(
-                bucket_weighted,
-                profile_id=profile_id,
-                tenor_by_id=tenor_by_id,
-                risk_factor_by_id=risk_factor_by_id or {},
-            )
-        else:
-            matrix = _build_girr_vega_intra_bucket_correlation_matrix(
-                bucket_weighted,
-                profile_id=profile_id,
-                option_tenor_by_id=option_tenor_by_id or {},
-                tenor_by_id=tenor_by_id,
-            )
-        intra_specs.append(
-            IntraBucketScenarioSpec(
-                bucket_id=bucket_id,
-                weighted_sensitivities=tuple(bucket_weighted),
-                base_correlation_matrix=matrix,
-                sb_correlation_floor=GIRR_INTRA_BUCKET_CORRELATION_FLOOR
-                if risk_measure is SbmRiskMeasure.DELTA
-                else None,
-            )
-        )
-
-    bucket_ids = tuple(sorted(spec.bucket_id for spec in intra_specs))
-    inter_bucket_correlations = _build_inter_bucket_correlation_map(
-        bucket_ids,
-        profile_id=profile_id,
-    )
-    return aggregate_risk_class_with_scenarios(
-        tuple(intra_specs),
-        inter_bucket_correlations,
-        risk_class=SbmRiskClass.GIRR,
-        risk_measure=risk_measure,
-        citation_ids=(
-            _girr_delta_scenario_citations(profile_id)
-            if risk_measure is SbmRiskMeasure.DELTA
-            else (
-                "basel_mar21_6_correlation_scenarios",
-                "basel_mar21_7_scenario_selection",
-            )
-        ),
-        intra_bucket_citation_ids=(
-            _girr_delta_intra_citations(profile_id)
-            if risk_measure is SbmRiskMeasure.DELTA
-            else _GIRR_VEGA_INTRA_CITATIONS
-        ),
-        inter_bucket_citation_ids=(
-            _girr_delta_inter_citations(profile_id)
-            if risk_measure is SbmRiskMeasure.DELTA
-            else _GIRR_VEGA_INTER_CITATIONS
-        ),
-        pairwise_evidence_mode=pairwise_evidence_mode,
-        pairwise_evidence_limit=pairwise_evidence_limit,
-    )
-
-
-def _girr_delta_scenario_citations(profile_id: str) -> tuple[str, ...]:
-    try:
-        return _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS[profile_id]
-    except KeyError as exc:
-        raise UnsupportedRegulatoryFeatureError(
-            f"GIRR delta scenario citations are unsupported for profile={profile_id}"
-        ) from exc
-
-
-def _girr_delta_intra_citations(profile_id: str) -> tuple[str, ...]:
-    try:
-        return _PROFILE_GIRR_DELTA_INTRA_CITATIONS[profile_id]
-    except KeyError as exc:
-        raise UnsupportedRegulatoryFeatureError(
-            f"GIRR delta intra-bucket citations are unsupported for profile={profile_id}"
-        ) from exc
-
-
-def _girr_delta_inter_citations(profile_id: str) -> tuple[str, ...]:
-    try:
-        return _PROFILE_GIRR_DELTA_INTER_CITATIONS[profile_id]
-    except KeyError as exc:
-        raise UnsupportedRegulatoryFeatureError(
-            f"GIRR delta inter-bucket citations are unsupported for profile={profile_id}"
-        ) from exc
-
-
-def _build_girr_delta_intra_bucket_correlation_matrix(
-    ordered: Sequence[WeightedSensitivity],
-    *,
-    profile_id: str,
-    tenor_by_id: Mapping[str, str],
-    risk_factor_by_id: Mapping[str, str],
-) -> npt.NDArray[np.float64]:
-    tenors = _girr_delta_tenor_array(ordered, tenor_by_id=tenor_by_id)
-    risk_factors = _girr_delta_risk_factor_array(ordered, risk_factor_by_id=risk_factor_by_id)
-    maturities = _girr_delta_maturity_array(tenors, profile_id=profile_id)
-
-    same_curve = risk_factors[:, np.newaxis] == risk_factors[np.newaxis, :]
-    minimum_tenor = np.minimum(maturities[:, np.newaxis], maturities[np.newaxis, :])
-    tenor_difference = np.abs(maturities[:, np.newaxis] - maturities[np.newaxis, :])
-    with np.errstate(divide="ignore", invalid="ignore"):
-        tenor_correlation = np.exp(
-            -GIRR_DELTA_INTRA_BUCKET_CONSTANT * tenor_difference / minimum_tenor
-        )
-    tenor_correlation = np.where(minimum_tenor <= 0.0, 1.0, tenor_correlation)
-    tenor_correlation = np.maximum(tenor_correlation, GIRR_INTRA_BUCKET_CORRELATION_FLOOR)
-    curve_correlation = np.where(
-        same_curve,
-        GIRR_SAME_CURVE_CORRELATION,
-        GIRR_DIFFERENT_CURVE_CORRELATION,
-    )
-    matrix = curve_correlation * tenor_correlation
-
-    xccy = tenors == "XCCY"
-    xccy_any = xccy[:, np.newaxis] | xccy[np.newaxis, :]
-    if np.any(xccy_any):
-        xccy_both = xccy[:, np.newaxis] & xccy[np.newaxis, :]
-        matrix = np.where(xccy_any, np.where(xccy_both, GIRR_SAME_CURVE_CORRELATION, 0.0), matrix)
-
-    inflation = tenors == "INFL"
-    inflation_any = inflation[:, np.newaxis] | inflation[np.newaxis, :]
-    if np.any(inflation_any):
-        inflation_both = inflation[:, np.newaxis] & inflation[np.newaxis, :]
-        matrix = np.where(
-            inflation_any & ~xccy_any,
-            np.where(
-                inflation_both,
-                GIRR_INFLATION_SAME_TENOR_CORRELATION,
-                GIRR_INFLATION_DIFFERENT_TENOR_CORRELATION,
-            ),
-            matrix,
-        )
-
-    np.fill_diagonal(matrix, GIRR_SAME_CURVE_CORRELATION)
-    return matrix
-
-
-def _girr_delta_tenor_array(
-    ordered: Sequence[WeightedSensitivity],
-    *,
-    tenor_by_id: Mapping[str, str],
-) -> npt.NDArray[np.object_]:
-    tenors: list[str] = []
-    for sensitivity in ordered:
-        try:
-            tenor = tenor_by_id[sensitivity.sensitivity_id]
-        except KeyError as exc:
-            raise SbmInputError(
-                "missing GIRR delta tenor for weighted sensitivity",
-                field="tenor_by_id",
-                sensitivity_id=sensitivity.sensitivity_id,
-            ) from exc
-        if not isinstance(tenor, str) or not tenor.strip():
-            raise SbmInputError(
-                "non-empty text is required",
-                field="tenor",
-                sensitivity_id=sensitivity.sensitivity_id,
-            )
-        tenors.append(tenor.strip())
-    return np.asarray(tenors, dtype=object)
-
-
-def _girr_delta_risk_factor_array(
-    ordered: Sequence[WeightedSensitivity],
-    *,
-    risk_factor_by_id: Mapping[str, str],
-) -> npt.NDArray[np.object_]:
-    risk_factors: list[str] = []
-    for sensitivity in ordered:
-        try:
-            risk_factor = risk_factor_by_id[sensitivity.sensitivity_id]
-        except KeyError as exc:
-            raise SbmInputError(
-                "missing GIRR delta risk factor for weighted sensitivity",
-                field="risk_factor_by_id",
-                sensitivity_id=sensitivity.sensitivity_id,
-            ) from exc
-        risk_factors.append(risk_factor)
-    return np.asarray(risk_factors, dtype=object)
-
-
-def _girr_delta_maturity_array(
-    tenors: npt.NDArray[np.object_],
-    *,
-    profile_id: str,
-) -> npt.NDArray[np.float64]:
-    maturity_by_tenor: dict[str, float] = {}
-    for tenor in sorted(str(value) for value in set(tenors) if value not in {"INFL", "XCCY"}):
-        maturity_by_tenor[tenor] = girr_tenor_definition(profile_id, tenor).maturity_years
-    return np.asarray(
-        [maturity_by_tenor.get(str(tenor), 0.0) for tenor in tenors],
-        dtype=np.float64,
-    )
-
-
-def _build_girr_vega_intra_bucket_correlation_matrix(
-    ordered: Sequence[WeightedSensitivity],
-    *,
-    profile_id: str,
-    option_tenor_by_id: Mapping[str, str],
-    tenor_by_id: Mapping[str, str],
-) -> npt.NDArray[np.float64]:
-    size = len(ordered)
-    matrix = np.eye(size, dtype=np.float64)
-    for row_index, sensitivity_a in enumerate(ordered):
-        for col_index in range(row_index, size):
-            sensitivity_b = ordered[col_index]
-            correlation, _ = girr_vega_intra_bucket_correlation(
-                profile_id,
-                option_tenor1=option_tenor_by_id[sensitivity_a.sensitivity_id],
-                option_tenor2=option_tenor_by_id[sensitivity_b.sensitivity_id],
-                tenor1=tenor_by_id[sensitivity_a.sensitivity_id],
-                tenor2=tenor_by_id[sensitivity_b.sensitivity_id],
-            )
-            matrix[row_index, col_index] = correlation
-            matrix[col_index, row_index] = correlation
-    return matrix
-
-
-def _build_inter_bucket_correlation_map(
-    bucket_ids: Sequence[str],
-    *,
-    profile_id: str,
-) -> dict[tuple[str, str], float]:
-    correlations: dict[tuple[str, str], float] = {}
-    ordered_ids = tuple(sorted(bucket_ids))
-    for left_index, bucket_a in enumerate(ordered_ids):
-        for bucket_b in ordered_ids[left_index + 1 :]:
-            gamma, _ = girr_inter_bucket_correlation(
-                profile_id,
-                bucket1=bucket_a,
-                bucket2=bucket_b,
-            )
-            correlations[(bucket_a, bucket_b)] = gamma
-    return correlations
 
 
 def _collect_citation_ids(

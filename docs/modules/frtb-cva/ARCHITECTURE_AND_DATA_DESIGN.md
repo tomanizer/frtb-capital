@@ -48,7 +48,7 @@ risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN
 | `data_models.py` | Frozen dataclasses and enums only. Canonical inputs, profile identity, intermediate and result records. |
 | `validation.py` | Input normalisation, invariant checks, error types, supported/unsupported gates, deterministic ordering helpers. |
 | `regimes.py` | Rule-profile identity, profile selection, supported-feature declarations, method policy hooks, profile hashing. |
-| `reference_data.py` | BA-CVA risk weights, BA-CVA scalars, SA-CVA bucket/tenor/risk-weight/correlation tables, multiplier defaults, citation tables. |
+| `reference_data.py`, `_reference_profile_data.py`, `_ba_reference_data.py`, `_girr_reference_data.py`, `sa_cva_reference_data.py`, `_sa_cva_reference_tables.py`, `_sa_cva_reference_payloads.py` | Public compatibility import paths plus package-private CVA reference-data families: profile citations/hashes, BA-CVA lookups, SA-CVA GIRR lookups, static SA-CVA tables, and deterministic reference payload assembly. |
 | `scope.py` | Covered-transaction scope metadata, method selection, carve-out routing, materiality-threshold fail-closed gates. |
 | `ba_cva.py` | Stand-alone counterparty capital, reduced portfolio aggregation, full BA-CVA hedge recognition and floor. |
 | `hedges.py` | Eligible / ineligible hedge checks, internal/external transfer evidence, CCS vs RCS assignment validation. |
@@ -66,11 +66,12 @@ risk-factor key before weighting (see [DECISIONS_AND_PLAN.md](DECISIONS_AND_PLAN
 | `crif.py` | Optional CRIF/vendor-to-canonical mapping. No kernel imports. |
 | `batch.py` | Public compatibility facade re-exporting canonical batch contracts and entrypoints. |
 | `_batch_contracts.py` | Frozen batch dataclasses (`CvaCounterpartyBatch`, etc.). |
-| `_batch_adapters.py`, `_batch_*_adapter.py` | Column and row adapters → canonical batches. |
-| `_batch_validation.py` | Package-local batch input rules. |
-| `_batch_assembly.py`, `_ba_*_batch_kernel.py`, `_sa_batch_kernel.py` | Kernel math and result assembly. |
-| `_batch_payloads.py`, `_payloads.py` | Deterministic hash inputs via `stable_json_hash`. |
-| `arrow_batch.py` | Arrow tabular handoff normalisation under ADR 0023. |
+| `registry.py` | Public `EntityBatchSpec` table for counterparty, netting-set, hedge, and SA-CVA sensitivity batch ingress; private `_arrow_entity_specs.py` remains a compatibility shim. |
+| `adapters/columns.py`, `adapters/rows.py`, `adapters/{counterparty,netting_set,hedge,sensitivity}.py` | Column and row adapters -> canonical batches; private `_batch_*adapter.py` paths remain compatibility shims. |
+| `validation/__init__.py`, `validation/{common,context,counterparties,hedges,sensitivities,batches}.py` | Public row validation facade, focused entity/context validation modules, and package-local batch input rules; private `_batch_validation.py` remains a compatibility shim. |
+| `assembly/batches.py`, `assembly/batch_payloads.py`, `assembly/payloads.py` | Result assembly and deterministic hash inputs; private `_batch_assembly.py`, `_batch_payloads.py`, and `_payloads.py` remain compatibility shims. |
+| `kernel/ba.py`, `kernel/ba_full.py`, `kernel/ba_reduced.py`, `kernel/sa.py` | BA-CVA and SA-CVA batch capital kernels; private `_ba_*_batch_kernel.py` and `_sa_batch_kernel.py` paths remain compatibility shims. |
+| `adapters/arrow.py` | Arrow tabular handoff normalisation under ADR 0023; `arrow_batch.py` remains a compatibility shim. |
 | `audit.py` | Deterministic result serialisation, input hash, profile hash, and reconciliation. |
 | `attribution.py` | Additive attribution for supported branches with explicit unsupported nonlinear residuals. |
 | `impact.py` | Baseline-vs-candidate finite-difference capital deltas. |
@@ -240,8 +241,11 @@ class CvaRuleProfile:
     content_hash: str
 ```
 
-The profile owns identifiers and hashes. `reference_data.py` owns lookup tables
-keyed by `profile_id`.
+The profile owns identifiers and hashes. `reference_data.py` and
+`sa_cva_reference_data.py` preserve the public lookup import paths; their
+package-private reference modules own the profile citation registry, BA-CVA
+lookups, SA-CVA GIRR lookups, static SA-CVA tables, and deterministic payload
+assembly keyed by `profile_id`.
 
 ### Canonical counterparty
 

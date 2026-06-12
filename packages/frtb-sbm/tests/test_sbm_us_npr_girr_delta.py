@@ -12,7 +12,7 @@ from frtb_sbm import (
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
-    build_girr_delta_batch_from_sensitivities,
+    build_sbm_batch,
     calculate_sbm_capital,
     calculate_sbm_capital_from_batch,
     serialize_sbm_result,
@@ -86,7 +86,7 @@ def test_us_npr_girr_delta_batch_and_arrow_match_row_result() -> None:
     sensitivities = loader.load_fixture_sensitivities()
 
     row_payload = serialize_sbm_result(calculate_sbm_capital(sensitivities, context=context))
-    batch = build_girr_delta_batch_from_sensitivities(sensitivities)
+    batch = build_sbm_batch(sensitivities, SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)
     batch_payload = serialize_sbm_result(calculate_sbm_capital_from_batch(batch, context=context))
     handoff = normalize_sbm_path(
         SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, _arrow_table(sensitivities)

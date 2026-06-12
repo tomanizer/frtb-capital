@@ -2,8 +2,20 @@ from __future__ import annotations
 
 import frtb_rrao
 import frtb_rrao._payloads as payload_compat
+import frtb_rrao._reference_citations as reference_citations
+import frtb_rrao._reference_evidence_rules as reference_evidence_rules
+import frtb_rrao._reference_exclusion_rules as reference_exclusion_rules
+import frtb_rrao._reference_risk_weight_rules as reference_risk_weight_rules
+import frtb_rrao._reference_rule_types as reference_rule_types
+import frtb_rrao._result_assembly as result_compat
+import frtb_rrao.assembly.hashes as hash_assembly
 import frtb_rrao.assembly.payloads as payload_assembly
+import frtb_rrao.assembly.results as result_assembly
+import frtb_rrao.batch as batch
+import frtb_rrao.kernel.classification as batch_classification
+import frtb_rrao.reference_data as reference_data
 import frtb_rrao.validation as validation
+from frtb_rrao.validation import batch as batch_validation
 from frtb_rrao.validation import position as position_validation
 
 EXPECTED_PUBLIC_API = (
@@ -78,6 +90,7 @@ def test_validation_package_preserves_public_compatibility_path() -> None:
         is position_validation.normalise_gross_effective_notional
     )
     assert validation.validate_rrao_positions is position_validation.validate_rrao_positions
+    assert callable(batch_validation.validate_rrao_batch)
 
 
 def test_payload_assembly_preserves_private_compatibility_path() -> None:
@@ -85,3 +98,40 @@ def test_payload_assembly_preserves_private_compatibility_path() -> None:
     assert payload_compat.hash_payload is payload_assembly.hash_payload
     assert payload_compat.hash_position_payloads is payload_assembly.hash_position_payloads
     assert payload_compat.position_payload is payload_assembly.position_payload
+
+
+def test_result_assembly_preserves_private_compatibility_path() -> None:
+    assert result_compat.collect_line_citations is result_assembly.collect_line_citations
+    assert result_compat.partition_lines is result_assembly.partition_lines
+    assert result_compat.profile_warnings is result_assembly.profile_warnings
+    assert result_compat.validate_context is result_assembly.validate_context
+
+
+def test_batch_hash_assembly_preserves_public_compatibility_path() -> None:
+    assert batch.input_hash_for_rrao_batch is hash_assembly.input_hash_for_rrao_batch
+    assert frtb_rrao.input_hash_for_rrao_batch is hash_assembly.input_hash_for_rrao_batch
+
+
+def test_batch_classification_kernel_is_available_from_physical_stage() -> None:
+    assert callable(batch_classification.decision_arrays_for_batch)
+    assert batch_classification.RraoDecisionArrays.__name__ == "RraoDecisionArrays"
+
+
+def test_reference_data_preserves_public_compatibility_path() -> None:
+    assert reference_data.RraoEvidenceRule is reference_rule_types.RraoEvidenceRule
+    assert reference_data.RraoExclusionRule is reference_rule_types.RraoExclusionRule
+    assert reference_data.RraoInvestmentFundRule is reference_rule_types.RraoInvestmentFundRule
+    assert reference_data.RraoRiskWeightRule is reference_rule_types.RraoRiskWeightRule
+    assert reference_data.PROFILE_CITATIONS is reference_citations.PROFILE_CITATIONS
+    assert reference_data.PROFILE_EVIDENCE_RULES is reference_evidence_rules.PROFILE_EVIDENCE_RULES
+    assert (
+        reference_data.PROFILE_INVESTMENT_FUND_RULES
+        is reference_evidence_rules.PROFILE_INVESTMENT_FUND_RULES
+    )
+    assert (
+        reference_data.PROFILE_EXCLUSION_RULES is reference_exclusion_rules.PROFILE_EXCLUSION_RULES
+    )
+    assert (
+        reference_data.PROFILE_RISK_WEIGHT_RULES
+        is reference_risk_weight_rules.PROFILE_RISK_WEIGHT_RULES
+    )

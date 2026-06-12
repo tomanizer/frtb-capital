@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import date
 from typing import Protocol
 
 import numpy as np
@@ -18,12 +17,7 @@ from frtb_sbm import (
     SbmSensitivityBatch,
     SbmSignConvention,
     SbmSourceLineage,
-    build_commodity_vega_batch_from_sensitivities,
-    build_csr_nonsec_vega_batch_from_sensitivities,
-    build_csr_sec_ctp_vega_batch_from_sensitivities,
-    build_csr_sec_nonctp_vega_batch_from_sensitivities,
-    build_equity_vega_batch_from_sensitivities,
-    build_fx_vega_batch_from_sensitivities,
+    build_sbm_batch,
     calculate_sbm_capital,
     calculate_sbm_capital_from_batch,
     input_hash_for_sensitivities,
@@ -53,6 +47,8 @@ from sbm_registry_helpers import (
     normalize_fx_vega_arrow_table,
     normalize_sbm_path,
 )
+
+from tests.sbm_fixture_helpers import sample_sbm_basel_context as sample_context
 
 BatchBuilder = Callable[[tuple[SbmSensitivity, ...]], SbmSensitivityBatch]
 HandoffBuilder = Callable[[NormalizedArrowTable], SbmSensitivityBatch]
@@ -85,14 +81,30 @@ class HandoffCalculator(Protocol):
     ) -> SbmCapitalResult: ...
 
 
-def sample_context(run_id: str) -> SbmCalculationContext:
-    return SbmCalculationContext(
-        run_id=run_id,
-        calculation_date=date(2026, 5, 30),
-        base_currency="USD",
-        reporting_currency="USD",
-        profile_id=SbmRegulatoryProfile.BASEL_MAR21.value,
-    )
+def build_fx_vega_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.FX, SbmRiskMeasure.VEGA)
+
+
+def build_equity_vega_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA)
+
+
+def build_commodity_vega_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA)
+
+
+def build_csr_nonsec_vega_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA)
+
+
+def build_csr_sec_nonctp_vega_batch_from_sensitivities(
+    sensitivities: object,
+):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA)
+
+
+def build_csr_sec_ctp_vega_batch_from_sensitivities(sensitivities: object):
+    return build_sbm_batch(sensitivities, SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA)
 
 
 def sample_lineage(row_id: str) -> SbmSourceLineage:

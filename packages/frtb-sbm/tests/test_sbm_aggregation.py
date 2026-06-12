@@ -6,27 +6,11 @@ import math
 
 import numpy as np
 import pytest
-from frtb_sbm import SbmRiskClass, SbmRiskMeasure, WeightedSensitivity
+from frtb_sbm import SbmRiskClass, SbmRiskMeasure
 from frtb_sbm.aggregation import aggregate_intra_bucket, group_weighted_sensitivities_by_bucket
 from frtb_sbm.validation import SbmInputError
 
-
-def _weighted(
-    *,
-    sensitivity_id: str,
-    scaled_amount: float,
-    bucket: str = "USD",
-) -> WeightedSensitivity:
-    return WeightedSensitivity(
-        sensitivity_id=sensitivity_id,
-        risk_class=SbmRiskClass.GIRR,
-        risk_measure=SbmRiskMeasure.DELTA,
-        bucket=bucket,
-        raw_amount=scaled_amount,
-        risk_weight=1.0,
-        scaled_amount=scaled_amount,
-        citation_ids=("basel_mar21_girr",),
-    )
+from tests.sbm_fixture_helpers import sample_sbm_weighted_sensitivity as _weighted
 
 
 def test_single_sensitivity_intra_bucket_matches_absolute_amount() -> None:

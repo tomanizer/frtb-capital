@@ -24,18 +24,7 @@ from frtb_sbm.aggregation import (
 )
 from frtb_sbm.validation import SbmInputError
 
-
-def _weighted(*, sensitivity_id: str, scaled_amount: float, bucket: str) -> WeightedSensitivity:
-    return WeightedSensitivity(
-        sensitivity_id=sensitivity_id,
-        risk_class=SbmRiskClass.GIRR,
-        risk_measure=SbmRiskMeasure.DELTA,
-        bucket=bucket,
-        raw_amount=scaled_amount,
-        risk_weight=1.0,
-        scaled_amount=scaled_amount,
-        citation_ids=("basel_mar21_girr",),
-    )
+from tests.sbm_fixture_helpers import sample_sbm_weighted_sensitivity as _weighted
 
 
 def _bucket(

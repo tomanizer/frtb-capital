@@ -1,14 +1,11 @@
 """Cited reference data for DRC rule profiles.
 
-Verification status (audit 2026-06-02):
-    - LGD ladder (`_LGD_RULES`) and flat 100% defaulted-position LGD confirmed
-      against US NPR 2.0 proposed section __.210(b)(1)(iv), 91 FR 15236, and
-      Basel MAR22.18-MAR22.20 where Basel defines the same seniority ladder.
-      PSE/GSE/not-recovery-linked entries are US-NPR-specific additions.
-    - Maturity policy (0.25y floor, 1.0y full weight) confirmed against
-      US NPR 2.0 proposed section __.210(a)(2)(iii), 91 FR 15235.
-    - Default risk weights (`_RISK_WEIGHT_RULES`) confirmed against Table 1 to
-      US NPR 2.0 proposed section __.210, 91 FR 15237.
+Verification status (audit 2026-06-02): LGD ladder and flat 100% defaulted LGD
+confirmed against US NPR 2.0 proposed section __.210(b)(1)(iv), 91 FR 15236,
+and Basel MAR22.18-MAR22.20; PSE/GSE/not-recovery-linked entries are US-NPR
+additions. Maturity policy and default risk weights are confirmed against
+proposed section __.210(a)(2)(iii), 91 FR 15235, and Table 1 to proposed
+section __.210, 91 FR 15237.
 """
 
 from __future__ import annotations

@@ -45,6 +45,11 @@ fallback results for incompatible inputs.
 
 ## Suite attribution reports
 
+The stable public import path remains `frtb_orchestration.suite` and the
+package top level. Internally, suite attribution result records live under
+`frtb_orchestration._suite_attribution_models`, while validation and report
+assembly live under `frtb_orchestration._suite_attribution_builders`.
+
 `aggregate_suite_attribution` is the low-level suite attribution validator. It
 preserves incoming `ComponentContributionBundle` records unchanged and emits one
 suite residual record.
@@ -70,6 +75,12 @@ package-owned records: `component`, `contribution_id`, `source_id`,
 or attribution methods.
 
 ## Standardised Approach composition
+
+The stable public import path remains `frtb_orchestration.standardised` and the
+package top level. Internally, SA composition result records live under
+`frtb_orchestration._standardised_models`, while component presence,
+jurisdiction-family, run-context, fallback-route, and run-id validation live
+under `frtb_orchestration._standardised_validation`.
 
 `compose_standardised_approach_capital` accepts public
 `ComponentCapitalSummary` objects from SBM, DRC, and RRAO. Those summaries are

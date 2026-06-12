@@ -29,6 +29,8 @@ from frtb_cva import (
     SaCvaRiskMeasure,
     SaCvaSensitivity,
     SensitivityTag,
+)
+from frtb_cva.adapters.arrow import (
     build_cva_counterparty_batch_from_arrow,
     build_cva_hedge_batch_from_arrow,
     build_cva_netting_set_batch_from_arrow,

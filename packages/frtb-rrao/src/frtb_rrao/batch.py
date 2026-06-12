@@ -8,9 +8,7 @@ from typing import Any, cast
 
 import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
-import numpy.typing as npt
 
-from frtb_rrao import _validation_rules as _vr
 from frtb_rrao._batch_columns import (
     BoolArray,
     ColumnInput,
@@ -27,26 +25,18 @@ from frtb_rrao._batch_columns import (
     _optional_int_array,
     _optional_text_array,
     _require_lengths,
-    _require_unique,
     _required_float_array,
     _required_text_array,
     _text_array_with_default,
 )
 from frtb_rrao._citations import merged_citation_ids
-from frtb_rrao._investment_fund_validation import (
-    gross_notional_mismatch_mask,
-    invalid_fund_notional_mask,
-    invalid_included_exposure_ratio_mask,
-    investment_fund_descriptor_present_mask,
-    investment_fund_path_mask,
-)
-from frtb_rrao._result_assembly import (
+from frtb_rrao.assembly.hashes import input_hash_for_rrao_batch
+from frtb_rrao.assembly.results import (
     collect_line_citations,
     partition_lines,
     profile_warnings,
     validate_context,
 )
-from frtb_rrao.assembly.payloads import batch_position_payload, hash_position_payloads
 from frtb_rrao.audit import validate_rrao_result_reconciliation
 from frtb_rrao.batch_registry import rrao_position_column_kwargs
 from frtb_rrao.capital import build_rrao_subtotals, included_rrao_total
@@ -62,14 +52,12 @@ from frtb_rrao.data_models import (
     RraoPosition,
     RraoRegulatoryProfile,
 )
-from frtb_rrao.reference_data import (
-    evidence_rules_for_profile,
-    exclusion_rules_for_profile,
-    investment_fund_rules_for_profile,
-    risk_weight_rules_for_profile,
-)
+from frtb_rrao.kernel.classification import RraoDecisionArrays, decision_arrays_for_batch
+from frtb_rrao.reference_data import risk_weight_rules_for_profile
 from frtb_rrao.regimes import get_rrao_rule_profile
 from frtb_rrao.validation import RraoInputError, validate_rrao_positions
+from frtb_rrao.validation._batch_common import position_id_at_first
+from frtb_rrao.validation.batch import validate_rrao_batch
 
 
 @dataclass(frozen=True)
@@ -131,14 +119,6 @@ class RraoBatchCapitalCalculation:
     classifications: ObjectArray
     risk_weights: FloatArray
     add_ons: FloatArray
-
-
-@dataclass(frozen=True)
-class _RraoDecisionArrays:
-    classifications: ObjectArray
-    risk_weight_keys: ObjectArray
-    reason_codes: ObjectArray
-    decision_citations: tuple[tuple[str, ...], ...]
 
 
 def build_rrao_batch_from_positions(
@@ -545,26 +525,8 @@ def build_rrao_batch_from_columns(
         handoff_hash=handoff_hash,
         diagnostics=tuple(dict(item) for item in diagnostics),
     )
-    _validate_batch(batch)
+    validate_rrao_batch(batch)
     return replace(batch, input_hash=input_hash_for_rrao_batch(batch))
-
-
-def input_hash_for_rrao_batch(batch: RraoPositionBatch) -> str:
-    """Hash canonical RRAO batch inputs in deterministic input order.
-    Parameters
-    ----------
-    batch : RraoPositionBatch
-        Batch.
-
-    Returns
-    -------
-    str
-        Result of the operation.
-    """
-
-    return hash_position_payloads(
-        _position_payload_for_hash(batch, index) for index in range(batch.row_count)
-    )
 
 
 def calculate_rrao_capital_from_batch(
@@ -629,373 +591,12 @@ def calculate_rrao_capital_from_batch(
     )
 
 
-def _validate_batch(batch: RraoPositionBatch) -> None:
-    _require_unique(batch.position_ids)
-    if not np.all(np.isfinite(batch.gross_effective_notionals)):
-        raise RraoInputError(
-            "gross effective notional values must be finite",
-            field="gross_effective_notional",
-        )
-    if bool(np.any(batch.gross_effective_notionals < 0.0)):
-        raise RraoInputError(
-            _vr.GROSS_NOTIONAL_NON_NEGATIVE_MESSAGE,
-            field="gross_effective_notional",
-        )
-    if bool(np.any(batch.classification_hints == RraoClassification.UNSUPPORTED.value)):
-        raise RraoInputError(
-            _vr.UNSUPPORTED_CLASSIFICATION_MESSAGE,
-            field="classification_hint",
-            position_id=_position_id_at_first(
-                batch,
-                batch.classification_hints == RraoClassification.UNSUPPORTED.value,
-            ),
-        )
-    if bool(np.any(~batch.lineage_present)):
-        raise RraoInputError(
-            _vr.SOURCE_LINEAGE_REQUIRED_MESSAGE,
-            field="lineage",
-            position_id=_position_id_at_first(batch, ~batch.lineage_present),
-        )
-    _require_non_empty_object_column(
-        batch,
-        batch.lineage_source_systems,
-        field="lineage.source_system",
-    )
-    _require_non_empty_object_column(
-        batch,
-        batch.lineage_source_files,
-        field="lineage.source_file",
-    )
-    _require_non_empty_object_column(
-        batch,
-        batch.lineage_source_row_ids,
-        field="lineage.source_row_id",
-    )
-    _validate_evidence_requirements(batch)
-    _validate_back_to_back_match_groups(batch)
-    _validate_investment_fund_fields(batch)
-
-
-def _validate_evidence_requirements(batch: RraoPositionBatch) -> None:
-    supervisor_mask = (batch.evidence_types == RraoEvidenceType.SUPERVISOR_DIRECTIVE.value) | (
-        batch.classification_hints == RraoClassification.SUPERVISOR_DIRECTED.value
-    )
-    _require_text_where(
-        batch,
-        batch.supervisor_directive_ids,
-        supervisor_mask,
-        field="supervisor_directive_id",
-    )
-
-    excluded_hint_mask = batch.classification_hints == RraoClassification.EXCLUDED.value
-    missing_exclusion_reason = excluded_hint_mask & (batch.exclusion_reasons == None)  # noqa: E711
-    if bool(np.any(missing_exclusion_reason)):
-        raise RraoInputError(
-            _vr.EXCLUDED_CLASSIFICATION_REQUIRES_REASON_MESSAGE,
-            field="exclusion_reason",
-            position_id=_position_id_at_first(batch, missing_exclusion_reason),
-        )
-
-    has_exclusion_reason = batch.exclusion_reasons != None  # noqa: E711
-    wrong_exclusion_evidence = has_exclusion_reason & (
-        batch.evidence_types != RraoEvidenceType.EXPLICIT_EXCLUSION.value
-    )
-    if bool(np.any(wrong_exclusion_evidence)):
-        raise RraoInputError(
-            _vr.EXCLUSION_REASON_REQUIRES_EXPLICIT_EVIDENCE_MESSAGE,
-            field="evidence_type",
-            position_id=_position_id_at_first(batch, wrong_exclusion_evidence),
-        )
-    _require_text_where(
-        batch,
-        batch.exclusion_evidence_ids,
-        has_exclusion_reason,
-        field="exclusion_evidence_id",
-    )
-
-    explicit_exclusion = batch.evidence_types == RraoEvidenceType.EXPLICIT_EXCLUSION.value
-    missing_reason_for_explicit = explicit_exclusion & (batch.exclusion_reasons == None)  # noqa: E711
-    if bool(np.any(missing_reason_for_explicit)):
-        raise RraoInputError(
-            _vr.EXPLICIT_EXCLUSION_REQUIRES_REASON_MESSAGE,
-            field="exclusion_reason",
-            position_id=_position_id_at_first(batch, missing_reason_for_explicit),
-        )
-    _require_text_where(
-        batch,
-        batch.exclusion_evidence_ids,
-        explicit_exclusion,
-        field="exclusion_evidence_id",
-    )
-
-    exact_back_to_back = (
-        batch.exclusion_reasons == RraoExclusionReason.EXACT_THIRD_PARTY_BACK_TO_BACK.value
-    )
-    match_present = (batch.back_to_back_match_group_ids != None) | (  # noqa: E711
-        batch.back_to_back_matched_position_ids != None  # noqa: E711
-    )
-    missing_match = exact_back_to_back & ~match_present
-    if bool(np.any(missing_match)):
-        raise RraoInputError(
-            _vr.EXACT_BACK_TO_BACK_REQUIRES_MATCH_MESSAGE,
-            field="back_to_back_match",
-            position_id=_position_id_at_first(batch, missing_match),
-        )
-    invalid_match_context = match_present & ~exact_back_to_back
-    if bool(np.any(invalid_match_context)):
-        raise RraoInputError(
-            _vr.BACK_TO_BACK_ONLY_FOR_EXACT_EXCLUSION_MESSAGE,
-            field="back_to_back_match",
-            position_id=_position_id_at_first(batch, invalid_match_context),
-        )
-    _require_text_where(
-        batch,
-        batch.back_to_back_match_group_ids,
-        match_present,
-        field="back_to_back_match.match_group_id",
-    )
-    _require_text_where(
-        batch,
-        batch.back_to_back_matched_position_ids,
-        match_present,
-        field="back_to_back_match.matched_position_id",
-    )
-
-
-def _validate_back_to_back_match_groups(batch: RraoPositionBatch) -> None:
-    match_mask = batch.back_to_back_match_group_ids != None  # noqa: E711
-    if not bool(np.any(match_mask)):
-        return
-
-    match_indices = np.nonzero(match_mask)[0]
-    self_matches = (
-        batch.back_to_back_matched_position_ids[match_indices] == batch.position_ids[match_indices]
-    )
-    if bool(np.any(self_matches)):
-        index = int(match_indices[np.nonzero(self_matches)[0][0]])
-        raise RraoInputError(
-            _vr.BACK_TO_BACK_SELF_MATCH_MESSAGE,
-            field="back_to_back_match.matched_position_id",
-            position_id=cast(str, batch.position_ids[index]),
-        )
-
-    missing_matches = ~np.isin(
-        batch.back_to_back_matched_position_ids[match_indices],
-        batch.position_ids,
-    )
-    if bool(np.any(missing_matches)):
-        index = int(match_indices[np.nonzero(missing_matches)[0][0]])
-        raise RraoInputError(
-            _vr.BACK_TO_BACK_MISSING_MATCH_MESSAGE,
-            field="back_to_back_match.matched_position_id",
-            position_id=cast(str, batch.position_ids[index]),
-        )
-
-    positions_by_id = {
-        cast(str, batch.position_ids[int(index)]): int(index) for index in match_indices
-    }
-    match_groups: dict[str, list[int]] = {}
-    for raw_index in match_indices:
-        index = int(raw_index)
-        match_group_id = batch.back_to_back_match_group_ids[index]
-        matched_position_id = cast(str, batch.back_to_back_matched_position_ids[index])
-        if matched_position_id not in positions_by_id:
-            raise RraoInputError(
-                _vr.BACK_TO_BACK_REQUIRES_EVIDENCED_COUNTERPART_MESSAGE,
-                field="back_to_back_match.matched_position_id",
-                position_id=cast(str, batch.position_ids[index]),
-            )
-        match_groups.setdefault(cast(str, match_group_id), []).append(index)
-
-    for match_group_id in sorted(match_groups):
-        indices = match_groups[match_group_id]
-        if len(indices) != 2:
-            joined = ", ".join(cast(str, batch.position_ids[index]) for index in indices)
-            raise RraoInputError(
-                f"exact back-to-back match group must contain exactly two transactions: {joined}",
-                field="back_to_back_match.match_group_id",
-                position_id=cast(str, batch.position_ids[indices[0]]),
-            )
-        left, right = indices
-        _validate_exact_back_to_back_pair(batch, left, right)
-
-
-def _validate_exact_back_to_back_pair(
-    batch: RraoPositionBatch,
-    left: int,
-    right: int,
-) -> None:
-    left_id = cast(str, batch.position_ids[left])
-    right_id = cast(str, batch.position_ids[right])
-    if batch.back_to_back_matched_position_ids[left] != right_id:
-        raise RraoInputError(
-            _vr.BACK_TO_BACK_CROSS_REFERENCE_MESSAGE,
-            field="back_to_back_match.matched_position_id",
-            position_id=left_id,
-        )
-    if batch.back_to_back_matched_position_ids[right] != left_id:
-        raise RraoInputError(
-            _vr.BACK_TO_BACK_CROSS_REFERENCE_MESSAGE,
-            field="back_to_back_match.matched_position_id",
-            position_id=right_id,
-        )
-    if batch.exclusion_evidence_ids[left] != batch.exclusion_evidence_ids[right]:
-        raise RraoInputError(
-            _vr.BACK_TO_BACK_SHARED_EVIDENCE_MESSAGE,
-            field="exclusion_evidence_id",
-            position_id=right_id,
-        )
-    if batch.currencies[left] != batch.currencies[right]:
-        raise RraoInputError(
-            _vr.BACK_TO_BACK_MATCHING_CURRENCY_MESSAGE,
-            field="currency",
-            position_id=right_id,
-        )
-    if not np.isclose(
-        float(batch.gross_effective_notionals[left]),
-        float(batch.gross_effective_notionals[right]),
-        rtol=_vr.NOTIONAL_RECONCILIATION_REL_TOL,
-        atol=_vr.NOTIONAL_RECONCILIATION_ABS_TOL,
-    ):
-        raise RraoInputError(
-            _vr.BACK_TO_BACK_MATCHING_NOTIONAL_MESSAGE,
-            field="gross_effective_notional",
-            position_id=right_id,
-        )
-
-
-def _validate_investment_fund_fields(batch: RraoPositionBatch) -> None:
-    descriptor_present = investment_fund_descriptor_present_mask(
-        fund_ids=batch.investment_fund_ids,
-        section_205_methods=batch.investment_fund_section_205_methods,
-        included_exposure_types=batch.investment_fund_included_exposure_types,
-        mandate_evidence_ids=batch.investment_fund_mandate_evidence_ids,
-        section_205_evidence_ids=batch.investment_fund_section_205_evidence_ids,
-        fund_gross_effective_notionals=batch.investment_fund_gross_effective_notionals,
-        included_exposure_ratios=batch.investment_fund_included_exposure_ratios,
-    )
-    is_fund_path = investment_fund_path_mask(
-        batch.is_investment_fund_exposures,
-        batch.evidence_types,
-        descriptor_present,
-    )
-    missing_flag = is_fund_path & ~batch.is_investment_fund_exposures
-    if bool(np.any(missing_flag)):
-        raise RraoInputError(
-            _vr.INVESTMENT_FUND_FLAG_REQUIRED_MESSAGE,
-            field="is_investment_fund_exposure",
-            position_id=_position_id_at_first(batch, missing_flag),
-        )
-    wrong_evidence = is_fund_path & (
-        batch.evidence_types != RraoEvidenceType.INVESTMENT_FUND_EXPOSURE.value
-    )
-    if bool(np.any(wrong_evidence)):
-        raise RraoInputError(
-            _vr.INVESTMENT_FUND_EVIDENCE_TYPE_REQUIRED_MESSAGE,
-            field="evidence_type",
-            position_id=_position_id_at_first(batch, wrong_evidence),
-        )
-    missing_descriptor = is_fund_path & ~descriptor_present
-    if bool(np.any(missing_descriptor)):
-        raise RraoInputError(
-            _vr.INVESTMENT_FUND_DESCRIPTOR_REQUIRED_MESSAGE,
-            field="investment_fund_descriptor",
-            position_id=_position_id_at_first(batch, missing_descriptor),
-        )
-    if not bool(np.any(is_fund_path)):
-        return
-
-    _require_text_where(
-        batch,
-        batch.investment_fund_ids,
-        is_fund_path,
-        field="investment_fund_descriptor.fund_id",
-    )
-    _require_text_where(
-        batch,
-        batch.investment_fund_mandate_evidence_ids,
-        is_fund_path,
-        field="investment_fund_descriptor.mandate_evidence_id",
-    )
-    _require_text_where(
-        batch,
-        batch.investment_fund_section_205_evidence_ids,
-        is_fund_path,
-        field="investment_fund_descriptor.section_205_evidence_id",
-    )
-    wrong_method = is_fund_path & (
-        batch.investment_fund_section_205_methods
-        != RraoInvestmentFundMethod.BACKSTOP_FUND_METHOD.value
-    )
-    if bool(np.any(wrong_method)):
-        raise RraoInputError(
-            _vr.INVESTMENT_FUND_BACKSTOP_METHOD_REQUIRED_MESSAGE,
-            field="investment_fund_descriptor.section_205_method",
-            position_id=_position_id_at_first(batch, wrong_method),
-        )
-    missing_exposure_type = is_fund_path & (
-        batch.investment_fund_included_exposure_types == None  # noqa: E711
-    )
-    if bool(np.any(missing_exposure_type)):
-        raise RraoInputError(
-            "invalid investment fund exposure type",
-            field="investment_fund_descriptor.included_exposure_type",
-            position_id=_position_id_at_first(batch, missing_exposure_type),
-        )
-    if bool(np.any(is_fund_path & batch.investment_fund_look_through_availables)):
-        raise RraoInputError(
-            _vr.INVESTMENT_FUND_NON_LOOK_THROUGH_MESSAGE,
-            field="investment_fund_descriptor.look_through_available",
-            position_id=_position_id_at_first(
-                batch,
-                is_fund_path & batch.investment_fund_look_through_availables,
-            ),
-        )
-    mandate_disallowed = is_fund_path & ~batch.investment_fund_mandate_allows_rrao_exposures
-    if bool(np.any(mandate_disallowed)):
-        raise RraoInputError(
-            _vr.INVESTMENT_FUND_MANDATE_ALLOWS_RRAO_MESSAGE,
-            field="investment_fund_descriptor.mandate_allows_rrao_exposures",
-            position_id=_position_id_at_first(batch, mandate_disallowed),
-        )
-    invalid_fund_notional = invalid_fund_notional_mask(
-        is_fund_path,
-        batch.investment_fund_gross_effective_notionals,
-    )
-    if bool(np.any(invalid_fund_notional)):
-        raise RraoInputError(
-            _vr.FUND_GROSS_NOTIONAL_POSITIVE_MESSAGE,
-            field="investment_fund_descriptor.fund_gross_effective_notional",
-            position_id=_position_id_at_first(batch, invalid_fund_notional),
-        )
-    ratio = batch.investment_fund_included_exposure_ratios
-    invalid_ratio = invalid_included_exposure_ratio_mask(is_fund_path, ratio)
-    if bool(np.any(invalid_ratio)):
-        raise RraoInputError(
-            _vr.INCLUDED_EXPOSURE_RATIO_RANGE_MESSAGE,
-            field="investment_fund_descriptor.included_exposure_ratio",
-            position_id=_position_id_at_first(batch, invalid_ratio),
-        )
-    mismatch = gross_notional_mismatch_mask(
-        is_fund_path=is_fund_path,
-        gross_effective_notionals=batch.gross_effective_notionals,
-        fund_gross_effective_notionals=batch.investment_fund_gross_effective_notionals,
-        included_exposure_ratios=ratio,
-    )
-    if bool(np.any(mismatch)):
-        raise RraoInputError(
-            _vr.GROSS_NOTIONAL_MATCHES_FUND_PORTION_MESSAGE,
-            field="gross_effective_notional",
-            position_id=_position_id_at_first(batch, mismatch),
-        )
-
-
 def _capital_lines_from_batch(
     batch: RraoPositionBatch,
     *,
     profile: RraoRegulatoryProfile,
 ) -> tuple[tuple[RraoCapitalLine, ...], ObjectArray, FloatArray, FloatArray]:
-    decisions = _decision_arrays_for_batch(batch, profile=profile)
+    decisions = decision_arrays_for_batch(batch, profile=profile)
     risk_weights, risk_weight_citations = _risk_weight_arrays_for_decisions(
         batch,
         decisions,
@@ -1016,166 +617,9 @@ def _capital_lines_from_batch(
     return (lines, decisions.classifications, risk_weights, add_ons)
 
 
-def _decision_arrays_for_batch(
-    batch: RraoPositionBatch,
-    *,
-    profile: RraoRegulatoryProfile,
-) -> _RraoDecisionArrays:
-    row_count = batch.row_count
-    classifications = np.empty(row_count, dtype=object)
-    risk_weight_keys = np.empty(row_count, dtype=object)
-    reason_codes = np.empty(row_count, dtype=object)
-    citation_groups: list[tuple[str, ...]] = [() for _ in range(row_count)]
-    assigned = np.zeros(row_count, dtype=np.bool_)
-    hint_check_mask = np.zeros(row_count, dtype=np.bool_)
-
-    exclusion_mask = _exclusion_path_mask(batch)
-    if bool(np.any(exclusion_mask)):
-        exclusion_assigned = np.zeros(row_count, dtype=np.bool_)
-        for exclusion_rule in exclusion_rules_for_profile(profile):
-            mask = exclusion_mask & (
-                batch.exclusion_reasons == exclusion_rule.exclusion_reason.value
-            )
-            _assign_decision_mask(
-                mask,
-                classifications=classifications,
-                risk_weight_keys=risk_weight_keys,
-                reason_codes=reason_codes,
-                citation_groups=citation_groups,
-                classification=RraoClassification.EXCLUDED,
-                risk_weight_key=exclusion_rule.risk_weight_key,
-                reason_code=exclusion_rule.reason_code,
-                citation_ids=(exclusion_rule.citation_id,),
-            )
-            exclusion_assigned |= mask
-        unsupported_exclusions = exclusion_mask & ~exclusion_assigned
-        if bool(np.any(unsupported_exclusions)):
-            index = int(np.nonzero(unsupported_exclusions)[0][0])
-            raise RraoInputError(
-                f"no RRAO exclusion rule for {batch.exclusion_reasons[index]}",
-                field="exclusion_reason",
-                position_id=cast(str, batch.position_ids[index]),
-            )
-        assigned |= exclusion_assigned
-
-    fund_mask = (~assigned) & (
-        batch.evidence_types == RraoEvidenceType.INVESTMENT_FUND_EXPOSURE.value
-    )
-    if bool(np.any(fund_mask)):
-        fund_assigned = np.zeros(row_count, dtype=np.bool_)
-        for fund_rule in investment_fund_rules_for_profile(profile):
-            mask = fund_mask & (
-                batch.investment_fund_included_exposure_types
-                == fund_rule.included_exposure_type.value
-            )
-            _assign_decision_mask(
-                mask,
-                classifications=classifications,
-                risk_weight_keys=risk_weight_keys,
-                reason_codes=reason_codes,
-                citation_groups=citation_groups,
-                classification=fund_rule.classification,
-                risk_weight_key=fund_rule.risk_weight_key,
-                reason_code=fund_rule.reason_code,
-                citation_ids=fund_rule.citation_ids,
-            )
-            fund_assigned |= mask
-        unsupported_funds = fund_mask & ~fund_assigned
-        if bool(np.any(unsupported_funds)):
-            index = int(np.nonzero(unsupported_funds)[0][0])
-            raise RraoInputError(
-                (
-                    "no RRAO investment-fund rule for "
-                    f"{batch.investment_fund_included_exposure_types[index]}"
-                ),
-                field="investment_fund_descriptor.included_exposure_type",
-                position_id=cast(str, batch.position_ids[index]),
-            )
-        assigned |= fund_assigned
-        hint_check_mask |= fund_assigned
-
-    evidence_mask = ~assigned
-    if bool(np.any(evidence_mask)):
-        evidence_assigned = np.zeros(row_count, dtype=np.bool_)
-        for evidence_rule in evidence_rules_for_profile(profile):
-            mask = evidence_mask & (batch.evidence_types == evidence_rule.evidence_type.value)
-            _assign_decision_mask(
-                mask,
-                classifications=classifications,
-                risk_weight_keys=risk_weight_keys,
-                reason_codes=reason_codes,
-                citation_groups=citation_groups,
-                classification=evidence_rule.classification,
-                risk_weight_key=evidence_rule.risk_weight_key,
-                reason_code=evidence_rule.reason_code,
-                citation_ids=(evidence_rule.citation_id,),
-            )
-            evidence_assigned |= mask
-        unsupported_evidence = evidence_mask & ~evidence_assigned
-        if bool(np.any(unsupported_evidence)):
-            index = int(np.nonzero(unsupported_evidence)[0][0])
-            raise RraoInputError(
-                f"no RRAO evidence rule for {batch.evidence_types[index]}",
-                field="evidence_type",
-                position_id=cast(str, batch.position_ids[index]),
-            )
-        assigned |= evidence_assigned
-        hint_check_mask |= evidence_assigned
-
-    _validate_hint_compatibility(batch, classifications, mask=hint_check_mask)
-    return _RraoDecisionArrays(
-        classifications=_batch_arrays.object_array(classifications, copy=False),
-        risk_weight_keys=_batch_arrays.object_array(risk_weight_keys, copy=False),
-        reason_codes=_batch_arrays.object_array(reason_codes, copy=False),
-        decision_citations=tuple(citation_groups),
-    )
-
-
-def _assign_decision_mask(
-    mask: npt.NDArray[np.bool_],
-    *,
-    classifications: ObjectArray,
-    risk_weight_keys: ObjectArray,
-    reason_codes: ObjectArray,
-    citation_groups: list[tuple[str, ...]],
-    classification: RraoClassification,
-    risk_weight_key: str,
-    reason_code: str,
-    citation_ids: tuple[str, ...],
-) -> None:
-    if not bool(np.any(mask)):
-        return
-    classifications[mask] = classification.value
-    risk_weight_keys[mask] = risk_weight_key
-    reason_codes[mask] = reason_code
-    for index in np.nonzero(mask)[0]:
-        citation_groups[int(index)] = citation_ids
-
-
-def _validate_hint_compatibility(
-    batch: RraoPositionBatch,
-    classifications: ObjectArray,
-    *,
-    mask: npt.NDArray[np.bool_],
-) -> None:
-    has_hint = mask & (batch.classification_hints != None)  # noqa: E711
-    conflicts = has_hint & (batch.classification_hints != classifications)
-    if not bool(np.any(conflicts)):
-        return
-    index = int(np.nonzero(conflicts)[0][0])
-    raise RraoInputError(
-        (
-            "classification hint conflicts with profile evidence rule: "
-            f"{batch.classification_hints[index]} != {classifications[index]}"
-        ),
-        field="classification_hint",
-        position_id=cast(str, batch.position_ids[index]),
-    )
-
-
 def _risk_weight_arrays_for_decisions(
     batch: RraoPositionBatch,
-    decisions: _RraoDecisionArrays,
+    decisions: RraoDecisionArrays,
     *,
     profile: RraoRegulatoryProfile,
 ) -> tuple[FloatArray, tuple[str, ...]]:
@@ -1191,7 +635,7 @@ def _risk_weight_arrays_for_decisions(
             raise RraoInputError(
                 "risk-weight classification does not match decision",
                 field="risk_weight_key",
-                position_id=_position_id_at_first(batch, mismatch),
+                position_id=position_id_at_first(batch, mismatch),
             )
         risk_weights[mask] = rule.risk_weight
         for index in np.nonzero(mask)[0]:
@@ -1209,7 +653,7 @@ def _risk_weight_arrays_for_decisions(
 
 def _capital_line_from_decision(
     batch: RraoPositionBatch,
-    decisions: _RraoDecisionArrays,
+    decisions: RraoDecisionArrays,
     *,
     risk_weights: FloatArray,
     risk_weight_citations: tuple[str, ...],
@@ -1242,102 +686,6 @@ def _capital_line_from_decision(
         ),
         exclusion_evidence_id=cast(str | None, batch.exclusion_evidence_ids[index]),
     )
-
-
-def _exclusion_path_mask(batch: RraoPositionBatch) -> npt.NDArray[np.bool_]:
-    return cast(
-        npt.NDArray[np.bool_],
-        (batch.classification_hints == RraoClassification.EXCLUDED.value)
-        | (batch.exclusion_reasons != None)  # noqa: E711
-        | (batch.evidence_types == RraoEvidenceType.EXPLICIT_EXCLUSION.value),
-    )
-
-
-def _position_payload_for_hash(batch: RraoPositionBatch, index: int) -> dict[str, object]:
-    return batch_position_payload(
-        position_id=batch.position_ids[index],
-        source_row_id=batch.source_row_ids[index],
-        desk_id=batch.desk_ids[index],
-        legal_entity=batch.legal_entities[index],
-        gross_effective_notional=batch.gross_effective_notionals[index],
-        currency=batch.currencies[index],
-        evidence_type=batch.evidence_types[index],
-        evidence_label=batch.evidence_labels[index],
-        lineage_source_system=batch.lineage_source_systems[index],
-        lineage_source_file=batch.lineage_source_files[index],
-        lineage_source_row_id=batch.lineage_source_row_ids[index],
-        source_column_map=batch.source_column_maps[index],
-        classification_hint=batch.classification_hints[index],
-        exclusion_reason=batch.exclusion_reasons[index],
-        exclusion_evidence_id=batch.exclusion_evidence_ids[index],
-        supervisor_directive_id=batch.supervisor_directive_ids[index],
-        underlying_count=batch.underlying_counts[index],
-        is_path_dependent=batch.is_path_dependents[index],
-        has_maturity=batch.has_maturities[index],
-        has_strike_or_barrier=batch.has_strike_or_barriers[index],
-        has_multiple_strikes_or_barriers=batch.has_multiple_strikes_or_barriers[index],
-        is_ctp_hedge=batch.is_ctp_hedges[index],
-        is_investment_fund_exposure=batch.is_investment_fund_exposures[index],
-        investment_fund_id=batch.investment_fund_ids[index],
-        investment_fund_section_205_method=batch.investment_fund_section_205_methods[index],
-        investment_fund_included_exposure_type=batch.investment_fund_included_exposure_types[index],
-        investment_fund_mandate_evidence_id=batch.investment_fund_mandate_evidence_ids[index],
-        investment_fund_section_205_evidence_id=(
-            batch.investment_fund_section_205_evidence_ids[index]
-        ),
-        investment_fund_gross_effective_notional=(
-            batch.investment_fund_gross_effective_notionals[index]
-        ),
-        investment_fund_included_exposure_ratio=(
-            batch.investment_fund_included_exposure_ratios[index]
-        ),
-        investment_fund_look_through_available=(
-            batch.investment_fund_look_through_availables[index]
-        ),
-        investment_fund_mandate_allows_rrao_exposures=(
-            batch.investment_fund_mandate_allows_rrao_exposures[index]
-        ),
-        notional_source=batch.notional_sources[index],
-        citations=batch.citations[index],
-        back_to_back_match_group_id=batch.back_to_back_match_group_ids[index],
-        back_to_back_matched_position_id=batch.back_to_back_matched_position_ids[index],
-    )
-
-
-def _position_id_at_first(batch: RraoPositionBatch, mask: npt.NDArray[np.bool_]) -> str:
-    index = int(np.nonzero(mask)[0][0])
-    return cast(str, batch.position_ids[index])
-
-
-def _require_non_empty_object_column(
-    batch: RraoPositionBatch,
-    values: ObjectArray,
-    *,
-    field: str,
-) -> None:
-    mask = values == ""
-    if bool(np.any(mask)):
-        raise RraoInputError(
-            "non-empty text is required",
-            field=field,
-            position_id=_position_id_at_first(batch, mask),
-        )
-
-
-def _require_text_where(
-    batch: RraoPositionBatch,
-    values: ObjectArray,
-    mask: npt.NDArray[np.bool_],
-    *,
-    field: str,
-) -> None:
-    missing = mask & (values == None)  # noqa: E711
-    if bool(np.any(missing)):
-        raise RraoInputError(
-            "non-empty text is required",
-            field=field,
-            position_id=_position_id_at_first(batch, missing),
-        )
 
 
 __all__ = [

@@ -81,10 +81,15 @@ The full normalizer → builder → capital-entry mapping lives in
 ## Risk-class routing (same journey, different kernels)
 
 Integration is **identical** across asset classes: one homogeneous table per path,
-path-specific normalize/build/calculate symbols, then portfolio grouping by
+the generic enum-driven normalize/build/calculate helpers, then portfolio grouping by
 `(risk_class, risk_measure)`. What changes is the **regulatory kernel** invoked
 after the batch is built — weights, buckets, correlations, and required input
-columns differ by class and measure.
+columns differ by class and measure. GIRR delta and vega batch kernels live in
+`frtb_sbm.risk_classes.girr`; GIRR weighting formulas live in
+`frtb_sbm.risk_classes.girr_weighting`; non-GIRR vega weighting lives in
+`frtb_sbm.risk_classes.vega_weighting`; FX, equity, and commodity delta
+weighting live in matching risk-class weighting modules; `frtb_sbm.capital`
+remains the public dispatcher.
 
 ### Shared pipeline (all seven risk classes)
 
@@ -92,7 +97,8 @@ columns differ by class and measure.
 | --- | --- |
 | Ingress / normalize | `frtb_common.normalize_arrow_table` + path `ColumnSpec`; identity, classification, amount, lineage columns per [`PUBLIC_API.md`](../../../docs/modules/frtb-sbm/PUBLIC_API.md#inputtable-column-summary) |
 | Batch | `SbmSensitivityBatch` NumPy columns; no per-row `SbmSensitivity` on the fast path |
-| Aggregation pattern | Weight sensitivities → intra-bucket `Kb` with correlation scenarios → inter-bucket / risk-class total (delta and vega); curvature uses MAR21.5 branch engine with up/down shocks |
+| Aggregation pattern | Weight sensitivities → intra-bucket `Kb` with correlation scenarios → inter-bucket / risk-class total (delta and vega); curvature uses MAR21.5 branch engine with up/down shocks. Shared aggregation implementation lives under focused `frtb_sbm.kernel.*_aggregation` modules; curvature input, factor, correlation, bucket-scenario, inter-bucket, and bucket-record helpers live under focused `frtb_sbm.curvature_*` modules; and `frtb_sbm.kernel.aggregation` / `frtb_sbm.aggregation` remain compatibility import paths. |
+| Reference data | Profile citations, GIRR/FX/vega/curvature lookups, and profile hash payload assembly live in focused `frtb_sbm.*_reference_data`, `frtb_sbm.reference_profiles`, and `frtb_sbm.reference_payload` modules; `frtb_sbm.reference_data` remains the compatibility import path. |
 | Result shape | One `RiskClassCapital` per path in `SbmCapitalResult.risk_classes`; portfolio `total_capital` sums implemented paths |
 | Attribution | Delta and vega: analytical Euler on weighted lines; curvature: `UNSUPPORTED` for every class (CVR floor) |
 
@@ -120,9 +126,10 @@ even if Basel paths would succeed under `BASEL_MAR21`.
 
 1. Tag each sensitivity row with `risk_class` and `risk_measure` before export.
 2. Split Arrow exports so each table is homogeneous (see profile section above).
-3. Call the matching `normalize_*` / `calculate_sbm_capital_from_*` pair from
-   [PUBLIC_API.md](../../../docs/modules/frtb-sbm/PUBLIC_API.md#inputtable-specs-and-normalizers),
-   or pass multiple normalized tables to `calculate_sbm_portfolio_capital_from_arrow_tables`.
+3. Call `normalize_sbm_arrow_table(..., risk_class, measure)` and either
+   `build_sbm_batch_from_arrow(..., risk_class, measure)` plus batch capital, or
+   `calculate_sbm_capital_from_arrow(..., risk_class, measure)`. For multi-path
+   runs, pass normalized tables to `calculate_sbm_portfolio_capital_from_arrow_tables`.
 4. For regulatory thresholds, weights, and citation ids per cell, use
    [`REGULATORY_TRACEABILITY.md`](REGULATORY_TRACEABILITY.md) (support matrix) and
    [`REGULATORY_ASSUMPTIONS.md`](REGULATORY_ASSUMPTIONS.md) (boundary assumptions).
@@ -144,12 +151,12 @@ flowchart TB
   end
 
   subgraph normalize["2 — Schema alignment at frtb-common boundary"]
-    N["normalize_*_arrow_table per table"]
+    N["normalize_sbm_arrow_table per path"]
     NAT["NormalizedArrowTable\n+ handoff hash per path"]
   end
 
   subgraph batch["3 — Package-owned NumPy batches"]
-    B["build_*_batch_from_arrow per path"]
+    B["build_sbm_batch_from_arrow per path"]
     GRP["Portfolio dispatcher groups by\n(risk_class, risk_measure)"]
     BATCH["SbmSensitivityBatch column arrays"]
   end
@@ -220,6 +227,10 @@ Portfolio dispatch physically lives under `frtb_sbm.kernel.portfolio`;
 Input, batch, and profile hash payload assembly physically lives under
 `frtb_sbm.assembly.hashes`; public callers continue to use the stable hash
 helpers from `frtb_sbm` and `frtb_sbm.batch`.
+Validation helpers physically live under the `frtb_sbm.validation` package, including
+`batch`, `batch_arrays`, `batch_lineage`, `coercion`, `context`,
+`risk_class_fields`, and `sensitivity`;
+`frtb_sbm.validation` remains the compatibility and public import path.
 
 The portfolio path **does not** materialize accepted `SbmSensitivity` dataclasses
 per row during calculation (`accepted_row_dataclasses_materialized` stays zero on

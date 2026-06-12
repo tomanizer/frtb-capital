@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 from frtb_common import stable_json_hash
-from frtb_cva._payloads import (
+from frtb_cva.assembly.payloads import (
     _optional_float_value,
     batch_lineage_payload,
     hash_payload,

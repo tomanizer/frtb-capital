@@ -20,6 +20,8 @@ from frtb_drc import (
 )
 from frtb_drc.arrow_batch import build_drc_nonsec_batch_from_arrow, normalize_drc_nonsec_arrow_table
 
+from tests.drc_fixture_helpers import assert_nested_close as _assert_nested_close
+
 _FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "drc_eu_nonsec_v1"
 
 
@@ -139,25 +141,6 @@ def _bucket_outputs(bucket_results: tuple[Any, ...]) -> dict[str, dict[str, obje
         }
         for bucket in bucket_results
     }
-
-
-def _assert_nested_close(actual: object, expected: object) -> None:
-    if isinstance(expected, dict):
-        assert isinstance(actual, dict)
-        assert actual.keys() == expected.keys()
-        for key, expected_value in expected.items():
-            _assert_nested_close(actual[key], expected_value)
-        return
-    if isinstance(expected, list):
-        assert isinstance(actual, list)
-        assert len(actual) == len(expected)
-        for actual_value, expected_value in zip(actual, expected, strict=True):
-            _assert_nested_close(actual_value, expected_value)
-        return
-    if isinstance(expected, float):
-        assert actual == pytest.approx(expected)
-        return
-    assert actual == expected
 
 
 def _arrow_table(positions: tuple[DrcPosition, ...]) -> pa.Table:

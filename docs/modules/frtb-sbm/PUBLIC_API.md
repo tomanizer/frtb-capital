@@ -22,8 +22,9 @@ BASEL_MAR21 slices.
 | Errors and support guards | `SbmInputError`, `SbmUnsupportedFeature`, `ensure_sbm_run_supported`, `ensure_sbm_risk_class_measure_supported`, `phase1_capital_supported_paths` | Fail-closed unsupported profiles and input diagnostics. |
 
 The registry-driven API is the client surface. Per-path Arrow normalizer,
-Arrow batch builder, batch capital, and batch hash wrappers are intentionally
-not exported; callers select a path with `SbmRiskClass` and `SbmRiskMeasure`.
+Arrow batch builder, row/column batch builder, batch capital, and batch hash
+wrappers are intentionally not exported; callers select a path with
+`SbmRiskClass` and `SbmRiskMeasure`.
 Arrow ingress implementation lives in `frtb_sbm.adapters.arrow`;
 `frtb_sbm.arrow_batch` remains a compatibility import path for the same public
 Arrow symbols.
@@ -33,9 +34,52 @@ batch callers.
 Portfolio dispatch physically lives under `frtb_sbm.kernel.portfolio`;
 `frtb_sbm.capital` remains the compatibility and public import path for existing
 capital callers.
+Shared aggregation kernels physically live under `frtb_sbm.kernel.bucket_aggregation`,
+`frtb_sbm.kernel.inter_bucket_aggregation`, `frtb_sbm.kernel.risk_class_aggregation`,
+`frtb_sbm.kernel.correlation_scenarios`, `frtb_sbm.kernel.pairwise_evidence`, and
+`frtb_sbm.kernel.scenario_alignment`; `frtb_sbm.kernel.aggregation` and
+`frtb_sbm.aggregation` remain compatibility import paths for existing aggregation callers.
+GIRR delta and vega risk-class kernels physically live under
+`frtb_sbm.risk_classes.girr`; `frtb_sbm.capital` remains the public dispatcher
+for row and batch capital runs. GIRR weighting formulas physically live under
+`frtb_sbm.risk_classes.girr_weighting`; non-GIRR vega weighting lives under
+`frtb_sbm.risk_classes.vega_weighting`; non-GIRR vega correlation helpers
+physically live under `frtb_sbm.risk_classes.vega_correlations`;
+`frtb_sbm.risk_classes.vega` remains the public compatibility path for
+vega capital and correlation callers. FX, equity, and commodity delta
+weighting live under their matching `frtb_sbm.risk_classes.*_weighting`
+modules; shared weighting sort and batch-axis helpers live under
+`frtb_sbm.kernel.weighting`; `frtb_sbm.weighted_sensitivity`
+remains the compatibility and public import path.
 Input, batch, and profile hash payload assembly physically lives under
 `frtb_sbm.assembly.hashes`; public callers should continue to use
 `input_hash_for_sensitivities`, `input_hash_for_batch`, and profile helpers.
+CRIF adapter implementation physically lives under `frtb_sbm.adapters.crif_*`;
+`frtb_sbm.crif` remains the public compatibility import path.
+Reference-data implementation physically lives under focused modules including
+`frtb_sbm.reference_profiles`, `frtb_sbm.girr_reference_data`,
+`frtb_sbm.fx_reference_data`, `frtb_sbm.vega_reference_data`,
+`frtb_sbm.curvature_reference_data`, and `frtb_sbm.reference_payload`;
+`frtb_sbm.reference_data` remains the compatibility and public import path.
+Curvature correlation helpers physically live under
+`frtb_sbm.curvature_correlations`; `frtb_sbm.curvature` remains the public
+capital, branch-selection, and compatibility import path.
+Curvature factor records and row-wise factor key helpers physically live under
+`frtb_sbm.curvature_factors`; `frtb_sbm.curvature` remains the compatibility
+path for existing curvature helper imports.
+Curvature row and batch input validation physically lives under
+`frtb_sbm.curvature_inputs`, `frtb_sbm.curvature_batch_inputs`, and
+`frtb_sbm.curvature_batch_mapping`; `frtb_sbm.curvature` remains the public
+compatibility path for existing curvature input and branch helpers.
+Curvature bucket scenario evaluation, inter-bucket aggregation, and bucket
+record conversion physically live under `frtb_sbm.curvature_bucket_scenarios`,
+`frtb_sbm.curvature_inter_bucket_aggregation`, and
+`frtb_sbm.curvature_bucket_records`; `frtb_sbm.curvature` remains the public
+compatibility path for the curvature capital engine.
+Validation helpers physically live under the `frtb_sbm.validation` package, including
+`batch`, `batch_arrays`, `batch_lineage`, `coercion`, `context`,
+`risk_class_fields`, and `sensitivity`;
+`frtb_sbm.validation` remains the compatibility and public import path.
 The public API surface test caps `frtb_sbm.__all__` below 400 names and requires
 every documented input_table symbol to remain importable.
 

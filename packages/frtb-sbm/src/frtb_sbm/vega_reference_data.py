@@ -1,0 +1,298 @@
+"""Vega liquidity-horizon and tenor reference-data lookups for SBM.
+
+Regulatory traceability:
+    See docs/REGULATORY_TRACEABILITY.md rows for reference_data.py, Basel
+    MAR21.91-MAR21.95, and SBM-REF-001.
+"""
+
+from __future__ import annotations
+
+import math
+
+from frtb_common import UnsupportedRegulatoryFeatureError
+
+from frtb_sbm._text import require_text as _require_text
+from frtb_sbm.data_models import SbmRegulatoryProfile, SbmRiskClass
+from frtb_sbm.equity_reference_data import equity_bucket_definition
+from frtb_sbm.girr_reference_correlations import _exponential_tenor_correlation
+from frtb_sbm.girr_reference_data import (
+    BASEL_GIRR_TENORS,
+    _ensure_girr_supported,
+    girr_tenor_definition,
+)
+from frtb_sbm.reference_profiles import _coerce_risk_class, _resolve_supported_profile
+from frtb_sbm.reference_types import SbmGirrTenorDefinition
+from frtb_sbm.validation import SbmInputError, require_positive_int
+
+GIRR_VEGA_INTRA_BUCKET_CONSTANT = 0.01
+GIRR_VEGA_RISK_WEIGHT_FACTOR = 0.55
+GIRR_VEGA_RISK_WEIGHT_CAP = 1.0
+
+PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS: dict[SbmRegulatoryProfile, int] = {
+    SbmRegulatoryProfile.BASEL_MAR21: 60,
+}
+
+PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
+    SbmRegulatoryProfile,
+    dict[SbmRiskClass, int],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: {
+        SbmRiskClass.GIRR: 60,
+        SbmRiskClass.CSR_NONSEC: 120,
+        SbmRiskClass.CSR_SEC_CTP: 120,
+        SbmRiskClass.CSR_SEC_NONCTP: 120,
+        SbmRiskClass.COMMODITY: 120,
+        SbmRiskClass.FX: 40,
+    }
+}
+
+EQUITY_VEGA_LARGE_CAP_INDEX_LIQUIDITY_HORIZON_DAYS = 20
+EQUITY_VEGA_SMALL_CAP_OTHER_LIQUIDITY_HORIZON_DAYS = 60
+EQUITY_VEGA_LARGE_CAP_INDEX_BUCKETS = frozenset(
+    {"1", "2", "3", "4", "5", "6", "7", "8", "12", "13"}
+)
+EQUITY_VEGA_SMALL_CAP_OTHER_BUCKETS = frozenset({"9", "10", "11"})
+
+PROFILE_GIRR_VEGA_OPTION_TENORS: dict[
+    SbmRegulatoryProfile,
+    tuple[SbmGirrTenorDefinition, ...],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_TENORS,
+}
+
+
+def girr_vega_liquidity_horizon_days(profile: SbmRegulatoryProfile | str) -> int:
+    """Return the cited GIRR vega liquidity horizon in days for a profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    int
+    """
+
+    return vega_liquidity_horizon_days(
+        profile,
+        risk_class=SbmRiskClass.GIRR,
+    )
+
+
+def vega_liquidity_horizon_days(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    risk_class: SbmRiskClass | str,
+    bucket_id: str = "",
+) -> int:
+    """Return the cited MAR21.92 Table 13 vega liquidity horizon in days.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    risk_class : SbmRiskClass | str
+        See signature.
+    bucket_id : str, optional
+        See signature.
+
+    Returns
+    -------
+    int
+    """
+
+    resolved = _resolve_supported_profile(profile)
+    _ensure_vega_supported(profile)
+    resolved_class = _coerce_risk_class(risk_class)
+    if resolved_class is SbmRiskClass.EQUITY:
+        normalised_bucket = equity_bucket_definition(profile, bucket_id).bucket_id
+        if normalised_bucket in EQUITY_VEGA_LARGE_CAP_INDEX_BUCKETS:
+            return EQUITY_VEGA_LARGE_CAP_INDEX_LIQUIDITY_HORIZON_DAYS
+        if normalised_bucket in EQUITY_VEGA_SMALL_CAP_OTHER_BUCKETS:
+            return EQUITY_VEGA_SMALL_CAP_OTHER_LIQUIDITY_HORIZON_DAYS
+        raise SbmInputError(
+            f"no equity vega liquidity horizon for bucket_id {normalised_bucket}",
+            field="bucket_id",
+        )
+    try:
+        return PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS[resolved][resolved_class]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"vega liquidity horizon is unsupported for risk_class={resolved_class.value}"
+        ) from exc
+
+
+def vega_risk_weight(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    liquidity_horizon_days: int,
+) -> tuple[float, tuple[str, ...]]:
+    """Return the cited vega risk weight min(100%, 55% * sqrt(LH/10)).
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    liquidity_horizon_days : int
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
+
+    _ensure_vega_supported(profile)
+    horizon = require_positive_int(liquidity_horizon_days, "liquidity_horizon_days")
+    risk_weight = min(
+        GIRR_VEGA_RISK_WEIGHT_CAP,
+        GIRR_VEGA_RISK_WEIGHT_FACTOR * math.sqrt(horizon / 10.0),
+    )
+    return risk_weight, ("basel_mar21_92",)
+
+
+def girr_vega_option_tenors(
+    profile: SbmRegulatoryProfile | str,
+) -> tuple[SbmGirrTenorDefinition, ...]:
+    """Return the prescribed GIRR vega option-tenor set for a supported profile.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+
+    Returns
+    -------
+    tuple[SbmGirrTenorDefinition, ...]
+    """
+
+    resolved = _resolve_supported_profile(profile)
+    _ensure_girr_vega_supported(profile)
+    return PROFILE_GIRR_VEGA_OPTION_TENORS[resolved]
+
+
+def girr_vega_option_tenor_definition(
+    profile: SbmRegulatoryProfile | str,
+    option_tenor: str,
+) -> SbmGirrTenorDefinition:
+    """Return the GIRR vega option-tenor definition for a canonical label.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    option_tenor : str
+        See signature.
+
+    Returns
+    -------
+    SbmGirrTenorDefinition
+    """
+
+    normalised = _require_text(option_tenor, "option_tenor")
+    for tenor_definition in girr_vega_option_tenors(profile):
+        if tenor_definition.tenor == normalised:
+            return tenor_definition
+    raise SbmInputError(
+        f"no GIRR vega option tenor definition for option_tenor {normalised}",
+        field="option_tenor",
+    )
+
+
+def girr_vega_intra_bucket_correlation(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    option_tenor1: str,
+    option_tenor2: str,
+    tenor1: str,
+    tenor2: str,
+) -> tuple[float, tuple[str, ...]]:
+    """Return min(1, rho_opt * rho_ul) with 1% exponential tenor constants.
+    Parameters
+    ----------
+    profile, option_tenor1, option_tenor2, tenor1, tenor2 :
+        See function signature for types and defaults.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
+
+    _ensure_girr_vega_supported(profile)
+    rho_opt, _ = vega_option_tenor_correlation(
+        profile,
+        option_tenor1=option_tenor1,
+        option_tenor2=option_tenor2,
+    )
+    underlying_maturity1 = girr_tenor_definition(profile, tenor1).maturity_years
+    underlying_maturity2 = girr_tenor_definition(profile, tenor2).maturity_years
+    rho_ul = _exponential_tenor_correlation(
+        underlying_maturity1,
+        underlying_maturity2,
+        constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
+        floor=None,
+    )
+    return min(1.0, rho_opt * rho_ul), ("basel_mar21_93",)
+
+
+def vega_option_tenor_correlation(
+    profile: SbmRegulatoryProfile | str,
+    *,
+    option_tenor1: str,
+    option_tenor2: str,
+) -> tuple[float, tuple[str, ...]]:
+    """Return the MAR21.93 option-tenor correlation term used by vega paths.
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        See signature.
+    option_tenor1 : str
+        See signature.
+    option_tenor2 : str
+        See signature.
+
+    Returns
+    -------
+    tuple[float, tuple[str, ...]]
+    """
+
+    _ensure_vega_supported(profile)
+    option_maturity1 = girr_vega_option_tenor_definition(profile, option_tenor1).maturity_years
+    option_maturity2 = girr_vega_option_tenor_definition(profile, option_tenor2).maturity_years
+    return (
+        _exponential_tenor_correlation(
+            option_maturity1,
+            option_maturity2,
+            constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
+            floor=None,
+        ),
+        ("basel_mar21_93",),
+    )
+
+
+def _ensure_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
+    resolved = _resolve_supported_profile(profile)
+    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
+        raise UnsupportedRegulatoryFeatureError(
+            f"vega reference data is unsupported for profile {resolved.value}"
+        )
+
+
+def _ensure_girr_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
+    _ensure_girr_supported(profile)
+
+
+__all__ = [
+    "EQUITY_VEGA_LARGE_CAP_INDEX_BUCKETS",
+    "EQUITY_VEGA_LARGE_CAP_INDEX_LIQUIDITY_HORIZON_DAYS",
+    "EQUITY_VEGA_SMALL_CAP_OTHER_BUCKETS",
+    "EQUITY_VEGA_SMALL_CAP_OTHER_LIQUIDITY_HORIZON_DAYS",
+    "GIRR_VEGA_INTRA_BUCKET_CONSTANT",
+    "GIRR_VEGA_RISK_WEIGHT_CAP",
+    "GIRR_VEGA_RISK_WEIGHT_FACTOR",
+    "PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS",
+    "PROFILE_GIRR_VEGA_OPTION_TENORS",
+    "PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS",
+    "girr_vega_intra_bucket_correlation",
+    "girr_vega_liquidity_horizon_days",
+    "girr_vega_option_tenor_definition",
+    "girr_vega_option_tenors",
+    "vega_liquidity_horizon_days",
+    "vega_option_tenor_correlation",
+    "vega_risk_weight",
+]

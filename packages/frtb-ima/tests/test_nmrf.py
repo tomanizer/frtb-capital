@@ -5,6 +5,11 @@ import math
 import numpy as np
 import pytest
 
+import frtb_ima.nmrf as nmrf
+import frtb_ima.nmrf_aggregation as nmrf_aggregation
+import frtb_ima.nmrf_capital as nmrf_capital
+import frtb_ima.nmrf_stress as nmrf_stress
+import frtb_ima.nmrf_types as nmrf_types
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus
 from frtb_ima.nmrf import (
     NMRFStressArtifact,
@@ -27,6 +32,18 @@ from frtb_ima.nmrf import (
 from frtb_ima.regimes import UnsupportedRegulatoryFeature, get_policy
 
 TYPE_B_RHO = 0.36
+
+
+def test_nmrf_module_preserves_public_compatibility_path() -> None:
+    assert nmrf.NMRFStressMethod is nmrf_types.NMRFStressMethod
+    assert nmrf.NMRFStressArtifact is nmrf_types.NMRFStressArtifact
+    assert nmrf.SESAggregationResult is nmrf_types.SESAggregationResult
+    assert nmrf.ses_for_nmrf_linear is nmrf_stress.ses_for_nmrf_linear
+    assert (
+        nmrf.calculate_nmrf_ses_from_revaluation is nmrf_stress.calculate_nmrf_ses_from_revaluation
+    )
+    assert nmrf.aggregate_ses_breakdown is nmrf_aggregation.aggregate_ses_breakdown
+    assert nmrf.calculate_nmrf_capital_for_policy is nmrf_capital.calculate_nmrf_capital_for_policy
 
 
 def test_ses_linear_basic() -> None:

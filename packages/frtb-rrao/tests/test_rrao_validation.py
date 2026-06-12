@@ -4,6 +4,12 @@ import math
 from dataclasses import replace
 
 import pytest
+from tests.rrao_fixture_helpers import (
+    sample_rrao_lineage as sample_lineage,
+)
+from tests.rrao_fixture_helpers import (
+    sample_rrao_position as sample_position,
+)
 
 from frtb_rrao import (
     RraoClassification,
@@ -11,39 +17,9 @@ from frtb_rrao import (
     RraoExclusionReason,
     RraoInputError,
     RraoPosition,
-    RraoSourceLineage,
     validate_rrao_positions,
 )
 from frtb_rrao.validation import normalise_gross_effective_notional
-
-
-def sample_lineage() -> RraoSourceLineage:
-    return RraoSourceLineage(
-        source_system="synthetic-risk",
-        source_file="rrao.csv",
-        source_row_id="row-001",
-        source_column_map=(
-            ("RiskType", "evidence_type"),
-            ("AmountUSD", "gross_effective_notional"),
-        ),
-    )
-
-
-def sample_position(**overrides: object) -> RraoPosition:
-    fields = {
-        "position_id": "pos-001",
-        "source_row_id": "row-001",
-        "desk_id": "rates-exotics",
-        "legal_entity": "LE-001",
-        "gross_effective_notional": 1_000_000.0,
-        "currency": "USD",
-        "evidence_type": RraoEvidenceType.EXOTIC_UNDERLYING,
-        "evidence_label": "weather derivative",
-        "classification_hint": RraoClassification.EXOTIC,
-        "lineage": sample_lineage(),
-    }
-    fields.update(overrides)
-    return RraoPosition(**fields)  # type: ignore[arg-type]
 
 
 def assert_rejects(
