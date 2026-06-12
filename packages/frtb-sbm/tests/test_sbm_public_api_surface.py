@@ -18,9 +18,12 @@ import frtb_sbm.crif as crif
 import frtb_sbm.curvature as curvature
 import frtb_sbm.curvature_batch_inputs as curvature_batch_inputs
 import frtb_sbm.curvature_batch_mapping as curvature_batch_mapping
+import frtb_sbm.curvature_bucket_records as curvature_bucket_records
+import frtb_sbm.curvature_bucket_scenarios as curvature_bucket_scenarios
 import frtb_sbm.curvature_correlations as curvature_correlations
 import frtb_sbm.curvature_factors as curvature_factors
 import frtb_sbm.curvature_inputs as curvature_inputs
+import frtb_sbm.curvature_inter_bucket_aggregation as curvature_inter_bucket_aggregation
 import frtb_sbm.curvature_reference_data as curvature_reference_data
 import frtb_sbm.fx_reference_data as fx_reference_data
 import frtb_sbm.girr_reference_data as girr_reference_data
@@ -332,6 +335,28 @@ def test_curvature_module_reexports_input_stage_helpers() -> None:
     ):
         assert name in curvature_batch_mapping.__all__
         assert getattr(curvature, name) is getattr(curvature_batch_mapping, name)
+
+
+def test_curvature_module_reexports_aggregation_stage_helpers() -> None:
+    for name in (
+        "_CurvatureBucketScenario",
+        "_evaluate_curvature_bucket_scenario",
+    ):
+        assert name in curvature_bucket_scenarios.__all__
+        assert getattr(curvature, name) is getattr(curvature_bucket_scenarios, name)
+
+    assert (
+        curvature._aggregate_curvature_inter_bucket
+        is curvature_inter_bucket_aggregation._aggregate_curvature_inter_bucket
+    )
+
+    for name in (
+        "_curvature_bucket_branch_record",
+        "_curvature_bucket_to_bucket_capital",
+        "_curvature_bucket_to_intra_record",
+    ):
+        assert name in curvature_bucket_records.__all__
+        assert getattr(curvature, name) is getattr(curvature_bucket_records, name)
 
 
 def test_crif_module_reexports_adapter_stage_surface() -> None:

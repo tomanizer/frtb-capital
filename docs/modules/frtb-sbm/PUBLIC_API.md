@@ -71,6 +71,11 @@ Curvature row and batch input validation physically lives under
 `frtb_sbm.curvature_inputs`, `frtb_sbm.curvature_batch_inputs`, and
 `frtb_sbm.curvature_batch_mapping`; `frtb_sbm.curvature` remains the public
 compatibility path for existing curvature input and branch helpers.
+Curvature bucket scenario evaluation, inter-bucket aggregation, and bucket
+record conversion physically live under `frtb_sbm.curvature_bucket_scenarios`,
+`frtb_sbm.curvature_inter_bucket_aggregation`, and
+`frtb_sbm.curvature_bucket_records`; `frtb_sbm.curvature` remains the public
+compatibility path for the curvature capital engine.
 Validation helpers physically live under the `frtb_sbm.validation` package, including
 `batch`, `batch_arrays`, `batch_lineage`, `coercion`, `context`,
 `risk_class_fields`, and `sensitivity`;
