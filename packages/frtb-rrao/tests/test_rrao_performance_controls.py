@@ -51,6 +51,11 @@ def test_target_scale_benchmark_smoke_is_deterministic() -> None:
     assert first["result"]["arrow_ordering_hash"] == first["result"]["ordering_hash"]
     assert first["result"]["batch_absolute_delta"] == 0.0
     assert first["result"]["arrow_absolute_delta"] == 0.0
+    assert first["timings"]["row_adapter_seconds"] > 0.0
+    assert first["timings"]["row_kernel_seconds"] > 0.0
+    assert first["timings"]["calculate_seconds"] == (
+        first["timings"]["row_adapter_seconds"] + first["timings"]["row_kernel_seconds"]
+    )
     assert first["timings"]["positions_per_second"] > 0.0
     assert first["timings"]["batch_positions_per_second"] > 0.0
     assert first["timings"]["arrow_positions_per_second"] > 0.0

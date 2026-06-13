@@ -23,12 +23,63 @@ same JSON report. The default deterministic fixture contains:
 
 The benchmark report includes wall-clock phase timings, peak traced memory, the
 RRAO input/profile hashes, a stable serialized audit payload hash, and a stable
-line-ordering hash.
+line-ordering hash. Since ADR 0045 single-kernel consolidation, the row/dataclass
+path reports adapter and kernel timings separately: `row_adapter_seconds`
+measures tuple/dataclass ingress into the canonical batch, while
+`row_kernel_seconds` measures the shared `calculate_rrao_capital_from_batch`
+kernel.
 
 ## Observed runs
 
+Local benchmark observations from this worktree on 2026-06-13 after the ADR 0045
+single-kernel consolidation:
+
+| Field | Value |
+| --- | ---: |
+| Benchmark id | `frtb-rrao-target-scale-v2` |
+| Python | 3.11.14 |
+| Platform | macOS-13.7.8-x86_64-i386-64bit |
+| Positions | 100,000 |
+| Row build positions | 9.015 seconds |
+| Row adapter to canonical batch | 30.672 seconds |
+| Row shared-kernel calculate | 9.394 seconds |
+| Row aggregate calculate | 40.066 seconds |
+| Row aggregate throughput | 2,496 positions/second |
+| Row serialize | 1.084 seconds |
+| Batch build columns | 3.138 seconds |
+| Batch build/validate/hash | 25.697 seconds |
+| Batch calculate | 9.046 seconds |
+| Batch serialize | 0.886 seconds |
+| Batch calculate throughput | 11,054 positions/second |
+| Arrow table build | 0.130 seconds |
+| Arrow batch build/validate/hash | 23.155 seconds |
+| Arrow calculate | 8.222 seconds |
+| Arrow calculate throughput | 12,163 positions/second |
+| Peak traced memory | 537,408,267 bytes |
+| Total RRAO | 155,470,000.0 |
+| Batch total delta | 0.0 |
+| Arrow total delta | 0.0 |
+| Payload hash | `c60490c0e675561c878aea716e20ce78add011737dc32986ae3d9bfec0053add` |
+| Batch payload hash | `c60490c0e675561c878aea716e20ce78add011737dc32986ae3d9bfec0053add` |
+| Arrow payload hash | `21afd04a1351c99a2adc19d0df115ce54c21b978978cc8872d0ded0ad59de427` |
+| Ordering hash | `1e6b188a7d2a6fee31654e9d5b1e929268ab3ec78c9e99aedc6401b6710df3ee` |
+| Input hash | `fb63ed0fb27d0134c3ad9812da579b375bfc10c63520a91a550bf101943d8dbf` |
+
+The row aggregate calculate time now includes both dataclass-to-batch adapter
+work and the shared batch kernel. The split shows that row ingress is dominated
+by adapter materialization; the shared kernel itself is comparable to the batch
+and Arrow kernel timings. High-volume callers should prefer column or Arrow
+handoffs. The row/dataclass API remains useful for ergonomic canonical-input
+tests, demos, and small runs.
+
+The column-batch payload hash matches the row path because both paths preserve
+the same lineage source-column map. The Arrow batch has a distinct payload hash
+because the flat handoff does not carry that tuple-valued lineage map, but it
+preserves capital and line ordering.
+
 Local benchmark observations from this worktree on 2026-06-01 after the RRAO
-batch decision-vectorization work:
+batch decision-vectorization work, before the row path was routed through the
+canonical batch adapter:
 
 | Field | Value |
 | --- | ---: |
@@ -53,19 +104,11 @@ batch decision-vectorization work:
 | Total RRAO | 155,470,000.0 |
 | Batch total delta | 0.0 |
 | Arrow total delta | 0.0 |
-| Batch accepted row dataclasses | 0 |
-| Arrow accepted row dataclasses | 0 |
 | Payload hash | `c60490c0e675561c878aea716e20ce78add011737dc32986ae3d9bfec0053add` |
 | Batch payload hash | `c60490c0e675561c878aea716e20ce78add011737dc32986ae3d9bfec0053add` |
 | Arrow payload hash | `21afd04a1351c99a2adc19d0df115ce54c21b978978cc8872d0ded0ad59de427` |
 | Ordering hash | `1e6b188a7d2a6fee31654e9d5b1e929268ab3ec78c9e99aedc6401b6710df3ee` |
 | Input hash | `fb63ed0fb27d0134c3ad9812da579b375bfc10c63520a91a550bf101943d8dbf` |
-
-The column-batch payload hash matches the row path because the benchmark
-provides the same lineage source-column map. The Arrow batch has a distinct
-payload hash because the flat handoff does not carry that tuple-valued lineage
-map, but it preserves capital, line ordering, and zero accepted-row dataclass
-materialization.
 
 Local benchmark observations from this worktree on 2026-05-29:
 
