@@ -27,7 +27,7 @@ from frtb_rrao import (
     RraoSourceLineage,
     build_rrao_batch_from_arrow,
     build_rrao_batch_from_columns,
-    calculate_rrao_capital,
+    build_rrao_batch_from_positions,
     calculate_rrao_capital_from_batch,
     normalize_rrao_arrow_table,
     serialize_rrao_result,
@@ -136,11 +136,17 @@ def run_benchmark(config: RraoBenchmarkConfig) -> dict[str, object]:
     positions = build_positions(config)
     row_build_seconds = time.perf_counter() - row_build_started
 
-    row_calculate_started = time.perf_counter()
-    result = calculate_rrao_capital(positions, context=build_context(config))
-    row_calculate_seconds = time.perf_counter() - row_calculate_started
+    row_adapter_started = time.perf_counter()
+    row_batch = build_rrao_batch_from_positions(positions)
+    row_adapter_seconds = time.perf_counter() - row_adapter_started
+
+    row_kernel_started = time.perf_counter()
+    row_calculation = calculate_rrao_capital_from_batch(row_batch, context=build_context(config))
+    row_kernel_seconds = time.perf_counter() - row_kernel_started
+    row_calculate_seconds = row_adapter_seconds + row_kernel_seconds
 
     row_serialize_started = time.perf_counter()
+    result = row_calculation.result
     payload = serialize_rrao_result(result)
     row_serialize_seconds = time.perf_counter() - row_serialize_started
 
@@ -199,6 +205,8 @@ def run_benchmark(config: RraoBenchmarkConfig) -> dict[str, object]:
         },
         "timings": {
             "build_positions_seconds": row_build_seconds,
+            "row_adapter_seconds": row_adapter_seconds,
+            "row_kernel_seconds": row_kernel_seconds,
             "calculate_seconds": row_calculate_seconds,
             "serialize_seconds": row_serialize_seconds,
             "wall_seconds": wall_seconds,
