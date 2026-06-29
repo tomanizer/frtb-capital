@@ -644,7 +644,13 @@ def scale_stress_es_breakdown(
     """Scale stress-period ES and return the full reduced-set scaling audit trail.
 
     The applied ratio is floored at 1.0 so the reduced-set scaling step never
-    deflates stress-period ES.
+    deflates stress-period ES. Basel MAR33.6 / NPR section __.214 require the
+    stress period to be identified from the full current-period risk-factor set
+    unless supervisory approval for a reduced set is documented. The
+    ``stress_reduced_es`` input should therefore be a reduced-set valuation
+    measured on a full-set-identified stress period, not a stress period
+    calibrated from a reduced-set history.
+
     Parameters
     ----------
     stress_reduced_es : float

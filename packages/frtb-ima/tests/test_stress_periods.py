@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import inspect
+import logging
+import warnings
 from datetime import date, timedelta
 
 import numpy as np
@@ -9,7 +12,7 @@ import pytest
 
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus, RiskClass
-from frtb_ima.expected_shortfall import ESEstimator
+from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall_from_sorted_losses_desc
 from frtb_ima.nmrf import NMRFStressMethod
 from frtb_ima.nmrf_method_selection import NMRFMethodReason, NMRFValuationInstruction
 from frtb_ima.nmrf_stress_spec import (
@@ -19,6 +22,7 @@ from frtb_ima.nmrf_stress_spec import (
 )
 from frtb_ima.regimes import get_policy
 from frtb_ima.stress_periods import (
+    REGULATORY_OBSERVATION_HORIZON_START,
     HistoricalStressSeries,
     StressPeriodCalibrationError,
     StressPeriodCandidate,
@@ -49,6 +53,8 @@ def _series(
     risk_class: RiskClass = RiskClass.CSR,
     source: str = "synthetic historical scenario loss series",
     dates: tuple[date, ...] | None = None,
+    risk_factor_set: str = "FULL",
+    minimum_start_date: date | None = None,
 ) -> HistoricalStressSeries:
     loss_arr = np.asarray(losses, dtype=float)
     series_dates = _dates(int(loss_arr.size)) if dates is None else dates
@@ -58,6 +64,28 @@ def _series(
         dates=series_dates,
         source=source,
         scenario_ids=tuple(f"{risk_class.value.lower()}-{idx:03d}" for idx in range(loss_arr.size)),
+        risk_factor_set=risk_factor_set,  # type: ignore[arg-type]
+        minimum_start_date=minimum_start_date,
+    )
+
+
+def _naive_es_scores(
+    losses: np.ndarray,
+    *,
+    window_observations: int,
+    confidence_level: float,
+    es_estimator: ESEstimator,
+) -> np.ndarray:
+    return np.asarray(
+        [
+            expected_shortfall_from_sorted_losses_desc(
+                np.sort(losses[start : start + window_observations])[::-1],
+                alpha=confidence_level,
+                estimator=es_estimator,
+            )
+            for start in range(losses.size - window_observations + 1)
+        ],
+        dtype=np.float64,
     )
 
 
@@ -77,6 +105,55 @@ def test_expected_shortfall_scores_match_naive_tail_mean() -> None:
         naive.append(float(np.mean(window[-2:])))
 
     np.testing.assert_allclose(scores, naive)
+
+
+def test_expected_shortfall_scores_match_naive_weighted_estimator() -> None:
+    losses = np.array([1.0, 10.0, 2.0, 20.0, 3.0, 30.0, 4.0, 40.0])
+    scores = rolling_window_severity_scores(
+        losses,
+        window_observations=5,
+        minimum_observations=5,
+        severity_metric=StressSeverityMetric.EXPECTED_SHORTFALL,
+        confidence_level=0.72,
+        es_estimator=ESEstimator.WEIGHTED_INTERPOLATED,
+    )
+
+    np.testing.assert_allclose(
+        scores,
+        _naive_es_scores(
+            losses,
+            window_observations=5,
+            confidence_level=0.72,
+            es_estimator=ESEstimator.WEIGHTED_INTERPOLATED,
+        ),
+    )
+
+
+def test_expected_shortfall_scoring_is_vectorized_for_large_histories() -> None:
+    losses = np.linspace(1.0, 3_000.0, 3_000)
+    source = inspect.getsource(rolling_window_severity_scores)
+
+    scores = rolling_window_severity_scores(
+        losses,
+        window_observations=250,
+        minimum_observations=250,
+        severity_metric=StressSeverityMetric.EXPECTED_SHORTFALL,
+        confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ESEstimator.WEIGHTED_INTERPOLATED,
+    )
+
+    assert "for window in" not in source
+    assert "np.partition" in source or "_expected_shortfall_scores_from_windows" in source
+    assert scores.shape == (2_751,)
+    np.testing.assert_allclose(
+        scores[[0, -1]],
+        _naive_es_scores(
+            losses,
+            window_observations=250,
+            confidence_level=CONFIDENCE_LEVEL,
+            es_estimator=ESEstimator.WEIGHTED_INTERPOLATED,
+        )[[0, -1]],
+    )
 
 
 def test_cumulative_loss_uses_window_sum_and_selects_severe_cluster() -> None:
@@ -193,16 +270,70 @@ def test_select_stress_periods_by_risk_class_selects_independently() -> None:
 def test_policy_wrapper_uses_policy_regime_and_confidence_level() -> None:
     policy = get_policy()
     policy_length_losses = np.linspace(1.0, 260.0, 260)
-    defaulted = select_stress_periods_for_policy(
-        [_series(policy_length_losses)],
-        policy,
-        as_of_date=date(2025, 6, 30),
-    )
+    with pytest.warns(UserWarning, match="observation-count proxy"):
+        defaulted = select_stress_periods_for_policy(
+            [_series(policy_length_losses)],
+            policy,
+            as_of_date=date(2025, 6, 30),
+        )
 
     assert defaulted.regime == policy.regime.value
     assert defaulted.confidence_level == pytest.approx(policy.es_confidence_level)
     assert defaulted.window_observations == policy.stress_period_window_observations
     assert defaulted.minimum_observations == policy.stress_period_minimum_observations
+    assert defaulted.as_dict()["series_start_dates"] == {"CSR": "2020-01-01"}
+    assert defaulted.as_dict()["risk_factor_sets"] == {"CSR": "FULL"}
+
+
+def test_observation_count_proxy_warns_and_exact_calendar_path_does_not() -> None:
+    policy = get_policy()
+    dates = business_dates(270, start=date(2024, 2, 29))
+    calendar = BusinessCalendar(
+        business_dates=dates,
+        source="FED",
+        version="2026.1",
+    )
+    losses = np.linspace(1.0, float(len(dates)), len(dates))
+
+    with pytest.warns(UserWarning, match="use_exact_twelve_month_window=True"):
+        select_stress_periods_for_policy(
+            [_series(losses, dates=dates)],
+            policy,
+            as_of_date=date(2025, 2, 28),
+        )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        select_stress_periods_for_policy(
+            [_series(losses, dates=dates)],
+            policy,
+            as_of_date=date(2025, 2, 28),
+            calendar=calendar,
+            use_exact_twelve_month_window=True,
+        )
+
+    assert not [
+        item
+        for item in caught
+        if issubclass(item.category, UserWarning) and "observation-count proxy" in str(item.message)
+    ]
+
+
+def test_policy_log_record_includes_window_basis(caplog: pytest.LogCaptureFixture) -> None:
+    policy = get_policy()
+    caplog.set_level(logging.INFO, logger="frtb_ima.stress_period_selection")
+
+    with pytest.warns(UserWarning, match="observation-count proxy"):
+        select_stress_periods_for_policy(
+            [_series(np.linspace(1.0, 260.0, 260))],
+            policy,
+            as_of_date=date(2025, 6, 30),
+        )
+
+    record = next(
+        item for item in caplog.records if item.getMessage() == "stress_period_selection_complete"
+    )
+    assert record.window_basis == ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
 
 
 def test_stress_period_selection_records_exact_calendar_window_basis() -> None:
@@ -371,6 +502,53 @@ def test_historical_stress_series_defaults_and_validates_scenario_ids() -> None:
             source="synthetic",
             scenario_ids=("one", "one"),
         )
+
+
+def test_historical_stress_series_enforces_optional_regulatory_horizon_floor() -> None:
+    passing = _series(
+        np.linspace(1.0, 10.0, 10),
+        dates=_dates(10, start=date(2006, 1, 1)),
+        minimum_start_date=REGULATORY_OBSERVATION_HORIZON_START,
+    )
+
+    assert passing.start_date == date(2006, 1, 1)
+    assert passing.as_dict()["minimum_start_date"] == "2007-01-01"
+
+    with pytest.raises(StressPeriodCalibrationError, match=r"Basel MAR33\.5"):
+        _series(
+            np.linspace(1.0, 10.0, 10),
+            dates=_dates(10, start=date(2010, 1, 1)),
+            minimum_start_date=REGULATORY_OBSERVATION_HORIZON_START,
+        )
+
+
+def test_historical_stress_series_serializes_and_validates_risk_factor_set() -> None:
+    reduced = _series([1.0, 2.0], risk_factor_set="REDUCED")
+
+    assert reduced.as_dict()["risk_factor_set"] == "REDUCED"
+
+    with pytest.raises(ValueError, match="risk_factor_set"):
+        _series([1.0, 2.0], risk_factor_set="PARTIAL")
+
+
+def test_policy_wrapper_warns_for_reduced_risk_factor_set() -> None:
+    policy = get_policy()
+    reduced = _series(np.linspace(1.0, 260.0, 260), risk_factor_set="REDUCED")
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = select_stress_periods_for_policy(
+            [reduced],
+            policy,
+            as_of_date=date(2025, 6, 30),
+        )
+
+    payload = result.as_dict()
+    messages = [str(item.message) for item in caught]
+    assert any("reduced risk-factor-set histories" in message for message in messages)
+    assert any("observation-count proxy" in message for message in messages)
+    assert payload["risk_factor_sets"] == {"CSR": "REDUCED"}
+    assert payload["selected_by_risk_class"]["CSR"]["risk_factor_set"] == "REDUCED"
 
 
 def test_stress_period_candidate_validates_inputs_and_serializes_spec() -> None:

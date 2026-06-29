@@ -9,6 +9,7 @@ run-level policy dispatch.
 
 from __future__ import annotations
 
+import math
 from datetime import date
 
 import numpy as np
@@ -16,7 +17,7 @@ import numpy.typing as npt
 from numpy.lib.stride_tricks import sliding_window_view
 
 from frtb_ima.data_models import RiskClass
-from frtb_ima.expected_shortfall import ESEstimator, expected_shortfall_from_sorted_losses_desc
+from frtb_ima.expected_shortfall import ESEstimator
 from frtb_ima.stress_period_types import (
     FloatVector,
     HistoricalStressSeries,
@@ -46,27 +47,29 @@ def rolling_window_severity_scores(
 
     The numeric path is NumPy-native. ``CUMULATIVE_LOSS`` uses prefix sums, which
     is the add-one/remove-one rolling-window optimisation. ``EXPECTED_SHORTFALL``
-    uses a strided rolling-window view plus ``np.partition`` to avoid full
-    sorting of each window.
+    uses a strided rolling-window view, partitions out the largest tail losses,
+    and computes every window tail mean in one vectorized operation.
+
     Parameters
     ----------
     losses : FloatVector
-        Losses.
+        Positive-loss observations sorted by observation date.
     window_observations : int, optional
-        Window observations.
+        Observation count in each rolling window.
     minimum_observations : int, optional
-        Minimum observations.
+        Minimum observations required before scoring.
     severity_metric : StressSeverityMetric, optional
-        Severity metric.
+        Statistic used to score each candidate window.
     confidence_level : float
-        Confidence level.
+        ES confidence level sourced from the applicable policy.
     es_estimator : ESEstimator
-        Es estimator.
+        Tail-mean estimator used for expected-shortfall scoring.
 
     Returns
     -------
     npt.NDArray[np.float64]
-        Result of the operation.
+        Array of shape ``(N - window_observations + 1,)`` with one severity
+        score per rolling window start position.
     """
     _validate_selection_parameters(
         window_observations=window_observations,
@@ -97,19 +100,11 @@ def rolling_window_severity_scores(
         return max_scores
 
     if severity_metric == StressSeverityMetric.EXPECTED_SHORTFALL:
-        sorted_windows = np.sort(windows, axis=1)[:, ::-1]
-        es_scores: npt.NDArray[np.float64] = np.asarray(
-            [
-                expected_shortfall_from_sorted_losses_desc(
-                    window,
-                    alpha=confidence_level,
-                    estimator=es_estimator,
-                )
-                for window in sorted_windows
-            ],
-            dtype=np.float64,
+        return _expected_shortfall_scores_from_windows(
+            windows,
+            confidence_level=confidence_level,
+            es_estimator=es_estimator,
         )
-        return es_scores
 
     raise ValueError(f"Unsupported severity metric: {severity_metric}")
 
@@ -124,25 +119,26 @@ def stress_period_candidates_from_history(
     es_estimator: ESEstimator,
 ) -> tuple[StressPeriodCandidate, ...]:
     """Build all candidate stress windows for audit or diagnostics.
+
     Parameters
     ----------
     series : HistoricalStressSeries
-        Series.
+        Validated historical loss series to score.
     window_observations : int, optional
-        Window observations.
+        Observation count in each candidate stress window.
     minimum_observations : int, optional
-        Minimum observations.
+        Minimum observations required before scoring.
     severity_metric : StressSeverityMetric, optional
-        Severity metric.
+        Statistic used to score each candidate window.
     confidence_level : float
-        Confidence level.
+        ES confidence level sourced from the applicable policy.
     es_estimator : ESEstimator
-        Es estimator.
+        Tail-mean estimator used for expected-shortfall scoring.
 
     Returns
     -------
     tuple[StressPeriodCandidate, ...]
-        Result of the operation.
+        Candidate records, one per valid window start, in chronological order.
     """
     if not isinstance(series, HistoricalStressSeries):
         raise TypeError("series must be a HistoricalStressSeries")
@@ -183,27 +179,28 @@ def select_stress_period_from_history(
     Ties are resolved by the requested start-date rule. The default selects the
     most recent start date; candidate period IDs are deterministic and provide a
     stable tertiary ordering if a caller later supplies duplicate date ranges.
+
     Parameters
     ----------
     series : HistoricalStressSeries
-        Series.
+        Validated historical loss series to score.
     window_observations : int, optional
-        Window observations.
+        Observation count in each candidate stress window.
     minimum_observations : int, optional
-        Minimum observations.
+        Minimum observations required before scoring.
     severity_metric : StressSeverityMetric, optional
-        Severity metric.
+        Statistic used to score each candidate window.
     confidence_level : float
-        Confidence level.
+        ES confidence level sourced from the applicable policy.
     es_estimator : ESEstimator
-        Es estimator.
+        Tail-mean estimator used for expected-shortfall scoring.
     tie_break : StressPeriodTieBreak, optional
-        Tie break.
+        Deterministic rule used when windows have equal severity.
 
     Returns
     -------
     StressPeriodCandidate
-        Result of the operation.
+        Highest-severity candidate, ties resolved by ``tie_break``.
     """
     if not isinstance(series, HistoricalStressSeries):
         raise TypeError("series must be a HistoricalStressSeries")
@@ -276,11 +273,55 @@ def _candidate_from_window_index(
         source=series.source,
         start_scenario_id=series.scenario_ids[start_index],
         end_scenario_id=series.scenario_ids[end_index],
+        risk_factor_set=series.risk_factor_set,
         notes=(
             "Selected from provided historical loss series; "
             "window basis is recorded on the StressPeriodSelectionResult."
         ),
     )
+
+
+def _expected_shortfall_scores_from_windows(
+    windows: npt.NDArray[np.float64],
+    *,
+    confidence_level: float,
+    es_estimator: ESEstimator,
+) -> npt.NDArray[np.float64]:
+    window_observations = int(windows.shape[1])
+    tail_mass = window_observations * (1.0 - confidence_level)
+    estimator = ESEstimator(es_estimator)
+    if estimator == ESEstimator.DISCRETE_CEIL:
+        tail_count = max(1, math.ceil(tail_mass))
+        tail_losses = _largest_losses_desc(windows, tail_count)
+        scores: npt.NDArray[np.float64] = np.asarray(
+            np.mean(tail_losses, axis=1),
+            dtype=np.float64,
+        )
+        return scores
+
+    full_count = math.floor(tail_mass)
+    fractional_weight = tail_mass - full_count
+    selected_count = full_count + (1 if fractional_weight > 0.0 else 0)
+    tail_losses = _largest_losses_desc(windows, max(1, selected_count))
+    weighted_sum = (
+        np.sum(tail_losses[:, :full_count], axis=1)
+        if full_count
+        else np.zeros(windows.shape[0], dtype=np.float64)
+    )
+    if fractional_weight > 0.0:
+        weighted_sum = weighted_sum + fractional_weight * tail_losses[:, full_count]
+    scores = np.asarray(weighted_sum / tail_mass, dtype=np.float64)
+    return scores
+
+
+def _largest_losses_desc(
+    windows: npt.NDArray[np.float64],
+    count: int,
+) -> npt.NDArray[np.float64]:
+    kth = int(windows.shape[1] - count)
+    tail = np.partition(windows, kth=kth, axis=1)[:, kth:]
+    sorted_tail: npt.NDArray[np.float64] = np.asarray(np.sort(tail, axis=1)[:, ::-1])
+    return sorted_tail
 
 
 def _stress_period_id(

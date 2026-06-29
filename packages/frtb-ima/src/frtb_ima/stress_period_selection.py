@@ -9,6 +9,7 @@ candidate scoring stage.
 from __future__ import annotations
 
 import logging
+import warnings
 from collections.abc import Mapping, Sequence
 from datetime import date
 
@@ -91,7 +92,7 @@ def select_stress_periods_by_risk_class(
         calendar=calendar,
         use_exact_twelve_month_window=use_exact_twelve_month_window,
     )
-    selected, counts = _select_histories_by_risk_class(
+    selected, counts, series_start_dates, risk_factor_sets = _select_histories_by_risk_class(
         histories,
         window_observations=window_observations,
         minimum_observations=minimum_observations,
@@ -118,6 +119,8 @@ def select_stress_periods_by_risk_class(
         calendar_version=calendar_version,
         official_holiday_count=official_holiday_count,
         missing_business_dates=missing_business_dates,
+        series_start_dates=series_start_dates,
+        risk_factor_sets=risk_factor_sets,
         metadata={} if metadata is None else metadata,
     )
 
@@ -131,6 +134,15 @@ def _resolve_selection_window(
     use_exact_twelve_month_window: bool,
 ) -> tuple[int, int, str, str, str, int, tuple[date, ...]]:
     if not use_exact_twelve_month_window:
+        warnings.warn(
+            "Stress period selected using observation-count proxy "
+            f"(window_observations={window_observations}). Basel MAR33.5 / "
+            "NPR section __.214 requires an exact 12-month rolling window. "
+            "Pass use_exact_twelve_month_window=True with a BusinessCalendar "
+            "to use the calendar-backed path.",
+            UserWarning,
+            stacklevel=4,
+        )
         return (
             window_observations,
             minimum_observations,
@@ -163,9 +175,16 @@ def _select_histories_by_risk_class(
     confidence_level: float,
     es_estimator: ESEstimator,
     tie_break: StressPeriodTieBreak,
-) -> tuple[dict[RiskClass, StressPeriodCandidate], dict[RiskClass, int]]:
+) -> tuple[
+    dict[RiskClass, StressPeriodCandidate],
+    dict[RiskClass, int],
+    dict[RiskClass, date],
+    dict[RiskClass, str],
+]:
     selected: dict[RiskClass, StressPeriodCandidate] = {}
     counts: dict[RiskClass, int] = {}
+    series_start_dates: dict[RiskClass, date] = {}
+    risk_factor_sets: dict[RiskClass, str] = {}
     for series in histories:
         if not isinstance(series, HistoricalStressSeries):
             raise TypeError("histories must contain HistoricalStressSeries values")
@@ -181,7 +200,9 @@ def _select_histories_by_risk_class(
             tie_break=tie_break,
         )
         counts[series.risk_class] = series.observation_count - window_observations + 1
-    return selected, counts
+        series_start_dates[series.risk_class] = series.start_date
+        risk_factor_sets[series.risk_class] = series.risk_factor_set
+    return selected, counts, series_start_dates, risk_factor_sets
 
 
 def select_stress_periods_for_policy(
@@ -198,37 +219,40 @@ def select_stress_periods_for_policy(
     metadata: Mapping[str, object] | None = None,
 ) -> StressPeriodSelectionResult:
     """Select stress periods using the run-level policy confidence level.
+
     Parameters
     ----------
     histories : Sequence[HistoricalStressSeries]
-        Histories.
+        Historical loss series keyed by risk class.
     policy : RegulatoryPolicy
-        Policy.
+        Run-level regulatory policy.
     as_of_date : date
-        As of date.
+        Run calibration date.
     severity_metric : StressSeverityMetric, optional
-        Severity metric.
+        Statistic used to score each candidate window.
     tie_break : StressPeriodTieBreak, optional
-        Tie break.
+        Deterministic rule used when windows have equal severity.
     calendar : BusinessCalendar | None, optional
-        Calendar.
+        Required when exact twelve-month business windows are requested.
     use_exact_twelve_month_window : bool, optional
-        Use exact twelve month window.
+        Whether to select the compliant exact 12-month calendar-backed path.
     run_id : str | None, optional
-        Run id.
+        Optional run identifier for structured logs.
     desk_id : str | None, optional
-        Desk id.
+        Optional desk identifier for structured logs.
     metadata : Mapping[str, object] | None, optional
-        Metadata.
+        Additional audit metadata to attach to the result.
 
     Returns
     -------
     StressPeriodSelectionResult
-        Result of the operation.
+        Selected windows, candidate counts, calendar provenance, and per-series
+        coverage evidence.
     """
     if not isinstance(policy, RegulatoryPolicy):
         raise TypeError("policy must be a RegulatoryPolicy")
     policy.require_capital_runtime_supported()
+    _warn_on_reduced_risk_factor_sets(histories)
     result = select_stress_periods_by_risk_class(
         histories,
         as_of_date=as_of_date,
@@ -251,6 +275,7 @@ def select_stress_periods_for_policy(
             regime=policy.regime.value,
             risk_class_count=result.risk_class_count,
             window_observations=result.window_observations,
+            window_basis=result.window_basis,
             severity_metric=result.severity_metric.value,
         ),
     )
@@ -261,15 +286,16 @@ def stress_period_specs_for_nmrf(
     selection_result: StressPeriodSelectionResult,
 ) -> dict[RiskClass, NMRFStressPeriodSpec]:
     """Return NMRF valuation stress-period specs keyed by risk class.
+
     Parameters
     ----------
     selection_result : StressPeriodSelectionResult
-        Selection result.
+        Stress-period selection result to convert.
 
     Returns
     -------
     dict[RiskClass, NMRFStressPeriodSpec]
-        Result of the operation.
+        NMRF valuation stress-period specs keyed by risk class.
     """
     if not isinstance(selection_result, StressPeriodSelectionResult):
         raise TypeError("selection_result must be a StressPeriodSelectionResult")
@@ -287,12 +313,13 @@ def validate_selected_stress_periods(
     required_risk_classes: Sequence[RiskClass],
 ) -> None:
     """Validate that all required risk classes have selected stress periods.
+
     Parameters
     ----------
     selection_result : StressPeriodSelectionResult
-        Selection result.
+        Stress-period selection result to inspect.
     required_risk_classes : Sequence[RiskClass]
-        Required risk classes.
+        Risk classes required by downstream SES/NMRF processing.
     """
     if not isinstance(selection_result, StressPeriodSelectionResult):
         raise TypeError("selection_result must be a StressPeriodSelectionResult")
@@ -309,6 +336,26 @@ def validate_selected_stress_periods(
         labels = ", ".join(risk_class.value for risk_class in missing)
         raise StressPeriodCalibrationError(
             f"missing selected stress period for risk classes: {labels}"
+        )
+
+
+def _warn_on_reduced_risk_factor_sets(
+    histories: Sequence[HistoricalStressSeries],
+) -> None:
+    reduced = sorted(
+        {
+            series.risk_class.value
+            for series in histories
+            if isinstance(series, HistoricalStressSeries) and series.risk_factor_set == "REDUCED"
+        }
+    )
+    if reduced:
+        warnings.warn(
+            "Stress-period identification received reduced risk-factor-set histories "
+            f"for {', '.join(reduced)}. Basel MAR33.6 / NPR section __.214 requires "
+            "full-set identification unless supervisory approval is documented.",
+            UserWarning,
+            stacklevel=3,
         )
 
 

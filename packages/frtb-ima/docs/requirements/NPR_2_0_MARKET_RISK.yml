@@ -162,7 +162,7 @@ requirements:
       - tests/test_calendar.py
       - tests/test_stress_periods.py
       - tests/test_nmrf_stress_spec.py
-    notes: "Vectorized common stress-window selection by risk class is implemented from supplied historical loss/severity vectors, including NMRFStressPeriodSpec bridging. Results distinguish observation-count proxy windows from caller-supplied exact 12-month business-calendar windows. Raw market-data sourcing, source-completeness proof, formal calibration approval, and trade pricing remain upstream."
+    notes: "Vectorized common stress-window selection by risk class is implemented from supplied historical loss/severity vectors, including NMRFStressPeriodSpec bridging. HistoricalStressSeries can enforce the Basel MAR33.5 / NPR §__.214 2007 observation-horizon floor at the data boundary, and serialized selection results expose per-risk-class series start dates. Expected-shortfall window scoring is fully vectorized with NumPy tail partitioning. Results warn when callers use the observation-count proxy instead of caller-supplied exact 12-month business-calendar windows, and full/reduced risk-factor-set provenance is serialized for MAR33.6 review. Raw market-data sourcing, source-completeness proof, formal calibration approval, and trade pricing remain upstream."
 
   - id: NPR-MR-NMRF-001
     title: "Type A and Type B SES aggregation"

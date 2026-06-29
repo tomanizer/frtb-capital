@@ -14,6 +14,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
+from typing import Literal, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -29,6 +30,11 @@ from frtb_ima.validation.observation_windows import (
 )
 
 FloatVector = Sequence[float] | npt.NDArray[np.float64]
+StressRiskFactorSet = Literal["FULL", "REDUCED"]
+
+# Basel MAR33.5 / U.S. NPR 2.0 proposed section __.214 require the stressed ES
+# observation horizon to include the financial stress period starting 2007-01-01.
+REGULATORY_OBSERVATION_HORIZON_START = date(2007, 1, 1)
 
 
 class StressPeriodCalibrationError(ValueError):
@@ -64,6 +70,8 @@ class HistoricalStressSeries:
     source: str
     scenario_ids: Sequence[str] = ()
     name: str = ""
+    risk_factor_set: StressRiskFactorSet = "FULL"
+    minimum_start_date: date | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.risk_class, RiskClass):
@@ -74,6 +82,15 @@ class HistoricalStressSeries:
             raise ValueError("dates length must match losses length")
         if not self.source:
             raise ValueError("source must be non-empty")
+        risk_factor_set = _validated_risk_factor_set(self.risk_factor_set)
+        minimum_start_date = _validated_minimum_start_date(self.minimum_start_date)
+        if minimum_start_date is not None and dates[0] > minimum_start_date:
+            raise StressPeriodCalibrationError(
+                f"HistoricalStressSeries for {self.risk_class.value} starts on "
+                f"{dates[0].isoformat()}, which is after the required minimum "
+                f"observation horizon of {minimum_start_date.isoformat()} "
+                "(Basel MAR33.5 / NPR section __.214)"
+            )
         scenario_ids = _validated_scenario_ids(
             self.scenario_ids,
             expected_length=losses.size,
@@ -83,51 +100,62 @@ class HistoricalStressSeries:
         object.__setattr__(self, "losses", losses)
         object.__setattr__(self, "dates", dates)
         object.__setattr__(self, "scenario_ids", scenario_ids)
+        object.__setattr__(self, "risk_factor_set", risk_factor_set)
+        object.__setattr__(self, "minimum_start_date", minimum_start_date)
 
     @property
     def observation_count(self) -> int:
         """Number of aligned historical observations.
+
         Returns
         -------
         int
-            Result of the operation.
+            Count of loss observations aligned to this series' date vector.
         """
         return len(self.dates)
 
     @property
     def start_date(self) -> date:
         """First observation date.
+
         Returns
         -------
         date
-            Result of the operation.
+            Earliest date included in the supplied historical loss series.
         """
         return self.dates[0]
 
     @property
     def end_date(self) -> date:
         """Last observation date.
+
         Returns
         -------
         date
-            Result of the operation.
+            Latest date included in the supplied historical loss series.
         """
         return self.dates[-1]
 
     def as_dict(self) -> dict[str, object]:
         """Return an audit summary without serialising the loss vector.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Audit summary with risk class, source, provenance, observation
+            count, and date range.
         """
         return {
             "risk_class": self.risk_class.value,
             "name": self.name,
             "source": self.source,
+            "risk_factor_set": self.risk_factor_set,
             "observation_count": self.observation_count,
             "start_date": self.start_date.isoformat(),
             "end_date": self.end_date.isoformat(),
+            "minimum_start_date": (
+                None if self.minimum_start_date is None else self.minimum_start_date.isoformat()
+            ),
         }
 
 
@@ -155,6 +183,7 @@ class StressPeriodCandidate:
     start_scenario_id: str
     end_scenario_id: str
     notes: str = ""
+    risk_factor_set: StressRiskFactorSet = "FULL"
 
     def __post_init__(self) -> None:
         if not isinstance(self.risk_class, RiskClass):
@@ -182,14 +211,18 @@ class StressPeriodCandidate:
             raise ValueError("source must be non-empty")
         if not self.start_scenario_id or not self.end_scenario_id:
             raise ValueError("start_scenario_id and end_scenario_id must be non-empty")
+        risk_factor_set = _validated_risk_factor_set(self.risk_factor_set)
         object.__setattr__(self, "es_estimator", es_estimator)
+        object.__setattr__(self, "risk_factor_set", risk_factor_set)
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Candidate stress-window attributes, severity score, scenario ids,
+            and risk-factor-set provenance.
         """
         return {
             "risk_class": self.risk_class.value,
@@ -206,15 +239,18 @@ class StressPeriodCandidate:
             "source": self.source,
             "start_scenario_id": self.start_scenario_id,
             "end_scenario_id": self.end_scenario_id,
+            "risk_factor_set": self.risk_factor_set,
             "notes": self.notes,
         }
 
     def to_nmrf_stress_period_spec(self) -> NMRFStressPeriodSpec:
         """Convert this selected window into an NMRF valuation stress-period spec.
+
         Returns
         -------
         NMRFStressPeriodSpec
-            Result of the operation.
+            Stress-period spec preserving the selected period id, source, and
+            start/end dates for downstream NMRF valuation requests.
         """
         return NMRFStressPeriodSpec(
             stress_period_id=self.period_id,
@@ -287,6 +323,20 @@ def _as_strictly_increasing_dates(values: Sequence[date]) -> tuple[date, ...]:
     return dates
 
 
+def _validated_risk_factor_set(value: str) -> StressRiskFactorSet:
+    if not isinstance(value, str):
+        raise TypeError("risk_factor_set must be 'FULL' or 'REDUCED'")
+    if value not in {"FULL", "REDUCED"}:
+        raise ValueError("risk_factor_set must be 'FULL' or 'REDUCED'")
+    return cast(StressRiskFactorSet, value)
+
+
+def _validated_minimum_start_date(value: date | None) -> date | None:
+    if value is not None and not isinstance(value, date):
+        raise TypeError("minimum_start_date must be a datetime.date or None")
+    return value
+
+
 def _validated_scenario_ids(
     values: Sequence[str],
     *,
@@ -311,10 +361,12 @@ def _validated_scenario_ids(
 
 
 __all__ = (
+    "REGULATORY_OBSERVATION_HORIZON_START",
     "FloatVector",
     "HistoricalStressSeries",
     "StressPeriodCalibrationError",
     "StressPeriodCandidate",
     "StressPeriodTieBreak",
+    "StressRiskFactorSet",
     "StressSeverityMetric",
 )
