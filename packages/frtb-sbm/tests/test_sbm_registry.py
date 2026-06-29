@@ -67,6 +67,7 @@ def test_generic_batch_capital_path_matches_row_api() -> None:
 
     assert input_hash_for_batch(batch) == row_result.input_hash
     assert batch_result.input_hash == row_result.input_hash
+    assert batch_result.input_hash_algorithm == "json-row-v1"
     assert batch_result.total_capital == pytest.approx(row_result.total_capital)
     assert batch_result.risk_classes[0].risk_class is SbmRiskClass.FX
     assert batch_result.risk_classes[0].risk_measure is SbmRiskMeasure.DELTA

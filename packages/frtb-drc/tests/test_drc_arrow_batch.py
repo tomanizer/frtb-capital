@@ -162,6 +162,8 @@ def test_drc_arrow_batch_batch_matches_nonsec_v2_row_capital() -> None:
     assert calculation.result.gross_jtds == ()
     assert calculation.result.maturity_scaled_jtds == ()
     assert calculation.result.input_hash == batch.input_hash
+    assert batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert calculation.result.input_hash_algorithm == "arrow-columnar-v2"
     assert calculation.result.profile_hash == row_result.profile_hash
     assert calculation.result.input_count == row_result.input_count
     assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
@@ -404,7 +406,10 @@ def test_drc_arrow_batch_handles_chunked_dictionary_text_columns() -> None:
 
     assert table.column("risk_class").num_chunks == 2
     assert pa.types.is_dictionary(table.column("risk_class").type)
-    assert arrow_batch.input_hash == row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
     np.testing.assert_array_equal(
         arrow_batch.position_ids,
         [position.position_id for position in fixture.positions],

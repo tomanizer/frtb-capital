@@ -264,7 +264,19 @@ def test_arrow_batch_batch_matches_row_batch_and_preserves_handoff_metadata() ->
 
     arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA, handoff)
 
-    assert arrow_batch.input_hash == row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert (
+        build_sbm_path_from_arrow(
+            SbmRiskClass.GIRR,
+            SbmRiskMeasure.DELTA,
+            handoff,
+        ).input_hash
+        == arrow_batch.input_hash
+    )
     assert arrow_batch.source_hash == source_hash
     assert arrow_batch.handoff_hash is not None
     assert arrow_batch.diagnostics == (diagnostic.as_dict(),)
@@ -323,7 +335,10 @@ def test_arrow_batch_handles_chunked_dictionary_text_columns() -> None:
     )
 
     assert table.column("risk_class").num_chunks == 2
-    assert arrow_batch.input_hash == row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
     np.testing.assert_array_equal(arrow_batch.buckets, row_batch.buckets)
     np.testing.assert_array_equal(arrow_batch.risk_factors, row_batch.risk_factors)
 
@@ -376,8 +391,14 @@ def test_row_and_arrow_calculation_paths_produce_same_girr_delta_capital() -> No
 
     assert batch_result.total_capital == pytest.approx(row_result.total_capital)
     assert handoff_result.total_capital == pytest.approx(row_result.total_capital)
-    assert batch_result.input_hash == row_result.input_hash
-    assert handoff_result.input_hash == row_result.input_hash
+    assert len(batch_result.input_hash) == 64
+    int(batch_result.input_hash, 16)
+    assert batch_result.input_hash_algorithm == "arrow-columnar-v2"
+    assert batch_result.input_hash != row_result.input_hash
+    assert len(handoff_result.input_hash) == 64
+    int(handoff_result.input_hash, 16)
+    assert handoff_result.input_hash_algorithm == "arrow-columnar-v2"
+    assert handoff_result.input_hash != row_result.input_hash
     assert (
         batch_result.risk_classes[0].selected_scenario
         is row_result.risk_classes[0].selected_scenario

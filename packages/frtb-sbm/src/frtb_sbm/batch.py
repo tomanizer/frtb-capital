@@ -17,6 +17,12 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_sbm.assembly.hashes import (
+    INPUT_HASH_ALGORITHM_JSON_ROW_V1,
+)
+from frtb_sbm.assembly.hashes import (
+    input_hash_algorithm_for_sbm_batches as _input_hash_algorithm_for_sbm_batches,
+)
+from frtb_sbm.assembly.hashes import (
     input_hash_for_sbm_batch as _input_hash_for_sbm_batch,
 )
 from frtb_sbm.assembly.hashes import (
@@ -62,6 +68,7 @@ class SbmSensitivityBatch:
     lineage_source_systems: ObjectArray
     lineage_source_files: ObjectArray
     input_hash: str
+    input_hash_algorithm: str = INPUT_HASH_ALGORITHM_JSON_ROW_V1
     source_hash: str | None = None
     handoff_hash: str | None = None
     diagnostics: tuple[Mapping[str, object], ...] = ()
@@ -181,7 +188,13 @@ def build_sbm_batch_from_sensitivities(
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citations,
         copy_arrays=True,
-        **optional_arrays,
+        position_ids=optional_arrays["position_ids"],
+        qualifiers=optional_arrays["qualifiers"],
+        option_tenors=optional_arrays["option_tenors"],
+        liquidity_horizon_days=optional_arrays["liquidity_horizon_days"],
+        maturities=optional_arrays["maturities"],
+        up_shock_amounts=optional_arrays["up_shock_amounts"],
+        down_shock_amounts=optional_arrays["down_shock_amounts"],
     )
     return replace(batch, accepted_row_dataclasses_materialized=len(validated))
 
@@ -200,6 +213,24 @@ def input_hash_for_batch(batch: SbmSensitivityBatch) -> str:
     """
 
     return _input_hash_for_sbm_batch(batch)
+
+
+def input_hash_algorithm_for_sbm_batches(batches: object) -> str:
+    """Return the deterministic input hash algorithm for batch portfolios.
+
+    Parameters
+    ----------
+    batches : object
+        Iterable of ``SbmSensitivityBatch`` instances.
+
+    Returns
+    -------
+    str
+        Result-level input hash algorithm label for the batch collection.
+    """
+
+    validated = coerce_sbm_batch_sequence(batches)
+    return _input_hash_algorithm_for_sbm_batches(validated)
 
 
 def input_hash_for_sbm_batches(batches: object) -> str:
@@ -718,6 +749,7 @@ __all__ = [
     "build_sbm_batch_from_sensitivities",
     "coerce_sbm_batch_sequence",
     "concatenate_sbm_batches",
+    "input_hash_algorithm_for_sbm_batches",
     "input_hash_for_batch",
     "input_hash_for_sbm_batches",
     "sorted_commodity_delta_batch_indices",
