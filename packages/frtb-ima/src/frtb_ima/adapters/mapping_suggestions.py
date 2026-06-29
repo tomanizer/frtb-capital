@@ -128,13 +128,25 @@ class MappingTableSuggestion:
 
     @property
     def suggested_field_count(self) -> int:
-        """Return the number of target fields with at least one candidate."""
+        """Return the number of target fields with at least one candidate.
+
+        Returns
+        -------
+        int
+            Count of target fields with one or more ranked candidates.
+        """
 
         return sum(1 for field in self.fields if field.candidates)
 
     @property
     def missing_required_fields(self) -> tuple[str, ...]:
-        """Return required target fields that have no candidate suggestion."""
+        """Return required target fields that have no candidate suggestion.
+
+        Returns
+        -------
+        tuple[str, ...]
+            Required target field names with no ranked source-column candidate.
+        """
 
         return tuple(
             field.target_field for field in self.fields if field.required and not field.candidates
@@ -170,13 +182,25 @@ class ImaMappingSuggestionReport:
 
     @property
     def missing_required_field_count(self) -> int:
-        """Return the aggregate count of required fields without candidates."""
+        """Return the aggregate count of required fields without candidates.
+
+        Returns
+        -------
+        int
+            Total required-field count across tables with no ranked candidate.
+        """
 
         return sum(len(table.missing_required_fields) for table in self.tables)
 
     @property
     def source_hashes(self) -> Mapping[str, str]:
-        """Return source hashes keyed by canonical table name."""
+        """Return source hashes keyed by canonical table name.
+
+        Returns
+        -------
+        Mapping[str, str]
+            Source-profile hashes keyed by canonical table name.
+        """
 
         return MappingProxyType({table.table_name: table.source_hash for table in self.tables})
 
