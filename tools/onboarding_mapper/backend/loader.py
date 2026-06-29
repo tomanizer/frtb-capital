@@ -94,7 +94,11 @@ def column_preview(table: pa.Table, column_name: str, *, sample_limit: int = 5) 
     }
 
 
-def table_preview(table: pa.Table, *, row_limit: int = 50) -> tuple[list[dict[str, Any]], list[str]]:
+def table_preview(
+    table: pa.Table,
+    *,
+    row_limit: int = 50,
+) -> tuple[list[dict[str, Any]], list[str]]:
     sliced = table.slice(0, min(row_limit, table.num_rows))
     columns = list(sliced.column_names)
     rows: list[dict[str, Any]] = []

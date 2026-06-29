@@ -10,12 +10,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tools.onboarding_mapper.backend.app import app
+from tools.onboarding_mapper.backend.catalog import resolve_catalog_entry
 from tools.onboarding_mapper.backend.mapping import (
     build_mapping_document,
     serialize_mapping_document,
     suggest_column_mapping,
 )
-from tools.onboarding_mapper.backend.catalog import resolve_catalog_entry
 
 
 @pytest.fixture
@@ -92,7 +92,7 @@ def test_upload_csv_and_export_mapping(client: TestClient) -> None:
 
 
 def test_upload_csv_validate_mapping(client: TestClient) -> None:
-    """Exercises the /api/mapping/validate endpoint (was broken: validate_mapped_table had no return)."""
+    """Exercise the /api/mapping/validate endpoint."""
     table = pa.table(
         {
             "positionId": ["pos-1"],

@@ -7,7 +7,12 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 import pyarrow as pa  # type: ignore[import-untyped]
-from frtb_common import ColumnSpec, NormalizedArrowTable, normalized_arrow_table_hash, source_content_hash
+from frtb_common import (
+    ColumnSpec,
+    NormalizedArrowTable,
+    normalized_arrow_table_hash,
+    source_content_hash,
+)
 
 from tools.onboarding_mapper.backend.catalog import TableCatalogEntry
 
@@ -92,7 +97,7 @@ def validate_mapped_table(
         try:
             _build_batch_from_normalized(entry, normalized)
             batch_built = True
-        except _BatchBuildSkipped:
+        except _BatchBuildSkippedError:
             batch_built = False
         except Exception as exc:
             diagnostics.append(
@@ -107,11 +112,14 @@ def validate_mapped_table(
     return normalized, batch_built, diagnostics
 
 
-class _BatchBuildSkipped(Exception):
+class _BatchBuildSkippedError(Exception):
     """Raised when no batch builder is registered for a catalog entry."""
 
 
-def _build_batch_from_normalized(entry: TableCatalogEntry, normalized: NormalizedArrowTable) -> None:
+def _build_batch_from_normalized(
+    entry: TableCatalogEntry,
+    normalized: NormalizedArrowTable,
+) -> None:
     from scripts.client_input_table_registry import resolve_input_table_entry
 
     try:
@@ -137,13 +145,13 @@ def _build_batch_from_normalized(entry: TableCatalogEntry, normalized: Normalize
             }
             builder = builders.get(entry.table_id)
             if builder is None:
-                raise _BatchBuildSkipped
+                raise _BatchBuildSkippedError
             builder(normalized)
             return
-        raise _BatchBuildSkipped
+        raise _BatchBuildSkippedError
 
     if registry_entry.build_batch is None:
-        raise _BatchBuildSkipped
+        raise _BatchBuildSkippedError
     registry_entry.build_batch(normalized)
 
 
