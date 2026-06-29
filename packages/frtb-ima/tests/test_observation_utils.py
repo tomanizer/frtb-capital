@@ -67,6 +67,12 @@ def test_validate_observation_dates_returns_tuple() -> None:
     assert validate_observation_dates(dates, 2, length_label="APL/HPL") == tuple(dates)
 
 
+def test_validate_observation_dates_allows_duplicate_dates() -> None:
+    dates = [date(2026, 1, 1), date(2026, 1, 1), date(2026, 1, 2)]
+
+    assert validate_observation_dates(dates, 3, length_label="APL/HPL") == tuple(dates)
+
+
 def test_validate_observation_dates_rejects_length_mismatch() -> None:
     with pytest.raises(ValueError, match="observation_dates length must match APL/HPL"):
         validate_observation_dates([date(2026, 1, 1)], 2, length_label="APL/HPL")
@@ -77,6 +83,24 @@ def test_validate_observation_dates_rejects_datetime_values() -> None:
         validate_observation_dates(
             [datetime(2026, 1, 1, 12, 30)],
             1,
+            length_label="APL/HPL",
+        )
+
+
+def test_validate_observation_dates_rejects_single_out_of_order_pair() -> None:
+    with pytest.raises(ValueError, match=r"index 2 \(2026-01-02\).*index 1 \(2026-01-03\)"):
+        validate_observation_dates(
+            [date(2026, 1, 1), date(2026, 1, 3), date(2026, 1, 2)],
+            3,
+            length_label="APL/HPL",
+        )
+
+
+def test_validate_observation_dates_rejects_reverse_sorted_sequence() -> None:
+    with pytest.raises(ValueError, match=r"index 1 \(2026-01-02\).*index 0 \(2026-01-03\)"):
+        validate_observation_dates(
+            [date(2026, 1, 3), date(2026, 1, 2), date(2026, 1, 1)],
+            3,
             length_label="APL/HPL",
         )
 

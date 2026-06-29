@@ -106,6 +106,10 @@ def validate_observation_dates(
     length_label: str,
 ) -> tuple[date, ...] | None:
     """Validate optional observation dates for aligned PLA/backtesting vectors.
+
+    Dates must be in non-decreasing order so positional window selection
+    corresponds to the chronologically most recent observations.
+
     Parameters
     ----------
     observation_dates : Sequence[date] | None
@@ -118,7 +122,7 @@ def validate_observation_dates(
     Returns
     -------
     tuple[date, ...] | None
-        Result of the operation.
+        Validated observation dates, or ``None`` when dates were not supplied.
     """
 
     if observation_dates is None:
@@ -128,6 +132,13 @@ def validate_observation_dates(
         raise ValueError(f"observation_dates length must match {length_label}")
     if not all(type(item) is date for item in dates):
         raise TypeError("observation_dates must contain datetime.date values")
+    for index in range(1, len(dates)):
+        if dates[index] < dates[index - 1]:
+            raise ValueError(
+                "observation_dates must be in non-decreasing order; "
+                f"date at index {index} ({dates[index]}) precedes "
+                f"index {index - 1} ({dates[index - 1]})"
+            )
     return dates
 
 

@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import logging
 import math
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -68,10 +69,12 @@ class PlaResult:
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dictionary with keys ``ks_statistic``, ``zone``,
+            ``n_hpl``, and ``n_rtpl``.
         """
         return {
             "ks_statistic": self.ks_statistic,
@@ -92,10 +95,12 @@ class SpearmanPlaResult:
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dictionary with keys ``spearman_correlation``,
+            ``zone``, ``n_hpl``, and ``n_rtpl``.
         """
         return {
             "spearman_correlation": self.spearman_correlation,
@@ -124,10 +129,12 @@ class PlaWindowDiagnostics:
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and notebooks.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dictionary with window size, index bounds, date range,
+            and calendar metadata.
         """
         return {
             "available_observations": self.available_observations,
@@ -160,7 +167,7 @@ class PlaPolicyAssessmentResult:
         Returns
         -------
         float
-            Result of the operation.
+            KS statistic from the policy PLA assessment.
         """
         return self.pla.ks_statistic
 
@@ -170,7 +177,8 @@ class PlaPolicyAssessmentResult:
         Returns
         -------
         str
-            Result of the operation.
+            Authoritative policy zone, using the worse KS/Spearman zone when
+            both metrics are required.
         """
         if self.spearman is None:
             return self.pla.zone
@@ -178,12 +186,15 @@ class PlaPolicyAssessmentResult:
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and notebooks.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dictionary including the authoritative policy zone,
+            metric details, and window diagnostics.
         """
         return {
+            "zone": self.zone,
             "pla": self.pla.as_dict(),
             "spearman": self.spearman.as_dict() if self.spearman is not None else None,
             "diagnostics": self.diagnostics.as_dict(),
@@ -229,26 +240,17 @@ def ks_statistic(hpl: FloatVector, rtpl: FloatVector) -> float:
 
     KS = max|F_HPL(x) - F_RTPL(x)| over all x.
 
-    Args:
-        hpl:  Hypothetical P&L vector (sign convention: positive = profit).
-        rtpl: Risk-Theoretical P&L vector (same convention).
-
-    Returns:
-        KS statistic in [0, 1].
-
-    Raises:
-        ValueError: if either vector is empty.
     Parameters
     ----------
     hpl : FloatVector
-        Hpl.
+        Hypothetical P&L vector; positive values are profits.
     rtpl : FloatVector
-        Rtpl.
+        Risk-theoretical P&L vector using the same sign convention.
 
     Returns
     -------
     float
-        Result of the operation.
+        KS statistic in [0, 1]; 0 means identical empirical distributions.
     """
     return _ks_statistic_arrays(
         np.sort(_as_finite_1d_array(hpl, "hpl")),
@@ -293,23 +295,17 @@ def _average_ranks(arr: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
 def spearman_correlation(hpl: FloatVector, rtpl: FloatVector) -> float:
     """Compute Spearman rank correlation between HPL and RTPL vectors.
 
-    Args:
-        hpl:  Hypothetical P&L vector (sign convention: positive = profit).
-        rtpl: Risk-Theoretical P&L vector (same convention).
-
-    Returns:
-        Pearson correlation of average ranks in [-1, 1].
     Parameters
     ----------
     hpl : FloatVector
-        Hpl.
+        Hypothetical P&L vector; positive values are profits.
     rtpl : FloatVector
-        Rtpl.
+        Risk-theoretical P&L vector using the same sign convention.
 
     Returns
     -------
     float
-        Result of the operation.
+        Spearman rank correlation in [-1, 1]; 1 means perfectly concordant ranks.
     """
     hpl_arr = _as_finite_1d_array(hpl, "hpl")
     rtpl_arr = _as_finite_1d_array(rtpl, "rtpl")
@@ -337,32 +333,23 @@ def pla_assessment(
 ) -> PlaResult:
     """Run PLA assessment and return the KS statistic with zone classification.
 
-    Args:
-        hpl:              Hypothetical P&L vector.
-        rtpl:             Risk-Theoretical P&L vector.
-        green_threshold:  KS <= this -> GREEN.
-        amber_threshold:  green < KS <= this -> AMBER; above -> RED.
-        zone_labels:      Labels for green, amber, and red zones.
-
-    Returns:
-        PlaResult with ks_statistic, zone, and vector lengths.
     Parameters
     ----------
     hpl : FloatVector
-        Hpl.
+        Hypothetical P&L vector.
     rtpl : FloatVector
-        Rtpl.
+        Risk-theoretical P&L vector.
     green_threshold : float
-        Green threshold.
+        KS values at or below this threshold are green.
     amber_threshold : float
-        Amber threshold.
+        KS values at or below this threshold but above green are amber.
     zone_labels : tuple[str, str, str], optional
-        Zone labels.
+        Labels for green, amber, and red zones.
 
     Returns
     -------
     PlaResult
-        Result of the operation.
+        ``PlaResult`` with KS statistic, zone classification, and vector lengths.
     """
     green_threshold = _validate_unit_threshold(green_threshold, "green_threshold")
     amber_threshold = _validate_unit_threshold(amber_threshold, "amber_threshold")
@@ -418,7 +405,8 @@ def spearman_pla_assessment(
     Returns
     -------
     SpearmanPlaResult
-        Result of the operation.
+        ``SpearmanPlaResult`` with rank correlation, zone classification, and
+        vector lengths.
     """
     green_threshold = _validate_unit_threshold(green_threshold, "green_threshold")
     amber_threshold = _validate_unit_threshold(amber_threshold, "amber_threshold")
@@ -457,6 +445,16 @@ def _worse_zone(zone1: str, zone2: str, zone_labels: Sequence[str]) -> str:
     return zone1 if severity[zone1] >= severity[zone2] else zone2
 
 
+def _warn_unverified_business_day_window() -> None:
+    warnings.warn(
+        "pla_assessment_for_policy: calendar=None uses an observation count, "
+        "not verified business days (Basel MAR32.40 and proposed NPR 2.0 "
+        "section __.213). Supply a BusinessCalendar for compliance.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
+
 def pla_assessment_for_policy(
     hpl: FloatVector,
     rtpl: FloatVector,
@@ -492,7 +490,7 @@ def pla_assessment_for_policy(
     Returns
     -------
     PlaResult
-        Result of the operation.
+        Compatibility PLA result carrying the authoritative policy zone.
     """
     result = pla_assessment_for_policy_with_diagnostics(
         hpl,
@@ -525,9 +523,14 @@ def pla_assessment_for_policy_with_diagnostics(
 ) -> PlaPolicyAssessmentResult:
     """Run policy PLA and return window diagnostics.
 
-    Policy PLA requires HPL and RTPL to be aligned one-to-one before the most
-    recent policy window is selected. Optional dates provide an auditable window
-    start/end without introducing a full business-calendar dependency.
+    Policy PLA requires HPL and RTPL to be aligned one-to-one before selecting
+    the most recent policy window. Basel MAR32.40 and proposed NPR 2.0
+    section __.213 require the most recent 250 business days; the
+    calendar-backed path verifies that business-day window when both
+    ``observation_dates`` and ``calendar`` are supplied. With ``calendar=None``,
+    the wrapper uses an observation-count window and emits a deprecation warning
+    because the business-day count is not independently verified.
+
     Parameters
     ----------
     hpl : FloatVector
@@ -548,7 +551,7 @@ def pla_assessment_for_policy_with_diagnostics(
     Returns
     -------
     PlaPolicyAssessmentResult
-        Result of the operation.
+        Policy PLA result with metric decomposition and window diagnostics.
     """
     _require_positive_observation_count(policy.pla_window_days, field="pla_window_days")
     _require_positive_observation_count(
@@ -565,6 +568,8 @@ def pla_assessment_for_policy_with_diagnostics(
         len(hpl_arr),
         length_label="HPL/RTPL",
     )
+    if calendar is None:
+        _warn_unverified_business_day_window()
 
     available_observations = len(hpl_arr)
     if available_observations < policy.pla_minimum_history_days:
