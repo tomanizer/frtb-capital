@@ -27,13 +27,16 @@ def _batch_from_arrow_columns(
     diagnostics: Sequence[Mapping[str, object]],
     input_hash: str,
 ) -> RraoPositionBatch:
-    field_values = {
-        **_identity_columns(columns),
-        **_classification_columns(columns, row_count),
-        **_shape_columns(columns, row_count),
-        **_investment_fund_columns(columns, row_count),
-        **_lineage_columns(columns, row_count),
-    }
+    field_values = cast(
+        Any,
+        {
+            **_identity_columns(columns),
+            **_classification_columns(columns, row_count),
+            **_shape_columns(columns, row_count),
+            **_investment_fund_columns(columns, row_count),
+            **_lineage_columns(columns, row_count),
+        },
+    )
     return RraoPositionBatch(
         **field_values,
         input_hash=input_hash,

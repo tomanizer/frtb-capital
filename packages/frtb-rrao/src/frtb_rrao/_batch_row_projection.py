@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
+
 import numpy as np
 
 from frtb_rrao._validation_rules import (
@@ -211,7 +213,7 @@ def _required_row_text(value: object | None, field: str, position: RraoPosition)
 
 def _enum_value(
     value: object,
-    enum_type: type,
+    enum_type: type[StrEnum],
     *,
     field: str,
     position: RraoPosition,
@@ -227,7 +229,7 @@ def _enum_value(
             field=field,
             position_id=_position_id(position),
         )
-    return value.value  # type: ignore[no-any-return]
+    return value.value
 
 
 def _optional_row_int(value: object | None, field: str, position: RraoPosition) -> int | None:
