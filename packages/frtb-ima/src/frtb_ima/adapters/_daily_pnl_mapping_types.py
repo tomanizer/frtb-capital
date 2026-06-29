@@ -16,6 +16,9 @@ from frtb_ima.adapters._mapping_hash import stable_mapping_hash
 from frtb_ima.audit_inputs import compute_inputs_hash
 
 if TYPE_CHECKING:
+    from frtb_ima.adapters._risk_factor_master_mapping_types import (
+        RiskFactorMasterTableMapping,
+    )
     from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
     from frtb_ima.adapters._scenario_pnl_mapping_types import ScenarioPnlTableMapping
 
@@ -108,6 +111,7 @@ class ImaMappingSpec:
     timezone: str
     pnl_positive_means: str
     daily_pnl_vectors: DailyPnlTableMapping | None = None
+    risk_factor_master: RiskFactorMasterTableMapping | None = None
     rfet_observations: RfetObservationTableMapping | None = None
     scenario_pnl_vectors: ScenarioPnlTableMapping | None = None
     risk_factor_aliases: Mapping[str, str] = field(default_factory=dict)
@@ -124,6 +128,7 @@ class ImaMappingSpec:
                 raise MappingSpecError(f"{field_name} must be non-empty")
         if (
             self.daily_pnl_vectors is None
+            and self.risk_factor_master is None
             and self.rfet_observations is None
             and self.scenario_pnl_vectors is None
         ):
@@ -350,6 +355,9 @@ def _mapping_spec_payload(spec: ImaMappingSpec) -> dict[str, object]:
         "pnl_positive_means": spec.pnl_positive_means,
         "daily_pnl_vectors": (
             None if spec.daily_pnl_vectors is None else spec.daily_pnl_vectors.source
+        ),
+        "risk_factor_master": (
+            None if spec.risk_factor_master is None else spec.risk_factor_master.source
         ),
         "rfet_observations": (
             None if spec.rfet_observations is None else spec.rfet_observations.source
