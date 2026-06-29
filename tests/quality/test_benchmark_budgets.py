@@ -327,8 +327,10 @@ def _write_suite_artifacts(artifact_dir: Path) -> None:
                 "tracemalloc_peak_bytes": 100,
             },
             "result": {
+                "ba_arrow_input_hash_algorithm": "arrow-columnar-v2",
                 "ba_arrow_payload_hash": "ba",
                 "ba_row_payload_hash": "ba",
+                "sa_arrow_input_hash_algorithm": "arrow-columnar-v2",
                 "sa_arrow_payload_hash": "sa",
                 "sa_row_payload_hash": "sa",
             },

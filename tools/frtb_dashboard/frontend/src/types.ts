@@ -67,6 +67,8 @@ export type SaComponentView = {
   component: string;
   total_capital: number;
   profile_id: string;
+  input_hash?: string | null;
+  line_count?: number | null;
   breakdown: Record<string, unknown>;
   top_attribution: AttributionRow[];
 };
