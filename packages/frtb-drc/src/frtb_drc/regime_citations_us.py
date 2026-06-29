@@ -14,6 +14,13 @@ US_NPR_2_0_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
         note="Default risk capital requirement scope and aggregation.",
     ),
+    "US_NPR_210_A_1_II": DrcCitation(
+        citation_id="US_NPR_210_A_1_II",
+        source_id="US_NPR_2_0_91_FR_14952",
+        paragraph="proposed section __.210(a)(1)(ii)",
+        url="https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959",
+        note="Non-securitisation long JTD is capped by the market value of the position.",
+    ),
     "US_NPR_207_A_8": DrcCitation(
         citation_id="US_NPR_207_A_8",
         source_id="US_NPR_2_0_91_FR_14952",

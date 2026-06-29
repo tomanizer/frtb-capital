@@ -143,6 +143,43 @@ def test_drc_batch_supports_eu_crr3_nonsec_profile() -> None:
     validate_reconciliation(calculation.result)
 
 
+def test_drc_batch_caps_nonsec_explicit_pnl_at_market_value() -> None:
+    batch = build_drc_nonsec_batch_from_columns(
+        position_ids=["capped-long"],
+        source_row_ids=["row-capped-long"],
+        desk_ids=["desk-a"],
+        legal_entities=["bank-na"],
+        risk_classes=["NON_SECURITISATION"],
+        instrument_types=["BOND"],
+        default_directions=["LONG"],
+        issuer_ids=["issuer-a"],
+        bucket_keys=["CORPORATE"],
+        seniorities=["SENIOR_DEBT"],
+        credit_qualities=["INVESTMENT_GRADE"],
+        notionals=[100.0],
+        market_values=[110.0],
+        cumulative_pnls=[50.0],
+        maturity_years=[1.0],
+        currencies=["USD"],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["nonsec-cap.csv"],
+        citation_ids=[("US_NPR_210_SCOPE",)],
+    )
+    context = DrcCalculationContext(
+        run_id="run-nonsec-cap-batch",
+        calculation_date=date(2026, 5, 29),
+        base_currency="USD",
+        profile_id="US_NPR_2_0",
+    )
+
+    calculation = calculate_drc_capital_from_batch(batch, context=context)
+
+    assert calculation.gross_jtd[0] == pytest.approx(110.0)
+    assert calculation.result.total_drc == pytest.approx(4.51)
+    assert "US_NPR_210_A_1_II" in calculation.result.citations
+    validate_reconciliation(calculation.result)
+
+
 def test_drc_arrow_batch_batch_matches_nonsec_v2_row_capital() -> None:
     fixture = load_drc_nonsec_v2_fixture()
     row_result = calculate_drc_capital(fixture.positions, context=fixture.context)
@@ -201,6 +238,85 @@ def test_drc_arrow_batch_batch_matches_securitisation_non_ctp_row_capital() -> N
         row_result.categories[0].bucket_results
     )
     assert "US_NPR_210_C_3_III" in calculation.result.citations
+
+
+def test_drc_securitisation_batch_short_maturity_is_unscaled() -> None:
+    batch = build_drc_securitisation_non_ctp_batch_from_columns(
+        position_ids=["short-maturity-sec"],
+        source_row_ids=["row-short-maturity-sec"],
+        desk_ids=["sec-desk"],
+        legal_entities=["bank-na"],
+        risk_classes=["SECURITISATION_NON_CTP"],
+        instrument_types=["SECURITISATION_TRANCHE"],
+        default_directions=["LONG"],
+        issuer_ids=["pool-a"],
+        tranche_ids=["mezz"],
+        index_series_ids=[None],
+        bucket_keys=["SEC_CLO_NORTH_AMERICA"],
+        notionals=[125.0],
+        market_values=[125.0],
+        cumulative_pnls=[None],
+        maturity_years=[0.5],
+        currencies=["USD"],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["sec-batch.csv"],
+        citation_ids=[("US_NPR_210_C_1",)],
+    )
+    context = DrcCalculationContext(
+        run_id="run-sec-maturity-batch",
+        calculation_date=date(2026, 5, 29),
+        base_currency="USD",
+        profile_id="US_NPR_2_0",
+        securitisation_non_ctp_risk_weights={"short-maturity-sec": 0.2},
+    )
+
+    calculation = calculate_drc_capital_from_batch(batch, context=context)
+
+    assert calculation.maturity_weights[0] == pytest.approx(1.0)
+    assert calculation.scaled_jtd[0] == pytest.approx(125.0)
+    assert calculation.result.total_drc == pytest.approx(25.0)
+    validate_reconciliation(calculation.result)
+
+
+def test_drc_securitisation_batch_zero_net_group_keeps_audit_record() -> None:
+    batch = build_drc_securitisation_non_ctp_batch_from_columns(
+        position_ids=["zero-long", "zero-short"],
+        source_row_ids=["row-zero-long", "row-zero-short"],
+        desk_ids=["sec-desk", "sec-desk"],
+        legal_entities=["bank-na", "bank-na"],
+        risk_classes=["SECURITISATION_NON_CTP", "SECURITISATION_NON_CTP"],
+        instrument_types=["SECURITISATION_TRANCHE", "SECURITISATION_TRANCHE"],
+        default_directions=["LONG", "SHORT"],
+        issuer_ids=["pool-a", "pool-a"],
+        tranche_ids=["mezz", "mezz"],
+        index_series_ids=[None, None],
+        bucket_keys=["SEC_CLO_NORTH_AMERICA", "SEC_CLO_NORTH_AMERICA"],
+        notionals=[100.0, 100.0],
+        market_values=[100.0, 100.0],
+        cumulative_pnls=[None, None],
+        maturity_years=[1.0, 1.0],
+        currencies=["USD", "USD"],
+        lineage_source_systems=["synthetic", "synthetic"],
+        lineage_source_files=["sec-batch.csv", "sec-batch.csv"],
+        citation_ids=[("US_NPR_210_C_1",), ("US_NPR_210_C_1",)],
+    )
+    context = DrcCalculationContext(
+        run_id="run-sec-zero-batch",
+        calculation_date=date(2026, 5, 29),
+        base_currency="USD",
+        profile_id="US_NPR_2_0",
+        securitisation_non_ctp_risk_weights={"zero-long": 0.2, "zero-short": 0.2},
+    )
+
+    calculation = calculate_drc_capital_from_batch(batch, context=context)
+
+    assert len(calculation.result.net_jtds) == 1
+    assert calculation.result.net_jtds[0].net_amount == 0.0
+    assert (
+        "fully offset to zero net JTD" in calculation.result.net_jtds[0].branch_metadata[0].reason
+    )
+    assert calculation.result.total_drc == 0.0
+    validate_reconciliation(calculation.result)
 
 
 def test_drc_arrow_batch_matches_basel_securitisation_non_ctp_row_capital() -> None:
@@ -284,6 +400,44 @@ def test_drc_arrow_batch_batch_matches_ctp_row_capital() -> None:
         row_result.categories[0].bucket_results
     )
     assert "US_NPR_210_D_3_IV_D" in calculation.result.citations
+
+
+def test_drc_ctp_batch_short_maturity_is_unscaled() -> None:
+    batch = build_drc_ctp_batch_from_columns(
+        position_ids=["short-maturity-ctp"],
+        source_row_ids=["row-short-maturity-ctp"],
+        desk_ids=["ctp-desk"],
+        legal_entities=["bank-na"],
+        risk_classes=["CORRELATION_TRADING_PORTFOLIO"],
+        instrument_types=["INDEX_TRANCHE"],
+        default_directions=["LONG"],
+        issuer_ids=[None],
+        tranche_ids=["mezz"],
+        index_series_ids=["CDX.NA.IG.S18"],
+        bucket_keys=["CDX_NA_IG"],
+        notionals=[100.0],
+        market_values=[100.0],
+        cumulative_pnls=[None],
+        maturity_years=[0.5],
+        currencies=["USD"],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["ctp-batch.csv"],
+        citation_ids=[("US_NPR_210_D_1",)],
+    )
+    context = DrcCalculationContext(
+        run_id="run-ctp-maturity-batch",
+        calculation_date=date(2026, 5, 29),
+        base_currency="USD",
+        profile_id="US_NPR_2_0",
+        ctp_risk_weights={"short-maturity-ctp": 0.2},
+    )
+
+    calculation = calculate_drc_capital_from_batch(batch, context=context)
+
+    assert calculation.maturity_weights[0] == pytest.approx(1.0)
+    assert calculation.scaled_jtd[0] == pytest.approx(100.0)
+    assert calculation.result.total_drc == pytest.approx(20.0)
+    validate_reconciliation(calculation.result)
 
 
 def test_drc_basel_ctp_batch_matches_row_result_for_typed_evidence() -> None:
