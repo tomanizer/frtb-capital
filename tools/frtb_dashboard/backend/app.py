@@ -39,7 +39,6 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -103,7 +102,11 @@ if FRONTEND_DIST.exists():
 
     @app.get("/{full_path:path}")
     def spa_fallback(full_path: str) -> FileResponse:
-        candidate = FRONTEND_DIST / full_path
-        if candidate.exists() and candidate.is_file():
+        candidate = (FRONTEND_DIST / full_path).resolve()
+        if (
+            str(candidate).startswith(str(FRONTEND_DIST))
+            and candidate.exists()
+            and candidate.is_file()
+        ):
             return FileResponse(candidate)
         return FileResponse(FRONTEND_DIST / "index.html")
