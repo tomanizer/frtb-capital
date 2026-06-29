@@ -85,7 +85,7 @@ def get_lgd_rule(
     Returns
     -------
     LgdRule
-        Result of the operation.
+        Cited LGD rule for the selected seniority and defaulted-status treatment.
     """
 
     _ensure_profile_exists(profile_id)
@@ -94,24 +94,33 @@ def get_lgd_rule(
     return _require_lgd_rule(profile_id, seniority, defaulted=False)
 
 
-def get_maturity_policy(profile_id: str = US_NPR_2_0_PROFILE_ID) -> MaturityPolicy:
-    """Return the maturity weighting policy for a profile.
+def get_maturity_policy(
+    profile_id: str = US_NPR_2_0_PROFILE_ID,
+    *,
+    risk_class: DrcRiskClass = DrcRiskClass.NON_SECURITISATION,
+) -> MaturityPolicy:
+    """Return the maturity weighting policy for a profile and risk class.
     Parameters
     ----------
     profile_id : str, optional
         Active DRC rule profile identifier.
+    risk_class : DrcRiskClass, optional
+        Default-risk class for the maturity weighting lookup.
 
     Returns
     -------
     MaturityPolicy
-        Result of the operation.
+        Cited maturity weighting policy for the selected profile and risk class.
     """
 
     _ensure_profile_exists(profile_id)
+    risk_class = DrcRiskClass(risk_class)
     try:
-        return _MATURITY_POLICIES[profile_id]
+        return _MATURITY_POLICIES[(profile_id, risk_class)]
     except KeyError as exc:
-        raise DrcInputError(f"missing maturity policy for profile: {profile_id}") from exc
+        raise DrcInputError(
+            f"missing maturity policy for profile/risk class: {profile_id}/{risk_class.value}"
+        ) from exc
 
 
 def get_bucket_definition(
@@ -130,7 +139,7 @@ def get_bucket_definition(
     Returns
     -------
     BucketDefinition
-        Result of the operation.
+        Cited DRC bucket definition for the selected profile and bucket key.
     """
 
     _ensure_profile_exists(profile_id)
@@ -159,7 +168,7 @@ def get_risk_weight_rule(
     Returns
     -------
     RiskWeightRule
-        Result of the operation.
+        Cited risk-weight rule for the selected bucket and credit quality.
     """
 
     _ensure_profile_exists(profile_id)
@@ -181,7 +190,7 @@ def iter_lgd_rules(profile_id: str = US_NPR_2_0_PROFILE_ID) -> tuple[LgdRule, ..
     Returns
     -------
     tuple[LgdRule, ...]
-        Result of the operation.
+        LGD rules for the selected profile in stable order.
     """
 
     _ensure_profile_exists(profile_id)
@@ -202,7 +211,7 @@ def iter_bucket_definitions(
     Returns
     -------
     tuple[BucketDefinition, ...]
-        Result of the operation.
+        Bucket definitions for the selected profile in stable order.
     """
 
     _ensure_profile_exists(profile_id)
@@ -221,7 +230,7 @@ def iter_risk_weight_rules(profile_id: str = US_NPR_2_0_PROFILE_ID) -> tuple[Ris
     Returns
     -------
     tuple[RiskWeightRule, ...]
-        Result of the operation.
+        Risk-weight rules for the selected profile in stable order.
     """
 
     _ensure_profile_exists(profile_id)
@@ -252,7 +261,7 @@ def profile_reference_data_payload(profile_id: str) -> dict[str, object]:
     Returns
     -------
     dict[str, object]
-        Result of the operation.
+        Deterministic reference-data payload used in rule-profile hashing.
     """
 
     return {
@@ -268,16 +277,21 @@ def profile_reference_data_payload(profile_id: str) -> dict[str, object]:
             if current_profile_id == profile_id
             for rule in (_LGD_RULES[(current_profile_id, seniority, defaulted)],)
         ],
-        "maturity_policy": (
-            None
-            if profile_id not in _MATURITY_POLICIES
-            else {
-                "profile_id": _MATURITY_POLICIES[profile_id].profile_id,
-                "floor_years": _MATURITY_POLICIES[profile_id].floor_years,
-                "full_weight_years": _MATURITY_POLICIES[profile_id].full_weight_years,
-                "citation_id": _MATURITY_POLICIES[profile_id].citation_id,
+        "maturity_policies": [
+            {
+                "risk_class": risk_class.value,
+                "profile_id": rule.profile_id,
+                "floor_years": rule.floor_years,
+                "full_weight_years": rule.full_weight_years,
+                "citation_id": rule.citation_id,
             }
-        ),
+            for current_profile_id, risk_class in sorted(
+                _MATURITY_POLICIES,
+                key=lambda item: (item[0], item[1].value),
+            )
+            if current_profile_id == profile_id
+            for rule in (_MATURITY_POLICIES[(current_profile_id, risk_class)],)
+        ],
         "bucket_definitions": [
             {
                 "bucket_key": bucket_key,
@@ -513,21 +527,66 @@ _LGD_RULES = MappingProxyType(
     }
 )
 
-_MATURITY_POLICIES: Mapping[str, MaturityPolicy] = MappingProxyType(
+_MATURITY_POLICIES: Mapping[tuple[str, DrcRiskClass], MaturityPolicy] = MappingProxyType(
     {
-        US_NPR_2_0_PROFILE_ID: MaturityPolicy(
+        (
+            US_NPR_2_0_PROFILE_ID,
+            DrcRiskClass.NON_SECURITISATION,
+        ): MaturityPolicy(
             profile_id=US_NPR_2_0_PROFILE_ID,
             floor_years=0.25,
             full_weight_years=1.0,
             citation_id="US_NPR_210_A_2_III",
         ),
-        BASEL_MAR22_PROFILE_ID: MaturityPolicy(
+        (
+            US_NPR_2_0_PROFILE_ID,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+        ): MaturityPolicy(
+            profile_id=US_NPR_2_0_PROFILE_ID,
+            floor_years=1.0,
+            full_weight_years=1.0,
+            citation_id="US_NPR_210_C_1",
+        ),
+        (
+            US_NPR_2_0_PROFILE_ID,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        ): MaturityPolicy(
+            profile_id=US_NPR_2_0_PROFILE_ID,
+            floor_years=1.0,
+            full_weight_years=1.0,
+            citation_id="US_NPR_210_D_1",
+        ),
+        (
+            BASEL_MAR22_PROFILE_ID,
+            DrcRiskClass.NON_SECURITISATION,
+        ): MaturityPolicy(
             profile_id=BASEL_MAR22_PROFILE_ID,
             floor_years=0.25,
             full_weight_years=1.0,
             citation_id="BASEL_MAR22_15_18",
         ),
-        EU_CRR3_PROFILE_ID: MaturityPolicy(
+        (
+            BASEL_MAR22_PROFILE_ID,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+        ): MaturityPolicy(
+            profile_id=BASEL_MAR22_PROFILE_ID,
+            floor_years=1.0,
+            full_weight_years=1.0,
+            citation_id="BASEL_MAR22_27",
+        ),
+        (
+            BASEL_MAR22_PROFILE_ID,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        ): MaturityPolicy(
+            profile_id=BASEL_MAR22_PROFILE_ID,
+            floor_years=1.0,
+            full_weight_years=1.0,
+            citation_id="BASEL_MAR22_36",
+        ),
+        (
+            EU_CRR3_PROFILE_ID,
+            DrcRiskClass.NON_SECURITISATION,
+        ): MaturityPolicy(
             profile_id=EU_CRR3_PROFILE_ID,
             floor_years=0.25,
             full_weight_years=1.0,

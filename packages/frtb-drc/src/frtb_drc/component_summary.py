@@ -22,7 +22,7 @@ def to_component_summary(result: DrcCapitalResult) -> ComponentCapitalSummary:
     Returns
     -------
     ComponentCapitalSummary
-        Result of the operation.
+        ComponentCapitalSummary produced by to_component_summary.
     """
 
     return ComponentCapitalSummary(

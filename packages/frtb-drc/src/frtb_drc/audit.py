@@ -30,7 +30,7 @@ def input_snapshot_hash(positions: Iterable[DrcPosition]) -> str:
     Returns
     -------
     str
-        Result of the operation.
+        Stable hash of canonical DRC inputs sorted by position lineage.
     """
 
     payload = [
@@ -53,7 +53,7 @@ def rule_profile_hash(profile_id: str) -> str:
     Returns
     -------
     str
-        Result of the operation.
+        Stable content hash for the selected DRC rule profile.
     """
 
     return get_rule_profile(profile_id).content_hash
@@ -69,7 +69,7 @@ def serialize_result(result: DrcCapitalResult) -> dict[str, object]:
     Returns
     -------
     dict[str, object]
-        Result of the operation.
+        JSON-ready deterministic DRC result snapshot.
     """
 
     return _sort_mapping(jsonable(result.as_dict()))
@@ -85,7 +85,7 @@ def result_json(result: DrcCapitalResult) -> str:
     Returns
     -------
     str
-        Result of the operation.
+        Stable compact JSON representation of the DRC capital result.
     """
 
     return json.dumps(serialize_result(result), sort_keys=True, separators=(",", ":"))
@@ -122,6 +122,7 @@ def validate_reconciliation(result: DrcCapitalResult, *, tolerance: float = 1e-1
     if abs(category_total - result.total_drc) > tolerance:
         raise DrcInputError("total DRC does not reconcile to category capital")
 
+    _validate_gross_jtd_market_value_caps(result, tolerance=tolerance)
     _validate_net_records(result)
 
 
@@ -145,6 +146,27 @@ def _validate_net_records(result: DrcCapitalResult) -> None:
         signed_scaled = record.scaled_long - record.scaled_short
         if abs(signed_amount - signed_scaled) > 1e-12:
             raise DrcInputError(f"net JTD does not reconcile to scaled legs: {record.net_jtd_id}")
+
+
+def _validate_gross_jtd_market_value_caps(
+    result: DrcCapitalResult,
+    *,
+    tolerance: float,
+) -> None:
+    positions_by_id = {position.position_id: position for position in result.input_positions}
+    if not positions_by_id:
+        return
+    for record in result.gross_jtds:
+        if DrcRiskClass(record.risk_class) != DrcRiskClass.NON_SECURITISATION:
+            continue
+        position = positions_by_id.get(record.position_id)
+        if position is None or position.market_value is None:
+            continue
+        market_value_cap = abs(position.market_value)
+        if record.gross_jtd - market_value_cap > tolerance:
+            raise DrcInputError(
+                f"gross JTD exceeds market-value cap for position: {record.position_id}"
+            )
 
 
 def _hash_payload(payload: object) -> str:

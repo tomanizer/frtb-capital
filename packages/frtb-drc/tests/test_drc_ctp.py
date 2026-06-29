@@ -284,6 +284,28 @@ def test_ctp_missing_market_value_fails_closed() -> None:
         )
 
 
+def test_ctp_short_maturity_is_not_nonsec_scaled() -> None:
+    position = _ctp_position(
+        "short-maturity-ctp",
+        DefaultDirection.LONG,
+        market_value=100.0,
+        bucket_key="CDX_NA_IG",
+        index_series_id="CDX.NA.IG.S18",
+        maturity_years=0.5,
+    )
+
+    result = calculate_drc_capital(
+        (position,),
+        context=_context(ctp_risk_weights={position.position_id: 0.2}),
+    )
+
+    assert result.maturity_scaled_jtds[0].maturity_weight == 1.0
+    assert result.maturity_scaled_jtds[0].scaled_jtd == pytest.approx(100.0)
+    assert result.total_drc == pytest.approx(20.0)
+    assert "US_NPR_210_D_1" in result.maturity_scaled_jtds[0].citations
+    validate_reconciliation(result)
+
+
 def test_ctp_missing_risk_weight_fails_closed() -> None:
     position = _ctp_position(
         "missing-weight",

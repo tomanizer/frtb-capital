@@ -109,7 +109,7 @@ def validate_position(
     Returns
     -------
     DrcPosition
-        Result of the operation.
+        Validated position with DRC enum values and required fields checked.
     """
 
     _validate_citation_policy(citation_policy)
@@ -172,7 +172,7 @@ def validate_positions(
     Returns
     -------
     tuple[DrcPosition, ...]
-        Result of the operation.
+        Tuple of validated positions in their original input order.
     """
 
     _validate_citation_policy(citation_policy)
@@ -230,7 +230,7 @@ def chargeable_non_securitisation_bucket_keys(
     Returns
     -------
     tuple[str, ...]
-        Result of the operation.
+        Deterministically ordered string identifiers.
     """
 
     return _chargeable_non_securitisation_bucket_keys(profile_id)
@@ -241,7 +241,7 @@ def chargeable_securitisation_non_ctp_bucket_keys() -> tuple[str, ...]:
     Returns
     -------
     tuple[str, ...]
-        Result of the operation.
+        Supported securitisation non-CTP bucket keys for chargeable positions.
     """
 
     return _CHARGEABLE_SEC_NONCTP_BUCKET_KEYS

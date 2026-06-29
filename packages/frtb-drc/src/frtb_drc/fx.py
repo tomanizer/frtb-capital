@@ -60,7 +60,7 @@ def convert_positions_to_base_currency(
     Returns
     -------
     tuple[tuple[DrcPosition, ...], tuple[DrcFxConversion, ...]]
-        Result of the operation.
+        FX-translated positions and conversion audit records.
     """
 
     converted: list[DrcPosition] = []
@@ -101,7 +101,7 @@ def require_fx_rate(
     Returns
     -------
     DrcFxRate
-        Result of the operation.
+        FX rate matching the source currency and run base currency.
     """
 
     try:
@@ -131,7 +131,7 @@ def fx_conversion_records(
     Returns
     -------
     tuple[DrcFxConversion, ...]
-        Result of the operation.
+        Deterministically ordered FX conversion audit records.
     """
 
     conversions: list[DrcFxConversion] = []
@@ -162,7 +162,7 @@ def fx_branch_metadata(conversions: tuple[DrcFxConversion, ...]) -> tuple[Branch
     Returns
     -------
     tuple[BranchMetadata, ...]
-        Result of the operation.
+        Branch metadata describing FX translation choices.
     """
 
     return tuple(
@@ -198,7 +198,7 @@ def input_hash_with_fx(
     Returns
     -------
     str
-        Result of the operation.
+        Input hash updated with FX conversion lineage.
     """
 
     if not conversions:
@@ -220,7 +220,7 @@ def fx_citation_ids(conversions: tuple[DrcFxConversion, ...]) -> tuple[str, ...]
     Returns
     -------
     tuple[str, ...]
-        Result of the operation.
+        Citation identifiers required by the applied FX conversions.
     """
 
     citation_ids: set[str] = set()

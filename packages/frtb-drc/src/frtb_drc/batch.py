@@ -212,6 +212,7 @@ def calculate_drc_capital_from_batch(
             calculation_batch,
             gross_jtd,
             profile_id=profile.profile_id,
+            risk_class=risk_class,
         )
         netting_citation = _nonsec_netting_citation(profile.profile_id)
         net_jtds = _net_jtd_kernel.calculate_nonsec_net_jtds_from_arrays(
@@ -238,6 +239,7 @@ def calculate_drc_capital_from_batch(
             calculation_batch,
             gross_jtd,
             profile_id=profile.profile_id,
+            risk_class=risk_class,
         )
         net_jtds = _net_jtd_kernel.calculate_securitisation_non_ctp_net_jtds_from_arrays(
             calculation_batch,
@@ -268,6 +270,7 @@ def calculate_drc_capital_from_batch(
             calculation_batch,
             gross_jtd,
             profile_id=profile.profile_id,
+            risk_class=risk_class,
         )
         net_jtds = _net_jtd_kernel.calculate_ctp_net_jtds_from_arrays(
             calculation_batch,
@@ -473,6 +476,8 @@ def _gross_jtd_array(
     signed_notional = np.where(long_mask, notionals_abs, -notionals_abs)
     raw_jtd = lgd_rates * signed_notional + pnl_component
     gross = np.where(long_mask, np.maximum(raw_jtd, 0.0), np.abs(np.minimum(raw_jtd, 0.0)))
+    has_market_value = ~np.isnan(batch.market_values)
+    gross = np.where(has_market_value, np.minimum(gross, np.abs(batch.market_values)), gross)
     return gross.astype(np.float64), citations
 
 
@@ -517,8 +522,9 @@ def _scaled_jtd_array(
     gross_jtd: FloatArray,
     *,
     profile_id: str,
+    risk_class: DrcRiskClass,
 ) -> tuple[FloatArray, FloatArray, str]:
-    policy = get_maturity_policy(profile_id)
+    policy = get_maturity_policy(profile_id, risk_class=risk_class)
     effective_maturity = np.maximum(batch.maturity_years, policy.floor_years)
     weights = np.where(
         batch.maturity_years >= policy.full_weight_years,
