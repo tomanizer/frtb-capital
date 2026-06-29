@@ -179,6 +179,37 @@ def test_daily_pnl_mapping_rejects_unknown_target_fields() -> None:
         parse_ima_mapping_spec(MAPPING_YAML.replace("source_row_id: ROW_ID", "mystery: X"))
 
 
+def test_mapping_spec_rejects_scalar_only_ima_tables() -> None:
+    bad_yaml = MAPPING_YAML.replace(
+        "risk_factor_aliases:",
+        "  es_scalars:\n"
+        "    source: es.csv\n"
+        "    target: ima_es_scalars\n"
+        "    fields:\n"
+        "      desk_id: DESK\n"
+        "      es: ES\n\n"
+        "risk_factor_aliases:",
+    )
+
+    with pytest.raises(MappingSpecError, match="unsupported scalar-only IMA mapping tables"):
+        parse_ima_mapping_spec(bad_yaml)
+
+
+def test_mapping_spec_rejects_unknown_table_keys() -> None:
+    bad_yaml = MAPPING_YAML.replace(
+        "risk_factor_aliases:",
+        "  mystery_vectors:\n"
+        "    source: mystery.csv\n"
+        "    target: ima_mystery_vectors\n"
+        "    fields:\n"
+        "      desk_id: DESK\n\n"
+        "risk_factor_aliases:",
+    )
+
+    with pytest.raises(MappingSpecError, match="unsupported IMA mapping tables: mystery_vectors"):
+        parse_ima_mapping_spec(bad_yaml)
+
+
 def test_daily_pnl_mapping_exposes_daily_pnl_column_specs() -> None:
     assert [spec.name for spec in IMA_DAILY_PNL_VECTOR_ARROW_COLUMN_SPECS] == [
         "desk_id",

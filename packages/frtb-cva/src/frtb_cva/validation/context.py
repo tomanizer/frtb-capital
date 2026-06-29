@@ -58,7 +58,7 @@ def validate_calculation_context(context: object) -> CvaCalculationContext:
 
 
 def validate_m_cva_multiplier(value: object) -> float:
-    """Return a finite, positive SA-CVA multiplier.
+    """Return a finite SA-CVA multiplier satisfying the MAR50.5 floor.
 
     Parameters
     ----------
@@ -68,17 +68,19 @@ def validate_m_cva_multiplier(value: object) -> float:
     Returns
     -------
     float
-        Finite multiplier strictly greater than zero.
+        Finite multiplier greater than or equal to ``1.0``.
 
     Raises
     ------
     CvaInputError
-        If the value is non-numeric, non-finite, or not positive.
+        If the value is non-numeric, non-finite, not positive, or below the MAR50.5 floor.
     """
 
     m_cva = _finite_float(value, field="m_cva")
     if m_cva <= 0.0:
         raise CvaInputError("m_cva must be positive", field="m_cva")
+    if m_cva < 1.0:
+        raise CvaInputError("m_cva must be at least 1.0 (MAR50.5)", field="m_cva")
     return m_cva
 
 

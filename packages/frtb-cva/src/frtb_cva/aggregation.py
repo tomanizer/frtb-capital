@@ -123,10 +123,12 @@ def aggregate_intra_bucket(
         weighted_sensitivities,
         correlation_fn=config.intra_bucket_correlation,
     )
-    variance = float(weighted_nets @ rho_matrix @ weighted_nets) + _hedging_disallowance_term(
+    raw_variance = float(weighted_nets @ rho_matrix @ weighted_nets) + _hedging_disallowance_term(
         weighted_hedges
     )
-    k_b = math.sqrt(max(variance, 0.0))
+    variance_floored = raw_variance < 0.0
+    variance = max(raw_variance, 0.0)
+    k_b = math.sqrt(variance)
     s_b = float(np.sum(weighted_nets))
     floor_applied = abs(s_b) > k_b
     if floor_applied:
@@ -148,7 +150,11 @@ def aggregate_intra_bucket(
         s_b=s_b,
         sensitivity_ids=sensitivity_ids,
         citations=profile_citation_ids(config.intra_bucket_citations, profile),
-        branch_metadata=(("floor_applied", str(floor_applied)),),
+        branch_metadata=(
+            ("floor_applied", str(floor_applied)),
+            ("variance_floored", str(variance_floored)),
+            ("raw_variance", f"{raw_variance:.6e}"),
+        ),
     )
 
 

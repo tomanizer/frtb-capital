@@ -27,11 +27,14 @@ from __future__ import annotations
 
 import logging
 import math
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 from frtb_ima.backtesting import TradingDeskBacktestResult
+from frtb_ima.calendar import ObservationWindowBasis
 from frtb_ima.logging import calculation_log_extra
+from frtb_ima.pla import PlaWindowDiagnostics
 from frtb_ima.regimes import (
     DeskEligibilityStatus,
     RegulatoryPolicy,
@@ -239,6 +242,64 @@ def desk_eligibility_from_results(
     if not backtest_result.model_eligible or pla_zone == red_label:
         return DeskEligibilityStatus.SA_FALLBACK
     return DeskEligibilityStatus.IMA_ELIGIBLE
+
+
+def validate_pla_backtesting_window_alignment(
+    pla_diagnostics: PlaWindowDiagnostics,
+    backtest_result: TradingDeskBacktestResult,
+) -> None:
+    """Validate that PLA and backtesting use the same dated policy window.
+
+    Basel MAR32.40 / MAR33.4 and proposed NPR 2.0 section __.213 align the PLA
+    and backtesting desk-eligibility evidence to the most recent 250 business
+    days. This helper validates that co-alignment when both results carry
+    caller-supplied business-calendar windows. If either side lacks dated,
+    calendar-backed diagnostics, it emits a deprecation warning and leaves the
+    capital number unchanged.
+
+    Parameters
+    ----------
+    pla_diagnostics : PlaWindowDiagnostics
+        PLA policy-window diagnostics.
+    backtest_result : TradingDeskBacktestResult
+        Trading-desk backtesting result with window diagnostics.
+    """
+
+    if not isinstance(pla_diagnostics, PlaWindowDiagnostics):
+        raise ValueError("pla_diagnostics must be a PlaWindowDiagnostics")
+    if not isinstance(backtest_result, TradingDeskBacktestResult):
+        raise ValueError("backtest_result must be a TradingDeskBacktestResult")
+
+    calendar_basis = ObservationWindowBasis.MOST_RECENT_BUSINESS_DAYS.value
+    if (
+        pla_diagnostics.start_date is None
+        or pla_diagnostics.end_date is None
+        or backtest_result.start_date is None
+        or backtest_result.end_date is None
+        or pla_diagnostics.calendar_basis != calendar_basis
+        or backtest_result.calendar_basis != calendar_basis
+    ):
+        warnings.warn(
+            "PLA and backtesting windows cannot be co-validated because both "
+            "results must carry calendar-backed date ranges (Basel MAR32.40, "
+            "MAR33.4, and proposed NPR 2.0 section __.213).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return
+
+    if pla_diagnostics.start_date != backtest_result.start_date:
+        raise ValueError(
+            "PLA and backtesting windows must span the same start date; "
+            f"PLA starts {pla_diagnostics.start_date}, backtesting starts "
+            f"{backtest_result.start_date}"
+        )
+    if pla_diagnostics.end_date != backtest_result.end_date:
+        raise ValueError(
+            "PLA and backtesting windows must span the same end date; "
+            f"PLA ends {pla_diagnostics.end_date}, backtesting ends "
+            f"{backtest_result.end_date}"
+        )
 
 
 def models_based_capital_for_policy(
