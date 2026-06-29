@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 import numpy as np
@@ -18,6 +18,7 @@ from frtb_common import (
     read_arrow_columns,
 )
 
+from frtb_drc._arrow_hash_adapter import drc_arrow_columnar_input_hash
 from frtb_drc.adapters.arrow_evidence import (
     DRC_FAIR_VALUE_CAP_EVIDENCE_ARROW_COLUMN_SPECS,
     DRC_RISK_WEIGHT_EVIDENCE_ARROW_COLUMN_SPECS,
@@ -38,11 +39,8 @@ from frtb_drc.adapters.path_registry import (
     DrcPathSpec,
     get_drc_path_spec,
 )
-from frtb_drc.adapters.positions import (
-    build_drc_ctp_batch_from_columns,
-    build_drc_nonsec_batch_from_columns,
-    build_drc_securitisation_non_ctp_batch_from_columns,
-)
+from frtb_drc.adapters.positions import build_drc_nonsec_batch_from_columns
+from frtb_drc.assembly.hashes import INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2
 from frtb_drc.batch import DrcPositionBatch
 from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID
 from frtb_drc.validation import DrcInputError
@@ -73,12 +71,6 @@ _DRC_BATCH_COLUMN_ARGS: Mapping[str, str] = {
     "is_covered_bond": "is_covered_bond",
     "lineage_source_system": "lineage_source_systems",
     "lineage_source_file": "lineage_source_files",
-}
-
-_DRC_PATH_COLUMN_BUILDERS: Mapping[str, Callable[..., DrcPositionBatch]] = {
-    DRC_NONSEC_PATH: build_drc_nonsec_batch_from_columns,
-    DRC_SECURITISATION_NON_CTP_PATH: build_drc_securitisation_non_ctp_batch_from_columns,
-    DRC_CTP_PATH: build_drc_ctp_batch_from_columns,
 }
 
 
@@ -285,6 +277,7 @@ def _build_drc_path_batch_from_arrow(
     profile_id: str = US_NPR_2_0_PROFILE_ID,
 ) -> DrcPositionBatch:
     table, columns = _read_position_columns(handoff, path_spec.arrow_column_specs)
+    input_hash = drc_arrow_columnar_input_hash(table, path_spec.arrow_column_specs)
     kwargs = dict(
         **_drc_batch_column_kwargs(columns),
         lineage_present=np.ones(table.num_rows, dtype=np.bool_),
@@ -292,11 +285,15 @@ def _build_drc_path_batch_from_arrow(
         source_hash=handoff.source_hash,
         handoff_hash=normalized_arrow_table_hash(handoff),
         diagnostics=_diagnostics_payload(handoff),
+        input_hash=input_hash,
+        input_hash_algorithm=INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2,
         copy_arrays=False,
     )
     if path_spec.path == DRC_NONSEC_PATH:
         kwargs["profile_id"] = profile_id
-    return _DRC_PATH_COLUMN_BUILDERS[path_spec.path](**kwargs)
+    else:
+        kwargs["_expected_risk_class"] = path_spec.risk_class
+    return build_drc_nonsec_batch_from_columns(**kwargs)
 
 
 def _read_position_columns(

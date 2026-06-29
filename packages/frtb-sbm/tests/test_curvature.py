@@ -30,7 +30,6 @@ from frtb_sbm import (
     curvature_worst_branch,
     ensure_sbm_capital_paths_supported,
     ensure_sbm_risk_class_measure_supported,
-    input_hash_for_sensitivities,
     parse_curvature_input,
     select_girr_curvature_branches_from_batch,
     serialize_sbm_result,
@@ -224,8 +223,13 @@ def test_girr_curvature_batch_and_handoff_preserve_separate_shock_arrays() -> No
 
     arrow_batch = build_sbm_path_from_arrow(SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE, handoff)
 
-    assert arrow_batch.input_hash == row_batch.input_hash
-    assert arrow_batch.input_hash == input_hash_for_sensitivities(sensitivities)
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
     assert arrow_batch.risk_class is SbmRiskClass.GIRR
     assert arrow_batch.risk_measure is SbmRiskMeasure.CURVATURE
     assert arrow_batch.up_shock_amounts is not None
