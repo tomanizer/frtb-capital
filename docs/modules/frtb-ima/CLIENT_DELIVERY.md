@@ -14,7 +14,7 @@ package.
 | Channel | Format | Purpose |
 | --- | --- | --- |
 | Scenario cube | NumPy `.npz` artifacts / `ScenarioCube` arrays | ES, LHA, IMCC, NMRF, PLA, and backtesting numerical kernels. |
-| Tabular handoff | Arrow tables matching IMA handoff specs | Scenario metadata, RFET observations, and capital-run input manifest lineage. |
+| Tabular handoff | Arrow tables matching IMA handoff specs | Scenario metadata, RFET observations, risk-factor master rows, daily P&L vectors, scenario P&L vectors, and capital-run input manifest lineage. |
 
 ```mermaid
 flowchart LR
@@ -96,3 +96,4 @@ The following remain upstream responsibilities:
 - [`docs/decisions/0023-arrow-tabular-handoff-boundary.md`](../../decisions/0023-arrow-tabular-handoff-boundary.md)
 - [`docs/decisions/0011-core-runtime-dependency-policy.md`](../../decisions/0011-core-runtime-dependency-policy.md)
 - [`packages/frtb-ima/docs/DATASET_CONTRACT.md`](../../../packages/frtb-ima/docs/DATASET_CONTRACT.md)
+- [`packages/frtb-ima/docs/CLIENT_INGESTION_WORKFLOW.md`](../../../packages/frtb-ima/docs/CLIENT_INGESTION_WORKFLOW.md)
