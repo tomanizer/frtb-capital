@@ -16,10 +16,10 @@ from frtb_ima.adapters._mapping_hash import stable_mapping_hash
 from frtb_ima.audit_inputs import compute_inputs_hash
 
 if TYPE_CHECKING:
+    from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
     from frtb_ima.adapters._risk_factor_master_mapping_types import (
         RiskFactorMasterTableMapping,
     )
-    from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
     from frtb_ima.adapters._scenario_pnl_mapping_types import ScenarioPnlTableMapping
 
 IMA_DAILY_PNL_VECTOR_TARGET = "ima_daily_pnl_vectors"
