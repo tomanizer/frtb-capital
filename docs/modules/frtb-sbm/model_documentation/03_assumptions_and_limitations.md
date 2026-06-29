@@ -2,7 +2,11 @@
 
 ## Risk-Class Scope Matrix
 
-`BASEL_MAR21` is the only capital-producing profile.
+`BASEL_MAR21` is the canonical capital-producing profile with per-risk-class
+fixture packs. `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` are comparison-slice
+profiles: all 21 runtime gates are open with Basel-mirrored numerics and
+profile-owned citation ids, but only GIRR delta has a deterministic fixture per
+profile. Comparison-slice outputs are not final regulatory capital.
 
 | Risk class | Delta | Vega | Curvature | Notes |
 | --- | --- | --- | --- | --- |
@@ -19,7 +23,7 @@
 Unsupported paths raise `UnsupportedRegulatoryFeatureError` or `SbmInputError`
 before capital is emitted:
 
-- `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` runtime profiles;
+- risk-class/measure cells outside the supported matrix for any profile;
 - risk-class/measure combinations outside the supported matrix;
 - missing curvature up/down shock inputs;
 - missing FX curvature scalar evidence where MAR21.98 requires it;

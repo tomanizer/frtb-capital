@@ -10,6 +10,7 @@ from frtb_sbm.reference_citations_pra_uk_crr import (
     PRA_UK_CRR_LEGISLATION_CHAPTER_URL,
     PRA_UK_CRR_PS1_26_URL,
 )
+from frtb_sbm.reference_profiles import PRA_UK_CRR_URL
 
 REGULATORY_SOURCES_PATH = (
     Path(__file__).resolve().parents[1] / "docs" / "regulatory_sources.yml"
@@ -49,6 +50,10 @@ def test_pra_uk_crr_ps1_26_url_is_registered_in_manifest() -> None:
     ps1_entry = next(entry for entry in manifest["sources"] if entry["id"] == "uk_pra_ps1_26_sbm")
 
     assert ps1_entry["url"] == PRA_UK_CRR_PS1_26_URL
+
+
+def test_reference_profiles_pra_url_matches_citation_module() -> None:
+    assert PRA_UK_CRR_URL == PRA_UK_CRR_LEGISLATION_CHAPTER_URL
 
 
 def test_pra_uk_crr_citations_use_article_level_legislation_urls() -> None:

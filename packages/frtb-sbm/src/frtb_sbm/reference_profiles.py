@@ -15,16 +15,16 @@ from frtb_sbm.data_models import SbmCitation, SbmRegulatoryProfile, SbmRiskClass
 from frtb_sbm.reference_citations_basel_core import BASEL_CORE_CITATIONS
 from frtb_sbm.reference_citations_basel_risk_classes import BASEL_RISK_CLASS_CITATIONS
 from frtb_sbm.reference_citations_eu_crr3 import EU_CRR3_CITATIONS
-from frtb_sbm.reference_citations_pra_uk_crr import PRA_UK_CRR_CITATIONS
+from frtb_sbm.reference_citations_pra_uk_crr import (
+    PRA_UK_CRR_CITATIONS,
+    PRA_UK_CRR_URL,
+)
 from frtb_sbm.reference_citations_us_npr import US_NPR_2_0_CITATIONS
 from frtb_sbm.reference_types import SbmCorrelationScenarioDefinition
 from frtb_sbm.validation import SbmInputError
 
 BASEL_MAR21_URL = "https://www.bis.org/basel_framework/chapter/MAR/21.htm"
 EU_CRR3_URL = "https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng"
-PRA_UK_CRR_URL = (
-    "https://www.legislation.gov.uk/eur/2013/575/part/8/crossheading/sensitivities-based-method"
-)
 US_NPR_2_0_URL = "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
 
 BASEL_CITATIONS: dict[str, SbmCitation] = {
