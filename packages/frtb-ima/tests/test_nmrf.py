@@ -1,6 +1,7 @@
 """Tests for NMRF SES module."""
 
 import math
+import warnings
 
 import numpy as np
 import pytest
@@ -29,7 +30,7 @@ from frtb_ima.nmrf import (
     ses_for_nmrf_linear,
     ses_values_from_stress_results,
 )
-from frtb_ima.regimes import UnsupportedRegulatoryFeature, get_policy
+from frtb_ima.regimes import RegulatoryRegime, UnsupportedRegulatoryFeature, get_policy
 
 TYPE_B_RHO = 0.36
 
@@ -194,6 +195,13 @@ def test_aggregate_ses_combines_a_and_b() -> None:
     assert result == pytest.approx(expected, rel=1e-9)
 
 
+def test_aggregate_ses_for_policy_raises_for_ecb_crr3_nmrf_rho_gap() -> None:
+    policy = get_policy(RegulatoryRegime.ECB_CRR3)
+
+    with pytest.raises(UnsupportedRegulatoryFeature, match="eu_crr3_nmrf_rho_parameter"):
+        nmrf_aggregation.aggregate_ses_for_policy([10.0], [20.0], policy)
+
+
 def test_aggregate_ses_breakdown_is_vectorized_and_auditable() -> None:
     result = aggregate_ses_breakdown([3.0, 4.0], [10.0, 10.0], type_b_rho=TYPE_B_RHO)
     assert result.type_a_count == 2
@@ -248,18 +256,71 @@ def test_stress_artifact_defensively_freezes_loss_vector() -> None:
 
 
 def test_stress_artifact_ses_is_floored_at_zero_for_all_gain_vectors() -> None:
+    with pytest.warns(UserWarning, match=r"EXOTIC_RF.*100%.*positive=loss"):
+        artifact = NMRFStressArtifact(
+            risk_factor_name="EXOTIC_RF",
+            method=NMRFStressMethod.DIRECT,
+            losses=[-10.0, -5.0, -1.0],
+            liquidity_horizon=LiquidityHorizon.LH20,
+            stress_period="synthetic-stress",
+            source="upstream risk engine",
+        )
+
+    result = calculate_nmrf_ses_from_revaluation(artifact, get_policy())
+
+    assert result.ses == pytest.approx(0.0)
+
+
+def test_stress_artifact_warns_for_mostly_negative_loss_vectors() -> None:
+    with pytest.warns(UserWarning, match=r"MOSTLY_NEGATIVE.*80%.*positive=loss"):
+        artifact = NMRFStressArtifact(
+            risk_factor_name="MOSTLY_NEGATIVE",
+            method=NMRFStressMethod.DIRECT,
+            losses=[-10.0, -8.0, -6.0, -4.0, 1.0],
+            liquidity_horizon=LiquidityHorizon.LH20,
+            stress_period="synthetic-stress",
+            source="upstream risk engine",
+        )
+
+    assert artifact.losses.tolist() == pytest.approx([-10.0, -8.0, -6.0, -4.0, 1.0])
+
+
+def test_stress_artifact_does_not_warn_for_correctly_signed_loss_vectors() -> None:
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
+        NMRFStressArtifact(
+            risk_factor_name="CORRECT_SIGN",
+            method=NMRFStressMethod.DIRECT,
+            losses=[10.0, 8.0, -2.0, 4.0],
+            liquidity_horizon=LiquidityHorizon.LH20,
+            stress_period="synthetic-stress",
+            source="upstream risk engine",
+        )
+
+    assert captured == []
+
+
+def test_stress_artifact_as_dict_includes_scenario_ids() -> None:
     artifact = NMRFStressArtifact(
         risk_factor_name="EXOTIC_RF",
+        method=NMRFStressMethod.FULL_REVALUATION,
+        losses=[10.0, 20.0],
+        liquidity_horizon=LiquidityHorizon.LH20,
+        stress_period="synthetic-stress",
+        source="upstream risk engine",
+        scenario_ids=("scenario-1", "scenario-2"),
+    )
+    empty_artifact = NMRFStressArtifact(
+        risk_factor_name="EMPTY_IDS",
         method=NMRFStressMethod.DIRECT,
-        losses=[-10.0, -5.0, -1.0],
+        losses=[1.0],
         liquidity_horizon=LiquidityHorizon.LH20,
         stress_period="synthetic-stress",
         source="upstream risk engine",
     )
 
-    result = calculate_nmrf_ses_from_revaluation(artifact, get_policy())
-
-    assert result.ses == pytest.approx(0.0)
+    assert artifact.as_dict()["scenario_ids"] == ["scenario-1", "scenario-2"]
+    assert empty_artifact.as_dict()["scenario_ids"] == []
 
 
 def test_max_loss_fallback_artifact_uses_maximum_loss_not_tail_average() -> None:
@@ -427,6 +488,53 @@ def test_calculate_nmrf_capital_allows_partial_required_constraint_mappings() ->
 
     assert result.type_a_results[0].ses == pytest.approx(10.0)
     assert result.type_b_results[0].ses == pytest.approx(20.0)
+
+
+def test_calculate_nmrf_capital_requires_max_loss_fallback_approval() -> None:
+    classifications = {"RF_TYPE_A": ModellabilityStatus.TYPE_A_NMRF}
+    artifacts = (
+        NMRFStressArtifact(
+            risk_factor_name="RF_TYPE_A",
+            method=NMRFStressMethod.MAX_LOSS_FALLBACK,
+            losses=[100.0, 60.0, 20.0],
+            liquidity_horizon=LiquidityHorizon.LH20,
+            stress_period="synthetic-stress",
+            source="upstream risk engine",
+        ),
+    )
+
+    with pytest.raises(ValueError, match=r"RF_TYPE_A.*allow_max_loss_fallback=True"):
+        calculate_nmrf_capital_for_policy(classifications, artifacts, get_policy())
+
+
+def test_calculate_nmrf_capital_accepts_max_loss_fallback_with_explicit_opt_in() -> None:
+    classifications = {"RF_TYPE_A": ModellabilityStatus.TYPE_A_NMRF}
+    artifacts = (
+        NMRFStressArtifact(
+            risk_factor_name="RF_TYPE_A",
+            method=NMRFStressMethod.MAX_LOSS_FALLBACK,
+            losses=[100.0, 60.0, 20.0],
+            liquidity_horizon=LiquidityHorizon.LH20,
+            stress_period="synthetic-stress",
+            source="upstream risk engine",
+        ),
+    )
+
+    result = calculate_nmrf_capital_for_policy(
+        classifications,
+        artifacts,
+        get_policy(),
+        allow_max_loss_fallback=True,
+    )
+    required_method_result = calculate_nmrf_capital_for_policy(
+        classifications,
+        artifacts,
+        get_policy(),
+        required_methods={"RF_TYPE_A": NMRFStressMethod.MAX_LOSS_FALLBACK},
+    )
+
+    assert result.type_a_results[0].ses == pytest.approx(100.0)
+    assert required_method_result.type_a_results[0].ses == pytest.approx(100.0)
 
 
 def test_calculate_nmrf_capital_aggregates_type_a_and_type_b_artifacts() -> None:

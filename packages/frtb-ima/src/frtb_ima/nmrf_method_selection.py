@@ -68,7 +68,7 @@ class NMRFMethodDiagnostic:
         Returns
         -------
         bool
-            Result of the operation.
+                True when the diagnostic outcome is PASS.
         """
         return self.outcome == NMRFDiagnosticOutcome.PASS
 
@@ -77,7 +77,7 @@ class NMRFMethodDiagnostic:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+                JSON-compatible diagnostic audit record.
         """
         return {
             "name": self.name,
@@ -140,7 +140,7 @@ class NMRFMethodEvidence:
         Returns
         -------
         bool
-            Result of the operation.
+                True when direct valuation evidence is available, robust, and clean.
         """
         return (
             self.direct_method_available
@@ -157,7 +157,7 @@ class NMRFMethodEvidence:
         Returns
         -------
         tuple[NMRFMethodDiagnostic, ...]
-            Result of the operation.
+                Direct robustness diagnostic followed by supplemental diagnostics.
         """
         if self.direct_robustness is None:
             return self.diagnostics
@@ -168,7 +168,7 @@ class NMRFMethodEvidence:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+                JSON-compatible method-evidence audit record.
         """
         return {
             "risk_factor_name": self.risk_factor_name,
@@ -240,7 +240,7 @@ class NMRFMethodSelectionInput:
         Returns
         -------
         bool
-            Result of the operation.
+                True when the input classification is Type A or Type B NMRF.
         """
         return self.modellability_status in {
             ModellabilityStatus.TYPE_A_NMRF,
@@ -292,7 +292,8 @@ def assess_direct_loss_robustness(
     Returns
     -------
     NMRFMethodDiagnostic
-        Result of the operation.
+        NMRFMethodDiagnostic with outcome PASS or FAIL, max relative error, and
+        threshold.
     """
     if max_relative_error_threshold < 0.0 or not math.isfinite(max_relative_error_threshold):
         raise ValueError("max_relative_error_threshold must be finite and non-negative")
@@ -346,7 +347,8 @@ def selection_input_from_method_evidence(
     Returns
     -------
     NMRFMethodSelectionInput
-        Result of the operation.
+        NMRFMethodSelectionInput populated from the evidence fields and supplied
+        modellability/LH metadata.
     """
     if not isinstance(evidence, NMRFMethodEvidence):
         raise TypeError("evidence must be an NMRFMethodEvidence")
@@ -405,7 +407,7 @@ class NMRFValuationInstruction:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+                JSON-compatible valuation instruction audit record.
         """
         return {
             "risk_factor_name": self.risk_factor_name,
@@ -437,7 +439,7 @@ class NMRFMethodDecision:
         Returns
         -------
         LiquidityHorizon
-            Result of the operation.
+                Stress horizon required after applying the NMRF floor.
         """
         return nmrf_effective_liquidity_horizon(self.liquidity_horizon)
 
@@ -446,7 +448,7 @@ class NMRFMethodDecision:
         Returns
         -------
         NMRFValuationInstruction
-            Result of the operation.
+                Valuation-run instruction for the selected stress method.
         """
         return NMRFValuationInstruction(
             risk_factor_name=self.risk_factor_name,
@@ -464,7 +466,7 @@ class NMRFMethodDecision:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+                JSON-compatible method-decision audit record.
         """
         return {
             "risk_factor_name": self.risk_factor_name,
@@ -518,7 +520,7 @@ def select_nmrf_method(
     Returns
     -------
     NMRFMethodDecision
-        Result of the operation.
+        NMRFMethodDecision with the selected stress method and audit reason.
     """
     if not selection_input.is_nmrf:
         raise NMRFMethodSelectionError("NMRF method selection requires TYPE_A_NMRF or TYPE_B_NMRF")
@@ -631,7 +633,8 @@ def select_nmrf_method_from_evidence(
     Returns
     -------
     NMRFMethodDecision
-        Result of the operation.
+        NMRFMethodDecision derived from the evidence, modellability status, and
+        liquidity horizon.
     """
     return select_nmrf_method(
         selection_input_from_method_evidence(
@@ -658,7 +661,7 @@ def select_nmrf_methods(
     Returns
     -------
     tuple[NMRFMethodDecision, ...]
-        Result of the operation.
+        Tuple of NMRFMethodDecision objects in the same order as selection_inputs.
     """
     if not selection_inputs:
         raise ValueError("selection_inputs must be non-empty")

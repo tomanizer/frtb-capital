@@ -40,6 +40,7 @@ class RegulatoryRegime(StrEnum):
 # Profile-level capital runtime guard. See docs/regulatory/profiles/
 # pra-uk-crr-source-mapping-status.md.
 PRA_UK_CRR_CAPITAL_RUNTIME_FEATURE = "pra_uk_crr_capital_runtime"
+EU_CRR3_NMRF_RHO_FEATURE = "eu_crr3_nmrf_rho_parameter"
 
 
 class NMRFTaxonomyMode(StrEnum):
@@ -469,6 +470,14 @@ def _ecb_crr3_policy() -> RegulatoryPolicy:
                 source_topic="EU CRR Article 325bk NMRF terminology",
                 notes=(
                     "Type A / Type B labels are U.S. NPR proposed-rule terms, not native EU terms."
+                ),
+            ),
+            UnsupportedFeature(
+                feature_name=EU_CRR3_NMRF_RHO_FEATURE,
+                source_topic="EU CRR3 Article 325bk NMRF SES aggregation rho parameter",
+                notes=(
+                    "The package has not implemented a cited CRR3-specific NMRF rho "
+                    "parameter for policy-wrapper capital aggregation."
                 ),
             ),
         ),

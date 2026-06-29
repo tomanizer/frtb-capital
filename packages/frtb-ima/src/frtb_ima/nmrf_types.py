@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
@@ -31,6 +32,7 @@ _UNSUPPORTED_GENERATION_FEATURES: dict[NMRFStressMethod, str] = {
 }
 
 _NMRF_MINIMUM_LIQUIDITY_HORIZON = LiquidityHorizon.LH20
+_NEGATIVE_LOSS_WARNING_THRESHOLD = 0.75
 
 
 @dataclass(frozen=True)
@@ -112,6 +114,16 @@ class NMRFStressArtifact:
             raise ValueError("source must be non-empty")
 
         losses = _as_loss_array(self.losses, "losses")
+        negative_fraction = float(np.mean(losses < 0.0))
+        if negative_fraction > _NEGATIVE_LOSS_WARNING_THRESHOLD:
+            warnings.warn(
+                f"NMRFStressArtifact for {self.risk_factor_name}: "
+                f"{negative_fraction:.0%} of loss values are negative. "
+                "Sign convention is positive=loss. If using gains convention "
+                "(positive=profit), negate the vector before constructing this artifact.",
+                UserWarning,
+                stacklevel=2,
+            )
         scenario_ids = tuple(self.scenario_ids)
         if scenario_ids:
             if len(scenario_ids) != losses.size:
@@ -138,6 +150,7 @@ class NMRFStressArtifact:
             "liquidity_horizon": self.liquidity_horizon.value,
             "stress_period": self.stress_period,
             "source": self.source,
+            "scenario_ids": list(self.scenario_ids),
             "generated_by_prototype": self.generated_by_prototype,
             "notes": self.notes,
         }

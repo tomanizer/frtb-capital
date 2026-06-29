@@ -32,7 +32,7 @@ def nmrf_effective_liquidity_horizon(
     Returns
     -------
     LiquidityHorizon
-        Result of the operation.
+        Effective NMRF stress horizon after applying the package floor.
     """
     if not isinstance(risk_factor_liquidity_horizon, LiquidityHorizon):
         raise TypeError("risk_factor_liquidity_horizon must be a LiquidityHorizon")
@@ -46,12 +46,6 @@ def ses_for_nmrf_linear(sensitivity: float, shock: float) -> float:
 
     SES_i = |sensitivity_i| * shock_i
 
-    Args:
-        sensitivity: First-order sensitivity (dollar P&L per unit of risk factor move).
-        shock:       Stress shock size (in risk factor units, positive).
-
-    Returns:
-        SES contribution as a positive scalar.
     Parameters
     ----------
     sensitivity : float
@@ -62,7 +56,7 @@ def ses_for_nmrf_linear(sensitivity: float, shock: float) -> float:
     Returns
     -------
     float
-        Result of the operation.
+        SES contribution as a non-negative scalar (|sensitivity| * |shock|).
     """
     return abs(sensitivity) * abs(shock)
 
@@ -95,7 +89,8 @@ def nmrf_stress_result_from_linear_sensitivity(
     Returns
     -------
     NMRFStressScenarioResult
-        Result of the operation.
+        NMRFStressScenarioResult with LINEAR_SENSITIVITY method and
+        generated_by_prototype=True.
     """
     return NMRFStressScenarioResult(
         risk_factor_name=risk_factor_name,
@@ -135,7 +130,8 @@ def nmrf_stress_result_from_external_ses(
     Returns
     -------
     NMRFStressScenarioResult
-        Result of the operation.
+        NMRFStressScenarioResult recording the upstream method and SES value
+        with generated_by_prototype=False.
     """
     return NMRFStressScenarioResult(
         risk_factor_name=risk_factor_name,
@@ -198,7 +194,7 @@ def calculate_nmrf_ses_from_revaluation(
     Returns
     -------
     NMRFStressScenarioResult
-        Result of the operation.
+        NMRFStressScenarioResult extracted from the upstream loss vector.
     """
     if artifact.method == NMRFStressMethod.LINEAR_SENSITIVITY and not allow_linear_approximation:
         raise ValueError(

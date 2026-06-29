@@ -41,25 +41,33 @@ uses the following documented modelling basis:
     upstream valuation-run specs for Type A and Type B NMRFs. Returned stress
     artifacts are reconciled to the specs before the capital layer consumes
     them.
-13. Missing or mismatched Type A or Type B NMRF stress artifacts are hard
+13. Stress artifacts use the positive-loss convention required by Basel MAR33.4
+    and U.S. NPR 2.0 proposed section `__.214`; a majority-negative vector emits
+    an audit warning because it may indicate gains-convention input. Serialized
+    stress-artifact summaries include scenario IDs when supplied so SES records
+    can be linked back to upstream valuation scenarios.
+14. Missing or mismatched Type A or Type B NMRF stress artifacts are hard
     validation errors; the capital layer does not silently substitute linear
-    approximations. Prototype-labelled valuation artifacts fail reconciliation
-    unless a demo/test caller explicitly opts into synthetic artifacts.
-14. Stress-period selection is a pre-run calibration step by risk class. The
+    approximations. MAX_LOSS_FALLBACK artifacts require explicit capital-layer
+    approval through `allow_max_loss_fallback=True` or matching
+    `required_methods` evidence. Prototype-labelled valuation artifacts fail
+    reconciliation unless a demo/test caller explicitly opts into synthetic
+    artifacts.
+15. Stress-period selection is a pre-run calibration step by risk class. The
     prototype selects windows from supplied historical loss/severity vectors
     using either the configured observation-count proxy or a caller-supplied
     exact 12-month business-calendar window. It does not source raw market
     data, price trades, or approve a formal regulatory stress-period
     methodology.
-15. Fed NPR PLA uses a Kolmogorov-Smirnov statistic comparing HPL and RTPL
+16. Fed NPR PLA uses a Kolmogorov-Smirnov statistic comparing HPL and RTPL
     over a 250-business-day policy window. Callers may supply authoritative
     business-calendar metadata to validate the most recent 250 business dates.
     ECB/PRA comparison profiles also compute Spearman rank correlation and use
     the worse KS/Spearman joint zone.
-16. Backtesting counts both APL and HPL exceptions at 97.5% and 99.0% VaR
+17. Backtesting counts both APL and HPL exceptions at 97.5% and 99.0% VaR
     confidence levels. The Fed profile applies exception limits of 30 at 97.5%
     and 12 at 99.0%.
-17. Missing APL, HPL, or VaR observations count as backtesting exceptions
+18. Missing APL, HPL, or VaR observations count as backtesting exceptions
     unless marked as official-holiday related. Supplied business calendars are
     recorded with source/version metadata and official-holiday counts in
     backtesting audit output.
@@ -149,7 +157,11 @@ The EU comparison layer is based on Regulation (EU) No 575/2013 as amended by CR
 8. Article 325bk for the stress scenario risk measure.
 
 The EU references are used for traceability and comparison. The code does not
-claim to calculate final EU own-funds requirements.
+claim to calculate final EU own-funds requirements. ECB CRR3 policy-wrapper
+NMRF SES aggregation currently raises the named
+`eu_crr3_nmrf_rho_parameter` unsupported feature instead of silently applying
+the U.S. NPR Type B rho or the PRA comparison rho=0 path without a
+CRR3-specific Article 325bk citation.
 
 ## Important limitation
 

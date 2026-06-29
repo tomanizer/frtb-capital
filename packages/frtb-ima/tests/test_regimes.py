@@ -209,6 +209,7 @@ def test_ecb_profile_requires_ks_and_spearman_pla() -> None:
     assert policy.pla_spearman_green_threshold == pytest.approx(0.80)
     assert policy.pla_spearman_amber_threshold == pytest.approx(0.70)
     assert "spearman_pla" not in {feature.feature_name for feature in policy.unsupported_features}
+    assert policy.unsupported_feature("eu_crr3_nmrf_rho_parameter") is not None
 
 
 def test_type_a_type_b_taxonomy_is_fed_only_until_explicitly_supported() -> None:

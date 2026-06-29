@@ -9,7 +9,12 @@ import numpy as np
 import numpy.typing as npt
 
 from frtb_ima.nmrf_types import NMRFStressScenarioResult, SESAggregationResult
-from frtb_ima.regimes import RegulatoryPolicy, TypeASESAggregationMode
+from frtb_ima.regimes import (
+    EU_CRR3_NMRF_RHO_FEATURE,
+    RegulatoryPolicy,
+    RegulatoryRegime,
+    TypeASESAggregationMode,
+)
 
 
 def _as_abs_ses_array(
@@ -36,7 +41,7 @@ def ses_values_from_stress_results(
     Returns
     -------
     tuple[float, ...]
-        Result of the operation.
+        SES values in the same order as the supplied stress results.
     """
     return tuple(result.ses for result in results)
 
@@ -55,7 +60,7 @@ def aggregate_ses_type_a(values: Sequence[float] | npt.NDArray[np.float64]) -> f
     Returns
     -------
     float
-        Result of the operation.
+        Aggregated Type A SES as a non-negative root-sum-square scalar.
     """
     abs_vals = _as_abs_ses_array(values, "values")
     return float(math.sqrt(np.dot(abs_vals, abs_vals)))
@@ -71,9 +76,6 @@ def aggregate_ses_type_b(
 
         SES_B = sqrt(rho * (sum SES_i)^2 + (1 - rho) * sum(SES_i^2))
 
-    Args:
-        values: Individual SES contributions (positive scalars).
-        rho:    Correlation parameter. 0 = fully diversified, 1 = fully correlated.
     Parameters
     ----------
     values : Sequence[float] | npt.NDArray[np.float64]
@@ -84,7 +86,8 @@ def aggregate_ses_type_b(
     Returns
     -------
     float
-        Result of the operation.
+        Aggregated Type B SES as a non-negative scalar using the
+        partial-correlation formula.
     """
     if not (0.0 <= rho <= 1.0):
         raise ValueError(f"rho must be in [0, 1], got {rho}")
@@ -124,7 +127,7 @@ def aggregate_ses_breakdown(
     Returns
     -------
     SESAggregationResult
-        Result of the operation.
+        Audit decomposition for Type A, Type B, and total SES terms.
     """
     if not (0.0 <= type_b_rho <= 1.0):
         raise ValueError(f"type_b_rho must be in [0, 1], got {type_b_rho}")
@@ -170,7 +173,7 @@ def aggregate_ses_breakdown_for_policy(
     Returns
     -------
     SESAggregationResult
-        Result of the operation.
+        Policy-routed SES aggregation decomposition.
     """
     policy.require_capital_runtime_supported()
     if policy.uses_type_a_type_b_taxonomy:
@@ -188,6 +191,12 @@ def aggregate_ses_breakdown_for_policy(
             type_b_values,
             type_b_rho=policy.type_b_ses_rho,
         )
+    if policy.regime is RegulatoryRegime.ECB_CRR3:
+        policy.require_supported(EU_CRR3_NMRF_RHO_FEATURE)
+
+    # Basel MAR33.16 / UK CRR Article 325bk comparison path: profiles without
+    # U.S. Type A / Type B taxonomy aggregate the supplied NMRF SES values
+    # independently unless a profile-specific rho feature is implemented.
     return aggregate_ses_breakdown(
         type_a_values,
         type_b_values,
@@ -213,7 +222,7 @@ def aggregate_ses(
     Returns
     -------
     float
-        Result of the operation.
+        Total SES scalar from Type A and Type B contributions.
     """
     return aggregate_ses_breakdown(
         type_a_values,
@@ -229,9 +238,10 @@ def aggregate_ses_for_policy(
 ) -> float:
     """Aggregate SES using policy parameters.
 
-    This wrapper is only valid for policies that support the U.S. NPR
-    Type A / Type B split. EU and UK profiles currently use broader NMRF
-    terminology, so this wrapper raises a named unsupported-feature error.
+    Fed NPR profiles use the Type A / Type B split with the policy rho
+    parameter. ECB CRR3 profiles currently raise ``UnsupportedRegulatoryFeature``
+    for the CRR3 NMRF rho parameter. PRA UK CRR comparison profiles use the
+    Basel/UK Article 325bk independent aggregation path with ``rho=0.0``.
     Parameters
     ----------
     type_a_values : Sequence[float] | npt.NDArray[np.float64]
@@ -244,7 +254,7 @@ def aggregate_ses_for_policy(
     Returns
     -------
     float
-        Result of the operation.
+        Policy-routed total SES scalar.
     """
     return aggregate_ses_breakdown_for_policy(
         type_a_values,
