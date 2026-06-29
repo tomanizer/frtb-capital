@@ -233,9 +233,7 @@ def test_daily_pnl_mapping_fixture_materializes_from_mapping_yaml() -> None:
     assert result.report.row_count_read == 4
     assert result.report.row_count_mapped == 3
     assert result.report.row_count_rejected == 1
-    assert [finding.code for finding in result.report.findings] == [
-        "DAILY_PNL_DUPLICATE_DESK_DATE"
-    ]
+    assert [finding.code for finding in result.report.findings] == ["DAILY_PNL_DUPLICATE_DESK_DATE"]
     assert {
         "target_schema": result.report.target_schema,
         "source_system": result.report.source_system,
