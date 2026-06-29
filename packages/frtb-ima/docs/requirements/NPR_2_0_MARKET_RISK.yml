@@ -175,7 +175,7 @@ requirements:
     tests:
       - tests/test_nmrf.py
       - tests/test_regimes.py
-    notes: "Type A zero-correlation and Type B rho=0.36 aggregation implemented."
+    notes: "Type A zero-correlation and Type B rho=0.36 aggregation implemented for the Fed NPR 2.0 policy. ECB CRR3 aggregation now raises a named UnsupportedRegulatoryFeatureError until a cited Article 325bk rho parameter is implemented; PRA UK CRR comparison aggregation remains on the documented independent rho=0 path."
 
   - id: NPR-MR-NMRF-002
     title: "NMRF direct, stepwise, and full-revaluation stress scenarios"
@@ -192,7 +192,7 @@ requirements:
       - tests/test_nmrf_method_selection.py
       - tests/test_nmrf_stress_spec.py
       - tests/test_nmrf_valuation_run.py
-    notes: "NMRF method evidence, valuation instructions, upstream valuation-run specs, valuation-run artifact reconciliation, vectorized stress-artifact SES extraction, and Type A/B capital routing are implemented. The capital layer consumes upstream direct/stepwise/full-revaluation artifacts but cannot generate or price them; generation raises UnsupportedRegulatoryFeatureError. Prototype linear sensitivity helper remains approximation-only."
+    notes: "NMRF method evidence, valuation instructions, upstream valuation-run specs, valuation-run artifact reconciliation, vectorized stress-artifact SES extraction, and Type A/B capital routing are implemented. Stress artifacts validate the positive-loss sign convention with a majority-negative warning and preserve scenario_ids in serialised audit summaries. The capital layer consumes upstream direct/stepwise/full-revaluation artifacts but cannot generate or price them; generation raises UnsupportedRegulatoryFeatureError. MAX_LOSS_FALLBACK artifacts require explicit capital-layer opt-in or matching required_methods evidence. Prototype linear sensitivity helper remains approximation-only."
 
   - id: NPR-MR-PLA-001
     title: "NPR KS-based PLA assessment"

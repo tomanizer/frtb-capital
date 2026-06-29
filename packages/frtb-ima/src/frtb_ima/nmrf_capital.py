@@ -164,8 +164,25 @@ def _stress_results_for_risk_factors(
     artifacts_by_name: Mapping[str, NMRFStressArtifact],
     policy: RegulatoryPolicy,
     *,
+    required_methods: Mapping[str, NMRFStressMethod] | None,
     allow_linear_approximation: bool,
+    allow_max_loss_fallback: bool,
 ) -> tuple[NMRFStressScenarioResult, ...]:
+    for risk_factor_name in risk_factor_names:
+        artifact = artifacts_by_name[risk_factor_name]
+        expected_method = (
+            None if required_methods is None else required_methods.get(risk_factor_name)
+        )
+        if (
+            artifact.method == NMRFStressMethod.MAX_LOSS_FALLBACK
+            and not allow_max_loss_fallback
+            and expected_method != NMRFStressMethod.MAX_LOSS_FALLBACK
+        ):
+            raise ValueError(
+                f"MAX_LOSS_FALLBACK artifact for {risk_factor_name} requires "
+                "allow_max_loss_fallback=True at the capital assembly layer or an "
+                "explicit required_methods entry selecting MAX_LOSS_FALLBACK."
+            )
     return tuple(
         calculate_nmrf_ses_from_revaluation(
             artifacts_by_name[risk_factor_name],
@@ -208,6 +225,7 @@ def calculate_nmrf_capital_for_policy(
     required_methods: Mapping[str, NMRFStressMethod] | None = None,
     required_liquidity_horizons: Mapping[str, LiquidityHorizon] | None = None,
     allow_linear_approximation: bool = False,
+    allow_max_loss_fallback: bool = False,
     run_id: str | None = None,
     desk_id: str | None = None,
 ) -> NMRFCapitalResult:
@@ -230,6 +248,10 @@ def calculate_nmrf_capital_for_policy(
         Minimum required liquidity horizon by risk-factor name.
     allow_linear_approximation : bool, optional
         Whether labelled linear artifacts may feed SES.
+    allow_max_loss_fallback : bool, optional
+        Whether MAX_LOSS_FALLBACK artifacts may feed SES without a matching
+        ``required_methods`` entry. This preserves the approval boundary from
+        method selection to capital assembly.
     run_id : str | None, optional
         Optional run identifier for structured logs.
     desk_id : str | None, optional
@@ -255,13 +277,17 @@ def calculate_nmrf_capital_for_policy(
         routing.type_a_nmrf_risk_factors,
         artifacts_by_name,
         policy,
+        required_methods=required_methods,
         allow_linear_approximation=allow_linear_approximation,
+        allow_max_loss_fallback=allow_max_loss_fallback,
     )
     type_b_results = _stress_results_for_risk_factors(
         routing.type_b_nmrf_risk_factors,
         artifacts_by_name,
         policy,
+        required_methods=required_methods,
         allow_linear_approximation=allow_linear_approximation,
+        allow_max_loss_fallback=allow_max_loss_fallback,
     )
     aggregation = aggregate_ses_breakdown_for_policy(
         ses_values_from_stress_results(type_a_results),
