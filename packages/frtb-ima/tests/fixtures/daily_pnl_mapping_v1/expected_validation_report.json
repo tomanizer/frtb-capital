@@ -1,0 +1,11 @@
+{
+  "target_schema": "ima-arrow-v1",
+  "source_system": "synthetic_client_risk_engine",
+  "source_file": "synthetic_daily_pnl.csv",
+  "row_count_read": 4,
+  "row_count_mapped": 3,
+  "row_count_rejected": 1,
+  "finding_codes": [
+    "DAILY_PNL_DUPLICATE_DESK_DATE"
+  ]
+}

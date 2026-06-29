@@ -1,0 +1,22 @@
+mapping_spec_version: 1
+target_schema: ima-arrow-v1
+source_system: synthetic_client_risk_engine
+base_currency: USD
+timezone: Europe/London
+
+sign_convention:
+  pnl_positive_means: gain
+
+tables:
+  daily_pnl_vectors:
+    source: synthetic_daily_pnl.csv
+    target: ima_daily_pnl_vectors
+    fields:
+      desk_id: DESK_CODE
+      business_date: COB_DATE
+      apl: APL_USD
+      hpl: HPL_USD
+      rtpl: RTPL_USD
+      var_975: VAR_975_USD
+      var_99: VAR_990_USD
+      source_row_id: SOURCE_ROW
