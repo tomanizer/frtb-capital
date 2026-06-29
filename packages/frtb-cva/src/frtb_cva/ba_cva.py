@@ -48,10 +48,12 @@ def calculate_netting_set_standalone(
     Parameters
     ----------
     netting_set :
-        Input for ``calculate_netting_set_standalone`` used in the CVA capital path.
+        Canonical BA-CVA netting-set exposure with EAD, maturity, discount factor,
+        and source lineage.
 
     counterparty :
-        Input for ``calculate_netting_set_standalone`` used in the CVA capital path.
+        Counterparty classification row that supplies sector and credit-quality
+        risk-weight inputs.
 
     profile, optional :
         Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
@@ -59,7 +61,8 @@ def calculate_netting_set_standalone(
     Returns
     -------
     BaCvaStandAloneLine
-        Result of ``calculate_netting_set_standalone`` for audit and downstream aggregation."""
+        Netting-set standalone capital line with risk weight, maturity, discount
+        factor, citations, and source identifiers for audit replay."""
 
     if netting_set.counterparty_id != counterparty.counterparty_id:
         raise CvaInputError(
@@ -114,10 +117,11 @@ def calculate_counterparty_standalone(
     Parameters
     ----------
     counterparty :
-        Input for ``calculate_counterparty_standalone`` used in the CVA capital path.
+        Counterparty whose BA-CVA standalone capital is being assembled.
 
     netting_sets :
-        Input for ``calculate_counterparty_standalone`` used in the CVA capital path.
+        Netting-set exposures; rows for other counterparties are ignored by this
+        counterparty-scoped aggregation.
 
     profile, optional :
         Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
@@ -125,7 +129,8 @@ def calculate_counterparty_standalone(
     Returns
     -------
     BaCvaCounterpartyCapital
-        Result of ``calculate_counterparty_standalone`` for audit and downstream aggregation."""
+        Counterparty standalone total with deterministic netting-set ids,
+        classification fields, and regulatory citations."""
 
     capital, _ = _counterparty_standalone_with_lines(counterparty, netting_sets, profile=profile)
     return capital
@@ -192,10 +197,10 @@ def calculate_reduced_portfolio(
     Parameters
     ----------
     counterparties :
-        Input for ``calculate_reduced_portfolio`` used in the CVA capital path.
+        Counterparty classification rows included in reduced BA-CVA aggregation.
 
     netting_sets :
-        Input for ``calculate_reduced_portfolio`` used in the CVA capital path.
+        Validated netting-set exposure rows grouped by counterparty id.
 
     profile, optional :
         Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
@@ -203,7 +208,8 @@ def calculate_reduced_portfolio(
     Returns
     -------
     BaCvaReducedPortfolioResult
-        Result of ``calculate_reduced_portfolio`` for audit and downstream aggregation."""
+        Reduced BA-CVA portfolio result with counterparty totals, netting-set
+        lines, portfolio scalar inputs, and citation metadata."""
 
     netting_sets_by_counterparty: dict[str, list[CvaNettingSet]] = defaultdict(list)
     for netting_set in netting_sets:
@@ -308,10 +314,11 @@ def calculate_full_portfolio(
     Parameters
     ----------
     counterparties :
-        Input for ``calculate_full_portfolio`` used in the CVA capital path.
+        Counterparty classification rows included in the full BA-CVA portfolio.
 
     netting_sets :
-        Input for ``calculate_full_portfolio`` used in the CVA capital path.
+        Validated netting-set exposure rows used to compute reduced and hedged
+        BA-CVA components.
 
     hedges, optional :
         Declared BA-CVA or SA-CVA hedge records assessed for eligibility.
@@ -322,7 +329,8 @@ def calculate_full_portfolio(
     Returns
     -------
     BaCvaFullPortfolioResult
-        Result of ``calculate_full_portfolio`` for audit and downstream aggregation."""
+        Full BA-CVA portfolio result combining reduced capital, eligible hedge
+        recognition lines, beta floor metadata, and citations."""
 
     reduced = calculate_reduced_portfolio(counterparties, netting_sets, profile=profile)
     rho, rho_citation = ba_cva_rho(profile=profile)
@@ -452,11 +460,9 @@ def calculate_full_portfolio(
     hma_total = sum(hma_by_counterparty.values())
     k_portfolio_hedged = math.sqrt(systematic**2 + (1.0 - rho**2) * idiosyncratic + hma_total)
     k_hedged = discount_scalar * k_portfolio_hedged
-    k_full = beta * reduced.k_reduced + (1.0 - beta) * k_hedged
     beta_floor = beta * reduced.k_reduced
-    beta_floor_binding = k_full + 1e-12 < beta_floor
-    if beta_floor_binding:
-        k_full = beta_floor
+    raw_k_full = beta_floor + (1.0 - beta) * k_hedged
+    k_full = max(raw_k_full, beta_floor)
 
     return BaCvaFullPortfolioResult(
         k_full=k_full,
@@ -465,7 +471,7 @@ def calculate_full_portfolio(
         k_portfolio_hedged=k_portfolio_hedged,
         ih=ih,
         beta=beta,
-        beta_floor_binding=beta_floor_binding,
+        beta_floor_binding=False,
         rho=rho,
         d_ba_cva=discount_scalar,
         reduced=reduced,

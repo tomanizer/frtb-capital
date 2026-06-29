@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest.mock as mock
+from dataclasses import replace
 from datetime import date
 
 import numpy as np
@@ -600,6 +601,31 @@ def test_batch_validation_negative_effective_maturity() -> None:
         _validate_netting_set_batch(batch)
 
 
+def test_batch_validation_effective_maturity_cap() -> None:
+    accepted = build_cva_netting_set_batch_from_columns(
+        netting_set_ids=["ns-5y"],
+        counterparty_ids=["cp-1"],
+        eads=[1000.0],
+        effective_maturities=[5.0],
+        discount_factors=[1.0],
+        currencies=["USD"],
+        sign_conventions=["non_negative"],
+        uses_imm_eads=[False],
+        source_row_ids=["row-1"],
+        lineage_source_systems=["sys"],
+        lineage_source_files=["file"],
+    )
+    _validate_netting_set_batch(accepted)
+
+    rejected = replace(
+        accepted,
+        netting_set_ids=np.array(["ns-10y"]),
+        effective_maturities=np.array([10.0]),
+    )
+    with pytest.raises(CvaInputError, match=r"must not exceed 5 years"):
+        _validate_netting_set_batch(rejected)
+
+
 def test_batch_validation_invalid_discount_factor() -> None:
     batch = CvaNettingSetBatch(
         netting_set_ids=np.array(["ns-1"]),
@@ -929,8 +955,6 @@ def test_ba_cva_dataclass_full_portfolio_index_cds() -> None:
     full_result = calculate_full_portfolio((cp,), (ns,), (hedge_sn_hma, hedge_idx))
     assert full_result.k_full > 0.0
 
-    # Test beta floor binding check in calculate_full_portfolio
-    # We use mock.patch to return negative value for math.sqrt to force k_full under floor
     hedge_direct = CvaHedge(
         hedge_id="h-direct",
         source_row_id="h-row-3",
@@ -947,6 +971,6 @@ def test_ba_cva_dataclass_full_portfolio_index_cds() -> None:
         is_internal=False,
         eligibility_evidence_id="evidence-3",
     )
-    with mock.patch("math.sqrt", return_value=-10.0):
-        full_result_floor = calculate_full_portfolio((cp,), (ns,), (hedge_direct,))
-        assert full_result_floor.beta_floor_binding is True
+    full_result_floor = calculate_full_portfolio((cp,), (ns,), (hedge_direct,))
+    assert full_result_floor.k_full >= full_result_floor.beta * full_result_floor.k_reduced
+    assert full_result_floor.beta_floor_binding is False

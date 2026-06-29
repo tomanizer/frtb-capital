@@ -8,6 +8,7 @@ from frtb_cva.validation.common import (
     CvaInputError,
     _finite_float,
     _require_text,
+    _validate_effective_maturity,
     _validate_lineage,
     normalise_ead_amount,
 )
@@ -149,13 +150,7 @@ def _validate_netting_set(
         netting_set.ead,
         source_sign_convention=netting_set.sign_convention,  # type: ignore[arg-type]
     )
-    _finite_float(netting_set.effective_maturity, field="effective_maturity")
-    if netting_set.effective_maturity < 0:
-        raise CvaInputError(
-            "effective maturity must be non-negative",
-            field="effective_maturity",
-            record_id=record_id,
-        )
+    _validate_effective_maturity(netting_set.effective_maturity, record_id=record_id)
     discount_factor = _finite_float(netting_set.discount_factor, field="discount_factor")
     if discount_factor <= 0:
         raise CvaInputError(
