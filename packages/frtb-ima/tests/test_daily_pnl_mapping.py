@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 from frtb_ima.adapters.daily_pnl_mapping import (
@@ -17,7 +16,6 @@ from frtb_ima.adapters.daily_pnl_mapping import (
     materialize_daily_pnl_vectors_from_rows,
     parse_ima_mapping_spec,
 )
-
 
 MAPPING_YAML = """
 mapping_spec_version: 1
