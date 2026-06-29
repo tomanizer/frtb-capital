@@ -34,7 +34,7 @@ def fair_value_cap_evidence_by_position(
     Returns
     -------
     dict[str, DrcFairValueCapEvidence]
-        Result of the operation.
+        Fair-value cap evidence keyed by unique position id.
     """
 
     by_position: dict[str, DrcFairValueCapEvidence] = {}
@@ -94,7 +94,7 @@ def used_fair_value_cap_evidence(
     Returns
     -------
     tuple[DrcFairValueCapEvidence, ...]
-        Result of the operation.
+        tuple[DrcFairValueCapEvidence, ...] produced by used_fair_value_cap_evidence.
     """
 
     position_ids = tuple(sorted(position.position_id for position in positions))
@@ -116,7 +116,7 @@ def used_fair_value_cap_evidence_for_position_ids(
     Returns
     -------
     tuple[DrcFairValueCapEvidence, ...]
-        Result of the operation.
+        Fair-value cap evidence consumed by the supplied position ids in stable order.
     """
 
     evidence = context.securitisation_non_ctp_fair_value_cap_evidence
@@ -140,7 +140,7 @@ def fair_value_cap_hash_payload(
     Returns
     -------
     tuple[dict[str, object], ...]
-        Result of the operation.
+        Deterministic fair-value cap evidence payload for hashing.
     """
 
     return tuple(

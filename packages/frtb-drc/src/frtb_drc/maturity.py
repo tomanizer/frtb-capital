@@ -5,7 +5,13 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 
-from frtb_drc.data_models import BranchMetadata, BranchType, GrossJtd, MaturityScaledJtd
+from frtb_drc.data_models import (
+    BranchMetadata,
+    BranchType,
+    DrcRiskClass,
+    GrossJtd,
+    MaturityScaledJtd,
+)
 from frtb_drc.reference_data import get_maturity_policy
 from frtb_drc.regimes import US_NPR_2_0_PROFILE_ID
 from frtb_drc.validation import DrcInputError
@@ -15,6 +21,7 @@ def calculate_maturity_weight(
     maturity_years: float,
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
+    risk_class: DrcRiskClass = DrcRiskClass.NON_SECURITISATION,
 ) -> tuple[float, bool, str]:
     """Return maturity weight, floor flag, and citation id.
     Parameters
@@ -23,11 +30,13 @@ def calculate_maturity_weight(
         Remaining maturity in years.
     profile_id : str, optional
         Active DRC rule profile identifier.
+    risk_class : DrcRiskClass, optional
+        Default-risk class for maturity policy dispatch.
 
     Returns
     -------
     tuple[float, bool, str]
-        Result of the operation.
+        Maturity weight, floor flag, and citation id for the selected profile and risk class.
     """
 
     if not math.isfinite(maturity_years):
@@ -35,7 +44,9 @@ def calculate_maturity_weight(
     if maturity_years < 0:
         raise DrcInputError("maturity_years must be non-negative")
 
-    policy = get_maturity_policy(profile_id)
+    policy = get_maturity_policy(profile_id, risk_class=risk_class)
+    if policy.floor_years == policy.full_weight_years:
+        return 1.0, False, policy.citation_id
     if maturity_years >= policy.full_weight_years:
         return 1.0, False, policy.citation_id
     floor_applied = maturity_years < policy.floor_years
@@ -48,6 +59,7 @@ def scale_gross_jtd(
     maturity_years: float,
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
+    risk_class: DrcRiskClass = DrcRiskClass.NON_SECURITISATION,
 ) -> MaturityScaledJtd:
     """Apply maturity weighting to a gross JTD record.
     Parameters
@@ -58,16 +70,19 @@ def scale_gross_jtd(
         Remaining maturity in years.
     profile_id : str, optional
         Active DRC rule profile identifier.
+    risk_class : DrcRiskClass, optional
+        Default-risk class for maturity policy dispatch.
 
     Returns
     -------
     MaturityScaledJtd
-        Result of the operation.
+        MaturityScaledJtd with weight, scaled amount, citations, and floor branch metadata.
     """
 
     weight, floor_applied, citation_id = calculate_maturity_weight(
         maturity_years,
         profile_id=profile_id,
+        risk_class=risk_class,
     )
     branch_metadata = gross_jtd.branch_metadata
     if floor_applied:
@@ -101,6 +116,7 @@ def scale_gross_jtds(
     gross_jtds_with_maturity: Iterable[tuple[GrossJtd, float]],
     *,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
+    risk_class: DrcRiskClass = DrcRiskClass.NON_SECURITISATION,
 ) -> tuple[MaturityScaledJtd, ...]:
     """Scale gross JTD records in input order.
     Parameters
@@ -109,15 +125,22 @@ def scale_gross_jtds(
         Gross jtds with maturity.
     profile_id : str, optional
         Active DRC rule profile identifier.
+    risk_class : DrcRiskClass, optional
+        Default-risk class for maturity policy dispatch.
 
     Returns
     -------
     tuple[MaturityScaledJtd, ...]
-        Result of the operation.
+        Tuple of MaturityScaledJtd records in input order.
     """
 
     return tuple(
-        scale_gross_jtd(gross_jtd, maturity_years, profile_id=profile_id)
+        scale_gross_jtd(
+            gross_jtd,
+            maturity_years,
+            profile_id=profile_id,
+            risk_class=risk_class,
+        )
         for gross_jtd, maturity_years in gross_jtds_with_maturity
     )
 

@@ -36,7 +36,7 @@ def risk_weight_evidence_by_position(
     Returns
     -------
     dict[str, DrcRiskWeightEvidence]
-        Result of the operation.
+        Risk-weight evidence keyed by unique position id.
     """
 
     result: dict[str, DrcRiskWeightEvidence] = {}
@@ -91,7 +91,7 @@ def effective_risk_weights(
     Returns
     -------
     dict[str, float]
-        Result of the operation.
+        Effective risk weights keyed by position id for the selected risk class.
     """
 
     raw_field_name, raw_weights = _context_raw_weights(context, risk_class=risk_class)
@@ -146,7 +146,7 @@ def used_risk_weight_evidence(
     Returns
     -------
     tuple[DrcRiskWeightEvidence, ...]
-        Result of the operation.
+        tuple[DrcRiskWeightEvidence, ...] produced by used_risk_weight_evidence.
     """
 
     _field_name, evidence = _context_evidence(context, risk_class=risk_class)
@@ -179,7 +179,7 @@ def used_risk_weight_evidence_for_position_ids(
     Returns
     -------
     tuple[DrcRiskWeightEvidence, ...]
-        Result of the operation.
+        Risk-weight evidence consumed by the supplied position ids in stable order.
     """
 
     _field_name, evidence = _context_evidence(context, risk_class=risk_class)
@@ -209,7 +209,7 @@ def risk_weight_evidence_hash_payload(
     Returns
     -------
     tuple[dict[str, object], ...]
-        Result of the operation.
+        Deterministic risk-weight evidence payload for hashing.
     """
 
     return tuple(

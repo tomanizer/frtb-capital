@@ -3,11 +3,18 @@
     "base_currency": "USD",
     "calculation_date": "2026-05-29",
     "citation_policy": "strict",
+    "ctp_offset_groups": {},
+    "ctp_risk_weight_evidence": {},
+    "ctp_risk_weights": {},
     "desk_id": "",
     "fx_rates": {},
     "legal_entity": "",
     "profile_id": "US_NPR_2_0",
-    "run_id": "demo-drc-nonsec-v2"
+    "run_id": "demo-drc-nonsec-v2",
+    "securitisation_non_ctp_fair_value_cap_evidence": {},
+    "securitisation_non_ctp_offset_groups": {},
+    "securitisation_non_ctp_risk_weight_evidence": {},
+    "securitisation_non_ctp_risk_weights": {}
   },
   "fixture_id": "drc_nonsec_v2",
   "positions": [

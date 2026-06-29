@@ -113,7 +113,7 @@ def calculate_ctp_drc(
     Returns
     -------
     CtpCalculation
-        Result of the operation.
+        CTP gross, maturity-scaled, net, and category records for result assembly.
     """
 
     profile = get_rule_profile(profile_id)
@@ -136,6 +136,7 @@ def calculate_ctp_drc(
             for gross_jtd, position in zip(gross_jtds, records, strict=True)
         ),
         profile_id=profile_id,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
     )
     net_jtds = calculate_ctp_net_jtds(
         (
@@ -188,7 +189,7 @@ def calculate_ctp_gross_jtd(
     Returns
     -------
     GrossJtd
-        Result of the operation.
+        CTP GrossJtd record using market-value default exposure and profile citations.
     """
 
     validate_position(position)
@@ -233,7 +234,7 @@ def calculate_ctp_net_jtds(
     Returns
     -------
     tuple[NetJtd, ...]
-        Result of the operation.
+        Tuple of CTP NetJtd records in stable bucket and offset-group order.
     """
 
     profile = get_rule_profile(profile_id)
@@ -275,7 +276,7 @@ def calculate_ctp_category_drc(
     Returns
     -------
     CategoryDrc
-        Result of the operation.
+        CTP CategoryDrc with bucket capital, cross-index aggregation, and branch metadata.
     """
 
     profile = get_rule_profile(profile_id)
@@ -357,7 +358,7 @@ def ctp_context_input_hash(
     Returns
     -------
     str
-        Result of the operation.
+        Stable string identifier for audit or hashing.
     """
 
     records = tuple(
