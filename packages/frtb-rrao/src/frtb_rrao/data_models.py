@@ -288,6 +288,7 @@ class RraoCapitalResult:
     total_rrao: float
     citations: tuple[str, ...]
     warnings: tuple[str, ...] = ()
+    input_hash_algorithm: str = "json-row-v1"
 
     def as_dict(self) -> dict[str, object]:
         """Return the deterministic audit payload for this result."""

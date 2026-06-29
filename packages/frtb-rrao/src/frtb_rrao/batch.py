@@ -30,7 +30,10 @@ from frtb_rrao._batch_columns import (
     _text_array_with_default,
 )
 from frtb_rrao._citations import merged_citation_ids
-from frtb_rrao.assembly.hashes import input_hash_for_rrao_batch
+from frtb_rrao.assembly.hashes import (
+    INPUT_HASH_ALGORITHM_JSON_ROW_V1,
+    input_hash_for_rrao_batch,
+)
 from frtb_rrao.assembly.results import (
     collect_line_citations,
     partition_lines,
@@ -38,7 +41,7 @@ from frtb_rrao.assembly.results import (
     validate_context,
 )
 from frtb_rrao.audit import validate_rrao_result_reconciliation
-from frtb_rrao.batch_registry import rrao_position_column_kwargs
+from frtb_rrao.batch_registry import materialize_rrao_positions, rrao_position_column_kwargs
 from frtb_rrao.capital import build_rrao_subtotals, included_rrao_total
 from frtb_rrao.data_models import (
     RraoCalculationContext,
@@ -55,8 +58,8 @@ from frtb_rrao.data_models import (
 from frtb_rrao.kernel.classification import RraoDecisionArrays, decision_arrays_for_batch
 from frtb_rrao.reference_data import risk_weight_rules_for_profile
 from frtb_rrao.regimes import get_rrao_rule_profile
-from frtb_rrao.validation import RraoInputError, validate_rrao_positions
 from frtb_rrao.validation._batch_common import position_id_at_first
+from frtb_rrao.validation._errors import RraoInputError
 from frtb_rrao.validation.batch import validate_rrao_batch
 
 
@@ -102,6 +105,7 @@ class RraoPositionBatch:
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...]
     citations: tuple[tuple[str, ...], ...]
     input_hash: str
+    input_hash_algorithm: str = INPUT_HASH_ALGORITHM_JSON_ROW_V1
     source_hash: str | None = None
     handoff_hash: str | None = None
     diagnostics: tuple[Mapping[str, object], ...] = ()
@@ -149,15 +153,33 @@ def build_rrao_batch_from_positions(
         Result of the operation.
     """
 
-    validated = validate_rrao_positions(positions)
-    if not validated:
+    materialized = materialize_rrao_positions(positions)
+    if not materialized:
         raise RraoInputError("RRAO batch requires at least one position", field="positions")
-    column_kwargs = cast(Any, rrao_position_column_kwargs(validated))
+    return _build_rrao_batch_from_materialized_positions(
+        materialized,
+        source_hash=source_hash,
+        handoff_hash=handoff_hash,
+        diagnostics=diagnostics,
+    )
+
+
+def _build_rrao_batch_from_materialized_positions(
+    positions: tuple[RraoPosition, ...],
+    *,
+    source_hash: str | None = None,
+    handoff_hash: str | None = None,
+    diagnostics: Sequence[Mapping[str, object]] = (),
+) -> RraoPositionBatch:
+    """Build a validated RRAO batch after row container/type checks."""
+
+    column_kwargs = cast(Any, rrao_position_column_kwargs(positions))
     return build_rrao_batch_from_columns(
         **column_kwargs,
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
+        copy_arrays=False,
     )
 
 
@@ -526,7 +548,11 @@ def build_rrao_batch_from_columns(
         diagnostics=tuple(dict(item) for item in diagnostics),
     )
     validate_rrao_batch(batch)
-    return replace(batch, input_hash=input_hash_for_rrao_batch(batch))
+    return replace(
+        batch,
+        input_hash=input_hash_for_rrao_batch(batch),
+        input_hash_algorithm=INPUT_HASH_ALGORITHM_JSON_ROW_V1,
+    )
 
 
 def calculate_rrao_capital_from_batch(
@@ -566,6 +592,7 @@ def calculate_rrao_capital_from_batch(
         profile_id=rule_profile.profile.value,
         profile_hash=rule_profile.content_hash,
         input_hash=batch.input_hash,
+        input_hash_algorithm=batch.input_hash_algorithm,
         lines=included_lines,
         excluded_lines=excluded_lines,
         subtotals=build_rrao_subtotals(result_lines),

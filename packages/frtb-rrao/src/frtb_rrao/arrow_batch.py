@@ -14,11 +14,10 @@ from frtb_common import (
     NullPolicy,
     TabularLogicalType,
     normalize_arrow_table,
-    normalized_arrow_table_hash,
-    read_arrow_columns,
 )
 
-from frtb_rrao.batch import RraoPositionBatch, build_rrao_batch_from_columns
+from frtb_rrao._arrow_batch_fast_adapter import _build_rrao_batch_from_arrow_fast
+from frtb_rrao.batch import RraoPositionBatch
 from frtb_rrao.batch_registry import RRAO_BATCH_SPEC
 from frtb_rrao.validation import RraoInputError
 
@@ -322,23 +321,10 @@ def build_rrao_batch_from_arrow(
 
     if not isinstance(handoff, NormalizedArrowTable):
         raise RraoInputError("handoff must be NormalizedArrowTable", field="handoff")
-    table = handoff.accepted
-    columns = read_arrow_columns(
-        table,
-        RRAO_ARROW_COLUMN_SPECS,
-        error=_rrao_error,
+    return _build_rrao_batch_from_arrow_fast(
+        handoff,
+        column_specs=RRAO_ARROW_COLUMN_SPECS,
         null_defaults=_RRAO_NULL_DEFAULTS,
-    )
-    _reject_unsupported_nested_payload(columns.get("unsupported_nested_payload"))
-    diagnostics = tuple(diagnostic.as_dict() for diagnostic in handoff.diagnostics)
-    return build_rrao_batch_from_columns(
-        **_rrao_batch_column_kwargs(columns),
-        lineage_present=[True] * table.num_rows,
-        citations=_citations_column(columns.get("citations")),
-        source_hash=handoff.source_hash,
-        handoff_hash=normalized_arrow_table_hash(handoff),
-        diagnostics=diagnostics,
-        copy_arrays=False,
     )
 
 

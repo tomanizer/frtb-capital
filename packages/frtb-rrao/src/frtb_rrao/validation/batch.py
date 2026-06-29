@@ -192,20 +192,10 @@ def _validate_back_to_back_match_groups(batch: Any) -> None:
             position_id=cast(str, batch.position_ids[index]),
         )
 
-    positions_by_id = {
-        cast(str, batch.position_ids[int(index)]): int(index) for index in match_indices
-    }
     match_groups: dict[str, list[int]] = {}
     for raw_index in match_indices:
         index = int(raw_index)
         match_group_id = batch.back_to_back_match_group_ids[index]
-        matched_position_id = cast(str, batch.back_to_back_matched_position_ids[index])
-        if matched_position_id not in positions_by_id:
-            raise RraoInputError(
-                _vr.BACK_TO_BACK_REQUIRES_EVIDENCED_COUNTERPART_MESSAGE,
-                field="back_to_back_match.matched_position_id",
-                position_id=cast(str, batch.position_ids[index]),
-            )
         match_groups.setdefault(cast(str, match_group_id), []).append(index)
 
     for match_group_id in sorted(match_groups):

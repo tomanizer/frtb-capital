@@ -6,6 +6,9 @@ from typing import Any
 
 from frtb_rrao.assembly.payloads import batch_position_payload, hash_position_payloads
 
+INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2 = "arrow-columnar-v2"
+INPUT_HASH_ALGORITHM_JSON_ROW_V1 = "json-row-v1"
+
 
 def input_hash_for_rrao_batch(batch: Any) -> str:
     """Hash canonical RRAO batch inputs in deterministic input order.
@@ -77,4 +80,8 @@ def _position_payload_for_hash(batch: Any, index: int) -> dict[str, object]:
     )
 
 
-__all__ = ["input_hash_for_rrao_batch"]
+__all__ = [
+    "INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2",
+    "INPUT_HASH_ALGORITHM_JSON_ROW_V1",
+    "input_hash_for_rrao_batch",
+]

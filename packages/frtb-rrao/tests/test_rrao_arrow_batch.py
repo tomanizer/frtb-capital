@@ -37,6 +37,7 @@ from frtb_rrao.arrow_batch import (
     build_rrao_batch_from_arrow,
     normalize_rrao_arrow_table,
 )
+from frtb_rrao.assembly.hashes import INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2
 from frtb_rrao.batch import build_rrao_batch_from_columns, build_rrao_batch_from_positions
 from frtb_rrao.batch_registry import RRAO_BATCH_SPEC, rrao_position_column_kwargs
 
@@ -109,6 +110,8 @@ def test_rrao_arrow_batch_batch_matches_v1_row_capital() -> None:
     calculation = calculate_rrao_capital_from_batch(batch, context=context)
 
     validate_rrao_result_reconciliation(calculation.result)
+    assert batch.input_hash_algorithm == INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2
+    assert calculation.result.input_hash_algorithm == INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2
     assert batch.source_hash == source_hash
     assert batch.handoff_hash is not None
     assert calculation.result.profile_hash == row_result.profile_hash
@@ -275,10 +278,13 @@ def test_rrao_arrow_batch_handles_chunked_dictionary_text_columns() -> None:
     column_batch = build_rrao_batch_from_columns(**payload)
 
     arrow_batch = build_rrao_batch_from_arrow(normalize_rrao_arrow_table(table))
+    repeated_arrow_batch = build_rrao_batch_from_arrow(normalize_rrao_arrow_table(table))
 
     assert table.column("evidence_type").num_chunks == 2
     assert pa.types.is_dictionary(table.column("evidence_type").type)
-    assert arrow_batch.input_hash == column_batch.input_hash
+    assert arrow_batch.input_hash_algorithm == INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2
+    assert arrow_batch.input_hash == repeated_arrow_batch.input_hash
+    assert arrow_batch.input_hash != column_batch.input_hash
     np.testing.assert_array_equal(
         arrow_batch.position_ids,
         payload["position_ids"],
