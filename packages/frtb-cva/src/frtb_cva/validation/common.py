@@ -28,6 +28,7 @@ class AmountSignConventionEnum(StrEnum):
 
 VALID_EAD_SIGN_CONVENTIONS: frozenset[str] = frozenset(EadSignConvention)
 VALID_AMOUNT_SIGN_CONVENTIONS: frozenset[str] = frozenset(AmountSignConventionEnum)
+MAX_EFFECTIVE_MATURITY_YEARS = 5.0
 
 
 class CvaInputError(ValueError):
@@ -48,6 +49,23 @@ def _finite_float(value: object, *, field: str) -> float:
     if not math.isfinite(number):
         raise CvaInputError("value must be finite", field=field)
     return number
+
+
+def _validate_effective_maturity(value: object, *, record_id: str = "") -> float:
+    maturity = _finite_float(value, field="effective_maturity")
+    if maturity < 0.0:
+        raise CvaInputError(
+            "effective maturity must be non-negative",
+            field="effective_maturity",
+            record_id=record_id,
+        )
+    if maturity > MAX_EFFECTIVE_MATURITY_YEARS:
+        raise CvaInputError(
+            "effective_maturity must not exceed 5 years (MAR50.15)",
+            field="effective_maturity",
+            record_id=record_id,
+        )
+    return maturity
 
 
 def normalise_ead_amount(
@@ -160,6 +178,7 @@ def _validate_lineage(lineage: CvaSourceLineage | None, record_id: str) -> None:
 
 
 __all__ = [
+    "MAX_EFFECTIVE_MATURITY_YEARS",
     "VALID_AMOUNT_SIGN_CONVENTIONS",
     "VALID_EAD_SIGN_CONVENTIONS",
     "AmountSignConvention",
@@ -170,6 +189,7 @@ __all__ = [
     "_finite_float",
     "_require_mixed_sensitivity_scope_evidence",
     "_require_text",
+    "_validate_effective_maturity",
     "_validate_lineage",
     "normalise_cva_amount",
     "normalise_ead_amount",

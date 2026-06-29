@@ -63,7 +63,8 @@ def test_lha_es_from_vectors_matches_scalars() -> None:
         alpha=ALPHA,
         estimator=ESTIMATOR,
     )
-    vector_result = lha_es_from_vectors(lh_vectors, alpha=ALPHA, estimator=ESTIMATOR)
+    with pytest.warns(UserWarning, match="without nesting_evidence"):
+        vector_result = lha_es_from_vectors(lh_vectors, alpha=ALPHA, estimator=ESTIMATOR)
     assert vector_result == pytest.approx(scalar_result, rel=1e-6)
 
 
@@ -75,10 +76,12 @@ def test_lha_breakdown_from_vectors() -> None:
             LiquidityHorizon.LH10: ScenarioVector(
                 values=np.array([100.0, 100.0, 100.0]),
                 metadata=metadata,
+                risk_factor_names=("RF1", "RF2"),
             ),
             LiquidityHorizon.LH20: ScenarioVector(
                 values=np.array([80.0, 80.0, 80.0]),
                 metadata=metadata,
+                risk_factor_names=("RF2",),
             ),
         },
         alpha=ALPHA,
@@ -126,13 +129,51 @@ def test_lha_es_from_scalars_missing_lh10_raises() -> None:
         )
 
 
+def test_lha_es_from_scalars_rejects_non_finite_lh10() -> None:
+    with pytest.raises(ValueError, match="pre-computed ES for LH10 must be finite, got inf"):
+        lha_es_breakdown_from_scalars(
+            {LiquidityHorizon.LH10: float("inf")},
+            alpha=ALPHA,
+            estimator=ESTIMATOR,
+        )
+
+
+def test_lha_es_from_scalars_rejects_non_finite_any_bucket() -> None:
+    with pytest.raises(ValueError, match="pre-computed ES for LH20 must be finite, got nan"):
+        lha_es_from_scalars(
+            {
+                LiquidityHorizon.LH10: 100.0,
+                LiquidityHorizon.LH20: float("nan"),
+            },
+            alpha=ALPHA,
+            estimator=ESTIMATOR,
+        )
+
+
+def test_lha_es_from_scalars_accepts_large_finite_input() -> None:
+    result = lha_es_breakdown_from_scalars(
+        {
+            LiquidityHorizon.LH10: 1.0e150,
+            LiquidityHorizon.LH20: 2.0e149,
+        },
+        alpha=ALPHA,
+        estimator=ESTIMATOR,
+    )
+
+    assert math.isfinite(result.lha_es)
+    assert result.component_by_horizon(LiquidityHorizon.LH10).expected_shortfall == pytest.approx(
+        1.0e150
+    )
+
+
 def test_lha_es_missing_intermediate_horizons() -> None:
     lh_vectors = {
         LiquidityHorizon.LH10: _uniform_losses(100, 100.0),
         LiquidityHorizon.LH120: _uniform_losses(100, 20.0),
     }
     expected = math.sqrt(1 * 100**2 + 6 * 20**2)
-    result = lha_es_from_vectors(lh_vectors, alpha=ALPHA, estimator=ESTIMATOR)
+    with pytest.warns(UserWarning, match="without nesting_evidence"):
+        result = lha_es_from_vectors(lh_vectors, alpha=ALPHA, estimator=ESTIMATOR)
     assert result == pytest.approx(expected, rel=1e-6)
 
 

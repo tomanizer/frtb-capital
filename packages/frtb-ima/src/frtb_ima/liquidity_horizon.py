@@ -68,7 +68,7 @@ class LHAESComponent:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Component fields keyed by stable reporting names.
         """
         return {
             "liquidity_horizon": self.liquidity_horizon.name,
@@ -96,12 +96,12 @@ class LHAESResult:
         Parameters
         ----------
         lh : LiquidityHorizon
-            Lh.
+            Liquidity horizon to look up in the decomposition.
 
         Returns
         -------
         LHAESComponent
-            Result of the operation.
+            Component whose liquidity horizon matches ``lh``.
         """
         for component in self.components:
             if component.liquidity_horizon == lh:
@@ -113,7 +113,7 @@ class LHAESResult:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Full LHA ES decomposition, including component audit records.
         """
         return {
             "alpha": self.alpha,
@@ -130,7 +130,7 @@ class LHAESResult:
         Returns
         -------
         list[str]
-            Result of the operation.
+            Human-readable summary lines for the LHA ES result.
         """
         lines = [
             f"LHA ES alpha={self.alpha:.4f} estimator={self.estimator.value}",
@@ -175,18 +175,19 @@ def lha_es_breakdown_from_vectors(
     Parameters
     ----------
     lh_vectors : Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]]
-        Lh vectors.
+        Nested scenario P&L vectors keyed by liquidity-horizon cutoff.
     alpha : float
-        Alpha.
+        ES confidence level.
     estimator : ESEstimator
-        Estimator.
+        Tail estimator used for each horizon-specific ES.
     lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
-        Lha weights.
+        Liquidity-horizon weights in regulatory aggregation order.
 
     Returns
     -------
     LHAESResult
-        Result of the operation.
+        LHAESResult with per-LH component decomposition, total sum of weighted
+        squares, scenario diagnostics, and final LHA ES.
     """
     validation = validate_nested_lh_vectors(lh_vectors)
 
@@ -245,21 +246,28 @@ def lha_es_breakdown_from_scalars(
     Parameters
     ----------
     es_by_lh : Mapping[LiquidityHorizon, float]
-        Es by lh.
+        Pre-computed finite ES scalar for each supplied liquidity-horizon subset.
     alpha : float
-        Alpha.
+        ES confidence level used to produce the supplied scalars.
     estimator : ESEstimator
-        Estimator.
+        Tail estimator used to produce the supplied scalars.
     lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
-        Lha weights.
+        Liquidity-horizon weights in regulatory aggregation order.
 
     Returns
     -------
     LHAESResult
-        Result of the operation.
+        LHAESResult using pre-computed ES scalars; scenario_count and
+        metadata_aligned are None because no vectors are supplied.
     """
     if LiquidityHorizon.LH10 not in es_by_lh:
         raise KeyError("es_by_lh must contain LH10 (the full risk-factor ES)")
+
+    for lh, es_value in es_by_lh.items():
+        if not isinstance(lh, LiquidityHorizon):
+            raise KeyError(f"invalid liquidity horizon key: {lh!r}")
+        if not math.isfinite(float(es_value)):
+            raise ValueError(f"pre-computed ES for {lh.name} must be finite, got {es_value}")
 
     sum_sq = 0.0
     components: list[LHAESComponent] = []
@@ -294,34 +302,21 @@ def lha_es_from_vectors(
     lha_weights: Sequence[tuple[LiquidityHorizon, float]] = _LHA_STEPS,
 ) -> float:
     """Compute liquidity-horizon-adjusted ES from nested scenario vectors.
-
-    Args:
-        lh_vectors: Mapping from LiquidityHorizon cutoff to the P&L vector
-                    for risk factors at or above that horizon.
-                    Must contain at least LH10 (the full set).
-        alpha:      ES confidence level.
-
-    Returns:
-        LHA ES scalar (positive = loss).
-
-    Raises:
-        KeyError:   if LH10 vector is missing.
-        ValueError: if any vector is empty or structurally invalid.
     Parameters
     ----------
     lh_vectors : Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]]
-        Lh vectors.
+        Nested scenario P&L vectors keyed by liquidity-horizon cutoff.
     alpha : float
-        Alpha.
+        ES confidence level.
     estimator : ESEstimator
-        Estimator.
+        Tail estimator used for each horizon-specific ES.
     lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
-        Lha weights.
+        Liquidity-horizon weights in regulatory aggregation order.
 
     Returns
     -------
     float
-        Result of the operation.
+        LHA ES scalar from the nested-vector formula.
     """
     if LiquidityHorizon.LH10 not in lh_vectors:
         raise KeyError("lh_vectors must contain LH10 (the full risk-factor vector)")
@@ -346,18 +341,18 @@ def lha_es_from_scalars(
     Parameters
     ----------
     es_by_lh : Mapping[LiquidityHorizon, float]
-        Es by lh.
+        Pre-computed finite ES scalar for each supplied liquidity-horizon subset.
     alpha : float
-        Alpha.
+        ES confidence level used to produce the supplied scalars.
     estimator : ESEstimator
-        Estimator.
+        Tail estimator used to produce the supplied scalars.
     lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
-        Lha weights.
+        Liquidity-horizon weights in regulatory aggregation order.
 
     Returns
     -------
     float
-        Result of the operation.
+        LHA ES scalar from the pre-computed horizon ES inputs.
     """
     return lha_es_breakdown_from_scalars(
         es_by_lh,
@@ -387,15 +382,15 @@ def lha_es_scalar_approximation(
     Parameters
     ----------
     es_full : float
-        Es full.
+        Full-set ES scalar to scale.
     weighted_avg_lh_days : float
-        Weighted avg lh days.
+        Weighted-average liquidity horizon in business days.
     base_horizon_days : float, optional
-        Base horizon days.
+        Base ES horizon in business days.
 
     Returns
     -------
     float
-        Result of the operation.
+        Legacy scalar approximation for comparison-only use.
     """
     return es_full * math.sqrt(weighted_avg_lh_days / base_horizon_days)

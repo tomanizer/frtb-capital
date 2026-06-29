@@ -22,12 +22,33 @@ def _vector(values: list[float]) -> ScenarioVector:
 def test_validate_nested_lh_vectors_success() -> None:
     result = validate_nested_lh_vectors(
         {
-            LiquidityHorizon.LH10: _vector([1.0, 2.0, 3.0]),
-            LiquidityHorizon.LH20: _vector([1.0, 2.0, 3.0]),
+            LiquidityHorizon.LH10: ScenarioVector(
+                values=np.array([1.0, 2.0, 3.0]),
+                metadata=METADATA,
+                risk_factor_names=("RF1", "RF2"),
+            ),
+            LiquidityHorizon.LH20: ScenarioVector(
+                values=np.array([1.0, 2.0, 3.0]),
+                metadata=METADATA,
+                risk_factor_names=("RF2",),
+            ),
         }
     )
     assert result.scenario_count == 3
     assert result.metadata_aligned is True
+    assert result.nesting_evidence_checked is True
+
+
+def test_validate_nested_lh_vectors_warns_when_nesting_evidence_absent() -> None:
+    with pytest.warns(UserWarning, match="without nesting_evidence"):
+        result = validate_nested_lh_vectors(
+            {
+                LiquidityHorizon.LH10: _vector([1.0, 2.0, 3.0]),
+                LiquidityHorizon.LH20: _vector([1.0, 2.0, 3.0]),
+            }
+        )
+
+    assert result.nesting_evidence_checked is False
 
 
 def test_validate_nested_lh_vectors_requires_lh10() -> None:
@@ -83,4 +104,20 @@ def test_validate_nested_lh_vectors_checks_nesting_evidence() -> None:
                 LiquidityHorizon.LH10: {"RF1"},
                 LiquidityHorizon.LH20: {"RF1", "RF2"},
             },
+        )
+
+
+def test_validate_nested_lh_vectors_checks_derived_nesting_evidence() -> None:
+    with pytest.raises(NestedLHValidationError, match="not a subset"):
+        validate_nested_lh_vectors(
+            {
+                LiquidityHorizon.LH10: ScenarioVector(
+                    values=np.array([1.0, 2.0, 3.0]),
+                    risk_factor_names=("RF1",),
+                ),
+                LiquidityHorizon.LH20: ScenarioVector(
+                    values=np.array([1.0, 2.0, 3.0]),
+                    risk_factor_names=("RF1", "RF2"),
+                ),
+            }
         )
