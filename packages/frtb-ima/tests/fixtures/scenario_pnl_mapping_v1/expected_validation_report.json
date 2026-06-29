@@ -1,0 +1,9 @@
+{
+  "target_schema": "ima-arrow-v1",
+  "source_system": "synthetic_client_risk_engine",
+  "source_file": "synthetic_scenario_pnl.csv",
+  "row_count_read": 9,
+  "row_count_mapped": 8,
+  "row_count_rejected": 1,
+  "finding_codes": ["SCENARIO_PNL_DUPLICATE_KEY"]
+}

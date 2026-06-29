@@ -1,0 +1,21 @@
+mapping_spec_version: 1
+target_schema: ima-arrow-v1
+source_system: synthetic_client_risk_engine
+base_currency: USD
+timezone: Europe/London
+
+sign_convention:
+  pnl_positive_means: gain
+
+tables:
+  scenario_pnl_vectors:
+    source: synthetic_scenario_pnl.csv
+    target: ima_scenario_pnl_vectors
+    fields:
+      scenario_id: SCENARIO_ID
+      scenario_date: SCENARIO_DATE
+      scenario_set: SCENARIO_SET
+      position_id: POSITION_ID
+      risk_factor_name: RISK_FACTOR
+      pnl: PNL_USD
+      source_row_id: SOURCE_ROW

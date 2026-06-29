@@ -17,6 +17,7 @@ from frtb_ima.audit_inputs import compute_inputs_hash
 
 if TYPE_CHECKING:
     from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
+    from frtb_ima.adapters._scenario_pnl_mapping_types import ScenarioPnlTableMapping
 
 IMA_DAILY_PNL_VECTOR_TARGET = "ima_daily_pnl_vectors"
 IMA_MAPPING_SPEC_VERSION = 1
@@ -108,6 +109,7 @@ class ImaMappingSpec:
     pnl_positive_means: str
     daily_pnl_vectors: DailyPnlTableMapping | None = None
     rfet_observations: RfetObservationTableMapping | None = None
+    scenario_pnl_vectors: ScenarioPnlTableMapping | None = None
     risk_factor_aliases: Mapping[str, str] = field(default_factory=dict)
     spec_hash: str = ""
 
@@ -120,7 +122,11 @@ class ImaMappingSpec:
         for field_name in ("target_schema", "source_system", "base_currency", "timezone"):
             if not str(getattr(self, field_name)):
                 raise MappingSpecError(f"{field_name} must be non-empty")
-        if self.daily_pnl_vectors is None and self.rfet_observations is None:
+        if (
+            self.daily_pnl_vectors is None
+            and self.rfet_observations is None
+            and self.scenario_pnl_vectors is None
+        ):
             raise MappingSpecError("tables must define at least one supported IMA target")
         object.__setattr__(
             self, "pnl_positive_means", _normalize_pnl_sign_convention(self.pnl_positive_means)
@@ -347,6 +353,14 @@ def _mapping_spec_payload(spec: ImaMappingSpec) -> dict[str, object]:
         ),
         "rfet_observations": (
             None if spec.rfet_observations is None else spec.rfet_observations.source
+        ),
+        "scenario_pnl_vectors": (
+            None
+            if spec.scenario_pnl_vectors is None
+            else {
+                "source": spec.scenario_pnl_vectors.source,
+                "missing_cells": spec.scenario_pnl_vectors.missing_cells,
+            }
         ),
         "risk_factor_aliases": dict(spec.risk_factor_aliases),
     }
