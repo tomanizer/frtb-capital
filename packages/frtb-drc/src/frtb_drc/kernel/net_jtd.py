@@ -40,6 +40,8 @@ _SENIORITY_RANK: dict[DrcSeniority, int] = {
     DrcSeniority.PSE: 1,
     DrcSeniority.NON_SENIOR_DEBT: 2,
     DrcSeniority.EQUITY: 3,
+    # ADR 0047 treats the zero-LGD recovery-unlinked category as below equity
+    # for same-obligor netting, grounded in US_NPR_210_B_1_IV / BASEL_MAR22_12.
     DrcSeniority.NOT_RECOVERY_LINKED: 4,
 }
 
@@ -135,6 +137,10 @@ def calculate_securitisation_non_ctp_net_jtds_from_arrays(
             "securitisation non-CTP netting used same-pool/same-tranche identity "
             "or explicit replication-group evidence"
         ),
+        zero_net_reason=(
+            "securitisation non-CTP same-pool/same-tranche group fully offset to zero net JTD"
+        ),
+        emit_zero_net_records=True,
         rejected_reason_code="SEC_NON_CTP_OFFSET_REQUIRES_SAME_POOL_TRANCHE_OR_REPLICATION",
         netting_citations=netting_citations,
     )
@@ -181,6 +187,8 @@ def calculate_ctp_net_jtds_from_arrays(
         normal_reason=(
             "CTP netting used exact exposure identity or explicit replication group evidence"
         ),
+        zero_net_reason="",
+        emit_zero_net_records=False,
         rejected_reason_code="CTP_OFFSET_REQUIRES_EXACT_MATCH_OR_EXPLICIT_REPLICATION",
         netting_citations=netting_citations,
     )
@@ -196,6 +204,8 @@ def _calculate_exact_group_net_jtds_from_arrays(
     seniority_layer: str,
     net_prefix: str,
     normal_reason: str,
+    zero_net_reason: str,
+    emit_zero_net_records: bool,
     rejected_reason_code: str,
     netting_citations: tuple[str, ...],
 ) -> tuple[NetJtd, ...]:
@@ -231,8 +241,13 @@ def _calculate_exact_group_net_jtds_from_arrays(
         scaled_short = math.fsum(float(scaled_jtd[index]) for index in short_indices)
         signed_net = scaled_long - scaled_short
         if signed_net == 0.0:
-            continue
-        direction = DefaultDirection.LONG if signed_net > 0.0 else DefaultDirection.SHORT
+            if not emit_zero_net_records:
+                continue
+            reason = zero_net_reason
+            direction = DefaultDirection.LONG
+        else:
+            reason = normal_reason
+            direction = DefaultDirection.LONG if signed_net > 0.0 else DefaultDirection.SHORT
         records.append(
             NetJtd(
                 net_jtd_id=(
@@ -259,7 +274,7 @@ def _calculate_exact_group_net_jtds_from_arrays(
                         branch_type=BranchType.NORMAL,
                         source_id=group_key,
                         selected=True,
-                        reason=normal_reason,
+                        reason=reason,
                         citations=netting_citations,
                     ),
                 ),

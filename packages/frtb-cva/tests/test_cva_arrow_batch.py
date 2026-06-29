@@ -13,6 +13,7 @@ from frtb_common import AdapterDiagnostic, source_content_hash
 from frtb_cva import (
     CvaCapitalResult,
     CvaCounterparty,
+    CvaHedge,
     CvaInputError,
     CvaNettingSet,
     SaCvaSensitivity,
@@ -26,6 +27,7 @@ from frtb_cva import (
     build_cva_netting_set_batch_from_netting_sets,
     build_sa_cva_sensitivity_batch_from_sensitivities,
     calculate_cva_capital,
+    calculate_cva_capital_from_arrow,
     calculate_cva_capital_from_batches,
     input_hash,
     input_hash_for_cva_batches,
@@ -134,6 +136,11 @@ def test_ba_cva_arrow_batch_matches_row_fixture_case() -> None:
         counterparty_batch,
         netting_set_batch,
     )
+    arrow_calculation = calculate_cva_capital_from_arrow(
+        context,
+        counterparty_handoff,
+        netting_set_handoff,
+    )
 
     assert counterparty_batch.source_hash == source_hash
     assert counterparty_batch.handoff_hash is not None
@@ -143,6 +150,24 @@ def test_ba_cva_arrow_batch_matches_row_fixture_case() -> None:
         row_result,
         case_id=case_id,
         check_input_hash=False,
+    )
+    _assert_results_match(
+        arrow_calculation.result,
+        row_result,
+        case_id=case_id,
+        check_input_hash=False,
+    )
+    assert len(arrow_calculation.result.input_hash) == 64
+    int(arrow_calculation.result.input_hash, 16)
+    assert arrow_calculation.result.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_calculation.result.input_hash != row_result.input_hash
+    assert (
+        calculate_cva_capital_from_arrow(
+            context,
+            counterparty_handoff,
+            netting_set_handoff,
+        ).result.input_hash
+        == arrow_calculation.result.input_hash
     )
 
 
@@ -220,6 +245,10 @@ def test_sa_cva_arrow_batch_matches_row_fixture_case() -> None:
         _sensitivity_table(sensitivities),
         source_hash=source_content_hash("synthetic cva sa source"),
     )
+    hedge_handoff = normalize_cva_hedge_arrow_table(
+        _hedge_table(hedges),
+        source_hash=source_content_hash("synthetic cva hedge source"),
+    )
 
     sensitivity_batch = build_sa_cva_sensitivity_batch_from_arrow(sensitivity_handoff)
     hedge_batch = build_cva_hedge_batch_from_hedges(hedges)
@@ -228,12 +257,35 @@ def test_sa_cva_arrow_batch_matches_row_fixture_case() -> None:
         sensitivities=sensitivity_batch,
         hedges=hedge_batch,
     )
+    arrow_calculation = calculate_cva_capital_from_arrow(
+        context,
+        hedges=hedge_handoff,
+        sensitivities=sensitivity_handoff,
+    )
 
     _assert_results_match(
         batch_calculation.result,
         row_result,
         case_id=case_id,
         check_input_hash=False,
+    )
+    _assert_results_match(
+        arrow_calculation.result,
+        row_result,
+        case_id=case_id,
+        check_input_hash=False,
+    )
+    assert len(arrow_calculation.result.input_hash) == 64
+    int(arrow_calculation.result.input_hash, 16)
+    assert arrow_calculation.result.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_calculation.result.input_hash != row_result.input_hash
+    assert (
+        calculate_cva_capital_from_arrow(
+            context,
+            hedges=hedge_handoff,
+            sensitivities=sensitivity_handoff,
+        ).result.input_hash
+        == arrow_calculation.result.input_hash
     )
     assert sensitivity_batch.handoff_hash is not None
 
@@ -607,6 +659,65 @@ def _netting_set_table(netting_sets: tuple[CvaNettingSet, ...]) -> pa.Table:
             "lineage_source_row_id": [
                 item.source_row_id if item.lineage is None else item.lineage.source_row_id
                 for item in netting_sets
+            ],
+        }
+    )
+
+
+def _hedge_table(hedges: tuple[CvaHedge, ...]) -> pa.Table:
+    return pa.table(
+        {
+            "hedge_id": [item.hedge_id for item in hedges],
+            "source_row_id": [item.source_row_id for item in hedges],
+            "counterparty_id": [item.counterparty_id for item in hedges],
+            "hedge_type": [
+                None if item.hedge_type is None else item.hedge_type.value for item in hedges
+            ],
+            "notional": [item.notional for item in hedges],
+            "remaining_maturity": [item.remaining_maturity for item in hedges],
+            "discount_factor": [item.discount_factor for item in hedges],
+            "reference_sector": [item.reference_sector.value for item in hedges],
+            "reference_credit_quality": [item.reference_credit_quality.value for item in hedges],
+            "reference_region": [item.reference_region for item in hedges],
+            "reference_relation": [item.reference_relation.value for item in hedges],
+            "eligibility": [item.eligibility.value for item in hedges],
+            "is_internal": [item.is_internal for item in hedges],
+            "discount_factor_explicit": [item.discount_factor_explicit for item in hedges],
+            "internal_desk_counterparty_id": [
+                item.internal_desk_counterparty_id for item in hedges
+            ],
+            "sa_cva_risk_class": [
+                None if item.sa_cva_risk_class is None else item.sa_cva_risk_class.value
+                for item in hedges
+            ],
+            "sa_cva_hedge_purpose": [
+                None if item.sa_cva_hedge_purpose is None else item.sa_cva_hedge_purpose.value
+                for item in hedges
+            ],
+            "sa_cva_hedge_instrument_type": [
+                None
+                if item.sa_cva_hedge_instrument_type is None
+                else item.sa_cva_hedge_instrument_type.value
+                for item in hedges
+            ],
+            "whole_transaction_evidence_id": [
+                item.whole_transaction_evidence_id for item in hedges
+            ],
+            "market_risk_ima_eligible": [item.market_risk_ima_eligible for item in hedges],
+            "market_risk_ima_exclusion_reason": [
+                item.market_risk_ima_exclusion_reason for item in hedges
+            ],
+            "eligibility_evidence_id": [item.eligibility_evidence_id for item in hedges],
+            "rejection_reason": [item.rejection_reason for item in hedges],
+            "lineage_source_system": [
+                "" if item.lineage is None else item.lineage.source_system for item in hedges
+            ],
+            "lineage_source_file": [
+                "" if item.lineage is None else item.lineage.source_file for item in hedges
+            ],
+            "lineage_source_row_id": [
+                item.source_row_id if item.lineage is None else item.lineage.source_row_id
+                for item in hedges
             ],
         }
     )

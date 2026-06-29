@@ -562,6 +562,7 @@ class DrcCapitalResult(_DrcAsDictMixin):
     categories: tuple[CategoryDrc, ...]
     total_drc: float
     citations: tuple[str, ...]
+    input_hash_algorithm: str = "json-row-v1"
     warnings: tuple[str, ...] = ()
     branch_metadata: tuple[BranchMetadata, ...] = ()
     package_name: str = "frtb-drc"

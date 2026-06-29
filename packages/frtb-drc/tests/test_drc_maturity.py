@@ -35,6 +35,19 @@ def test_maturity_between_three_months_and_one_year_scales_linearly() -> None:
     assert scaled.branch_metadata == ()
 
 
+def test_securitisation_maturity_policy_is_unscaled_for_short_maturity() -> None:
+    scaled = scale_gross_jtd(
+        _gross(risk_class=DrcRiskClass.SECURITISATION_NON_CTP),
+        0.50,
+        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+    )
+
+    assert scaled.maturity_weight == 1.0
+    assert scaled.scaled_jtd == 100.0
+    assert scaled.floor_applied is False
+    assert scaled.citations == ("BASEL_MAR22_11", "US_NPR_210_B_1_IV", "US_NPR_210_C_1")
+
+
 def test_maturity_at_or_above_one_year_is_unscaled() -> None:
     scaled_at_one = scale_gross_jtd(_gross(), 1.0)
     scaled_above_one = scale_gross_jtd(_gross(), 2.0)

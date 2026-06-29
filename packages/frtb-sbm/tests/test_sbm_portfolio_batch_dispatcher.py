@@ -19,7 +19,6 @@ from frtb_sbm import (
     build_sbm_batch,
     calculate_sbm_capital,
     calculate_sbm_portfolio_capital_from_batches,
-    input_hash_for_sensitivities,
 )
 from frtb_sbm.arrow_batch import (
     calculate_sbm_portfolio_capital_from_arrow_tables,
@@ -134,8 +133,13 @@ def test_portfolio_handoff_dispatcher_matches_row_api_for_supported_paths() -> N
     assert {(item.risk_class, item.risk_measure) for item in calculation.path_diagnostics} == set(
         SUPPORTED_PATHS
     )
-    assert calculation.result.input_hash == input_hash_for_sensitivities(sensitivities)
-    assert calculation.result.input_hash == row_result.input_hash
+    assert len(calculation.result.input_hash) == 64
+    int(calculation.result.input_hash, 16)
+    assert calculation.result.input_hash_algorithm == "arrow-columnar-v2-portfolio"
+    assert len(calculation.result.input_hash) == 64
+    int(calculation.result.input_hash, 16)
+    assert calculation.result.input_hash_algorithm == "arrow-columnar-v2-portfolio"
+    assert calculation.result.input_hash != row_result.input_hash
     assert calculation.result.total_capital == pytest.approx(row_result.total_capital)
     assert calculation.result.reconciliation is not None
     assert calculation.result.reconciliation.input_count == len(sensitivities)
@@ -164,7 +168,10 @@ def test_batch_dispatcher_concatenates_split_same_path_batches_before_capital() 
     assert calculation.path_diagnostics[0].batch_count == 2
     assert calculation.path_diagnostics[0].input_count == 2
     assert len(calculation.result.risk_classes) == 1
-    assert calculation.result.input_hash == row_result.input_hash
+    assert len(calculation.result.input_hash) == 64
+    int(calculation.result.input_hash, 16)
+    assert calculation.result.input_hash_algorithm == "arrow-columnar-v2-portfolio"
+    assert calculation.result.input_hash != row_result.input_hash
     assert calculation.result.total_capital == pytest.approx(row_result.total_capital)
 
 

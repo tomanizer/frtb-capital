@@ -144,7 +144,7 @@ def get_rule_profile(profile_id: str = US_NPR_2_0_PROFILE_ID) -> DrcRuleProfile:
     Returns
     -------
     DrcRuleProfile
-        Result of the operation.
+        Rule-profile metadata for the selected DRC profile id.
     """
 
     try:
@@ -174,7 +174,7 @@ def drc_profile_support_matrix() -> tuple[DrcProfileSupportCell, ...]:
     Returns
     -------
     tuple[DrcProfileSupportCell, ...]
-        Result of the operation.
+        tuple[DrcProfileSupportCell, ...] produced by drc_profile_support_matrix.
     """
 
     cells: list[DrcProfileSupportCell] = []
@@ -195,7 +195,7 @@ def profile_content_hash(profile: DrcRuleProfile) -> str:
     Returns
     -------
     str
-        Result of the operation.
+        Stable hash of rule-profile metadata and reference data.
     """
 
     payload = _profile_hash_payload(profile)

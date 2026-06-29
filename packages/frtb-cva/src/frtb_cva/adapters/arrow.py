@@ -19,12 +19,17 @@ from frtb_common import (
     read_arrow_columns,
 )
 
+from frtb_cva._arrow_hash_adapter import cva_arrow_columnar_input_hash
+from frtb_cva._batch_contracts import CvaBatchCapitalCalculation
+from frtb_cva.assembly.batch_payloads import INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2
 from frtb_cva.batch import (
     CvaCounterpartyBatch,
     CvaHedgeBatch,
     CvaNettingSetBatch,
     SaCvaSensitivityBatch,
+    calculate_cva_capital_from_batches,
 )
+from frtb_cva.data_models import CvaCalculationContext
 from frtb_cva.registry import (
     CVA_COUNTERPARTY_ARROW_COLUMN_SPECS,
     CVA_COUNTERPARTY_ENTITY_SPEC,
@@ -284,6 +289,59 @@ def build_sa_cva_sensitivity_batch_from_arrow(
     return build_cva_batch_from_arrow(handoff, SA_CVA_SENSITIVITY_ENTITY_SPEC)
 
 
+def calculate_cva_capital_from_arrow(
+    context: CvaCalculationContext,
+    counterparties: NormalizedArrowTable | None = None,
+    netting_sets: NormalizedArrowTable | None = None,
+    *,
+    hedges: NormalizedArrowTable | None = None,
+    sensitivities: NormalizedArrowTable | None = None,
+) -> CvaBatchCapitalCalculation:
+    """Calculate CVA capital directly from normalized Arrow handoffs.
+
+    Parameters
+    ----------
+    context : CvaCalculationContext
+        CVA run controls, profile, and method selection.
+    counterparties, netting_sets : NormalizedArrowTable or None, optional
+        Normalized BA-CVA entity handoffs.
+    hedges, sensitivities : NormalizedArrowTable or None, optional
+        Normalized hedge and SA-CVA sensitivity handoffs.
+
+    Returns
+    -------
+    CvaBatchCapitalCalculation
+        Capital result with an ``arrow-columnar-v2`` input hash.
+    """
+
+    counterparty_batch = (
+        None if counterparties is None else build_cva_counterparty_batch_from_arrow(counterparties)
+    )
+    netting_set_batch = (
+        None if netting_sets is None else build_cva_netting_set_batch_from_arrow(netting_sets)
+    )
+    hedge_batch = None if hedges is None else build_cva_hedge_batch_from_arrow(hedges)
+    sensitivity_batch = (
+        None if sensitivities is None else build_sa_cva_sensitivity_batch_from_arrow(sensitivities)
+    )
+    input_hash = cva_arrow_columnar_input_hash(
+        context,
+        None if counterparties is None else counterparties.accepted,
+        None if netting_sets is None else netting_sets.accepted,
+        hedge_table=None if hedges is None else hedges.accepted,
+        sensitivity_table=None if sensitivities is None else sensitivities.accepted,
+    )
+    return calculate_cva_capital_from_batches(
+        context,
+        counterparty_batch,
+        netting_set_batch,
+        hedges=hedge_batch,
+        sensitivities=sensitivity_batch,
+        input_hash=input_hash,
+        input_hash_algorithm=INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2,
+    )
+
+
 def normalize_cva_arrow_table(
     table: pa.Table,
     spec: EntityBatchSpec[Any],
@@ -390,6 +448,7 @@ __all__ = [
     "build_cva_hedge_batch_from_arrow",
     "build_cva_netting_set_batch_from_arrow",
     "build_sa_cva_sensitivity_batch_from_arrow",
+    "calculate_cva_capital_from_arrow",
     "normalize_cva_arrow_table",
     "normalize_cva_counterparty_arrow_table",
     "normalize_cva_hedge_arrow_table",

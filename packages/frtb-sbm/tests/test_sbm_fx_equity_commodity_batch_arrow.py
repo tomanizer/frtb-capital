@@ -232,11 +232,20 @@ def test_fx_delta_batch_and_handoff_match_row_capital() -> None:
     )
 
     assert row_batch.input_hash == input_hash_for_sensitivities(sensitivities)
-    assert arrow_batch.input_hash == row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
     assert arrow_batch.source_hash == source_hash
     assert arrow_batch.handoff_hash is not None
-    assert batch_result.input_hash == row_result.input_hash
-    assert handoff_result.input_hash == row_result.input_hash
+    assert len(batch_result.input_hash) == 64
+    int(batch_result.input_hash, 16)
+    assert batch_result.input_hash_algorithm == "arrow-columnar-v2"
+    assert batch_result.input_hash != row_result.input_hash
+    assert len(handoff_result.input_hash) == 64
+    int(handoff_result.input_hash, 16)
+    assert handoff_result.input_hash_algorithm == "arrow-columnar-v2"
+    assert handoff_result.input_hash != row_result.input_hash
     assert batch_result.total_capital == pytest.approx(row_result.total_capital)
     assert handoff_result.risk_classes[0].buckets == row_result.risk_classes[0].buckets
     assert [
@@ -267,10 +276,19 @@ def test_equity_delta_batch_and_handoff_match_row_capital() -> None:
         SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA, handoff, context=context
     )
 
-    assert arrow_batch.input_hash == row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
     np.testing.assert_array_equal(arrow_batch.qualifiers, row_batch.qualifiers)
-    assert batch_result.input_hash == row_result.input_hash
-    assert handoff_result.input_hash == row_result.input_hash
+    assert len(batch_result.input_hash) == 64
+    int(batch_result.input_hash, 16)
+    assert batch_result.input_hash_algorithm == "arrow-columnar-v2"
+    assert batch_result.input_hash != row_result.input_hash
+    assert len(handoff_result.input_hash) == 64
+    int(handoff_result.input_hash, 16)
+    assert handoff_result.input_hash_algorithm == "arrow-columnar-v2"
+    assert handoff_result.input_hash != row_result.input_hash
     assert batch_result.total_capital == pytest.approx(row_result.total_capital)
     assert handoff_result.risk_classes[0].buckets == row_result.risk_classes[0].buckets
     assert [
@@ -300,11 +318,20 @@ def test_commodity_delta_batch_and_handoff_match_row_capital() -> None:
         SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA, handoff, context=context
     )
 
-    assert arrow_batch.input_hash == row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
     np.testing.assert_array_equal(arrow_batch.tenors, row_batch.tenors)
     np.testing.assert_array_equal(arrow_batch.qualifiers, row_batch.qualifiers)
-    assert batch_result.input_hash == row_result.input_hash
-    assert handoff_result.input_hash == row_result.input_hash
+    assert len(batch_result.input_hash) == 64
+    int(batch_result.input_hash, 16)
+    assert batch_result.input_hash_algorithm == "arrow-columnar-v2"
+    assert batch_result.input_hash != row_result.input_hash
+    assert len(handoff_result.input_hash) == 64
+    int(handoff_result.input_hash, 16)
+    assert handoff_result.input_hash_algorithm == "arrow-columnar-v2"
+    assert handoff_result.input_hash != row_result.input_hash
     assert batch_result.total_capital == pytest.approx(row_result.total_capital)
     assert handoff_result.risk_classes[0].buckets == row_result.risk_classes[0].buckets
     assert [

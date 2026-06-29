@@ -134,7 +134,8 @@ def calculate_securitisation_non_ctp_drc(
     Returns
     -------
     SecuritisationNonCtpCalculation
-        Result of the operation.
+        Securitisation non-CTP gross, maturity-scaled, net, and category
+        records for result assembly.
     """
 
     profile = get_rule_profile(profile_id)
@@ -162,6 +163,7 @@ def calculate_securitisation_non_ctp_drc(
             for gross_jtd, position in zip(gross_jtds, records, strict=True)
         ),
         profile_id=profile_id,
+        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
     )
     net_jtds = calculate_securitisation_non_ctp_net_jtds(
         (
@@ -217,7 +219,7 @@ def calculate_securitisation_non_ctp_gross_jtd(
     Returns
     -------
     GrossJtd
-        Result of the operation.
+        Securitisation non-CTP GrossJtd record using market value, cap evidence, and citations.
     """
 
     validate_position(position)
@@ -280,7 +282,7 @@ def calculate_securitisation_non_ctp_net_jtds(
     Returns
     -------
     tuple[NetJtd, ...]
-        Result of the operation.
+        Tuple of securitisation non-CTP NetJtd records, including zero-net audit records.
     """
 
     profile = get_rule_profile(profile_id)
@@ -304,8 +306,7 @@ def calculate_securitisation_non_ctp_net_jtds(
             rejected_offsets=rejected_by_bucket.get(key[0], ()),
             profile_id=profile_id,
         )
-        if record is not None:
-            net_records.append(record)
+        net_records.append(record)
     return tuple(net_records)
 
 
@@ -325,7 +326,7 @@ def calculate_securitisation_non_ctp_category_drc(
     Returns
     -------
     CategoryDrc
-        Result of the operation.
+        Securitisation non-CTP CategoryDrc with per-bucket capital and branch metadata.
     """
 
     profile = get_rule_profile(profile_id)
@@ -508,7 +509,7 @@ def _net_securitisation_non_ctp_group(
     *,
     rejected_offsets: tuple[RejectedOffset, ...],
     profile_id: str,
-) -> NetJtd | None:
+) -> NetJtd:
     bucket_key, group_key = key
     gross_long = sum(
         item.gross_jtd.gross_jtd
@@ -531,10 +532,14 @@ def _net_securitisation_non_ctp_group(
         if DefaultDirection(item.gross_jtd.default_direction) == DefaultDirection.SHORT
     )
     signed_net = scaled_long - scaled_short
-    if signed_net == 0.0:
-        return None
-    direction = DefaultDirection.LONG if signed_net > 0.0 else DefaultDirection.SHORT
+    direction = DefaultDirection.LONG if signed_net >= 0.0 else DefaultDirection.SHORT
     net_amount = abs(signed_net)
+    reason = (
+        "securitisation non-CTP netting used same-pool/same-tranche "
+        "identity or explicit replication-group evidence"
+    )
+    if signed_net == 0.0:
+        reason = "securitisation non-CTP same-pool/same-tranche group fully offset to zero net JTD"
     return NetJtd(
         net_jtd_id=(
             "net-sec-non-ctp-"
@@ -560,10 +565,7 @@ def _net_securitisation_non_ctp_group(
                 branch_type=BranchType.NORMAL,
                 source_id=group_key,
                 selected=True,
-                reason=(
-                    "securitisation non-CTP netting used same-pool/same-tranche "
-                    "identity or explicit replication-group evidence"
-                ),
+                reason=reason,
                 citations=_netting_citations(profile_id),
             ),
         ),

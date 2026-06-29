@@ -400,6 +400,7 @@ class SbmCapitalResult:
     profile_id: str
     profile_hash: str
     input_hash: str
+    input_hash_algorithm: str = "json-row-v1"
     warnings: tuple[str, ...] = ()
     unsupported_flags: tuple[str, ...] = ()
     structured_warnings: tuple[SbmWarning, ...] = ()
