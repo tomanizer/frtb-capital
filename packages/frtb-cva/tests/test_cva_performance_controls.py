@@ -26,11 +26,15 @@ def test_benchmark_smoke_is_deterministic() -> None:
     second = module.run_benchmark(config)
     assert first["result"]["ba_row_payload_hash"] == second["result"]["ba_row_payload_hash"]
     assert first["result"]["ba_column_payload_hash"] == first["result"]["ba_row_payload_hash"]
-    assert first["result"]["ba_arrow_payload_hash"] == first["result"]["ba_row_payload_hash"]
+    assert first["result"]["ba_arrow_payload_hash"] == second["result"]["ba_arrow_payload_hash"]
+    assert first["result"]["ba_arrow_payload_hash"] != first["result"]["ba_row_payload_hash"]
+    assert first["result"]["ba_arrow_input_hash_algorithm"] == "arrow-columnar-v2"
     assert first["result"]["ba_column_capital_delta"] == 0.0
     assert first["result"]["ba_arrow_capital_delta"] == 0.0
     assert first["result"]["sa_column_payload_hash"] == first["result"]["sa_row_payload_hash"]
-    assert first["result"]["sa_arrow_payload_hash"] == first["result"]["sa_row_payload_hash"]
+    assert first["result"]["sa_arrow_payload_hash"] == second["result"]["sa_arrow_payload_hash"]
+    assert first["result"]["sa_arrow_payload_hash"] != first["result"]["sa_row_payload_hash"]
+    assert first["result"]["sa_arrow_input_hash_algorithm"] == "arrow-columnar-v2"
     assert first["result"]["sa_column_capital_delta"] == 0.0
     assert first["result"]["sa_arrow_capital_delta"] == 0.0
     assert first["dataclasses_materialized"]["ba_column_counterparties"] == 0

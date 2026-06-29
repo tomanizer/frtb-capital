@@ -169,6 +169,8 @@ def build_drc_nonsec_batch_from_columns(
     source_hash: str | None = None,
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
+    input_hash: str | None = None,
+    input_hash_algorithm: str | None = None,
     copy_arrays: bool = True,
     _expected_risk_class: DrcRiskClass = get_drc_path_spec(DRC_NONSEC_PATH).risk_class,
     profile_id: str = US_NPR_2_0_PROFILE_ID,
@@ -203,6 +205,7 @@ def build_drc_nonsec_batch_from_columns(
         Validated batch with ``input_hash`` populated.
     """
 
+    from frtb_drc.assembly.hashes import INPUT_HASH_ALGORITHM_JSON_ROW_V1
     from frtb_drc.batch import DrcPositionBatch, input_hash_for_drc_batch
 
     row_count = len(position_ids)
@@ -315,7 +318,8 @@ def build_drc_nonsec_batch_from_columns(
         ),
         source_column_maps=_freeze_source_column_maps(source_column_maps, row_count),
         citation_ids=_freeze_citation_ids(citation_ids, row_count),
-        input_hash="",
+        input_hash="" if input_hash is None else input_hash,
+        input_hash_algorithm=input_hash_algorithm or INPUT_HASH_ALGORITHM_JSON_ROW_V1,
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=tuple(dict(item) for item in diagnostics),
@@ -325,7 +329,13 @@ def build_drc_nonsec_batch_from_columns(
         expected_risk_class=_expected_risk_class,
         profile_id=profile_id,
     )
-    return replace(batch, input_hash=input_hash_for_drc_batch(batch))
+    if input_hash is not None:
+        return batch
+    return replace(
+        batch,
+        input_hash=input_hash_for_drc_batch(batch),
+        input_hash_algorithm=INPUT_HASH_ALGORITHM_JSON_ROW_V1,
+    )
 
 
 def build_drc_securitisation_non_ctp_batch_from_columns(

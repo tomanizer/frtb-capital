@@ -15,6 +15,9 @@ from frtb_drc.risk_weight_evidence import effective_risk_weights, risk_weight_ev
 if TYPE_CHECKING:
     from frtb_drc.batch import DrcPositionBatch
 
+INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2 = "arrow-columnar-v2"
+INPUT_HASH_ALGORITHM_JSON_ROW_V1 = "json-row-v1"
+
 
 def input_hash_for_drc_batch(batch: DrcPositionBatch) -> str:
     """Hash canonical DRC batch inputs in deterministic position-id order.
@@ -174,6 +177,8 @@ def _optional_float_payload(value: float) -> float | None:
 
 
 __all__ = [
+    "INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2",
+    "INPUT_HASH_ALGORITHM_JSON_ROW_V1",
     "context_input_hash_for_drc_batch",
     "input_hash_for_drc_batch",
 ]

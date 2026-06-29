@@ -41,7 +41,10 @@ def test_notebook_arrow_batch_example_matches_row_api() -> None:
     )
 
     assert calculation.result.total_capital == pytest.approx(row_result.total_capital)
-    assert calculation.result.input_hash == row_result.input_hash
+    assert len(calculation.result.input_hash) == 64
+    int(calculation.result.input_hash, 16)
+    assert calculation.result.input_hash_algorithm == "arrow-columnar-v2-portfolio"
+    assert calculation.result.input_hash != row_result.input_hash
     assert calculation.accepted_row_dataclasses_materialized == 0
 
 
