@@ -5,6 +5,7 @@ import type { AttributionRow, CapitalNode, ImaDeskView, NodeDetail, RunOverview,
 
 type ImaTab = "summary" | "imcc" | "nmrf" | "pla" | "backtest" | "attribution";
 type SortKey = "absContribution" | "source" | "category";
+type Density = "comfortable" | "compact";
 
 const COMPONENT_FILTERS = ["ALL", "IMA", "SA", "SBM", "DRC", "RRAO"] as const;
 const TAB_LABELS: Array<[ImaTab, string]> = [
@@ -15,6 +16,20 @@ const TAB_LABELS: Array<[ImaTab, string]> = [
   ["backtest", "Backtesting"],
   ["attribution", "Attribution"],
 ];
+const VIEW_MODES = [
+  ["total", "Overview"],
+  ["ima", "IMA"],
+  ["sa", "SA"],
+] as const;
+const COMPONENT_COLORS: Record<string, string> = {
+  ALL: "#7a8793",
+  SUITE: "#22272e",
+  IMA: "#2f6fed",
+  SA: "#0f766e",
+  SBM: "#7c5cff",
+  DRC: "#bd6b00",
+  RRAO: "#0f8ea8",
+};
 
 type ComponentFilter = (typeof COMPONENT_FILTERS)[number];
 type TreeRow = { node: CapitalNode; depth: number };
@@ -64,6 +79,16 @@ function zoneClass(zone: unknown): string {
 function ZoneBadge({ zone }: { zone: unknown }) {
   const label = String(zone ?? "-");
   return <span className={zoneClass(zone)}>{label}</span>;
+}
+
+function ComponentSwatch({ component }: { component: string }) {
+  return (
+    <span
+      className="component-swatch"
+      style={{ "--swatch": COMPONENT_COLORS[component] ?? COMPONENT_COLORS.ALL } as CSSProperties & Record<"--swatch", string>}
+      aria-hidden="true"
+    />
+  );
 }
 
 function MiniBar({ value, total }: { value: number | null | undefined; total: number | null | undefined }) {
@@ -166,7 +191,7 @@ function CapitalStack({
                 className={selectedNodeId === target ? "active" : ""}
                 onClick={() => onSelect(target)}
               >
-                <span>{component.component}</span>
+                <span><ComponentSwatch component={component.component} />{component.component}</span>
                 <MiniBar value={component.total_capital} total={saOverview.total_capital} />
                 <strong>{formatMoney(component.total_capital, overview.currency)}</strong>
               </button>
@@ -230,6 +255,7 @@ function TreeNavigation({
             className={componentFilter === filter ? "active" : ""}
             onClick={() => onFilter(filter)}
           >
+            <ComponentSwatch component={filter} />
             {filter}
           </button>
         ))}
@@ -245,7 +271,7 @@ function TreeNavigation({
             onClick={() => onSelect(node.node_id)}
           >
             <span>
-              <strong>{node.label}</strong>
+              <strong><ComponentSwatch component={node.component} />{node.label}</strong>
               <small>{node.component} / {node.node_type.toLowerCase()}</small>
             </span>
             <b>{formatMoney(node.amount, node.currency)}</b>
@@ -253,6 +279,48 @@ function TreeNavigation({
         ))}
       </nav>
     </aside>
+  );
+}
+
+function CommandBar({
+  selectedNodeId,
+  density,
+  onSelect,
+  onDensity,
+}: {
+  selectedNodeId: string;
+  density: Density;
+  onSelect: (nodeId: string) => void;
+  onDensity: (density: Density) => void;
+}) {
+  const mode = VIEW_MODES.find(([nodeId]) => selectedNodeId === nodeId)?.[0] ?? "total";
+  return (
+    <section className="command-bar" aria-label="Dashboard controls">
+      <div className="segmented-control" aria-label="View">
+        {VIEW_MODES.map(([nodeId, label]) => (
+          <button
+            key={nodeId}
+            type="button"
+            className={mode === nodeId ? "active" : ""}
+            onClick={() => onSelect(nodeId)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="segmented-control density-control" aria-label="Density">
+        {(["comfortable", "compact"] as const).map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={density === option ? "active" : ""}
+            onClick={() => onDensity(option)}
+          >
+            {option === "comfortable" ? "Comfort" : "Compact"}
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -483,7 +551,7 @@ function SaComponentPanel({
                     : 0;
               return (
                 <div key={key} className="breakdown-row">
-                  <span>{key}</span>
+                  <span><ComponentSwatch component={component.component} />{key}</span>
                   <MiniBar value={componentAmount} total={component.total_capital} />
                   <strong>{formatMoney(componentAmount, currency)}</strong>
                 </div>
@@ -508,6 +576,7 @@ export default function App() {
   const [treeQuery, setTreeQuery] = useState("");
   const [componentFilter, setComponentFilter] = useState<ComponentFilter>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("absContribution");
+  const [density, setDensity] = useState<Density>("comfortable");
   const [error, setError] = useState<string | null>(null);
 
   const runId = overview?.run.run_id ?? "demo-suite-001";
@@ -564,7 +633,7 @@ export default function App() {
   const showNodeDetail = nodeDetail && !showImaDesk && !showSaOverview && !showSaComponent;
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell density-${density}`}>
       <TreeNavigation
         rows={tree}
         selectedNodeId={selectedNodeId}
@@ -584,7 +653,7 @@ export default function App() {
               <div>
                 <span className="eyebrow">{overview.run.calculation_date} / {overview.run.jurisdiction_family}</span>
                 <h2>{selectedNode?.label ?? "Capital overview"}</h2>
-                <p>{overview.run.label}. Read-only synthetic results for dashboard inspection, not final regulatory capital.</p>
+                <p>{overview.run.label}. Synthetic inspection run, not final regulatory capital.</p>
               </div>
               <div className="header-actions">
                 <span className="status-pill">{selectedNode?.component ?? "SUITE"}</span>
@@ -592,6 +661,12 @@ export default function App() {
               </div>
             </header>
 
+            <CommandBar
+              selectedNodeId={selectedNodeId}
+              density={density}
+              onSelect={setSelectedNodeId}
+              onDensity={setDensity}
+            />
             <HealthStrip desk={activeDesk} overview={overview} />
             <CapitalStack overview={overview} saOverview={saOverview} selectedNodeId={selectedNodeId} onSelect={setSelectedNodeId} />
 
