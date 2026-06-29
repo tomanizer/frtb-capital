@@ -306,6 +306,7 @@ def calculate_sbm_capital_from_batch(
         context=context,
         input_hash=batch.input_hash,
         input_count=batch.row_count,
+        input_hash_algorithm=batch.input_hash_algorithm,
     )
 
 
@@ -582,6 +583,7 @@ def _build_sbm_capital_result(
     context: SbmCalculationContext,
     input_hash: str,
     input_count: int,
+    input_hash_algorithm: str = "json-row-v1",
 ) -> SbmCapitalResult:
     (
         aligned_risk_classes,
@@ -603,6 +605,7 @@ def _build_sbm_capital_result(
         profile_id=rule_profile.profile_id,
         profile_hash=rule_profile.content_hash,
         input_hash=input_hash,
+        input_hash_algorithm=input_hash_algorithm,
         warnings=_profile_warnings(rule_profile.profile_id),
         reconciliation=SbmReconciliationMetadata(
             input_count=input_count,

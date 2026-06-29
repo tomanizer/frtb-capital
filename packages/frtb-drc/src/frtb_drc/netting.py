@@ -37,7 +37,7 @@ _SENIORITY_RANK: dict[DrcSeniority, int] = {
     DrcSeniority.PSE: 1,
     DrcSeniority.NON_SENIOR_DEBT: 2,
     DrcSeniority.EQUITY: 3,
-    # ADR 0046 treats the zero-LGD recovery-unlinked category as below equity
+    # ADR 0047 treats the zero-LGD recovery-unlinked category as below equity
     # for same-obligor netting, grounded in US_NPR_210_B_1_IV / BASEL_MAR22_12.
     DrcSeniority.NOT_RECOVERY_LINKED: 4,
 }

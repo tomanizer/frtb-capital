@@ -1,4 +1,4 @@
-# 46. DRC risk-class maturity policy and recovery-unlinked netting rank
+# 47. DRC risk-class maturity policy and recovery-unlinked netting rank
 
 Date: 2026-06-29
 

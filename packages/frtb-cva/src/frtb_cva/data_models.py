@@ -433,6 +433,7 @@ class CvaCapitalResult:
     ba_cva_netting_set_lines: tuple[BaCvaStandAloneLine, ...]
     sa_cva_risk_class_capitals: tuple[SaCvaRiskClassCapital, ...]
     citations: tuple[str, ...]
+    input_hash_algorithm: str = "json-row-v1"
     method_components: tuple[CvaMethodComponentTotal, ...] = ()
     warnings: tuple[str, ...] = ()
     unsupported_flags: tuple[str, ...] = ()

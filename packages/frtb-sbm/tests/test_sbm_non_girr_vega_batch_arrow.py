@@ -400,13 +400,22 @@ def test_non_girr_vega_batch_and_handoff_match_row_capital(
     handoff_result = calculate_handoff(handoff, context=context)
 
     assert row_batch.input_hash == input_hash_for_sensitivities(sensitivities)
-    assert arrow_batch.input_hash == row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
     assert arrow_batch.source_hash == handoff.source_hash
     assert arrow_batch.handoff_hash is not None
     assert arrow_batch.option_tenors is not None
     np.testing.assert_array_equal(arrow_batch.option_tenors, row_batch.option_tenors)
-    assert batch_result.input_hash == row_result.input_hash
-    assert handoff_result.input_hash == row_result.input_hash
+    assert len(batch_result.input_hash) == 64
+    int(batch_result.input_hash, 16)
+    assert batch_result.input_hash_algorithm == "arrow-columnar-v2"
+    assert batch_result.input_hash != row_result.input_hash
+    assert len(handoff_result.input_hash) == 64
+    int(handoff_result.input_hash, 16)
+    assert handoff_result.input_hash_algorithm == "arrow-columnar-v2"
+    assert handoff_result.input_hash != row_result.input_hash
     assert batch_result.total_capital == pytest.approx(row_result.total_capital)
     assert handoff_result.risk_classes[0].buckets == row_result.risk_classes[0].buckets
     assert [

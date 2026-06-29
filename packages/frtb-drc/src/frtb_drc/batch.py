@@ -50,9 +50,12 @@ from frtb_drc.assembly.fair_value_cap import (
     fair_value_cap_branch_metadata_for_batch as _fair_value_cap_branch_metadata_for_batch,
 )
 from frtb_drc.assembly.hashes import (
+    INPUT_HASH_ALGORITHM_JSON_ROW_V1,
+    input_hash_for_drc_batch,
+)
+from frtb_drc.assembly.hashes import (
     context_input_hash_for_drc_batch as _context_input_hash_for_batch,
 )
-from frtb_drc.assembly.hashes import input_hash_for_drc_batch
 from frtb_drc.attribution import calculate_drc_attribution
 from frtb_drc.audit import validate_reconciliation
 from frtb_drc.batch_validation import (
@@ -142,6 +145,7 @@ class DrcPositionBatch:
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...]
     citation_ids: tuple[tuple[str, ...], ...]
     input_hash: str
+    input_hash_algorithm: str = INPUT_HASH_ALGORITHM_JSON_ROW_V1
     source_hash: str | None = None
     handoff_hash: str | None = None
     diagnostics: tuple[Mapping[str, object], ...] = ()
@@ -301,6 +305,7 @@ def calculate_drc_capital_from_batch(
         profile_id=profile.profile_id,
         profile_hash=profile.content_hash,
         input_hash=input_hash,
+        input_hash_algorithm=calculation_batch.input_hash_algorithm,
         categories=(category,),
         total_drc=category.capital,
         citations=_collect_batch_citations(
