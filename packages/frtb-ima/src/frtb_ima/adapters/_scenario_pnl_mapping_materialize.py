@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import csv
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
+from types import MappingProxyType
 
 import numpy as np
 
@@ -18,6 +19,7 @@ from frtb_ima.adapters._mapping_row_helpers import (
     plain_mapping,
     resolve_source_row_id,
 )
+from frtb_ima.adapters._risk_factor_master_mapping_types import RiskFactorMasterBatch
 from frtb_ima.adapters._scenario_pnl_mapping_cube import (
     _scenario_pnl_arrow_from_accepted,
     build_scenario_pnl_batch_from_arrow,
@@ -34,6 +36,7 @@ from frtb_ima.adapters.mapping_spec import (
     MappingSpecError,
 )
 from frtb_ima.data_contracts import ScenarioCube
+from frtb_ima.data_models import LiquidityHorizon
 from frtb_ima.scenario import ScenarioSetType
 
 
@@ -44,12 +47,21 @@ class ScenarioPnlMappingResult:
     batch: ScenarioPnlVectorBatch
     cube: ScenarioCube
     report: ScenarioPnlValidationReport
+    liquidity_horizons_by_risk_factor: Mapping[str, LiquidityHorizon] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "liquidity_horizons_by_risk_factor",
+            MappingProxyType(dict(self.liquidity_horizons_by_risk_factor)),
+        )
 
 
 def materialize_scenario_pnl_vectors_from_mapping(
     mapping_spec: ImaMappingSpec,
     *,
     source_root: str | Path = ".",
+    risk_factor_master: RiskFactorMasterBatch | None = None,
 ) -> ScenarioPnlMappingResult:
     """Read the configured CSV source and materialize a scenario P&L cube.
 
@@ -74,11 +86,20 @@ def materialize_scenario_pnl_vectors_from_mapping(
         raise MappingSpecError("scenario_pnl_vectors.source currently supports CSV files only")
     source_text = source_path.read_text(encoding="utf-8")
     rows = tuple(csv.DictReader(source_text.splitlines()))
+    if risk_factor_master is None and mapping_spec.risk_factor_master is not None:
+        from frtb_ima.adapters.risk_factor_master_mapping import (
+            materialize_risk_factor_master_from_mapping,
+        )
+
+        risk_factor_master = materialize_risk_factor_master_from_mapping(
+            mapping_spec, source_root=source_root
+        ).batch
     return materialize_scenario_pnl_vectors_from_rows(
         rows,
         mapping_spec,
         source_file=table.source,
         source_hash=stable_mapping_hash({"source_text": source_text}),
+        risk_factor_master=risk_factor_master,
     )
 
 
@@ -88,6 +109,7 @@ def materialize_scenario_pnl_vectors_from_rows(
     *,
     source_file: str = "<rows>",
     source_hash: str | None = None,
+    risk_factor_master: RiskFactorMasterBatch | None = None,
 ) -> ScenarioPnlMappingResult:
     """Materialize scenario P&L vectors from already-loaded source rows.
 
@@ -124,6 +146,9 @@ def materialize_scenario_pnl_vectors_from_rows(
             "Scenario P&L Arrow normalizer changed the accepted row count: "
             f"accepted={len(accepted)}, batch={batch.observation_count}"
         )
+    liquidity_horizons_by_risk_factor, liquidity_horizon_findings = _reconcile_liquidity_horizons(
+        batch, risk_factor_master
+    )
     cube = scenario_cube_from_batch(batch, missing_cells=table.missing_cells)
     report = ScenarioPnlValidationReport(
         target_schema=mapping_spec.target_schema,
@@ -134,9 +159,14 @@ def materialize_scenario_pnl_vectors_from_rows(
         row_count_read=len(rows),
         row_count_mapped=batch.observation_count,
         row_count_rejected=len(rows) - len(accepted),
-        findings=tuple(findings),
+        findings=tuple([*findings, *liquidity_horizon_findings]),
     )
-    return ScenarioPnlMappingResult(batch=batch, cube=cube, report=report)
+    return ScenarioPnlMappingResult(
+        batch=batch,
+        cube=cube,
+        report=report,
+        liquidity_horizons_by_risk_factor=liquidity_horizons_by_risk_factor,
+    )
 
 
 def _accepted_scenario_pnl_rows(
@@ -278,3 +308,64 @@ def _scenario_set(value: object) -> ScenarioSetType:
 
 def _finding(code: str, message: str, row_id: str) -> MappingFinding:
     return MappingFinding(severity="ERROR", code=code, message=message, row_id=row_id)
+
+
+def _reconcile_liquidity_horizons(
+    batch: ScenarioPnlVectorBatch,
+    risk_factor_master: RiskFactorMasterBatch | None,
+) -> tuple[dict[str, LiquidityHorizon], list[MappingFinding]]:
+    if risk_factor_master is None:
+        return {}, []
+    master_values = _master_liquidity_horizons(risk_factor_master)
+    first_source_row_by_risk_factor = _first_source_row_by_risk_factor(batch)
+    result: dict[str, LiquidityHorizon] = {}
+    findings: list[MappingFinding] = []
+    for risk_factor_name in sorted(first_source_row_by_risk_factor):
+        horizons = master_values.get(risk_factor_name, frozenset())
+        row_id = first_source_row_by_risk_factor[risk_factor_name]
+        if not horizons:
+            findings.append(
+                _finding(
+                    "SCENARIO_PNL_RISK_FACTOR_NOT_IN_MASTER",
+                    "scenario_pnl_vectors risk_factor_name is missing from risk_factor_master",
+                    row_id,
+                )
+            )
+            continue
+        if len(horizons) > 1:
+            findings.append(
+                _finding(
+                    "SCENARIO_PNL_RISK_FACTOR_LH_CONFLICT",
+                    "risk_factor_master maps risk_factor_name to multiple liquidity horizons",
+                    row_id,
+                )
+            )
+            continue
+        result[risk_factor_name] = next(iter(horizons))
+    return result, findings
+
+
+def _master_liquidity_horizons(
+    risk_factor_master: RiskFactorMasterBatch,
+) -> dict[str, frozenset[LiquidityHorizon]]:
+    values: dict[str, set[LiquidityHorizon]] = {}
+    for risk_factor_name, liquidity_horizon in zip(
+        risk_factor_master.risk_factor_names,
+        risk_factor_master.liquidity_horizons,
+        strict=True,
+    ):
+        values.setdefault(str(risk_factor_name), set()).add(
+            LiquidityHorizon(int(liquidity_horizon))
+        )
+    return {key: frozenset(value) for key, value in values.items()}
+
+
+def _first_source_row_by_risk_factor(batch: ScenarioPnlVectorBatch) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for risk_factor_name, source_row_id in zip(
+        batch.risk_factor_names,
+        batch.source_row_ids,
+        strict=True,
+    ):
+        result.setdefault(str(risk_factor_name), str(source_row_id))
+    return result
