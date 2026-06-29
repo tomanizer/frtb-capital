@@ -89,8 +89,12 @@ def materialize_daily_pnl_vectors_from_rows(
         seen_keys.add(key)
         accepted.append(mapped)
 
-    accepted.sort(key=lambda item: (str(item["desk_id"]), item["business_date"], str(item["source_row_id"])))
-    batch = _daily_pnl_batch_from_accepted(accepted, source_hash=row_hash, mapping_hash=mapping_spec.spec_hash)
+    accepted.sort(
+        key=lambda item: (str(item["desk_id"]), item["business_date"], str(item["source_row_id"]))
+    )
+    batch = _daily_pnl_batch_from_accepted(
+        accepted, source_hash=row_hash, mapping_hash=mapping_spec.spec_hash
+    )
     report = DailyPnlValidationReport(
         target_schema=mapping_spec.target_schema,
         source_system=mapping_spec.source_system,
@@ -145,7 +149,9 @@ def _daily_pnl_batch_from_accepted(
         raise ValueError("daily P&L mapping produced no accepted rows")
     return DailyPnlVectorBatch(
         desk_ids=np.asarray([item["desk_id"] for item in accepted], dtype=np.str_),
-        business_dates=np.asarray([item["business_date"] for item in accepted], dtype="datetime64[D]"),
+        business_dates=np.asarray(
+            [item["business_date"] for item in accepted], dtype="datetime64[D]"
+        ),
         apl=np.asarray([item["apl"] for item in accepted], dtype=np.float64),
         hpl=np.asarray([item["hpl"] for item in accepted], dtype=np.float64),
         rtpl=np.asarray([item["rtpl"] for item in accepted], dtype=np.float64),
@@ -195,7 +201,9 @@ def _mapped_float(row: Mapping[str, object], mapping: FieldMapping, field_name: 
     return value
 
 
-def _mapped_optional_float(row: Mapping[str, object], mapping: FieldMapping, field_name: str) -> float | None:
+def _mapped_optional_float(
+    row: Mapping[str, object], mapping: FieldMapping, field_name: str
+) -> float | None:
     value = _mapped_value(row, mapping, field_name)
     if value is None or str(value).strip() == "":
         return None
@@ -208,7 +216,9 @@ def _mapped_optional_float(row: Mapping[str, object], mapping: FieldMapping, fie
     return result
 
 
-def _source_row_id(row: Mapping[str, object], row_index: int, fields: Mapping[str, FieldMapping]) -> str:
+def _source_row_id(
+    row: Mapping[str, object], row_index: int, fields: Mapping[str, FieldMapping]
+) -> str:
     mapping = fields.get("source_row_id")
     if mapping is None:
         return f"row-{row_index}"

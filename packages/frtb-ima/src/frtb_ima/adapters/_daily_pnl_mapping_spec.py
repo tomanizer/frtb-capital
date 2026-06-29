@@ -7,6 +7,7 @@ import json
 from collections.abc import Mapping
 from pathlib import Path
 
+from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
 from frtb_ima.adapters._daily_pnl_mapping_types import (
     DailyPnlTableMapping,
     FieldMapping,
@@ -35,6 +36,12 @@ def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> Im
     sign_convention = _required_mapping(raw, "sign_convention")
     if "pnl_positive_means" not in sign_convention:
         raise MappingSpecError("sign_convention.pnl_positive_means is required")
+    rfet_raw = tables.get("rfet_observations")
+    rfet = (
+        _rfet_observation_mapping(_required_mapping(tables, "rfet_observations"))
+        if isinstance(rfet_raw, Mapping)
+        else None
+    )
     return ImaMappingSpec(
         mapping_spec_version=_required_int(raw, "mapping_spec_version"),
         target_schema=_required_str(raw, "target_schema"),
@@ -47,8 +54,19 @@ def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> Im
             target=_required_str(daily_pnl, "target"),
             fields=_field_mappings(_required_mapping(daily_pnl, "fields")),
         ),
-        risk_factor_aliases=_string_mapping(raw.get("risk_factor_aliases", {}), "risk_factor_aliases"),
+        rfet_observations=rfet,
+        risk_factor_aliases=_string_mapping(
+            raw.get("risk_factor_aliases", {}), "risk_factor_aliases"
+        ),
         spec_hash=_stable_hash({"mapping_spec": source_text}),
+    )
+
+
+def _rfet_observation_mapping(raw: Mapping[str, object]) -> RfetObservationTableMapping:
+    return RfetObservationTableMapping(
+        source=_required_str(raw, "source"),
+        target=_required_str(raw, "target"),
+        fields=_field_mappings(_required_mapping(raw, "fields")),
     )
 
 
@@ -70,7 +88,9 @@ def _field_mapping_from_value(*, target: str, value: object) -> FieldMapping:
         values = _string_mapping(value.get("values", {}), f"{target}.values")
         if source is not None and not isinstance(source, str):
             raise MappingSpecError(f"{target}.source must be a string")
-        return FieldMapping(source=source, constant=None if constant is None else str(constant), values=values)
+        return FieldMapping(
+            source=source, constant=None if constant is None else str(constant), values=values
+        )
     raise MappingSpecError(f"{target} field mapping must be a source column or mapping")
 
 
@@ -116,7 +136,9 @@ def _strip_yaml_comment(line: str) -> str:
 
 
 def _parse_yaml_scalar(value: str) -> object:
-    if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+    if (value.startswith('"') and value.endswith('"')) or (
+        value.startswith("'") and value.endswith("'")
+    ):
         return value[1:-1]
     lowered = value.lower()
     if lowered in {"true", "false"}:

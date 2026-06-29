@@ -8,6 +8,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date
 from types import MappingProxyType
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -24,9 +25,24 @@ IMA_DAILY_PNL_VECTOR_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("apl", logical_type=TabularLogicalType.FLOAT),
     ColumnSpec("hpl", logical_type=TabularLogicalType.FLOAT),
     ColumnSpec("rtpl", logical_type=TabularLogicalType.FLOAT),
-    ColumnSpec("var_975", logical_type=TabularLogicalType.FLOAT, required=False, null_policy=NullPolicy.ALLOW),
-    ColumnSpec("var_99", logical_type=TabularLogicalType.FLOAT, required=False, null_policy=NullPolicy.ALLOW),
-    ColumnSpec("source_row_id", logical_type=TabularLogicalType.STRING, required=False, null_policy=NullPolicy.ALLOW),
+    ColumnSpec(
+        "var_975",
+        logical_type=TabularLogicalType.FLOAT,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "var_99",
+        logical_type=TabularLogicalType.FLOAT,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "source_row_id",
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
 )
 
 REQUIRED_DAILY_PNL_FIELDS = frozenset({"desk_id", "business_date", "apl", "hpl", "rtpl"})
@@ -71,7 +87,9 @@ class DailyPnlTableMapping:
             raise MappingSpecError("unknown daily_pnl_vectors target fields: " + ", ".join(unknown))
         missing = sorted(REQUIRED_DAILY_PNL_FIELDS - set(self.fields))
         if missing:
-            raise MappingSpecError("missing daily_pnl_vectors required fields: " + ", ".join(missing))
+            raise MappingSpecError(
+                "missing daily_pnl_vectors required fields: " + ", ".join(missing)
+            )
         object.__setattr__(self, "fields", MappingProxyType(dict(self.fields)))
 
 
@@ -86,6 +104,7 @@ class ImaMappingSpec:
     timezone: str
     pnl_positive_means: str
     daily_pnl_vectors: DailyPnlTableMapping
+    rfet_observations: RfetObservationTableMapping | None = None
     risk_factor_aliases: Mapping[str, str] = field(default_factory=dict)
     spec_hash: str = ""
 
@@ -97,10 +116,16 @@ class ImaMappingSpec:
         for field_name in ("target_schema", "source_system", "base_currency", "timezone"):
             if not str(getattr(self, field_name)):
                 raise MappingSpecError(f"{field_name} must be non-empty")
-        object.__setattr__(self, "pnl_positive_means", _normalize_pnl_sign_convention(self.pnl_positive_means))
-        object.__setattr__(self, "risk_factor_aliases", MappingProxyType(dict(self.risk_factor_aliases)))
+        object.__setattr__(
+            self, "pnl_positive_means", _normalize_pnl_sign_convention(self.pnl_positive_means)
+        )
+        object.__setattr__(
+            self, "risk_factor_aliases", MappingProxyType(dict(self.risk_factor_aliases))
+        )
         if not self.spec_hash:
-            object.__setattr__(self, "spec_hash", _stable_hash({"mapping_spec": _mapping_spec_payload(self)}))
+            object.__setattr__(
+                self, "spec_hash", _stable_hash({"mapping_spec": _mapping_spec_payload(self)})
+            )
 
 
 @dataclass(frozen=True)
@@ -245,7 +270,9 @@ def _normalize_pnl_sign_convention(value: str) -> str:
         return "profit"
     if normalized in {"loss", "positive_loss"}:
         return "loss"
-    raise MappingSpecError("sign_convention.pnl_positive_means must be one of profit, gain, or loss")
+    raise MappingSpecError(
+        "sign_convention.pnl_positive_means must be one of profit, gain, or loss"
+    )
 
 
 def _mapping_spec_payload(spec: ImaMappingSpec) -> dict[str, object]:

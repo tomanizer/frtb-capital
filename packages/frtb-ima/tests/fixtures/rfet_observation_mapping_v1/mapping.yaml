@@ -1,0 +1,31 @@
+mapping_spec_version: 1
+target_schema: ima-arrow-v1
+source_system: synthetic_client_risk_engine
+base_currency: USD
+timezone: Europe/London
+
+sign_convention:
+  pnl_positive_means: gain
+
+tables:
+  daily_pnl_vectors:
+    source: unused_daily_pnl.csv
+    target: ima_daily_pnl_vectors
+    fields:
+      desk_id: DESK_CODE
+      business_date: COB_DATE
+      apl: APL_USD
+      hpl: HPL_USD
+      rtpl: RTPL_USD
+  rfet_observations:
+    source: synthetic_rfet_observations.csv
+    target: ima_rfet_observations
+    fields:
+      risk_factor_name: RF_NAME
+      observation_date: OBS_DATE
+      source: OBS_SOURCE
+      vendor_id: VENDOR
+      venue: VENUE
+      feed: FEED
+      verifiable: VERIFIABLE
+      source_row_id: SOURCE_ROW
