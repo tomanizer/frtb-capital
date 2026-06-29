@@ -8,15 +8,6 @@ sign_convention:
   pnl_positive_means: gain
 
 tables:
-  daily_pnl_vectors:
-    source: unused_daily_pnl.csv
-    target: ima_daily_pnl_vectors
-    fields:
-      desk_id: DESK_CODE
-      business_date: COB_DATE
-      apl: APL_USD
-      hpl: HPL_USD
-      rtpl: RTPL_USD
   rfet_observations:
     source: synthetic_rfet_observations.csv
     target: ima_rfet_observations

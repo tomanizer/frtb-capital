@@ -3,20 +3,25 @@
 from __future__ import annotations
 
 import csv
-import hashlib
-import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import date
 from pathlib import Path
 
 import pyarrow as pa  # type: ignore[import-untyped]
 
-from frtb_ima.adapters._daily_pnl_mapping_types import (
+from frtb_ima.adapters.mapping_spec import (
     FieldMapping,
     ImaMappingSpec,
     MappingFinding,
     MappingSpecError,
+)
+from frtb_ima.adapters._mapping_hash import stable_mapping_hash
+from frtb_ima.adapters._mapping_row_helpers import (
+    mapped_date,
+    mapped_str,
+    mapped_value,
+    plain_mapping,
+    resolve_source_row_id,
 )
 from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationValidationReport
 from frtb_ima.adapters.arrow import (
@@ -79,7 +84,7 @@ def materialize_rfet_observations_from_mapping(
         rows,
         mapping_spec,
         source_file=table.source,
-        source_hash=_stable_hash({"source_text": source_text}),
+        source_hash=stable_mapping_hash({"source_text": source_text}),
     )
 
 
@@ -112,11 +117,11 @@ def materialize_rfet_observations_from_rows(
     table = mapping_spec.rfet_observations
     if table is None:
         raise MappingSpecError("tables.rfet_observations is required for RFET observation mapping")
-    row_hash = source_hash or _stable_hash({"rows": [_plain_mapping(row) for row in rows]})
+    row_hash = source_hash or stable_mapping_hash({"rows": [plain_mapping(row) for row in rows]})
     accepted: list[dict[str, object]] = []
     findings: list[MappingFinding] = []
     for row_index, row in enumerate(rows, start=1):
-        source_row_id = _source_row_id(row, row_index, table.fields)
+        source_row_id = resolve_source_row_id(row, row_index, table.fields, findings=findings)
         try:
             accepted.append(_map_rfet_row(row, table.fields, source_row_id=source_row_id))
         except ValueError as exc:
@@ -143,6 +148,11 @@ def materialize_rfet_observations_from_rows(
         metadata={"mapping_hash": mapping_spec.spec_hash},
     )
     batch = build_rfet_observation_batch_from_arrow(handoff)
+    if batch.observation_count != len(accepted):
+        raise ValueError(
+            "RFET Arrow normalizer dropped mapped rows: "
+            f"accepted={len(accepted)}, batch={batch.observation_count}"
+        )
     report = RfetObservationValidationReport(
         target_schema=mapping_spec.target_schema,
         source_system=mapping_spec.source_system,
@@ -151,7 +161,7 @@ def materialize_rfet_observations_from_rows(
         source_hash=row_hash,
         row_count_read=len(rows),
         row_count_mapped=batch.observation_count,
-        row_count_rejected=len(rows) - batch.observation_count,
+        row_count_rejected=len(rows) - len(accepted),
         findings=tuple(findings),
     )
     return RfetObservationMappingResult(batch=batch, report=report)
@@ -164,8 +174,8 @@ def _map_rfet_row(
     source_row_id: str,
 ) -> dict[str, object]:
     mapped: dict[str, object] = {
-        "risk_factor_name": _mapped_str(row, fields["risk_factor_name"], "risk_factor_name"),
-        "observation_date": _mapped_date(row, fields["observation_date"], "observation_date"),
+        "risk_factor_name": mapped_str(row, fields["risk_factor_name"], "risk_factor_name"),
+        "observation_date": mapped_date(row, fields["observation_date"], "observation_date"),
     }
     for field_name in _OPTIONAL_STRING_FIELDS:
         mapped[field_name] = (
@@ -178,32 +188,10 @@ def _map_rfet_row(
     return mapped
 
 
-def _mapped_value(row: Mapping[str, object], mapping: FieldMapping, field_name: str) -> object:
-    if mapping.constant is not None:
-        value: object = mapping.constant
-    else:
-        assert mapping.source is not None
-        if mapping.source not in row:
-            raise ValueError(f"{field_name} source column {mapping.source!r} is missing")
-        value = row[mapping.source]
-    if value is None:
-        return None
-    text = str(value)
-    return mapping.values.get(text, value)
-
-
-def _mapped_str(row: Mapping[str, object], mapping: FieldMapping, field_name: str) -> str:
-    value = _mapped_value(row, mapping, field_name)
-    text = "" if value is None else str(value).strip()
-    if not text:
-        raise ValueError(f"{field_name} is required")
-    return text
-
-
 def _optional_str(row: Mapping[str, object], mapping: FieldMapping | None) -> str | None:
     if mapping is None:
         return None
-    value = _mapped_value(row, mapping, "optional field")
+    value = mapped_value(row, mapping, "optional field")
     text = "" if value is None else str(value).strip()
     return None if not text else text
 
@@ -220,34 +208,6 @@ def _optional_bool(row: Mapping[str, object], mapping: FieldMapping | None) -> b
     if normalized in {"false", "f", "no", "n", "0"}:
         return False
     raise ValueError("verifiable must be boolean-like")
-
-
-def _mapped_date(row: Mapping[str, object], mapping: FieldMapping, field_name: str) -> date:
-    try:
-        return date.fromisoformat(_mapped_str(row, mapping, field_name))
-    except ValueError as exc:
-        raise ValueError(f"{field_name} must be an ISO date") from exc
-
-
-def _source_row_id(
-    row: Mapping[str, object], row_index: int, fields: Mapping[str, FieldMapping]
-) -> str:
-    mapping = fields.get("source_row_id")
-    if mapping is None:
-        return f"row-{row_index}"
-    try:
-        return _mapped_str(row, mapping, "source_row_id")
-    except ValueError:
-        return f"row-{row_index}"
-
-
-def _plain_mapping(row: Mapping[str, object]) -> dict[str, str]:
-    return {str(key): "" if value is None else str(value) for key, value in row.items()}
-
-
-def _stable_hash(payload: Mapping[str, object]) -> str:
-    data = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
-    return hashlib.sha256(data).hexdigest()
 
 
 __all__ = [

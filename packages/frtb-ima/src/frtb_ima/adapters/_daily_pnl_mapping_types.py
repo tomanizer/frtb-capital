@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date
@@ -15,6 +13,7 @@ import numpy.typing as npt
 from frtb_common import ColumnSpec, NullPolicy, TabularLogicalType
 
 from frtb_ima.audit_inputs import compute_inputs_hash
+from frtb_ima.adapters._mapping_hash import stable_mapping_hash
 
 if TYPE_CHECKING:
     from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
@@ -107,7 +106,7 @@ class ImaMappingSpec:
     base_currency: str
     timezone: str
     pnl_positive_means: str
-    daily_pnl_vectors: DailyPnlTableMapping
+    daily_pnl_vectors: DailyPnlTableMapping | None = None
     rfet_observations: RfetObservationTableMapping | None = None
     risk_factor_aliases: Mapping[str, str] = field(default_factory=dict)
     spec_hash: str = ""
@@ -121,6 +120,8 @@ class ImaMappingSpec:
         for field_name in ("target_schema", "source_system", "base_currency", "timezone"):
             if not str(getattr(self, field_name)):
                 raise MappingSpecError(f"{field_name} must be non-empty")
+        if self.daily_pnl_vectors is None and self.rfet_observations is None:
+            raise MappingSpecError("tables must define at least one supported IMA target")
         object.__setattr__(
             self, "pnl_positive_means", _normalize_pnl_sign_convention(self.pnl_positive_means)
         )
@@ -129,7 +130,7 @@ class ImaMappingSpec:
         )
         if not self.spec_hash:
             object.__setattr__(
-                self, "spec_hash", _stable_hash({"mapping_spec": _mapping_spec_payload(self)})
+                self, "spec_hash", stable_mapping_hash({"mapping_spec": _mapping_spec_payload(self)})
             )
 
 
@@ -339,14 +340,14 @@ def _mapping_spec_payload(spec: ImaMappingSpec) -> dict[str, object]:
         "base_currency": spec.base_currency,
         "timezone": spec.timezone,
         "pnl_positive_means": spec.pnl_positive_means,
-        "daily_pnl_vectors": spec.daily_pnl_vectors.source,
+        "daily_pnl_vectors": (
+            None if spec.daily_pnl_vectors is None else spec.daily_pnl_vectors.source
+        ),
+        "rfet_observations": (
+            None if spec.rfet_observations is None else spec.rfet_observations.source
+        ),
         "risk_factor_aliases": dict(spec.risk_factor_aliases),
     }
-
-
-def _stable_hash(payload: Mapping[str, object]) -> str:
-    data = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
-    return hashlib.sha256(data).hexdigest()
 
 
 def _readonly_string_array(values: npt.ArrayLike, name: str) -> npt.NDArray[np.str_]:

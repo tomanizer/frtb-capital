@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import csv
-import hashlib
-import json
 from collections.abc import Mapping, Sequence
 from datetime import date
 from pathlib import Path
@@ -19,6 +17,14 @@ from frtb_ima.adapters._daily_pnl_mapping_types import (
     ImaMappingSpec,
     MappingFinding,
     MappingSpecError,
+)
+from frtb_ima.adapters._mapping_hash import stable_mapping_hash
+from frtb_ima.adapters._mapping_row_helpers import (
+    mapped_date,
+    mapped_str,
+    mapped_value,
+    plain_mapping,
+    resolve_source_row_id,
 )
 
 _VAR_FIELDS = frozenset({"var_975", "var_99"})
@@ -45,6 +51,8 @@ def materialize_daily_pnl_vectors_from_mapping(
     """
 
     table = mapping_spec.daily_pnl_vectors
+    if table is None:
+        raise MappingSpecError("tables.daily_pnl_vectors is required for daily P&L mapping")
     source_path = (Path(source_root) / table.source).resolve()
     if source_path.suffix.lower() != ".csv":
         raise MappingSpecError("daily_pnl_vectors.source currently supports CSV files only")
@@ -54,7 +62,7 @@ def materialize_daily_pnl_vectors_from_mapping(
         rows,
         mapping_spec,
         source_file=table.source,
-        source_hash=_stable_hash({"source_text": source_text}),
+        source_hash=stable_mapping_hash({"source_text": source_text}),
     )
 
 
@@ -84,18 +92,26 @@ def materialize_daily_pnl_vectors_from_rows(
         Materialized NumPy batch plus generated validation report.
     """
 
-    row_hash = source_hash or _stable_hash({"rows": [_plain_mapping(row) for row in rows]})
+    table = mapping_spec.daily_pnl_vectors
+    if table is None:
+        raise MappingSpecError("tables.daily_pnl_vectors is required for daily P&L mapping")
+    row_hash = source_hash or stable_mapping_hash({"rows": [plain_mapping(row) for row in rows]})
     accepted: list[dict[str, object]] = []
     findings: list[MappingFinding] = []
     seen_keys: set[tuple[str, date]] = set()
     sign_multiplier = -1.0 if mapping_spec.pnl_positive_means == "loss" else 1.0
 
     for row_index, row in enumerate(rows, start=1):
-        source_row_id = _source_row_id(row, row_index, mapping_spec.daily_pnl_vectors.fields)
+        source_row_id = resolve_source_row_id(
+            row,
+            row_index,
+            table.fields,
+            findings=findings,
+        )
         try:
             mapped = _map_daily_pnl_row(
                 row,
-                mapping_spec.daily_pnl_vectors.fields,
+                table.fields,
                 source_row_id=source_row_id,
                 sign_multiplier=sign_multiplier,
             )
@@ -147,8 +163,8 @@ def _map_daily_pnl_row(
     sign_multiplier: float,
 ) -> dict[str, object]:
     mapped: dict[str, object] = {
-        "desk_id": _mapped_str(row, fields["desk_id"], "desk_id"),
-        "business_date": _mapped_date(row, fields["business_date"], "business_date"),
+        "desk_id": mapped_str(row, fields["desk_id"], "desk_id"),
+        "business_date": mapped_date(row, fields["business_date"], "business_date"),
         "apl": _mapped_float(row, fields["apl"], "apl") * sign_multiplier,
         "hpl": _mapped_float(row, fields["hpl"], "hpl") * sign_multiplier,
         "rtpl": _mapped_float(row, fields["rtpl"], "rtpl") * sign_multiplier,
@@ -195,35 +211,6 @@ def _daily_pnl_batch_from_accepted(
     )
 
 
-def _mapped_value(row: Mapping[str, object], mapping: FieldMapping, field_name: str) -> object:
-    if mapping.constant is not None:
-        value: object = mapping.constant
-    else:
-        assert mapping.source is not None
-        if mapping.source not in row:
-            raise ValueError(f"{field_name} source column {mapping.source!r} is missing")
-        value = row[mapping.source]
-    if value is None:
-        return None
-    text = str(value)
-    return mapping.values.get(text, value)
-
-
-def _mapped_str(row: Mapping[str, object], mapping: FieldMapping, field_name: str) -> str:
-    value = _mapped_value(row, mapping, field_name)
-    text = "" if value is None else str(value).strip()
-    if not text:
-        raise ValueError(f"{field_name} is required")
-    return text
-
-
-def _mapped_date(row: Mapping[str, object], mapping: FieldMapping, field_name: str) -> date:
-    try:
-        return date.fromisoformat(_mapped_str(row, mapping, field_name))
-    except ValueError as exc:
-        raise ValueError(f"{field_name} must be an ISO date") from exc
-
-
 def _mapped_float(row: Mapping[str, object], mapping: FieldMapping, field_name: str) -> float:
     value = _mapped_optional_float(row, mapping, field_name)
     if value is None:
@@ -234,7 +221,7 @@ def _mapped_float(row: Mapping[str, object], mapping: FieldMapping, field_name: 
 def _mapped_optional_float(
     row: Mapping[str, object], mapping: FieldMapping, field_name: str
 ) -> float | None:
-    value = _mapped_value(row, mapping, field_name)
+    value = mapped_value(row, mapping, field_name)
     if value is None or str(value).strip() == "":
         return None
     try:
@@ -246,26 +233,5 @@ def _mapped_optional_float(
     return result
 
 
-def _source_row_id(
-    row: Mapping[str, object], row_index: int, fields: Mapping[str, FieldMapping]
-) -> str:
-    mapping = fields.get("source_row_id")
-    if mapping is None:
-        return f"row-{row_index}"
-    try:
-        return _mapped_str(row, mapping, "source_row_id")
-    except ValueError:
-        return f"row-{row_index}"
-
-
 def _finding(code: str, message: str, row_id: str) -> MappingFinding:
     return MappingFinding(severity="ERROR", code=code, message=message, row_id=row_id)
-
-
-def _plain_mapping(row: Mapping[str, object]) -> dict[str, str]:
-    return {str(key): "" if value is None else str(value) for key, value in row.items()}
-
-
-def _stable_hash(payload: Mapping[str, object]) -> str:
-    data = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
-    return hashlib.sha256(data).hexdigest()

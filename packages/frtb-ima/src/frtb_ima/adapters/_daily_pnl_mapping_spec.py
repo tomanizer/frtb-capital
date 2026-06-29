@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -13,6 +11,7 @@ from frtb_ima.adapters._daily_pnl_mapping_types import (
     ImaMappingSpec,
     MappingSpecError,
 )
+from frtb_ima.adapters._mapping_hash import stable_mapping_hash
 from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
 
 
@@ -54,16 +53,16 @@ def parse_ima_mapping_spec(text: str) -> ImaMappingSpec:
 
 def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> ImaMappingSpec:
     tables = _required_mapping(raw, "tables")
-    daily_pnl = _required_mapping(tables, "daily_pnl_vectors")
+    daily_pnl = tables.get("daily_pnl_vectors")
+    if daily_pnl is not None and not isinstance(daily_pnl, Mapping):
+        raise MappingSpecError("daily_pnl_vectors must be a mapping")
     sign_convention = _required_mapping(raw, "sign_convention")
     if "pnl_positive_means" not in sign_convention:
         raise MappingSpecError("sign_convention.pnl_positive_means is required")
     rfet_raw = tables.get("rfet_observations")
-    rfet = (
-        _rfet_observation_mapping(_required_mapping(tables, "rfet_observations"))
-        if isinstance(rfet_raw, Mapping)
-        else None
-    )
+    if rfet_raw is not None and not isinstance(rfet_raw, Mapping):
+        raise MappingSpecError("rfet_observations must be a mapping")
+    rfet = _rfet_observation_mapping(rfet_raw) if isinstance(rfet_raw, Mapping) else None
     return ImaMappingSpec(
         mapping_spec_version=_required_int(raw, "mapping_spec_version"),
         target_schema=_required_str(raw, "target_schema"),
@@ -71,16 +70,20 @@ def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> Im
         base_currency=_required_str(raw, "base_currency"),
         timezone=_required_str(raw, "timezone"),
         pnl_positive_means=_required_str(sign_convention, "pnl_positive_means"),
-        daily_pnl_vectors=DailyPnlTableMapping(
-            source=_required_str(daily_pnl, "source"),
-            target=_required_str(daily_pnl, "target"),
-            fields=_field_mappings(_required_mapping(daily_pnl, "fields")),
+        daily_pnl_vectors=(
+            DailyPnlTableMapping(
+                source=_required_str(daily_pnl, "source"),
+                target=_required_str(daily_pnl, "target"),
+                fields=_field_mappings(_required_mapping(daily_pnl, "fields")),
+            )
+            if isinstance(daily_pnl, Mapping)
+            else None
         ),
         rfet_observations=rfet,
         risk_factor_aliases=_string_mapping(
             raw.get("risk_factor_aliases", {}), "risk_factor_aliases"
         ),
-        spec_hash=_stable_hash({"mapping_spec": source_text}),
+        spec_hash=stable_mapping_hash({"mapping_spec": source_text}),
     )
 
 
@@ -205,8 +208,3 @@ def _string_mapping(value: object, field_name: str) -> Mapping[str, str]:
     if not isinstance(value, Mapping):
         raise MappingSpecError(f"{field_name} must be a mapping")
     return {str(key): str(item) for key, item in value.items()}
-
-
-def _stable_hash(payload: Mapping[str, object]) -> str:
-    data = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
-    return hashlib.sha256(data).hexdigest()
