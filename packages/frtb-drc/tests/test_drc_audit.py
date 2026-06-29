@@ -62,6 +62,18 @@ def test_validate_reconciliation_rejects_broken_total() -> None:
         validate_reconciliation(broken)
 
 
+def test_validate_reconciliation_rejects_nonsec_gross_jtd_above_market_value() -> None:
+    result = calculate_drc_capital(
+        (_position("long", DefaultDirection.LONG, 100.0),),
+        context=_context(),
+    )
+    broken_gross = replace(result.gross_jtds[0], gross_jtd=101.0)
+    broken = replace(result, gross_jtds=(broken_gross,))
+
+    with pytest.raises(DrcInputError, match="gross JTD exceeds market-value cap"):
+        validate_reconciliation(broken)
+
+
 def _context() -> DrcCalculationContext:
     return DrcCalculationContext(
         run_id="run-audit",

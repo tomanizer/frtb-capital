@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 from frtb_drc import (
+    BranchType,
     CreditQuality,
     DefaultDirection,
     DrcInputError,
@@ -51,6 +52,49 @@ def test_market_value_derives_pnl_when_cumulative_pnl_is_absent() -> None:
 
     assert gross.pnl_component == -10.0
     assert gross.gross_jtd == 65.0
+
+
+def test_long_gross_jtd_caps_explicit_pnl_at_market_value() -> None:
+    gross = calculate_gross_jtd(
+        _position(
+            default_direction=DefaultDirection.LONG,
+            notional=100.0,
+            market_value=110.0,
+            cumulative_pnl=50.0,
+        )
+    )
+
+    assert gross.gross_jtd == 110.0
+    assert gross.branch_metadata[0].branch_type is BranchType.CAP
+    assert gross.branch_metadata[0].source_id == "pos-1"
+    assert gross.branch_metadata[0].citations == ("US_NPR_210_A_1_II",)
+
+
+def test_long_gross_jtd_does_not_emit_cap_branch_when_market_value_is_not_binding() -> None:
+    gross = calculate_gross_jtd(
+        _position(
+            default_direction=DefaultDirection.LONG,
+            notional=100.0,
+            market_value=110.0,
+            cumulative_pnl=10.0,
+        )
+    )
+
+    assert gross.gross_jtd == 85.0
+    assert gross.branch_metadata == ()
+
+
+def test_gross_jtd_is_unchanged_when_market_value_is_unavailable() -> None:
+    gross = calculate_gross_jtd(
+        _position(
+            default_direction=DefaultDirection.LONG,
+            market_value=None,
+            cumulative_pnl=50.0,
+        )
+    )
+
+    assert gross.gross_jtd == 125.0
+    assert gross.branch_metadata == ()
 
 
 def test_zero_lgd_recovery_unlinked_position_produces_zero_gross_jtd() -> None:

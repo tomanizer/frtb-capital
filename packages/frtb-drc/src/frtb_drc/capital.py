@@ -74,7 +74,8 @@ def calculate_hedge_benefit_ratio(
     Returns
     -------
     HedgeBenefitRatio
-        Result of the operation.
+        HedgeBenefitRatio with aggregate net long, aggregate net short,
+        denominator, ratio, and zero-denominator branch metadata.
     """
 
     records = tuple(net_jtds)
@@ -139,7 +140,8 @@ def calculate_bucket_drc(
     Returns
     -------
     BucketDrc
-        Result of the operation.
+        BucketDrc with weighted long and short totals, HBR, capital, floor
+        branch metadata, and citations.
     """
 
     profile = get_rule_profile(profile_id)
@@ -229,7 +231,7 @@ def calculate_category_drc(
     Returns
     -------
     CategoryDrc
-        Result of the operation.
+        CategoryDrc as the cited sum of bucket capital requirements.
     """
 
     profile = get_rule_profile(profile_id)

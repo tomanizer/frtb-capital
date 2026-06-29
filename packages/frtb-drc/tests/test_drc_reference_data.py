@@ -89,6 +89,22 @@ def test_us_npr_maturity_policy_is_cited() -> None:
     assert policy.citation_id == "US_NPR_210_A_2_III"
 
 
+def test_us_npr_maturity_policy_dispatches_by_risk_class() -> None:
+    securitisation = get_maturity_policy(
+        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+    )
+    ctp = get_maturity_policy(
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+    )
+
+    assert securitisation.floor_years == 1.0
+    assert securitisation.full_weight_years == 1.0
+    assert securitisation.citation_id == "US_NPR_210_C_1"
+    assert ctp.floor_years == 1.0
+    assert ctp.full_weight_years == 1.0
+    assert ctp.citation_id == "US_NPR_210_D_1"
+
+
 def test_basel_maturity_policy_is_cited() -> None:
     policy = get_maturity_policy(BASEL_MAR22_PROFILE_ID)
 
@@ -96,6 +112,24 @@ def test_basel_maturity_policy_is_cited() -> None:
     assert policy.floor_years == 0.25
     assert policy.full_weight_years == 1.0
     assert policy.citation_id == "BASEL_MAR22_15_18"
+
+
+def test_basel_maturity_policy_dispatches_by_risk_class() -> None:
+    securitisation = get_maturity_policy(
+        BASEL_MAR22_PROFILE_ID,
+        risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+    )
+    ctp = get_maturity_policy(
+        BASEL_MAR22_PROFILE_ID,
+        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+    )
+
+    assert securitisation.floor_years == 1.0
+    assert securitisation.full_weight_years == 1.0
+    assert securitisation.citation_id == "BASEL_MAR22_27"
+    assert ctp.floor_years == 1.0
+    assert ctp.full_weight_years == 1.0
+    assert ctp.citation_id == "BASEL_MAR22_36"
 
 
 def test_eu_crr3_maturity_policy_is_cited() -> None:

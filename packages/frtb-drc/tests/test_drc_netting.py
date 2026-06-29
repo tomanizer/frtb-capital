@@ -116,6 +116,26 @@ def test_same_obligor_lower_seniority_short_offsets_higher_seniority_long() -> N
     assert records[0].net_amount == 60.0
 
 
+def test_recovery_unlinked_short_offsets_equity_under_cited_rank_order() -> None:
+    records = calculate_net_jtds(
+        (
+            _input("long-1", DefaultDirection.LONG, 100.0, seniority=DrcSeniority.EQUITY),
+            _input(
+                "short-1",
+                DefaultDirection.SHORT,
+                40.0,
+                seniority=DrcSeniority.NOT_RECOVERY_LINKED,
+            ),
+        )
+    )
+
+    assert len(records) == 1
+    assert records[0].seniority_layer == "EQUITY"
+    assert records[0].net_direction is DefaultDirection.LONG
+    assert records[0].net_amount == 60.0
+    assert records[0].rejected_offsets == ()
+
+
 def test_same_obligor_higher_seniority_short_is_rejected_against_lower_seniority_long() -> None:
     records = calculate_net_jtds(
         (

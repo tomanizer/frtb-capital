@@ -13,7 +13,7 @@ def slug(value: str) -> str:
     Returns
     -------
     str
-        Result of the operation.
+        Lowercase identifier slug safe for stable DRC ids.
     """
 
     return value.lower().replace(" ", "-").replace("_", "-")
@@ -29,7 +29,7 @@ def slug_path(value: str) -> str:
     Returns
     -------
     str
-        Result of the operation.
+        Path-safe identifier slug preserving hierarchy separators.
     """
 
     return slug(value).replace(":", "-").replace("/", "-")
