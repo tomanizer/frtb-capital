@@ -14,6 +14,7 @@ from frtb_rrao._validation_rules import (
     UNSUPPORTED_CLASSIFICATION_MESSAGE,
     is_unsupported_classification_hint,
 )
+from frtb_rrao.batch_registry import materialize_rrao_positions
 from frtb_rrao.data_models import (
     RraoClassification,
     RraoEvidenceType,
@@ -23,7 +24,6 @@ from frtb_rrao.data_models import (
 )
 from frtb_rrao.validation._back_to_back import (
     _validate_back_to_back_match_fields,
-    _validate_back_to_back_match_groups,
 )
 from frtb_rrao.validation._common import _finite_float, _require_text
 from frtb_rrao.validation._errors import NotionalSignConvention, RraoInputError
@@ -84,25 +84,13 @@ def validate_rrao_positions(positions: object) -> tuple[RraoPosition, ...]:
         Validated positions in input order.
     """
 
-    if isinstance(positions, RraoPosition):
-        raise RraoInputError("positions must be an iterable of RraoPosition objects")
-    try:
-        candidates: tuple[object, ...] = tuple(positions)  # type: ignore[arg-type]
-    except TypeError as exc:
-        raise RraoInputError("positions must be an iterable of RraoPosition objects") from exc
+    materialized = materialize_rrao_positions(positions)
+    if not materialized:
+        return materialized
+    from frtb_rrao.batch import _build_rrao_batch_from_materialized_positions
 
-    seen_position_ids: set[str] = set()
-    validated: list[RraoPosition] = []
-    for candidate in candidates:
-        if not isinstance(candidate, RraoPosition):
-            raise RraoInputError("positions must contain only RraoPosition objects")
-        position = candidate
-        _validate_position(position, seen_position_ids)
-        seen_position_ids.add(position.position_id)
-        validated.append(position)
-    validated_positions = tuple(validated)
-    _validate_back_to_back_match_groups(validated_positions)
-    return validated_positions
+    _build_rrao_batch_from_materialized_positions(materialized)
+    return materialized
 
 
 def _validate_position_without_back_to_back_groups(

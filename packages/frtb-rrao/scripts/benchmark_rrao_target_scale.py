@@ -27,7 +27,7 @@ from frtb_rrao import (
     RraoSourceLineage,
     build_rrao_batch_from_arrow,
     build_rrao_batch_from_columns,
-    calculate_rrao_capital,
+    build_rrao_batch_from_positions,
     calculate_rrao_capital_from_batch,
     normalize_rrao_arrow_table,
     serialize_rrao_result,
@@ -136,9 +136,14 @@ def run_benchmark(config: RraoBenchmarkConfig) -> dict[str, object]:
     positions = build_positions(config)
     row_build_seconds = time.perf_counter() - row_build_started
 
-    row_calculate_started = time.perf_counter()
-    result = calculate_rrao_capital(positions, context=build_context(config))
-    row_calculate_seconds = time.perf_counter() - row_calculate_started
+    row_batch_build_started = time.perf_counter()
+    row_batch = build_rrao_batch_from_positions(positions)
+    row_batch_build_seconds = time.perf_counter() - row_batch_build_started
+
+    row_kernel_started = time.perf_counter()
+    row_calculation = calculate_rrao_capital_from_batch(row_batch, context=build_context(config))
+    row_kernel_seconds = time.perf_counter() - row_kernel_started
+    result = row_calculation.result
 
     row_serialize_started = time.perf_counter()
     payload = serialize_rrao_result(result)
@@ -199,25 +204,26 @@ def run_benchmark(config: RraoBenchmarkConfig) -> dict[str, object]:
         },
         "timings": {
             "build_positions_seconds": row_build_seconds,
-            "calculate_seconds": row_calculate_seconds,
+            "row_adapter_seconds": row_batch_build_seconds,
+            "row_batch_build_seconds": row_batch_build_seconds,
+            "row_kernel_seconds": row_kernel_seconds,
             "serialize_seconds": row_serialize_seconds,
             "wall_seconds": wall_seconds,
-            "positions_per_second": config.positions / row_calculate_seconds
-            if row_calculate_seconds
-            else 0.0,
+            "positions_per_second": positions_per_second(config, row_kernel_seconds),
+            "row_adapter_positions_per_second": positions_per_second(
+                config,
+                row_batch_build_seconds,
+            ),
+            "row_kernel_positions_per_second": positions_per_second(config, row_kernel_seconds),
             "batch_build_columns_seconds": columns_build_seconds,
             "batch_build_seconds": batch_build_seconds,
             "batch_calculate_seconds": batch_calculate_seconds,
             "batch_serialize_seconds": batch_serialize_seconds,
-            "batch_positions_per_second": config.positions / batch_calculate_seconds
-            if batch_calculate_seconds
-            else 0.0,
+            "batch_positions_per_second": positions_per_second(config, batch_calculate_seconds),
             "arrow_table_seconds": arrow_table_seconds,
             "arrow_batch_seconds": arrow_batch_seconds,
             "arrow_calculate_seconds": arrow_calculate_seconds,
-            "arrow_positions_per_second": config.positions / arrow_calculate_seconds
-            if arrow_calculate_seconds
-            else 0.0,
+            "arrow_positions_per_second": positions_per_second(config, arrow_calculate_seconds),
         },
         "memory": {
             "peak_traced_bytes": peak_bytes,
@@ -229,14 +235,17 @@ def run_benchmark(config: RraoBenchmarkConfig) -> dict[str, object]:
             "subtotal_count": len(result.subtotals),
             "profile_hash": result.profile_hash,
             "input_hash": result.input_hash,
+            "input_hash_algorithm": result.input_hash_algorithm,
             "payload_hash": row_payload_hash,
             "ordering_hash": ordering_hash(result),
             "citation_count": len(result.citations),
             "warning_count": len(result.warnings),
             "batch_input_hash": batch_result.input_hash,
+            "batch_input_hash_algorithm": batch_result.input_hash_algorithm,
             "batch_ordering_hash": ordering_hash(batch_result),
             "batch_total_rrao": batch_result.total_rrao,
             "arrow_input_hash": arrow_result.input_hash,
+            "arrow_input_hash_algorithm": arrow_result.input_hash_algorithm,
             "arrow_ordering_hash": ordering_hash(arrow_result),
             "arrow_total_rrao": arrow_result.total_rrao,
             "batch_payload_hash": batch_payload_hash,
@@ -245,6 +254,12 @@ def run_benchmark(config: RraoBenchmarkConfig) -> dict[str, object]:
             "arrow_absolute_delta": abs(result.total_rrao - arrow_result.total_rrao),
         },
     }
+
+
+def positions_per_second(config: RraoBenchmarkConfig, seconds: float) -> float:
+    """Return benchmark throughput for a timed phase."""
+
+    return config.positions / seconds if seconds else 0.0
 
 
 def audit_payload_hash(payload: dict[str, object]) -> str:

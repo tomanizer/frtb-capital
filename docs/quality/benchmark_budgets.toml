@@ -202,6 +202,11 @@ name = "calculate phase"
 path = ["timings", "arrow_calculate_seconds"]
 
 [[benchmarks.metrics]]
+name = "Arrow build validate hash seconds"
+path = ["timings", "arrow_batch_seconds"]
+max = 5.0
+
+[[benchmarks.metrics]]
 name = "row path positions per second"
 path = ["timings", "positions_per_second"]
 min = 1500.0

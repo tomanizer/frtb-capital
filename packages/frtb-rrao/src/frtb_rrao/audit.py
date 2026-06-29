@@ -73,6 +73,7 @@ def serialize_rrao_result(result: RraoCapitalResult) -> dict[str, object]:
         "profile_id": result.profile_id,
         "profile_hash": result.profile_hash,
         "input_hash": result.input_hash,
+        "input_hash_algorithm": result.input_hash_algorithm,
         "total_rrao": result.total_rrao,
         "citations": list(result.citations),
         "warnings": list(result.warnings),

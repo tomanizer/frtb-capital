@@ -19,6 +19,10 @@ from frtb_rrao import (
     calculate_rrao_capital,
     serialize_rrao_result,
 )
+from frtb_rrao.assembly.hashes import (
+    INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2,
+    INPUT_HASH_ALGORITHM_JSON_ROW_V1,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK_SCRIPT = ROOT / "scripts" / "benchmark_rrao_target_scale.py"
@@ -46,11 +50,20 @@ def test_target_scale_benchmark_smoke_is_deterministic() -> None:
     assert first["result"]["excluded_count"] == 100
     assert first["result"]["payload_hash"] == second["result"]["payload_hash"]
     assert first["result"]["ordering_hash"] == second["result"]["ordering_hash"]
+    assert first["result"]["input_hash_algorithm"] == INPUT_HASH_ALGORITHM_JSON_ROW_V1
+    assert first["result"]["batch_input_hash_algorithm"] == INPUT_HASH_ALGORITHM_JSON_ROW_V1
+    assert first["result"]["arrow_input_hash_algorithm"] == INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2
     assert first["result"]["batch_payload_hash"] == first["result"]["payload_hash"]
     assert first["result"]["batch_ordering_hash"] == first["result"]["ordering_hash"]
     assert first["result"]["arrow_ordering_hash"] == first["result"]["ordering_hash"]
     assert first["result"]["batch_absolute_delta"] == 0.0
     assert first["result"]["arrow_absolute_delta"] == 0.0
+    assert "calculate_seconds" not in first["timings"]
+    assert first["timings"]["row_adapter_seconds"] > 0.0
+    assert first["timings"]["row_batch_build_seconds"] == first["timings"]["row_adapter_seconds"]
+    assert first["timings"]["row_kernel_seconds"] > 0.0
+    assert first["timings"]["row_adapter_positions_per_second"] > 0.0
+    assert first["timings"]["row_kernel_positions_per_second"] > 0.0
     assert first["timings"]["positions_per_second"] > 0.0
     assert first["timings"]["batch_positions_per_second"] > 0.0
     assert first["timings"]["arrow_positions_per_second"] > 0.0
