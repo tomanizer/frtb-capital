@@ -240,6 +240,7 @@ def test_pla_joint_zone_ks_green_spearman_amber_gives_amber() -> None:
     )
 
     assert result.zone == "AMBER"
+    assert result.as_dict()["zone"] == "AMBER"
 
 
 def test_pla_joint_zone_ks_red_spearman_green_gives_red() -> None:
@@ -274,14 +275,17 @@ def test_pla_assessment_for_policy_with_diagnostics_reports_window() -> None:
     hpl = [float(idx) for idx in range(n)]
     rtpl = [float(idx) for idx in range(n)]
 
-    result = pla_assessment_for_policy_with_diagnostics(
-        hpl,
-        rtpl,
-        policy,
-        observation_dates=dates,
-    )
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy_with_diagnostics(
+            hpl,
+            rtpl,
+            policy,
+            observation_dates=dates,
+        )
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        compatibility_result = pla_assessment_for_policy(hpl, rtpl, policy)
 
-    assert result.pla == pla_assessment_for_policy(hpl, rtpl, policy)
+    assert result.pla == compatibility_result
     assert result.zone == "GREEN"
     assert result.diagnostics.available_observations == n
     assert result.diagnostics.window_size == policy.pla_window_days
@@ -289,6 +293,28 @@ def test_pla_assessment_for_policy_with_diagnostics_reports_window() -> None:
     assert result.diagnostics.start_date == dates[n - policy.pla_window_days]
     assert result.diagnostics.end_date == dates[-1]
     assert result.as_dict()["diagnostics"]["window_size"] == policy.pla_window_days
+
+
+def test_pla_policy_without_calendar_warns_observation_count_is_unverified() -> None:
+    policy = get_policy()
+    hpl = [float(idx) for idx in range(policy.pla_minimum_history_days)]
+    rtpl = [float(idx) for idx in range(policy.pla_minimum_history_days)]
+
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
+
+    assert result.diagnostics.calendar_basis == ObservationWindowBasis.OBSERVATION_COUNT_PROXY
+
+
+def test_pla_policy_compatibility_wrapper_warns_without_calendar() -> None:
+    policy = get_policy()
+    hpl = [float(idx) for idx in range(policy.pla_minimum_history_days)]
+    rtpl = [float(idx) for idx in range(policy.pla_minimum_history_days)]
+
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy(hpl, rtpl, policy)
+
+    assert result.zone == "GREEN"
 
 
 def test_pla_policy_calendar_validates_business_window_and_reports_holidays() -> None:
@@ -346,7 +372,8 @@ def test_pla_ecb_policy_no_longer_raises_unsupported_feature() -> None:
     hpl = [float(idx) for idx in range(250)]
     rtpl = [float(idx) for idx in range(250)]
 
-    result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
 
     assert result.zone == "GREEN"
 
@@ -356,7 +383,8 @@ def test_pla_ecb_policy_returns_spearman_result() -> None:
     hpl = [float(idx) for idx in range(250)]
     rtpl = [float(idx + 1) for idx in range(250)]
 
-    result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
 
     assert result.spearman is not None
     assert result.spearman.spearman_correlation == pytest.approx(1.0)
@@ -367,7 +395,8 @@ def test_pla_ecb_policy_joint_zone_propagates() -> None:
     hpl = [float(idx) for idx in range(250)]
     rtpl = [float(idx + 1) for idx in range(250)]
 
-    result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
 
     assert result.spearman is not None
     assert result.zone == _worse_test_zone(result.pla.zone, result.spearman.zone)
@@ -382,7 +411,8 @@ def test_pla_policy_joint_zone_uses_custom_zone_labels() -> None:
     hpl = [float(idx) for idx in range(250)]
     rtpl = [float(idx) for idx in range(249, -1, -1)]
 
-    result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
 
     assert result.pla.zone == "PASS"
     assert result.spearman is not None
@@ -395,7 +425,8 @@ def test_pla_assessment_for_policy_returns_authoritative_joint_zone() -> None:
     hpl = [float(idx) for idx in range(250)]
     rtpl = [float(idx) for idx in range(249, -1, -1)]
 
-    result = pla_assessment_for_policy(hpl, rtpl, policy)
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy(hpl, rtpl, policy)
 
     assert result.ks_statistic == pytest.approx(0.0)
     assert result.zone == "RED"
@@ -406,7 +437,8 @@ def test_pla_fed_policy_spearman_is_none() -> None:
     hpl = [float(idx) for idx in range(250)]
     rtpl = [float(idx) for idx in range(250)]
 
-    result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
 
     assert result.spearman is None
 
@@ -416,9 +448,11 @@ def test_pla_assessment_result_as_dict_includes_spearman_when_present() -> None:
     hpl = [float(idx) for idx in range(250)]
     rtpl = [float(idx + 1) for idx in range(250)]
 
-    result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
 
     payload = result.as_dict()
+    assert payload["zone"] == _worse_test_zone(result.pla.zone, result.spearman.zone)
     assert payload["spearman"] is not None
     assert "spearman_correlation" in payload["spearman"]
 
@@ -428,8 +462,11 @@ def test_pla_assessment_result_as_dict_spearman_is_none_for_fed_policy() -> None
     hpl = [float(idx) for idx in range(250)]
     rtpl = [float(idx) for idx in range(250)]
 
-    result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
+    with pytest.warns(DeprecationWarning, match="calendar=None uses an observation count"):
+        result = pla_assessment_for_policy_with_diagnostics(hpl, rtpl, policy)
 
+    payload = result.as_dict()
+    assert payload["zone"] == payload["pla"]["zone"]
     assert result.as_dict()["spearman"] is None
 
 
