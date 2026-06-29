@@ -10,8 +10,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from frtb_common import UnsupportedRegulatoryFeatureError
-
 from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import SbmRegulatoryProfile
 from frtb_sbm.reference_citation_routing import (

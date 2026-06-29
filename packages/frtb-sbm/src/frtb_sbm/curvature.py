@@ -103,13 +103,13 @@ from frtb_sbm.data_models import (
 from frtb_sbm.equity_reference_data import (
     EQUITY_SPOT_RISK_FACTOR,
 )
-from frtb_sbm.reference_data import (
-    curvature_citation_ids,
-    normalise_fx_delta_currency_code,
-)
 from frtb_sbm.reference_citation_routing import (
     profile_citation_id,
     profile_scenario_citation_ids,
+)
+from frtb_sbm.reference_data import (
+    curvature_citation_ids,
+    normalise_fx_delta_currency_code,
 )
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 from frtb_sbm.validation import (

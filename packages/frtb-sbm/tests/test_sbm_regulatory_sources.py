@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-
 from frtb_sbm.reference_citations_pra_uk_crr import (
     PRA_UK_CRR_CITATIONS,
     PRA_UK_CRR_LEGISLATION_CHAPTER_URL,

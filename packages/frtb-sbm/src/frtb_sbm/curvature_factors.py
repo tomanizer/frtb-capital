@@ -119,7 +119,10 @@ def _curvature_definition_citation_ids(
     risk_class: SbmRiskClass,
 ) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.GIRR:
-        return profile_citation_ids(profile_id, ("basel_mar21_8", "basel_mar21_96", "basel_mar21_97"))
+        return profile_citation_ids(
+            profile_id,
+            ("basel_mar21_8", "basel_mar21_96", "basel_mar21_97"),
+        )
     if risk_class is SbmRiskClass.FX:
         return profile_citation_ids(
             profile_id,
@@ -136,7 +139,10 @@ def _curvature_definition_citation_ids(
             ("basel_mar21_13", "basel_mar21_96", "basel_mar21_97"),
         )
     if risk_class is SbmRiskClass.CSR_NONSEC:
-        return profile_citation_ids(profile_id, ("basel_mar21_9", "basel_mar21_96", "basel_mar21_97"))
+        return profile_citation_ids(
+            profile_id,
+            ("basel_mar21_9", "basel_mar21_96", "basel_mar21_97"),
+        )
     if risk_class is SbmRiskClass.CSR_SEC_CTP:
         return profile_citation_ids(
             profile_id,

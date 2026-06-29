@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
     SbmInputError,
     SbmRegulatoryProfile,

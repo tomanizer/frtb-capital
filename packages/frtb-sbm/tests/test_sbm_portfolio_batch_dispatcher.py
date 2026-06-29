@@ -6,7 +6,7 @@ from datetime import date
 
 import pyarrow as pa
 import pytest
-from frtb_common import NormalizedArrowTable, UnsupportedRegulatoryFeatureError
+from frtb_common import NormalizedArrowTable
 from frtb_sbm import (
     SbmCalculationContext,
     SbmInputError,

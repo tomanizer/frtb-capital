@@ -39,13 +39,13 @@ from frtb_sbm.data_models import (
     WeightedSensitivity,
 )
 from frtb_sbm.equity_reference_data import EQUITY_OTHER_SECTOR_BUCKET
-from frtb_sbm.risk_classes.csr_sec_nonctp import (
-    build_csr_sec_nonctp_inter_bucket_correlation_map,
-)
 from frtb_sbm.reference_citation_routing import (
     profile_citation_id,
     profile_citation_ids,
     profile_scenario_citation_ids,
+)
+from frtb_sbm.risk_classes.csr_sec_nonctp import (
+    build_csr_sec_nonctp_inter_bucket_correlation_map,
 )
 from frtb_sbm.risk_classes.vega_correlation_common import (
     _uses_absolute_weight_intra_bucket,

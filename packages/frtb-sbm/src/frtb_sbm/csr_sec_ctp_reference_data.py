@@ -14,11 +14,6 @@ from dataclasses import dataclass
 from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._text import require_text as _require_text
-from frtb_sbm.reference_citation_routing import (
-    ensure_profile_in_reference_map,
-    profile_citation_id,
-)
-from frtb_sbm.us_npr_reference_tables import mirror_with_profile_citation
 from frtb_sbm.csr_nonsec_reference_data import (
     CSR_BOND_RISK_FACTOR,
     CSR_CDS_RISK_FACTOR,
@@ -28,6 +23,11 @@ from frtb_sbm.csr_nonsec_reference_data import (
     csr_nonsec_inter_bucket_correlation,
 )
 from frtb_sbm.data_models import SbmRegulatoryProfile, SbmSensitivity
+from frtb_sbm.reference_citation_routing import (
+    ensure_profile_in_reference_map,
+    profile_citation_id,
+)
+from frtb_sbm.us_npr_reference_tables import mirror_with_profile_citation
 from frtb_sbm.validation import SbmInputError, ensure_sbm_profile_known
 
 CSR_SEC_CTP_DECOMPOSITION_REQUIRED_FLAG = "index_ctp_decomposition_required"

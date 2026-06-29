@@ -66,8 +66,9 @@ runtime paths are enforced before calculation:
 | Profile | Implemented paths (summary) |
 | --- | --- |
 | `BASEL_MAR21` | Delta, vega, and curvature across all seven SBM risk classes (see support matrix) |
-| `US_NPR_2_0` | GIRR delta only |
-| Other comparison profiles | Fail closed with `UnsupportedRegulatoryFeatureError` |
+| `US_NPR_2_0` | Comparison slice under audit: 21 / 21 runtime gates; GIRR delta fixture-backed |
+| `EU_CRR3` | Comparison slice under audit: 21 / 21 runtime gates; GIRR delta fixture-backed |
+| `PRA_UK_CRR` | Comparison slice under audit: 21 / 21 runtime gates; GIRR delta fixture-backed |
 
 Each Arrow table handed to the portfolio dispatcher must be **homogeneous**: every
 row shares the same `risk_class` and `risk_measure`. Mixed GIRR delta + FX vega in

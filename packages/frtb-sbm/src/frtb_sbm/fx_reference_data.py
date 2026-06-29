@@ -15,8 +15,8 @@ from frtb_sbm.reference_citation_routing import (
     profile_citation_id,
 )
 from frtb_sbm.reference_profiles import _resolve_supported_profile
-from frtb_sbm.us_npr_reference_tables import mirror_fx_buckets
 from frtb_sbm.reference_types import SbmFxBucketDefinition
+from frtb_sbm.us_npr_reference_tables import mirror_fx_buckets
 
 FX_DELTA_RISK_WEIGHT = 0.15
 FX_INTER_BUCKET_CORRELATION = 0.60
@@ -290,13 +290,13 @@ __all__ = [
     "BASEL_FX_BUCKETS",
     "BASEL_FX_SPECIFIED_CURRENCIES",
     "EU_CRR3_FX_BUCKETS",
-    "PRA_UK_CRR_FX_BUCKETS",
-    "US_NPR_FX_BUCKETS",
     "FX_DELTA_RISK_WEIGHT",
     "FX_INTER_BUCKET_CORRELATION",
     "FX_INTRA_BUCKET_CORRELATION",
+    "PRA_UK_CRR_FX_BUCKETS",
     "PROFILE_FX_BUCKETS",
     "PROFILE_FX_SPECIFIED_CURRENCIES",
+    "US_NPR_FX_BUCKETS",
     "fx_bucket_definition",
     "fx_buckets_for_profile",
     "fx_delta_intra_bucket_correlation",

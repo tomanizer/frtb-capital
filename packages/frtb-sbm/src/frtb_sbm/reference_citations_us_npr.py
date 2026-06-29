@@ -7,9 +7,9 @@ Regulatory traceability:
 from __future__ import annotations
 
 from frtb_sbm.data_models import SbmCitation
-from frtb_sbm.us_npr_citation_map import BASEL_TO_US_NPR_CITATION_IDS
 from frtb_sbm.reference_citations_basel_core import BASEL_CORE_CITATIONS
 from frtb_sbm.reference_citations_basel_risk_classes import BASEL_RISK_CLASS_CITATIONS
+from frtb_sbm.us_npr_citation_map import BASEL_TO_US_NPR_CITATION_IDS
 
 US_NPR_2_0_URL = "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
 _US_NPR_SOURCE_ID = "us_npr_2_0_91_fr_14952"
