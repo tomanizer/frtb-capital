@@ -46,6 +46,8 @@ class StressPeriodSelectionResult:
     calendar_version: str = ""
     official_holiday_count: int = 0
     missing_business_dates: tuple[date, ...] = ()
+    series_start_dates: Mapping[RiskClass, date] = field(default_factory=dict)
+    risk_factor_sets: Mapping[RiskClass, str] = field(default_factory=dict)
     metadata: Mapping[str, object] = field(default_factory=_empty_mapping)
 
     def __post_init__(self) -> None:
@@ -76,29 +78,52 @@ class StressPeriodSelectionResult:
             count = counts[risk_class]
             if count <= 0:
                 raise ValueError("candidate_counts values must be positive")
+        start_dates = dict(self.series_start_dates)
+        if start_dates:
+            if set(start_dates) != set(selected):
+                raise ValueError("series_start_dates keys must match selected_by_risk_class")
+            for risk_class, start_date in start_dates.items():
+                if not isinstance(risk_class, RiskClass):
+                    raise TypeError("series_start_dates keys must be RiskClass values")
+                if not isinstance(start_date, date):
+                    raise TypeError("series_start_dates values must be datetime.date values")
+        risk_factor_sets = dict(self.risk_factor_sets)
+        if risk_factor_sets:
+            if set(risk_factor_sets) != set(selected):
+                raise ValueError("risk_factor_sets keys must match selected_by_risk_class")
+            for risk_class, risk_factor_set in risk_factor_sets.items():
+                if not isinstance(risk_class, RiskClass):
+                    raise TypeError("risk_factor_sets keys must be RiskClass values")
+                if risk_factor_set not in {"FULL", "REDUCED"}:
+                    raise ValueError("risk_factor_sets values must be 'FULL' or 'REDUCED'")
         object.__setattr__(self, "selected_by_risk_class", _freeze_mapping(selected))
         object.__setattr__(self, "candidate_counts", _freeze_mapping(counts))
         object.__setattr__(self, "es_estimator", es_estimator)
         object.__setattr__(self, "window_basis", str(self.window_basis))
         object.__setattr__(self, "missing_business_dates", tuple(self.missing_business_dates))
+        object.__setattr__(self, "series_start_dates", _freeze_mapping(start_dates))
+        object.__setattr__(self, "risk_factor_sets", _freeze_mapping(risk_factor_sets))
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 
     @property
     def risk_class_count(self) -> int:
         """Number of risk classes with selected stress periods.
+
         Returns
         -------
         int
-            Result of the operation.
+            Count of risk classes represented in ``selected_by_risk_class``.
         """
         return len(self.selected_by_risk_class)
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dictionary with selection parameters, per-risk-class
+            selected windows, candidate counts, and series coverage evidence.
         """
         selected = {
             risk_class.value: self.selected_by_risk_class[risk_class].as_dict()
@@ -107,6 +132,14 @@ class StressPeriodSelectionResult:
         counts = {
             risk_class.value: self.candidate_counts[risk_class]
             for risk_class in sorted(self.candidate_counts, key=lambda item: item.value)
+        }
+        series_start_dates = {
+            risk_class.value: self.series_start_dates[risk_class].isoformat()
+            for risk_class in sorted(self.series_start_dates, key=lambda item: item.value)
+        }
+        risk_factor_sets = {
+            risk_class.value: self.risk_factor_sets[risk_class]
+            for risk_class in sorted(self.risk_factor_sets, key=lambda item: item.value)
         }
         return {
             "as_of_date": self.as_of_date.isoformat(),
@@ -129,6 +162,8 @@ class StressPeriodSelectionResult:
             "risk_class_count": self.risk_class_count,
             "selected_by_risk_class": selected,
             "candidate_counts": counts,
+            "series_start_dates": series_start_dates,
+            "risk_factor_sets": risk_factor_sets,
             "metadata": jsonable(self.metadata),
         }
 

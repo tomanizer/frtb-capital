@@ -14,11 +14,13 @@ from frtb_ima.stress_period_selection import (
     validate_selected_stress_periods,
 )
 from frtb_ima.stress_period_types import (
+    REGULATORY_OBSERVATION_HORIZON_START,
     FloatVector,
     HistoricalStressSeries,
     StressPeriodCalibrationError,
     StressPeriodCandidate,
     StressPeriodTieBreak,
+    StressRiskFactorSet,
     StressSeverityMetric,
 )
 from frtb_ima.stress_period_windows import (
@@ -28,12 +30,14 @@ from frtb_ima.stress_period_windows import (
 )
 
 __all__ = (
+    "REGULATORY_OBSERVATION_HORIZON_START",
     "FloatVector",
     "HistoricalStressSeries",
     "StressPeriodCalibrationError",
     "StressPeriodCandidate",
     "StressPeriodSelectionResult",
     "StressPeriodTieBreak",
+    "StressRiskFactorSet",
     "StressSeverityMetric",
     "rolling_window_severity_scores",
     "select_stress_period_from_history",
