@@ -155,7 +155,7 @@ tables:
 """
     )
 
-    with pytest.raises(MappingSpecError, match="tables.rfet_observations"):
+    with pytest.raises(MappingSpecError, match=r"tables\.rfet_observations"):
         materialize_rfet_observations_from_rows([], spec)
 
 

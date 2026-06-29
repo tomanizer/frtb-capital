@@ -12,8 +12,8 @@ import numpy as np
 import numpy.typing as npt
 from frtb_common import ColumnSpec, NullPolicy, TabularLogicalType
 
-from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.adapters._mapping_hash import stable_mapping_hash
+from frtb_ima.audit_inputs import compute_inputs_hash
 
 if TYPE_CHECKING:
     from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
@@ -130,7 +130,9 @@ class ImaMappingSpec:
         )
         if not self.spec_hash:
             object.__setattr__(
-                self, "spec_hash", stable_mapping_hash({"mapping_spec": _mapping_spec_payload(self)})
+                self,
+                "spec_hash",
+                stable_mapping_hash({"mapping_spec": _mapping_spec_payload(self)}),
             )
 
 

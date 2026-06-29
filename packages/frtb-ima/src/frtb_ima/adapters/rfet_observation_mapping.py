@@ -9,12 +9,6 @@ from pathlib import Path
 
 import pyarrow as pa  # type: ignore[import-untyped]
 
-from frtb_ima.adapters.mapping_spec import (
-    FieldMapping,
-    ImaMappingSpec,
-    MappingFinding,
-    MappingSpecError,
-)
 from frtb_ima.adapters._mapping_hash import stable_mapping_hash
 from frtb_ima.adapters._mapping_row_helpers import (
     mapped_date,
@@ -27,6 +21,12 @@ from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationVal
 from frtb_ima.adapters.arrow import (
     build_rfet_observation_batch_from_arrow,
     normalize_ima_rfet_observation_arrow_table,
+)
+from frtb_ima.adapters.mapping_spec import (
+    FieldMapping,
+    ImaMappingSpec,
+    MappingFinding,
+    MappingSpecError,
 )
 from frtb_ima.rfet_evidence import RFETObservationBatch
 
