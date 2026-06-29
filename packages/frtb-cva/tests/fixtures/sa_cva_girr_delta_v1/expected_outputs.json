@@ -53,6 +53,14 @@
               [
                 "floor_applied",
                 "False"
+              ],
+              [
+                "variance_floored",
+                "False"
+              ],
+              [
+                "raw_variance",
+                "5.476000e+07"
               ]
             ]
           }
@@ -136,6 +144,14 @@
               [
                 "floor_applied",
                 "False"
+              ],
+              [
+                "variance_floored",
+                "False"
+              ],
+              [
+                "raw_variance",
+                "1.369000e+07"
               ]
             ]
           },
@@ -156,6 +172,14 @@
               [
                 "floor_applied",
                 "False"
+              ],
+              [
+                "variance_floored",
+                "False"
+              ],
+              [
+                "raw_variance",
+                "5.476000e+07"
               ]
             ]
           }
@@ -219,6 +243,14 @@
               [
                 "floor_applied",
                 "False"
+              ],
+              [
+                "variance_floored",
+                "False"
+              ],
+              [
+                "raw_variance",
+                "5.476000e+05"
               ]
             ]
           }
@@ -280,6 +312,14 @@
               [
                 "floor_applied",
                 "False"
+              ],
+              [
+                "variance_floored",
+                "False"
+              ],
+              [
+                "raw_variance",
+                "5.476000e+07"
               ]
             ]
           }
@@ -342,6 +382,14 @@
               [
                 "floor_applied",
                 "False"
+              ],
+              [
+                "variance_floored",
+                "False"
+              ],
+              [
+                "raw_variance",
+                "1.073296e+08"
               ]
             ]
           }

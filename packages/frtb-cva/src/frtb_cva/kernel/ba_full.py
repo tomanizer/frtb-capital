@@ -116,12 +116,9 @@ def _k_portfolio_hedged(
 
 
 def _apply_beta_floor(beta: float, k_reduced: float, k_hedged: float) -> tuple[float, bool]:
-    k_full = beta * k_reduced + (1.0 - beta) * k_hedged
     beta_floor = beta * k_reduced
-    beta_floor_binding = k_full + 1e-12 < beta_floor
-    if beta_floor_binding:
-        return beta_floor, True
-    return k_full, False
+    raw_k_full = beta_floor + (1.0 - beta) * k_hedged
+    return max(raw_k_full, beta_floor), False
 
 
 __all__ = ["calculate_full_portfolio_from_batches"]
