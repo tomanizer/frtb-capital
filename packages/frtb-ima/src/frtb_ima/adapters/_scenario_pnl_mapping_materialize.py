@@ -19,11 +19,14 @@ from frtb_ima.adapters._mapping_row_helpers import (
     resolve_source_row_id,
 )
 from frtb_ima.adapters._scenario_pnl_mapping_cube import (
+    _scenario_pnl_arrow_from_accepted,
     build_scenario_pnl_batch_from_arrow,
     scenario_cube_from_batch,
-    scenario_pnl_handoff_from_accepted,
 )
-from frtb_ima.adapters._scenario_pnl_mapping_types import ScenarioPnlValidationReport
+from frtb_ima.adapters._scenario_pnl_mapping_types import (
+    ScenarioPnlValidationReport,
+    ScenarioPnlVectorBatch,
+)
 from frtb_ima.adapters.mapping_spec import (
     FieldMapping,
     ImaMappingSpec,
@@ -38,7 +41,7 @@ from frtb_ima.scenario import ScenarioSetType
 class ScenarioPnlMappingResult:
     """Materialized scenario P&L rows, cube, and validation report."""
 
-    batch: object
+    batch: ScenarioPnlVectorBatch
     cube: ScenarioCube
     report: ScenarioPnlValidationReport
 
@@ -65,9 +68,7 @@ def materialize_scenario_pnl_vectors_from_mapping(
 
     table = mapping_spec.scenario_pnl_vectors
     if table is None:
-        raise MappingSpecError(
-            "tables.scenario_pnl_vectors is required for scenario P&L mapping"
-        )
+        raise MappingSpecError("tables.scenario_pnl_vectors is required for scenario P&L mapping")
     source_path = (Path(source_root) / table.source).resolve()
     if source_path.suffix.lower() != ".csv":
         raise MappingSpecError("scenario_pnl_vectors.source currently supports CSV files only")
@@ -109,12 +110,10 @@ def materialize_scenario_pnl_vectors_from_rows(
 
     table = mapping_spec.scenario_pnl_vectors
     if table is None:
-        raise MappingSpecError(
-            "tables.scenario_pnl_vectors is required for scenario P&L mapping"
-        )
+        raise MappingSpecError("tables.scenario_pnl_vectors is required for scenario P&L mapping")
     row_hash = source_hash or stable_mapping_hash({"rows": [plain_mapping(row) for row in rows]})
     accepted, findings = _accepted_scenario_pnl_rows(rows, table.fields, mapping_spec)
-    handoff = scenario_pnl_handoff_from_accepted(
+    handoff = _scenario_pnl_arrow_from_accepted(
         accepted,
         source_hash=row_hash,
         mapping_hash=mapping_spec.spec_hash,

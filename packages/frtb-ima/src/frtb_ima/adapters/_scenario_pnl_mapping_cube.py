@@ -18,7 +18,7 @@ from frtb_ima.data_contracts import ScenarioCube
 from frtb_ima.scenario import ScenarioMetadata, ScenarioSetType
 
 
-def scenario_pnl_handoff_from_accepted(
+def _scenario_pnl_arrow_from_accepted(
     accepted: Sequence[Mapping[str, object]],
     *,
     source_hash: str,
@@ -165,8 +165,9 @@ def _build_cube(
 
 
 def _date_from_value(value: object) -> date:
-    return date.fromisoformat(str(np.datetime64(value, "D")))
+    return date.fromisoformat(str(np.datetime64(str(value), "D")))
 
 
 def _column_values(table: pa.Table, column_name: str) -> list[object]:
-    return table.column(column_name).to_pylist()
+    values: Sequence[object] = table.column(column_name).to_pylist()
+    return list(values)

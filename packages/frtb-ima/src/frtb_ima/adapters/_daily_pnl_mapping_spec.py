@@ -68,9 +68,7 @@ def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> Im
     if scenario_pnl_raw is not None and not isinstance(scenario_pnl_raw, Mapping):
         raise MappingSpecError("scenario_pnl_vectors must be a mapping")
     scenario_pnl = (
-        _scenario_pnl_mapping(scenario_pnl_raw)
-        if isinstance(scenario_pnl_raw, Mapping)
-        else None
+        _scenario_pnl_mapping(scenario_pnl_raw) if isinstance(scenario_pnl_raw, Mapping) else None
     )
     return ImaMappingSpec(
         mapping_spec_version=_required_int(raw, "mapping_spec_version"),

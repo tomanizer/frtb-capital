@@ -91,9 +91,7 @@ def test_scenario_pnl_mapping_fixture_materializes_scenario_cube() -> None:
     assert result.report.row_count_read == 9
     assert result.report.row_count_mapped == 8
     assert result.report.row_count_rejected == 1
-    assert [finding.code for finding in result.report.findings] == [
-        "SCENARIO_PNL_DUPLICATE_KEY"
-    ]
+    assert [finding.code for finding in result.report.findings] == ["SCENARIO_PNL_DUPLICATE_KEY"]
     assert {
         "target_schema": result.report.target_schema,
         "source_system": result.report.source_system,
