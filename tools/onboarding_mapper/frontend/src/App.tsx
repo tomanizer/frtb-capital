@@ -1,5 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Circle,
+  ClipboardList,
+  Columns3,
+  Copy,
+  Database,
+  Download,
+  FileInput,
+  FolderOpen,
+  Play,
+  RefreshCw,
+  Search,
+  Table2,
+  Trash2,
+  UploadCloud,
+  WandSparkles,
+} from "lucide-react";
+import {
   exportMapping,
   getTable,
   listTables,
@@ -401,7 +422,9 @@ export default function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">FRTB</div>
+          <div className="brand-mark">
+            <ClipboardList aria-hidden="true" className="brand-icon" />
+          </div>
           <div>
             <h1>Onboarding Mapper</h1>
             <p>Column contracts for capital inputs</p>
@@ -454,12 +477,26 @@ export default function App() {
             <p>{STEPS.find((item) => item.id === step)?.subtitle}</p>
           </div>
           <div className="status-strip" aria-label="Workflow status">
-            <span className={selectedTable ? "status-pill complete" : "status-pill"}>Target</span>
-            <span className={sourcePreview ? "status-pill complete" : "status-pill"}>Source</span>
+            <span className={selectedTable ? "status-pill complete" : "status-pill"}>
+              {selectedTable ? <CheckCircle2 aria-hidden="true" className="icon" /> : <Circle aria-hidden="true" className="icon" />}
+              Target
+            </span>
+            <span className={sourcePreview ? "status-pill complete" : "status-pill"}>
+              {sourcePreview ? <CheckCircle2 aria-hidden="true" className="icon" /> : <Circle aria-hidden="true" className="icon" />}
+              Source
+            </span>
             <span className={mappedRequired.total && mappedRequired.done === mappedRequired.total ? "status-pill complete" : "status-pill"}>
+              {mappedRequired.total && mappedRequired.done === mappedRequired.total ? (
+                <CheckCircle2 aria-hidden="true" className="icon" />
+              ) : (
+                <Circle aria-hidden="true" className="icon" />
+              )}
               Mapping
             </span>
-            <span className={validation ? "status-pill complete" : "status-pill"}>Validation</span>
+            <span className={validation ? "status-pill complete" : "status-pill"}>
+              {validation ? <CheckCircle2 aria-hidden="true" className="icon" /> : <Circle aria-hidden="true" className="icon" />}
+              Validation
+            </span>
           </div>
         </header>
 
@@ -474,12 +511,15 @@ export default function App() {
               </div>
               <div className="search-control">
                 <label htmlFor="dataset-search">Search</label>
-                <input
-                  id="dataset-search"
-                  value={datasetSearch}
-                  onChange={(event) => setDatasetSearch(event.target.value)}
-                  placeholder="Component, package, table, risk class"
-                />
+                <div className="input-with-icon">
+                  <Search aria-hidden="true" className="icon" />
+                  <input
+                    id="dataset-search"
+                    value={datasetSearch}
+                    onChange={(event) => setDatasetSearch(event.target.value)}
+                    placeholder="Component, package, table, risk class"
+                  />
+                </div>
               </div>
             </div>
             <div className="panel-body">
@@ -526,7 +566,13 @@ export default function App() {
                           <td className="numeric">{table.column_count}</td>
                           <td>{[table.sbm_risk_class, table.sbm_risk_measure].filter(Boolean).join(" / ") || "-"}</td>
                           <td className="row-action">
-                            <button type="button" className="btn btn-secondary btn-small" onClick={() => selectTable(table)}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-small"
+                              title={selected ? "Selected contract" : "Select contract"}
+                              onClick={() => selectTable(table)}
+                            >
+                              {selected ? <Check aria-hidden="true" className="icon" /> : <ArrowRight aria-hidden="true" className="icon" />}
                               {selected ? "Selected" : "Select"}
                             </button>
                           </td>
@@ -569,6 +615,7 @@ export default function App() {
                   disabled={!selectedTable}
                   onClick={() => setStep("source")}
                 >
+                  <ArrowRight aria-hidden="true" className="icon" />
                   Continue to source
                 </button>
               </div>
@@ -595,6 +642,13 @@ export default function App() {
                       className={sourceTab === tab ? "active" : ""}
                       onClick={() => setSourceTab(tab)}
                     >
+                      {tab === "upload" ? (
+                        <UploadCloud aria-hidden="true" className="icon" />
+                      ) : tab === "path" ? (
+                        <FolderOpen aria-hidden="true" className="icon" />
+                      ) : (
+                        <Database aria-hidden="true" className="icon" />
+                      )}
                       {tab === "upload" ? "Upload" : tab === "path" ? "Server path" : "DuckDB"}
                     </button>
                   ))}
@@ -611,8 +665,8 @@ export default function App() {
                         if (file) void handleUpload(file);
                       }}
                     />
+                    <UploadCloud aria-hidden="true" className="dropzone-icon" />
                     <strong>Choose CSV, Parquet, or Arrow IPC</strong>
-                    <span>Loaded locally for this browser session.</span>
                   </label>
                 ) : null}
 
@@ -628,6 +682,7 @@ export default function App() {
                       />
                     </div>
                     <button type="button" className="btn btn-primary" disabled={busy || !pathValue} onClick={() => void handleLoadPath()}>
+                      <FolderOpen aria-hidden="true" className="icon" />
                       Load file
                     </button>
                   </>
@@ -653,6 +708,7 @@ export default function App() {
                       <textarea id="query" rows={6} value={duckQuery} onChange={(event) => setDuckQuery(event.target.value)} />
                     </div>
                     <button type="button" className="btn btn-primary" disabled={busy || !duckQuery} onClick={() => void handleLoadDuckDb()}>
+                      <Play aria-hidden="true" className="icon" />
                       Run query
                     </button>
                   </>
@@ -683,9 +739,11 @@ export default function App() {
                     <div className="preview-toolbar">
                       <div className="segmented-control">
                         <button type="button" className={previewMode === "columns" ? "active" : ""} onClick={() => setPreviewMode("columns")}>
+                          <Columns3 aria-hidden="true" className="icon" />
                           Column profile
                         </button>
                         <button type="button" className={previewMode === "rows" ? "active" : ""} onClick={() => setPreviewMode("rows")}>
+                          <Table2 aria-hidden="true" className="icon" />
                           Row preview
                         </button>
                       </div>
@@ -704,6 +762,7 @@ export default function App() {
             </div>
             <div className="panel-body panel-footer">
               <button type="button" className="btn btn-secondary" onClick={() => setStep("dataset")}>
+                <ArrowLeft aria-hidden="true" className="icon" />
                 Back
               </button>
               <button
@@ -712,6 +771,7 @@ export default function App() {
                 disabled={!sourcePreview || !selectedTable || busy}
                 onClick={() => void handleSuggestMapping()}
               >
+                <WandSparkles aria-hidden="true" className="icon" />
                 Auto-map columns
               </button>
             </div>
@@ -727,9 +787,11 @@ export default function App() {
               </div>
               <div className="toolbar">
                 <button type="button" className="btn btn-secondary btn-small" disabled={busy} onClick={() => void handleSuggestMapping()}>
+                  <RefreshCw aria-hidden="true" className="icon" />
                   Re-suggest
                 </button>
-                <button type="button" className="btn btn-secondary btn-small" onClick={() => setMapping({})}>
+                <button type="button" className="btn btn-secondary btn-small" title="Clear all mappings" onClick={() => setMapping({})}>
+                  <Trash2 aria-hidden="true" className="icon" />
                   Clear
                 </button>
               </div>
@@ -757,12 +819,15 @@ export default function App() {
                 </div>
                 <div className="search-control grow">
                   <label htmlFor="mapping-search">Find field</label>
-                  <input
-                    id="mapping-search"
-                    value={mappingSearch}
-                    onChange={(event) => setMappingSearch(event.target.value)}
-                    placeholder="Canonical, source, alias, sample value"
-                  />
+                  <div className="input-with-icon">
+                    <Search aria-hidden="true" className="icon" />
+                    <input
+                      id="mapping-search"
+                      value={mappingSearch}
+                      onChange={(event) => setMappingSearch(event.target.value)}
+                      placeholder="Canonical, source, alias, sample value"
+                    />
+                  </div>
                 </div>
                 <div className="field compact">
                   <label htmlFor="mapping-filter">Show</label>
@@ -887,6 +952,7 @@ export default function App() {
 
             <div className="panel-body panel-footer">
               <button type="button" className="btn btn-secondary" onClick={() => setStep("source")}>
+                <ArrowLeft aria-hidden="true" className="icon" />
                 Back
               </button>
               <button
@@ -895,6 +961,7 @@ export default function App() {
                 disabled={busy || mappedRequired.done < mappedRequired.total}
                 onClick={() => void handleValidate()}
               >
+                <CheckCircle2 aria-hidden="true" className="icon" />
                 Validate mapping
               </button>
             </div>
@@ -915,9 +982,11 @@ export default function App() {
                   <option value="json">JSON</option>
                 </select>
                 <button type="button" className="btn btn-secondary btn-small" disabled={busy || !validation} onClick={() => void handleExport()}>
+                  <FileInput aria-hidden="true" className="icon" />
                   Generate
                 </button>
                 <button type="button" className="btn btn-primary btn-small" disabled={!exportContent} onClick={downloadExport}>
+                  <Download aria-hidden="true" className="icon" />
                   Download
                 </button>
               </div>
@@ -1010,6 +1079,7 @@ export default function App() {
                   <div className="section-header">
                     <h3>Mapping artifact</h3>
                     <button type="button" className="btn btn-secondary btn-small" onClick={() => void copyExport()}>
+                      <Copy aria-hidden="true" className="icon" />
                       {copied ? "Copied" : "Copy"}
                     </button>
                   </div>
@@ -1019,9 +1089,11 @@ export default function App() {
 
               <div className="footer-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setStep("mapping")}>
+                  <ArrowLeft aria-hidden="true" className="icon" />
                   Back to mapping
                 </button>
                 <button type="button" className="btn btn-primary" disabled={!exportContent} onClick={downloadExport}>
+                  <Download aria-hidden="true" className="icon" />
                   Download {exportFilename}
                 </button>
               </div>
