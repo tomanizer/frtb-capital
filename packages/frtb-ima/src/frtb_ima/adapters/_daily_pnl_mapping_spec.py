@@ -13,6 +13,7 @@ from frtb_ima.adapters._daily_pnl_mapping_types import (
 )
 from frtb_ima.adapters._mapping_hash import stable_mapping_hash
 from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
+from frtb_ima.adapters._scenario_pnl_mapping_types import ScenarioPnlTableMapping
 
 
 def load_ima_mapping_spec(path: str | Path) -> ImaMappingSpec:
@@ -63,6 +64,14 @@ def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> Im
     if rfet_raw is not None and not isinstance(rfet_raw, Mapping):
         raise MappingSpecError("rfet_observations must be a mapping")
     rfet = _rfet_observation_mapping(rfet_raw) if isinstance(rfet_raw, Mapping) else None
+    scenario_pnl_raw = tables.get("scenario_pnl_vectors")
+    if scenario_pnl_raw is not None and not isinstance(scenario_pnl_raw, Mapping):
+        raise MappingSpecError("scenario_pnl_vectors must be a mapping")
+    scenario_pnl = (
+        _scenario_pnl_mapping(scenario_pnl_raw)
+        if isinstance(scenario_pnl_raw, Mapping)
+        else None
+    )
     return ImaMappingSpec(
         mapping_spec_version=_required_int(raw, "mapping_spec_version"),
         target_schema=_required_str(raw, "target_schema"),
@@ -80,6 +89,7 @@ def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> Im
             else None
         ),
         rfet_observations=rfet,
+        scenario_pnl_vectors=scenario_pnl,
         risk_factor_aliases=_string_mapping(
             raw.get("risk_factor_aliases", {}), "risk_factor_aliases"
         ),
@@ -92,6 +102,15 @@ def _rfet_observation_mapping(raw: Mapping[str, object]) -> RfetObservationTable
         source=_required_str(raw, "source"),
         target=_required_str(raw, "target"),
         fields=_field_mappings(_required_mapping(raw, "fields")),
+    )
+
+
+def _scenario_pnl_mapping(raw: Mapping[str, object]) -> ScenarioPnlTableMapping:
+    return ScenarioPnlTableMapping(
+        source=_required_str(raw, "source"),
+        target=_required_str(raw, "target"),
+        fields=_field_mappings(_required_mapping(raw, "fields")),
+        missing_cells=_optional_str(raw, "missing_cells", default="reject"),
     )
 
 
@@ -193,6 +212,14 @@ def _required_str(raw: Mapping[str, object], field_name: str) -> str:
     if not text:
         raise MappingSpecError(f"{field_name} must be non-empty")
     return text
+
+
+def _optional_str(raw: Mapping[str, object], field_name: str, *, default: str) -> str:
+    value = raw.get(field_name, default)
+    if value is None:
+        return default
+    text = str(value).strip()
+    return default if not text else text
 
 
 def _required_int(raw: Mapping[str, object], field_name: str) -> int:
