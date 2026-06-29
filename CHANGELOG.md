@@ -6,8 +6,11 @@ Per-package change history lives under each package (e.g. `packages/frtb-ima/CHA
 
 ## [Unreleased]
 
+## [0.1.1a1] - 2026-06-29
+
 ### Added
 
+- PyPI trusted-publishing workflow for alpha package releases from release tags.
 - Root `import-linter` layers contract and `make import-lint` gate wired into
   `make quality-control` to enforce capital-package import boundaries in CI.
 - Weekly/manual mutation-testing workflow and root `make mutation` target for

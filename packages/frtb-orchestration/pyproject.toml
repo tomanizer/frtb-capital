@@ -4,18 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frtb-orchestration"
-version = "0.2.0"
+version = "0.2.1a1"
 description = "Suite-level capital orchestration for frtb-capital"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 dependencies = [
-    "frtb-common",
-    "frtb-cva",
-    "frtb-drc",
-    "frtb-ima",
-    "frtb-rrao",
-    "frtb-sbm",
+    "frtb-common>=0.1.2a1,<0.2",
+    "frtb-cva>=0.1.1a1,<0.2",
+    "frtb-drc>=0.1.8a1,<0.2",
+    "frtb-ima>=0.1.1a1,<0.2",
+    "frtb-rrao>=0.12.2a1,<0.13",
+    "frtb-sbm>=0.8.1a1,<0.9",
 ]
 
 [tool.setuptools.packages.find]

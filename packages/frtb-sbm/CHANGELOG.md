@@ -4,6 +4,108 @@ All notable changes to `frtb-sbm` will be documented here.
 
 ## [Unreleased]
 
+## [0.8.1a1] - 2026-06-29
+
+### Fixed
+
+- Export SBM attribution and impact helpers at the top-level package boundary and
+  align documentation with the implemented delta/vega analytical Euler support,
+  curvature unsupported-residual behavior, and finite-difference impact contract. (#sbm-attribution-api-docs)
+- Net GIRR delta duplicate rows to regulatory factor keys before intra-bucket aggregation. (#263)
+- Vectorize GIRR delta intra-bucket correlation matrix construction and correlation-scenario matrix adjustment while preserving scalar-reference results. (#264)
+- Make intra-bucket pairwise correlation audit evidence scale-aware with AUTO, FULL, and SUMMARY materialisation modes. (#265)
+- Wrap Arrow object conversion failures in SBM handoff adapters and reuse the common decoder. (#405)
+
+### Added
+
+- Add SBM curvature batch and Arrow handoff capital paths for supported MAR21 risk classes. (#313-curvature)
+- Add portfolio-level SBM batch and Arrow handoff dispatchers for high-volume supported paths. (#314-portfolio-dispatcher)
+- Implement GIRR curvature capital, CSR securitisation non-CTP/CTP delta paths, CRIF adapter, and orchestration handoff for issue #160 follow-on (#166–#169). (#218)
+- Implemented the GIRR MAR21.5 curvature branch engine with CVR+/CVR- preservation, bucket-level branch selection, psi handling, squared curvature correlations, and branch audit serialization while keeping public curvature capital gates fail-closed pending full curvature coverage. (#252)
+- Implemented BASEL_MAR21 row-wise curvature capital across SBM risk classes with MAR21.96-MAR21.101 citations, curvature risk-weight lookups, squared curvature correlations, public support gates, and non-GIRR synthetic coverage. (#253)
+- Implemented row-wise BASEL_MAR21 non-GIRR vega capital for FX, equity,
+  commodity, CSR non-securitisation, CSR securitisation CTP, and CSR
+  securitisation non-CTP under MAR21.90-MAR21.95.
+
+  Added Table 13 vega liquidity-horizon lookups, MAR21.94 non-GIRR vega
+  correlations, MAR21.95 delta-gamma inter-bucket reuse, support-map updates,
+  validation, audit citations, and synthetic regression tests. Equity repo vega
+  continues to fail closed because it has no capital requirement under MAR21.12. (#254)
+- Expand the SBM CRIF row-dict adapter to map supported non-GIRR vega and
+  curvature risk types into canonical sensitivities with per-row rejected-row
+  diagnostics. (#255)
+- Add the first Arrow-backed GIRR delta batch path so row-wise and handoff inputs
+  route through one NumPy-backed weighting and factor-grid implementation. (#268)
+- Add an SBM-owned GIRR delta CRIF-to-Arrow handoff path that consumes the common
+  CRIF normalizer and feeds the existing `SbmSensitivityBatch` calculation path
+  without materializing accepted rows as `SbmSensitivity` dataclasses. (#269)
+- Generalized the package-owned `SbmSensitivityBatch` foundation for homogeneous
+  SBM risk-class/measure paths while preserving the existing GIRR delta batch and
+  Arrow handoff compatibility APIs. (#285)
+- Added GIRR vega package-owned batch and Arrow handoff calculation entrypoints
+  that avoid accepted-row `SbmSensitivity` materialization on the high-volume
+  handoff path. (#286)
+- Added package-owned batch and Arrow handoff capital entrypoints for FX,
+  equity, and commodity delta paths, with row compatibility APIs routed through
+  the same batch compute path. (#287)
+- Add Arrow-backed package batch handoffs and capital entrypoints for CSR non-sec,
+  CSR securitisation non-CTP, and CSR securitisation CTP delta paths. (#288)
+- Added GIRR curvature batch builders and an Arrow validation handoff that preserves separate up/down shock arrays while leaving curvature capital fail-closed. (#289)
+- Add Arrow handoff, package-owned batch, and batch-capital entrypoints for supported non-GIRR vega SBM paths. (#313)
+- `to_component_summary` now returns the shared
+  `frtb_common.ComponentCapitalSummary` instead of the package-local
+  `SbmOrchestrationHandoff`, which is removed. The adapter is now exported from
+  the package's public API. See ADR 0029. (#359)
+- Publish the SBM Arrow handoff surface at the package top level and document the
+  client integration contract for public onboarding workflows. (#424)
+- Added the U.S. NPR 2.0 GIRR delta comparison slice with profile-owned citations, fixture evidence, and row/batch/Arrow parity tests. (#504)
+- Replace SBM-FUNC-022 attribution and impact placeholders with production
+  implementations: `calculate_sbm_attribution` returns analytical Euler
+  `CapitalContribution` records for delta and vega branches (per ADR 0037/0038),
+  with explicit `UNSUPPORTED` records for curvature (CVR floor), floors, partial
+  pairwise materialisation, and alternative-S_b paths.
+  `calculate_sbm_capital_impact` returns a shared `CapitalImpact` record. (#515)
+
+### Breaking Changes
+
+- Remove ADR 0033 M2 dynamically generated `*_HANDOFF_COLUMN_SPECS`,
+  `build_*_batch_from_handoff`, `calculate_sbm_capital_from_*_handoff`,
+  `calculate_sbm_portfolio_capital_from_handoffs`, and
+  `to_orchestration_handoff` aliases. Use the Arrow batch constants/functions and
+  `to_component_summary`; SBM adapters now live in `frtb_sbm.arrow_batch` and
+  `frtb_sbm.component_summary`. (#474)
+
+### Changed
+
+- Vectorize non-GIRR vega and curvature intra-bucket correlation matrices with NumPy masks; honor pairwise evidence mode on curvature audit paths. (#439-refactor)
+- Refactored SBM validation text checks to use the package-local `require_text`
+  helper without changing public validation errors. (#717-validation)
+- Reduce SBM Arrow handoff batch-construction copies for numeric, chunked, and dictionary-encoded columns. (#315)
+- Route SBM Arrow handoff batch builders through the shared `read_arrow_columns` reader. (#406)
+- Route SBM Arrow handoff null-default restoration through the shared common reader. (#432)
+- Vectorize non-GIRR vega and curvature correlation matrix construction and extend
+  SBM batch/Arrow benchmarks to cover those paths. (#439)
+- Delegate SBM audit and regime payload hashing to `frtb_common.stable_json_hash`
+  instead of maintaining duplicate local JSON/SHA-256 helpers. (#706)
+- Delegate SBM Arrow portfolio path text extraction to `frtb_common`. (#708)
+
+### Documentation
+
+- Moved the SBM requirement registry into package-local docs and linked the module
+  front door to the canonical package evidence. (#documentation-ownership)
+- Add executable SBM demonstration notebooks covering validation fixtures, vega and curvature paths, and the Arrow handoff fast path. (#sbm-notebooks)
+- Document the Arrow tabular handoff boundary while keeping SBM calculation kernels NumPy-native. (#266)
+- Add split-metric SBM Arrow/batch benchmark summaries and baseline-relative budget controls. (#273)
+- Published the SBM batch and Arrow handoff performance report with a reusable
+  benchmark harness and checked-in synthetic baseline. (#290)
+- Reconcile SBM documentation after the suite documentation audit, including the
+  current BASEL_MAR21 high-volume support matrix and stale first-slice planning
+  language. (#362)
+- Documented SBM non-Basel profile expansion design and `SBM-NBP-*` requirements for AUDIT-IMP-003 (#501). (#501)
+- Document NumPy-style docstrings for SBM batch and Arrow adapters (issue #651). (#651)
+- Document NumPy-style docstrings for SBM calculation and validation (issue #652). (#652)
+- Document NumPy-style docstrings for SBM reference data (issue #653). (#653)
+
 ## [0.8.0] - 2026-05-30
 
 ### Added

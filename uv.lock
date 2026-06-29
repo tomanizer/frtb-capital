@@ -873,7 +873,7 @@ wheels = [
 
 [[package]]
 name = "frtb-capital"
-version = "0.1.0"
+version = "0.1.1a1"
 source = { editable = "." }
 dependencies = [
     { name = "frtb-common" },
@@ -942,7 +942,7 @@ dev = [
 
 [[package]]
 name = "frtb-common"
-version = "0.1.1"
+version = "0.1.2a1"
 source = { editable = "packages/frtb-common" }
 dependencies = [
     { name = "numpy" },
@@ -957,7 +957,7 @@ requires-dist = [
 
 [[package]]
 name = "frtb-cva"
-version = "0.1.0"
+version = "0.1.1a1"
 source = { editable = "packages/frtb-cva" }
 dependencies = [
     { name = "frtb-common" },
@@ -968,7 +968,7 @@ requires-dist = [{ name = "frtb-common", editable = "packages/frtb-common" }]
 
 [[package]]
 name = "frtb-drc"
-version = "0.1.7"
+version = "0.1.8a1"
 source = { editable = "packages/frtb-drc" }
 dependencies = [
     { name = "frtb-common" },
@@ -987,7 +987,7 @@ dev = [{ name = "matplotlib", specifier = ">=3.10.9" }]
 
 [[package]]
 name = "frtb-ima"
-version = "0.1.0"
+version = "0.1.1a1"
 source = { editable = "packages/frtb-ima" }
 dependencies = [
     { name = "frtb-common" },
@@ -1029,7 +1029,7 @@ provides-extras = ["dev", "notebooks"]
 
 [[package]]
 name = "frtb-orchestration"
-version = "0.2.0"
+version = "0.2.1a1"
 source = { editable = "packages/frtb-orchestration" }
 dependencies = [
     { name = "frtb-common" },
@@ -1052,7 +1052,7 @@ requires-dist = [
 
 [[package]]
 name = "frtb-result-store"
-version = "0.1.0"
+version = "0.1.1a1"
 source = { editable = "packages/frtb-result-store" }
 dependencies = [
     { name = "frtb-common" },
@@ -1090,7 +1090,7 @@ provides-extras = ["api", "cli", "duckdb", "otel"]
 
 [[package]]
 name = "frtb-rrao"
-version = "0.12.1"
+version = "0.12.2a1"
 source = { editable = "packages/frtb-rrao" }
 dependencies = [
     { name = "frtb-common" },
@@ -1128,7 +1128,7 @@ provides-extras = ["dev", "notebooks"]
 
 [[package]]
 name = "frtb-sbm"
-version = "0.8.0"
+version = "0.8.1a1"
 source = { editable = "packages/frtb-sbm" }
 dependencies = [
     { name = "frtb-common" },

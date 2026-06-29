@@ -86,14 +86,17 @@ release-integrity policy.
 5. In a `release/*` branch, for each package being released:
    a. Assemble changelog fragments and bump the version in one step:
       ```bash
-      uv run towncrier build --package <pkg> --version <new-version> \
-          --dir packages/<pkg>
+      uv run towncrier build --version <new-version> \
+          --date <YYYY-MM-DD> --dir packages/<pkg> --yes
       ```
       This writes the new `## [x.y.z]` section into `CHANGELOG.md`, removes
       the processed fragment files, and leaves `pyproject.toml` version
       unchanged — bump `version =` manually afterwards.
    b. Bump `version =` in `packages/<pkg>/pyproject.toml`.
-   c. Regenerate the lock: `uv lock`.
+   c. For PyPI releases, set published internal dependency ranges so the
+      package can resolve the matching released workspace packages rather than
+      relying on editable workspace sources.
+   d. Regenerate the lock: `uv lock`.
 
    Open this as a `release/*` PR against `main`.  The CI version-bump and
    uv-lock guards are skipped on `release/*` branches.
@@ -102,28 +105,50 @@ release-integrity policy.
 7. Merge the release PR through the protected-branch workflow.
 8. Create annotated tag(s) from the final `main` commit. Sign tags with the
    maintainer's configured GPG or SSH signing key where available.
-9. Confirm `.github/workflows/release.yml` completed for the tag, or run it
-   manually as a dry run before publishing release notes.
-10. Confirm the release workflow uploaded:
+   Coordinated PyPI publishing runs from the `suite-v*` tag. Package tags still
+   build and attest release artifacts, but they do not publish the full
+   distribution set again.
+9. Before the first PyPI release for any package, configure PyPI Trusted
+   Publishing for that exact project name, owner `tomanizer`, repository
+   `frtb-capital`, workflow `.github/workflows/release.yml`, and environment
+   `pypi`. For first-time project creation, configure PyPI pending publishers
+   for each package name before pushing the release tag.
+10. Confirm `.github/workflows/release.yml` completed for the suite tag,
+    including the `Publish PyPI distributions` job. Manual workflow dispatch is
+    build-only and must not publish to PyPI.
+11. Confirm the release workflow uploaded:
    - source distributions and wheels under `dist/release/`,
    - `dist/sbom/frtb-capital.cdx.json`,
    - `dist/release/SHA256SUMS`,
    - `dist/release/release-checksums.json`,
    - GitHub artifact attestations for the release artifacts.
-11. Capture repository-control evidence:
+12. Confirm the released distributions are visible on PyPI and smoke-test a
+    fresh install with prereleases enabled, for example:
+
+   ```bash
+   python -m venv /tmp/frtb-capital-alpha-smoke
+   /tmp/frtb-capital-alpha-smoke/bin/python -m pip install --upgrade pip
+   /tmp/frtb-capital-alpha-smoke/bin/python -m pip install --pre frtb-capital==<suite-version>
+   /tmp/frtb-capital-alpha-smoke/bin/python - <<'PY'
+   import frtb_common, frtb_cva, frtb_drc, frtb_ima, frtb_orchestration, frtb_result_store, frtb_rrao, frtb_sbm
+   print(frtb_common.__version__)
+   PY
+   ```
+
+13. Capture repository-control evidence:
 
    ```bash
    make repo-controls-snapshot
    ```
 
-12. Create a GitHub release that includes:
+14. Create a GitHub release that includes:
    - changelog excerpt,
    - affected packages and versions,
    - validation commands,
    - SBOM artifact from `dist/sbom/`,
    - release checksum manifest,
    - link to the GitHub artifact attestation.
-13. Keep release notes factual. Do not describe outputs as final regulatory
+15. Keep release notes factual. Do not describe outputs as final regulatory
     capital or production-approved unless independent validation has approved
     that status.
 
@@ -151,6 +176,8 @@ dist/sbom/frtb-capital.cdx.json
 ```
 
 The release workflow uses GitHub artifact attestations as the documented
-attestation mechanism. It is intentionally dependency-free inside the Python
-packages; provenance is an operational control owned by GitHub Actions, not by
-the runtime calculators.
+attestation mechanism. It also publishes the wheel and source distributions to
+PyPI from `suite-v*` tag runs through PyPI Trusted Publishing. Package-tag and
+manual-dispatch runs build and upload artifacts but do not publish. Provenance
+is an operational control owned by GitHub Actions, not by the runtime
+calculators.

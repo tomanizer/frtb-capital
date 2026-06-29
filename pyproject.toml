@@ -1,19 +1,19 @@
 [project]
 name = "frtb-capital"
-version = "0.1.0"
+version = "0.1.1a1"
 description = "FRTB market-risk capital calculation suite"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
 dependencies = [
-    "frtb-common",
-    "frtb-cva",
-    "frtb-drc",
-    "frtb-ima",
-    "frtb-orchestration",
-    "frtb-result-store",
-    "frtb-rrao",
-    "frtb-sbm",
+    "frtb-common==0.1.2a1",
+    "frtb-cva==0.1.1a1",
+    "frtb-drc==0.1.8a1",
+    "frtb-ima==0.1.1a1",
+    "frtb-orchestration==0.2.1a1",
+    "frtb-result-store==0.1.1a1",
+    "frtb-rrao==0.12.2a1",
+    "frtb-sbm==0.8.1a1",
 ]
 
 [tool.uv.workspace]
