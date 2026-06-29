@@ -258,6 +258,22 @@ path = ["summary", "timings_seconds", "build"]
 name = "calculate phase"
 path = ["summary", "timings_seconds", "calculate"]
 
+[[benchmarks.required_paths]]
+name = "BA-CVA Arrow input hash algorithm"
+path = ["result", "ba_arrow_input_hash_algorithm"]
+
+[[benchmarks.required_paths]]
+name = "SA-CVA Arrow input hash algorithm"
+path = ["result", "sa_arrow_input_hash_algorithm"]
+
+[[benchmarks.required_paths]]
+name = "BA-CVA Arrow payload hash"
+path = ["result", "ba_arrow_payload_hash"]
+
+[[benchmarks.required_paths]]
+name = "SA-CVA Arrow payload hash"
+path = ["result", "sa_arrow_payload_hash"]
+
 [[benchmarks.metrics]]
 name = "Arrow accepted-row dataclasses"
 path = ["summary", "materialized_dataclass_count", "arrow_batch_path"]
@@ -272,13 +288,3 @@ max = 0.000000001
 name = "peak traced memory bytes"
 path = ["summary", "tracemalloc_peak_bytes"]
 max = 2000000000.0
-
-[[benchmarks.path_equalities]]
-name = "BA-CVA Arrow payload hash matches row path"
-left_path = ["result", "ba_arrow_payload_hash"]
-right_path = ["result", "ba_row_payload_hash"]
-
-[[benchmarks.path_equalities]]
-name = "SA-CVA Arrow payload hash matches row path"
-left_path = ["result", "sa_arrow_payload_hash"]
-right_path = ["result", "sa_row_payload_hash"]

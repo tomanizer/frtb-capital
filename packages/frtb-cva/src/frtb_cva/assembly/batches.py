@@ -9,7 +9,7 @@ from frtb_cva._batch_contracts import (
     CvaNettingSetBatch,
     SaCvaSensitivityBatch,
 )
-from frtb_cva._batch_method_outputs import _calculate_method_outputs
+from frtb_cva._batch_method_outputs import _BatchMethodOutputs, _calculate_method_outputs
 from frtb_cva._batch_utils import (
     _empty_counterparty_batch,
     _empty_hedge_batch,
@@ -18,7 +18,10 @@ from frtb_cva._batch_utils import (
 from frtb_cva._citations import collect_ba_citations as _collect_ba_citations
 from frtb_cva._citations import merge_citations as _merge_citations
 from frtb_cva._profile_warnings import profile_warnings as _profile_warnings
-from frtb_cva.assembly.batch_payloads import input_hash_for_cva_batches
+from frtb_cva.assembly.batch_payloads import (
+    INPUT_HASH_ALGORITHM_JSON_ROW_V1,
+    input_hash_for_cva_batches,
+)
 from frtb_cva.audit import validate_cva_result_reconciliation
 from frtb_cva.data_models import (
     CvaCalculationContext,
@@ -36,6 +39,8 @@ def calculate_cva_capital_from_batches(
     *,
     hedges: CvaHedgeBatch | None = None,
     sensitivities: SaCvaSensitivityBatch | None = None,
+    input_hash: str | None = None,
+    input_hash_algorithm: str = INPUT_HASH_ALGORITHM_JSON_ROW_V1,
 ) -> CvaBatchCapitalCalculation:
     """Calculate supported CVA capital from package-owned columnar batches.
 
@@ -69,6 +74,41 @@ def calculate_cva_capital_from_batches(
         carve_out_netting_set_ids=scope.carve_out_netting_set_ids,
     )
 
+    result = CvaCapitalResult(
+        run_id=validated_context.run_id,
+        calculation_date=validated_context.calculation_date,
+        base_currency=validated_context.base_currency,
+        profile_id=rule_profile.profile.value,
+        profile_hash=rule_profile.content_hash,
+        input_hash=_resolved_input_hash(
+            input_hash,
+            validated_context,
+            counterparty_batch,
+            netting_set_batch,
+            hedges=hedge_batch,
+            sensitivities=sensitivities,
+        ),
+        input_hash_algorithm=input_hash_algorithm,
+        method=scope.method,
+        total_cva_capital=outputs.total_cva_capital,
+        ba_cva_reduced=outputs.ba_cva_reduced,
+        ba_cva_full=outputs.ba_cva_full,
+        ba_cva_counterparty_capitals=outputs.ba_cva_counterparty_capitals,
+        ba_cva_netting_set_lines=outputs.ba_cva_netting_set_lines,
+        sa_cva_risk_class_capitals=outputs.sa_cva_risk_class_capitals,
+        method_components=outputs.method_components,
+        citations=_collect_result_citations(outputs),
+        warnings=_profile_warnings(rule_profile.profile.value, scope.method),
+        unsupported_flags=scope.unsupported_flags,
+        audit_metadata=scope.audit_metadata,
+    )
+    validate_cva_result_reconciliation(result)
+    return CvaBatchCapitalCalculation(result=result)
+
+
+def _collect_result_citations(outputs: _BatchMethodOutputs) -> tuple[str, ...]:
+    """Collect regulatory citations from every CVA branch that contributed capital."""
+
     citations: tuple[str, ...] = ()
     if outputs.ba_cva_full is not None:
         citations = _merge_citations(citations, outputs.ba_cva_full.citations)
@@ -89,35 +129,27 @@ def calculate_cva_capital_from_batches(
                 for citation in item.citations
             ),
         )
+    return citations
 
-    result = CvaCapitalResult(
-        run_id=validated_context.run_id,
-        calculation_date=validated_context.calculation_date,
-        base_currency=validated_context.base_currency,
-        profile_id=rule_profile.profile.value,
-        profile_hash=rule_profile.content_hash,
-        input_hash=input_hash_for_cva_batches(
-            validated_context,
-            counterparty_batch,
-            netting_set_batch,
-            hedges=hedge_batch,
-            sensitivities=sensitivities,
-        ),
-        method=scope.method,
-        total_cva_capital=outputs.total_cva_capital,
-        ba_cva_reduced=outputs.ba_cva_reduced,
-        ba_cva_full=outputs.ba_cva_full,
-        ba_cva_counterparty_capitals=outputs.ba_cva_counterparty_capitals,
-        ba_cva_netting_set_lines=outputs.ba_cva_netting_set_lines,
-        sa_cva_risk_class_capitals=outputs.sa_cva_risk_class_capitals,
-        method_components=outputs.method_components,
-        citations=citations,
-        warnings=_profile_warnings(rule_profile.profile.value, scope.method),
-        unsupported_flags=scope.unsupported_flags,
-        audit_metadata=scope.audit_metadata,
+
+def _resolved_input_hash(
+    input_hash: str | None,
+    context: CvaCalculationContext,
+    counterparties: CvaCounterpartyBatch,
+    netting_sets: CvaNettingSetBatch,
+    *,
+    hedges: CvaHedgeBatch,
+    sensitivities: SaCvaSensitivityBatch | None,
+) -> str:
+    if input_hash is not None:
+        return input_hash
+    return input_hash_for_cva_batches(
+        context,
+        counterparties,
+        netting_sets,
+        hedges=hedges,
+        sensitivities=sensitivities,
     )
-    validate_cva_result_reconciliation(result)
-    return CvaBatchCapitalCalculation(result=result)
 
 
 __all__ = ["calculate_cva_capital_from_batches"]

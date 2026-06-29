@@ -14,6 +14,7 @@ from frtb_sbm.batch import (
     SbmSensitivityBatch,
     coerce_sbm_batch_sequence,
     concatenate_sbm_batches,
+    input_hash_algorithm_for_sbm_batches,
     input_hash_for_sbm_batches,
 )
 from frtb_sbm.data_models import (
@@ -98,6 +99,7 @@ def calculate_sbm_portfolio_capital_from_batches(
         context=context,
         input_hash=input_hash_for_sbm_batches(validated_batches),
         input_count=sum(batch.row_count for batch in validated_batches),
+        input_hash_algorithm=input_hash_algorithm_for_sbm_batches(validated_batches),
     )
     return SbmBatchPortfolioCalculation(
         result=result,

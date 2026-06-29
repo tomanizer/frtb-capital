@@ -265,7 +265,10 @@ def test_csr_nonsec_delta_batch_and_handoff_match_row_capital() -> None:
     )
 
     assert row_batch.input_hash == input_hash_for_sensitivities(sensitivities)
-    assert arrow_batch.input_hash == row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
     assert arrow_batch.source_hash == source_hash
     assert arrow_batch.handoff_hash is not None
     np.testing.assert_array_equal(arrow_batch.qualifiers, row_batch.qualifiers)
@@ -300,7 +303,10 @@ def test_csr_sec_nonctp_delta_batch_and_handoff_match_row_capital() -> None:
         context=context,
     )
 
-    assert arrow_batch.input_hash == row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
     np.testing.assert_array_equal(arrow_batch.qualifiers, row_batch.qualifiers)
     np.testing.assert_array_equal(arrow_batch.tenors, row_batch.tenors)
     _assert_capital_equivalent(batch_result, row_result)
@@ -331,7 +337,10 @@ def test_csr_sec_ctp_delta_batch_and_handoff_match_row_capital() -> None:
         context=context,
     )
 
-    assert arrow_batch.input_hash == row_batch.input_hash
+    assert len(arrow_batch.input_hash) == 64
+    int(arrow_batch.input_hash, 16)
+    assert arrow_batch.input_hash_algorithm == "arrow-columnar-v2"
+    assert arrow_batch.input_hash != row_batch.input_hash
     np.testing.assert_array_equal(arrow_batch.qualifiers, row_batch.qualifiers)
     np.testing.assert_array_equal(arrow_batch.tenors, row_batch.tenors)
     _assert_capital_equivalent(batch_result, row_result)
@@ -340,7 +349,10 @@ def test_csr_sec_ctp_delta_batch_and_handoff_match_row_capital() -> None:
 
 def _assert_capital_equivalent(left: object, right: object) -> None:
     assert left.total_capital == pytest.approx(right.total_capital)  # type: ignore[attr-defined]
-    assert left.input_hash == right.input_hash  # type: ignore[attr-defined]
+    assert len(left.input_hash) == 64  # type: ignore[attr-defined]
+    int(left.input_hash, 16)  # type: ignore[attr-defined]
+    assert left.input_hash_algorithm == "arrow-columnar-v2"  # type: ignore[attr-defined]
+    assert left.input_hash != right.input_hash  # type: ignore[attr-defined]
     assert len(left.risk_classes) == len(right.risk_classes) == 1  # type: ignore[attr-defined]
     left_risk_class = left.risk_classes[0]  # type: ignore[attr-defined]
     right_risk_class = right.risk_classes[0]  # type: ignore[attr-defined]

@@ -7,6 +7,7 @@ from dataclasses import replace
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, cast
 
+from frtb_sbm.assembly.hashes import INPUT_HASH_ALGORITHM_JSON_ROW_V1
 from frtb_sbm.data_models import SbmCalculationContext, SbmRiskClass, SbmRiskMeasure
 from frtb_sbm.registry import sbm_batch_spec
 from frtb_sbm.validation import SbmInputError, coerce_risk_class, coerce_risk_measure
@@ -104,6 +105,8 @@ def build_sbm_batch_from_columns(
     down_shock_amounts: Iterable[object] | None = None,
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    input_hash: str | None = None,
+    input_hash_algorithm: str = INPUT_HASH_ALGORITHM_JSON_ROW_V1,
     copy_arrays: bool = True,
 ) -> SbmSensitivityBatch:
     """Build a homogeneous SBM batch from columnar arrays owned by an adapter.
@@ -150,6 +153,8 @@ def build_sbm_batch_from_columns(
         diagnostics=diagnostics,
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citation_ids,
+        input_hash=input_hash,
+        input_hash_algorithm=input_hash_algorithm,
     )
 
 
@@ -261,6 +266,8 @@ def _batch_with_hash(
     diagnostics: Sequence[Mapping[str, object]],
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None,
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None,
+    input_hash: str | None,
+    input_hash_algorithm: str,
 ) -> SbmSensitivityBatch:
     batch_module = _batch_module()
     diagnostic_payloads = tuple(MappingProxyType(dict(item)) for item in diagnostics)
@@ -279,7 +286,8 @@ def _batch_with_hash(
         tenors=arrays["tenors"],
         lineage_source_systems=arrays["lineage_source_systems"],
         lineage_source_files=arrays["lineage_source_files"],
-        input_hash="",
+        input_hash="" if input_hash is None else input_hash,
+        input_hash_algorithm=input_hash_algorithm,
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostic_payloads,
@@ -293,11 +301,14 @@ def _batch_with_hash(
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citation_ids,
     )
+    if input_hash is not None:
+        return cast("SbmSensitivityBatch", batch_without_hash)
     return cast(
         "SbmSensitivityBatch",
         replace(
             batch_without_hash,
             input_hash=batch_module.input_hash_for_batch(batch_without_hash),
+            input_hash_algorithm=INPUT_HASH_ALGORITHM_JSON_ROW_V1,
         ),
     )
 
