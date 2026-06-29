@@ -13,6 +13,7 @@ from frtb_ima.adapters._daily_pnl_mapping_types import (
 )
 from frtb_ima.adapters._mapping_hash import stable_mapping_hash
 from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
+from frtb_ima.adapters._risk_factor_master_mapping_types import RiskFactorMasterTableMapping
 from frtb_ima.adapters._scenario_pnl_mapping_types import ScenarioPnlTableMapping
 
 
@@ -60,6 +61,14 @@ def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> Im
     sign_convention = _required_mapping(raw, "sign_convention")
     if "pnl_positive_means" not in sign_convention:
         raise MappingSpecError("sign_convention.pnl_positive_means is required")
+    risk_factor_master_raw = tables.get("risk_factor_master")
+    if risk_factor_master_raw is not None and not isinstance(risk_factor_master_raw, Mapping):
+        raise MappingSpecError("risk_factor_master must be a mapping")
+    risk_factor_master = (
+        _risk_factor_master_mapping(risk_factor_master_raw)
+        if isinstance(risk_factor_master_raw, Mapping)
+        else None
+    )
     rfet_raw = tables.get("rfet_observations")
     if rfet_raw is not None and not isinstance(rfet_raw, Mapping):
         raise MappingSpecError("rfet_observations must be a mapping")
@@ -86,12 +95,21 @@ def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> Im
             if isinstance(daily_pnl, Mapping)
             else None
         ),
+        risk_factor_master=risk_factor_master,
         rfet_observations=rfet,
         scenario_pnl_vectors=scenario_pnl,
         risk_factor_aliases=_string_mapping(
             raw.get("risk_factor_aliases", {}), "risk_factor_aliases"
         ),
         spec_hash=stable_mapping_hash({"mapping_spec": source_text}),
+    )
+
+
+def _risk_factor_master_mapping(raw: Mapping[str, object]) -> RiskFactorMasterTableMapping:
+    return RiskFactorMasterTableMapping(
+        source=_required_str(raw, "source"),
+        target=_required_str(raw, "target"),
+        fields=_field_mappings(_required_mapping(raw, "fields")),
     )
 
 
