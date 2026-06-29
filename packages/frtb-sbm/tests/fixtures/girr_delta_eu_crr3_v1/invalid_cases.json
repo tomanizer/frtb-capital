@@ -1,9 +1,9 @@
 [
   {
-    "case_id": "npr-equity-repo-vega-unsupported",
+    "case_id": "eu-crr3-equity-repo-vega-unsupported",
     "expected_error_match": "equity repo",
     "sensitivity": {
-      "sensitivity_id": "us-npr-equity-repo-vega",
+      "sensitivity_id": "eu-crr3-equity-repo-vega",
       "source_row_id": "row-invalid-001",
       "desk_id": "equity-desk",
       "legal_entity": "LE-001",
@@ -18,7 +18,7 @@
       "option_tenor": "1y",
       "sign_convention": "RECEIVE",
       "mapping_citation_ids": [
-        "us_npr_91_fr_14952_va7a_equity_buckets"
+        "eu_crr3_art_325r_equity_buckets"
       ]
     }
   }

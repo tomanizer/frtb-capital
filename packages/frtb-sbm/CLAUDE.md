@@ -19,9 +19,10 @@ Review `frtb-sbm` as the owner of SBM capital only.
 | CSR securitisation non-CTP / CTP | Implemented under audit | Implemented under audit | Implemented under audit |
 
 Public entry point: `calculate_sbm_capital`. Supported paths return cited
-`SbmCapitalResult` records with audit hashes and scenario evidence. All other
-profile/risk-class/measure combinations fail closed with
-`UnsupportedRegulatoryFeatureError` or `SbmInputError` — never silent
+`SbmCapitalResult` records with audit hashes and scenario evidence.
+`BASEL_MAR21`, `US_NPR_2_0`, and `EU_CRR3` support all seven risk classes across
+delta, vega, and curvature. Unsupported sub-features (for example equity repo vega) fail closed
+with `UnsupportedRegulatoryFeatureError` or `SbmInputError` — never silent
 zero-capital placeholders.
 
 Curvature up/down shock inputs may be validated with

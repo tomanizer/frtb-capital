@@ -22,7 +22,9 @@ NON_BASEL_PROFILES = (
     SbmRegulatoryProfile.PRA_UK_CRR,
 )
 
-US_NPR_EXPECTED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
+US_NPR_EXPECTED_PATHS = BASEL_EXPECTED_PATHS
+EU_CRR3_EXPECTED_PATHS = BASEL_EXPECTED_PATHS
+PRA_UK_CRR_EXPECTED_PATHS = BASEL_EXPECTED_PATHS
 
 RISK_CLASS_LABELS = {
     SbmRiskClass.GIRR: "GIRR",
@@ -47,45 +49,39 @@ def test_basel_phase1_support_matrix_covers_every_risk_class_measure() -> None:
         )
 
 
-def test_us_npr_profile_supports_only_girr_delta() -> None:
-    assert phase1_capital_supported_paths(SbmRegulatoryProfile.US_NPR_2_0.value) == (
-        US_NPR_EXPECTED_PATHS
-    )
-    ensure_sbm_risk_class_measure_supported(
-        SbmRegulatoryProfile.US_NPR_2_0.value,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.DELTA,
-    )
+def test_us_npr_profile_supports_full_risk_class_measure_matrix() -> None:
+    supported = phase1_capital_supported_paths(SbmRegulatoryProfile.US_NPR_2_0.value)
 
-    for risk_class in SbmRiskClass:
-        for risk_measure in SbmRiskMeasure:
-            if (risk_class, risk_measure) in US_NPR_EXPECTED_PATHS:
-                continue
-            with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR_2_0"):
-                ensure_sbm_risk_class_measure_supported(
-                    SbmRegulatoryProfile.US_NPR_2_0.value,
-                    risk_class,
-                    risk_measure,
-                )
-
-
-@pytest.mark.parametrize(
-    "profile",
-    (
-        SbmRegulatoryProfile.EU_CRR3,
-        SbmRegulatoryProfile.PRA_UK_CRR,
-    ),
-)
-def test_non_basel_profiles_without_implemented_cells_fail_closed(
-    profile: SbmRegulatoryProfile,
-) -> None:
-    assert phase1_capital_supported_paths(profile.value) == frozenset()
-
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
+    assert supported == US_NPR_EXPECTED_PATHS
+    for risk_class, risk_measure in US_NPR_EXPECTED_PATHS:
         ensure_sbm_risk_class_measure_supported(
-            profile.value,
-            SbmRiskClass.GIRR,
-            SbmRiskMeasure.DELTA,
+            SbmRegulatoryProfile.US_NPR_2_0.value,
+            risk_class,
+            risk_measure,
+        )
+
+
+def test_eu_crr3_profile_supports_full_risk_class_measure_matrix() -> None:
+    supported = phase1_capital_supported_paths(SbmRegulatoryProfile.EU_CRR3.value)
+
+    assert supported == EU_CRR3_EXPECTED_PATHS
+    for risk_class, risk_measure in EU_CRR3_EXPECTED_PATHS:
+        ensure_sbm_risk_class_measure_supported(
+            SbmRegulatoryProfile.EU_CRR3.value,
+            risk_class,
+            risk_measure,
+        )
+
+
+def test_pra_uk_crr_profile_supports_full_risk_class_measure_matrix() -> None:
+    supported = phase1_capital_supported_paths(SbmRegulatoryProfile.PRA_UK_CRR.value)
+
+    assert supported == PRA_UK_CRR_EXPECTED_PATHS
+    for risk_class, risk_measure in PRA_UK_CRR_EXPECTED_PATHS:
+        ensure_sbm_risk_class_measure_supported(
+            SbmRegulatoryProfile.PRA_UK_CRR.value,
+            risk_class,
+            risk_measure,
         )
 
 
@@ -100,13 +96,13 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
         row = f"| {label} | {implemented} | {implemented} | {implemented} |"
         assert row in traceability
 
-    assert "| `US_NPR_2_0` | partial (1 / 21 cells) |" in traceability
-    for profile in (SbmRegulatoryProfile.EU_CRR3, SbmRegulatoryProfile.PRA_UK_CRR):
-        assert f"| `{profile.value}` | unsupported fail-closed" in traceability
+    assert "| `US_NPR_2_0` | implemented under audit (21 / 21 cells) |" in traceability
+    assert "| `EU_CRR3` | implemented under audit (21 / 21 cells) |" in traceability
+    assert "| `PRA_UK_CRR` | implemented under audit (21 / 21 cells) |" in traceability
 
     for issue_number in ("#160", "#161", "#166", "#169", "#226", "#244"):
         assert issue_number in traceability
 
     assert "NON_BASEL_PROFILE_DESIGN.md" in traceability
     assert "NON_BASEL_PROFILE_REQUIREMENTS.md" in traceability
-    assert "SBM-NBP-020" in traceability
+

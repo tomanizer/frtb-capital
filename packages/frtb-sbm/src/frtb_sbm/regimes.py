@@ -38,51 +38,59 @@ SUPPORTED_PROFILE_METADATA: dict[SbmRegulatoryProfile, dict[str, object]] = {
             ),
             "version": "Federal Register 91 FR 14952 proposed market-risk rule",
             "publication_date": date(2026, 3, 27),
-            "status": "supported_us_npr_girr_delta_comparison_slice",
+            "status": "supported_us_npr_full_comparison_slice",
             "effective_date": None,
         }
     ),
+    SbmRegulatoryProfile.EU_CRR3: {
+        "regulator": "European Union",
+        "version": "Regulation (EU) 2024/1623",
+        "publication_date": date(2024, 6, 13),
+        "status": "supported_eu_crr3_full_comparison_slice",
+        "effective_date": None,
+    },
+    SbmRegulatoryProfile.PRA_UK_CRR: {
+        "regulator": "PRA / UK CRR",
+        "version": "UK CRR sensitivities-based method (onshored)",
+        "publication_date": date(2026, 1, 20),
+        "status": "supported_pra_uk_crr_full_comparison_slice",
+        "effective_date": date(2027, 1, 1),
+    },
 }
 
-UNSUPPORTED_PROFILE_REASONS: dict[SbmRegulatoryProfile, str] = {
-    SbmRegulatoryProfile.EU_CRR3: (
-        "EU CRR3 SBM profile is unsupported until cited reference data and fixtures are added."
+UNSUPPORTED_PROFILE_REASONS: dict[SbmRegulatoryProfile, str] = {}
+
+_BASEL_PROFILE_SUPPORTED_MEASURES: dict[SbmRiskClass, frozenset[SbmRiskMeasure]] = {
+    SbmRiskClass.GIRR: frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
     ),
-    SbmRegulatoryProfile.PRA_UK_CRR: (
-        "PRA UK CRR SBM profile is unsupported until UK-specific source mapping "
-        "and fixtures are added."
+    SbmRiskClass.FX: frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    ),
+    SbmRiskClass.EQUITY: frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    ),
+    SbmRiskClass.COMMODITY: frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    ),
+    SbmRiskClass.CSR_NONSEC: frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    ),
+    SbmRiskClass.CSR_SEC_NONCTP: frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    ),
+    SbmRiskClass.CSR_SEC_CTP: frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
     ),
 }
 
 PROFILE_SUPPORTED_MEASURES: dict[
     SbmRegulatoryProfile, dict[SbmRiskClass, frozenset[SbmRiskMeasure]]
 ] = {
-    SbmRegulatoryProfile.BASEL_MAR21: {
-        SbmRiskClass.GIRR: frozenset(
-            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
-        ),
-        SbmRiskClass.FX: frozenset(
-            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
-        ),
-        SbmRiskClass.EQUITY: frozenset(
-            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
-        ),
-        SbmRiskClass.COMMODITY: frozenset(
-            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
-        ),
-        SbmRiskClass.CSR_NONSEC: frozenset(
-            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
-        ),
-        SbmRiskClass.CSR_SEC_NONCTP: frozenset(
-            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
-        ),
-        SbmRiskClass.CSR_SEC_CTP: frozenset(
-            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
-        ),
-    },
-    SbmRegulatoryProfile.US_NPR_2_0: {
-        SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),
-    },
+    SbmRegulatoryProfile.BASEL_MAR21: _BASEL_PROFILE_SUPPORTED_MEASURES,
+    SbmRegulatoryProfile.EU_CRR3: _BASEL_PROFILE_SUPPORTED_MEASURES,
+    SbmRegulatoryProfile.PRA_UK_CRR: _BASEL_PROFILE_SUPPORTED_MEASURES,
+    SbmRegulatoryProfile.US_NPR_2_0: _BASEL_PROFILE_SUPPORTED_MEASURES,
 }
 
 

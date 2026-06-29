@@ -215,7 +215,7 @@ def test_batch_dispatcher_reports_batch_field_for_invalid_batch_inputs() -> None
     assert wrong_member_exc.value.field == "batches"
 
 
-def test_batch_dispatcher_fails_closed_for_unsupported_profile() -> None:
+def test_batch_dispatcher_supports_pra_uk_crr_profile() -> None:
     handoff = normalize_sbm_path(
         SbmRiskClass.GIRR,
         SbmRiskMeasure.DELTA,
@@ -230,15 +230,15 @@ def test_batch_dispatcher_fails_closed_for_unsupported_profile() -> None:
         ),
     )
     context = SbmCalculationContext(
-        run_id="sbm-portfolio-dispatch-unsupported",
+        run_id="sbm-portfolio-dispatch-pra-uk-crr",
         calculation_date=date(2026, 5, 30),
         base_currency="USD",
         reporting_currency="USD",
-        profile_id=SbmRegulatoryProfile.EU_CRR3.value,
+        profile_id=SbmRegulatoryProfile.PRA_UK_CRR.value,
     )
 
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        calculate_sbm_portfolio_capital_from_arrow_tables((handoff,), context=context)
+    calculation = calculate_sbm_portfolio_capital_from_arrow_tables((handoff,), context=context)
+    assert calculation.result.total_capital > 0.0
 
 
 def sample_context() -> SbmCalculationContext:

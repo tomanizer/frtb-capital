@@ -30,39 +30,37 @@ from frtb_sbm.validation.coercion import (
 
 _STRICT_CITATION_POLICY = "strict"
 
+_BASEL_PHASE1_SUPPORTED_PATHS: frozenset[tuple[SbmRiskClass, SbmRiskMeasure]] = frozenset(
+    {
+        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE),
+    }
+)
+
 _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
-    SbmRegulatoryProfile.US_NPR_2_0.value: frozenset(
-        {
-            (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
-        }
-    ),
-    SbmRegulatoryProfile.BASEL_MAR21.value: frozenset(
-        {
-            (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
-            (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
-            (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
-            (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
-            (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
-            (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
-            (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
-            (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
-            (SbmRiskClass.EQUITY, SbmRiskMeasure.CURVATURE),
-            (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
-            (SbmRiskClass.COMMODITY, SbmRiskMeasure.VEGA),
-            (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE),
-            (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
-            (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.VEGA),
-            (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.CURVATURE),
-            (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.DELTA),
-            (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.VEGA),
-            (SbmRiskClass.CSR_SEC_NONCTP, SbmRiskMeasure.CURVATURE),
-            (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.DELTA),
-            (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.VEGA),
-            (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE),
-        }
-    ),
-    SbmRegulatoryProfile.EU_CRR3.value: frozenset(),
-    SbmRegulatoryProfile.PRA_UK_CRR.value: frozenset(),
+    SbmRegulatoryProfile.US_NPR_2_0.value: _BASEL_PHASE1_SUPPORTED_PATHS,
+    SbmRegulatoryProfile.BASEL_MAR21.value: _BASEL_PHASE1_SUPPORTED_PATHS,
+    SbmRegulatoryProfile.EU_CRR3.value: _BASEL_PHASE1_SUPPORTED_PATHS,
+    SbmRegulatoryProfile.PRA_UK_CRR.value: _BASEL_PHASE1_SUPPORTED_PATHS,
 }
 
 _CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"

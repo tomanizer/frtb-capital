@@ -14,6 +14,11 @@ from dataclasses import dataclass
 from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._text import require_text as _require_text
+from frtb_sbm.reference_citation_routing import (
+    ensure_profile_in_reference_map,
+    profile_citation_id,
+)
+from frtb_sbm.us_npr_reference_tables import mirror_with_profile_citation
 from frtb_sbm.csr_nonsec_reference_data import (
     CSR_BOND_RISK_FACTOR,
     CSR_CDS_RISK_FACTOR,
@@ -72,6 +77,21 @@ _BASEL_CSR_CTP_BUCKETS: tuple[SbmCsrSecCtpBucketDefinition, ...] = (
 
 _PROFILE_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmCsrSecCtpBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: _BASEL_CSR_CTP_BUCKETS,
+    SbmRegulatoryProfile.EU_CRR3: mirror_with_profile_citation(
+        SbmRegulatoryProfile.EU_CRR3.value,
+        _BASEL_CSR_CTP_BUCKETS,
+        "basel_mar21_59",
+    ),
+    SbmRegulatoryProfile.PRA_UK_CRR: mirror_with_profile_citation(
+        SbmRegulatoryProfile.PRA_UK_CRR.value,
+        _BASEL_CSR_CTP_BUCKETS,
+        "basel_mar21_59",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0: mirror_with_profile_citation(
+        SbmRegulatoryProfile.US_NPR_2_0.value,
+        _BASEL_CSR_CTP_BUCKETS,
+        "basel_mar21_59",
+    ),
 }
 
 
@@ -230,7 +250,8 @@ def csr_sec_ctp_delta_risk_weight(
     """
 
     bucket = csr_sec_ctp_bucket_definition(profile, bucket_id)
-    return bucket.risk_weight, (bucket.citation_id, _WEIGHT_CITATION)
+    weight_citation = _csr_sec_ctp_citation(profile, "basel_mar21_59")
+    return bucket.risk_weight, (bucket.citation_id, weight_citation)
 
 
 def csr_sec_ctp_delta_intra_bucket_correlation(
@@ -266,7 +287,9 @@ def csr_sec_ctp_delta_intra_bucket_correlation(
         if basis_a == basis_b
         else CSR_CTP_DIFFERENT_BASIS_CORRELATION
     )
-    return name_factor * tenor_factor * basis_factor, (_INTRA_CITATION,)
+    return name_factor * tenor_factor * basis_factor, (
+        _csr_sec_ctp_citation(profile, "basel_mar21_58"),
+    )
 
 
 def csr_sec_ctp_inter_bucket_correlation(
@@ -327,17 +350,21 @@ def csr_sec_ctp_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[s
         },
         "csr_sec_ctp_inter_parameters": {
             "cross_rating_gamma": CSR_CROSS_RATING_GAMMA,
-            "inter_bucket_citation_id": _INTER_CITATION,
+            "inter_bucket_citation_id": _csr_sec_ctp_citation(profile, "basel_mar21_57"),
         },
     }
 
 
+def _csr_sec_ctp_citation(profile: SbmRegulatoryProfile | str, basel_id: str) -> str:
+    return profile_citation_id(profile, basel_id)
+
+
 def _ensure_csr_sec_ctp_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
-    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
-        raise UnsupportedRegulatoryFeatureError(
-            f"CSR securitisation CTP delta is unsupported for profile {resolved.value}"
-        )
+    ensure_profile_in_reference_map(
+        profile,
+        _PROFILE_BUCKETS,
+        feature_label="CSR securitisation CTP delta",
+    )
 
 
 def _normalise_csr_sec_ctp_risk_factor(risk_factor: str) -> str:

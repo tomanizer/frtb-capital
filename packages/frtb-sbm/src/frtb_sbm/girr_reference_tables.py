@@ -140,28 +140,180 @@ US_NPR_GIRR_SPECIAL_RISK_FACTORS: tuple[SbmGirrSpecialRiskFactorRule, ...] = (
     ),
 )
 
+EU_CRR3_GIRR_BUCKETS: tuple[SbmGirrBucketDefinition, ...] = (
+    SbmGirrBucketDefinition("1", "EUR", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("2", "USD", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("3", "GBP", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("4", "JPY", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("5", "AUD", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("6", "CAD", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("7", "CHF", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("8", "CNY", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("9", "HKD", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("10", "KRW", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("11", "MXN", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("12", "NOK", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("13", "NZD", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("14", "SEK", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("15", "SGD", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("16", "TRY", "eu_crr3_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("17", "CNH", "eu_crr3_art_325r_girr_buckets"),
+)
+
+EU_CRR3_GIRR_TENORS: tuple[SbmGirrTenorDefinition, ...] = (
+    SbmGirrTenorDefinition("3m", 0.25, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("6m", 0.5, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("1y", 1.0, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("2y", 2.0, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("3y", 3.0, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("5y", 5.0, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("10y", 10.0, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("15y", 15.0, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("20y", 20.0, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("30y", 30.0, "eu_crr3_art_325r_girr_delta_weights"),
+)
+
+EU_CRR3_GIRR_DELTA_RISK_WEIGHTS: tuple[SbmGirrRiskWeightRule, ...] = (
+    SbmGirrRiskWeightRule("3m", 0.017, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("6m", 0.017, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("1y", 0.016, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("2y", 0.013, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("3y", 0.012, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("5y", 0.011, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("10y", 0.011, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("15y", 0.011, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("20y", 0.011, "eu_crr3_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("30y", 0.011, "eu_crr3_art_325r_girr_delta_weights"),
+)
+
+EU_CRR3_GIRR_SPECIAL_RISK_FACTORS: tuple[SbmGirrSpecialRiskFactorRule, ...] = (
+    SbmGirrSpecialRiskFactorRule(
+        "INFL",
+        0.016,
+        "eu_crr3_art_325r_girr_special_factors",
+    ),
+    SbmGirrSpecialRiskFactorRule(
+        "XCCY",
+        0.016,
+        "eu_crr3_art_325r_girr_special_factors",
+    ),
+)
+
+PRA_UK_CRR_GIRR_BUCKETS: tuple[SbmGirrBucketDefinition, ...] = (
+    SbmGirrBucketDefinition("1", "EUR", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("2", "USD", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("3", "GBP", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("4", "JPY", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("5", "AUD", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("6", "CAD", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("7", "CHF", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("8", "CNY", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("9", "HKD", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("10", "KRW", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("11", "MXN", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("12", "NOK", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("13", "NZD", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("14", "SEK", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("15", "SGD", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("16", "TRY", "pra_uk_crr_art_325r_girr_buckets"),
+    SbmGirrBucketDefinition("17", "CNH", "pra_uk_crr_art_325r_girr_buckets"),
+)
+
+PRA_UK_CRR_GIRR_TENORS: tuple[SbmGirrTenorDefinition, ...] = (
+    SbmGirrTenorDefinition("3m", 0.25, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("6m", 0.5, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("1y", 1.0, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("2y", 2.0, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("3y", 3.0, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("5y", 5.0, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("10y", 10.0, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("15y", 15.0, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("20y", 20.0, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrTenorDefinition("30y", 30.0, "pra_uk_crr_art_325r_girr_delta_weights"),
+)
+
+PRA_UK_CRR_GIRR_DELTA_RISK_WEIGHTS: tuple[SbmGirrRiskWeightRule, ...] = (
+    SbmGirrRiskWeightRule("3m", 0.017, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("6m", 0.017, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("1y", 0.016, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("2y", 0.013, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("3y", 0.012, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("5y", 0.011, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("10y", 0.011, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("15y", 0.011, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("20y", 0.011, "pra_uk_crr_art_325r_girr_delta_weights"),
+    SbmGirrRiskWeightRule("30y", 0.011, "pra_uk_crr_art_325r_girr_delta_weights"),
+)
+
+PRA_UK_CRR_GIRR_SPECIAL_RISK_FACTORS: tuple[SbmGirrSpecialRiskFactorRule, ...] = (
+    SbmGirrSpecialRiskFactorRule(
+        "INFL",
+        0.016,
+        "pra_uk_crr_art_325r_girr_special_factors",
+    ),
+    SbmGirrSpecialRiskFactorRule(
+        "XCCY",
+        0.016,
+        "pra_uk_crr_art_325r_girr_special_factors",
+    ),
+)
+
 PROFILE_GIRR_DELTA_SQRT2_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_44",
+    SbmRegulatoryProfile.EU_CRR3: "eu_crr3_art_325r_girr_sqrt2",
+    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_art_325r_girr_sqrt2",
     SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_sqrt2",
 }
 
 PROFILE_GIRR_DELTA_INTRA_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_45_49",
+    SbmRegulatoryProfile.EU_CRR3: "eu_crr3_art_325r_girr_intra",
+    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_art_325r_girr_intra",
     SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_intra",
 }
 
 PROFILE_GIRR_DELTA_INTER_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_50",
+    SbmRegulatoryProfile.EU_CRR3: "eu_crr3_art_325r_girr_inter",
+    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_art_325r_girr_inter",
     SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_inter",
+}
+
+PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_93",
+    SbmRegulatoryProfile.EU_CRR3: "eu_crr3_art_325s_girr_vega_intra",
+    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_art_325s_girr_vega_intra",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_vega_intra",
+}
+
+PROFILE_GIRR_VEGA_INTER_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_95",
+    SbmRegulatoryProfile.EU_CRR3: "eu_crr3_art_325s_vega_inter",
+    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_art_325s_vega_inter",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_vega_inter",
+}
+
+PROFILE_GIRR_VEGA_OPTION_TENORS: dict[
+    SbmRegulatoryProfile,
+    tuple[SbmGirrTenorDefinition, ...],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_TENORS,
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_TENORS,
+    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_TENORS,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_TENORS,
 }
 
 PROFILE_GIRR_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmGirrBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_BUCKETS,
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_BUCKETS,
+    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_BUCKETS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_BUCKETS,
 }
 
 PROFILE_GIRR_TENORS: dict[SbmRegulatoryProfile, tuple[SbmGirrTenorDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_TENORS,
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_TENORS,
+    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_TENORS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_TENORS,
 }
 
@@ -170,6 +322,8 @@ PROFILE_GIRR_DELTA_RISK_WEIGHTS: dict[
     tuple[SbmGirrRiskWeightRule, ...],
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_DELTA_RISK_WEIGHTS,
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_DELTA_RISK_WEIGHTS,
+    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_DELTA_RISK_WEIGHTS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_DELTA_RISK_WEIGHTS,
 }
 
@@ -178,6 +332,8 @@ PROFILE_GIRR_SPECIAL_RISK_FACTORS: dict[
     tuple[SbmGirrSpecialRiskFactorRule, ...],
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_SPECIAL_RISK_FACTORS,
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_SPECIAL_RISK_FACTORS,
+    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_SPECIAL_RISK_FACTORS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_SPECIAL_RISK_FACTORS,
 }
 
@@ -205,7 +361,18 @@ __all__ = [
     "PROFILE_GIRR_DELTA_SQRT2_CITATION_IDS",
     "PROFILE_GIRR_SPECIAL_RISK_FACTORS",
     "PROFILE_GIRR_TENORS",
+    "PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS",
+    "PROFILE_GIRR_VEGA_INTER_BUCKET_CITATION_IDS",
+    "PROFILE_GIRR_VEGA_OPTION_TENORS",
     "SQRT2",
+    "EU_CRR3_GIRR_BUCKETS",
+    "EU_CRR3_GIRR_DELTA_RISK_WEIGHTS",
+    "EU_CRR3_GIRR_SPECIAL_RISK_FACTORS",
+    "EU_CRR3_GIRR_TENORS",
+    "PRA_UK_CRR_GIRR_BUCKETS",
+    "PRA_UK_CRR_GIRR_DELTA_RISK_WEIGHTS",
+    "PRA_UK_CRR_GIRR_SPECIAL_RISK_FACTORS",
+    "PRA_UK_CRR_GIRR_TENORS",
     "US_NPR_GIRR_BUCKETS",
     "US_NPR_GIRR_DELTA_RISK_WEIGHTS",
     "US_NPR_GIRR_SPECIAL_RISK_FACTORS",

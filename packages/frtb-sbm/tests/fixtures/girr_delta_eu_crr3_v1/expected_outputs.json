@@ -1,7 +1,7 @@
 {
-  "profile_id": "US_NPR_2_0",
-  "profile_hash": "e0c3c5f55f0f290058aa894a610fcb9931541f17d849c7ca4b789dd67087aa3b",
-  "input_hash": "0d90b8f8b8b9b50f27cd614fb54a9705aa566609dfc0d4c2650a8e0e1a50a717",
+  "profile_id": "EU_CRR3",
+  "profile_hash": "603f2d8bea80cbe0c997d825c62ed91a829acf174769ac78565fb3c20e070dcc",
+  "input_hash": "a89666f3d43bf01d8bb1a1464e5b49227cba3748779d66a0120ef040ae6a927a",
   "total_capital": 19700.12690314456,
   "warnings": [],
   "selected_portfolio_scenario": "HIGH",
@@ -13,14 +13,14 @@
   "risk_classes": [
     {
       "risk_class": "GIRR",
+      "risk_measure": "DELTA",
       "selected_capital": 19700.12690314456,
       "selected_scenario": "HIGH",
-      "risk_measure": "DELTA",
       "citation_ids": [
-        "us_npr_91_fr_14952_va7a_correlation_scenarios",
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_girr_intra",
-        "us_npr_91_fr_14952_va7a_girr_inter"
+        "eu_crr3_art_325u_correlation_scenarios",
+        "eu_crr3_art_325r_sbm_scope",
+        "eu_crr3_art_325r_girr_intra",
+        "eu_crr3_art_325r_girr_inter"
       ]
     }
   ],
@@ -36,8 +36,8 @@
         "kb": 15202.795795510772,
         "sb": 15202.795795510772,
         "citation_ids": [
-          "us_npr_91_fr_14952_va7a_sbm_scope",
-          "us_npr_91_fr_14952_va7a_girr_intra"
+          "eu_crr3_art_325r_sbm_scope",
+          "eu_crr3_art_325r_girr_intra"
         ]
       },
       {
@@ -45,8 +45,8 @@
         "kb": 6222.5396744416175,
         "sb": 6222.5396744416175,
         "citation_ids": [
-          "us_npr_91_fr_14952_va7a_sbm_scope",
-          "us_npr_91_fr_14952_va7a_girr_intra"
+          "eu_crr3_art_325r_sbm_scope",
+          "eu_crr3_art_325r_girr_intra"
         ]
       }
     ]
@@ -55,36 +55,35 @@
     [
       [
         {
-          "sensitivity_id": "us-npr-eur-1y",
+          "sensitivity_id": "eu-crr3-eur-1y",
           "risk_weight": 0.01131370849898476,
           "scaled_amount": 11313.70849898476,
           "citation_ids": [
-            "us_npr_91_fr_14952_va7a_girr_delta_weights",
-            "us_npr_91_fr_14952_va7a_girr_sqrt2"
+            "eu_crr3_art_325r_girr_delta_weights",
+            "eu_crr3_art_325r_girr_sqrt2"
           ]
         },
         {
-          "sensitivity_id": "us-npr-eur-5y",
+          "sensitivity_id": "eu-crr3-eur-5y",
           "risk_weight": 0.007778174593052022,
           "scaled_amount": 3889.087296526011,
           "citation_ids": [
-            "us_npr_91_fr_14952_va7a_girr_delta_weights",
-            "us_npr_91_fr_14952_va7a_girr_sqrt2"
+            "eu_crr3_art_325r_girr_delta_weights",
+            "eu_crr3_art_325r_girr_sqrt2"
           ]
         }
       ],
       [
         {
-          "sensitivity_id": "us-npr-usd-5y",
+          "sensitivity_id": "eu-crr3-usd-5y",
           "risk_weight": 0.007778174593052022,
           "scaled_amount": 6222.5396744416175,
           "citation_ids": [
-            "us_npr_91_fr_14952_va7a_girr_delta_weights",
-            "us_npr_91_fr_14952_va7a_girr_sqrt2"
+            "eu_crr3_art_325r_girr_delta_weights",
+            "eu_crr3_art_325r_girr_sqrt2"
           ]
         }
       ]
     ]
   ]
 }
-

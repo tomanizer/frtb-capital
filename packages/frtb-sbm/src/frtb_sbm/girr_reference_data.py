@@ -37,6 +37,7 @@ from frtb_sbm.girr_reference_tables import (
     US_NPR_GIRR_SPECIAL_RISK_FACTORS,
     US_NPR_GIRR_TENORS,
 )
+from frtb_sbm.reference_citation_routing import ensure_profile_in_reference_map
 from frtb_sbm.reference_profiles import _resolve_supported_profile
 from frtb_sbm.reference_types import (
     SbmGirrBucketDefinition,
@@ -233,11 +234,11 @@ def girr_delta_risk_weight(
 
 
 def _ensure_girr_supported(profile: SbmRegulatoryProfile | str) -> None:
-    resolved = _resolve_supported_profile(profile)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
-        raise UnsupportedRegulatoryFeatureError(
-            f"GIRR reference data is unsupported for profile {resolved.value}"
-        )
+    ensure_profile_in_reference_map(
+        profile,
+        PROFILE_GIRR_BUCKETS,
+        feature_label="GIRR",
+    )
 
 
 def _ensure_girr_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
@@ -249,7 +250,13 @@ def _ensure_girr_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
 
 
 def _ensure_girr_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
-    _ensure_girr_supported(profile)
+    from frtb_sbm.vega_reference_data import PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS
+
+    ensure_profile_in_reference_map(
+        profile,
+        PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS,
+        feature_label="GIRR vega",
+    )
 
 
 def _apply_sqrt2_adjustment(*, tenor: str, currency: str, reporting_currency: str) -> bool:

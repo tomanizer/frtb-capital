@@ -16,6 +16,7 @@ from frtb_sbm import (
 )
 from frtb_sbm.reference_data import profile_reference_payload
 from frtb_sbm.regimes import (
+    PROFILE_SUPPORTED_MEASURES,
     ensure_profile_supports_risk_class_measure,
     profile_supports_risk_class_measure,
     supported_risk_class_measures,
@@ -76,41 +77,66 @@ def test_profile_content_hash_uses_common_stable_json_hash() -> None:
                 "Office of the Comptroller of the Currency, Board of Governors of the "
                 "Federal Reserve System, and Federal Deposit Insurance Corporation"
             ),
-            "status": "supported_us_npr_girr_delta_comparison_slice",
+            "status": "supported_us_npr_full_comparison_slice",
             "version": "Federal Register 91 FR 14952 proposed market-risk rule",
         },
-        "supported_measures": {"GIRR": ["DELTA"]},
+        "supported_measures": {
+            risk_class.value: sorted(measure.value for measure in measures)
+            for risk_class, measures in sorted(
+                PROFILE_SUPPORTED_MEASURES[SbmRegulatoryProfile.US_NPR_2_0].items(),
+                key=lambda item: item[0].value,
+            )
+        },
         "reference_data": profile_reference_payload(SbmRegulatoryProfile.US_NPR_2_0),
     }
 
     assert profile_content_hash(SbmRegulatoryProfile.US_NPR_2_0) == stable_json_hash(payload)
 
 
-def test_get_sbm_rule_profile_returns_partial_us_npr_profile() -> None:
+def test_get_sbm_rule_profile_returns_full_us_npr_profile() -> None:
     profile = get_sbm_rule_profile(SbmRegulatoryProfile.US_NPR_2_0)
 
     assert resolve_sbm_profile(SbmRegulatoryProfile.US_NPR_2_0) is SbmRegulatoryProfile.US_NPR_2_0
     assert profile.profile_id == SbmRegulatoryProfile.US_NPR_2_0.value
     assert profile.publication_date == date(2026, 3, 27)
-    assert profile.supported_risk_classes == frozenset({SbmRiskClass.GIRR})
-    assert profile.supported_measures == {
-        SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),
-    }
+    assert profile.supported_risk_classes == frozenset(SbmRiskClass)
+    assert profile.supported_measures[SbmRiskClass.GIRR] == frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    )
+    assert profile.supported_measures[SbmRiskClass.FX] == frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    )
     assert "us_npr_91_fr_14952_va7a_girr_delta_weights" in profile.citations
+    assert "us_npr_91_fr_14952_va7a_fx_buckets" in profile.citations
 
 
-@pytest.mark.parametrize(
-    "profile",
-    [
-        SbmRegulatoryProfile.EU_CRR3,
-        SbmRegulatoryProfile.PRA_UK_CRR,
-    ],
-)
-def test_unsupported_profiles_fail_before_calculation(profile: SbmRegulatoryProfile) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        resolve_sbm_profile(profile)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        get_sbm_rule_profile(profile)
+def test_get_sbm_rule_profile_returns_full_eu_crr3_profile() -> None:
+    profile = get_sbm_rule_profile(SbmRegulatoryProfile.EU_CRR3)
+
+    assert resolve_sbm_profile(SbmRegulatoryProfile.EU_CRR3) is SbmRegulatoryProfile.EU_CRR3
+    assert profile.profile_id == SbmRegulatoryProfile.EU_CRR3.value
+    assert profile.publication_date == date(2024, 6, 13)
+    assert profile.supported_risk_classes == frozenset(SbmRiskClass)
+    assert profile.supported_measures[SbmRiskClass.GIRR] == frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    )
+    assert "eu_crr3_art_325r_girr_delta_weights" in profile.citations
+    assert "eu_crr3_art_325r_fx_buckets" in profile.citations
+
+
+def test_get_sbm_rule_profile_returns_full_pra_uk_crr_profile() -> None:
+    profile = get_sbm_rule_profile(SbmRegulatoryProfile.PRA_UK_CRR)
+
+    assert resolve_sbm_profile(SbmRegulatoryProfile.PRA_UK_CRR) is SbmRegulatoryProfile.PRA_UK_CRR
+    assert profile.profile_id == SbmRegulatoryProfile.PRA_UK_CRR.value
+    assert profile.publication_date == date(2026, 1, 20)
+    assert profile.effective_date == date(2027, 1, 1)
+    assert profile.supported_risk_classes == frozenset(SbmRiskClass)
+    assert profile.supported_measures[SbmRiskClass.GIRR] == frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    )
+    assert "pra_uk_crr_art_325r_girr_delta_weights" in profile.citations
+    assert "pra_uk_crr_art_325r_fx_buckets" in profile.citations
 
 
 def test_unknown_profile_fails_as_input_error() -> None:
@@ -207,23 +233,40 @@ def test_supported_risk_class_measures_lists_delta_vega_and_curvature_paths() ->
     )
 
 
-def test_us_npr_profile_support_map_is_girr_delta_only() -> None:
+def test_us_npr_profile_support_map_covers_all_risk_class_measures() -> None:
     supported = supported_risk_class_measures(SbmRegulatoryProfile.US_NPR_2_0)
 
-    assert supported == frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
-    assert profile_supports_risk_class_measure(
-        SbmRegulatoryProfile.US_NPR_2_0,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.DELTA,
-    )
-    ensure_profile_supports_risk_class_measure(
-        SbmRegulatoryProfile.US_NPR_2_0,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.DELTA,
-    )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR_2_0"):
-        ensure_profile_supports_risk_class_measure(
-            SbmRegulatoryProfile.US_NPR_2_0,
-            SbmRiskClass.GIRR,
-            SbmRiskMeasure.VEGA,
-        )
+    assert supported == supported_risk_class_measures(SbmRegulatoryProfile.BASEL_MAR21)
+    for risk_class in SbmRiskClass:
+        for risk_measure in SbmRiskMeasure:
+            ensure_profile_supports_risk_class_measure(
+                SbmRegulatoryProfile.US_NPR_2_0,
+                risk_class,
+                risk_measure,
+            )
+
+
+def test_eu_crr3_profile_support_map_covers_all_risk_class_measures() -> None:
+    supported = supported_risk_class_measures(SbmRegulatoryProfile.EU_CRR3)
+
+    assert supported == supported_risk_class_measures(SbmRegulatoryProfile.BASEL_MAR21)
+    for risk_class in SbmRiskClass:
+        for risk_measure in SbmRiskMeasure:
+            ensure_profile_supports_risk_class_measure(
+                SbmRegulatoryProfile.EU_CRR3,
+                risk_class,
+                risk_measure,
+            )
+
+
+def test_pra_uk_crr_profile_support_map_covers_all_risk_class_measures() -> None:
+    supported = supported_risk_class_measures(SbmRegulatoryProfile.PRA_UK_CRR)
+
+    assert supported == supported_risk_class_measures(SbmRegulatoryProfile.BASEL_MAR21)
+    for risk_class in SbmRiskClass:
+        for risk_measure in SbmRiskMeasure:
+            ensure_profile_supports_risk_class_measure(
+                SbmRegulatoryProfile.PRA_UK_CRR,
+                risk_class,
+                risk_measure,
+            )

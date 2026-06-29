@@ -9,12 +9,16 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import SbmRegulatoryProfile
+from frtb_sbm.reference_citation_routing import (
+    ensure_profile_in_reference_map,
+    profile_citation_id,
+)
 from frtb_sbm.validation import SbmInputError, ensure_sbm_profile_known
 
 CSR_SEC_BOND_RISK_FACTOR = "BOND"
@@ -123,8 +127,44 @@ def _build_basel_csr_sec_nonctp_buckets() -> tuple[SbmCsrSecNonctpBucketDefiniti
 
 _BASEL_CSR_SEC_NONCTP_BUCKETS = _build_basel_csr_sec_nonctp_buckets()
 
+_US_NPR_CSR_SEC_NONCTP_BUCKETS: tuple[SbmCsrSecNonctpBucketDefinition, ...] = tuple(
+    replace(
+        bucket,
+        citation_id=profile_citation_id(
+            SbmRegulatoryProfile.US_NPR_2_0,
+            "basel_mar21_66" if bucket.is_other_sector else "basel_mar21_65",
+        ),
+    )
+    for bucket in _BASEL_CSR_SEC_NONCTP_BUCKETS
+)
+
+_EU_CRR3_CSR_SEC_NONCTP_BUCKETS: tuple[SbmCsrSecNonctpBucketDefinition, ...] = tuple(
+    replace(
+        bucket,
+        citation_id=profile_citation_id(
+            SbmRegulatoryProfile.EU_CRR3,
+            "basel_mar21_66" if bucket.is_other_sector else "basel_mar21_65",
+        ),
+    )
+    for bucket in _BASEL_CSR_SEC_NONCTP_BUCKETS
+)
+
+_PRA_UK_CRR_CSR_SEC_NONCTP_BUCKETS: tuple[SbmCsrSecNonctpBucketDefinition, ...] = tuple(
+    replace(
+        bucket,
+        citation_id=profile_citation_id(
+            SbmRegulatoryProfile.PRA_UK_CRR,
+            "basel_mar21_66" if bucket.is_other_sector else "basel_mar21_65",
+        ),
+    )
+    for bucket in _BASEL_CSR_SEC_NONCTP_BUCKETS
+)
+
 _PROFILE_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmCsrSecNonctpBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: _BASEL_CSR_SEC_NONCTP_BUCKETS,
+    SbmRegulatoryProfile.EU_CRR3: _EU_CRR3_CSR_SEC_NONCTP_BUCKETS,
+    SbmRegulatoryProfile.PRA_UK_CRR: _PRA_UK_CRR_CSR_SEC_NONCTP_BUCKETS,
+    SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_CSR_SEC_NONCTP_BUCKETS,
 }
 
 
@@ -258,7 +298,10 @@ def csr_sec_nonctp_delta_risk_weight(
     """
 
     bucket = csr_sec_nonctp_bucket_definition(profile, bucket_id)
-    return bucket.risk_weight, (bucket.citation_id, _WEIGHT_CITATION)
+    return bucket.risk_weight, (
+        bucket.citation_id,
+        _csr_sec_nonctp_citation(profile, "basel_mar21_65"),
+    )
 
 
 def csr_sec_nonctp_delta_intra_bucket_correlation(
@@ -286,7 +329,7 @@ def csr_sec_nonctp_delta_intra_bucket_correlation(
     _ensure_csr_sec_nonctp_delta_supported(profile)
     bucket = csr_sec_nonctp_bucket_definition(profile, bucket_id)
     if bucket.is_other_sector:
-        return 0.0, (_OTHER_SECTOR_CITATION,)
+        return 0.0, (_csr_sec_nonctp_citation(profile, "basel_mar21_68"),)
 
     tranche_factor = (
         CSR_SEC_TRANCHE_SAME_CORRELATION
@@ -305,7 +348,9 @@ def csr_sec_nonctp_delta_intra_bucket_correlation(
         if basis_a == basis_b
         else CSR_SEC_DIFFERENT_BASIS_CORRELATION
     )
-    return tranche_factor * tenor_factor * basis_factor, (_INTRA_CITATION,)
+    return tranche_factor * tenor_factor * basis_factor, (
+        _csr_sec_nonctp_citation(profile, "basel_mar21_67"),
+    )
 
 
 def csr_sec_nonctp_inter_bucket_correlation(
@@ -331,7 +376,9 @@ def csr_sec_nonctp_inter_bucket_correlation(
 
     _ensure_csr_sec_nonctp_delta_supported(profile)
     del bucket1, bucket2
-    return CSR_SEC_INTER_BUCKET_CORRELATION, (_INTER_CITATION,)
+    return CSR_SEC_INTER_BUCKET_CORRELATION, (
+        _csr_sec_nonctp_citation(profile, "basel_mar21_70"),
+    )
 
 
 def csr_sec_nonctp_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:
@@ -376,12 +423,16 @@ def csr_sec_nonctp_reference_payload(profile: SbmRegulatoryProfile | str) -> dic
     }
 
 
+def _csr_sec_nonctp_citation(profile: SbmRegulatoryProfile | str, basel_id: str) -> str:
+    return profile_citation_id(profile, basel_id)
+
+
 def _ensure_csr_sec_nonctp_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
-    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
-        raise UnsupportedRegulatoryFeatureError(
-            f"CSR securitisation non-CTP delta is unsupported for profile {resolved.value}"
-        )
+    ensure_profile_in_reference_map(
+        profile,
+        _PROFILE_BUCKETS,
+        feature_label="CSR securitisation non-CTP delta",
+    )
 
 
 def _normalise_csr_sec_risk_factor(risk_factor: str) -> str:

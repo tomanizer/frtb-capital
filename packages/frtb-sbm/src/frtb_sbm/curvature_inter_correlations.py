@@ -17,21 +17,27 @@ from frtb_sbm.commodity_reference_data import (
 from frtb_sbm.csr_nonsec_reference_data import csr_nonsec_inter_bucket_correlation
 from frtb_sbm.csr_sec_ctp_reference_data import csr_sec_ctp_inter_bucket_correlation
 from frtb_sbm.csr_sec_nonctp_reference_data import csr_sec_nonctp_inter_bucket_correlation
-from frtb_sbm.data_models import SbmRiskClass
+from frtb_sbm.data_models import SbmRegulatoryProfile, SbmRiskClass
 from frtb_sbm.equity_reference_data import (
     _require_equity_bucket_number,
     equity_inter_bucket_correlation,
 )
+from frtb_sbm.reference_citation_routing import profile_citation_id, profile_citation_ids
 from frtb_sbm.reference_data import fx_inter_bucket_correlation, girr_inter_bucket_correlation
 
-_MAR21_CURVATURE_INTRA_CITATION = (
-    "basel_mar21_curvature",
-    "basel_mar21_100",
-)
-_MAR21_CURVATURE_INTER_CITATION = (
-    "basel_mar21_curvature",
-    "basel_mar21_101",
-)
+
+def _curvature_scope_intra_citations(profile_id: str) -> tuple[str, ...]:
+    return profile_citation_ids(
+        profile_id,
+        ("basel_mar21_curvature", "basel_mar21_100"),
+    )
+
+
+def _curvature_scope_inter_citations(profile_id: str) -> tuple[str, ...]:
+    return profile_citation_ids(
+        profile_id,
+        ("basel_mar21_curvature", "basel_mar21_101"),
+    )
 
 
 def _build_curvature_inter_bucket_correlation_map(
@@ -103,38 +109,60 @@ def _curvature_inter_bucket_correlation(
     )
 
 
-def _curvature_intra_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
+def _curvature_intra_citation_ids(
+    risk_class: SbmRiskClass,
+    *,
+    profile_id: str = SbmRegulatoryProfile.BASEL_MAR21.value,
+) -> tuple[str, ...]:
+    scope = _curvature_scope_intra_citations(profile_id)
     if risk_class is SbmRiskClass.GIRR:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_45_49")
+        return (*scope, profile_citation_id(profile_id, "basel_mar21_45_49"))
     if risk_class is SbmRiskClass.FX:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_86")
+        return (*scope, profile_citation_id(profile_id, "basel_mar21_86"))
     if risk_class is SbmRiskClass.EQUITY:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_78", "basel_mar21_79")
+        return (
+            *scope,
+            profile_citation_id(profile_id, "basel_mar21_78"),
+            profile_citation_id(profile_id, "basel_mar21_79"),
+        )
     if risk_class is SbmRiskClass.COMMODITY:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_83")
+        return (*scope, profile_citation_id(profile_id, "basel_mar21_83"))
     if risk_class is SbmRiskClass.CSR_NONSEC:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_54", "basel_mar21_55")
+        return (
+            *scope,
+            profile_citation_id(profile_id, "basel_mar21_54"),
+            profile_citation_id(profile_id, "basel_mar21_55"),
+        )
     if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_58")
+        return (*scope, profile_citation_id(profile_id, "basel_mar21_58"))
     if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_67", "basel_mar21_68")
-    return _MAR21_CURVATURE_INTRA_CITATION
+        return (
+            *scope,
+            profile_citation_id(profile_id, "basel_mar21_67"),
+            profile_citation_id(profile_id, "basel_mar21_68"),
+        )
+    return scope
 
 
-def _curvature_inter_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
+def _curvature_inter_citation_ids(
+    risk_class: SbmRiskClass,
+    *,
+    profile_id: str = SbmRegulatoryProfile.BASEL_MAR21.value,
+) -> tuple[str, ...]:
+    scope = _curvature_scope_inter_citations(profile_id)
     if risk_class is SbmRiskClass.GIRR:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_50")
+        return (*scope, profile_citation_id(profile_id, "basel_mar21_50"))
     if risk_class is SbmRiskClass.FX:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_89")
+        return (*scope, profile_citation_id(profile_id, "basel_mar21_89"))
     if risk_class is SbmRiskClass.EQUITY:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_80")
+        return (*scope, profile_citation_id(profile_id, "basel_mar21_80"))
     if risk_class is SbmRiskClass.COMMODITY:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_85")
+        return (*scope, profile_citation_id(profile_id, "basel_mar21_85"))
     if risk_class in {SbmRiskClass.CSR_NONSEC, SbmRiskClass.CSR_SEC_CTP}:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_57")
+        return (*scope, profile_citation_id(profile_id, "basel_mar21_57"))
     if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_70")
-    return _MAR21_CURVATURE_INTER_CITATION
+        return (*scope, profile_citation_id(profile_id, "basel_mar21_70"))
+    return scope
 
 
 def _bucket_sort_key(risk_class: SbmRiskClass, bucket_id: str) -> tuple[int, str]:

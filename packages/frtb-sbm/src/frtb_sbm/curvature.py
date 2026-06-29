@@ -107,6 +107,10 @@ from frtb_sbm.reference_data import (
     curvature_citation_ids,
     normalise_fx_delta_currency_code,
 )
+from frtb_sbm.reference_citation_routing import (
+    profile_citation_id,
+    profile_scenario_citation_ids,
+)
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 from frtb_sbm.validation import (
     SbmInputError,
@@ -116,11 +120,12 @@ from frtb_sbm.validation import (
 
 CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"
 
-_MAR21_CURVATURE_FLOOR_CITATION = ("basel_mar21_curvature",)
-_MAR21_CURVATURE_SCENARIO_CITATION = (
-    "basel_mar21_6_correlation_scenarios",
-    "basel_mar21_7_scenario_selection",
-)
+def _curvature_floor_citation(profile_id: str) -> tuple[str, ...]:
+    return (profile_citation_id(profile_id, "basel_mar21_curvature"),)
+
+
+def _curvature_scenario_citations(profile_id: str) -> tuple[str, ...]:
+    return profile_scenario_citation_ids(profile_id)
 _DEFAULT_SCENARIOS: tuple[SbmScenarioLabel, ...] = (
     SbmScenarioLabel.LOW,
     SbmScenarioLabel.MEDIUM,
@@ -712,9 +717,9 @@ def _aggregate_curvature_factors(
                     for bucket_scenario in bucket_scenarios
                 ),
                 citation_ids=_merge_citation_ids(
-                    _MAR21_CURVATURE_SCENARIO_CITATION,
-                    _curvature_intra_citation_ids(risk_class),
-                    _curvature_inter_citation_ids(risk_class),
+                    _curvature_scenario_citations(profile_id),
+                    _curvature_intra_citation_ids(risk_class, profile_id=profile_id),
+                    _curvature_inter_citation_ids(risk_class, profile_id=profile_id),
                 ),
             )
         )
@@ -724,7 +729,7 @@ def _aggregate_curvature_factors(
         risk_class=risk_class,
         risk_measure=SbmRiskMeasure.CURVATURE,
         branch_id=f"{risk_class.value.lower()}_curvature_scenario_selection",
-        citation_ids=_MAR21_CURVATURE_SCENARIO_CITATION,
+        citation_ids=_curvature_scenario_citations(profile_id),
     )
     selected_bucket_scenarios = scenario_buckets[selection.selected_scenario]
     selected_buckets = tuple(
@@ -732,10 +737,10 @@ def _aggregate_curvature_factors(
         for bucket_scenario in selected_bucket_scenarios
     )
     citations = _merge_citation_ids(
-        _MAR21_CURVATURE_SCENARIO_CITATION,
-        _curvature_intra_citation_ids(risk_class),
-        _curvature_inter_citation_ids(risk_class),
-        _MAR21_CURVATURE_FLOOR_CITATION,
+        _curvature_scenario_citations(profile_id),
+        _curvature_intra_citation_ids(risk_class, profile_id=profile_id),
+        _curvature_inter_citation_ids(risk_class, profile_id=profile_id),
+        _curvature_floor_citation(profile_id),
         selection.citation_ids,
     )
     return RiskClassCapital(

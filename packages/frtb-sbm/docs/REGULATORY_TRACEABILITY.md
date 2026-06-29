@@ -94,9 +94,9 @@ and
 
 | Profile | Current runtime status | Planning status |
 | --- | --- | --- |
-| `US_NPR_2_0` | partial (1 / 21 cells) | GIRR delta implemented under audit; all other cells unsupported fail-closed. Proposed-rule material only. |
-| `EU_CRR3` | unsupported fail-closed (0 / 21 cells) | planned after article-level mapping (Regulation (EU) 2024/1623, Arts. 325e-325az). |
-| `PRA_UK_CRR` | unsupported fail-closed (0 / 21 cells) | blocked pending PRA/UK CRR SBM source mapping (see SBM-NBP-020). |
+| `US_NPR_2_0` | implemented under audit (21 / 21 cells) | Full seven-risk-class delta, vega, and curvature comparison slice with cited NPR reference data. Equity repo vega/curvature sub-features remain unsupported fail-closed. Proposed-rule material only. |
+| `EU_CRR3` | implemented under audit (21 / 21 cells) | Full seven-risk-class delta, vega, and curvature comparison slice with cited EU CRR3 reference data. Equity repo vega/curvature sub-features remain unsupported fail-closed. |
+| `PRA_UK_CRR` | implemented under audit (21 / 21 cells) | Full seven-risk-class delta, vega, and curvature comparison slice with cited UK CRR reference data. Equity repo vega/curvature sub-features remain unsupported fail-closed. |
 
 Except for `US_NPR_2_0` GIRR delta, every risk-class and measure combination for
 non-Basel profiles remains unsupported fail-closed. Basel MAR21 sub-features that

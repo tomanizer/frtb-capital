@@ -25,14 +25,14 @@ requirements:
     status: partial
     modules: [src/frtb_sbm/reference_data.py]
     tests: [tests/test_sbm_reference_data.py]
-    notes: GIRR, FX, equity, commodity, and CSR delta, vega, and curvature tables are cited for BASEL_MAR21; non-Basel profiles remain planned and runtime fail-closed.
+    notes: GIRR, FX, equity, commodity, and CSR delta, vega, and curvature tables are cited for BASEL_MAR21, US_NPR_2_0, EU_CRR3, and PRA_UK_CRR comparison profiles.
   - id: SBM-RISK-001
     title: Seven-risk-class coverage
     source: Basel MAR21; 91 FR 15037
     status: partial
     modules: [src/frtb_sbm/risk_classes]
     tests: [tests/test_sbm_support_matrix.py, tests/risk_classes/test_sbm_fx.py, tests/risk_classes/test_equity.py, tests/risk_classes/test_commodity.py, tests/risk_classes/test_csr_nonsec.py, tests/risk_classes/test_csr_sec_nonctp.py, tests/risk_classes/test_csr_sec_ctp.py]
-    notes: GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP delta, vega, and curvature are implemented under BASEL_MAR21 with row, batch, and Arrow batch paths.
+    notes: GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP delta, vega, and curvature are implemented under BASEL_MAR21, US_NPR_2_0, and EU_CRR3 with row, batch, and Arrow batch paths.
   - id: SBM-WS-001
     title: Weighted sensitivity calculation
     source: Basel MAR21 risk-weight provisions; U.S. NPR 2.0 section V.A.7.a step three

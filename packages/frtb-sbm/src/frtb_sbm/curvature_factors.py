@@ -13,6 +13,7 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
 from frtb_sbm.data_models import SbmRiskClass, SbmSensitivity
 from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
+from frtb_sbm.reference_citation_routing import profile_citation_id, profile_citation_ids
 from frtb_sbm.reference_data import curvature_citation_ids, normalise_fx_delta_currency_code
 from frtb_sbm.validation import SbmInputError, normalise_sensitivity_amount
 
@@ -108,45 +109,72 @@ def _curvature_factor_citation_ids(
     del bucket_id, risk_factor
     return _merge_citation_ids(
         curvature_citation_ids(profile_id),
-        _curvature_definition_citation_ids(risk_class),
-        _curvature_weight_rule_citation_ids(risk_class),
+        _curvature_definition_citation_ids(profile_id, risk_class),
+        _curvature_weight_rule_citation_ids(profile_id, risk_class),
     )
 
 
-def _curvature_definition_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
+def _curvature_definition_citation_ids(
+    profile_id: str,
+    risk_class: SbmRiskClass,
+) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.GIRR:
-        return ("basel_mar21_8", "basel_mar21_96", "basel_mar21_97")
+        return profile_citation_ids(profile_id, ("basel_mar21_8", "basel_mar21_96", "basel_mar21_97"))
     if risk_class is SbmRiskClass.FX:
-        return ("basel_mar21_14", "basel_mar21_96", "basel_mar21_97")
+        return profile_citation_ids(
+            profile_id,
+            ("basel_mar21_14", "basel_mar21_96", "basel_mar21_97"),
+        )
     if risk_class is SbmRiskClass.EQUITY:
-        return ("basel_mar21_12", "basel_mar21_96", "basel_mar21_97")
+        return profile_citation_ids(
+            profile_id,
+            ("basel_mar21_12", "basel_mar21_96", "basel_mar21_97"),
+        )
     if risk_class is SbmRiskClass.COMMODITY:
-        return ("basel_mar21_13", "basel_mar21_96", "basel_mar21_97")
+        return profile_citation_ids(
+            profile_id,
+            ("basel_mar21_13", "basel_mar21_96", "basel_mar21_97"),
+        )
     if risk_class is SbmRiskClass.CSR_NONSEC:
-        return ("basel_mar21_9", "basel_mar21_96", "basel_mar21_97")
+        return profile_citation_ids(profile_id, ("basel_mar21_9", "basel_mar21_96", "basel_mar21_97"))
     if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        return ("basel_mar21_11", "basel_mar21_96", "basel_mar21_97")
+        return profile_citation_ids(
+            profile_id,
+            ("basel_mar21_11", "basel_mar21_96", "basel_mar21_97"),
+        )
     if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        return ("basel_mar21_10", "basel_mar21_96", "basel_mar21_97")
-    return ("basel_mar21_96", "basel_mar21_97")
+        return profile_citation_ids(
+            profile_id,
+            ("basel_mar21_10", "basel_mar21_96", "basel_mar21_97"),
+        )
+    return profile_citation_ids(profile_id, ("basel_mar21_96", "basel_mar21_97"))
 
 
-def _curvature_weight_rule_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
+def _curvature_weight_rule_citation_ids(
+    profile_id: str,
+    risk_class: SbmRiskClass,
+) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.GIRR:
-        return ("basel_mar21_99", "basel_mar21_39")
+        return profile_citation_ids(profile_id, ("basel_mar21_99", "basel_mar21_39"))
     if risk_class is SbmRiskClass.FX:
-        return ("basel_mar21_98", "basel_mar21_87", "basel_mar21_88")
+        return profile_citation_ids(
+            profile_id,
+            ("basel_mar21_98", "basel_mar21_87", "basel_mar21_88"),
+        )
     if risk_class is SbmRiskClass.EQUITY:
-        return ("basel_mar21_98", "basel_mar21_77")
+        return profile_citation_ids(profile_id, ("basel_mar21_98", "basel_mar21_77"))
     if risk_class is SbmRiskClass.COMMODITY:
-        return ("basel_mar21_99", "basel_mar21_82")
+        return profile_citation_ids(profile_id, ("basel_mar21_99", "basel_mar21_82"))
     if risk_class is SbmRiskClass.CSR_NONSEC:
-        return ("basel_mar21_99", "basel_mar21_53")
+        return profile_citation_ids(profile_id, ("basel_mar21_99", "basel_mar21_53"))
     if risk_class is SbmRiskClass.CSR_SEC_CTP:
-        return ("basel_mar21_99", "basel_mar21_59")
+        return profile_citation_ids(profile_id, ("basel_mar21_99", "basel_mar21_59"))
     if risk_class is SbmRiskClass.CSR_SEC_NONCTP:
-        return ("basel_mar21_99", "basel_mar21_65", "basel_mar21_66")
-    return ("basel_mar21_99",)
+        return profile_citation_ids(
+            profile_id,
+            ("basel_mar21_99", "basel_mar21_65", "basel_mar21_66"),
+        )
+    return (profile_citation_id(profile_id, "basel_mar21_99"),)
 
 
 def _required_curvature_shock(sensitivity: SbmSensitivity, *, field: str) -> float:

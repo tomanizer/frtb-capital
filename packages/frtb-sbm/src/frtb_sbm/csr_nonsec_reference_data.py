@@ -15,6 +15,11 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import SbmRegulatoryProfile
+from frtb_sbm.reference_citation_routing import (
+    ensure_profile_in_reference_map,
+    profile_citation_id,
+)
+from frtb_sbm.us_npr_reference_tables import mirror_with_profile_citation
 from frtb_sbm.validation import SbmInputError, ensure_sbm_profile_known
 
 BASEL_MAR21_URL = "https://www.bis.org/basel_framework/chapter/MAR/21.htm"
@@ -130,6 +135,21 @@ _BASEL_CSR_BUCKETS: tuple[SbmCsrNonsecBucketDefinition, ...] = (
 
 _PROFILE_CSR_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmCsrNonsecBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: _BASEL_CSR_BUCKETS,
+    SbmRegulatoryProfile.EU_CRR3: mirror_with_profile_citation(
+        SbmRegulatoryProfile.EU_CRR3.value,
+        _BASEL_CSR_BUCKETS,
+        "basel_mar21_51",
+    ),
+    SbmRegulatoryProfile.PRA_UK_CRR: mirror_with_profile_citation(
+        SbmRegulatoryProfile.PRA_UK_CRR.value,
+        _BASEL_CSR_BUCKETS,
+        "basel_mar21_51",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0: mirror_with_profile_citation(
+        SbmRegulatoryProfile.US_NPR_2_0.value,
+        _BASEL_CSR_BUCKETS,
+        "basel_mar21_51",
+    ),
 }
 
 
@@ -259,7 +279,7 @@ def csr_nonsec_delta_risk_weight(
     """
 
     bucket = csr_nonsec_bucket_definition(profile, bucket_id)
-    return bucket.risk_weight, (_CSR_WEIGHT_CITATION,)
+    return bucket.risk_weight, (_csr_nonsec_citation(profile, "basel_mar21_53"),)
 
 
 def csr_nonsec_delta_intra_bucket_correlation(
@@ -309,8 +329,8 @@ def csr_nonsec_delta_intra_bucket_correlation(
     basis_rho = (
         CSR_SAME_CURVE_CORRELATION if factor_a == factor_b else CSR_DIFFERENT_CURVE_CORRELATION
     )
-    citation = _CSR_INDEX_INTRA_CITATION if bucket.is_index_bucket else _CSR_INTRA_CITATION
-    return name_rho * tenor_rho * basis_rho, (citation,)
+    basel_citation = "basel_mar21_55" if bucket.is_index_bucket else "basel_mar21_54"
+    return name_rho * tenor_rho * basis_rho, (_csr_nonsec_citation(profile, basel_citation),)
 
 
 def csr_nonsec_inter_bucket_correlation(
@@ -339,8 +359,9 @@ def csr_nonsec_inter_bucket_correlation(
     b2 = _require_csr_bucket_number(bucket2)
     bucket_a = csr_nonsec_bucket_definition(profile, str(b1))
     bucket_b = csr_nonsec_bucket_definition(profile, str(b2))
+    inter_citation = (_csr_nonsec_citation(profile, "basel_mar21_57"),)
     if b1 == b2:
-        return 1.0, (_CSR_INTER_CITATION,)
+        return 1.0, inter_citation
 
     gamma = _sector_gamma_from_table(b1, b2)
     if (
@@ -349,7 +370,7 @@ def csr_nonsec_inter_bucket_correlation(
         and bucket_a.investment_grade is not bucket_b.investment_grade
     ):
         gamma *= CSR_CROSS_RATING_GAMMA
-    return gamma, (_CSR_INTER_CITATION,)
+    return gamma, inter_citation
 
 
 def csr_nonsec_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:
@@ -426,13 +447,16 @@ def _require_csr_tenor(profile: SbmRegulatoryProfile | str, tenor: str) -> str:
     return normalised
 
 
+def _csr_nonsec_citation(profile: SbmRegulatoryProfile | str, basel_id: str) -> str:
+    return profile_citation_id(profile, basel_id)
+
+
 def _ensure_csr_nonsec_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
-    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
-        raise UnsupportedRegulatoryFeatureError(
-            f"CSR non-securitisation delta reference data is unsupported for profile "
-            f"{resolved.value}"
-        )
+    ensure_profile_in_reference_map(
+        profile,
+        _PROFILE_CSR_BUCKETS,
+        feature_label="CSR non-securitisation delta",
+    )
 
 
 def _require_csr_bucket_number(bucket_id: str) -> int:

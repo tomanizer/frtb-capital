@@ -587,12 +587,36 @@ def test_curvature_reference_weights_include_paragraph_citations() -> None:
     assert "basel_mar21_98" in equity_citations
 
 
-@pytest.mark.parametrize(
-    "profile",
-    [
-        SbmRegulatoryProfile.EU_CRR3,
-    ],
-)
-def test_unsupported_profiles_fail_reference_data_lookup(profile: SbmRegulatoryProfile) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        citations_for_profile(profile)
+def test_pra_uk_crr_girr_delta_reference_data_uses_profile_owned_citations() -> None:
+    citations = citations_for_profile(SbmRegulatoryProfile.PRA_UK_CRR)
+    bucket = girr_bucket_definition(SbmRegulatoryProfile.PRA_UK_CRR, "2")
+    adjusted, weight_citations = girr_delta_risk_weight(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        tenor="5y",
+        currency="USD",
+        reporting_currency="USD",
+    )
+    intra_correlation, intra_citations = girr_delta_intra_bucket_correlation(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        tenor1="1y",
+        tenor2="5y",
+        same_curve=True,
+    )
+    inter_correlation, inter_citations = girr_inter_bucket_correlation(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        bucket1="1",
+        bucket2="2",
+    )
+
+    assert "pra_uk_crr_art_325r_girr_delta_weights" in citations
+    assert bucket.currency == "USD"
+    assert bucket.citation_id == "pra_uk_crr_art_325r_girr_buckets"
+    assert adjusted == pytest.approx(0.011 / math.sqrt(2.0))
+    assert weight_citations == (
+        "pra_uk_crr_art_325r_girr_delta_weights",
+        "pra_uk_crr_art_325r_girr_sqrt2",
+    )
+    assert intra_correlation == pytest.approx(math.exp(-0.03 * 4.0))
+    assert intra_citations == ("pra_uk_crr_art_325r_girr_intra",)
+    assert inter_correlation == GIRR_INTER_BUCKET_CORRELATION
+    assert inter_citations == ("pra_uk_crr_art_325r_girr_inter",)

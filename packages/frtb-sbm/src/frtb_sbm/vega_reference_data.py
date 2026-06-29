@@ -15,10 +15,11 @@ from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import SbmRegulatoryProfile, SbmRiskClass
 from frtb_sbm.equity_reference_data import equity_bucket_definition
 from frtb_sbm.girr_reference_correlations import _exponential_tenor_correlation
-from frtb_sbm.girr_reference_data import (
-    BASEL_GIRR_TENORS,
-    _ensure_girr_supported,
-    girr_tenor_definition,
+from frtb_sbm.girr_reference_data import girr_tenor_definition
+from frtb_sbm.girr_reference_tables import PROFILE_GIRR_VEGA_OPTION_TENORS
+from frtb_sbm.reference_citation_routing import (
+    ensure_profile_in_reference_map,
+    profile_citation_id,
 )
 from frtb_sbm.reference_profiles import _coerce_risk_class, _resolve_supported_profile
 from frtb_sbm.reference_types import SbmGirrTenorDefinition
@@ -30,6 +31,9 @@ GIRR_VEGA_RISK_WEIGHT_CAP = 1.0
 
 PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS: dict[SbmRegulatoryProfile, int] = {
     SbmRegulatoryProfile.BASEL_MAR21: 60,
+    SbmRegulatoryProfile.EU_CRR3: 60,
+    SbmRegulatoryProfile.PRA_UK_CRR: 60,
+    SbmRegulatoryProfile.US_NPR_2_0: 60,
 }
 
 PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
@@ -43,7 +47,31 @@ PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
         SbmRiskClass.CSR_SEC_NONCTP: 120,
         SbmRiskClass.COMMODITY: 120,
         SbmRiskClass.FX: 40,
-    }
+    },
+    SbmRegulatoryProfile.EU_CRR3: {
+        SbmRiskClass.GIRR: 60,
+        SbmRiskClass.CSR_NONSEC: 120,
+        SbmRiskClass.CSR_SEC_CTP: 120,
+        SbmRiskClass.CSR_SEC_NONCTP: 120,
+        SbmRiskClass.COMMODITY: 120,
+        SbmRiskClass.FX: 40,
+    },
+    SbmRegulatoryProfile.PRA_UK_CRR: {
+        SbmRiskClass.GIRR: 60,
+        SbmRiskClass.CSR_NONSEC: 120,
+        SbmRiskClass.CSR_SEC_CTP: 120,
+        SbmRiskClass.CSR_SEC_NONCTP: 120,
+        SbmRiskClass.COMMODITY: 120,
+        SbmRiskClass.FX: 40,
+    },
+    SbmRegulatoryProfile.US_NPR_2_0: {
+        SbmRiskClass.GIRR: 60,
+        SbmRiskClass.CSR_NONSEC: 120,
+        SbmRiskClass.CSR_SEC_CTP: 120,
+        SbmRiskClass.CSR_SEC_NONCTP: 120,
+        SbmRiskClass.COMMODITY: 120,
+        SbmRiskClass.FX: 40,
+    },
 }
 
 EQUITY_VEGA_LARGE_CAP_INDEX_LIQUIDITY_HORIZON_DAYS = 20
@@ -52,14 +80,6 @@ EQUITY_VEGA_LARGE_CAP_INDEX_BUCKETS = frozenset(
     {"1", "2", "3", "4", "5", "6", "7", "8", "12", "13"}
 )
 EQUITY_VEGA_SMALL_CAP_OTHER_BUCKETS = frozenset({"9", "10", "11"})
-
-PROFILE_GIRR_VEGA_OPTION_TENORS: dict[
-    SbmRegulatoryProfile,
-    tuple[SbmGirrTenorDefinition, ...],
-] = {
-    SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_TENORS,
-}
-
 
 def girr_vega_liquidity_horizon_days(profile: SbmRegulatoryProfile | str) -> int:
     """Return the cited GIRR vega liquidity horizon in days for a profile.
@@ -145,7 +165,7 @@ def vega_risk_weight(
         GIRR_VEGA_RISK_WEIGHT_CAP,
         GIRR_VEGA_RISK_WEIGHT_FACTOR * math.sqrt(horizon / 10.0),
     )
-    return risk_weight, ("basel_mar21_92",)
+    return risk_weight, (profile_citation_id(profile, "basel_mar21_92"),)
 
 
 def girr_vega_option_tenors(
@@ -227,7 +247,7 @@ def girr_vega_intra_bucket_correlation(
         constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
         floor=None,
     )
-    return min(1.0, rho_opt * rho_ul), ("basel_mar21_93",)
+    return min(1.0, rho_opt * rho_ul), (profile_citation_id(profile, "basel_mar21_93"),)
 
 
 def vega_option_tenor_correlation(
@@ -261,20 +281,24 @@ def vega_option_tenor_correlation(
             constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
             floor=None,
         ),
-        ("basel_mar21_93",),
+        (profile_citation_id(profile, "basel_mar21_93"),),
     )
 
 
 def _ensure_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
-    resolved = _resolve_supported_profile(profile)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
-        raise UnsupportedRegulatoryFeatureError(
-            f"vega reference data is unsupported for profile {resolved.value}"
-        )
+    ensure_profile_in_reference_map(
+        profile,
+        PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS,
+        feature_label="vega",
+    )
 
 
 def _ensure_girr_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
-    _ensure_girr_supported(profile)
+    ensure_profile_in_reference_map(
+        profile,
+        PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS,
+        feature_label="GIRR vega",
+    )
 
 
 __all__ = [

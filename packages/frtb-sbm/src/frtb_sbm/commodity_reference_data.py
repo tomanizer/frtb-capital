@@ -14,6 +14,11 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import SbmRegulatoryProfile
+from frtb_sbm.reference_citation_routing import (
+    ensure_profile_in_reference_map,
+    profile_citation_id,
+)
+from frtb_sbm.us_npr_reference_tables import mirror_with_profile_citation
 from frtb_sbm.validation import SbmInputError, ensure_sbm_profile_known
 
 BASEL_MAR21_URL = "https://www.bis.org/basel_framework/chapter/MAR/21.htm"
@@ -63,6 +68,21 @@ _BASEL_COMMODITY_BUCKETS: tuple[SbmCommodityBucketDefinition, ...] = (
 
 _PROFILE_COMMODITY_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmCommodityBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: _BASEL_COMMODITY_BUCKETS,
+    SbmRegulatoryProfile.EU_CRR3: mirror_with_profile_citation(
+        SbmRegulatoryProfile.EU_CRR3.value,
+        _BASEL_COMMODITY_BUCKETS,
+        "basel_mar21_81",
+    ),
+    SbmRegulatoryProfile.PRA_UK_CRR: mirror_with_profile_citation(
+        SbmRegulatoryProfile.PRA_UK_CRR.value,
+        _BASEL_COMMODITY_BUCKETS,
+        "basel_mar21_81",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0: mirror_with_profile_citation(
+        SbmRegulatoryProfile.US_NPR_2_0.value,
+        _BASEL_COMMODITY_BUCKETS,
+        "basel_mar21_81",
+    ),
 }
 
 
@@ -133,7 +153,7 @@ def commodity_delta_risk_weight(
     """
 
     bucket = commodity_bucket_definition(profile, bucket_id)
-    return bucket.risk_weight, (_COMMODITY_WEIGHT_CITATION,)
+    return bucket.risk_weight, (_commodity_citation(profile, "basel_mar21_82"),)
 
 
 def commodity_delta_intra_bucket_correlation(
@@ -174,7 +194,7 @@ def commodity_delta_intra_bucket_correlation(
 
     rho_tenor = 1.0 if tenor_a_norm == tenor_b_norm else COMMODITY_TENOR_CORRELATION
     rho_location = 1.0 if location_a_norm == location_b_norm else COMMODITY_LOCATION_CORRELATION
-    return rho_cty * rho_tenor * rho_location, (_COMMODITY_INTRA_CITATION,)
+    return rho_cty * rho_tenor * rho_location, (_commodity_citation(profile, "basel_mar21_83"),)
 
 
 def commodity_inter_bucket_correlation(
@@ -203,11 +223,12 @@ def commodity_inter_bucket_correlation(
     b2 = _require_commodity_bucket_number(bucket2)
     commodity_bucket_definition(profile, str(b1))
     commodity_bucket_definition(profile, str(b2))
+    inter_citation = (_commodity_citation(profile, "basel_mar21_85"),)
     if b1 == b2:
-        return 1.0, (_COMMODITY_INTER_CITATION,)
+        return 1.0, inter_citation
     if b1 == 11 or b2 == 11:
-        return 0.0, (_COMMODITY_INTER_CITATION,)
-    return 0.20, (_COMMODITY_INTER_CITATION,)
+        return 0.0, inter_citation
+    return 0.20, inter_citation
 
 
 def commodity_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:
@@ -240,12 +261,16 @@ def commodity_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str
     }
 
 
+def _commodity_citation(profile: SbmRegulatoryProfile | str, basel_id: str) -> str:
+    return profile_citation_id(profile, basel_id)
+
+
 def _ensure_commodity_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
-    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
-        raise UnsupportedRegulatoryFeatureError(
-            f"commodity delta reference data is unsupported for profile {resolved.value}"
-        )
+    ensure_profile_in_reference_map(
+        profile,
+        _PROFILE_COMMODITY_BUCKETS,
+        feature_label="commodity delta",
+    )
 
 
 def _require_commodity_bucket_number(bucket_id: str) -> int:

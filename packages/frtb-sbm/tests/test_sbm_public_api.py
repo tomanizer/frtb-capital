@@ -149,21 +149,22 @@ def test_calculate_sbm_capital_validates_context_shape() -> None:
         calculate_sbm_capital((sensitivity,), context=object())  # type: ignore[arg-type]
 
 
-def test_calculate_sbm_capital_fails_closed_for_unsupported_profiles() -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        calculate_sbm_capital(
-            (
-                sample_sensitivity(
-                    sensitivity_id="eur-1y",
-                    source_row_id="row-001",
-                    bucket="1",
-                    risk_factor="EUR",
-                    tenor="1y",
-                    amount=1_000_000.0,
-                ),
+def test_calculate_sbm_capital_returns_pra_uk_crr_girr_delta_result() -> None:
+    result = calculate_sbm_capital(
+        (
+            sample_sensitivity(
+                sensitivity_id="pra-uk-crr-eur-1y",
+                source_row_id="row-001",
+                bucket="1",
+                risk_factor="EUR",
+                tenor="1y",
+                amount=1_000_000.0,
             ),
-            context=sample_context(SbmRegulatoryProfile.EU_CRR3),
-        )
+        ),
+        context=sample_context(SbmRegulatoryProfile.PRA_UK_CRR),
+    )
+    assert result.total_capital > 0.0
+    assert result.risk_classes[0].risk_class is SbmRiskClass.GIRR
 
 
 def test_calculate_sbm_capital_returns_fx_delta_result() -> None:

@@ -39,25 +39,12 @@ def test_unknown_profile_fails_closed() -> None:
         ensure_sbm_profile_known("UNKNOWN_PROFILE")
 
 
-@pytest.mark.parametrize(
-    ("risk_class", "risk_measure"),
-    [
-        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
-        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
-        (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
-        (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
-    ],
-)
-def test_unsupported_risk_class_measure_paths_fail_closed(
-    risk_class: SbmRiskClass,
-    risk_measure: SbmRiskMeasure,
-) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        ensure_sbm_risk_class_measure_supported(
-            SbmRegulatoryProfile.US_NPR_2_0.value,
-            risk_class,
-            risk_measure,
-        )
+def test_us_npr_fx_delta_path_is_supported() -> None:
+    ensure_sbm_risk_class_measure_supported(
+        SbmRegulatoryProfile.US_NPR_2_0.value,
+        SbmRiskClass.FX,
+        SbmRiskMeasure.DELTA,
+    )
 
 
 def test_ensure_sbm_run_supported_rejects_scope_mismatch() -> None:
@@ -68,7 +55,7 @@ def test_ensure_sbm_run_supported_rejects_scope_mismatch() -> None:
         ensure_sbm_run_supported(context, (sensitivity,))
 
 
-def test_ensure_sbm_capital_paths_supported_rejects_unsupported_npr_cell() -> None:
+def test_ensure_sbm_capital_paths_supported_accepts_supported_npr_fx_delta() -> None:
     sensitivity = sample_sensitivity(
         risk_class=SbmRiskClass.FX,
         risk_measure=SbmRiskMeasure.DELTA,
@@ -76,11 +63,10 @@ def test_ensure_sbm_capital_paths_supported_rejects_unsupported_npr_cell() -> No
         risk_factor="EUR",
         tenor=None,
     )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR_2_0"):
-        ensure_sbm_capital_paths_supported(
-            SbmRegulatoryProfile.US_NPR_2_0.value,
-            (sensitivity,),
-        )
+    ensure_sbm_capital_paths_supported(
+        SbmRegulatoryProfile.US_NPR_2_0.value,
+        (sensitivity,),
+    )
 
 
 def test_portfolio_scenario_citations_do_not_fall_back_to_basel() -> None:
@@ -90,8 +76,12 @@ def test_portfolio_scenario_citations_do_not_fall_back_to_basel() -> None:
     assert _portfolio_scenario_citations(SbmRegulatoryProfile.US_NPR_2_0.value) == (
         "us_npr_91_fr_14952_va7a_correlation_scenarios",
     )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile=EU_CRR3"):
-        _portfolio_scenario_citations(SbmRegulatoryProfile.EU_CRR3.value)
+    assert _portfolio_scenario_citations(SbmRegulatoryProfile.EU_CRR3.value) == (
+        "eu_crr3_art_325u_correlation_scenarios",
+    )
+    assert _portfolio_scenario_citations(SbmRegulatoryProfile.PRA_UK_CRR.value) == (
+        "pra_uk_crr_art_325u_correlation_scenarios",
+    )
 
 
 def test_basel_fx_curvature_measure_is_supported() -> None:

@@ -68,10 +68,30 @@ sources:
     jurisdiction: EU
     title: "Regulation (EU) 2024/1623 (CRR3) consolidated text"
     url: "https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng"
-    section_hint: "Articles 325e-325az and related market-risk provisions for EU comparison profile work."
+    section_hint: "Articles 325e-325az; Article 325r delta, 325s vega, 325t curvature, and 325u correlation scenarios for the EU_CRR3 comparison slice."
     status: comparison_reference
-    reuse_note: "EU profile support is planned after the supported BASEL_MAR21 delta/vega/curvature matrix; current EU runtime requests fail closed."
-    module_paths: []
+    reuse_note: "EU CRR3 full 21-cell SBM comparison slice uses profile-owned citation ids; outputs are comparison material only."
+    module_paths:
+      - src/frtb_sbm/regimes.py
+      - src/frtb_sbm/reference_citations_eu_crr3.py
+      - src/frtb_sbm/reference_data.py
+      - src/frtb_sbm/capital.py
+    requirement_ids:
+      - SBM-REF-001
+
+  - id: uk_crr_sbm_retained
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "UK CRR sensitivities-based method (onshored)"
+    url: "https://www.legislation.gov.uk/eur/2013/575/part/8/crossheading/sensitivities-based-method"
+    section_hint: "Articles 325r-325az; Article 325r delta, 325s vega, 325t curvature, and 325u correlation scenarios for the PRA_UK_CRR comparison slice."
+    status: comparison_reference
+    reuse_note: "PRA UK CRR full 21-cell SBM comparison slice uses profile-owned citation ids; outputs are comparison material only."
+    module_paths:
+      - src/frtb_sbm/regimes.py
+      - src/frtb_sbm/reference_citations_pra_uk_crr.py
+      - src/frtb_sbm/reference_data.py
+      - src/frtb_sbm/capital.py
     requirement_ids:
       - SBM-REF-001
 

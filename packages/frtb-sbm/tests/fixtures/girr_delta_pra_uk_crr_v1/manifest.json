@@ -1,0 +1,18 @@
+{
+  "calculation_date": "2026-06-03",
+  "files": {
+    "expected_outputs.json": {
+      "sha256": "f99046188ba0b563fd9d764de11057bc0187666e6e825b50b5b0be2877dad1c1"
+    },
+    "invalid_cases.json": {
+      "sha256": "522b63f4edf8fd3c9b14fdf57eba9baaadd1edf60f215ae7e848d22d96430b56"
+    },
+    "sensitivities.json": {
+      "sha256": "8015b0b91de9dff770d393dde7c4826f7e1b59ca9b9424dbdaf7ba1fc8a46000"
+    }
+  },
+  "profile": "PRA_UK_CRR",
+  "schema_version": "girr_delta_pra_uk_crr_fixture_v1",
+  "sensitivity_count": 3,
+  "total_capital": 19700.12690314456
+}

@@ -30,6 +30,7 @@ from frtb_sbm.data_models import (
     SbmSensitivity,
     WeightedSensitivity,
 )
+from frtb_sbm.reference_citation_routing import profile_citation_ids
 from frtb_sbm.reference_data import (
     fx_delta_intra_bucket_correlation,
     fx_inter_bucket_correlation,
@@ -143,11 +144,19 @@ def aggregate_fx_delta_measure_capital(
         inter_bucket_correlations,
         risk_class=SbmRiskClass.FX,
         risk_measure=SbmRiskMeasure.DELTA,
-        intra_bucket_citation_ids=("basel_mar21_4_intra_bucket", "basel_mar21_86"),
-        inter_bucket_citation_ids=("basel_mar21_4_inter_bucket", "basel_mar21_89"),
+        intra_bucket_citation_ids=_fx_delta_intra_citations(profile_id),
+        inter_bucket_citation_ids=_fx_delta_inter_citations(profile_id),
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
     )
+
+
+def _fx_delta_intra_citations(profile_id: str) -> tuple[str, ...]:
+    return profile_citation_ids(profile_id, ("basel_mar21_4_intra_bucket", "basel_mar21_86"))
+
+
+def _fx_delta_inter_citations(profile_id: str) -> tuple[str, ...]:
+    return profile_citation_ids(profile_id, ("basel_mar21_4_inter_bucket", "basel_mar21_89"))
 
 
 def build_fx_delta_intra_bucket_correlation_matrix(
