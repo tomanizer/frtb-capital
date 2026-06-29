@@ -54,7 +54,6 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -136,19 +135,21 @@ async def upload_source(request: Request, filename: str = Query(...)) -> SourceP
 
 @app.post("/api/source/path", response_model=SourcePreview)
 def load_source_path(request: PathSourceRequest) -> SourcePreview:
-    path = Path(request.path).expanduser()
+    path = Path(request.path).expanduser().resolve()
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"Path not found: {path}")
     try:
         table = load_table_from_path(path)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    # Pass path as source metadata; raw_bytes deferred to validation time to avoid
+    # loading large files twice into memory.
     session_id = SESSIONS.create(
         table,
         source_name=path.name,
         source_kind="path",
         source_meta={"path": str(path)},
-        raw_bytes=path.read_bytes(),
+        raw_bytes=None,
     )
     return _source_preview(session_id, table)
 
@@ -269,7 +270,11 @@ if FRONTEND_DIST.exists():
 
     @app.get("/{full_path:path}")
     def spa_fallback(full_path: str) -> FileResponse:
-        candidate = FRONTEND_DIST / full_path
-        if candidate.exists() and candidate.is_file():
+        candidate = (FRONTEND_DIST / full_path).resolve()
+        if (
+            str(candidate).startswith(str(FRONTEND_DIST))
+            and candidate.exists()
+            and candidate.is_file()
+        ):
             return FileResponse(candidate)
         return FileResponse(FRONTEND_DIST / "index.html")

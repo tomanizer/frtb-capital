@@ -91,6 +91,61 @@ def test_upload_csv_and_export_mapping(client: TestClient) -> None:
     assert "column_mapping:" in export.json()["content"]
 
 
+def test_upload_csv_validate_mapping(client: TestClient) -> None:
+    """Exercises the /api/mapping/validate endpoint (was broken: validate_mapped_table had no return)."""
+    table = pa.table(
+        {
+            "positionId": ["pos-1"],
+            "sourceRowId": ["1"],
+            "deskId": ["desk-a"],
+            "legalEntity": ["LE1"],
+            "grossEffectiveNotional": [1_000_000.0],
+            "currency": ["USD"],
+            "evidenceType": ["EXOTIC"],
+            "evidenceLabel": ["barrier"],
+            "lineage_source_system": ["demo"],
+            "lineage_source_file": ["demo.csv"],
+        }
+    )
+    buffer = io.BytesIO()
+    pa_csv.write_csv(table, buffer)
+    payload = buffer.getvalue()
+
+    upload = client.post(
+        "/api/source/upload?filename=demo.csv",
+        content=payload,
+        headers={"Content-Type": "application/octet-stream"},
+    )
+    assert upload.status_code == 200
+    session_id = upload.json()["session_id"]
+
+    suggest = client.post(
+        "/api/mapping/suggest",
+        json={
+            "session_id": session_id,
+            "target_package": "frtb_rrao",
+            "target_table_id": "positions",
+        },
+    )
+    assert suggest.status_code == 200
+    mapping = suggest.json()["mapping"]
+
+    validate = client.post(
+        "/api/mapping/validate",
+        json={
+            "session_id": session_id,
+            "target_package": "frtb_rrao",
+            "target_table_id": "positions",
+            "mapping": mapping,
+        },
+    )
+    assert validate.status_code == 200
+    result = validate.json()
+    assert result["accepted_rows"] >= 0
+    assert "batch_built" in result
+    assert isinstance(result["diagnostics"], list)
+
+
 def test_mapping_document_serializers() -> None:
     entry = resolve_catalog_entry("frtb_rrao", "positions")
     document = build_mapping_document(

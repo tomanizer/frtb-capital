@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
@@ -106,6 +107,7 @@ def _cva_catalog_entries() -> Sequence[TableCatalogEntry]:
     return entries
 
 
+@functools.lru_cache(maxsize=1)
 def table_catalog() -> Mapping[tuple[str, str], TableCatalogEntry]:
     """Return the full onboarding catalog keyed by (package, table_id)."""
 

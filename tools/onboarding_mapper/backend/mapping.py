@@ -104,6 +104,7 @@ def validate_mapped_table(
                     "column_name": None,
                 }
             )
+    return normalized, batch_built, diagnostics
 
 
 class _BatchBuildSkipped(Exception):
@@ -144,8 +145,6 @@ def _build_batch_from_normalized(entry: TableCatalogEntry, normalized: Normalize
     if registry_entry.build_batch is None:
         raise _BatchBuildSkipped
     registry_entry.build_batch(normalized)
-
-    return normalized, batch_built, diagnostics
 
 
 def build_mapping_document(

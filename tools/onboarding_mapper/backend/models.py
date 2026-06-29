@@ -70,7 +70,7 @@ class ColumnMappingState(BaseModel):
 
 
 class ValidateMappingRequest(ColumnMappingState):
-  pass
+    pass
 
 
 class MappingDiagnostic(BaseModel):
