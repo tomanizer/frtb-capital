@@ -195,6 +195,7 @@ REGULATORY_PARAMETER_CITATIONS: Mapping[str, str] = MappingProxyType(
         "supervisory_multiplier_red_zone": (
             "Basel MAR99 Table 2; U.S. NPR 2.0 proposed section __.213"
         ),
+        "red_zone_exception_threshold": ("Basel MAR32.8; U.S. NPR 2.0 proposed section __.213"),
     }
 )
 
@@ -326,6 +327,8 @@ class RegulatoryPolicy:
         DEFAULT_SUPERVISORY_MULTIPLIER_SCHEDULE
     )
     supervisory_multiplier_red_zone: float = 2.00
+    # Ten or more exceptions trigger red-zone SA fallback treatment.
+    red_zone_exception_threshold: int = 10
     cited_by: Mapping[str, str] = field(default_factory=_default_parameter_citations)
     unsupported_features: tuple[UnsupportedFeature, ...] = ()
 

@@ -216,6 +216,7 @@ class ScenarioVector:
     metadata: tuple[ScenarioMetadata, ...] = ()
     risk_class: RiskClass | None = None
     liquidity_horizon: LiquidityHorizon | None = None
+    risk_factor_names: tuple[str, ...] = ()
     name: str = ""
 
     def __post_init__(self) -> None:
@@ -230,8 +231,14 @@ class ScenarioVector:
             raise ValueError(
                 f"metadata length ({len(self.metadata)}) != values length ({arr.size})"
             )
+        risk_factor_names = tuple(str(name) for name in self.risk_factor_names)
+        if any(not name for name in risk_factor_names):
+            raise ValueError("risk_factor_names cannot contain empty values")
+        if len(set(risk_factor_names)) != len(risk_factor_names):
+            raise ValueError("risk_factor_names cannot contain duplicate values")
         object.__setattr__(self, "values", arr.astype(np.float64, copy=False))
         object.__setattr__(self, "metadata", tuple(self.metadata))
+        object.__setattr__(self, "risk_factor_names", risk_factor_names)
 
     @property
     def scenario_ids(self) -> tuple[str, ...]:

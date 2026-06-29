@@ -51,7 +51,7 @@ class ReducedSetCoverageResult:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Coverage diagnostic fields keyed by stable reporting names.
         """
         return {
             "window_size": self.window_size,
@@ -83,7 +83,7 @@ class ReducedSetSelectionStep:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Selection-step audit fields keyed by stable reporting names.
         """
         return {
             "iteration": self.iteration,
@@ -117,7 +117,7 @@ class ReducedSetSelectionResult:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Selected factor set, coverage series, and iteration trace for audit.
         """
         return {
             "selected_factor_names": list(self.selected_factor_names),
@@ -182,20 +182,20 @@ def reduced_set_variation_explained(
     Parameters
     ----------
     full_current_lha_es : FloatVector
-        Full current lha es.
+        Full-set current-period LHA ES series.
     reduced_current_lha_es : FloatVector
-        Reduced current lha es.
+        Reduced-set current-period LHA ES series aligned to the full series.
     window : int, optional
-        Window.
+        Number of most recent observations used in the diagnostic.
     minimum_history : int | None, optional
-        Minimum history.
+        Minimum aligned observations required before the diagnostic is valid.
     threshold : float, optional
-        Threshold.
+        Required variation-explained threshold.
 
     Returns
     -------
     ReducedSetCoverageResult
-        Result of the operation.
+        Variation-explained diagnostic and pass/fail result.
     """
     _validate_coverage_parameters(
         window=window,
@@ -265,22 +265,22 @@ def select_reduced_risk_factor_set(
     Parameters
     ----------
     full_current_lha_es : FloatVector
-        Full current lha es.
+        Full-set current-period LHA ES series.
     risk_factor_contributions : Mapping[str, FloatVector]
-        Risk factor contributions.
+        Per-risk-factor current-period LHA ES contribution series.
     window : int, optional
-        Window.
+        Number of most recent observations used for ranking and coverage.
     minimum_history : int | None, optional
-        Minimum history.
+        Minimum aligned observations required before selection is valid.
     threshold : float, optional
-        Threshold.
+        Required variation-explained threshold.
     minimum_factors : int, optional
-        Minimum factors.
+        Minimum number of factors to keep even if the threshold is met earlier.
 
     Returns
     -------
     ReducedSetSelectionResult
-        Result of the operation.
+        Deterministic reduced factor selection with coverage and iteration trace.
     """
     _validate_coverage_parameters(
         window=window,
@@ -390,20 +390,20 @@ def select_reduced_risk_factor_set_for_policy(
     Parameters
     ----------
     full_current_lha_es : FloatVector
-        Full current lha es.
+        Full-set current-period LHA ES series.
     risk_factor_contributions : Mapping[str, FloatVector]
-        Risk factor contributions.
+        Per-risk-factor current-period LHA ES contribution series.
     policy : RegulatoryPolicy
-        Policy.
+        Regulatory policy supplying reduced-set defaults.
     run_id : str | None, optional
-        Run id.
+        Optional run identifier for structured logs.
     desk_id : str | None, optional
-        Desk id.
+        Optional desk identifier for structured logs.
 
     Returns
     -------
     ReducedSetSelectionResult
-        Result of the operation.
+        Policy-parameterized reduced factor selection result.
     """
     policy.require_capital_runtime_supported()
     result = select_reduced_risk_factor_set(
@@ -442,20 +442,20 @@ def reduced_set_variation_explained_for_policy(
     Parameters
     ----------
     full_current_lha_es : FloatVector
-        Full current lha es.
+        Full-set current-period LHA ES series.
     reduced_current_lha_es : FloatVector
-        Reduced current lha es.
+        Reduced-set current-period LHA ES series aligned to the full series.
     policy : RegulatoryPolicy
-        Policy.
+        Regulatory policy supplying reduced-set diagnostic defaults.
     run_id : str | None, optional
-        Run id.
+        Optional run identifier for structured logs.
     desk_id : str | None, optional
-        Desk id.
+        Optional desk identifier for structured logs.
 
     Returns
     -------
     ReducedSetCoverageResult
-        Result of the operation.
+        Policy-parameterized variation-explained diagnostic.
     """
     policy.require_capital_runtime_supported()
     result = reduced_set_variation_explained(

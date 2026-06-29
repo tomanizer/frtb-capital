@@ -54,6 +54,22 @@ def test_direct_hedge_reduces_full_capital(
     assert with_hedge.k_full >= with_hedge.beta * without.k_reduced - 1e-9
 
 
+def test_beta_floor_flag_is_not_binding_when_hedged_component_is_zero(
+    sovereign_counterparty,
+    sovereign_netting_set,
+) -> None:
+    zero_exposure = replace(
+        sovereign_netting_set,
+        netting_set_id="ns-zero",
+        ead=0.0,
+        source_row_id="row-zero",
+    )
+    full = calculate_full_portfolio((sovereign_counterparty,), (zero_exposure,))
+    assert full.k_hedged == pytest.approx(0.0)
+    assert full.k_full == pytest.approx(0.0)
+    assert full.beta_floor_binding is False
+
+
 def test_hedge_explicit_discount_factor_unity_is_not_recomputed(
     sovereign_counterparty,
     sovereign_netting_set,

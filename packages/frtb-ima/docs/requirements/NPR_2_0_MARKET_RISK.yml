@@ -65,7 +65,7 @@ requirements:
       - tests/test_lha_builder.py
       - tests/test_liquidity_horizon.py
       - tests/test_scenario_validation.py
-    notes: "Scenario cube to nested-vector construction and LHA calculation are implemented."
+    notes: "Scenario cube to nested-vector construction and LHA calculation are implemented. Scalar ES inputs are finite-checked before LHA aggregation, and cube-built nested vectors carry risk-factor membership evidence so validation enforces longer-horizon subset nesting under Proposed Sec. __.215."
 
   - id: NPR-MR-LHA-002
     title: "Risk-factor to liquidity-horizon mapping tables"
@@ -134,7 +134,7 @@ requirements:
       - tests/test_imcc.py
       - tests/test_lha_builder.py
       - tests/test_regimes.py
-    notes: "Scalar API and audit decomposition implemented for unconstrained, constrained, and blended IMCC."
+    notes: "Scalar API and audit decomposition implemented for unconstrained, constrained, and blended IMCC. IMCC vector paths consume the same LHA nested-vector validation, including cube-derived subset evidence when built from ScenarioCube."
 
   - id: NPR-MR-IMCC-002
     title: "Current/stress period ES and reduced-set governance"
@@ -207,7 +207,7 @@ requirements:
       - tests/test_calendar.py
       - tests/test_pla.py
       - tests/test_regimes.py
-    notes: "KS metric, 250-day policy window, optional window date diagnostics, and caller-supplied business-calendar validation implemented for Fed profile."
+    notes: "KS metric, 250-business-day policy window, optional window date diagnostics, and caller-supplied business-calendar validation implemented for the Fed profile under Basel MAR32.40 and proposed NPR 2.0 section __.213. The calendar-backed path is the compliance path; calendar-free calls emit a deprecation warning because they use an observation-count approximation rather than independently verified business days. PLA/backtesting co-alignment can be validated from calendar-backed window diagnostics."
 
   - id: NPR-MR-PLA-002
     title: "EU/PRA Spearman PLA metric"
@@ -220,7 +220,7 @@ requirements:
     tests:
       - tests/test_pla.py
       - tests/test_regimes.py
-    notes: "Spearman rank-correlation PLA and worse-of-KS/Spearman joint-zone logic are implemented for ECB/PRA policy paths. Thresholds are documented proposed-rule comparison parameters."
+    notes: "Spearman rank-correlation PLA and worse-of-KS/Spearman joint-zone logic are implemented for ECB/PRA policy paths. The authoritative joint zone is now serialised in the PLA audit payload. Thresholds are documented proposed-rule comparison parameters under Delegated Regulation (EU) 2022/2059 Articles 4-5."
 
   - id: NPR-MR-BT-001
     title: "Trading-desk backtesting gates at 97.5 and 99 percent VaR"
@@ -235,7 +235,7 @@ requirements:
       - tests/test_calendar.py
       - tests/test_backtesting.py
       - tests/test_regimes.py
-    notes: "Includes missing-data exception treatment, optional prorated short-history thresholds, and caller-supplied business-calendar validation of the 250-business-day policy window."
+    notes: "Includes missing-data exception treatment, optional prorated short-history thresholds, caller-supplied business-calendar validation of the 250-business-day policy window, and start/end date diagnostics for PLA/backtesting co-alignment under Basel MAR32.40 / MAR33.4 and proposed NPR 2.0 section __.213."
 
   - id: NPR-MR-BT-002
     title: "Dated backtesting exception trace and business calendar"

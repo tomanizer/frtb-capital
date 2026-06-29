@@ -144,6 +144,7 @@ def trading_desk_backtest_trace(
         calendar=calendar,
         validation_label="backtesting",
     )
+    dates_w = date_window.observation_dates
     apl_w = inputs.apl[-window_size:]
     hpl_w = inputs.hpl[-window_size:]
     holiday_w = inputs.holiday_mask[-window_size:] if inputs.holiday_mask is not None else None
@@ -157,7 +158,7 @@ def trading_desk_backtest_trace(
             apl_w=apl_w,
             hpl_w=hpl_w,
             holiday_w=holiday_w,
-            dates_w=date_window.observation_dates,
+            dates_w=dates_w,
             start_index=start_index,
             window=window,
             window_size=window_size,
@@ -170,6 +171,8 @@ def trading_desk_backtest_trace(
         levels=tuple(level_results),
         window_size=window_size,
         model_eligible=all(result.level_passed for result in level_results),
+        start_date=dates_w[0] if dates_w else None,
+        end_date=dates_w[-1] if dates_w else None,
         calendar_source=date_window.calendar_source,
         calendar_version=date_window.calendar_version,
         calendar_basis=date_window.calendar_basis,

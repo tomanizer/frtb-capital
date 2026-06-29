@@ -198,3 +198,7 @@ text, see [docs/regulatory_sources.yml](docs/regulatory_sources.yml).
 
 For the committed synthetic capital-run fixture contract, see
 [docs/DATASET_CONTRACT.md](docs/DATASET_CONTRACT.md).
+
+For production-style client export profiling, mapping suggestions, reviewed
+`mapping.yaml`, and validation-report evidence, see
+[docs/CLIENT_INGESTION_WORKFLOW.md](docs/CLIENT_INGESTION_WORKFLOW.md).

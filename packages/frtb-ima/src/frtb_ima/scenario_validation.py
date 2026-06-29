@@ -14,6 +14,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from itertools import pairwise
@@ -39,7 +40,7 @@ class NestedLHValidationResult:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Validation diagnostics keyed by stable reporting names.
         """
         return {
             "horizons": [horizon.name for horizon in self.horizons],
@@ -78,33 +79,21 @@ def validate_nested_lh_vectors(
     nesting_evidence: Mapping[LiquidityHorizon, set[str]] | None = None,
 ) -> NestedLHValidationResult:
     """Validate nested liquidity-horizon scenario vectors.
-
-    Args:
-        lh_vectors: Mapping from liquidity-horizon cutoff to a ScenarioVector or
-            plain sequence of scenario values. LH10 must be present.
-        require_metadata: If True, every vector must carry scenario metadata.
-        nesting_evidence: Optional mapping from LH cutoff to the set of risk-factor
-            IDs included in that nested subset. If supplied, the validator checks
-            that longer-horizon subsets are true subsets of shorter-horizon sets.
-
-    Returns:
-        NestedLHValidationResult with validation diagnostics.
-
-    Raises:
-        NestedLHValidationError: if structural validation fails.
     Parameters
     ----------
     lh_vectors : Mapping[LiquidityHorizon, ScenarioVector | Sequence[float]]
-        Lh vectors.
+        Liquidity-horizon vectors keyed by cutoff. LH10 must be present.
     require_metadata : bool, optional
-        Require metadata.
+        Require every vector to carry aligned scenario metadata.
     nesting_evidence : Mapping[LiquidityHorizon, set[str]] | None, optional
-        Nesting evidence.
+        Risk-factor ID set for each LH subset. When omitted, ScenarioVector
+        risk_factor_names are used if every vector supplies them.
 
     Returns
     -------
     NestedLHValidationResult
-        Result of the operation.
+        Validation diagnostics including scenario count, metadata alignment,
+        and whether nesting evidence was checked.
     """
     if not lh_vectors:
         raise NestedLHValidationError("lh_vectors must be non-empty")
@@ -136,9 +125,23 @@ def validate_nested_lh_vectors(
         metadata_aligned = True
 
     nesting_evidence_checked = False
-    if nesting_evidence is not None:
-        _validate_nesting_evidence(tuple(vectors.keys()), nesting_evidence)
+    evidence = nesting_evidence
+    if evidence is None:
+        derived_evidence = _derive_nesting_evidence(vectors)
+        if derived_evidence is not None:
+            evidence = derived_evidence
+
+    if evidence is not None:
+        _validate_nesting_evidence(tuple(vectors.keys()), evidence)
         nesting_evidence_checked = True
+    elif len(vectors) > 1:
+        warnings.warn(
+            "validate_nested_lh_vectors called without nesting_evidence; "
+            "caller is responsible for ensuring longer liquidity-horizon vectors "
+            "are nested subsets of shorter-horizon risk factors",
+            UserWarning,
+            stacklevel=2,
+        )
 
     horizons = tuple(sorted(vectors.keys(), key=lambda item: item.value))
     return NestedLHValidationResult(
@@ -148,6 +151,14 @@ def validate_nested_lh_vectors(
         metadata_aligned=metadata_aligned,
         nesting_evidence_checked=nesting_evidence_checked,
     )
+
+
+def _derive_nesting_evidence(
+    vectors: Mapping[LiquidityHorizon, ScenarioVector],
+) -> dict[LiquidityHorizon, set[str]] | None:
+    if not all(vector.risk_factor_names for vector in vectors.values()):
+        return None
+    return {lh: set(vector.risk_factor_names) for lh, vector in vectors.items()}
 
 
 def _validate_nesting_evidence(

@@ -27,11 +27,14 @@ from __future__ import annotations
 
 import logging
 import math
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 from frtb_ima.backtesting import TradingDeskBacktestResult
+from frtb_ima.calendar import ObservationWindowBasis
 from frtb_ima.logging import calculation_log_extra
+from frtb_ima.pla import PlaWindowDiagnostics
 from frtb_ima.regimes import (
     DeskEligibilityStatus,
     RegulatoryPolicy,
@@ -57,13 +60,14 @@ class CapitalComponents:
     pla_addon: float
     models_based_capital: float
     binding_term: str  # "SPOT" or "AVERAGE"
+    exception_count: int | None = None
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Capital decomposition fields keyed by stable reporting names.
         """
         return {
             "imcc_t_minus_1": self.imcc_t_minus_1,
@@ -74,6 +78,7 @@ class CapitalComponents:
             "pla_addon": self.pla_addon,
             "models_based_capital": self.models_based_capital,
             "binding_term": self.binding_term,
+            "exception_count": self.exception_count,
         }
 
 
@@ -93,7 +98,7 @@ class PLAAddonResult:
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            PLA add-on decomposition fields keyed by stable reporting names.
         """
         return {
             "k_factor": self.k_factor,
@@ -133,6 +138,8 @@ def models_based_capital(
     ses_60d_avg: float,
     multiplier: float,
     pla_addon: float = 0.0,
+    *,
+    exception_count: int | None = None,
 ) -> CapitalComponents:
     """Compute models-based capital for one approved desk.
 
@@ -141,37 +148,28 @@ def models_based_capital(
             IMCC_{t-1} + SES_{t-1},
             multiplier * IMCC_60d_avg + SES_60d_avg
         ) + PLA_addon
-
-    Args:
-        imcc_t_minus_1: Most recent day's IMCC.
-        ses_t_minus_1:  Most recent day's SES.
-        imcc_60d_avg:   60-business-day average IMCC.
-        ses_60d_avg:    60-business-day average SES.
-        multiplier:     Supervisory multiplier (floor 1.5; increases with
-                        backtesting exceptions per Basel / NPR 2.0).
-        pla_addon:      PLA capital add-on (zero for green zone desks).
-
-    Returns:
-        CapitalComponents with breakdown and binding term.
     Parameters
     ----------
     imcc_t_minus_1 : float
-        Imcc t minus 1.
+        Most recent day's IMCC.
     ses_t_minus_1 : float
-        Ses t minus 1.
+        Most recent day's SES.
     imcc_60d_avg : float
-        Imcc 60d avg.
+        60-business-day average IMCC.
     ses_60d_avg : float
-        Ses 60d avg.
+        60-business-day average SES.
     multiplier : float
-        Multiplier.
+        Supervisory multiplier applied to average IMCC.
     pla_addon : float, optional
-        Pla addon.
+        PLA capital add-on.
+    exception_count : int | None, optional
+        Backtesting exception count included in audit output when available.
 
     Returns
     -------
     CapitalComponents
-        Result of the operation.
+        CapitalComponents with both MBC terms, binding term, audit exception
+        count, and final models_based_capital.
     """
     _validate_non_negative_finite(imcc_t_minus_1, "imcc_t_minus_1")
     _validate_non_negative_finite(ses_t_minus_1, "ses_t_minus_1")
@@ -183,6 +181,8 @@ def models_based_capital(
         raise ValueError(f"multiplier must be finite, got {multiplier}")
     if multiplier < 1.5:
         raise ValueError(f"multiplier must be at least the supervisory floor, got {multiplier}")
+    if exception_count is not None and not isinstance(exception_count, int):
+        raise ValueError("exception_count must be an integer when supplied")
 
     spot_term = imcc_t_minus_1 + ses_t_minus_1
     average_term = multiplier * imcc_60d_avg + ses_60d_avg
@@ -203,6 +203,7 @@ def models_based_capital(
         pla_addon=pla_addon,
         models_based_capital=mbc,
         binding_term=binding,
+        exception_count=exception_count,
     )
 
 
@@ -219,16 +220,16 @@ def desk_eligibility_from_results(
     Parameters
     ----------
     backtest_result : TradingDeskBacktestResult
-        Backtest result.
+        Backtesting result carrying model-eligibility status.
     pla_zone : str
-        Pla zone.
+        PLA zone label for the desk.
     pla_zone_labels : Sequence[str], optional
-        Pla zone labels.
+        Ordered green, amber, and red PLA zone labels.
 
     Returns
     -------
     DeskEligibilityStatus
-        Result of the operation.
+        IMA eligibility status or SA fallback signal for the desk.
     """
     if not isinstance(backtest_result, TradingDeskBacktestResult):
         raise ValueError("backtest_result must be a TradingDeskBacktestResult")
@@ -241,6 +242,64 @@ def desk_eligibility_from_results(
     if not backtest_result.model_eligible or pla_zone == red_label:
         return DeskEligibilityStatus.SA_FALLBACK
     return DeskEligibilityStatus.IMA_ELIGIBLE
+
+
+def validate_pla_backtesting_window_alignment(
+    pla_diagnostics: PlaWindowDiagnostics,
+    backtest_result: TradingDeskBacktestResult,
+) -> None:
+    """Validate that PLA and backtesting use the same dated policy window.
+
+    Basel MAR32.40 / MAR33.4 and proposed NPR 2.0 section __.213 align the PLA
+    and backtesting desk-eligibility evidence to the most recent 250 business
+    days. This helper validates that co-alignment when both results carry
+    caller-supplied business-calendar windows. If either side lacks dated,
+    calendar-backed diagnostics, it emits a deprecation warning and leaves the
+    capital number unchanged.
+
+    Parameters
+    ----------
+    pla_diagnostics : PlaWindowDiagnostics
+        PLA policy-window diagnostics.
+    backtest_result : TradingDeskBacktestResult
+        Trading-desk backtesting result with window diagnostics.
+    """
+
+    if not isinstance(pla_diagnostics, PlaWindowDiagnostics):
+        raise ValueError("pla_diagnostics must be a PlaWindowDiagnostics")
+    if not isinstance(backtest_result, TradingDeskBacktestResult):
+        raise ValueError("backtest_result must be a TradingDeskBacktestResult")
+
+    calendar_basis = ObservationWindowBasis.MOST_RECENT_BUSINESS_DAYS.value
+    if (
+        pla_diagnostics.start_date is None
+        or pla_diagnostics.end_date is None
+        or backtest_result.start_date is None
+        or backtest_result.end_date is None
+        or pla_diagnostics.calendar_basis != calendar_basis
+        or backtest_result.calendar_basis != calendar_basis
+    ):
+        warnings.warn(
+            "PLA and backtesting windows cannot be co-validated because both "
+            "results must carry calendar-backed date ranges (Basel MAR32.40, "
+            "MAR33.4, and proposed NPR 2.0 section __.213).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return
+
+    if pla_diagnostics.start_date != backtest_result.start_date:
+        raise ValueError(
+            "PLA and backtesting windows must span the same start date; "
+            f"PLA starts {pla_diagnostics.start_date}, backtesting starts "
+            f"{backtest_result.start_date}"
+        )
+    if pla_diagnostics.end_date != backtest_result.end_date:
+        raise ValueError(
+            "PLA and backtesting windows must span the same end date; "
+            f"PLA ends {pla_diagnostics.end_date}, backtesting ends "
+            f"{backtest_result.end_date}"
+        )
 
 
 def models_based_capital_for_policy(
@@ -258,26 +317,26 @@ def models_based_capital_for_policy(
     Parameters
     ----------
     desk_eligibility : DeskEligibilityStatus
-        Desk eligibility.
+        Current desk eligibility signal.
     imcc_t_minus_1 : float
-        Imcc t minus 1.
+        Most recent day's IMCC.
     ses_t_minus_1 : float
-        Ses t minus 1.
+        Most recent day's SES.
     imcc_60d_avg : float
-        Imcc 60d avg.
+        60-business-day average IMCC.
     ses_60d_avg : float
-        Ses 60d avg.
+        60-business-day average SES.
     pla_addon : float
-        Pla addon.
+        PLA capital add-on.
     policy : RegulatoryPolicy
-        Policy.
+        Regulatory policy supplying the multiplier schedule and eligibility threshold.
     exception_count : int, optional
-        Exception count.
+        Backtesting exception count driving the supervisory multiplier.
 
     Returns
     -------
     CapitalComponents
-        Result of the operation.
+        Policy-guarded models-based capital decomposition.
     """
     status = DeskEligibilityStatus(desk_eligibility)
     if not isinstance(policy, RegulatoryPolicy):
@@ -289,6 +348,11 @@ def models_based_capital_for_policy(
             f"models-based capital requires IMA eligibility; desk eligibility is {status.value}"
         )
     policy.require_capital_runtime_supported()
+    if exception_count >= policy.red_zone_exception_threshold:
+        raise IMAIneligibleError(
+            f"exception_count {exception_count} meets or exceeds the red-zone threshold "
+            f"({policy.red_zone_exception_threshold}); desk must use SA fallback capital"
+        )
 
     result = models_based_capital(
         imcc_t_minus_1=imcc_t_minus_1,
@@ -297,6 +361,7 @@ def models_based_capital_for_policy(
         ses_60d_avg=ses_60d_avg,
         multiplier=supervisory_multiplier_for_policy(exception_count, policy),
         pla_addon=pla_addon,
+        exception_count=exception_count,
     )
     logger.info(
         "models_based_capital_complete",
@@ -324,27 +389,19 @@ def pla_addon(
 
         k = 0.5 * standardized_amber / standardized_green_amber
         PLA_addon = k * max(standardized_green_amber - ima_green_amber, 0)
-
-    Args:
-        standardized_green_amber: SA non-default capital for model-eligible
-            desks in green or amber PLA zones.
-        standardized_amber: SA non-default capital for model-eligible desks in
-            amber PLA zone.
-        ima_green_amber: Models-based non-default capital for the same green
-            or amber population before the PLA add-on.
     Parameters
     ----------
     standardized_green_amber : float
-        Standardized green amber.
+        SA non-default capital for model-eligible green or amber desks.
     standardized_amber : float
-        Standardized amber.
+        SA non-default capital for model-eligible amber desks.
     ima_green_amber : float
-        Ima green amber.
+        Models-based non-default capital for the same green or amber population.
 
     Returns
     -------
     PLAAddonResult
-        Result of the operation.
+        PLAAddonResult with k-factor, capital benefit, and add-on amount.
     """
     _validate_non_negative_finite(
         standardized_green_amber,
@@ -397,16 +454,16 @@ def supervisory_multiplier(
     Parameters
     ----------
     exception_count : int
-        Exception count.
+        Backtesting exception count.
     schedule : Sequence[tuple[int, float]]
-        Schedule.
+        Explicit exception-count to multiplier schedule.
     red_zone_multiplier : float
-        Red zone multiplier.
+        Multiplier returned for counts above the explicit schedule.
 
     Returns
     -------
     float
-        Result of the operation.
+        Multiplier from the schedule, or red_zone_multiplier for red-zone counts.
     """
     if not isinstance(exception_count, int):
         raise TypeError("exception_count must be an integer")
@@ -437,14 +494,14 @@ def supervisory_multiplier_for_policy(
     Parameters
     ----------
     exception_count : int
-        Exception count.
+        Backtesting exception count.
     policy : RegulatoryPolicy
-        Policy.
+        Regulatory policy supplying the multiplier schedule.
 
     Returns
     -------
     float
-        Result of the operation.
+        Supervisory multiplier selected from the policy schedule.
     """
     return supervisory_multiplier(
         exception_count,

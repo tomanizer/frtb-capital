@@ -1,8 +1,11 @@
 """Tests for capital assembly validation."""
 
+from datetime import date
+
 import pytest
 
 from frtb_ima.backtesting import BacktestLevelResult, TradingDeskBacktestResult
+from frtb_ima.calendar import ObservationWindowBasis
 from frtb_ima.capital import (
     CapitalComponents,
     IMAIneligibleError,
@@ -12,7 +15,9 @@ from frtb_ima.capital import (
     pla_addon,
     supervisory_multiplier,
     supervisory_multiplier_for_policy,
+    validate_pla_backtesting_window_alignment,
 )
+from frtb_ima.pla import PlaWindowDiagnostics
 from frtb_ima.regimes import DeskEligibilityStatus, get_policy
 
 POLICY = get_policy()
@@ -34,6 +39,41 @@ def _trading_desk_backtest_result(*, model_eligible: bool) -> TradingDeskBacktes
         ),
         window_size=250,
         model_eligible=model_eligible,
+    )
+
+
+def _pla_diagnostics(
+    *,
+    start_date: date | None = date(2025, 1, 1),
+    end_date: date | None = date(2025, 12, 31),
+    calendar_basis: str = ObservationWindowBasis.MOST_RECENT_BUSINESS_DAYS.value,
+) -> PlaWindowDiagnostics:
+    return PlaWindowDiagnostics(
+        available_observations=250,
+        minimum_history=250,
+        window_size=250,
+        start_index=0,
+        end_index_exclusive=250,
+        start_date=start_date,
+        end_date=end_date,
+        calendar_basis=calendar_basis,
+    )
+
+
+def _dated_backtest_result(
+    *,
+    start_date: date | None = date(2025, 1, 1),
+    end_date: date | None = date(2025, 12, 31),
+    calendar_basis: str = ObservationWindowBasis.MOST_RECENT_BUSINESS_DAYS.value,
+) -> TradingDeskBacktestResult:
+    result = _trading_desk_backtest_result(model_eligible=True)
+    return TradingDeskBacktestResult(
+        levels=result.levels,
+        window_size=result.window_size,
+        model_eligible=result.model_eligible,
+        start_date=start_date,
+        end_date=end_date,
+        calendar_basis=calendar_basis,
     )
 
 
@@ -132,6 +172,7 @@ def test_models_based_capital_serializes_audit_breakdown() -> None:
 
     assert result.as_dict()["models_based_capital"] == pytest.approx(145.0)
     assert result.as_dict()["binding_term"] == "AVERAGE"
+    assert result.as_dict()["exception_count"] is None
 
 
 def test_models_based_capital_reports_spot_binding_term() -> None:
@@ -295,6 +336,8 @@ def test_models_based_capital_for_policy_returns_capital_components() -> None:
     assert result.multiplier == pytest.approx(supervisory_multiplier_for_policy(0, policy))
     assert result.models_based_capital == pytest.approx(150.0)
     assert result.binding_term == "AVERAGE"
+    assert result.exception_count == 0
+    assert result.as_dict()["exception_count"] == 0
 
 
 def test_models_based_capital_for_policy_uses_policy_exception_count_multiplier() -> None:
@@ -313,6 +356,97 @@ def test_models_based_capital_for_policy_uses_policy_exception_count_multiplier(
 
     assert result.multiplier == pytest.approx(supervisory_multiplier_for_policy(6, policy))
     assert result.models_based_capital == pytest.approx(168.4)
+    assert result.as_dict()["exception_count"] == 6
+
+
+def test_models_based_capital_for_policy_rejects_red_zone_exception_count() -> None:
+    policy = get_policy()
+
+    result = models_based_capital_for_policy(
+        DeskEligibilityStatus.IMA_ELIGIBLE,
+        imcc_t_minus_1=100.0,
+        ses_t_minus_1=20.0,
+        imcc_60d_avg=90.0,
+        ses_60d_avg=10.0,
+        pla_addon=0.0,
+        policy=policy,
+        exception_count=9,
+    )
+    assert result.multiplier == pytest.approx(1.92)
+
+    for exception_count in (10, 25):
+        with pytest.raises(IMAIneligibleError, match="red-zone threshold"):
+            models_based_capital_for_policy(
+                DeskEligibilityStatus.IMA_ELIGIBLE,
+                imcc_t_minus_1=100.0,
+                ses_t_minus_1=20.0,
+                imcc_60d_avg=90.0,
+                ses_60d_avg=10.0,
+                pla_addon=0.0,
+                policy=policy,
+                exception_count=exception_count,
+            )
+
+
+def test_models_based_capital_for_policy_keeps_sa_fallback_gate_first() -> None:
+    with pytest.raises(IMAIneligibleError, match="SA_FALLBACK"):
+        models_based_capital_for_policy(
+            DeskEligibilityStatus.SA_FALLBACK,
+            imcc_t_minus_1=100.0,
+            ses_t_minus_1=20.0,
+            imcc_60d_avg=90.0,
+            ses_60d_avg=10.0,
+            pla_addon=0.0,
+            policy=get_policy(),
+            exception_count=10,
+        )
+
+
+def test_validate_pla_backtesting_window_alignment_passes_for_same_calendar_dates() -> None:
+    result = validate_pla_backtesting_window_alignment(
+        _pla_diagnostics(),
+        _dated_backtest_result(),
+    )
+
+    assert result is None
+
+
+def test_validate_pla_backtesting_window_alignment_rejects_different_start_date() -> None:
+    with pytest.raises(ValueError, match="same start date"):
+        validate_pla_backtesting_window_alignment(
+            _pla_diagnostics(start_date=date(2025, 1, 2)),
+            _dated_backtest_result(start_date=date(2025, 1, 1)),
+        )
+
+
+def test_validate_pla_backtesting_window_alignment_rejects_different_end_date() -> None:
+    with pytest.raises(ValueError, match="same end date"):
+        validate_pla_backtesting_window_alignment(
+            _pla_diagnostics(end_date=date(2025, 12, 30)),
+            _dated_backtest_result(end_date=date(2025, 12, 31)),
+        )
+
+
+def test_validate_pla_backtesting_window_alignment_warns_for_missing_dates() -> None:
+    with pytest.warns(DeprecationWarning, match="cannot be co-validated") as warnings:
+        result = validate_pla_backtesting_window_alignment(
+            _pla_diagnostics(start_date=None, end_date=None),
+            _dated_backtest_result(),
+        )
+
+    assert result is None
+    assert len(warnings) == 1
+
+
+def test_validate_pla_backtesting_window_alignment_warns_for_count_proxy_dates() -> None:
+    with pytest.warns(DeprecationWarning, match="calendar-backed date ranges") as warnings:
+        result = validate_pla_backtesting_window_alignment(
+            _pla_diagnostics(calendar_basis=ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value),
+            _dated_backtest_result(),
+        )
+
+    assert result is None
+    assert len(warnings) == 1
 
 
 def test_pla_addon_zero_green_amber_requires_zero_amber() -> None:
