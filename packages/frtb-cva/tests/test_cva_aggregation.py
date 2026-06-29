@@ -11,6 +11,7 @@ from frtb_cva import (
 )
 from frtb_cva.aggregation import (
     HEDGING_DISALLOWANCE_R,
+    SaCvaAggregationConfig,
     aggregate_intra_bucket,
     aggregate_weighted_sensitivities,
     girr_delta_aggregation_config,
@@ -53,6 +54,9 @@ def test_intra_bucket_reconciles_to_weighted_inputs() -> None:
     bucket = aggregate_intra_bucket("USD", (_weighted(1_000_000.0),), config=config)
     assert bucket.k_b == pytest.approx(1_000_000.0 * 0.0074)
     assert bucket.s_b == pytest.approx(1_000_000.0 * 0.0074)
+    metadata = dict(bucket.branch_metadata)
+    assert metadata["variance_floored"] == "False"
+    assert float(metadata["raw_variance"]) > 0.0
 
 
 def test_hedging_disallowance_constant_is_cited() -> None:
@@ -70,6 +74,32 @@ def test_hedging_disallowance_adds_non_negative_penalty_for_offsetting_hedge() -
     assert item.weighted_net == pytest.approx(0.0)
     assert bucket.k_b == pytest.approx(expected)
     assert bucket.k_b > 0.0
+
+
+def test_intra_bucket_records_negative_variance_floor() -> None:
+    def _inconsistent_correlation(
+        left: SaCvaWeightedSensitivity,
+        right: SaCvaWeightedSensitivity,
+    ) -> tuple[float, str]:
+        del left, right
+        return -1.1, "synthetic_inconsistent_rho"
+
+    config = SaCvaAggregationConfig(
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.DELTA,
+        intra_bucket_correlation=_inconsistent_correlation,
+        inter_bucket_gamma=lambda left, right: (0.0, "synthetic_gamma"),
+        intra_bucket_citations=("basel_mar50_53",),
+    )
+    bucket = aggregate_intra_bucket(
+        "USD",
+        (_weighted(1_000.0, factor="1y"), _weighted(1_000.0, factor="5y")),
+        config=config,
+    )
+    metadata = dict(bucket.branch_metadata)
+    assert bucket.k_b == pytest.approx(0.0)
+    assert metadata["variance_floored"] == "True"
+    assert float(metadata["raw_variance"]) < 0.0
 
 
 def test_inter_bucket_aggregation_produces_risk_class_total() -> None:

@@ -36,6 +36,7 @@ from frtb_cva.validation import (
     VALID_AMOUNT_SIGN_CONVENTIONS,
     VALID_EAD_SIGN_CONVENTIONS,
     CvaInputError,
+    _validate_effective_maturity,
     normalise_ead_amount,
     normalise_sensitivity_amount,
 )
@@ -60,12 +61,7 @@ def _validate_netting_set_batch(batch: CvaNettingSetBatch) -> None:
                 field="ead",
                 record_id=record_id,
             )
-        if float(batch.effective_maturities[index]) < 0.0:
-            raise CvaInputError(
-                "effective maturity must be non-negative",
-                field="effective_maturity",
-                record_id=record_id,
-            )
+        _validate_effective_maturity(batch.effective_maturities[index], record_id=record_id)
         if float(batch.discount_factors[index]) <= 0.0:
             raise CvaInputError(
                 "discount factor must be positive",

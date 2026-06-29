@@ -148,7 +148,7 @@ def calculate_sa_cva_capital(
         SA-CVA multiplier ``M_CVA`` applied after inter-bucket aggregation (MAR50.53).
 
     reporting_currency, optional :
-        Input for ``calculate_sa_cva_capital`` used in the CVA capital path.
+        ISO 4217 reporting base used to denominate and weight SA-CVA sensitivities.
 
     profile, optional :
         Optional ``CvaRegulatoryProfile`` or profile label; default Basel MAR50 (2020).
@@ -156,7 +156,8 @@ def calculate_sa_cva_capital(
     Returns
     -------
     tuple[SaCvaRiskClassCapital, ...]
-        Result of ``calculate_sa_cva_capital`` for audit and downstream aggregation."""
+        Risk-class capital records with bucket breakdowns, multiplier effects,
+        and regulatory citations for audit replay."""
 
     validated_m_cva = validate_m_cva_multiplier(m_cva)
     if not sensitivities:
@@ -217,6 +218,15 @@ def _calculate_path(
     reporting_currency: str,
     profile: CvaRegulatoryProfile | str,
 ) -> SaCvaRiskClassCapital:
+    """Calculate one supported SA-CVA risk-class/measure path.
+
+    Returns
+    -------
+    SaCvaRiskClassCapital
+        Risk-class capital before and after the ``M_CVA`` multiplier, including
+        bucket-level audit records from the selected path implementation.
+    """
+
     spec = _capital_path_spec_for(risk_class, risk_measure)
     capital_fn = spec.capital_fn
     if capital_fn is None:
@@ -238,6 +248,8 @@ def _capital_path_spec_for(
     risk_class: SaCvaRiskClass,
     risk_measure: SaCvaRiskMeasure,
 ) -> SaCvaPathSpec:
+    """Return the registered SA-CVA path specification for a risk-class measure pair."""
+
     spec = SA_CVA_PATH_REGISTRY.get((risk_class, risk_measure))
     if spec is None:
         raise CvaInputError(
@@ -277,7 +289,7 @@ def sa_cva_aggregation_config(
     Returns
     -------
     SaCvaAggregationConfig
-        Result of ``sa_cva_aggregation_config`` for audit and downstream aggregation."""
+        Risk-class-specific intra-bucket rho, inter-bucket gamma, and citation hooks."""
 
     from frtb_cva.aggregation import (
         girr_delta_aggregation_config,
