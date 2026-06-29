@@ -1,435 +1,513 @@
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { formatMoney, getImaDesk, getNode, getRun, getSa } from "./api";
 import type { AttributionRow, CapitalNode, ImaDeskView, NodeDetail, RunOverview, SaOverview } from "./types";
 
 type ImaTab = "summary" | "imcc" | "nmrf" | "pla" | "backtest" | "attribution";
+type SortKey = "absContribution" | "source" | "category";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+const COMPONENT_FILTERS = ["ALL", "IMA", "SA", "SBM", "DRC", "RRAO"] as const;
+const TAB_LABELS: Array<[ImaTab, string]> = [
+  ["summary", "Summary"],
+  ["imcc", "IMCC / ES"],
+  ["nmrf", "SES & NMRF"],
+  ["pla", "PLA"],
+  ["backtest", "Backtesting"],
+  ["attribution", "Attribution"],
+];
 
-function flattenTree(nodes: CapitalNode[], parentId: string | null = null, depth = 0): Array<{ node: CapitalNode; depth: number }> {
-  const children = nodes.filter((n) => n.parent_id === parentId);
-  return children.flatMap((n) => [{ node: n, depth }, ...flattenTree(nodes, n.node_id, depth + 1)]);
+type ComponentFilter = (typeof COMPONENT_FILTERS)[number];
+type TreeRow = { node: CapitalNode; depth: number };
+
+function flattenTree(nodes: CapitalNode[], parentId: string | null = null, depth = 0): TreeRow[] {
+  const children = nodes.filter((node) => node.parent_id === parentId);
+  return children.flatMap((node) => [{ node, depth }, ...flattenTree(nodes, node.node_id, depth + 1)]);
 }
 
 function humanKey(key: string): string {
   return key
     .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\b\w/g, (character) => character.toUpperCase())
     .replace(/\bEs\b/g, "ES")
     .replace(/\bImcc\b/g, "IMCC")
     .replace(/\bSes\b/g, "SES")
     .replace(/\bPla\b/g, "PLA")
     .replace(/\bLha\b/g, "LHA")
+    .replace(/\bNmrf\b/g, "NMRF")
     .replace(/\bKs\b/g, "KS");
 }
 
 function formatValue(value: unknown, currency: string): string {
-  if (value == null) return "—";
+  if (value == null) return "-";
   if (typeof value === "number") {
     if (Math.abs(value) > 1000) return formatMoney(value, currency);
     if (Math.abs(value) < 10 && Math.abs(value) > 0) return value.toFixed(4);
     return value.toLocaleString();
   }
+  if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
 
-function pct(part: number, total: number): string {
-  if (!total) return "—";
+function percent(part: number | null | undefined, total: number | null | undefined): string {
+  if (!part || !total) return "-";
   return `${((part / total) * 100).toFixed(1)}%`;
 }
 
-// ── Zone badge ────────────────────────────────────────────────────────────────
-
-type Zone = "GREEN" | "AMBER" | "RED" | string;
-
-function zoneCls(zone: Zone): string {
-  if (zone === "GREEN") return "badge success";
-  if (zone === "RED") return "badge danger";
-  if (zone === "AMBER" || zone === "ORANGE") return "badge warning";
-  return "badge";
+function zoneClass(zone: unknown): string {
+  const normalized = String(zone ?? "").toUpperCase();
+  if (normalized === "GREEN") return "zone zone-green";
+  if (normalized === "AMBER" || normalized === "ORANGE") return "zone zone-amber";
+  if (normalized === "RED") return "zone zone-red";
+  return "zone";
 }
 
-function ZoneBadge({ zone }: { zone: Zone }) {
-  return <span className={zoneCls(zone)}>{zone}</span>;
+function ZoneBadge({ zone }: { zone: unknown }) {
+  const label = String(zone ?? "-");
+  return <span className={zoneClass(zone)}>{label}</span>;
 }
 
-// ── Capital breakdown bars ────────────────────────────────────────────────────
+function MiniBar({ value, total }: { value: number | null | undefined; total: number | null | undefined }) {
+  const width = total && value ? Math.max(0, Math.min(100, (Math.abs(value) / Math.abs(total)) * 100)) : 0;
+  return (
+    <span className="mini-bar" aria-hidden="true">
+      <span style={{ width: `${width}%` }} />
+    </span>
+  );
+}
 
-interface BarItem {
+function MetricCard({
+  label,
+  value,
+  meta,
+  tone = "neutral",
+}: {
   label: string;
-  amount: number;
-  color: string;
-  indent?: boolean;
+  value: string;
+  meta?: string;
+  tone?: "neutral" | "blue" | "amber" | "green" | "red";
+}) {
+  return (
+    <article className={`metric-card tone-${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {meta ? <small>{meta}</small> : null}
+    </article>
+  );
 }
 
-function CapitalBars({ items, total, currency }: { items: BarItem[]; total: number; currency: string }) {
+function KeyValueGrid({ data, currency, skip = [] }: { data: Record<string, unknown>; currency: string; skip?: string[] }) {
+  const rows = Object.entries(data).filter(([key]) => !skip.includes(key));
+  if (!rows.length) return null;
   return (
-    <div className="capital-bars">
-      {items.map((item) => {
-        const fraction = total > 0 ? Math.max(0, Math.min(1, item.amount / total)) : 0;
-        return (
-          <div key={item.label} className={`bar-row${item.indent ? " bar-indent" : ""}`}>
-            <span className="bar-label">{item.label}</span>
-            <div className="bar-track">
-              <div className="bar-fill" style={{ width: `${fraction * 100}%`, background: item.color }} />
-            </div>
-            <span className="bar-amount">{formatMoney(item.amount, currency)}</span>
-            <span className="bar-pct">{pct(item.amount, total)}</span>
-          </div>
-        );
-      })}
+    <div className="kv-grid">
+      {rows.map(([key, value]) => (
+        <div key={key} className="kv-row">
+          <span className="kv-key">{humanKey(key)}</span>
+          <span className="kv-val">{formatValue(value, currency)}</span>
+        </div>
+      ))}
     </div>
   );
 }
 
-// ── Structured panels ─────────────────────────────────────────────────────────
-
-function BacktestPanel({ data, currency }: { data: Record<string, unknown>; currency: string }) {
-  const aplZone = String(data.apl_zone ?? data.zone ?? "—");
-  const hplZone = String(data.hpl_zone ?? "—");
-  const aplEx = data.apl_exceptions as number | undefined;
-  const hplEx = data.hpl_exceptions as number | undefined;
-  const windowSize = data.window_size as number | undefined;
+function CapitalStack({
+  overview,
+  saOverview,
+  selectedNodeId,
+  onSelect,
+}: {
+  overview: RunOverview;
+  saOverview: SaOverview | null;
+  selectedNodeId: string;
+  onSelect: (nodeId: string) => void;
+}) {
+  const suiteTotal = overview.suite_total ?? 0;
+  const stackItems = [
+    { id: "ima", label: "IMA", value: overview.ima_total ?? 0, tone: "stack-ima" },
+    { id: "sa", label: "SA", value: overview.sa_total ?? 0, tone: "stack-sa" },
+  ];
 
   return (
-    <div>
-      <div className="stats-grid" style={{ marginBottom: 16 }}>
-        <div className="stat-card">
-          <strong><ZoneBadge zone={aplZone} /></strong>
-          <span>APL zone</span>
+    <section className="capital-stack" aria-label="Capital stack">
+      <div className="stack-header">
+        <div>
+          <span className="eyebrow">Capital stack</span>
+          <h2>{formatMoney(suiteTotal, overview.currency)}</h2>
         </div>
-        {hplZone !== "—" && (
-          <div className="stat-card">
-            <strong><ZoneBadge zone={hplZone} /></strong>
-            <span>HPL zone</span>
-          </div>
-        )}
-        <div className="stat-card">
-          <strong>{aplEx ?? "—"}</strong>
-          <span>APL exceptions</span>
-        </div>
-        {hplEx !== undefined && (
-          <div className="stat-card">
-            <strong>{hplEx}</strong>
-            <span>HPL exceptions</span>
-          </div>
-        )}
-        {windowSize !== undefined && (
-          <div className="stat-card">
-            <strong>{windowSize} obs</strong>
-            <span>Backtesting window</span>
-          </div>
-        )}
+        <span className="status-pill">demo-suite-001</span>
       </div>
-      {Object.keys(data).some((k) => !["apl_zone", "hpl_zone", "zone", "apl_exceptions", "hpl_exceptions", "window_size"].includes(k)) && (
-        <div className="kv-grid">
-          {Object.entries(data)
-            .filter(([k]) => !["apl_zone", "hpl_zone", "zone", "apl_exceptions", "hpl_exceptions", "window_size"].includes(k))
-            .map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <span className="kv-key">{humanKey(k)}</span>
-                <span className="kv-val">{formatValue(v, currency)}</span>
-              </div>
-            ))}
+
+      <div className="stack-lanes">
+        {stackItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`stack-lane ${item.tone} ${selectedNodeId === item.id ? "active" : ""}`}
+            onClick={() => onSelect(item.id)}
+          >
+            <span>
+              <strong>{item.label}</strong>
+              <small>{percent(item.value, suiteTotal)} of total</small>
+            </span>
+            <i style={{ width: `${suiteTotal ? (item.value / suiteTotal) * 100 : 0}%` }} />
+            <b>{formatMoney(item.value, overview.currency)}</b>
+          </button>
+        ))}
+      </div>
+
+      {saOverview ? (
+        <div className="component-ribbon" aria-label="SA components">
+          {saOverview.components.map((component) => {
+            const target = component.component === "SBM" ? "sa-sbm" : component.component === "DRC" ? "sa-drc" : "sa-rrao";
+            return (
+              <button
+                key={component.component}
+                type="button"
+                className={selectedNodeId === target ? "active" : ""}
+                onClick={() => onSelect(target)}
+              >
+                <span>{component.component}</span>
+                <MiniBar value={component.total_capital} total={saOverview.total_capital} />
+                <strong>{formatMoney(component.total_capital, overview.currency)}</strong>
+              </button>
+            );
+          })}
         </div>
-      )}
-    </div>
+      ) : null}
+    </section>
   );
 }
 
-function PlaPanel({ data }: { data: Record<string, unknown> }) {
-  const zone = String(data.zone ?? "—");
-  const ks = data.ks_statistic as number | undefined;
-  const windowSize = data.window_size as number | undefined;
+function TreeNavigation({
+  rows,
+  selectedNodeId,
+  query,
+  componentFilter,
+  onQuery,
+  onFilter,
+  onSelect,
+}: {
+  rows: TreeRow[];
+  selectedNodeId: string;
+  query: string;
+  componentFilter: ComponentFilter;
+  onQuery: (value: string) => void;
+  onFilter: (value: ComponentFilter) => void;
+  onSelect: (nodeId: string) => void;
+}) {
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredRows = rows.filter(({ node }) => {
+    const matchesQuery =
+      !normalizedQuery ||
+      `${node.label} ${node.node_type} ${node.component}`.toLowerCase().includes(normalizedQuery);
+    const matchesComponent =
+      componentFilter === "ALL" ||
+      node.component === componentFilter ||
+      (componentFilter === "SA" && ["SBM", "DRC", "RRAO"].includes(node.component));
+    return matchesQuery && matchesComponent;
+  });
 
   return (
-    <div>
-      <div className="stats-grid" style={{ marginBottom: 16 }}>
-        <div className="stat-card">
-          <strong><ZoneBadge zone={zone} /></strong>
-          <span>PLA zone</span>
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-mark">F</div>
+        <div>
+          <h1>FRTB Capital</h1>
+          <p>Desk, stack, attribution</p>
         </div>
-        {ks !== undefined && (
-          <div className="stat-card">
-            <strong>{ks.toFixed(4)}</strong>
-            <span>KS statistic</span>
-          </div>
-        )}
-        {windowSize !== undefined && (
-          <div className="stat-card">
-            <strong>{windowSize} obs</strong>
-            <span>Window size</span>
-          </div>
-        )}
       </div>
-      <div className="info-note">
-        GREEN = distribution aligned (no add-on) · AMBER = partial mis-alignment · RED = significant mis-alignment (capital add-on applies)
+
+      <label className="search-box">
+        <span>Find node</span>
+        <input value={query} onChange={(event) => onQuery(event.target.value)} placeholder="Desk, DRC, PLA..." />
+      </label>
+
+      <div className="filter-chips" aria-label="Component filter">
+        {COMPONENT_FILTERS.map((filter) => (
+          <button
+            key={filter}
+            type="button"
+            className={componentFilter === filter ? "active" : ""}
+            onClick={() => onFilter(filter)}
+          >
+            {filter}
+          </button>
+        ))}
       </div>
+
+      <nav className="tree-nav" aria-label="Capital tree">
+        {filteredRows.map(({ node, depth }) => (
+          <button
+            key={node.node_id}
+            type="button"
+            className={`tree-item ${selectedNodeId === node.node_id ? "active" : ""}`}
+            style={{ "--depth": depth } as CSSProperties & Record<"--depth", number>}
+            onClick={() => onSelect(node.node_id)}
+          >
+            <span>
+              <strong>{node.label}</strong>
+              <small>{node.component} / {node.node_type.toLowerCase()}</small>
+            </span>
+            <b>{formatMoney(node.amount, node.currency)}</b>
+          </button>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+function HealthStrip({ desk, overview }: { desk: ImaDeskView | null; overview: RunOverview }) {
+  const plaZone = desk?.pla.zone;
+  const aplZone = desk?.backtesting.apl_zone ?? desk?.backtesting.zone;
+  const hplZone = desk?.backtesting.hpl_zone;
+  const multiplier = desk?.summary.supervisory_multiplier;
+
+  return (
+    <section className="health-strip">
+      <MetricCard label="Suite total" value={formatMoney(overview.suite_total, overview.currency)} meta={overview.run.profile_id} tone="blue" />
+      <MetricCard label="IMA / SA mix" value={`${percent(overview.ima_total, overview.suite_total)} / ${percent(overview.sa_total, overview.suite_total)}`} meta="capital split" />
+      <MetricCard label="PLA status" value={String(plaZone ?? "-")} meta="distribution alignment" tone={String(plaZone).toUpperCase() === "GREEN" ? "green" : "amber"} />
+      <MetricCard label="Backtesting" value={`${String(aplZone ?? "-")} / ${String(hplZone ?? "-")}`} meta="APL / HPL zones" tone={String(aplZone).toUpperCase() === "GREEN" ? "green" : "amber"} />
+      <MetricCard label="Multiplier" value={multiplier ? `x${multiplier}` : "-"} meta="supervisory scalar" />
+    </section>
+  );
+}
+
+function SummaryPanel({ data, currency }: { data: Record<string, unknown>; currency: string }) {
+  return (
+    <div className="detail-grid">
+      <MetricCard label="Models-based capital" value={formatValue(data.models_based_capital, currency)} tone="blue" />
+      <MetricCard label="IMCC" value={formatValue(data.imcc, currency)} />
+      <MetricCard label="Total SES" value={formatValue(data.total_ses, currency)} />
+      <MetricCard label="Binding term" value={String(data.binding_term ?? "-")} meta="capital driver" />
+      <MetricCard label="Supervisory multiplier" value={data.supervisory_multiplier ? `x${data.supervisory_multiplier}` : "-"} />
     </div>
   );
 }
 
 function ImccPanel({ data, currency }: { data: Record<string, unknown>; currency: string }) {
-  const imcc = data.imcc as number | undefined;
-  const unconstrained = data.unconstrained_lha_es as number | undefined;
-  const constrained = data.constrained_lha_es as number | undefined;
-
   return (
-    <div>
-      <div className="stats-grid" style={{ marginBottom: 16 }}>
-        {imcc !== undefined && (
-          <div className="stat-card accent">
-            <strong>{formatMoney(imcc, currency)}</strong>
-            <span>IMCC (binding)</span>
-          </div>
-        )}
-        {unconstrained !== undefined && (
-          <div className="stat-card">
-            <strong>{formatMoney(unconstrained, currency)}</strong>
-            <span>Unconstrained LHA ES</span>
-          </div>
-        )}
-        {constrained !== undefined && (
-          <div className="stat-card">
-            <strong>{formatMoney(constrained, currency)}</strong>
-            <span>Constrained LHA ES</span>
-          </div>
-        )}
+    <div className="panel-flow">
+      <div className="detail-grid">
+        <MetricCard label="IMCC binding capital" value={formatValue(data.imcc, currency)} tone="blue" />
+        <MetricCard label="Unconstrained LHA ES" value={formatValue(data.unconstrained_lha_es, currency)} />
+        <MetricCard label="Constrained LHA ES" value={formatValue(data.constrained_lha_es, currency)} />
       </div>
-      {Object.keys(data).some((k) => !["imcc", "unconstrained_lha_es", "constrained_lha_es"].includes(k)) && (
-        <div className="kv-grid">
-          {Object.entries(data)
-            .filter(([k]) => !["imcc", "unconstrained_lha_es", "constrained_lha_es"].includes(k))
-            .map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <span className="kv-key">{humanKey(k)}</span>
-                <span className="kv-val">{formatValue(v, currency)}</span>
-              </div>
-            ))}
-        </div>
-      )}
+      <KeyValueGrid data={data} currency={currency} skip={["imcc", "unconstrained_lha_es", "constrained_lha_es"]} />
     </div>
   );
 }
 
 function NmrfPanel({ data, currency }: { data: Record<string, unknown>; currency: string }) {
-  const totalSes = data.total_ses as number | undefined;
   const classifications = data.classifications as Record<string, unknown> | undefined;
   const methods = data.methods as Record<string, unknown> | undefined;
   const stressPeriods = data.selected_stress_periods as Record<string, unknown> | undefined;
 
   return (
-    <div>
-      {totalSes !== undefined && (
-        <div className="stats-grid" style={{ marginBottom: 16 }}>
-          <div className="stat-card accent">
-            <strong>{formatMoney(totalSes, currency)}</strong>
-            <span>Total SES capital</span>
-          </div>
-        </div>
-      )}
-      {classifications && Object.keys(classifications).length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <h4 className="panel-section-title">Risk factor classifications</h4>
-          <div className="kv-grid">
-            {Object.entries(classifications).map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <span className="kv-key">{k}</span>
-                <span className="kv-val">{String(v)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {methods && Object.keys(methods).length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <h4 className="panel-section-title">NMRF methods selected</h4>
-          <div className="kv-grid">
-            {Object.entries(methods).map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <span className="kv-key">{k}</span>
-                <span className="kv-val">{String(v)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {stressPeriods && Object.keys(stressPeriods).length > 0 && (
-        <div>
-          <h4 className="panel-section-title">Stress periods</h4>
-          <div className="kv-grid">
-            {Object.entries(stressPeriods).map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <span className="kv-key">{humanKey(k)}</span>
-                <span className="kv-val">{typeof v === "object" ? JSON.stringify(v) : String(v)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* Fallback for any keys not covered above */}
-      {Object.entries(data)
-        .filter(([k]) => !["total_ses", "classifications", "methods", "selected_stress_periods", "reconciliation"].includes(k))
-        .map(([k, v]) => (
-          <div key={k} className="kv-row">
-            <span className="kv-key">{humanKey(k)}</span>
-            <span className="kv-val">{formatValue(v, currency)}</span>
-          </div>
-        ))}
-    </div>
-  );
-}
-
-function SummaryPanel({ data, currency }: { data: Record<string, unknown>; currency: string }) {
-  const bindingTerm = data.binding_term as string | undefined;
-  const multiplier = data.supervisory_multiplier as number | undefined;
-
-  return (
-    <div>
-      <div className="stats-grid" style={{ marginBottom: 16 }}>
-        {data.models_based_capital !== undefined && (
-          <div className="stat-card accent">
-            <strong>{formatMoney(data.models_based_capital as number, currency)}</strong>
-            <span>Models-based capital</span>
-          </div>
-        )}
-        {data.imcc !== undefined && (
-          <div className="stat-card">
-            <strong>{formatMoney(data.imcc as number, currency)}</strong>
-            <span>IMCC</span>
-          </div>
-        )}
-        {data.total_ses !== undefined && (
-          <div className="stat-card">
-            <strong>{formatMoney(data.total_ses as number, currency)}</strong>
-            <span>Total SES</span>
-          </div>
-        )}
-        {multiplier !== undefined && (
-          <div className="stat-card">
-            <strong>×{multiplier}</strong>
-            <span>Supervisory multiplier</span>
-          </div>
-        )}
+    <div className="panel-flow">
+      <div className="detail-grid">
+        <MetricCard label="Total SES capital" value={formatValue(data.total_ses, currency)} tone="blue" />
+        <MetricCard label="Classifications" value={String(Object.keys(classifications ?? {}).length)} meta="risk factors" />
+        <MetricCard label="Methods" value={String(Object.keys(methods ?? {}).length)} meta="NMRF selections" />
+        <MetricCard label="Stress periods" value={String(Object.keys(stressPeriods ?? {}).length)} meta="selected windows" />
       </div>
-      {bindingTerm && (
-        <div className="kv-row" style={{ marginBottom: 8 }}>
-          <span className="kv-key">Binding term</span>
-          <span className="kv-val">
-            <span className="chip">{bindingTerm}</span>
-          </span>
-        </div>
-      )}
+      {classifications ? <KeyValueGrid data={classifications} currency={currency} /> : null}
+      {methods ? <KeyValueGrid data={methods} currency={currency} /> : null}
+      {stressPeriods ? <KeyValueGrid data={stressPeriods} currency={currency} /> : null}
     </div>
   );
 }
 
-// ── Attribution table ─────────────────────────────────────────────────────────
-
-function AttributionTable({ rows, currency }: { rows: AttributionRow[]; currency: string }) {
-  if (!rows.length) return <p className="alias-list">No attribution rows for this view.</p>;
-  const absTotal = rows.reduce((sum, r) => sum + Math.abs(r.contribution ?? 0), 0);
+function PlaPanel({ data }: { data: Record<string, unknown> }) {
   return (
-    <div className="preview-table-wrap">
-      <table className="preview-table">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Source</th>
-            <th>Method</th>
-            <th style={{ textAlign: "right" }}>Amount</th>
-            <th style={{ textAlign: "right" }}>Contribution</th>
-            <th style={{ textAlign: "right" }}>Share</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.contribution_id}>
-              <td>{row.category}</td>
-              <td className="mono-cell">{row.source_level}:{row.source_id}</td>
-              <td>{row.method}</td>
-              <td style={{ textAlign: "right", fontFamily: "var(--mono)", fontSize: "0.82rem" }}>
-                {row.amount != null ? formatMoney(row.amount, currency) : "—"}
-              </td>
-              <td style={{ textAlign: "right", fontFamily: "var(--mono)", fontSize: "0.82rem" }}>
-                {row.contribution != null ? formatMoney(row.contribution, currency) : "—"}
-              </td>
-              <td style={{ textAlign: "right", color: "var(--text-muted)", fontSize: "0.82rem" }}>
-                {row.contribution != null && absTotal > 0
-                  ? `${((Math.abs(row.contribution) / absTotal) * 100).toFixed(1)}%`
-                  : "—"}
-              </td>
-              <td>
-                <span className={`chip ${row.reconciliation_status === "RECONCILED" ? "chip-ok" : ""}`}>
-                  {row.reconciliation_status}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="panel-flow">
+      <div className="detail-grid">
+        <article className="metric-card tone-green">
+          <span>PLA zone</span>
+          <strong><ZoneBadge zone={data.zone} /></strong>
+          <small>distribution alignment</small>
+        </article>
+        <MetricCard label="KS statistic" value={formatValue(data.ks_statistic, "USD")} />
+        <MetricCard label="Window size" value={data.window_size ? `${data.window_size} obs` : "-"} />
+      </div>
+      <p className="info-note">
+        Green means no PLA add-on in this demo view; amber or red would route the desk into capital add-on review.
+      </p>
     </div>
   );
 }
 
-// ── SA component panel ────────────────────────────────────────────────────────
+function BacktestPanel({ data, currency }: { data: Record<string, unknown>; currency: string }) {
+  return (
+    <div className="panel-flow">
+      <div className="detail-grid">
+        <article className="metric-card tone-green">
+          <span>APL zone</span>
+          <strong><ZoneBadge zone={data.apl_zone ?? data.zone} /></strong>
+          <small>{formatValue(data.apl_exceptions, currency)} exceptions</small>
+        </article>
+        <article className="metric-card tone-green">
+          <span>HPL zone</span>
+          <strong><ZoneBadge zone={data.hpl_zone} /></strong>
+          <small>{formatValue(data.hpl_exceptions, currency)} exceptions</small>
+        </article>
+        <MetricCard label="Window" value={data.window_size ? `${data.window_size} obs` : "-"} />
+      </div>
+      <KeyValueGrid
+        data={data}
+        currency={currency}
+        skip={["apl_zone", "zone", "hpl_zone", "apl_exceptions", "hpl_exceptions", "window_size"]}
+      />
+    </div>
+  );
+}
+
+function AttributionTable({
+  rows,
+  currency,
+  sortKey,
+  onSort,
+}: {
+  rows: AttributionRow[];
+  currency: string;
+  sortKey: SortKey;
+  onSort: (sortKey: SortKey) => void;
+}) {
+  const sortedRows = useMemo(() => {
+    const copy = [...rows];
+    if (sortKey === "source") copy.sort((left, right) => left.source_id.localeCompare(right.source_id));
+    if (sortKey === "category") copy.sort((left, right) => left.category.localeCompare(right.category));
+    if (sortKey === "absContribution") {
+      copy.sort((left, right) => Math.abs(right.contribution ?? 0) - Math.abs(left.contribution ?? 0));
+    }
+    return copy;
+  }, [rows, sortKey]);
+
+  if (!sortedRows.length) return <p className="empty-state">No attribution rows for this view.</p>;
+  const absTotal = sortedRows.reduce((sum, row) => sum + Math.abs(row.contribution ?? 0), 0);
+
+  return (
+    <div className="attribution-panel">
+      <div className="table-toolbar">
+        <span>{sortedRows.length} rows</span>
+        <div>
+          <button type="button" className={sortKey === "absContribution" ? "active" : ""} onClick={() => onSort("absContribution")}>
+            Impact
+          </button>
+          <button type="button" className={sortKey === "category" ? "active" : ""} onClick={() => onSort("category")}>
+            Category
+          </button>
+          <button type="button" className={sortKey === "source" ? "active" : ""} onClick={() => onSort("source")}>
+            Source
+          </button>
+        </div>
+      </div>
+      <div className="preview-table-wrap">
+        <table className="preview-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Source</th>
+              <th>Method</th>
+              <th>Contribution</th>
+              <th>Share</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedRows.map((row) => (
+              <tr key={row.contribution_id}>
+                <td>{row.category}</td>
+                <td className="mono-cell">{row.source_level}:{row.source_id}</td>
+                <td>{row.method}</td>
+                <td className="money-cell">{row.contribution != null ? formatMoney(row.contribution, currency) : "-"}</td>
+                <td>
+                  <div className="share-cell">
+                    <MiniBar value={row.contribution} total={absTotal} />
+                    <span>{row.contribution != null && absTotal > 0 ? `${((Math.abs(row.contribution) / absTotal) * 100).toFixed(1)}%` : "-"}</span>
+                  </div>
+                </td>
+                <td>
+                  <span className={row.reconciliation_status === "RECONCILED" ? "status-chip ok" : "status-chip"}>
+                    {row.reconciliation_status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 function SaComponentPanel({
   component,
   currency,
   saTotal,
+  sortKey,
+  onSort,
 }: {
   component: SaOverview["components"][number];
   currency: string;
   saTotal: number;
+  sortKey: SortKey;
+  onSort: (sortKey: SortKey) => void;
 }) {
   const breakdown = component.breakdown ?? {};
   const innerBreakdown = (breakdown.buckets ?? breakdown.lines ?? breakdown.risk_classes ?? {}) as Record<string, unknown>;
 
   return (
-    <section className="panel" style={{ marginBottom: 18 }}>
+    <section className="panel">
       <div className="panel-header">
-        <strong>{component.component} — {component.profile_id}</strong>
-        <span className="chip">{formatMoney(component.total_capital, currency)} · {pct(component.total_capital, saTotal)} of SA</span>
+        <div>
+          <span className="eyebrow">{component.component}</span>
+          <h3>{component.profile_id}</h3>
+        </div>
+        <span className="status-pill">{percent(component.total_capital, saTotal)} of SA</span>
       </div>
-      <div className="panel-body">
-        {Object.keys(innerBreakdown).length > 0 && (
-          <>
-            <h4 className="panel-section-title">Breakdown</h4>
-            <div className="capital-bars" style={{ marginBottom: 18 }}>
-              {Object.entries(innerBreakdown).map(([key, val]) => {
-                const amount = typeof val === "number" ? val : (typeof val === "object" && val !== null && "capital" in val) ? (val as { capital: number }).capital : 0;
-                return (
-                  <div key={key} className="bar-row">
-                    <span className="bar-label">{key}</span>
-                    <div className="bar-track">
-                      <div className="bar-fill" style={{ width: `${component.total_capital > 0 ? Math.min(100, (amount / component.total_capital) * 100) : 0}%`, background: "#3b82f6" }} />
-                    </div>
-                    <span className="bar-amount">{formatMoney(amount, currency)}</span>
-                    <span className="bar-pct">{pct(amount, component.total_capital)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-        <h4 className="panel-section-title">Top attribution</h4>
-        <AttributionTable rows={component.top_attribution} currency={currency} />
+      <div className="panel-body panel-flow">
+        <div className="detail-grid">
+          <MetricCard label="Component capital" value={formatMoney(component.total_capital, currency)} tone="blue" />
+          <MetricCard label="Input hash" value={component.input_hash?.slice(0, 12) ?? "-"} meta="prefix" />
+          <MetricCard label="Lines" value={String(component.line_count ?? "-")} />
+        </div>
+        {Object.keys(innerBreakdown).length ? (
+          <div className="breakdown-list">
+            {Object.entries(innerBreakdown).map(([key, value]) => {
+              const componentAmount =
+                typeof value === "number"
+                  ? value
+                  : typeof value === "object" && value !== null && "capital" in value
+                    ? Number((value as { capital: number }).capital)
+                    : 0;
+              return (
+                <div key={key} className="breakdown-row">
+                  <span>{key}</span>
+                  <MiniBar value={componentAmount} total={component.total_capital} />
+                  <strong>{formatMoney(componentAmount, currency)}</strong>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+        <AttributionTable rows={component.top_attribution} currency={currency} sortKey={sortKey} onSort={onSort} />
       </div>
     </section>
   );
 }
-
-// ── Main app ──────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [overview, setOverview] = useState<RunOverview | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState("total");
   const [nodeDetail, setNodeDetail] = useState<NodeDetail | null>(null);
   const [imaDesk, setImaDesk] = useState<ImaDeskView | null>(null);
+  const [primaryDesk, setPrimaryDesk] = useState<ImaDeskView | null>(null);
   const [saOverview, setSaOverview] = useState<SaOverview | null>(null);
   const [imaTab, setImaTab] = useState<ImaTab>("summary");
+  const [treeQuery, setTreeQuery] = useState("");
+  const [componentFilter, setComponentFilter] = useState<ComponentFilter>("ALL");
+  const [sortKey, setSortKey] = useState<SortKey>("absContribution");
   const [error, setError] = useState<string | null>(null);
 
   const runId = overview?.run.run_id ?? "demo-suite-001";
@@ -438,7 +516,15 @@ export default function App() {
 
   useEffect(() => {
     getRun(runId)
-      .then(setOverview)
+      .then((result) => {
+        setOverview(result);
+        const deskNode = result.nodes.find((node) => node.node_id.startsWith("ima-desk-"));
+        if (deskNode) {
+          getImaDesk(result.run.run_id, deskNode.node_id.replace("ima-desk-", ""))
+            .then(setPrimaryDesk)
+            .catch(() => undefined);
+        }
+      })
       .catch((exc) => setError(String(exc)));
     getSa(runId)
       .then(setSaOverview)
@@ -461,232 +547,151 @@ export default function App() {
   }, [overview, runId, selectedNodeId]);
 
   const selectedNode = nodeDetail?.node;
-
-  // Which SA component is directly selected?
+  const activeDesk = imaDesk ?? primaryDesk;
   const selectedSaComponent = useMemo(() => {
     if (!saOverview) return null;
-    if (selectedNodeId === "sa-sbm") return saOverview.components.find((c) => c.component === "SBM") ?? null;
-    if (selectedNodeId === "sa-drc" || selectedNodeId.startsWith("sa-drc-"))
-      return saOverview.components.find((c) => c.component === "DRC") ?? null;
-    if (selectedNodeId === "sa-rrao") return saOverview.components.find((c) => c.component === "RRAO") ?? null;
+    if (selectedNodeId === "sa-sbm") return saOverview.components.find((component) => component.component === "SBM") ?? null;
+    if (selectedNodeId === "sa-drc" || selectedNodeId.startsWith("sa-drc-")) {
+      return saOverview.components.find((component) => component.component === "DRC") ?? null;
+    }
+    if (selectedNodeId === "sa-rrao") return saOverview.components.find((component) => component.component === "RRAO") ?? null;
     return null;
   }, [selectedNodeId, saOverview]);
 
   const showSaOverview = selectedNodeId === "sa" && saOverview;
   const showImaDesk = !!imaDesk;
   const showSaComponent = !!selectedSaComponent;
-  // Don't show generic node detail when a richer panel is shown
   const showNodeDetail = nodeDetail && !showImaDesk && !showSaOverview && !showSaComponent;
-
-  // Capital breakdown bars data
-  const capitalBars = useMemo((): BarItem[] => {
-    if (!overview) return [];
-    const ima = overview.ima_total ?? 0;
-    const sa = overview.sa_total ?? 0;
-    const bars: BarItem[] = [
-      { label: "IMA", amount: ima, color: "#3b82f6" },
-      { label: "SA", amount: sa, color: "#0ea5e9" },
-    ];
-    if (saOverview) {
-      for (const comp of saOverview.components) {
-        bars.push({ label: `  ${comp.component}`, amount: comp.total_capital, color: "#7dd3fc", indent: true });
-      }
-    }
-    return bars;
-  }, [overview, saOverview]);
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">F</div>
-          <div>
-            <h1>FRTB Dashboard</h1>
-            <p>IMA &amp; SA capital explorer</p>
-          </div>
-        </div>
-        {overview ? (
-          <>
-            <span className="chip">{overview.run.profile_id}</span>
-            <p style={{ color: "#9fb0cb", fontSize: "0.8rem", marginTop: 12 }}>{overview.run.label}</p>
-            <p style={{ color: "#9fb0cb", fontSize: "0.75rem", marginTop: 4 }}>{overview.run.calculation_date} · {overview.run.jurisdiction_family}</p>
-            <div className="tree-nav">
-              {tree.map(({ node, depth }) => (
-                <button
-                  key={node.node_id}
-                  type="button"
-                  className={`tree-item ${selectedNodeId === node.node_id ? "active" : ""}`}
-                  style={{ paddingLeft: `${10 + depth * 14}px` }}
-                  onClick={() => setSelectedNodeId(node.node_id)}
-                >
-                  {node.label}
-                  <span className="amount">{formatMoney(node.amount, node.currency)}</span>
-                </button>
-              ))}
-            </div>
-          </>
-        ) : null}
-      </aside>
+      <TreeNavigation
+        rows={tree}
+        selectedNodeId={selectedNodeId}
+        query={treeQuery}
+        componentFilter={componentFilter}
+        onQuery={setTreeQuery}
+        onFilter={setComponentFilter}
+        onSelect={setSelectedNodeId}
+      />
 
       <main className="main">
-        <div className="prototype-banner">
-          Prototype dashboard — outputs are illustrative only and are not final regulatory capital.
-        </div>
-
         {error ? <div className="alert error">{error}</div> : null}
 
         {overview ? (
           <>
             <header className="page-header">
               <div>
+                <span className="eyebrow">{overview.run.calculation_date} / {overview.run.jurisdiction_family}</span>
                 <h2>{selectedNode?.label ?? "Capital overview"}</h2>
-                <p>
-                  As of {overview.run.calculation_date} · {overview.run.jurisdiction_family} ·{" "}
-                  {overview.run.components.join(" + ")}
-                </p>
+                <p>{overview.run.label}. Read-only synthetic results for dashboard inspection, not final regulatory capital.</p>
               </div>
-              <span className="chip">{selectedNode?.component ?? "SUITE"}</span>
+              <div className="header-actions">
+                <span className="status-pill">{selectedNode?.component ?? "SUITE"}</span>
+                <span className="status-pill muted">{overview.run.input_hash?.slice(0, 12) ?? "-"}</span>
+              </div>
             </header>
 
-            {/* Capital breakdown */}
-            <section className="panel" style={{ marginBottom: 18 }}>
-              <div className="panel-header">
-                <strong>Capital composition</strong>
-                <span className="chip accent-chip">{formatMoney(overview.suite_total, currency)}</span>
-              </div>
-              <div className="panel-body">
-                <CapitalBars items={capitalBars} total={overview.suite_total ?? 0} currency={currency} />
-                <div className="stats-grid" style={{ marginTop: 16 }}>
-                  <div className="stat-card accent">
-                    <strong>{formatMoney(overview.suite_total, currency)}</strong>
-                    <span>Suite total</span>
-                  </div>
-                  <div className="stat-card">
-                    <strong>{formatMoney(overview.ima_total, currency)}</strong>
-                    <span>IMA</span>
-                  </div>
-                  <div className="stat-card">
-                    <strong>{formatMoney(overview.sa_total, currency)}</strong>
-                    <span>Standardised Approach</span>
-                  </div>
-                  <div className="stat-card">
-                    <strong className="mono-small">{overview.run.input_hash?.slice(0, 12) ?? "—"}</strong>
-                    <span>Input hash prefix</span>
-                  </div>
-                </div>
-              </div>
-            </section>
+            <HealthStrip desk={activeDesk} overview={overview} />
+            <CapitalStack overview={overview} saOverview={saOverview} selectedNodeId={selectedNodeId} onSelect={setSelectedNodeId} />
 
-            {/* IMA desk detail */}
-            {showImaDesk && (
-              <section className="panel" style={{ marginBottom: 18 }}>
+            {showImaDesk ? (
+              <section className="panel">
                 <div className="panel-header">
-                  <strong>IMA desk — {imaDesk.desk_id}</strong>
-                  <span className="chip">{imaDesk.regime} · {imaDesk.eligibility}</span>
+                  <div>
+                    <span className="eyebrow">IMA desk</span>
+                    <h3>{imaDesk.desk_id}</h3>
+                  </div>
+                  <span className="status-pill">{imaDesk.regime} / {imaDesk.eligibility}</span>
                 </div>
                 <div className="panel-body">
                   <div className="detail-tabs">
-                    {(
-                      [
-                        ["summary", "Summary"],
-                        ["imcc", "IMCC / ES"],
-                        ["nmrf", "SES & NMRF"],
-                        ["pla", "PLA"],
-                        ["backtest", "Backtesting"],
-                        ["attribution", "Attribution"],
-                      ] as const
-                    ).map(([id, label]) => (
+                    {TAB_LABELS.map(([id, label]) => (
                       <button
                         key={id}
                         type="button"
-                        className={`source-tab ${imaTab === id ? "active" : ""}`}
+                        className={imaTab === id ? "active" : ""}
                         onClick={() => setImaTab(id)}
                       >
                         {label}
                       </button>
                     ))}
                   </div>
-                  {imaTab === "summary" && <SummaryPanel data={imaDesk.summary as Record<string, unknown>} currency={currency} />}
-                  {imaTab === "imcc" && <ImccPanel data={imaDesk.imcc as Record<string, unknown>} currency={currency} />}
-                  {imaTab === "nmrf" && <NmrfPanel data={imaDesk.ses_nmrf as Record<string, unknown>} currency={currency} />}
-                  {imaTab === "pla" && <PlaPanel data={imaDesk.pla as Record<string, unknown>} />}
-                  {imaTab === "backtest" && <BacktestPanel data={imaDesk.backtesting as Record<string, unknown>} currency={currency} />}
-                  {imaTab === "attribution" && <AttributionTable rows={imaDesk.attributions} currency={currency} />}
+                  {imaTab === "summary" ? <SummaryPanel data={imaDesk.summary as Record<string, unknown>} currency={currency} /> : null}
+                  {imaTab === "imcc" ? <ImccPanel data={imaDesk.imcc as Record<string, unknown>} currency={currency} /> : null}
+                  {imaTab === "nmrf" ? <NmrfPanel data={imaDesk.ses_nmrf as Record<string, unknown>} currency={currency} /> : null}
+                  {imaTab === "pla" ? <PlaPanel data={imaDesk.pla as Record<string, unknown>} /> : null}
+                  {imaTab === "backtest" ? <BacktestPanel data={imaDesk.backtesting as Record<string, unknown>} currency={currency} /> : null}
+                  {imaTab === "attribution" ? (
+                    <AttributionTable rows={imaDesk.attributions} currency={currency} sortKey={sortKey} onSort={setSortKey} />
+                  ) : null}
                 </div>
               </section>
-            )}
+            ) : null}
 
-            {/* SA total overview */}
-            {showSaOverview && saOverview && (
-              <section className="panel" style={{ marginBottom: 18 }}>
+            {showSaOverview && saOverview ? (
+              <section className="panel">
                 <div className="panel-header">
-                  <strong>Standardised Approach composition</strong>
-                  <span className="chip">{formatMoney(saOverview.total_capital, currency)}</span>
-                </div>
-                <div className="panel-body">
-                  <div className="capital-bars" style={{ marginBottom: 18 }}>
-                    {saOverview.components.map((comp) => (
-                      <div key={comp.component} className="bar-row">
-                        <span className="bar-label">{comp.component}</span>
-                        <div className="bar-track">
-                          <div className="bar-fill" style={{ width: `${saOverview.total_capital > 0 ? (comp.total_capital / saOverview.total_capital) * 100 : 0}%`, background: "#3b82f6" }} />
-                        </div>
-                        <span className="bar-amount">{formatMoney(comp.total_capital, currency)}</span>
-                        <span className="bar-pct">{pct(comp.total_capital, saOverview.total_capital)}</span>
-                      </div>
-                    ))}
+                  <div>
+                    <span className="eyebrow">Standardised Approach</span>
+                    <h3>{formatMoney(saOverview.total_capital, currency)}</h3>
                   </div>
-                  {saOverview.components.map((comp) => (
+                  <span className="status-pill">{saOverview.jurisdiction_family}</span>
+                </div>
+                <div className="panel-body sa-grid">
+                  {saOverview.components.map((component) => (
                     <SaComponentPanel
-                      key={comp.component}
-                      component={comp}
+                      key={component.component}
+                      component={component}
                       currency={currency}
                       saTotal={saOverview.total_capital}
+                      sortKey={sortKey}
+                      onSort={setSortKey}
                     />
                   ))}
                 </div>
               </section>
-            )}
+            ) : null}
 
-            {/* Individual SA component */}
-            {showSaComponent && selectedSaComponent && saOverview && (
+            {showSaComponent && selectedSaComponent && saOverview ? (
               <SaComponentPanel
                 component={selectedSaComponent}
                 currency={currency}
                 saTotal={saOverview.total_capital}
+                sortKey={sortKey}
+                onSort={setSortKey}
               />
-            )}
+            ) : null}
 
-            {/* Generic node detail (only when no richer panel is shown) */}
-            {showNodeDetail && (
+            {showNodeDetail ? (
               <section className="panel">
                 <div className="panel-header">
-                  <strong>Node detail</strong>
-                  <span className="chip">{nodeDetail.node.node_type}</span>
+                  <div>
+                    <span className="eyebrow">Node detail</span>
+                    <h3>{nodeDetail.node.node_type}</h3>
+                  </div>
+                  <span className="status-pill">{nodeDetail.node.component}</span>
                 </div>
-                <div className="panel-body">
-                  {nodeDetail.measures.length > 0 && (
-                    <div className="stats-grid" style={{ marginBottom: 16 }}>
+                <div className="panel-body panel-flow">
+                  {nodeDetail.measures.length ? (
+                    <div className="detail-grid">
                       {nodeDetail.measures.map((measure) => (
-                        <div key={measure.name} className="stat-card">
-                          <strong>{formatValue(measure.value, currency)}</strong>
-                          <span>{measure.name}{measure.unit ? ` (${measure.unit})` : ""}</span>
-                        </div>
+                        <MetricCard
+                          key={measure.name}
+                          label={measure.name}
+                          value={formatValue(measure.value, currency)}
+                          meta={measure.unit ?? undefined}
+                        />
                       ))}
                     </div>
-                  )}
-                  {nodeDetail.attributions.length > 0 && (
-                    <>
-                      <h4 className="panel-section-title">Attribution</h4>
-                      <AttributionTable rows={nodeDetail.attributions} currency={currency} />
-                    </>
-                  )}
+                  ) : null}
+                  <AttributionTable rows={nodeDetail.attributions} currency={currency} sortKey={sortKey} onSort={setSortKey} />
                 </div>
               </section>
-            )}
+            ) : null}
           </>
         ) : (
-          <p>Loading capital run…</p>
+          <div className="loading-state">Loading capital run...</div>
         )}
       </main>
     </div>

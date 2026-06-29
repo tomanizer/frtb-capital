@@ -40,3 +40,23 @@ def test_api_ima_desk() -> None:
     response = client.get(f"/api/runs/demo-suite-001/ima/desks/{desk_id}")
     assert response.status_code == 200
     assert response.json()["desk_id"] == desk_id
+
+
+def test_api_sa_overview() -> None:
+    client = TestClient(app)
+    response = client.get("/api/runs/demo-suite-001/sa")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total_capital"] > 0
+    assert {component["component"] for component in payload["components"]} == {"DRC", "RRAO", "SBM"}
+    drc = next(component for component in payload["components"] if component["component"] == "DRC")
+    assert drc["top_attribution"]
+
+
+def test_api_drc_node_detail_has_attribution() -> None:
+    client = TestClient(app)
+    response = client.get("/api/runs/demo-suite-001/nodes/sa-drc")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["node"]["component"] == "DRC"
+    assert payload["attributions"]

@@ -7,15 +7,17 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
+import frtb_drc
+import frtb_rrao
 from frtb_common import jsonable
 from frtb_common.attribution import CapitalContribution
-from frtb_drc.demo_fixture import load_drc_nonsec_v2_fixture, run_fixture_workflow as run_drc_fixture_workflow
+from frtb_drc.demo_fixture import load_drc_nonsec_v2_fixture
+from frtb_drc.demo_fixture import run_fixture_workflow as run_drc_fixture_workflow
 from frtb_ima import desk_contributions
 from frtb_ima.audit import DeskAuditRecord
 from frtb_ima.capital_run_fixture import (
     input_hash_for_capital_run_fixture,
     load_capital_run_v1_fixture,
-    policy_from_fixture,
     run_capital_run_fixture_workflow,
 )
 from frtb_orchestration import compose_standardised_approach_capital
@@ -29,14 +31,12 @@ from frtb_sbm import (
     SbmSourceLineage,
     calculate_sbm_attribution,
     calculate_sbm_capital,
+)
+from frtb_sbm import (
     to_component_summary as sbm_to_component_summary,
 )
 
-import frtb_drc
-import frtb_rrao
-
 from tools.frtb_dashboard.backend._rrao_fixture import load_rrao_context, load_rrao_positions
-
 from tools.frtb_dashboard.backend.models import (
     AttributionRowView,
     CapitalNodeView,
@@ -78,7 +78,6 @@ def build_demo_run() -> DashboardRun:
     as_of = date.fromisoformat(str(params["as_of_date"]))
     regime = str(params["regime"])
     inputs_hash = input_hash_for_capital_run_fixture(fixture)
-    policy = policy_from_fixture(fixture)
 
     scalars = workflow["scalars"]
     assert isinstance(scalars, dict)
@@ -102,7 +101,9 @@ def build_demo_run() -> DashboardRun:
             if isinstance(workflow.get("pla"), dict)
             else None,
         },
-        backtesting=workflow["backtesting"] if isinstance(workflow.get("backtesting"), dict) else {},
+        backtesting=workflow["backtesting"]
+        if isinstance(workflow.get("backtesting"), dict)
+        else {},
         capital={
             "models_based_capital": scalars["models_based_capital"],
             "supervisory_multiplier": scalars["supervisory_multiplier"],
@@ -305,7 +306,7 @@ def _sa_component_from_drc(result: frtb_drc.DrcCapitalResult) -> SaComponentView
         for category in result.categories
         for bucket in category.bucket_results
     }
-    records = frtb_drc.calculate_drc_attribution(result)
+    records = result.attribution_records
     top = sorted(records, key=lambda item: abs(item.contribution or 0.0), reverse=True)[:8]
     return SaComponentView(
         component="DRC",
@@ -322,9 +323,7 @@ def _sa_component_from_rrao(result: frtb_rrao.RraoCapitalResult) -> SaComponentV
     records = frtb_rrao.calculate_rrao_attribution(result)
     top = sorted(records, key=lambda item: abs(item.contribution or 0.0), reverse=True)[:8]
     breakdown = {
-        line.evidence_type.value: line.add_on
-        for line in result.lines
-        if not line.is_excluded
+        line.evidence_type.value: line.add_on for line in result.lines if not line.is_excluded
     }
     return SaComponentView(
         component="RRAO",
@@ -341,7 +340,9 @@ def _sa_component_from_sbm(result: Any) -> SaComponentView:
     records = calculate_sbm_attribution(result)
     top = sorted(records, key=lambda item: abs(item.contribution or 0.0), reverse=True)[:8]
     breakdown = {
-        f"{item.risk_class.value}:{item.risk_measure.value if item.risk_measure else 'DELTA'}": item.selected_capital
+        (
+            f"{item.risk_class.value}:{item.risk_measure.value if item.risk_measure else 'DELTA'}"
+        ): item.selected_capital
         for item in result.risk_classes
     }
     return SaComponentView(
