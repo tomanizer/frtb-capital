@@ -217,20 +217,29 @@ The May 2026 accuracy pass corrected four prior simplifications:
    99.0% VaR exception counts separately for APL and HPL, including missing-data
    exception treatment and optional prorated thresholds for shorter approved
    histories.
-3. The PLA policy wrapper now enforces the 250-business-day policy window before
-   applying the KS threshold classification.
-4. NMRF treatment now has an explicit post-RFET method-selection step, method
+3. The PLA policy wrapper enforces the 250-business-day policy window required
+   by Basel MAR32.40 and proposed NPR 2.0 section `__.213` when callers supply
+   both `observation_dates` and a `BusinessCalendar`. Calls without a calendar
+   retain the historical observation-count path for compatibility, but emit a
+   deprecation warning because that path cannot independently verify the
+   business-day count.
+4. PLA and backtesting co-alignment under Basel MAR32.40 / MAR33.4 and proposed
+   NPR 2.0 section `__.213` is validated from calendar-backed start/end date
+   diagnostics. If either result lacks calendar-backed diagnostics, the
+   capital-layer validator emits a deprecation warning rather than changing the
+   capital number.
+5. NMRF treatment now has an explicit post-RFET method-selection step, method
    evidence diagnostics, upstream valuation-run specs, valuation-run artifact
    reconciliation, vectorized stress-artifact SES extraction, and fail-hard
    validation for missing Type A/B NMRF artifacts.
-5. Policy-wrapper boundaries can emit structured JSON log records with run,
+6. Policy-wrapper boundaries can emit structured JSON log records with run,
    desk, regime, and scalar result fields. Decomposed result objects can be
    collected into `DeskAuditRecord` / `CapitalRunAuditLog` NDJSON artifacts
    and deterministic Markdown reports.
-6. Stress-period selection now has a first-class pre-run component that selects
+7. Stress-period selection now has a first-class pre-run component that selects
    common risk-class stress windows from supplied historical loss/severity
    vectors with NumPy-native rolling-window severity scoring.
-7. Liquidity-horizon mapping is implemented for caller-supplied regulatory
+8. Liquidity-horizon mapping is implemented for caller-supplied regulatory
    categories, including short-maturity and weighted-average multi-underlying
    helpers.
 

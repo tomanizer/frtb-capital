@@ -208,12 +208,16 @@ def test_trading_desk_backtest_trace_reports_dated_exception_reasons() -> None:
     )
 
     level = result.level(0.99)
-    assert result.result == trading_desk_backtest(apl, hpl, var)
+    assert result.result == trading_desk_backtest(apl, hpl, var, observation_dates=dates)
     assert level.result.apl_exceptions == 1
     assert level.result.hpl_exceptions == 1
     assert len(level.observations) == n
     assert len(level.exception_observations()) == 2
     assert level.observations[0].observation_date == date(2025, 1, 1)
+    assert result.result.start_date == date(2025, 1, 1)
+    assert result.result.end_date == date(2025, 9, 7)
+    assert result.as_dict()["start_date"] == "2025-01-01"
+    assert result.as_dict()["end_date"] == "2025-09-07"
     assert level.observations[0].apl is None
     assert level.observations[0].apl_reason == "missing_pnl"
     assert level.observations[1].hpl_reason == "loss_exceeds_var"
@@ -381,6 +385,8 @@ def test_trading_desk_backtest_policy_calendar_validates_business_window() -> No
     )
 
     assert result.result.calendar_basis == ObservationWindowBasis.MOST_RECENT_BUSINESS_DAYS
+    assert result.result.start_date == dates[0]
+    assert result.result.end_date == dates[-1]
     assert result.result.official_holiday_count == 1
     assert result.as_dict()["official_holiday_count"] == 1
 
