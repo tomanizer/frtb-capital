@@ -40,6 +40,7 @@ from frtb_ima.capital import (
     models_based_capital,
     models_based_capital_for_policy,
     pla_addon,
+    validate_pla_backtesting_window_alignment,
 )
 from frtb_ima.data_contracts import (
     CapitalRunResult,
@@ -409,6 +410,7 @@ __all__ = [
     "stress_period_specs_for_nmrf",
     "validate_aligned_metadata",
     "validate_nested_lh_vectors",
+    "validate_pla_backtesting_window_alignment",
     "validate_selected_stress_periods",
     "validate_unique_scenarios",
     "write_audit_records_ndjson",

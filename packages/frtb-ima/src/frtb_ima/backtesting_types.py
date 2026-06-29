@@ -86,6 +86,8 @@ class TradingDeskBacktestResult:
     levels: tuple[BacktestLevelResult, ...]
     window_size: int
     model_eligible: bool
+    start_date: date | None = None
+    end_date: date | None = None
     calendar_source: str = ""
     calendar_version: str = ""
     calendar_basis: str = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
@@ -119,6 +121,8 @@ class TradingDeskBacktestResult:
         return {
             "window_size": self.window_size,
             "model_eligible": self.model_eligible,
+            "start_date": self.start_date.isoformat() if self.start_date is not None else None,
+            "end_date": self.end_date.isoformat() if self.end_date is not None else None,
             "calendar_source": self.calendar_source,
             "calendar_version": self.calendar_version,
             "calendar_basis": self.calendar_basis,
@@ -263,6 +267,12 @@ class TradingDeskBacktestTraceResult:
         return {
             "window_size": self.window_size,
             "model_eligible": self.model_eligible,
+            "start_date": self.result.start_date.isoformat()
+            if self.result.start_date is not None
+            else None,
+            "end_date": self.result.end_date.isoformat()
+            if self.result.end_date is not None
+            else None,
             "calendar_source": self.result.calendar_source,
             "calendar_version": self.result.calendar_version,
             "calendar_basis": self.result.calendar_basis,
