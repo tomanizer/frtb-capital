@@ -14,6 +14,7 @@ from frtb_ima.lha_builder import (
     risk_factor_names_for_lh_subset,
 )
 from frtb_ima.scenario import ScenarioSetType, make_scenario_metadata
+from frtb_ima.scenario_validation import validate_nested_lh_vectors
 
 
 def _risk_factors() -> tuple[RiskFactorDefinition, ...]:
@@ -82,6 +83,13 @@ def test_nested_lh_vectors_from_cube_all_classes() -> None:
     assert result[LiquidityHorizon.LH40].values.tolist() == pytest.approx([300.0, 700.0])
     assert LiquidityHorizon.LH60 not in result
     assert result[LiquidityHorizon.LH10].metadata == _cube().scenario_metadata
+    assert result[LiquidityHorizon.LH10].risk_factor_names == (
+        "USD_RATE",
+        "EUR_RATE",
+        "IG_CREDIT",
+    )
+    assert result[LiquidityHorizon.LH20].risk_factor_names == ("EUR_RATE", "IG_CREDIT")
+    assert validate_nested_lh_vectors(result).nesting_evidence_checked is True
 
 
 def test_nested_lh_vectors_from_cube_for_one_risk_class() -> None:

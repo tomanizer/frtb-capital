@@ -37,31 +37,20 @@ def expected_shortfall(
     estimator: ESEstimator,
 ) -> float:
     """Compute expected shortfall (average of tail losses beyond alpha quantile).
-
-    Args:
-        losses: Scenario loss values. Positive = loss, negative = gain.
-        alpha:  Confidence level sourced from the applicable run policy.
-        estimator: Tail estimator used to average losses beyond alpha.
-
-    Returns:
-        ES as the mean of the non-empty worst-loss tail. The result can be
-        negative when all selected tail scenarios are gains.
-
-    Raises:
-        ValueError: on empty input or invalid alpha.
     Parameters
     ----------
     losses : Sequence[float] | npt.NDArray[np.float64]
-        Losses.
+        Scenario loss values. Positive values are losses; negative values are gains.
     alpha : float
-        Alpha.
+        ES confidence level sourced from the applicable run policy.
     estimator : ESEstimator
-        Estimator.
+        Tail estimator used to average losses beyond alpha.
 
     Returns
     -------
     float
-        Result of the operation.
+        ES as the mean of the worst-tail losses at alpha. Can be negative when all
+        selected tail scenarios are gains.
     """
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
@@ -91,16 +80,16 @@ def expected_shortfall_from_sorted_losses_desc(
     Parameters
     ----------
     sorted_losses_desc : Sequence[float] | npt.NDArray[np.float64]
-        Sorted losses desc.
+        Scenario losses sorted descending with the worst losses first.
     alpha : float
-        Alpha.
+        ES confidence level sourced from the applicable run policy.
     estimator : ESEstimator
-        Estimator.
+        Tail estimator used to average losses beyond alpha.
 
     Returns
     -------
     float
-        Result of the operation.
+        ES from the already sorted worst-tail losses at alpha.
     """
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
