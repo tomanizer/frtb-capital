@@ -16,6 +16,26 @@ from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTab
 from frtb_ima.adapters._risk_factor_master_mapping_types import RiskFactorMasterTableMapping
 from frtb_ima.adapters._scenario_pnl_mapping_types import ScenarioPnlTableMapping
 
+_SUPPORTED_TABLE_KEYS = frozenset(
+    {
+        "daily_pnl_vectors",
+        "risk_factor_master",
+        "rfet_observations",
+        "scenario_pnl_vectors",
+    }
+)
+_UNSUPPORTED_SCALAR_TABLE_KEYS = frozenset(
+    {
+        "es_scalars",
+        "expected_shortfall_scalars",
+        "imcc_scalars",
+        "nmrf_scalar_outputs",
+        "nmrf_ses_scalars",
+        "ses_scalars",
+        "var_scalars",
+    }
+)
+
 
 def load_ima_mapping_spec(path: str | Path) -> ImaMappingSpec:
     """Load a v1 IMA ``mapping.yaml`` file.
@@ -55,6 +75,7 @@ def parse_ima_mapping_spec(text: str) -> ImaMappingSpec:
 
 def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> ImaMappingSpec:
     tables = _required_mapping(raw, "tables")
+    _validate_table_keys(tables)
     daily_pnl = tables.get("daily_pnl_vectors")
     if daily_pnl is not None and not isinstance(daily_pnl, Mapping):
         raise MappingSpecError("daily_pnl_vectors must be a mapping")
@@ -103,6 +124,20 @@ def _mapping_spec_from_raw(raw: Mapping[str, object], *, source_text: str) -> Im
         ),
         spec_hash=stable_mapping_hash({"mapping_spec": source_text}),
     )
+
+
+def _validate_table_keys(tables: Mapping[str, object]) -> None:
+    table_keys = {str(key) for key in tables}
+    scalar_keys = sorted(table_keys & _UNSUPPORTED_SCALAR_TABLE_KEYS)
+    if scalar_keys:
+        raise MappingSpecError(
+            "unsupported scalar-only IMA mapping tables: "
+            + ", ".join(scalar_keys)
+            + "; provide vector/scenario-level source inputs instead"
+        )
+    unknown = sorted(table_keys - _SUPPORTED_TABLE_KEYS)
+    if unknown:
+        raise MappingSpecError("unsupported IMA mapping tables: " + ", ".join(unknown))
 
 
 def _risk_factor_master_mapping(raw: Mapping[str, object]) -> RiskFactorMasterTableMapping:
