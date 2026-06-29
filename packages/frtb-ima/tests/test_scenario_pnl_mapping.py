@@ -13,11 +13,13 @@ from frtb_ima.adapters.mapping_spec import (
     load_ima_mapping_spec,
     parse_ima_mapping_spec,
 )
+from frtb_ima.adapters.risk_factor_master_mapping import materialize_risk_factor_master_from_rows
 from frtb_ima.adapters.scenario_pnl_mapping import (
     IMA_SCENARIO_PNL_VECTOR_TARGET,
     materialize_scenario_pnl_vectors_from_mapping,
     materialize_scenario_pnl_vectors_from_rows,
 )
+from frtb_ima.data_models import LiquidityHorizon
 from frtb_ima.scenario import ScenarioSetType
 
 SCENARIO_PNL_MAPPING_YAML = """
@@ -31,6 +33,40 @@ sign_convention:
   pnl_positive_means: gain
 
 tables:
+  scenario_pnl_vectors:
+    source: scenario_pnl.csv
+    target: ima_scenario_pnl_vectors
+    fields:
+      scenario_id: SCENARIO_ID
+      scenario_date: SCENARIO_DATE
+      scenario_set: SCENARIO_SET
+      position_id: POSITION_ID
+      risk_factor_name: RISK_FACTOR
+      pnl: PNL_USD
+      source_row_id: SOURCE_ROW
+"""
+
+SCENARIO_AND_RISK_FACTOR_MAPPING_YAML = """
+mapping_spec_version: 1
+target_schema: ima-arrow-v1
+source_system: client_risk_engine
+base_currency: USD
+timezone: Europe/London
+
+sign_convention:
+  pnl_positive_means: gain
+
+tables:
+  risk_factor_master:
+    source: risk_factor_master.csv
+    target: ima_risk_factor_master
+    fields:
+      risk_factor_name: RF_NAME
+      risk_class: RISK_CLASS
+      liquidity_horizon: LH
+      bucket: BUCKET
+      effective_date: EFFECTIVE_DATE
+      source_row_id: RF_ROW
   scenario_pnl_vectors:
     source: scenario_pnl.csv
     target: ima_scenario_pnl_vectors
@@ -243,6 +279,152 @@ def test_scenario_pnl_mapping_allows_explicit_zero_fill_policy() -> None:
         ),
     )
     assert result.report.passed
+
+
+def test_scenario_pnl_mapping_reconciles_liquidity_horizons_from_master() -> None:
+    spec = parse_ima_mapping_spec(SCENARIO_AND_RISK_FACTOR_MAPPING_YAML)
+    risk_factor_master = materialize_risk_factor_master_from_rows(
+        [
+            {
+                "RF_ROW": "rf-1",
+                "RF_NAME": "USD_SWAP_5Y",
+                "RISK_CLASS": "GIRR",
+                "LH": "10",
+                "BUCKET": "USD",
+                "EFFECTIVE_DATE": "2025-01-01",
+            },
+            {
+                "RF_ROW": "rf-2",
+                "RF_NAME": "EUR_SWAP_10Y",
+                "RISK_CLASS": "GIRR",
+                "LH": "20",
+                "BUCKET": "EUR",
+                "EFFECTIVE_DATE": "2025-01-01",
+            },
+        ],
+        spec,
+    ).batch
+
+    result = materialize_scenario_pnl_vectors_from_rows(
+        [
+            {
+                "SOURCE_ROW": "scenario-1",
+                "SCENARIO_ID": "scn-001",
+                "SCENARIO_DATE": "2025-01-02",
+                "SCENARIO_SET": "CURRENT",
+                "POSITION_ID": "POS_A",
+                "RISK_FACTOR": "USD_SWAP_5Y",
+                "PNL_USD": "-3.0",
+            },
+            {
+                "SOURCE_ROW": "scenario-2",
+                "SCENARIO_ID": "scn-001",
+                "SCENARIO_DATE": "2025-01-02",
+                "SCENARIO_SET": "CURRENT",
+                "POSITION_ID": "POS_A",
+                "RISK_FACTOR": "EUR_SWAP_10Y",
+                "PNL_USD": "-2.0",
+            },
+        ],
+        spec,
+        risk_factor_master=risk_factor_master,
+    )
+
+    assert result.report.passed
+    assert result.liquidity_horizons_by_risk_factor == {
+        "EUR_SWAP_10Y": LiquidityHorizon.LH20,
+        "USD_SWAP_5Y": LiquidityHorizon.LH10,
+    }
+
+
+def test_scenario_pnl_mapping_auto_loads_master_for_lh_reconciliation(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "mapping.yaml").write_text(
+        SCENARIO_AND_RISK_FACTOR_MAPPING_YAML,
+        encoding="utf-8",
+    )
+    (tmp_path / "risk_factor_master.csv").write_text(
+        "RF_ROW,RF_NAME,RISK_CLASS,LH,BUCKET,EFFECTIVE_DATE\n"
+        "rf-1,USD_SWAP_5Y,GIRR,10,USD,2025-01-01\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "scenario_pnl.csv").write_text(
+        "SOURCE_ROW,SCENARIO_ID,SCENARIO_DATE,SCENARIO_SET,POSITION_ID,RISK_FACTOR,PNL_USD\n"
+        "scenario-1,scn-001,2025-01-02,CURRENT,POS_A,USD_SWAP_5Y,-3.0\n",
+        encoding="utf-8",
+    )
+
+    result = materialize_scenario_pnl_vectors_from_mapping(
+        load_ima_mapping_spec(tmp_path / "mapping.yaml"),
+        source_root=tmp_path,
+    )
+
+    assert result.report.passed
+    assert result.liquidity_horizons_by_risk_factor == {
+        "USD_SWAP_5Y": LiquidityHorizon.LH10,
+    }
+
+
+def test_scenario_pnl_mapping_reports_missing_and_ambiguous_master_lh() -> None:
+    spec = parse_ima_mapping_spec(SCENARIO_AND_RISK_FACTOR_MAPPING_YAML)
+    risk_factor_master = materialize_risk_factor_master_from_rows(
+        [
+            {
+                "RF_ROW": "rf-1",
+                "RF_NAME": "USD_SWAP_5Y",
+                "RISK_CLASS": "GIRR",
+                "LH": "10",
+                "BUCKET": "USD",
+                "EFFECTIVE_DATE": "2025-01-01",
+            },
+            {
+                "RF_ROW": "rf-2",
+                "RF_NAME": "USD_SWAP_5Y",
+                "RISK_CLASS": "GIRR",
+                "LH": "20",
+                "BUCKET": "USD",
+                "EFFECTIVE_DATE": "2025-01-02",
+            },
+        ],
+        spec,
+    ).batch
+
+    result = materialize_scenario_pnl_vectors_from_rows(
+        [
+            {
+                "SOURCE_ROW": "scenario-1",
+                "SCENARIO_ID": "scn-001",
+                "SCENARIO_DATE": "2025-01-02",
+                "SCENARIO_SET": "CURRENT",
+                "POSITION_ID": "POS_A",
+                "RISK_FACTOR": "USD_SWAP_5Y",
+                "PNL_USD": "-3.0",
+            },
+            {
+                "SOURCE_ROW": "scenario-2",
+                "SCENARIO_ID": "scn-001",
+                "SCENARIO_DATE": "2025-01-02",
+                "SCENARIO_SET": "CURRENT",
+                "POSITION_ID": "POS_A",
+                "RISK_FACTOR": "MISSING_RF",
+                "PNL_USD": "-2.0",
+            },
+        ],
+        spec,
+        risk_factor_master=risk_factor_master,
+    )
+
+    assert not result.report.passed
+    assert result.liquidity_horizons_by_risk_factor == {}
+    assert [finding.code for finding in result.report.findings] == [
+        "SCENARIO_PNL_RISK_FACTOR_NOT_IN_MASTER",
+        "SCENARIO_PNL_RISK_FACTOR_LH_CONFLICT",
+    ]
+    assert [finding.row_id for finding in result.report.findings] == [
+        "scenario-2",
+        "scenario-1",
+    ]
 
 
 def test_scenario_pnl_mapping_requires_scenario_table_for_materialization() -> None:
