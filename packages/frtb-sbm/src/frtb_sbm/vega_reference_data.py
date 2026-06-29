@@ -81,6 +81,7 @@ EQUITY_VEGA_LARGE_CAP_INDEX_BUCKETS = frozenset(
 )
 EQUITY_VEGA_SMALL_CAP_OTHER_BUCKETS = frozenset({"9", "10", "11"})
 
+
 def girr_vega_liquidity_horizon_days(profile: SbmRegulatoryProfile | str) -> int:
     """Return the cited GIRR vega liquidity horizon in days for a profile.
     Parameters

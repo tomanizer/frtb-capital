@@ -11,9 +11,7 @@ from frtb_sbm.reference_citations_pra_uk_crr import (
 )
 from frtb_sbm.reference_profiles import PRA_UK_CRR_URL
 
-REGULATORY_SOURCES_PATH = (
-    Path(__file__).resolve().parents[1] / "docs" / "regulatory_sources.yml"
-)
+REGULATORY_SOURCES_PATH = Path(__file__).resolve().parents[1] / "docs" / "regulatory_sources.yml"
 
 
 def test_regulatory_sources_manifest_lists_comparison_profiles() -> None:

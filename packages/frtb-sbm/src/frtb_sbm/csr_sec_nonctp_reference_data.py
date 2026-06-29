@@ -376,9 +376,7 @@ def csr_sec_nonctp_inter_bucket_correlation(
 
     _ensure_csr_sec_nonctp_delta_supported(profile)
     del bucket1, bucket2
-    return CSR_SEC_INTER_BUCKET_CORRELATION, (
-        _csr_sec_nonctp_citation(profile, "basel_mar21_70"),
-    )
+    return CSR_SEC_INTER_BUCKET_CORRELATION, (_csr_sec_nonctp_citation(profile, "basel_mar21_70"),)
 
 
 def csr_sec_nonctp_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:

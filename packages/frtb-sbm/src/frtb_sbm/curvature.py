@@ -120,12 +120,15 @@ from frtb_sbm.validation import (
 
 CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"
 
+
 def _curvature_floor_citation(profile_id: str) -> tuple[str, ...]:
     return (profile_citation_id(profile_id, "basel_mar21_curvature"),)
 
 
 def _curvature_scenario_citations(profile_id: str) -> tuple[str, ...]:
     return profile_scenario_citation_ids(profile_id)
+
+
 _DEFAULT_SCENARIOS: tuple[SbmScenarioLabel, ...] = (
     SbmScenarioLabel.LOW,
     SbmScenarioLabel.MEDIUM,

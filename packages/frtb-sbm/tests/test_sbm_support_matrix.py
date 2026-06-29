@@ -115,4 +115,3 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
 
     assert "NON_BASEL_PROFILE_DESIGN.md" in traceability
     assert "NON_BASEL_PROFILE_REQUIREMENTS.md" in traceability
-

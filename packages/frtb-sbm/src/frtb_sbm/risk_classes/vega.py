@@ -73,6 +73,7 @@ _NON_GIRR_VEGA_RISK_CLASSES = frozenset(
     }
 )
 
+
 def calculate_non_girr_vega_risk_class_capital(
     sensitivities: tuple[SbmSensitivity, ...],
     *,
@@ -379,9 +380,7 @@ def _aggregate_csr_sec_nonctp_vega_measure_capital(
         scenario_totals,
         risk_class=SbmRiskClass.CSR_SEC_NONCTP,
         risk_measure=SbmRiskMeasure.VEGA,
-        citation_ids=(
-            profile_citation_id(profile_id, "basel_mar21_7_scenario_selection"),
-        ),
+        citation_ids=(profile_citation_id(profile_id, "basel_mar21_7_scenario_selection"),),
     )
     return RiskClassCapital(
         risk_class=SbmRiskClass.CSR_SEC_NONCTP,
