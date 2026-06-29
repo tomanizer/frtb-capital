@@ -65,7 +65,7 @@ requirements:
       - tests/test_lha_builder.py
       - tests/test_liquidity_horizon.py
       - tests/test_scenario_validation.py
-    notes: "Scenario cube to nested-vector construction and LHA calculation are implemented."
+    notes: "Scenario cube to nested-vector construction and LHA calculation are implemented. Scalar ES inputs are finite-checked before LHA aggregation, and cube-built nested vectors carry risk-factor membership evidence so validation enforces longer-horizon subset nesting under Proposed Sec. __.215."
 
   - id: NPR-MR-LHA-002
     title: "Risk-factor to liquidity-horizon mapping tables"
@@ -134,7 +134,7 @@ requirements:
       - tests/test_imcc.py
       - tests/test_lha_builder.py
       - tests/test_regimes.py
-    notes: "Scalar API and audit decomposition implemented for unconstrained, constrained, and blended IMCC."
+    notes: "Scalar API and audit decomposition implemented for unconstrained, constrained, and blended IMCC. IMCC vector paths consume the same LHA nested-vector validation, including cube-derived subset evidence when built from ScenarioCube."
 
   - id: NPR-MR-IMCC-002
     title: "Current/stress period ES and reduced-set governance"

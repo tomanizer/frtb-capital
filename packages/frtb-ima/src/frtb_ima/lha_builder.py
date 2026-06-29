@@ -63,16 +63,16 @@ def risk_factor_names_for_lh_subset(
     Parameters
     ----------
     risk_factors : Sequence[RiskFactorDefinition]
-        Risk factors.
+        Risk-factor definitions to filter.
     liquidity_horizon : LiquidityHorizon
-        Liquidity horizon.
+        Minimum liquidity-horizon cutoff for inclusion.
     risk_class : RiskClass | None, optional
-        Risk class.
+        Optional risk-class filter.
 
     Returns
     -------
     tuple[str, ...]
-        Result of the operation.
+        Risk-factor names whose liquidity horizon is at least the requested cutoff.
     """
     return tuple(
         risk_factor.name
@@ -96,18 +96,19 @@ def nested_lh_vectors_from_cube(
     Parameters
     ----------
     cube : ScenarioCube
-        Cube.
+        Scenario cube containing scenario, position, and risk-factor P&L values.
     risk_factors : Sequence[RiskFactorDefinition]
-        Risk factors.
+        Risk-factor definitions matching the cube risk-factor axis.
     risk_class : RiskClass | None, optional
-        Risk class.
+        Optional risk class to isolate in every nested vector.
     lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
-        Lha weights.
+        Liquidity-horizon cutoffs to build.
 
     Returns
     -------
     dict[LiquidityHorizon, ScenarioVector]
-        Result of the operation.
+        Nested scenario vectors keyed by liquidity horizon, with risk-factor
+        membership evidence attached to each vector.
     """
     risk_factor_by_name = _risk_factor_map(risk_factors)
     _validate_cube_risk_factors(cube, risk_factor_by_name)
@@ -127,6 +128,7 @@ def nested_lh_vectors_from_cube(
             metadata=cube.scenario_metadata,
             risk_class=risk_class,
             liquidity_horizon=liquidity_horizon,
+            risk_factor_names=selected_names,
             name=(
                 f"{risk_class.value if risk_class is not None else 'ALL'}_{liquidity_horizon.name}"
             ),
@@ -148,16 +150,16 @@ def per_risk_class_nested_lh_vectors_from_cube(
     Parameters
     ----------
     cube : ScenarioCube
-        Cube.
+        Scenario cube containing scenario, position, and risk-factor P&L values.
     risk_factors : Sequence[RiskFactorDefinition]
-        Risk factors.
+        Risk-factor definitions matching the cube risk-factor axis.
     lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
-        Lha weights.
+        Liquidity-horizon cutoffs to build for each risk class.
 
     Returns
     -------
     dict[RiskClass, dict[LiquidityHorizon, ScenarioVector]]
-        Result of the operation.
+        Nested scenario vectors grouped by risk class and liquidity horizon.
     """
     risk_factor_by_name = _risk_factor_map(risk_factors)
     _validate_cube_risk_factors(cube, risk_factor_by_name)
@@ -186,16 +188,16 @@ def imcc_nested_lh_vectors_from_cube(
     Parameters
     ----------
     cube : ScenarioCube
-        Cube.
+        Scenario cube containing scenario, position, and risk-factor P&L values.
     risk_factors : Sequence[RiskFactorDefinition]
-        Risk factors.
+        Risk-factor definitions matching the cube risk-factor axis.
     lha_weights : Sequence[tuple[LiquidityHorizon, float]], optional
-        Lha weights.
+        Liquidity-horizon cutoffs to build for all-class and per-class views.
 
     Returns
     -------
     NestedLHScenarioVectors
-        Result of the operation.
+        All-class and per-risk-class nested LH vectors ready for IMCC.
     """
     return NestedLHScenarioVectors(
         all_risk_class_vectors=nested_lh_vectors_from_cube(

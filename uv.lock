@@ -983,7 +983,7 @@ dev = [{ name = "matplotlib", specifier = ">=3.10.9" }]
 
 [[package]]
 name = "frtb-ima"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "packages/frtb-ima" }
 dependencies = [
     { name = "frtb-common" },

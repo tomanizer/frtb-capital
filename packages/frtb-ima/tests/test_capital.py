@@ -132,6 +132,7 @@ def test_models_based_capital_serializes_audit_breakdown() -> None:
 
     assert result.as_dict()["models_based_capital"] == pytest.approx(145.0)
     assert result.as_dict()["binding_term"] == "AVERAGE"
+    assert result.as_dict()["exception_count"] is None
 
 
 def test_models_based_capital_reports_spot_binding_term() -> None:
@@ -295,6 +296,8 @@ def test_models_based_capital_for_policy_returns_capital_components() -> None:
     assert result.multiplier == pytest.approx(supervisory_multiplier_for_policy(0, policy))
     assert result.models_based_capital == pytest.approx(150.0)
     assert result.binding_term == "AVERAGE"
+    assert result.exception_count == 0
+    assert result.as_dict()["exception_count"] == 0
 
 
 def test_models_based_capital_for_policy_uses_policy_exception_count_multiplier() -> None:
@@ -313,6 +316,50 @@ def test_models_based_capital_for_policy_uses_policy_exception_count_multiplier(
 
     assert result.multiplier == pytest.approx(supervisory_multiplier_for_policy(6, policy))
     assert result.models_based_capital == pytest.approx(168.4)
+    assert result.as_dict()["exception_count"] == 6
+
+
+def test_models_based_capital_for_policy_rejects_red_zone_exception_count() -> None:
+    policy = get_policy()
+
+    result = models_based_capital_for_policy(
+        DeskEligibilityStatus.IMA_ELIGIBLE,
+        imcc_t_minus_1=100.0,
+        ses_t_minus_1=20.0,
+        imcc_60d_avg=90.0,
+        ses_60d_avg=10.0,
+        pla_addon=0.0,
+        policy=policy,
+        exception_count=9,
+    )
+    assert result.multiplier == pytest.approx(1.92)
+
+    for exception_count in (10, 25):
+        with pytest.raises(IMAIneligibleError, match="red-zone threshold"):
+            models_based_capital_for_policy(
+                DeskEligibilityStatus.IMA_ELIGIBLE,
+                imcc_t_minus_1=100.0,
+                ses_t_minus_1=20.0,
+                imcc_60d_avg=90.0,
+                ses_60d_avg=10.0,
+                pla_addon=0.0,
+                policy=policy,
+                exception_count=exception_count,
+            )
+
+
+def test_models_based_capital_for_policy_keeps_sa_fallback_gate_first() -> None:
+    with pytest.raises(IMAIneligibleError, match="SA_FALLBACK"):
+        models_based_capital_for_policy(
+            DeskEligibilityStatus.SA_FALLBACK,
+            imcc_t_minus_1=100.0,
+            ses_t_minus_1=20.0,
+            imcc_60d_avg=90.0,
+            ses_60d_avg=10.0,
+            pla_addon=0.0,
+            policy=get_policy(),
+            exception_count=10,
+        )
 
 
 def test_pla_addon_zero_green_amber_requires_zero_amber() -> None:
