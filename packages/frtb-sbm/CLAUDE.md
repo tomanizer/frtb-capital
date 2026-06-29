@@ -20,8 +20,8 @@ Review `frtb-sbm` as the owner of SBM capital only.
 
 Public entry point: `calculate_sbm_capital`. Supported paths return cited
 `SbmCapitalResult` records with audit hashes and scenario evidence.
-`BASEL_MAR21`, `US_NPR_2_0`, and `EU_CRR3` support all seven risk classes across
-delta, vega, and curvature. Unsupported sub-features (for example equity repo vega) fail closed
+`US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` are comparison-slice profiles (21/21
+runtime gates; Basel-mirrored numerics; one GIRR delta fixture each). Unsupported sub-features (for example equity repo vega) fail closed
 with `UnsupportedRegulatoryFeatureError` or `SbmInputError` — never silent
 zero-capital placeholders.
 
@@ -72,7 +72,7 @@ the import-shadowing guardrail before adding `adapters/`, `validation/`,
 
 ## Profile boundaries
 
-`SbmRegulatoryProfile` includes `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` for
-forward compatibility, but phase-1 capital is implemented only for
-`BASEL_MAR21`. Non-Basel profiles fail closed at validation with explicit
-unsupported-profile errors.
+`SbmRegulatoryProfile` includes `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR`
+comparison-slice profiles alongside `BASEL_MAR21`. Unknown profiles and
+unsupported sub-features fail closed with explicit errors; comparison profiles
+must not silently reuse Basel citation ids.

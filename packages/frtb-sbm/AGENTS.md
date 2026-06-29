@@ -20,9 +20,11 @@ and do not constitute independent model validation. Do not treat outputs as
 production regulatory capital.
 
 `BASEL_MAR21` produces phase-1 capital for the supported delta, vega, and
-curvature matrix. `US_NPR_2_0` and `EU_CRR3` produce capital for all seven risk classes across
-delta, vega, and curvature with cited profile-owned reference data. The
-`PRA_UK_CRR` profile uses cited UK CRR comparison reference data for the full 21-cell SBM matrix.
+curvature matrix with per-risk-class fixture packs. `US_NPR_2_0`, `EU_CRR3`, and
+`PRA_UK_CRR` are comparison-slice profiles: all 21 runtime gates are open with
+Basel-mirrored numerics and profile-owned citation ids, but only GIRR delta has
+a deterministic fixture per profile. Comparison-slice outputs are not final
+regulatory capital.
 
 Package-local traceability lives under `packages/frtb-sbm/docs/`. See
 `REGULATORY_TRACEABILITY.md` for implemented/unsupported status by area.
