@@ -6,7 +6,11 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
-from frtb_ima.adapters._daily_pnl_mapping_types import FieldMapping, MappingFinding, MappingSpecError
+from frtb_ima.adapters._daily_pnl_mapping_types import (
+    FieldMapping,
+    MappingFinding,
+    MappingSpecError,
+)
 
 IMA_RFET_OBSERVATION_TARGET = "ima_rfet_observations"
 RFET_OBSERVATION_TARGET_FIELDS = frozenset(
@@ -42,14 +46,17 @@ class RfetObservationTableMapping:
             raise MappingSpecError("rfet_observations.source must be non-empty")
         if self.target != IMA_RFET_OBSERVATION_TARGET:
             raise MappingSpecError(
-                f"rfet_observations.target must be {IMA_RFET_OBSERVATION_TARGET!r}, got {self.target!r}"
+                "rfet_observations.target must be "
+                f"{IMA_RFET_OBSERVATION_TARGET!r}, got {self.target!r}"
             )
         unknown = sorted(set(self.fields) - RFET_OBSERVATION_TARGET_FIELDS)
         if unknown:
             raise MappingSpecError("unknown rfet_observations target fields: " + ", ".join(unknown))
         missing = sorted(REQUIRED_RFET_OBSERVATION_FIELDS - set(self.fields))
         if missing:
-            raise MappingSpecError("missing rfet_observations required fields: " + ", ".join(missing))
+            raise MappingSpecError(
+                "missing rfet_observations required fields: " + ", ".join(missing)
+            )
         object.__setattr__(self, "fields", MappingProxyType(dict(self.fields)))
 
 
@@ -69,9 +76,23 @@ class RfetObservationValidationReport:
 
     @property
     def passed(self) -> bool:
+        """Return ``True`` when no finding has severity ``ERROR``.
+
+        Returns
+        -------
+        bool
+            ``True`` when the report contains no error-severity findings.
+        """
         return all(finding.severity != "ERROR" for finding in self.findings)
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serializable validation report payload.
+
+        Returns
+        -------
+        dict[str, object]
+            Validation report fields suitable for JSON serialization.
+        """
         return {
             "target_schema": self.target_schema,
             "source_system": self.source_system,

@@ -29,7 +29,20 @@ def materialize_daily_pnl_vectors_from_mapping(
     *,
     source_root: str | Path = ".",
 ) -> DailyPnlMappingResult:
-    """Read the configured CSV source and materialize daily P&L vectors."""
+    """Read the configured CSV source and materialize daily P&L vectors.
+
+    Parameters
+    ----------
+    mapping_spec : ImaMappingSpec
+        Parsed v1 IMA mapping spec with ``daily_pnl_vectors`` table metadata.
+    source_root : str | Path, optional
+        Root directory used to resolve ``daily_pnl_vectors.source``.
+
+    Returns
+    -------
+    DailyPnlMappingResult
+        Materialized NumPy batch plus generated validation report.
+    """
 
     table = mapping_spec.daily_pnl_vectors
     source_path = (Path(source_root) / table.source).resolve()
@@ -52,7 +65,24 @@ def materialize_daily_pnl_vectors_from_rows(
     source_file: str = "<rows>",
     source_hash: str | None = None,
 ) -> DailyPnlMappingResult:
-    """Materialize daily P&L vectors from already-loaded source rows."""
+    """Materialize daily P&L vectors from already-loaded source rows.
+
+    Parameters
+    ----------
+    rows : Sequence[Mapping[str, object]]
+        Client-shaped daily P&L rows keyed by source column names.
+    mapping_spec : ImaMappingSpec
+        Parsed v1 IMA mapping spec with field mappings and sign convention.
+    source_file : str, optional
+        Logical source identifier recorded in the validation report.
+    source_hash : str | None, optional
+        Precomputed source hash; derived from ``rows`` when omitted.
+
+    Returns
+    -------
+    DailyPnlMappingResult
+        Materialized NumPy batch plus generated validation report.
+    """
 
     row_hash = source_hash or _stable_hash({"rows": [_plain_mapping(row) for row in rows]})
     accepted: list[dict[str, object]] = []

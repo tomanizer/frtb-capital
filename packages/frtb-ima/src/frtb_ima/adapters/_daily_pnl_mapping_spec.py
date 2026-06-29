@@ -7,24 +7,46 @@ import json
 from collections.abc import Mapping
 from pathlib import Path
 
-from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
 from frtb_ima.adapters._daily_pnl_mapping_types import (
     DailyPnlTableMapping,
     FieldMapping,
     ImaMappingSpec,
     MappingSpecError,
 )
+from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
 
 
 def load_ima_mapping_spec(path: str | Path) -> ImaMappingSpec:
-    """Load a v1 IMA ``mapping.yaml`` file."""
+    """Load a v1 IMA ``mapping.yaml`` file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Filesystem path to the mapping spec.
+
+    Returns
+    -------
+    ImaMappingSpec
+        Parsed and validated v1 IMA mapping spec.
+    """
 
     spec_path = Path(path)
     return parse_ima_mapping_spec(spec_path.read_text(encoding="utf-8"))
 
 
 def parse_ima_mapping_spec(text: str) -> ImaMappingSpec:
-    """Parse a v1 IMA mapping spec from a small YAML subset."""
+    """Parse a v1 IMA mapping spec from a small YAML subset.
+
+    Parameters
+    ----------
+    text : str
+        Mapping spec text using the supported YAML subset.
+
+    Returns
+    -------
+    ImaMappingSpec
+        Parsed and validated v1 IMA mapping spec.
+    """
 
     raw = _parse_yaml_mapping(text)
     return _mapping_spec_from_raw(raw, source_text=text)

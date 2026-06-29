@@ -12,13 +12,13 @@ from pathlib import Path
 
 import pyarrow as pa  # type: ignore[import-untyped]
 
-from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationValidationReport
 from frtb_ima.adapters._daily_pnl_mapping_types import (
     FieldMapping,
     ImaMappingSpec,
     MappingFinding,
     MappingSpecError,
 )
+from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationValidationReport
 from frtb_ima.adapters.arrow import (
     build_rfet_observation_batch_from_arrow,
     normalize_ima_rfet_observation_arrow_table,
@@ -52,7 +52,20 @@ def materialize_rfet_observations_from_mapping(
     *,
     source_root: str | Path = ".",
 ) -> RfetObservationMappingResult:
-    """Read the configured CSV source and materialize RFET observations."""
+    """Read the configured CSV source and materialize RFET observations.
+
+    Parameters
+    ----------
+    mapping_spec : ImaMappingSpec
+        Parsed v1 IMA mapping spec with ``rfet_observations`` table metadata.
+    source_root : str | Path, optional
+        Root directory used to resolve ``rfet_observations.source``.
+
+    Returns
+    -------
+    RfetObservationMappingResult
+        Materialized RFET observation batch plus generated validation report.
+    """
 
     table = mapping_spec.rfet_observations
     if table is None:
@@ -77,7 +90,24 @@ def materialize_rfet_observations_from_rows(
     source_file: str = "<rows>",
     source_hash: str | None = None,
 ) -> RfetObservationMappingResult:
-    """Materialize RFET observations from already-loaded source rows."""
+    """Materialize RFET observations from already-loaded source rows.
+
+    Parameters
+    ----------
+    rows : Sequence[Mapping[str, object]]
+        Client-shaped RFET observation rows keyed by source column names.
+    mapping_spec : ImaMappingSpec
+        Parsed v1 IMA mapping spec with field mappings for RFET observations.
+    source_file : str, optional
+        Logical source identifier recorded in the validation report.
+    source_hash : str | None, optional
+        Precomputed source hash; derived from ``rows`` when omitted.
+
+    Returns
+    -------
+    RfetObservationMappingResult
+        Materialized RFET observation batch plus generated validation report.
+    """
 
     table = mapping_spec.rfet_observations
     if table is None:
@@ -138,7 +168,11 @@ def _map_rfet_row(
         "observation_date": _mapped_date(row, fields["observation_date"], "observation_date"),
     }
     for field_name in _OPTIONAL_STRING_FIELDS:
-        mapped[field_name] = source_row_id if field_name == "source_row_id" else _optional_str(row, fields.get(field_name))
+        mapped[field_name] = (
+            source_row_id
+            if field_name == "source_row_id"
+            else _optional_str(row, fields.get(field_name))
+        )
     mapped["observation_timestamp"] = _optional_str(row, fields.get("observation_timestamp"))
     mapped["verifiable"] = _optional_bool(row, fields.get("verifiable"))
     return mapped
@@ -195,7 +229,9 @@ def _mapped_date(row: Mapping[str, object], mapping: FieldMapping, field_name: s
         raise ValueError(f"{field_name} must be an ISO date") from exc
 
 
-def _source_row_id(row: Mapping[str, object], row_index: int, fields: Mapping[str, FieldMapping]) -> str:
+def _source_row_id(
+    row: Mapping[str, object], row_index: int, fields: Mapping[str, FieldMapping]
+) -> str:
     mapping = fields.get("source_row_id")
     if mapping is None:
         return f"row-{row_index}"

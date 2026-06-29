@@ -8,13 +8,16 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date
 from types import MappingProxyType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
 from frtb_common import ColumnSpec, NullPolicy, TabularLogicalType
 
 from frtb_ima.audit_inputs import compute_inputs_hash
+
+if TYPE_CHECKING:
+    from frtb_ima.adapters._rfet_observation_mapping_types import RfetObservationTableMapping
 
 IMA_DAILY_PNL_VECTOR_TARGET = "ima_daily_pnl_vectors"
 IMA_MAPPING_SPEC_VERSION = 1
@@ -80,7 +83,8 @@ class DailyPnlTableMapping:
             raise MappingSpecError("daily_pnl_vectors.source must be non-empty")
         if self.target != IMA_DAILY_PNL_VECTOR_TARGET:
             raise MappingSpecError(
-                f"daily_pnl_vectors.target must be {IMA_DAILY_PNL_VECTOR_TARGET!r}, got {self.target!r}"
+                "daily_pnl_vectors.target must be "
+                f"{IMA_DAILY_PNL_VECTOR_TARGET!r}, got {self.target!r}"
             )
         unknown = sorted(set(self.fields) - DAILY_PNL_TARGET_FIELDS)
         if unknown:
@@ -111,7 +115,8 @@ class ImaMappingSpec:
     def __post_init__(self) -> None:
         if self.mapping_spec_version != IMA_MAPPING_SPEC_VERSION:
             raise MappingSpecError(
-                f"mapping_spec_version must be {IMA_MAPPING_SPEC_VERSION}, got {self.mapping_spec_version!r}"
+                f"mapping_spec_version must be {IMA_MAPPING_SPEC_VERSION}, "
+                f"got {self.mapping_spec_version!r}"
             )
         for field_name in ("target_schema", "source_system", "base_currency", "timezone"):
             if not str(getattr(self, field_name)):
@@ -139,6 +144,13 @@ class MappingFinding:
     field: str = ""
 
     def as_dict(self) -> dict[str, str]:
+        """Return a JSON-serializable finding payload.
+
+        Returns
+        -------
+        dict[str, str]
+            Finding fields suitable for JSON serialization.
+        """
         payload = {"severity": self.severity, "code": self.code, "message": self.message}
         if self.row_id:
             payload["row_id"] = self.row_id
@@ -163,9 +175,23 @@ class DailyPnlValidationReport:
 
     @property
     def passed(self) -> bool:
+        """Return ``True`` when no finding has severity ``ERROR``.
+
+        Returns
+        -------
+        bool
+            ``True`` when the report contains no error-severity findings.
+        """
         return all(finding.severity != "ERROR" for finding in self.findings)
 
     def as_dict(self) -> dict[str, object]:
+        """Return a JSON-serializable validation report payload.
+
+        Returns
+        -------
+        dict[str, object]
+            Validation report fields suitable for JSON serialization.
+        """
         return {
             "target_schema": self.target_schema,
             "source_system": self.source_system,
@@ -215,9 +241,28 @@ class DailyPnlVectorBatch:
 
     @property
     def observation_count(self) -> int:
+        """Return the number of accepted daily P&L observations.
+
+        Returns
+        -------
+        int
+            Count of accepted rows in the batch.
+        """
         return int(self.desk_ids.size)
 
     def observation_dates_for_desk(self, desk_id: str) -> tuple[date, ...]:
+        """Return accepted business dates for one desk in ascending order.
+
+        Parameters
+        ----------
+        desk_id : str
+            Desk identifier to filter accepted observations.
+
+        Returns
+        -------
+        tuple[date, ...]
+            Business dates accepted for ``desk_id``.
+        """
         selected = self.business_dates[self.desk_ids == desk_id].astype("datetime64[D]").astype(str)
         return tuple(date.fromisoformat(str(value)) for value in selected)
 
@@ -231,7 +276,18 @@ class DailyPnlMappingResult:
 
 
 def input_hash_for_daily_pnl_vector_batch(batch: DailyPnlVectorBatch) -> str:
-    """Return a stable input hash for a daily P&L vector batch."""
+    """Return a stable input hash for a daily P&L vector batch.
+
+    Parameters
+    ----------
+    batch : DailyPnlVectorBatch
+        Accepted daily P&L vectors plus source and mapping provenance.
+
+    Returns
+    -------
+    str
+        Deterministic SHA-256 hash over the batch arrays and provenance fields.
+    """
 
     return compute_inputs_hash(
         desk_ids=batch.desk_ids,
